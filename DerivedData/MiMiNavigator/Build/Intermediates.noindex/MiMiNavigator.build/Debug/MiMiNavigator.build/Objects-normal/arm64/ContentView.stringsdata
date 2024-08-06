@@ -1,0 +1,20 @@
+{
+  "source": "/Users/senat/Develop/MiMiNavigator/MiMiNavigator/ContentView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "Item at %@"
+      },
+      {
+        "comment": "",
+        "key": "Add Item"
+      },
+      {
+        "comment": "",
+        "key": "Select an item"
+      }
+    ]
+  },
+  "version": 1
+}

@@ -1,0 +1,6 @@
+Target dependency graph (3 targets)
+Target 'MiMiNavigatorUITests' in project 'MiMiNavigator'
+➜ Explicit dependency on target 'MiMiNavigator' in project 'MiMiNavigator'
+Target 'MiMiNavigatorTests' in project 'MiMiNavigator'
+➜ Explicit dependency on target 'MiMiNavigator' in project 'MiMiNavigator'
+Target 'MiMiNavigator' in project 'MiMiNavigator' (no dependencies)

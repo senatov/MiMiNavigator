@@ -1,0 +1,178 @@
+{
+  "buildCommand" : {
+    "command" : "preview",
+    "style" : "dynamicReplacement"
+  },
+  "configuredTargets" : [
+    {
+      "guid" : "cc2ea898e229f0643e016aaa5359377a7bb13067fb32793707ebf91e34cb716d",
+      "parameters" : {
+        "action" : "build",
+        "activeArchitecture" : "arm64",
+        "activeRunDestination" : {
+          "disableOnlyActiveArch" : false,
+          "platform" : "macosx",
+          "sdk" : "macosx14.5",
+          "sdkVariant" : "macos",
+          "supportedArchitectures" : [
+            "arm64e",
+            "arm64",
+            "x86_64"
+          ],
+          "targetArchitecture" : "arm64"
+        },
+        "arenaInfo" : {
+          "buildIntermediatesPath" : "/Users/senat/Develop/MiMiNavigator/DerivedData/MiMiNavigator/Build/Intermediates.noindex",
+          "buildProductsPath" : "/Users/senat/Develop/MiMiNavigator/DerivedData/MiMiNavigator/Build/Products",
+          "derivedDataPath" : "/Users/senat/Develop/MiMiNavigator/DerivedData",
+          "indexDataStoreFolderPath" : "/Users/senat/Develop/MiMiNavigator/DerivedData/MiMiNavigator/Index.noindex/DataStore",
+          "indexEnableDataStore" : true,
+          "indexPCHPath" : "/Users/senat/Develop/MiMiNavigator/DerivedData/MiMiNavigator/Index.noindex/PrecompiledHeaders",
+          "pchPath" : "/Users/senat/Develop/MiMiNavigator/DerivedData/MiMiNavigator/Build/Intermediates.noindex/PrecompiledHeaders"
+        },
+        "configurationName" : "Debug",
+        "overrides" : {
+          "synthesized" : {
+            "table" : {
+              "CLANG_COVERAGE_MAPPING" : "YES",
+              "CLANG_PROFILE_DATA_DIRECTORY" : "/Users/senat/Develop/MiMiNavigator/DerivedData/MiMiNavigator/Build/ProfileData",
+              "DSTROOT" : "/Users/senat/Develop/MiMiNavigator/DerivedData/MiMiNavigator/Build/Intermediates.noindex/Previews/macos/MiMiNavigator/ReleaseProducts",
+              "ENABLE_PREVIEWS" : "YES",
+              "OBJROOT" : "/Users/senat/Develop/MiMiNavigator/DerivedData/MiMiNavigator/Build/Intermediates.noindex/Previews/macos/MiMiNavigator/Intermediates.noindex",
+              "SYMROOT" : "/Users/senat/Develop/MiMiNavigator/DerivedData/MiMiNavigator/Build/Intermediates.noindex/Previews/macos/MiMiNavigator/Products"
+            }
+          }
+        }
+      }
+    },
+    {
+      "guid" : "cc2ea898e229f0643e016aaa5359377a20b7cc1d1fb9505d6964d28d457404ad",
+      "parameters" : {
+        "action" : "build",
+        "activeArchitecture" : "arm64",
+        "activeRunDestination" : {
+          "disableOnlyActiveArch" : false,
+          "platform" : "macosx",
+          "sdk" : "macosx14.5",
+          "sdkVariant" : "macos",
+          "supportedArchitectures" : [
+            "arm64e",
+            "arm64",
+            "x86_64"
+          ],
+          "targetArchitecture" : "arm64"
+        },
+        "arenaInfo" : {
+          "buildIntermediatesPath" : "/Users/senat/Develop/MiMiNavigator/DerivedData/MiMiNavigator/Build/Intermediates.noindex",
+          "buildProductsPath" : "/Users/senat/Develop/MiMiNavigator/DerivedData/MiMiNavigator/Build/Products",
+          "derivedDataPath" : "/Users/senat/Develop/MiMiNavigator/DerivedData",
+          "indexDataStoreFolderPath" : "/Users/senat/Develop/MiMiNavigator/DerivedData/MiMiNavigator/Index.noindex/DataStore",
+          "indexEnableDataStore" : true,
+          "indexPCHPath" : "/Users/senat/Develop/MiMiNavigator/DerivedData/MiMiNavigator/Index.noindex/PrecompiledHeaders",
+          "pchPath" : "/Users/senat/Develop/MiMiNavigator/DerivedData/MiMiNavigator/Build/Intermediates.noindex/PrecompiledHeaders"
+        },
+        "configurationName" : "Debug",
+        "overrides" : {
+          "synthesized" : {
+            "table" : {
+              "CLANG_COVERAGE_MAPPING" : "YES",
+              "CLANG_PROFILE_DATA_DIRECTORY" : "/Users/senat/Develop/MiMiNavigator/DerivedData/MiMiNavigator/Build/ProfileData",
+              "DSTROOT" : "/Users/senat/Develop/MiMiNavigator/DerivedData/MiMiNavigator/Build/Intermediates.noindex/Previews/macos/MiMiNavigator/ReleaseProducts",
+              "ENABLE_PREVIEWS" : "YES",
+              "OBJROOT" : "/Users/senat/Develop/MiMiNavigator/DerivedData/MiMiNavigator/Build/Intermediates.noindex/Previews/macos/MiMiNavigator/Intermediates.noindex",
+              "SYMROOT" : "/Users/senat/Develop/MiMiNavigator/DerivedData/MiMiNavigator/Build/Intermediates.noindex/Previews/macos/MiMiNavigator/Products"
+            }
+          }
+        }
+      }
+    },
+    {
+      "guid" : "cc2ea898e229f0643e016aaa5359377a8f79cf04fe4e247fbd8e63771508a711",
+      "parameters" : {
+        "action" : "build",
+        "activeArchitecture" : "arm64",
+        "activeRunDestination" : {
+          "disableOnlyActiveArch" : false,
+          "platform" : "macosx",
+          "sdk" : "macosx14.5",
+          "sdkVariant" : "macos",
+          "supportedArchitectures" : [
+            "arm64e",
+            "arm64",
+            "x86_64"
+          ],
+          "targetArchitecture" : "arm64"
+        },
+        "arenaInfo" : {
+          "buildIntermediatesPath" : "/Users/senat/Develop/MiMiNavigator/DerivedData/MiMiNavigator/Build/Intermediates.noindex",
+          "buildProductsPath" : "/Users/senat/Develop/MiMiNavigator/DerivedData/MiMiNavigator/Build/Products",
+          "derivedDataPath" : "/Users/senat/Develop/MiMiNavigator/DerivedData",
+          "indexDataStoreFolderPath" : "/Users/senat/Develop/MiMiNavigator/DerivedData/MiMiNavigator/Index.noindex/DataStore",
+          "indexEnableDataStore" : true,
+          "indexPCHPath" : "/Users/senat/Develop/MiMiNavigator/DerivedData/MiMiNavigator/Index.noindex/PrecompiledHeaders",
+          "pchPath" : "/Users/senat/Develop/MiMiNavigator/DerivedData/MiMiNavigator/Build/Intermediates.noindex/PrecompiledHeaders"
+        },
+        "configurationName" : "Debug",
+        "overrides" : {
+          "synthesized" : {
+            "table" : {
+              "CLANG_COVERAGE_MAPPING" : "YES",
+              "CLANG_PROFILE_DATA_DIRECTORY" : "/Users/senat/Develop/MiMiNavigator/DerivedData/MiMiNavigator/Build/ProfileData",
+              "DSTROOT" : "/Users/senat/Develop/MiMiNavigator/DerivedData/MiMiNavigator/Build/Intermediates.noindex/Previews/macos/MiMiNavigator/ReleaseProducts",
+              "ENABLE_PREVIEWS" : "YES",
+              "OBJROOT" : "/Users/senat/Develop/MiMiNavigator/DerivedData/MiMiNavigator/Build/Intermediates.noindex/Previews/macos/MiMiNavigator/Intermediates.noindex",
+              "SYMROOT" : "/Users/senat/Develop/MiMiNavigator/DerivedData/MiMiNavigator/Build/Intermediates.noindex/Previews/macos/MiMiNavigator/Products"
+            }
+          }
+        }
+      }
+    }
+  ],
+  "containerPath" : "/Users/senat/Develop/MiMiNavigator/MiMiNavigator.xcodeproj",
+  "continueBuildingAfterErrors" : true,
+  "dependencyScope" : "workspace",
+  "enableIndexBuildArena" : false,
+  "hideShellScriptEnvironment" : false,
+  "parameters" : {
+    "action" : "build",
+    "activeArchitecture" : "arm64",
+    "activeRunDestination" : {
+      "disableOnlyActiveArch" : false,
+      "platform" : "macosx",
+      "sdk" : "macosx14.5",
+      "sdkVariant" : "macos",
+      "supportedArchitectures" : [
+        "arm64e",
+        "arm64",
+        "x86_64"
+      ],
+      "targetArchitecture" : "arm64"
+    },
+    "arenaInfo" : {
+      "buildIntermediatesPath" : "/Users/senat/Develop/MiMiNavigator/DerivedData/MiMiNavigator/Build/Intermediates.noindex",
+      "buildProductsPath" : "/Users/senat/Develop/MiMiNavigator/DerivedData/MiMiNavigator/Build/Products",
+      "derivedDataPath" : "/Users/senat/Develop/MiMiNavigator/DerivedData",
+      "indexDataStoreFolderPath" : "/Users/senat/Develop/MiMiNavigator/DerivedData/MiMiNavigator/Index.noindex/DataStore",
+      "indexEnableDataStore" : true,
+      "indexPCHPath" : "/Users/senat/Develop/MiMiNavigator/DerivedData/MiMiNavigator/Index.noindex/PrecompiledHeaders",
+      "pchPath" : "/Users/senat/Develop/MiMiNavigator/DerivedData/MiMiNavigator/Build/Intermediates.noindex/PrecompiledHeaders"
+    },
+    "configurationName" : "Debug",
+    "overrides" : {
+      "synthesized" : {
+        "table" : {
+          "CLANG_COVERAGE_MAPPING" : "YES",
+          "CLANG_PROFILE_DATA_DIRECTORY" : "/Users/senat/Develop/MiMiNavigator/DerivedData/MiMiNavigator/Build/ProfileData",
+          "ENABLE_XOJIT_PREVIEWS" : "NO",
+          "ONLY_ACTIVE_ARCH" : "YES"
+        }
+      }
+    }
+  },
+  "schemeCommand" : "launch",
+  "showNonLoggedProgress" : true,
+  "useDryRun" : false,
+  "useImplicitDependencies" : true,
+  "useLegacyBuildLocations" : false,
+  "useParallelTargets" : true
+}

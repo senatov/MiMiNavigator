@@ -1,0 +1,48 @@
+{
+  "" : {
+    "diagnostics" : "/Users/senat/Develop/MiMiNavigator/DerivedData/MiMiNavigator/Build/Intermediates.noindex/MiMiNavigator.build/Debug/MiMiNavigator.build/Objects-normal/arm64/MiMiNavigator-master.dia",
+    "emit-module-dependencies" : "/Users/senat/Develop/MiMiNavigator/DerivedData/MiMiNavigator/Build/Intermediates.noindex/MiMiNavigator.build/Debug/MiMiNavigator.build/Objects-normal/arm64/MiMiNavigator-master-emit-module.d",
+    "emit-module-diagnostics" : "/Users/senat/Develop/MiMiNavigator/DerivedData/MiMiNavigator/Build/Intermediates.noindex/MiMiNavigator.build/Debug/MiMiNavigator.build/Objects-normal/arm64/MiMiNavigator-master-emit-module.dia",
+    "swift-dependencies" : "/Users/senat/Develop/MiMiNavigator/DerivedData/MiMiNavigator/Build/Intermediates.noindex/MiMiNavigator.build/Debug/MiMiNavigator.build/Objects-normal/arm64/MiMiNavigator-master.swiftdeps"
+  },
+  "/Users/senat/Develop/MiMiNavigator/DerivedData/MiMiNavigator/Build/Intermediates.noindex/MiMiNavigator.build/Debug/MiMiNavigator.build/DerivedSources/GeneratedAssetSymbols.swift" : {
+    "const-values" : "/Users/senat/Develop/MiMiNavigator/DerivedData/MiMiNavigator/Build/Intermediates.noindex/MiMiNavigator.build/Debug/MiMiNavigator.build/Objects-normal/arm64/GeneratedAssetSymbols.swiftconstvalues",
+    "dependencies" : "/Users/senat/Develop/MiMiNavigator/DerivedData/MiMiNavigator/Build/Intermediates.noindex/MiMiNavigator.build/Debug/MiMiNavigator.build/Objects-normal/arm64/GeneratedAssetSymbols.d",
+    "diagnostics" : "/Users/senat/Develop/MiMiNavigator/DerivedData/MiMiNavigator/Build/Intermediates.noindex/MiMiNavigator.build/Debug/MiMiNavigator.build/Objects-normal/arm64/GeneratedAssetSymbols.dia",
+    "index-unit-output-path" : "/MiMiNavigator.build/Debug/MiMiNavigator.build/Objects-normal/arm64/GeneratedAssetSymbols.o",
+    "llvm-bc" : "/Users/senat/Develop/MiMiNavigator/DerivedData/MiMiNavigator/Build/Intermediates.noindex/MiMiNavigator.build/Debug/MiMiNavigator.build/Objects-normal/arm64/GeneratedAssetSymbols.bc",
+    "object" : "/Users/senat/Develop/MiMiNavigator/DerivedData/MiMiNavigator/Build/Intermediates.noindex/MiMiNavigator.build/Debug/MiMiNavigator.build/Objects-normal/arm64/GeneratedAssetSymbols.o",
+    "swift-dependencies" : "/Users/senat/Develop/MiMiNavigator/DerivedData/MiMiNavigator/Build/Intermediates.noindex/MiMiNavigator.build/Debug/MiMiNavigator.build/Objects-normal/arm64/GeneratedAssetSymbols.swiftdeps",
+    "swiftmodule" : "/Users/senat/Develop/MiMiNavigator/DerivedData/MiMiNavigator/Build/Intermediates.noindex/MiMiNavigator.build/Debug/MiMiNavigator.build/Objects-normal/arm64/GeneratedAssetSymbols~partial.swiftmodule"
+  },
+  "/Users/senat/Develop/MiMiNavigator/MiMiNavigator/ContentView.swift" : {
+    "const-values" : "/Users/senat/Develop/MiMiNavigator/DerivedData/MiMiNavigator/Build/Intermediates.noindex/MiMiNavigator.build/Debug/MiMiNavigator.build/Objects-normal/arm64/ContentView.swiftconstvalues",
+    "dependencies" : "/Users/senat/Develop/MiMiNavigator/DerivedData/MiMiNavigator/Build/Intermediates.noindex/MiMiNavigator.build/Debug/MiMiNavigator.build/Objects-normal/arm64/ContentView.d",
+    "diagnostics" : "/Users/senat/Develop/MiMiNavigator/DerivedData/MiMiNavigator/Build/Intermediates.noindex/MiMiNavigator.build/Debug/MiMiNavigator.build/Objects-normal/arm64/ContentView.dia",
+    "index-unit-output-path" : "/MiMiNavigator.build/Debug/MiMiNavigator.build/Objects-normal/arm64/ContentView.o",
+    "llvm-bc" : "/Users/senat/Develop/MiMiNavigator/DerivedData/MiMiNavigator/Build/Intermediates.noindex/MiMiNavigator.build/Debug/MiMiNavigator.build/Objects-normal/arm64/ContentView.bc",
+    "object" : "/Users/senat/Develop/MiMiNavigator/DerivedData/MiMiNavigator/Build/Intermediates.noindex/MiMiNavigator.build/Debug/MiMiNavigator.build/Objects-normal/arm64/ContentView.o",
+    "swift-dependencies" : "/Users/senat/Develop/MiMiNavigator/DerivedData/MiMiNavigator/Build/Intermediates.noindex/MiMiNavigator.build/Debug/MiMiNavigator.build/Objects-normal/arm64/ContentView.swiftdeps",
+    "swiftmodule" : "/Users/senat/Develop/MiMiNavigator/DerivedData/MiMiNavigator/Build/Intermediates.noindex/MiMiNavigator.build/Debug/MiMiNavigator.build/Objects-normal/arm64/ContentView~partial.swiftmodule"
+  },
+  "/Users/senat/Develop/MiMiNavigator/MiMiNavigator/Item.swift" : {
+    "const-values" : "/Users/senat/Develop/MiMiNavigator/DerivedData/MiMiNavigator/Build/Intermediates.noindex/MiMiNavigator.build/Debug/MiMiNavigator.build/Objects-normal/arm64/Item.swiftconstvalues",
+    "dependencies" : "/Users/senat/Develop/MiMiNavigator/DerivedData/MiMiNavigator/Build/Intermediates.noindex/MiMiNavigator.build/Debug/MiMiNavigator.build/Objects-normal/arm64/Item.d",
+    "diagnostics" : "/Users/senat/Develop/MiMiNavigator/DerivedData/MiMiNavigator/Build/Intermediates.noindex/MiMiNavigator.build/Debug/MiMiNavigator.build/Objects-normal/arm64/Item.dia",
+    "index-unit-output-path" : "/MiMiNavigator.build/Debug/MiMiNavigator.build/Objects-normal/arm64/Item.o",
+    "llvm-bc" : "/Users/senat/Develop/MiMiNavigator/DerivedData/MiMiNavigator/Build/Intermediates.noindex/MiMiNavigator.build/Debug/MiMiNavigator.build/Objects-normal/arm64/Item.bc",
+    "object" : "/Users/senat/Develop/MiMiNavigator/DerivedData/MiMiNavigator/Build/Intermediates.noindex/MiMiNavigator.build/Debug/MiMiNavigator.build/Objects-normal/arm64/Item.o",
+    "swift-dependencies" : "/Users/senat/Develop/MiMiNavigator/DerivedData/MiMiNavigator/Build/Intermediates.noindex/MiMiNavigator.build/Debug/MiMiNavigator.build/Objects-normal/arm64/Item.swiftdeps",
+    "swiftmodule" : "/Users/senat/Develop/MiMiNavigator/DerivedData/MiMiNavigator/Build/Intermediates.noindex/MiMiNavigator.build/Debug/MiMiNavigator.build/Objects-normal/arm64/Item~partial.swiftmodule"
+  },
+  "/Users/senat/Develop/MiMiNavigator/MiMiNavigator/MiMiNavigatorApp.swift" : {
+    "const-values" : "/Users/senat/Develop/MiMiNavigator/DerivedData/MiMiNavigator/Build/Intermediates.noindex/MiMiNavigator.build/Debug/MiMiNavigator.build/Objects-normal/arm64/MiMiNavigatorApp.swiftconstvalues",
+    "dependencies" : "/Users/senat/Develop/MiMiNavigator/DerivedData/MiMiNavigator/Build/Intermediates.noindex/MiMiNavigator.build/Debug/MiMiNavigator.build/Objects-normal/arm64/MiMiNavigatorApp.d",
+    "diagnostics" : "/Users/senat/Develop/MiMiNavigator/DerivedData/MiMiNavigator/Build/Intermediates.noindex/MiMiNavigator.build/Debug/MiMiNavigator.build/Objects-normal/arm64/MiMiNavigatorApp.dia",
+    "index-unit-output-path" : "/MiMiNavigator.build/Debug/MiMiNavigator.build/Objects-normal/arm64/MiMiNavigatorApp.o",
+    "llvm-bc" : "/Users/senat/Develop/MiMiNavigator/DerivedData/MiMiNavigator/Build/Intermediates.noindex/MiMiNavigator.build/Debug/MiMiNavigator.build/Objects-normal/arm64/MiMiNavigatorApp.bc",
+    "object" : "/Users/senat/Develop/MiMiNavigator/DerivedData/MiMiNavigator/Build/Intermediates.noindex/MiMiNavigator.build/Debug/MiMiNavigator.build/Objects-normal/arm64/MiMiNavigatorApp.o",
+    "swift-dependencies" : "/Users/senat/Develop/MiMiNavigator/DerivedData/MiMiNavigator/Build/Intermediates.noindex/MiMiNavigator.build/Debug/MiMiNavigator.build/Objects-normal/arm64/MiMiNavigatorApp.swiftdeps",
+    "swiftmodule" : "/Users/senat/Develop/MiMiNavigator/DerivedData/MiMiNavigator/Build/Intermediates.noindex/MiMiNavigator.build/Debug/MiMiNavigator.build/Objects-normal/arm64/MiMiNavigatorApp~partial.swiftmodule"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "" : {
+    "dependencies" : "/Users/senat/Develop/MiMiNavigator/DerivedData/MiMiNavigator/Index.noindex/Build/Intermediates.noindex/MiMiNavigator.build/Debug/MiMiNavigator.build/Objects-normal/arm64/MiMiNavigator-master.d",
+    "diagnostics" : "/Users/senat/Develop/MiMiNavigator/DerivedData/MiMiNavigator/Index.noindex/Build/Intermediates.noindex/MiMiNavigator.build/Debug/MiMiNavigator.build/Objects-normal/arm64/MiMiNavigator-master.dia",
+    "emit-module-dependencies" : "/Users/senat/Develop/MiMiNavigator/DerivedData/MiMiNavigator/Index.noindex/Build/Intermediates.noindex/MiMiNavigator.build/Debug/MiMiNavigator.build/Objects-normal/arm64/MiMiNavigator-master-emit-module.d",
+    "emit-module-diagnostics" : "/Users/senat/Develop/MiMiNavigator/DerivedData/MiMiNavigator/Index.noindex/Build/Intermediates.noindex/MiMiNavigator.build/Debug/MiMiNavigator.build/Objects-normal/arm64/MiMiNavigator-master-emit-module.dia",
+    "swift-dependencies" : "/Users/senat/Develop/MiMiNavigator/DerivedData/MiMiNavigator/Index.noindex/Build/Intermediates.noindex/MiMiNavigator.build/Debug/MiMiNavigator.build/Objects-normal/arm64/MiMiNavigator-master.swiftdeps"
+  },
+  "/Users/senat/Develop/MiMiNavigator/DerivedData/MiMiNavigator/Index.noindex/Build/Intermediates.noindex/MiMiNavigator.build/Debug/MiMiNavigator.build/DerivedSources/GeneratedAssetSymbols.swift" : {
+
+  },
+  "/Users/senat/Develop/MiMiNavigator/MiMiNavigator/ContentView.swift" : {
+
+  },
+  "/Users/senat/Develop/MiMiNavigator/MiMiNavigator/Item.swift" : {
+
+  },
+  "/Users/senat/Develop/MiMiNavigator/MiMiNavigator/MiMiNavigatorApp.swift" : {
+
+  }
+}

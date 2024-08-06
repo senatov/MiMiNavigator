@@ -1,0 +1,18 @@
+{
+  "" : {
+    "diagnostics" : "/Users/senat/Develop/MiMiNavigator/DerivedData/MiMiNavigator/Build/Intermediates.noindex/Previews/macos/MiMiNavigator/Intermediates.noindex/MiMiNavigator.build/Debug/MiMiNavigatorTests.build/Objects-normal/arm64/MiMiNavigatorTests-master.dia",
+    "emit-module-dependencies" : "/Users/senat/Develop/MiMiNavigator/DerivedData/MiMiNavigator/Build/Intermediates.noindex/Previews/macos/MiMiNavigator/Intermediates.noindex/MiMiNavigator.build/Debug/MiMiNavigatorTests.build/Objects-normal/arm64/MiMiNavigatorTests-master-emit-module.d",
+    "emit-module-diagnostics" : "/Users/senat/Develop/MiMiNavigator/DerivedData/MiMiNavigator/Build/Intermediates.noindex/Previews/macos/MiMiNavigator/Intermediates.noindex/MiMiNavigator.build/Debug/MiMiNavigatorTests.build/Objects-normal/arm64/MiMiNavigatorTests-master-emit-module.dia",
+    "swift-dependencies" : "/Users/senat/Develop/MiMiNavigator/DerivedData/MiMiNavigator/Build/Intermediates.noindex/Previews/macos/MiMiNavigator/Intermediates.noindex/MiMiNavigator.build/Debug/MiMiNavigatorTests.build/Objects-normal/arm64/MiMiNavigatorTests-master.swiftdeps"
+  },
+  "/Users/senat/Develop/MiMiNavigator/MiMiNavigatorTests/MiMiNavigatorTests.swift" : {
+    "const-values" : "/Users/senat/Develop/MiMiNavigator/DerivedData/MiMiNavigator/Build/Intermediates.noindex/Previews/macos/MiMiNavigator/Intermediates.noindex/MiMiNavigator.build/Debug/MiMiNavigatorTests.build/Objects-normal/arm64/MiMiNavigatorTests.swiftconstvalues",
+    "dependencies" : "/Users/senat/Develop/MiMiNavigator/DerivedData/MiMiNavigator/Build/Intermediates.noindex/Previews/macos/MiMiNavigator/Intermediates.noindex/MiMiNavigator.build/Debug/MiMiNavigatorTests.build/Objects-normal/arm64/MiMiNavigatorTests.d",
+    "diagnostics" : "/Users/senat/Develop/MiMiNavigator/DerivedData/MiMiNavigator/Build/Intermediates.noindex/Previews/macos/MiMiNavigator/Intermediates.noindex/MiMiNavigator.build/Debug/MiMiNavigatorTests.build/Objects-normal/arm64/MiMiNavigatorTests.dia",
+    "index-unit-output-path" : "/MiMiNavigator.build/Debug/MiMiNavigatorTests.build/Objects-normal/arm64/MiMiNavigatorTests.o",
+    "llvm-bc" : "/Users/senat/Develop/MiMiNavigator/DerivedData/MiMiNavigator/Build/Intermediates.noindex/Previews/macos/MiMiNavigator/Intermediates.noindex/MiMiNavigator.build/Debug/MiMiNavigatorTests.build/Objects-normal/arm64/MiMiNavigatorTests.bc",
+    "object" : "/Users/senat/Develop/MiMiNavigator/DerivedData/MiMiNavigator/Build/Intermediates.noindex/Previews/macos/MiMiNavigator/Intermediates.noindex/MiMiNavigator.build/Debug/MiMiNavigatorTests.build/Objects-normal/arm64/MiMiNavigatorTests.o",
+    "swift-dependencies" : "/Users/senat/Develop/MiMiNavigator/DerivedData/MiMiNavigator/Build/Intermediates.noindex/Previews/macos/MiMiNavigator/Intermediates.noindex/MiMiNavigator.build/Debug/MiMiNavigatorTests.build/Objects-normal/arm64/MiMiNavigatorTests.swiftdeps",
+    "swiftmodule" : "/Users/senat/Develop/MiMiNavigator/DerivedData/MiMiNavigator/Build/Intermediates.noindex/Previews/macos/MiMiNavigator/Intermediates.noindex/MiMiNavigator.build/Debug/MiMiNavigatorTests.build/Objects-normal/arm64/MiMiNavigatorTests~partial.swiftmodule"
+  }
+}
