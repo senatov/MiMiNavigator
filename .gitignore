@@ -21,5 +21,6 @@ pom.xml.versionsBackup
 release.properties
 target/
 Thumbs.db
-Thumbs.db:encryptable
+Thumbs.db:encryptable/
 tmp/
+**/Index.noindex
