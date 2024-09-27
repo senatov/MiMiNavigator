@@ -11,6 +11,8 @@ struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @Query private var items: [Item]
 
+    // MARK: - some view
+
     var body: some View {
         NavigationSplitView {
             List {
@@ -36,12 +38,16 @@ struct ContentView: View {
         }
     }
 
+    // MARK: - add Item
+
     private func addItem() {
         withAnimation {
             let newItem = Item(timestamp: Date())
             modelContext.insert(newItem)
         }
     }
+
+    // MARK: - delete Items
 
     private func deleteItems(offsets: IndexSet) {
         withAnimation {

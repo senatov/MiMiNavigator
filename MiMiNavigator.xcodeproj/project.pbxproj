@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		9717B0142CA7548100D8B2EF /* UserPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9717B0132CA7547D00D8B2EF /* UserPreferences.swift */; };
 		97AD1A322C624E020045C38D /* MiMiNavigatorApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97AD1A312C624E020045C38D /* MiMiNavigatorApp.swift */; };
 		97AD1A342C624E020045C38D /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97AD1A332C624E020045C38D /* ContentView.swift */; };
 		97AD1A362C624E020045C38D /* Item.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97AD1A352C624E020045C38D /* Item.swift */; };
@@ -35,6 +36,8 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		9717B0132CA7547D00D8B2EF /* UserPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserPreferences.swift; sourceTree = "<group>"; };
+		9717B0152CA7558B00D8B2EF /* MiMiNavigatorRelease.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MiMiNavigatorRelease.entitlements; sourceTree = "<group>"; };
 		979482F02C79633A00B55AF3 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		97AD1A2E2C624E020045C38D /* MiMiNavigator.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MiMiNavigator.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		97AD1A312C624E020045C38D /* MiMiNavigatorApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MiMiNavigatorApp.swift; sourceTree = "<group>"; };
@@ -98,6 +101,8 @@
 		97AD1A302C624E020045C38D /* MiMiNavigator */ = {
 			isa = PBXGroup;
 			children = (
+				9717B0152CA7558B00D8B2EF /* MiMiNavigatorRelease.entitlements */,
+				9717B0132CA7547D00D8B2EF /* UserPreferences.swift */,
 				979482F02C79633A00B55AF3 /* Info.plist */,
 				97AD1A312C624E020045C38D /* MiMiNavigatorApp.swift */,
 				97AD1A332C624E020045C38D /* ContentView.swift */,
@@ -198,7 +203,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1540;
-				LastUpgradeCheck = 1540;
+				LastUpgradeCheck = 1600;
 				TargetAttributes = {
 					97AD1A2D2C624E020045C38D = {
 						CreatedOnToolsVersion = 15.4;
@@ -265,6 +270,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				97AD1A342C624E020045C38D /* ContentView.swift in Sources */,
+				9717B0142CA7548100D8B2EF /* UserPreferences.swift in Sources */,
 				97AD1A362C624E020045C38D /* Item.swift in Sources */,
 				97AD1A322C624E020045C38D /* MiMiNavigatorApp.swift in Sources */,
 			);
@@ -337,6 +343,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
@@ -400,6 +407,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -426,22 +434,25 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = MiMiNavigator/MiMiNavigator.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"MiMiNavigator/Preview Content\"";
 				DEVELOPMENT_TEAM = G2V9T9AD95;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = MiMiNavigator/Info.plist;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = Senatov.MiMiNavigator;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -455,23 +466,26 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = MiMiNavigator/MiMiNavigator.entitlements;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
+				CODE_SIGN_ENTITLEMENTS = MiMiNavigator/MiMiNavigatorRelease.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"MiMiNavigator/Preview Content\"";
 				DEVELOPMENT_TEAM = G2V9T9AD95;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = MiMiNavigator/Info.plist;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = Senatov.MiMiNavigator;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -483,13 +497,13 @@
 		97AD1A592C624E040045C38D /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = G2V9T9AD95;
 				GENERATE_INFOPLIST_FILE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = Senatov.MiMiNavigatorTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -502,13 +516,13 @@
 		97AD1A5A2C624E040045C38D /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = G2V9T9AD95;
 				GENERATE_INFOPLIST_FILE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = Senatov.MiMiNavigatorTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -521,11 +535,12 @@
 		97AD1A5C2C624E040045C38D /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = G2V9T9AD95;
 				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = Senatov.MiMiNavigatorUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -538,11 +553,12 @@
 		97AD1A5D2C624E040045C38D /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = G2V9T9AD95;
 				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = Senatov.MiMiNavigatorUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -562,7 +578,7 @@
 				97AD1A542C624E040045C38D /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = Debug;
 		};
 		97AD1A552C624E040045C38D /* Build configuration list for PBXNativeTarget "MiMiNavigator" */ = {
 			isa = XCConfigurationList;
@@ -571,7 +587,7 @@
 				97AD1A572C624E040045C38D /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = Debug;
 		};
 		97AD1A582C624E040045C38D /* Build configuration list for PBXNativeTarget "MiMiNavigatorTests" */ = {
 			isa = XCConfigurationList;
@@ -580,7 +596,7 @@
 				97AD1A5A2C624E040045C38D /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = Debug;
 		};
 		97AD1A5B2C624E040045C38D /* Build configuration list for PBXNativeTarget "MiMiNavigatorUITests" */ = {
 			isa = XCConfigurationList;
@@ -589,7 +605,7 @@
 				97AD1A5D2C624E040045C38D /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = Debug;
 		};
 /* End XCConfigurationList section */
 	};
