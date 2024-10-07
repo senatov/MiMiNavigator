@@ -3,20 +3,8 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 56;
+	objectVersion = 70;
 	objects = {
-
-/* Begin PBXBuildFile section */
-		9717B0142CA7548100D8B2EF /* UserPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9717B0132CA7547D00D8B2EF /* UserPreferences.swift */; };
-		97AD1A322C624E020045C38D /* MiMiNavigatorApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97AD1A312C624E020045C38D /* MiMiNavigatorApp.swift */; };
-		97AD1A342C624E020045C38D /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97AD1A332C624E020045C38D /* ContentView.swift */; };
-		97AD1A362C624E020045C38D /* Item.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97AD1A352C624E020045C38D /* Item.swift */; };
-		97AD1A382C624E040045C38D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 97AD1A372C624E040045C38D /* Assets.xcassets */; };
-		97AD1A3B2C624E040045C38D /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 97AD1A3A2C624E040045C38D /* Preview Assets.xcassets */; };
-		97AD1A462C624E040045C38D /* MiMiNavigatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97AD1A452C624E040045C38D /* MiMiNavigatorTests.swift */; };
-		97AD1A502C624E040045C38D /* MiMiNavigatorUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97AD1A4F2C624E040045C38D /* MiMiNavigatorUITests.swift */; };
-		97AD1A522C624E040045C38D /* MiMiNavigatorUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97AD1A512C624E040045C38D /* MiMiNavigatorUITestsLaunchTests.swift */; };
-/* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
 		97AD1A422C624E040045C38D /* PBXContainerItemProxy */ = {
@@ -36,22 +24,26 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		9717B0132CA7547D00D8B2EF /* UserPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserPreferences.swift; sourceTree = "<group>"; };
-		9717B0152CA7558B00D8B2EF /* MiMiNavigatorRelease.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MiMiNavigatorRelease.entitlements; sourceTree = "<group>"; };
-		979482F02C79633A00B55AF3 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		97AD1A2E2C624E020045C38D /* MiMiNavigator.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MiMiNavigator.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		97AD1A312C624E020045C38D /* MiMiNavigatorApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MiMiNavigatorApp.swift; sourceTree = "<group>"; };
-		97AD1A332C624E020045C38D /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; wrapsLines = 1; };
-		97AD1A352C624E020045C38D /* Item.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Item.swift; sourceTree = "<group>"; };
-		97AD1A372C624E040045C38D /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		97AD1A3A2C624E040045C38D /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
-		97AD1A3C2C624E040045C38D /* MiMiNavigator.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MiMiNavigator.entitlements; sourceTree = "<group>"; };
 		97AD1A412C624E040045C38D /* MiMiNavigatorTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MiMiNavigatorTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		97AD1A452C624E040045C38D /* MiMiNavigatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MiMiNavigatorTests.swift; sourceTree = "<group>"; };
 		97AD1A4B2C624E040045C38D /* MiMiNavigatorUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MiMiNavigatorUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		97AD1A4F2C624E040045C38D /* MiMiNavigatorUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MiMiNavigatorUITests.swift; sourceTree = "<group>"; };
-		97AD1A512C624E040045C38D /* MiMiNavigatorUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MiMiNavigatorUITestsLaunchTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		974B9C302CAC9ECF00D6C4F7 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 97AD1A2D2C624E020045C38D /* MiMiNavigator */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		974B9C282CAC9ECF00D6C4F7 /* MiMiNavigator */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (974B9C302CAC9ECF00D6C4F7 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = MiMiNavigator; sourceTree = "<group>"; };
+		974B9C322CAC9ED800D6C4F7 /* MiMiNavigatorTests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = MiMiNavigatorTests; sourceTree = "<group>"; };
+		974B9C362CAC9EDE00D6C4F7 /* MiMiNavigatorUITests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = MiMiNavigatorUITests; sourceTree = "<group>"; };
+/* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		97AD1A2B2C624E020045C38D /* Frameworks */ = {
@@ -81,9 +73,9 @@
 		97AD1A252C624E020045C38D = {
 			isa = PBXGroup;
 			children = (
-				97AD1A302C624E020045C38D /* MiMiNavigator */,
-				97AD1A442C624E040045C38D /* MiMiNavigatorTests */,
-				97AD1A4E2C624E040045C38D /* MiMiNavigatorUITests */,
+				974B9C282CAC9ECF00D6C4F7 /* MiMiNavigator */,
+				974B9C322CAC9ED800D6C4F7 /* MiMiNavigatorTests */,
+				974B9C362CAC9EDE00D6C4F7 /* MiMiNavigatorUITests */,
 				97AD1A2F2C624E020045C38D /* Products */,
 			);
 			sourceTree = "<group>";
@@ -96,47 +88,6 @@
 				97AD1A4B2C624E040045C38D /* MiMiNavigatorUITests.xctest */,
 			);
 			name = Products;
-			sourceTree = "<group>";
-		};
-		97AD1A302C624E020045C38D /* MiMiNavigator */ = {
-			isa = PBXGroup;
-			children = (
-				9717B0152CA7558B00D8B2EF /* MiMiNavigatorRelease.entitlements */,
-				9717B0132CA7547D00D8B2EF /* UserPreferences.swift */,
-				979482F02C79633A00B55AF3 /* Info.plist */,
-				97AD1A312C624E020045C38D /* MiMiNavigatorApp.swift */,
-				97AD1A332C624E020045C38D /* ContentView.swift */,
-				97AD1A352C624E020045C38D /* Item.swift */,
-				97AD1A372C624E040045C38D /* Assets.xcassets */,
-				97AD1A3C2C624E040045C38D /* MiMiNavigator.entitlements */,
-				97AD1A392C624E040045C38D /* Preview Content */,
-			);
-			path = MiMiNavigator;
-			sourceTree = "<group>";
-		};
-		97AD1A392C624E040045C38D /* Preview Content */ = {
-			isa = PBXGroup;
-			children = (
-				97AD1A3A2C624E040045C38D /* Preview Assets.xcassets */,
-			);
-			path = "Preview Content";
-			sourceTree = "<group>";
-		};
-		97AD1A442C624E040045C38D /* MiMiNavigatorTests */ = {
-			isa = PBXGroup;
-			children = (
-				97AD1A452C624E040045C38D /* MiMiNavigatorTests.swift */,
-			);
-			path = MiMiNavigatorTests;
-			sourceTree = "<group>";
-		};
-		97AD1A4E2C624E040045C38D /* MiMiNavigatorUITests */ = {
-			isa = PBXGroup;
-			children = (
-				97AD1A4F2C624E040045C38D /* MiMiNavigatorUITests.swift */,
-				97AD1A512C624E040045C38D /* MiMiNavigatorUITestsLaunchTests.swift */,
-			);
-			path = MiMiNavigatorUITests;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -153,6 +104,9 @@
 			buildRules = (
 			);
 			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				974B9C282CAC9ECF00D6C4F7 /* MiMiNavigator */,
 			);
 			name = MiMiNavigator;
 			productName = MiMiNavigator;
@@ -172,6 +126,9 @@
 			dependencies = (
 				97AD1A432C624E040045C38D /* PBXTargetDependency */,
 			);
+			fileSystemSynchronizedGroups = (
+				974B9C322CAC9ED800D6C4F7 /* MiMiNavigatorTests */,
+			);
 			name = MiMiNavigatorTests;
 			productName = MiMiNavigatorTests;
 			productReference = 97AD1A412C624E040045C38D /* MiMiNavigatorTests.xctest */;
@@ -189,6 +146,9 @@
 			);
 			dependencies = (
 				97AD1A4D2C624E040045C38D /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				974B9C362CAC9EDE00D6C4F7 /* MiMiNavigatorUITests */,
 			);
 			name = MiMiNavigatorUITests;
 			productName = MiMiNavigatorUITests;
@@ -243,8 +203,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				97AD1A3B2C624E040045C38D /* Preview Assets.xcassets in Resources */,
-				97AD1A382C624E040045C38D /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -269,10 +227,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				97AD1A342C624E020045C38D /* ContentView.swift in Sources */,
-				9717B0142CA7548100D8B2EF /* UserPreferences.swift in Sources */,
-				97AD1A362C624E020045C38D /* Item.swift in Sources */,
-				97AD1A322C624E020045C38D /* MiMiNavigatorApp.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -280,7 +234,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				97AD1A462C624E040045C38D /* MiMiNavigatorTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -288,8 +241,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				97AD1A522C624E040045C38D /* MiMiNavigatorUITestsLaunchTests.swift in Sources */,
-				97AD1A502C624E040045C38D /* MiMiNavigatorUITests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

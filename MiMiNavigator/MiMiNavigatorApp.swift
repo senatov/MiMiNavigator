@@ -5,8 +5,8 @@
 //  Created by Iakov Senatov on 06.08.24.
 //
 
-import SwiftUI
 import SwiftData
+import SwiftUI
 
 @main
 struct MiMiNavigatorApp: App {
@@ -25,7 +25,7 @@ struct MiMiNavigatorApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            TotalCommanderResizableView()
         }
         .modelContainer(sharedModelContainer)
     }
