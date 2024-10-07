@@ -6,7 +6,7 @@
 	<integer>11</integer>
 	<key>logs</key>
 	<dict>
-		<key>297BA295-4D71-4AE9-8474-778F484BA3F3</key>
+		<key>CA627776-1989-443B-BDA4-B4F99DD102C6</key>
 		<dict>
 			<key>className</key>
 			<string>IDEActivityLogSection</string>
@@ -15,7 +15,49 @@
 			<key>domainType</key>
 			<string>Xcode.IDEActivityLogDomainType.BuildLog</string>
 			<key>fileName</key>
-			<string>297BA295-4D71-4AE9-8474-778F484BA3F3.xcactivitylog</string>
+			<string>CA627776-1989-443B-BDA4-B4F99DD102C6.xcactivitylog</string>
+			<key>hasPrimaryLog</key>
+			<true/>
+			<key>primaryObservable</key>
+			<dict>
+				<key>highLevelStatus</key>
+				<string>E</string>
+				<key>totalNumberOfAnalyzerIssues</key>
+				<integer>0</integer>
+				<key>totalNumberOfErrors</key>
+				<integer>1</integer>
+				<key>totalNumberOfTestFailures</key>
+				<integer>0</integer>
+				<key>totalNumberOfWarnings</key>
+				<integer>0</integer>
+			</dict>
+			<key>schemeIdentifier-containerName</key>
+			<string>MiMiNavigator project</string>
+			<key>schemeIdentifier-schemeName</key>
+			<string>MiMiNavigator</string>
+			<key>schemeIdentifier-sharedScheme</key>
+			<integer>0</integer>
+			<key>signature</key>
+			<string>Build MiMiNavigator</string>
+			<key>timeStartedRecording</key>
+			<real>749181918.543504</real>
+			<key>timeStoppedRecording</key>
+			<real>749181919.19103205</real>
+			<key>title</key>
+			<string>Build MiMiNavigator</string>
+			<key>uniqueIdentifier</key>
+			<string>CA627776-1989-443B-BDA4-B4F99DD102C6</string>
+		</dict>
+		<key>EF03C74E-4983-422F-B8E2-8F2517CCB4AD</key>
+		<dict>
+			<key>className</key>
+			<string>IDEActivityLogSection</string>
+			<key>documentTypeString</key>
+			<string>&lt;nil&gt;</string>
+			<key>domainType</key>
+			<string>Xcode.IDEActivityLogDomainType.BuildLog</string>
+			<key>fileName</key>
+			<string>EF03C74E-4983-422F-B8E2-8F2517CCB4AD.xcactivitylog</string>
 			<key>hasPrimaryLog</key>
 			<true/>
 			<key>primaryObservable</key>
@@ -40,13 +82,13 @@
 			<key>signature</key>
 			<string>Build MiMiNavigator</string>
 			<key>timeStartedRecording</key>
-			<real>748765893.16606796</real>
+			<real>750017046.16203201</real>
 			<key>timeStoppedRecording</key>
-			<real>748765902.73115897</real>
+			<real>750017048.460379</real>
 			<key>title</key>
 			<string>Build MiMiNavigator</string>
 			<key>uniqueIdentifier</key>
-			<string>297BA295-4D71-4AE9-8474-778F484BA3F3</string>
+			<string>EF03C74E-4983-422F-B8E2-8F2517CCB4AD</string>
 		</dict>
 	</dict>
 </dict>
