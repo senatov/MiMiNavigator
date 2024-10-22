@@ -2,12 +2,12 @@ import SwiftUI
 
     /// A view that recursively displays files and folders as a tree structure.
     ///
-    /// This view takes an array of `File` objects and displays them as a list.
+    /// This view takes an array of `CustomFile` objects and displays them as a list.
     /// If a file has children, it will create a nested list to represent the tree structure.
     /// Handles click events to update the selected file.
 struct TreeView: View {
-    let files: [File]
-    @Binding var selectedFile: File?
+    let files: [CustomFile]
+    @Binding var selectedFile: CustomFile?
     
     var body: some View {
         List(files, children: \.children) { file in
@@ -18,29 +18,25 @@ struct TreeView: View {
                     print("Selected file: \(file.name)")
                 }
                 .contextMenu {
-                    Button(action: {
+                    Button {
                             // Copy action
-                    }) {
-                        Text("Copy")
-                        Image(systemName: "doc.on.doc")
+                    } label: {
+                        Label("Copy", systemImage: "doc.on.doc")
                     }
-                    Button(action: {
+                    Button {
                             // Rename action
-                    }) {
-                        Text("Rename")
-                        Image(systemName: "pencil")
+                    } label: {
+                        Label("Rename", systemImage: "pencil")
                     }
-                    Button(action: {
+                    Button {
                             // Delete action
-                    }) {
-                        Text("Delete")
-                        Image(systemName: "trash")
+                    } label: {
+                        Label("Delete", systemImage: "trash")
                     }
-                    Button(action: {
+                    Button {
                             // Additional action
-                    }) {
-                        Text("More Info")
-                        Image(systemName: "info.circle")
+                    } label: {
+                        Label("More Info", systemImage: "info.circle")
                     }
                 }
         }

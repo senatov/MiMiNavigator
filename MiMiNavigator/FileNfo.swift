@@ -7,8 +7,7 @@
 import SwiftUI
 
     /// Represents a file or folder that can optionally have child items to form a tree structure.
-struct File: Identifiable {
+struct FileNfo: Identifiable {
     let id = UUID()
-
-    var children: [File]? // Optional children to create tree structure
+    var children: [FileNfo]? // Optional children to create tree structure
 }
