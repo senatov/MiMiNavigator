@@ -1,18 +1,16 @@
-//
-//  ContentView.swift
-//  MiMiNavigator
-//
-//  Created by Iakov Senatov on 06.08.24.
-//
 import SwiftUI
 
-struct File: Identifiable {
-    let id = UUID()
-    let name: String
-}
-
+    /// Main view representing a Total Commander-like interface with resizable panels and a vertical tree menu.
+    ///
+    /// Features:
+    /// - Vertical menu in the form of a tree structure to navigate files and folders.
+    /// - Button to show/hide the vertical menu.
+    /// - Left and right panels to display file lists, with a draggable divider to resize them.
+    /// - Bottom toolbar with actions like Copy, Move, Delete, and Settings.
 struct TotalCommanderResizableView: View {
     @State private var leftPanelWidth: CGFloat = 0 // Set dynamically in body
+    @State private var showMenu: Bool = false // State to show/hide menu
+    @State private var selectedFile: File? = nil // Track the selected file
     
         // Example files for both panels
     let leftFiles = [File(name: "File1.txt"), File(name: "Folder1"),
@@ -21,41 +19,53 @@ struct TotalCommanderResizableView: View {
     
     var body: some View {
         GeometryReader { geometry in
-            VStack {
-                    // Toolbar at the top
+            VStack(spacing: 0) {
+                    // Button to open vertical tree menu
                 HStack {
-                    Button("Copy") { /* Copy action */ }
-                    Button("Move") { /* Move action */ }
-                    Button("Delete") { /* Delete action */ }
+                    Button(action: {
+                        withAnimation {
+                            showMenu.toggle()
+                        }
+                    }) {
+                        Text("Menu")
+                            .padding()
+                            .background(Color.blue)
+                            .foregroundColor(.white)
+                            .cornerRadius(8)
+                    }
                     Spacer()
-                    Button("Settings") { /* Open settings */ }
                 }
                 .padding()
                 .background(Color.gray.opacity(0.2))
                 
                 HStack(spacing: 0) {
+                        // Vertical tree menu
+                    if showMenu {
+                        TreeView(files: leftFiles, selectedFile: $selectedFile)
+                            .padding()
+                            .frame(maxWidth: 200)
+                            .background(Color.gray.opacity(0.1))
+                    }
+                    
                         // Left panel
                     VStack {
-                        List(leftFiles) { file in
+                        List(leftFiles, id: \.id) { file in
                             Text(file.name)
                                 .contextMenu {
-                                    Button(action: {
+                                    Button {
                                             // Copy action
-                                    }) {
-                                        Text("Copy")
-                                        Image(systemName: "doc.on.doc")
+                                    } label: {
+                                        Label("Copy", systemImage: "doc.on.doc")
                                     }
-                                    Button(action: {
+                                    Button {
                                             // Rename action
-                                    }) {
-                                        Text("Rename")
-                                        Image(systemName: "pencil")
+                                    } label: {
+                                        Label("Rename", systemImage: "pencil")
                                     }
-                                    Button(action: {
+                                    Button {
                                             // Delete action
-                                    }) {
-                                        Text("Delete")
-                                        Image(systemName: "trash")
+                                    } label: {
+                                        Label("Delete", systemImage: "trash")
                                     }
                                 }
                         }
@@ -83,26 +93,23 @@ struct TotalCommanderResizableView: View {
                     
                         // Right panel
                     VStack {
-                        List(rightFiles) { file in
+                        List(rightFiles, id: \.id) { file in
                             Text(file.name)
                                 .contextMenu {
-                                    Button(action: {
+                                    Button {
                                             // Copy action
-                                    }) {
-                                        Text("Copy")
-                                        Image(systemName: "doc.on.doc")
+                                    } label: {
+                                        Label("Copy", systemImage: "doc.on.doc")
                                     }
-                                    Button(action: {
+                                    Button {
                                             // Rename action
-                                    }) {
-                                        Text("Rename")
-                                        Image(systemName: "pencil")
+                                    } label: {
+                                        Label("Rename", systemImage: "pencil")
                                     }
-                                    Button(action: {
+                                    Button {
                                             // Delete action
-                                    }) {
-                                        Text("Delete")
-                                        Image(systemName: "trash")
+                                    } label: {
+                                        Label("Delete", systemImage: "trash")
                                     }
                                 }
                         }
@@ -111,17 +118,34 @@ struct TotalCommanderResizableView: View {
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
+                
+                    // Toolbar at the bottom
+                HStack {
+                    Button(action: { /* Copy action */ }) {
+                        Text("Copy")
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                    Button(action: { /* Move action */ }) {
+                        Text("Move")
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                    Button(action: { /* Delete action */ }) {
+                        Text("Delete")
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                    Spacer()
+                    Button(action: { /* Settings action */ }) {
+                        Text("Settings")
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                }
+                .padding()
+                .background(Color.gray.opacity(0.2))
             }
             .onAppear {
                     // Set the initial left panel width if it was not restored
                 leftPanelWidth = UserDefaults.standard.object(forKey: "leftPanelWidth") as? CGFloat ?? geometry.size.width / 2
             }
         }
-    }
-}
-
-struct TotalCommanderResizableView_Previews: PreviewProvider {
-    static var previews: some View {
-        TotalCommanderResizableView()
     }
 }
