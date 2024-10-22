@@ -21,22 +21,22 @@ struct TreeView: View {
                     Button {
                             // Copy action
                     } label: {
-                        Label("Copy", systemImage: "doc.on.doc")
+                        Label("Copy", systemImage: "document.on.document")
                     }
                     Button {
                             // Rename action
                     } label: {
-                        Label("Rename", systemImage: "pencil")
+                        Label("Rename", systemImage: "penpencil.circle")
                     }
                     Button {
                             // Delete action
                     } label: {
-                        Label("Delete", systemImage: "trash")
+                        Label("Delete", systemImage: "eraser.line.dashed")
                     }
                     Button {
                             // Additional action
                     } label: {
-                        Label("More Info", systemImage: "info.circle")
+                        Label("More Info", systemImage: "info.circle.fill")
                     }
                 }
         }

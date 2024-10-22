@@ -6,20 +6,16 @@
 - **RAM**: 32 GB
 
 ## Developer Tools
-
 - **Swift**: Xcode 16
 
 # Project Name
 **MiMiNavigator**
 
 ## Overview
-
 This is a simple training project aimed at fully (as much as possible) replicating the look and functionality of Total Commander to learn Swift development and make use of my newly purchased Mac Studio (I had never used a Mac before). We'll see how far I can take this project and how much my free time and patience will allow.
-
-![Current](/docs/Screenshot2024-10-22.png?raw=true "current")
+![Current Stage](/docs/Screenshot2024-10-22.png?raw=true "current")
 
 ## Requirements
-
 - macOS operating system
 - Total Commander (with Wine or similar to run on macOS)
 
@@ -33,4 +29,4 @@ This project is licensed under the MIT License.
 
 ## Contact
 
-[LinkedIn](https://www.linkedin.com/in/your-linkedin-profile) for more updates and collaboration opportunities.
+[Senatov's LinkedIn](https://www.linkedin.com/in/your-linkedin-profile) for more updates and collaboration opportunities.
