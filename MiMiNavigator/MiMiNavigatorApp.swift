@@ -8,14 +8,16 @@
 import SwiftData
 import SwiftUI
 
+
 @main
 struct MiMiNavigatorApp: App {
+    
     var sharedModelContainer: ModelContainer = {
+        CustomLogger.logInfo(" ---- BEGIN ----")
         let schema = Schema([
             Item.self,
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
-
         do {
             return try ModelContainer(for: schema, configurations: [modelConfiguration])
         } catch {
@@ -29,4 +31,5 @@ struct MiMiNavigatorApp: App {
         }
         .modelContainer(sharedModelContainer)
     }
+    
 }
