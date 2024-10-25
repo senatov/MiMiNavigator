@@ -165,11 +165,11 @@ struct TotalCommanderResizableView: View {
   /// Builds the bottom toolbar with various actions
   private func buildToolbar() -> some View {
     HStack {
-      ToolbarButton(title: "Copy", action: { /* Copy action */  })
-      ToolbarButton(title: "Move", action: { /* Move action */  })
-      ToolbarButton(title: "Delete", action: { /* Delete action */  })
+      ToolbarButton(title: "Copy", icon: "document.on.document") { print("Copy button tapped")  }
+      ToolbarButton(title: "Move", icon: "trash")  { print("MOVE button tapped")  }
+      ToolbarButton(title: "Delete", icon: "eraser") { print("DELETE button tapped") }
       Spacer()
-      ToolbarButton(title: "Settings", action: { /* Settings action */  })
+      ToolbarButton(title: "Settings", icon: "opticid") { print("Settings button tapped")  }
     }
     .padding()
     .background(Color.gray.opacity(0.2))

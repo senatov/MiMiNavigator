@@ -1,46 +1,37 @@
-    //
-    //  CustomLogger.swift
-    //  CustomLogger
-    //
-    //  Created by Iakov Senatov on 07.10.24.
-    //
-
+    // CustomLogger.swift
+    // Custom logging utility with Singleton pattern and multiple log levels
+    // Created by Iakov Senatov
 
 import Foundation
 import os
 
-class CustomLogger {
-    private static let logger: Logger = {
+final class CustomLogger {
+        // Singleton instance
+    static let shared = CustomLogger()
+    
+        // Private OS Logger instance
+    private let logger: Logger
+    
+        // Private initializer to enforce Singleton
+    private init() {
         let subsystem = Bundle.main.bundleIdentifier ?? "com.senatov.MiMiNavigator"
-        return Logger(subsystem: subsystem, category: "UI")
-    }()
-    
-    private static func getCurrentTime() -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
-        return formatter.string(from: Date())
+        self.logger = Logger(subsystem: subsystem, category: "CustomLogger")
     }
     
-    private static func getCallerInfo(file: String = #file, function: String = #function, line: Int = #line) -> String {
-        let fileName = URL(fileURLWithPath: file).lastPathComponent
-        return "\(fileName):\(line) \(function)"
+        // Logging functions with different levels
+    func logInfo(_ message: String) {
+        logger.info("\(message, privacy: .public)")
     }
     
-    static func logInfo(_ message: String, file: String = #file, function: String = #function, line: Int = #line) {
-        let timeStamp = getCurrentTime()
-        let callerInfo = getCallerInfo(file: file, function: function, line: line)
-        logger.info("INFO: \(message) | Time: \(timeStamp) | Called from: \(callerInfo)")
+    func logDebug(_ message: String) {
+        logger.debug("\(message, privacy: .public)")
     }
     
-    static func logError(_ message: String, file: String = #file, function: String = #function, line: Int = #line) {
-        let timeStamp = getCurrentTime()
-        let callerInfo = getCallerInfo(file: file, function: function, line: line)
-        logger.error("ERROR: \(message) | Time: \(timeStamp) | Called from: \(callerInfo)")
+    func logError(_ message: String) {
+        logger.error("\(message, privacy: .public)")
     }
     
-    static func logDebug(_ message: String, file: String = #file, function: String = #function, line: Int = #line) {
-        let timeStamp = getCurrentTime()
-        let callerInfo = getCallerInfo(file: file, function: function, line: line)
-        logger.debug("DEBUG: \(message) | Time: \(timeStamp) | Called from: \(callerInfo)")
+    func logFault(_ message: String) {
+        logger.fault("\(message, privacy: .public)")
     }
 }
