@@ -13,7 +13,7 @@ import SwiftUI
 struct MiMiNavigatorApp: App {
     
     var sharedModelContainer: ModelContainer = {
-        CustomLogger.logInfo(" ---- BEGIN ----")
+        CustomLogger.shared.logInfo(" ---- BEGIN ----")
         let schema = Schema([
             Item.self,
         ])
