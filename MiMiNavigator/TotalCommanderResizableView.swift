@@ -1,3 +1,6 @@
+// TotalCommanderResizableView.swift
+// Main view representing a Total Commander-like interface with resizable panels and a vertical tree menu.
+
 import SwiftUI
 
 /// Represents a file or folder that can optionally have child items to form a tree structure.
@@ -8,12 +11,6 @@ struct CustomFile: Identifiable {
 }
 
 /// Main view representing a Total Commander-like interface with resizable panels and a vertical tree menu.
-///
-/// Features:
-/// - Vertical menu in the form of a tree structure to navigate files and folders.
-/// - Button to show/hide the vertical tree menu.
-/// - Left and right panels to display file lists, with a draggable divider to resize them.
-/// - Bottom toolbar with actions like Copy, Move, Delete, and Settings.
 struct TotalCommanderResizableView: View {
   @State private var leftPanelWidth: CGFloat = 0  // Set dynamically in body
   @State private var showMenu: Bool = false  // State to show/hide menu
@@ -109,7 +106,7 @@ struct TotalCommanderResizableView: View {
       List(leftFiles, id: \.id) { file in
         Text(file.name)
           .contextMenu {
-            buildContextMenu()
+            FileContextMenu()
           }
       }
       .listStyle(PlainListStyle())
@@ -124,7 +121,7 @@ struct TotalCommanderResizableView: View {
       List(rightFiles, id: \.id) { file in
         Text(file.name)
           .contextMenu {
-            buildContextMenu()
+            FileContextMenu()
           }
       }
       .listStyle(PlainListStyle())
@@ -168,47 +165,19 @@ struct TotalCommanderResizableView: View {
   /// Builds the bottom toolbar with various actions
   private func buildToolbar() -> some View {
     HStack {
-      buildToolbarButton(title: "Copy", action: { /* Copy action */  })
-      buildToolbarButton(title: "Move", action: { /* Move action */  })
-      buildToolbarButton(title: "Delete", action: { /* Delete action */  })
+      ToolbarButton(title: "Copy", action: { /* Copy action */  })
+      ToolbarButton(title: "Move", action: { /* Move action */  })
+      ToolbarButton(title: "Delete", action: { /* Delete action */  })
       Spacer()
-      buildToolbarButton(title: "Settings", action: { /* Settings action */  })
+      ToolbarButton(title: "Settings", action: { /* Settings action */  })
     }
     .padding()
     .background(Color.gray.opacity(0.2))
   }
 
-  /// Builds a toolbar button
-  private func buildToolbarButton(title: String, action: @escaping () -> Void) -> some View {
-    Button(action: action) {
-      Text(title)
-    }
-    .buttonStyle(PlainButtonStyle())
-  }
-
+  /// Handles double-click on the divider to reset the left panel width
   private func handleDoubleClickDivider(geometry: GeometryProxy) {
     leftPanelWidth = geometry.size.width / 2
     UserDefaults.standard.set(leftPanelWidth, forKey: "leftPanelWidth")
-  }
-
-  /// Builds the context menu for file actions
-  private func buildContextMenu() -> some View {
-    Group {
-      Button {
-        // Copy action
-      } label: {
-        Label("Copy", systemImage: "doc.on.doc")
-      }
-      Button {
-        // Rename action
-      } label: {
-        Label("Rename", systemImage: "pencil")
-      }
-      Button {
-        // Delete action
-      } label: {
-        Label("Delete", systemImage: "trash")
-      }
-    }
   }
 }
