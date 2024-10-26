@@ -13,7 +13,7 @@
 
 ## Overview
 This is a simple training project aimed at fully (as much as possible) replicating the look and functionality of Total Commander to learn Swift development and make use of my newly purchased Mac Studio (I had never used a Mac before). We'll see how far I can take this project and how much my free time and patience will allow.
-![Current Stage](/docs/Screenshot2024-10-22.png?raw=true "current")
+![Current Stage](/docs/appsshot.png‚?raw=true "current")
 
 ## Requirements
 - macOS operating system
