@@ -6,7 +6,7 @@
 	<integer>11</integer>
 	<key>logs</key>
 	<dict>
-		<key>0B579D67-D804-4A2A-A6E9-27F07771E38C</key>
+		<key>89D11435-8D9B-4132-BD22-AA282749B141</key>
 		<dict>
 			<key>className</key>
 			<string>IDEActivityLogSection</string>
@@ -15,7 +15,7 @@
 			<key>domainType</key>
 			<string>Xcode.IDEActivityLogDomainType.BuildLog</string>
 			<key>fileName</key>
-			<string>0B579D67-D804-4A2A-A6E9-27F07771E38C.xcactivitylog</string>
+			<string>89D11435-8D9B-4132-BD22-AA282749B141.xcactivitylog</string>
 			<key>hasPrimaryLog</key>
 			<true/>
 			<key>primaryObservable</key>
@@ -40,13 +40,13 @@
 			<key>signature</key>
 			<string>Build MiMiNavigator</string>
 			<key>timeStartedRecording</key>
-			<real>751593213.44215</real>
+			<real>751593577.58898795</real>
 			<key>timeStoppedRecording</key>
-			<real>751593213.62822294</real>
+			<real>751593578.440238</real>
 			<key>title</key>
 			<string>Build MiMiNavigator</string>
 			<key>uniqueIdentifier</key>
-			<string>0B579D67-D804-4A2A-A6E9-27F07771E38C</string>
+			<string>89D11435-8D9B-4132-BD22-AA282749B141</string>
 		</dict>
 	</dict>
 </dict>
