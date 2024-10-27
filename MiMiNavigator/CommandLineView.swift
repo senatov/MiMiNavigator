@@ -2,17 +2,18 @@
 //  CommandLineView.swift
 //  MiMiNavigator
 //
-//  Created by Iakov Senatov on 06.10.24.
+//  Created by Iakov Senatov on 16.10.24.
 //
+
 import SwiftUI
 
 struct CommandLineView: View {
     var body: some View {
         VStack {
-            Button("Open Terminal in Home Directory") {
+            Button("Console") {
                 openTerminalInDirectory("~")
             }
-            .foregroundColor(.blue) // Standard user color
+            .foregroundColor(.primary) // System default color
             .padding()
         }
     }
