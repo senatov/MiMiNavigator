@@ -29,12 +29,17 @@ struct TotalCommanderResizableView: View {
     let leftFiles = [
         CustomFile(name: "File1.txt", children: nil),
         CustomFile(
-            name: "Folder1",
+            name: "not implemented yet1",
             children: [
-                CustomFile(name: "SubFile1.txt", children: nil),
-                CustomFile(name: "SubFile2.txt", children: nil),
+                CustomFile(name: "not implemented yet11", children: nil),
+                CustomFile(name: "not implemented yet12", children: nil),
+                CustomFile(name: "not implemented yet13",
+                           children: [
+                            CustomFile(name: "not implemented yet", children: nil),
+                            CustomFile(name: "not implemented yet")
+                           ]),
             ]),
-        CustomFile(name: "Image.png", children: nil),
+        CustomFile(name: "Image2.png", children: nil),
     ]
     let rightFiles = [
         CustomFile(name: "Doc1.docx", children: nil),
@@ -175,6 +180,9 @@ struct TotalCommanderResizableView: View {
             ToolbarButton(title: "Move", icon: "trash") { print("MOVE button tapped") }
             ToolbarButton(title: "Delete", icon: "eraser") { print("DELETE button tapped") }
             Spacer()
+            ToolbarButton(title: "Console", icon: "terminal") {
+                openTerminalInDirectory("~")
+            } // Console button added to toolbar
             ToolbarButton(title: "Settings", icon: "opticid") { print("Settings button tapped") }
         }
         .padding()
