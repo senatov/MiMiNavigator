@@ -1,12 +1,14 @@
-    // ToolbarButton.swift
-    // A reusable toolbar button component with customizable title, icon, and action.
-    // Created by Iakov Senatov
+// ToolbarButton.swift
+// A reusable toolbar button component with customizable title, icon, and action.
+//  Created by Iakov Senatov on 19.10.24.
+
+//  Description:
 
 import SwiftUI
 
 struct ToolbarButton: View {
     let title: String
-    let icon: String?   // Optional icon name from SF Symbols or custom icon
+    let icon: String? // Optional icon name from SF Symbols or custom icon
     let action: () -> Void
 
     @State private var isPressed = false
@@ -52,7 +54,7 @@ struct ToolbarButton: View {
     }
 }
 
-    // Preview for ToolbarButton
+// Preview for ToolbarButton
 struct ToolbarButton_Previews: PreviewProvider {
     static var previews: some View {
         ToolbarButton(title: "Save", icon: "square.and.arrow.down") {
