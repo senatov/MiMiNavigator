@@ -1,10 +1,9 @@
-    //
-    //  CommandLineView.swift
-    //  MiMiNavigator
-    //
-    //  Created by [Your Name] on [Date].
-    //
-
+//
+//  CommandLineView.swift
+//  MiMiNavigator
+//
+//  Created by Iakov Senatov on 06.10.24.
+//
 import SwiftUI
 
 struct CommandLineView: View {
@@ -13,24 +12,25 @@ struct CommandLineView: View {
             Button("Open Terminal in Home Directory") {
                 openTerminalInDirectory("~")
             }
+            .foregroundColor(.blue) // Standard user color
             .padding()
         }
     }
-    
+
     func openTerminalInDirectory(_ directory: String) {
-            // Step 1: Launch Terminal
+        // Step 1: Launch Terminal
         let launchTask = Process()
         launchTask.launchPath = "/usr/bin/open"
         launchTask.arguments = ["/System/Applications/Utilities/Terminal.app"]
         launchTask.launch()
-        
-            // Step 2: Set position and size of Terminal window
+
+        // Step 2: Set position and size of Terminal window
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { // Small delay to ensure Terminal is open
-                                                                // Define main window dimensions
-            let mainAppWidth = 800  // Set your main window's width
+            // Define main window dimensions
+            let mainAppWidth = 800 // Set your main window's width
             let mainAppHeight = 600 // Set your main window's height
             let terminalHeight = 100 // Approximate height for 5 lines
-            
+
             let script = """
             tell application "Terminal"
                 do script "cd \(directory)"
@@ -39,7 +39,7 @@ struct CommandLineView: View {
                 set bounds of front window to {0, \(mainAppHeight), \(mainAppWidth), \(mainAppHeight + terminalHeight)}
             end tell
             """
-            
+
             let task = Process()
             task.launchPath = "/usr/bin/osascript"
             task.arguments = ["-e", script]
