@@ -9,13 +9,6 @@
 
 import SwiftUI
 
-/// Represents a file or folder that can optionally have child items to form a tree structure.
-struct CustomFile: Identifiable {
-    let id = UUID()
-    let name: String
-    var children: [CustomFile]? // Optional children to create tree structure
-}
-
 /// Main view representing a Total Commander-like interface with resizable panels and a vertical tree menu.
 struct TotalCommanderResizableView: View {
     @State private var leftPanelWidth: CGFloat = 0 // Set dynamically in body
@@ -27,23 +20,25 @@ struct TotalCommanderResizableView: View {
 
     // Example files for both panels
     let leftFiles = [
-        CustomFile(name: "File1.txt", children: nil),
+        CustomFile(name: "File1.txt", path: "/path/to/File1.txt", isDirectory: false, children: nil),
         CustomFile(
-            name: "not implemented yet1",
+            name: "Folder1",
+            path: "/path/to/Folder1",
+            isDirectory: true,
             children: [
-                CustomFile(name: "not implemented yet11", children: nil),
-                CustomFile(name: "not implemented yet12", children: nil),
-                CustomFile(name: "not implemented yet13",
-                           children: [
-                               CustomFile(name: "not implemented yet", children: nil),
-                               CustomFile(name: "not implemented yet"),
-                           ]),
-            ]),
-        CustomFile(name: "Image2.png", children: nil),
+                CustomFile(name: "File11.txt", path: "/path/to/Folder1/File11.txt", isDirectory: false, children: nil),
+                CustomFile(name: "File12.txt", path: "/path/to/Folder1/File12.txt", isDirectory: false, children: nil),
+                CustomFile(name: "SubFolder13", path: "/path/to/Folder1/SubFolder13", isDirectory: true, children: [
+                    CustomFile(name: "File131.txt", path: "/path/to/Folder1/SubFolder13/File131.txt", isDirectory: false, children: nil)
+                ])
+            ]
+        ),
+        CustomFile(name: "Image2.png", path: "/path/to/Image2.png", isDirectory: false, children: nil),
     ]
+    
     let rightFiles = [
-        CustomFile(name: "Doc1.docx", children: nil),
-        CustomFile(name: "Backup.zip", children: nil),
+        CustomFile(name: "Doc1.docx", path: "/path/to/Doc1.docx", isDirectory: false, children: nil),
+        CustomFile(name: "Backup.zip", path: "/path/to/Backup.zip", isDirectory: false, children: nil),
     ]
 
     var body: some View {
