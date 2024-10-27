@@ -35,8 +35,8 @@ struct TotalCommanderResizableView: View {
                 CustomFile(name: "not implemented yet12", children: nil),
                 CustomFile(name: "not implemented yet13",
                            children: [
-                            CustomFile(name: "not implemented yet", children: nil),
-                            CustomFile(name: "not implemented yet")
+                               CustomFile(name: "not implemented yet", children: nil),
+                               CustomFile(name: "not implemented yet"),
                            ]),
             ]),
         CustomFile(name: "Image2.png", children: nil),
@@ -145,7 +145,7 @@ struct TotalCommanderResizableView: View {
         Rectangle()
             .fill(Color.gray)
             .frame(width: 5)
-            .gesture(
+            .highPriorityGesture( // Обработка жеста с высоким приоритетом
                 DragGesture()
                     .onChanged { value in
                         handleDividerDrag(value: value, geometry: geometry)
@@ -191,7 +191,7 @@ struct TotalCommanderResizableView: View {
 
     /// Handles double-click on the divider to reset the left panel width
     private func handleDoubleClickDivider(geometry: GeometryProxy) {
-        leftPanelWidth = geometry.size.width / 2
+        leftPanelWidth = showMenu ? (geometry.size.width - 200) / 2 : geometry.size.width / 2
         UserDefaults.standard.set(leftPanelWidth, forKey: "leftPanelWidth")
     }
 }
