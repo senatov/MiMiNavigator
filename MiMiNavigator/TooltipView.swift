@@ -1,8 +1,6 @@
 // TooltipView.swift
 // A reusable tooltip view component that can display text at a specified position.
-//  Created by Iakov Senatov on 19.10.24.
-
-//  Description:
+// Created by Iakov Senatov
 
 import SwiftUI
 
