@@ -1,6 +1,9 @@
 // FileContextMenu.swift
+//  MiMiNavigator
+
 // Context menu for file actions such as Copy, Rename, Delete
 //  Created by Iakov Senatov on 25.10.24.
+
 
 import SwiftUI
 

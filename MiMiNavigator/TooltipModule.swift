@@ -1,8 +1,9 @@
 //
 //  FileName.swift
-//  ProjectName
+//  MiMiNavigator
 //
-//  Created by Author on Date.
+//  Created by Iakov Senatov on 16.10.24.
+
 //  Description: This file contains the implementation of XYZ functionality.
 //
 import SwiftUI

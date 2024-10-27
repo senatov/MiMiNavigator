@@ -8,9 +8,9 @@ struct ToolbarButton: View {
     let title: String
     let icon: String?   // Optional icon name from SF Symbols or custom icon
     let action: () -> Void
-    
+
     @State private var isPressed = false
-    
+
     var body: some View {
         Button(action: {
             action()
