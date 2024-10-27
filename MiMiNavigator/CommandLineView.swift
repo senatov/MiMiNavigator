@@ -3,11 +3,11 @@
 //  MiMiNavigator
 //
 //  Created by Iakov Senatov on 16.10.24.
-//  Description:
+//
 
 import SwiftUI
 
-struct ConsoleView: View {
+struct CommandLineView: View {
     var body: some View {
         VStack {
         }

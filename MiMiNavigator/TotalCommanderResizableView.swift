@@ -19,7 +19,7 @@ struct CustomFile: Identifiable {
 /// Main view representing a Total Commander-like interface with resizable panels and a vertical tree menu.
 struct TotalCommanderResizableView: View {
     @State private var leftPanelWidth: CGFloat = 0 // Set dynamically in body
-    @State private var showMenu: Bool = false // State to show/hide menu
+    @State private var showMenu: Bool = UserPreferences.shared.restoreMenuState() // Restore menu state
     @State private var selectedFile: CustomFile? = nil // Track the selected file
     @State private var showTooltip: Bool = false // State to show/hide the tooltip
     @State private var tooltipPosition: CGPoint = .zero // Position of the tooltip
@@ -74,9 +74,7 @@ struct TotalCommanderResizableView: View {
     private func buildMenuButton() -> some View {
         HStack {
             Button(action: {
-                withAnimation {
-                    showMenu.toggle()
-                }
+                toggleMenu() // Calls toggleMenu to save the menu state
             }) {
                 Image(systemName: "line.horizontal.3")
                     .foregroundColor(.blue)
@@ -101,6 +99,14 @@ struct TotalCommanderResizableView: View {
             buildRightPanel()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    /// Toggles the menu state and saves the updated state
+    private func toggleMenu() {
+        withAnimation {
+            showMenu.toggle()
+            UserPreferences.shared.saveMenuState(isOpen: showMenu) // Save menu state
+        }
     }
 
     /// Builds the vertical tree menu
@@ -145,7 +151,7 @@ struct TotalCommanderResizableView: View {
         Rectangle()
             .fill(Color.gray)
             .frame(width: 5)
-            .highPriorityGesture( // Обработка жеста с высоким приоритетом
+            .gesture(
                 DragGesture()
                     .onChanged { value in
                         handleDividerDrag(value: value, geometry: geometry)
@@ -191,7 +197,7 @@ struct TotalCommanderResizableView: View {
 
     /// Handles double-click on the divider to reset the left panel width
     private func handleDoubleClickDivider(geometry: GeometryProxy) {
-        leftPanelWidth = showMenu ? (geometry.size.width - 200) / 2 : geometry.size.width / 2
+        leftPanelWidth = geometry.size.width / 2
         UserDefaults.standard.set(leftPanelWidth, forKey: "leftPanelWidth")
     }
 }

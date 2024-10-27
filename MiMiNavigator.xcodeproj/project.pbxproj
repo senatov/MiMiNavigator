@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 70;
+	objectVersion = 77;
 	objects = {
 
 /* Begin PBXContainerItemProxy section */
@@ -30,7 +30,7 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		974B9C302CAC9ECF00D6C4F7 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+		9751D0782CCEB1BC005B1D64 /* Exceptions for "MiMiNavigator" folder in "MiMiNavigator" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
@@ -40,9 +40,24 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		974B9C282CAC9ECF00D6C4F7 /* MiMiNavigator */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (974B9C302CAC9ECF00D6C4F7 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = MiMiNavigator; sourceTree = "<group>"; };
-		974B9C322CAC9ED800D6C4F7 /* MiMiNavigatorTests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = MiMiNavigatorTests; sourceTree = "<group>"; };
-		974B9C362CAC9EDE00D6C4F7 /* MiMiNavigatorUITests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = MiMiNavigatorUITests; sourceTree = "<group>"; };
+		9751D0502CCEB1B6005B1D64 /* MiMiNavigatorUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = MiMiNavigatorUITests;
+			sourceTree = "<group>";
+		};
+		9751D0542CCEB1B9005B1D64 /* MiMiNavigatorTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = MiMiNavigatorTests;
+			sourceTree = "<group>";
+		};
+		9751D0682CCEB1BC005B1D64 /* MiMiNavigator */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				9751D0782CCEB1BC005B1D64 /* Exceptions for "MiMiNavigator" folder in "MiMiNavigator" target */,
+			);
+			path = MiMiNavigator;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -73,9 +88,9 @@
 		97AD1A252C624E020045C38D = {
 			isa = PBXGroup;
 			children = (
-				974B9C282CAC9ECF00D6C4F7 /* MiMiNavigator */,
-				974B9C322CAC9ED800D6C4F7 /* MiMiNavigatorTests */,
-				974B9C362CAC9EDE00D6C4F7 /* MiMiNavigatorUITests */,
+				9751D0682CCEB1BC005B1D64 /* MiMiNavigator */,
+				9751D0542CCEB1B9005B1D64 /* MiMiNavigatorTests */,
+				9751D0502CCEB1B6005B1D64 /* MiMiNavigatorUITests */,
 				97AD1A2F2C624E020045C38D /* Products */,
 			);
 			sourceTree = "<group>";
@@ -106,7 +121,7 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				974B9C282CAC9ECF00D6C4F7 /* MiMiNavigator */,
+				9751D0682CCEB1BC005B1D64 /* MiMiNavigator */,
 			);
 			name = MiMiNavigator;
 			productName = MiMiNavigator;
@@ -127,7 +142,7 @@
 				97AD1A432C624E040045C38D /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				974B9C322CAC9ED800D6C4F7 /* MiMiNavigatorTests */,
+				9751D0542CCEB1B9005B1D64 /* MiMiNavigatorTests */,
 			);
 			name = MiMiNavigatorTests;
 			productName = MiMiNavigatorTests;
@@ -148,7 +163,7 @@
 				97AD1A4D2C624E040045C38D /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				974B9C362CAC9EDE00D6C4F7 /* MiMiNavigatorUITests */,
+				9751D0502CCEB1B6005B1D64 /* MiMiNavigatorUITests */,
 			);
 			name = MiMiNavigatorUITests;
 			productName = MiMiNavigatorUITests;
@@ -164,6 +179,7 @@
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1540;
 				LastUpgradeCheck = 1600;
+				ORGANIZATIONNAME = Senatov;
 				TargetAttributes = {
 					97AD1A2D2C624E020045C38D = {
 						CreatedOnToolsVersion = 15.4;
@@ -179,7 +195,6 @@
 				};
 			};
 			buildConfigurationList = 97AD1A292C624E020045C38D /* Build configuration list for PBXProject "MiMiNavigator" */;
-			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -187,6 +202,7 @@
 				Base,
 			);
 			mainGroup = 97AD1A252C624E020045C38D;
+			preferredProjectObjectVersion = 77;
 			productRefGroup = 97AD1A2F2C624E020045C38D /* Products */;
 			projectDirPath = "";
 			projectRoot = "";

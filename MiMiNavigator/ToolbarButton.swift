@@ -1,8 +1,6 @@
 // ToolbarButton.swift
 // A reusable toolbar button component with customizable title, icon, and action.
-//  Created by Iakov Senatov on 19.10.24.
-
-//  Description:
+// Created by Iakov Senatov
 
 import SwiftUI
 
