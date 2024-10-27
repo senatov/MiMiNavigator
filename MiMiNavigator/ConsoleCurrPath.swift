@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct CommandLineView: View {
+struct ConsoleCurrPath: View {
     var body: some View {
         VStack {
         }
@@ -16,7 +16,7 @@ struct CommandLineView: View {
     }
 }
 
-func openTerminalInDirectory(_ directory: String) {
+func openConsoleInDirectory(_ directory: String) {
     // Step 1: Launch Terminal
     let launchTask = Process()
     launchTask.launchPath = "/usr/bin/open"

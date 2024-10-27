@@ -29,7 +29,7 @@ struct MiMiNavigatorApp: App {
     WindowGroup {
       VStack {
         TotalCommanderResizableView()
-        CommandLineView()
+        ConsoleCurrPath()
       }
     }
     .modelContainer(sharedModelContainer)

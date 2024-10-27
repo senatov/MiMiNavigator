@@ -187,7 +187,7 @@ struct TotalCommanderResizableView: View {
             ToolbarButton(title: "Delete", icon: "eraser") { print("DELETE button tapped") }
             Spacer()
             ToolbarButton(title: "Console", icon: "terminal") {
-                openTerminalInDirectory("~")
+                openConsoleInDirectory("~")
             } // Console button added to toolbar
             ToolbarButton(title: "Settings", icon: "opticid") { print("Settings button tapped") }
         }
