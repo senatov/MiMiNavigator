@@ -64,8 +64,6 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 > Inspired by [Total Commander](https://www.ghisler.com/) 🌟
 
----
-
 ## Recent Changes (2024-10-29)
 
 <span style="font-size: small; color: grey;">
