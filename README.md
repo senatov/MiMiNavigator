@@ -17,7 +17,7 @@
 
 ## ⚙️ Requirements
 
-- **Xcode** 12.5 or later
+- **Xcode** 16.2 beta or later
 - **Swift** 6.0 or later
 - macOS 10.15 or later
 
@@ -48,7 +48,7 @@
 
 ## 👤 Authors
 
-- **Your Name**
+- **WWW**
   [![LinkedIn](https://img.shields.io/badge/LinkedIn-blue.svg?logo=linkedin&colorB=555)](https://www.linkedin.com/in/iakov-senatov-07060765)
 
 ## 📝 License
