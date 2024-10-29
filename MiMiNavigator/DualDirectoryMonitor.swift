@@ -3,13 +3,12 @@
 //  MiMiNavigator
 //
 //  Created by Iakov Senatov on 27.10.24.
-//  Copyright © 2024 Senatov. All rights reserved.
 //
 
 import Foundation
 import SwiftUI
 
-// MARK: - -
+// MARK: - DualDirectoryMonitor
 
 class DualDirectoryMonitor: ObservableObject {
     @Published var leftFiles: [CustomFile] = []
@@ -20,13 +19,15 @@ class DualDirectoryMonitor: ObservableObject {
     private let leftDirectory: URL
     private let rightDirectory: URL
 
+    // MARK: - Initializer
+
     init(leftDirectory: URL, rightDirectory: URL) {
         self.leftDirectory = leftDirectory
         self.rightDirectory = rightDirectory
         startMonitoring()
     }
 
-    // MARK: - -
+    // MARK: - Start Monitoring
 
     private func startMonitoring() {
         leftTimer = DispatchSource.makeTimerSource(queue: DispatchQueue.global())
@@ -48,7 +49,16 @@ class DualDirectoryMonitor: ObservableObject {
         rightTimer?.resume()
     }
 
-    // MARK: - -
+    // MARK: - Stop Monitoring
+
+    func stopMonitoring() {
+        leftTimer?.cancel()
+        leftTimer = nil
+        rightTimer?.cancel()
+        rightTimer = nil
+    }
+
+    // MARK: - Scan Directory
 
     private func scanDirectory(at url: URL?) -> [CustomFile] {
         guard let url = url else { return [] }
@@ -66,60 +76,15 @@ class DualDirectoryMonitor: ObservableObject {
             print("Error reading directory contents: \(error)")
             return []
         }
-        // Implement directory scanning logic
-        return []
     }
 
-    // MARK: - -
-
-    init(leftDirectoryPath: String, rightDirectoryPath: String) {
-        leftDirectory = URL(fileURLWithPath: leftDirectoryPath)
-        rightDirectory = URL(fileURLWithPath: rightDirectoryPath)
-        startMonitoring()
-    }
-
-    // MARK: - -  Stop monitoring both directories
-
-    func stopMonitoring() {
-        print("Executing stopMonitoring") // Log for method tracking
-        leftTimer?.cancel()
-        leftTimer = nil
-        rightTimer?.cancel()
-        rightTimer = nil
-    }
-
-    // MARK: - -  Scans directory and updates the appropriate file collection
-
-    private func scanDirectory(at url: URL?, for side: DirectorySide) {
-        guard let url = url else { return }
-        let fileManager = FileManager.default
-        do {
-            let contents = try fileManager.contentsOfDirectory(at: url, includingPropertiesForKeys: nil)
-            let files = contents.map { fileURL in
-                CustomFile(
-                    name: fileURL.lastPathComponent,
-                    path: fileURL.path,
-                    isDirectory: (try? fileURL.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
-                )
-            }
-
-            DispatchQueue.main.async {
-                if side == .left {
-                    self.leftFiles = files
-                } else {
-                    self.rightFiles = files
-                }
-            }
-        } catch {
-            print("Error reading directory contents: \(error)")
-        }
-    }
+    // MARK: - Deinitializer
 
     deinit {
         stopMonitoring()
     }
 
-    // MARK: - -
+    // MARK: - DirectorySide Enum
 
     enum DirectorySide {
         case left
