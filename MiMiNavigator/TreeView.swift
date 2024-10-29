@@ -22,38 +22,41 @@ struct TreeView: View {
         List(files, children: \.children) { file in
             Text(file.name)
                 .onTapGesture {
-                    // Handle click event to select the file
                     selectedFile = file
                     print("Selected file: \(file.name)")
                 }
                 .contextMenu {
-                    Button {
-                        // Copy action
-                    } label: {
+                    Button(action: {
+                        print("Copy action for \(file.name)")
+                    }) {
                         Label("Copy", systemImage: "document.on.document")
                     }
+                    .buttonStyle(PlainButtonStyle()) // Apply plain style
                     .foregroundColor(.primary) // System default color
 
-                    Button {
-                        // Rename action
-                    } label: {
+                    Button(action: {
+                        print("Rename action for \(file.name)")
+                    }) {
                         Label("Rename", systemImage: "penpencil.circle")
                     }
-                    .foregroundColor(.primary) // System default color
+                    .buttonStyle(PlainButtonStyle())
+                    .foregroundColor(.primary)
 
-                    Button {
-                        // Delete action
-                    } label: {
+                    Button(action: {
+                        print("Delete action for \(file.name)")
+                    }) {
                         Label("Delete", systemImage: "eraser.line.dashed")
                     }
-                    .foregroundColor(.primary) // System default color
+                    .buttonStyle(PlainButtonStyle())
+                    .foregroundColor(.primary)
 
-                    Button {
-                        // Additional action
-                    } label: {
+                    Button(action: {
+                        print("More info action for \(file.name)")
+                    }) {
                         Label("More Info", systemImage: "info.circle.fill")
                     }
-                    .foregroundColor(.primary) // System default color
+                    .buttonStyle(PlainButtonStyle())
+                    .foregroundColor(.primary)
                 }
         }
     }
