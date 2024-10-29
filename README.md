@@ -63,3 +63,14 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 ---
 
 > Inspired by [Total Commander](https://www.ghisler.com/) 🌟
+
+---
+
+## Recent Changes (2024-10-29)
+
+<span style="font-size: small; color: grey;">
+| Change Description | Details |
+|--------------------|---------|
+| Favorites State Persistence | Added @AppStorage to persist the open/closed state of items in the Favorites panel |
+| Enhanced Finder-Style Favorites | Expanded Favorites panel to include Finder-like items (AirDrop, Recent, Applications, Home, Desktop, Documents, etc.) |
+</span>
