@@ -17,7 +17,10 @@ final class MiMiNavigatorUITestsLaunchTests: XCTestCase {
         continueAfterFailure = false
     }
 
+
+// MARK: --
     func testLaunch() throws {
+        print("Executing testLaunch") // Log for method tracking
         let app = XCUIApplication()
         app.launch()
 

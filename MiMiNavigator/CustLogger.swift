@@ -20,19 +20,32 @@ final class CustomLogger {
     }
 
     // Logging functions with different levels
+
+    // MARK: - -
+
     func logInfo(_ message: String) {
+        print("Executing logInfo") // Log for method tracking
         logger.info("\(message, privacy: .public)")
     }
 
+    // MARK: - -
+
     func logDebug(_ message: String) {
+        print("Executing logDebug") // Log for method tracking
         logger.debug("\(message, privacy: .public)")
     }
 
+    // MARK: - -
+
     func logError(_ message: String) {
+        print("Executing logError") // Log for method tracking
         logger.error("\(message, privacy: .public)")
     }
 
+    // MARK: - -
+
     func logFault(_ message: String) {
+        print("Executing logFault") // Log for method tracking
         logger.fault("\(message, privacy: .public)")
     }
 }

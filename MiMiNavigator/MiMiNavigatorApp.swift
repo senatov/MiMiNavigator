@@ -9,30 +9,34 @@ import SwiftData
 import SwiftUI
 
 @main
+
+// MARK: - -
+
 struct MiMiNavigatorApp: App {
+    @StateObject private var directoryMonitor = DualDirectoryMonitor(leftDirectory: URL(fileURLWithPath: "/Users/senat/Documents/My Kindle Content"), rightDirectory: URL(fileURLWithPath: "/"))
 
-  var sharedModelContainer: ModelContainer = {
-    CustomLogger.shared.logInfo(" ---- BEGIN ----")
-    let schema = Schema([
-      Item.self
-    ])
-    let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
-    do {
-      return try ModelContainer(for: schema, configurations: [modelConfiguration])
-    } catch {
-      fatalError("Could not create ModelContainer: \(error)")
+    var sharedModelContainer: ModelContainer = {
+        CustomLogger.shared.logInfo(" ---- BEGIN ----")
+        let schema = Schema([
+            Item.self,
+        ])
+        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
+        do {
+            return try ModelContainer(for: schema, configurations: [modelConfiguration])
+        } catch {
+            fatalError("Could not create ModelContainer: \(error)")
+        }
+    }()
+
+    // MARK: -
+
+    var body: some Scene {
+        WindowGroup {
+            VStack {
+                TotalCommanderResizableView(directoryMonitor: directoryMonitor)
+                ConsoleCurrPath()
+            }
+        }
+        .modelContainer(sharedModelContainer)
     }
-  }()
-
-  var body: some Scene {
-
-    WindowGroup {
-      VStack {
-        TotalCommanderResizableView()
-        ConsoleCurrPath()
-      }
-    }
-    .modelContainer(sharedModelContainer)
-  }
-
 }

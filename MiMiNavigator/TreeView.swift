@@ -14,6 +14,9 @@ import SwiftUI
 /// This view takes an array of `CustomFile` objects and displays them as a list.
 /// If a file has children, it will create a nested list to represent the tree structure.
 /// Handles click events to update the selected file.
+
+// MARK: - -
+
 struct TreeView: View {
     let files: [CustomFile]
     @Binding var selectedFile: CustomFile?

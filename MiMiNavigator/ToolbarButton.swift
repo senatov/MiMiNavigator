@@ -4,6 +4,8 @@
 
 import SwiftUI
 
+// MARK: - -
+
 struct ToolbarButton: View {
     let title: String
     let icon: String? // Optional icon name from SF Symbols or custom icon
@@ -54,6 +56,9 @@ struct ToolbarButton: View {
 }
 
 // Preview for ToolbarButton
+
+// MARK: - -
+
 struct ToolbarButton_Previews: PreviewProvider {
     static var previews: some View {
         ToolbarButton(title: "Save", icon: "square.and.arrow.down") {

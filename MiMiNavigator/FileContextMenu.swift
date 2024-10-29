@@ -7,6 +7,9 @@
 import SwiftUI
 
 /// Context menu for file actions
+
+// MARK: - -
+
 struct FileContextMenu: View {
     var body: some View {
         Group {
