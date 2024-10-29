@@ -8,14 +8,16 @@
 
 import Foundation
 
+// MARK: - -
+
 struct CustomFile: Identifiable {
     let id = UUID()
     let name: String
     let path: String
     let isDirectory: Bool
-    var children: [CustomFile]?  // Optional array for holding child files if it's a directory
-    
-        // Initialize 'children' only if 'isDirectory' is true
+    var children: [CustomFile]? // Optional array for holding child files if it's a directory
+
+    // Initialize 'children' only if 'isDirectory' is true
     init(name: String, path: String, isDirectory: Bool, children: [CustomFile]? = nil) {
         self.name = name
         self.path = path

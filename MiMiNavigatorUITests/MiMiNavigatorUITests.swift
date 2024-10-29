@@ -22,7 +22,10 @@ final class MiMiNavigatorUITests: XCTestCase {
         // Put teardown code here. This method is called after the invocation of each test method in the class.
     }
 
+
+// MARK: --
     func testExample() throws {
+        print("Executing testExample") // Log for method tracking
         // UI tests must launch the application that they test.
         let app = XCUIApplication()
         app.launch()
@@ -30,7 +33,10 @@ final class MiMiNavigatorUITests: XCTestCase {
         // Use XCTAssert and related functions to verify your tests produce the correct results.
     }
 
+
+// MARK: --
     func testLaunchPerformance() throws {
+        print("Executing testLaunchPerformance") // Log for method tracking
         if #available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 7.0, *) {
             // This measures how long it takes to launch your application.
             measure(metrics: [XCTApplicationLaunchMetric()]) {

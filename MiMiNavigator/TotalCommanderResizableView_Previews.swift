@@ -9,8 +9,10 @@
 
 import SwiftUI
 
+// MARK: - -
+
 struct TotalCommanderResizableView_Previews: PreviewProvider {
     static var previews: some View {
-        TotalCommanderResizableView()
+        TotalCommanderResizableView(directoryMonitor: DualDirectoryMonitor(leftDirectory: URL(fileURLWithPath: "/path/to/left"), rightDirectory: URL(fileURLWithPath: "/path/to/right")))
     }
 }
