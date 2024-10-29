@@ -38,7 +38,8 @@ struct ToolbarButton: View {
             .shadow(color: Color.purple.opacity(0.4), radius: 5, x: 0, y: 4)
             .scaleEffect(isPressed ? 0.95 : 1.0) // Scale effect when pressed
         }
-        .buttonStyle(PlainButtonStyle())
+        .buttonStyle(PlainButtonStyle()) // Apply PlainButtonStyle here
+        .foregroundColor(Color.primary.opacity(0.9)) // Set background color
         .onChange(of: isPressed) {
             withAnimation(.easeInOut(duration: 0.1)) {
                 isPressed.toggle()
