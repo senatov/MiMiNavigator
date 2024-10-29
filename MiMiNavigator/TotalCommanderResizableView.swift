@@ -1,15 +1,47 @@
-//
-//  TotalCommanderResizableView.swift
-//  MiMiNavigator
-//
-//  Created by Iakov Senatov on 17.10.24.
-
-//  Description: Main view representing a Total Commander-like interface with resizable panels and a vertical tree menu.
-//
+    //
+    //  TotalCommanderResizableView.swift
+    //  MiMiNavigator
+    //
+    //  Created by Iakov Senatov on 17.10.24.
+    //
 
 import SwiftUI
 
-// MARK: - - Main view representing a Total Commander-like interface with resizable panels and a vertical tree menu.
+    // MARK: - Total Commander-like Menu Structure
+
+struct MenuOption: Identifiable {
+    let id = UUID()
+    let name: String
+    var children: [MenuOption]? = nil
+}
+
+let menuOptions: [MenuOption] = [
+    MenuOption(name: "Configuration", children: [
+        MenuOption(name: "Options"),
+        MenuOption(name: "Display"),
+        MenuOption(name: "Layout"),
+        MenuOption(name: "Colors"),
+        MenuOption(name: "Fonts")
+    ]),
+    MenuOption(name: "Files", children: [
+        MenuOption(name: "Associate"),
+        MenuOption(name: "Edit/View"),
+        MenuOption(name: "Compare"),
+        MenuOption(name: "Sync Dirs")
+    ]),
+    MenuOption(name: "Network", children: [
+        MenuOption(name: "FTP Connect"),
+        MenuOption(name: "FTP Disconnect"),
+        MenuOption(name: "Network Neighborhood")
+    ]),
+    MenuOption(name: "Tools", children: [
+        MenuOption(name: "Multi-Rename Tool"),
+        MenuOption(name: "Disk Cleanup"),
+        MenuOption(name: "Compare by Content")
+    ])
+]
+
+    // MARK: - TotalCommanderResizableView
 
 struct TotalCommanderResizableView: View {
     @ObservedObject var directoryMonitor: DualDirectoryMonitor
@@ -19,7 +51,7 @@ struct TotalCommanderResizableView: View {
     @State private var showTooltip: Bool = false
     @State private var tooltipPosition: CGPoint = .zero
     @State private var tooltipText: String = ""
-
+    
     var body: some View {
         GeometryReader { geometry in
             ZStack {
@@ -37,15 +69,11 @@ struct TotalCommanderResizableView: View {
             }
         }
     }
-
-    // MARK: - -
-
+        // MARK: -
     private func initializePanelWidth(geometry: GeometryProxy) {
         leftPanelWidth = UserDefaults.standard.object(forKey: "leftPanelWidth") as? CGFloat ?? geometry.size.width / 2
     }
-
-    // MARK: - -
-
+        // MARK: -
     private func buildMenuButton() -> some View {
         HStack {
             Button(action: {
@@ -62,9 +90,7 @@ struct TotalCommanderResizableView: View {
         .padding(.top, 8)
         .background(Color.gray.opacity(0.2))
     }
-
-    // MARK: - -
-
+        // MARK: -
     private func buildMainPanels(geometry: GeometryProxy) -> some View {
         HStack(spacing: 0) {
             if showMenu {
@@ -76,27 +102,21 @@ struct TotalCommanderResizableView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
-
-    // MARK: - -
-
+        // MARK: -
     private func toggleMenu() {
         withAnimation {
             showMenu.toggle()
             UserPreferences.shared.saveMenuState(isOpen: showMenu)
         }
     }
-
-    // MARK: - -
-
+        // MARK: - 
     private func buildVerticalTreeMenu() -> some View {
-        TreeView(files: directoryMonitor.leftFiles, selectedFile: $selectedFile)
+        TreeView(files: menuOptions.map { CustomFile(name: $0.name, path: "", isDirectory: true, children: $0.children?.map { CustomFile(name: $0.name, path: "", isDirectory: true, children: nil) }) }, selectedFile: $selectedFile)
             .padding()
             .frame(maxWidth: 200)
             .background(Color.gray.opacity(0.1))
     }
-
-    // MARK: - -
-
+    
     private func buildLeftPanel(geometry: GeometryProxy) -> some View {
         VStack {
             List(directoryMonitor.leftFiles, id: \.id) { file in
@@ -110,9 +130,7 @@ struct TotalCommanderResizableView: View {
             .border(Color.gray)
         }
     }
-
-    // MARK: - -
-
+    
     private func buildRightPanel() -> some View {
         VStack {
             List(directoryMonitor.rightFiles, id: \.id) { file in
@@ -125,9 +143,7 @@ struct TotalCommanderResizableView: View {
             .border(Color.gray)
         }
     }
-
-    // MARK: - -
-
+    
     private func buildDivider(geometry: GeometryProxy) -> some View {
         Rectangle()
             .fill(Color.gray)
@@ -146,9 +162,7 @@ struct TotalCommanderResizableView: View {
                 handleDoubleClickDivider(geometry: geometry)
             }
     }
-
-    // MARK: - -
-
+    
     private func handleDividerDrag(value: DragGesture.Value, geometry: GeometryProxy) {
         let newWidth = leftPanelWidth + value.translation.width
         if newWidth > 100 && newWidth < geometry.size.width - 100 {
@@ -160,9 +174,7 @@ struct TotalCommanderResizableView: View {
             showTooltip = true
         }
     }
-
-    // MARK: - -
-
+    
     private func buildToolbar() -> some View {
         HStack {
             ToolbarButton(title: "Copy", icon: "document.on.document") {
@@ -185,11 +197,10 @@ struct TotalCommanderResizableView: View {
         .padding()
         .background(Color.gray.opacity(0.2))
     }
-
-    // MARK: - -
-
+    
     private func handleDoubleClickDivider(geometry: GeometryProxy) {
         leftPanelWidth = geometry.size.width / 2
         UserDefaults.standard.set(leftPanelWidth, forKey: "leftPanelWidth")
     }
 }
+
