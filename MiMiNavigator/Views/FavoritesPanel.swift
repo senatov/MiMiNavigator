@@ -16,8 +16,6 @@ import SwiftyBeaver
 struct FavoritesPanel: View {
     // MARK: - Favorite Item Model
 
-    // Initialize logger
-    let log = SwiftyBeaver.self
     struct FavoriteItem: Identifiable {
         let id = UUID()
         let name: String

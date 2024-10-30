@@ -12,8 +12,6 @@ import SwiftyBeaver
 // MARK: - -
 
 struct FileContextMenu: View {
-    // Initialize logger
-    let log = SwiftyBeaver.self
     var body: some View {
         Group {
             Button(action: {

@@ -12,10 +12,7 @@ import SwiftyBeaver
 // MARK: - -
 
 struct UserPreferences {
-    // Initialize logger
-    let log = SwiftyBeaver.self
     static let shared = UserPreferences()
-
     // Keys for storing window and UI state
     private let mimiWidthKey = "windowWidthMimi0"
     private let mimiHeightKey = "windowHeightMiMi0"

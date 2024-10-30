@@ -9,18 +9,19 @@ import SwiftData
 import SwiftUI
 import SwiftyBeaver
 
+let log = SwiftyBeaver.self
+
 @main
 
 // MARK: - -
 
 struct MiMiNavigatorApp: App {
-   
+
     @StateObject private var directoryMonitor = DualDirectoryMonitor(
         leftDirectory: URL(fileURLWithPath: "~/Documents"),
         rightDirectory: URL(fileURLWithPath: "~/Downloads"))
 
     var sharedModelContainer: ModelContainer = {
-        let log = SwiftyBeaver.self
         log.debug(" ---- BEGIN ----")
         let schema = Schema([
             Item.self,
@@ -32,8 +33,21 @@ struct MiMiNavigatorApp: App {
             fatalError("Could not create ModelContainer: \(error)")
         }
     }()
+    
+        // MARK: -
+    init() {
+            // Console logging
+        let console = ConsoleDestination()
+        console.minLevel = .verbose
+        log.addDestination(console)
+        
+            // File logging (optional)
+        let file = FileDestination()
+        file.minLevel = .info
+        log.addDestination(file)
+    }
 
-    // MARK: -
+        // MARK: -
 
     var body: some Scene {
         WindowGroup {
@@ -44,4 +58,6 @@ struct MiMiNavigatorApp: App {
         }
         .modelContainer(sharedModelContainer)
     }
+    
+    
 }

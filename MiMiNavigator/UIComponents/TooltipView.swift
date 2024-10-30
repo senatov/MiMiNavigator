@@ -11,9 +11,7 @@ struct TooltipView: View {
     let text: String
     let position: CGPoint
     // Initialize logger
-    let log = SwiftyBeaver.self
-    var backgroundColor: Color = Color.yellow.opacity(0.9) // Default background color
-
+    var backgroundColor: Color = Color.yellow.opacity(0.4)
     var body: some View {
         Text(text)
             .padding(8)
@@ -23,9 +21,7 @@ struct TooltipView: View {
     }
 }
 
-// Preview for TooltipView
-
-// MARK: - -
+// MARK: - Preview for TooltipView
 
 struct TooltipView_Previews: PreviewProvider {
     static var previews: some View {

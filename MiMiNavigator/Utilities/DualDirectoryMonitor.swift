@@ -10,9 +10,6 @@ import Foundation
 import SwiftyBeaver
 
 actor DualDirectoryMonitor: ObservableObject {
-    // Initialize logger
-    let log = SwiftyBeaver.self
-
     private(set) var leftFiles: [CustomFile] = []
     private(set) var rightFiles: [CustomFile] = []
 

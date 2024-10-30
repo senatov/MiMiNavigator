@@ -19,7 +19,8 @@ struct TotalCommanderResizableView: View {
     @State private var tooltipText: String = ""
     @State private var leftFiles: [CustomFile] = [] // Local state for left files
     @State private var rightFiles: [CustomFile] = [] // Local state for right files
-    let log = SwiftyBeaver.self
+
+    // MARK: - -
 
     var body: some View {
         GeometryReader { geometry in
@@ -48,9 +49,13 @@ struct TotalCommanderResizableView: View {
         }
     }
 
+    // MARK: - -
+
     private func initializePanelWidth(geometry: GeometryProxy) {
         leftPanelWidth = UserDefaults.standard.object(forKey: "leftPanelWidth") as? CGFloat ?? geometry.size.width / 2
     }
+
+    // MARK: - -
 
     private func buildMenuButton() -> some View {
         HStack {
@@ -69,6 +74,8 @@ struct TotalCommanderResizableView: View {
         .background(Color.gray.opacity(0.2))
     }
 
+    // MARK: - -
+
     private func buildMainPanels(geometry: GeometryProxy) -> some View {
         HStack(spacing: 0) {
             if showMenu {
@@ -82,11 +89,14 @@ struct TotalCommanderResizableView: View {
     }
 
     private func toggleMenu() {
+        log.debug("Toggling menu")
         withAnimation {
             showMenu.toggle()
             UserPreferences.shared.saveMenuState(isOpen: showMenu)
         }
     }
+
+    // MARK: - -
 
     private func buildVerticalTreeMenu() -> some View {
         TreeView(files: FavoritesPanel().getFavoriteItems().map { CustomFile(name: $0.name, path: "", isDirectory: true, children: nil) },
@@ -95,6 +105,8 @@ struct TotalCommanderResizableView: View {
             .frame(maxWidth: 200)
             .background(Color.gray.opacity(0.1))
     }
+
+    // MARK: - -
 
     private func buildLeftPanel(geometry: GeometryProxy) -> some View {
         VStack {
