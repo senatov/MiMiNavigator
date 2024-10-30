@@ -87,9 +87,10 @@ struct FavoritesPanel: View {
                     }
                 }
             }
-            .listStyle(SidebarListStyle())
+            .listStyle(PlainListStyle()) // Changed from SidebarListStyle to PlainListStyle
+            .frame(maxWidth: .infinity) // Expands to full width
         }
-        .padding()
+        .padding(.all)
     }
 }
 
@@ -98,6 +99,5 @@ struct FavoritesPanel: View {
 struct FavoritesPanel_Previews: PreviewProvider {
     static var previews: some View {
         FavoritesPanel()
-            .previewLayout(.sizeThatFits)
     }
 }
