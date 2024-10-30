@@ -9,7 +9,6 @@
 
 import SwiftUI
 
-
 // MARK: - -
 
 struct TotalCommanderResizableView_Previews: PreviewProvider {
