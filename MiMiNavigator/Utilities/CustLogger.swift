@@ -6,7 +6,7 @@
 import Foundation
 import os
 
-final class CustomLogger {
+final class CustomLogger: @unchecked Sendable {
     // Singleton instance
     static let shared = CustomLogger()
 

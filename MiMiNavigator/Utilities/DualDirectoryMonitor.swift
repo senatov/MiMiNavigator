@@ -2,92 +2,83 @@
 //  DualDirectoryMonitor.swift
 //  MiMiNavigator
 //
-//  Created by Iakov Senatov on 27.10.24.
+//  Created by Iakov Senatov on 28.10.24.
+//  Copyright © 2024 Senatov. All rights reserved.
 //
 
 import Foundation
 import SwiftUI
 
-// MARK: - DualDirectoryMonitor
-
-class DualDirectoryMonitor: ObservableObject {
-    @Published var leftFiles: [CustomFile] = []
-    @Published var rightFiles: [CustomFile] = []
-
+actor DualDirectoryMonitor: ObservableObject {
+    @MainActor private(set) var leftFiles: [CustomFile] = []
+    @MainActor private(set) var rightFiles: [CustomFile] = []
+    
     private var leftTimer: DispatchSourceTimer?
     private var rightTimer: DispatchSourceTimer?
     private let leftDirectory: URL
     private let rightDirectory: URL
-
-    // MARK: - Initializer
-
+    
+        // MARK: - Initializer
+    
     init(leftDirectory: URL, rightDirectory: URL) {
         self.leftDirectory = leftDirectory
         self.rightDirectory = rightDirectory
-        startMonitoring()
     }
-
-    // MARK: - Start Monitoring
-
-    private func startMonitoring() {
+    
+        // MARK: - Directory Monitoring Functions
+    
+    func startMonitoring() {
+            // Start monitoring left directory
         leftTimer = DispatchSource.makeTimerSource(queue: DispatchQueue.global())
-        leftTimer?.schedule(deadline: .now(), repeating: .seconds(1))
-        leftTimer?.setEventHandler { [weak self] in
-            DispatchQueue.main.async {
-                self?.leftFiles = self?.scanDirectory(at: self?.leftDirectory) ?? []
+        leftTimer?.schedule(deadline: .now(), repeating: .seconds(10))
+        leftTimer?.setEventHandler {
+            Task { [unowned self] in
+                await self.refreshFiles(for: .left)
             }
         }
         leftTimer?.resume()
-
+        
+            // Start monitoring right directory
         rightTimer = DispatchSource.makeTimerSource(queue: DispatchQueue.global())
-        rightTimer?.schedule(deadline: .now(), repeating: .seconds(1))
-        rightTimer?.setEventHandler { [weak self] in
-            DispatchQueue.main.async {
-                self?.rightFiles = self?.scanDirectory(at: self?.rightDirectory) ?? []
+        rightTimer?.schedule(deadline: .now(), repeating: .seconds(10))
+        rightTimer?.setEventHandler {
+            Task { [unowned self] in
+                await self.refreshFiles(for: .right)
             }
         }
         rightTimer?.resume()
     }
-
-    // MARK: - Stop Monitoring
-
+    
     func stopMonitoring() {
         leftTimer?.cancel()
         leftTimer = nil
         rightTimer?.cancel()
         rightTimer = nil
     }
-
-    // MARK: - Scan Directory
-
-    private func scanDirectory(at url: URL?) -> [CustomFile] {
-        guard let url = url else { return [] }
-        let fileManager = FileManager.default
-        do {
-            let contents = try fileManager.contentsOfDirectory(at: url, includingPropertiesForKeys: nil)
-            return contents.map { fileURL in
-                CustomFile(
-                    name: fileURL.lastPathComponent,
-                    path: fileURL.path,
-                    isDirectory: (try? fileURL.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
-                )
+    
+        // MARK: - Helper Functions
+    
+    private enum DirectorySide {
+        case left, right
+    }
+    
+    private func refreshFiles(for side: DirectorySide) async {
+        let directoryURL = side == .left ? leftDirectory : rightDirectory
+        let files = fetchFiles(in: directoryURL)
+        
+            // Update files based on the directory side on the main actor
+        await MainActor.run {
+            switch side {
+                case .left:
+                    self.leftFiles = files
+                case .right:
+                    self.rightFiles = files
             }
-        } catch {
-            print("Error reading directory contents: \(error)")
-            return []
         }
     }
-
-    // MARK: - Deinitializer
-
-    deinit {
-        stopMonitoring()
-    }
-
-    // MARK: - DirectorySide Enum
-
-    enum DirectorySide {
-        case left
-        case right
+    
+    private func fetchFiles(in directory: URL) -> [CustomFile] {
+            // Logic to fetch files from directory
+        return []
     }
 }

@@ -80,7 +80,7 @@ struct TotalCommanderResizableView: View {
             Button(action: {
                 toggleMenu()
             }) {
-                Image(systemName: "line.horizontal.3")
+                Image(systemName: "sidebar.leading")
                     .foregroundColor(.blue)
             }
             .buttonStyle(PlainButtonStyle())
@@ -184,14 +184,14 @@ struct TotalCommanderResizableView: View {
             ToolbarButton(title: "Move", icon: "trash") {
                 print("MOVE button tapped")
             }
-            ToolbarButton(title: "Delete", icon: "eraser") {
+            ToolbarButton(title: "Delete", icon: "eraser.line.dashed") {
                 print("DELETE button tapped")
             }
             Spacer()
-            ToolbarButton(title: "Console", icon: "terminal") {
+            ToolbarButton(title: "Console", icon: "apple.terminal") {
                 openConsoleInDirectory("~")
             }
-            ToolbarButton(title: "Settings", icon: "opticid") {
+            ToolbarButton(title: "Settings", icon: "blinds.horizontal.open") {
                 print("Settings button tapped")
             }
         }
