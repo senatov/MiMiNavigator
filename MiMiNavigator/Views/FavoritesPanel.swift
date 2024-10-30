@@ -5,33 +5,31 @@
 //  Copyright © 2024 Senatov. All rights reserved.
 //
 
-// Enhanced to include Finder-style items and JSON-based state persistence
+// Description: Enhanced to include Finder-style items and JSON-based state persistence
 
 import SwiftUI
 
-    // MARK: - FavoritesPanel
+// MARK: - FavoritesPanel
 
-    /// A sidebar panel displaying user's favorite locations in a Finder-style interface.
+/// A sidebar panel displaying user's favorite locations in a Finder-style interface.
 struct FavoritesPanel: View {
-    
-        // MARK: - Favorite Item Model
+    // MARK: - Favorite Item Model
+
     struct FavoriteItem: Identifiable {
         let id = UUID()
         let name: String
         let icon: String // SF Symbols icon name for simplicity
     }
-    
+
     @AppStorage("favoritesState") private var favoritesStateJson: String = "" // JSON storage for favorites state
-    
-        // Convert JSON string to a dictionary for accessing favorites state
+
+    // Convert JSON string to a dictionary for accessing favorites state
     private var favoritesState: [String: Bool] {
-        get {
-            guard let data = favoritesStateJson.data(using: .utf8) else { return [:] }
-            return (try? JSONDecoder().decode([String: Bool].self, from: data)) ?? [:]
-        }
+        guard let data = favoritesStateJson.data(using: .utf8) else { return [:] }
+        return (try? JSONDecoder().decode([String: Bool].self, from: data)) ?? [:]
     }
-    
-        // Helper method to update favoritesStateJson directly
+
+    // Helper method to update favoritesStateJson directly
     private func updateFavoritesState(for itemName: String, value: Bool) {
         var state = favoritesState
         state[itemName] = value
@@ -40,8 +38,8 @@ struct FavoritesPanel: View {
             favoritesStateJson = jsonString
         }
     }
-    
-        // Define Finder-style favorite items
+
+    // Define Finder-style favorite items
     private var favoriteItems: [FavoriteItem] = [
         FavoriteItem(name: "AirDrop", icon: "airplane.circle.fill"),
         FavoriteItem(name: "Recent", icon: "clock.fill"),
@@ -54,16 +52,21 @@ struct FavoritesPanel: View {
         FavoriteItem(name: "Pictures", icon: "photo"),
         FavoriteItem(name: "iCloud Drive", icon: "icloud.and.arrow.down"),
         FavoriteItem(name: "Shared", icon: "person.2.fill"),
-        FavoriteItem(name: "Network", icon: "network")
+        FavoriteItem(name: "Network", icon: "network"),
     ]
-    
+
+    // Public method to access favoriteItems
+    func getFavoriteItems() -> [FavoriteItem] {
+        return favoriteItems
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 15) {
             Text("Favorites")
                 .font(.headline)
                 .padding(.top)
                 .padding(.leading)
-            
+
             List(favoriteItems) { item in
                 HStack {
                     Image(systemName: item.icon)
@@ -71,11 +74,11 @@ struct FavoritesPanel: View {
                     Text(item.name)
                 }
                 .onTapGesture {
-                        // Log selected favorite item
+                    // Log selected favorite item
                     print("Selected favorite item: \(item.name)")
                 }
                 .onAppear {
-                        // Initialize item state if missing by updating JSON directly
+                    // Initialize item state if missing by updating JSON directly
                     if favoritesState[item.name] == nil {
                         updateFavoritesState(for: item.name, value: false)
                     }
@@ -87,7 +90,7 @@ struct FavoritesPanel: View {
     }
 }
 
-    // MARK: - Preview
+// MARK: - Preview
 
 struct FavoritesPanel_Previews: PreviewProvider {
     static var previews: some View {
