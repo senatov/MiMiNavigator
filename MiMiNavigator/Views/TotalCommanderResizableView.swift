@@ -7,6 +7,7 @@
 // Description:
 
 import SwiftUI
+import SwiftyBeaver
 
 struct TotalCommanderResizableView: View {
     @ObservedObject var directoryMonitor: DualDirectoryMonitor
@@ -16,6 +17,9 @@ struct TotalCommanderResizableView: View {
     @State private var showTooltip: Bool = false
     @State private var tooltipPosition: CGPoint = .zero
     @State private var tooltipText: String = ""
+    @State private var leftFiles: [CustomFile] = [] // Local state for left files
+    @State private var rightFiles: [CustomFile] = [] // Local state for right files
+    let log = SwiftyBeaver.self
 
     var body: some View {
         GeometryReader { geometry in
@@ -30,16 +34,15 @@ struct TotalCommanderResizableView: View {
                 }
             }
             .onAppear {
-                print("TotalCommanderResizableView appeared. Starting directory monitoring.")
                 Task {
-                    await directoryMonitor.startMonitoring() // Start monitoring asynchronously when the view appears
+                    self.leftFiles = await directoryMonitor.getLeftFiles()
+                    self.rightFiles = await directoryMonitor.getRightFiles()
+                    await directoryMonitor.startMonitoring()
                 }
-                initializePanelWidth(geometry: geometry)
             }
             .onDisappear {
-                print("TotalCommanderResizableView disappeared. Stopping directory monitoring.")
                 Task {
-                    await directoryMonitor.stopMonitoring() // Stop monitoring asynchronously when the view disappears
+                    await directoryMonitor.stopMonitoring()
                 }
             }
         }
@@ -95,11 +98,11 @@ struct TotalCommanderResizableView: View {
 
     private func buildLeftPanel(geometry: GeometryProxy) -> some View {
         VStack {
-            if directoryMonitor.leftFiles.isEmpty {
+            if leftFiles.isEmpty {
                 Text("No files available")
                     .foregroundColor(.gray)
             } else {
-                AnyView(List(directoryMonitor.leftFiles, id: \.id) { file in
+                AnyView(List(leftFiles, id: \.id) { file in
                     Text(file.name)
                         .contextMenu {
                             FileContextMenu()
@@ -114,11 +117,11 @@ struct TotalCommanderResizableView: View {
 
     private func buildRightPanel() -> some View {
         VStack {
-            if directoryMonitor.rightFiles.isEmpty {
+            if rightFiles.isEmpty {
                 Text("No files available")
                     .foregroundColor(.gray)
             } else {
-                AnyView(List(directoryMonitor.rightFiles, id: \.id) { file in
+                AnyView(List(rightFiles, id: \.id) { file in
                     Text(file.name)
                         .contextMenu {
                             FileContextMenu()
@@ -164,20 +167,20 @@ struct TotalCommanderResizableView: View {
     private func buildToolbar() -> some View {
         HStack {
             ToolbarButton(title: "Copy", icon: "document.on.document") {
-                print("Copy button tapped")
+                log.debug("Copy button tapped")
             }
             ToolbarButton(title: "Move", icon: "trash") {
-                print("Move button tapped")
+                log.debug("Move button tapped")
             }
             ToolbarButton(title: "Delete", icon: "eraser.line.dashed") {
-                print("Delete button tapped")
+                log.debug("Delete button tapped")
             }
             Spacer()
             ToolbarButton(title: "Console", icon: "apple.terminal") {
                 openConsoleInDirectory("~")
             }
             ToolbarButton(title: "Settings", icon: "blinds.horizontal.open") {
-                print("Settings button tapped")
+                log.debug("Settings button tapped")
             }
         }
         .padding()

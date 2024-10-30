@@ -1,6 +1,7 @@
 
 import Foundation
 
+
 // Define the structure of a menu option
 struct MenuOption: Identifiable {
     let id = UUID()

@@ -8,6 +8,7 @@
 // Description: Enhanced to include Finder-style items and JSON-based state persistence
 
 import SwiftUI
+import SwiftyBeaver
 
 // MARK: - FavoritesPanel
 
@@ -15,6 +16,8 @@ import SwiftUI
 struct FavoritesPanel: View {
     // MARK: - Favorite Item Model
 
+    // Initialize logger
+    let log = SwiftyBeaver.self
     struct FavoriteItem: Identifiable {
         let id = UUID()
         let name: String
@@ -75,7 +78,7 @@ struct FavoritesPanel: View {
                 }
                 .onTapGesture {
                     // Log selected favorite item
-                    print("Selected favorite item: \(item.name)")
+                    log.debug("Selected favorite item: \(item.name)")
                 }
                 .onAppear {
                     // Initialize item state if missing by updating JSON directly

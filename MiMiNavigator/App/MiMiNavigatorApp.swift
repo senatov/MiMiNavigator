@@ -15,8 +15,8 @@ import SwiftUI
 
 struct MiMiNavigatorApp: App {
     @StateObject private var directoryMonitor = DualDirectoryMonitor(
-        leftDirectory: URL(fileURLWithPath: "."),
-        rightDirectory: URL(fileURLWithPath: "/"))
+        leftDirectory: URL(fileURLWithPath: "~/Documents"),
+        rightDirectory: URL(fileURLWithPath: "~/Downloads"))
 
     var sharedModelContainer: ModelContainer = {
         CustomLogger.shared.logInfo(" ---- BEGIN ----")
