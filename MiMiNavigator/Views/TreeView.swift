@@ -8,6 +8,7 @@
 //
 
 import SwiftUI
+import SwiftyBeaver
 
 /// A view that recursively displays files and folders as a tree structure.
 ///
@@ -20,17 +21,17 @@ import SwiftUI
 struct TreeView: View {
     let files: [CustomFile]
     @Binding var selectedFile: CustomFile?
-
+    let log = SwiftyBeaver.self
     var body: some View {
         List(files, children: \.children) { file in
             Text(file.name)
                 .onTapGesture {
                     selectedFile = file
-                    print("Selected file: \(file.name)")
+                    log.debug("Selected file: \(file.name)")
                 }
                 .contextMenu {
                     Button(action: {
-                        print("Copy action for \(file.name)")
+                        log.debug("Copy action for \(file.name)")
                     }) {
                         Label("Copy", systemImage: "document.on.document")
                     }
@@ -38,7 +39,7 @@ struct TreeView: View {
                     .foregroundColor(.primary) // System default color
 
                     Button(action: {
-                        print("Rename action for \(file.name)")
+                        log.debug("Rename action for \(file.name)")
                     }) {
                         Label("Rename", systemImage: "penpencil.circle")
                     }
@@ -46,7 +47,7 @@ struct TreeView: View {
                     .foregroundColor(.primary)
 
                     Button(action: {
-                        print("Delete action for \(file.name)")
+                        log.debug("Delete action for \(file.name)")
                     }) {
                         Label("Delete", systemImage: "eraser.line.dashed")
                     }
@@ -54,7 +55,7 @@ struct TreeView: View {
                     .foregroundColor(.primary)
 
                     Button(action: {
-                        print("More info action for \(file.name)")
+                        log.debug("More info action for \(file.name)")
                     }) {
                         Label("More Info", systemImage: "info.circle.fill")
                     }

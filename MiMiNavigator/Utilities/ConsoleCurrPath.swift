@@ -8,10 +8,12 @@
 // Description:
 
 import SwiftUI
+import SwiftyBeaver
 
 // MARK: - -
 
 struct ConsoleCurrPath: View {
+    // Initialize logger
     var body: some View {
         VStack {
         }

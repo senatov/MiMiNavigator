@@ -3,15 +3,18 @@
 // Created by Iakov Senatov
 
 import SwiftUI
+import SwiftyBeaver
 
 // MARK: - -
 
 struct ToolbarButton: View {
     let title: String
     let icon: String? // Optional icon name from SF Symbols or custom icon
+    // Initialize logger
+    let log = SwiftyBeaver.self
     let action: () -> Void
-
     @State private var isPressed = false
+    // Initialize logger
 
     var body: some View {
         Button(action: {
@@ -62,7 +65,8 @@ struct ToolbarButton: View {
 struct ToolbarButton_Previews: PreviewProvider {
     static var previews: some View {
         ToolbarButton(title: "Save", icon: "square.and.arrow.down") {
-            print("Button tapped")
+            let log = SwiftyBeaver.self
+            log.debug("Button tapped")
         }
         .previewLayout(.sizeThatFits)
         .padding()

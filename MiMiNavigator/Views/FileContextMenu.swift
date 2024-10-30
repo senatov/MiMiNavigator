@@ -5,17 +5,20 @@
 //  Created by Iakov Senatov on 25.10.24.
 
 import SwiftUI
+import SwiftyBeaver
 
 /// Context menu for file actions
 
 // MARK: - -
 
 struct FileContextMenu: View {
+    // Initialize logger
+    let log = SwiftyBeaver.self
     var body: some View {
         Group {
             Button(action: {
                 // Copy action
-                print("Copy action triggered")
+                log.debug("Copy action triggered")
             }) {
                 Label("Copy", systemImage: "doc.on.doc")
             }
@@ -24,7 +27,7 @@ struct FileContextMenu: View {
 
             Button(action: {
                 // Rename action
-                print("Rename action triggered")
+                log.debug("Rename action triggered")
             }) {
                 Label("Rename", systemImage: "pencil")
             }
@@ -33,7 +36,7 @@ struct FileContextMenu: View {
 
             Button(action: {
                 // Delete action
-                print("Delete action triggered")
+                log.debug("Delete action triggered")
             }) {
                 Label("Delete", systemImage: "trash")
             }

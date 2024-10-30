@@ -7,10 +7,13 @@
 
 import Foundation
 import SwiftUI
+import SwiftyBeaver
 
 // MARK: - -
 
 struct UserPreferences {
+    // Initialize logger
+    let log = SwiftyBeaver.self
     static let shared = UserPreferences()
 
     // Keys for storing window and UI state
@@ -28,8 +31,8 @@ struct UserPreferences {
     // MARK: - -
 
     func saveWindowSize(width: CGFloat, height: CGFloat) {
-        print("Executing saveWindowSize") // Log for method tracking
-        print("Saving window size - Width: \(width), Height: \(height)")
+        log.debug("Executing saveWindowSize") // Log for method tracking
+        log.debug("Saving window size - Width: \(width), Height: \(height)")
         UserDefaults.standard.set(width, forKey: mimiWidthKey)
         UserDefaults.standard.set(height, forKey: mimiHeightKey)
     }
@@ -37,8 +40,8 @@ struct UserPreferences {
     // MARK: - -
 
     func saveWindowPosition(x: CGFloat, y: CGFloat) {
-        print("Executing saveWindowPosition") // Log for method tracking
-        print("Saving window position - X: \(x), Y: \(y)")
+        log.debug("Executing saveWindowPosition") // Log for method tracking
+        log.debug("Saving window position - X: \(x), Y: \(y)")
         UserDefaults.standard.set(x, forKey: mimiWindowPosXKey)
         UserDefaults.standard.set(y, forKey: mimiWindowPosYKey)
     }
@@ -46,16 +49,16 @@ struct UserPreferences {
     // MARK: - -
 
     func saveLeftPanelWidth(_ width: CGFloat) {
-        print("Executing saveLeftPanelWidth") // Log for method tracking
-        print("Saving left panel width - Width: \(width)")
+        log.debug("Executing saveLeftPanelWidth") // Log for method tracking
+        log.debug("Saving left panel width - Width: \(width)")
         UserDefaults.standard.set(width, forKey: mimiLeftPanelWidthKey)
     }
 
     // MARK: - -
 
     func saveMenuState(isOpen: Bool) {
-        print("Executing saveMenuState") // Log for method tracking
-        print("Saving menu state - Is Open: \(isOpen)")
+        log.debug("Executing saveMenuState") // Log for method tracking
+        log.debug("Saving menu state - Is Open: \(isOpen)")
         UserDefaults.standard.set(isOpen, forKey: mimiMenuStateKey)
     }
 
@@ -64,17 +67,17 @@ struct UserPreferences {
     // MARK: - -
 
     func restoreWindowSize() -> CGSize {
-        print("Executing restoreWindowSize") // Log for method tracking
+        log.debug("Executing restoreWindowSize") // Log for method tracking
         let width = UserDefaults.standard.object(forKey: mimiWidthKey) as? CGFloat ?? 800
         let height = UserDefaults.standard.object(forKey: mimiHeightKey) as? CGFloat ?? 600
-        print("Restoring window size - Width: \(width), Height: \(height)")
+        log.debug("Restoring window size - Width: \(width), Height: \(height)")
         return CGSize(width: width, height: height)
     }
 
     // MARK: - -
 
     func restoreWindowPosition(screenSize: CGSize) -> CGPoint {
-        print("Executing restoreWindowPosition") // Log for method tracking
+        log.debug("Executing restoreWindowPosition") // Log for method tracking
         // Default to the center of the screen if no saved position is found
         let defaultX = (screenSize.width - 800) / 2 // Assuming default width of 800
         let defaultY = (screenSize.height - 600) / 2 // Assuming default height of 600
@@ -82,25 +85,25 @@ struct UserPreferences {
         let x = UserDefaults.standard.object(forKey: mimiWindowPosXKey) as? CGFloat ?? defaultX
         let y = UserDefaults.standard.object(forKey: mimiWindowPosYKey) as? CGFloat ?? defaultY
 
-        print("Restoring window position - X: \(x), Y: \(y) (Default if not saved - X: \(defaultX), Y: \(defaultY))")
+        log.debug("Restoring window position - X: \(x), Y: \(y) (Default if not saved - X: \(defaultX), Y: \(defaultY))")
         return CGPoint(x: x, y: y)
     }
 
     // MARK: - -
 
     func restoreLeftPanelWidth() -> CGFloat {
-        print("Executing restoreLeftPanelWidth") // Log for method tracking
+        log.debug("Executing restoreLeftPanelWidth") // Log for method tracking
         let width = UserDefaults.standard.object(forKey: mimiLeftPanelWidthKey) as? CGFloat ?? 300
-        print("Restoring left panel width - Width: \(width)")
+        log.debug("Restoring left panel width - Width: \(width)")
         return width
     }
 
     // MARK: - -
 
     func restoreMenuState() -> Bool {
-        print("Executing restoreMenuState") // Log for method tracking
+        log.debug("Executing restoreMenuState") // Log for method tracking
         let isOpen = UserDefaults.standard.bool(forKey: mimiMenuStateKey)
-        print("Restoring menu state - Is Open: \(isOpen)")
+        log.debug("Restoring menu state - Is Open: \(isOpen)")
         return isOpen
     }
 }
