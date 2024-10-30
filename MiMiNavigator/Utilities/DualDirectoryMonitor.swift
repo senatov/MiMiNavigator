@@ -1,3 +1,10 @@
+//
+//  DualDirectoryMonitor.swift
+//  MiMiNavigator
+//
+//  Created by Iakov Senatov on 28.10.24.
+
+//  Description:
 
 import Foundation
 import SwiftyBeaver
@@ -5,7 +12,7 @@ import SwiftyBeaver
 actor DualDirectoryMonitor: ObservableObject {
     // Initialize logger
     let log = SwiftyBeaver.self
-    
+
     private(set) var leftFiles: [CustomFile] = []
     private(set) var rightFiles: [CustomFile] = []
 

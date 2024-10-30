@@ -26,7 +26,7 @@ struct TooltipModule {
         let adjustedX = location.x + dividerX + 100 // Slightly to the right of the divider
         let adjustedY = location.y - 5 // Slightly above the cursor
         let tooltipPosition = CGPoint(x: adjustedX, y: adjustedY)
-
+        log.info(tooltipText)
         return (tooltipText, tooltipPosition)
     }
 }
