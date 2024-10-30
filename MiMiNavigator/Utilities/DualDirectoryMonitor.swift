@@ -6,12 +6,11 @@
 //  Copyright © 2024 Senatov. All rights reserved.
 //
 
-import Foundation
 import SwiftUI
 
 actor DualDirectoryMonitor: ObservableObject {
-    @MainActor private(set) var leftFiles: [CustomFile] = []
-    @MainActor private(set) var rightFiles: [CustomFile] = []
+    @MainActor @Published private(set) var leftFiles: [CustomFile] = []
+    @MainActor @Published private(set) var rightFiles: [CustomFile] = []
     
     private var leftTimer: DispatchSourceTimer?
     private var rightTimer: DispatchSourceTimer?
@@ -28,9 +27,10 @@ actor DualDirectoryMonitor: ObservableObject {
         // MARK: - Directory Monitoring Functions
     
     func startMonitoring() {
-            // Start monitoring left directory
+            // Start monitoring left directory every second
+        print("Starting directory monitoring")
         leftTimer = DispatchSource.makeTimerSource(queue: DispatchQueue.global())
-        leftTimer?.schedule(deadline: .now(), repeating: .seconds(10))
+        leftTimer?.schedule(deadline: .now(), repeating: .seconds(1))
         leftTimer?.setEventHandler {
             Task { [unowned self] in
                 await self.refreshFiles(for: .left)
@@ -38,9 +38,9 @@ actor DualDirectoryMonitor: ObservableObject {
         }
         leftTimer?.resume()
         
-            // Start monitoring right directory
+            // Start monitoring right directory every second
         rightTimer = DispatchSource.makeTimerSource(queue: DispatchQueue.global())
-        rightTimer?.schedule(deadline: .now(), repeating: .seconds(10))
+        rightTimer?.schedule(deadline: .now(), repeating: .seconds(1))
         rightTimer?.setEventHandler {
             Task { [unowned self] in
                 await self.refreshFiles(for: .right)
@@ -50,6 +50,7 @@ actor DualDirectoryMonitor: ObservableObject {
     }
     
     func stopMonitoring() {
+        print("Stop directory monitoring")
         leftTimer?.cancel()
         leftTimer = nil
         rightTimer?.cancel()
