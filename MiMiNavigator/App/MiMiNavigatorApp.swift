@@ -7,19 +7,21 @@
 
 import SwiftData
 import SwiftUI
-
+import SwiftyBeaver
 
 @main
 
 // MARK: - -
 
 struct MiMiNavigatorApp: App {
+   
     @StateObject private var directoryMonitor = DualDirectoryMonitor(
         leftDirectory: URL(fileURLWithPath: "~/Documents"),
         rightDirectory: URL(fileURLWithPath: "~/Downloads"))
 
     var sharedModelContainer: ModelContainer = {
-        CustomLogger.shared.logInfo(" ---- BEGIN ----")
+        let log = SwiftyBeaver.self
+        log.debug(" ---- BEGIN ----")
         let schema = Schema([
             Item.self,
         ])

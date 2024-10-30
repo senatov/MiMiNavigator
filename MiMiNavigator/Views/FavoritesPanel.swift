@@ -64,7 +64,7 @@ struct FavoritesPanel: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 15) {
+        VStack(alignment: .leading, spacing: 5) {
             Text("Favorites")
                 .font(.headline)
                 .padding(.top)
