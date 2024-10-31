@@ -7,6 +7,7 @@
 //  Description:
 //
 
+import Foundation
 import SwiftUI
 import SwiftyBeaver
 
@@ -14,6 +15,8 @@ import SwiftyBeaver
 
 struct TotalCommanderResizableView_Previews: PreviewProvider {
     static var previews: some View {
-        TotalCommanderResizableView(directoryMonitor: DualDirectoryMonitor(leftDirectory: URL(fileURLWithPath: "."), rightDirectory: URL(fileURLWithPath: ".")))
+        TotalCommanderResizableView(directoryMonitor:
+            DualDirectoryMonitor(leftDirectory: URL(fileURLWithPath: "/Users/senat/Downloads/Hahly")
+                                 , rightDirectory: URL(fileURLWithPath: "/Users/senat/Downloads/Hahly")))
     }
 }

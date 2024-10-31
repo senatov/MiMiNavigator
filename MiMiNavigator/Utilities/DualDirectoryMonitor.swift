@@ -3,8 +3,8 @@
 //  MiMiNavigator
 //
 //  Created by Iakov Senatov on 28.10.24.
-
-//  Description:
+//
+//  Description: Monitors two directories for changes every second and updates file lists accordingly.
 
 import Foundation
 import SwiftyBeaver
@@ -19,31 +19,43 @@ actor DualDirectoryMonitor: ObservableObject {
     private let rightDirectory: URL
 
     init(leftDirectory: URL, rightDirectory: URL) {
-        log.debug("init()")
+        log.debug("DualDirectoryMonitor initialized.")
         self.leftDirectory = leftDirectory
+        log.debug("left directory: \(leftDirectory.path)")
         self.rightDirectory = rightDirectory
+        log.debug("right directory: \(rightDirectory.path)")
     }
 
+    // MARK: - Start Monitoring
+
+    /// Starts monitoring both directories with a 1-second refresh interval.
     func startMonitoring() {
-        log.debug("Starting directory monitoring.")
+        // Setup left directory timer
         leftTimer = DispatchSource.makeTimerSource(queue: DispatchQueue.global())
         leftTimer?.schedule(deadline: .now(), repeating: .seconds(1))
         leftTimer?.setEventHandler { [weak self] in
-            Task { [weak self] in
+            Task.detached { [weak self] in
                 await self?.refreshFiles(for: .left)
             }
         }
         leftTimer?.resume()
+        // Setup right directory timer
         rightTimer = DispatchSource.makeTimerSource(queue: DispatchQueue.global())
         rightTimer?.schedule(deadline: .now(), repeating: .seconds(1))
         rightTimer?.setEventHandler { [weak self] in
-            Task { [weak self] in
+            Task.detached { [weak self] in
                 await self?.refreshFiles(for: .right)
             }
         }
         rightTimer?.resume()
+        if leftTimer == nil || rightTimer == nil {
+            log.error("Failed to initialize one or both timers.")
+        }
     }
 
+    // MARK: - Stop Monitoring
+
+    /// Stops monitoring both directories and cancels active timers.
     func stopMonitoring() {
         log.debug("Stopping directory monitoring.")
         leftTimer?.cancel()
@@ -51,6 +63,8 @@ actor DualDirectoryMonitor: ObservableObject {
         rightTimer?.cancel()
         rightTimer = nil
     }
+
+    // MARK: - Getters for Files
 
     func getLeftFiles() -> [CustomFile] {
         return leftFiles
@@ -60,15 +74,18 @@ actor DualDirectoryMonitor: ObservableObject {
         return rightFiles
     }
 
+    // MARK: - Directory Monitoring
+
     private enum DirectorySide {
         case left, right
     }
 
+    /// Refreshes file list for the specified directory side.
+    /// - Parameter side: The directory side to refresh (.left or .right).
     private func refreshFiles(for side: DirectorySide) async {
-        log.debug("refreshFiles()")
-        let directoryURL = side == .left ? leftDirectory : rightDirectory
-        let files = fetchFiles(in: directoryURL)
-
+        log.debug("Refreshing files for \(side == .left ? "left" : "right") directory.")
+        let directoryURL = (side == .left) ? leftDirectory : rightDirectory
+        let files = scanDirectory(at: directoryURL)
         switch side {
         case .left:
             leftFiles = files
@@ -77,32 +94,39 @@ actor DualDirectoryMonitor: ObservableObject {
         }
     }
 
-    private func fetchFiles(in directory: URL) -> [CustomFile] {
-        var files: [CustomFile] = []
-        log.debug("fetchFiles()")
+    // MARK: - Directory Scanning
+
+    /// Scans the specified directory URL for files and directories.
+    /// - Parameter url: The URL of the directory to scan.
+    /// - Returns: An array of `CustomFile` objects representing the contents of the directory.
+    private func scanDirectory(at url: URL?) -> [CustomFile] {
+        log.debug("scanDirectory() called for URL: \(url?.path ?? "nil")")
+        // Validate the URL
+        guard let url = url else {
+            log.error("Invalid directory URL: URL is nil.")
+            return []
+        }
+        let fileManager = FileManager.default
+        var customFiles: [CustomFile] = []
         do {
-            let fileURLs = try FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: [.isReadableKey, .isDirectoryKey], options: [.skipsHiddenFiles])
+            // Attempt to retrieve directory contents
+            let contents = try fileManager.contentsOfDirectory(at: url, includingPropertiesForKeys: [.isDirectoryKey], options: [.skipsHiddenFiles])
 
-            for url in fileURLs {
-                let resourceValues = try url.resourceValues(forKeys: [.isReadableKey, .isDirectoryKey])
-                guard resourceValues.isReadable == true else {
-                    log.debug("Skipping unreadable file: \(url.lastPathComponent)")
-                    continue
-                }
-
-                let isDirectory = resourceValues.isDirectory ?? false
-                let file = CustomFile(
-                    name: url.lastPathComponent,
-                    path: url.path,
-                    isDirectory: isDirectory,
-                    children: isDirectory ? fetchFiles(in: url) : nil
+            for fileURL in contents {
+                // Safely retrieve isDirectory property for each item
+                let isDirectory = (try? fileURL.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
+                // Create and add a CustomFile object
+                let customFile = CustomFile(
+                    name: fileURL.lastPathComponent,
+                    path: fileURL.path,
+                    isDirectory: isDirectory
                 )
-                files.append(file)
+                customFiles.append(customFile)
             }
         } catch {
-            log.error("Error reading contents of directory: \(error.localizedDescription)")
+            // Log any error encountered during directory scan
+            log.error("Failed to scan directory at \(url.path): \(error.localizedDescription)")
         }
-
-        return files
+        return customFiles
     }
 }
