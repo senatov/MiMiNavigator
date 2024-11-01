@@ -89,3 +89,6 @@
 - [Features and Options](#features-and-options)
 - [Recent Changes](#recent-changes)
 - [FAQ](#faq)
+| Date & Time       | Description of Changes |
+|-------------------|------------------------|
+| 2024-11-01 18:15    | Added `FileManagerState` singleton class to manage `leftFiles` and `rightFiles` arrays across the app. Updated `DualDirectoryMonitor` to use `FileManagerState` and added a delegate pattern to notify changes in file arrays. |
