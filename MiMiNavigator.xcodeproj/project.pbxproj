@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		97D9156C2CD5625D00EB5FDD /* SwiftyBeaver in Frameworks */ = {isa = PBXBuildFile; productRef = 97D9156B2CD5625D00EB5FDD /* SwiftyBeaver */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		97AD1A422C624E040045C38D /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -65,6 +69,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				97D9156C2CD5625D00EB5FDD /* SwiftyBeaver in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -91,6 +96,7 @@
 				9751D0682CCEB1BC005B1D64 /* MiMiNavigator */,
 				9751D0542CCEB1B9005B1D64 /* MiMiNavigatorTests */,
 				9751D0502CCEB1B6005B1D64 /* MiMiNavigatorUITests */,
+				97D9156A2CD5625D00EB5FDD /* Frameworks */,
 				97AD1A2F2C624E020045C38D /* Products */,
 			);
 			sourceTree = "<group>";
@@ -103,6 +109,13 @@
 				97AD1A4B2C624E040045C38D /* MiMiNavigatorUITests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		97D9156A2CD5625D00EB5FDD /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -119,6 +132,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				97D915692CD5624900EB5FDD /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				9751D0682CCEB1BC005B1D64 /* MiMiNavigator */,
@@ -202,6 +216,9 @@
 				Base,
 			);
 			mainGroup = 97AD1A252C624E020045C38D;
+			packageReferences = (
+				97D915672CD5621500EB5FDD /* XCRemoteSwiftPackageReference "SwiftyBeaver" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 97AD1A2F2C624E020045C38D /* Products */;
 			projectDirPath = "";
@@ -272,6 +289,10 @@
 			isa = PBXTargetDependency;
 			target = 97AD1A2D2C624E020045C38D /* MiMiNavigator */;
 			targetProxy = 97AD1A4C2C624E040045C38D /* PBXContainerItemProxy */;
+		};
+		97D915692CD5624900EB5FDD /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			productRef = 97D915682CD5624900EB5FDD /* SwiftyBeaver */;
 		};
 /* End PBXTargetDependency section */
 
@@ -575,6 +596,30 @@
 			defaultConfigurationName = Debug;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		97D915672CD5621500EB5FDD /* XCRemoteSwiftPackageReference "SwiftyBeaver" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/SwiftyBeaver/SwiftyBeaver";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.1.1;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		97D915682CD5624900EB5FDD /* SwiftyBeaver */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 97D915672CD5621500EB5FDD /* XCRemoteSwiftPackageReference "SwiftyBeaver" */;
+			productName = SwiftyBeaver;
+		};
+		97D9156B2CD5625D00EB5FDD /* SwiftyBeaver */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 97D915672CD5621500EB5FDD /* XCRemoteSwiftPackageReference "SwiftyBeaver" */;
+			productName = SwiftyBeaver;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 97AD1A262C624E020045C38D /* Project object */;
 }
