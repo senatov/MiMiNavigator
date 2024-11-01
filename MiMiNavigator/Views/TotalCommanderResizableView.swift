@@ -20,22 +20,19 @@ struct TotalCommanderResizableView: View {
 
     // Example files for both panels
     let leftFiles = [
-        CustomFile(name: "File1.txt", path: "/path/to/File1.txt", isDirectory: false, children: nil),
-        CustomFile(
-            name: "Folder1",
-            path: "/path/to/Folder1",
-            isDirectory: true,
-            children: [
-                CustomFile(name: "File11.txt", path: "/path/to/Folder1/File11.txt", isDirectory: false, children: nil),
-                CustomFile(name: "File12.txt", path: "/path/to/Folder1/File12.txt", isDirectory: false, children: nil),
-                CustomFile(name: "SubFolder13", path: "/path/to/Folder1/SubFolder13", isDirectory: true, children: [
-                    CustomFile(name: "File131.txt", path: "/path/to/Folder1/SubFolder13/File131.txt", isDirectory: false, children: nil)
-                ])
-            ]
+        CustomFile(name: "Aaaaa", path: "/path/to/File1.txt", isDirectory: false, children: nil),
+        CustomFile(name: "Bbbbb", path: "/path/to/Folder1", isDirectory: true,
+                   children: [
+                       CustomFile(name: "File11.txt", path: "/path/to/Folder1/File11.txt", isDirectory: false, children: nil),
+                       CustomFile(name: "File12.txt", path: "/path/to/Folder1/File12.txt", isDirectory: false, children: nil),
+                       CustomFile(name: "SubFolder13", path: "/path/to/Folder1/SubFolder13", isDirectory: true, children: [
+                           CustomFile(name: "File131.txt", path: "/path/to/Folder1/SubFolder13/File131.txt", isDirectory: false, children: nil),
+                       ]),
+                   ]
         ),
-        CustomFile(name: "Image2.png", path: "/path/to/Image2.png", isDirectory: false, children: nil),
+        CustomFile(name: "Ccccc", path: "/path/to/Image2.png", isDirectory: false, children: nil),
     ]
-    
+
     let rightFiles = [
         CustomFile(name: "Doc1.docx", path: "/path/to/Doc1.docx", isDirectory: false, children: nil),
         CustomFile(name: "Backup.zip", path: "/path/to/Backup.zip", isDirectory: false, children: nil),
@@ -106,7 +103,10 @@ struct TotalCommanderResizableView: View {
 
     /// Builds the vertical tree menu
     private func buildVerticalTreeMenu() -> some View {
-        TreeView(files: leftFiles, selectedFile: $selectedFile)
+        let scanner = FavoritesScanner()
+        let fileStructure = scanner.scanFavorites() // Replaces static file structure with the scanned favorites structure
+
+        return TreeView(files: fileStructure, selectedFile: $selectedFile)
             .padding()
             .frame(maxWidth: 200)
             .background(Color.gray.opacity(0.1))
