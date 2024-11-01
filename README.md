@@ -1,73 +1,94 @@
 
-# MiMiNavigator
+# 📁 MiMiNavigator
+[![Swift Version](https://img.shields.io/badge/Swift-6.0-blue.svg)](https://swift.org)
+[![License](https://img.shields.io/badge/License-MIT-lightgrey.svg)](LICENSE)
 
-![Swift](https://img.shields.io/badge/Swift-6.0-orange.svg)  
-![Platform](https://img.shields.io/badge/Platform-macOS-lightgrey.svg)  
-![License](https://img.shields.io/badge/License-MIT-blue.svg)  
+## 📖 Overview
 
-MiMiNavigator is a dual-pane file manager inspired by the classic Total Commander, designed to provide an efficient way to navigate, view, and manage files across two directories in a split view. Tailored specifically for macOS.
+**MiMiNavigator** is a versatile navigation tool that provides a Total Commander-style interface with directory tree navigation. This project is built with Swift 6, delivering high-performance, real-time file operations.
 
----
+## ✨ Features
 
-## 🖥️ System Information
+- Dual-panel interface for managing files and directories.
+- Periodic directory scanning and updating, using dynamic collections for real-time content refresh.
+- Integrated file management actions including copy, rename, and delete.
+- Automatic UI updates when directory contents change.
 
-- **OS**: macOS 15.0.1  
-- **Architecture**: ARM  
-- **Processor**: M2 Max  
-- **RAM**: 32 GB  
 
-## 🔧 Developer Tools
-
-- **Swift**: Xcode 16  
-
-## 📘 Project Overview
-
-MiMiNavigator is a personal project to fully (as much as possible) replicate the look and functionality of Total Commander to improve my Swift development skills and make use of my new Mac Studio. This is my first experience using a Mac, and I’m excited to see how far I can take this project.
-
-![Current Stage](/docs/appsshot.png?raw=true "current")
-
-## 📋 Requirements
-
-- macOS operating system  
-- Total Commander (run through Wine or similar tools to work on macOS)  
-
-## 🔑 Key Features
-
-- **Dual-Pane Interface**: View two directories side-by-side for convenient navigation and file comparison.  
-- **Real-Time Monitoring**: Automatic updates every second to track changes in both directories.  
-- **Directory Tree View**: Recursive display of folders and files for easy browsing.  
-- **User Preferences**: Customizable layout settings, including window position, size, and panel widths.  
-- **Mac Terminal Integration**: Open Terminal in the current directory to execute shell commands directly.  
+- **Xcode** 16.2 beta or later
+- **Swift** 6.0 or later
+- macOS 10.15 or later
 
 ## 🚀 Installation
 
-The project is currently in development, and the installation instructions may change. A complete installation guide will be available once the project is stable.
-
-### Current Steps:
-
-1. Clone the repository:
+1. **Clone the repository:**
    ```bash
    git clone https://github.com/username/MiMiNavigator.git
    cd MiMiNavigator
    ```
-
-2. Open the project in Xcode:
+2. **Open the project in Xcode:**
    ```bash
    open MiMiNavigator.xcodeproj
    ```
+3. **Build and Run** through Xcode or with the command:
+   ```bash
+   xcodebuild -scheme MiMiNavigator -sdk macosx
+   ```
 
-> **Note**: The project is still under active development, so expect ongoing changes.
+## 📋 Usage
+
+1. **Launching**: Open the application and set directories for dual-panel mode.
+2. **File Operations**:
+   - **Copy**: Use the `Copy` option in the context menu for quick file duplication.
+   - **Rename**: Select `Rename` and specify the new name.
+   - **Delete**: Use `Delete` to move the file to the trash.
+3. **Automatic Updates**: The application will periodically scan the specified directories and refresh content in real time.
+
+## 👤 Authors
+
+- Iakov Senatov: 
+  [![LinkedIn](https://img.shields.io/badge/LinkedIn-blue.svg?logo=linkedin&colorB=555)](https://www.linkedin.com/in/iakov-senatov-07060765)
+
+| Step                    | Description                                                                                    |
+|-------------------------|------------------------------------------------------------------------------------------------|
+| **Installation**        | Clone the repository, navigate to the project directory, and install dependencies as required. |
+| **Running the Project** | Use the command `swift run` to launch the project.                                             |
+| **Usage**               | Access features like configuration, file management, network, and tools from the main menu.    |
 
 ---
 
-## 📄 License
+## 📅 Recent Changes
 
-This project is licensed under the MIT License.
+| Date and Time           | New Features                             | Description                                                                          |
+|-------------------------|------------------------------------------|--------------------------------------------------------------------------------------|
 
-## 📫 Contact
-
-Connect with me for updates and collaboration opportunities:
-
-[LinkedIn - Iakov Senatov](https://www.linkedin.com/in/iakov-senatov-07060765/)
+| 2024-10-30 13:51:11      | Enhanced Asynchronous Access              | Added state properties for `leftFiles` and `rightFiles`, using async retrieval from `DualDirectoryMonitor` to avoid actor isolation conflicts. |
+| 2024-10-30 10:55:55     | Dynamic "Favorites" Panel Data           | Added dynamic data loading in the "Favorites" panel.                                 |
+| 2024-10-30 10:55:55     | Modular Structure                        | Reorganized code into smaller, modular Swift files in their respective directories.   |
+| 2024-10-30 10:55:55     | Enhanced TotalCommanderResizableView     | Configured dynamic content display and refined view handling for better usability.    |
+| 2024-10-31 12:00:00     | **Improved Accessibility**               | Adjusted protection level and added public access method for favorite items.          |
+| 2024-10-31 12:00:00     | **Refined Logging**                      | Enhanced logging for start/stop monitoring in TotalCommanderResizableView.            |
+| 2024-10-31 12:00:00     | **Organized README**                     | Updated and clarified recent changes in the README for improved tracking.             |
 
 ---
+
+## ❓ FAQ
+
+| Question                                        | Answer                                                                                     |
+|-------------------------------------------------|--------------------------------------------------------------------------------------------|
+| **How to configure settings?**                  | Navigate to **Configuration** to access display, layout, and color settings.               |
+| **How to compare directories?**                 | Use the **Files** menu to compare and sync directories.                                    |
+| **Can I rename multiple files at once?**        | Yes, use the **Multi-Rename Tool** available under **Tools**.                              |
+| **Is FTP supported?**                           | Yes, FTP connection tools are available under the **Network** menu.                        |
+
+---
+
+## 🔗 Related Links
+
+- [Installation Guide](#quick-start-guide)
+- [Features and Options](#features-and-options)
+- [Recent Changes](#recent-changes)
+- [FAQ](#faq)
+| Date & Time       | Description of Changes |
+|-------------------|------------------------|
+| 2024-11-01 18:15    | Added `FileManagerState` singleton class to manage `leftFiles` and `rightFiles` arrays across the app. Updated `DualDirectoryMonitor` to use `FileManagerState` and added a delegate pattern to notify changes in file arrays. |
