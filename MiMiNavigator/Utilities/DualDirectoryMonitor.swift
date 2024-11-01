@@ -2,110 +2,87 @@
 //  DualDirectoryMonitor.swift
 //  MiMiNavigator
 //
-//  Created by Iakov Senatov on 28.10.24.
-
-//  Description:
+//  Created by Iakov Senatov on 27.10.24.
+//  Copyright © 2024 Senatov. All rights reserved.
+//
 
 import Foundation
-import SwiftyBeaver
+import SwiftUI
 
-actor DualDirectoryMonitor: ObservableObject {
-    // Initialize logger
-    let log = SwiftyBeaver.self
-
-    private(set) var leftFiles: [CustomFile] = []
-    private(set) var rightFiles: [CustomFile] = []
-
+class DualDirectoryMonitor: ObservableObject {
+    @Published var leftFiles: [CustomFile] = []
+    @Published var rightFiles: [CustomFile] = []
+    
     private var leftTimer: DispatchSourceTimer?
     private var rightTimer: DispatchSourceTimer?
     private let leftDirectory: URL
     private let rightDirectory: URL
-
-    init(leftDirectory: URL, rightDirectory: URL) {
-        log.debug("init()")
-        self.leftDirectory = leftDirectory
-        self.rightDirectory = rightDirectory
+    
+    init(leftDirectoryPath: String, rightDirectoryPath: String) {
+        self.leftDirectory = URL(fileURLWithPath: leftDirectoryPath)
+        self.rightDirectory = URL(fileURLWithPath: rightDirectoryPath)
+        startMonitoring()
     }
-
-    func startMonitoring() {
-        log.debug("Starting directory monitoring.")
+    
+        // Start monitoring both directories
+    private func startMonitoring() {
+            // Timer for left directory
         leftTimer = DispatchSource.makeTimerSource(queue: DispatchQueue.global())
-        leftTimer?.schedule(deadline: .now(), repeating: .seconds(1))
+        leftTimer?.schedule(deadline: .now(), repeating: 1.0) // Every 1 second
         leftTimer?.setEventHandler { [weak self] in
-            Task { [weak self] in
-                await self?.refreshFiles(for: .left)
-            }
+            self?.scanDirectory(at: self?.leftDirectory, for: .left)
         }
         leftTimer?.resume()
+        
+            // Timer for right directory
         rightTimer = DispatchSource.makeTimerSource(queue: DispatchQueue.global())
-        rightTimer?.schedule(deadline: .now(), repeating: .seconds(1))
+        rightTimer?.schedule(deadline: .now(), repeating: 1.0)
         rightTimer?.setEventHandler { [weak self] in
-            Task { [weak self] in
-                await self?.refreshFiles(for: .right)
-            }
+            self?.scanDirectory(at: self?.rightDirectory, for: .right)
         }
         rightTimer?.resume()
     }
-
+    
+        // Stop monitoring both directories
     func stopMonitoring() {
-        log.debug("Stopping directory monitoring.")
         leftTimer?.cancel()
         leftTimer = nil
         rightTimer?.cancel()
         rightTimer = nil
     }
-
-    func getLeftFiles() -> [CustomFile] {
-        return leftFiles
-    }
-
-    func getRightFiles() -> [CustomFile] {
-        return rightFiles
-    }
-
-    private enum DirectorySide {
-        case left, right
-    }
-
-    private func refreshFiles(for side: DirectorySide) async {
-        log.debug("refreshFiles()")
-        let directoryURL = side == .left ? leftDirectory : rightDirectory
-        let files = fetchFiles(in: directoryURL)
-
-        switch side {
-        case .left:
-            leftFiles = files
-        case .right:
-            rightFiles = files
-        }
-    }
-
-    private func fetchFiles(in directory: URL) -> [CustomFile] {
-        var files: [CustomFile] = []
-        log.debug("fetchFiles()")
+    
+        // Scans directory and updates the appropriate file collection
+    private func scanDirectory(at url: URL?, for side: DirectorySide) {
+        guard let url = url else { return }
+        let fileManager = FileManager.default
         do {
-            let fileURLs = try FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: [.isReadableKey, .isDirectoryKey], options: [.skipsHiddenFiles])
-
-            for url in fileURLs {
-                let resourceValues = try url.resourceValues(forKeys: [.isReadableKey, .isDirectoryKey])
-                guard resourceValues.isReadable == true else {
-                    log.debug("Skipping unreadable file: \(url.lastPathComponent)")
-                    continue
-                }
-
-                let isDirectory = resourceValues.isDirectory ?? false
-                let file = CustomFile(
-                    name: url.lastPathComponent,
-                    path: url.path,
-                    isDirectory: isDirectory,
-                    children: isDirectory ? fetchFiles(in: url) : nil
+            let contents = try fileManager.contentsOfDirectory(at: url, includingPropertiesForKeys: nil)
+            let files = contents.map { fileURL in
+                CustomFile(
+                    name: fileURL.lastPathComponent,
+                    path: fileURL.path,
+                    isDirectory: (try? fileURL.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
                 )
-                files.append(file)
+            }
+            
+            DispatchQueue.main.async {
+                if side == .left {
+                    self.leftFiles = files
+                } else {
+                    self.rightFiles = files
+                }
             }
         } catch {
-            log.error("Error reading contents of directory: \(error.localizedDescription)")
+            print("Error reading directory contents: \(error)")
         }
-
-        return files
+    }
+    
+    deinit {
+        stopMonitoring()
+    }
+    
+    enum DirectorySide {
+        case left
+        case right
     }
 }

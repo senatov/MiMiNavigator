@@ -10,8 +10,6 @@ import SwiftyBeaver
 struct ToolbarButton: View {
     let title: String
     let icon: String? // Optional icon name from SF Symbols or custom icon
-    // Initialize logger
-    let log = SwiftyBeaver.self
     let action: () -> Void
     @State private var isPressed = false
     // Initialize logger
@@ -65,7 +63,6 @@ struct ToolbarButton: View {
 struct ToolbarButton_Previews: PreviewProvider {
     static var previews: some View {
         ToolbarButton(title: "Save", icon: "square.and.arrow.down") {
-            let log = SwiftyBeaver.self
             log.debug("Button tapped")
         }
         .previewLayout(.sizeThatFits)
