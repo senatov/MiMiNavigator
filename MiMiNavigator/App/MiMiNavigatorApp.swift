@@ -20,7 +20,8 @@ struct MiMiNavigatorApp: App {
         log.debug("Console logging")
         let console = ConsoleDestination()
         console.minLevel = .verbose
-        console.format = "$DHH:mm:ss$d $L $M"
+        // Configure the log format to include file name, function name, and line number
+        console.format = "$DHH:mm:ss$d ➤ $L $N.$F:$l - $M"
         log.addDestination(console)
         // File logging (optional)
         let file = FileDestination()
