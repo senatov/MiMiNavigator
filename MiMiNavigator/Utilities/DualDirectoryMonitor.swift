@@ -1,132 +1,71 @@
-//
-//  DualDirectoryMonitor.swift
-//  MiMiNavigator
-//
-//  Created by Iakov Senatov on 28.10.24.
-//
-//  Description: Monitors two directories for changes every second and updates file lists accordingly.
 
 import Foundation
-import SwiftyBeaver
+import Combine
 
-actor DualDirectoryMonitor: ObservableObject {
-    private(set) var leftFiles: [CustomFile] = []
-    private(set) var rightFiles: [CustomFile] = []
+class DualDirectoryMonitor: ObservableObject {
+    @Published private(set) var leftFiles: [CustomFile] = []
+    @Published private(set) var rightFiles: [CustomFile] = []
+    private var fileMonitorQueue = DispatchQueue(label: "fileMonitorQueue")
+    private var activeMonitors: [DispatchSourceFileSystemObject] = []
+    private(set) var isMonitoring = false
 
-    private var leftTimer: DispatchSourceTimer?
-    private var rightTimer: DispatchSourceTimer?
-    private let leftDirectory: URL
-    private let rightDirectory: URL
-
-    init(leftDirectory: URL, rightDirectory: URL) {
-        log.debug("DualDirectoryMonitor initialized.")
-        self.leftDirectory = leftDirectory
-        log.debug("left directory: \(leftDirectory.path)")
-        self.rightDirectory = rightDirectory
-        log.debug("right directory: \(rightDirectory.path)")
+    
+    // Methods to update files
+    func updateLeftFiles(newFiles: [CustomFile]) {
+        leftFiles = newFiles
     }
 
-    // MARK: - Start Monitoring
-
-    /// Starts monitoring both directories with a 1-second refresh interval.
-    func startMonitoring() {
-        // Setup left directory timer
-        leftTimer = DispatchSource.makeTimerSource(queue: DispatchQueue.global())
-        leftTimer?.schedule(deadline: .now(), repeating: .seconds(1))
-        leftTimer?.setEventHandler { [weak self] in
-            Task.detached { [weak self] in
-                await self?.refreshFiles(for: .left)
-            }
-        }
-        leftTimer?.resume()
-        // Setup right directory timer
-        rightTimer = DispatchSource.makeTimerSource(queue: DispatchQueue.global())
-        rightTimer?.schedule(deadline: .now(), repeating: .seconds(1))
-        rightTimer?.setEventHandler { [weak self] in
-            Task.detached { [weak self] in
-                await self?.refreshFiles(for: .right)
-            }
-        }
-        rightTimer?.resume()
-        if leftTimer == nil || rightTimer == nil {
-            log.error("Failed to initialize one or both timers.")
-        }
+    func updateRightFiles(newFiles: [CustomFile]) {
+        rightFiles = newFiles
     }
-
-    // MARK: - Stop Monitoring
-
-    /// Stops monitoring both directories and cancels active timers.
-    func stopMonitoring() {
-        log.debug("Stopping directory monitoring.")
-        leftTimer?.cancel()
-        leftTimer = nil
-        rightTimer?.cancel()
-        rightTimer = nil
-    }
-
-    // MARK: - Getters for Files
-
-    func getLeftFiles() -> [CustomFile] {
-        return leftFiles
-    }
-
-    func getRightFiles() -> [CustomFile] {
-        return rightFiles
-    }
-
-    // MARK: - Directory Monitoring
-
-    private enum DirectorySide {
-        case left, right
-    }
-
-    /// Refreshes file list for the specified directory side.
-    /// - Parameter side: The directory side to refresh (.left or .right).
-    private func refreshFiles(for side: DirectorySide) async {
-        log.debug("Refreshing files for \(side == .left ? "left" : "right") directory.")
-        let directoryURL = (side == .left) ? leftDirectory : rightDirectory
-        let files = scanDirectory(at: directoryURL)
-        switch side {
-        case .left:
-            leftFiles = files
-        case .right:
-            rightFiles = files
-        }
-    }
-
-    // MARK: - Directory Scanning
-
-    /// Scans the specified directory URL for files and directories.
-    /// - Parameter url: The URL of the directory to scan.
-    /// - Returns: An array of `CustomFile` objects representing the contents of the directory.
-    private func scanDirectory(at url: URL?) -> [CustomFile] {
-        log.debug("scanDirectory() called for URL: \(url?.path ?? "nil")")
-        // Validate the URL
-        guard let url = url else {
-            log.error("Invalid directory URL: URL is nil.")
-            return []
-        }
-        let fileManager = FileManager.default
-        var customFiles: [CustomFile] = []
+    
+    // Async function to start monitoring
+    func startMonitoring() async {
+        // Simulate monitoring work
         do {
-            // Attempt to retrieve directory contents
-            let contents = try fileManager.contentsOfDirectory(at: url, includingPropertiesForKeys: [.isDirectoryKey], options: [.skipsHiddenFiles])
-
-            for fileURL in contents {
-                // Safely retrieve isDirectory property for each item
-                let isDirectory = (try? fileURL.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
-                // Create and add a CustomFile object
-                let customFile = CustomFile(
-                    name: fileURL.lastPathComponent,
-                    path: fileURL.path,
-                    isDirectory: isDirectory
-                )
-                customFiles.append(customFile)
-            }
+            try await Task.sleep(nanoseconds: 1_000_000_000) // 1 second
         } catch {
-            // Log any error encountered during directory scan
-            log.error("Failed to scan directory at \(url.path): \(error.localizedDescription)")
+                // Handle the error if the sleep is interrupted
+            print("Task.sleep was interrupted: \(error)")
         }
-        return customFiles
+        // Example file update to simulate monitoring result
+        updateLeftFiles(newFiles: [CustomFile(name: "SampleLeftFile")])
+        updateRightFiles(newFiles: [CustomFile(name: "SampleRightFile")])
+    }
+    
+    func stopMonitoring() async {
+            // Реальный код остановки мониторинга
+            // Закрытие всех запущенных наблюдателей директорий и освобождение ресурсов
+            // Например:
+        if isMonitoring {
+            fileMonitorQueue.async {
+                for monitor in self.activeMonitors {
+                    monitor.cancel()
+                }
+                self.activeMonitors.removeAll()
+            }
+            isMonitoring = false
+        }
+    }
+    
+    
+        // Метод для обновления leftFiles
+    private func updateLeftFiles(newFiles: [CustomFile]) {
+        DispatchQueue.main.async {
+            self.leftFiles = newFiles
+        }
+    }
+    
+        // Метод для обновления rightFiles
+    private func updateRightFiles(newFiles: [CustomFile]) {
+        DispatchQueue.main.async {
+            self.rightFiles = newFiles
+        }
+    }
+    
+        // Метод для извлечения файлов из директории
+    private func fetchFilesFromDirectory(_ path: String) -> [CustomFile] {
+            // Логика для извлечения массива CustomFile из указанной директории
+        return []
     }
 }

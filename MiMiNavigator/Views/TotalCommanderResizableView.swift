@@ -17,10 +17,9 @@ struct TotalCommanderResizableView: View {
     @State private var showTooltip: Bool = false
     @State private var tooltipPosition: CGPoint = .zero
     @State private var tooltipText: String = ""
-    @State private var leftFiles: [CustomFile] = [] // Local state for left files
-    @State private var rightFiles: [CustomFile] = [] // Local state for right files
-
-    // MARK: - -
+    @State private var favoritePanelWidth: CGFloat = 300 // Initial width of the favorites panel
+    @State private var leftFiles: [CustomFile] = [] // Local state for left panel files
+    @State private var rightFiles: [CustomFile] = [] // Local state for right panel files
 
     var body: some View {
         GeometryReader { geometry in
@@ -35,9 +34,9 @@ struct TotalCommanderResizableView: View {
                 }
             }
             .onAppear {
-                Task {
-                    self.leftFiles = await directoryMonitor.getLeftFiles()
-                    self.rightFiles = await directoryMonitor.getRightFiles()
+                Task { @MainActor in
+                    self.leftFiles = await directoryMonitor.leftFiles
+                    self.rightFiles = await directoryMonitor.rightFiles
                     await directoryMonitor.startMonitoring()
                 }
             }
@@ -48,14 +47,6 @@ struct TotalCommanderResizableView: View {
             }
         }
     }
-
-    // MARK: - -
-
-    private func initializePanelWidth(geometry: GeometryProxy) {
-        leftPanelWidth = UserDefaults.standard.object(forKey: "leftPanelWidth") as? CGFloat ?? geometry.size.width / 2
-    }
-
-    // MARK: - -
 
     private func buildMenuButton() -> some View {
         HStack {
@@ -74,12 +65,10 @@ struct TotalCommanderResizableView: View {
         .background(Color.gray.opacity(0.2))
     }
 
-    // MARK: - -
-
     private func buildMainPanels(geometry: GeometryProxy) -> some View {
         HStack(spacing: 0) {
             if showMenu {
-                buildVerticalTreeMenu()
+                buildFavoritePanel()
             }
             buildLeftPanel(geometry: geometry)
             buildDivider(geometry: geometry)
@@ -96,23 +85,36 @@ struct TotalCommanderResizableView: View {
         }
     }
 
-    // MARK: - -
-
-    private func buildVerticalTreeMenu() -> some View {
-        TreeView(files: FavoritesPanel().getFavoriteItems().map { CustomFile(name: $0.name, path: "", isDirectory: true, children: nil) },
-                 selectedFile: $selectedFile)
-            .padding()
-            .frame(maxWidth: 200)
-            .background(Color.gray.opacity(0.1))
+    private func buildFavoritePanel() -> some View {
+        GeometryReader { geo in
+            TreeView(files: FavoritesPanel().getFavoriteItems().map { CustomFile(name: $0.name, path: "", isDirectory: true, children: nil) },
+                     selectedFile: $selectedFile)
+                .padding(.all)
+                .background(Color.gray.opacity(0.1))
+                .frame(width: geo.size.width) // Dynamic width based on content
+                .onAppear {
+                    DispatchQueue.main.async {
+                        favoritePanelWidth = geo.size.width
+                    }
+                }
+                .gesture(
+                    DragGesture()
+                        .onChanged { value in
+                            let newWidth = favoritePanelWidth + value.translation.width
+                            if newWidth > 100 && newWidth < 500 {
+                                favoritePanelWidth = newWidth
+                            }
+                        }
+                )
+        }
+        .frame(width: favoritePanelWidth)
     }
-
-    // MARK: - -
 
     private func buildLeftPanel(geometry: GeometryProxy) -> some View {
         VStack {
             if leftFiles.isEmpty {
                 Text("No files available")
-                    .foregroundColor(.gray)
+                    .foregroundColor(.blue)
             } else {
                 AnyView(List(leftFiles, id: \.id) { file in
                     Text(file.name)
@@ -124,14 +126,14 @@ struct TotalCommanderResizableView: View {
             }
         }
         .frame(width: leftPanelWidth == 0 ? geometry.size.width / 2 : leftPanelWidth)
-        .border(Color.gray)
+        .border(Color.orange.opacity(0.1))
     }
 
     private func buildRightPanel() -> some View {
         VStack {
             if rightFiles.isEmpty {
                 Text("No files available")
-                    .foregroundColor(.gray)
+                    .foregroundColor(.blue)
             } else {
                 AnyView(List(rightFiles, id: \.id) { file in
                     Text(file.name)
@@ -142,7 +144,7 @@ struct TotalCommanderResizableView: View {
                 .listStyle(PlainListStyle()))
             }
         }
-        .border(Color.gray)
+        .border(Color.orange.opacity(0.1))
     }
 
     private func buildDivider(geometry: GeometryProxy) -> some View {
@@ -176,6 +178,24 @@ struct TotalCommanderResizableView: View {
         }
     }
 
+    private func handleDoubleClickDivider(geometry: GeometryProxy) {
+        leftPanelWidth = geometry.size.width / 2
+        UserDefaults.standard.set(leftPanelWidth, forKey: "leftPanelWidth")
+    }
+
+    private func handleDividerDrag(value: DragGesture.Value, geometry: GeometryProxy) -> some View {
+        let newWidth = leftPanelWidth + value.translation.width
+        if newWidth > 100 && newWidth < geometry.size.width - 100 {
+            leftPanelWidth = newWidth
+            let (tooltipText, tooltipPosition) = TooltipModule.calculateTooltip(
+                location: value.location, dividerX: newWidth, totalWidth: geometry.size.width)
+            self.tooltipText = tooltipText
+            self.tooltipPosition = tooltipPosition
+            showTooltip = true
+        }
+        return EmptyView() // Replace EmptyView with any placeholder View if needed
+    }
+
     private func buildToolbar() -> some View {
         HStack {
             ToolbarButton(title: "Copy", icon: "document.on.document") {
@@ -197,10 +217,5 @@ struct TotalCommanderResizableView: View {
         }
         .padding()
         .background(Color.gray.opacity(0.2))
-    }
-
-    private func handleDoubleClickDivider(geometry: GeometryProxy) {
-        leftPanelWidth = geometry.size.width / 2
-        UserDefaults.standard.set(leftPanelWidth, forKey: "leftPanelWidth")
     }
 }

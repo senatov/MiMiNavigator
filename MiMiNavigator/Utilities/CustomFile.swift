@@ -20,7 +20,6 @@ struct CustomFile: Identifiable {
 
     // Initialize 'children' only if 'isDirectory' is true
     init(name: String, path: String, isDirectory: Bool, children: [CustomFile]? = nil) {
-        log.debug("init()")
         self.name = name
         self.path = path
         self.isDirectory = isDirectory

@@ -16,7 +16,9 @@ let log = SwiftyBeaver.self
 // MARK: - -
 
 struct MiMiNavigatorApp: App {
-    @StateObject private var directoryMonitor = DualDirectoryMonitor(
+    
+    @ObservedObject
+    private var directoryMonitor = DualDirectoryMonitor(
         leftDirectory: URL(fileURLWithPath: "/Users/senat/Downloads/Hahly"),
         rightDirectory: URL(fileURLWithPath: "/Users/senat/Downloads"))
 
@@ -39,6 +41,7 @@ struct MiMiNavigatorApp: App {
         log.debug("Console logging")
         let console = ConsoleDestination()
         console.minLevel = .verbose
+        console.format = "$DHH:mm:ss$d $L $M"
         log.addDestination(console)
         // File logging (optional)
         let file = FileDestination()
