@@ -8,40 +8,49 @@
 
 import Foundation
 
-// This class scans the "Favorites" directory on macOS and builds a CustomFile structure
+    // This class scans commonly used "Favorites" folders on macOS and builds a CustomFile structure
 class FavoritesScanner {
-    // Scans the user's "Favorites" folder and returns it as a hierarchy of CustomFile objects
+    
+        // MARK: - Scans standard directories in Finder (e.g., Desktop, Documents) and returns a hierarchy of CustomFile objects
+    
     func scanFavorites() -> [CustomFile] {
-        // macOS typically stores "Favorites" in the sidebar, which can include folders like "Desktop", "Documents", etc.
-        // For simplicity, we'll assume Favorites are located in a specific path, such as "/Users/username/Favorites".
-        // Adjust the path as needed.
-        let favoritesPaths = [
-            URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent("Desktop"),
-            URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent("Documents"),
-            URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent("Downloads"),
-            URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent("Pictures"),
-        ]
-
+        let favoritePaths = getStandardFavoritePaths() // Retrieve standard favorites paths
         var favorites: [CustomFile] = []
-        for path in favoritesPaths {
+        
+        for path in favoritePaths {
             if let customFile = buildFileStructure(at: path) {
                 favorites.append(customFile)
             }
         }
         return favorites
     }
-
-    // Recursively builds the file structure for a given directory
+    
+        // MARK: - Recursively builds the file structure for a given directory
+    
     private func buildFileStructure(at url: URL) -> CustomFile? {
         let fileManager = FileManager.default
         let isDirectory = (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
         let fileName = url.lastPathComponent
-
         var children: [CustomFile]?
         if isDirectory {
             let contents = (try? fileManager.contentsOfDirectory(at: url, includingPropertiesForKeys: nil, options: [])) ?? []
             children = contents.compactMap { buildFileStructure(at: $0) }
         }
         return CustomFile(name: fileName, path: url.path, isDirectory: isDirectory, children: children)
+    }
+    
+        // MARK: - Retrieves standard favorites paths (Desktop, Documents, Downloads, Pictures)
+    
+    private func getStandardFavoritePaths() -> [URL] {
+        let fileManager = FileManager.default
+        
+        return [
+            fileManager.urls(for: .desktopDirectory, in: .userDomainMask).first,
+            fileManager.urls(for: .documentDirectory, in: .userDomainMask).first,
+            fileManager.urls(for: .documentationDirectory, in: .networkDomainMask).first,
+            fileManager.urls(for: .downloadsDirectory, in: .userDomainMask).first,
+            fileManager.urls(for: .picturesDirectory, in: .userDomainMask).first,
+            fileManager.urls(for: .developerDirectory, in: .userDomainMask).first
+        ].compactMap { $0 } // Filters out nil values if any paths are missing
     }
 }
