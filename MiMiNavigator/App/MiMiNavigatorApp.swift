@@ -7,9 +7,28 @@
 
 import SwiftData
 import SwiftUI
+import SwiftyBeaver
+
+let log = SwiftyBeaver.self
 
 @main
 struct MiMiNavigatorApp: App {
+    
+        // MARK: -
+    
+    init() {
+        log.debug("Console logging")
+        let console = ConsoleDestination()
+        console.minLevel = .verbose
+        console.format = "$DHH:mm:ss$d $L $M"
+        log.addDestination(console)
+            // File logging (optional)
+        let file = FileDestination()
+        file.minLevel = .info
+        log.addDestination(file)
+    }
+    
+    
 
   var sharedModelContainer: ModelContainer = {
     CustomLogger.shared.logInfo(" ---- BEGIN ----")
