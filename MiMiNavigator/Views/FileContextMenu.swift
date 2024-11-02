@@ -22,7 +22,7 @@ struct FileContextMenu: View {
             }) {
                 Label("Copy", systemImage: "doc.on.doc")
             }
-            .buttonStyle(PlainButtonStyle()) // Apply plain style
+            .buttonStyle(.borderless)
             .foregroundColor(.primary) // Default system color
 
             Button(action: {
@@ -31,7 +31,7 @@ struct FileContextMenu: View {
             }) {
                 Label("Rename", systemImage: "pencil")
             }
-            .buttonStyle(PlainButtonStyle())
+            .buttonStyle(.borderless)
             .foregroundColor(.primary)
 
             Button(action: {
@@ -40,7 +40,7 @@ struct FileContextMenu: View {
             }) {
                 Label("Delete", systemImage: "trash")
             }
-            .buttonStyle(PlainButtonStyle())
+            .buttonStyle(.borderless)
             .foregroundColor(.primary)
         }
     }

@@ -71,7 +71,7 @@ struct TotalCommanderResizableView: View {
                 Image(systemName: "line.horizontal.3")
                     .foregroundColor(.blue)
             }
-            .buttonStyle(PlainButtonStyle())
+            .buttonStyle(.borderless)
             .padding(4)
             Spacer()
         }
