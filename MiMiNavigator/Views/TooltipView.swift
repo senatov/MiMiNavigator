@@ -23,9 +23,8 @@ struct TooltipView: View {
     }
 }
 
-// Preview for TooltipView
 
-// MARK: - -
+// MARK: - - Preview for TooltipView
 
 struct TooltipView_Previews: PreviewProvider {
     static var previews: some View {

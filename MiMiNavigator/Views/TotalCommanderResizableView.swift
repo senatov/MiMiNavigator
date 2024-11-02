@@ -93,7 +93,8 @@ struct TotalCommanderResizableView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    /// Toggles the menu state and saves the updated state
+    // MARK: - - Toggles the menu state and saves the updated state
+
     private func toggleMenu() {
         withAnimation {
             showMenu.toggle()
@@ -101,7 +102,8 @@ struct TotalCommanderResizableView: View {
         }
     }
 
-    /// Builds the vertical tree menu
+    // MARK: - - Builds the vertical tree menu
+
     private func buildVerticalTreeMenu() -> some View {
         let scanner = FavoritesScanner()
         let fileStructure = scanner.scanFavorites() // Replaces static file structure with the scanned favorites structure
@@ -112,7 +114,8 @@ struct TotalCommanderResizableView: View {
             .background(Color.gray.opacity(0.1))
     }
 
-    /// Builds the left panel containing a list of files
+    // MARK: - - Builds the left panel containing a list of files
+
     private func buildLeftPanel(geometry: GeometryProxy) -> some View {
         VStack {
             List(leftFiles, id: \.id) { file in
@@ -127,7 +130,8 @@ struct TotalCommanderResizableView: View {
         }
     }
 
-    /// Builds the right panel containing a list of files
+    // MARK: - - Builds the right panel containing a list of files
+
     private func buildRightPanel() -> some View {
         VStack {
             List(rightFiles, id: \.id) { file in
@@ -141,7 +145,8 @@ struct TotalCommanderResizableView: View {
         }
     }
 
-    /// Builds the draggable divider between the panels
+    // MARK: - - Builds the draggable divider between the panels
+
     private func buildDivider(geometry: GeometryProxy) -> some View {
         Rectangle()
             .fill(Color.gray)
@@ -161,7 +166,8 @@ struct TotalCommanderResizableView: View {
             }
     }
 
-    /// Handles the drag gesture for the divider
+    // MARK: - - Handles the drag gesture for the divider
+
     private func handleDividerDrag(value: DragGesture.Value, geometry: GeometryProxy) {
         let newWidth = leftPanelWidth + value.translation.width
         if newWidth > 100 && newWidth < geometry.size.width - 100 {
@@ -174,7 +180,8 @@ struct TotalCommanderResizableView: View {
         }
     }
 
-    /// Builds the bottom toolbar with various actions
+    // MARK: - - Builds the bottom toolbar with various actions
+
     private func buildToolbar() -> some View {
         HStack {
             ToolbarButton(title: "Copy", icon: "document.on.document") { print("Copy button tapped") }
@@ -190,7 +197,8 @@ struct TotalCommanderResizableView: View {
         .background(Color.gray.opacity(0.2))
     }
 
-    /// Handles double-click on the divider to reset the left panel width
+    // MARK: - - Handles double-click on the divider to reset the left panel width
+
     private func handleDoubleClickDivider(geometry: GeometryProxy) {
         leftPanelWidth = geometry.size.width / 2
         UserDefaults.standard.set(leftPanelWidth, forKey: "leftPanelWidth")
