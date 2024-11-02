@@ -1,8 +1,16 @@
 
 # 📁 MiMiNavigator
-[![Swift Version](https://img.shields.io/badge/Swift-6.0-blue.svg)](https://swift.org)
-[![License](https://img.shields.io/badge/License-MIT-lightgrey.svg)](LICENSE)
 
+[![Swift Version](https://img.shields.io/badge/Swift-6.0-blue.svg)](https://swift.org)
+[![Xcode Version](https://img.shields.io/badge/Xcode-16.1-blue.svg)](https://developer.apple.com/xcode/)
+[![License](https://img.shields.io/badge/License-MIT-lightgrey.svg)](LICENSE)
+[![Platform](https://img.shields.io/badge/Platform-macOS-blue.svg)](https://www.apple.com/macos/)
+[![Framework](https://img.shields.io/badge/Framework-SwiftUI-blueviolet.svg)](https://developer.apple.com/xcode/swiftui/)
+[![Mac Studio](https://img.shields.io/badge/Device-Mac_Studio_M2Max-orange.svg)](https://www.apple.com/mac-studio/)
+[![Memory](https://img.shields.io/badge/RAM-32_GB-brightgreen.svg)]()
+[![Encryption](https://img.shields.io/badge/Encryption-Enabled-green.svg)]()
+[![Programming](https://img.shields.io/badge/Type-Free_Programming-lightblue.svg)]()
+[![Shareware](https://img.shields.io/badge/License-Shareware-yellow.svg)]()
 ## 📖 Overview
 
 **MiMiNavigator** is a versatile navigation tool that provides a Total Commander-style interface with directory tree navigation. This project is built with Swift 6, delivering high-performance, real-time file operations.
