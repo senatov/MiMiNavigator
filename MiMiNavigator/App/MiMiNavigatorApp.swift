@@ -18,15 +18,39 @@ struct MiMiNavigatorApp: App {
 
     init() {
         log.debug("Console logging")
+        // Add Console Destination
         let console = ConsoleDestination()
-        console.minLevel = .verbose
-        // Configure the log format to include file name, function name, and line number
+
+        // Set base log format (without level symbol here)
         console.format = "$DHH:mm:ss$d ➤ $L $N.$F:$l - $M"
+
+        // Configure emoji icons based on log level
+        func getLevelIcon(for level: SwiftyBeaver.Level) -> String {
+            switch level {
+            case .verbose:
+                return "🔮↳" // Purple arrow for verbose
+            case .debug:
+                return "☘️→" // Green arrow for debug
+            case .info:
+                return "🔹➔" // Blue arrow for info
+            case .warning:
+                return "🔸⇢" // Orange arrow for warning
+            case .error:
+                return "💢➤" // Red arrow for error
+            default:
+                return "➤" // Default arrow
+            }
+        }
+
+        // Customize level string for each log level
+        console.levelString.verbose = getLevelIcon(for: .verbose) + " VERBOSE"
+        console.levelString.debug = getLevelIcon(for: .debug) + " DEBUG"
+        console.levelString.info = getLevelIcon(for: .info) + " INFO"
+        console.levelString.warning = getLevelIcon(for: .warning) + " WARNING"
+        console.levelString.error = getLevelIcon(for: .error) + " ERROR"
+
+        // Add the console to SwiftyBeaver
         log.addDestination(console)
-        // File logging (optional)
-        let file = FileDestination()
-        file.minLevel = .info
-        log.addDestination(file)
     }
 
     var sharedModelContainer: ModelContainer = {
