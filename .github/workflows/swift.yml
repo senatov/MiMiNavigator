@@ -10,13 +10,59 @@ on:
     branches: [ "master" ]
 
 jobs:
-  build:
-
+  build-and-test:
     runs-on: macos-latest
 
     steps:
-    - uses: actions/checkout@v4
-    - name: Build
-      run: swift build -v
+    - name: Check out the code
+      uses: actions/checkout@v3
+
+    - name: Set up Xcode
+      run: sudo xcode-select -switch /Applications/Xcode.app/Contents/Developer
+
+    - name: Set up SwiftLint
+      run: |
+        brew install swiftlint
+
+    - name: Build project
+      run: |
+        xcodebuild clean build \
+          -project MiMiNavigator.xcodeproj \
+          -scheme MiMiNavigator \
+          -sdk macosx \
+          -destination 'platform=macOS,arch=x86_64' \
+          CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO
+
     - name: Run tests
-      run: swift test -v
+      run: |
+        xcodebuild test \
+          -project MiMiNavigator.xcodeproj \
+          -scheme MiMiNavigator \
+          -sdk macosx \
+          -destination 'platform=macOS,arch=x86_64' \
+          CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO
+
+    - name: Run SwiftLint
+      run: |
+        swiftlint --strict
+
+    - name: Analyze code coverage
+      run: |
+        xcodebuild test \
+          -project MiMiNavigator.xcodeproj \
+          -scheme MiMiNavigator \
+          -sdk macosx \
+          -enableCodeCoverage YES \
+          -destination 'platform=macOS,arch=x86_64' \
+          CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO
+      continue-on-error: true
+
+    - name: Generate and Upload Code Coverage Report
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: code-coverage
+        path: build/reports/code_coverage/  # Adjust to the correct path if needed
+
+    - name: Clean up
+      run: xcodebuild clean
