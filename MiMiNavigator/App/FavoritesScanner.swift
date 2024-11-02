@@ -8,15 +8,14 @@
 
 import Foundation
 
-    // This class scans commonly used "Favorites" folders on macOS and builds a CustomFile structure
+// This class scans commonly used "Favorites" folders on macOS and builds a CustomFile structure
 class FavoritesScanner {
-    
-        // MARK: - Scans standard directories in Finder (e.g., Desktop, Documents) and returns a hierarchy of CustomFile objects
-    
+    // MARK: - Scans standard directories in Finder (e.g., Desktop, Documents) and returns a hierarchy of CustomFile objects
+
     func scanFavorites() -> [CustomFile] {
-        let favoritePaths = getStandardFavoritePaths() // Retrieve standard favorites paths
+        let favoritePaths = FileManager.default.allDirectories
         var favorites: [CustomFile] = []
-        
+
         for path in favoritePaths {
             if let customFile = buildFileStructure(at: path) {
                 favorites.append(customFile)
@@ -24,9 +23,9 @@ class FavoritesScanner {
         }
         return favorites
     }
-    
-        // MARK: - Recursively builds the file structure for a given directory
-    
+
+    // MARK: - Recursively builds the file structure for a given directory
+
     private func buildFileStructure(at url: URL) -> CustomFile? {
         let fileManager = FileManager.default
         let isDirectory = (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
@@ -37,20 +36,5 @@ class FavoritesScanner {
             children = contents.compactMap { buildFileStructure(at: $0) }
         }
         return CustomFile(name: fileName, path: url.path, isDirectory: isDirectory, children: children)
-    }
-    
-        // MARK: - Retrieves standard favorites paths (Desktop, Documents, Downloads, Pictures)
-    
-    private func getStandardFavoritePaths() -> [URL] {
-        let fileManager = FileManager.default
-        
-        return [
-            fileManager.urls(for: .desktopDirectory, in: .userDomainMask).first,
-            fileManager.urls(for: .documentDirectory, in: .userDomainMask).first,
-            fileManager.urls(for: .documentationDirectory, in: .networkDomainMask).first,
-            fileManager.urls(for: .downloadsDirectory, in: .userDomainMask).first,
-            fileManager.urls(for: .picturesDirectory, in: .userDomainMask).first,
-            fileManager.urls(for: .developerDirectory, in: .userDomainMask).first
-        ].compactMap { $0 } // Filters out nil values if any paths are missing
     }
 }
