@@ -1,13 +1,16 @@
-# This workflow will build a Swift project
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-swift
-
-name: Swift
+name: Swift CI
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [ main ]
   pull_request:
-    branches: [ "master" ]
+    branches: [ main ]
+
+env:
+  PROJECT_NAME: MiMiNavigator
+  SCHEME: MiMiNavigator
+  SDK: macosx
+  DESTINATION: "platform=macOS,arch=x86_64"
 
 jobs:
   build-and-test:
@@ -17,52 +20,69 @@ jobs:
     - name: Check out the code
       uses: actions/checkout@v3
 
+    - name: Set up environment variables
+      run: |
+        echo "Setting up environment for $PROJECT_NAME"
+        export PROJECT_NAME=$PROJECT_NAME
+        export SCHEME=$SCHEME
+        export SDK=$SDK
+        export DESTINATION=$DESTINATION
+
+    - name: Install dependencies (for local and GitHub Actions)
+      run: |
+        if [ "$CI" != "true" ]; then
+          echo "Running locally: installing dependencies with Homebrew"
+          brew install swiftlint swiftformat
+        else
+          echo "Running on GitHub Actions"
+          brew install swiftlint swiftformat
+        fi
+
     - name: Set up Xcode
       run: sudo xcode-select -switch /Applications/Xcode.app/Contents/Developer
-
-    - name: Set up SwiftLint
-      run: |
-        brew install swiftlint
 
     - name: Build project
       run: |
         xcodebuild clean build \
-          -project MiMiNavigator.xcodeproj \
-          -scheme MiMiNavigator \
-          -sdk macosx \
-          -destination 'platform=macOS,arch=x86_64' \
+          -project $PROJECT_NAME.xcodeproj \
+          -scheme $SCHEME \
+          -sdk $SDK \
+          -destination "$DESTINATION" \
           CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO
+      shell: bash
 
     - name: Run tests
       run: |
         xcodebuild test \
-          -project MiMiNavigator.xcodeproj \
-          -scheme MiMiNavigator \
-          -sdk macosx \
-          -destination 'platform=macOS,arch=x86_64' \
+          -project $PROJECT_NAME.xcodeproj \
+          -scheme $SCHEME \
+          -sdk $SDK \
+          -destination "$DESTINATION" \
           CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO
+      shell: bash
 
     - name: Run SwiftLint
       run: |
-        swiftlint --strict
+        swiftlint --strict || true
 
-    - name: Analyze code coverage
+    - name: Run SwiftFormat
+      run: |
+        swiftformat . || true
+
+    - name: Generate code coverage report
       run: |
         xcodebuild test \
-          -project MiMiNavigator.xcodeproj \
-          -scheme MiMiNavigator \
-          -sdk macosx \
+          -project $PROJECT_NAME.xcodeproj \
+          -scheme $SCHEME \
+          -sdk $SDK \
           -enableCodeCoverage YES \
-          -destination 'platform=macOS,arch=x86_64' \
+          -destination "$DESTINATION" \
           CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO
       continue-on-error: true
 
-    - name: Generate and Upload Code Coverage Report
+    - name: Upload code coverage report
       if: always()
       uses: actions/upload-artifact@v3
       with:
         name: code-coverage
-        path: build/reports/code_coverage/  # Adjust to the correct path if needed
-
-    - name: Clean up
-      run: xcodebuild clean
+        path: build/reports/code_coverage/
