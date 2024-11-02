@@ -22,9 +22,7 @@ struct UserPreferences {
 
     private init() {}
 
-    // Save preferences
-
-    // MARK: - -
+    // MARK: - - Save preferences
 
     func saveWindowSize(width: CGFloat, height: CGFloat) {
         log.debug("Executing saveWindowSize") // Log for method tracking
@@ -58,9 +56,7 @@ struct UserPreferences {
         UserDefaults.standard.set(isOpen, forKey: mimiMenuStateKey)
     }
 
-    // Restore preferences
-
-    // MARK: - -
+    // MARK: - -  Restore preferences
 
     func restoreWindowSize() -> CGSize {
         log.debug("Executing restoreWindowSize") // Log for method tracking

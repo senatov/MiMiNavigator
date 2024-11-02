@@ -13,9 +13,9 @@ class FavoritesScanner {
     // MARK: - Scans standard directories in Finder (e.g., Desktop, Documents) and returns a hierarchy of CustomFile objects
 
     func scanFavorites() -> [CustomFile] {
+        log.debug("Scanning macOS favorites folders")
         let favoritePaths = FileManager.default.allDirectories
         var favorites: [CustomFile] = []
-
         for path in favoritePaths {
             if let customFile = buildFileStructure(at: path) {
                 favorites.append(customFile)
@@ -27,6 +27,7 @@ class FavoritesScanner {
     // MARK: - Recursively builds the file structure for a given directory
 
     private func buildFileStructure(at url: URL) -> CustomFile? {
+        log.debug("Building file structure for \(url.path)")
         let fileManager = FileManager.default
         let isDirectory = (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
         let fileName = url.lastPathComponent

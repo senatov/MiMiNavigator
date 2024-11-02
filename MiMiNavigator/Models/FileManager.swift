@@ -9,65 +9,71 @@
 import Foundation
 import SwiftyBeaver
 
-
 extension FileManager {
-    
-        /// Returns the URL of the user's Documents directory
+    // MARK: - - Returns the URL of the user's Documents directory
+
     var documentsDirectory: URL {
         return urls(for: .documentDirectory, in: .userDomainMask).first!
     }
-    
-        /// Returns the URL of the user's Caches directory
+
+    // MARK: - - Returns the URL of the user's Caches directory
+
     var cachesDirectory: URL {
         return urls(for: .cachesDirectory, in: .userDomainMask).first!
     }
-    
-        /// Returns the URL of the Application Support directory
+
+    // MARK: - - Returns the URL of the Application Support directory
+
     var applicationSupportDirectory: URL {
         return urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
     }
-    
-        /// Returns the URL of the Library directory
+
+    // MARK: - - Returns the URL of the Library directory
+
     var libraryDirectory: URL {
         return urls(for: .libraryDirectory, in: .userDomainMask).first!
     }
-    
-        /// Returns the URL of the Downloads directory
+
+    // MARK: - - Returns the URL of the Downloads directory
+
     var downloadsDirectory: URL {
         return urls(for: .downloadsDirectory, in: .userDomainMask).first!
     }
-    
-        /// Returns the URL of the Desktop directory
+
+    // MARK: - - Returns the URL of the Desktop directory
+
     var desktopDirectory: URL {
         return urls(for: .desktopDirectory, in: .userDomainMask).first!
     }
-    
-        /// Returns the URL of the user's home directory
+
+    // MARK: - - Returns the URL of the user's home directory
+
     var homeDirectory: URL {
         return homeDirectoryForCurrentUser
     }
-    
-        /// Returns the URL of the system's temporary directory
+
+    // MARK: - - Returns the URL of the system's temporary directory
+
     var systemTemporaryDirectory: URL {
         return temporaryDirectory
     }
-    
-        /// Returns the URL of the user's Music directory
+
+    /// Returns the URL of the user's Music directory
     var musicDirectory: URL {
         return urls(for: .musicDirectory, in: .userDomainMask).first!
     }
-    
-        /// Returns the URL of the user's Pictures directory
+
+    /// Returns the URL of the user's Pictures directory
     var picturesDirectory: URL {
         return urls(for: .picturesDirectory, in: .userDomainMask).first!
     }
-    
-        /// Returns the URL of the user's Movies directory
+
+    /// Returns the URL of the user's Movies directory
     var moviesDirectory: URL {
         return urls(for: .moviesDirectory, in: .userDomainMask).first!
     }
-    
-        /// Returns the URL of the iCloud Drive directory if available, logs error if unavailable
+
+    /// Returns the URL of the iCloud Drive directory if available, logs error if unavailable
     var iCloudDirectory: URL? {
         guard let iCloudURL = url(forUbiquityContainerIdentifier: nil)?.appendingPathComponent("Documents") else {
             log.error("iCloud directory not available. Ensure iCloud is enabled and accessible.")
@@ -75,12 +81,12 @@ extension FileManager {
         }
         return iCloudURL
     }
-    
-        /// Returns the URL of the OneDrive directory if available, logs error if unavailable
+
+    /// Returns the URL of the OneDrive directory if available, logs error if unavailable
     var oneDriveDirectory: URL? {
         let possiblePaths = [
             homeDirectoryForCurrentUser.appendingPathComponent("Library/CloudStorage/OneDrive"),
-            homeDirectoryForCurrentUser.appendingPathComponent("OneDrive")
+            homeDirectoryForCurrentUser.appendingPathComponent("OneDrive"),
         ]
         for path in possiblePaths {
             if fileExists(atPath: path.path) {
@@ -90,8 +96,8 @@ extension FileManager {
         log.error("OneDrive directory not found. OneDrive may not be installed or is located in an unexpected directory.")
         return nil
     }
-    
-        /// Returns the URL of the Google Drive directory if available, logs error if unavailable
+
+    /// Returns the URL of the Google Drive directory if available, logs error if unavailable
     var googleDriveDirectory: URL? {
         let googleDrivePath = homeDirectoryForCurrentUser.appendingPathComponent("Google Drive")
         if fileExists(atPath: googleDrivePath.path) {
@@ -101,8 +107,8 @@ extension FileManager {
             return nil
         }
     }
-    
-        /// Returns the URLs of all mounted network drives, logs error if unable to access
+
+    /// Returns the URLs of all mounted network drives, logs error if unable to access
     var networkDrives: [URL] {
         let volumesURL = URL(fileURLWithPath: "/Volumes")
         do {
@@ -113,8 +119,8 @@ extension FileManager {
             return []
         }
     }
-    
-        /// Returns an array containing the URLs of all available user directories, including iCloud, OneDrive, Google Drive, and network drives
+
+    /// Returns an array containing the URLs of all available user directories, including iCloud, OneDrive, Google Drive, and network drives
     var allDirectories: [URL] {
         var directories = [
             documentsDirectory,
@@ -127,24 +133,24 @@ extension FileManager {
             homeDirectory,
             musicDirectory,
             picturesDirectory,
-            moviesDirectory
+            moviesDirectory,
         ]
-        
-            // Optionally add iCloud, OneDrive, Google Drive, and network drives if available
+
+        // Optionally add iCloud, OneDrive, Google Drive, and network drives if available
         if let iCloud = iCloudDirectory {
             directories.append(iCloud)
         }
-        
+
         if let oneDrive = oneDriveDirectory {
             directories.append(oneDrive)
         }
-        
+
         if let googleDrive = googleDriveDirectory {
             directories.append(googleDrive)
         }
-        
+
         directories.append(contentsOf: networkDrives)
-        
+
         return directories
     }
 }
