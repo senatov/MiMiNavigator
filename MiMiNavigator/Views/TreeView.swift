@@ -35,7 +35,7 @@ struct TreeView: View {
                     }) {
                         Label("Copy", systemImage: "document.on.document")
                     }
-                    .buttonStyle(PlainButtonStyle()) // Apply plain style
+                    .buttonStyle(.borderless) // Apply plain style
                     .foregroundColor(.primary) // System default color
 
                     Button(action: {
@@ -43,7 +43,7 @@ struct TreeView: View {
                     }) {
                         Label("Rename", systemImage: "penpencil.circle")
                     }
-                    .buttonStyle(PlainButtonStyle())
+                    .buttonStyle(.borderless)
                     .foregroundColor(.primary)
 
                     Button(action: {
@@ -51,7 +51,7 @@ struct TreeView: View {
                     }) {
                         Label("Delete", systemImage: "eraser.line.dashed")
                     }
-                    .buttonStyle(PlainButtonStyle())
+                    .buttonStyle(.borderless)
                     .foregroundColor(.primary)
 
                     Button(action: {
@@ -59,7 +59,7 @@ struct TreeView: View {
                     }) {
                         Label("More Info", systemImage: "info.circle.fill")
                     }
-                    .buttonStyle(PlainButtonStyle())
+                    .buttonStyle(.borderless)
                     .foregroundColor(.primary)
                 }
         }
