@@ -14,12 +14,10 @@ let log = SwiftyBeaver.self
 
 @main
 struct MiMiNavigatorApp: App {
-    
-    @StateObject private var directoryMonitor = DualDirectoryScanner(
-        leftDirectory: URL(fileURLWithPath: "/Users/senat/Downloads/Hahly"),
-        rightDirectory: URL(fileURLWithPath: "/Users/senat/Downloads"))
-    
-        // MARK: -
+
+
+    // MARK: -
+
     init() {
         log.debug("Console logging")
         // Add Console Destination

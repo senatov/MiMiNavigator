@@ -12,7 +12,8 @@ struct ToolbarButton: View {
     let icon: String? // Optional icon name from SF Symbols or custom icon
     let action: () -> Void
     @State private var isPressed = false
-        // MARK: -- Initialize logger
+
+    // MARK: - - Initialize logger
 
     var body: some View {
         Button(action: {
@@ -41,7 +42,7 @@ struct ToolbarButton: View {
             .shadow(color: Color.purple.opacity(0.4), radius: 5, x: 0, y: 4)
             .scaleEffect(isPressed ? 0.95 : 1.0) // Scale effect when pressed
         }
-        .buttonStyle(.borderless) 
+        .buttonStyle(.borderless)
         .foregroundColor(Color.primary.opacity(0.9)) // Set background color
         .onChange(of: isPressed) {
             withAnimation(.easeInOut(duration: 0.1)) {
@@ -55,8 +56,6 @@ struct ToolbarButton: View {
         )
     }
 }
-
-
 
 // MARK: - -Preview for ToolbarButton
 
