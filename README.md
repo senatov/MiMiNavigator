@@ -102,3 +102,8 @@
 | Date & Time       | Description of Changes |
 |-------------------|------------------------|
 | 2024-11-01 18:15    | Added `FileManagerState` singleton class to manage `leftFiles` and `rightFiles` arrays across the app. Updated `DualDirectoryMonitor` to use `FileManagerState` and added a delegate pattern to notify changes in file arrays. |
+
+## Recent Changes
+
+- Added automatic start for `DualDirectoryScanner` with a 1-second interval for directory scanning.
+- Modified the initializer in `DualDirectoryScanner` to handle actor isolation in Swift 6.1 by using `Task { await startMonitoring() }`.
