@@ -17,27 +17,14 @@ struct TotalCommanderResizableView: View {
     @State private var showTooltip: Bool = false // State to show/hide the tooltip
     @State private var tooltipPosition: CGPoint = .zero // Position of the tooltip
     @State private var tooltipText: String = "" // Text of the tooltip
+    @StateObject private var scanner = DualDirectoryScanner(leftDirectory: URL(fileURLWithPath: "/Users/senat/Downloads/Hahly"),
+                                                            rightDirectory: URL(fileURLWithPath: "/Users/senat/Downloads"))
+   
 
-    // Example files for both panels
-    let leftFiles = [
-        CustomFile(name: "Aaaaa", path: "/path/to/File1.txt", isDirectory: false, children: nil),
-        CustomFile(name: "Bbbbb", path: "/path/to/Folder1", isDirectory: true,
-                   children: [
-                       CustomFile(name: "File11.txt", path: "/path/to/Folder1/File11.txt", isDirectory: false, children: nil),
-                       CustomFile(name: "File12.txt", path: "/path/to/Folder1/File12.txt", isDirectory: false, children: nil),
-                       CustomFile(name: "SubFolder13", path: "/path/to/Folder1/SubFolder13", isDirectory: true, children: [
-                           CustomFile(name: "File131.txt", path: "/path/to/Folder1/SubFolder13/File131.txt", isDirectory: false, children: nil),
-                       ]),
-                   ]
-        ),
-        CustomFile(name: "Ccccc", path: "/path/to/Image2.png", isDirectory: false, children: nil),
-    ]
+    @State private var leftFiles: [CustomFile] = [] // Files for the left panel
+    @State private var rightFiles: [CustomFile] = [] // Files for the right panel
 
-    let rightFiles = [
-        CustomFile(name: "Doc1.docx", path: "/path/to/Doc1.docx", isDirectory: false, children: nil),
-        CustomFile(name: "Backup.zip", path: "/path/to/Backup.zip", isDirectory: false, children: nil),
-    ]
-
+    
     var body: some View {
         GeometryReader { geometry in
             ZStack {

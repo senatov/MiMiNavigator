@@ -67,10 +67,10 @@
 			<key>uniqueIdentifier</key>
 			<string>1E5C2D47-F23A-4CA4-AE19-733CBB1B1F6B</string>
 		</dict>
-		<key>6662A954-6796-4A3A-87E1-DC2050FBACD8</key>
+		<key>7E7EF898-24F7-4E4C-B46D-B453870677BE</key>
 		<dict>
 			<key>auxiliaryLogUniqueIdentifier</key>
-			<string>3E8C5909-D527-4DF1-974F-1D69B4C18B0E</string>
+			<string>AD26BBF7-7559-45CC-B8E0-70C9E318D255</string>
 			<key>auxiliaryObservable</key>
 			<dict>
 				<key>highLevelStatus</key>
@@ -91,7 +91,7 @@
 			<key>domainType</key>
 			<string>com.apple.dt.IDE.LaunchSchemeAction</string>
 			<key>fileName</key>
-			<string>Run-MiMiNavigator-2024.11.02_20-29-35-+0100.xcresult</string>
+			<string>Run-MiMiNavigator-2024.11.03_22-38-58-+0100.xcresult</string>
 			<key>hasAuxiliaryLog</key>
 			<true/>
 			<key>hasConsoleLog</key>
@@ -120,18 +120,18 @@
 			<key>signature</key>
 			<string>Run MiMiNavigator</string>
 			<key>timeStartedRecording</key>
-			<real>752268575.40647995</real>
+			<real>752362738.37689698</real>
 			<key>timeStoppedRecording</key>
 			<real>0.0</real>
 			<key>title</key>
 			<string>Run MiMiNavigator</string>
 			<key>uniqueIdentifier</key>
-			<string>6662A954-6796-4A3A-87E1-DC2050FBACD8</string>
+			<string>7E7EF898-24F7-4E4C-B46D-B453870677BE</string>
 		</dict>
-		<key>6C8392AA-54EC-4F2F-9C2E-345C29D8CDF5</key>
+		<key>905BF7E3-A157-41AA-B8F8-9B3958945A30</key>
 		<dict>
 			<key>auxiliaryLogUniqueIdentifier</key>
-			<string>F3384C63-150F-4C60-A5A4-E3894F8FAFD8</string>
+			<string>18360480-486A-4A48-91F1-9BFB6A4BC051</string>
 			<key>auxiliaryObservable</key>
 			<dict>
 				<key>highLevelStatus</key>
@@ -139,11 +139,11 @@
 				<key>totalNumberOfAnalyzerIssues</key>
 				<integer>0</integer>
 				<key>totalNumberOfErrors</key>
-				<integer>1</integer>
+				<integer>5</integer>
 				<key>totalNumberOfTestFailures</key>
 				<integer>0</integer>
 				<key>totalNumberOfWarnings</key>
-				<integer>1</integer>
+				<integer>0</integer>
 			</dict>
 			<key>className</key>
 			<string>IDESchemeActionsInvocationRecord</string>
@@ -152,7 +152,7 @@
 			<key>domainType</key>
 			<string>com.apple.dt.IDE.LaunchSchemeAction</string>
 			<key>fileName</key>
-			<string>Run-MiMiNavigator-2024.11.03_19-47-33-+0100.xcresult</string>
+			<string>Run-MiMiNavigator-2024.11.03_22-25-21-+0100.xcresult</string>
 			<key>hasAuxiliaryLog</key>
 			<true/>
 			<key>hasConsoleLog</key>
@@ -166,11 +166,11 @@
 				<key>totalNumberOfAnalyzerIssues</key>
 				<integer>0</integer>
 				<key>totalNumberOfErrors</key>
-				<integer>1</integer>
+				<integer>5</integer>
 				<key>totalNumberOfTestFailures</key>
 				<integer>0</integer>
 				<key>totalNumberOfWarnings</key>
-				<integer>1</integer>
+				<integer>0</integer>
 			</dict>
 			<key>schemeIdentifier-containerName</key>
 			<string>MiMiNavigator project</string>
@@ -181,13 +181,13 @@
 			<key>signature</key>
 			<string>Run MiMiNavigator</string>
 			<key>timeStartedRecording</key>
-			<real>752352453.99737597</real>
+			<real>752361921.14213598</real>
 			<key>timeStoppedRecording</key>
 			<real>0.0</real>
 			<key>title</key>
 			<string>Run MiMiNavigator</string>
 			<key>uniqueIdentifier</key>
-			<string>6C8392AA-54EC-4F2F-9C2E-345C29D8CDF5</string>
+			<string>905BF7E3-A157-41AA-B8F8-9B3958945A30</string>
 		</dict>
 	</dict>
 </dict>
