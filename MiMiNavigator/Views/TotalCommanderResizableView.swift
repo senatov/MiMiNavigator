@@ -19,12 +19,10 @@ struct TotalCommanderResizableView: View {
     @State private var tooltipText: String = "" // Text of the tooltip
     @StateObject private var scanner = DualDirectoryScanner(leftDirectory: URL(fileURLWithPath: "/Users/senat/Downloads/Hahly"),
                                                             rightDirectory: URL(fileURLWithPath: "/Users/senat/Downloads"))
-   
 
-    @State private var leftFiles: [CustomFile] = [] // Files for the left panel
-    @State private var rightFiles: [CustomFile] = [] // Files for the right panel
+    @State public static var leftFiles: [CustomFile] = [] // Files for the left panel
+    @State public static var rightFiles: [CustomFile] = [] // Files for the right panel
 
-    
     var body: some View {
         GeometryReader { geometry in
             ZStack {

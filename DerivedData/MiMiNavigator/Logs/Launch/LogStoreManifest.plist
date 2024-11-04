@@ -6,67 +6,6 @@
 	<integer>11</integer>
 	<key>logs</key>
 	<dict>
-		<key>1E5C2D47-F23A-4CA4-AE19-733CBB1B1F6B</key>
-		<dict>
-			<key>auxiliaryLogUniqueIdentifier</key>
-			<string>98E18869-33BD-46DF-8AE2-B4EF71D4DBE1</string>
-			<key>auxiliaryObservable</key>
-			<dict>
-				<key>highLevelStatus</key>
-				<string>S</string>
-				<key>totalNumberOfAnalyzerIssues</key>
-				<integer>0</integer>
-				<key>totalNumberOfErrors</key>
-				<integer>0</integer>
-				<key>totalNumberOfTestFailures</key>
-				<integer>0</integer>
-				<key>totalNumberOfWarnings</key>
-				<integer>0</integer>
-			</dict>
-			<key>className</key>
-			<string>IDESchemeActionsInvocationRecord</string>
-			<key>documentTypeString</key>
-			<string>&lt;nil&gt;</string>
-			<key>domainType</key>
-			<string>com.apple.dt.IDE.LaunchSchemeAction</string>
-			<key>fileName</key>
-			<string>Run-MiMiNavigator-2024.11.03_19-51-51-+0100.xcresult</string>
-			<key>hasAuxiliaryLog</key>
-			<true/>
-			<key>hasConsoleLog</key>
-			<true/>
-			<key>hasPrimaryLog</key>
-			<true/>
-			<key>primaryObservable</key>
-			<dict>
-				<key>highLevelStatus</key>
-				<string>S</string>
-				<key>totalNumberOfAnalyzerIssues</key>
-				<integer>0</integer>
-				<key>totalNumberOfErrors</key>
-				<integer>0</integer>
-				<key>totalNumberOfTestFailures</key>
-				<integer>0</integer>
-				<key>totalNumberOfWarnings</key>
-				<integer>0</integer>
-			</dict>
-			<key>schemeIdentifier-containerName</key>
-			<string>MiMiNavigator project</string>
-			<key>schemeIdentifier-schemeName</key>
-			<string>MiMiNavigator</string>
-			<key>schemeIdentifier-sharedScheme</key>
-			<integer>1</integer>
-			<key>signature</key>
-			<string>Run MiMiNavigator</string>
-			<key>timeStartedRecording</key>
-			<real>752352711.92616296</real>
-			<key>timeStoppedRecording</key>
-			<real>0.0</real>
-			<key>title</key>
-			<string>Run MiMiNavigator</string>
-			<key>uniqueIdentifier</key>
-			<string>1E5C2D47-F23A-4CA4-AE19-733CBB1B1F6B</string>
-		</dict>
 		<key>7E7EF898-24F7-4E4C-B46D-B453870677BE</key>
 		<dict>
 			<key>auxiliaryLogUniqueIdentifier</key>
@@ -127,67 +66,6 @@
 			<string>Run MiMiNavigator</string>
 			<key>uniqueIdentifier</key>
 			<string>7E7EF898-24F7-4E4C-B46D-B453870677BE</string>
-		</dict>
-		<key>905BF7E3-A157-41AA-B8F8-9B3958945A30</key>
-		<dict>
-			<key>auxiliaryLogUniqueIdentifier</key>
-			<string>18360480-486A-4A48-91F1-9BFB6A4BC051</string>
-			<key>auxiliaryObservable</key>
-			<dict>
-				<key>highLevelStatus</key>
-				<string>E</string>
-				<key>totalNumberOfAnalyzerIssues</key>
-				<integer>0</integer>
-				<key>totalNumberOfErrors</key>
-				<integer>5</integer>
-				<key>totalNumberOfTestFailures</key>
-				<integer>0</integer>
-				<key>totalNumberOfWarnings</key>
-				<integer>0</integer>
-			</dict>
-			<key>className</key>
-			<string>IDESchemeActionsInvocationRecord</string>
-			<key>documentTypeString</key>
-			<string>&lt;nil&gt;</string>
-			<key>domainType</key>
-			<string>com.apple.dt.IDE.LaunchSchemeAction</string>
-			<key>fileName</key>
-			<string>Run-MiMiNavigator-2024.11.03_22-25-21-+0100.xcresult</string>
-			<key>hasAuxiliaryLog</key>
-			<true/>
-			<key>hasConsoleLog</key>
-			<true/>
-			<key>hasPrimaryLog</key>
-			<true/>
-			<key>primaryObservable</key>
-			<dict>
-				<key>highLevelStatus</key>
-				<string>E</string>
-				<key>totalNumberOfAnalyzerIssues</key>
-				<integer>0</integer>
-				<key>totalNumberOfErrors</key>
-				<integer>5</integer>
-				<key>totalNumberOfTestFailures</key>
-				<integer>0</integer>
-				<key>totalNumberOfWarnings</key>
-				<integer>0</integer>
-			</dict>
-			<key>schemeIdentifier-containerName</key>
-			<string>MiMiNavigator project</string>
-			<key>schemeIdentifier-schemeName</key>
-			<string>MiMiNavigator</string>
-			<key>schemeIdentifier-sharedScheme</key>
-			<integer>1</integer>
-			<key>signature</key>
-			<string>Run MiMiNavigator</string>
-			<key>timeStartedRecording</key>
-			<real>752361921.14213598</real>
-			<key>timeStoppedRecording</key>
-			<real>0.0</real>
-			<key>title</key>
-			<string>Run MiMiNavigator</string>
-			<key>uniqueIdentifier</key>
-			<string>905BF7E3-A157-41AA-B8F8-9B3958945A30</string>
 		</dict>
 	</dict>
 </dict>
