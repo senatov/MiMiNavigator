@@ -79,6 +79,7 @@
 | 2024-11-01 18:15:00   | FileManagerState Singleton             | Added `FileManagerState` singleton class to manage `leftFiles` and `rightFiles` arrays across the app. Updated `DualDirectoryMonitor` to use `FileManagerState` and added a delegate pattern to notify changes in file arrays. |
 | 2024-11-02 10:30:00   | New Logging Configuration              | Updated `SwiftyBeaver` configuration for color-coded log messages by level using emoji arrows.                            |
 | 2024-11-02 14:00:00   | Refactored README Format               | Corrected Markdown formatting for tables in README for better GitHub rendering.                                           |
+| 2024-11-04 14:00:00   | code                                   | Files area and favorites area are vieable
 
 ---
 

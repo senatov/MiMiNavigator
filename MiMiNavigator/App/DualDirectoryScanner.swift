@@ -1,4 +1,3 @@
-
 import Combine
 import Foundation
 
@@ -8,8 +7,8 @@ actor DualDirectoryScanner: ObservableObject {
 
     private var leftTimer: DispatchSourceTimer?
     private var rightTimer: DispatchSourceTimer?
-    private let leftDirectory: URL
-    private let rightDirectory: URL
+    public var leftDirectory: URL
+    public var rightDirectory: URL
 
     // MARK: -
 
@@ -25,6 +24,8 @@ actor DualDirectoryScanner: ObservableObject {
             await startMonitoring()
         }
     }
+    
+    
 
     // MARK: - Starts monitoring both directories with a 1-second refresh interval.
 
@@ -60,18 +61,6 @@ actor DualDirectoryScanner: ObservableObject {
         leftTimer = nil
         rightTimer?.cancel()
         rightTimer = nil
-    }
-
-    // MARK: - Getters for Files
-
-    func getLeftFiles() -> [CustomFile] {
-        return leftFiles
-    }
-
-    // MARK: -
-
-    func getRightFiles() -> [CustomFile] {
-        return rightFiles
     }
 
     // MARK: - Directory Monitoring
@@ -110,7 +99,8 @@ actor DualDirectoryScanner: ObservableObject {
         var customFiles: [CustomFile] = []
         do {
             // Attempt to retrieve directory contents
-            let contents = try fileManager.contentsOfDirectory(at: url, includingPropertiesForKeys: [.isDirectoryKey], options: [.skipsHiddenFiles])
+            let contents = try fileManager.contentsOfDirectory(
+                at: url, includingPropertiesForKeys: [.isDirectoryKey], options: [.skipsHiddenFiles])
             for fileURL in contents {
                 // Safely retrieve isDirectory property for each item
                 let isDirectory = (try? fileURL.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false

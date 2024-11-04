@@ -17,12 +17,10 @@ struct TotalCommanderResizableView: View {
     @State private var showTooltip: Bool = false // State to show/hide the tooltip
     @State private var tooltipPosition: CGPoint = .zero // Position of the tooltip
     @State private var tooltipText: String = "" // Text of the tooltip
-    @StateObject private var scanner = DualDirectoryScanner(leftDirectory: URL(fileURLWithPath: "/Users/senat/Downloads/Hahly"),
-                                                            rightDirectory: URL(fileURLWithPath: "/Users/senat/Downloads"))
 
-    @State public static var leftFiles: [CustomFile] = [] // Files for the left panel
-    @State public static var rightFiles: [CustomFile] = [] // Files for the right panel
-
+    @State public var leftFiles: [CustomFile] = [] // Files for the left panel
+    @State public var rightFiles: [CustomFile] = [] // Files for the right panel
+    @StateObject private var scanner = DualDirectoryScanner(leftDirectory: URL(fileURLWithPath: "/Users/senat/Downloads/Hahly"),rightDirectory: URL(fileURLWithPath: "/Users/senat/Downloads")) 
     var body: some View {
         GeometryReader { geometry in
             ZStack {
@@ -90,6 +88,7 @@ struct TotalCommanderResizableView: View {
     // MARK: - - Builds the vertical tree menu
 
     private func buildVerticalTreeMenu() -> some View {
+        log.debug("buildVerticalTreeMenu")
         let scanner = FavoritesScanner()
         let fileStructure = scanner.scanFavorites() // Replaces static file structure with the scanned favorites structure
 
@@ -102,8 +101,9 @@ struct TotalCommanderResizableView: View {
     // MARK: - - Builds the left panel containing a list of files
 
     private func buildLeftPanel(geometry: GeometryProxy) -> some View {
-        VStack {
-            List(leftFiles, id: \.id) { file in
+        log.debug("buildLeftPanel")
+        return VStack {
+            List(scanner.leftFiles, id: \.id) { file in
                 Text(file.name)
                     .contextMenu {
                         FileContextMenu()
@@ -118,14 +118,16 @@ struct TotalCommanderResizableView: View {
     // MARK: - - Builds the right panel containing a list of files
 
     private func buildRightPanel() -> some View {
-        VStack {
-            List(rightFiles, id: \.id) { file in
+        log.debug("buildRightPanel")
+        return VStack {
+            List(scanner.rightFiles, id: \.id) { file in
                 Text(file.name)
                     .contextMenu {
                         FileContextMenu()
                     }
             }
             .listStyle(PlainListStyle())
+            .frame(maxWidth: .infinity) // Опционально для адаптивной ширины
             .border(Color.gray)
         }
     }
@@ -133,7 +135,8 @@ struct TotalCommanderResizableView: View {
     // MARK: - - Builds the draggable divider between the panels
 
     private func buildDivider(geometry: GeometryProxy) -> some View {
-        Rectangle()
+        log.debug("buildDivider")
+        return Rectangle()
             .fill(Color.gray)
             .frame(width: 5)
             .gesture(
@@ -154,6 +157,7 @@ struct TotalCommanderResizableView: View {
     // MARK: - - Handles the drag gesture for the divider
 
     private func handleDividerDrag(value: DragGesture.Value, geometry: GeometryProxy) {
+        log.debug("handleDividerDrag")
         let newWidth = leftPanelWidth + value.translation.width
         if newWidth > 100 && newWidth < geometry.size.width - 100 {
             leftPanelWidth = newWidth
