@@ -12,10 +12,14 @@
 [![Programming](https://img.shields.io/badge/Type-Free_Programming-lightblue.svg)]()
 [![Shareware](https://img.shields.io/badge/License-Shareware-yellow.svg)]()
 ## 📖 Overview
-
 **MiMiNavigator** is a versatile navigation tool that provides a Total Commander-style interface with directory tree navigation. This project is built with Swift 6, delivering high-performance, real-time file operations.
 
+
+
+
 ## ✨ Features
+
+![Current Stage](/docs/appsshot.png?raw=true "current")
 
 - Dual-panel interface for managing files and directories.
 - Periodic directory scanning and updating, using dynamic collections for real-time content refresh.
