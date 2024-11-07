@@ -74,9 +74,9 @@ actor DualDirectoryScanner: ObservableObject {
         let files = scanDirectory(at: directoryURL)
         switch side {
         case .left:
-            await fileLst.leftFiles = files
+            await fileLst.updateLeftFiles(files)
         case .right:
-            await fileLst.rightFiles = files
+            await fileLst.updateRightFiles(files)
         }
     }
 
