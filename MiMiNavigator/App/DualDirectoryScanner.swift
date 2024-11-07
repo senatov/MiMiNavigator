@@ -1,10 +1,9 @@
 import Combine
 import Foundation
+import SwiftUI
 
 actor DualDirectoryScanner: ObservableObject {
-    private(set) var leftFiles: [CustomFile] = []
-    private(set) var rightFiles: [CustomFile] = []
-
+    @ObservedObject private var fileLst = FileSingleton.shared
     private var leftTimer: DispatchSourceTimer?
     private var rightTimer: DispatchSourceTimer?
     public var leftDirectory: URL
@@ -24,8 +23,6 @@ actor DualDirectoryScanner: ObservableObject {
             await startMonitoring()
         }
     }
-    
-    
 
     // MARK: - Starts monitoring both directories with a 1-second refresh interval.
 
@@ -77,9 +74,9 @@ actor DualDirectoryScanner: ObservableObject {
         let files = scanDirectory(at: directoryURL)
         switch side {
         case .left:
-            leftFiles = files
+            await fileLst.leftFiles = files
         case .right:
-            rightFiles = files
+            await fileLst.rightFiles = files
         }
     }
 
