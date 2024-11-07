@@ -17,10 +17,8 @@ struct TotalCommanderResizableView: View {
     @State private var showTooltip: Bool = false // State to show/hide the tooltip
     @State private var tooltipPosition: CGPoint = .zero // Position of the tooltip
     @State private var tooltipText: String = "" // Text of the tooltip
-
-    @State public var leftFiles: [CustomFile] = [] // Files for the left panel
-    @State public var rightFiles: [CustomFile] = [] // Files for the right panel
-    @StateObject private var scanner = DualDirectoryScanner(leftDirectory: URL(fileURLWithPath: "/Users/senat/Downloads/Hahly"),rightDirectory: URL(fileURLWithPath: "/Users/senat/Downloads")) 
+    @ObservedObject private var fileLst = FileSingleton.shared
+    @StateObject private var scanner = DualDirectoryScanner(leftDirectory: URL(fileURLWithPath: "/Users/senat/Downloads/Hahly"), rightDirectory: URL(fileURLWithPath: "/Users/senat/Downloads"))
     var body: some View {
         GeometryReader { geometry in
             ZStack {
@@ -103,7 +101,7 @@ struct TotalCommanderResizableView: View {
     private func buildLeftPanel(geometry: GeometryProxy) -> some View {
         log.debug("buildLeftPanel")
         return VStack {
-            List(scanner.leftFiles, id: \.id) { file in
+            List(fileLst.leftFiles, id: \.id) { file in
                 Text(file.name)
                     .contextMenu {
                         FileContextMenu()
@@ -120,7 +118,7 @@ struct TotalCommanderResizableView: View {
     private func buildRightPanel() -> some View {
         log.debug("buildRightPanel")
         return VStack {
-            List(scanner.rightFiles, id: \.id) { file in
+            List(fileLst.rightFiles, id: \.id) { file in
                 Text(file.name)
                     .contextMenu {
                         FileContextMenu()
