@@ -27,9 +27,9 @@
 - Automatic UI updates when directory contents change.
 
 
-- **Xcode** 16.2 beta or later
-- **Swift** 6.0 or later
-- macOS 10.15 or later
+- **Xcode** 16.2beta2 beta or later
+- **Swift** 6.1 or later
+- **macOS** Sequoia 15.1 or later
 
 ## 🚀 Installation
 
@@ -84,7 +84,7 @@
 | 2024-11-02 10:30:00   | New Logging Configuration              | Updated `SwiftyBeaver` configuration for color-coded log messages by level using emoji arrows.                            |
 | 2024-11-02 14:00:00   | Refactored README Format               | Corrected Markdown formatting for tables in README for better GitHub rendering.                                           |
 | 2024-11-04 14:00:00   | code                                   | Files area and favorites area are vieable
-
+| 2024-11-04 14:00:00   | multithread refresh                    | Multithread reafresh of both file's lists Views depends on FS changes
 ---
 
 ## ❓ FAQ
