@@ -171,9 +171,13 @@ struct TotalCommanderResizableView: View {
 
     private func buildToolbar() -> some View {
         HStack {
-            ToolbarButton(title: "Copy", icon: "document.on.document") { print("Copy button tapped") }
-            ToolbarButton(title: "Move", icon: "trash") { print("MOVE button tapped") }
-            ToolbarButton(title: "Delete", icon: "eraser") { print("DELETE button tapped") }
+            ToolbarButton(title: "F3 View", icon: "eye.circle") { print("View selected Docu") }
+            ToolbarButton(title: "F4 Edit", icon: "pencil") { print("Edit button tapped") }
+            ToolbarButton(title: "F5 Copy", icon: "document.on.document") { print("Copy button tapped") }
+            ToolbarButton(title: "F6 Move", icon: "folder.move") { print("Move button tapped") }
+            ToolbarButton(title: "F7 NewFolder", icon: "folder.badge.plus") { print("NewFolder button tapped") }
+            ToolbarButton(title: "F8 Delete", icon: "minus.rectangle") { print("Delete button tapped") }
+            ToolbarButton(title: "Alt-F4 Exit", icon: "pip.exit") { print("Exit button tapped") }
             Spacer()
             ToolbarButton(title: "Console", icon: "terminal") {
                 openConsoleInDirectory("~")
