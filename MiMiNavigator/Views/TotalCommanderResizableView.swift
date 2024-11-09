@@ -33,6 +33,7 @@ struct TotalCommanderResizableView: View {
             }
             .onAppear {
                 initializePanelWidth(geometry: geometry)
+                addKeyPressMonitor()
             }
         }
     }
@@ -170,22 +171,49 @@ struct TotalCommanderResizableView: View {
     // MARK: - - Builds the bottom toolbar with various actions
 
     private func buildToolbar() -> some View {
-        HStack {
-            ToolbarButton(title: "F3 View", icon: "eye.circle") { print("View selected Docu") }
-            ToolbarButton(title: "F4 Edit", icon: "pencil") { print("Edit button tapped") }
-            ToolbarButton(title: "F5 Copy", icon: "document.on.document") { print("Copy button tapped") }
-            ToolbarButton(title: "F6 Move", icon: "folder.move") { print("Move button tapped") }
-            ToolbarButton(title: "F7 NewFolder", icon: "folder.badge.plus") { print("NewFolder button tapped") }
-            ToolbarButton(title: "F8 Delete", icon: "minus.rectangle") { print("Delete button tapped") }
-            ToolbarButton(title: "Alt-F4 Exit", icon: "pip.exit") { print("Exit button tapped") }
-            Spacer()
+        let buttons = [
+            ("F3 View", "eye.circle", { log.debug("View selected Docu") }),
+            ("F4 Edit", "pencil", { log.debug("Edit button tapped") }),
+            ("F5 Copy", "document.on.document", { log.debug("Copy button tapped") }),
+            ("F6 Move", "folder.move", { log.debug("Move button tapped") }),
+            ("F7 NewFolder", "folder.badge.plus", { log.debug("NewFolder button tapped") }),
+            ("F8 Delete", "minus.rectangle", { log.debug("Delete button tapped") }),
+            ("⌥-F4 Exit", "pip.exit", { exitApp() }),
+        ]
+
+        return HStack {
+            ForEach(buttons, id: \.0) { title, icon, action in
+                ToolbarButton(title: title, icon: icon, action: action)
+                    .buttonStyle(.bordered)
+                if title == "⌥-F4 Exit" {
+                    Spacer()
+                }
+            }
             ToolbarButton(title: "Console", icon: "terminal") {
                 openConsoleInDirectory("~")
-            } // Console button added to toolbar
-            ToolbarButton(title: "Settings", icon: "opticid") { print("Settings button tapped") }
+            }.buttonStyle(.bordered)
+
+            ToolbarButton(title: "Settings", icon: "opticid") {
+                log.debug("Settings button tapped")
+            }.buttonStyle(.bordered)
         }
         .padding()
-        .background(Color.gray.opacity(0.2))
+        .background(Color(NSColor.windowBackgroundColor))
+    }
+
+    private func exitApp() {
+        NSApplication.shared.terminate(nil)
+    }
+
+    private func addKeyPressMonitor() {
+        NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+            if event.modifierFlags.contains(.option) && event.keyCode == 0x76 {
+                // 0x76 - код клавиши F4
+                exitApp()
+                return nil
+            }
+            return event
+        }
     }
 
     // MARK: - - Handles double-click on the divider to reset the left panel width
