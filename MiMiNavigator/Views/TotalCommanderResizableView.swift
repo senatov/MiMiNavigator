@@ -19,6 +19,9 @@ struct TotalCommanderResizableView: View {
     @State private var tooltipText: String = "" // Text of the tooltip
     @ObservedObject private var fileLst = FileSingleton.shared
     @StateObject private var scanner = DualDirectoryScanner(leftDirectory: URL(fileURLWithPath: "/Users/senat/Downloads/Hahly"), rightDirectory: URL(fileURLWithPath: "/Users/senat/Downloads"))
+ 
+
+    
     var body: some View {
         GeometryReader { geometry in
             ZStack {
@@ -44,19 +47,51 @@ struct TotalCommanderResizableView: View {
             UserDefaults.standard.object(forKey: "leftPanelWidth") as? CGFloat ?? geometry.size.width / 2
     }
 
-    /// Builds the button to open the vertical tree menu
+    fileprivate func getRightPathLine() -> some View {
+        TextField("", text: .constant("/abc/scde/.ggg/qqqq"))
+            .textFieldStyle(PlainTextFieldStyle()) // Plain стиль для упрощённого вида
+            .padding(8)
+            .background(Color.blue.opacity(0.1)) // Светло-синий фон
+            .cornerRadius(5)
+            .overlay(
+                RoundedRectangle(cornerRadius: 5)
+                    .stroke(Color.gray, lineWidth: 1) // Рамка серого цвета
+            )
+            .frame(maxWidth: .infinity)
+    }
+    
+    fileprivate func getLeftPathLine() -> some View {
+        TextField("", text: .constant("/xxx/asdfg/65.gf/aaaa"))
+            .textFieldStyle(PlainTextFieldStyle())
+            .padding(8)
+            .background(Color.blue.opacity(0.1))
+            .cornerRadius(5)
+            .overlay(
+                RoundedRectangle(cornerRadius: 5)
+                    .stroke(Color.gray, lineWidth: 1)
+            )
+            .frame(maxWidth: .infinity)
+    }
+    
     private func buildMenuButton() -> some View {
+
         HStack {
-            Button(action: {
-                toggleMenu() // Calls toggleMenu to save the menu state
-            }) {
-                Image(systemName: "line.horizontal.3")
+            VStack(alignment: .leading) {
+                Button(action: {
+                    toggleMenu() // Calls toggleMenu to save the menu state
+                }) {
+                    Image(systemName: "line.horizontal.3")
+                }
+                .buttonStyle(.plain)
+                .padding(4)
             }
-            .buttonStyle(.plain)
-            .padding(4)
+            Spacer()
+            getLeftPathLine()
+            Spacer()
+            getRightPathLine()
             Spacer()
         }
-        .padding(.leading, 8)
+        .padding(.horizontal, 8)
         .padding(.top, 8)
         .background(Color.gray.opacity(0.4))
     }
