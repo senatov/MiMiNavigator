@@ -11,8 +11,7 @@ struct TooltipView: View {
     let text: String
     let position: CGPoint
     // Initialize logger
-    let log = SwiftyBeaver.self
-    var backgroundColor: Color = Color.yellow.opacity(0.9) // Default background color
+    var backgroundColor: Color = Color.yellow.opacity(0.6) // Default background color
 
     var body: some View {
         Text(text)

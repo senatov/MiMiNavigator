@@ -16,15 +16,24 @@ import SwiftyBeaver
 struct FavoritesPanel: View {
     // MARK: - Favorite Item Model
 
-    // Initialize logger
-    let log = SwiftyBeaver.self
-    struct FavoriteItem: Identifiable {
-        let id = UUID()
-        let name: String
-        let icon: String // SF Symbols icon name for simplicity
-    }
-
     @AppStorage("favoritesState") private var favoritesStateJson: String = "" // JSON storage for favorites state
+
+    // MARK: - - Define Finder-style favorite items
+
+    private var favoriteItems: [FavoriteItem] = [
+        FavoriteItem(name: "AirDrop", icon: "airplane.circle.fill"),
+        FavoriteItem(name: "Recent", icon: "clock.fill"),
+        FavoriteItem(name: "Applications", icon: "folder.fill"),
+        FavoriteItem(name: "Home", icon: "house.fill"),
+        FavoriteItem(name: "Desktop", icon: "desktopcomputer"),
+        FavoriteItem(name: "Documents", icon: "doc.text.fill"),
+        FavoriteItem(name: "Downloads", icon: "arrow.down.circle.fill"),
+        FavoriteItem(name: "Music", icon: "music.note"),
+        FavoriteItem(name: "Pictures", icon: "photo"),
+        FavoriteItem(name: "iCloud Drive", icon: "icloud.and.arrow.down"),
+        FavoriteItem(name: "Shared", icon: "person.2.fill"),
+        FavoriteItem(name: "Network", icon: "network"),
+    ]
 
     // MARK: - - Convert JSON string to a dictionary for accessing favorites state
 
@@ -43,23 +52,6 @@ struct FavoritesPanel: View {
             favoritesStateJson = jsonString
         }
     }
-
-    // MARK: - - Define Finder-style favorite items
-
-    private var favoriteItems: [FavoriteItem] = [
-        FavoriteItem(name: "AirDrop", icon: "airplane.circle.fill"),
-        FavoriteItem(name: "Recent", icon: "clock.fill"),
-        FavoriteItem(name: "Applications", icon: "folder.fill"),
-        FavoriteItem(name: "Home", icon: "house.fill"),
-        FavoriteItem(name: "Desktop", icon: "desktopcomputer"),
-        FavoriteItem(name: "Documents", icon: "doc.text.fill"),
-        FavoriteItem(name: "Downloads", icon: "arrow.down.circle.fill"),
-        FavoriteItem(name: "Music", icon: "music.note"),
-        FavoriteItem(name: "Pictures", icon: "photo"),
-        FavoriteItem(name: "iCloud Drive", icon: "icloud.and.arrow.down"),
-        FavoriteItem(name: "Shared", icon: "person.2.fill"),
-        FavoriteItem(name: "Network", icon: "network"),
-    ]
 
     // Public method to access favoriteItems
     func getFavoriteItems() -> [FavoriteItem] {

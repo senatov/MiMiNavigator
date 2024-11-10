@@ -12,7 +12,7 @@ import SwiftUI
 /// Main view representing a Total Commander-like interface with resizable panels and a vertical tree menu.
 struct TotalCommanderResizableView: View {
     @State private var leftPanelWidth: CGFloat = 0 // Set dynamically in body
-    @State private var showMenu: Bool = UserPreferences.shared.restoreMenuState() // Restore menu state
+    @State private var isShowMenu: Bool = UserPreferences.shared.restoreMenuState() // Restore menu state
     @State private var selectedFile: CustomFile? = nil // Track the selected file
     @State private var showTooltip: Bool = false // State to show/hide the tooltip
     @State private var tooltipPosition: CGPoint = .zero // Position of the tooltip
@@ -51,21 +51,20 @@ struct TotalCommanderResizableView: View {
                 toggleMenu() // Calls toggleMenu to save the menu state
             }) {
                 Image(systemName: "line.horizontal.3")
-                    .foregroundColor(.blue)
             }
-            .buttonStyle(.borderless)
+            .buttonStyle(.plain)
             .padding(4)
             Spacer()
         }
         .padding(.leading, 8)
         .padding(.top, 8)
-        .background(Color.gray.opacity(0.2))
+        .background(Color.gray.opacity(0.4))
     }
 
     /// Builds the main panels including the left and right panels and the draggable divider
     private func buildMainPanels(geometry: GeometryProxy) -> some View {
         HStack(spacing: 0) {
-            if showMenu {
+            if isShowMenu {
                 buildVerticalTreeMenu()
             }
             buildLeftPanel(geometry: geometry)
@@ -79,8 +78,8 @@ struct TotalCommanderResizableView: View {
 
     private func toggleMenu() {
         withAnimation {
-            showMenu.toggle()
-            UserPreferences.shared.saveMenuState(isOpen: showMenu) // Save menu state
+            isShowMenu.toggle()
+            UserPreferences.shared.saveMenuState(isOpen: isShowMenu) // Save menu state
         }
     }
 
@@ -100,7 +99,6 @@ struct TotalCommanderResizableView: View {
     // MARK: - - Builds the left panel containing a list of files
 
     private func buildLeftPanel(geometry: GeometryProxy) -> some View {
-        log.debug("buildLeftPanel")
         return VStack {
             List(fileLst.leftFiles, id: \.id) { file in
                 Text(file.name)
@@ -117,7 +115,6 @@ struct TotalCommanderResizableView: View {
     // MARK: - - Builds the right panel containing a list of files
 
     private func buildRightPanel() -> some View {
-        log.debug("buildRightPanel")
         return VStack {
             List(fileLst.rightFiles, id: \.id) { file in
                 Text(file.name)
@@ -134,7 +131,6 @@ struct TotalCommanderResizableView: View {
     // MARK: - - Builds the draggable divider between the panels
 
     private func buildDivider(geometry: GeometryProxy) -> some View {
-        log.debug("buildDivider")
         return Rectangle()
             .fill(Color.gray)
             .frame(width: 5)
@@ -175,7 +171,7 @@ struct TotalCommanderResizableView: View {
             ("F3 View", "eye.circle", { log.debug("View selected Docu") }),
             ("F4 Edit", "pencil", { log.debug("Edit button tapped") }),
             ("F5 Copy", "document.on.document", { log.debug("Copy button tapped") }),
-            ("F6 Move", "folder.move", { log.debug("Move button tapped") }),
+            ("F6 Move", "square.and.arrow.down.on.square", { log.debug("Move button tapped") }),
             ("F7 NewFolder", "folder.badge.plus", { log.debug("NewFolder button tapped") }),
             ("F8 Delete", "minus.rectangle", { log.debug("Delete button tapped") }),
             ("⌥-F4 Exit", "pip.exit", { exitApp() }),
@@ -193,7 +189,7 @@ struct TotalCommanderResizableView: View {
                 openConsoleInDirectory("~")
             }.buttonStyle(.bordered)
 
-            ToolbarButton(title: "Settings", icon: "opticid") {
+            ToolbarButton(title: "Settings", icon: "switch.2") {
                 log.debug("Settings button tapped")
             }.buttonStyle(.bordered)
         }

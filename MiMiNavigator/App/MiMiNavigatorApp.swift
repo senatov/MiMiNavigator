@@ -58,14 +58,11 @@ struct MiMiNavigatorApp: App {
             do {
                 // Try creating the directory if it doesn't exist
                 try FileManager.default.createDirectory(at: logDirectory, withIntermediateDirectories: true, attributes: nil)
-
                 // Set log file path
                 file.logFileURL = logDirectory.appendingPathComponent("MiMiNavigator.log")
                 log.addDestination(file)
-
                 log.debug("File logging initialized at \(file.logFileURL?.path ?? "unknown path")")
                 print("Log file path: \(file.logFileURL?.path ?? "unknown path")")
-
             } catch {
                 log.error("Failed to create log directory: \(error)")
                 print("Error creating log directory: \(error)")
