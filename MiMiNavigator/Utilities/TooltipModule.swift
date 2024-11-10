@@ -16,7 +16,6 @@ import SwiftyBeaver
 struct TooltipModule {
     static func calculateTooltip(location: CGPoint, dividerX: CGFloat, totalWidth: CGFloat) -> (String, CGPoint) {
         // Initialize logger
-        let log = SwiftyBeaver.self
         // Tooltip text showing the ratio between left and right panels
         let leftRatio = (dividerX / totalWidth * 100).rounded()
         let rightRatio = (100 - leftRatio).rounded()

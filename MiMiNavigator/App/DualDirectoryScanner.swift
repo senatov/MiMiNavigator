@@ -69,7 +69,6 @@ actor DualDirectoryScanner: ObservableObject {
     // MARK: - Refreshes file list for the specified directory side.Parameter side: The directory side to refresh (.left or .right).
 
     private func refreshFiles(for side: DirectorySide) async {
-        log.debug("Refreshing files for \(side == .left ? "left" : "right") directory.")
         let directoryURL = (side == .left) ? leftDirectory : rightDirectory
         let files = scanDirectory(at: directoryURL)
         switch side {
@@ -86,8 +85,6 @@ actor DualDirectoryScanner: ObservableObject {
     /// - Parameter url: The URL of the directory to scan.
     /// - Returns: An array of `CustomFile` objects representing the contents of the directory.
     private func scanDirectory(at url: URL?) -> [CustomFile] {
-        log.debug("scanDirectory() called for URL: \(url?.path ?? "nil")")
-        // Validate the URL
         guard let url = url else {
             log.error("Invalid directory URL: URL is nil.")
             return []

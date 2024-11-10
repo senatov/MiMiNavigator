@@ -11,8 +11,6 @@ import SwiftyBeaver
 
 struct CustomFile: Identifiable {
     // MARK: - - Initialize logger
-
-    let log = SwiftyBeaver.self
     let id = UUID()
     let name: String
     let path: String

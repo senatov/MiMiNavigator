@@ -21,7 +21,6 @@ import SwiftyBeaver
 struct TreeView: View {
     let files: [CustomFile]
     @Binding var selectedFile: CustomFile?
-    let log = SwiftyBeaver.self
     var body: some View {
         List(files, children: \.children) { file in
             Text(file.name)
