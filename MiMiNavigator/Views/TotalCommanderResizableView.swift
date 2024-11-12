@@ -212,19 +212,19 @@ struct TotalCommanderResizableView: View {
             ("⌥-F4 Exit", "pip.exit", { exitApp() }),
         ]
 
-        return HStack {
+        return HStack(spacing: 2)  {
             ForEach(buttons, id: \.0) { title, icon, action in
-                ToolbarButton(title: title, icon: icon, action: action)
+                TB_Button_IS(title: title, icon: icon, action: action)
                     .buttonStyle(.bordered)
                 if title == "⌥-F4 Exit" {
                     Spacer()
                 }
             }
-            ToolbarButton(title: "Console", icon: "terminal") {
+            TB_Button_IS(title: "Console", icon: "terminal") {
                 openConsoleInDirectory("~")
             }.buttonStyle(.bordered)
 
-            ToolbarButton(title: "Settings", icon: "switch.2") {
+            TB_Button_IS(title: "Settings", icon: "switch.2") {
                 log.debug("Settings button tapped")
             }.buttonStyle(.bordered)
         }
