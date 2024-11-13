@@ -42,7 +42,8 @@ struct TB_Button_IS: View {
                 }
                 Text(title)
                     .fontWeight(.light)
-                    .foregroundColor(isHighlighted ? Color.orange : Color.black) // Черный цвет для неактивного состояния
+                    .foregroundColor(isHighlighted ? Color.orange : Color.black)
+                    // Черный цвет для неактивного состояния
                     .scaleEffect(isPressed ? 0.9 : 1.0)
             }
             .padding(.horizontal, 16)

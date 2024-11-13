@@ -10,18 +10,16 @@ import SwiftyBeaver
 struct TooltipView: View {
     let text: String
     let position: CGPoint
-    // Initialize logger
-    var backgroundColor: Color = Color.yellow.opacity(0.6) // Default background color
 
     var body: some View {
         Text(text)
-            .padding(8)
-            .background(backgroundColor)
-            .cornerRadius(5)
+            .padding()
+            .background(Color.black.opacity(0.7))
+            .cornerRadius(8)
+            .foregroundColor(.white)
             .position(position)
     }
 }
-
 
 // MARK: - - Preview for TooltipView
 
