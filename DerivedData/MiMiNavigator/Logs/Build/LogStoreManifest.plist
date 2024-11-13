@@ -6,7 +6,7 @@
 	<integer>11</integer>
 	<key>logs</key>
 	<dict>
-		<key>03F90983-7C1C-434F-A6E7-598C406930E4</key>
+		<key>124138FC-E712-4EC5-AB50-6C9E9D7C1F8E</key>
 		<dict>
 			<key>className</key>
 			<string>IDEActivityLogSection</string>
@@ -15,7 +15,7 @@
 			<key>domainType</key>
 			<string>Xcode.IDEActivityLogDomainType.BuildLog</string>
 			<key>fileName</key>
-			<string>03F90983-7C1C-434F-A6E7-598C406930E4.xcactivitylog</string>
+			<string>124138FC-E712-4EC5-AB50-6C9E9D7C1F8E.xcactivitylog</string>
 			<key>hasPrimaryLog</key>
 			<true/>
 			<key>primaryObservable</key>
@@ -40,15 +40,15 @@
 			<key>signature</key>
 			<string>Build MiMiNavigator</string>
 			<key>timeStartedRecording</key>
-			<real>753134167.02280498</real>
+			<real>753156447.681844</real>
 			<key>timeStoppedRecording</key>
-			<real>753134168.38220298</real>
+			<real>753156448.93165898</real>
 			<key>title</key>
 			<string>Build MiMiNavigator</string>
 			<key>uniqueIdentifier</key>
-			<string>03F90983-7C1C-434F-A6E7-598C406930E4</string>
+			<string>124138FC-E712-4EC5-AB50-6C9E9D7C1F8E</string>
 		</dict>
-		<key>062E3C76-0AD4-4B2F-8D58-DB7A27261BD5</key>
+		<key>17A25651-2918-4E40-AF36-269C613E770B</key>
 		<dict>
 			<key>className</key>
 			<string>IDEActivityLogSection</string>
@@ -57,7 +57,7 @@
 			<key>domainType</key>
 			<string>Xcode.IDEActivityLogDomainType.BuildLog</string>
 			<key>fileName</key>
-			<string>062E3C76-0AD4-4B2F-8D58-DB7A27261BD5.xcactivitylog</string>
+			<string>17A25651-2918-4E40-AF36-269C613E770B.xcactivitylog</string>
 			<key>hasPrimaryLog</key>
 			<true/>
 			<key>primaryObservable</key>
@@ -82,15 +82,15 @@
 			<key>signature</key>
 			<string>Build MiMiNavigator</string>
 			<key>timeStartedRecording</key>
-			<real>753133444.66973603</real>
+			<real>753155495.62064505</real>
 			<key>timeStoppedRecording</key>
-			<real>753133445.54356301</real>
+			<real>753155495.79922605</real>
 			<key>title</key>
 			<string>Build MiMiNavigator</string>
 			<key>uniqueIdentifier</key>
-			<string>062E3C76-0AD4-4B2F-8D58-DB7A27261BD5</string>
+			<string>17A25651-2918-4E40-AF36-269C613E770B</string>
 		</dict>
-		<key>0787AF37-E645-4139-81EF-EF71BD9D783A</key>
+		<key>25592E1D-3B85-4489-84E1-37A10F890B29</key>
 		<dict>
 			<key>className</key>
 			<string>IDEActivityLogSection</string>
@@ -99,7 +99,7 @@
 			<key>domainType</key>
 			<string>Xcode.IDEActivityLogDomainType.BuildLog</string>
 			<key>fileName</key>
-			<string>0787AF37-E645-4139-81EF-EF71BD9D783A.xcactivitylog</string>
+			<string>25592E1D-3B85-4489-84E1-37A10F890B29.xcactivitylog</string>
 			<key>hasPrimaryLog</key>
 			<true/>
 			<key>primaryObservable</key>
@@ -124,15 +124,15 @@
 			<key>signature</key>
 			<string>Build MiMiNavigator</string>
 			<key>timeStartedRecording</key>
-			<real>753135334.45599699</real>
+			<real>753155700.06363499</real>
 			<key>timeStoppedRecording</key>
-			<real>753135335.50369704</real>
+			<real>753155701.31156695</real>
 			<key>title</key>
 			<string>Build MiMiNavigator</string>
 			<key>uniqueIdentifier</key>
-			<string>0787AF37-E645-4139-81EF-EF71BD9D783A</string>
+			<string>25592E1D-3B85-4489-84E1-37A10F890B29</string>
 		</dict>
-		<key>0DEC1A1B-7F1E-4532-85FE-C66FFE28CDE5</key>
+		<key>2936CE2F-5998-44F8-A720-A3276B71C038</key>
 		<dict>
 			<key>className</key>
 			<string>IDEActivityLogSection</string>
@@ -141,49 +141,7 @@
 			<key>domainType</key>
 			<string>Xcode.IDEActivityLogDomainType.BuildLog</string>
 			<key>fileName</key>
-			<string>0DEC1A1B-7F1E-4532-85FE-C66FFE28CDE5.xcactivitylog</string>
-			<key>hasPrimaryLog</key>
-			<true/>
-			<key>primaryObservable</key>
-			<dict>
-				<key>highLevelStatus</key>
-				<string>S</string>
-				<key>totalNumberOfAnalyzerIssues</key>
-				<integer>0</integer>
-				<key>totalNumberOfErrors</key>
-				<integer>0</integer>
-				<key>totalNumberOfTestFailures</key>
-				<integer>0</integer>
-				<key>totalNumberOfWarnings</key>
-				<integer>0</integer>
-			</dict>
-			<key>schemeIdentifier-containerName</key>
-			<string>MiMiNavigator project</string>
-			<key>schemeIdentifier-schemeName</key>
-			<string>MiMiNavigator</string>
-			<key>schemeIdentifier-sharedScheme</key>
-			<integer>1</integer>
-			<key>signature</key>
-			<string>Build (Automatic) MiMiNavigator</string>
-			<key>timeStartedRecording</key>
-			<real>753135126.43971503</real>
-			<key>timeStoppedRecording</key>
-			<real>753135127.34751797</real>
-			<key>title</key>
-			<string>Build (Automatic) MiMiNavigator</string>
-			<key>uniqueIdentifier</key>
-			<string>0DEC1A1B-7F1E-4532-85FE-C66FFE28CDE5</string>
-		</dict>
-		<key>0ED66A90-739A-437D-B3E3-B1DD53603A16</key>
-		<dict>
-			<key>className</key>
-			<string>IDEActivityLogSection</string>
-			<key>documentTypeString</key>
-			<string>&lt;nil&gt;</string>
-			<key>domainType</key>
-			<string>Xcode.IDEActivityLogDomainType.BuildLog</string>
-			<key>fileName</key>
-			<string>0ED66A90-739A-437D-B3E3-B1DD53603A16.xcactivitylog</string>
+			<string>2936CE2F-5998-44F8-A720-A3276B71C038.xcactivitylog</string>
 			<key>hasPrimaryLog</key>
 			<true/>
 			<key>primaryObservable</key>
@@ -208,15 +166,15 @@
 			<key>signature</key>
 			<string>Build MiMiNavigator</string>
 			<key>timeStartedRecording</key>
-			<real>753134636.95373797</real>
+			<real>753156459.19967699</real>
 			<key>timeStoppedRecording</key>
-			<real>753134637.87483597</real>
+			<real>753156459.41018999</real>
 			<key>title</key>
 			<string>Build MiMiNavigator</string>
 			<key>uniqueIdentifier</key>
-			<string>0ED66A90-739A-437D-B3E3-B1DD53603A16</string>
+			<string>2936CE2F-5998-44F8-A720-A3276B71C038</string>
 		</dict>
-		<key>11D6937E-34DB-46F8-8432-7CBA7DA89FFA</key>
+		<key>297DFC16-603C-44AC-BBEF-AE1C80559E20</key>
 		<dict>
 			<key>className</key>
 			<string>IDEActivityLogSection</string>
@@ -225,7 +183,7 @@
 			<key>domainType</key>
 			<string>Xcode.IDEActivityLogDomainType.BuildLog</string>
 			<key>fileName</key>
-			<string>11D6937E-34DB-46F8-8432-7CBA7DA89FFA.xcactivitylog</string>
+			<string>297DFC16-603C-44AC-BBEF-AE1C80559E20.xcactivitylog</string>
 			<key>hasPrimaryLog</key>
 			<true/>
 			<key>primaryObservable</key>
@@ -250,15 +208,15 @@
 			<key>signature</key>
 			<string>Build MiMiNavigator</string>
 			<key>timeStartedRecording</key>
-			<real>753134729.68493295</real>
+			<real>753156691.33018506</real>
 			<key>timeStoppedRecording</key>
-			<real>753134730.64030194</real>
+			<real>753156692.54574502</real>
 			<key>title</key>
 			<string>Build MiMiNavigator</string>
 			<key>uniqueIdentifier</key>
-			<string>11D6937E-34DB-46F8-8432-7CBA7DA89FFA</string>
+			<string>297DFC16-603C-44AC-BBEF-AE1C80559E20</string>
 		</dict>
-		<key>24745240-9410-45F2-B322-04BD5C969886</key>
+		<key>43B8E39B-CA1D-42D2-95C9-746C544D8989</key>
 		<dict>
 			<key>className</key>
 			<string>IDEActivityLogSection</string>
@@ -267,7 +225,7 @@
 			<key>domainType</key>
 			<string>Xcode.IDEActivityLogDomainType.BuildLog</string>
 			<key>fileName</key>
-			<string>24745240-9410-45F2-B322-04BD5C969886.xcactivitylog</string>
+			<string>43B8E39B-CA1D-42D2-95C9-746C544D8989.xcactivitylog</string>
 			<key>hasPrimaryLog</key>
 			<true/>
 			<key>primaryObservable</key>
@@ -292,15 +250,15 @@
 			<key>signature</key>
 			<string>Build MiMiNavigator</string>
 			<key>timeStartedRecording</key>
-			<real>753134896.94988</real>
+			<real>753156802.20887899</real>
 			<key>timeStoppedRecording</key>
-			<real>753134897.88420296</real>
+			<real>753156803.49157298</real>
 			<key>title</key>
 			<string>Build MiMiNavigator</string>
 			<key>uniqueIdentifier</key>
-			<string>24745240-9410-45F2-B322-04BD5C969886</string>
+			<string>43B8E39B-CA1D-42D2-95C9-746C544D8989</string>
 		</dict>
-		<key>26819FAE-C73B-428E-A4BF-AA85DAF81922</key>
+		<key>5674EC78-D4FA-4D43-8AA1-535F2B21B30A</key>
 		<dict>
 			<key>className</key>
 			<string>IDEActivityLogSection</string>
@@ -309,7 +267,7 @@
 			<key>domainType</key>
 			<string>Xcode.IDEActivityLogDomainType.BuildLog</string>
 			<key>fileName</key>
-			<string>26819FAE-C73B-428E-A4BF-AA85DAF81922.xcactivitylog</string>
+			<string>5674EC78-D4FA-4D43-8AA1-535F2B21B30A.xcactivitylog</string>
 			<key>hasPrimaryLog</key>
 			<true/>
 			<key>primaryObservable</key>
@@ -334,15 +292,15 @@
 			<key>signature</key>
 			<string>Build MiMiNavigator</string>
 			<key>timeStartedRecording</key>
-			<real>753136419.23026597</real>
+			<real>753155992.19167697</real>
 			<key>timeStoppedRecording</key>
-			<real>753136420.21525502</real>
+			<real>753155993.66707206</real>
 			<key>title</key>
 			<string>Build MiMiNavigator</string>
 			<key>uniqueIdentifier</key>
-			<string>26819FAE-C73B-428E-A4BF-AA85DAF81922</string>
+			<string>5674EC78-D4FA-4D43-8AA1-535F2B21B30A</string>
 		</dict>
-		<key>290DDDC4-D401-43B0-AA8A-1962BD3BD1BE</key>
+		<key>5B67E284-2D9B-4567-83E1-BB92575EA4DD</key>
 		<dict>
 			<key>className</key>
 			<string>IDEActivityLogSection</string>
@@ -351,49 +309,7 @@
 			<key>domainType</key>
 			<string>Xcode.IDEActivityLogDomainType.BuildLog</string>
 			<key>fileName</key>
-			<string>290DDDC4-D401-43B0-AA8A-1962BD3BD1BE.xcactivitylog</string>
-			<key>hasPrimaryLog</key>
-			<true/>
-			<key>primaryObservable</key>
-			<dict>
-				<key>highLevelStatus</key>
-				<string>S</string>
-				<key>totalNumberOfAnalyzerIssues</key>
-				<integer>0</integer>
-				<key>totalNumberOfErrors</key>
-				<integer>0</integer>
-				<key>totalNumberOfTestFailures</key>
-				<integer>0</integer>
-				<key>totalNumberOfWarnings</key>
-				<integer>0</integer>
-			</dict>
-			<key>schemeIdentifier-containerName</key>
-			<string>MiMiNavigator project</string>
-			<key>schemeIdentifier-schemeName</key>
-			<string>MiMiNavigator</string>
-			<key>schemeIdentifier-sharedScheme</key>
-			<integer>1</integer>
-			<key>signature</key>
-			<string>Build MiMiNavigator</string>
-			<key>timeStartedRecording</key>
-			<real>753136545.12859297</real>
-			<key>timeStoppedRecording</key>
-			<real>753136545.99545503</real>
-			<key>title</key>
-			<string>Build MiMiNavigator</string>
-			<key>uniqueIdentifier</key>
-			<string>290DDDC4-D401-43B0-AA8A-1962BD3BD1BE</string>
-		</dict>
-		<key>2C00A501-8D03-48A7-96DA-E8F4A9B61B51</key>
-		<dict>
-			<key>className</key>
-			<string>IDEActivityLogSection</string>
-			<key>documentTypeString</key>
-			<string>&lt;nil&gt;</string>
-			<key>domainType</key>
-			<string>Xcode.IDEActivityLogDomainType.BuildLog</string>
-			<key>fileName</key>
-			<string>2C00A501-8D03-48A7-96DA-E8F4A9B61B51.xcactivitylog</string>
+			<string>5B67E284-2D9B-4567-83E1-BB92575EA4DD.xcactivitylog</string>
 			<key>hasPrimaryLog</key>
 			<true/>
 			<key>primaryObservable</key>
@@ -418,15 +334,15 @@
 			<key>signature</key>
 			<string>Build (Automatic) MiMiNavigator</string>
 			<key>timeStartedRecording</key>
-			<real>753135360.74743795</real>
+			<real>753137721.45327795</real>
 			<key>timeStoppedRecording</key>
-			<real>753135361.614663</real>
+			<real>753137723.13691902</real>
 			<key>title</key>
 			<string>Build (Automatic) MiMiNavigator</string>
 			<key>uniqueIdentifier</key>
-			<string>2C00A501-8D03-48A7-96DA-E8F4A9B61B51</string>
+			<string>5B67E284-2D9B-4567-83E1-BB92575EA4DD</string>
 		</dict>
-		<key>30D80406-885A-4539-A64F-89D78D14BAD7</key>
+		<key>5DBBC974-1708-486F-82AE-18D63182DCC4</key>
 		<dict>
 			<key>className</key>
 			<string>IDEActivityLogSection</string>
@@ -435,679 +351,7 @@
 			<key>domainType</key>
 			<string>Xcode.IDEActivityLogDomainType.BuildLog</string>
 			<key>fileName</key>
-			<string>30D80406-885A-4539-A64F-89D78D14BAD7.xcactivitylog</string>
-			<key>hasPrimaryLog</key>
-			<true/>
-			<key>primaryObservable</key>
-			<dict>
-				<key>highLevelStatus</key>
-				<string>S</string>
-				<key>totalNumberOfAnalyzerIssues</key>
-				<integer>0</integer>
-				<key>totalNumberOfErrors</key>
-				<integer>0</integer>
-				<key>totalNumberOfTestFailures</key>
-				<integer>0</integer>
-				<key>totalNumberOfWarnings</key>
-				<integer>0</integer>
-			</dict>
-			<key>schemeIdentifier-containerName</key>
-			<string>MiMiNavigator project</string>
-			<key>schemeIdentifier-schemeName</key>
-			<string>MiMiNavigator</string>
-			<key>schemeIdentifier-sharedScheme</key>
-			<integer>1</integer>
-			<key>signature</key>
-			<string>Build MiMiNavigator</string>
-			<key>timeStartedRecording</key>
-			<real>753134478.66906095</real>
-			<key>timeStoppedRecording</key>
-			<real>753134480.16652298</real>
-			<key>title</key>
-			<string>Build MiMiNavigator</string>
-			<key>uniqueIdentifier</key>
-			<string>30D80406-885A-4539-A64F-89D78D14BAD7</string>
-		</dict>
-		<key>357C721E-5FEB-4EB7-B025-E83D329E15DA</key>
-		<dict>
-			<key>className</key>
-			<string>IDEActivityLogSection</string>
-			<key>documentTypeString</key>
-			<string>&lt;nil&gt;</string>
-			<key>domainType</key>
-			<string>Xcode.IDEActivityLogDomainType.BuildLog</string>
-			<key>fileName</key>
-			<string>357C721E-5FEB-4EB7-B025-E83D329E15DA.xcactivitylog</string>
-			<key>hasPrimaryLog</key>
-			<true/>
-			<key>primaryObservable</key>
-			<dict>
-				<key>highLevelStatus</key>
-				<string>S</string>
-				<key>totalNumberOfAnalyzerIssues</key>
-				<integer>0</integer>
-				<key>totalNumberOfErrors</key>
-				<integer>0</integer>
-				<key>totalNumberOfTestFailures</key>
-				<integer>0</integer>
-				<key>totalNumberOfWarnings</key>
-				<integer>0</integer>
-			</dict>
-			<key>schemeIdentifier-containerName</key>
-			<string>MiMiNavigator project</string>
-			<key>schemeIdentifier-schemeName</key>
-			<string>MiMiNavigator</string>
-			<key>schemeIdentifier-sharedScheme</key>
-			<integer>1</integer>
-			<key>signature</key>
-			<string>Build MiMiNavigator</string>
-			<key>timeStartedRecording</key>
-			<real>753136217.32941902</real>
-			<key>timeStoppedRecording</key>
-			<real>753136218.42010999</real>
-			<key>title</key>
-			<string>Build MiMiNavigator</string>
-			<key>uniqueIdentifier</key>
-			<string>357C721E-5FEB-4EB7-B025-E83D329E15DA</string>
-		</dict>
-		<key>3F6DA711-217B-4177-AD08-F90C549D657E</key>
-		<dict>
-			<key>className</key>
-			<string>IDEActivityLogSection</string>
-			<key>documentTypeString</key>
-			<string>&lt;nil&gt;</string>
-			<key>domainType</key>
-			<string>Xcode.IDEActivityLogDomainType.BuildLog</string>
-			<key>fileName</key>
-			<string>3F6DA711-217B-4177-AD08-F90C549D657E.xcactivitylog</string>
-			<key>hasPrimaryLog</key>
-			<true/>
-			<key>primaryObservable</key>
-			<dict>
-				<key>highLevelStatus</key>
-				<string>S</string>
-				<key>totalNumberOfAnalyzerIssues</key>
-				<integer>0</integer>
-				<key>totalNumberOfErrors</key>
-				<integer>0</integer>
-				<key>totalNumberOfTestFailures</key>
-				<integer>0</integer>
-				<key>totalNumberOfWarnings</key>
-				<integer>0</integer>
-			</dict>
-			<key>schemeIdentifier-containerName</key>
-			<string>MiMiNavigator project</string>
-			<key>schemeIdentifier-schemeName</key>
-			<string>MiMiNavigator</string>
-			<key>schemeIdentifier-sharedScheme</key>
-			<integer>1</integer>
-			<key>signature</key>
-			<string>Build MiMiNavigator</string>
-			<key>timeStartedRecording</key>
-			<real>753132847.100546</real>
-			<key>timeStoppedRecording</key>
-			<real>753132848.97636998</real>
-			<key>title</key>
-			<string>Build MiMiNavigator</string>
-			<key>uniqueIdentifier</key>
-			<string>3F6DA711-217B-4177-AD08-F90C549D657E</string>
-		</dict>
-		<key>4E4B3EE1-1877-421E-98F8-308030644BE6</key>
-		<dict>
-			<key>className</key>
-			<string>IDEActivityLogSection</string>
-			<key>documentTypeString</key>
-			<string>&lt;nil&gt;</string>
-			<key>domainType</key>
-			<string>Xcode.IDEActivityLogDomainType.BuildLog</string>
-			<key>fileName</key>
-			<string>4E4B3EE1-1877-421E-98F8-308030644BE6.xcactivitylog</string>
-			<key>hasPrimaryLog</key>
-			<true/>
-			<key>primaryObservable</key>
-			<dict>
-				<key>highLevelStatus</key>
-				<string>E</string>
-				<key>totalNumberOfAnalyzerIssues</key>
-				<integer>0</integer>
-				<key>totalNumberOfErrors</key>
-				<integer>6</integer>
-				<key>totalNumberOfTestFailures</key>
-				<integer>0</integer>
-				<key>totalNumberOfWarnings</key>
-				<integer>0</integer>
-			</dict>
-			<key>schemeIdentifier-containerName</key>
-			<string>MiMiNavigator project</string>
-			<key>schemeIdentifier-schemeName</key>
-			<string>MiMiNavigator</string>
-			<key>schemeIdentifier-sharedScheme</key>
-			<integer>1</integer>
-			<key>signature</key>
-			<string>Build MiMiNavigator</string>
-			<key>timeStartedRecording</key>
-			<real>753132182.70895398</real>
-			<key>timeStoppedRecording</key>
-			<real>753132183.56014395</real>
-			<key>title</key>
-			<string>Build MiMiNavigator</string>
-			<key>uniqueIdentifier</key>
-			<string>4E4B3EE1-1877-421E-98F8-308030644BE6</string>
-		</dict>
-		<key>52DD47DA-84E8-4252-ADDC-455F6E642C78</key>
-		<dict>
-			<key>className</key>
-			<string>IDEActivityLogSection</string>
-			<key>documentTypeString</key>
-			<string>&lt;nil&gt;</string>
-			<key>domainType</key>
-			<string>Xcode.IDEActivityLogDomainType.BuildLog</string>
-			<key>fileName</key>
-			<string>52DD47DA-84E8-4252-ADDC-455F6E642C78.xcactivitylog</string>
-			<key>hasPrimaryLog</key>
-			<true/>
-			<key>primaryObservable</key>
-			<dict>
-				<key>highLevelStatus</key>
-				<string>S</string>
-				<key>totalNumberOfAnalyzerIssues</key>
-				<integer>0</integer>
-				<key>totalNumberOfErrors</key>
-				<integer>0</integer>
-				<key>totalNumberOfTestFailures</key>
-				<integer>0</integer>
-				<key>totalNumberOfWarnings</key>
-				<integer>0</integer>
-			</dict>
-			<key>schemeIdentifier-containerName</key>
-			<string>MiMiNavigator project</string>
-			<key>schemeIdentifier-schemeName</key>
-			<string>MiMiNavigator</string>
-			<key>schemeIdentifier-sharedScheme</key>
-			<integer>1</integer>
-			<key>signature</key>
-			<string>Build MiMiNavigator</string>
-			<key>timeStartedRecording</key>
-			<real>753135500.56022203</real>
-			<key>timeStoppedRecording</key>
-			<real>753135501.471012</real>
-			<key>title</key>
-			<string>Build MiMiNavigator</string>
-			<key>uniqueIdentifier</key>
-			<string>52DD47DA-84E8-4252-ADDC-455F6E642C78</string>
-		</dict>
-		<key>5BBF0E84-FEB1-4E6C-89B6-6709DE0F414A</key>
-		<dict>
-			<key>className</key>
-			<string>IDEActivityLogSection</string>
-			<key>documentTypeString</key>
-			<string>&lt;nil&gt;</string>
-			<key>domainType</key>
-			<string>Xcode.IDEActivityLogDomainType.BuildLog</string>
-			<key>fileName</key>
-			<string>5BBF0E84-FEB1-4E6C-89B6-6709DE0F414A.xcactivitylog</string>
-			<key>hasPrimaryLog</key>
-			<true/>
-			<key>primaryObservable</key>
-			<dict>
-				<key>highLevelStatus</key>
-				<string>S</string>
-				<key>totalNumberOfAnalyzerIssues</key>
-				<integer>0</integer>
-				<key>totalNumberOfErrors</key>
-				<integer>0</integer>
-				<key>totalNumberOfTestFailures</key>
-				<integer>0</integer>
-				<key>totalNumberOfWarnings</key>
-				<integer>0</integer>
-			</dict>
-			<key>schemeIdentifier-containerName</key>
-			<string>MiMiNavigator project</string>
-			<key>schemeIdentifier-schemeName</key>
-			<string>MiMiNavigator</string>
-			<key>schemeIdentifier-sharedScheme</key>
-			<integer>1</integer>
-			<key>signature</key>
-			<string>Build MiMiNavigator</string>
-			<key>timeStartedRecording</key>
-			<real>753133653.86098802</real>
-			<key>timeStoppedRecording</key>
-			<real>753133654.75575602</real>
-			<key>title</key>
-			<string>Build MiMiNavigator</string>
-			<key>uniqueIdentifier</key>
-			<string>5BBF0E84-FEB1-4E6C-89B6-6709DE0F414A</string>
-		</dict>
-		<key>5D24107B-7E63-4A05-A909-CB4F4C19412A</key>
-		<dict>
-			<key>className</key>
-			<string>IDEActivityLogSection</string>
-			<key>documentTypeString</key>
-			<string>&lt;nil&gt;</string>
-			<key>domainType</key>
-			<string>Xcode.IDEActivityLogDomainType.BuildLog</string>
-			<key>fileName</key>
-			<string>5D24107B-7E63-4A05-A909-CB4F4C19412A.xcactivitylog</string>
-			<key>hasPrimaryLog</key>
-			<true/>
-			<key>primaryObservable</key>
-			<dict>
-				<key>highLevelStatus</key>
-				<string>S</string>
-				<key>totalNumberOfAnalyzerIssues</key>
-				<integer>0</integer>
-				<key>totalNumberOfErrors</key>
-				<integer>0</integer>
-				<key>totalNumberOfTestFailures</key>
-				<integer>0</integer>
-				<key>totalNumberOfWarnings</key>
-				<integer>0</integer>
-			</dict>
-			<key>schemeIdentifier-containerName</key>
-			<string>MiMiNavigator project</string>
-			<key>schemeIdentifier-schemeName</key>
-			<string>MiMiNavigator</string>
-			<key>schemeIdentifier-sharedScheme</key>
-			<integer>1</integer>
-			<key>signature</key>
-			<string>Build MiMiNavigator</string>
-			<key>timeStartedRecording</key>
-			<real>753136448.35880399</real>
-			<key>timeStoppedRecording</key>
-			<real>753136451.74464798</real>
-			<key>title</key>
-			<string>Build MiMiNavigator</string>
-			<key>uniqueIdentifier</key>
-			<string>5D24107B-7E63-4A05-A909-CB4F4C19412A</string>
-		</dict>
-		<key>685F105C-F094-4D17-9039-A03EB5039B7E</key>
-		<dict>
-			<key>className</key>
-			<string>IDEActivityLogSection</string>
-			<key>documentTypeString</key>
-			<string>&lt;nil&gt;</string>
-			<key>domainType</key>
-			<string>Xcode.IDEActivityLogDomainType.BuildLog</string>
-			<key>fileName</key>
-			<string>685F105C-F094-4D17-9039-A03EB5039B7E.xcactivitylog</string>
-			<key>hasPrimaryLog</key>
-			<true/>
-			<key>primaryObservable</key>
-			<dict>
-				<key>highLevelStatus</key>
-				<string>S</string>
-				<key>totalNumberOfAnalyzerIssues</key>
-				<integer>0</integer>
-				<key>totalNumberOfErrors</key>
-				<integer>0</integer>
-				<key>totalNumberOfTestFailures</key>
-				<integer>0</integer>
-				<key>totalNumberOfWarnings</key>
-				<integer>0</integer>
-			</dict>
-			<key>schemeIdentifier-containerName</key>
-			<string>MiMiNavigator project</string>
-			<key>schemeIdentifier-schemeName</key>
-			<string>MiMiNavigator</string>
-			<key>schemeIdentifier-sharedScheme</key>
-			<integer>1</integer>
-			<key>signature</key>
-			<string>Build MiMiNavigator</string>
-			<key>timeStartedRecording</key>
-			<real>753136593.63662505</real>
-			<key>timeStoppedRecording</key>
-			<real>753136593.71661997</real>
-			<key>title</key>
-			<string>Build MiMiNavigator</string>
-			<key>uniqueIdentifier</key>
-			<string>685F105C-F094-4D17-9039-A03EB5039B7E</string>
-		</dict>
-		<key>75A97C71-D208-44FB-9A09-FB2095AD6B5A</key>
-		<dict>
-			<key>className</key>
-			<string>IDEActivityLogSection</string>
-			<key>documentTypeString</key>
-			<string>&lt;nil&gt;</string>
-			<key>domainType</key>
-			<string>Xcode.IDEActivityLogDomainType.BuildLog</string>
-			<key>fileName</key>
-			<string>75A97C71-D208-44FB-9A09-FB2095AD6B5A.xcactivitylog</string>
-			<key>hasPrimaryLog</key>
-			<true/>
-			<key>primaryObservable</key>
-			<dict>
-				<key>highLevelStatus</key>
-				<string>S</string>
-				<key>totalNumberOfAnalyzerIssues</key>
-				<integer>0</integer>
-				<key>totalNumberOfErrors</key>
-				<integer>0</integer>
-				<key>totalNumberOfTestFailures</key>
-				<integer>0</integer>
-				<key>totalNumberOfWarnings</key>
-				<integer>0</integer>
-			</dict>
-			<key>schemeIdentifier-containerName</key>
-			<string>MiMiNavigator project</string>
-			<key>schemeIdentifier-schemeName</key>
-			<string>MiMiNavigator</string>
-			<key>schemeIdentifier-sharedScheme</key>
-			<integer>1</integer>
-			<key>signature</key>
-			<string>Build MiMiNavigator</string>
-			<key>timeStartedRecording</key>
-			<real>753134858.24338996</real>
-			<key>timeStoppedRecording</key>
-			<real>753134859.27274501</real>
-			<key>title</key>
-			<string>Build MiMiNavigator</string>
-			<key>uniqueIdentifier</key>
-			<string>75A97C71-D208-44FB-9A09-FB2095AD6B5A</string>
-		</dict>
-		<key>769CEBE6-23AE-489D-8301-AA9487646613</key>
-		<dict>
-			<key>className</key>
-			<string>IDEActivityLogSection</string>
-			<key>documentTypeString</key>
-			<string>&lt;nil&gt;</string>
-			<key>domainType</key>
-			<string>Xcode.IDEActivityLogDomainType.BuildLog</string>
-			<key>fileName</key>
-			<string>769CEBE6-23AE-489D-8301-AA9487646613.xcactivitylog</string>
-			<key>hasPrimaryLog</key>
-			<true/>
-			<key>primaryObservable</key>
-			<dict>
-				<key>highLevelStatus</key>
-				<string>S</string>
-				<key>totalNumberOfAnalyzerIssues</key>
-				<integer>0</integer>
-				<key>totalNumberOfErrors</key>
-				<integer>0</integer>
-				<key>totalNumberOfTestFailures</key>
-				<integer>0</integer>
-				<key>totalNumberOfWarnings</key>
-				<integer>0</integer>
-			</dict>
-			<key>schemeIdentifier-containerName</key>
-			<string>MiMiNavigator project</string>
-			<key>schemeIdentifier-schemeName</key>
-			<string>MiMiNavigator</string>
-			<key>schemeIdentifier-sharedScheme</key>
-			<integer>1</integer>
-			<key>signature</key>
-			<string>Build MiMiNavigator</string>
-			<key>timeStartedRecording</key>
-			<real>753135470.81026697</real>
-			<key>timeStoppedRecording</key>
-			<real>753135470.87582397</real>
-			<key>title</key>
-			<string>Build MiMiNavigator</string>
-			<key>uniqueIdentifier</key>
-			<string>769CEBE6-23AE-489D-8301-AA9487646613</string>
-		</dict>
-		<key>775CF4D0-F149-4598-950B-AB86D6BE80CF</key>
-		<dict>
-			<key>className</key>
-			<string>IDEActivityLogSection</string>
-			<key>documentTypeString</key>
-			<string>&lt;nil&gt;</string>
-			<key>domainType</key>
-			<string>Xcode.IDEActivityLogDomainType.BuildLog</string>
-			<key>fileName</key>
-			<string>775CF4D0-F149-4598-950B-AB86D6BE80CF.xcactivitylog</string>
-			<key>hasPrimaryLog</key>
-			<true/>
-			<key>primaryObservable</key>
-			<dict>
-				<key>highLevelStatus</key>
-				<string>S</string>
-				<key>totalNumberOfAnalyzerIssues</key>
-				<integer>0</integer>
-				<key>totalNumberOfErrors</key>
-				<integer>0</integer>
-				<key>totalNumberOfTestFailures</key>
-				<integer>0</integer>
-				<key>totalNumberOfWarnings</key>
-				<integer>0</integer>
-			</dict>
-			<key>schemeIdentifier-containerName</key>
-			<string>MiMiNavigator project</string>
-			<key>schemeIdentifier-schemeName</key>
-			<string>MiMiNavigator</string>
-			<key>schemeIdentifier-sharedScheme</key>
-			<integer>1</integer>
-			<key>signature</key>
-			<string>Build MiMiNavigator</string>
-			<key>timeStartedRecording</key>
-			<real>753135220.96413898</real>
-			<key>timeStoppedRecording</key>
-			<real>753135221.93784201</real>
-			<key>title</key>
-			<string>Build MiMiNavigator</string>
-			<key>uniqueIdentifier</key>
-			<string>775CF4D0-F149-4598-950B-AB86D6BE80CF</string>
-		</dict>
-		<key>7CE5204C-8CE6-4623-AC73-7B51B8F4484E</key>
-		<dict>
-			<key>className</key>
-			<string>IDEActivityLogSection</string>
-			<key>documentTypeString</key>
-			<string>&lt;nil&gt;</string>
-			<key>domainType</key>
-			<string>Xcode.IDEActivityLogDomainType.BuildLog</string>
-			<key>fileName</key>
-			<string>7CE5204C-8CE6-4623-AC73-7B51B8F4484E.xcactivitylog</string>
-			<key>hasPrimaryLog</key>
-			<true/>
-			<key>primaryObservable</key>
-			<dict>
-				<key>highLevelStatus</key>
-				<string>S</string>
-				<key>totalNumberOfAnalyzerIssues</key>
-				<integer>0</integer>
-				<key>totalNumberOfErrors</key>
-				<integer>0</integer>
-				<key>totalNumberOfTestFailures</key>
-				<integer>0</integer>
-				<key>totalNumberOfWarnings</key>
-				<integer>0</integer>
-			</dict>
-			<key>schemeIdentifier-containerName</key>
-			<string>MiMiNavigator project</string>
-			<key>schemeIdentifier-schemeName</key>
-			<string>MiMiNavigator</string>
-			<key>schemeIdentifier-sharedScheme</key>
-			<integer>1</integer>
-			<key>signature</key>
-			<string>Build (Automatic) MiMiNavigator</string>
-			<key>timeStartedRecording</key>
-			<real>753134047.783903</real>
-			<key>timeStoppedRecording</key>
-			<real>753134049.28519106</real>
-			<key>title</key>
-			<string>Build (Automatic) MiMiNavigator</string>
-			<key>uniqueIdentifier</key>
-			<string>7CE5204C-8CE6-4623-AC73-7B51B8F4484E</string>
-		</dict>
-		<key>7F1A73EF-A6BF-4980-9A6F-6575F8725F44</key>
-		<dict>
-			<key>className</key>
-			<string>IDEActivityLogSection</string>
-			<key>documentTypeString</key>
-			<string>&lt;nil&gt;</string>
-			<key>domainType</key>
-			<string>Xcode.IDEActivityLogDomainType.BuildLog</string>
-			<key>fileName</key>
-			<string>7F1A73EF-A6BF-4980-9A6F-6575F8725F44.xcactivitylog</string>
-			<key>hasPrimaryLog</key>
-			<true/>
-			<key>primaryObservable</key>
-			<dict>
-				<key>highLevelStatus</key>
-				<string>S</string>
-				<key>totalNumberOfAnalyzerIssues</key>
-				<integer>0</integer>
-				<key>totalNumberOfErrors</key>
-				<integer>0</integer>
-				<key>totalNumberOfTestFailures</key>
-				<integer>0</integer>
-				<key>totalNumberOfWarnings</key>
-				<integer>0</integer>
-			</dict>
-			<key>schemeIdentifier-containerName</key>
-			<string>MiMiNavigator project</string>
-			<key>schemeIdentifier-schemeName</key>
-			<string>MiMiNavigator</string>
-			<key>schemeIdentifier-sharedScheme</key>
-			<integer>1</integer>
-			<key>signature</key>
-			<string>Build (Automatic) MiMiNavigator</string>
-			<key>timeStartedRecording</key>
-			<real>753135883.82646203</real>
-			<key>timeStoppedRecording</key>
-			<real>753135884.87701702</real>
-			<key>title</key>
-			<string>Build (Automatic) MiMiNavigator</string>
-			<key>uniqueIdentifier</key>
-			<string>7F1A73EF-A6BF-4980-9A6F-6575F8725F44</string>
-		</dict>
-		<key>828CC4A5-0271-42D1-B441-25344F0A9BDC</key>
-		<dict>
-			<key>className</key>
-			<string>IDEActivityLogSection</string>
-			<key>documentTypeString</key>
-			<string>&lt;nil&gt;</string>
-			<key>domainType</key>
-			<string>Xcode.IDEActivityLogDomainType.BuildLog</string>
-			<key>fileName</key>
-			<string>828CC4A5-0271-42D1-B441-25344F0A9BDC.xcactivitylog</string>
-			<key>hasPrimaryLog</key>
-			<true/>
-			<key>primaryObservable</key>
-			<dict>
-				<key>highLevelStatus</key>
-				<string>S</string>
-				<key>totalNumberOfAnalyzerIssues</key>
-				<integer>0</integer>
-				<key>totalNumberOfErrors</key>
-				<integer>0</integer>
-				<key>totalNumberOfTestFailures</key>
-				<integer>0</integer>
-				<key>totalNumberOfWarnings</key>
-				<integer>0</integer>
-			</dict>
-			<key>schemeIdentifier-containerName</key>
-			<string>MiMiNavigator project</string>
-			<key>schemeIdentifier-schemeName</key>
-			<string>MiMiNavigator</string>
-			<key>schemeIdentifier-sharedScheme</key>
-			<integer>1</integer>
-			<key>signature</key>
-			<string>Build MiMiNavigator</string>
-			<key>timeStartedRecording</key>
-			<real>753134325.201159</real>
-			<key>timeStoppedRecording</key>
-			<real>753134326.46164894</real>
-			<key>title</key>
-			<string>Build MiMiNavigator</string>
-			<key>uniqueIdentifier</key>
-			<string>828CC4A5-0271-42D1-B441-25344F0A9BDC</string>
-		</dict>
-		<key>8C07CC62-9C38-48E0-A509-3C108EA6D533</key>
-		<dict>
-			<key>className</key>
-			<string>IDEActivityLogSection</string>
-			<key>documentTypeString</key>
-			<string>&lt;nil&gt;</string>
-			<key>domainType</key>
-			<string>Xcode.IDEActivityLogDomainType.BuildLog</string>
-			<key>fileName</key>
-			<string>8C07CC62-9C38-48E0-A509-3C108EA6D533.xcactivitylog</string>
-			<key>hasPrimaryLog</key>
-			<true/>
-			<key>primaryObservable</key>
-			<dict>
-				<key>highLevelStatus</key>
-				<string>S</string>
-				<key>totalNumberOfAnalyzerIssues</key>
-				<integer>0</integer>
-				<key>totalNumberOfErrors</key>
-				<integer>0</integer>
-				<key>totalNumberOfTestFailures</key>
-				<integer>0</integer>
-				<key>totalNumberOfWarnings</key>
-				<integer>0</integer>
-			</dict>
-			<key>schemeIdentifier-containerName</key>
-			<string>MiMiNavigator project</string>
-			<key>schemeIdentifier-schemeName</key>
-			<string>MiMiNavigator</string>
-			<key>schemeIdentifier-sharedScheme</key>
-			<integer>1</integer>
-			<key>signature</key>
-			<string>Build (Automatic) MiMiNavigator</string>
-			<key>timeStartedRecording</key>
-			<real>753135840.16538799</real>
-			<key>timeStoppedRecording</key>
-			<real>753135841.07315099</real>
-			<key>title</key>
-			<string>Build (Automatic) MiMiNavigator</string>
-			<key>uniqueIdentifier</key>
-			<string>8C07CC62-9C38-48E0-A509-3C108EA6D533</string>
-		</dict>
-		<key>8E0B1551-0A04-4249-BC37-A97CDA76CD5B</key>
-		<dict>
-			<key>className</key>
-			<string>IDEActivityLogSection</string>
-			<key>documentTypeString</key>
-			<string>&lt;nil&gt;</string>
-			<key>domainType</key>
-			<string>Xcode.IDEActivityLogDomainType.BuildLog</string>
-			<key>fileName</key>
-			<string>8E0B1551-0A04-4249-BC37-A97CDA76CD5B.xcactivitylog</string>
-			<key>hasPrimaryLog</key>
-			<true/>
-			<key>primaryObservable</key>
-			<dict>
-				<key>highLevelStatus</key>
-				<string>S</string>
-				<key>totalNumberOfAnalyzerIssues</key>
-				<integer>0</integer>
-				<key>totalNumberOfErrors</key>
-				<integer>0</integer>
-				<key>totalNumberOfTestFailures</key>
-				<integer>0</integer>
-				<key>totalNumberOfWarnings</key>
-				<integer>0</integer>
-			</dict>
-			<key>schemeIdentifier-containerName</key>
-			<string>MiMiNavigator project</string>
-			<key>schemeIdentifier-schemeName</key>
-			<string>MiMiNavigator</string>
-			<key>schemeIdentifier-sharedScheme</key>
-			<integer>1</integer>
-			<key>signature</key>
-			<string>Build MiMiNavigator</string>
-			<key>timeStartedRecording</key>
-			<real>753134804.09065497</real>
-			<key>timeStoppedRecording</key>
-			<real>753134805.02737606</real>
-			<key>title</key>
-			<string>Build MiMiNavigator</string>
-			<key>uniqueIdentifier</key>
-			<string>8E0B1551-0A04-4249-BC37-A97CDA76CD5B</string>
-		</dict>
-		<key>A55D56A8-FAAF-405E-A2C3-656FA664F272</key>
-		<dict>
-			<key>className</key>
-			<string>IDEActivityLogSection</string>
-			<key>documentTypeString</key>
-			<string>&lt;nil&gt;</string>
-			<key>domainType</key>
-			<string>Xcode.IDEActivityLogDomainType.BuildLog</string>
-			<key>fileName</key>
-			<string>A55D56A8-FAAF-405E-A2C3-656FA664F272.xcactivitylog</string>
+			<string>5DBBC974-1708-486F-82AE-18D63182DCC4.xcactivitylog</string>
 			<key>hasPrimaryLog</key>
 			<true/>
 			<key>primaryObservable</key>
@@ -1132,15 +376,15 @@
 			<key>signature</key>
 			<string>Build MiMiNavigator</string>
 			<key>timeStartedRecording</key>
-			<real>753134847.46196496</real>
+			<real>753156663.72098398</real>
 			<key>timeStoppedRecording</key>
-			<real>753134847.85158205</real>
+			<real>753156664.14479005</real>
 			<key>title</key>
 			<string>Build MiMiNavigator</string>
 			<key>uniqueIdentifier</key>
-			<string>A55D56A8-FAAF-405E-A2C3-656FA664F272</string>
+			<string>5DBBC974-1708-486F-82AE-18D63182DCC4</string>
 		</dict>
-		<key>AA194D0E-8EE1-4EBD-8A7B-C3D41092BFE2</key>
+		<key>6D7DF53F-AD21-4BBF-9582-1B90D1D08B01</key>
 		<dict>
 			<key>className</key>
 			<string>IDEActivityLogSection</string>
@@ -1149,133 +393,7 @@
 			<key>domainType</key>
 			<string>Xcode.IDEActivityLogDomainType.BuildLog</string>
 			<key>fileName</key>
-			<string>AA194D0E-8EE1-4EBD-8A7B-C3D41092BFE2.xcactivitylog</string>
-			<key>hasPrimaryLog</key>
-			<true/>
-			<key>primaryObservable</key>
-			<dict>
-				<key>highLevelStatus</key>
-				<string>S</string>
-				<key>totalNumberOfAnalyzerIssues</key>
-				<integer>0</integer>
-				<key>totalNumberOfErrors</key>
-				<integer>0</integer>
-				<key>totalNumberOfTestFailures</key>
-				<integer>0</integer>
-				<key>totalNumberOfWarnings</key>
-				<integer>0</integer>
-			</dict>
-			<key>schemeIdentifier-containerName</key>
-			<string>MiMiNavigator project</string>
-			<key>schemeIdentifier-schemeName</key>
-			<string>MiMiNavigator</string>
-			<key>schemeIdentifier-sharedScheme</key>
-			<integer>1</integer>
-			<key>signature</key>
-			<string>Build (Automatic) MiMiNavigator</string>
-			<key>timeStartedRecording</key>
-			<real>753134759.29456103</real>
-			<key>timeStoppedRecording</key>
-			<real>753134759.35167897</real>
-			<key>title</key>
-			<string>Build (Automatic) MiMiNavigator</string>
-			<key>uniqueIdentifier</key>
-			<string>AA194D0E-8EE1-4EBD-8A7B-C3D41092BFE2</string>
-		</dict>
-		<key>AD4A1060-4268-441B-BF09-425ECDE72502</key>
-		<dict>
-			<key>className</key>
-			<string>IDEActivityLogSection</string>
-			<key>documentTypeString</key>
-			<string>&lt;nil&gt;</string>
-			<key>domainType</key>
-			<string>Xcode.IDEActivityLogDomainType.BuildLog</string>
-			<key>fileName</key>
-			<string>AD4A1060-4268-441B-BF09-425ECDE72502.xcactivitylog</string>
-			<key>hasPrimaryLog</key>
-			<true/>
-			<key>primaryObservable</key>
-			<dict>
-				<key>highLevelStatus</key>
-				<string>S</string>
-				<key>totalNumberOfAnalyzerIssues</key>
-				<integer>0</integer>
-				<key>totalNumberOfErrors</key>
-				<integer>0</integer>
-				<key>totalNumberOfTestFailures</key>
-				<integer>0</integer>
-				<key>totalNumberOfWarnings</key>
-				<integer>0</integer>
-			</dict>
-			<key>schemeIdentifier-containerName</key>
-			<string>MiMiNavigator project</string>
-			<key>schemeIdentifier-schemeName</key>
-			<string>MiMiNavigator</string>
-			<key>schemeIdentifier-sharedScheme</key>
-			<integer>1</integer>
-			<key>signature</key>
-			<string>Build (Automatic) MiMiNavigator</string>
-			<key>timeStartedRecording</key>
-			<real>753135469.84778798</real>
-			<key>timeStoppedRecording</key>
-			<real>753135470.75810504</real>
-			<key>title</key>
-			<string>Build (Automatic) MiMiNavigator</string>
-			<key>uniqueIdentifier</key>
-			<string>AD4A1060-4268-441B-BF09-425ECDE72502</string>
-		</dict>
-		<key>B0137040-8CC8-4991-8B11-3A865074D1E9</key>
-		<dict>
-			<key>className</key>
-			<string>IDEActivityLogSection</string>
-			<key>documentTypeString</key>
-			<string>&lt;nil&gt;</string>
-			<key>domainType</key>
-			<string>Xcode.IDEActivityLogDomainType.BuildLog</string>
-			<key>fileName</key>
-			<string>B0137040-8CC8-4991-8B11-3A865074D1E9.xcactivitylog</string>
-			<key>hasPrimaryLog</key>
-			<true/>
-			<key>primaryObservable</key>
-			<dict>
-				<key>highLevelStatus</key>
-				<string>S</string>
-				<key>totalNumberOfAnalyzerIssues</key>
-				<integer>0</integer>
-				<key>totalNumberOfErrors</key>
-				<integer>0</integer>
-				<key>totalNumberOfTestFailures</key>
-				<integer>0</integer>
-				<key>totalNumberOfWarnings</key>
-				<integer>0</integer>
-			</dict>
-			<key>schemeIdentifier-containerName</key>
-			<string>MiMiNavigator project</string>
-			<key>schemeIdentifier-schemeName</key>
-			<string>MiMiNavigator</string>
-			<key>schemeIdentifier-sharedScheme</key>
-			<integer>1</integer>
-			<key>signature</key>
-			<string>Build (Automatic) MiMiNavigator</string>
-			<key>timeStartedRecording</key>
-			<real>753135291.86582994</real>
-			<key>timeStoppedRecording</key>
-			<real>753135292.889534</real>
-			<key>title</key>
-			<string>Build (Automatic) MiMiNavigator</string>
-			<key>uniqueIdentifier</key>
-			<string>B0137040-8CC8-4991-8B11-3A865074D1E9</string>
-		</dict>
-		<key>B2977BD4-FC94-4163-B0CD-20AB59D8F8AC</key>
-		<dict>
-			<key>className</key>
-			<string>IDEActivityLogSection</string>
-			<key>documentTypeString</key>
-			<string>&lt;nil&gt;</string>
-			<key>domainType</key>
-			<string>Xcode.IDEActivityLogDomainType.BuildLog</string>
-			<key>fileName</key>
-			<string>B2977BD4-FC94-4163-B0CD-20AB59D8F8AC.xcactivitylog</string>
+			<string>6D7DF53F-AD21-4BBF-9582-1B90D1D08B01.xcactivitylog</string>
 			<key>hasPrimaryLog</key>
 			<true/>
 			<key>primaryObservable</key>
@@ -1300,15 +418,15 @@
 			<key>signature</key>
 			<string>Build MiMiNavigator</string>
 			<key>timeStartedRecording</key>
-			<real>753136507.80283296</real>
+			<real>753154341.93129897</real>
 			<key>timeStoppedRecording</key>
-			<real>753136508.74242604</real>
+			<real>753154343.29986</real>
 			<key>title</key>
 			<string>Build MiMiNavigator</string>
 			<key>uniqueIdentifier</key>
-			<string>B2977BD4-FC94-4163-B0CD-20AB59D8F8AC</string>
+			<string>6D7DF53F-AD21-4BBF-9582-1B90D1D08B01</string>
 		</dict>
-		<key>B3FDFC43-0892-4D92-AECC-196E6A148EE9</key>
+		<key>7D8FE592-5914-4BA0-872E-9B82759B78DE</key>
 		<dict>
 			<key>className</key>
 			<string>IDEActivityLogSection</string>
@@ -1317,7 +435,7 @@
 			<key>domainType</key>
 			<string>Xcode.IDEActivityLogDomainType.BuildLog</string>
 			<key>fileName</key>
-			<string>B3FDFC43-0892-4D92-AECC-196E6A148EE9.xcactivitylog</string>
+			<string>7D8FE592-5914-4BA0-872E-9B82759B78DE.xcactivitylog</string>
 			<key>hasPrimaryLog</key>
 			<true/>
 			<key>primaryObservable</key>
@@ -1340,17 +458,17 @@
 			<key>schemeIdentifier-sharedScheme</key>
 			<integer>1</integer>
 			<key>signature</key>
-			<string>Clean MiMiNavigator</string>
+			<string>Build (Automatic) MiMiNavigator</string>
 			<key>timeStartedRecording</key>
-			<real>753136444.14175797</real>
+			<real>753155488.59469795</real>
 			<key>timeStoppedRecording</key>
-			<real>753136444.259094</real>
+			<real>753155489.77503097</real>
 			<key>title</key>
-			<string>Clean MiMiNavigator</string>
+			<string>Build (Automatic) MiMiNavigator</string>
 			<key>uniqueIdentifier</key>
-			<string>B3FDFC43-0892-4D92-AECC-196E6A148EE9</string>
+			<string>7D8FE592-5914-4BA0-872E-9B82759B78DE</string>
 		</dict>
-		<key>CEF89377-38BD-402E-9FA8-85E1C9197B94</key>
+		<key>8144C07C-55F1-43B5-9852-BEAED31F1E65</key>
 		<dict>
 			<key>className</key>
 			<string>IDEActivityLogSection</string>
@@ -1359,7 +477,7 @@
 			<key>domainType</key>
 			<string>Xcode.IDEActivityLogDomainType.BuildLog</string>
 			<key>fileName</key>
-			<string>CEF89377-38BD-402E-9FA8-85E1C9197B94.xcactivitylog</string>
+			<string>8144C07C-55F1-43B5-9852-BEAED31F1E65.xcactivitylog</string>
 			<key>hasPrimaryLog</key>
 			<true/>
 			<key>primaryObservable</key>
@@ -1384,15 +502,15 @@
 			<key>signature</key>
 			<string>Build MiMiNavigator</string>
 			<key>timeStartedRecording</key>
-			<real>753134923.691203</real>
+			<real>753156304.94124496</real>
 			<key>timeStoppedRecording</key>
-			<real>753134924.61130595</real>
+			<real>753156306.30426097</real>
 			<key>title</key>
 			<string>Build MiMiNavigator</string>
 			<key>uniqueIdentifier</key>
-			<string>CEF89377-38BD-402E-9FA8-85E1C9197B94</string>
+			<string>8144C07C-55F1-43B5-9852-BEAED31F1E65</string>
 		</dict>
-		<key>D8F05DEF-7A44-45E4-9F11-F66AD81A3DC6</key>
+		<key>900E4F1B-2B81-49EC-A34D-2D12CFC95A71</key>
 		<dict>
 			<key>className</key>
 			<string>IDEActivityLogSection</string>
@@ -1401,7 +519,7 @@
 			<key>domainType</key>
 			<string>Xcode.IDEActivityLogDomainType.BuildLog</string>
 			<key>fileName</key>
-			<string>D8F05DEF-7A44-45E4-9F11-F66AD81A3DC6.xcactivitylog</string>
+			<string>900E4F1B-2B81-49EC-A34D-2D12CFC95A71.xcactivitylog</string>
 			<key>hasPrimaryLog</key>
 			<true/>
 			<key>primaryObservable</key>
@@ -1411,137 +529,11 @@
 				<key>totalNumberOfAnalyzerIssues</key>
 				<integer>0</integer>
 				<key>totalNumberOfErrors</key>
+				<integer>1</integer>
+				<key>totalNumberOfTestFailures</key>
+				<integer>0</integer>
+				<key>totalNumberOfWarnings</key>
 				<integer>2</integer>
-				<key>totalNumberOfTestFailures</key>
-				<integer>0</integer>
-				<key>totalNumberOfWarnings</key>
-				<integer>0</integer>
-			</dict>
-			<key>schemeIdentifier-containerName</key>
-			<string>MiMiNavigator project</string>
-			<key>schemeIdentifier-schemeName</key>
-			<string>MiMiNavigator</string>
-			<key>schemeIdentifier-sharedScheme</key>
-			<integer>1</integer>
-			<key>signature</key>
-			<string>Build MiMiNavigator</string>
-			<key>timeStartedRecording</key>
-			<real>753136389.82627296</real>
-			<key>timeStoppedRecording</key>
-			<real>753136390.35565495</real>
-			<key>title</key>
-			<string>Build MiMiNavigator</string>
-			<key>uniqueIdentifier</key>
-			<string>D8F05DEF-7A44-45E4-9F11-F66AD81A3DC6</string>
-		</dict>
-		<key>D994316D-C068-4DE2-8E18-CEBCD3AE3959</key>
-		<dict>
-			<key>className</key>
-			<string>IDEActivityLogSection</string>
-			<key>documentTypeString</key>
-			<string>&lt;nil&gt;</string>
-			<key>domainType</key>
-			<string>Xcode.IDEActivityLogDomainType.BuildLog</string>
-			<key>fileName</key>
-			<string>D994316D-C068-4DE2-8E18-CEBCD3AE3959.xcactivitylog</string>
-			<key>hasPrimaryLog</key>
-			<true/>
-			<key>primaryObservable</key>
-			<dict>
-				<key>highLevelStatus</key>
-				<string>S</string>
-				<key>totalNumberOfAnalyzerIssues</key>
-				<integer>0</integer>
-				<key>totalNumberOfErrors</key>
-				<integer>0</integer>
-				<key>totalNumberOfTestFailures</key>
-				<integer>0</integer>
-				<key>totalNumberOfWarnings</key>
-				<integer>0</integer>
-			</dict>
-			<key>schemeIdentifier-containerName</key>
-			<string>MiMiNavigator project</string>
-			<key>schemeIdentifier-schemeName</key>
-			<string>MiMiNavigator</string>
-			<key>schemeIdentifier-sharedScheme</key>
-			<integer>1</integer>
-			<key>signature</key>
-			<string>Build MiMiNavigator</string>
-			<key>timeStartedRecording</key>
-			<real>753133309.05096102</real>
-			<key>timeStoppedRecording</key>
-			<real>753133310.732445</real>
-			<key>title</key>
-			<string>Build MiMiNavigator</string>
-			<key>uniqueIdentifier</key>
-			<string>D994316D-C068-4DE2-8E18-CEBCD3AE3959</string>
-		</dict>
-		<key>DA7FACEF-69CD-4D1E-8BFD-83F9FA04A88A</key>
-		<dict>
-			<key>className</key>
-			<string>IDEActivityLogSection</string>
-			<key>documentTypeString</key>
-			<string>&lt;nil&gt;</string>
-			<key>domainType</key>
-			<string>Xcode.IDEActivityLogDomainType.BuildLog</string>
-			<key>fileName</key>
-			<string>DA7FACEF-69CD-4D1E-8BFD-83F9FA04A88A.xcactivitylog</string>
-			<key>hasPrimaryLog</key>
-			<true/>
-			<key>primaryObservable</key>
-			<dict>
-				<key>highLevelStatus</key>
-				<string>S</string>
-				<key>totalNumberOfAnalyzerIssues</key>
-				<integer>0</integer>
-				<key>totalNumberOfErrors</key>
-				<integer>0</integer>
-				<key>totalNumberOfTestFailures</key>
-				<integer>0</integer>
-				<key>totalNumberOfWarnings</key>
-				<integer>0</integer>
-			</dict>
-			<key>schemeIdentifier-containerName</key>
-			<string>MiMiNavigator project</string>
-			<key>schemeIdentifier-schemeName</key>
-			<string>MiMiNavigator</string>
-			<key>schemeIdentifier-sharedScheme</key>
-			<integer>1</integer>
-			<key>signature</key>
-			<string>Build MiMiNavigator</string>
-			<key>timeStartedRecording</key>
-			<real>753133376.92106497</real>
-			<key>timeStoppedRecording</key>
-			<real>753133377.13660896</real>
-			<key>title</key>
-			<string>Build MiMiNavigator</string>
-			<key>uniqueIdentifier</key>
-			<string>DA7FACEF-69CD-4D1E-8BFD-83F9FA04A88A</string>
-		</dict>
-		<key>DFB02D93-D6EA-473C-9BEA-026E40C5B296</key>
-		<dict>
-			<key>className</key>
-			<string>IDEActivityLogSection</string>
-			<key>documentTypeString</key>
-			<string>&lt;nil&gt;</string>
-			<key>domainType</key>
-			<string>Xcode.IDEActivityLogDomainType.BuildLog</string>
-			<key>fileName</key>
-			<string>DFB02D93-D6EA-473C-9BEA-026E40C5B296.xcactivitylog</string>
-			<key>hasPrimaryLog</key>
-			<true/>
-			<key>primaryObservable</key>
-			<dict>
-				<key>highLevelStatus</key>
-				<string>S</string>
-				<key>totalNumberOfAnalyzerIssues</key>
-				<integer>0</integer>
-				<key>totalNumberOfErrors</key>
-				<integer>0</integer>
-				<key>totalNumberOfTestFailures</key>
-				<integer>0</integer>
-				<key>totalNumberOfWarnings</key>
-				<integer>0</integer>
 			</dict>
 			<key>schemeIdentifier-containerName</key>
 			<string>MiMiNavigator project</string>
@@ -1552,15 +544,15 @@
 			<key>signature</key>
 			<string>Build (Automatic) MiMiNavigator</string>
 			<key>timeStartedRecording</key>
-			<real>753135758.48025799</real>
+			<real>753155077.37619901</real>
 			<key>timeStoppedRecording</key>
-			<real>753135759.38792098</real>
+			<real>753155077.83997297</real>
 			<key>title</key>
 			<string>Build (Automatic) MiMiNavigator</string>
 			<key>uniqueIdentifier</key>
-			<string>DFB02D93-D6EA-473C-9BEA-026E40C5B296</string>
+			<string>900E4F1B-2B81-49EC-A34D-2D12CFC95A71</string>
 		</dict>
-		<key>E70F7BA5-E17F-440F-ABE5-C6721CC049B2</key>
+		<key>9839DDA9-1358-446A-8289-4503D6DC5FF5</key>
 		<dict>
 			<key>className</key>
 			<string>IDEActivityLogSection</string>
@@ -1569,7 +561,7 @@
 			<key>domainType</key>
 			<string>Xcode.IDEActivityLogDomainType.BuildLog</string>
 			<key>fileName</key>
-			<string>E70F7BA5-E17F-440F-ABE5-C6721CC049B2.xcactivitylog</string>
+			<string>9839DDA9-1358-446A-8289-4503D6DC5FF5.xcactivitylog</string>
 			<key>hasPrimaryLog</key>
 			<true/>
 			<key>primaryObservable</key>
@@ -1594,15 +586,15 @@
 			<key>signature</key>
 			<string>Build MiMiNavigator</string>
 			<key>timeStartedRecording</key>
-			<real>753133000.06653905</real>
+			<real>753155586.63356197</real>
 			<key>timeStoppedRecording</key>
-			<real>753133001.96776903</real>
+			<real>753155587.86000001</real>
 			<key>title</key>
 			<string>Build MiMiNavigator</string>
 			<key>uniqueIdentifier</key>
-			<string>E70F7BA5-E17F-440F-ABE5-C6721CC049B2</string>
+			<string>9839DDA9-1358-446A-8289-4503D6DC5FF5</string>
 		</dict>
-		<key>E8771892-1A2F-4633-B210-0C41535EA24F</key>
+		<key>9C9EB6B5-A750-41A9-8D46-62137EB30EE5</key>
 		<dict>
 			<key>className</key>
 			<string>IDEActivityLogSection</string>
@@ -1611,7 +603,7 @@
 			<key>domainType</key>
 			<string>Xcode.IDEActivityLogDomainType.BuildLog</string>
 			<key>fileName</key>
-			<string>E8771892-1A2F-4633-B210-0C41535EA24F.xcactivitylog</string>
+			<string>9C9EB6B5-A750-41A9-8D46-62137EB30EE5.xcactivitylog</string>
 			<key>hasPrimaryLog</key>
 			<true/>
 			<key>primaryObservable</key>
@@ -1636,15 +628,15 @@
 			<key>signature</key>
 			<string>Build MiMiNavigator</string>
 			<key>timeStartedRecording</key>
-			<real>753133371.92220902</real>
+			<real>753154384.13241005</real>
 			<key>timeStoppedRecording</key>
-			<real>753133372.80913794</real>
+			<real>753154387.23122895</real>
 			<key>title</key>
 			<string>Build MiMiNavigator</string>
 			<key>uniqueIdentifier</key>
-			<string>E8771892-1A2F-4633-B210-0C41535EA24F</string>
+			<string>9C9EB6B5-A750-41A9-8D46-62137EB30EE5</string>
 		</dict>
-		<key>F2287307-BB85-4ACE-9536-B43B9624F19B</key>
+		<key>A9F5AB42-DD16-4EA8-BFEB-6D09D2C41AA2</key>
 		<dict>
 			<key>className</key>
 			<string>IDEActivityLogSection</string>
@@ -1653,7 +645,7 @@
 			<key>domainType</key>
 			<string>Xcode.IDEActivityLogDomainType.BuildLog</string>
 			<key>fileName</key>
-			<string>F2287307-BB85-4ACE-9536-B43B9624F19B.xcactivitylog</string>
+			<string>A9F5AB42-DD16-4EA8-BFEB-6D09D2C41AA2.xcactivitylog</string>
 			<key>hasPrimaryLog</key>
 			<true/>
 			<key>primaryObservable</key>
@@ -1678,15 +670,15 @@
 			<key>signature</key>
 			<string>Build MiMiNavigator</string>
 			<key>timeStartedRecording</key>
-			<real>753135847.35596704</real>
+			<real>753156216.28695095</real>
 			<key>timeStoppedRecording</key>
-			<real>753135847.55830002</real>
+			<real>753156216.43259001</real>
 			<key>title</key>
 			<string>Build MiMiNavigator</string>
 			<key>uniqueIdentifier</key>
-			<string>F2287307-BB85-4ACE-9536-B43B9624F19B</string>
+			<string>A9F5AB42-DD16-4EA8-BFEB-6D09D2C41AA2</string>
 		</dict>
-		<key>FC925F59-E94F-46BE-8AF4-EAA5383AC4FB</key>
+		<key>BE0976C7-A3B8-4DBB-B927-0E7BA015D98F</key>
 		<dict>
 			<key>className</key>
 			<string>IDEActivityLogSection</string>
@@ -1695,7 +687,7 @@
 			<key>domainType</key>
 			<string>Xcode.IDEActivityLogDomainType.BuildLog</string>
 			<key>fileName</key>
-			<string>FC925F59-E94F-46BE-8AF4-EAA5383AC4FB.xcactivitylog</string>
+			<string>BE0976C7-A3B8-4DBB-B927-0E7BA015D98F.xcactivitylog</string>
 			<key>hasPrimaryLog</key>
 			<true/>
 			<key>primaryObservable</key>
@@ -1710,6 +702,90 @@
 				<integer>0</integer>
 				<key>totalNumberOfWarnings</key>
 				<integer>0</integer>
+			</dict>
+			<key>schemeIdentifier-containerName</key>
+			<string>MiMiNavigator project</string>
+			<key>schemeIdentifier-schemeName</key>
+			<string>MiMiNavigator</string>
+			<key>schemeIdentifier-sharedScheme</key>
+			<integer>1</integer>
+			<key>signature</key>
+			<string>Clean MiMiNavigator</string>
+			<key>timeStartedRecording</key>
+			<real>753154381.01765704</real>
+			<key>timeStoppedRecording</key>
+			<real>753154381.16269195</real>
+			<key>title</key>
+			<string>Clean MiMiNavigator</string>
+			<key>uniqueIdentifier</key>
+			<string>BE0976C7-A3B8-4DBB-B927-0E7BA015D98F</string>
+		</dict>
+		<key>C05416E0-937C-4D7D-9F30-6B73137871F9</key>
+		<dict>
+			<key>className</key>
+			<string>IDEActivityLogSection</string>
+			<key>documentTypeString</key>
+			<string>&lt;nil&gt;</string>
+			<key>domainType</key>
+			<string>Xcode.IDEActivityLogDomainType.BuildLog</string>
+			<key>fileName</key>
+			<string>C05416E0-937C-4D7D-9F30-6B73137871F9.xcactivitylog</string>
+			<key>hasPrimaryLog</key>
+			<true/>
+			<key>primaryObservable</key>
+			<dict>
+				<key>highLevelStatus</key>
+				<string>S</string>
+				<key>totalNumberOfAnalyzerIssues</key>
+				<integer>0</integer>
+				<key>totalNumberOfErrors</key>
+				<integer>0</integer>
+				<key>totalNumberOfTestFailures</key>
+				<integer>0</integer>
+				<key>totalNumberOfWarnings</key>
+				<integer>0</integer>
+			</dict>
+			<key>schemeIdentifier-containerName</key>
+			<string>MiMiNavigator project</string>
+			<key>schemeIdentifier-schemeName</key>
+			<string>MiMiNavigator</string>
+			<key>schemeIdentifier-sharedScheme</key>
+			<integer>1</integer>
+			<key>signature</key>
+			<string>Build MiMiNavigator</string>
+			<key>timeStartedRecording</key>
+			<real>753154091.24615598</real>
+			<key>timeStoppedRecording</key>
+			<real>753154095.02980995</real>
+			<key>title</key>
+			<string>Build MiMiNavigator</string>
+			<key>uniqueIdentifier</key>
+			<string>C05416E0-937C-4D7D-9F30-6B73137871F9</string>
+		</dict>
+		<key>C9ECE0BE-1344-4211-B346-93B03AE95931</key>
+		<dict>
+			<key>className</key>
+			<string>IDEActivityLogSection</string>
+			<key>documentTypeString</key>
+			<string>&lt;nil&gt;</string>
+			<key>domainType</key>
+			<string>Xcode.IDEActivityLogDomainType.BuildLog</string>
+			<key>fileName</key>
+			<string>C9ECE0BE-1344-4211-B346-93B03AE95931.xcactivitylog</string>
+			<key>hasPrimaryLog</key>
+			<true/>
+			<key>primaryObservable</key>
+			<dict>
+				<key>highLevelStatus</key>
+				<string>W</string>
+				<key>totalNumberOfAnalyzerIssues</key>
+				<integer>0</integer>
+				<key>totalNumberOfErrors</key>
+				<integer>0</integer>
+				<key>totalNumberOfTestFailures</key>
+				<integer>0</integer>
+				<key>totalNumberOfWarnings</key>
+				<integer>1</integer>
 			</dict>
 			<key>schemeIdentifier-containerName</key>
 			<string>MiMiNavigator project</string>
@@ -1720,15 +796,15 @@
 			<key>signature</key>
 			<string>Build (Automatic) MiMiNavigator</string>
 			<key>timeStartedRecording</key>
-			<real>753134971.28840601</real>
+			<real>753155307.18804705</real>
 			<key>timeStoppedRecording</key>
-			<real>753134972.16498101</real>
+			<real>753155308.69197202</real>
 			<key>title</key>
 			<string>Build (Automatic) MiMiNavigator</string>
 			<key>uniqueIdentifier</key>
-			<string>FC925F59-E94F-46BE-8AF4-EAA5383AC4FB</string>
+			<string>C9ECE0BE-1344-4211-B346-93B03AE95931</string>
 		</dict>
-		<key>FE3EF7B9-17DE-42F3-81D9-BBCAD58F51E8</key>
+		<key>CC7B9EAB-092B-433E-9FAB-61E2ED95103E</key>
 		<dict>
 			<key>className</key>
 			<string>IDEActivityLogSection</string>
@@ -1737,21 +813,21 @@
 			<key>domainType</key>
 			<string>Xcode.IDEActivityLogDomainType.BuildLog</string>
 			<key>fileName</key>
-			<string>FE3EF7B9-17DE-42F3-81D9-BBCAD58F51E8.xcactivitylog</string>
+			<string>CC7B9EAB-092B-433E-9FAB-61E2ED95103E.xcactivitylog</string>
 			<key>hasPrimaryLog</key>
 			<true/>
 			<key>primaryObservable</key>
 			<dict>
 				<key>highLevelStatus</key>
-				<string>S</string>
+				<string>E</string>
 				<key>totalNumberOfAnalyzerIssues</key>
 				<integer>0</integer>
 				<key>totalNumberOfErrors</key>
-				<integer>0</integer>
+				<integer>1</integer>
 				<key>totalNumberOfTestFailures</key>
 				<integer>0</integer>
 				<key>totalNumberOfWarnings</key>
-				<integer>0</integer>
+				<integer>2</integer>
 			</dict>
 			<key>schemeIdentifier-containerName</key>
 			<string>MiMiNavigator project</string>
@@ -1760,15 +836,15 @@
 			<key>schemeIdentifier-sharedScheme</key>
 			<integer>1</integer>
 			<key>signature</key>
-			<string>Build MiMiNavigator</string>
+			<string>Build (Automatic) MiMiNavigator</string>
 			<key>timeStartedRecording</key>
-			<real>753133344.26695299</real>
+			<real>753155072.42069602</real>
 			<key>timeStoppedRecording</key>
-			<real>753133344.34652102</real>
+			<real>753155073.10554302</real>
 			<key>title</key>
-			<string>Build MiMiNavigator</string>
+			<string>Build (Automatic) MiMiNavigator</string>
 			<key>uniqueIdentifier</key>
-			<string>FE3EF7B9-17DE-42F3-81D9-BBCAD58F51E8</string>
+			<string>CC7B9EAB-092B-433E-9FAB-61E2ED95103E</string>
 		</dict>
 	</dict>
 </dict>

@@ -79,11 +79,10 @@ actor DualDirectoryScanner: ObservableObject {
         }
     }
 
-    // MARK: - Directory Scanning
+    // MARK: - Scans the specified directory URL for files and directories.
 
-    /// Scans the specified directory URL for files and directories.
-    /// - Parameter url: The URL of the directory to scan.
-    /// - Returns: An array of `CustomFile` objects representing the contents of the directory.
+    // - Parameter url: The URL of the directory to scan.
+    // - Returns: An array of `CustomFile` objects representing the contents of the directory.
     private func scanDirectory(at url: URL?) -> [CustomFile] {
         guard let url = url else {
             log.error("Invalid directory URL: URL is nil.")
