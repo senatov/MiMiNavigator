@@ -59,33 +59,26 @@ struct FavoritesPanel: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 5) {
-            Text("Favorites")
-                .font(.headline)
-                .padding(.top)
-                .padding(.leading)
+        VStack {
+            Text("Favorites").font(.callout)
 
             List(favoriteItems) { item in
                 HStack {
-                    Image(systemName: item.icon)
+                    Image(systemName: item.icon.isEmpty ? "questionmark" : item.icon) // Default icon if icon name is empty
                         .foregroundColor(.blue)
                     Text(item.name)
                 }
                 .onTapGesture {
-                    // Log selected favorite item
                     log.debug("Selected favorite item: \(item.name)")
                 }
                 .onAppear {
-                    // Initialize item state if missing by updating JSON directly
                     if favoritesState[item.name] == nil {
                         updateFavoritesState(for: item.name, value: false)
                     }
                 }
             }
-            .listStyle(PlainListStyle()) // Changed from SidebarListStyle to PlainListStyle
-            .frame(maxWidth: .infinity) // Expands to full width
+            .frame(maxWidth: .infinity)
         }
-        .padding(.all)
     }
 }
 

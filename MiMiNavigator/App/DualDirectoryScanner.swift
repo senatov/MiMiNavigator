@@ -1,9 +1,15 @@
+//  DualDirectoryScanner.swift
+//  MiMiNavigator
+//
+//  Created by Iakov Senatov on 11.11.24.
+//
+
 import Combine
 import Foundation
 import SwiftUI
 
 actor DualDirectoryScanner: ObservableObject {
-    @ObservedObject private var fileLst = FileSingleton.shared
+    internal var fileLst = FileSingleton.shared
     private var leftTimer: DispatchSourceTimer?
     private var rightTimer: DispatchSourceTimer?
     public var leftDirectory: URL
@@ -12,15 +18,23 @@ actor DualDirectoryScanner: ObservableObject {
     // MARK: -
 
     init(leftDirectory: URL, rightDirectory: URL) {
-        log.debug("DualDirectoryScanner initialized.")
         self.leftDirectory = leftDirectory
-        log.debug("left directory: \(leftDirectory.path)")
         self.rightDirectory = rightDirectory
+
+        log.debug("DualDirectoryScanner initialized.")
+        log.debug("left directory: \(leftDirectory.path)")
         log.debug("right directory: \(rightDirectory.path)")
 
+        // Start monitoring in an asynchronous task after initialization
+        Task { [weak self] in
+            await self?.startMonitoring()
+        }
+    }
+
+    private func initializeMonitoring() {
         // Start monitoring in an asynchronous task to handle actor isolation
         Task {
-            await startMonitoring()
+            startMonitoring()
         }
     }
 
@@ -36,6 +50,7 @@ actor DualDirectoryScanner: ObservableObject {
             }
         }
         leftTimer?.resume()
+
         // Setup right directory timer
         rightTimer = DispatchSource.makeTimerSource(queue: DispatchQueue.global())
         rightTimer?.schedule(deadline: .now(), repeating: .seconds(1))
@@ -45,6 +60,7 @@ actor DualDirectoryScanner: ObservableObject {
             }
         }
         rightTimer?.resume()
+
         if leftTimer == nil || rightTimer == nil {
             log.error("Failed to initialize one or both timers.")
         }
@@ -66,11 +82,12 @@ actor DualDirectoryScanner: ObservableObject {
         case left, right
     }
 
-    // MARK: - Refreshes file list for the specified directory side.Parameter side: The directory side to refresh (.left or .right).
+    // MARK: - Refreshes file list for the specified directory side.
 
     private func refreshFiles(for side: DirectorySide) async {
         let directoryURL = (side == .left) ? leftDirectory : rightDirectory
         let files = scanDirectory(at: directoryURL)
+
         switch side {
         case .left:
             await fileLst.updateLeftFiles(files)
@@ -81,8 +98,6 @@ actor DualDirectoryScanner: ObservableObject {
 
     // MARK: - Scans the specified directory URL for files and directories.
 
-    // - Parameter url: The URL of the directory to scan.
-    // - Returns: An array of `CustomFile` objects representing the contents of the directory.
     private func scanDirectory(at url: URL?) -> [CustomFile] {
         guard let url = url else {
             log.error("Invalid directory URL: URL is nil.")
@@ -91,13 +106,10 @@ actor DualDirectoryScanner: ObservableObject {
         let fileManager = FileManager.default
         var customFiles: [CustomFile] = []
         do {
-            // Attempt to retrieve directory contents
             let contents = try fileManager.contentsOfDirectory(
                 at: url, includingPropertiesForKeys: [.isDirectoryKey], options: [.skipsHiddenFiles])
             for fileURL in contents {
-                // Safely retrieve isDirectory property for each item
                 let isDirectory = (try? fileURL.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
-                // Create and add a CustomFile object
                 let customFile = CustomFile(
                     name: fileURL.lastPathComponent,
                     path: fileURL.path,
@@ -106,9 +118,20 @@ actor DualDirectoryScanner: ObservableObject {
                 customFiles.append(customFile)
             }
         } catch {
-            // Log any error encountered during directory scan
             log.error("Failed to scan directory at \(url.path): \(error.localizedDescription)")
         }
         return customFiles
+    }
+
+    func setLeftDirectory(path: String) {
+        Task {
+            self.leftDirectory = URL(fileURLWithPath: path)
+        }
+    }
+
+    func setRightDirectory(path: String) {
+        Task {
+            self.rightDirectory = URL(fileURLWithPath: path)
+        }
     }
 }

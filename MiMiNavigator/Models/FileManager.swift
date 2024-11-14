@@ -1,5 +1,5 @@
 //
-//  Untitled.swift
+//  FavoritesManager.swift
 //  MiMiNavigator
 //
 //  Created by Iakov Senatov on 02.11.24.
@@ -135,22 +135,17 @@ extension FileManager {
             picturesDirectory,
             moviesDirectory,
         ]
-
         // Optionally add iCloud, OneDrive, Google Drive, and network drives if available
         if let iCloud = iCloudDirectory {
             directories.append(iCloud)
         }
-
         if let oneDrive = oneDriveDirectory {
             directories.append(oneDrive)
         }
-
         if let googleDrive = googleDriveDirectory {
             directories.append(googleDrive)
         }
-
         directories.append(contentsOf: networkDrives)
-
         return directories
     }
 }
