@@ -69,7 +69,7 @@ actor DualDirectoryScanner: ObservableObject {
     // MARK: - Stops monitoring both directories and cancels active timers.
 
     func stopMonitoring() {
-        log.debug("Stopping directory monitoring.")
+        log.debug("stopMonitoring()")
         leftTimer?.cancel()
         leftTimer = nil
         rightTimer?.cancel()

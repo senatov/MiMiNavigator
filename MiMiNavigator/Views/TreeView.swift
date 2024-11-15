@@ -34,8 +34,8 @@ struct TreeView: View {
                     }) {
                         Label("Copy", systemImage: "document.on.document")
                     }
-                    .buttonStyle(.borderless) // Apply plain style
-                    .foregroundColor(.primary) // System default color
+                    .buttonStyle(.borderless)
+                    .foregroundColor(.primary)
 
                     Button(action: {
                         log.debug("Rename action for \(file.name)")

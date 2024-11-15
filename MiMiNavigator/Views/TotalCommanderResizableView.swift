@@ -14,18 +14,13 @@ struct TotalCommanderResizableView: View {
     @State private var tooltipPosition: CGPoint = .zero
     @State private var tooltipText: String = ""
     @ObservedObject private var fileLst = FileSingleton.shared
-    @StateObject private var scanner = DualDirectoryScanner(leftDirectory: URL(fileURLWithPath: "/Users/senat/Downloads/Hahly"), rightDirectory: URL(fileURLWithPath: "/Users/senat/tmp"))
+    @StateObject private var scanner = DualDirectoryScanner(leftDirectory: URL(fileURLWithPath: "/Users/senat/Downloads/Hahly")
+                                                            , rightDirectory: URL(fileURLWithPath: "/TMP"))
     @State private var leftPath: String = ""
     @State private var rightPath: String = ""
 
     @State private var displayedLeftFiles: [CustomFile] = []
     @State private var displayedRightFiles: [CustomFile] = []
-
-    @MainActor
-    private func fetchPaths() async {
-        leftPath = await scanner.leftDirectory.path
-        rightPath = await scanner.rightDirectory.path
-    }
 
     var body: some View {
         GeometryReader { geometry in
@@ -52,15 +47,43 @@ struct TotalCommanderResizableView: View {
         }
     }
 
+    // MARK: - -
+
+    @MainActor
+    private func fetchPaths() async {
+        leftPath = await scanner.leftDirectory.path
+        rightPath = await scanner.rightDirectory.path
+    }
+
+    // MARK: - - Fetch the files asynchronously from the actor
+
+    @MainActor
+    private func fetchLeftFiles() async {
+        displayedLeftFiles = await scanner.fileLst.getLeftFiles()
+    }
+
+    // MARK: - - Fetch the files asynchronously from the actor
+
+    @MainActor
+    private func fetchRightFiles() async {
+        displayedRightFiles = await scanner.fileLst.getRightFiles()
+    }
+
+    // MARK: - -
+
     private func toggleMenu() {
+        log.debug("toggleMenu()")
         withAnimation {
             isShowMenu.toggle()
             UserPreferences.shared.saveMenuState(isOpen: isShowMenu)
         }
     }
 
+    // MARK: - -
+
     private func buildMenuButton(geometry: GeometryProxy) -> some View {
-        HStack {
+        log.debug("buildMenuButton()")
+        return HStack {
             Button(action: { toggleMenu() }) {
                 Image(systemName: "line.horizontal.3")
                     .foregroundColor(.black)
@@ -77,10 +100,13 @@ struct TotalCommanderResizableView: View {
         .padding(.bottom, 0.1)
     }
 
+    // MARK: - -
+
     private func buildMainPanels(geometry: GeometryProxy) -> some View {
-        HStack(spacing: 0) {
+        log.debug("buildMainPanels()")
+        return HStack(spacing: 0) {
             if isShowMenu {
-                buildVerticalTreeMenu()
+                builFavoriteTreeMenu()
             }
             buildLeftPanel(geometry: geometry)
             buildDivider(geometry: geometry)
@@ -90,8 +116,11 @@ struct TotalCommanderResizableView: View {
         .background(Color.white)
     }
 
+    // MARK: - -
+
     private func buildLeftPanel(geometry: GeometryProxy) -> some View {
-        VStack {
+        log.debug("buildLeftPanel()")
+        return VStack {
             EditablePathControlWrapper(path: $leftPath)
                 .padding(.bottom, 1)
                 .background(
@@ -127,14 +156,11 @@ struct TotalCommanderResizableView: View {
         }
     }
 
-    // Fetch the files asynchronously from the actor
-    @MainActor
-    private func fetchLeftFiles() async {
-        displayedLeftFiles = await scanner.fileLst.getLeftFiles()
-    }
+    // MARK: - -
 
     private func buildRightPanel() -> some View {
-        VStack {
+        log.debug("buildRightPanel()")
+        return VStack {
             EditablePathControlWrapper(path: $rightPath)
                 .padding(.bottom, 1)
                 .background(
@@ -170,22 +196,22 @@ struct TotalCommanderResizableView: View {
         }
     }
 
-    // Fetch the files asynchronously from the actor
-    @MainActor
-    private func fetchRightFiles() async {
-        displayedRightFiles = await scanner.fileLst.getRightFiles()
-    }
+    // MARK: - -
 
-    private func buildVerticalTreeMenu() -> some View {
-        let scanner = FavoritesScanner()
-        let fileStructure = scanner.scanFavorites()
+    private func builFavoriteTreeMenu() -> some View {
+        log.debug("builFavoriteTreeMenu()")
+        let favScanner = FavoritesScanner()
+        let fileStructure = favScanner.scanFavorites()
         return TreeView(files: fileStructure, selectedFile: $selectedFile)
             .padding()
             .frame(maxWidth: 230)
     }
 
+    // MARK: - -
+
     private func buildDivider(geometry: GeometryProxy) -> some View {
-        Rectangle()
+        log.debug("buildDivider()")
+        return Rectangle()
             .fill(Color.gray)
             .frame(width: 7)
             .gesture(
@@ -203,7 +229,10 @@ struct TotalCommanderResizableView: View {
             }
     }
 
+    // MARK: - -
+
     private func handleDividerDrag(value: DragGesture.Value, geometry: GeometryProxy) {
+        log.debug("handleDividerDrag")
         let newWidth = leftPanelWidth + value.translation.width
         if newWidth > 100 && newWidth < geometry.size.width - 100 {
             leftPanelWidth = newWidth
@@ -215,16 +244,23 @@ struct TotalCommanderResizableView: View {
         }
     }
 
+    // MARK: - -
+
     private func handleDoubleClickDivider(geometry: GeometryProxy) {
         leftPanelWidth = geometry.size.width / 2
         UserDefaults.standard.set(leftPanelWidth, forKey: "leftPanelWidth")
     }
 
+    // MARK: - -
+
     private func initializePanelWidth(geometry: GeometryProxy) {
         leftPanelWidth = UserDefaults.standard.object(forKey: "leftPanelWidth") as? CGFloat ?? geometry.size.width / 2
     }
 
+    // MARK: - -
+
     private func buildToolbar() -> some View {
+        log.debug("buildToolbar()")
         let buttons = [
             ("F3 View", "eye.circle", { log.debug("View selected Docu") }),
             ("F4 Edit", "pencil", { log.debug("Edit button tapped") }),
@@ -257,11 +293,17 @@ struct TotalCommanderResizableView: View {
         .background(Color(NSColor.windowBackgroundColor))
     }
 
+    // MARK: - -
+
     private func exitApp() {
+        log.debug("exitApp()")
         NSApplication.shared.terminate(nil)
     }
 
+    // MARK: - -
+
     private func addKeyPressMonitor() {
+        log.debug("addKeyPressMonitor()")
         NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
             if event.modifierFlags.contains(.option) && event.keyCode == 0x76 {
                 exitApp()
