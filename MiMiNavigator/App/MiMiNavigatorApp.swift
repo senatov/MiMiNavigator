@@ -17,7 +17,7 @@ struct MiMiNavigatorApp: App {
     // MARK: - -
 
     init() {
-        log.debug("Console logging")
+        log.debug("MiMiNavigatorApp initialized")
 
         // Add Console Destination
         let console = ConsoleDestination()
@@ -47,6 +47,7 @@ struct MiMiNavigatorApp: App {
     // MARK: - -
 
     private func setupFileLogging() {
+        log.debug("setupFileLogging()")
         let file = FileDestination()
         // Create log directory
         guard let logDirectory = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask).first?
@@ -65,7 +66,7 @@ struct MiMiNavigatorApp: App {
             file.logFileURL = logDirectory.appendingPathComponent(logFileName)
             if let currentLogURL = file.logFileURL, FileManager.default.fileExists(atPath: currentLogURL.path) {
                 let fileSize = try FileManager.default.attributesOfItem(atPath: currentLogURL.path)[.size] as? UInt64 ?? 0
-                if fileSize > 10 * 1024 * 1024 { // If file size is greater than 10 MB
+                if fileSize > 10 * 1024 * 1024 { 
                     try archiveAndClearLogFile(at: currentLogURL, in: logDirectory)
                 }
             }
@@ -84,6 +85,7 @@ struct MiMiNavigatorApp: App {
     // MARK: - -
 
     private func archiveAndClearLogFile(at logFileURL: URL, in logDirectory: URL) throws {
+        log.debug("archivingAndClearingLogFile()")
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyy-MM-dd_HH-mm-ss"
         let zipFileName = "MiMiNavigatorLog_\(dateFormatter.string(from: Date())).zip"
@@ -99,6 +101,7 @@ struct MiMiNavigatorApp: App {
     // MARK: - - Custom function to compress data from a source file to a destination file using zlib
 
     private func compressFile(at sourceURL: URL, to destinationURL: URL) throws {
+        log.debug("compressFile()")
         let source = try FileHandle(forReadingFrom: sourceURL)
         defer { source.closeFile() }
 
@@ -116,6 +119,7 @@ struct MiMiNavigatorApp: App {
     // MARK: - - Custom compression function using zlib
 
     private func compressData(_ data: Data) -> Data {
+        log.debug("compressData()")
         var compressedData = Data()
         data.withUnsafeBytes { (rawBufferPointer: UnsafeRawBufferPointer) in
             guard let baseAddress = rawBufferPointer.baseAddress else { return }
@@ -133,6 +137,7 @@ struct MiMiNavigatorApp: App {
     // MARK: - -
 
     private func cleanUpOldZipFiles(in directory: URL) throws {
+        log.debug("cleanUpOldZipFiles()")
         let fileManager = FileManager.default
         let zipFiles = try fileManager.contentsOfDirectory(at: directory, includingPropertiesForKeys: [.creationDateKey], options: .skipsHiddenFiles)
             .filter { $0.pathExtension == "zip" }
@@ -151,13 +156,18 @@ struct MiMiNavigatorApp: App {
     // MARK: - -
 
     private func cleanUpOldLogs(in directory: URL) throws {
+        log.debug("cleanUpOldLogs()")
         let fileManager = FileManager.default
-        let twoWeeksAgo = Calendar.current.date(byAdding: .day, value: -14, to: Date()) ?? Date.distantPast
+        let twoHourAgo = Calendar.current.date(
+            byAdding: .hour,
+            value: -2,
+            to: Date()
+        ) ?? Date.distantPast
         let logFiles = try fileManager.contentsOfDirectory(at: directory, includingPropertiesForKeys: [.creationDateKey], options: .skipsHiddenFiles)
             .filter { $0.pathExtension == "log" }
         for logFile in logFiles {
             let creationDate = try logFile.resourceValues(forKeys: [.creationDateKey]).creationDate ?? Date.distantPast
-            if creationDate < twoWeeksAgo {
+            if creationDate < twoHourAgo {
                 try fileManager.removeItem(at: logFile)
                 log.debug("Deleted old log file: \(logFile.lastPathComponent)")
             }

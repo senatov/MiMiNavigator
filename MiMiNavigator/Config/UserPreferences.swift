@@ -25,7 +25,7 @@ struct UserPreferences {
     // MARK: - - Save preferences
 
     func saveWindowSize(width: CGFloat, height: CGFloat) {
-        log.debug("Executing saveWindowSize") // Log for method tracking
+        log.debug("saveWindowSize()")
         log.debug("Saving window size - Width: \(width), Height: \(height)")
         UserDefaults.standard.set(width, forKey: mimiWidthKey)
         UserDefaults.standard.set(height, forKey: mimiHeightKey)
@@ -34,7 +34,7 @@ struct UserPreferences {
     // MARK: - -
 
     func saveWindowPosition(x: CGFloat, y: CGFloat) {
-        log.debug("Executing saveWindowPosition") // Log for method tracking
+        log.debug("saveWindowPosition()")
         log.debug("Saving window position - X: \(x), Y: \(y)")
         UserDefaults.standard.set(x, forKey: mimiWindowPosXKey)
         UserDefaults.standard.set(y, forKey: mimiWindowPosYKey)
@@ -43,7 +43,7 @@ struct UserPreferences {
     // MARK: - -
 
     func saveLeftPanelWidth(_ width: CGFloat) {
-        log.debug("Executing saveLeftPanelWidth") // Log for method tracking
+        log.debug("saveLeftPanelWidth()")
         log.debug("Saving left panel width - Width: \(width)")
         UserDefaults.standard.set(width, forKey: mimiLeftPanelWidthKey)
     }
@@ -51,7 +51,7 @@ struct UserPreferences {
     // MARK: - -
 
     func saveMenuState(isOpen: Bool) {
-        log.debug("Executing saveMenuState") // Log for method tracking
+        log.debug("saveMenuState()")
         log.debug("Saving menu state - Is Open: \(isOpen)")
         UserDefaults.standard.set(isOpen, forKey: mimiMenuStateKey)
     }
@@ -59,7 +59,7 @@ struct UserPreferences {
     // MARK: - -  Restore preferences
 
     func restoreWindowSize() -> CGSize {
-        log.debug("Executing restoreWindowSize") // Log for method tracking
+        log.debug("restoreWindowSize()")
         let width = UserDefaults.standard.object(forKey: mimiWidthKey) as? CGFloat ?? 800
         let height = UserDefaults.standard.object(forKey: mimiHeightKey) as? CGFloat ?? 600
         log.debug("Restoring window size - Width: \(width), Height: \(height)")
@@ -69,7 +69,7 @@ struct UserPreferences {
     // MARK: - -
 
     func restoreWindowPosition(screenSize: CGSize) -> CGPoint {
-        log.debug("Executing restoreWindowPosition") // Log for method tracking
+        log.debug("restoreWindowPosition()")
         // Default to the center of the screen if no saved position is found
         let defaultX = (screenSize.width - 800) / 2 // Assuming default width of 800
         let defaultY = (screenSize.height - 600) / 2 // Assuming default height of 600
@@ -84,7 +84,7 @@ struct UserPreferences {
     // MARK: - -
 
     func restoreLeftPanelWidth() -> CGFloat {
-        log.debug("Executing restoreLeftPanelWidth") // Log for method tracking
+        log.debug("restoreLeftPanelWidth()") // Log for method tracking
         let width = UserDefaults.standard.object(forKey: mimiLeftPanelWidthKey) as? CGFloat ?? 300
         log.debug("Restoring left panel width - Width: \(width)")
         return width
@@ -93,7 +93,7 @@ struct UserPreferences {
     // MARK: - -
 
     func restoreMenuState() -> Bool {
-        log.debug("Executing restoreMenuState") // Log for method tracking
+        log.debug("restoreMenuState()")
         let isOpen = UserDefaults.standard.bool(forKey: mimiMenuStateKey)
         log.debug("Restoring menu state - Is Open: \(isOpen)")
         return isOpen
