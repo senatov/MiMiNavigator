@@ -1,5 +1,6 @@
 
-# 📁 MiMiNavigator
+# 📁 MiMiNavigator - MacOS File manager with two panels (NOT READY YET, under development )
+
 
 [![Swift Version](https://img.shields.io/badge/Swift-6.0-blue.svg)](https://swift.org)
 [![Xcode Version](https://img.shields.io/badge/Xcode-16.1-blue.svg)](https://developer.apple.com/xcode/)
