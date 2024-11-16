@@ -19,7 +19,7 @@ class FavoritesScanner {
         let favoritePaths = FileManager.default.allDirectories
         var favorites: [CustomFile] = []
         for path in favoritePaths {
-            if let customFile = buildFavoritePanel(at: path, maxDirectories: <#T##Int#>) {
+            if let customFile = buildFavoritePanel(at: path, maxDirectories: 0xFF) {
                 favorites.append(customFile)
             }
         }
