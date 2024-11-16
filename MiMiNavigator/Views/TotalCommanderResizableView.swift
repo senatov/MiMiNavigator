@@ -14,8 +14,8 @@ struct TotalCommanderResizableView: View {
     @State private var tooltipPosition: CGPoint = .zero
     @State private var tooltipText: String = ""
     @ObservedObject private var fileLst = FileSingleton.shared
-    @StateObject private var scanner = DualDirectoryScanner(leftDirectory: URL(fileURLWithPath: "/Users/senat/Downloads/Hahly")
-                                                            , rightDirectory: URL(fileURLWithPath: "/TMP"))
+    @StateObject private var scanner = DualDirectoryScanner(leftDirectory: URL(fileURLWithPath: "/Users/senat/Downloads/Hahly"),
+                                                            rightDirectory: URL(fileURLWithPath: "/TMP"))
     @State private var leftPath: String = ""
     @State private var rightPath: String = ""
 
@@ -237,7 +237,8 @@ struct TotalCommanderResizableView: View {
         if newWidth > 100 && newWidth < geometry.size.width - 100 {
             leftPanelWidth = newWidth
             let (tooltipText, tooltipPosition) = TooltipModule.calculateTooltip(
-                location: value.location, dividerX: newWidth, totalWidth: geometry.size.width)
+                location: value.location, dividerX: newWidth, totalWidth: geometry.size.width
+            )
             self.tooltipText = tooltipText
             self.tooltipPosition = tooltipPosition
             showTooltip = true

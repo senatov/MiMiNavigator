@@ -12,19 +12,23 @@ import Foundation
 class FavoritesScanner {
     private var visitedPaths = Set<String>()
 
+    // MARK: - -
+
     public func scanFavorites() -> [CustomFile] {
         log.debug("scanFavorites()")
         let favoritePaths = FileManager.default.allDirectories
         var favorites: [CustomFile] = []
         for path in favoritePaths {
-            if let customFile = buildFavoriteStructure(at: path) {
+            if let customFile = buildFavoritePanel(at: path, maxDirectories: <#T##Int#>) {
                 favorites.append(customFile)
             }
         }
         return favorites
     }
 
-    private func buildFavoriteStructure(at url: URL, maxDirectories: Int = 34) -> CustomFile? {
+    // MARK: - -
+
+    private func buildFavoritePanel(at url: URL, maxDirectories: Int = 0xFF) -> CustomFile? {
         log.debug("buildFavoriteStructure()")
         guard !visitedPaths.contains(url.path) else {
             return nil
@@ -48,7 +52,7 @@ class FavoritesScanner {
                     log.debug("Reached the maximum directory limit within buildFavoriteStructure, stopping further scanning.")
                     break
                 }
-                if let child = buildFavoriteStructure(at: item, maxDirectories: 0) { // maxDirectories 0 prevents further recursion
+                if let child = buildFavoritePanel(at: item, maxDirectories: 0) { // maxDirectories 0 prevents further recursion
                     children.append(child)
                     directoryCount += 1
                 }
@@ -56,6 +60,8 @@ class FavoritesScanner {
         }
         return CustomFile(name: fileName, path: url.path, isDirectory: isDirectory, children: children.isEmpty ? nil : children)
     }
+
+    // MARK: - -
 
     private func buildFileStructure(at url: URL) -> CustomFile? {
         log.debug("buildFileStructure()")
