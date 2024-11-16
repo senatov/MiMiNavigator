@@ -199,12 +199,13 @@ struct TotalCommanderResizableView: View {
     // MARK: - -
 
     private func builFavoriteTreeMenu() -> some View {
-        log.debug("builFavoriteTreeMenu()")
-        let favScanner = FavoritesScanner()
-        let fileStructure = favScanner.scanFavorites()
+        log.debug("builFavoriteTreeMenu()") // Log the start of the menu-building process
+        let favScanner = FavoritesScanner() // Initialize the favorites scanner
+        let fileStructure = favScanner.scanFavorites() // Scan and retrieve the file structure
         return TreeView(files: fileStructure, selectedFile: $selectedFile)
-            .padding()
-            .frame(maxWidth: 230)
+            .padding() // Add padding to the tree view
+            .frame(maxWidth: 230) // Set the maximum width of the tree view
+            .font(.caption) // Use a compact font for a more condensed appearance
     }
 
     // MARK: - -
