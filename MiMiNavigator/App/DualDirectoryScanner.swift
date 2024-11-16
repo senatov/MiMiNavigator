@@ -9,11 +9,15 @@ import Foundation
 import SwiftUI
 
 actor DualDirectoryScanner: ObservableObject {
-    internal var fileLst = FileSingleton.shared
+    var fileLst = FileSingleton.shared
     private var leftTimer: DispatchSourceTimer?
     private var rightTimer: DispatchSourceTimer?
     public var leftDirectory: URL
     public var rightDirectory: URL
+
+    private enum DirectorySide {
+        case left, right
+    }
 
     // MARK: -
 
@@ -41,9 +45,9 @@ actor DualDirectoryScanner: ObservableObject {
     // MARK: - Starts monitoring both directories with a 1-second refresh interval.
 
     func startMonitoring() {
-        // Setup left directory timer
+        log.info("Starting monitoring both directories.")
         leftTimer = DispatchSource.makeTimerSource(queue: DispatchQueue.global())
-        leftTimer?.schedule(deadline: .now(), repeating: .seconds(1))
+        leftTimer?.schedule(deadline: .now(), repeating: .seconds(5))
         leftTimer?.setEventHandler { [weak self] in
             Task.detached { [weak self] in
                 await self?.refreshFiles(for: .left)
@@ -53,7 +57,7 @@ actor DualDirectoryScanner: ObservableObject {
 
         // Setup right directory timer
         rightTimer = DispatchSource.makeTimerSource(queue: DispatchQueue.global())
-        rightTimer?.schedule(deadline: .now(), repeating: .seconds(1))
+        rightTimer?.schedule(deadline: .now(), repeating: .seconds(5))
         rightTimer?.setEventHandler { [weak self] in
             Task.detached { [weak self] in
                 await self?.refreshFiles(for: .right)
@@ -69,45 +73,66 @@ actor DualDirectoryScanner: ObservableObject {
     // MARK: - Stops monitoring both directories and cancels active timers.
 
     func stopMonitoring() {
-        log.debug("stopMonitoring()")
+        log.info("Stop monitoring both directories.")
         leftTimer?.cancel()
         leftTimer = nil
         rightTimer?.cancel()
         rightTimer = nil
     }
 
-    // MARK: - Directory Monitoring
-
-    private enum DirectorySide {
-        case left, right
-    }
-
     // MARK: - Refreshes file list for the specified directory side.
 
     private func refreshFiles(for side: DirectorySide) async {
-        let directoryURL = (side == .left) ? leftDirectory : rightDirectory
-        let files = scanDirectory(at: directoryURL)
+        log.debug("Refreshing files for \(side) directory.")
 
+        // Определяем URL директории
+        let directoryURL: URL
+        switch side {
+        case .left:
+            directoryURL = leftDirectory
+        case .right:
+            directoryURL = rightDirectory
+        }
+
+        // Асинхронное сканирование директории
+        let files: [CustomFile]
+        do {
+            files = try await scanDirectory(at: directoryURL)
+        } catch {
+            log.error("Failed to scan \(side) directory: \(error.localizedDescription)")
+            files = []
+        }
+
+        // Обновление файла и логирование
+        await updateFileList(for: side, with: files)
+    }
+
+    private func updateFileList(for side: DirectorySide, with files: [CustomFile]) async {
         switch side {
         case .left:
             await fileLst.updateLeftFiles(files)
+            log.info("Left directory updated with \(files.count) files.")
+
         case .right:
             await fileLst.updateRightFiles(files)
+            log.info("Right directory updated with \(files.count) files.")
         }
     }
 
     // MARK: - Scans the specified directory URL for files and directories.
 
-    private func scanDirectory(at url: URL?) -> [CustomFile] {
+    private func scanDirectory(at url: URL?) async throws -> [CustomFile] {
         guard let url = url else {
             log.error("Invalid directory URL: URL is nil.")
             return []
         }
+
         let fileManager = FileManager.default
         var customFiles: [CustomFile] = []
         do {
             let contents = try fileManager.contentsOfDirectory(
-                at: url, includingPropertiesForKeys: [.isDirectoryKey], options: [.skipsHiddenFiles])
+                at: url, includingPropertiesForKeys: [.isDirectoryKey], options: [.skipsHiddenFiles]
+            )
             for fileURL in contents {
                 let isDirectory = (try? fileURL.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
                 let customFile = CustomFile(
@@ -119,6 +144,7 @@ actor DualDirectoryScanner: ObservableObject {
             }
         } catch {
             log.error("Failed to scan directory at \(url.path): \(error.localizedDescription)")
+            throw error
         }
         return customFiles
     }

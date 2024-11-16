@@ -1,3 +1,5 @@
+![MiMiNavigator Logo](A_minimalist_and_elegant_logo_featuring_a_stylized.png)
+
 
 # 📁 MiMiNavigator - MacOS File manager with two panels (NOT READY YET, under development )
 
@@ -12,7 +14,12 @@
 [![Encryption](https://img.shields.io/badge/Encryption-Enabled-green.svg)]()
 [![Programming](https://img.shields.io/badge/Type-Free_Programming-lightblue.svg)]()
 [![Shareware](https://img.shields.io/badge/License-Shareware-yellow.svg)]()
+
 ## 📖 Overview
+**MiMiNavigator** is a versatile navigation tool designed specifically for **macOS**. Built using **Swift** and **SwiftUI**, this project leverages the power of **Apple**'s ecosystem to provide a seamless experience. It includes advanced features that make full use of **multitasking** and **multithreading**, allowing efficient handling of directory monitoring, file operations, and user interactions.
+
+This application highlights the strengths of **SwiftUI** in creating intuitive, responsive user interfaces and utilizes **multithreading** for efficient background processes, such as file scanning and updating views, ensuring that the application remains responsive even with intensive tasks.
+
 **MiMiNavigator** is a versatile navigation tool that provides a Total Commander-style interface with directory tree navigation. This project is built with Swift 6, delivering high-performance, real-time file operations.
 
 
