@@ -71,9 +71,80 @@ This application offers a **Total Commander-style interface**, making it easy fo
 
 
 
+
 ## 📅 **Recent Changes**
 
-| **Date and Time**     | **New Features**                       | **Description**                                                                                                           |
+| **Date and Time**      | **New Features**                     | **Description**                                                                                                          |
+|-------------------------|---------------------------------------|--------------------------------------------------------------------------------------------------------------------------|
+| 2024-10-30 13:51:11    | Enhanced Asynchronous Access         | Added state properties for `leftFiles` and `rightFiles`, using async retrieval from `DualDirectoryMonitor` to avoid actor isolation conflicts. |
+| 2024-10-30 10:55:55    | Dynamic "Favorites" Panel Data       | Added dynamic data loading in the "Favorites" panel.                                                                     |
+| 2024-10-30 10:55:55    | Modular Structure                    | Reorganized code into smaller, modular Swift files in their respective directories.                                      |
+| 2024-10-30 10:55:55    | Enhanced TotalCommanderResizableView | Configured dynamic content display and refined view handling for better usability.                                       |
+| 2024-10-31 12:00:00    | Improved Accessibility               | Adjusted protection level and added public access method for favorite items.                                             |
+| 2024-10-31 12:00:00    | Refined Logging                      | Enhanced logging for start/stop monitoring in TotalCommanderResizableView.                                               |
+| 2024-11-01 18:15:00    | FileManagerState Singleton           | Added `FileManagerState` singleton class to manage `leftFiles` and `rightFiles`. Updated `DualDirectoryMonitor` to use `FileManagerState` and added a delegate pattern to notify changes. |
+| 2024-11-02 10:30:00    | New Logging Configuration            | Updated `SwiftyBeaver` configuration for color-coded log messages by level using emoji arrows.                           |
+| 2024-11-02 14:00:00    | Refactored README Format             | Corrected Markdown formatting for tables in README for better GitHub rendering.                                          |
+| 2024-11-04 14:00:00    | Files and Favorites Areas Viewable   | Files area and favorites area are now viewable.                                                                          |
+| 2024-11-04 14:00:00    | Multithreaded Refresh                | Multithreaded refresh of both file lists; views update dynamically based on filesystem changes.                          |
+
+---
+---
+---
+---
+---
+---
+--|---
+---
+---
+---
+---
+---
+---
+---
+---
+---
+---
+---
+---
+|---
+---
+---
+---
+---
+---
+---
+---
+---
+---
+---
+---
+---
+---
+---
+---
+---
+---
+---
+---
+---
+---
+---
+---
+---
+---
+---
+---
+---
+---
+---
+---
+---
+---
+---
+---
+---
+---
 ---
 ---
 ---
@@ -96,6 +167,45 @@ This application offers a **Total Commander-style interface**, making it easy fo
 ## ❓ **FAQ**
 
 | Question                                        | Answer                                                                      |
+|---
+---
+---
+---
+---
+---
+---
+---
+---
+---
+---
+---
+---
+---
+---
+---
+|---
+---
+---
+---
+---
+---
+---
+---
+---
+---
+---
+---
+---
+---
+---
+---
+---
+---
+---
+---
+---
+---
+---
 ---
 ---
 -|
