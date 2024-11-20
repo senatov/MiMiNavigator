@@ -259,40 +259,82 @@ struct TotalCommanderResizableView: View {
         leftPanelWidth = UserDefaults.standard.object(forKey: "leftPanelWidth") as? CGFloat ?? geometry.size.width / 2
     }
 
+
     // MARK: - -
 
     private func buildToolbar() -> some View {
         log.debug("buildToolbar()")
-        let buttons = [
-            ("F3 View", "eye.circle", { log.debug("View selected Docu") }),
-            ("F4 Edit", "pencil", { log.debug("Edit button tapped") }),
-            ("F5 Copy", "document.on.document", { log.debug("Copy button tapped") }),
-            ("F6 Move", "square.and.arrow.down.on.square", { log.debug("Move button tapped") }),
-            ("F7 NewFolder", "folder.badge.plus", { log.debug("NewFolder button tapped") }),
-            ("F8 Delete", "minus.rectangle", { log.debug("Delete button tapped") }),
-            ("⌥-F4 Exit", "pip.exit", { exitApp() }),
-        ]
-
-        return HStack(spacing: 2) {
-            ForEach(buttons, id: \.0) { title, icon, action in
-                TB_Button_IS(title: title, icon: icon, action: action)
-                    .buttonStyle(.bordered)
-                if title == "⌥-F4 Exit" {
-                    Spacer()
+        return HStack(spacing: 20) {
+            ControlGroup {
+                Button(action: {
+                    log.debug("View selected Docu")
+                }) {
+                    Label("F3 View", systemImage: "eye.circle")
+                        .labelStyle(.titleAndIcon)
                 }
-            }
-            TB_Button_IS(title: "Console", icon: "terminal") {
-                openConsoleInDirectory("~")
-            }
-            .buttonStyle(.bordered)
+                .help("View the selected document") // Tooltip
 
-            TB_Button_IS(title: "Settings", icon: "switch.2") {
-                log.debug("Settings button tapped")
+                Button(action: {
+                    log.debug("Edit button tapped")
+                }) {
+                    Label("F4 Edit", systemImage: "pencil")
+                        .labelStyle(.titleAndIcon)
+                }
+                .help("Edit the selected file") // Tooltip
+
+                Button(action: {
+                    log.debug("Copy button tapped")
+                }) {
+                    Label("F5 Copy", systemImage: "document.on.document")
+                        .labelStyle(.titleAndIcon)
+                }
+                .help("Copy the selected file") // Tooltip
+
+                Button(action: {
+                    log.debug("Move button tapped")
+                }) {
+                    Label("F6 Move", systemImage: "square.and.arrow.down.on.square")
+                        .labelStyle(.titleAndIcon)
+                }
+                .help("Move the selected file") // Tooltip
+
+                Button(action: {
+                    log.debug("NewFolder button tapped")
+                }) {
+                    Label("F7 NewFolder", systemImage: "folder.badge.plus")
+                        .labelStyle(.titleAndIcon)
+                }
+                .help("Create a new folder") // Tooltip
+
+                Button(action: {
+                    log.debug("Delete button tapped")
+                }) {
+                    Label("F8 Delete", systemImage: "minus.rectangle")
+                        .labelStyle(.titleAndIcon)
+                }
+                .help("Delete the selected file") // Tooltip
+
+                Button(action: {
+                    exitApp()
+                }) {
+                    Label("⌥-F4 Exit", systemImage: "xmark.circle")
+                        .labelStyle(.titleAndIcon)
+                }
+                .help("Exit the application") // Tooltip
+
+                Button(action: {
+                    log.debug("Settings button tapped")
+                }) {
+                    Label("Settings", systemImage: "gearshape")
+                        .labelStyle(.titleAndIcon)
+                }
+                .help("Open application settings") // Tooltip
             }
-            .buttonStyle(.bordered)
+            .controlGroupStyle(.navigation)
         }
         .padding()
-        .background(Color(NSColor.windowBackgroundColor))
+        .background(Color.blue.opacity(0.2))
+        .cornerRadius(8)
     }
 
     // MARK: - -
