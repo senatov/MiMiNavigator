@@ -1,8 +1,9 @@
-![MiMiNavigator Logo](/docs/logo.png)
+<img src="docs/logo.png" alt="Description" class="hover-effect" height="200" width="550" style="align-content: center; padding: 10px; border-radius: 20px;" >
 
+# 📁 MiMiNavigator - MacOS File manager with two panels
+### (NOT READY YET, under development )
 
-# 📁 MiMiNavigator - MacOS File manager with two panels 
-_#### (NOT READY YET, under development )_
+##
 
 
 [![Swift Version](https://img.shields.io/badge/Swift-6.0-blue.svg)](https://swift.org)
@@ -45,7 +46,7 @@ This application highlights the strengths of **SwiftUI** in creating intuitive, 
 1. **Clone the repository:**
    ```bash
    git clone https://github.com/username/MiMiNavigator.git
-   cd MiMiNavigator
+   cd **MiMiNavigator**
    ```
 2. **Open the project in Xcode:**
    ```bash
