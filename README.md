@@ -1,8 +1,8 @@
-![MiMiNavigator Logo](docs/logo.png "just logo"){height=150 width=250}
+![MiMiNavigator Logo](docs/logo.png "just logo")
 
 
 # 📁 MiMiNavigator - MacOS File manager with two panels
-### (NOT READY YET, under development )
+### (NOT READY YET, under development 🧹)
 
 ##
 
@@ -30,7 +30,7 @@ This application highlights the strengths of **SwiftUI** in creating intuitive, 
 
 ## ✨ Features
 
-![Current Stage](docs/preview.png "Screenshot"){: width="98%"}
+![Current Stage](docs/preview.png "Screenshot")
 
 - Dual-panel interface for managing files and directories.
 - Periodic directory scanning and updating, using dynamic collections for real-time content refresh.
