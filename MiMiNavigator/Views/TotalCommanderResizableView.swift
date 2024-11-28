@@ -8,14 +8,16 @@ import SwiftUI
 
 struct TotalCommanderResizableView: View {
     @State private var leftPanelWidth: CGFloat = 0
-    @State private var isShowMenu: Bool = UserPreferences.shared.restoreMenuState()
+    @State private var isShowMenu: Bool = UserPreferences.shared
+        .restoreMenuState()
     @State private var selectedFile: CustomFile? = nil
     @State private var showTooltip: Bool = false
     @State private var tooltipPosition: CGPoint = .zero
     @State private var tooltipText: String = ""
     @ObservedObject private var fileLst = FileSingleton.shared
-    @StateObject private var scanner = DualDirectoryScanner(leftDirectory: URL(fileURLWithPath: "/Users/senat/Downloads/Hahly"),
-                                                            rightDirectory: URL(fileURLWithPath: "/TMP"))
+    @StateObject private var scanner = DualDirectoryScanner(
+        leftDirectory: URL(fileURLWithPath: "/Users/senat/Downloads/Hahly"),
+        rightDirectory: URL(fileURLWithPath: "/TMP"))
     @State private var leftPath: String = ""
     @State private var rightPath: String = ""
 
@@ -37,6 +39,7 @@ struct TotalCommanderResizableView: View {
                     TooltipView(text: tooltipText, position: tooltipPosition)
                 }
             }
+
             .onAppear {
                 Task {
                     await fetchPaths()
@@ -80,7 +83,6 @@ struct TotalCommanderResizableView: View {
     }
 
     // MARK: - -
-
     private func buildMenuButton(geometry: GeometryProxy) -> some View {
         log.debug("buildMenuButton()")
         return HStack {
@@ -146,7 +148,10 @@ struct TotalCommanderResizableView: View {
                     }
             }
             .listStyle(PlainListStyle())
-            .frame(width: leftPanelWidth == 0 ? geometry.size.width / 2 : leftPanelWidth)
+            .frame(
+                width: leftPanelWidth == 0
+                    ? geometry.size.width / 2 : leftPanelWidth
+            )
             .border(Color.gray)
             .onAppear {
                 Task {
@@ -199,13 +204,13 @@ struct TotalCommanderResizableView: View {
     // MARK: - -
 
     private func builFavoriteTreeMenu() -> some View {
-        log.debug("builFavoriteTreeMenu()") // Log the start of the menu-building process
-        let favScanner = FavoritesScanner() // Initialize the favorites scanner
-        let fileStructure = favScanner.scanFavorites() // Scan and retrieve the file structure
+        log.debug("builFavoriteTreeMenu()")  // Log the start of the menu-building process
+        let favScanner = FavoritesScanner()  // Initialize the favorites scanner
+        let fileStructure = favScanner.scanFavorites()  // Scan and retrieve the file structure
         return TreeView(files: fileStructure, selectedFile: $selectedFile)
-            .padding() // Add padding to the tree view
-            .frame(maxWidth: 230) // Set the maximum width of the tree view
-            .font(.caption) // Use a compact font for a more condensed appearance
+            .padding()  // Add padding to the tree view
+            .frame(maxWidth: 230)  // Set the maximum width of the tree view
+            .font(.caption)  // Use a compact font for a more condensed appearance
     }
 
     // MARK: - -
@@ -221,7 +226,8 @@ struct TotalCommanderResizableView: View {
                         handleDividerDrag(value: value, geometry: geometry)
                     }
                     .onEnded { _ in
-                        UserDefaults.standard.set(leftPanelWidth, forKey: "leftPanelWidth")
+                        UserDefaults.standard.set(
+                            leftPanelWidth, forKey: "leftPanelWidth")
                         showTooltip = false
                     }
             )
@@ -232,13 +238,16 @@ struct TotalCommanderResizableView: View {
 
     // MARK: - -
 
-    private func handleDividerDrag(value: DragGesture.Value, geometry: GeometryProxy) {
+    private func handleDividerDrag(
+        value: DragGesture.Value, geometry: GeometryProxy
+    ) {
         log.debug("handleDividerDrag")
         let newWidth = leftPanelWidth + value.translation.width
         if newWidth > 100 && newWidth < geometry.size.width - 100 {
             leftPanelWidth = newWidth
             let (tooltipText, tooltipPosition) = TooltipModule.calculateTooltip(
-                location: value.location, dividerX: newWidth, totalWidth: geometry.size.width
+                location: value.location, dividerX: newWidth,
+                totalWidth: geometry.size.width
             )
             self.tooltipText = tooltipText
             self.tooltipPosition = tooltipPosition
@@ -256,12 +265,12 @@ struct TotalCommanderResizableView: View {
     // MARK: - -
 
     private func initializePanelWidth(geometry: GeometryProxy) {
-        leftPanelWidth = UserDefaults.standard.object(forKey: "leftPanelWidth") as? CGFloat ?? geometry.size.width / 2
+        leftPanelWidth =
+            UserDefaults.standard.object(forKey: "leftPanelWidth") as? CGFloat
+            ?? geometry.size.width / 2
     }
 
-
     // MARK: - -
-
     private func buildToolbar() -> some View {
         log.debug("buildToolbar()")
         return HStack(spacing: 20) {
@@ -272,7 +281,7 @@ struct TotalCommanderResizableView: View {
                     Label("F3 View", systemImage: "eye.circle")
                         .labelStyle(.titleAndIcon)
                 }
-                .help("View the selected document") // Tooltip
+                .help("View the selected document")  // Tooltip
 
                 Button(action: {
                     log.debug("Edit button tapped")
@@ -280,7 +289,7 @@ struct TotalCommanderResizableView: View {
                     Label("F4 Edit", systemImage: "pencil")
                         .labelStyle(.titleAndIcon)
                 }
-                .help("Edit the selected file") // Tooltip
+                .help("Edit the selected file")  // Tooltip
 
                 Button(action: {
                     log.debug("Copy button tapped")
@@ -288,15 +297,18 @@ struct TotalCommanderResizableView: View {
                     Label("F5 Copy", systemImage: "document.on.document")
                         .labelStyle(.titleAndIcon)
                 }
-                .help("Copy the selected file") // Tooltip
+                .help("Copy the selected file")  // Tooltip
 
                 Button(action: {
                     log.debug("Move button tapped")
                 }) {
-                    Label("F6 Move", systemImage: "square.and.arrow.down.on.square")
-                        .labelStyle(.titleAndIcon)
+                    Label(
+                        "F6 Move",
+                        systemImage: "square.and.arrow.down.on.square"
+                    )
+                    .labelStyle(.titleAndIcon)
                 }
-                .help("Move the selected file") // Tooltip
+                .help("Move the selected file")  // Tooltip
 
                 Button(action: {
                     log.debug("NewFolder button tapped")
@@ -304,7 +316,7 @@ struct TotalCommanderResizableView: View {
                     Label("F7 NewFolder", systemImage: "folder.badge.plus")
                         .labelStyle(.titleAndIcon)
                 }
-                .help("Create a new folder") // Tooltip
+                .help("Create a new folder")  // Tooltip
 
                 Button(action: {
                     log.debug("Delete button tapped")
@@ -312,7 +324,7 @@ struct TotalCommanderResizableView: View {
                     Label("F8 Delete", systemImage: "minus.rectangle")
                         .labelStyle(.titleAndIcon)
                 }
-                .help("Delete the selected file") // Tooltip
+                .help("Delete the selected file")  // Tooltip
 
                 Button(action: {
                     exitApp()
@@ -320,7 +332,7 @@ struct TotalCommanderResizableView: View {
                     Label("⌥-F4 Exit", systemImage: "xmark.circle")
                         .labelStyle(.titleAndIcon)
                 }
-                .help("Exit the application") // Tooltip
+                .help("Exit the application")  // Tooltip
 
                 Button(action: {
                     log.debug("Settings button tapped")
@@ -328,7 +340,7 @@ struct TotalCommanderResizableView: View {
                     Label("Settings", systemImage: "gearshape")
                         .labelStyle(.titleAndIcon)
                 }
-                .help("Open application settings") // Tooltip
+                .help("Open application settings")  // Tooltip
             }
             .controlGroupStyle(.navigation)
         }
