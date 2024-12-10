@@ -29,7 +29,7 @@ struct TotalCommanderResizableView: View {
             ZStack {
                 VStack(spacing: 0) {
                     HStack {
-                        buildMenuButton(geometry: geometry)
+                        buildTopMenuBar(geometry: geometry)
                         Spacer()
                     }
                     buildMainPanels(geometry: geometry)
@@ -83,7 +83,7 @@ struct TotalCommanderResizableView: View {
     }
 
     // MARK: - -
-    private func buildMenuButton(geometry: GeometryProxy) -> some View {
+    private func buildTopMenuBar(geometry: GeometryProxy) -> some View {
         log.debug("buildMenuButton()")
         return HStack {
             Button(action: { toggleMenu() }) {

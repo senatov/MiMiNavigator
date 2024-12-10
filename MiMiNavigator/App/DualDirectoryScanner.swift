@@ -24,15 +24,13 @@ actor DualDirectoryScanner: ObservableObject {
     init(leftDirectory: URL, rightDirectory: URL) {
         self.leftDirectory = leftDirectory
         self.rightDirectory = rightDirectory
-        log.debug("DualDirectoryScanner initialized.")
-        log.debug("left directory: \(leftDirectory.path)")
-        log.debug("right directory: \(rightDirectory.path)")
+        log.debug("\n --- DualDirectoryScanner initialized.----")
         // Start monitoring in an asynchronous task after initialization
         Task { [weak self] in
             await self?.startMonitoring()
         }
     }
-        // MARK: --
+    // MARK: --
     private func initializeMonitoring() {
         // Start monitoring in an asynchronous task to handle actor isolation
         Task {
@@ -45,7 +43,7 @@ actor DualDirectoryScanner: ObservableObject {
     func startMonitoring() {
         log.info("Starting monitoring both directories.")
         leftTimer = DispatchSource.makeTimerSource(queue: DispatchQueue.global())
-        leftTimer?.schedule(deadline: .now(), repeating: .seconds(5))
+        leftTimer?.schedule(deadline: .now(), repeating: .seconds(45))
         leftTimer?.setEventHandler { [weak self] in
             Task.detached { [weak self] in
                 await self?.refreshFiles(for: .left)

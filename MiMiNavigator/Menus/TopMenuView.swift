@@ -1,4 +1,3 @@
-
 import SwiftUI
 
 struct TopMenuView: View {
@@ -14,9 +13,7 @@ struct TopMenuView: View {
                         .font(.headline)
                         .padding(.horizontal)
                 }
-
                 Spacer()
-
                 // Верхнее меню
                 HStack {
                     MenuButton(label: "Files", systemImage: "eye.circle")
@@ -29,40 +26,21 @@ struct TopMenuView: View {
                     MenuButton(label: "Help", systemImage: "arrowshape.turn.up.forward")
                 }
                 .padding(.horizontal)
-                .background(Color.gray.opacity(0.2)) // Background for visibility
+                .background(Color.gray.opacity(0.2))  // Background for visibility
                 .cornerRadius(8)
             }
             .padding()
-            .background(Color.gray.opacity(0.1)) // Header background
-
+            .background(Color.gray.opacity(0.1))  // Header background
             Spacer()
-
             // Основной контент
             Text("Main application content goes here")
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(Color.white)
-
             Spacer()
-
             // Нижнее меню
-            MenuBar()
+            UnderMenuView()
         }
         .background(Color.gray.opacity(0.05))
         .edgesIgnoringSafeArea(.bottom)
-    }
-}
-
-// Вспомогательный компонент для кнопок меню
-struct MenuButton: View {
-    let label: String
-    let systemImage: String
-
-    var body: some View {
-        Button(action: {
-            log.debug("\(label) button pressed")
-        }) {
-            Label(label, systemImage: systemImage)
-                .labelStyle(.iconOnly) // Компактный стиль
-        }
     }
 }
