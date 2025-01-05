@@ -5,16 +5,6 @@ struct TopMenuView: View {
         VStack {
             // Верхняя панель
             HStack {
-                // Кнопка Favorites
-                Button(action: {
-                    log.debug("Favorites button pressed")
-                }) {
-                    Text("Favorites")
-                        .font(.headline)
-                        .padding(.horizontal)
-                }
-                Spacer()
-                // Верхнее меню
                 HStack {
                     MenuButton(label: "Files", systemImage: "eye.circle")
                     MenuButton(label: "Mark", systemImage: "pencil.circle")
