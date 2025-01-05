@@ -7,8 +7,8 @@
 ##
 
 
-[![Swift Version](https://img.shields.io/badge/Swift-6.0-blue.svg)](https://swift.org)
-[![Xcode Version](https://img.shields.io/badge/Xcode-16.1-blue.svg)](https://developer.apple.com/xcode/)
+[![Swift Version](https://img.shields.io/badge/Swift-6.2-blue.svg)](https://swift.org)
+[![Xcode Version](https://img.shields.io/badge/Xcode-16.2-blue.svg)](https://developer.apple.com/xcode/)
 [![License](https://img.shields.io/badge/License-MIT-lightgrey.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-macOS-blue.svg)](https://www.apple.com/macos/)
 [![Framework](https://img.shields.io/badge/Framework-SwiftUI-blueviolet.svg)](https://developer.apple.com/xcode/swiftui/)
