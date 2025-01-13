@@ -1,32 +1,38 @@
-    //
-    //  TopMenuBarView.swift
-    //  MiMiNavigator
-    //
-    //  Created by Iakov Senatov on 16.10.24.
-    //
+//
+//  TopMenuBarView.swift
+//  MiMiNavigator
+//
+//  Created by Iakov Senatov on 16.10.24.
+//
 
 import SwiftUI
 
 struct TopMenuBarView: View {
-        // MARK: - Properties
     @Binding var isShowMenu: Bool
     var toggleMenu: () -> Void
 
     var body: some View {
         HStack(spacing: 8) {
-            menuButton(
-                icon: "line.horizontal.3",
-                action: toggleMenu,
-                accessibilityLabel: "Toggle Menu"
-            )
-            menuSection(title: "Files", icon: "externaldrive.connected.to.line.below", menuItems: filesMenuItems)
-            menuSection(title: "Mark", icon: "pencil.circle", menuItems: markMenuItems)
-            menuSection(title: "Commands", icon: "doc.on.doc", menuItems: commandMenuItems)
-            menuSection(title: "Net", icon: "network", menuItems: netMenuItems)
-            menuSection(title: "Show", icon: "dot.circle.viewfinder", menuItems: showMenuItems)
-            menuSection(title: "Configuration", icon: "gear.circle", menuItems: configMenuItems)
-            menuSection(title: "Start", icon: "figure.run.circle", menuItems: startMenuItems)
-            menuSection(title: "Help", icon: "questionmark.circle", menuItems: helpMenuItems)
+            ForEach(menuData) { menu in
+                Menu {
+                    ForEach(menu.items) { item in
+                        Button(action: item.action) {
+                            Text(item.title)
+                            if let shortcut = item.shortcut {
+                                Spacer()
+                                Text(shortcut).foregroundColor(.gray)
+                            }
+                        }
+                    }
+                } label: {
+                    Text(menu.title)
+                        .padding(.horizontal, 10)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Color.gray.opacity(0.1))
+                        .cornerRadius(8)
+                }
+            }
+            Spacer()
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 5)
@@ -34,142 +40,88 @@ struct TopMenuBarView: View {
         .cornerRadius(8)
     }
 
-        // MARK: - Menu Items Definitions
+    // MARK: - Menu Data
+    private var menuData: [MenuCategory] {
+        [
+            MenuCategory(title: "Files", items: filesMenuItems),
+            MenuCategory(title: "Mark", items: markMenuItems),
+            MenuCategory(title: "Commands", items: commandMenuItems),
+            MenuCategory(title: "Net", items: netMenuItems),
+            MenuCategory(title: "Show", items: showMenuItems),
+            MenuCategory(title: "Configuration", items: configMenuItems),
+            MenuCategory(title: "Start", items: startMenuItems),
+            MenuCategory(title: "Help", items: helpMenuItems),
+        ]
+    }
+
     private var filesMenuItems: [MenuItem] {
         [
-            .init(title: "Rename/Move", action: {}),
-            .init(title: "Change Attributes...", action: {}),
-            .init(title: "Pack...", action: {}),
-            .init(title: "Unpack...", action: {}),
-            .init(title: "Test Archive(s)", action: {}),
-            .init(title: "Compare By Content...", action: {}),
-            .init(title: "Synchronize Directories...", action: {}),
-            .init(title: "Associate With...", action: {}),
-            .init(title: "Calculate Occupied Space...", action: {}),
-            .init(title: "Multi-Rename Tool...", action: {}),
-            .init(title: "Edit Comment...", action: {}),
-            .init(title: "Verify Checksums...", action: {}),
-            .init(title: "Create Checksum File(s)...", action: {}),
-            .init(title: "Print...", action: {}),
-            .init(title: "Split File...", action: {}),
-            .init(title: "Combine Files...", action: {}),
-            .init(title: "Quit", action: {})
+            .init(title: "Rename/Move", action: {}, shortcut: "F6"),
+            .init(title: "Change Attributes...", action: {}, shortcut: "Ctrl+A"),
+            .init(title: "Pack...", action: {}, shortcut: "Alt+F5"),
+            .init(title: "Unpack...", action: {}, shortcut: "Alt+F9"),
+            .init(title: "Test Archive(s)", action: {}, shortcut: nil),
+            .init(title: "Compare By Content...", action: {}, shortcut: "Ctrl+C"),
+            .init(title: "Synchronize Directories...", action: {}, shortcut: "Ctrl+S"),
+            .init(title: "Quit", action: {}, shortcut: "Alt+F4"),
         ]
     }
 
     private var markMenuItems: [MenuItem] {
         [
-            .init(title: "Select Group...", action: {}),
-            .init(title: "Unselect Group...", action: {}),
-            .init(title: "Select All", action: {}),
-            .init(title: "Unselect All", action: {}),
-            .init(title: "Invert Selection", action: {}),
-            .init(title: "Save Selection...", action: {}),
-            .init(title: "Load Selection...", action: {})
+            .init(title: "Select Group...", action: {}, shortcut: "Num+"),
+            .init(title: "Unselect Group...", action: {}, shortcut: "Num-"),
+            .init(title: "Select All", action: {}, shortcut: "Ctrl+A"),
+            .init(title: "Unselect All", action: {}, shortcut: "Ctrl+U"),
+            .init(title: "Invert Selection", action: {}, shortcut: nil),
         ]
     }
 
     private var commandMenuItems: [MenuItem] {
         [
-            .init(title: "Open Command Prompt...", action: {}),
-            .init(title: "Open Desktop Folder", action: {}),
-            .init(title: "Open Terminal Here...", action: {}),
-            .init(title: "CD Tree...", action: {}),
-            .init(title: "Branch View (With Subdirs)", action: {}),
-            .init(title: "Volume Label...", action: {}),
-            .init(title: "Compare Directories...", action: {}),
-            .init(title: "Search Files...", action: {}),
-            .init(title: "Search in Separate Process...", action: {}),
-            .init(title: "Hot Directory List...", action: {})
+            .init(title: "Open Command Prompt...", action: {}, shortcut: "Ctrl+P"),
+            .init(title: "Open Desktop Folder", action: {}, shortcut: nil),
+            .init(title: "CD Tree...", action: {}, shortcut: "Ctrl+D"),
+            .init(title: "Branch View (With Subdirs)", action: {}, shortcut: "Ctrl+B"),
         ]
     }
 
     private var netMenuItems: [MenuItem] {
         [
-            .init(title: "FTP Connect...", action: {}),
-            .init(title: "FTP Disconnect", action: {}),
-            .init(title: "FTP Show Hidden Files", action: {}),
-            .init(title: "Reconnect to Server", action: {}),
-            .init(title: "Network Neighborhood", action: {})
+            .init(title: "FTP Connect...", action: {}, shortcut: "Ctrl+N"),
+            .init(title: "FTP Disconnect", action: {}, shortcut: nil),
+            .init(title: "Network Neighborhood", action: {}, shortcut: nil),
         ]
     }
 
     private var showMenuItems: [MenuItem] {
         [
-            .init(title: "Full View", action: {}),
-            .init(title: "Brief View", action: {}),
-            .init(title: "Tree View", action: {}),
-            .init(title: "Quick View", action: {}),
-            .init(title: "Hidden Files", action: {})
+            .init(title: "Full View", action: {}, shortcut: nil),
+            .init(title: "Brief View", action: {}, shortcut: nil),
+            .init(title: "Hidden Files", action: {}, shortcut: "Ctrl+H"),
         ]
     }
 
     private var configMenuItems: [MenuItem] {
         [
-            .init(title: "Options...", action: {}),
-            .init(title: "Save Settings", action: {}),
-            .init(title: "Restore Settings", action: {}),
-            .init(title: "Customize Toolbar...", action: {})
+            .init(title: "Options...", action: {}, shortcut: "Alt+O"),
+            .init(title: "Customize Toolbar...", action: {}, shortcut: nil),
         ]
     }
 
     private var startMenuItems: [MenuItem] {
         [
-            .init(title: "New Tab", action: {}),
-            .init(title: "Duplicate Tab", action: {}),
-            .init(title: "Close Tab", action: {}),
-            .init(title: "Close All Tabs", action: {}),
-            .init(title: "Start Application", action: {}),
-            .init(title: "Restart Services", action: {})
+            .init(title: "New Tab", action: {}, shortcut: "Ctrl+T"),
+            .init(title: "Duplicate Tab", action: {}, shortcut: "Ctrl+D"),
+            .init(title: "Close Tab", action: {}, shortcut: "Ctrl+W"),
         ]
     }
 
     private var helpMenuItems: [MenuItem] {
         [
-            .init(title: "Contents", action: {}),
-            .init(title: "Keyboard Shortcuts", action: {}),
-            .init(title: "Check for Updates...", action: {}),
-            .init(title: "About...", action: {}),
-            .init(title: "Contact Support", action: {})
+            .init(title: "Contents", action: {}, shortcut: "F1"),
+            .init(title: "Keyboard Shortcuts", action: {}, shortcut: nil),
+            .init(title: "Check for Updates...", action: {}, shortcut: nil),
         ]
     }
-
-        // MARK: - Components
-    private func menuButton(icon: String, action: @escaping () -> Void, accessibilityLabel: String) -> some View {
-        Button(action: action) {
-            Image(systemName: icon)
-                .foregroundColor(.black)
-                .font(.title2)
-                .padding(8)
-        }
-        .accessibilityLabel(accessibilityLabel)
-        .background(Color.clear)
-        .cornerRadius(8)
-        .shadow(color: Color.black.opacity(0.2), radius: 4, x: 2, y: 2)
-        .shadow(color: Color.white.opacity(0.7), radius: 4, x: -2, y: -2)
-        .buttonStyle(.borderless)
-    }
-
-    private func menuSection(title: String, icon: String, menuItems: [MenuItem]) -> some View {
-        Menu {
-            ForEach(menuItems) { item in
-                Button(item.title, action: item.action)
-            }
-        } label: {
-            Label(title, systemImage: icon)
-                .padding(.horizontal, 10)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Color.gray.opacity(0.1))
-                .cornerRadius(8)
-        }
-        .fixedSize(horizontal: true, vertical: false)
-        .padding(.horizontal, 5)
-    }
-}
-
-    // MARK: - Supporting Structures
-struct MenuItem: Identifiable {
-    let id = UUID()
-    let title: String
-    let action: () -> Void
 }
