@@ -39,7 +39,6 @@ actor DualDirectoryScanner: ObservableObject {
     }
 
     // MARK: - Starts monitoring both directories with a 1-second refresh interval.
-
     func startMonitoring() {
         log.info("Starting monitoring both directories.")
         leftTimer = DispatchSource.makeTimerSource(queue: DispatchQueue.global())
@@ -50,7 +49,6 @@ actor DualDirectoryScanner: ObservableObject {
             }
         }
         leftTimer?.resume()
-
         // Setup right directory timer
         rightTimer = DispatchSource.makeTimerSource(queue: DispatchQueue.global())
         rightTimer?.schedule(deadline: .now(), repeating: .seconds(5))

@@ -8,8 +8,7 @@ import SwiftUI
 
 struct TotalCommanderResizableView: View {
     @State private var leftPanelWidth: CGFloat = 0
-    @State private var isShowMenu: Bool = UserPreferences.shared
-        .restoreMenuState()
+    @State private var isShowMenu: Bool = UserPreferences.shared.restoreMenuState()
     @State private var selectedFile: CustomFile? = nil
     @State private var showTooltip: Bool = false
     @State private var tooltipPosition: CGPoint = .zero
@@ -195,7 +194,6 @@ struct TotalCommanderResizableView: View {
     }
 
     // MARK: - -
-
     private func buildDivider(geometry: GeometryProxy) -> some View {
         log.debug("buildDivider()")
         return Rectangle()
@@ -218,7 +216,6 @@ struct TotalCommanderResizableView: View {
     }
 
     // MARK: - -
-
     private func handleDividerDrag(
         value: DragGesture.Value, geometry: GeometryProxy
     ) {
