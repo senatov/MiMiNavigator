@@ -14,7 +14,6 @@ struct TopMenuBarView: View {
 
     var body: some View {
         HStack(spacing: 8) {
-                // Основное меню
             menuButton(
                 icon: "line.horizontal.3",
                 action: toggleMenu,
@@ -38,25 +37,23 @@ struct TopMenuBarView: View {
         // MARK: - Menu Items Definitions
     private var filesMenuItems: [MenuItem] {
         [
-            .init(title: "Change Attributes", action: {}),
+            .init(title: "Rename/Move", action: {}),
+            .init(title: "Change Attributes...", action: {}),
             .init(title: "Pack...", action: {}),
-            .init(title: "Unpack Specific Files...", action: {}),
+            .init(title: "Unpack...", action: {}),
             .init(title: "Test Archive(s)", action: {}),
-            .init(title: "Compare By Content", action: {}),
+            .init(title: "Compare By Content...", action: {}),
+            .init(title: "Synchronize Directories...", action: {}),
             .init(title: "Associate With...", action: {}),
-            .init(title: "Internal Associations...", action: {}),
-            .init(title: "Properties...", action: {}),
             .init(title: "Calculate Occupied Space...", action: {}),
-            .init(title: "Multi Rename Tool...", action: {}),
+            .init(title: "Multi-Rename Tool...", action: {}),
             .init(title: "Edit Comment...", action: {}),
-            .init(title: "Print", action: {}),
+            .init(title: "Verify Checksums...", action: {}),
+            .init(title: "Create Checksum File(s)...", action: {}),
+            .init(title: "Print...", action: {}),
             .init(title: "Split File...", action: {}),
             .init(title: "Combine Files...", action: {}),
-            .init(title: "Encode File...", action: {}),
-            .init(title: "Decode File...", action: {}),
-            .init(title: "Create Checksum...", action: {}),
-            .init(title: "Verify Checksum...", action: {}),
-            .init(title: "Quit...", action: {})
+            .init(title: "Quit", action: {})
         ]
     }
 
@@ -66,60 +63,62 @@ struct TopMenuBarView: View {
             .init(title: "Unselect Group...", action: {}),
             .init(title: "Select All", action: {}),
             .init(title: "Unselect All", action: {}),
-            .init(title: "Invert Selection...", action: {}),
-            .init(title: "Select All With Same Extension", action: {}),
-            .init(title: "Save Selection", action: {}),
-            .init(title: "Restore Selection", action: {}),
-            .init(title: "Save Selection to File", action: {}),
-            .init(title: "Load Selection from File", action: {})
+            .init(title: "Invert Selection", action: {}),
+            .init(title: "Save Selection...", action: {}),
+            .init(title: "Load Selection...", action: {})
         ]
     }
 
     private var commandMenuItems: [MenuItem] {
         [
-            .init(title: "CD Tree", action: {}),
-            .init(title: "Search...", action: {}),
-            .init(title: "Search in separate &Process", action: {}),
+            .init(title: "Open Command Prompt...", action: {}),
+            .init(title: "Open Desktop Folder", action: {}),
+            .init(title: "Open Terminal Here...", action: {}),
+            .init(title: "CD Tree...", action: {}),
+            .init(title: "Branch View (With Subdirs)", action: {}),
             .init(title: "Volume Label...", action: {}),
-            .init(title: "Synchronize Dirs...", action: {}),
-            .init(title: "Directory Hotlist", action: {}),
-            .init(title: "Directory Go Back", action: {}),
-            .init(title: "---------------", action: {}),
-            .init(title: "Open command prompt window", action: {}),
-            .init(title: "---------------", action: {}),
-            .init(title: "Branch View(With Sub&dirs)", action: {}),
-            .init(title: "Open Desktop Folder", action: {}),
-            .init(title: "Open Desktop Folder", action: {}),
-            .init(title: "---------------", action: {}),
-            .init(title: "Open Terminal in new window...", action: {}),
-            .init(title: "---------------", action: {}),
+            .init(title: "Compare Directories...", action: {}),
+            .init(title: "Search Files...", action: {}),
+            .init(title: "Search in Separate Process...", action: {}),
+            .init(title: "Hot Directory List...", action: {})
         ]
     }
 
     private var netMenuItems: [MenuItem] {
         [
-            .init(title: "Connect to Server", action: {}),
-            .init(title: "Disconnect", action: {}),
-            .init(title: "Network Settings...", action: {})
+            .init(title: "FTP Connect...", action: {}),
+            .init(title: "FTP Disconnect", action: {}),
+            .init(title: "FTP Show Hidden Files", action: {}),
+            .init(title: "Reconnect to Server", action: {}),
+            .init(title: "Network Neighborhood", action: {})
         ]
     }
 
     private var showMenuItems: [MenuItem] {
         [
-            .init(title: "Show Hidden Files", action: {}),
-            .init(title: "Customize View", action: {})
+            .init(title: "Full View", action: {}),
+            .init(title: "Brief View", action: {}),
+            .init(title: "Tree View", action: {}),
+            .init(title: "Quick View", action: {}),
+            .init(title: "Hidden Files", action: {})
         ]
     }
 
     private var configMenuItems: [MenuItem] {
         [
-            .init(title: "Settings", action: {}),
-            .init(title: "Preferences...", action: {})
+            .init(title: "Options...", action: {}),
+            .init(title: "Save Settings", action: {}),
+            .init(title: "Restore Settings", action: {}),
+            .init(title: "Customize Toolbar...", action: {})
         ]
     }
 
     private var startMenuItems: [MenuItem] {
         [
+            .init(title: "New Tab", action: {}),
+            .init(title: "Duplicate Tab", action: {}),
+            .init(title: "Close Tab", action: {}),
+            .init(title: "Close All Tabs", action: {}),
             .init(title: "Start Application", action: {}),
             .init(title: "Restart Services", action: {})
         ]
@@ -127,7 +126,10 @@ struct TopMenuBarView: View {
 
     private var helpMenuItems: [MenuItem] {
         [
-            .init(title: "Documentation", action: {}),
+            .init(title: "Contents", action: {}),
+            .init(title: "Keyboard Shortcuts", action: {}),
+            .init(title: "Check for Updates...", action: {}),
+            .init(title: "About...", action: {}),
             .init(title: "Contact Support", action: {})
         ]
     }
@@ -157,7 +159,7 @@ struct TopMenuBarView: View {
             Label(title, systemImage: icon)
                 .padding(.horizontal, 10)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Color.blue.opacity(0.2))
+                .background(Color.gray.opacity(0.1))
                 .cornerRadius(8)
         }
         .fixedSize(horizontal: true, vertical: false)
