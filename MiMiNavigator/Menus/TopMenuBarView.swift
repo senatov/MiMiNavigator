@@ -1,3 +1,10 @@
+//
+//  TopMenuBarView.swift
+//  MiMiNavigator
+//
+//  Created by Iakov Senatov on 16.10.24.
+//
+
 import SwiftUI
 
 struct TopMenuBarView: View {
