@@ -142,7 +142,6 @@ struct TotalCommanderResizableView: View {
     }
 
     // MARK: - -
-
     private func buildRightPanel() -> some View {
         log.debug("buildRightPanel()")
         return VStack {
@@ -182,7 +181,6 @@ struct TotalCommanderResizableView: View {
     }
 
     // MARK: - -
-
     private func builFavoriteTreeMenu() -> some View {
         log.debug("builFavoriteTreeMenu()")  // Log the start of the menu-building process
         let favScanner = FavoritesScanner()  // Initialize the favorites scanner

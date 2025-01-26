@@ -1,17 +1,24 @@
+//
 //  DualDirectoryScanner.swift
 //  MiMiNavigator
 //
 //  Created by Iakov Senatov on 11.11.24.
+//  Description: Actor-based utility for monitoring and synchronizing file updates in two directories.
+//  Dependencies: Foundation, Combine, SwiftUI
 //
 
 import Combine
 import Foundation
 import SwiftUI
 
+/// Manages dual directory monitoring with periodic file refreshes.
 actor DualDirectoryScanner: ObservableObject {
+    // Singleton for shared file management logic
     var fileLst = FileSingleton.shared
+    // Timers for both directories
     private var leftTimer: DispatchSourceTimer?
     private var rightTimer: DispatchSourceTimer?
+    // Directory paths
     public var leftDirectory: URL
     public var rightDirectory: URL
 
@@ -19,28 +26,30 @@ actor DualDirectoryScanner: ObservableObject {
         case left, right
     }
 
-    // MARK: -
-
+    // MARK: - Initialization
     init(leftDirectory: URL, rightDirectory: URL) {
+        log.info("init()")
         self.leftDirectory = leftDirectory
         self.rightDirectory = rightDirectory
         log.debug("\n --- DualDirectoryScanner initialized.----")
-        // Start monitoring in an asynchronous task after initialization
+        // Start monitoring asynchronously after initialization
         Task { [weak self] in
             await self?.startMonitoring()
         }
     }
-    // MARK: --
+
+    // MARK: - Sets up monitoring for both directories
     private func initializeMonitoring() {
-        // Start monitoring in an asynchronous task to handle actor isolation
+        log.info("initializeMonitoring()")
         Task {
             startMonitoring()
         }
     }
 
-    // MARK: - Starts monitoring both directories with a 1-second refresh interval.
+    // MARK: - Starts timers for both directories with custom refresh intervals
     func startMonitoring() {
-        log.info("Starting monitoring both directories.")
+        log.info("startMonitoring()")
+        // Left directory monitoring
         leftTimer = DispatchSource.makeTimerSource(queue: DispatchQueue.global())
         leftTimer?.schedule(deadline: .now(), repeating: .seconds(45))
         leftTimer?.setEventHandler { [weak self] in
@@ -49,7 +58,8 @@ actor DualDirectoryScanner: ObservableObject {
             }
         }
         leftTimer?.resume()
-        // Setup right directory timer
+
+        // Right directory monitoring
         rightTimer = DispatchSource.makeTimerSource(queue: DispatchQueue.global())
         rightTimer?.schedule(deadline: .now(), repeating: .seconds(5))
         rightTimer?.setEventHandler { [weak self] in
@@ -64,22 +74,18 @@ actor DualDirectoryScanner: ObservableObject {
         }
     }
 
-    // MARK: - Stops monitoring both directories and cancels active timers.
-
+    // MARK: - Stops monitoring by canceling timers
     func stopMonitoring() {
-        log.info("Stop monitoring both directories.")
+        log.info("stopMonitoring()")
         leftTimer?.cancel()
         leftTimer = nil
         rightTimer?.cancel()
         rightTimer = nil
     }
 
-    // MARK: - Refreshes file list for the specified directory side.
-
+    // MARK: - Refreshes the file list for a specific directory side
     private func refreshFiles(for side: DirectorySide) async {
-        log.debug("Refreshing files for \(side) directory.")
-
-        // Определяем URL директории
+        log.debug("refreshFiles() for <<\(side)>> directory.")
         let directoryURL: URL
         switch side {
         case .left:
@@ -88,7 +94,6 @@ actor DualDirectoryScanner: ObservableObject {
             directoryURL = rightDirectory
         }
 
-        // Асинхронное сканирование директории
         let files: [CustomFile]
         do {
             files = try await scanDirectory(at: directoryURL)
@@ -97,25 +102,25 @@ actor DualDirectoryScanner: ObservableObject {
             files = []
         }
 
-        // Обновление файла и логирование
         await updateFileList(for: side, with: files)
     }
 
+    // MARK: - Updates the file list for the specified directory side
     private func updateFileList(for side: DirectorySide, with files: [CustomFile]) async {
+        log.info("updateFileList()")
         switch side {
         case .left:
             await fileLst.updateLeftFiles(files)
             log.info("Left directory updated with \(files.count) files.")
-
         case .right:
             await fileLst.updateRightFiles(files)
             log.info("Right directory updated with \(files.count) files.")
         }
     }
 
-    // MARK: - Scans the specified directory URL for files and directories.
-
+    // MARK: - Scans a directory for files and directories
     private func scanDirectory(at url: URL?) async throws -> [CustomFile] {
+        log.info("scanDirectory()")
         guard let url = url else {
             log.error("Invalid directory URL: URL is nil.")
             return []
@@ -123,10 +128,12 @@ actor DualDirectoryScanner: ObservableObject {
 
         let fileManager = FileManager.default
         var customFiles: [CustomFile] = []
+
         do {
             let contents = try fileManager.contentsOfDirectory(
                 at: url, includingPropertiesForKeys: [.isDirectoryKey], options: [.skipsHiddenFiles]
             )
+
             for fileURL in contents {
                 let isDirectory = (try? fileURL.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
                 let customFile = CustomFile(
@@ -140,15 +147,18 @@ actor DualDirectoryScanner: ObservableObject {
             log.error("Failed to scan directory at \(url.path): \(error.localizedDescription)")
             throw error
         }
+
         return customFiles
     }
 
+    // MARK: - Updates the left directory's path
     func setLeftDirectory(path: String) {
         Task {
             self.leftDirectory = URL(fileURLWithPath: path)
         }
     }
 
+    // MARK: - Updates the right directory's path
     func setRightDirectory(path: String) {
         Task {
             self.rightDirectory = URL(fileURLWithPath: path)

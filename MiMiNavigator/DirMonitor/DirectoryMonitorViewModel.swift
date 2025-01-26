@@ -29,8 +29,8 @@
 
 //
 //  DirectoryMonitorViewModel.swift
-//  ViewModel, работающий на @MainActor, чтобы SwiftUI безопасно
-//  наблюдал @Published-свойства
+//  ViewModel working under @MainActor to ensure that SwiftUI observes
+//  @Published properties safely.
 //
 
 import SwiftUI
@@ -40,9 +40,9 @@ final class DirectoryMonitorViewModel: ObservableObject {
     @Published var directoryChanged: Bool = false
     @Published var managerState: String = "No changes yet"
 
-    // "Низкоуровневый" монитор
+    // Low-level directory monitor
     private var monitor: DirectoryMonitor?
-    // "Средний" слой логики
+    // "Intermediate" layer of logic
     private var eventManager: DirectoryEventManager?
 
     init(directoryPath: String = "/path/to/Sequoia") {
@@ -52,28 +52,27 @@ final class DirectoryMonitorViewModel: ObservableObject {
     deinit {
     }
 
+    // MARK: -
     private func setup(directoryPath: String) {
+        log.info("setup()")
         let monitor = DirectoryMonitor(directoryPath: directoryPath)
         let manager = DirectoryEventManager()
 
-        // Когда монитор сообщает о новом событии
+        // When the monitor reports a new event
         monitor.onDirectoryChanged = { [weak manager, weak self] in
-            // Пробрасываем в менеджер
+            // Pass it to the manager
             manager?.handleDirectoryChangeEvent()
-
-            // Также сразу меняем флаг "directoryChanged" (если надо)
+            // Also immediately update the "directoryChanged" flag (if needed)
             self?.directoryChanged = true
             DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
                 self?.directoryChanged = false
             }
         }
-
-        // Когда менеджер меняет состояние, сообщаем это во ViewModel
+        // When the manager updates the state, notify the ViewModel
         manager.onStateUpdated = { [weak self] newState in
             self?.managerState = newState
         }
-
-        // Сохраняем ссылки
+        // Save references
         self.monitor = monitor
         self.eventManager = manager
     }
