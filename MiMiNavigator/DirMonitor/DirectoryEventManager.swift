@@ -1,37 +1,33 @@
 //
-//  Untitled.swift
+//  DirectoryEventManager.swift
 //  MiMiNavigator
 //
 //  Created by Iakov Senatov on 24.01.25.
-//  Copyright © 2025 Senatov. All rights reserved.
-//
-
-//
-//  DirectoryEventManager.swift
-//  Слой, который "перехватывает" сырые события мониторинга,
-//  и дополняет их бизнес-логикой, фильтрацией, буферизацией и т.п.
+//  Description: Intermediate logic layer that intercepts raw monitoring events
+//  and augments them with business logic, filtering, buffering, etc.
 //
 
 import Foundation
 
+/// Handles directory-related events and processes them for higher-level logic.
 final class DirectoryEventManager {
-    // Тут можно хранить какие-то дополнительные состояния,
-    // например, время последнего изменения, счётчик изменений и т.д.
+    // Stores additional state, e.g., last modification time or a change counter
     private var lastKnownState: String = "OK"
 
-    // Колбэк для клиента, говорим: "У нас есть новое событие"
+    // Callback for the client to notify about a new event
     var onStateUpdated: ((String) -> Void)?
 
+    /// Default initializer
     init() {}
 
-    // Допустим, этот метод вызывается, когда `DirectoryMonitor` говорит "изменение"
+    // MARK: - Handles a directory change event triggered by `DirectoryMonitor`
     func handleDirectoryChangeEvent() {
-        // Здесь может быть сложная логика:
-        // - проверка реального контента директории
-        // - фильтрация файлов
-        // - задержки и пр.
+        // Complex logic can go here:
+        // - Check the actual directory content
+        // - Filter files based on criteria
+        // - Apply delays or batching
 
-        // Для примера просто меняем некую строку
+        // For now, just update the state string
         lastKnownState = "Directory has changed!"
         onStateUpdated?(lastKnownState)
     }

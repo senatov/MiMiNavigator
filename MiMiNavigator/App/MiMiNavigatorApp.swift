@@ -14,8 +14,8 @@ let log = SwiftyBeaver.self
 
 @main
 struct MiMiNavigatorApp: App {
-    // MARK: - -
 
+    // MARK: - -
     init() {
         log.debug("MiMiNavigatorApp initialized")
 
@@ -50,9 +50,11 @@ struct MiMiNavigatorApp: App {
         log.debug("setupFileLogging()")
         let file = FileDestination()
         // Create log directory
-        guard let logDirectory = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask).first?
-            .appendingPathComponent("Logs")
-            .appendingPathComponent("MiMiNavigator", isDirectory: true) else {
+        guard
+            let logDirectory = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask).first?
+                .appendingPathComponent("Logs")
+                .appendingPathComponent("MiMiNavigator", isDirectory: true)
+        else {
             log.error("Failed to initialize file logging directory")
             print("Failed to initialize file logging directory")
             return
@@ -66,7 +68,7 @@ struct MiMiNavigatorApp: App {
             file.logFileURL = logDirectory.appendingPathComponent(logFileName)
             if let currentLogURL = file.logFileURL, FileManager.default.fileExists(atPath: currentLogURL.path) {
                 let fileSize = try FileManager.default.attributesOfItem(atPath: currentLogURL.path)[.size] as? UInt64 ?? 0
-                if fileSize > 10 * 1024 * 1024 { 
+                if fileSize > 10 * 1024 * 1024 {
                     try archiveAndClearLogFile(at: currentLogURL, in: logDirectory)
                 }
             }
@@ -126,7 +128,8 @@ struct MiMiNavigatorApp: App {
             let sourceBuffer = UnsafeBufferPointer(start: baseAddress.assumingMemoryBound(to: UInt8.self), count: data.count)
             let destinationBuffer = UnsafeMutablePointer<UInt8>.allocate(capacity: data.count)
             defer { destinationBuffer.deallocate() }
-            let compressedSize = compression_encode_buffer(destinationBuffer, data.count, sourceBuffer.baseAddress!, data.count, nil, COMPRESSION_ZLIB)
+            let compressedSize = compression_encode_buffer(
+                destinationBuffer, data.count, sourceBuffer.baseAddress!, data.count, nil, COMPRESSION_ZLIB)
             if compressedSize > 0 {
                 compressedData.append(destinationBuffer, count: compressedSize)
             }
@@ -158,11 +161,12 @@ struct MiMiNavigatorApp: App {
     private func cleanUpOldLogs(in directory: URL) throws {
         log.debug("cleanUpOldLogs()")
         let fileManager = FileManager.default
-        let twoHourAgo = Calendar.current.date(
-            byAdding: .hour,
-            value: -2,
-            to: Date()
-        ) ?? Date.distantPast
+        let twoHourAgo =
+            Calendar.current.date(
+                byAdding: .hour,
+                value: -2,
+                to: Date()
+            ) ?? Date.distantPast
         let logFiles = try fileManager.contentsOfDirectory(at: directory, includingPropertiesForKeys: [.creationDateKey], options: .skipsHiddenFiles)
             .filter { $0.pathExtension == "log" }
         for logFile in logFiles {
@@ -177,7 +181,7 @@ struct MiMiNavigatorApp: App {
     var sharedModelContainer: ModelContainer = {
         log.debug(" ---- BEGIN ----")
         let schema = Schema([
-            Item.self,
+            Item.self
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
         do {

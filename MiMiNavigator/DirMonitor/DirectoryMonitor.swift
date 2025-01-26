@@ -3,8 +3,8 @@
 //  Directory Monitoring Utility
 //
 //  Created by Iakov Senatov on 23.01.25.
-//  Description: Простейший вариант класса, следящего за изменением даты модификации директории.
-//  Без использования async/await, @MainActor или actor.
+//  Description: A basic implementation of a class for monitoring directory modification dates.
+//  No async/await, @MainActor, or actor used.
 //
 //  Dependencies: Foundation, Combine
 //
@@ -12,66 +12,70 @@
 import Combine
 import Foundation
 
-/// Класс, мониторящий директорию с помощью таймера.
-/// Не отмечен как actor или @MainActor, чтобы избежать ошибок изоляции.
+/// Not marked as an actor or @MainActor to avoid isolation issues.
 final class DirectoryMonitor: ObservableObject {
-    // Таймер для периодической проверки директории
+    // Timer for periodically checking the directory
     private var timer: Timer?
-    // Путь к директории, за которой следим
+    // Path to the monitored directory
     private let directoryURL: URL
-    // Храним дату последнего изменения
+    // Stores the last known modification date
     @Published private var lastModificationDate: Date?
-    // Колбэк, вызываемый при изменении директории
+    // Callback triggered when the directory changes
     var onDirectoryChanged: (() -> Void)?
-    /// Инициализатор, принимающий строку пути к директории.
-    /// После инициализации сразу запускаем мониторинг.
+
+    /// Initializer takes a directory path as a string.
+    /// Starts monitoring immediately after initialization.
     init(directoryPath: String) {
         self.directoryURL = URL(fileURLWithPath: directoryPath)
         startMonitoring()
     }
 
-    /// При уничтожении объекта — останавливаем таймер.
+    /// Stops the timer when the object is deallocated.
     deinit {
         stopMonitoring()
     }
 
-    /// Запускаем мониторинг с проверкой каждые 5 секунд.
+    // MARK: - Starts monitoring the directory, checks every 5 seconds.
     func startMonitoring() {
-        stopMonitoring()  // Останавливаем предыдущий таймер, если был
-        // Создаём таймер старым способом
+        log.info("startMonitoring()")
+        stopMonitoring()  // Kill any previous timer if it exists
+        // Old-school timer creation
         let newTimer = Timer(timeInterval: 5.0, repeats: true) { [weak self] _ in
             guard let self = self else { return }
             self.checkDirectoryChanges()
         }
-        // Сохраняем ссылку в свойство
+        // Save the timer reference
         timer = newTimer
-        // Добавляем таймер в текущий run loop (обычно .commonModes)
+        // Add the timer to the current run loop (usually .commonModes)
         RunLoop.main.add(newTimer, forMode: .common)
     }
 
-    /// Останавливаем мониторинг, если он идёт (инвалидируем таймер).
+    // MARK: - Stops monitoring (invalidates the timer if running).
     func stopMonitoring() {
+        log.info("stopMonitoring()")
         timer?.invalidate()
         timer = nil
     }
 
-    /// Проверяем, не изменилась ли дата модификации директории.
+    // MARK: - Checks if the directory's modification date has changed.
     private func checkDirectoryChanges() {
+        log.info("checkDirectoryChanges()")
         do {
-            // Получаем атрибуты файла (синхронно)
+            // Get file attributes (sync call)
             let attributes = try FileManager.default.attributesOfItem(atPath: directoryURL.path)
-            // Выделяем дату модификации
+            // Extract the modification date
             guard let modificationDate = attributes[.modificationDate] as? Date else { return }
-            // Если новая дата отличается от старой, вызываем колбэк
+            // Trigger the callback if the new date is different
             if let lastDate = lastModificationDate, lastDate != modificationDate {
                 onDirectoryChanged?()
             }
-            // Сохраняем дату, чтобы сравнить в следующий раз
+            // Update the date for the next check
             lastModificationDate = modificationDate
         } catch {
-            print("Ошибка при проверке директории: \(error.localizedDescription)")
+            print("Error while checking the directory: \(error.localizedDescription)")
         }
     }
 }
 
+// Adding @unchecked Sendable to suppress thread-safety warnings
 extension DirectoryMonitor: @unchecked Sendable {}
