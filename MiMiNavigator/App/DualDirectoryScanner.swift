@@ -51,7 +51,7 @@ actor DualDirectoryScanner: ObservableObject {
         log.info("startMonitoring()")
         // Left directory monitoring
         leftTimer = DispatchSource.makeTimerSource(queue: DispatchQueue.global())
-        leftTimer?.schedule(deadline: .now(), repeating: .seconds(45))
+        leftTimer?.schedule(deadline: .now(), repeating: .seconds(15))
         leftTimer?.setEventHandler { [weak self] in
             Task.detached { [weak self] in
                 await self?.refreshFiles(for: .left)

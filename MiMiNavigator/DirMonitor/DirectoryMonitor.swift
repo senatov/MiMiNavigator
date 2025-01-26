@@ -72,7 +72,7 @@ final class DirectoryMonitor: ObservableObject {
             // Update the date for the next check
             lastModificationDate = modificationDate
         } catch {
-            print("Error while checking the directory: \(error.localizedDescription)")
+            log.error("Error while checking the directory: \(error.localizedDescription)")
         }
     }
 }

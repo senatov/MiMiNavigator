@@ -5,8 +5,9 @@
 //  Created by Iakov Senatov on 06.08.24.
 //
 
-@testable import MiMiNavigator
 import XCTest
+
+@testable import MiMiNavigator
 
 final class MiMiNavigatorTests: XCTestCase {
     override func setUpWithError() throws {
@@ -18,9 +19,8 @@ final class MiMiNavigatorTests: XCTestCase {
     }
 
     // MARK: - -
-
     func testExample() throws {
-        print("Executing testExample") // Log for method tracking
+        log.info("testExample()")
         // This is an example of a functional test case.
         // Use XCTAssert and related functions to verify your tests produce the correct results.
         // Any test you write for XCTest can be annotated as throws and async.
@@ -29,9 +29,8 @@ final class MiMiNavigatorTests: XCTestCase {
     }
 
     // MARK: - -
-
     func testPerformanceExample() throws {
-        print("Executing testPerformanceExample") // Log for method tracking
+        log.info("testPerformanceExample()")
         // This is an example of a performance test case.
         measure {
             // Put the code you want to measure the time of here.
