@@ -120,20 +120,17 @@ actor DualDirectoryScanner: ObservableObject {
 
     // MARK: - Scans a directory for files and directories
     private func scanDirectory(at url: URL?) async throws -> [CustomFile] {
-        log.info("scanDirectory()")
+        log.info("scanDirectory() dir: \(String(describing: url?.path) ) ")
         guard let url = url else {
             log.error("Invalid directory URL: URL is nil.")
             return []
         }
-
         let fileManager = FileManager.default
         var customFiles: [CustomFile] = []
-
         do {
             let contents = try fileManager.contentsOfDirectory(
                 at: url, includingPropertiesForKeys: [.isDirectoryKey], options: [.skipsHiddenFiles]
             )
-
             for fileURL in contents {
                 let isDirectory = (try? fileURL.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
                 let customFile = CustomFile(
@@ -144,10 +141,9 @@ actor DualDirectoryScanner: ObservableObject {
                 customFiles.append(customFile)
             }
         } catch {
-            log.error("Failed to scan directory at \(url.path): \(error.localizedDescription)")
+            log.error("Failed to scan directory at: \(url.path):\(error.localizedDescription)")
             throw error
         }
-
         return customFiles
     }
 

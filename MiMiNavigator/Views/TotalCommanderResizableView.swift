@@ -99,7 +99,6 @@ struct TotalCommanderResizableView: View {
     }
 
     // MARK: - -
-
     private func buildLeftPanel(geometry: GeometryProxy) -> some View {
         log.debug("buildLeftPanel()")
         return VStack {
@@ -162,7 +161,6 @@ struct TotalCommanderResizableView: View {
                         await fetchRightFiles()
                     }
                 }
-
             List(displayedRightFiles, id: \.id) { file in
                 Text(file.name)
                     .contextMenu {
