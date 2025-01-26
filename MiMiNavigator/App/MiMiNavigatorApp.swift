@@ -56,7 +56,6 @@ struct MiMiNavigatorApp: App {
                 .appendingPathComponent("MiMiNavigator", isDirectory: true)
         else {
             log.error("Failed to initialize file logging directory")
-            print("Failed to initialize file logging directory")
             return
         }
         do {
@@ -80,7 +79,6 @@ struct MiMiNavigatorApp: App {
 
         } catch {
             log.error("Failed to setup file logging: \(error)")
-            print("Error setting up file logging: \(error)")
         }
     }
 
