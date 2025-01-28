@@ -23,7 +23,6 @@ struct UserPreferences {
     private init() {}
 
     // MARK: - - Save preferences
-
     func saveWindowSize(width: CGFloat, height: CGFloat) {
         log.debug("saveWindowSize()")
         log.debug("Saving window size - Width: \(width), Height: \(height)")
@@ -32,7 +31,6 @@ struct UserPreferences {
     }
 
     // MARK: - -
-
     func saveWindowPosition(x: CGFloat, y: CGFloat) {
         log.debug("saveWindowPosition()")
         log.debug("Saving window position - X: \(x), Y: \(y)")
@@ -41,7 +39,6 @@ struct UserPreferences {
     }
 
     // MARK: - -
-
     func saveLeftPanelWidth(_ width: CGFloat) {
         log.debug("saveLeftPanelWidth()")
         log.debug("Saving left panel width - Width: \(width)")
@@ -49,7 +46,6 @@ struct UserPreferences {
     }
 
     // MARK: - -
-
     func saveMenuState(isOpen: Bool) {
         log.debug("saveMenuState()")
         log.debug("Saving menu state - Is Open: \(isOpen)")
@@ -57,7 +53,6 @@ struct UserPreferences {
     }
 
     // MARK: - -  Restore preferences
-
     func restoreWindowSize() -> CGSize {
         log.debug("restoreWindowSize()")
         let width = UserDefaults.standard.object(forKey: mimiWidthKey) as? CGFloat ?? 800
@@ -67,7 +62,6 @@ struct UserPreferences {
     }
 
     // MARK: - -
-
     func restoreWindowPosition(screenSize: CGSize) -> CGPoint {
         log.debug("restoreWindowPosition()")
         // Default to the center of the screen if no saved position is found
@@ -82,7 +76,6 @@ struct UserPreferences {
     }
 
     // MARK: - -
-
     func restoreLeftPanelWidth() -> CGFloat {
         log.debug("restoreLeftPanelWidth()") // Log for method tracking
         let width = UserDefaults.standard.object(forKey: mimiLeftPanelWidthKey) as? CGFloat ?? 300
@@ -91,7 +84,6 @@ struct UserPreferences {
     }
 
     // MARK: - -
-
     func restoreMenuState() -> Bool {
         log.debug("restoreMenuState()")
         let isOpen = UserDefaults.standard.bool(forKey: mimiMenuStateKey)
