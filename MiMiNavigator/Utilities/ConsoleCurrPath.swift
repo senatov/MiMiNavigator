@@ -10,7 +10,7 @@
 import SwiftUI
 import SwiftyBeaver
 
-// MARK: - -
+// MARK: -
 
 struct ConsoleCurrPath: View {
     // Initialize logger
@@ -22,8 +22,7 @@ struct ConsoleCurrPath: View {
     }
 }
 
-// MARK: - -
-
+// MARK: -
 func openConsoleInDirectory(_ directory: String) {
     log.info("openConsoleInDirectory()") // Log for method tracking
     // Step 1: Launch Terminal

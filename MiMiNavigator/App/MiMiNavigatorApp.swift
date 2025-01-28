@@ -15,7 +15,7 @@ let log = SwiftyBeaver.self
 @main
 struct MiMiNavigatorApp: App {
 
-    // MARK: - -
+    // MARK: -
     init() {
         log.debug("MiMiNavigatorApp initialized")
 
@@ -44,8 +44,7 @@ struct MiMiNavigatorApp: App {
         setupFileLogging()
     }
 
-    // MARK: - -
-
+    // MARK: -
     private func setupFileLogging() {
         log.debug("setupFileLogging()")
         let file = FileDestination()
@@ -82,8 +81,7 @@ struct MiMiNavigatorApp: App {
         }
     }
 
-    // MARK: - -
-
+    // MARK: -
     private func archiveAndClearLogFile(at logFileURL: URL, in logDirectory: URL) throws {
         log.debug("archivingAndClearingLogFile()")
         let dateFormatter = DateFormatter()
@@ -98,26 +96,21 @@ struct MiMiNavigatorApp: App {
         log.debug("Cleared original log file at \(logFileURL.path)")
     }
 
-    // MARK: - - Custom function to compress data from a source file to a destination file using zlib
-
+    // MARK: - Custom function to compress data from a source file to a destination file using zlib
     private func compressFile(at sourceURL: URL, to destinationURL: URL) throws {
         log.debug("compressFile()")
         let source = try FileHandle(forReadingFrom: sourceURL)
         defer { source.closeFile() }
-
         let destination = try FileHandle(forWritingTo: destinationURL)
         defer { destination.closeFile() }
-
         let bufferSize = 64 * 1024
-
         while let bytesRead = try? source.read(upToCount: bufferSize), !bytesRead.isEmpty {
             let compressedData = compressData(bytesRead)
             destination.write(compressedData)
         }
     }
 
-    // MARK: - - Custom compression function using zlib
-
+    // MARK: - Custom compression function using zlib
     private func compressData(_ data: Data) -> Data {
         log.debug("compressData()")
         var compressedData = Data()
@@ -135,8 +128,7 @@ struct MiMiNavigatorApp: App {
         return compressedData
     }
 
-    // MARK: - -
-
+    // MARK: -
     private func cleanUpOldZipFiles(in directory: URL) throws {
         log.debug("cleanUpOldZipFiles()")
         let fileManager = FileManager.default
@@ -154,8 +146,7 @@ struct MiMiNavigatorApp: App {
         }
     }
 
-    // MARK: - -
-
+    // MARK: -
     private func cleanUpOldLogs(in directory: URL) throws {
         log.debug("cleanUpOldLogs()")
         let fileManager = FileManager.default
@@ -176,6 +167,7 @@ struct MiMiNavigatorApp: App {
         }
     }
 
+    // MARK: -
     var sharedModelContainer: ModelContainer = {
         log.debug(" ---- BEGIN ----")
         let schema = Schema([
@@ -189,6 +181,7 @@ struct MiMiNavigatorApp: App {
         }
     }()
 
+    // MARK: -
     var body: some Scene {
         WindowGroup {
             VStack {

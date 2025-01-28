@@ -8,8 +8,6 @@ import Foundation
 import SwiftUI
 import SwiftyBeaver
 
-// MARK: - -
-
 struct UserPreferences {
     static let shared = UserPreferences()
     // Keys for storing window and UI state
@@ -22,7 +20,7 @@ struct UserPreferences {
 
     private init() {}
 
-    // MARK: - - Save preferences
+    // MARK: -
     func saveWindowSize(width: CGFloat, height: CGFloat) {
         log.debug("saveWindowSize()")
         log.debug("Saving window size - Width: \(width), Height: \(height)")
@@ -30,7 +28,7 @@ struct UserPreferences {
         UserDefaults.standard.set(height, forKey: mimiHeightKey)
     }
 
-    // MARK: - -
+    // MARK: -
     func saveWindowPosition(x: CGFloat, y: CGFloat) {
         log.debug("saveWindowPosition()")
         log.debug("Saving window position - X: \(x), Y: \(y)")
@@ -38,21 +36,20 @@ struct UserPreferences {
         UserDefaults.standard.set(y, forKey: mimiWindowPosYKey)
     }
 
-    // MARK: - -
     func saveLeftPanelWidth(_ width: CGFloat) {
         log.debug("saveLeftPanelWidth()")
         log.debug("Saving left panel width - Width: \(width)")
         UserDefaults.standard.set(width, forKey: mimiLeftPanelWidthKey)
     }
 
-    // MARK: - -
+    // MARK: -
     func saveMenuState(isOpen: Bool) {
         log.debug("saveMenuState()")
         log.debug("Saving menu state - Is Open: \(isOpen)")
         UserDefaults.standard.set(isOpen, forKey: mimiMenuStateKey)
     }
 
-    // MARK: - -  Restore preferences
+    // MARK: -
     func restoreWindowSize() -> CGSize {
         log.debug("restoreWindowSize()")
         let width = UserDefaults.standard.object(forKey: mimiWidthKey) as? CGFloat ?? 800
@@ -60,13 +57,12 @@ struct UserPreferences {
         log.debug("Restoring window size - Width: \(width), Height: \(height)")
         return CGSize(width: width, height: height)
     }
-
-    // MARK: - -
+    // MARK: -
     func restoreWindowPosition(screenSize: CGSize) -> CGPoint {
         log.debug("restoreWindowPosition()")
         // Default to the center of the screen if no saved position is found
-        let defaultX = (screenSize.width - 800) / 2 // Assuming default width of 800
-        let defaultY = (screenSize.height - 600) / 2 // Assuming default height of 600
+        let defaultX = (screenSize.width - 800) / 2  // Assuming default width of 800
+        let defaultY = (screenSize.height - 600) / 2  // Assuming default height of 600
 
         let x = UserDefaults.standard.object(forKey: mimiWindowPosXKey) as? CGFloat ?? defaultX
         let y = UserDefaults.standard.object(forKey: mimiWindowPosYKey) as? CGFloat ?? defaultY
@@ -75,15 +71,15 @@ struct UserPreferences {
         return CGPoint(x: x, y: y)
     }
 
-    // MARK: - -
+    // MARK: -
     func restoreLeftPanelWidth() -> CGFloat {
-        log.debug("restoreLeftPanelWidth()") // Log for method tracking
+        log.debug("restoreLeftPanelWidth()")  // Log for method tracking
         let width = UserDefaults.standard.object(forKey: mimiLeftPanelWidthKey) as? CGFloat ?? 300
         log.debug("Restoring left panel width - Width: \(width)")
         return width
     }
 
-    // MARK: - -
+    // MARK: -
     func restoreMenuState() -> Bool {
         log.debug("restoreMenuState()")
         let isOpen = UserDefaults.standard.bool(forKey: mimiMenuStateKey)

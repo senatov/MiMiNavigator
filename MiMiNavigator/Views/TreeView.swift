@@ -16,8 +16,7 @@ import SwiftyBeaver
 /// If a file has children, it will create a nested list to represent the tree structure.
 /// Handles click events to update the selected file.
 
-// MARK: - -
-
+// MARK: -
 struct TreeView: View {
     let files: [CustomFile]
     @Binding var selectedFile: CustomFile?

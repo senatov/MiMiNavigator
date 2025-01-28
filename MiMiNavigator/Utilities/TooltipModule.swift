@@ -11,8 +11,7 @@ import SwiftyBeaver
 
 /// TooltipModule is responsible for calculating the tooltip text and position.
 
-// MARK: - -
-
+// MARK: -
 struct TooltipModule {
     static func calculateTooltip(location: CGPoint, dividerX: CGFloat, totalWidth: CGFloat) -> (String, CGPoint) {
         // Initialize logger

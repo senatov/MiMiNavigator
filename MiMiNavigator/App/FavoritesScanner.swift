@@ -12,8 +12,7 @@ import Foundation
 class FavoritesScanner {
     private var visitedPaths = Set<String>()
 
-    // MARK: - -
-
+    // MARK: -
     public func scanFavorites() -> [CustomFile] {
         log.debug("scanFavorites()")
         let favoritePaths = FileManager.default.allDirectories
@@ -26,8 +25,7 @@ class FavoritesScanner {
         return favorites
     }
 
-    // MARK: - -
-
+    // MARK: -
     private func buildFavoritePanel(at url: URL, maxDirectories: Int = 0xFF) -> CustomFile? {
         log.debug("buildFavoriteStructure()")
         guard !visitedPaths.contains(url.path) else {
@@ -61,8 +59,7 @@ class FavoritesScanner {
         return CustomFile(name: fileName, path: url.path, isDirectory: isDirectory, children: children.isEmpty ? nil : children)
     }
 
-    // MARK: - -
-
+    // MARK: -
     private func buildFileStructure(at url: URL) -> CustomFile? {
         log.debug("buildFileStructure()")
         guard !visitedPaths.contains(url.path) else {

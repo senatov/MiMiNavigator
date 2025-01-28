@@ -5,7 +5,7 @@
 import SwiftUI
 import SwiftyBeaver
 
-// MARK: - -
+// MARK: -
 
 struct TooltipView: View {
     let text: String
@@ -21,7 +21,7 @@ struct TooltipView: View {
     }
 }
 
-// MARK: - - Preview for TooltipView
+// MARK: - Preview for TooltipView
 
 struct TooltipView_Previews: PreviewProvider {
     static var previews: some View {

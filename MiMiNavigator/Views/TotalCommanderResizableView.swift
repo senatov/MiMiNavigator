@@ -49,31 +49,31 @@ struct TotalCommanderResizableView: View {
         }
     }
 
-    // MARK: - -
+    // MARK: -
     private func buildTopMenuBar(geometry: GeometryProxy) -> some View {
         TopMenuBarView(isShowMenu: $isShowMenu, toggleMenu: toggleMenu)
     }
 
-    // MARK: - -
+    // MARK: -
     @MainActor
     private func fetchPaths() async {
         leftPath = await scanner.leftDirectory.path
         rightPath = await scanner.rightDirectory.path
     }
 
-    // MARK: - - Fetch the files asynchronously from the actor
+    // MARK: - Fetch the files asynchronously from the actor
     @MainActor
     private func fetchLeftFiles() async {
         displayedLeftFiles = await scanner.fileLst.getLeftFiles()
     }
 
-    // MARK: - - Fetch the files asynchronously from the actor
+    // MARK: - Fetch the files asynchronously from the actor
     @MainActor
     private func fetchRightFiles() async {
         displayedRightFiles = await scanner.fileLst.getRightFiles()
     }
 
-    // MARK: - -
+    // MARK: -
     private func toggleMenu() {
         log.debug("toggleMenu()")
         withAnimation {
@@ -82,8 +82,7 @@ struct TotalCommanderResizableView: View {
         }
     }
 
-    // MARK: - -
-
+    // MARK: -
     private func buildMainPanels(geometry: GeometryProxy) -> some View {
         log.debug("buildMainPanels()")
         return HStack(spacing: 0) {
@@ -98,7 +97,7 @@ struct TotalCommanderResizableView: View {
         .background(Color.white)
     }
 
-    // MARK: - -
+    // MARK: -
     private func buildLeftPanel(geometry: GeometryProxy) -> some View {
         log.debug("buildLeftPanel()")
         return VStack {
@@ -140,7 +139,7 @@ struct TotalCommanderResizableView: View {
         }
     }
 
-    // MARK: - -
+    // MARK: -
     private func buildRightPanel() -> some View {
         log.debug("buildRightPanel()")
         return VStack {
@@ -178,7 +177,7 @@ struct TotalCommanderResizableView: View {
         }
     }
 
-    // MARK: - -
+    // MARK: -
     private func builFavoriteTreeMenu() -> some View {
         log.debug("builFavoriteTreeMenu()")  // Log the start of the menu-building process
         let favScanner = FavoritesScanner()  // Initialize the favorites scanner
@@ -189,7 +188,7 @@ struct TotalCommanderResizableView: View {
             .font(.caption)  // Use a compact font for a more condensed appearance
     }
 
-    // MARK: - -
+    // MARK: -
     private func buildDivider(geometry: GeometryProxy) -> some View {
         log.debug("buildDivider()")
         return Rectangle()
@@ -211,7 +210,7 @@ struct TotalCommanderResizableView: View {
             }
     }
 
-    // MARK: - -
+    // MARK: -
     private func handleDividerDrag(
         value: DragGesture.Value, geometry: GeometryProxy
     ) {
@@ -229,22 +228,20 @@ struct TotalCommanderResizableView: View {
         }
     }
 
-    // MARK: - -
-
+    // MARK: -
     private func handleDoubleClickDivider(geometry: GeometryProxy) {
         leftPanelWidth = geometry.size.width / 2
         UserDefaults.standard.set(leftPanelWidth, forKey: "leftPanelWidth")
     }
 
-    // MARK: - -
-
+    // MARK: -
     private func initializePanelWidth(geometry: GeometryProxy) {
         leftPanelWidth =
             UserDefaults.standard.object(forKey: "leftPanelWidth") as? CGFloat
             ?? geometry.size.width / 2
     }
 
-    // MARK: - -
+    // MARK: -
     private func buildToolbar() -> some View {
         log.debug("buildToolbar()")
         return HStack(spacing: 20) {
@@ -323,15 +320,13 @@ struct TotalCommanderResizableView: View {
         .cornerRadius(8)
     }
 
-    // MARK: - -
-
+    // MARK: -
     private func exitApp() {
         log.debug("exitApp()")
         NSApplication.shared.terminate(nil)
     }
 
-    // MARK: - -
-
+    // MARK: -
     private func addKeyPressMonitor() {
         log.debug("addKeyPressMonitor()")
         NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in

@@ -18,7 +18,7 @@ struct FavoritesPanel: View {
 
     @AppStorage("favoritesState") private var favoritesStateJson: String = "" // JSON storage for favorites state
 
-    // MARK: - - Define Finder-style favorite items
+    // MARK: - Define Finder-style favorite items
 
     private var favoriteItems: [FavoriteItem] = [
         FavoriteItem(name: "AirDrop", icon: "airplane.circle.fill"),
@@ -35,14 +35,14 @@ struct FavoritesPanel: View {
         FavoriteItem(name: "Network", icon: "network"),
     ]
 
-    // MARK: - - Convert JSON string to a dictionary for accessing favorites state
+    // MARK: - Convert JSON string to a dictionary for accessing favorites state
 
     private var favoritesState: [String: Bool] {
         guard let data = favoritesStateJson.data(using: .utf8) else { return [:] }
         return (try? JSONDecoder().decode([String: Bool].self, from: data)) ?? [:]
     }
 
-    // MARK: - - Helper method to update favoritesStateJson directly
+    // MARK: - Helper method to update favoritesStateJson directly
 
     private func updateFavoritesState(for itemName: String, value: Bool) {
         var state = favoritesState
