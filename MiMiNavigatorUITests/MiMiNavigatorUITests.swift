@@ -20,7 +20,7 @@ final class MiMiNavigatorUITests: XCTestCase {
         // Put teardown code here. This method is called after the invocation of each test method in the class.
     }
 
-    // MARK: --
+    // MARK: -
     func testExample() throws {
         print("testExample()")
         // UI tests must launch the application that they test.

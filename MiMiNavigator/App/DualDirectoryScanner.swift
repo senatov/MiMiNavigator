@@ -93,7 +93,6 @@ actor DualDirectoryScanner: ObservableObject {
         case .right:
             directoryURL = rightDirectory
         }
-
         let files: [CustomFile]
         do {
             files = try await scanDirectory(at: directoryURL)
@@ -101,7 +100,6 @@ actor DualDirectoryScanner: ObservableObject {
             log.error("Failed to scan \(side) directory: \(error.localizedDescription)")
             files = []
         }
-
         await updateFileList(for: side, with: files)
     }
 

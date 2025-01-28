@@ -10,50 +10,42 @@ import Foundation
 import SwiftyBeaver
 
 extension FileManager {
-    // MARK: - - Returns the URL of the user's Documents directory
-
+    // MARK: - Returns the URL of the user's Documents directory
     var documentsDirectory: URL {
         return urls(for: .documentDirectory, in: .userDomainMask).first!
     }
 
-    // MARK: - - Returns the URL of the user's Caches directory
-
+    // MARK: - Returns the URL of the user's Caches directory
     var cachesDirectory: URL {
         return urls(for: .cachesDirectory, in: .userDomainMask).first!
     }
 
-    // MARK: - - Returns the URL of the Application Support directory
-
+    // MARK: - Returns the URL of the Application Support directory
     var applicationSupportDirectory: URL {
         return urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
     }
 
-    // MARK: - - Returns the URL of the Library directory
-
+    // MARK: - Returns the URL of the Library directory
     var libraryDirectory: URL {
         return urls(for: .libraryDirectory, in: .userDomainMask).first!
     }
 
-    // MARK: - - Returns the URL of the Downloads directory
-
+    // MARK: - Returns the URL of the Downloads directory
     var downloadsDirectory: URL {
         return urls(for: .downloadsDirectory, in: .userDomainMask).first!
     }
 
-    // MARK: - - Returns the URL of the Desktop directory
-
+    // MARK: - Returns the URL of the Desktop directory
     var desktopDirectory: URL {
         return urls(for: .desktopDirectory, in: .userDomainMask).first!
     }
 
-    // MARK: - - Returns the URL of the user's home directory
-
+    // MARK: -  Returns the URL of the user's home directory
     var homeDirectory: URL {
         return homeDirectoryForCurrentUser
     }
 
-    // MARK: - - Returns the URL of the system's temporary directory
-
+    // MARK: - Returns the URL of the system's temporary directory
     var systemTemporaryDirectory: URL {
         return temporaryDirectory
     }
@@ -63,17 +55,17 @@ extension FileManager {
         return urls(for: .musicDirectory, in: .userDomainMask).first!
     }
 
-    /// Returns the URL of the user's Pictures directory
+    // MARK: - Returns the URL of the user's Pictures directory
     var picturesDirectory: URL {
         return urls(for: .picturesDirectory, in: .userDomainMask).first!
     }
 
-    /// Returns the URL of the user's Movies directory
+    // MARK: - Returns the URL of the user's Movies directory
     var moviesDirectory: URL {
         return urls(for: .moviesDirectory, in: .userDomainMask).first!
     }
 
-    /// Returns the URL of the iCloud Drive directory if available, logs error if unavailable
+    // MARK: - Returns the URL of the iCloud Drive directory if available, logs error if unavailable
     var iCloudDirectory: URL? {
         guard let iCloudURL = url(forUbiquityContainerIdentifier: nil)?.appendingPathComponent("Documents") else {
             log.error("iCloud directory not available. Ensure iCloud is enabled and accessible.")
@@ -82,7 +74,7 @@ extension FileManager {
         return iCloudURL
     }
 
-    /// Returns the URL of the OneDrive directory if available, logs error if unavailable
+    // MARK: - Returns the URL of the OneDrive directory if available, logs error if unavailable
     var oneDriveDirectory: URL? {
         let possiblePaths = [
             homeDirectoryForCurrentUser.appendingPathComponent("Library/CloudStorage/OneDrive"),
@@ -97,7 +89,7 @@ extension FileManager {
         return nil
     }
 
-    /// Returns the URL of the Google Drive directory if available, logs error if unavailable
+    // MARK: - Returns the URL of the Google Drive directory if available, logs error if unavailable
     var googleDriveDirectory: URL? {
         let googleDrivePath = homeDirectoryForCurrentUser.appendingPathComponent("Google Drive")
         if fileExists(atPath: googleDrivePath.path) {
@@ -108,19 +100,20 @@ extension FileManager {
         }
     }
 
-    /// Returns the URLs of all mounted network drives, logs error if unable to access
+    // MARK: - Returns the URLs of all mounted network drives, logs error if unable to access
     var networkDrives: [URL] {
         let volumesURL = URL(fileURLWithPath: "/Volumes")
         do {
             let contents = try contentsOfDirectory(at: volumesURL, includingPropertiesForKeys: nil, options: .skipsHiddenFiles)
             return contents.filter { $0 != volumesURL.appendingPathComponent("Macintosh HD") }
         } catch {
-            log.error("Failed to access network drives in /Volumes: \(error.localizedDescription). Ensure network drives are connected and accessible.")
+            log.error(
+                "Failed to access network drives in /Volumes: \(error.localizedDescription). Ensure network drives are connected and accessible.")
             return []
         }
     }
 
-    /// Returns an array containing the URLs of all available user directories, including iCloud, OneDrive, Google Drive, and network drives
+    // MARK: - Returns an array containing the URLs of all available user directories, including iCloud, OneDrive, Google Drive, and network drives
     var allDirectories: [URL] {
         var directories = [
             documentsDirectory,

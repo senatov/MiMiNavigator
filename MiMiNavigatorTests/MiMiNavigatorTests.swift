@@ -18,7 +18,7 @@ final class MiMiNavigatorTests: XCTestCase {
         // Put teardown code here. This method is called after the invocation of each test method in the class.
     }
 
-    // MARK: - -
+    // MARK: -
     func testExample() throws {
         log.info("testExample()")
         // This is an example of a functional test case.
@@ -28,7 +28,7 @@ final class MiMiNavigatorTests: XCTestCase {
         // Mark your test async to allow awaiting for asynchronous code to complete. Check the results with assertions afterwards.
     }
 
-    // MARK: - -
+    // MARK: -
     func testPerformanceExample() throws {
         log.info("testPerformanceExample()")
         // This is an example of a performance test case.

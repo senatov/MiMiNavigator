@@ -9,17 +9,15 @@
 import Foundation
 import SwiftyBeaver
 
+// Initialize logger
 struct CustomFile: Identifiable {
-    // MARK: - - Initialize logger
-
     let id = UUID()
     let name: String
     let path: String
     let isDirectory: Bool
-    var children: [CustomFile]? // Optional array for holding child files if it's a directory
+    var children: [CustomFile]?  // Optional array for holding child files if it's a directory
 
-    // MARK: - -Initialize 'children' only if 'isDirectory' is true
-
+    // MARK: - Initialize 'children' only if 'isDirectory' is true
     init(name: String, path: String, isDirectory: Bool, children: [CustomFile]? = nil) {
         self.name = name
         self.path = path

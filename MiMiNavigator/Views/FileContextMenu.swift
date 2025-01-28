@@ -7,7 +7,7 @@
 import SwiftUI
 import SwiftyBeaver
 
-// MARK: - - Context menu for file actions
+// MARK: - Context menu for file actions
 
 struct FileContextMenu: View {
     // Initialize logger
