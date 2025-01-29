@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		976FEA882D49C8C70078EA90 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 976FEA872D49C8C70078EA90 /* README.md */; };
 		97D9156C2CD5625D00EB5FDD /* SwiftyBeaver in Frameworks */ = {isa = PBXBuildFile; productRef = 97D9156B2CD5625D00EB5FDD /* SwiftyBeaver */; };
 /* End PBXBuildFile section */
 
@@ -28,6 +29,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		976FEA872D49C8C70078EA90 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		97AD1A2E2C624E020045C38D /* MiMiNavigator.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MiMiNavigator.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		97AD1A412C624E040045C38D /* MiMiNavigatorTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MiMiNavigatorTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		97AD1A4B2C624E040045C38D /* MiMiNavigatorUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MiMiNavigatorUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -93,6 +95,7 @@
 		97AD1A252C624E020045C38D = {
 			isa = PBXGroup;
 			children = (
+				976FEA872D49C8C70078EA90 /* README.md */,
 				9751D0682CCEB1BC005B1D64 /* MiMiNavigator */,
 				9751D0542CCEB1B9005B1D64 /* MiMiNavigatorTests */,
 				9751D0502CCEB1B6005B1D64 /* MiMiNavigatorUITests */,
@@ -236,6 +239,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				976FEA882D49C8C70078EA90 /* README.md in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
