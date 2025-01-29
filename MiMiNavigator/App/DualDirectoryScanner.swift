@@ -13,6 +13,7 @@ import SwiftUI
 
 /// Manages dual directory monitoring with periodic file refreshes.
 actor DualDirectoryScanner: ObservableObject {
+    let interval = 15
     // Singleton for shared file management logic
     var fileLst = FileSingleton.shared
     // Timers for both directories
@@ -32,45 +33,37 @@ actor DualDirectoryScanner: ObservableObject {
         self.leftDirectory = leftDirectory
         self.rightDirectory = rightDirectory
         log.debug("\n --- DualDirectoryScanner initialized.----")
-        // Start monitoring asynchronously after initialization
-        Task { [weak self] in
-            await self?.startMonitoring()
-        }
-    }
-
-    // MARK: - Sets up monitoring for both directories
-    private func initializeMonitoring() {
-        log.info("initializeMonitoring()")
-        Task {
-            startMonitoring()
+        Task { @MainActor in
+            await self.startMonitoring()
         }
     }
 
     // MARK: - Starts timers for both directories with custom refresh intervals
     func startMonitoring() {
         log.info("startMonitoring()")
-        // Left directory monitoring
-        leftTimer = DispatchSource.makeTimerSource(queue: DispatchQueue.global())
-        leftTimer?.schedule(deadline: .now(), repeating: .seconds(15))
-        leftTimer?.setEventHandler { [weak self] in
-            Task.detached { [weak self] in
-                await self?.refreshFiles(for: .left)
-            }
-        }
-        leftTimer?.resume()
-
-        // Right directory monitoring
-        rightTimer = DispatchSource.makeTimerSource(queue: DispatchQueue.global())
-        rightTimer?.schedule(deadline: .now(), repeating: .seconds(5))
-        rightTimer?.setEventHandler { [weak self] in
-            Task.detached { [weak self] in
-                await self?.refreshFiles(for: .right)
-            }
-        }
-        rightTimer?.resume()
+        setupTimer(for: .left)
+        setupTimer(for: .right)
 
         if leftTimer == nil || rightTimer == nil {
             log.error("Failed to initialize one or both timers.")
+        }
+    }
+
+    // MARK: - Helper method to setup timers
+    private func setupTimer(for side: DirectorySide) {
+        let timer = DispatchSource.makeTimerSource(queue: DispatchQueue.global())
+        timer.schedule(deadline: .now(), repeating: .seconds(interval))
+        timer.setEventHandler { [weak self] in
+            Task.detached { [weak self] in
+                await self?.refreshFiles(for: side)
+            }
+        }
+        timer.resume()
+        switch side {
+        case .left:
+            leftTimer = timer
+        case .right:
+            rightTimer = timer
         }
     }
 
@@ -118,7 +111,7 @@ actor DualDirectoryScanner: ObservableObject {
 
     // MARK: - Scans a directory for files and directories
     private func scanDirectory(at url: URL?) async throws -> [CustomFile] {
-        log.info("scanDirectory() dir: \(String(describing: url?.path) ) ")
+        log.info("scanDirectory() dir: \(String(describing: url?.path))")
         guard let url = url else {
             log.error("Invalid directory URL: URL is nil.")
             return []
@@ -139,7 +132,7 @@ actor DualDirectoryScanner: ObservableObject {
                 customFiles.append(customFile)
             }
         } catch {
-            log.error("Failed to scan directory at: \(url.path):\(error.localizedDescription)")
+            log.error("Failed to scan directory at: \(url.path): \(error.localizedDescription)")
             throw error
         }
         return customFiles
