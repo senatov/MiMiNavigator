@@ -11,14 +11,14 @@ import Foundation
 class FavoritesScanner {
     private var visitedPaths = Set<URL>()
 
-    // MARK: - Public Methods
+    // MARK: -
     public func scanFavorites() -> [CustomFile] {
         log.debug("scanFavorites()")
         let favoritePaths = FileManager.default.allDirectories
         return favoritePaths.compactMap { buildFileStructure(at: $0, maxDirectories: 0xFF) }
     }
 
-    // MARK: - Private Methods
+    // MARK: -
     private func buildFileStructure(at url: URL, maxDirectories: Int = 0xFF) -> CustomFile? {
         log.debug("buildFileStructure() at \(url.path)")
         // Avoid revisiting the same path
