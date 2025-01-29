@@ -5,81 +5,45 @@
 //  Created by Iakov Senatov on 01.11.24.
 //  Copyright © 2024 Senatov. All rights reserved.
 //
-
 import Foundation
 
 // This class scans commonly used "Favorites" folders on macOS and builds a CustomFile structure
 class FavoritesScanner {
-    private var visitedPaths = Set<String>()
+    private var visitedPaths = Set<URL>()
 
-    // MARK: -
+    // MARK: - Public Methods
     public func scanFavorites() -> [CustomFile] {
         log.debug("scanFavorites()")
         let favoritePaths = FileManager.default.allDirectories
-        var favorites: [CustomFile] = []
-        for path in favoritePaths {
-            if let customFile = buildFavoritePanel(at: path, maxDirectories: 0xFF) {
-                favorites.append(customFile)
-            }
-        }
-        return favorites
+        return favoritePaths.compactMap { buildFileStructure(at: $0, maxDirectories: 0xFF) }
     }
 
-    // MARK: -
-    private func buildFavoritePanel(at url: URL, maxDirectories: Int = 0xFF) -> CustomFile? {
-        log.debug("buildFavoriteStructure()")
-        guard !visitedPaths.contains(url.path) else {
+    // MARK: - Private Methods
+    private func buildFileStructure(at url: URL, maxDirectories: Int = 0xFF) -> CustomFile? {
+        log.debug("buildFileStructure() at \(url.path)")
+        // Avoid revisiting the same path
+        guard !visitedPaths.contains(url) else {
             return nil
         }
-        visitedPaths.insert(url.path)
-        log.debug("buildFileStructure() \(url.path)")
-        let fileManager = FileManager.default
+        visitedPaths.insert(url)
+        // Check if the URL is a symbolic link
         let resourceValues = try? url.resourceValues(forKeys: [.isSymbolicLinkKey, .isDirectoryKey])
         guard resourceValues?.isSymbolicLink != true else {
             return nil
         }
+        // Determine if the URL is a directory
         let isDirectory = resourceValues?.isDirectory ?? false
         let fileName = url.lastPathComponent
-        var children: [CustomFile] = []
-        if isDirectory {
-            let contents = (try? fileManager.contentsOfDirectory(at: url, includingPropertiesForKeys: nil, options: [.skipsHiddenFiles])) ?? []
-            var directoryCount = 0
-            for item in contents {
-                // Limit to only the first maxDirectories
-                if directoryCount >= maxDirectories {
-                    log.debug("Reached the maximum directory limit within buildFavoriteStructure, stopping further scanning.")
-                    break
-                }
-                if let child = buildFavoritePanel(at: item, maxDirectories: 0) { // maxDirectories 0 prevents further recursion
-                    children.append(child)
-                    directoryCount += 1
-                }
-            }
-        }
-        return CustomFile(name: fileName, path: url.path, isDirectory: isDirectory, children: children.isEmpty ? nil : children)
-    }
-
-    // MARK: -
-    private func buildFileStructure(at url: URL) -> CustomFile? {
-        log.debug("buildFileStructure()")
-        guard !visitedPaths.contains(url.path) else {
-            return nil
-        }
-        visitedPaths.insert(url.path)
-        log.debug("buildFileStructure() \(url.path)")
-        let fileManager = FileManager.default
-        let resourceValues = try? url.resourceValues(forKeys: [.isSymbolicLinkKey, .isDirectoryKey])
-        guard resourceValues?.isSymbolicLink != true else {
-            return nil
-        }
-
-        let isDirectory = resourceValues?.isDirectory ?? false
-        let fileName = url.lastPathComponent
+        // If it's a directory, scan its contents
         var children: [CustomFile]?
-
         if isDirectory {
-            let contents = (try? fileManager.contentsOfDirectory(at: url, includingPropertiesForKeys: nil, options: [])) ?? []
-            children = contents.compactMap { buildFileStructure(at: $0) }
+            let contents =
+                (try? FileManager.default.contentsOfDirectory(
+                    at: url, includingPropertiesForKeys: nil, options: [.skipsHiddenFiles]
+                )) ?? []
+
+            // Limit the number of directories to scan
+            children = contents.prefix(maxDirectories).compactMap { buildFileStructure(at: $0, maxDirectories: 0) }
         }
         return CustomFile(name: fileName, path: url.path, isDirectory: isDirectory, children: children)
     }
