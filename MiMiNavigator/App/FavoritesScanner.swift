@@ -41,7 +41,6 @@ class FavoritesScanner {
                 (try? FileManager.default.contentsOfDirectory(
                     at: url, includingPropertiesForKeys: nil, options: [.skipsHiddenFiles]
                 )) ?? []
-
             // Limit the number of directories to scan
             children = contents.prefix(maxDirectories).compactMap { buildFileStructure(at: $0, maxDirectories: 0) }
         }

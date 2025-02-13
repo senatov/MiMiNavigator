@@ -5,7 +5,6 @@
 //  Created by Iakov Senatov on 06.08.24.
 //
 
-import Compression
 import SwiftData
 import SwiftUI
 import SwiftyBeaver
@@ -18,115 +17,6 @@ struct MiMiNavigatorApp: App {
     // MARK: -
     init() {
         LogMan.initializeLogging()
-        LogMan.log.debug("MiMiNavigatorApp initialized")
-
-        // Add Console Destination
-        let console = ConsoleDestination()
-        console.format = "$DHH:mm:ss$d ➤ $L ➤ $N.$F:$l ➤ $M"
-
-        // Configure emoji icons based on log level
-        func getLevelIcon(for level: SwiftyBeaver.Level) -> String {
-            switch level {
-            case .verbose: return "🔮➤"
-            case .debug: return "☘️➤"
-            case .info: return "🔹➤"
-            case .warning: return "🔸➤"
-            case .error: return "💢➤"
-            default: return "➤➤➤➤"
-            }
-        }
-        // Customize level string for each log level
-        console.levelString.verbose = getLevelIcon(for: .verbose) + " VERBOSE"
-        console.levelString.debug = getLevelIcon(for: .debug) + " DEBUG"
-        console.levelString.info = getLevelIcon(for: .info) + " INFO"
-        console.levelString.warning = getLevelIcon(for: .warning) + " WARNING"
-        console.levelString.error = getLevelIcon(for: .error) + " ERROR"
-        LogMan.log.addDestination(console)
-        setupFileLogging()
-    }
-
-    // MARK: -
-    private func setupFileLogging() {
-        LogMan.log.debug("setupFileLogging()")
-        let file = FileDestination()
-        // Create log directory
-        guard
-            let logDirectory = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask).first?
-                .appendingPathComponent("Logs")
-                .appendingPathComponent("MiMiNavigator", isDirectory: true)
-        else {
-            LogMan.log.error("Failed to initialize file logging directory")
-            return
-        }
-        do {
-            try FileManager.default.createDirectory(at: logDirectory, withIntermediateDirectories: true, attributes: nil)
-            // Check the current log file size
-            let dateFormatter = DateFormatter()
-            dateFormatter.dateFormat = "yyyy-MM-dd_HH-mm-ss"
-            let logFileName = "MiMiNavigator_\(dateFormatter.string(from: Date())).log"
-            file.logFileURL = logDirectory.appendingPathComponent(logFileName)
-            if let currentLogURL = file.logFileURL, FileManager.default.fileExists(atPath: currentLogURL.path) {
-                let fileSize = try FileManager.default.attributesOfItem(atPath: currentLogURL.path)[.size] as? UInt64 ?? 0
-                if fileSize > 10 * 1024 * 1024 {
-                    try archiveAndClearLogFile(at: currentLogURL, in: logDirectory)
-                }
-            }
-            LogMan.log.addDestination(file)
-            LogMan.log.debug("File logging initialized at \(file.logFileURL?.path ?? "unknown path")")
-            // Cleanup old ZIP files and logs
-            try cleanUpOldZipFiles(in: logDirectory)
-            try cleanUpOldLogs(in: logDirectory)
-
-        } catch {
-            LogMan.log.error("Failed to setup file logging: \(error)")
-        }
-    }
-
-    // MARK: -
-    private func archiveAndClearLogFile(at logFileURL: URL, in logDirectory: URL) throws {
-        LogMan.log.debug("archivingAndClearingLogFile()")
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "yyyy-MM-dd_HH-mm-ss"
-        let zipFileName = "MiMiNavigatorLog_\(dateFormatter.string(from: Date())).zip"
-        let zipFileURL = logDirectory.appendingPathComponent(zipFileName)
-        // Compress log file into ZIP format
-        try compressFile(at: logFileURL, to: zipFileURL)
-        LogMan.log.debug("Archived log file to \(zipFileURL.path)")
-        // Remove old log after archiving
-        try FileManager.default.removeItem(at: logFileURL)
-        LogMan.log.debug("Cleared original log file at \(logFileURL.path)")
-    }
-
-    // MARK: - Custom function to compress data from a source file to a destination file using zlib
-    private func compressFile(at sourceURL: URL, to destinationURL: URL) throws {
-        LogMan.log.debug("compressFile()")
-        let source = try FileHandle(forReadingFrom: sourceURL)
-        defer { source.closeFile() }
-        let destination = try FileHandle(forWritingTo: destinationURL)
-        defer { destination.closeFile() }
-        let bufferSize = 64 * 1024
-        while let bytesRead = try? source.read(upToCount: bufferSize), !bytesRead.isEmpty {
-            let compressedData = compressData(bytesRead)
-            destination.write(compressedData)
-        }
-    }
-
-    // MARK: - Custom compression function using zlib
-    private func compressData(_ data: Data) -> Data {
-        LogMan.log.debug("compressData()")
-        var compressedData = Data()
-        data.withUnsafeBytes { (rawBufferPointer: UnsafeRawBufferPointer) in
-            guard let baseAddress = rawBufferPointer.baseAddress else { return }
-            let sourceBuffer = UnsafeBufferPointer(start: baseAddress.assumingMemoryBound(to: UInt8.self), count: data.count)
-            let destinationBuffer = UnsafeMutablePointer<UInt8>.allocate(capacity: data.count)
-            defer { destinationBuffer.deallocate() }
-            let compressedSize = compression_encode_buffer(
-                destinationBuffer, data.count, sourceBuffer.baseAddress!, data.count, nil, COMPRESSION_ZLIB)
-            if compressedSize > 0 {
-                compressedData.append(destinationBuffer, count: compressedSize)
-            }
-        }
-        return compressedData
     }
 
     // MARK: -
