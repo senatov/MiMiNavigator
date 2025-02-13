@@ -10,11 +10,12 @@ import Foundation
 
 actor FileSingleton: ObservableObject, @unchecked Sendable {
     static let shared = FileSingleton()
-
     private var _leftFiles: [CustomFile] = []  // Private storage for left files
     private var _rightFiles: [CustomFile] = []  // Private storage for right files
 
-    private init() {}
+    private init() {
+        LoggerManager.log.debug("init() - empty")
+    }
 
     // MARK: -
     func updateLeftFiles(_ files: [CustomFile]) async {

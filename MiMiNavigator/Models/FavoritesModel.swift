@@ -19,7 +19,6 @@ class FavoritesModel {
     // MARK: -  Sets up default favorite directories, including iCloud, OneDrive, Google Drive, and network drives if available
     private func setupFavoriteDirectories() {
         let fileManager = FileManager.default
-
         // Adding standard directories
         favoriteDirectories.append(contentsOf: [
             fileManager.documentsDirectory,

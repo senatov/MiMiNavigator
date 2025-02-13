@@ -75,7 +75,7 @@ struct TotalCommanderResizableView: View {
 
     // MARK: -
     private func toggleMenu() {
-        log.debug("toggleMenu()")
+        LoggerManager.log.debug("toggleMenu()")
         withAnimation {
             isShowMenu.toggle()
             UserPreferences.shared.saveMenuState(isOpen: isShowMenu)
@@ -84,7 +84,7 @@ struct TotalCommanderResizableView: View {
 
     // MARK: -
     private func buildMainPanels(geometry: GeometryProxy) -> some View {
-        log.debug("buildMainPanels()")
+        LoggerManager.log.debug("buildMainPanels()")
         return HStack(spacing: 0) {
             if isShowMenu {
                 builFavoriteTreeMenu()
@@ -99,7 +99,7 @@ struct TotalCommanderResizableView: View {
 
     // MARK: -
     private func buildLeftPanel(geometry: GeometryProxy) -> some View {
-        log.debug("buildLeftPanel()")
+        LoggerManager.log.debug("buildLeftPanel()")
         return VStack {
             EditablePathControlWrapper(path: $leftPath)
                 .padding(.bottom, 1)
@@ -141,7 +141,7 @@ struct TotalCommanderResizableView: View {
 
     // MARK: -
     private func buildRightPanel() -> some View {
-        log.debug("buildRightPanel()")
+        LoggerManager.log.debug("buildRightPanel()")
         return VStack {
             EditablePathControlWrapper(path: $rightPath)
                 .padding(.bottom, 1)
@@ -179,7 +179,7 @@ struct TotalCommanderResizableView: View {
 
     // MARK: -
     private func builFavoriteTreeMenu() -> some View {
-        log.debug("builFavoriteTreeMenu()")  // Log the start of the menu-building process
+        LoggerManager.log.debug("builFavoriteTreeMenu()")  // Log the start of the menu-building process
         let favScanner = FavoritesScanner()  // Initialize the favorites scanner
         let fileStructure = favScanner.scanFavorites()  // Scan and retrieve the file structure
         return TreeView(files: fileStructure, selectedFile: $selectedFile)
@@ -190,7 +190,7 @@ struct TotalCommanderResizableView: View {
 
     // MARK: -
     private func buildDivider(geometry: GeometryProxy) -> some View {
-        log.debug("buildDivider()")
+        LoggerManager.log.debug("buildDivider()")
         return Rectangle()
             .fill(Color.gray)
             .frame(width: 7)
@@ -214,7 +214,7 @@ struct TotalCommanderResizableView: View {
     private func handleDividerDrag(
         value: DragGesture.Value, geometry: GeometryProxy
     ) {
-        log.debug("handleDividerDrag")
+        LoggerManager.log.debug("handleDividerDrag")
         let newWidth = leftPanelWidth + value.translation.width
         if newWidth > 100 && newWidth < geometry.size.width - 100 {
             leftPanelWidth = newWidth
@@ -243,11 +243,11 @@ struct TotalCommanderResizableView: View {
 
     // MARK: -
     private func buildToolbar() -> some View {
-        log.debug("buildToolbar()")
+        LoggerManager.log.debug("buildToolbar()")
         return HStack(spacing: 20) {
             ControlGroup {
                 Button(action: {
-                    log.debug("View selected Docu")
+                    LoggerManager.log.debug("View selected Docu")
                 }) {
                     Label("F3 View", systemImage: "eye.circle")
                         .labelStyle(.titleAndIcon)
@@ -255,7 +255,7 @@ struct TotalCommanderResizableView: View {
                 .help("View the selected document")  // Tooltip
 
                 Button(action: {
-                    log.debug("Edit button tapped")
+                    LoggerManager.log.debug("Edit button tapped")
                 }) {
                     Label("F4 Edit", systemImage: "pencil")
                         .labelStyle(.titleAndIcon)
@@ -263,7 +263,7 @@ struct TotalCommanderResizableView: View {
                 .help("Edit the selected file")  // Tooltip
 
                 Button(action: {
-                    log.debug("Copy button tapped")
+                    LoggerManager.log.debug("Copy button tapped")
                 }) {
                     Label("F5 Copy", systemImage: "document.on.document")
                         .labelStyle(.titleAndIcon)
@@ -271,7 +271,7 @@ struct TotalCommanderResizableView: View {
                 .help("Copy the selected file")  // Tooltip
 
                 Button(action: {
-                    log.debug("Move button tapped")
+                    LoggerManager.log.debug("Move button tapped")
                 }) {
                     Label(
                         "F6 Move",
@@ -282,7 +282,7 @@ struct TotalCommanderResizableView: View {
                 .help("Move the selected file")  // Tooltip
 
                 Button(action: {
-                    log.debug("NewFolder button tapped")
+                    LoggerManager.log.debug("NewFolder button tapped")
                 }) {
                     Label("F7 NewFolder", systemImage: "folder.badge.plus")
                         .labelStyle(.titleAndIcon)
@@ -290,7 +290,7 @@ struct TotalCommanderResizableView: View {
                 .help("Create a new folder")  // Tooltip
 
                 Button(action: {
-                    log.debug("Delete button tapped")
+                    LoggerManager.log.debug("Delete button tapped")
                 }) {
                     Label("F8 Delete", systemImage: "minus.rectangle")
                         .labelStyle(.titleAndIcon)
@@ -306,7 +306,7 @@ struct TotalCommanderResizableView: View {
                 .help("Exit the application")  // Tooltip
 
                 Button(action: {
-                    log.debug("Settings button tapped")
+                    LoggerManager.log.debug("Settings button tapped")
                 }) {
                     Label("Settings", systemImage: "gearshape")
                         .labelStyle(.titleAndIcon)
@@ -322,13 +322,13 @@ struct TotalCommanderResizableView: View {
 
     // MARK: -
     private func exitApp() {
-        log.debug("exitApp()")
+        LoggerManager.log.debug("exitApp()")
         NSApplication.shared.terminate(nil)
     }
 
     // MARK: -
     private func addKeyPressMonitor() {
-        log.debug("addKeyPressMonitor()")
+        LoggerManager.log.debug("addKeyPressMonitor()")
         NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
             if event.modifierFlags.contains(.option) && event.keyCode == 0x76 {
                 exitApp()

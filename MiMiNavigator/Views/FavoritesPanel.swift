@@ -19,7 +19,6 @@ struct FavoritesPanel: View {
     @AppStorage("favoritesState") private var favoritesStateJson: String = "" // JSON storage for favorites state
 
     // MARK: - Define Finder-style favorite items
-
     private var favoriteItems: [FavoriteItem] = [
         FavoriteItem(name: "AirDrop", icon: "airplane.circle.fill"),
         FavoriteItem(name: "Recent", icon: "clock.fill"),
@@ -61,7 +60,6 @@ struct FavoritesPanel: View {
     var body: some View {
         VStack {
             Text("Favorites").font(.callout)
-
             List(favoriteItems) { item in
                 HStack {
                     Image(systemName: item.icon.isEmpty ? "questionmark" : item.icon) // Default icon if icon name is empty
@@ -69,7 +67,7 @@ struct FavoritesPanel: View {
                     Text(item.name)
                 }
                 .onTapGesture {
-                    log.debug("Selected favorite item: \(item.name)")
+                    LoggerManager.log.debug("Selected favorite item: \(item.name)")
                 }
                 .onAppear {
                     if favoritesState[item.name] == nil {
@@ -83,7 +81,6 @@ struct FavoritesPanel: View {
 }
 
 // MARK: - Preview
-
 struct FavoritesPanel_Previews: PreviewProvider {
     static var previews: some View {
         FavoritesPanel()
