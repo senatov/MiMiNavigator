@@ -89,7 +89,7 @@ struct TotalCommanderResizableView: View {
             if isShowMenu {
                 builFavoriteTreeMenu()
             }
-            buildLeftPanel(geometry: geometry)
+            buildLeftPanel()
             buildDivider(geometry: geometry)
             buildRightPanel()
         }
@@ -98,7 +98,7 @@ struct TotalCommanderResizableView: View {
     }
 
     // MARK: -
-    private func buildLeftPanel(geometry: GeometryProxy) -> some View {
+    private func buildLeftPanel() -> some View {
         LogMan.log.debug("buildLeftPanel()")
         return VStack {
             EditablePathControlWrapper(path: $leftPath)
@@ -126,10 +126,7 @@ struct TotalCommanderResizableView: View {
                     }
             }
             .listStyle(PlainListStyle())
-            .frame(
-                width: leftPanelWidth == 0
-                    ? geometry.size.width / 2 : leftPanelWidth
-            )
+            .frame(maxWidth: .infinity)
             .border(Color.gray)
             .onAppear {
                 Task {
