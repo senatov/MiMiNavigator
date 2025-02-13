@@ -99,7 +99,6 @@
 				9751D0682CCEB1BC005B1D64 /* MiMiNavigator */,
 				9751D0542CCEB1B9005B1D64 /* MiMiNavigatorTests */,
 				9751D0502CCEB1B6005B1D64 /* MiMiNavigatorUITests */,
-				97D9156A2CD5625D00EB5FDD /* Frameworks */,
 				97AD1A2F2C624E020045C38D /* Products */,
 			);
 			sourceTree = "<group>";
@@ -112,13 +111,6 @@
 				97AD1A4B2C624E040045C38D /* MiMiNavigatorUITests.xctest */,
 			);
 			name = Products;
-			sourceTree = "<group>";
-		};
-		97D9156A2CD5625D00EB5FDD /* Frameworks */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
