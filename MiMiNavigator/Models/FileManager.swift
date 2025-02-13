@@ -68,7 +68,7 @@ extension FileManager {
     // MARK: - Returns the URL of the iCloud Drive directory if available, logs error if unavailable
     var iCloudDirectory: URL? {
         guard let iCloudURL = url(forUbiquityContainerIdentifier: nil)?.appendingPathComponent("Documents") else {
-            LoggerManager.log.error("iCloud directory not available. Ensure iCloud is enabled and accessible.")
+            LogMan.log.error("iCloud directory not available. Ensure iCloud is enabled and accessible.")
             return nil
         }
         return iCloudURL
@@ -85,7 +85,7 @@ extension FileManager {
                 return path
             }
         }
-        LoggerManager.log.error("OneDrive directory not found. OneDrive may not be installed or is located in an unexpected directory.")
+        LogMan.log.error("OneDrive directory not found. OneDrive may not be installed or is located in an unexpected directory.")
         return nil
     }
 
@@ -95,7 +95,7 @@ extension FileManager {
         if fileExists(atPath: googleDrivePath.path) {
             return googleDrivePath
         } else {
-            LoggerManager.log.error("Google Drive directory not found. Verify Google Drive is installed and accessible.")
+            LogMan.log.error("Google Drive directory not found. Verify Google Drive is installed and accessible.")
             return nil
         }
     }
@@ -107,7 +107,7 @@ extension FileManager {
             let contents = try contentsOfDirectory(at: volumesURL, includingPropertiesForKeys: nil, options: .skipsHiddenFiles)
             return contents.filter { $0 != volumesURL.appendingPathComponent("Macintosh HD") }
         } catch {
-            LoggerManager.log.error(
+            LogMan.log.error(
                 "Failed to access network drives in /Volumes: \(error.localizedDescription). Ensure network drives are connected and accessible.")
             return []
         }

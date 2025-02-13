@@ -13,14 +13,14 @@ class FavoritesScanner {
 
     // MARK: -
     public func scanFavorites() -> [CustomFile] {
-        LoggerManager.log.debug("scanFavorites()")
+        LogMan.log.debug("scanFavorites()")
         let favoritePaths = FileManager.default.allDirectories
         return favoritePaths.compactMap { buildFileStructure(at: $0, maxDirectories: 0xFF) }
     }
 
     // MARK: -
     private func buildFileStructure(at url: URL, maxDirectories: Int = 0xFF) -> CustomFile? {
-        LoggerManager.log.debug("buildFileStructure() at \(url.path)")
+        LogMan.log.debug("buildFileStructure() at \(url.path)")
         // Avoid revisiting the same path
         guard !visitedPaths.contains(url) else {
             return nil

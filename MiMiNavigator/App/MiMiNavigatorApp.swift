@@ -17,8 +17,8 @@ struct MiMiNavigatorApp: App {
 
     // MARK: -
     init() {
-        LoggerManager.initializeLogging()
-        LoggerManager.log.debug("MiMiNavigatorApp initialized")
+        LogMan.initializeLogging()
+        LogMan.log.debug("MiMiNavigatorApp initialized")
 
         // Add Console Destination
         let console = ConsoleDestination()
@@ -41,13 +41,13 @@ struct MiMiNavigatorApp: App {
         console.levelString.info = getLevelIcon(for: .info) + " INFO"
         console.levelString.warning = getLevelIcon(for: .warning) + " WARNING"
         console.levelString.error = getLevelIcon(for: .error) + " ERROR"
-        LoggerManager.log.addDestination(console)
+        LogMan.log.addDestination(console)
         setupFileLogging()
     }
 
     // MARK: -
     private func setupFileLogging() {
-        LoggerManager.log.debug("setupFileLogging()")
+        LogMan.log.debug("setupFileLogging()")
         let file = FileDestination()
         // Create log directory
         guard
@@ -55,7 +55,7 @@ struct MiMiNavigatorApp: App {
                 .appendingPathComponent("Logs")
                 .appendingPathComponent("MiMiNavigator", isDirectory: true)
         else {
-            LoggerManager.log.error("Failed to initialize file logging directory")
+            LogMan.log.error("Failed to initialize file logging directory")
             return
         }
         do {
@@ -71,35 +71,35 @@ struct MiMiNavigatorApp: App {
                     try archiveAndClearLogFile(at: currentLogURL, in: logDirectory)
                 }
             }
-            LoggerManager.log.addDestination(file)
-            LoggerManager.log.debug("File logging initialized at \(file.logFileURL?.path ?? "unknown path")")
+            LogMan.log.addDestination(file)
+            LogMan.log.debug("File logging initialized at \(file.logFileURL?.path ?? "unknown path")")
             // Cleanup old ZIP files and logs
             try cleanUpOldZipFiles(in: logDirectory)
             try cleanUpOldLogs(in: logDirectory)
 
         } catch {
-            LoggerManager.log.error("Failed to setup file logging: \(error)")
+            LogMan.log.error("Failed to setup file logging: \(error)")
         }
     }
 
     // MARK: -
     private func archiveAndClearLogFile(at logFileURL: URL, in logDirectory: URL) throws {
-        LoggerManager.log.debug("archivingAndClearingLogFile()")
+        LogMan.log.debug("archivingAndClearingLogFile()")
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyy-MM-dd_HH-mm-ss"
         let zipFileName = "MiMiNavigatorLog_\(dateFormatter.string(from: Date())).zip"
         let zipFileURL = logDirectory.appendingPathComponent(zipFileName)
         // Compress log file into ZIP format
         try compressFile(at: logFileURL, to: zipFileURL)
-        LoggerManager.log.debug("Archived log file to \(zipFileURL.path)")
+        LogMan.log.debug("Archived log file to \(zipFileURL.path)")
         // Remove old log after archiving
         try FileManager.default.removeItem(at: logFileURL)
-        LoggerManager.log.debug("Cleared original log file at \(logFileURL.path)")
+        LogMan.log.debug("Cleared original log file at \(logFileURL.path)")
     }
 
     // MARK: - Custom function to compress data from a source file to a destination file using zlib
     private func compressFile(at sourceURL: URL, to destinationURL: URL) throws {
-        LoggerManager.log.debug("compressFile()")
+        LogMan.log.debug("compressFile()")
         let source = try FileHandle(forReadingFrom: sourceURL)
         defer { source.closeFile() }
         let destination = try FileHandle(forWritingTo: destinationURL)
@@ -113,7 +113,7 @@ struct MiMiNavigatorApp: App {
 
     // MARK: - Custom compression function using zlib
     private func compressData(_ data: Data) -> Data {
-        LoggerManager.log.debug("compressData()")
+        LogMan.log.debug("compressData()")
         var compressedData = Data()
         data.withUnsafeBytes { (rawBufferPointer: UnsafeRawBufferPointer) in
             guard let baseAddress = rawBufferPointer.baseAddress else { return }
@@ -131,7 +131,7 @@ struct MiMiNavigatorApp: App {
 
     // MARK: -
     private func cleanUpOldZipFiles(in directory: URL) throws {
-        LoggerManager.log.debug("cleanUpOldZipFiles()")
+        LogMan.log.debug("cleanUpOldZipFiles()")
         let fileManager = FileManager.default
         let zipFiles = try fileManager.contentsOfDirectory(at: directory, includingPropertiesForKeys: [.creationDateKey], options: .skipsHiddenFiles)
             .filter { $0.pathExtension == "zip" }
@@ -143,13 +143,13 @@ struct MiMiNavigatorApp: App {
         let filesToDelete = zipFiles.dropFirst(3)
         for file in filesToDelete {
             try fileManager.removeItem(at: file)
-            LoggerManager.log.debug("Deleted old zip file: \(file.lastPathComponent)")
+            LogMan.log.debug("Deleted old zip file: \(file.lastPathComponent)")
         }
     }
 
     // MARK: -
     private func cleanUpOldLogs(in directory: URL) throws {
-        LoggerManager.log.debug("cleanUpOldLogs()")
+        LogMan.log.debug("cleanUpOldLogs()")
         let fileManager = FileManager.default
         let twoHourAgo =
             Calendar.current.date(
@@ -163,14 +163,14 @@ struct MiMiNavigatorApp: App {
             let creationDate = try logFile.resourceValues(forKeys: [.creationDateKey]).creationDate ?? Date.distantPast
             if creationDate < twoHourAgo {
                 try fileManager.removeItem(at: logFile)
-                LoggerManager.log.debug("Deleted old log file: \(logFile.lastPathComponent)")
+                LogMan.log.debug("Deleted old log file: \(logFile.lastPathComponent)")
             }
         }
     }
 
     // MARK: -
     var sharedModelContainer: ModelContainer = {
-        LoggerManager.log.debug(" ---- BEGIN ----")
+        LogMan.log.debug(" ---- BEGIN ----")
         let schema = Schema([
             Item.self
         ])

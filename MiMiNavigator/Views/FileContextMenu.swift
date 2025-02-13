@@ -15,7 +15,7 @@ struct FileContextMenu: View {
         Group {
             Button(action: {
                 // Copy action
-                LoggerManager.log.debug("Copy action triggered")
+                LogMan.log.debug("Copy action triggered")
             }) {
                 Label("Copy", systemImage: "doc.on.doc")
             }
@@ -24,7 +24,7 @@ struct FileContextMenu: View {
 
             Button(action: {
                 // Rename action
-                LoggerManager.log.debug("Rename action triggered")
+                LogMan.log.debug("Rename action triggered")
             }) {
                 Label("Rename", systemImage: "pencil")
             }
@@ -33,7 +33,7 @@ struct FileContextMenu: View {
 
             Button(action: {
                 // Delete action
-                LoggerManager.log.debug("Delete action triggered")
+                LogMan.log.debug("Delete action triggered")
             }) {
                 Label("Delete", systemImage: "trash")
             }

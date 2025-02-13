@@ -6,42 +6,42 @@ struct UnderMenuView: View {
             Spacer()
 
             Button(action: {
-                LoggerManager.log.debug("View selected")
+                LogMan.log.debug("View selected")
             }) {
                 Label("F3 View", systemImage: "eye.circle")
                     .labelStyle(.titleAndIcon)
             }
 
             Button(action: {
-                LoggerManager.log.debug("Edit selected")
+                LogMan.log.debug("Edit selected")
             }) {
                 Label("F4 Edit", systemImage: "pencil.circle")
                     .labelStyle(.titleAndIcon)
             }
 
             Button(action: {
-                LoggerManager.log.debug("Copy selected")
+                LogMan.log.debug("Copy selected")
             }) {
                 Label("F5 Copy", systemImage: "doc.on.doc")
                     .labelStyle(.titleAndIcon)
             }
 
             Button(action: {
-                LoggerManager.log.debug("Move selected")
+                LogMan.log.debug("Move selected")
             }) {
                 Label("F6 Move", systemImage: "arrowshape.turn.up.forward")
                     .labelStyle(.titleAndIcon)
             }
 
             Button(action: {
-                LoggerManager.log.debug("Delete selected")
+                LogMan.log.debug("Delete selected")
             }) {
                 Label("F8 Delete", systemImage: "trash.circle")
                     .labelStyle(.titleAndIcon)
             }
 
             Button(action: {
-                LoggerManager.log.debug("Search selected")
+                LogMan.log.debug("Search selected")
             }) {
                 Label("Alt+F7 Search", systemImage: "magnifyingglass.circle")
                     .labelStyle(.titleAndIcon)
