@@ -25,11 +25,11 @@ struct TreeView: View {
             Text(file.name)
                 .onTapGesture {
                     selectedFile = file
-                    log.debug("Selected file: \(file.name)")
+                    LoggerManager.log.debug("Selected file: \(file.name)")
                 }
                 .contextMenu {
                     Button(action: {
-                        log.debug("Copy action for \(file.name)")
+                        LoggerManager.log.debug("Copy action for \(file.name)")
                     }) {
                         Label("Copy", systemImage: "document.on.document")
                     }
@@ -37,7 +37,7 @@ struct TreeView: View {
                     .foregroundColor(.primary)
 
                     Button(action: {
-                        log.debug("Rename action for \(file.name)")
+                        LoggerManager.log.debug("Rename action for \(file.name)")
                     }) {
                         Label("Rename", systemImage: "penpencil.circle")
                     }
@@ -45,7 +45,7 @@ struct TreeView: View {
                     .foregroundColor(.primary)
 
                     Button(action: {
-                        log.debug("Delete action for \(file.name)")
+                        LoggerManager.log.debug("Delete action for \(file.name)")
                     }) {
                         Label("Delete", systemImage: "eraser.line.dashed")
                     }
@@ -53,7 +53,7 @@ struct TreeView: View {
                     .foregroundColor(.primary)
 
                     Button(action: {
-                        log.debug("More info action for \(file.name)")
+                        LoggerManager.log.debug("More info action for \(file.name)")
                     }) {
                         Label("More Info", systemImage: "info.circle.fill")
                     }
