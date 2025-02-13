@@ -14,7 +14,7 @@ struct EditablePathControl: NSViewRepresentable {
     @State private var isEditing = false
 
     func makeNSView(context: Context) -> NSPathControl {
-        LoggerManager.log.debug("makeNSView()")
+        LogMan.log.debug("makeNSView()")
         let pathControl = NSPathControl()
         pathControl.target = context.coordinator
         pathControl.action = #selector(Coordinator.pathControlDidChange(_:))

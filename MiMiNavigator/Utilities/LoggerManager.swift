@@ -1,7 +1,7 @@
 import SwiftyBeaver
 import Foundation
 
-final class LoggerManager {
+final class LogMan {
     static let log = SwiftyBeaver.self
 
     static func initializeLogging() {

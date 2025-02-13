@@ -67,7 +67,7 @@ struct FavoritesPanel: View {
                     Text(item.name)
                 }
                 .onTapGesture {
-                    LoggerManager.log.debug("Selected favorite item: \(item.name)")
+                    LogMan.log.debug("Selected favorite item: \(item.name)")
                 }
                 .onAppear {
                     if favoritesState[item.name] == nil {

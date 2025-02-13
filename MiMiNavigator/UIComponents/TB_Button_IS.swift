@@ -68,7 +68,7 @@ struct TB_Button_IS: View {
 struct ContentView_Previews: PreviewProvider {
     static var previews: some View {
         TB_Button_IS(title: "Settings", icon: "switch.2") {
-            LoggerManager.log.debug("Settings button tapped")
+            LogMan.log.debug("Settings button tapped")
         }.buttonStyle(.bordered)
     }
 }

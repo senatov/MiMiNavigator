@@ -14,7 +14,7 @@ actor FileSingleton: ObservableObject, @unchecked Sendable {
     private var _rightFiles: [CustomFile] = []  // Private storage for right files
 
     private init() {
-        LoggerManager.log.debug("init() - empty")
+        LogMan.log.debug("init() - empty")
     }
 
     // MARK: -
