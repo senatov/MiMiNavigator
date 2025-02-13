@@ -14,19 +14,17 @@ struct EditablePathControl: NSViewRepresentable {
     @State private var isEditing = false
 
     func makeNSView(context: Context) -> NSPathControl {
+        log.debug("makeNSView()")
         let pathControl = NSPathControl()
         pathControl.target = context.coordinator
         pathControl.action = #selector(Coordinator.pathControlDidChange(_:))
         pathControl.pathStyle = .standard
-
         // Directly set URL without `if let`
         pathControl.url = URL(fileURLWithPath: path)
-
         return pathControl
     }
 
     func updateNSView(_ nsView: NSPathControl, context: Context) {
-        // Directly set URL without `if let`
         nsView.url = URL(fileURLWithPath: path)
     }
 

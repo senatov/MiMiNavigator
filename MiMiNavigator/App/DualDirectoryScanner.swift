@@ -23,8 +23,16 @@ actor DualDirectoryScanner: ObservableObject {
     public var leftDirectory: URL
     public var rightDirectory: URL
 
-    private enum DirectorySide {
+    private enum DirectorySide: CustomStringConvertible {
         case left, right
+        var description: String {
+            switch self {
+            case .left:
+                return "left"
+            case .right:
+                return "right"
+            }
+        }
     }
 
     // MARK: - Initialization
@@ -43,7 +51,6 @@ actor DualDirectoryScanner: ObservableObject {
         log.info("startMonitoring()")
         setupTimer(for: .left)
         setupTimer(for: .right)
-
         if leftTimer == nil || rightTimer == nil {
             log.error("Failed to initialize one or both timers.")
         }
@@ -51,6 +58,7 @@ actor DualDirectoryScanner: ObservableObject {
 
     // MARK: - Helper method to setup timers
     private func setupTimer(for side: DirectorySide) {
+        log.info("setupTimer() \(side)")
         let timer = DispatchSource.makeTimerSource(queue: DispatchQueue.global())
         timer.schedule(deadline: .now(), repeating: .seconds(interval))
         timer.setEventHandler { [weak self] in
