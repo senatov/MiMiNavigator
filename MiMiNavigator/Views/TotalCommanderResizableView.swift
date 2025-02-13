@@ -38,7 +38,6 @@ struct TotalCommanderResizableView: View {
                     TooltipView(text: tooltipText, position: tooltipPosition)
                 }
             }
-
             .onAppear {
                 Task {
                     await fetchPaths()
