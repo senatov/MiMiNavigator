@@ -1,4 +1,4 @@
-![MiMiNavigator Logo](docs/logo.png "just logo")
+![MiMiNavigator Logo](MiMiNavigator/playstore.png "just logo")
 
 
 # 📁 MiMiNavigator - MacOS File manager with two panels
@@ -111,7 +111,7 @@ This application highlights the strengths of **SwiftUI** in creating intuitive, 
 | 2025-01-05          | Localization Support                 | Introduced localization-friendly `MenuItem` structure for flexibility in `TopMenuBarView`.                                                                                                  |
 | 2025-01-07          | Timestamp-Based File Naming          | Added dynamic timestamp-based naming for output files in shell scripts.                                                                                                                     |
 | 2025-01-10          | Background Color Sync                | Refactored `menuSection` in `TopMenuBarView` to sync background color with the main panel.                                                                                                  |
-| 2025-01-12          | Full Total Commander Menu Recreation | Enhanced `TopMenuBarView` to fully match Total Commander’s submenu structure.  
+| 2025-01-12          | Full Total Commander Menu Recreation | Enhanced `TopMenuBarView` to fully match Total Commander’s submenu structure.
 | 2025-01-27          | Top Menu                             | Das Top-Menü ist grob strukturiert und modular aufgebaut, aber bisher nur mit Platzhaltern implementiert. Es wurde erfolgreich geteste                                                                     |
 
 ## ❓ FAQ
