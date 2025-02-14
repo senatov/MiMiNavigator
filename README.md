@@ -28,9 +28,9 @@ This application highlights the strengths of **SwiftUI** in creating intuitive, 
 
 
 
-## ✨ Features
+# ✨ Features
 
-![Current Stage](docs/preview.png "Screenshot")
+## 🦎 [Current Stage](docs/preview.png "Screenshot")
 
 - Support for macOS 15.2 with Swift 6.2.
 - Periodic directory scanning and updating, using dynamic collections for real-time content refresh.
@@ -79,7 +79,7 @@ This application highlights the strengths of **SwiftUI** in creating intuitive, 
   [![LinkedIn](https://img.shields.io/badge/LinkedIn-blue.svg?logo=linkedin&colorB=555)](https://www.linkedin.com/in/iakov-senatov-07060765)
 
 | Step                    | Description                                                                                    |
-| ----------------------- | ---------------------------------------------------------------------------------------------- |
+|-------------------------|------------------------------------------------------------------------------------------------|
 | **Installation**        | Clone the repository, navigate to the project directory, and install dependencies as required. |
 | **Running the Project** | Use the command `swift run` to launch the project.                                             |
 | **Usage**               | Access features like configuration, file management, network, and tools from the main menu.    |
@@ -89,7 +89,7 @@ This application highlights the strengths of **SwiftUI** in creating intuitive, 
 ## 📅 Recent Changes
 
 | **Date and Time**   | **New Features**                     | **Description**                                                                                                                                                                             |
-| ------------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+|---------------------|--------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | 2024-10-30 13:51:11 | Enhanced Asynchronous Access         | Added state properties for `leftFiles` and `rightFiles`, using async retrieval from `DualDirectoryMonitor` to avoid actor isolation conflicts.                                              |
 | 2024-10-30 10:55:55 | Dynamic "Favorites" Panel Data       | Added dynamic data loading in the "Favorites" panel.                                                                                                                                        |
 | 2024-10-30 10:55:55 | Modular Structure                    | Reorganized code into smaller, modular Swift files in their respective directories.                                                                                                         |
@@ -111,13 +111,14 @@ This application highlights the strengths of **SwiftUI** in creating intuitive, 
 | 2025-01-05          | Localization Support                 | Introduced localization-friendly `MenuItem` structure for flexibility in `TopMenuBarView`.                                                                                                  |
 | 2025-01-07          | Timestamp-Based File Naming          | Added dynamic timestamp-based naming for output files in shell scripts.                                                                                                                     |
 | 2025-01-10          | Background Color Sync                | Refactored `menuSection` in `TopMenuBarView` to sync background color with the main panel.                                                                                                  |
-| 2025-01-12          | Full Total Commander Menu Recreation | Enhanced `TopMenuBarView` to fully match Total Commander’s submenu structure.
-| 2025-01-27          | Top Menu                             | Das Top-Menü ist grob strukturiert und modular aufgebaut, aber bisher nur mit Platzhaltern implementiert. Es wurde erfolgreich geteste                                                                     |
+| 2025-01-12          | Full Total Commander Menu Recreation | Enhanced `TopMenuBarView` to fully match Total Commander’s submenu structure.                                                                                                               
+| 2025-01-27          | Top Menu                             | Das Top-Menü ist grob strukturiert und modular aufgebaut, aber bisher nur mit Platzhaltern implementiert. Es wurde erfolgreich geteste                                                      
+| 2025-02-12          | Top Menu                             | new logo design and new icons design                                                                                                                                                        
 
 ## ❓ FAQ
 
 | Question                                 | Answer                                                                       |
-| ---------------------------------------- | ---------------------------------------------------------------------------- |
+|------------------------------------------|------------------------------------------------------------------------------|
 | **How to configure settings?**           | Navigate to **Configuration** to access display, layout, and color settings. |
 | **How to compare directories?**          | Use the **Files** menu to compare and sync directories.                      |
 | **Can I rename multiple files at once?** | Yes, use the **Multi-Rename Tool** available under **Tools**.                |
