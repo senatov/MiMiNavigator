@@ -32,14 +32,14 @@ This application highlights the strengths of **SwiftUI** in creating intuitive, 
 
 🦾 [Current Stage] ![[Preview.png]]
 
-- ==Support for macOS 15.2 with Swift 6.2.==
-- ==Periodic directory scanning and updating, using dynamic collections for real-time content refresh.==
-- ==Modular and reusable components for top navigation.==
-- ==Integrated file management actions including copy, rename, and delete.==
-- ==Full Total Commander submenu structure recreated.==
-- ==Dynamic output naming in shell utilities.==
-- ==Dual-panel interface for managing files and directories.==
-- ==Automatic UI updates when directory contents change.==
+-  Support for macOS 15.2 with Swift 6.2. 
+-  Periodic directory scanning and updating, using dynamic collections for real-time content refresh. 
+-  Modular and reusable components for top navigation. 
+-  Integrated file management actions including copy, rename, and delete. 
+-  Full Total Commander submenu structure recreated. 
+-  Dynamic output naming in shell utilities. 
+-  Dual-panel interface for managing files and directories. 
+-  Automatic UI updates when directory contents change. 
 
 ## Requirements
 
@@ -88,8 +88,8 @@ This application highlights the strengths of **SwiftUI** in creating intuitive, 
 
 ## 📅 Recent Changes
 
-|   **Date and Time**   |           **New Features**           |                                                                                       **Description**                                                                                       |
-| :-------------------: | :----------------------------------: | :-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: |
+|   **Date and Time**      |           **New Features**              |                                                                                   **Description**                                                                                       |
+| :----------------------: | :-------------------------------------: | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: |
 | 2024-10-30 13:51:11 |     Enhanced Asynchronous Access     |                       Added state properties for leftFiles and rightFiles, using async retrieval from DualDirectoryMonitor to avoid actor isolation conflicts.                        |
 | 2024-10-30 10:55:55 |    Dynamic "Favorites" Panel Data    |                                                                    Added dynamic data loading in the "Favorites" panel.                                                                     |
 | 2024-10-30 10:55:55 |          Modular Structure           |                                                     Reorganized code into smaller, modular Swift files in their respective directories.                                                     |
