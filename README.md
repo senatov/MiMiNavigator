@@ -1,4 +1,4 @@
-![MiMiNavigator Logo](MiMiNavigator/playstore.png "just logo")
+![MiMiNavigator Logo](MiMiNavigator/Assets.xcassets/AppIcon.appiconset/87.png "just logo")
 
 
 # 📁 MiMiNavigator - MacOS File manager with two panels
@@ -30,7 +30,7 @@ This application highlights the strengths of **SwiftUI** in creating intuitive, 
 
 # ✨ Features
 
-## 🦎 [Current Stage](docs/preview.png "Screenshot")
+## 🦾 [Current Stage](docs/Preview.png "Screenshot")
 
 - Support for macOS 15.2 with Swift 6.2.
 - Periodic directory scanning and updating, using dynamic collections for real-time content refresh.
@@ -111,9 +111,9 @@ This application highlights the strengths of **SwiftUI** in creating intuitive, 
 | 2025-01-05          | Localization Support                 | Introduced localization-friendly `MenuItem` structure for flexibility in `TopMenuBarView`.                                                                                                  |
 | 2025-01-07          | Timestamp-Based File Naming          | Added dynamic timestamp-based naming for output files in shell scripts.                                                                                                                     |
 | 2025-01-10          | Background Color Sync                | Refactored `menuSection` in `TopMenuBarView` to sync background color with the main panel.                                                                                                  |
-| 2025-01-12          | Full Total Commander Menu Recreation | Enhanced `TopMenuBarView` to fully match Total Commander’s submenu structure.                                                                                                               
-| 2025-01-27          | Top Menu                             | Das Top-Menü ist grob strukturiert und modular aufgebaut, aber bisher nur mit Platzhaltern implementiert. Es wurde erfolgreich geteste                                                      
-| 2025-02-12          | Top Menu                             | new logo design and new icons design                                                                                                                                                        
+| 2025-01-12          | Full Total Commander Menu Recreation | Enhanced `TopMenuBarView` to fully match Total Commander’s submenu structure.
+| 2025-01-27          | Top Menu                             | Das Top-Menü ist grob strukturiert und modular aufgebaut, aber bisher nur mit Platzhaltern implementiert. Es wurde erfolgreich geteste
+| 2025-02-12          | Top Menu                             | new logo design and new icons design
 
 ## ❓ FAQ
 
