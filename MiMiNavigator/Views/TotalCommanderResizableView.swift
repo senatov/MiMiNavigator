@@ -8,6 +8,7 @@ import SwiftUI
 
 struct TotalCommanderResizableView: View {
     @State private var leftPanelWidth: CGFloat = 0
+    @State private var rightPanelWidth: CGFloat = 0
     @State private var isShowMenu: Bool = UserPreferences.shared.restoreMenuState()
     @State private var selectedFile: CustomFile? = nil
     @State private var showTooltip: Bool = false
@@ -16,7 +17,7 @@ struct TotalCommanderResizableView: View {
     @ObservedObject private var fileLst = FileSingleton.shared
     @StateObject private var scanner = DualDirectoryScanner(
         leftDirectory: URL(fileURLWithPath: "/Users/senat/Downloads/Hahly"),
-        rightDirectory: URL(fileURLWithPath: "/TMP"))
+        rightDirectory: URL(fileURLWithPath: "/Users/senat/Library/Caches"))
     @State private var leftPath: String = ""
     @State private var rightPath: String = ""
 
@@ -88,16 +89,16 @@ struct TotalCommanderResizableView: View {
             if isShowMenu {
                 builFavoriteTreeMenu()
             }
-            buildLeftPanel()
+            buildLeftPanel(geometry: geometry)
             buildDivider(geometry: geometry)
-            buildRightPanel()
+            buildRightPanel(geometry: geometry)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.white)
     }
 
     // MARK: -
-    private func buildLeftPanel() -> some View {
+    private func buildLeftPanel(geometry: GeometryProxy) -> some View {
         LogMan.log.debug("buildLeftPanel()")
         return VStack {
             EditablePathControlWrapper(path: $leftPath)
@@ -125,7 +126,9 @@ struct TotalCommanderResizableView: View {
                     }
             }
             .listStyle(PlainListStyle())
-            .frame(maxWidth: .infinity)
+            .frame(
+                width: leftPanelWidth == 0 ? geometry.size.width / 2 : leftPanelWidth
+            )
             .border(Color.gray)
             .onAppear {
                 Task {
@@ -136,7 +139,7 @@ struct TotalCommanderResizableView: View {
     }
 
     // MARK: -
-    private func buildRightPanel() -> some View {
+    private func buildRightPanel(geometry: GeometryProxy) -> some View {
         LogMan.log.debug("buildRightPanel()")
         return VStack {
             EditablePathControlWrapper(path: $rightPath)
@@ -157,14 +160,16 @@ struct TotalCommanderResizableView: View {
                     }
                 }
             List(displayedRightFiles, id: \.id) { file in
-                Text(file.name)
+                Text(file.name  + "x")
                     .contextMenu {
                         FileContextMenu()
                     }
             }
             .listStyle(PlainListStyle())
             .frame(maxWidth: .infinity)
-            .border(Color.gray)
+            .frame(
+                width: leftPanelWidth == 0 ? geometry.size.width / 2 : rightPanelWidth
+            )
             .onAppear {
                 Task {
                     await fetchRightFiles()
@@ -175,9 +180,9 @@ struct TotalCommanderResizableView: View {
 
     // MARK: -
     private func builFavoriteTreeMenu() -> some View {
-        LogMan.log.debug("builFavoriteTreeMenu()")  // Log the start of the menu-building process
-        let favScanner = FavoritesScanner()  // Initialize the favorites scanner
-        let fileStructure = favScanner.scanFavorites()  // Scan and retrieve the file structure
+        LogMan.log.debug("builFavoriteTreeMenu()")
+        let favScanner = FavoritesScanner()
+        let fileStructure = favScanner.scanFavorites()
         return TreeView(files: fileStructure, selectedFile: $selectedFile)
             .padding()  // Add padding to the tree view
             .frame(maxWidth: 230)  // Set the maximum width of the tree view
@@ -207,9 +212,7 @@ struct TotalCommanderResizableView: View {
     }
 
     // MARK: -
-    private func handleDividerDrag(
-        value: DragGesture.Value, geometry: GeometryProxy
-    ) {
+    private func handleDividerDrag(value: DragGesture.Value, geometry: GeometryProxy) {
         LogMan.log.debug("handleDividerDrag")
         let newWidth = leftPanelWidth + value.translation.width
         if newWidth > 100 && newWidth < geometry.size.width - 100 {
