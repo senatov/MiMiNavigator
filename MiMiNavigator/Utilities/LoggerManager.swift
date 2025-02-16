@@ -18,7 +18,7 @@ final class LogMan {
             case .warning: return "🔸"
             case .error: return "💢"
             case .critical: return "💀"
-            case .fault: return "☠️"
+            case .fault: return "👻"
             }
         }
         console.levelString.verbose = getLevelIcon(for: .verbose) + " VERBOSE"
