@@ -17,7 +17,7 @@ struct TotalCommanderResizableView: View {
     @ObservedObject private var fileLst = FileSingleton.shared
     @StateObject private var scanner = DualDirectoryScanner(
         leftDirectory: URL(fileURLWithPath: "/Users/senat/Downloads/Hahly"),
-        rightDirectory: URL(fileURLWithPath: "/Users/senat/Library/Caches"))
+        rightDirectory: URL(fileURLWithPath: "/Users/senat"))
     @State private var leftPath: String = ""
     @State private var rightPath: String = ""
 
@@ -126,18 +126,16 @@ struct TotalCommanderResizableView: View {
                     }
             }
             .listStyle(PlainListStyle())
-            .frame(
-                width: leftPanelWidth == 0 ? geometry.size.width / 2 : leftPanelWidth
-            )
-            .border(Color.gray)
+            .frame(maxWidth: .infinity) // Автоматически занимает доступное пространство
+            .border(Color.orange)
             .onAppear {
                 Task {
                     await fetchLeftFiles()
                 }
             }
         }
+        .frame(width: leftPanelWidth > 0 ? leftPanelWidth : geometry.size.width / 2) // Определяем ширину панели
     }
-
     // MARK: -
     private func buildRightPanel(geometry: GeometryProxy) -> some View {
         LogMan.log.debug("buildRightPanel()")
@@ -160,7 +158,7 @@ struct TotalCommanderResizableView: View {
                     }
                 }
             List(displayedRightFiles, id: \.id) { file in
-                Text(file.name  + "x")
+                Text(file.name + "x")
                     .contextMenu {
                         FileContextMenu()
                     }
@@ -168,7 +166,7 @@ struct TotalCommanderResizableView: View {
             .listStyle(PlainListStyle())
             .frame(maxWidth: .infinity)
             .frame(
-                width: leftPanelWidth == 0 ? geometry.size.width / 2 : rightPanelWidth
+                width: rightPanelWidth == 0 ? geometry.size.width / 2 : rightPanelWidth
             )
             .onAppear {
                 Task {
