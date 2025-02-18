@@ -126,7 +126,7 @@ struct TotalCommanderResizableView: View {
                     }
             }
             .listStyle(PlainListStyle())
-            .frame(maxWidth: .infinity) // Автоматически занимает доступное пространство
+            .frame(maxWidth: .infinity)
             .border(Color.orange)
             .onAppear {
                 Task {
