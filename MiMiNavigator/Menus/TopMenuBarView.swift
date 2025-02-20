@@ -5,7 +5,6 @@
 //  Created by Iakov Senatov on 16.10.24.
 //  Description: SwiftUI component for rendering the top menu bar with dropdown menus and shortcuts.
 //
-
 import SwiftUI
 
 struct TopMenuBarView: View {
@@ -14,43 +13,60 @@ struct TopMenuBarView: View {
 
     var body: some View {
         HStack(spacing: 8) {
-            // Left-side menu button with a hamburger icon
+            // Кнопка "гамбургер"
             Button(action: toggleMenu) {
-                HStack {
-                    Image(systemName: "line.horizontal.3")
-                }
-                .accessibilityLabel("Toggle")
-                .background(Color.clear)
+                Image(systemName: "line.horizontal.3")
+                    .frame(width: 18, height: 18)
             }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 4)
+            .accessibilityLabel("Toggle")
             .background(BlurView())
-            ForEach(menuData) { menu in
+            .padding(.horizontal, 15)
+            .padding(.vertical, 4)
+
+            // Остальные пункты меню (кроме Help)
+            ForEach(menuData.dropLast()) { menu in
                 Menu {
-                    // Populate each menu category with its items
                     ForEach(menu.items) { item in
                         MenuItemView(item: item)
                     }
                 } label: {
                     Text(menu.title)
-                        .frame(minWidth: 80)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 5)
-                        .background(Color(NSColor.windowBackgroundColor))  // Фон как у стандартной панели
-                        .cornerRadius(5)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 3)
+                        .font(.system(size: NSFont.systemFontSize, weight: .regular))
+                        .foregroundColor(Color.primary)
+                        .frame(height: 22)
                 }
+                .buttonStyle(MenuButtonStyle())
             }
-            Spacer()
+
+            Spacer()  // Отделяем Help от остальных
+
+            // Последний пункт "Help"
+            if let helpMenu = menuData.last {
+                Menu {
+                    ForEach(helpMenu.items) { item in
+                        MenuItemView(item: item)
+                    }
+                } label: {
+                    Text(helpMenu.title)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 3)
+                        .font(.system(size: NSFont.systemFontSize, weight: .regular))
+                        .foregroundColor(Color.primary)
+                        .frame(height: 22)
+                }
+                .buttonStyle(MenuButtonStyle())
+                .padding(.trailing, 1)  // Отступ 1px от правого края
+            }
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 5)
-        .background(Color.gray.opacity(0.1))
-        .cornerRadius(8)
+        .frame(maxWidth: .infinity, alignment: .leading)  // Растягиваем на всю ширину
+        .padding(.horizontal, 20)
+        .background(BlurView())  // Одинаковый фон для всей панели
     }
 
-    // MARK: - Menu Data (Fake Data Layer)
+    // MARK: - Menu Data
     private var menuData: [MenuCategory] {
-        // Hardcoding menu categories (like an old-school `switchboard`)
         [
             filesMenuCategory,
             markMenuCategory,
@@ -61,5 +77,38 @@ struct TopMenuBarView: View {
             startMenuCategory,
             helpMenuCategory,
         ]
+    }
+}
+
+// MARK: - Menu Button Style
+struct MenuButtonStyle: ButtonStyle {
+    @State private var isHovered = false  // Отслеживаем наведение курсора
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .padding(.horizontal, 30)  // Уменьшаем отступы
+            .padding(.vertical, 3)
+            .font(.system(size: NSFont.systemFontSize, weight: .regular))
+            .foregroundColor(isHovered ? Color.blue.opacity(0.9) : Color.primary)  // Чёткий тёмно-синий цвет
+            .background(
+                Group {
+                    if isHovered {
+                        Color.blue.opacity(0.15)  // Лёгкий голубой фон при наведении
+                    } else {
+                        BlurView()  // Обычный фон
+                    }
+                }
+            )
+            .frame(height: 22)  // Ограничиваем высоту
+            .cornerRadius(5)
+            .overlay(
+                RoundedRectangle(cornerRadius: 5)
+                    .stroke(Color.blue.opacity(isHovered ? 0.8 : 0.4), lineWidth: isHovered ? 1.4 : 1)
+            )
+            .onHover { hovering in
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    isHovered = hovering  // Обновляем состояние при наведении
+                }
+            }
     }
 }

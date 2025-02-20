@@ -177,13 +177,15 @@ struct HelpPopup: View {
     }
 }
 
+
 struct BlurView: NSViewRepresentable {
     func makeNSView(context: Context) -> NSVisualEffectView {
         let view = NSVisualEffectView()
-        view.material = .menu
+        view.material = .menu // Используем стандартное размытие меню macOS
         view.blendingMode = .behindWindow
         view.state = .active
         return view
     }
+
     func updateNSView(_ nsView: NSVisualEffectView, context: Context) {}
 }
