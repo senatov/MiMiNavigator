@@ -134,7 +134,7 @@ struct TotalCommanderResizableView: View {
                 }
             }
         }
-        .frame(width: leftPanelWidth > 0 ? leftPanelWidth : geometry.size.width / 2) // Определяем ширину панели
+        .frame(width: leftPanelWidth > 0 ? leftPanelWidth : geometry.size.width / 2)  // Определяем ширину панели
     }
     // MARK: -
     private func buildRightPanel(geometry: GeometryProxy) -> some View {
