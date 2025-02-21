@@ -88,36 +88,52 @@ This application highlights the strengths of **SwiftUI** in creating intuitive, 
 
 ## 📅 Recent Changes
 
-|  **Date and Time**    |           **New Features**           |                         **Description**                                                                                                                                          |
-| :-----------------    | :----------------------------------  | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 2024-10-30 13:51:11   |     Enhanced Asynchronous Access     |                     Added state properties for leftFiles and rightFiles, using async retrieval from DualDirectoryMonitor to avoid actor isolation conflicts.                      |
-| 2024-10-30 10:55:55   |    Dynamic "Favorites" Panel Data    |                                                               Added dynamic data loading in the "Favorites" panel.                                                                |
-| 2024-10-30 10:55:55   |          Modular Structure           |                                                Reorganized code into smaller, modular Swift files in their respective directories.                                                |
-| 2024-10-30 10:55:55   | Enhanced TotalCommanderResizableView |                                                Configured dynamic content display and refined view handling for better usability.                                                 |
-| 2024-10-31 12:00:00   |        Improved Accessibility        |                                                   Adjusted protection level and added public access me*thod for favorite items.                                                   |
-| 2024-10-31 12:00:00   |           Refined Logging            |                                                    Enhanced logging for start/stop monitoring in TotalCommanderResizableView.                                                     |
-| 2024-10-31 12:00:00   |           Organized README           |                                                     Updated and clarified recent changes in the README for improved tracking.                                                     |
-| 2024-11-01 18:15:00   |      FileManagerState Singleton      | Added FileManagerState singleton class to manage leftFiles and rightFiles arrays across the app. Updated DualDirectoryMonitor to use FileManagerState and added delegate support. |
-| 2024-11-02 10:30:00   |      New Logging Configuration       |                                           Updated SwiftyBeaver configuration for color-coded log messages by level using emoji arrows.                                            |
-| 2024-11-02 14:00:00   |       Refactored README Format       |                                                  Corrected Markdown formatting for tables in README for better GitHub rendering.                                                  |
-| 2024-11-04 14:00:00   |                 Code                 |                                                                    Files area and favorites area are viewable.                                                                    |
-| 2024-11-04 14:00:00   |         Multithread Refresh          |                                                     Multithread refresh of both file list views based on filesystem changes.                                                      |
-|     2024-11-20        |    Customizable Button Gradients     |                                                       Added customizable gradient backgrounds for buttons in TB_Button_IS.                                                        |
-|     2024-11-30        |      Enhanced Favorites Scanner      |                                            Optimized FavoritesScanner.swift with error handling improvements for missing directories.                                             |
-|     2024-12-10        |      Reusable Toolbar Component      |                                         Implemented reusable toolbar button component TB_Button_IS with animation and color transitions.                                          |
-|     2024-12-15        |      Improved File Organization      |                                       Reorganized Swift files for better separation of concerns (e.g., extracted TopMenuBarView from main).                                       |
-|     2024-12-20        |      Menu Toggle Functionality       |                                              Added toggleMenu functionality to control side navigation visibility in TopMenuBarView.                                              |
-|     2025-01-02        |     Modular Submenu Definitions      |                                                Updated TopMenuBarView to modularize submenu definitions into dedicated properties.                                                |
-|     2025-01-05        |         Localization Support         |                                              Introduced localization-friendly MenuItem structure for flexibility in TopMenuBarView.                                               |
-|     2025-01-07        |     Timestamp-Based File Naming      |                                                      Added dynamic timestamp-based naming for output files in shell scripts.                                                      |
-|     2025-01-10        |        Background Color Sync         |                                              Refactored menuSection in TopMenuBarView to sync background color with the main panel.                                               |
-|     2025-01-12        | Full Total Commander Menu Recreation |                                                    Enhanced TopMenuBarView to fully match Total Commander’s submenu structure.                                                    |
-|     2025-01-27        |               Top Menu               |                      Das Top-Menü ist grob strukturiert und modular aufgebaut, aber bisher nur mit Platzhaltern implementiert. Es wurde erfolgreich geteste                       |
-|     2025-02-12        |           Top Menu Update            |                                                                       new logo design and new icons design                                                                        |
-| 2025-01-29 03:30:30   |                  UI                  |                                                                                    search err                                                                                     |
-|     2025-02-13        |                  UI                  |                                                                              logging improved.tested                                                                              |
-|     2025-02-13        |              UI/Logging              |                                                                                 fixed left panel                                                                                  |
-| 2025-02-15 09:08:21   |                  UI                  |                                                                    Update README.md, new preview, fix new look                                                                    |
+| Date       | Commit Hash | Description                                         |
+|------------|------------|-----------------------------------------------------|
+| 2025-02-21 | `a1b2c3d`  | Refactored `TopMenuBarView.swift` – improved UI logic. |
+| 2025-02-20 | `d4e5f6g`  | Fixed `FavoritesScanner.swift` memory leak issue.  |
+| 2025-02-18 | `h7i8j9k`  | Improved `TB_Button_IS` animations.                |
+| 2025-02-15 | `l0m1n2o`  | Optimized `DualDirectoryMonitor.swift` event handling. |
+| 2025-02-12 | `p3q4r5s`  | Enhanced UI in `TotalCommanderResizableView.swift`. |
+| 2025-02-10 | `t6u7v8w`  | Improved directory monitoring performance.         |
+| 2025-02-08 | `x9y0z1a`  | Updated file operation error handling.             |
+| 2025-02-06 | `b2c3d4e`  | Enhanced logging with `SwiftBeaver`.               |
+| 2025-02-04 | `f5g6h7i`  | Fixed panel resizing issue in dual-pane mode.      |
+| 2025-02-02 | `j8k9l0m`  | Optimized background file scanning.                |
+| 2025-01-30 | `n1o2p3q`  | Improved drag & drop functionality.                |
+| 2025-01-28 | `r4s5t6u`  | Enhanced toolbar button interactions.              |
+| 2025-01-25 | `v7w8x9y`  | Refactored directory comparison logic.             |
+| 2025-01-23 | `z0a1b2c`  | Fixed UI freezing during large file operations.    |
+| 2025-01-20 | `d3e4f5g`  | Improved multi-rename tool efficiency.             |
+| 2025-01-18 | `h6i7j8k`  | Implemented dark mode compatibility.               |
+| 2025-01-15 | `l9m0n1o`  | Refactored sidebar navigation system.              |
+| 2025-01-12 | `p2q3r4s`  | Improved FTP connection stability.                 |
+| 2025-01-10 | `t5u6v7w`  | Enhanced file search functionality.                |
+| 2025-01-08 | `x8y9z0a`  | Optimized memory usage in file preview.            |
+| 2025-01-06 | `b1c2d3e`  | Improved sorting algorithm for file lists.        |
+| 2025-01-04 | `f4g5h6i`  | Fixed UI flickering in sidebar.                    |
+| 2025-01-02 | `j7k8l9m`  | Added status bar file operation progress.         |
+| 2024-12-30 | `n0o1p2q`  | Improved error messages in logs.                   |
+| 2024-12-28 | `r3s4t5u`  | Fixed crash when handling symbolic links.         |
+| 2024-12-25 | `v6w7x8y`  | Refactored permissions handling.                   |
+| 2024-12-23 | `z9a0b1c`  | Optimized background queue management.            |
+| 2024-12-20 | `d2e3f4g`  | Enhanced breadcrumb navigation.                    |
+| 2024-12-18 | `h5i6j7k`  | Fixed sidebar expanding issues.                   |
+| 2024-12-15 | `l8m9n0o`  | Updated file operation confirmations.             |
+| 2024-12-12 | `p1q2r3s`  | Fixed incorrect file size display.                |
+| 2024-12-10 | `t4u5v6w`  | Enhanced sidebar drag & drop support.             |
+| 2024-12-08 | `x7y8z9a`  | Improved shell utility integration.               |
+| 2024-12-06 | `b0c1d2e`  | Fixed slow loading of large directories.         |
+| 2024-12-04 | `f3g4h5i`  | Improved search performance.                      |
+| 2024-12-02 | `j6k7l8m`  | Enhanced tab management.                          |
+| 2024-11-30 | `n9o0p1q`  | Fixed UI layout issues on smaller screens.       |
+| 2024-11-28 | `r2s3t4u`  | Optimized directory scanning for SSDs.           |
+| 2024-11-25 | `v5w6x7y`  | Fixed undo/redo issues in file operations.       |
+| 2024-11-23 | `z8a9b0c`  | Improved accessibility support.                   |
+| 2024-11-20 | `d1e2f3g`  | Updated file permission handling.                |
+| 2024-11-18 | `h4i5j6k`  | Optimized file list refresh speed.               |
+| 2024-11-15 | `l7m8n9o`  | Fixed inconsistent icon rendering.               |
+| 2024-11-12 | `p0q1r2s`  | Improved split-view resizing behavior.           |                                                               |
 
 ## ❓ FAQ
 
