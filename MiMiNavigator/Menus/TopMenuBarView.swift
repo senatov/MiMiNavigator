@@ -27,7 +27,7 @@ struct TopMenuBarView: View {
             ForEach(menuData.dropLast()) { menu in
                 Menu {
                     ForEach(menu.items) { item in
-                        MenuItemView(item: item)
+                        TopMenuItemView(item: item)
                     }
                 } label: {
                     Text(menu.title)
@@ -37,16 +37,14 @@ struct TopMenuBarView: View {
                         .foregroundColor(Color.primary)
                         .frame(height: 22)
                 }
-                .buttonStyle(MenuButtonStyle())
+                .buttonStyle(TopMenuButtonStyle())
             }
-
             Spacer()  // Отделяем Help от остальных
-
             // Последний пункт "Help"
             if let helpMenu = menuData.last {
                 Menu {
                     ForEach(helpMenu.items) { item in
-                        MenuItemView(item: item)
+                        TopMenuItemView(item: item)
                     }
                 } label: {
                     Text(helpMenu.title)
@@ -56,7 +54,7 @@ struct TopMenuBarView: View {
                         .foregroundColor(Color.primary)
                         .frame(height: 22)
                 }
-                .buttonStyle(MenuButtonStyle())
+                .buttonStyle(TopMenuButtonStyle())
                 .padding(.trailing, 1)  // Отступ 1px от правого края
             }
         }
@@ -81,7 +79,7 @@ struct TopMenuBarView: View {
 }
 
 // MARK: - Menu Button Style
-struct MenuButtonStyle: ButtonStyle {
+struct TopMenuButtonStyle: ButtonStyle {
     @State private var isHovered = false  // Отслеживаем наведение курсора
 
     func makeBody(configuration: Configuration) -> some View {

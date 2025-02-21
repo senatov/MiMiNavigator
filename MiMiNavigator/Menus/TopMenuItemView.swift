@@ -7,7 +7,7 @@
 //
 import SwiftUI
 
-struct MenuItemView: View {
+struct TopMenuItemView: View {
     let item: MenuItem
     @State private var isHovered = false
     @State private var isPressed = false
@@ -35,7 +35,7 @@ struct MenuItemView: View {
             )
             .cornerRadius(5)
         }
-        .buttonStyle(PlainButtonStyle())  // Убираем стандартные кнопочные эффекты
+        .buttonStyle(TopMenuButtonStyle())
         .onHover { hovering in
             isHovered = hovering
             if hovering {
