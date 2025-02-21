@@ -29,11 +29,11 @@ struct TotalCommanderResizableView: View {
             ZStack {
                 VStack(spacing: 0) {
                     HStack {
-                        buildTopMenuBar(geometry: geometry)
+                        TopMenuBarView(isShowMenu: $isShowMenu, toggleMenu: toggleMenu)
                         Spacer()
                     }
                     buildMainPanels(geometry: geometry)
-                    buildToolbar()
+                    buildDownToolbar()
                 }
                 if showTooltip {
                     TooltipView(text: tooltipText, position: tooltipPosition)
@@ -47,11 +47,6 @@ struct TotalCommanderResizableView: View {
                 addKeyPressMonitor()
             }
         }
-    }
-
-    // MARK: -
-    private func buildTopMenuBar(geometry: GeometryProxy) -> some View {
-        TopMenuBarView(isShowMenu: $isShowMenu, toggleMenu: toggleMenu)
     }
 
     // MARK: -
@@ -239,81 +234,58 @@ struct TotalCommanderResizableView: View {
     }
 
     // MARK: -
-    private func buildToolbar() -> some View {
+    private func buildDownToolbar() -> some View {
         LogMan.log.debug("buildToolbar()")
-        return HStack(spacing: 20) {
-            ControlGroup {
-                Button(action: {
+        return HStack(spacing: 18) {  // Увеличили расстояние между кнопками
+            DownToolbarButtonView(
+                title: "F3 View", systemImage: "eye.circle",
+                action: {
                     LogMan.log.debug("View selected Docu")
-                }) {
-                    Label("F3 View", systemImage: "eye.circle")
-                        .labelStyle(.titleAndIcon)
-                }
-                .help("View the selected document")  // Tooltip
+                })
 
-                Button(action: {
+            DownToolbarButtonView(
+                title: "F4 Edit", systemImage: "pencil",
+                action: {
                     LogMan.log.debug("Edit button tapped")
-                }) {
-                    Label("F4 Edit", systemImage: "pencil")
-                        .labelStyle(.titleAndIcon)
-                }
-                .help("Edit the selected file")  // Tooltip
+                })
 
-                Button(action: {
+            DownToolbarButtonView(
+                title: "F5 Copy", systemImage: "document.on.document",
+                action: {
                     LogMan.log.debug("Copy button tapped")
-                }) {
-                    Label("F5 Copy", systemImage: "document.on.document")
-                        .labelStyle(.titleAndIcon)
-                }
-                .help("Copy the selected file")  // Tooltip
+                })
 
-                Button(action: {
+            DownToolbarButtonView(
+                title: "F6 Move", systemImage: "square.and.arrow.down.on.square",
+                action: {
                     LogMan.log.debug("Move button tapped")
-                }) {
-                    Label(
-                        "F6 Move",
-                        systemImage: "square.and.arrow.down.on.square"
-                    )
-                    .labelStyle(.titleAndIcon)
-                }
-                .help("Move the selected file")  // Tooltip
+                })
 
-                Button(action: {
+            DownToolbarButtonView(
+                title: "F7 NewFolder", systemImage: "folder.badge.plus",
+                action: {
                     LogMan.log.debug("NewFolder button tapped")
-                }) {
-                    Label("F7 NewFolder", systemImage: "folder.badge.plus")
-                        .labelStyle(.titleAndIcon)
-                }
-                .help("Create a new folder")  // Tooltip
+                })
 
-                Button(action: {
+            DownToolbarButtonView(
+                title: "F8 Delete", systemImage: "minus.rectangle",
+                action: {
                     LogMan.log.debug("Delete button tapped")
-                }) {
-                    Label("F8 Delete", systemImage: "minus.rectangle")
-                        .labelStyle(.titleAndIcon)
-                }
-                .help("Delete the selected file")  // Tooltip
+                })
 
-                Button(action: {
+            DownToolbarButtonView(
+                title: "⌥-F4 Exit", systemImage: "xmark.circle",
+                action: {
                     exitApp()
-                }) {
-                    Label("⌥-F4 Exit", systemImage: "xmark.circle")
-                        .labelStyle(.titleAndIcon)
-                }
-                .help("Exit the application")  // Tooltip
+                })
 
-                Button(action: {
+            DownToolbarButtonView(
+                title: "Settings", systemImage: "gearshape",
+                action: {
                     LogMan.log.debug("Settings button tapped")
-                }) {
-                    Label("Settings", systemImage: "gearshape")
-                        .labelStyle(.titleAndIcon)
-                }
-                .help("Open application settings")  // Tooltip
-            }
-            .controlGroupStyle(.navigation)
+                })
         }
         .padding()
-        .background(Color.blue.opacity(0.2))
         .cornerRadius(8)
     }
 
