@@ -3,63 +3,63 @@
 //  MiMiNavigator
 //
 //  Created by Iakov Senatov on 16.10.24.
-
-//  Description:
 //
 
 import SwiftUI
 import SwiftyBeaver
 
-/// A view that recursively displays files and folders as a tree structure.
-///
-/// This view takes an array of `CustomFile` objects and displays them as a list.
-/// If a file has children, it will create a nested list to represent the tree structure.
-/// Handles click events to update the selected file.
 
-// MARK: -
 struct TreeView: View {
-    let files: [CustomFile]
+    @Binding var files: [CustomFile]
     @Binding var selectedFile: CustomFile?
+
+    @State private var expandedFolders: Set<String> = []
+
     var body: some View {
-        List(files, children: \.children) { file in
-            Text(file.name)
-                .onTapGesture {
-                    selectedFile = file
-                    LogMan.log.debug("Selected file: \(file.name)")
+        ScrollView {
+            LazyVStack(alignment: .leading, spacing: 5) {
+                ForEach($files) { $file in
+                    TreeRowView(
+                        file: $file,
+                        selectedFile: $selectedFile,
+                        expandedFolders: $expandedFolders
+                    )
                 }
-                .contextMenu {
-                    Button(action: {
-                        LogMan.log.debug("Copy action for \(file.name)")
-                    }) {
-                        Label("Copy", systemImage: "document.on.document")
-                    }
-                    .buttonStyle(.borderless)
-                    .foregroundColor(.primary)
-
-                    Button(action: {
-                        LogMan.log.debug("Rename action for \(file.name)")
-                    }) {
-                        Label("Rename", systemImage: "penpencil.circle")
-                    }
-                    .buttonStyle(.borderless)
-                    .foregroundColor(.primary)
-
-                    Button(action: {
-                        LogMan.log.debug("Delete action for \(file.name)")
-                    }) {
-                        Label("Delete", systemImage: "eraser.line.dashed")
-                    }
-                    .buttonStyle(.borderless)
-                    .foregroundColor(.primary)
-
-                    Button(action: {
-                        LogMan.log.debug("More info action for \(file.name)")
-                    }) {
-                        Label("More Info", systemImage: "info.circle.fill")
-                    }
-                    .buttonStyle(.borderless)
-                    .foregroundColor(.primary)
-                }
+            }
         }
+        .padding()
+    }
+}
+
+
+// MARK: - Preview
+struct TreeView_Previews: PreviewProvider {
+    @State static var previewSelectedFile: CustomFile? = nil
+
+    static let previewFileStructure: [CustomFile] = [
+        CustomFile(
+            name: "Root",
+            path: "/Root",
+            isDirectory: true,
+            children: [
+                CustomFile(
+                    name: "Folder 1",
+                    path: "/Root/Folder1",
+                    isDirectory: true,
+                    children: [
+                        CustomFile(name: "File 1", path: "/Root/Folder1/File1", isDirectory: false),
+                        CustomFile(name: "File 2", path: "/Root/Folder1/File2", isDirectory: false),
+                    ]
+                ),
+                CustomFile(name: "Folder 2", path: "/Root/Folder2", isDirectory: true, children: []),
+            ]
+        )
+    ]
+
+    static var previews: some View {
+        TreeView(files: .constant(previewFileStructure), selectedFile: $previewSelectedFile)
+            .frame(maxWidth: 250)
+            .font(.caption)
+            .padding()
     }
 }

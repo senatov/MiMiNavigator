@@ -22,7 +22,6 @@ struct TooltipView: View {
 }
 
 // MARK: - Preview for TooltipView
-
 struct TooltipView_Previews: PreviewProvider {
     static var previews: some View {
         TooltipView(text: "This is a tooltip", position: CGPoint(x: 100, y: 100))

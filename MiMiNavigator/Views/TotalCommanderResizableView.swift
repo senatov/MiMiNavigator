@@ -17,12 +17,14 @@ struct TotalCommanderResizableView: View {
     @ObservedObject private var fileLst = FileSingleton.shared
     @StateObject private var scanner = DualDirectoryScanner(
         leftDirectory: URL(fileURLWithPath: "/Users/senat/Downloads/Hahly"),
-        rightDirectory: URL(fileURLWithPath: "/Users/senat"))
+        rightDirectory: URL(fileURLWithPath: "/Users/senat")
+    )
     @State private var leftPath: String = ""
     @State private var rightPath: String = ""
 
     @State private var displayedLeftFiles: [CustomFile] = []
     @State private var displayedRightFiles: [CustomFile] = []
+    @State private var fileStructure: [CustomFile] = []
 
     var body: some View {
         GeometryReader { geometry in
@@ -174,12 +176,22 @@ struct TotalCommanderResizableView: View {
     // MARK: -
     private func builFavoriteTreeMenu() -> some View {
         LogMan.log.debug("builFavoriteTreeMenu()")
+        return TreeView(files: $fileStructure, selectedFile: $selectedFile)
+            .padding()
+            .frame(maxWidth: 230)
+            .font(.system(size: 14, weight: .regular))  // Унифицированный шрифт
+            .onAppear {
+                Task {
+                    await fetchFavoriteTree()
+                }
+            }
+    }
+
+    @MainActor
+    private func fetchFavoriteTree() async {
+        LogMan.log.debug("Fetching favorite tree structure")
         let favScanner = FavoritesScanner()
-        let fileStructure = favScanner.scanFavorites()
-        return TreeView(files: fileStructure, selectedFile: $selectedFile)
-            .padding()  // Add padding to the tree view
-            .frame(maxWidth: 230)  // Set the maximum width of the tree view
-            .font(.caption)  // Use a compact font for a more condensed appearance
+        fileStructure = favScanner.scanFavorites()
     }
 
     // MARK: -
@@ -195,7 +207,9 @@ struct TotalCommanderResizableView: View {
                     }
                     .onEnded { _ in
                         UserDefaults.standard.set(
-                            leftPanelWidth, forKey: "leftPanelWidth")
+                            leftPanelWidth,
+                            forKey: "leftPanelWidth"
+                        )
                         showTooltip = false
                     }
             )
@@ -211,7 +225,8 @@ struct TotalCommanderResizableView: View {
         if newWidth > 100 && newWidth < geometry.size.width - 100 {
             leftPanelWidth = newWidth
             let (tooltipText, tooltipPosition) = TooltipModule.calculateTooltip(
-                location: value.location, dividerX: newWidth,
+                location: value.location,
+                dividerX: newWidth,
                 totalWidth: geometry.size.width
             )
             self.tooltipText = tooltipText
@@ -238,52 +253,68 @@ struct TotalCommanderResizableView: View {
         LogMan.log.debug("buildToolbar()")
         return HStack(spacing: 18) {  // Увеличили расстояние между кнопками
             DownToolbarButtonView(
-                title: "F3 View", systemImage: "eye.circle",
+                title: "F3 View",
+                systemImage: "eye.circle",
                 action: {
                     LogMan.log.debug("View selected Docu")
-                })
+                }
+            )
 
             DownToolbarButtonView(
-                title: "F4 Edit", systemImage: "pencil",
+                title: "F4 Edit",
+                systemImage: "pencil",
                 action: {
                     LogMan.log.debug("Edit button tapped")
-                })
+                }
+            )
 
             DownToolbarButtonView(
-                title: "F5 Copy", systemImage: "document.on.document",
+                title: "F5 Copy",
+                systemImage: "document.on.document",
                 action: {
                     LogMan.log.debug("Copy button tapped")
-                })
+                }
+            )
 
             DownToolbarButtonView(
-                title: "F6 Move", systemImage: "square.and.arrow.down.on.square",
+                title: "F6 Move",
+                systemImage: "square.and.arrow.down.on.square",
                 action: {
                     LogMan.log.debug("Move button tapped")
-                })
+                }
+            )
 
             DownToolbarButtonView(
-                title: "F7 NewFolder", systemImage: "folder.badge.plus",
+                title: "F7 NewFolder",
+                systemImage: "folder.badge.plus",
                 action: {
                     LogMan.log.debug("NewFolder button tapped")
-                })
+                }
+            )
 
             DownToolbarButtonView(
-                title: "F8 Delete", systemImage: "minus.rectangle",
+                title: "F8 Delete",
+                systemImage: "minus.rectangle",
                 action: {
                     LogMan.log.debug("Delete button tapped")
-                })
+                }
+            )
 
             DownToolbarButtonView(
-                title: "⌥-F4 Exit", systemImage: "xmark.circle",
+                title: "⌥-F4 Exit",
+                systemImage: "xmark.circle",
                 action: {
                     exitApp()
-                })
+                }
+            )
 
             DownToolbarButtonView(
-                title: "Settings", systemImage: "gearshape",
+                title: "Settings",
+                systemImage: "gearshape",
                 action: {
                     LogMan.log.debug("Settings button tapped")
-                })
+                }
+            )
         }
         .padding()
         .cornerRadius(8)
