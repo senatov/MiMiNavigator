@@ -1,4 +1,4 @@
-// ToolbarButton.swift
+// TB_Button_IS.swift
 // A reusable toolbar button component with customizable title, icon, and action.
 // Created by Iakov Senatov
 

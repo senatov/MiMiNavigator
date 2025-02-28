@@ -65,3 +65,16 @@ struct DownToolbarButtonView: View {
         }
     }
 }
+
+// MARK: - Preview
+struct DownToolbarButtonView_Previews: PreviewProvider {
+    static var previews: some View {
+        DownToolbarButtonView(
+            title: "F4 Edit",
+            systemImage: "pencil",
+            action: {
+                LogMan.log.debug("Edit button tapped")
+            }
+        )
+    }
+}

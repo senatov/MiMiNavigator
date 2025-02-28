@@ -20,7 +20,7 @@ struct FileContextMenu: View {
                 Label("Copy", systemImage: "doc.on.doc")
             }
             .buttonStyle(.borderless)
-            .foregroundColor(.primary) // Default system color
+            .foregroundColor(.primary)  // Default system color
 
             Button(action: {
                 // Rename action
@@ -40,5 +40,12 @@ struct FileContextMenu: View {
             .buttonStyle(.borderless)
             .foregroundColor(.primary)
         }
+    }
+}
+
+// MARK: - Preview
+struct FileContextMenu_Previews: PreviewProvider {
+    static var previews: some View {
+        FileContextMenu()
     }
 }

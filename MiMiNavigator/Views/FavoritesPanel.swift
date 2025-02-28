@@ -86,3 +86,4 @@ struct FavoritesPanel_Previews: PreviewProvider {
         FavoritesPanel()
     }
 }
+
