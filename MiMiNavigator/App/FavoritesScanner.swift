@@ -21,46 +21,39 @@ class FavoritesScanner {
 
     // MARK: - Iterative File Structure Scanner (BFS)
     private func buildFileStructure(at rootURL: URL, maxDirectories: Int = 0xFF, maxDepth: Int = 3) -> CustomFile? {
-        LogMan.log.debug("Scanning: \(rootURL.path)")
-
+        //LogMan.log.debug("Scanning: \(rootURL.path)")
         var visitedPaths = Set<URL>()
         visitedPaths.insert(rootURL)
-
-            // Очередь с уровнями (URL, depth)
+        // Очередь с уровнями (URL, depth)
         var queue: [(url: URL, depth: Int)] = [(rootURL, 0)]
         var fileMap = [URL: CustomFile]()
         var rootFile: CustomFile?
 
         while !queue.isEmpty {
             let (currentURL, currentDepth) = queue.removeFirst()
-
-                // Прекращаем углубление, если достигнут maxDepth
+            // Прекращаем углубление, если достигнут maxDepth
             if currentDepth >= maxDepth {
                 continue
             }
-
-                // Получаем свойства файла/папки
+            // Получаем свойства файла/папки
             guard let resourceValues = try? currentURL.resourceValues(forKeys: [.isSymbolicLinkKey, .isDirectoryKey]) else {
                 LogMan.log.error("Failed to get resource values for \(currentURL.path)")
                 continue
             }
-
-                // Пропускаем символические ссылки
+            // Пропускаем символические ссылки
             if resourceValues.isSymbolicLink == true {
-                LogMan.log.debug("Skipping symbolic link: \(currentURL.path)")
+                //LogMan.log.debug("Skipping symbolic link: \(currentURL.path)")
                 continue
             }
-
             let isDirectory = resourceValues.isDirectory ?? false
             let fileName = currentURL.lastPathComponent
             let fileNode = CustomFile(name: fileName, path: currentURL.path, isDirectory: isDirectory, children: [])
-
             fileMap[currentURL] = fileNode
             if rootFile == nil {
                 rootFile = fileNode
             }
 
-                // Обрабатываем директории, если глубина позволяет
+            // Обрабатываем директории, если глубина позволяет
             if isDirectory {
                 do {
                     let contents = try FileManager.default.contentsOfDirectory(
@@ -75,7 +68,7 @@ class FavoritesScanner {
                         if visitedPaths.contains(item) { continue }
                         visitedPaths.insert(item)
 
-                            // Добавляем в очередь только если не превышен maxDepth
+                        // Добавляем в очередь только если не превышен maxDepth
                         if currentDepth + 1 < maxDepth {
                             queue.append((item, currentDepth + 1))
                         }
@@ -85,10 +78,13 @@ class FavoritesScanner {
                         fileMap[item] = tempNode
                     }
 
-                        // Корректно обновляем узел в fileMap
+                    // Корректно обновляем узел в fileMap
                     if let updatedNode = fileMap[currentURL] {
                         fileMap[currentURL] = CustomFile(
-                            name: updatedNode.name, path: updatedNode.path, isDirectory: updatedNode.isDirectory, children: children
+                            name: updatedNode.name,
+                            path: updatedNode.path,
+                            isDirectory: updatedNode.isDirectory,
+                            children: children
                         )
                     }
                 } catch {

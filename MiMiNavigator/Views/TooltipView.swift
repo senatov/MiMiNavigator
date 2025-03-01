@@ -15,7 +15,7 @@ struct TooltipView: View {
         Text(text)
             .padding()
             .background(Color.black.opacity(0.7))
-            .cornerRadius(8)
+            .cornerRadius(3)
             .foregroundColor(.white)
             .position(position)
     }

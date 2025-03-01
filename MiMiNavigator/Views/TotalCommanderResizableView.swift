@@ -101,10 +101,10 @@ struct TotalCommanderResizableView: View {
             EditablePathControlWrapper(path: $leftPath)
                 .padding(.bottom, 1)
                 .background(
-                    RoundedRectangle(cornerRadius: 12)
+                    RoundedRectangle(cornerRadius: 30)
                         .stroke(Color.blue.opacity(0.8), lineWidth: 2)
                         .background(
-                            RoundedRectangle(cornerRadius: 12)
+                            RoundedRectangle(cornerRadius: 30)
                                 .fill(Color.blue.opacity(0.1))
                         )
                 )
@@ -140,10 +140,10 @@ struct TotalCommanderResizableView: View {
             EditablePathControlWrapper(path: $rightPath)
                 .padding(.bottom, 1)
                 .background(
-                    RoundedRectangle(cornerRadius: 12)
+                    RoundedRectangle(cornerRadius: 30)
                         .stroke(Color.blue.opacity(0.8), lineWidth: 2)
                         .background(
-                            RoundedRectangle(cornerRadius: 12)
+                            RoundedRectangle(cornerRadius: 30)
                                 .fill(Color.blue.opacity(0.1))
                         )
                 )
@@ -317,7 +317,7 @@ struct TotalCommanderResizableView: View {
             )
         }
         .padding()
-        .cornerRadius(8)
+        .cornerRadius(3)
     }
 
     // MARK: -

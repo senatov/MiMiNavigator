@@ -24,11 +24,11 @@ struct DownToolbarButtonView: View {
                     .padding(.vertical, 10)
                     .frame(minWidth: 120, minHeight: 28)
                     .background(
-                        RoundedRectangle(cornerRadius: 8)
+                        RoundedRectangle(cornerRadius: 30)
                             .fill(Color.clear)  // Фон остается прозрачным
                     )
                     .overlay(
-                        RoundedRectangle(cornerRadius: 8)
+                        RoundedRectangle(cornerRadius: 30)
                             .stroke(Color.blue.opacity(0.5), lineWidth: isHovered ? 3 : 1)  // Тонкая рамка, увеличивается при hover
                             .animation(.easeInOut(duration: 0.4), value: isHovered)
                     )
