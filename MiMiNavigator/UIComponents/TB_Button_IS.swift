@@ -24,9 +24,8 @@ struct TB_Button_IS: View {
             withAnimation(.easeInOut(duration: 0.3)) {
                 action()
             }
-
             // Таймер для возврата к исходному цвету через 1.5 секунды
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                 withAnimation(.easeInOut(duration: 0.5)) {
                     isHighlighted = false // Возвращаем цвет к исходному
                 }
@@ -55,7 +54,7 @@ struct TB_Button_IS: View {
                     endPoint: .trailing
                 )
             )
-            .cornerRadius(12)
+            .cornerRadius(3)
             .shadow(color: Color.gray.opacity(0.4), radius: 6, x: 0, y: 5) // Тень только на фоне кнопки
             .scaleEffect(isPressed ? 0.95 : 1.0) // Scale effect when pressed
             .animation(.spring(response: 0.4, dampingFraction: 0.5), value: isPressed)

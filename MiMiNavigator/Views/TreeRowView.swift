@@ -78,11 +78,11 @@ struct TreeRowView: View {
 }
 
 // MARK: - Preview
-struct TreeRowView_Previews: PreviewProvider {
-    @State static var previewSelectedFile: CustomFile? = nil
-    @State static var previewExpandedFolders: Set<String> = []
+struct PreviewTreeRowView: View {
+    @State private var previewSelectedFile: CustomFile? = nil
+    @State private var previewExpandedFolders: Set<String> = []
 
-    @State static var previewFile: CustomFile = CustomFile(
+    @State private var previewFile: CustomFile = CustomFile(
         name: "Root",
         path: "/Root",
         isDirectory: true,
@@ -100,13 +100,19 @@ struct TreeRowView_Previews: PreviewProvider {
         ]
     )
 
-    static var previews: some View {
+    var body: some View {
         TreeRowView(
             file: $previewFile,
             selectedFile: $previewSelectedFile,
             expandedFolders: $previewExpandedFolders
         )
         .padding()
-        .frame(width: 300)
+        frame(width: 300, height: 400) // Увеличили высоту до 400
+    }
+}
+
+struct TreeRowView_Previews: PreviewProvider {
+    static var previews: some View {
+        PreviewTreeRowView()
     }
 }
