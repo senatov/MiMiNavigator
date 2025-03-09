@@ -33,7 +33,6 @@ struct TreeRowView: View {
                     Image(systemName: "doc")
                         .foregroundColor(.gray)
                 }
-
                 // Клик для выбора файла
                 Text(file.name)
                     .foregroundColor(selectedFile?.path == file.path ? .blue : .primary)
