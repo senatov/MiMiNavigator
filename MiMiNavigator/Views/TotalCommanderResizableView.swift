@@ -97,18 +97,8 @@ struct TotalCommanderResizableView: View {
     // MARK: -
     private func buildLeftPanel(geometry: GeometryProxy) -> some View {
         LogMan.log.debug("buildLeftPanel()")
-        return VStack {
+        return VStack(spacing: 20) {
             EditablePathControlWrapper(path: $leftPath)
-                .padding(.bottom, 1)
-                .background(
-                    RoundedRectangle(cornerRadius: 30)
-                        .stroke(Color.blue.opacity(0.8), lineWidth: 2)
-                        .background(
-                            RoundedRectangle(cornerRadius: 30)
-                                .fill(Color.blue.opacity(0.1))
-                        )
-                )
-                .padding(.bottom, 4)
                 .onChange(of: leftPath) { _, newPath in
                     Task {
                         await scanner.setLeftDirectory(path: newPath)
@@ -123,8 +113,9 @@ struct TotalCommanderResizableView: View {
                     }
             }
             .listStyle(PlainListStyle())
-            .frame(maxWidth: .infinity)
-            .border(Color.orange)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 8)
+            .border(Color.secondary)
             .onAppear {
                 Task {
                     await fetchLeftFiles()
@@ -136,18 +127,8 @@ struct TotalCommanderResizableView: View {
     // MARK: -
     private func buildRightPanel(geometry: GeometryProxy) -> some View {
         LogMan.log.debug("buildRightPanel()")
-        return VStack {
+        return VStack(spacing: 20) {
             EditablePathControlWrapper(path: $rightPath)
-                .padding(.bottom, 1)
-                .background(
-                    RoundedRectangle(cornerRadius: 30)
-                        .stroke(Color.blue.opacity(0.8), lineWidth: 2)
-                        .background(
-                            RoundedRectangle(cornerRadius: 30)
-                                .fill(Color.blue.opacity(0.1))
-                        )
-                )
-                .padding(.bottom, 4)
                 .onChange(of: rightPath) { _, newPath in
                     Task {
                         await scanner.setRightDirectory(path: newPath)
@@ -161,10 +142,9 @@ struct TotalCommanderResizableView: View {
                     }
             }
             .listStyle(PlainListStyle())
-            .frame(maxWidth: .infinity)
-            .frame(
-                width: rightPanelWidth == 0 ? geometry.size.width / 2 : rightPanelWidth
-            )
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 8)
+            .border(Color.secondary)
             .onAppear {
                 Task {
                     await fetchRightFiles()
@@ -178,7 +158,7 @@ struct TotalCommanderResizableView: View {
         LogMan.log.debug("builFavoriteTreeMenu()")
         return TreeView(files: $fileStructure, selectedFile: $selectedFile)
             .padding()
-            .frame(maxWidth: 230)
+            .frame(maxWidth: 210)
             .font(.system(size: 14, weight: .regular))  // Унифицированный шрифт
             .onAppear {
                 Task {

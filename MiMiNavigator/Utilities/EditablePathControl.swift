@@ -11,7 +11,7 @@ import SwiftUI
 struct EditablePathControl: NSViewRepresentable {
     @Binding var path: String
     var onPathSelected: (String) -> Void
-    @State private var isEditing = false
+    @State private var isEditing = true
 
     func makeNSView(context: Context) -> NSPathControl {
         LogMan.log.debug("makeNSView()")
@@ -32,3 +32,4 @@ struct EditablePathControl: NSViewRepresentable {
         Coordinator(onPathSelected: onPathSelected)
     }
 }
+

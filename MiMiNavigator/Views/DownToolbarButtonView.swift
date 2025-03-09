@@ -29,7 +29,7 @@ struct DownToolbarButtonView: View {
                     )
                     .overlay(
                         RoundedRectangle(cornerRadius: 30)
-                            .stroke(Color.blue.opacity(0.5), lineWidth: isHovered ? 3 : 1)  // Тонкая рамка, увеличивается при hover
+                            .stroke(Color.blue.opacity(0.4), lineWidth: isHovered ? 3 : 1)
                             .animation(.easeInOut(duration: 0.4), value: isHovered)
                     )
                     .scaleEffect(isPressed ? 0.92 : 1.0)
@@ -49,7 +49,7 @@ struct DownToolbarButtonView: View {
             isPressed = true
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-            withAnimation(.easeInOut(duration: 0.2)) {
+            withAnimation(.easeInOut(duration: 0.3)) {
                 isPressed = false
             }
         }

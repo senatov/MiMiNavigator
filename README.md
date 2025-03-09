@@ -43,9 +43,9 @@ This application highlights the strengths of **SwiftUI** in creating intuitive, 
 
 ## Requirements
 
-- **macOS** 15.1 or later
-- **Swift** 6
-- **Xcode** 16.2beta2 beta or later
+- **macOS** 15.3 or later
+- **Swift** 6.3
+- **Xcode** 16.3 or later
 - **macOS** Sequoia 15.1.1 or later
 
 ## 🚀 Installation
@@ -90,11 +90,12 @@ This application highlights the strengths of **SwiftUI** in creating intuitive, 
 
 | Date       | Commit Hash | Description                                         |
 |------------|------------|-----------------------------------------------------|
+| 2025-02-28 | `78e169a`  | nav. sizes                                          |  
 | 2025-02-21 | `a1b2c3d`  | Refactored `TopMenuBarView.swift` – improved UI logic. |
-| 2025-02-20 | `d4e5f6g`  | Fixed `FavoritesScanner.swift` memory leak issue.  |
-| 2025-02-18 | `h7i8j9k`  | Improved `TB_Button_IS` animations.                |
+| 2025-02-20 | `d4e5f6g`  | Fixed `FavoritesScanner.swift` memory leak issue.      |
+| 2025-02-18 | `h7i8j9k`  | Improved `TB_Button_IS` animations.                    |
 | 2025-02-15 | `l0m1n2o`  | Optimized `DualDirectoryMonitor.swift` event handling. |
-| 2025-02-12 | `p3q4r5s`  | Enhanced UI in `TotalCommanderResizableView.swift`. |
+| 2025-02-12 | `p3q4r5s`  | Enhanced UI in `TotalCommanderResizableView.swift`.    |
 | 2025-02-10 | `t6u7v8w`  | Improved directory monitoring performance.         |
 | 2025-02-08 | `x9y0z1a`  | Updated file operation error handling.             |
 | 2025-02-06 | `b2c3d4e`  | Enhanced logging with `SwiftBeaver`.               |
@@ -110,30 +111,31 @@ This application highlights the strengths of **SwiftUI** in creating intuitive, 
 | 2025-01-12 | `p2q3r4s`  | Improved FTP connection stability.                 |
 | 2025-01-10 | `t5u6v7w`  | Enhanced file search functionality.                |
 | 2025-01-08 | `x8y9z0a`  | Optimized memory usage in file preview.            |
-| 2025-01-06 | `b1c2d3e`  | Improved sorting algorithm for file lists.        |
-| 2025-01-04 | `f4g5h6i`  | Fixed UI flickering in sidebar.                    |
-| 2025-01-02 | `j7k8l9m`  | Added status bar file operation progress.         |
-| 2024-12-30 | `n0o1p2q`  | Improved error messages in logs.                   |
-| 2024-12-28 | `r3s4t5u`  | Fixed crash when handling symbolic links.         |
-| 2024-12-25 | `v6w7x8y`  | Refactored permissions handling.                   |
-| 2024-12-23 | `z9a0b1c`  | Optimized background queue management.            |
-| 2024-12-20 | `d2e3f4g`  | Enhanced breadcrumb navigation.                    |
-| 2024-12-18 | `h5i6j7k`  | Fixed sidebar expanding issues.                   |
-| 2024-12-15 | `l8m9n0o`  | Updated file operation confirmations.             |
-| 2024-12-12 | `p1q2r3s`  | Fixed incorrect file size display.                |
-| 2024-12-10 | `t4u5v6w`  | Enhanced sidebar drag & drop support.             |
-| 2024-12-08 | `x7y8z9a`  | Improved shell utility integration.               |
+| 2025-01-06 | `b1c2d3e`  | Improved sorting algorithm for file lists.       |
+| 2025-01-04 | `f4g5h6i`  | Fixed UI flickering in sidebar.                  |
+| 2025-01-02 | `j7k8l9m`  | Added status bar file operation progress.        |
+| 2024-12-30 | `n0o1p2q`  | Improved error messages in logs.                 |
+| 2024-12-28 | `r3s4t5u`  | Fixed crash when handling symbolic links.        |
+| 2024-12-25 | `v6w7x8y`  | Refactored permissions handling.                 |
+| 2024-12-23 | `z9a0b1c`  | Optimized background queue management.           |
+| 2024-12-20 | `d2e3f4g`  | Enhanced breadcrumb navigation.                  |
+| 2024-12-18 | `h5i6j7k`  | Fixed sidebar expanding issues.                  |
+| 2024-12-15 | `l8m9n0o`  | Updated file operation confirmations.            |
+| 2024-12-12 | `p1q2r3s`  | Fixed incorrect file size display.               |
+| 2024-12-10 | `t4u5v6w`  | Enhanced sidebar drag & drop support.            |
+| 2024-12-08 | `x7y8z9a`  | Improved shell utility integration.              |
 | 2024-12-06 | `b0c1d2e`  | Fixed slow loading of large directories.         |
-| 2024-12-04 | `f3g4h5i`  | Improved search performance.                      |
-| 2024-12-02 | `j6k7l8m`  | Enhanced tab management.                          |
+| 2024-12-04 | `f3g4h5i`  | Improved search performance.                     |
+| 2024-12-02 | `j6k7l8m`  | Enhanced tab management.                         |
 | 2024-11-30 | `n9o0p1q`  | Fixed UI layout issues on smaller screens.       |
 | 2024-11-28 | `r2s3t4u`  | Optimized directory scanning for SSDs.           |
 | 2024-11-25 | `v5w6x7y`  | Fixed undo/redo issues in file operations.       |
-| 2024-11-23 | `z8a9b0c`  | Improved accessibility support.                   |
+| 2024-11-23 | `z8a9b0c`  | Improved accessibility support.                  |
 | 2024-11-20 | `d1e2f3g`  | Updated file permission handling.                |
 | 2024-11-18 | `h4i5j6k`  | Optimized file list refresh speed.               |
 | 2024-11-15 | `l7m8n9o`  | Fixed inconsistent icon rendering.               |
-| 2024-11-12 | `p0q1r2s`  | Improved split-view resizing behavior.           |                                                               |
+| 2024-11-12 | `p0q1r2s`  | Improved split-view resizing behavior.           |   
+
 
 ## ❓ FAQ
 
