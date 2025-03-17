@@ -12,13 +12,13 @@ import SwiftyBeaver
 
 class Coordinator: NSObject {
     var onPathSelected: (String) -> Void
-
-    init(onPathSelected: @escaping (String) -> Void) {
-        self.onPathSelected = onPathSelected
+        //DualDirectoryScanner.
+        init(onPathSelected: @escaping (String) -> Void) {
+            self.onPathSelected = onPathSelected
     }
 
     @MainActor @objc func pathControlDidChange(_ sender: NSPathControl) {
-        sender.isEditable = true // Делаем NSPathControl редактируемым
+        sender.isEditable = true  // Делаем NSPathControl редактируемым
         if let url = sender.url {
             log.debug("PathControl clicked. New path selected: \(url.path)")
             onPathSelected(url.path)

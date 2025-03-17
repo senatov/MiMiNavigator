@@ -42,7 +42,7 @@ struct TotalCommanderResizableView: View {
                 }
             }
             .onAppear {
-                Task {
+                Task (priority: .low){
                     await fetchPaths()
                 }
                 initializePanelWidth(geometry: geometry)
@@ -97,7 +97,7 @@ struct TotalCommanderResizableView: View {
     // MARK: -
     private func buildLeftPanel(geometry: GeometryProxy) -> some View {
         LogMan.log.debug("buildLeftPanel()")
-        return VStack(spacing: 20) {
+        return VStack {
             EditablePathControlWrapper(path: $leftPath)
                 .onChange(of: leftPath) { _, newPath in
                     Task {
@@ -105,7 +105,8 @@ struct TotalCommanderResizableView: View {
                         await fetchLeftFiles()
                     }
                 }
-
+                .cornerRadius(3)
+                .padding(.horizontal, 5)
             List(displayedLeftFiles, id: \.id) { file in
                 Text(file.name)
                     .contextMenu {
@@ -117,7 +118,7 @@ struct TotalCommanderResizableView: View {
             .padding(.horizontal, 8)
             .border(Color.secondary)
             .onAppear {
-                Task {
+                Task (priority: .low) {
                     await fetchLeftFiles()
                 }
             }
@@ -127,14 +128,16 @@ struct TotalCommanderResizableView: View {
     // MARK: -
     private func buildRightPanel(geometry: GeometryProxy) -> some View {
         LogMan.log.debug("buildRightPanel()")
-        return VStack(spacing: 20) {
+        return VStack {
             EditablePathControlWrapper(path: $rightPath)
                 .onChange(of: rightPath) { _, newPath in
-                    Task {
+                    Task (priority: .low){
                         await scanner.setRightDirectory(path: newPath)
                         await fetchRightFiles()
                     }
                 }
+                .cornerRadius(3)
+                .padding(.horizontal, 5)
             List(displayedRightFiles, id: \.id) { file in
                 Text(file.name + "x")
                     .contextMenu {
@@ -146,7 +149,7 @@ struct TotalCommanderResizableView: View {
             .padding(.horizontal, 8)
             .border(Color.secondary)
             .onAppear {
-                Task {
+                Task (priority: .low){
                     await fetchRightFiles()
                 }
             }
@@ -161,7 +164,7 @@ struct TotalCommanderResizableView: View {
             .frame(maxWidth: 210)
             .font(.system(size: 14, weight: .regular))  // Унифицированный шрифт
             .onAppear {
-                Task {
+                Task (priority: .low){
                     await fetchFavoriteTree()
                 }
             }
