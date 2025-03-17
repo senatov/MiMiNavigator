@@ -25,12 +25,11 @@ struct EditablePathControlWrapper: View {
                     .onExitCommand {
                         isEditing = false
                     }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .layoutPriority(1)  // Гарантируем, что займет всю доступную ширину
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .layoutPriority(1)
                     .transition(.opacity.combined(with: .scale))
                     .animation(.easeInOut(duration: 0.4), value: isEditing)
-
-                Button(action: {
+                 Button(action: {
                     withAnimation {
                         isEditing = false
                     }
@@ -73,11 +72,12 @@ struct EditablePathControlWrapper: View {
             RoundedRectangle(cornerRadius: 5)
                 .stroke(Color.blue.opacity(0.8), lineWidth: 2)
                 .background(
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(Color.blue.opacity(0.1))
+                    RoundedRectangle(cornerRadius: 5)
+                        .fill(Color.blue.opacity(0.2))
                 )
                 .animation(.spring(response: 0.4, dampingFraction: 0.6), value: isEditing)
         )
         .padding(.bottom, 4)
+        .padding(.top, 5)
     }
 }

@@ -41,7 +41,7 @@ actor DualDirectoryScanner: ObservableObject {
         self.leftDirectory = leftDirectory
         self.rightDirectory = rightDirectory
         LogMan.log.debug("\n --- DualDirectoryScanner initialized.----")
-        Task { @MainActor in
+        Task (priority: .low) { @MainActor in
             await self.startMonitoring()
         }
     }
@@ -128,7 +128,9 @@ actor DualDirectoryScanner: ObservableObject {
         var customFiles: [CustomFile] = []
         do {
             let contents = try fileManager.contentsOfDirectory(
-                at: url, includingPropertiesForKeys: [.isDirectoryKey], options: [.skipsHiddenFiles]
+                at: url,
+                includingPropertiesForKeys: [.isDirectoryKey],
+                options: [.skipsHiddenFiles]
             )
             for fileURL in contents {
                 let isDirectory = (try? fileURL.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
@@ -148,15 +150,34 @@ actor DualDirectoryScanner: ObservableObject {
 
     // MARK: - Updates the left directory's path
     func setLeftDirectory(path: String) {
-        Task {
+        Task (priority: .low){
             self.leftDirectory = URL(fileURLWithPath: path)
         }
     }
 
     // MARK: - Updates the right directory's path
     func setRightDirectory(path: String) {
-        Task {
+        Task (priority: .low){
             self.rightDirectory = URL(fileURLWithPath: path)
         }
+    }
+
+    // MARK: - Getters and Setters for directory paths
+    public func getLeftDirectory() async -> URL {
+        return leftDirectory
+    }
+
+    public func setLeftDirectory(_ path: String) async {
+        self.leftDirectory = URL(fileURLWithPath: path)
+        LogMan.log.debug("Left directory updated: \(self.leftDirectory.path)")
+    }
+
+    public func getRightDirectory() async -> URL {
+        return rightDirectory
+    }
+
+    public func setRightDirectory(_ path: String) async {
+        self.rightDirectory = URL(fileURLWithPath: path)
+        LogMan.log.debug("Right directory updated: \(self.rightDirectory.path)")
     }
 }
