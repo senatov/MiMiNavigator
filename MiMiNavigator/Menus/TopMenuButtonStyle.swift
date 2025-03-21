@@ -33,9 +33,11 @@ struct TopMenuButtonStyle: ButtonStyle {
                     .stroke(Color.blue.opacity(isHovered ? 0.8 : 0.4), lineWidth: isHovered ? 1.4 : 1)
             )
             .onHover { hovering in
-                withAnimation(.easeInOut(duration: 0.2)) {
-                    isHovered = hovering  // Обновляем состояние при наведении
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.6, blendDuration: 0)) {
+                    isHovered = hovering
                 }
+
             }
+            .accessibility(label: Text("Верхний меню"))
     }
 }
