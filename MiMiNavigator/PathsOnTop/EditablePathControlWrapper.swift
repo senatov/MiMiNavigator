@@ -41,7 +41,7 @@ struct EditablePathControlWrapper: View {
 
                 Button(action: {
                     withAnimation {
-                        isEditing = false
+                        isEditing = false 
                     }
                 }) {
                     Image(systemName: "xmark.circle.fill")
@@ -49,7 +49,7 @@ struct EditablePathControlWrapper: View {
                         .transition(.opacity)
                 }
             } else {
-                EditablePathControl(path: $path) { newPath in
+                EditablePathControlView(path: $path) { newPath in
                     path = newPath
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
