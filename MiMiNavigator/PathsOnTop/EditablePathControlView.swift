@@ -1,6 +1,6 @@
 import AppKit
 //
-//  EditablePathControl.swift
+//  EditablePathControlView.swift
 //  MiMiNavigator
 //
 //  Created by Iakov Senatov on 14.11.24.
@@ -37,15 +37,14 @@ struct EditablePathControlView: View {
                             .fill(
                                 LinearGradient(
                                     colors: path == item.path
-                                        ? [Color.orange.opacity(0.4), Color.orange.opacity(0.2)]
-                                        : [Color.gray.opacity(0.1), Color.gray.opacity(0.05)],
+                                        ? [Color.gray.opacity(0.1), Color.gray.opacity(0.05)]
+                                        : [Color.blue.opacity(0.1), Color.blue.opacity(0.05)],
                                     startPoint: .top,
                                     endPoint: .bottom
                                 )
                             )
-                            .shadow(color: .orange.opacity(path == item.path ? 0.4 : 0), radius: 4, x: 0, y: 2)
+                            .shadow(color: .gray.opacity(path == item.path ? 0.4 : 0), radius: 4, x: 0, y: 2)
                     )
-                    .animation(.easeInOut(duration: 0.2), value: path)
                 }
                 .buttonStyle(.plain)
             }
@@ -54,7 +53,7 @@ struct EditablePathControlView: View {
         .padding(4)
         .background(
             RoundedRectangle(cornerRadius: 8)
-                .fill(Color.blue.opacity(0.05))
+                .fill(Color.gray.opacity(0.05))
         )
     }
 

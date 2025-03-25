@@ -150,14 +150,14 @@ actor DualDirectoryScanner: ObservableObject {
 
     // MARK: - Updates the left directory's path
     func setLeftDirectory(path: String) {
-        Task (priority: .low){
+        Task {
             self.leftDirectory = URL(fileURLWithPath: path)
         }
     }
 
     // MARK: - Updates the right directory's path
     func setRightDirectory(path: String) {
-        Task (priority: .low){
+        Task{
             self.rightDirectory = URL(fileURLWithPath: path)
         }
     }
