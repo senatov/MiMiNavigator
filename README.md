@@ -32,7 +32,7 @@ This application highlights the strengths of **SwiftUI** in creating intuitive, 
 
 ## Current Stage 🦾 ![Current Stage](docs/Preview.png "current preview")
 
--  Support for macOS 15.2 with Swift 6.2.
+-  Support for macOS 15.3 with Swift 6.2.
 -  Periodic directory scanning and updating, using dynamic collections for real-time content refresh.
 -  Modular and reusable components for top navigation.
 -  Integrated file management actions including copy, rename, and delete.
@@ -46,7 +46,7 @@ This application highlights the strengths of **SwiftUI** in creating intuitive, 
 - **macOS** 15.3 or later
 - **Swift** 6.3
 - **Xcode** 16.3 or later
-- **macOS** Sequoia 15.1.1 or later
+- **macOS** Sequoia 15.0 or later
 
 ## 🚀 Installation
 
@@ -137,7 +137,7 @@ This application highlights the strengths of **SwiftUI** in creating intuitive, 
 | 2024-11-12 | `p0q1r2s`  | Improved split-view resizing behavior.           |   
 
 
-## ❓ FAQ
+## ❓FAQ❓ 
 
 | Question                                 | Answer                                                                       |
 |------------------------------------------|------------------------------------------------------------------------------|
