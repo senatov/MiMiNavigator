@@ -136,7 +136,7 @@ struct TotalCommanderResizableView: View {
                 .cornerRadius(3)
                 .padding(.horizontal, 5)
             List(displayedRightFiles, id: \.id) { file in
-                Text(file.name + "x")
+                Text(file.name)
                     .contextMenu {
                         FileContextMenu()
                     }
