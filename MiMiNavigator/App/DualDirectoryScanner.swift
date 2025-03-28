@@ -23,6 +23,7 @@ actor DualDirectoryScanner: ObservableObject {
     public var leftDirectory: URL
     public var rightDirectory: URL
 
+    // MARK: -
     private enum DirectorySide: CustomStringConvertible {
         case left, right
         var description: String {
@@ -41,7 +42,7 @@ actor DualDirectoryScanner: ObservableObject {
         self.leftDirectory = leftDirectory
         self.rightDirectory = rightDirectory
         LogMan.log.debug("\n --- DualDirectoryScanner initialized.----")
-        Task (priority: .low) { @MainActor in
+        Task(priority: .low) { @MainActor in
             await self.startMonitoring()
         }
     }
@@ -148,16 +149,16 @@ actor DualDirectoryScanner: ObservableObject {
         return customFiles
     }
 
-    // MARK: - Updates the left directory's path
+    // MARK: -
     func setLeftDirectory(path: String) {
         Task {
             self.leftDirectory = URL(fileURLWithPath: path)
         }
     }
 
-    // MARK: - Updates the right directory's path
+    // MARK: -
     func setRightDirectory(path: String) {
-        Task{
+        Task {
             self.rightDirectory = URL(fileURLWithPath: path)
         }
     }
@@ -167,17 +168,9 @@ actor DualDirectoryScanner: ObservableObject {
         return leftDirectory
     }
 
-    public func setLeftDirectory(_ path: String) async {
-        self.leftDirectory = URL(fileURLWithPath: path)
-        LogMan.log.debug("Left directory updated: \(self.leftDirectory.path)")
-    }
-
+    // MARK: -
     public func getRightDirectory() async -> URL {
         return rightDirectory
     }
 
-    public func setRightDirectory(_ path: String) async {
-        self.rightDirectory = URL(fileURLWithPath: path)
-        LogMan.log.debug("Right directory updated: \(self.rightDirectory.path)")
-    }
 }

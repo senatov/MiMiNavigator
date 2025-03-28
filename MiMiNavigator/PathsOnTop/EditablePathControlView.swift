@@ -14,7 +14,7 @@ struct EditablePathControlView: View {
 
     var body: some View {
         HStack(spacing: 2) {
-            ForEach(pathComponents(), id: \PathItem.path) { item in
+            ForEach(pathComponents(), id: \EditablePathItem.path) { item in
                 Button(action: {
                     withAnimation(.easeInOut(duration: 0.2)) {
                         path = item.path
@@ -58,14 +58,14 @@ struct EditablePathControlView: View {
     }
 
     // Вспомогательная структура для элементов пути
-    private struct PathItem: Hashable {
+    private struct EditablePathItem: Hashable {
         let title: String
         let path: String
         let icon: NSImage
     }
 
     // Генерация элементов пути
-    private func pathComponents() -> [PathItem] {
+    private func pathComponents() -> [EditablePathItem] {
         let url = URL(fileURLWithPath: path)
         var components = url.pathComponents
         if components.first == "/" { components.removeFirst() }
@@ -76,7 +76,8 @@ struct EditablePathControlView: View {
             let icon = NSWorkspace.shared.icon(forFile: currentPath)
             icon.size = NSSize(width: 16, height: 16)
 
-            return PathItem(title: component, path: currentPath, icon: icon)
+            return EditablePathItem(title: component, path: currentPath, icon: icon)
         }
     }
+
 }

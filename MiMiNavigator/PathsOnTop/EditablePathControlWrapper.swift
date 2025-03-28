@@ -1,10 +1,10 @@
-//
-//  EditablePathControlWrapper.swift
-//  MiMiNavigator
-//
-//  Created by Iakov Senatov on 25.03.25.
-//  Copyright © 2025 Senatov. All rights reserved.
-//
+    //
+    //  EditablePathControlWrapper.swift
+    //  MiMiNavigator
+    //
+    //  Created by Iakov Senatov on 25.03.25.
+    //  Copyright © 2025 Senatov. All rights reserved.
+    //
 
 import SwiftUI
 
@@ -12,7 +12,7 @@ struct EditablePathControlWrapper: View {
     @Binding var path: String
     @State private var isEditing = false
     @FocusState private var isTextFieldFocused: Bool
-
+    
     var body: some View {
         HStack {
             if isEditing {
@@ -34,7 +34,7 @@ struct EditablePathControlWrapper: View {
         )
         .padding(.vertical, 5)
     }
-
+    
     private var editingView: some View {
         HStack {
             TextField("Enter path", text: $path)
@@ -42,9 +42,21 @@ struct EditablePathControlWrapper: View {
                 .padding(6)
                 .background(.white)
                 .focused($isTextFieldFocused)
-                .onAppear { isTextFieldFocused = true }
+                .onAppear {
+                    isTextFieldFocused = true
+                    DispatchQueue.main.async {
+                        if let editor = NSApp.keyWindow?.firstResponder as? NSTextView {
+                            editor.selectAll(nil)
+                        }
+                    }
+                }
                 .onExitCommand { isEditing = false }
-
+                .onSubmit {
+                    withAnimation(.easeInOut(duration: 0.3)) {
+                        isEditing = false
+                    }
+                }
+            
             Button {
                 withAnimation(.easeInOut(duration: 0.3)) {
                     isEditing = false
@@ -53,7 +65,7 @@ struct EditablePathControlWrapper: View {
                 Image(systemName: "checkmark.circle.fill")
                     .foregroundColor(.accentColor)
             }
-
+            
             Button {
                 withAnimation(.easeInOut(duration: 0.3)) {
                     isEditing = false
@@ -65,20 +77,21 @@ struct EditablePathControlWrapper: View {
         }
         .transition(.opacity)
     }
-
+    
     private func handlePathChanged(_ newPath: String) {
         self.path = newPath
     }
-
+    
     private var pathControlView: some View {
         EditablePathControlView(path: $path, onPathSelected: handlePathChanged)
     }
-
+    
     private var displayView: some View {
         pathControlView
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(Color.white)
             .contentShape(Rectangle())
+            .allowsHitTesting(true)
             .onTapGesture {
                 withAnimation(.easeInOut(duration: 0.3)) {
                     isEditing = true

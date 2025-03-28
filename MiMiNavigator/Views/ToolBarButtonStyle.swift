@@ -9,7 +9,7 @@
 import SwiftUI
 import SwiftyBeaver
 
-struct ToolbarButtonStyle: ButtonStyle {
+struct ToolBarButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .padding(12)
