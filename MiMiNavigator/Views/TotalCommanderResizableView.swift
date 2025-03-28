@@ -11,7 +11,7 @@ struct TotalCommanderResizableView: View {
     @State private var rightPanelWidth: CGFloat = 0
     @State private var isShowMenu: Bool = UserPreferences.shared.restoreMenuState()
     @State private var selectedFile: CustomFile? = nil
-    @State private var showTooltip: Bool = false
+    @State private var showTooltip: Bool = true
     @State private var tooltipPosition: CGPoint = .zero
     @State private var tooltipText: String = ""
     @ObservedObject private var fileLst = FileSingleton.shared
@@ -37,12 +37,9 @@ struct TotalCommanderResizableView: View {
                     buildMainPanels(geometry: geometry)
                     buildDownToolbar()
                 }
-                if showTooltip {
-                    TooltipView(text: tooltipText, position: tooltipPosition)
-                }
             }
             .onAppear {
-                Task (priority: .low){
+                Task(priority: .low) {
                     await fetchPaths()
                 }
                 initializePanelWidth(geometry: geometry)
@@ -118,7 +115,7 @@ struct TotalCommanderResizableView: View {
             .padding(.horizontal, 8)
             .border(Color.secondary)
             .onAppear {
-                Task (priority: .low) {
+                Task(priority: .low) {
                     await fetchLeftFiles()
                 }
             }
@@ -131,7 +128,7 @@ struct TotalCommanderResizableView: View {
         return VStack {
             EditablePathControlWrapper(path: $rightPath)
                 .onChange(of: rightPath) { _, newPath in
-                    Task (priority: .low){
+                    Task(priority: .low) {
                         await scanner.setRightDirectory(path: newPath)
                         await fetchRightFiles()
                     }
@@ -149,7 +146,7 @@ struct TotalCommanderResizableView: View {
             .padding(.horizontal, 8)
             .border(Color.secondary)
             .onAppear {
-                Task (priority: .low){
+                Task(priority: .low) {
                     await fetchRightFiles()
                 }
             }
@@ -164,7 +161,7 @@ struct TotalCommanderResizableView: View {
             .frame(maxWidth: 210)
             .font(.system(size: 14, weight: .regular))  // Унифицированный шрифт
             .onAppear {
-                Task (priority: .low){
+                Task(priority: .low) {
                     await fetchFavoriteTree()
                 }
             }
