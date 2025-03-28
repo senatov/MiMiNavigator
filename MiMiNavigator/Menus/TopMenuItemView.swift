@@ -57,6 +57,7 @@ var filesMenuCategory: MenuCategory {
     MenuCategory(title: "Files", items: filesMenuItems)
 }
 
+// MARK: -
 var filesMenuItems: [MenuItem] {
     [
         .init(title: "Rename/Move", action: {}, shortcut: "F6"),
@@ -90,6 +91,7 @@ var commandMenuCategory: MenuCategory {
     MenuCategory(title: "Commands", items: commandMenuItems)
 }
 
+// MARK: -
 var commandMenuItems: [MenuItem] {
     [
         .init(title: "Open Command Prompt...", action: {}, shortcut: "Ctrl+P"),
@@ -104,6 +106,7 @@ var netMenuCategory: MenuCategory {
     MenuCategory(title: "Net", items: netMenuItems)
 }
 
+// MARK: -
 var netMenuItems: [MenuItem] {
     [
         .init(title: "FTP Connect...", action: {}, shortcut: "Ctrl+N"),
@@ -168,7 +171,7 @@ struct HelpPopup: View {
 
     var body: some View {
         Text(text)
-            .font(.system(size: 12)) 
+            .font(.system(size: 12))
             .foregroundColor(.black)
             .padding(8)
             .background(Color.yellow.opacity(0.1))  // Бледно-жёлтый фон
@@ -177,11 +180,10 @@ struct HelpPopup: View {
     }
 }
 
-
 struct BlurView: NSViewRepresentable {
     func makeNSView(context: Context) -> NSVisualEffectView {
         let view = NSVisualEffectView()
-        view.material = .menu // Используем стандартное размытие меню macOS
+        view.material = .menu  // Используем стандартное размытие меню macOS
         view.blendingMode = .behindWindow
         view.state = .active
         return view
