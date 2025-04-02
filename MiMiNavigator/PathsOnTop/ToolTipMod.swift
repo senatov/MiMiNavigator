@@ -1,5 +1,5 @@
 //
-//  FileName.swift
+//  ToolTipMod.swift
 //  MiMiNavigator
 //
 //  Created by Iakov Senatov on 16.10.24.
@@ -12,7 +12,7 @@ import SwiftyBeaver
 /// TooltipModule is responsible for calculating the tooltip text and position.
 
 // MARK: -
-struct TooltipModule {
+struct ToolTipMod {
 
     // MARK: - Tooltip text showing the ratio between left and right panels
     static func calculateTooltip(location: CGPoint, dividerX: CGFloat, totalWidth: CGFloat) -> (String, CGPoint) {

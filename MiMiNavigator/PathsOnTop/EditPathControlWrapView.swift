@@ -1,5 +1,5 @@
     //
-    //  EditablePathControlWrapper.swift
+    //  EditPathControlWrapView.swift
     //  MiMiNavigator
     //
     //  Created by Iakov Senatov on 25.03.25.
@@ -8,7 +8,7 @@
 
 import SwiftUI
 
-struct EditablePathControlWrapper: View {
+struct EditPathControlWrapView: View {
     @Binding var path: String
     @State private var isEditing = false
     @FocusState private var isTextFieldFocused: Bool
@@ -98,5 +98,20 @@ struct EditablePathControlWrapper: View {
                 }
             }
             .transition(.opacity)
+    }
+}
+
+#Preview {
+    EditPathPreviewWrapper()
+}
+
+private struct EditPathPreviewWrapper: View {
+    @State private var samplePath = "/Users/username/Downloads"
+    
+    var body: some View {
+        EditPathControlWrapView(path: $samplePath)
+            .padding()
+            .background(Color.gray.opacity(0.1))
+            .frame(maxWidth: 400)
     }
 }
