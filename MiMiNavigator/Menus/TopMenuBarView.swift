@@ -1,10 +1,10 @@
-    //
-    //  TopMenuBarView.swift
-    //  MiMiNavigator
-    //
-    //  Created by Iakov Senatov on 16.10.24.
-    //  Description: SwiftUI component for rendering the top menu bar with dropdown menus and shortcuts.
-    //
+//
+//  TopMenuBarView.swift
+//  MiMiNavigator
+//
+//  Created by Iakov Senatov on 16.10.24.
+//  Description: SwiftUI component for rendering the top menu bar with dropdown menus and shortcuts.
+//
 
 import SwiftUI
 
@@ -13,10 +13,10 @@ struct TopMenuBarView: View {
     @State private var isHovering = false
     @State private var showTooltip = false
     var toggleMenu: () -> Void  // Action to toggle the menu
-    
+
     var body: some View {
         HStack(spacing: 8) {
-                // Кнопка "гамбургер"
+            // Кнопка "гамбургер"
             Button(action: toggleMenu) {
                 Image(systemName: "line.horizontal.3")
                     .frame(width: 18, height: 18)
@@ -26,8 +26,8 @@ struct TopMenuBarView: View {
             .background(BlurView())
             .padding(.horizontal, 15)
             .padding(.vertical, 4)
-            
-                // Остальные пункты меню (кроме Help)
+
+            // Остальные пункты меню (кроме Help)
             ForEach(menuData.dropLast()) { menu in
                 ZStack(alignment: .topLeading) {
                     Menu {
@@ -59,7 +59,7 @@ struct TopMenuBarView: View {
                                 }
                             }
                     }
-                    
+
                     if showTooltip {
                         PrettyTooltip(text: "Меню \(menu.title)")
                             .offset(x: 10, y: -34)
@@ -70,7 +70,7 @@ struct TopMenuBarView: View {
                 .buttonStyle(TopMenuButtonStyle())
             }
             Spacer()  // Отделяем Help от остальных
-                      // Последний пункт "Help"
+            // Последний пункт "Help"
             if let helpMenu = menuData.last {
                 Menu {
                     ForEach(helpMenu.items) { item in
@@ -92,8 +92,8 @@ struct TopMenuBarView: View {
         .padding(.horizontal, 20)
         .background(BlurView())  // Одинаковый фон для всей панели
     }
-    
-        // MARK: - Menu Data
+
+    // MARK: - Menu Data
     private var menuData: [MenuCategory] {
         [
             filesMenuCategory,

@@ -5,10 +5,10 @@
 import SwiftUI
 import SwiftyBeaver
 
-struct TB_Button_IS: View {
-    @State private var isHighlighted = false // Состояние для отслеживания цвета кнопки
+struct TBButtonView: View {
+    @State private var isHighlighted = false  // Состояние для отслеживания цвета кнопки
     let title: String
-    let icon: String? // Optional icon name from SF Symbols or custom icon
+    let icon: String?  // Optional icon name from SF Symbols or custom icon
     let action: () -> Void
     @State private var isPressed = false
 
@@ -16,7 +16,7 @@ struct TB_Button_IS: View {
         Button(action: {
             withAnimation(.easeInOut(duration: 0.1)) {
                 isPressed = true
-                isHighlighted = true // Устанавливаем цвет в оранжевый при нажатии
+                isHighlighted = true  // Устанавливаем цвет в оранжевый при нажатии
             }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                 isPressed = false
@@ -27,7 +27,7 @@ struct TB_Button_IS: View {
             // Таймер для возврата к исходному цвету через 1.5 секунды
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                 withAnimation(.easeInOut(duration: 0.5)) {
-                    isHighlighted = false // Возвращаем цвет к исходному
+                    isHighlighted = false  // Возвращаем цвет к исходному
                 }
             }
         }) {
@@ -36,7 +36,8 @@ struct TB_Button_IS: View {
                     Image(systemName: iconName)
                         .font(.headline)
                         .foregroundColor(
-                            isHighlighted ? Color.orange : Color.indigo)
+                            isHighlighted ? Color.orange : Color.indigo
+                        )
                         .scaleEffect(isPressed ? 0.9 : 1.0)
                 }
                 Text(title)
@@ -55,8 +56,8 @@ struct TB_Button_IS: View {
                 )
             )
             .cornerRadius(3)
-            .shadow(color: Color.gray.opacity(0.4), radius: 6, x: 0, y: 5) // Тень только на фоне кнопки
-            .scaleEffect(isPressed ? 0.95 : 1.0) // Scale effect when pressed
+            .shadow(color: Color.gray.opacity(0.4), radius: 6, x: 0, y: 5)  // Тень только на фоне кнопки
+            .scaleEffect(isPressed ? 0.95 : 1.0)  // Scale effect when pressed
             .animation(.spring(response: 0.4, dampingFraction: 0.5), value: isPressed)
         }
         .buttonStyle(.borderless)
@@ -66,7 +67,7 @@ struct TB_Button_IS: View {
 // Пример для превью
 struct ContentView_Previews: PreviewProvider {
     static var previews: some View {
-        TB_Button_IS(title: "Settings", icon: "switch.2") {
+        TBButtonView(title: "Settings", icon: "switch.2") {
             LogMan.log.debug("Settings button tapped")
         }.buttonStyle(.bordered)
     }

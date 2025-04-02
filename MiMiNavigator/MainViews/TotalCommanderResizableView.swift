@@ -95,7 +95,7 @@ struct TotalCommanderResizableView: View {
     private func buildLeftPanel(geometry: GeometryProxy) -> some View {
         LogMan.log.debug("buildLeftPanel()")
         return VStack {
-            EditablePathControlWrapper(path: $leftPath)
+            EditPathControlWrapView(path: $leftPath)
                 .onChange(of: leftPath) { _, newPath in
                     Task {
                         await scanner.setLeftDirectory(path: newPath)
@@ -126,7 +126,7 @@ struct TotalCommanderResizableView: View {
     private func buildRightPanel(geometry: GeometryProxy) -> some View {
         LogMan.log.debug("buildRightPanel()")
         return VStack {
-            EditablePathControlWrapper(path: $rightPath)
+            EditPathControlWrapView(path: $rightPath)
                 .onChange(of: rightPath) { _, newPath in
                     Task(priority: .low) {
                         await scanner.setRightDirectory(path: newPath)
@@ -204,7 +204,7 @@ struct TotalCommanderResizableView: View {
         let newWidth = leftPanelWidth + value.translation.width
         if newWidth > 100 && newWidth < geometry.size.width - 100 {
             leftPanelWidth = newWidth
-            let (tooltipText, tooltipPosition) = TooltipModule.calculateTooltip(
+            let (tooltipText, tooltipPosition) = ToolTipMod.calculateTooltip(
                 location: value.location,
                 dividerX: newWidth,
                 totalWidth: geometry.size.width

@@ -1,3 +1,10 @@
+//
+//  LogMan.swift
+//  MiMiNavigator
+//
+//  Created by Iakov Senatov on 25.03.25.
+//  Copyright © 2025 Senatov. All rights reserved.
+//
 import Compression
 import Foundation
 import SwiftyBeaver

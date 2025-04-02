@@ -1,17 +1,17 @@
 import AppKit
-//
-//  EditablePathControlView.swift
-//  MiMiNavigator
-//
-//  Created by Iakov Senatov on 14.11.24.
-//  Copyright © 2024 Senatov. All rights reserved.
-//
+    //
+    //  EditablePathControlView.swift
+    //  MiMiNavigator
+    //
+    //  Created by Iakov Senatov on 14.11.24.
+    //  Copyright © 2024 Senatov. All rights reserved.
+    //
 import SwiftUI
 
 struct EditablePathControlView: View {
     @Binding var path: String
     var onPathSelected: (String) -> Void
-
+    
     var body: some View {
         HStack(spacing: 2) {
             ForEach(pathComponents(), id: \EditablePathItem.path) { item in
@@ -25,7 +25,7 @@ struct EditablePathControlView: View {
                         Image(nsImage: item.icon)
                             .resizable()
                             .frame(width: 16, height: 16)
-
+                        
                         Text(item.title)
                             .foregroundStyle(.primary)
                             .font(.callout)
@@ -37,8 +37,8 @@ struct EditablePathControlView: View {
                             .fill(
                                 LinearGradient(
                                     colors: path == item.path
-                                        ? [Color.gray.opacity(0.1), Color.gray.opacity(0.05)]
-                                        : [Color.blue.opacity(0.1), Color.blue.opacity(0.05)],
+                                    ? [Color.gray.opacity(0.1), Color.gray.opacity(0.05)]
+                                    : [Color.blue.opacity(0.1), Color.blue.opacity(0.05)],
                                     startPoint: .top,
                                     endPoint: .bottom
                                 )
@@ -56,28 +56,44 @@ struct EditablePathControlView: View {
                 .fill(Color.gray.opacity(0.05))
         )
     }
-
-    // Вспомогательная структура для элементов пути
+    
+        // Вспомогательная структура для элементов пути
     private struct EditablePathItem: Hashable {
         let title: String
         let path: String
         let icon: NSImage
     }
-
-    // Генерация элементов пути
+    
+        // Генерация элементов пути
     private func pathComponents() -> [EditablePathItem] {
         let url = URL(fileURLWithPath: path)
         var components = url.pathComponents
         if components.first == "/" { components.removeFirst() }
-
+        
         var currentPath = "/"
         return components.map { component in
             currentPath = (currentPath as NSString).appendingPathComponent(component)
             let icon = NSWorkspace.shared.icon(forFile: currentPath)
             icon.size = NSSize(width: 16, height: 16)
-
+            
             return EditablePathItem(title: component, path: currentPath, icon: icon)
         }
     }
+    
+}
 
+#Preview {
+    EditablePathPreviewWrapper()
+}
+
+private struct EditablePathPreviewWrapper: View {
+    @State private var currentPath = "/Users/username/Documents"
+    
+    var body: some View {
+        EditablePathControlView(path: $currentPath) { selected in
+            print("Path selected:", selected)
+        }
+        .padding()
+        .background(Color.gray.opacity(0.1))
+    }
 }
