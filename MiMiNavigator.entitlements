@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+ "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+
+<plist version="1.0">
+<dict>
+
+    <!-- Включаем sandbox для безопасности -->
+    <key>com.apple.security.app-sandbox</key>
+    <true/>
+
+    <!-- Разрешаем доступ к файлам, выбранным пользователем через NSOpenPanel -->
+    <key>com.apple.security.files.user-selected.read-write</key>
+    <true/>
+
+    <!-- Разрешить работу с временными файлами -->
+    <key>com.apple.security.files.downloads.read-write</key>
+    <false/>
+
+    <!-- Если используешь сетевые соединения -->
+    <key>com.apple.security.network.client</key>
+    <true/>
+
+</dict>
+</plist>
