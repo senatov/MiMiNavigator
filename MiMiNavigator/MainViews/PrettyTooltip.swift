@@ -12,12 +12,12 @@ struct PrettyTooltip: View {
 
     var body: some View {
         Text(text)
-            .font(.system(size: 13))
-            .foregroundColor(.blue)
+            .font(.system(size: 13, weight: .regular))
+            .foregroundColor(Color(red: 0.18, green: 0.01, blue: 0.56))
             .padding(8)
             .background(
                 RoundedRectangle(cornerRadius: 8)
-                    .fill(Color.yellow.opacity(0.9))
+                    .fill(Color.yellow.opacity(0.3))
                     .shadow(radius: 4)
             )
             .overlay(
@@ -31,6 +31,6 @@ struct PrettyTooltip: View {
 struct PrettyTooltip_Previews: PreviewProvider {
     static var previews: some View {
         PrettyTooltip(text: "This is some ToolTip, Hurra!")
-            .frame(height: 40)
+            .padding()
     }
 }
