@@ -178,8 +178,9 @@ struct TotalCommanderResizableView: View {
     private func buildDivider(geometry: GeometryProxy) -> some View {
         LogMan.log.debug("buildDivider()")
         return Rectangle()
-            .fill(Color.blue)
-            .frame(width: 5)
+            .fill(Color(#colorLiteral(red: 0.8039215686, green: 0.8039215686, blue: 0.8039215686, alpha: 1)))
+            .frame(width: 2)
+            .opacity(0.2)
             .gesture(
                 DragGesture()
                     .onChanged { value in
