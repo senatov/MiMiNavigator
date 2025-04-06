@@ -8,9 +8,9 @@
 import SwiftUI
 import SwiftyBeaver
 
-struct TreeRowView: View {
+struct FavTreeRowView: View {
     @Binding var file: CustomFile
-    @Binding var selectedFile: CustomFile?
+    @Binding var selectedFav: CustomFile?
     @Binding var expandedFolders: Set<String>
 
     var isExpanded: Bool {
@@ -23,8 +23,8 @@ struct TreeRowView: View {
                 // Анимация вращения значка раскрытия
                 if file.isDirectory {
                     Image(systemName: "chevron.right.circle.fill")
-                        .foregroundColor(.blue)
-                        .rotationEffect(.degrees(isExpanded ? 90 : 0))  // Вращение
+                        .foregroundColor(Color(#colorLiteral(red: 0.4392156899, green: 0.01176470611, blue: 0.1921568662, alpha: 1)))
+                        .rotationEffect(.degrees(isExpanded ? 90 : 0))
                         .animation(.spring(response: 0.3, dampingFraction: 0.6, blendDuration: 0.3), value: isExpanded)
                         .onTapGesture {
                             toggleExpansion()
@@ -35,27 +35,27 @@ struct TreeRowView: View {
                 }
                 // Клик для выбора файла
                 Text(file.name)
-                    .foregroundColor(selectedFile?.path == file.path ? .blue : .primary)
+                    .foregroundColor(selectedFav?.path == file.path ? .blue : .primary)
                     .onTapGesture {
-                        selectedFile = file
-                        LogMan.log.debug("Selected file: \(file.name)")
+                        selectedFav = file
+                        LogMan.log.debug("Selected tree menu item:' \(file.name)'")
                     }
                     .contextMenu {
                         TreeViewContextMenu(file: file)
                     }
             }
             .padding(.leading, file.isDirectory ? 5 : 15)
-            .font(.system(size: 14, weight: .regular))  // Унифицированный шрифт
+            .font(.system(size: 14, weight: .light))  // Унифицированный шрифт
 
             // Анимация появления поддиректорий
             if isExpanded, let children = file.children, !children.isEmpty {
                 ForEach(children.indices, id: \.self) { index in
-                    TreeRowView(
+                    FavTreeRowView(
                         file: Binding(
                             get: { file.children![index] },
                             set: { file.children![index] = $0 }
                         ),
-                        selectedFile: $selectedFile,
+                        selectedFav: $selectedFav,
                         expandedFolders: $expandedFolders
                     )
                     .padding(.leading, 15)
@@ -100,9 +100,9 @@ struct PreviewTreeRowView: View {
     )
 
     var body: some View {
-        TreeRowView(
+        FavTreeRowView(
             file: $previewFile,
-            selectedFile: $previewSelectedFile,
+            selectedFav: $previewSelectedFile,
             expandedFolders: $previewExpandedFolders
         )
         .padding()

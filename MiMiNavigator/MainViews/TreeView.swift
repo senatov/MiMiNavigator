@@ -19,9 +19,9 @@ struct TreeView: View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 5) {
                 ForEach($files) { $file in
-                    TreeRowView(
+                    FavTreeRowView(
                         file: $file,
-                        selectedFile: $selectedFile,
+                        selectedFav: $selectedFile,
                         expandedFolders: $expandedFolders
                     )
                 }

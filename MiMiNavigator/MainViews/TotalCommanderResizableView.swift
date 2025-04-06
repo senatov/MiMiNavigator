@@ -296,6 +296,15 @@ struct TotalCommanderResizableView: View {
                     LogMan.log.debug("Settings button tapped")
                 }
             )
+
+            DownToolbarButtonView(
+                title: "Console",
+                systemImage: "apple.terminal",
+                action: {
+                    LogMan.log.debug("Console button tapped")
+                    openConsoleInActivePanelDirectory()
+                }
+            )
         }
         .padding()
         .cornerRadius(3)
