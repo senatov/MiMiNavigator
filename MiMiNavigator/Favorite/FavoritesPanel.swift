@@ -16,7 +16,7 @@ import SwiftyBeaver
 struct FavoritesPanel: View {
     // MARK: - Favorite Item Model
 
-    @AppStorage("favoritesState") private var favoritesStateJson: String = "" // JSON storage for favorites state
+    @AppStorage("favoritesState") private var favoritesStateJson: String = ""  // JSON storage for favorites state
 
     // MARK: - Define Finder-style favorite items
     private var favoriteItems: [FavoriteItem] = [
@@ -47,12 +47,13 @@ struct FavoritesPanel: View {
         var state = favoritesState
         state[itemName] = value
         if let data = try? JSONEncoder().encode(state),
-           let jsonString = String(data: data, encoding: .utf8) {
+            let jsonString = String(data: data, encoding: .utf8)
+        {
             favoritesStateJson = jsonString
         }
     }
 
-    // Public method to access favoriteItems
+    // MARK: -  Public method to access favoriteItems
     func getFavoriteItems() -> [FavoriteItem] {
         return favoriteItems
     }
@@ -62,7 +63,8 @@ struct FavoritesPanel: View {
             Text("Favorites").font(.callout)
             List(favoriteItems) { item in
                 HStack {
-                    Image(systemName: item.icon.isEmpty ? "questionmark" : item.icon) // Default icon if icon name is empty
+                    // Default icon if icon name is empty
+                    Image(systemName: item.icon.isEmpty ? "questionmark" : item.icon)
                         .foregroundColor(.blue)
                     Text(item.name)
                 }
@@ -86,4 +88,3 @@ struct FavoritesPanel_Previews: PreviewProvider {
         FavoritesPanel()
     }
 }
-

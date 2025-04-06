@@ -18,34 +18,32 @@ class FavoritesModel {
 
     // MARK: -  Sets up default favorite directories, including iCloud, OneDrive, Google Drive, and network drives if available
     private func setupFavoriteDirectories() {
-        let fileManager = FileManager.default
-        // Adding standard directories
         favoriteDirectories.append(contentsOf: [
-            fileManager.documentsDirectory,
-            fileManager.cachesDirectory,
-            fileManager.temporaryDirectory,
-            fileManager.applicationSupportDirectory,
-            fileManager.libraryDirectory,
-            fileManager.downloadsDirectory,
-            fileManager.desktopDirectory,
-            fileManager.homeDirectory,
-            fileManager.musicDirectory,
-            fileManager.picturesDirectory,
-            fileManager.moviesDirectory,
+            USRDrivePanel.documentsDirectory,
+            USRDrivePanel.cachesDirectory,
+            USRDrivePanel.applicationSupportDirectory,
+            USRDrivePanel.libraryDirectory,
+            USRDrivePanel.downloadsDirectory,
+            USRDrivePanel.desktopDirectory,
+            USRDrivePanel.homeDirectory,
+            USRDrivePanel.musicDirectory,
+            USRDrivePanel.picturesDirectory,
+            USRDrivePanel.moviesDirectory,
+            USRDrivePanel.systemTemporaryDirectory,
         ])
 
         // Optionally add iCloud, OneDrive, Google Drive, and network drives if available
-        if let iCloud = fileManager.iCloudDirectory {
+        if let iCloud = USRDrivePanel.iCloudDirectory {
             favoriteDirectories.append(iCloud)
         }
 
-        if let oneDrive = fileManager.oneDriveDirectory {
+        if let oneDrive = USRDrivePanel.oneDriveDirectory {
             favoriteDirectories.append(oneDrive)
         }
 
-        if let googleDrive = fileManager.googleDriveDirectory {
+        if let googleDrive = USRDrivePanel.googleDriveDirectory {
             favoriteDirectories.append(googleDrive)
         }
-        favoriteDirectories.append(contentsOf: fileManager.networkDrives)
+        favoriteDirectories.append(contentsOf: USRDrivePanel.networkDrives)
     }
 }

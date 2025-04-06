@@ -28,7 +28,7 @@ This application highlights the strengths of **SwiftUI** in creating intuitive, 
 
 
 
-# ✨ Features
+# ✨ Features (NOT READY YET, under development 🧹)
 
 ## Current Stage 🦾 ![Current Stage](docs/Preview.png "current preview")
 
@@ -134,7 +134,8 @@ This application highlights the strengths of **SwiftUI** in creating intuitive, 
 | 2024-11-20 | `d1e2f3g`  | Updated file permission handling.                |
 | 2024-11-18 | `h4i5j6k`  | Optimized file list refresh speed.               |
 | 2024-11-15 | `l7m8n9o`  | Fixed inconsistent icon rendering.               |
-| 2024-11-12 | `p0q1r2s`  | Improved split-view resizing behavior.           |   
+| 2024-11-12 | `p0q1r2s`  | Improved split-view resizing behavior.           |  
+
 
 
 ## ❓FAQ❓ 

@@ -4,11 +4,36 @@
 <dict>
 	<key>CFBundleDocumentTypes</key>
 	<array>
-		<dict/>
+		<dict>
+			<key>CFBundleTypeName</key>
+			<string>Text Document</string>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>public.plain-text</string>
+			</array>
+			<key>LSHandlerRank</key>
+			<string>Default</string>
+		</dict>
 	</array>
+
 	<key>NSServices</key>
 	<array>
-		<dict/>
+		<!-- Пример службы. Удали или измени по необходимости -->
+		<dict>
+			<key>NSMenuItem</key>
+			<dict>
+				<key>default</key>
+				<string>My Custom Service</string>
+			</dict>
+			<key>NSMessage</key>
+			<string>handleService:</string>
+			<key>NSSendTypes</key>
+			<array>
+				<string>NSStringPboardType</string>
+			</array>
+		</dict>
 	</array>
 </dict>
 </plist>

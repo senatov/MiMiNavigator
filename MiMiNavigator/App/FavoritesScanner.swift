@@ -15,7 +15,7 @@ class FavoritesScanner {
     // MARK: - Public Method
     public func scanFavorites() -> [CustomFile] {
         LogMan.log.debug("scanFavorites() started")
-        let favoritePaths = FileManager.default.allDirectories
+        let favoritePaths = USRDrivePanel.allDirectories
         return favoritePaths.compactMap { buildFileStructure(at: $0, maxDirectories: 0xFF) }
     }
 

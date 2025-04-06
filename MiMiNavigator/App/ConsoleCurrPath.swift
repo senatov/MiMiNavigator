@@ -22,33 +22,35 @@ struct ConsoleCurrPath: View {
 }
 
 // MARK: -
-func openConsoleInDirectory(_ directory: String) {
-    LogMan.log.info("openConsoleInDirectory()")  // Log for method tracking
-    // Step 1: Launch Terminal
-    let launchTask = Process()
-    launchTask.launchPath = "/usr/bin/open"
-    launchTask.arguments = ["/System/Applications/Utilities/Terminal.app"]
-    launchTask.launch()
+@MainActor func openConsoleInActivePanelDirectory() {
+    LogMan.log.info("openConsoleInActivePanelDirectory()")
 
-    // Step 2: Set position and size of Terminal window
-    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {  // Small delay to ensure Terminal is open
-        // Define main window dimensions
-        let mainAppWidth = 800  // Set your main window's width
-        let mainAppHeight = 600  // Set your main window's height
-        let terminalHeight = 100  // Approximate height for 5 lines
+    let directory =
+        NSDocumentController.shared.recentDocumentURLs.first?.deletingLastPathComponent().path
+                                        ?? FileManager.default.homeDirectoryForCurrentUser.path
 
-        let script = """
-            tell application "Terminal"
-                do script "cd \(directory)"
-                activate
-                delay 0.5  -- Wait for terminal to become active
-                set bounds of front window to {0, \(mainAppHeight), \(mainAppWidth), \(mainAppHeight + terminalHeight)}
-            end tell
-            """
+    let script = """
+        tell application "Terminal"
+            do script "cd \(directory)"
+            activate
+        end tell
+        """
 
-        let task = Process()
-        task.launchPath = "/usr/bin/osascript"
-        task.arguments = ["-e", script]
-        task.launch()
-    }
+    let task = Process()
+    task.launchPath = "/usr/bin/osascript"
+    task.arguments = ["-e", script]
+    task.launch()
+}
+
+// Example function where the button is created
+@MainActor
+func buildDownToolbar() -> some View {
+    DownToolbarButtonView(
+        title: "Console",
+        systemImage: "apple.terminal",
+        action: {
+            LogMan.log.debug("Console button tapped")
+            openConsoleInActivePanelDirectory()
+        }
+    )
 }
