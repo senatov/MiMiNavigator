@@ -119,7 +119,6 @@ actor DualDirectoryScanner: ObservableObject {
 
     // MARK: - Scans a directory for files and directories
     private func scanDirectory(at url: URL?) async throws -> [CustomFile] {
-        LogMan.log.info("scanDirectory() dir: \(String(describing: url?.path))")
         guard let url = url else {
             LogMan.log.error("Invalid directory URL: URL is nil.")
             return []
@@ -150,7 +149,6 @@ actor DualDirectoryScanner: ObservableObject {
             LogMan.log.error("Failed to scan directory at: \(url.path): \(error.localizedDescription)")
             throw error
         }
-        LogMan.log.debug("Scanned files: \(customFiles)")
         return customFiles
     }
 

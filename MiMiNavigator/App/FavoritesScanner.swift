@@ -8,91 +8,90 @@
 
 import Foundation
 
-/// This class scans commonly used "Favorites" folders on macOS and builds a CustomFile structure
+/// Scans commonly used "Favorites" folders on macOS and builds a CustomFile structure
 class FavoritesScanner {
-    private var visitedPaths = Set<URL>()
+    private var favPaths = Set<URL>()
 
     // MARK: - Public Method
     public func scanFavorites() -> [CustomFile] {
-        LogMan.log.debug("scanFavorites() started")
-        let favoritePaths = USRDrivePanel.allDirectories
-        return favoritePaths.compactMap { buildFileStructure(at: $0, maxDirectories: 0xFF) }
+        LogMan.log.debug("scanFavorites()")
+        favPaths.removeAll()  // Очистка перед новым сканированием
+        return FavTreePanel.allDirectories.compactMap {
+            buildFileStructure(at: $0, maxDirectories: 0xFF)
+        }
     }
 
-    // MARK: - Iterative File Structure Scanner (BFS)
+    // MARK: - BFS Scanner
     private func buildFileStructure(at rootURL: URL, maxDirectories: Int = 0xFF, maxDepth: Int = 3) -> CustomFile? {
-        //LogMan.log.debug("Scanning: \(rootURL.path)")
-        var visitedPaths = Set<URL>()
-        visitedPaths.insert(rootURL)
-        // Очередь с уровнями (URL, depth)
+        LogMan.log.debug("buildFileStructure() for \(rootURL.path)")
+
+        guard favPaths.insert(rootURL).inserted else {
+            LogMan.log.debug("Already scanned \(rootURL.path)")
+            return nil
+        }
+
         var queue: [(url: URL, depth: Int)] = [(rootURL, 0)]
         var fileMap = [URL: CustomFile]()
         var rootFile: CustomFile?
 
         while !queue.isEmpty {
             let (currentURL, currentDepth) = queue.removeFirst()
-            // Прекращаем углубление, если достигнут maxDepth
-            if currentDepth >= maxDepth {
-                continue
-            }
-            // Получаем свойства файла/папки
+
             guard let resourceValues = try? currentURL.resourceValues(forKeys: [.isSymbolicLinkKey, .isDirectoryKey]) else {
-                LogMan.log.error("Failed to get resource values for \(currentURL.path)")
+                LogMan.log.error("Failed resourceValues: \(currentURL.path)")
                 continue
             }
-            // Пропускаем символические ссылки
-            if resourceValues.isSymbolicLink == true {
-                //LogMan.log.debug("Skipping symbolic link: \(currentURL.path)")
-                continue
-            }
+
+            if resourceValues.isSymbolicLink == true { continue }
+
             let isDirectory = resourceValues.isDirectory ?? false
-            let fileName = currentURL.lastPathComponent
-            let fileNode = CustomFile(name: fileName, path: currentURL.path, isDirectory: isDirectory, children: [])
+            let fileNode = CustomFile(
+                name: currentURL.lastPathComponent,
+                path: currentURL.path,
+                isDirectory: isDirectory,
+                children: isDirectory ? [] : nil
+            )
+
             fileMap[currentURL] = fileNode
             if rootFile == nil {
                 rootFile = fileNode
             }
 
-            // Обрабатываем директории, если глубина позволяет
-            if isDirectory {
-                do {
-                    let contents = try FileManager.default.contentsOfDirectory(
-                        at: currentURL,
-                        includingPropertiesForKeys: [.isDirectoryKey],
-                        options: [.skipsHiddenFiles]
+            guard isDirectory, currentDepth < maxDepth else { continue }
+
+            do {
+                let contents = try FileManager.default.contentsOfDirectory(
+                    at: currentURL,
+                    includingPropertiesForKeys: [.isDirectoryKey, .isSymbolicLinkKey],
+                    options: [.skipsHiddenFiles]
+                )
+
+                for item in contents.prefix(maxDirectories) {
+                    if favPaths.contains(item) { continue }
+
+                    favPaths.insert(item)
+
+                    guard let itemResourceValues = try? item.resourceValues(forKeys: [.isDirectoryKey]),
+                        let isItemDirectory = itemResourceValues.isDirectory
+                    else { continue }
+
+                    queue.append((item, currentDepth + 1))
+
+                    let tempNode = CustomFile(
+                        name: item.lastPathComponent,
+                        path: item.path,
+                        isDirectory: isItemDirectory,
+                        children: isItemDirectory ? [] : nil
                     )
 
-                    var children: [CustomFile] = []
-
-                    for item in contents.prefix(maxDirectories) {
-                        if visitedPaths.contains(item) { continue }
-                        visitedPaths.insert(item)
-
-                        // Добавляем в очередь только если не превышен maxDepth
-                        if currentDepth + 1 < maxDepth {
-                            queue.append((item, currentDepth + 1))
-                        }
-
-                        let tempNode = CustomFile(name: item.lastPathComponent, path: item.path, isDirectory: false, children: nil)
-                        children.append(tempNode)
-                        fileMap[item] = tempNode
-                    }
-
-                    // Корректно обновляем узел в fileMap
-                    if let updatedNode = fileMap[currentURL] {
-                        fileMap[currentURL] = CustomFile(
-                            name: updatedNode.name,
-                            path: updatedNode.path,
-                            isDirectory: updatedNode.isDirectory,
-                            children: children
-                        )
-                    }
-                } catch {
-                    LogMan.log.error("Failed to read contents of directory: \(currentURL.path) – \(error.localizedDescription)")
+                    fileMap[currentURL]?.children?.append(tempNode)
+                    fileMap[item] = tempNode
                 }
+
+            } catch {
+                LogMan.log.error("Failed reading directory: \(currentURL.path), error: \(error.localizedDescription)")
             }
         }
-
         return rootFile
     }
 }
