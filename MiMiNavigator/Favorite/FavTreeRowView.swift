@@ -30,6 +30,7 @@ struct FavTreeRowView: View {
                             toggleExpansion()
                         }
                 } else {
+
                     Image(systemName: "doc")
                         .foregroundColor(.gray)
                 }
@@ -46,7 +47,6 @@ struct FavTreeRowView: View {
             }
             .padding(.leading, file.isDirectory ? 5 : 15)
             .font(.system(size: 14, weight: .light))  // Унифицированный шрифт
-
             // Анимация появления поддиректорий
             if isExpanded, let children = file.children, !children.isEmpty {
                 ForEach(children.indices, id: \.self) { index in
@@ -67,6 +67,7 @@ struct FavTreeRowView: View {
     }
 
     private func toggleExpansion() {
+        LogMan.log.debug("toggleExpansion(file)")
         if isExpanded {
             expandedFolders.remove(file.path)
         } else {
@@ -106,7 +107,7 @@ struct PreviewTreeRowView: View {
             expandedFolders: $previewExpandedFolders
         )
         .padding()
-        frame(width: 300, height: 400) // Увеличили высоту до 400
+        frame(width: 300, height: 400)  // Увеличили высоту до 400
     }
 }
 

@@ -8,7 +8,7 @@
 
 import Foundation
 
-struct USRDrivePanel {
+struct FavTreePanel {
     // MARK: - Returns the URL of the user's Documents directory
     static var documentsDirectory: URL {
         return FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
@@ -59,6 +59,11 @@ struct USRDrivePanel {
         return FileManager.default.urls(for: .picturesDirectory, in: .userDomainMask).first!
     }
 
+    // MARK: -
+    static var trashDirectory: URL {
+        return FileManager.default.urls(for: .trashDirectory, in: .userDomainMask).first!
+    }
+
     // MARK: - Returns the URL of the user's Movies directory
     static var moviesDirectory: URL {
         return FileManager.default.urls(for: .moviesDirectory, in: .userDomainMask).first!
@@ -87,16 +92,21 @@ struct USRDrivePanel {
 
     // MARK: - Returns the URL of the OneDrive directory if available, logs error if unavailable
     static var oneDriveDirectory: URL? {
-        let possiblePaths = [
-            FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/CloudStorage/OneDrive"),
-            FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("OneDrive"),
-        ]
-        for path in possiblePaths {
-            if FileManager.default.fileExists(atPath: path.path) {
-                return path
+        let cloudStorageURL = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/CloudStorage")
+        do {
+            let contents = try FileManager.default.contentsOfDirectory(
+                at: cloudStorageURL,
+                includingPropertiesForKeys: nil,
+                options: .skipsHiddenFiles
+            )
+            if let oneDrive = contents.first(where: { $0.lastPathComponent.contains("OneDrive") }) {
+                return oneDrive
+            } else {
+                LogMan.log.error("OneDrive directory not found in ~/Library/CloudStorage")
             }
+        } catch {
+            LogMan.log.error("Failed to access CloudStorage for OneDrive: \(error.localizedDescription)")
         }
-        LogMan.log.error("OneDrive directory not found. OneDrive may not be installed or is located in an unexpected directory.")
         return nil
     }
 
@@ -129,19 +139,20 @@ struct USRDrivePanel {
     // MARK: - Returns an array containing the URLs of all available user directories, including iCloud, OneDrive, Google Drive, and network drives
     static var allDirectories: [URL] {
         var directories = [
-            documentsDirectory,
-            cachesDirectory,
-            systemTemporaryDirectory,
             applicationSupportDirectory,
-            libraryDirectory,
-            downloadsDirectory,
+            cachesDirectory,
             desktopDirectory,
+            documentsDirectory,
+            downloadsDirectory,
             homeDirectory,
+            libraryDirectory,
+            moviesDirectory,
             musicDirectory,
             picturesDirectory,
-            moviesDirectory,
+            systemTemporaryDirectory,
+            trashDirectory,
         ]
-        // Optionally add iCloud, OneDrive, Google Drive, and network drives if available
+
         if let iCloud = iCloudDirectory {
             directories.append(iCloud)
         }
@@ -153,20 +164,5 @@ struct USRDrivePanel {
         }
         directories.append(contentsOf: networkDrives)
         return directories
-    }
-}
-
-func displayName(for directory: URL) -> String {
-    let name = directory.lastPathComponent
-    if name.contains("My Drive") {
-        return "Google"
-    } else if name.contains("iCloud") {
-        return "iCloud"
-    } else if name.contains("OneDrive") {
-        return "OneDrive"
-    } else if name.contains("ProtonDrive") {
-        return "Proton"
-    } else {
-        return name
     }
 }
