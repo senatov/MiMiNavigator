@@ -81,7 +81,7 @@ struct TotalCommanderResizableView: View {
         LogMan.log.debug("buildMainPanels()")
         return HStack(spacing: 0) {
             if isShowMenu {
-                builFavoriteTreeMenu()
+                builFavTreeMenu()
             }
             buildLeftPanel(geometry: geometry)
             buildDivider(geometry: geometry)
@@ -154,7 +154,7 @@ struct TotalCommanderResizableView: View {
     }
 
     // MARK: -
-    private func builFavoriteTreeMenu() -> some View {
+    private func builFavTreeMenu() -> some View {
         LogMan.log.debug("builFavoriteTreeMenu()")
         return TreeView(files: $fileStructure, selectedFile: $selectedFile)
             .padding()
