@@ -1,5 +1,5 @@
 //
-//  FileSinglton.swift
+//  FileSingleton.swift
 //  MiMiNavigator
 //
 //  Created by Iakov Senatov on 07.11.24.
@@ -14,7 +14,7 @@ actor FileSingleton: ObservableObject, @unchecked Sendable {
     private var _rightFiles: [CustomFile] = []  // Private storage for right files
 
     private init() {
-        LogMan.log.debug("init() - empty")
+        log.debug("init() - empty")
     }
 
     // MARK: -
@@ -30,13 +30,13 @@ actor FileSingleton: ObservableObject, @unchecked Sendable {
     }
 
     // MARK: - Non-isolated accessor methods to allow safe access for SwiftUI
-    nonisolated func getLeftFiles() async -> [CustomFile] {
-        await _leftFiles
+    func getLeftFiles() -> [CustomFile] {
+        _leftFiles
     }
 
     // MARK: -
-    nonisolated func getRightFiles() async -> [CustomFile] {
-        await _rightFiles
+    func getRightFiles() -> [CustomFile] {
+        _rightFiles
     }
 
     // Function to notify SwiftUI observers of changes

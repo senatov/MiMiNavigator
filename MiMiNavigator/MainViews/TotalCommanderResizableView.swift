@@ -1,9 +1,3 @@
-//
-//  TotalCommanderResizableView.swift
-//  MiMiNavigator
-//
-//  Created by Iakov Senatov on 16.10.24.
-
 import SwiftUI
 
 struct TotalCommanderResizableView: View {
@@ -14,7 +8,7 @@ struct TotalCommanderResizableView: View {
     @State private var showTooltip: Bool = true
     @State private var tooltipPosition: CGPoint = .zero
     @State private var tooltipText: String = ""
-    @ObservedObject private var fileLst = FileSingleton.shared
+    @ObservedObject private var fileLst: FileSingleton = FileSingleton.shared
     @StateObject private var scanner = DualDirectoryScanner(
         leftDirectory: URL(fileURLWithPath: "/Users/senat/Downloads/Hahly"),
         rightDirectory: URL(fileURLWithPath: "/Users/senat")
@@ -48,40 +42,20 @@ struct TotalCommanderResizableView: View {
         }
     }
 
-    // MARK: -
+    // MARK: - Fetch left and right directory paths
     @MainActor
     private func fetchPaths() async {
+        log.debug("Fetching directory paths")
         leftPath = await scanner.leftDirectory.path
         rightPath = await scanner.rightDirectory.path
     }
 
-    // MARK: - Fetch the files asynchronously from the actor
-    @MainActor
-    private func fetchLeftFiles() async {
-        displayedLeftFiles = await scanner.fileLst.getLeftFiles()
-    }
-
-    // MARK: - Fetch the files asynchronously from the actor
-    @MainActor
-    private func fetchRightFiles() async {
-        displayedRightFiles = await scanner.fileLst.getRightFiles()
-    }
-
-    // MARK: -
-    private func toggleMenu() {
-        LogMan.log.debug("toggleMenu()")
-        withAnimation {
-            isShowMenu.toggle()
-            UserPreferences.shared.saveMenuState(isOpen: isShowMenu)
-        }
-    }
-
-    // MARK: -
+    // MARK: - build main panel
     private func buildMainPanels(geometry: GeometryProxy) -> some View {
-        LogMan.log.debug("buildMainPanels()")
+        log.debug("buildMainPanels()")
         return HStack(spacing: 0) {
             if isShowMenu {
-                builFavTreeMenu()
+                buildFavTreeMenu()
             }
             buildLeftPanel(geometry: geometry)
             buildDivider(geometry: geometry)
@@ -91,14 +65,26 @@ struct TotalCommanderResizableView: View {
         .background(Color.white)
     }
 
-    // MARK: -
+    // MARK: - Build Favorite Tree Menu Panel
+    private func buildFavTreeMenu() -> some View {
+        log.debug("buildFavoriteTreeMenu()")
+        return TreeView(files: $fileStructure, selectedFile: $selectedFile)
+            .padding()
+            .frame(maxWidth: 210)
+            .font(.system(size: 14, weight: .regular))
+            .onAppear {
+                fetchFavoriteTree()
+            }
+    }
+
+    // MARK: - Build Left Panel
     private func buildLeftPanel(geometry: GeometryProxy) -> some View {
-        LogMan.log.debug("buildLeftPanel()")
+        log.debug("buildLeftPanel()")
         return VStack {
             EditPathControlWrapView(path: $leftPath)
-                .onChange(of: leftPath) { _, newPath in
+                .onChange(of: leftPath) {
                     Task {
-                        await scanner.setLeftDirectory(path: newPath)
+                        await scanner.setLeftDirectory(url: URL(fileURLWithPath: leftPath))
                         await fetchLeftFiles()
                     }
                 }
@@ -120,65 +106,14 @@ struct TotalCommanderResizableView: View {
                 }
             }
         }
-        .frame(width: leftPanelWidth > 0 ? leftPanelWidth : geometry.size.width / 2)  // Определяем ширину панели
-    }
-    // MARK: -
-    private func buildRightPanel(geometry: GeometryProxy) -> some View {
-        LogMan.log.debug("buildRightPanel()")
-        return VStack {
-            EditPathControlWrapView(path: $rightPath)
-                .onChange(of: rightPath) { _, newPath in
-                    Task(priority: .low) {
-                        await scanner.setRightDirectory(path: newPath)
-                        await fetchRightFiles()
-                    }
-                }
-                .cornerRadius(3)
-                .padding(.horizontal, 5)
-            List(displayedRightFiles, id: \.id) { file in
-                Text(file.name)
-                    .contextMenu {
-                        FileContextMenu()
-                    }
-            }
-            .listStyle(PlainListStyle())
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 8)
-            .border(Color.secondary)
-            .onAppear {
-                Task(priority: .low) {
-                    await fetchRightFiles()
-                }
-            }
-        }
+        .frame(width: leftPanelWidth > 0 ? leftPanelWidth : geometry.size.width / 2)
     }
 
-    // MARK: -
-    private func builFavTreeMenu() -> some View {
-        LogMan.log.debug("builFavoriteTreeMenu()")
-        return TreeView(files: $fileStructure, selectedFile: $selectedFile)
-            .padding()
-            .frame(maxWidth: 210)
-            .font(.system(size: 14, weight: .regular))  // Унифицированный шрифт
-            .onAppear {
-                Task(priority: .low) {
-                    await fetchFavoriteTree()
-                }
-            }
-    }
-
-    @MainActor
-    private func fetchFavoriteTree() async {
-        LogMan.log.debug("Fetching favorite tree structure")
-        let favScanner = FavoritesScanner()
-        fileStructure = favScanner.scanFavorites()
-    }
-
-    // MARK: -
+    // MARK: - Build Divider Between Panels
     private func buildDivider(geometry: GeometryProxy) -> some View {
-        LogMan.log.debug("buildDivider()")
+        log.debug("buildDivider()")
         return Rectangle()
-            .fill(Color(#colorLiteral(red: 0.8039215686, green: 0.8039215686, blue: 0.8039215686, alpha: 1)))
+            .fill(Color(.systemGray))
             .frame(width: 2)
             .opacity(0.2)
             .gesture(
@@ -199,11 +134,78 @@ struct TotalCommanderResizableView: View {
             }
     }
 
+    // MARK: - Handle Double Click on Divider
+    private func handleDoubleClickDivider(geometry: GeometryProxy) {
+        leftPanelWidth = geometry.size.width / 2
+        UserDefaults.standard.set(leftPanelWidth, forKey: "leftPanelWidth")
+    }
+
+    // MARK: -
+    private func buildRightPanel(geometry: GeometryProxy) -> some View {
+        log.debug("buildRightPanel()")
+        return VStack {
+            EditPathControlWrapView(path: $rightPath)
+                .onChange(of: rightPath) {
+                    Task(priority: .low) {
+                        await scanner.setRightDirectory(url: URL(fileURLWithPath: rightPath))
+                        await fetchRightFiles()
+                    }
+                }
+                .cornerRadius(3)
+                .padding(.horizontal, 5)
+            List(displayedRightFiles, id: \.id) { file in
+                Text(file.name)
+                    .contextMenu {
+                        FileContextMenu()
+                    }
+            }
+            .listStyle(PlainListStyle())
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 8)
+            .border(Color.secondary)
+            .task(priority: .low) {
+                await fetchRightFiles()
+            }
+        }
+    }
+
+    // MARK: - Build Bottom Toolbar
+    private func buildDownToolbar() -> some View {
+        log.debug("buildDownToolbar()")
+        return HStack(spacing: 18) {
+            DownToolbarButtonView(title: "F3 View", systemImage: "eye.circle") {
+                log.debug("View action")
+            }
+            DownToolbarButtonView(title: "F4 Edit", systemImage: "pencil") {
+                log.debug("Edit action")
+            }
+            DownToolbarButtonView(title: "F5 Copy", systemImage: "doc.on.doc") {
+                log.debug("Copy action")
+            }
+            DownToolbarButtonView(title: "F6 Move", systemImage: "arrow.right.doc.on.clipboard") {
+                log.debug("Move action")
+            }
+            DownToolbarButtonView(title: "F7 MkDir", systemImage: "folder.badge.plus") {
+                log.debug("MkDir action")
+            }
+            DownToolbarButtonView(title: "F8 Delete", systemImage: "trash") {
+                log.debug("Delete action")
+            }
+            DownToolbarButtonView(title: "Exit", systemImage: "xmark.circle") {
+                exitApp()
+            }
+        }
+        .padding()
+        .background(Color(.systemGray).opacity(0.05))
+    }
+
     // MARK: -
     private func handleDividerDrag(value: DragGesture.Value, geometry: GeometryProxy) {
-        LogMan.log.debug("handleDividerDrag")
+        log.debug("handleDividerDrag")
         let newWidth = leftPanelWidth + value.translation.width
-        if newWidth > 100 && newWidth < geometry.size.width - 100 {
+        let minPanelWidth: CGFloat = 100
+        let maxPanelWidth = geometry.size.width - 100
+        if newWidth > minPanelWidth && newWidth < maxPanelWidth {
             leftPanelWidth = newWidth
             let (tooltipText, tooltipPosition) = ToolTipMod.calculateTooltip(
                 location: value.location,
@@ -217,108 +219,51 @@ struct TotalCommanderResizableView: View {
     }
 
     // MARK: -
-    private func handleDoubleClickDivider(geometry: GeometryProxy) {
-        leftPanelWidth = geometry.size.width / 2
-        UserDefaults.standard.set(leftPanelWidth, forKey: "leftPanelWidth")
-    }
-
-    // MARK: -
     private func initializePanelWidth(geometry: GeometryProxy) {
-        leftPanelWidth =
-            UserDefaults.standard.object(forKey: "leftPanelWidth") as? CGFloat
-            ?? geometry.size.width / 2
+        if let savedWidth = UserDefaults.standard.object(forKey: "leftPanelWidth") as? CGFloat {
+            leftPanelWidth = savedWidth
+        } else {
+            leftPanelWidth = geometry.size.width / 2
+        }
     }
 
     // MARK: -
-    private func buildDownToolbar() -> some View {
-        LogMan.log.debug("buildToolbar()")
-        return HStack(spacing: 18) {  // Увеличили расстояние между кнопками
-            DownToolbarButtonView(
-                title: "F3 View",
-                systemImage: "eye.circle",
-                action: {
-                    LogMan.log.debug("View selected Docu")
-                }
-            )
-
-            DownToolbarButtonView(
-                title: "F4 Edit",
-                systemImage: "pencil",
-                action: {
-                    LogMan.log.debug("Edit button tapped")
-                }
-            )
-
-            DownToolbarButtonView(
-                title: "F5 Copy",
-                systemImage: "document.on.document",
-                action: {
-                    LogMan.log.debug("Copy button tapped")
-                }
-            )
-
-            DownToolbarButtonView(
-                title: "F6 Move",
-                systemImage: "square.and.arrow.down.on.square",
-                action: {
-                    LogMan.log.debug("Move button tapped")
-                }
-            )
-
-            DownToolbarButtonView(
-                title: "F7 NewFolder",
-                systemImage: "folder.badge.plus",
-                action: {
-                    LogMan.log.debug("NewFolder button tapped")
-                }
-            )
-
-            DownToolbarButtonView(
-                title: "F8 Delete",
-                systemImage: "minus.rectangle",
-                action: {
-                    LogMan.log.debug("Delete button tapped")
-                }
-            )
-
-            DownToolbarButtonView(
-                title: "⌥-F4 Exit",
-                systemImage: "xmark.circle",
-                action: {
-                    exitApp()
-                }
-            )
-
-            DownToolbarButtonView(
-                title: "Settings",
-                systemImage: "gearshape",
-                action: {
-                    LogMan.log.debug("Settings button tapped")
-                }
-            )
-
-            DownToolbarButtonView(
-                title: "Console",
-                systemImage: "apple.terminal",
-                action: {
-                    LogMan.log.debug("Console button tapped")
-                    openConsoleInActivePanelDirectory()
-                }
-            )
-        }
-        .padding()
-        .cornerRadius(3)
+    private func fetchFavoriteTree() {
+        log.debug("Fetching favorite tree structure")
+        let favScanner = FavoritesScanner()
+        fileStructure = favScanner.scanFavorites()
     }
 
     // MARK: -
     private func exitApp() {
-        LogMan.log.debug("exitApp()")
+        log.debug("exitApp()")  // Завершение приложения
         NSApplication.shared.terminate(nil)
     }
 
-    // MARK: -
+    // MARK: - Загрузка файлов для правой панели
+    private func fetchRightFiles() async {
+        log.debug("Loading files for the right panel")
+        displayedRightFiles = await fileLst.getRightFiles()
+    }
+
+    // MARK: - Load files for the left panel
+    private func fetchLeftFiles() async {
+        log.debug("Loading files for the left panel")
+        displayedLeftFiles = await fileLst.getLeftFiles()
+    }
+
+    // MARK: - Toggle menu visibility
+    private func toggleMenu() {
+        log.debug("toggleMenu()")
+        withAnimation {
+            isShowMenu.toggle()
+            UserPreferences.shared.saveMenuState(isOpen: isShowMenu)
+        }
+    }
+
+    // MARK: - Add keyboard shortcut to exit app
     private func addKeyPressMonitor() {
-        LogMan.log.debug("addKeyPressMonitor()")
+        log.debug("addKeyPressMonitor()")
         NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
             if event.modifierFlags.contains(.option) && event.keyCode == 0x76 {
                 exitApp()

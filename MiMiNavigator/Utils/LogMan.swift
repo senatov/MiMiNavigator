@@ -10,7 +10,7 @@ import Foundation
 import SwiftyBeaver
 
 final class LogMan {
-    static let log = SwiftyBeaver.self
+    public static let log = SwiftyBeaver.self
 
     // MARK: -
     static func initializeLogging() {

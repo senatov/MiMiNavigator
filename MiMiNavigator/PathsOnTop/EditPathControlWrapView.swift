@@ -1,10 +1,10 @@
-    //
-    //  EditPathControlWrapView.swift
-    //  MiMiNavigator
-    //
-    //  Created by Iakov Senatov on 25.03.25.
-    //  Copyright © 2025 Senatov. All rights reserved.
-    //
+//
+//  EditPathControlWrapView.swift
+//  MiMiNavigator
+//
+//  Created by Iakov Senatov on 25.03.25.
+//  Copyright © 2025 Senatov. All rights reserved.
+//
 
 import SwiftUI
 
@@ -12,7 +12,7 @@ struct EditPathControlWrapView: View {
     @Binding var path: String
     @State private var isEditing = false
     @FocusState private var isTextFieldFocused: Bool
-    
+
     var body: some View {
         HStack {
             if isEditing {
@@ -34,7 +34,7 @@ struct EditPathControlWrapView: View {
         )
         .padding(.vertical, 5)
     }
-    
+
     private var editingView: some View {
         HStack {
             TextField("Enter path", text: $path)
@@ -56,7 +56,7 @@ struct EditPathControlWrapView: View {
                         isEditing = false
                     }
                 }
-            
+
             Button {
                 withAnimation(.easeInOut(duration: 0.3)) {
                     isEditing = false
@@ -65,7 +65,7 @@ struct EditPathControlWrapView: View {
                 Image(systemName: "checkmark.circle.fill")
                     .foregroundColor(.accentColor)
             }
-            
+
             Button {
                 withAnimation(.easeInOut(duration: 0.3)) {
                     isEditing = false
@@ -77,15 +77,15 @@ struct EditPathControlWrapView: View {
         }
         .transition(.opacity)
     }
-    
+
     private func handlePathChanged(_ newPath: String) {
-        self.path = newPath
+        path = newPath
     }
-    
+
     private var pathControlView: some View {
         EditablePathControlView(path: $path, onPathSelected: handlePathChanged)
     }
-    
+
     private var displayView: some View {
         pathControlView
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -107,7 +107,7 @@ struct EditPathControlWrapView: View {
 
 private struct EditPathPreviewWrapper: View {
     @State private var samplePath = "/Users/username/Downloads"
-    
+
     var body: some View {
         EditPathControlWrapView(path: $samplePath)
             .padding()

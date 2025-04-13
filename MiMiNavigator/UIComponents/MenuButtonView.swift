@@ -15,7 +15,7 @@ struct MenuButtonView: View {
 
     var body: some View {
         Button(action: {
-            LogMan.log.debug("\(label) button pressed")
+            log.debug("\(label) button pressed")
         }) {
             Label(label, systemImage: systemImage)
                 .labelStyle(.iconOnly)  // Компактный стиль

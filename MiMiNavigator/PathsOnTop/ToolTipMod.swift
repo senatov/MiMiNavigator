@@ -16,7 +16,7 @@ struct ToolTipMod {
 
     // MARK: - Tooltip text showing the ratio between left and right panels
     static func calculateTooltip(location: CGPoint, dividerX: CGFloat, totalWidth: CGFloat) -> (String, CGPoint) {
-        LogMan.log.debug("calculateTooltip()")
+        log.debug("calculateTooltip()")
         let leftRatio = (dividerX / totalWidth * 100).rounded()
         let rightRatio = (100 - leftRatio).rounded()
         let tooltipText = "Left: \(leftRatio)% | Right: \(rightRatio)%"
@@ -24,7 +24,7 @@ struct ToolTipMod {
         let adjustedX = location.x + dividerX + 100  // Slightly to the right of the divider
         let adjustedY = location.y - 5  // Slightly above the cursor
         let tooltipPosition = CGPoint(x: adjustedX, y: adjustedY)
-        LogMan.log.info(tooltipText)
+        log.info(tooltipText)
         return (tooltipText, tooltipPosition)
     }
 }
