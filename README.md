@@ -88,53 +88,30 @@ This application highlights the strengths of **SwiftUI** in creating intuitive, 
 
 ## 📅 Recent Changes
 
-| Date       | Commit Hash | Description                                         |
-|------------|------------|-----------------------------------------------------|
-| 2025-02-28 | `78e169a`  | nav. sizes                                          |  
-| 2025-02-21 | `a1b2c3d`  | Refactored `TopMenuBarView.swift` – improved UI logic. |
-| 2025-02-20 | `d4e5f6g`  | Fixed `FavoritesScanner.swift` memory leak issue.      |
-| 2025-02-18 | `h7i8j9k`  | Improved `TB_Button_IS` animations.                    |
-| 2025-02-15 | `l0m1n2o`  | Optimized `DualDirectoryMonitor.swift` event handling. |
-| 2025-02-12 | `p3q4r5s`  | Enhanced UI in `TotalCommanderResizableView.swift`.    |
-| 2025-02-10 | `t6u7v8w`  | Improved directory monitoring performance.         |
-| 2025-02-08 | `x9y0z1a`  | Updated file operation error handling.             |
-| 2025-02-06 | `b2c3d4e`  | Enhanced logging with `SwiftBeaver`.               |
-| 2025-02-04 | `f5g6h7i`  | Fixed panel resizing issue in dual-pane mode.      |
-| 2025-02-02 | `j8k9l0m`  | Optimized background file scanning.                |
-| 2025-01-30 | `n1o2p3q`  | Improved drag & drop functionality.                |
-| 2025-01-28 | `r4s5t6u`  | Enhanced toolbar button interactions.              |
-| 2025-01-25 | `v7w8x9y`  | Refactored directory comparison logic.             |
-| 2025-01-23 | `z0a1b2c`  | Fixed UI freezing during large file operations.    |
-| 2025-01-20 | `d3e4f5g`  | Improved multi-rename tool efficiency.             |
-| 2025-01-18 | `h6i7j8k`  | Implemented dark mode compatibility.               |
-| 2025-01-15 | `l9m0n1o`  | Refactored sidebar navigation system.              |
-| 2025-01-12 | `p2q3r4s`  | Improved FTP connection stability.                 |
-| 2025-01-10 | `t5u6v7w`  | Enhanced file search functionality.                |
-| 2025-01-08 | `x8y9z0a`  | Optimized memory usage in file preview.            |
-| 2025-01-06 | `b1c2d3e`  | Improved sorting algorithm for file lists.       |
-| 2025-01-04 | `f4g5h6i`  | Fixed UI flickering in sidebar.                  |
-| 2025-01-02 | `j7k8l9m`  | Added status bar file operation progress.        |
-| 2024-12-30 | `n0o1p2q`  | Improved error messages in logs.                 |
-| 2024-12-28 | `r3s4t5u`  | Fixed crash when handling symbolic links.        |
-| 2024-12-25 | `v6w7x8y`  | Refactored permissions handling.                 |
-| 2024-12-23 | `z9a0b1c`  | Optimized background queue management.           |
-| 2024-12-20 | `d2e3f4g`  | Enhanced breadcrumb navigation.                  |
-| 2024-12-18 | `h5i6j7k`  | Fixed sidebar expanding issues.                  |
-| 2024-12-15 | `l8m9n0o`  | Updated file operation confirmations.            |
-| 2024-12-12 | `p1q2r3s`  | Fixed incorrect file size display.               |
-| 2024-12-10 | `t4u5v6w`  | Enhanced sidebar drag & drop support.            |
-| 2024-12-08 | `x7y8z9a`  | Improved shell utility integration.              |
-| 2024-12-06 | `b0c1d2e`  | Fixed slow loading of large directories.         |
-| 2024-12-04 | `f3g4h5i`  | Improved search performance.                     |
-| 2024-12-02 | `j6k7l8m`  | Enhanced tab management.                         |
-| 2024-11-30 | `n9o0p1q`  | Fixed UI layout issues on smaller screens.       |
-| 2024-11-28 | `r2s3t4u`  | Optimized directory scanning for SSDs.           |
-| 2024-11-25 | `v5w6x7y`  | Fixed undo/redo issues in file operations.       |
-| 2024-11-23 | `z8a9b0c`  | Improved accessibility support.                  |
-| 2024-11-20 | `d1e2f3g`  | Updated file permission handling.                |
-| 2024-11-18 | `h4i5j6k`  | Optimized file list refresh speed.               |
-| 2024-11-15 | `l7m8n9o`  | Fixed inconsistent icon rendering.               |
-| 2024-11-12 | `p0q1r2s`  | Improved split-view resizing behavior.           |  
+| Commit Hash | Author   | Message                                           | Date                     |
+|-------------|----------|---------------------------------------------------|--------------------------|
+| `f1e192d`   | Senatov  | Fix max branches in Tree scan                     | 2025-04-13 16:05:43 +0200 |
+| `b57a63e`   | Senatov  | Fix tree fav                                      | 2025-04-13 01:45:05 +0200 |
+| `851e4aa`   | Senatov  | Fav. URL fix                                      | 2025-04-12 22:30:07 +0200 |
+| `17e3f9c`   | Senatov  | Fav. URL fix                                      | 2025-04-12 22:30:07 +0200 |
+| `d9ab99a`   | Senatov  | FavTree processing                                | 2025-04-09 12:12:26 +0200 |
+| `020f864`   | Senatov  | System & network drives support                   | 2025-04-07 00:46:09 +0200 |
+| `5236768`   | Senatov  | Path panel, previews                              | 2025-04-04 01:48:37 +0200 |
+| `fba4236`   | Senatov  | UI shapes, colors, etc.                           | 2025-04-04 00:35:26 +0200 |
+| `c78f912`   | Senatov  | Preparation for cleanup                           | 2025-04-02 13:41:39 +0200 |
+| `bc720cf`   | Senatov  | Minor change                                      | 2025-04-01 22:47:06 +0200 |
+| `7333ad1`   | Senatov  | Root character handling                           | 2025-03-28 19:18:37 +0100 |
+| `9ee9e03`   | Senatov  | EditablePath group: not ready yet                 | 2025-03-28 11:04:55 +0100 |
+| `663dc33`   | Senatov  | Refactoring / selected paths                      | 2025-03-25 23:48:36 +0100 |
+| `a036ad4`   | Senatov  | Default selection color                           | 2025-03-23 21:09:16 +0100 |
+| `bbfe4bc`   | Senatov  | Path bar top (tested, not yet final)              | 2025-03-21 02:25:58 +0100 |
+| `3c70bae`   | Senatov  | Priority set to `.low`                            | 2025-03-17 22:18:51 +0100 |
+| `c7ecd23`   | Senatov  | Fix R-panel width (2nd attempt)                   | 2025-03-09 15:38:09 +0100 |
+| `600f8ff`   | Senatov  | File panel width – Stage 1                        | 2025-03-09 15:37:40 +0100 |
+| `986299b`   | Senatov  | Navigation sizes update                           | 2025-03-01 16:21:36 +0100 |
+| `6f226ca`   | Senatov  | Preview and refactoring                           | 2025-02-28 18:27:53 +0100 |
+
+<sub>... commit list truncated ...</sub>
 
 
 

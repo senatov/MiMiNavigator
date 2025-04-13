@@ -10,29 +10,19 @@ import Foundation
 import SwiftyBeaver
 
 // MARK: - CustomFile: File & Folder Representation
-struct CustomFile: Identifiable, Equatable, Codable {
-    let id: UUID
-    let name: String
-    let path: String
-    let isDirectory: Bool
+struct CustomFile: Identifiable, Sendable {
+    var id: UUID
+    var name: String
+    var path: String
+    var isDirectory: Bool
     var children: [CustomFile]?
 
-    // MARK: - Equatable Implementation
-    static func == (lhs: CustomFile, rhs: CustomFile) -> Bool {
-        lhs.path == rhs.path
-    }
-
-    // MARK: - Initialize 'children' only if 'isDirectory' is true
-    init(name: String, path: String, isDirectory: Bool, children: [CustomFile]? = nil) {
-        self.id = UUID()
+    /// Initializes a new instance of `CustomFile`
+    init(name: String, path: String, isDirectory: Bool, children: [CustomFile]?) {
+        self.id = UUID()  // ✅ new. added
         self.name = name
         self.path = path
         self.isDirectory = isDirectory
-        self.children = isDirectory ? children ?? [] : nil
-    }
-
-    // MARK: - Debugging Log
-    func logDetails() {
-        LogMan.log.debug("File: \(name), Path: \(path), Directory: \(isDirectory), Children: \(children?.count ?? 0)")
+        self.children = children
     }
 }

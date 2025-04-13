@@ -15,26 +15,26 @@ struct TreeViewContextMenu: View {
     var body: some View {
         Group {
             Button(action: {
-                LogMan.log.debug("Copy action for \(file.name)")
+                log.debug("Copy action for \(file.name)")
             }) {
                 Label("Copy", systemImage: "doc.on.doc")
             }
 
             Button(action: {
-                LogMan.log.debug("Rename action for \(file.name)")
+                log.debug("Rename action for \(file.name)")
             }) {
                 Label("Rename", systemImage: "square.and.pencil")
             }
 
             Button(action: {
-                LogMan.log.debug("Delete action for \(file.name)")
+                log.debug("Delete action for \(file.name)")
             }) {
                 Label("Delete", systemImage: "trash")
             }
             .foregroundColor(.red)
 
             Button(action: {
-                LogMan.log.debug("More info action for \(file.name)")
+                log.debug("More info action for \(file.name)")
             }) {
                 Label("More Info", systemImage: "info.circle")
             }

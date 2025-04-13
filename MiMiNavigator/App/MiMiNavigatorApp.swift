@@ -21,7 +21,7 @@ struct MiMiNavigatorApp: App {
 
     // MARK: -
     var sharedModelContainer: ModelContainer = {
-        LogMan.log.debug(" ---- BEGIN ----")
+        log.debug(" ---- BEGIN ----")
         let schema = Schema([
             Item.self
         ])

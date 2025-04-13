@@ -22,13 +22,13 @@ struct GoogleDrvPath {
                 if FileManager.default.fileExists(atPath: myDrivePath.path) {
                     return myDrivePath
                 } else {
-                    LogMan.log.error("Google Drive 'My Drive' folder not found in \(googleDriveFolder.path)")
+                    log.error("Google Drive 'My Drive' folder not found in \(googleDriveFolder.path)")
                 }
             } else {
-                LogMan.log.error("No Google Drive folder found in ~/Library/CloudStorage")
+                log.error("No Google Drive folder found in ~/Library/CloudStorage")
             }
         } catch {
-            LogMan.log.error("Unable to access CloudStorage directory: \(error.localizedDescription)")
+            log.error("Unable to access CloudStorage directory: \(error.localizedDescription)")
         }
 
         return nil

@@ -23,7 +23,7 @@ struct ConsoleCurrPath: View {
 
 // MARK: -
 @MainActor func openConsoleInActivePanelDirectory() {
-    LogMan.log.info("openConsoleInActivePanelDirectory()")
+    log.info("openConsoleInActivePanelDirectory()")
 
     let directory =
         NSDocumentController.shared.recentDocumentURLs.first?.deletingLastPathComponent().path
@@ -49,7 +49,7 @@ func buildDownToolbar() -> some View {
         title: "Console",
         systemImage: "apple.terminal",
         action: {
-            LogMan.log.debug("Console button tapped")
+            log.debug("Console button tapped")
             openConsoleInActivePanelDirectory()
         }
     )
