@@ -9,7 +9,7 @@ struct TotalCommanderResizableView: View {
     @State private var tooltipPosition: CGPoint = .zero
     @State private var tooltipText: String = ""
     @ObservedObject private var fileLst: FileSingleton = FileSingleton.shared
-    @StateObject private var scanner = DualDirectoryScanner(
+    @StateObject private var scanner = DualDirScanner(
         leftDirectory: URL(fileURLWithPath: "/Users/senat/Downloads/Hahly"),
         rightDirectory: URL(fileURLWithPath: "/Users/senat")
     )
@@ -46,8 +46,8 @@ struct TotalCommanderResizableView: View {
     @MainActor
     private func fetchPaths() async {
         log.debug("Fetching directory paths")
-        leftPath = await scanner.leftDirectory.path
-        rightPath = await scanner.rightDirectory.path
+        leftPath = await scanner.leftDir.path
+        rightPath = await scanner.rightDir.path
     }
 
     // MARK: - build main panel
@@ -148,7 +148,7 @@ struct TotalCommanderResizableView: View {
                 .onChange(of: rightPath) {
                     Task(priority: .low) {
                         await scanner.setRightDirectory(url: URL(fileURLWithPath: rightPath))
-                        await fetchRightFiles()
+                        await fetchRightiles()
                     }
                 }
                 .cornerRadius(3)
@@ -164,7 +164,7 @@ struct TotalCommanderResizableView: View {
             .padding(.horizontal, 8)
             .border(Color.secondary)
             .task(priority: .low) {
-                await fetchRightFiles()
+                await fetchRightiles()
             }
         }
     }
@@ -191,7 +191,7 @@ struct TotalCommanderResizableView: View {
             DownToolbarButtonView(title: "F8 Delete", systemImage: "trash") {
                 log.debug("Delete action")
             }
-            DownToolbarButtonView(title: "Exit", systemImage: "xmark.circle") {
+            DownToolbarButtonView(title: "Exit", systemImage: "power") {
                 exitApp()
             }
         }
@@ -241,15 +241,19 @@ struct TotalCommanderResizableView: View {
     }
 
     // MARK: - Загрузка файлов для правой панели
-    private func fetchRightFiles() async {
-        log.debug("Loading files for the right panel")
-        displayedRightFiles = await fileLst.getRightFiles()
+    @MainActor
+    private func fetchRightiles() async {
+        log.debug("fetch right-panel Files")
+        displayedLeftFiles = await fileLst.getRightFiles()
+        log.debug("fetched rightleft panel files \(displayedRightFiles.count) done")
     }
 
     // MARK: - Load files for the left panel
+    @MainActor
     private func fetchLeftFiles() async {
-        log.debug("Loading files for the left panel")
+        log.debug("fetch left-panel Files")
         displayedLeftFiles = await fileLst.getLeftFiles()
+        log.debug("fetched left panel files \(displayedLeftFiles.count) done")
     }
 
     // MARK: - Toggle menu visibility
