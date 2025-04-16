@@ -10,10 +10,9 @@ import Foundation
 
 /// This class scans commonly used "Favorites" folders on macOS and builds a CustomFile structure
 class FavScanner {
-    private var visitedPaths = Set<URL>()
 
     // MARK: - Public Method
-    public func scanFavorites() -> [CustomFile] {
+    func scanFavorites() -> [CustomFile] {
         log.debug("scanFavorites() started")
         let favoritePaths = FileManager.default.allDirectories
         return favoritePaths.compactMap { buildFileStructure(at: $0, maxDirectories: 0xFF) }

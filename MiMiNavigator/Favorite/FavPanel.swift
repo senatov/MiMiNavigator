@@ -52,11 +52,6 @@ struct FavPanel: View {
         }
     }
 
-    // Public method to access favoriteItems
-    func getFavoriteItems() -> [FavoriteItem] {
-        return favoriteItems
-    }
-
     var body: some View {
         VStack {
             Text("Favorites").font(.callout)

@@ -123,6 +123,7 @@ This application highlights the strengths of **SwiftUI** in creating intuitive, 
 | **How to compare directories?**          | Use the **Files** menu to compare and sync directories.                      |
 | **Can I rename multiple files at once?** | Yes, use the **Multi-Rename Tool** available under **Tools**.                |
 | **Is FTP supported?**                    | Yes, FTP connection tools are available under the **Network** menu.          |
+| **Clean the Project**                    | periphery scan --project MiMiNavigator.xcodeproj --schemes MiMiNavigator     |
 
 ---
 

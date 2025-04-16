@@ -30,9 +30,4 @@ struct CustomFile: Identifiable, Equatable, Codable {
         self.isDirectory = isDirectory
         self.children = isDirectory ? children ?? [] : nil
     }
-
-    // MARK: - Debugging Log
-    func logDetails() {
-        log.debug("File: \(name), Path: \(path), Directory: \(isDirectory), Children: \(children?.count ?? 0)")
-    }
 }

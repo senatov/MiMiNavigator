@@ -45,10 +45,6 @@ extension FileManager {
         return homeDirectoryForCurrentUser
     }
 
-    // MARK: - Returns the URL of the system's temporary directory
-    var systemTemporaryDirectory: URL {
-        return temporaryDirectory
-    }
 
     /// Returns the URL of the user's Music directory
     var musicDirectory: URL {
