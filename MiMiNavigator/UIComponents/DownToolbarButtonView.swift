@@ -42,7 +42,7 @@ struct DownToolbarButtonView: View {
         .contentShape(Rectangle())  // Гарантия, что hover обрабатывается
     }
 
-    /// Обработчик нажатия кнопки
+    //MARK: - Обработчик нажатия кнопки
     private func handlePress() {
         log.debug("handlePress()")
         withAnimation(.easeInOut(duration: 0.2)) {
