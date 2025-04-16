@@ -13,13 +13,6 @@ import SwiftUI
 struct ContainerBorder: View {
     var body: some View {
         RoundedRectangle(cornerRadius: 6)
-            .stroke(Color.blue.opacity(0.2), lineWidth: 1)
+            .stroke(Color.gray.opacity(0.3), lineWidth: 1)
     }
-}
-
-#Preview {
-    ContainerBorder()
-        .frame(width: 200, height: 100)
-        .padding()
-        .background(Color.blue.opacity(0.2))
 }
