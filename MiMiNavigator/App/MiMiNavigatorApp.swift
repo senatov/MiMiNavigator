@@ -44,4 +44,3 @@ struct MiMiNavigatorApp: App {
         .modelContainer(sharedModelContainer)
     }
 }
-

@@ -15,10 +15,3 @@ struct ContainerBackground: View {
             .shadow(color: Color.black.opacity(0.15), radius: 3, x: 0, y: 2)
     }
 }
-
-#Preview {
-    ContainerBackground()
-        .frame(width: 200, height: 100)
-        .padding()
-        .background(Color.gray.opacity(0.2))
-}
