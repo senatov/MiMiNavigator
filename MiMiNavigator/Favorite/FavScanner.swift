@@ -115,20 +115,4 @@ class FavScanner {
         return rootFile
     }
 
-    /// Recursively counts directory branches in a CustomFile tree
-    private func countBranches(in node: CustomFile?) -> Int {
-        guard let node = node, node.isDirectory else { return 0 }
-
-        var count = 0
-        if let children = node.children {
-            for child in children {
-                if child.isDirectory {
-                    count += 1
-                    count += countBranches(in: child)
-                }
-            }
-        }
-        return count
-    }
-
 }

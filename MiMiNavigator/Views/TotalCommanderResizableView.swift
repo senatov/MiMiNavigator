@@ -1,51 +1,51 @@
-//
-//  TotalCommanderResizableView.swift
-//  MiMiNavigator
-//
-//  Created by Iakov Senatov on 16.10.24.
+    //
+    //  TotalCommanderResizableView.swift
+    //  MiMiNavigator
+    //
+    //  Created by Iakov Senatov on 16.10.24.
 
 import SwiftUI
 
 struct TotalCommanderResizableView: View {
     @State private var leftPanelWidth: CGFloat = 0
-
+    
     @State private var isShowMenu: Bool = UserPreferences.shared.restoreMenuState()
     @State private var selectedFile: CustomFile? = nil
     @State private var showTooltip: Bool = true
     @State private var tooltipPosition: CGPoint = .zero
     @State private var tooltipText: String = ""
-
+    
     @StateObject private var scanner = DualDirectoryScanner(
         leftDirectory: URL(fileURLWithPath: "/Users/senat/Downloads/Hahly"),
         rightDirectory: URL(fileURLWithPath: "/Users/senat")
     )
     @State private var leftPath: String = ""
     @State private var rightPath: String = ""
-
+    
     @State private var displayedLeftFiles: [CustomFile] = []
     @State private var displayedRightFiles: [CustomFile] = []
     @State private var favTreeStruct: [CustomFile] = []
-
-    // MARK: -
+    
+        // MARK: -
     @MainActor
     private func fetchPaths() async {
         leftPath = await scanner.leftDirectory.path
         rightPath = await scanner.rightDirectory.path
     }
-
-    // MARK: - Fetch the files asynchronously from the actor
+    
+        // MARK: - Fetch the files asynchronously from the actor
     @MainActor
     private func fetchLeftFiles() async {
         displayedLeftFiles = await scanner.fileLst.getLeftFiles()
     }
-
-    // MARK: - Fetch the files asynchronously from the actor
+    
+        // MARK: - Fetch the files asynchronously from the actor
     @MainActor
     private func fetchRightFiles() async {
         displayedRightFiles = await scanner.fileLst.getRightFiles()
     }
-
-    // MARK: -
+    
+        // MARK: -
     private func toggleMenu() {
         log.debug("toggleMenu()")
         withAnimation {
@@ -53,8 +53,8 @@ struct TotalCommanderResizableView: View {
             UserPreferences.shared.saveMenuState(isOpen: isShowMenu)
         }
     }
-
-    // MARK: -
+    
+        // MARK: -
     private func buildMainPanels(geometry: GeometryProxy) -> some View {
         log.debug("buildMainPanels()")
         return HStack(spacing: 0) {
@@ -63,12 +63,12 @@ struct TotalCommanderResizableView: View {
             }
             buildLeftPanel(geometry: geometry)
             buildDivider(geometry: geometry)
-            buildRightPanel(geometry: geometry)
+            buildRightPanel()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.white)
     }
-
+    
     var body: some View {
         GeometryReader { geometry in
             ZStack {
@@ -90,8 +90,8 @@ struct TotalCommanderResizableView: View {
             }
         }
     }
-
-    // MARK: -
+    
+        // MARK: -
     private func buildLeftPanel(geometry: GeometryProxy) -> some View {
         log.debug("buildLeftPanel()")
         return VStack {
@@ -122,8 +122,8 @@ struct TotalCommanderResizableView: View {
         }
         .frame(width: leftPanelWidth > 0 ? leftPanelWidth : geometry.size.width / 2)  // Определяем ширину панели
     }
-    // MARK: -
-    private func buildRightPanel(geometry: GeometryProxy) -> some View {
+        // MARK: -
+    private func buildRightPanel() -> some View {
         log.debug("buildRightPanel()")
         return VStack {
             EditablePathControlWrapper(path: $rightPath)
@@ -152,8 +152,8 @@ struct TotalCommanderResizableView: View {
             }
         }
     }
-
-    // MARK: -
+    
+        // MARK: -
     private func builFavTreeMenu() -> some View {
         log.debug("builFavTreeMenu()")
         return TreeView(files: $favTreeStruct, selectedFile: $selectedFile)
@@ -166,15 +166,15 @@ struct TotalCommanderResizableView: View {
                 }
             }
     }
-
+    
     @MainActor
     private func fetchFavTree() async {
         log.debug("fetchFavTree()")
         let favScanner = FavScanner()
         favTreeStruct = favScanner.scanFavorites()
     }
-
-    // MARK: - Build Divider Between Panels
+    
+        // MARK: - Build Divider Between Panels
     private func buildDivider(geometry: GeometryProxy) -> some View {
         log.debug("buildDivider()")
         return Rectangle()
@@ -198,8 +198,8 @@ struct TotalCommanderResizableView: View {
                 handleDoubleClickDivider(geometry: geometry)
             }
     }
-
-    // MARK: -
+    
+        // MARK: -
     private func handleDividerDrag(value: DragGesture.Value, geometry: GeometryProxy) {
         log.debug("handleDividerDrag")
         let newWidth = leftPanelWidth + value.translation.width
@@ -217,21 +217,21 @@ struct TotalCommanderResizableView: View {
             showTooltip = true
         }
     }
-
-    // MARK: -
+    
+        // MARK: -
     private func handleDoubleClickDivider(geometry: GeometryProxy) {
         leftPanelWidth = geometry.size.width / 2
         UserDefaults.standard.set(leftPanelWidth, forKey: "leftPanelWidth")
     }
-
-    // MARK: -
+    
+        // MARK: -
     private func initializePanelWidth(geometry: GeometryProxy) {
         leftPanelWidth =
-            UserDefaults.standard.object(forKey: "leftPanelWidth") as? CGFloat
-            ?? geometry.size.width / 2
+        UserDefaults.standard.object(forKey: "leftPanelWidth") as? CGFloat
+        ?? geometry.size.width / 2
     }
-
-    // MARK: -
+    
+        // MARK: -
     private func buildDownToolbar() -> some View {
         log.debug("buildToolbar()")
         return HStack(spacing: 18) {  // Увеличили расстояние между кнопками
@@ -242,7 +242,7 @@ struct TotalCommanderResizableView: View {
                     log.debug("View selected Docu")
                 }
             )
-
+            
             DownToolbarButtonView(
                 title: "F4 Edit",
                 systemImage: "pencil",
@@ -250,7 +250,7 @@ struct TotalCommanderResizableView: View {
                     log.debug("Edit button tapped")
                 }
             )
-
+            
             DownToolbarButtonView(
                 title: "F5 Copy",
                 systemImage: "document.on.document",
@@ -258,7 +258,7 @@ struct TotalCommanderResizableView: View {
                     log.debug("Copy button tapped")
                 }
             )
-
+            
             DownToolbarButtonView(
                 title: "F6 Move",
                 systemImage: "square.and.arrow.down.on.square",
@@ -266,7 +266,7 @@ struct TotalCommanderResizableView: View {
                     log.debug("Move button tapped")
                 }
             )
-
+            
             DownToolbarButtonView(
                 title: "F7 NewFolder",
                 systemImage: "folder.badge.plus",
@@ -274,7 +274,7 @@ struct TotalCommanderResizableView: View {
                     log.debug("NewFolder button tapped")
                 }
             )
-
+            
             DownToolbarButtonView(
                 title: "F8 Delete",
                 systemImage: "minus.rectangle",
@@ -282,7 +282,7 @@ struct TotalCommanderResizableView: View {
                     log.debug("Delete button tapped")
                 }
             )
-
+            
             DownToolbarButtonView(
                 title: "F4 Exit",
                 systemImage: "power",
@@ -290,7 +290,7 @@ struct TotalCommanderResizableView: View {
                     exitApp()
                 }
             )
-
+            
             DownToolbarButtonView(
                 title: "Settings",
                 systemImage: "gearshape",
@@ -298,7 +298,7 @@ struct TotalCommanderResizableView: View {
                     log.debug("Settings button tapped")
                 }
             )
-
+            
             DownToolbarButtonView(
                 title: "Console",
                 systemImage: "terminal",
@@ -310,14 +310,14 @@ struct TotalCommanderResizableView: View {
         .padding()
         .cornerRadius(3)
     }
-
-    // MARK: -
+    
+        // MARK: -
     private func exitApp() {
         log.debug("exitApp()")
         NSApplication.shared.terminate(nil)
     }
-
-    // MARK: -
+    
+        // MARK: -
     private func addKeyPressMonitor() {
         log.debug("addKeyPressMonitor()")
         NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
