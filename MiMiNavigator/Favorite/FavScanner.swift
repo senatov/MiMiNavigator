@@ -11,73 +11,94 @@ import Foundation
 /// This class scans commonly used "Favorites" folders on macOS and builds a CustomFile structure
 class FavScanner {
 
-    // MARK: - Public Method
+    // Limits for the breadth and depth of directory scanning
+    private let maxDirectories: Int = 0x7D
+    // Limits for the breadth and depth of directory scanning
+    private let maxDepth: Int = 3
+
+    // MARK: - Entry Point: Scans favorite directories and builds their file trees
     func scanFavorites() -> [CustomFile] {
         log.debug("scanFavorites() started")
         let favoritePaths = FileManager.default.allDirectories
-        return favoritePaths.compactMap { buildFileStructure(at: $0, maxDirectories: 0xFF) }
+        let trees = favoritePaths.compactMap { buildFavTreeStructure(at: $0) }
+        log.debug("Total directory branches across all favorite trees: \(trees.count)")
+        return trees
     }
 
     // MARK: - Iterative File Structure Scanner (BFS)
-    private func buildFileStructure(at rootURL: URL, maxDirectories: Int = 0xFF, maxDepth: Int = 3) -> CustomFile? {
-        //log.debug("Scanning: \(rootURL.path)")
+    private func buildFavTreeStructure(at rootURL: URL) -> CustomFile? {
+        // Initialize a set to track visited paths to avoid cycles
         var visitedPaths = Set<URL>()
         visitedPaths.insert(rootURL)
-        // Очередь с уровнями (URL, depth)
+
+        // Queue to hold URLs and their corresponding depth for BFS
         var queue: [(url: URL, depth: Int)] = [(rootURL, 0)]
         var fileMap = [URL: CustomFile]()
         var rootFile: CustomFile?
 
+        // Process the queue until it's empty
         while !queue.isEmpty {
             let (currentURL, currentDepth) = queue.removeFirst()
-            // Прекращаем углубление, если достигнут maxDepth
+
+            // Stop going deeper if maxDepth is reached
             if currentDepth >= maxDepth {
                 continue
             }
-            // Получаем свойства файла/папки
+
+            // Get file/folder attributes
             guard let resourceValues = try? currentURL.resourceValues(forKeys: [.isSymbolicLinkKey, .isDirectoryKey]) else {
                 log.error("Failed to get resource values for \(currentURL.path)")
                 continue
             }
-            // Пропускаем символические ссылки
+
+            // Skip symbolic links
             if resourceValues.isSymbolicLink == true {
-                //log.debug("Skipping symbolic link: \(currentURL.path)")
                 continue
             }
+
             let isDirectory = resourceValues.isDirectory ?? false
             let fileName = currentURL.lastPathComponent
             let fileNode = CustomFile(name: fileName, path: currentURL.path, isDirectory: isDirectory, children: [])
             fileMap[currentURL] = fileNode
+
+            // Set the root file if not already set
             if rootFile == nil {
                 rootFile = fileNode
             }
 
-            // Обрабатываем директории, если глубина позволяет
+            // Process directories if depth allows
             if isDirectory {
                 do {
+                    // Get the contents of the directory
                     let contents = try FileManager.default.contentsOfDirectory(
                         at: currentURL,
                         includingPropertiesForKeys: [.isDirectoryKey],
                         options: [.skipsHiddenFiles]
                     )
-
                     var children: [CustomFile] = []
 
+                    // Iterate through the contents, limited by maxDirectories
                     for item in contents.prefix(maxDirectories) {
                         if visitedPaths.contains(item) { continue }
                         visitedPaths.insert(item)
 
-                        // Добавляем в очередь только если не превышен maxDepth
+                        // Add to queue only if maxDepth is not exceeded
                         if currentDepth + 1 < maxDepth {
                             queue.append((item, currentDepth + 1))
                         }
 
-                        let tempNode = CustomFile(name: item.lastPathComponent, path: item.path, isDirectory: false, children: nil)
+                        let itemIsDirectory = (try? item.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
+                        let tempNode = CustomFile(
+                            name: item.lastPathComponent,
+                            path: item.path,
+                            isDirectory: itemIsDirectory,
+                            children: itemIsDirectory ? [] : nil
+                        )
                         children.append(tempNode)
                         fileMap[item] = tempNode
                     }
 
-                    // Корректно обновляем узел в fileMap
+                    // Properly update the node in fileMap with its children
                     if let updatedNode = fileMap[currentURL] {
                         fileMap[currentURL] = CustomFile(
                             name: updatedNode.name,
@@ -91,7 +112,23 @@ class FavScanner {
                 }
             }
         }
-
         return rootFile
     }
+
+    /// Recursively counts directory branches in a CustomFile tree
+    private func countBranches(in node: CustomFile?) -> Int {
+        guard let node = node, node.isDirectory else { return 0 }
+
+        var count = 0
+        if let children = node.children {
+            for child in children {
+                if child.isDirectory {
+                    count += 1
+                    count += countBranches(in: child)
+                }
+            }
+        }
+        return count
+    }
+
 }

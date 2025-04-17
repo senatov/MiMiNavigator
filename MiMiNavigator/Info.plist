@@ -4,11 +4,18 @@
 <dict>
 	<key>CFBundleDocumentTypes</key>
 	<array>
-		<dict/>
-	</array>
-	<key>NSServices</key>
-	<array>
-		<dict/>
+		<dict>
+			<key>CFBundleTypeName</key>
+			<string>MyCustomDocument</string>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>LSHandlerRank</key>
+			<string>Owner</string>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>public.text</string>
+			</array>
+		</dict>
 	</array>
 </dict>
 </plist>
