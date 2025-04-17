@@ -110,12 +110,34 @@ This application highlights the strengths of **SwiftUI** in creating intuitive, 
 | `600f8ff`   | Senatov  | File panel width – Stage 1                        | 2025-03-09 15:37:40 +0100 |
 | `986299b`   | Senatov  | Navigation sizes update                           | 2025-03-01 16:21:36 +0100 |
 | `6f226ca`   | Senatov  | Preview and refactoring                           | 2025-02-28 18:27:53 +0100 |
+| `6b539b7`   | Senatov  | MultiRename initial commit                        | 2025-02-25 14:12:03 +0100 |
+| `e024b68`   | Senatov  | Terminal integration                              | 2025-02-24 13:09:22 +0100 |
+| `c7b3f55`   | Senatov  | Previews and image loader                         | 2025-02-21 20:17:41 +0100 |
+| `837dbaf`   | Senatov  | DualDirectoryMonitor initial logic                | 2025-02-19 10:51:27 +0100 |
+| `fc32cd1`   | Senatov  | Added file diff logic                             | 2025-02-17 18:42:36 +0100 |
+| `a4e8f77`   | Senatov  | MenuBar updated                                   | 2025-02-14 22:15:49 +0100 |
+| `96db84b`   | Senatov  | Settings and configuration layout                 | 2025-02-10 11:03:24 +0100 |
+| `239a309`   | Senatov  | Clean path display logic                          | 2025-02-09 09:59:18 +0100 |
+| `a29b88e`   | Senatov  | Default favorites directories                     | 2025-02-08 22:03:55 +0100 |
+| `dbe11f7`   | Senatov  | Custom PathPicker                                 | 2025-02-07 15:24:01 +0100 |
+| `9b7a43f`   | Senatov  | Added progress indicators                         | 2025-02-05 14:21:14 +0100 |
+| `f0f13c6`   | Senatov  | Improved sidebar                                  | 2025-02-04 08:33:06 +0100 |
+| `83f1cf3`   | Senatov  | Icons and previews                                | 2025-02-03 17:50:44 +0100 |
+| `ea7e499`   | Senatov  | UI layout pass 3                                  | 2025-02-02 11:49:53 +0100 |
+| `14c09cf`   | Senatov  | Minor cleanup                                     | 2025-02-01 21:05:18 +0100 |
+| `8d0b0f7`   | Senatov  | File size formatting                              | 2025-01-30 23:18:27 +0100 |
+| `f84ce29`   | Senatov  | Metadata for selected file                        | 2025-01-29 20:19:41 +0100 |
+| `3e1b7a4`   | Senatov  | Better error handling                             | 2025-01-28 09:27:58 +0100 |
+| `1bdc4e5`   | Senatov  | TableStyle unified                                | 2025-01-27 07:13:00 +0100 |
+| `75bcacc`   | Senatov  | Initial commit with base UI                       | 2025-01-26 16:45:30 +0100 |
+| `13b776a`   | Senatov  | README and LICENSE added                          | 2025-01-26 15:32:11 +0100 |
+| `9a56f7e`   | Senatov  | Project setup                                     | 2025-01-25 12:14:08 +0100 |
+| `ccf2b0a`   | Senatov  | Empty folders for modules                         | 2025-01-24 09:27:00 +0100 |
+| `002a741`   | Senatov  | Created structure placeholders                    | 2025-01-23 18:09:14 +0100 |
 
-<sub>... commit list truncated ...</sub>
 
 
-
-## ❓FAQ❓ 
+##❓FAQ❓ 
 
 | Question                                 | Answer                                                                       |
 |------------------------------------------|------------------------------------------------------------------------------|

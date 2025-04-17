@@ -24,7 +24,7 @@ struct TotalCommanderResizableView: View {
 
     @State private var displayedLeftFiles: [CustomFile] = []
     @State private var displayedRightFiles: [CustomFile] = []
-    @State private var fileStructure: [CustomFile] = []
+    @State private var favTreeStruct: [CustomFile] = []
 
     // MARK: -
     @MainActor
@@ -155,10 +155,10 @@ struct TotalCommanderResizableView: View {
 
     // MARK: -
     private func builFavTreeMenu() -> some View {
-        log.debug("builFavoriteTreeMenu()")
-        return TreeView(files: $fileStructure, selectedFile: $selectedFile)
+        log.debug("builFavTreeMenu()")
+        return TreeView(files: $favTreeStruct, selectedFile: $selectedFile)
             .padding()
-            .frame(maxWidth: 210)
+            .frame(maxWidth: 180)
             .font(.system(size: 14, weight: .regular))  // Унифицированный шрифт
             .onAppear {
                 Task(priority: .low) {
@@ -169,9 +169,9 @@ struct TotalCommanderResizableView: View {
 
     @MainActor
     private func fetchFavTree() async {
-        log.debug("Fetching favorite tree structure")
+        log.debug("fetchFavTree()")
         let favScanner = FavScanner()
-        fileStructure = favScanner.scanFavorites()
+        favTreeStruct = favScanner.scanFavorites()
     }
 
     // MARK: - Build Divider Between Panels

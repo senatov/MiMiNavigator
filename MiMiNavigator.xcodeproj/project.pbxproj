@@ -575,7 +575,7 @@
 			repositoryURL = "https://github.com/SwiftyBeaver/SwiftyBeaver";
 			requirement = {
 				kind = versionRange;
-				maximumVersion = 4.5.0;
+				maximumVersion = 3.6.0;
 				minimumVersion = 2.1.1;
 			};
 		};
