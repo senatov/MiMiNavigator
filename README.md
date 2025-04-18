@@ -51,18 +51,22 @@ This application highlights the strengths of **SwiftUI** in creating intuitive, 
 ## 🚀 Installation
 
 1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/username/MiMiNavigator.git
-   cd MiMiNavigator
-   ```
+    ```bash
+    git clone https://github.com/username/MiMiNavigator.git
+    cd MiMiNavigator
+    ```
 2. **Open the project in Xcode:**
-   ```bash
-   open MiMiNavigator.xcodeproj
-   ```
+    ```bash
+    open MiMiNavigator.xcodeproj
+    ```
 3. **Build and Run** through Xcode or with the command:
-   ```bash
-   xcodebuild -scheme MiMiNavigator -sdk macosx
-   ```
+    ```bash
+    xcodebuild -scheme MiMiNavigator -sdk macosx
+    ```
+4. **Check sources** 
+    ```bash
+    periphery scan --project MiMiNavigator.xcodeproj --schemes MiMiNavigator
+    ```     
 
 ## 📋 Usage
 
