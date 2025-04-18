@@ -12,7 +12,7 @@ import SwiftyBeaver
 struct EditablePathControlView: View {
     @Binding var path: String
     var onPathSelected: (String) -> Void
-
+    
     var body: some View {
         HStack(spacing: 2) {
             NavMnu()
@@ -31,28 +31,7 @@ struct EditablePathControlView: View {
                         onPathSelected(item.path)
                     }
                 }) {
-                    HStack(spacing: 4) {
-                        Image(nsImage: item.icon)
-                            .resizable()
-                            .frame(width: 16, height: 16)
-                        Text(item.title)
-                            .foregroundStyle(.primary)
-                            .font(.callout)
-                    }
-                    .padding(.vertical, 2)
-                    .background(
-                        RoundedRectangle(cornerRadius: 6)
-                            .fill(
-                                LinearGradient(
-                                    colors: path == item.path
-                                    ? [Color.gray.opacity(0.1), Color.gray.opacity(0.05)]
-                                    : [Color.blue.opacity(0.1), Color.blue.opacity(0.05)],
-                                    startPoint: .top,
-                                    endPoint: .bottom
-                                )
-                            )
-                            .shadow(color: .gray.opacity(path == item.path ? 0.4 : 0), radius: 4, x: 0, y: 2)
-                    )
+                    DirIcon(item: item, path: path)
                 }
                 .buttonStyle(.plain)
             }
@@ -63,38 +42,30 @@ struct EditablePathControlView: View {
                 .fill(Color.gray.opacity(0.05))
         )
     }
-
+    
         // Вспомогательная структура для элементов пути
-    private struct EditablePathItem: Hashable {
+    struct EditablePathItem: Hashable {
         let title: String
         let path: String
         let icon: NSImage
     }
-
+    
         // Генерация элементов пути
     private func pathComponents() -> [EditablePathItem] {
         let url = URL(fileURLWithPath: path)
         var components = url.pathComponents
         if components.first == "/" { components.removeFirst() }
-
+        
         var currentPath = "/"
         return components.map { component in
             currentPath = (currentPath as NSString).appendingPathComponent(component)
             let icon = NSWorkspace.shared.icon(forFile: currentPath)
             icon.size = NSSize(width: 16, height: 16)
-
+            
             return EditablePathItem(title: component, path: currentPath, icon: icon)
         }
     }
-
-}
-
-#Preview {
-    EditablePathControlView(path: .constant("/Users/senat/Downloads/Telegram Desktop")) { selectedPath in
-        print("Path selected: \(selectedPath)")
-    }
-    .frame(height: 36)
-    .padding()
+    
 }
 
 struct Mnu2: View {
@@ -130,7 +101,7 @@ struct NavMnu: View {
                 }) {
                     Image(systemName: "arrowshape.backward")
                 }
-
+                
                 Button(action: {
                     log.debug("Forward: navigating to next directory")
                 }) {
@@ -155,4 +126,47 @@ struct NavMnu: View {
         }
         .padding(.leading, 6)
     }
+}
+
+struct DirIcon: View {
+    let item: EditablePathControlView.EditablePathItem
+    let path: String
+    
+    var body: some View {
+        let isSelected = path == item.path
+        let gradientColors =
+        isSelected
+        ? [Color.gray.opacity(0.1), Color.gray.opacity(0.05)]
+        : [Color.blue.opacity(0.1), Color.blue.opacity(0.05)]
+        
+        return HStack(spacing: 4) {
+            Image(nsImage: item.icon)
+                .resizable()
+                .frame(width: 16, height: 16)
+            
+            Text(item.title)
+                .foregroundStyle(.primary)
+                .font(.callout)
+        }
+        .padding(.vertical, 2)
+        .background(
+            RoundedRectangle(cornerRadius: 6)
+                .fill(
+                    LinearGradient(
+                        colors: gradientColors,
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+                .shadow(color: .gray.opacity(isSelected ? 0.4 : 0), radius: 4, x: 0, y: 2)
+        )
+    }
+}
+
+#Preview {
+    EditablePathControlView(path: .constant("/Users/senat/Downloads/Telegram Desktop")) { selectedPath in
+        print("Path selected: \(selectedPath)")
+    }
+    .frame(height: 36)
+    .padding()
 }
