@@ -81,3 +81,11 @@ struct EditablePathControlView: View {
     }
 
 }
+
+#Preview {
+    EditablePathControlView(path: .constant("/Users/senat/Downloads/Telegram Desktop")) { selectedPath in
+        print("Path selected: \(selectedPath)")
+    }
+    .frame(height: 36)
+    .padding()
+}
