@@ -8,9 +8,7 @@
 import SwiftUI
 import SwiftyBeaver
 
-/// TooltipModule is responsible for calculating the tooltip text and position.
-
-// MARK: -
+// MARK: - TooltipModule is responsible for calculating the tooltip text and position.
 struct ToolTipMod {
 
   // MARK: - Tooltip text showing the ratio between left and right panels
