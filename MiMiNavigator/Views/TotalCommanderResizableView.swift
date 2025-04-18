@@ -61,7 +61,7 @@ struct TotalCommanderResizableView: View {
         log.debug("buildMainPanels()")
         return HStack(spacing: 0) {
             if isShowMenu {
-                builFavTreeMenu()
+                buildFavTreeMenu()
             }
             buildLeftPanel(geometry: geometry)
             buildDivider(geometry: geometry)
@@ -94,6 +94,7 @@ struct TotalCommanderResizableView: View {
                 PrettyTooltip(text: tooltipText)
                     .position(tooltipPosition)
                     .transition(.opacity)
+                    .opacity(0.7)
                     .zIndex(1000)
             }
 
@@ -163,7 +164,7 @@ struct TotalCommanderResizableView: View {
     }
     
         // MARK: -
-    private func builFavTreeMenu() -> some View {
+    public func buildFavTreeMenu() -> some View {
         log.debug("builFavTreeMenu()")
         return TreeView(files: $favTreeStruct, selectedFile: $selectedFile)
             .padding(3)
