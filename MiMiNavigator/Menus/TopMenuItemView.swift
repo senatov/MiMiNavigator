@@ -1,10 +1,10 @@
-    //
-    //  MenuItemView.swift
-    //  MiMiNavigator
-    //
-    //  Created by Iakov Senatov on 18.02.25.
-    //  Copyright © 2025 Senatov. All rights reserved.
-    //
+//
+//  MenuItemView.swift
+//  MiMiNavigator
+//
+//  Created by Iakov Senatov on 18.02.25.
+//  Copyright © 2025 Senatov. All rights reserved.
+//
 import SwiftUI
 
 struct TopMenuItemView: View {
@@ -29,7 +29,7 @@ struct TopMenuItemView: View {
                 }
             }
             .padding(.horizontal, 10)
-            .padding(.vertical, 4)
+            .padding(.vertical, 6)
             .background(
                 isPressed ? Color.blue.opacity(0.7) : isHovered ? Color.blue.opacity(0.3) : Color.clear
             )
@@ -52,12 +52,12 @@ struct TopMenuItemView: View {
     }
 }
 
-    // MARK: - File Menu (Your bread-and-butter file ops)
+// MARK: - File Menu (Your bread-and-butter file ops)
 var filesMenuCategory: MenuCategory {
     MenuCategory(title: "Files", items: filesMenuItems)
 }
 
-    // MARK: -
+// MARK: -
 var filesMenuItems: [MenuItem] {
     [
         .init(title: "Rename/Move", action: {}, shortcut: "F6"),
@@ -71,7 +71,7 @@ var filesMenuItems: [MenuItem] {
     ]
 }
 
-    // MARK: - Mark Menu (Select, unselect... the basics)
+// MARK: - Mark Menu (Select, unselect... the basics)
 var markMenuCategory: MenuCategory {
     MenuCategory(title: "Mark", items: markMenuItems)
 }
@@ -86,12 +86,12 @@ var markMenuItems: [MenuItem] {
     ]
 }
 
-    // MARK: - Command Menu (CMD-style actions)
+// MARK: - Command Menu (CMD-style actions)
 var commandMenuCategory: MenuCategory {
     MenuCategory(title: "Commands", items: commandMenuItems)
 }
 
-    // MARK: -
+// MARK: -
 var commandMenuItems: [MenuItem] {
     [
         .init(title: "Open Command Prompt...", action: {}, shortcut: "Ctrl+P"),
@@ -101,12 +101,12 @@ var commandMenuItems: [MenuItem] {
     ]
 }
 
-    // MARK: - Net Menu (The web stuff, FTP, etc.)
+// MARK: - Net Menu (The web stuff, FTP, etc.)
 var netMenuCategory: MenuCategory {
     MenuCategory(title: "Net", items: netMenuItems)
 }
 
-    // MARK: -
+// MARK: -
 var netMenuItems: [MenuItem] {
     [
         .init(title: "FTP Connect...", action: {}, shortcut: "Ctrl+N"),
@@ -115,7 +115,7 @@ var netMenuItems: [MenuItem] {
     ]
 }
 
-    // MARK: - Show Menu (View-related options)
+// MARK: - Show Menu (View-related options)
 var showMenuCategory: MenuCategory {
     MenuCategory(title: "Show", items: showMenuItems)
 }
@@ -128,7 +128,7 @@ var showMenuItems: [MenuItem] {
     ]
 }
 
-    // MARK: - Configuration Menu (The power user’s playground)
+// MARK: - Configuration Menu (The power user’s playground)
 var configMenuCategory: MenuCategory {
     MenuCategory(title: "Configuration", items: configMenuItems)
 }
@@ -140,7 +140,7 @@ var configMenuItems: [MenuItem] {
     ]
 }
 
-    // MARK: - Start Menu (Tabs and layout management)
+// MARK: - Start Menu (Tabs and layout management)
 var startMenuCategory: MenuCategory {
     MenuCategory(title: "Start", items: startMenuItems)
 }
@@ -153,7 +153,7 @@ var startMenuItems: [MenuItem] {
     ]
 }
 
-    // MARK: - Help Menu (Docs, guides, updates)
+// MARK: - Help Menu (Docs, guides, updates)
 var helpMenuCategory: MenuCategory {
     MenuCategory(title: "Help", items: helpMenuItems)
 }
