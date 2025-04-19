@@ -21,7 +21,7 @@ struct DownToolbarButtonView: View {
                 Label(title, systemImage: systemImage)
                     .labelStyle(.titleAndIcon)
                     .padding(.horizontal, 14)
-                    .padding(.vertical, 10)
+                    .padding(.vertical, 6)
                     .frame(minWidth: 120, minHeight: 28)
                     .background(
                         RoundedRectangle(cornerRadius: 30)
@@ -38,7 +38,7 @@ struct DownToolbarButtonView: View {
             .help(title)
             .onHover(perform: handleHover)
         }
-        .frame(minWidth: 120, minHeight: 28)
+        .frame(minWidth: 120, minHeight: 20)
         .contentShape(Rectangle())  // Гарантия, что hover обрабатывается
     }
 

@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		976FEA882D49C8C70078EA90 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 976FEA872D49C8C70078EA90 /* README.md */; };
+		979574EC2DB3F6B000CA5F0B /* .periphery.yml in Sources */ = {isa = PBXBuildFile; fileRef = 979574EB2DB3F6A900CA5F0B /* .periphery.yml */; };
 		97D9156C2CD5625D00EB5FDD /* SwiftyBeaver in Frameworks */ = {isa = PBXBuildFile; productRef = 97D9156B2CD5625D00EB5FDD /* SwiftyBeaver */; };
 /* End PBXBuildFile section */
 
@@ -30,6 +31,7 @@
 
 /* Begin PBXFileReference section */
 		976FEA872D49C8C70078EA90 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		979574EB2DB3F6A900CA5F0B /* .periphery.yml */ = {isa = PBXFileReference; lastKnownFileType = text.yaml; path = .periphery.yml; sourceTree = "<group>"; };
 		97AD1A2E2C624E020045C38D /* MiMiNavigator.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MiMiNavigator.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		97AD1A412C624E040045C38D /* MiMiNavigatorTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MiMiNavigatorTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		97AD1A4B2C624E040045C38D /* MiMiNavigatorUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MiMiNavigatorUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -90,6 +92,7 @@
 			isa = PBXGroup;
 			children = (
 				976FEA872D49C8C70078EA90 /* README.md */,
+				979574EB2DB3F6A900CA5F0B /* .periphery.yml */,
 				9751D0682CCEB1BC005B1D64 /* MiMiNavigator */,
 				9751D0542CCEB1B9005B1D64 /* MiMiNavigatorTests */,
 				9751D0502CCEB1B6005B1D64 /* MiMiNavigatorUITests */,
@@ -243,6 +246,7 @@
 		97AD1A2A2C624E020045C38D /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			files = (
+				979574EC2DB3F6B000CA5F0B /* .periphery.yml in Sources */,
 			);
 		};
 		97AD1A3D2C624E040045C38D /* Sources */ = {

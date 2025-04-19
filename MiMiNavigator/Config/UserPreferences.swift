@@ -43,13 +43,6 @@ struct UserPreferences {
     }
 
     // MARK: -
-    func saveMenuState(isOpen: Bool) {
-        log.debug("saveMenuState()")
-        log.debug("Saving menu state - Is Open: \(isOpen)")
-        UserDefaults.standard.set(isOpen, forKey: mimiMenuStateKey)
-    }
-
-    // MARK: -
     func restoreWindowSize() -> CGSize {
         log.debug("restoreWindowSize()")
         let width = UserDefaults.standard.object(forKey: mimiWidthKey) as? CGFloat ?? 800
@@ -77,13 +70,5 @@ struct UserPreferences {
         let width = UserDefaults.standard.object(forKey: mimiLeftPanelWidthKey) as? CGFloat ?? 300
         log.debug("Restoring left panel width - Width: \(width)")
         return width
-    }
-
-    // MARK: -
-    func restoreMenuState() -> Bool {
-        log.debug("restoreMenuState()")
-        let isOpen = UserDefaults.standard.bool(forKey: mimiMenuStateKey)
-        log.debug("Restoring menu state - Is Open: \(isOpen)")
-        return isOpen
     }
 }

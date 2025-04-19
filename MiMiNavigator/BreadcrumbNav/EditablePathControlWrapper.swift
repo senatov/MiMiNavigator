@@ -22,7 +22,7 @@ struct EditablePathControlWrapper: View {
             }
         }
         .padding(.horizontal, 6)
-        .padding(.vertical, 5)
+        .padding(.vertical, 6)
         .background(
             RoundedRectangle(cornerRadius: 6)
                 .fill(Color.white)
@@ -32,7 +32,7 @@ struct EditablePathControlWrapper: View {
             RoundedRectangle(cornerRadius: 6)
                 .stroke(.gray.opacity(0.3), lineWidth: 1)
         )
-        .padding(.vertical, 5)
+        .padding(.vertical, 6)
     }
     
     private var editingView: some View {

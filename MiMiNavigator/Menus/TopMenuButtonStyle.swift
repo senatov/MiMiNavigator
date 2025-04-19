@@ -14,7 +14,7 @@ struct TopMenuButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .padding(.horizontal, 30)  // Уменьшаем отступы
-            .padding(.vertical, 3)
+            .padding(.vertical, 6)
             .font(.system(size: NSFont.systemFontSize, weight: .regular))
             .foregroundColor(isHovered ? Color.blue.opacity(0.9) : Color.primary)  // Чёткий тёмно-синий цвет
             .background(
