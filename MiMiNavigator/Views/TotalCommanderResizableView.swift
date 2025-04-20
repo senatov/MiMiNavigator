@@ -163,10 +163,13 @@ struct TotalCommanderResizableView: View {
             }
             .onHover { isHovering in
                 if isHovering {
-                    log.debug("Divider selected")
-                    NSCursor.resizeLeftRight.push()
+                    DispatchQueue.main.async {
+                        NSCursor.resizeLeftRight.push()
+                    }
                 } else {
-                    NSCursor.pop()
+                    DispatchQueue.main.async {
+                        NSCursor.pop()
+                    }
                 }
             }
     }
