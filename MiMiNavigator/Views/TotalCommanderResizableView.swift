@@ -138,7 +138,7 @@ struct TotalCommanderResizableView: View {
         }
     }
 
-    // MARK: - Build Divider Between Panels
+        // MARK: - Build Divider Between Panels
     private func buildDivider(geometry: GeometryProxy) -> some View {
         log.debug("buildDivider()")
         return Rectangle()
@@ -160,6 +160,13 @@ struct TotalCommanderResizableView: View {
             )
             .onTapGesture(count: 2) {
                 handleDoubleClickDivider(geometry: geometry)
+            }
+            .onHover { isHovering in
+                if isHovering {
+                    NSCursor.resizeLeftRight.push()
+                } else {
+                    NSCursor.pop()
+                }
             }
     }
 
