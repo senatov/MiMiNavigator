@@ -45,7 +45,7 @@ struct TotalCommanderResizableView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.white)
     }
-
+    // MARK: -
     var body: some View {
         GeometryReader { geometry in
             ZStack {
