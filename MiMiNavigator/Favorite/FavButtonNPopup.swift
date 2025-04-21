@@ -2,12 +2,12 @@ import AppKit
 import SwiftUI
 import SwiftyBeaver
 
-struct ButtonNavOnBreadCamp: View {
+struct FavButtonNPopup: View {
     @State private var showFavTreePopup = false
     @State private var favTreeStruct: [CustomFile] = []
     @State private var selectedFile: CustomFile? = nil
     let lineLimit = 250
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack(spacing: 6) {
@@ -17,7 +17,7 @@ struct ButtonNavOnBreadCamp: View {
                     Image(systemName: "arrowshape.backward")
                 }
                 .shadow(color: .blue.opacity(0.15), radius: 8, x: 0, y: 1)
-                
+
                 Button(action: {
                     log.debug("Forward: navigating to next directory")
                 }) {
@@ -25,7 +25,7 @@ struct ButtonNavOnBreadCamp: View {
                 }
                 .shadow(color: .blue.opacity(0.15), radius: 8, x: 0, y: 1)
                 .disabled(true)
-                
+
                 Button(action: {
                     log.debug("Navigation between favorites")
                     showFavTreePopup.toggle()
@@ -37,8 +37,8 @@ struct ButtonNavOnBreadCamp: View {
                 .buttonStyle(.plain)
                 .popover(isPresented: $showFavTreePopup, arrowEdge: .bottom) {
                     buildFavTreeMenu()
-                        .frame(minWidth: 230, idealWidth: 300, maxWidth: 400,
-                               minHeight: 320, idealHeight: 370, maxHeight: 480)
+                        .frame(minWidth: 300, idealWidth: 480, maxWidth: 550,
+                               minHeight: 380, idealHeight: 540, maxHeight: 800)
                         .background(.ultraThinMaterial)
                         .cornerRadius(6)
                         .shadow(color: Color.black.opacity(0.3), radius: 10, x: 0, y: 4)
@@ -46,14 +46,14 @@ struct ButtonNavOnBreadCamp: View {
             }
         }
     }
-    
+
         // MARK: -
     func buildFavTreeMenu() -> some View {
         log.debug("builFavTreeMenu()")
         return TreeView(files: $favTreeStruct, selectedFile: $selectedFile)
             .padding(6)
             .font(.custom("Helvetica Neue", size: 11).weight(.light))
-            .foregroundColor(Color(#colorLiteral(red: 0.1411764771, green: 0.3960784376, blue: 0.5647059083, alpha: 1)))
+            .foregroundColor(Color(#colorLiteral(red: 0.1294117719, green: 0.2156862766, blue: 0.06666667014, alpha: 1)))
             .animation(.spring(response: 0.4, dampingFraction: 0.7, blendDuration: 0.3), value: favTreeStruct)
             .onAppear {
                 Task(priority: .background) {
@@ -61,7 +61,7 @@ struct ButtonNavOnBreadCamp: View {
                 }
             }
     }
-    
+
         // MARK: -
     @MainActor
     private func fetchFavTree() async {
@@ -71,7 +71,7 @@ struct ButtonNavOnBreadCamp: View {
         let files = await fetchFavoritesAsync(from: favScanner)
         favTreeStruct.append(contentsOf: files)
     }
-    
+
         // MARK: -
     private func fetchFavoritesAsync(from scanner: FavScanner) async -> [CustomFile] {
         await withCheckedContinuation { continuation in
