@@ -14,48 +14,24 @@ struct TopMenuBarView: View {
     
     var body: some View {
         HStack(spacing: 8) {
-                // The main menu squad (excluding Help at the end)
+                // Main menu items (excluding the final Help menu)
             ForEach(menuData.dropLast()) { menu in
-                ZStack(alignment: .topLeading) {
-                    Menu {
-                        ForEach(menu.items) { item in
-                            TopMenuItemView(item: item)
-                        }
-                    } label: {
-                        Text(menu.title)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 6)
-                            .font(.system(size: NSFont.systemFontSize, weight: .regular))
-                            .foregroundColor(Color.primary)
-                            .frame(height: 22)
-                            .help("Some handy buttons for ya")
-                            .onHover { hovering in
-                                isHovering = hovering
-                                if hovering {
-                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                                        if isHovering && !showTooltip {
-                                            withAnimation(.easeInOut(duration: 0.2)) {
-                                                showTooltip = true
-                                            }
-                                        }
-                                    }
-                                } else {
-                                    withAnimation(.easeOut(duration: 0.2)) {
-                                        showTooltip = false
-                                    }
-                                }
-                            }
+                Menu {
+                    ForEach(menu.items) { item in
+                        TopMenuItemView(item: item)
                     }
-                    if showTooltip {
-                        PrettyTooltip(text: "Menu \(menu.title)")
-                            .offset(x: 10, y: -34)
-                            .transition(.opacity.combined(with: .scale))
-                            .zIndex(1)
-                    }
+                } label: {
+                    Text(menu.title)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 8)
+                        .font(.system(size: NSFont.systemFontSize, weight: .regular))
+                        .foregroundColor(Color.primary)
+                        .frame(height: 22)
+                        .help("Open menu: '\(menu.title)'")
                 }
                 .buttonStyle(TopMenuButtonStyle())
             }
-            Spacer()  // Pushes "Help" waaaay over to the right side
+            Spacer()  // Pushes the Help menu to the far right
                       // The mighty "Help" menu at the edge of the universe
             if let helpMenu = menuData.last {
                 Menu {
@@ -69,18 +45,19 @@ struct TopMenuBarView: View {
                         .font(.system(size: NSFont.systemFontSize, weight: .regular))
                         .foregroundColor(Color.primary)
                         .frame(height: 22)
+                        .help("Open menu: '\(helpMenu.title)'")
                 }
                 .buttonStyle(TopMenuButtonStyle())
-                .padding(.trailing, 1)  // Little space to breathe from the right edge
+                .padding(.trailing, 1)  // Adds a small spacing from the right edge
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 20)
         .padding(.vertical, 6)
-        .background(BlurView())  // Fancy blurred background for our top menu bar
+        .background(BlurView().clipShape(RoundedRectangle(cornerRadius: 6)))  // Blurred background for the top menu bar
     }
     
-        // All the juicy menu items loaded here:
+        // All top-level menu categories are defined here:
     private var menuData: [MenuCategory] {
         [
             filesMenuCategory,

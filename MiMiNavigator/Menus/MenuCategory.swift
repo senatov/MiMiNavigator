@@ -12,4 +12,9 @@ struct MenuCategory: Identifiable {
     let id = UUID()
     let title: String
     let items: [MenuItem]
+
+    init(title: String, items: [MenuItem]) {
+        self.title = title
+        self.items = items
+    }
 }
