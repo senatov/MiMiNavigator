@@ -1,61 +1,102 @@
-//
-//  FavoritesScanner.swift
-//  MiMiNavigator
-//
-//  Created by Iakov Senatov on 01.11.24.
-//  Copyright © 2024 Senatov. All rights reserved.
-//
+    //
+    //  FavoritesScanner.swift
+    //  MiMiNavigator
+    //
+    //  Created by Iakov Senatov on 01.11.24.
+    //  Copyright © 2024 Senatov. All rights reserved.
+    //
 
 import FilesProvider
 import Foundation
 
-/// This class scans commonly used "Favorites" folders on macOS and builds a CustomFile structure
+    /// This class scans commonly used "Favorites" folders on macOS and builds a CustomFile structure
 class FavScanner {
-
+    
     private var visitedPaths = Set<URL>()
-    // Limits for the breadth and depth of directory scanning
-    private let maxDirectories: Int = 64
-    // Limits for the breadth and depth of directory scanning
+        // Limits for the breadth and depth of directory scanning
+    private let maxDirectories: Int = 125
     private let maxDepth: Int = 2
     private var currentDepth: Int = 0
-
-    // MARK: - Entry Point: Scans favorite directories and builds their file trees
+    
+        // MARK: - Entry Point: Scans favorite directories and builds their file trees
     func scanFavoritesAndNetworkVolumes(completion: @escaping ([CustomFile]) -> Void) {
         log.debug("scanFavoritesAndNetworkVolumes() started")
+        
         let provider = LocalFileProvider()
-        var roots: [URL] = []
-        // Add favorites
-        roots.append(contentsOf: FileManager.default.allDirectories)
-        // Add iCloud Drive using fallback path
-        let fallbackURL = URL(fileURLWithPath: NSHomeDirectory())
+        
+        var favorites: [CustomFile] = []
+        var icloud: [CustomFile] = []
+        var network: [CustomFile] = []
+        var localDisks: [CustomFile] = []
+        
+        let favoriteURLs = FileManager.default.allDirectories
+        favorites = favoriteURLs.compactMap { buildFavTreeStructure(at: $0) }
+        
+            // iCloud Drive fallback
+        let icloudURL = URL(fileURLWithPath: NSHomeDirectory())
             .appendingPathComponent("Library/Mobile Documents/com~apple~CloudDocs")
-
-        if FileManager.default.fileExists(atPath: fallbackURL.path) {
-            log.debug("Using fallback iCloud path: \(fallbackURL.path)")
-            roots.append(fallbackURL)
-        } else {
-            log.debug("Fallback iCloud path not found: \(fallbackURL.path)")
+        if FileManager.default.fileExists(atPath: icloudURL.path) {
+            if let node = buildFavTreeStructure(at: icloudURL) {
+                icloud.append(node)
+            }
         }
-        // Add mounted volumes (async)
+        
+            // OneDrive fallback
+        var oneDrive: [CustomFile] = []
+        let oneDriveURL = URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent("OneDrive")
+        if FileManager.default.fileExists(atPath: oneDriveURL.path),
+           let node = buildFavTreeStructure(at: oneDriveURL) {
+            oneDrive.append(node)
+        }
+        
+            // Получаем тома из /Volumes
         provider.contentsOfDirectory(path: "/Volumes") { mounted, error in
             guard error == nil else {
                 log.error("Failed to get /Volumes: \(error?.localizedDescription ?? "unknown error")")
-                let trees = roots.compactMap { self.buildFavTreeStructure(at: $0) }
-                completion(trees)
+                let result: [CustomFile] = [
+                    CustomFile(name: "Favorites", path: "", isDirectory: true, children: favorites),
+                    CustomFile(name: "iCloud Drive", path: "", isDirectory: true, children: icloud),
+                    CustomFile(name: "OneDrive", path: "", isDirectory: true, children: oneDrive),
+                ]
+                completion(result)
                 return
             }
-            mounted.forEach { file in
-                if file.isDirectory {
-                    roots.append(URL(fileURLWithPath: "/Volumes").appendingPathComponent(file.name))
+            
+            for file in mounted where file.isDirectory {
+                let url = URL(fileURLWithPath: "/Volumes").appendingPathComponent(file.name)
+                guard FileManager.default.fileExists(atPath: url.path) else { continue }
+                
+                var isNetwork = false
+                if #available(macOS 13.0, *) {
+                    let key = URLResourceKey("volumeIsNetwork")
+                    let values = try? url.resourceValues(forKeys: [key])
+                    isNetwork = values?.allValues[key] as? Bool ?? false
+                }
+                
+                if isNetwork {
+                    if let node = self.buildFavTreeStructure(at: url) {
+                        network.append(node)
+                    }
+                } else {
+                    if let node = self.buildFavTreeStructure(at: url) {
+                        localDisks.append(node)
+                    }
                 }
             }
-            let trees = roots.compactMap { self.buildFavTreeStructure(at: $0) }
-            log.debug("Total directory branches (favorites + network): \(trees.count)")
-            completion(trees)
+            
+            let result: [CustomFile] = [
+                CustomFile(name: "Favorites", path: "", isDirectory: true, children: favorites),
+                CustomFile(name: "iCloud Drive", path: "", isDirectory: true, children: icloud),
+                CustomFile(name: "OneDrive", path: "", isDirectory: true, children: oneDrive),
+                CustomFile(name: "Network Volumes", path: "", isDirectory: true, children: network),
+                CustomFile(name: "Local Volumes", path: "", isDirectory: true, children: localDisks),
+            ]
+            log.debug("Total groups: \(result.count)")
+            completion(result)
         }
     }
-
-    // MARK: -
+    
+        // MARK: -
     func scanOnlyFavorites() -> [CustomFile] {
         log.debug("scanOnlyFavorites() started")
         let favoritePaths = FileManager.default.allDirectories
@@ -63,12 +104,13 @@ class FavScanner {
         log.debug("Total directory branches: \(trees.count)")
         return trees
     }
-
-    // MARK: - Iterative File Structure Scanner (BFS)
+    
+        // MARK: - Iterative File Structure Scanner (BFS)
     private func buildFavTreeStructure(at url: URL) -> CustomFile? {
         currentDepth += 1
+        defer { currentDepth -= 1 }
         log.debug("buildFavTreeStructure() depth: \(currentDepth) at \(url.path)")
-        // Avoid revisiting the same path
+            // Avoid revisiting the same path
         guard !visitedPaths.contains(url) else {
             return nil
         }
@@ -76,48 +118,106 @@ class FavScanner {
         guard isValidDirectory(url) else {
             return nil
         }
-        // approx. character limit to fit the visual frame
+            // approx. character limit to fit the visual frame
         let maxDisplayWidth: Int = 75
         var fileName = url.lastPathComponent
         if fileName.count > maxDisplayWidth {
             fileName = String(fileName.prefix(maxDisplayWidth - 3)) + "..."
         }
-
+        
         let children = buildChildren(for: url)
         return CustomFile(name: fileName, path: url.path, isDirectory: true, children: children)
     }
-
-    // MARK: -
+    
+        // MARK: -
     private func isValidDirectory(_ url: URL) -> Bool {
-        let resourceValues = try? url.resourceValues(forKeys: [.isSymbolicLinkKey, .isDirectoryKey, .isHiddenKey])
-        if resourceValues?.isSymbolicLink == true {
+        let keys: [URLResourceKey] = [
+            .isSymbolicLinkKey,
+            .isDirectoryKey,
+            .isHiddenKey,
+            .fileResourceTypeKey,
+            .typeIdentifierKey
+        ]
+        let values = try? url.resourceValues(forKeys: Set(keys))
+            // Skip hidden items
+        if values?.isHidden == true {
             return false
         }
-        if resourceValues?.isHidden == true {
+            // Resolve and validate symbolic links
+        if values?.isSymbolicLink == true {
+            let resolvedURL = url.resolvingSymlinksInPath()
+            var isDirFS: ObjCBool = false
+            if FileManager.default.fileExists(atPath: resolvedURL.path, isDirectory: &isDirFS) {
+                return isDirFS.boolValue
+            }
+                // Fallback to resource values on resolved URL
+            let resolvedValues = try? resolvedURL.resourceValues(forKeys: [.isDirectoryKey, .fileResourceTypeKey])
+            if resolvedValues?.isDirectory == true || resolvedValues?.fileResourceType == .directory {
+                return true
+            }
             return false
         }
-        return resourceValues?.isDirectory == true
+            // Accept genuine directories
+        if values?.isDirectory == true {
+            return true
+        }
+            // Fallback: accept if fileResourceType indicates a directory
+        if values?.fileResourceType == .directory {
+            return true
+        }
+            // Final fallback via FileManager
+        var isDirFS: ObjCBool = false
+        if FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirFS) {
+            return isDirFS.boolValue
+        }
+        return false
     }
-
-    // MARK: -
+    
+        // MARK: -
     private func buildChildren(for url: URL) -> [CustomFile]? {
         var result: [CustomFile]? = nil
         if currentDepth <= maxDepth {
             let contents =
-                (try? FileManager.default.contentsOfDirectory(
-                    at: url,
-                    includingPropertiesForKeys: [.isDirectoryKey, .isSymbolicLinkKey, .isHiddenKey],
-                    options: [.skipsHiddenFiles]
-                )) ?? []
+            (try? FileManager.default.contentsOfDirectory(
+                at: url,
+                includingPropertiesForKeys: [.isDirectoryKey, .isSymbolicLinkKey, .isHiddenKey, .fileResourceTypeKey, .typeIdentifierKey],
+                options: [.skipsHiddenFiles]
+            )) ?? []
             let validDirectories = contents.prefix(maxDirectories).filter { url in
-                guard let values = try? url.resourceValues(forKeys: [.isSymbolicLinkKey, .isDirectoryKey, .isHiddenKey]) else {
+                guard let values = try? url.resourceValues(forKeys: [
+                    .isSymbolicLinkKey, .isDirectoryKey, .isHiddenKey,
+                    .fileResourceTypeKey, .typeIdentifierKey
+                ]) else {
                     return false
                 }
-                return values.isSymbolicLink != true && values.isHidden != true && values.isDirectory == true
+                    // Skip hidden items
+                if values.isHidden == true {
+                    return false
+                }
+                    // Resolve symlinks if needed
+                if values.isSymbolicLink == true {
+                    let resolved = url.resolvingSymlinksInPath()
+                    return (try? resolved.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
+                }
+                    // Accept genuine directories
+                if values.isDirectory == true {
+                    return true
+                }
+                    // Fallback: accept if fileResourceTypeKey says it's a directory
+                if values.fileResourceType == .directory {
+                    return true
+                }
+                    // Final fallback via FileManager
+                var isDirFS: ObjCBool = false
+                if FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirFS),
+                   isDirFS.boolValue {
+                    return true
+                }
+                return false
             }
             result = validDirectories.compactMap { buildFavTreeStructure(at: $0) }
         }
-
+        
         return result
     }
 }

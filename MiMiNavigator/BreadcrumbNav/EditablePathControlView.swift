@@ -95,7 +95,7 @@ struct NavMnu: View {
     var body: some View {
         HStack(spacing: 4) {
             // Navigation buttons
-            ButtonNavOnBreadCamp()
+            FavButtonNPopup()
         }
         .padding(.leading, 6)
     }
