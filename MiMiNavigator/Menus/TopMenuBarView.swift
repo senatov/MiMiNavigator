@@ -9,8 +9,6 @@
 import SwiftUI
 
 struct TopMenuBarView: View {
-    @State private var isHovering = false
-    @State private var showTooltip = false
     
     var body: some View {
         HStack(spacing: 8) {

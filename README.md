@@ -90,6 +90,21 @@ This application highlights the strengths of **SwiftUI** in creating intuitive, 
 
 ---
 
+
+
+
+##❓FAQ❓ 
+
+| Question                                 | Answer                                                                       |
+|------------------------------------------|------------------------------------------------------------------------------|
+| **How to configure settings?**           | Navigate to **Configuration** to access display, layout, and color settings. |
+| **How to compare directories?**          | Use the **Files** menu to compare and sync directories.                      |
+| **Can I rename multiple files at once?** | Yes, use the **Multi-Rename Tool** available under **Tools**.                |
+| **Is FTP supported?**                    | Yes, FTP connection tools are available under the **Network** menu.          |
+| **Clean the Project**                    | periphery scan --config .periphery.yml                                       |
+
+---
+
 ## 📅 Recent Changes
 
 | Commit Hash | Author   | Message                                           | Date                     |
@@ -97,7 +112,6 @@ This application highlights the strengths of **SwiftUI** in creating intuitive, 
 | `f1e192d`   | Senatov  | Fix max branches in Tree scan                     | 2025-04-13 16:05:43 +0200 |
 | `b57a63e`   | Senatov  | Fix tree fav                                      | 2025-04-13 01:45:05 +0200 |
 | `851e4aa`   | Senatov  | Fav. URL fix                                      | 2025-04-12 22:30:07 +0200 |
-| `17e3f9c`   | Senatov  | Fav. URL fix                                      | 2025-04-12 22:30:07 +0200 |
 | `d9ab99a`   | Senatov  | FavTree processing                                | 2025-04-09 12:12:26 +0200 |
 | `020f864`   | Senatov  | System & network drives support                   | 2025-04-07 00:46:09 +0200 |
 | `5236768`   | Senatov  | Path panel, previews                              | 2025-04-04 01:48:37 +0200 |
@@ -134,26 +148,6 @@ This application highlights the strengths of **SwiftUI** in creating intuitive, 
 | `3e1b7a4`   | Senatov  | Better error handling                             | 2025-01-28 09:27:58 +0100 |
 | `1bdc4e5`   | Senatov  | TableStyle unified                                | 2025-01-27 07:13:00 +0100 |
 | `75bcacc`   | Senatov  | Initial commit with base UI                       | 2025-01-26 16:45:30 +0100 |
-| `13b776a`   | Senatov  | README and LICENSE added                          | 2025-01-26 15:32:11 +0100 |
-| `9a56f7e`   | Senatov  | Project setup                                     | 2025-01-25 12:14:08 +0100 |
-| `ccf2b0a`   | Senatov  | Empty folders for modules                         | 2025-01-24 09:27:00 +0100 |
-| `002a741`   | Senatov  | Created structure placeholders                    | 2025-01-23 18:09:14 +0100 |
-
-
-
-##❓FAQ❓ 
-
-| Question                                 | Answer                                                                       |
-|------------------------------------------|------------------------------------------------------------------------------|
-| **How to configure settings?**           | Navigate to **Configuration** to access display, layout, and color settings. |
-| **How to compare directories?**          | Use the **Files** menu to compare and sync directories.                      |
-| **Can I rename multiple files at once?** | Yes, use the **Multi-Rename Tool** available under **Tools**.                |
-| **Is FTP supported?**                    | Yes, FTP connection tools are available under the **Network** menu.          |
-| **Clean the Project**                    | periphery scan --config .periphery.yml                                       |
-
----
-
-
 
 ## 🔗 Related Links
 

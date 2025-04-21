@@ -46,7 +46,6 @@ struct FavTreeView: View {
             }
             .padding(.leading, file.isDirectory ? 5 : 15)
             .font(.system(size: 14, weight: .regular))  // Унифицированный шрифт
-
             // Анимация появления поддиректорий
             if isExpanded, let children = file.children, !children.isEmpty {
                 ForEach(children.indices, id: \.self) { index in
