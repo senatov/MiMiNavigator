@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		976FEA882D49C8C70078EA90 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 976FEA872D49C8C70078EA90 /* README.md */; };
 		979574EC2DB3F6B000CA5F0B /* .periphery.yml in Sources */ = {isa = PBXBuildFile; fileRef = 979574EB2DB3F6A900CA5F0B /* .periphery.yml */; };
+		97D128762DB62DD400274684 /* FilesProvider in Frameworks */ = {isa = PBXBuildFile; productRef = 97D128752DB62DD400274684 /* FilesProvider */; };
 		97D9156C2CD5625D00EB5FDD /* SwiftyBeaver in Frameworks */ = {isa = PBXBuildFile; productRef = 97D9156B2CD5625D00EB5FDD /* SwiftyBeaver */; };
 /* End PBXBuildFile section */
 
@@ -73,6 +74,7 @@
 			isa = PBXFrameworksBuildPhase;
 			files = (
 				97D9156C2CD5625D00EB5FDD /* SwiftyBeaver in Frameworks */,
+				97D128762DB62DD400274684 /* FilesProvider in Frameworks */,
 			);
 		};
 		97AD1A3E2C624E040045C38D /* Frameworks */ = {
@@ -96,6 +98,7 @@
 				9751D0682CCEB1BC005B1D64 /* MiMiNavigator */,
 				9751D0542CCEB1B9005B1D64 /* MiMiNavigatorTests */,
 				9751D0502CCEB1B6005B1D64 /* MiMiNavigatorUITests */,
+				97D128742DB62DD400274684 /* Frameworks */,
 				97AD1A2F2C624E020045C38D /* Products */,
 			);
 			sourceTree = "<group>";
@@ -108,6 +111,13 @@
 				97AD1A4B2C624E040045C38D /* MiMiNavigatorUITests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		97D128742DB62DD400274684 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -130,6 +140,9 @@
 				9751D0682CCEB1BC005B1D64 /* MiMiNavigator */,
 			);
 			name = MiMiNavigator;
+			packageProductDependencies = (
+				97D128752DB62DD400274684 /* FilesProvider */,
+			);
 			productName = MiMiNavigator;
 			productReference = 97AD1A2E2C624E020045C38D /* MiMiNavigator.app */;
 			productType = "com.apple.product-type.application";
@@ -587,14 +600,18 @@
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/SwiftyBeaver/SwiftyBeaver";
 			requirement = {
-				kind = versionRange;
-				maximumVersion = 3.6.0;
+				kind = upToNextMajorVersion;
 				minimumVersion = 2.1.1;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		97D128752DB62DD400274684 /* FilesProvider */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 97D128732DB62CB400274684 /* XCRemoteSwiftPackageReference "FileProvider" */;
+			productName = FilesProvider;
+		};
 		97D915682CD5624900EB5FDD /* SwiftyBeaver */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 97D915672CD5621500EB5FDD /* XCRemoteSwiftPackageReference "SwiftyBeaver" */;

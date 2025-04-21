@@ -71,7 +71,7 @@ struct ButtonNavOnBreadCamp: View {
     private func fetchFavTree() async {
         log.debug("fetchFavTree()")
         let favScanner = FavScanner()
-        favTreeStruct = favScanner.scanFavorites()
+        favTreeStruct = favScanner.scanOnlyFavorites()
     }
 
 }
