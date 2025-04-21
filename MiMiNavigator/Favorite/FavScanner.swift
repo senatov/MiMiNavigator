@@ -14,9 +14,9 @@ class FavScanner {
 
     private var visitedPaths = Set<URL>()
     // Limits for the breadth and depth of directory scanning
-    private let maxDirectories: Int = 11
+    private let maxDirectories: Int = 64
     // Limits for the breadth and depth of directory scanning
-    private let maxDepth: Int = 1
+    private let maxDepth: Int = 2
     private var currentDepth: Int = 0
 
     // MARK: - Entry Point: Scans favorite directories and builds their file trees
@@ -26,6 +26,16 @@ class FavScanner {
         var roots: [URL] = []
         // Add favorites
         roots.append(contentsOf: FileManager.default.allDirectories)
+        // Add iCloud Drive using fallback path
+        let fallbackURL = URL(fileURLWithPath: NSHomeDirectory())
+            .appendingPathComponent("Library/Mobile Documents/com~apple~CloudDocs")
+
+        if FileManager.default.fileExists(atPath: fallbackURL.path) {
+            log.debug("Using fallback iCloud path: \(fallbackURL.path)")
+            roots.append(fallbackURL)
+        } else {
+            log.debug("Fallback iCloud path not found: \(fallbackURL.path)")
+        }
         // Add mounted volumes (async)
         provider.contentsOfDirectory(path: "/Volumes") { mounted, error in
             guard error == nil else {
@@ -63,43 +73,51 @@ class FavScanner {
             return nil
         }
         visitedPaths.insert(url)
-        // Check if the URL is a symbolic link, not a directory, or hidden
-        let resourceValues = try? url.resourceValues(forKeys: [.isSymbolicLinkKey, .isDirectoryKey, .isHiddenKey])
-        if resourceValues?.isSymbolicLink == true {
+        guard isValidDirectory(url) else {
             return nil
         }
-        if resourceValues?.isHidden == true {
-            return nil
-        }
-        guard resourceValues?.isDirectory == true else {
-            return nil
-        }
-        let maxDisplayWidth: Int = 30  // approx. character limit to fit the visual frame
+        // approx. character limit to fit the visual frame
+        let maxDisplayWidth: Int = 75
         var fileName = url.lastPathComponent
         if fileName.count > maxDisplayWidth {
             fileName = String(fileName.prefix(maxDisplayWidth - 3)) + "..."
         }
-        var children: [CustomFile]?
-        let contents =
-            (try? FileManager.default.contentsOfDirectory(
-                at: url,
-                includingPropertiesForKeys: [.isDirectoryKey, .isSymbolicLinkKey, .isHiddenKey],
-                options: [.skipsHiddenFiles]
-            )) ?? []
-        if currentDepth <= maxDepth {
-            children = contents.prefix(maxDirectories).compactMap {
-                guard let values = try? $0.resourceValues(forKeys: [.isSymbolicLinkKey, .isDirectoryKey, .isHiddenKey]) else {
-                    return nil
-                }
-                if values.isSymbolicLink == true || values.isHidden == true {
-                    return nil
-                }
-                if values.isDirectory != true {
-                    return nil
-                }
-                return buildFavTreeStructure(at: $0)
-            }
-        }
+
+        let children = buildChildren(for: url)
         return CustomFile(name: fileName, path: url.path, isDirectory: true, children: children)
+    }
+
+    // MARK: -
+    private func isValidDirectory(_ url: URL) -> Bool {
+        let resourceValues = try? url.resourceValues(forKeys: [.isSymbolicLinkKey, .isDirectoryKey, .isHiddenKey])
+        if resourceValues?.isSymbolicLink == true {
+            return false
+        }
+        if resourceValues?.isHidden == true {
+            return false
+        }
+        return resourceValues?.isDirectory == true
+    }
+
+    // MARK: -
+    private func buildChildren(for url: URL) -> [CustomFile]? {
+        var result: [CustomFile]? = nil
+        if currentDepth <= maxDepth {
+            let contents =
+                (try? FileManager.default.contentsOfDirectory(
+                    at: url,
+                    includingPropertiesForKeys: [.isDirectoryKey, .isSymbolicLinkKey, .isHiddenKey],
+                    options: [.skipsHiddenFiles]
+                )) ?? []
+            let validDirectories = contents.prefix(maxDirectories).filter { url in
+                guard let values = try? url.resourceValues(forKeys: [.isSymbolicLinkKey, .isDirectoryKey, .isHiddenKey]) else {
+                    return false
+                }
+                return values.isSymbolicLink != true && values.isHidden != true && values.isDirectory == true
+            }
+            result = validDirectories.compactMap { buildFavTreeStructure(at: $0) }
+        }
+
+        return result
     }
 }
