@@ -8,8 +8,16 @@
 
 import SwiftUI
 
+// MARK: -
 struct FavoriteItem: Identifiable {
     let id = UUID()
     let name: String
-    let icon: String // SF Symbols icon name for simplicity
+    let icon: String
+
+    // MARK: -
+    init(name: String, icon: String) {
+        self.name = name
+        self.icon = icon
+    }
+
 }
