@@ -39,6 +39,7 @@ struct FavTreeView: View {
                     .onTapGesture {
                         selectedFile = file
                         log.debug("Selected file: \(file.name)")
+                        
                     }
                     .contextMenu {
                         TreeViewContextMenu(file: file)
