@@ -9,45 +9,57 @@ struct FavButtonNPopup: View {
     let lineLimit = 250
 
     var body: some View {
+        let msg1 = "Navigation between favorites"
+        let msg2 = "Back: navigating to previous directory"
+        let msg3 = "Forward: navigating to next directory"
+
         VStack(alignment: .leading, spacing: 4) {
             HStack(spacing: 6) {
                 Button(action: {
-                    log.debug("Back: navigating to previous directory")
+                    log.debug(msg2)
                 }) {
                     Image(systemName: "arrowshape.backward")
                 }
-                .shadow(color: .blue.opacity(0.15), radius: 8, x: 0, y: 1)
+                .help(msg2)
+                .shadow(color: .blue.opacity(0.15), radius: 8, x: 1, y: 1)
 
                 Button(action: {
-                    log.debug("Forward: navigating to next directory")
+                    log.debug(msg3)
                 }) {
                     Image(systemName: "arrowshape.right")
                 }
-                .shadow(color: .blue.opacity(0.15), radius: 8, x: 0, y: 1)
+                .help(msg3)
+                .shadow(color: .blue.opacity(0.15), radius: 8, x: 1, y: 1)
                 .disabled(true)
 
                 Button(action: {
-                    log.debug("Navigation between favorites")
+                    log.debug(msg1)
                     showFavTreePopup.toggle()
                 }) {
                     Image(systemName: "menucard")
                 }
-                .shadow(color: .blue.opacity(0.15), radius: 8, x: 0, y: 1)
-                .help("Go up to directory Menu")
+                .shadow(color: .blue.opacity(0.15), radius: 8, x: 1, y: 1)
+                .help(msg1)
                 .buttonStyle(.plain)
                 .popover(isPresented: $showFavTreePopup, arrowEdge: .bottom) {
                     buildFavTreeMenu()
-                        .frame(minWidth: 300, idealWidth: 480, maxWidth: 550,
-                               minHeight: 380, idealHeight: 540, maxHeight: 800)
+                        .frame(
+                            minWidth: 300,
+                            idealWidth: 480,
+                            maxWidth: 550,
+                            minHeight: 380,
+                            idealHeight: 540,
+                            maxHeight: 800
+                        )
                         .background(.ultraThinMaterial)
                         .cornerRadius(6)
-                        .shadow(color: Color.black.opacity(0.3), radius: 10, x: 0, y: 4)
+                        .shadow(color: Color.black.opacity(0.3), radius: 10, x: 2, y: 4)
                 }
             }
         }
     }
 
-        // MARK: -
+    // MARK: -
     func buildFavTreeMenu() -> some View {
         log.debug("builFavTreeMenu()")
         return TreeView(files: $favTreeStruct, selectedFile: $selectedFile)
@@ -62,7 +74,7 @@ struct FavButtonNPopup: View {
             }
     }
 
-        // MARK: -
+    // MARK: -
     @MainActor
     private func fetchFavTree() async {
         log.debug("fetchFavTree()")
@@ -72,7 +84,7 @@ struct FavButtonNPopup: View {
         favTreeStruct.append(contentsOf: files)
     }
 
-        // MARK: -
+    // MARK: -
     private func fetchFavoritesAsync(from scanner: FavScanner) async -> [CustomFile] {
         await withCheckedContinuation { continuation in
             scanner.scanFavoritesAndNetworkVolumes { files in

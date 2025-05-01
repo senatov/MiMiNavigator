@@ -5,8 +5,8 @@ struct TotalCommanderResizableView: View {
     @State private var displayedRightFiles: [CustomFile] = []
     @State private var isDividerTooltipVisible: Bool = true
     @State private var leftPanelWidth: CGFloat = 0
-    @State private var leftPath: String = ""
-    @State private var rightPath: String = ""
+    @State public var leftPath: String = ""
+    @State public var rightPath: String = ""
     @State private var tooltipPosition: CGPoint = .zero
     @State private var tooltipText: String = ""
 
