@@ -20,13 +20,12 @@ struct EditablePathControlView: View {
             ForEach(Array(pathComponents().enumerated()), id: \.1.path) { index, item in
                 if index > 0 {
                     Image(systemName: "arrowtriangle.right")
-                        .foregroundColor(.gray)
                         .onTapGesture {
                             log.debug("Forward: clicked breadcrumb separator")
                         }
                 }
                 Button(action: {
-                    withAnimation(.easeInOut(duration: 0.2)) {
+                    withAnimation(.easeInOut(duration: 0.4)) {
                         path = item.path
                         onPathSelected(item.path)
                     }
@@ -38,8 +37,8 @@ struct EditablePathControlView: View {
             Mnu2()
         }
         .background(
-            RoundedRectangle(cornerRadius: 8)
-                .fill(Color.gray.opacity(0.05))
+            RoundedRectangle(cornerRadius: 5)
+                .fill(.background)
         )
     }
 
@@ -52,6 +51,7 @@ struct EditablePathControlView: View {
 
     // Генерация элементов пути
     private func pathComponents() -> [EditablePathItem] {
+        log.debug(#function)
         let url = URL(fileURLWithPath: path)
         var components = url.pathComponents
         if components.first == "/" { components.removeFirst() }
@@ -61,7 +61,6 @@ struct EditablePathControlView: View {
             currentPath = (currentPath as NSString).appendingPathComponent(component)
             let icon = NSWorkspace.shared.icon(forFile: currentPath)
             icon.size = NSSize(width: 16, height: 16)
-
             return EditablePathItem(title: component, path: currentPath, icon: icon)
         }
     }
@@ -109,9 +108,8 @@ struct DirIcon: View {
         let isSelected = path == item.path
         let gradientColors =
             isSelected
-            ? [Color.gray.opacity(0.1), Color.gray.opacity(0.05)]
-            : [Color.blue.opacity(0.1), Color.blue.opacity(0.05)]
-
+            ? [Color.gray.opacity(0), Color.gray.opacity(0.01)]
+            : [Color.green.opacity(0), Color.green.opacity(0.01)]
         return HStack(spacing: 4) {
             Image(nsImage: item.icon)
                 .resizable()
@@ -123,7 +121,7 @@ struct DirIcon: View {
         }
         .padding(.vertical, 2)
         .background(
-            RoundedRectangle(cornerRadius: 6)
+            RoundedRectangle(cornerRadius: 5)
                 .fill(
                     LinearGradient(
                         colors: gradientColors,
@@ -131,12 +129,10 @@ struct DirIcon: View {
                         endPoint: .bottom
                     )
                 )
-                .shadow(color: .gray.opacity(isSelected ? 0.4 : 0), radius: 4, x: 0, y: 2)
+                .shadow(color: .gray.opacity(isSelected ? 0.4 : 0), radius: 5.0, x: 0, y: 2)
         )
     }
 }
-
-
 
 #Preview {
     EditablePathControlView(path: .constant("/Users/senat/Downloads/Telegram Desktop")) { selectedPath in

@@ -20,7 +20,7 @@ class FavScanner {
 
         // MARK: - Entry Point: Scans favorite directories and builds their file trees
     func scanFavoritesAndNetworkVolumes(completion: @escaping ([CustomFile]) -> Void) {
-        log.debug("scanFavoritesAndNetworkVolumes() started")
+        log.debug(#function)
         let provider = LocalFileProvider()
         var favorites: [CustomFile] = []
         var icloud: [CustomFile] = []
@@ -96,7 +96,7 @@ class FavScanner {
 
         // MARK: -
     func scanOnlyFavorites() -> [CustomFile] {
-        log.debug("scanOnlyFavorites() started")
+        log.debug(#function)
         let favoritePaths = FileManager.default.allDirectories
         let trees = favoritePaths.compactMap { buildFavTreeStructure(at: $0) }
         log.debug("Total directory branches: \(trees.count)")
@@ -105,6 +105,7 @@ class FavScanner {
 
         // MARK: - Iterative File Structure Scanner (BFS)
     private func buildFavTreeStructure(at url: URL) -> CustomFile? {
+        log.debug(#function)
         currentDepth += 1
         defer { currentDepth -= 1 }
         log.debug("buildFavTreeStructure() depth: \(currentDepth) at \(url.path)")
@@ -129,6 +130,7 @@ class FavScanner {
 
         // MARK: -
     private func isValidDirectory(_ url: URL) -> Bool {
+        log.debug(#function)
         let keys: [URLResourceKey] = [
             .isSymbolicLinkKey,
             .isDirectoryKey,
@@ -173,6 +175,7 @@ class FavScanner {
 
         // MARK: -
     private func buildChildren(for url: URL) -> [CustomFile]? {
+        log.debug(#function)
         var result: [CustomFile]? = nil
         if currentDepth <= maxDepth {
             let contents =

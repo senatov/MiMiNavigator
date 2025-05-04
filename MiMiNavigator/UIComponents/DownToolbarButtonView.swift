@@ -24,11 +24,11 @@ struct DownToolbarButtonView: View {
                     .padding(.vertical, 6)
                     .frame(minWidth: 120, minHeight: 28)
                     .background(
-                        RoundedRectangle(cornerRadius: 30)
-                            .fill(Color.clear)  // Фон остается прозрачным
+                        RoundedRectangle(cornerRadius: 5)
+                            .fill(Color.clear)
                     )
                     .overlay(
-                        RoundedRectangle(cornerRadius: 30)
+                        RoundedRectangle(cornerRadius: 5)
                             .stroke(Color.blue.opacity(0.4), lineWidth: isHovered ? 3 : 1)
                             .animation(.easeInOut(duration: 0.4), value: isHovered)
                     )
@@ -44,7 +44,7 @@ struct DownToolbarButtonView: View {
 
     //MARK: - Обработчик нажатия кнопки
     private func handlePress() {
-        log.debug("handlePress()")
+        log.debug(#function)
         withAnimation(.easeInOut(duration: 0.2)) {
             isPressed = true
         }

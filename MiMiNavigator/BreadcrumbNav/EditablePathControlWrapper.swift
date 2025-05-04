@@ -24,12 +24,12 @@ struct EditablePathControlWrapper: View {
         .padding(.horizontal, 6)
         .padding(.vertical, 6)
         .background(
-            RoundedRectangle(cornerRadius: 6)
+            RoundedRectangle(cornerRadius: 5)
                 .fill(Color.white)
-                .shadow(color: .black.opacity(0.15), radius: 3, x: 0, y: 2)
+                .shadow(color: .black.opacity(0.15), radius: 5.0, x: 0, y: 2)
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 6)
+            RoundedRectangle(cornerRadius: 5)
                 .stroke(.gray.opacity(0.3), lineWidth: 1)
         )
         .padding(.vertical, 6)

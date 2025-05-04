@@ -39,10 +39,10 @@ struct TreeView: View {
             }
             .padding(.bottom, 8)
         }
-        .background(RoundedRectangle(cornerRadius: 10)
+        .background(RoundedRectangle(cornerRadius: 5)
             .stroke(Color.blue.opacity(0.3), lineWidth: 1)
             .background(Color.white.opacity(0.05))
-            .cornerRadius(10))
+            .cornerRadius(3))
         .padding()
     }
 }
