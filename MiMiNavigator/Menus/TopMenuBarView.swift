@@ -52,7 +52,7 @@ struct TopMenuBarView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 20)
         .padding(.vertical, 6)
-        .background(BlurView().clipShape(RoundedRectangle(cornerRadius: 6)))  // Blurred background for the top menu bar
+        .background(BlurView().clipShape(RoundedRectangle(cornerRadius: 5)))  // Blurred background for the top menu bar
     }
     
         // All top-level menu categories are defined here:

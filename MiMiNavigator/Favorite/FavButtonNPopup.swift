@@ -6,7 +6,6 @@ struct FavButtonNPopup: View {
     @State private var showFavTreePopup = false
     @State private var favTreeStruct: [CustomFile] = []
     @State private var selectedFile: CustomFile? = nil
-    let lineLimit = 250
 
     var body: some View {
         let msg1 = "Navigation between favorites"
@@ -20,17 +19,17 @@ struct FavButtonNPopup: View {
                 }) {
                     Image(systemName: "arrowshape.backward")
                 }
+                .shadow(color: .blue.opacity(0.15), radius: 5.0, x: 1, y: 1)
                 .help(msg2)
-                .shadow(color: .blue.opacity(0.15), radius: 8, x: 1, y: 1)
 
                 Button(action: {
                     log.debug(msg3)
                 }) {
                     Image(systemName: "arrowshape.right")
                 }
-                .help(msg3)
-                .shadow(color: .blue.opacity(0.15), radius: 8, x: 1, y: 1)
+                .shadow(color: .blue.opacity(0.15), radius: 5.0, x: 1, y: 1)
                 .disabled(true)
+                .help(msg3)
 
                 Button(action: {
                     log.debug(msg1)
@@ -38,8 +37,7 @@ struct FavButtonNPopup: View {
                 }) {
                     Image(systemName: "menucard")
                 }
-                .shadow(color: .blue.opacity(0.15), radius: 8, x: 1, y: 1)
-                .help(msg1)
+                .shadow(color: .blue.opacity(0.15), radius: 5.0, x: 1, y: 1)
                 .buttonStyle(.plain)
                 .popover(isPresented: $showFavTreePopup, arrowEdge: .bottom) {
                     buildFavTreeMenu()
@@ -52,16 +50,17 @@ struct FavButtonNPopup: View {
                             maxHeight: 800
                         )
                         .background(.ultraThinMaterial)
-                        .cornerRadius(6)
-                        .shadow(color: Color.black.opacity(0.3), radius: 10, x: 2, y: 4)
+                        .cornerRadius(3)
+                        .shadow(color: Color.black.opacity(0.3), radius: 5.0, x: 2, y: 4)
                 }
+                .help(msg1)
             }
         }
     }
 
     // MARK: -
     func buildFavTreeMenu() -> some View {
-        log.debug("builFavTreeMenu()")
+        log.debug(#function)
         return TreeView(files: $favTreeStruct, selectedFile: $selectedFile)
             .padding(6)
             .font(.custom("Helvetica Neue", size: 11).weight(.light))
@@ -77,7 +76,7 @@ struct FavButtonNPopup: View {
     // MARK: -
     @MainActor
     private func fetchFavTree() async {
-        log.debug("fetchFavTree()")
+        log.debug(#function)
         let favScanner = FavScanner()
         favTreeStruct = favScanner.scanOnlyFavorites()
         let files = await fetchFavoritesAsync(from: favScanner)

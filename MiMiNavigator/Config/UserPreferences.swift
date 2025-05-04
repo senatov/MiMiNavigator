@@ -22,7 +22,7 @@ struct UserPreferences {
 
     // MARK: -
     func saveWindowSize(width: CGFloat, height: CGFloat) {
-        log.debug("saveWindowSize()")
+        log.debug(#function)
         log.debug("Saving window size - Width: \(width), Height: \(height)")
         UserDefaults.standard.set(width, forKey: mimiWidthKey)
         UserDefaults.standard.set(height, forKey: mimiHeightKey)
@@ -30,21 +30,21 @@ struct UserPreferences {
 
     // MARK: -
     func saveWindowPosition(x: CGFloat, y: CGFloat) {
-        log.debug("saveWindowPosition()")
+        log.debug(#function)
         log.debug("Saving window position - X: \(x), Y: \(y)")
         UserDefaults.standard.set(x, forKey: mimiWindowPosXKey)
         UserDefaults.standard.set(y, forKey: mimiWindowPosYKey)
     }
 
     func saveLeftPanelWidth(_ width: CGFloat) {
-        log.debug("saveLeftPanelWidth()")
+        log.debug(#function)
         log.debug("Saving left panel width - Width: \(width)")
         UserDefaults.standard.set(width, forKey: mimiLeftPanelWidthKey)
     }
 
     // MARK: -
     func restoreWindowSize() -> CGSize {
-        log.debug("restoreWindowSize()")
+        log.debug(#function)
         let width = UserDefaults.standard.object(forKey: mimiWidthKey) as? CGFloat ?? 800
         let height = UserDefaults.standard.object(forKey: mimiHeightKey) as? CGFloat ?? 600
         log.debug("Restoring window size - Width: \(width), Height: \(height)")
@@ -52,7 +52,7 @@ struct UserPreferences {
     }
     // MARK: -
     func restoreWindowPosition(screenSize: CGSize) -> CGPoint {
-        log.debug("restoreWindowPosition()")
+        log.debug(#function)
         // Default to the center of the screen if no saved position is found
         let defaultX = (screenSize.width - 800) / 2  // Assuming default width of 800
         let defaultY = (screenSize.height - 600) / 2  // Assuming default height of 600
@@ -66,7 +66,7 @@ struct UserPreferences {
 
     // MARK: -
     func restoreLeftPanelWidth() -> CGFloat {
-        log.debug("restoreLeftPanelWidth()")  // Log for method tracking
+        log.debug(#function)
         let width = UserDefaults.standard.object(forKey: mimiLeftPanelWidthKey) as? CGFloat ?? 300
         log.debug("Restoring left panel width - Width: \(width)")
         return width

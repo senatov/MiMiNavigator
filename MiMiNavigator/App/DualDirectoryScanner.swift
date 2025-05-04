@@ -39,7 +39,7 @@ actor DualDirectoryScanner: ObservableObject {
 
     // MARK: - Initialization
     init(leftDirectory: URL, rightDirectory: URL) {
-        log.info("init()")
+        log.info(#function)
         self.leftDirectory = leftDirectory
         self.rightDirectory = rightDirectory
         log.debug("\n --- DualDirectoryScanner initialized.----")
@@ -50,7 +50,7 @@ actor DualDirectoryScanner: ObservableObject {
 
     // MARK: - Starts timers for both directories with custom refresh intervals
     func startMonitoring() {
-        log.info("startMonitoring()")
+        log.info(#function)
         setupTimer(for: .left)
         setupTimer(for: .right)
         if leftTimer == nil || rightTimer == nil {
@@ -60,7 +60,7 @@ actor DualDirectoryScanner: ObservableObject {
 
     // MARK: - Helper method to setup timers
     private func setupTimer(for side: DirectorySide) {
-        log.info("setupTimer() \(side)")
+        log.info(#function)
         let timer = DispatchSource.makeTimerSource(queue: DispatchQueue.global())
         timer.schedule(deadline: .now(), repeating: .seconds(interval))
         timer.setEventHandler { [weak self] in
@@ -79,7 +79,7 @@ actor DualDirectoryScanner: ObservableObject {
 
     // MARK: - Refreshes the file list for a specific directory side
     private func refreshFiles(for side: DirectorySide) async {
-        log.debug("refreshFiles() for <<\(side)>> directory.")
+        log.info(#function)
         let directoryURL: URL
         switch side {
         case .left:
@@ -111,7 +111,7 @@ actor DualDirectoryScanner: ObservableObject {
 
     // MARK: - Scans a directory for files and directories
     private func scanDirectory(at url: URL?) async throws -> [CustomFile] {
-        log.info("scanDirectory() dir: \(String(describing: url?.path))")
+        log.info("scanDirectory() dir: \(url?.relativePath))")
         guard let url = url else {
             log.error("Invalid directory URL: URL is nil.")
             return []
@@ -142,7 +142,7 @@ actor DualDirectoryScanner: ObservableObject {
             log.error("Failed to scan directory at: \(url.path): \(error.localizedDescription)")
             throw error
         }
-        log.debug("Scanned files: \(customFiles)")
+        log.debug("Scanned files nummer: \(customFiles.count)")
         return customFiles
     }
 

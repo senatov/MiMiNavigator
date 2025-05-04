@@ -5,8 +5,8 @@ struct TotalCommanderResizableView: View {
     @State private var displayedRightFiles: [CustomFile] = []
     @State private var isDividerTooltipVisible: Bool = true
     @State private var leftPanelWidth: CGFloat = 0
-    @State public var leftPath: String = ""
-    @State public var rightPath: String = ""
+    @State private var leftPath: String = ""
+    @State private var rightPath: String = ""
     @State private var tooltipPosition: CGPoint = .zero
     @State private var tooltipText: String = ""
 
@@ -36,7 +36,7 @@ struct TotalCommanderResizableView: View {
 
     // MARK: -
     private func buildMainPanels(geometry: GeometryProxy) -> some View {
-        log.debug("buildMainPanels()")
+        log.debug(#function)
         return HStack(spacing: 0) {
             buildLeftPanel(geometry: geometry)
             buildDivider(geometry: geometry)
@@ -78,7 +78,7 @@ struct TotalCommanderResizableView: View {
 
     // MARK: -
     private func buildLeftPanel(geometry: GeometryProxy) -> some View {
-        log.debug("buildLeftPanel()")
+        log.info(#function)
         return VStack {
             EditablePathControlWrapper(path: $leftPath)
                 .onChange(of: leftPath) { _, newPath in
@@ -109,7 +109,7 @@ struct TotalCommanderResizableView: View {
     }
     // MARK: -
     private func buildRightPanel() -> some View {
-        log.debug("buildRightPanel()")
+        log.info(#function)
         return VStack {
             EditablePathControlWrapper(path: $rightPath)
                 .onChange(of: rightPath) { _, newPath in
@@ -140,7 +140,7 @@ struct TotalCommanderResizableView: View {
 
     // MARK: - Build Divider Between Panels
     private func buildDivider(geometry: GeometryProxy) -> some View {
-        log.debug("buildDivider()")
+        log.info(#function)
         return Rectangle()
             .fill(Color(.systemGray))
             .frame(width: 4)
@@ -208,7 +208,7 @@ struct TotalCommanderResizableView: View {
 
     // MARK: -
     private func buildDownToolbar() -> some View {
-        log.debug("buildToolbar()")
+        log.info(#function)
         return HStack(spacing: 18) {  // Увеличили расстояние между кнопками
             DownToolbarButtonView(
                 title: "F3 View",
@@ -287,13 +287,13 @@ struct TotalCommanderResizableView: View {
 
     // MARK: -
     private func exitApp() {
-        log.debug("exitApp()")
+        log.info(#function)
         NSApplication.shared.terminate(nil)
     }
 
     // MARK: -
     private func addKeyPressMonitor() {
-        log.debug("addKeyPressMonitor()")
+        log.info(#function)
         NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
             if event.modifierFlags.contains(.option) && event.keyCode == 0x76 {
                 exitApp()

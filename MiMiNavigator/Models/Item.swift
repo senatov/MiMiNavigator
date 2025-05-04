@@ -13,6 +13,7 @@ final class Item {
     var timestamp: Date
 
     init(timestamp: Date) {
+        log.debug(#function)
         self.timestamp = timestamp
     }
 }
