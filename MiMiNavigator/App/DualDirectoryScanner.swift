@@ -111,7 +111,7 @@ actor DualDirectoryScanner: ObservableObject {
 
     // MARK: - Scans a directory for files and directories
     private func scanDirectory(at url: URL?) async throws -> [CustomFile] {
-        log.info("scanDirectory() dir: \(url?.relativePath))")
+        log.info("scanDirectory() dir: \(String(describing: url?.relativePath)))")
         guard let url = url else {
             log.error("Invalid directory URL: URL is nil.")
             return []
