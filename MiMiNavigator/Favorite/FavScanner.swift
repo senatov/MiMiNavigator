@@ -48,7 +48,7 @@ class FavScanner {
     func scanFavoritesAndNetworkVolumes(completion: @escaping ([CustomFile]) -> Void) {
         visitedPaths.removeAll()
         log.debug(#function)
-        let provider = LocalFileProvider()
+        _ = LocalFileProvider()
         var favorites: [CustomFile] = []
         var icloud: [CustomFile] = []
         var network: [CustomFile] = []
@@ -98,7 +98,7 @@ class FavScanner {
                     for url in contents where (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true {
                         guard FileManager.default.fileExists(atPath: url.path) else { continue }
                         var isNetwork = false
-                        let key = URLResourceKey("volumeIsNetwork")  // осторожно: не проверяется компилятором
+                        let key = URLResourceKey("volumeIsNetwork") 
                         let values = try? url.resourceValues(forKeys: [key])
                         isNetwork = (values?.allValues[key] as? Bool) ?? false
 

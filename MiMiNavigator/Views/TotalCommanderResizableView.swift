@@ -80,7 +80,7 @@ struct TotalCommanderResizableView: View {
     private func buildLeftPanel(geometry: GeometryProxy) -> some View {
         log.info(#function)
         return VStack {
-            EditablePathControlWrapper(path: $leftPath)
+            EditablePathControlWrapper(path: $leftPath, side: .left)
                 .onChange(of: leftPath) { _, newPath in
                     Task {
                         await scanner.setLeftDirectory(path: newPath)
@@ -111,7 +111,7 @@ struct TotalCommanderResizableView: View {
     private func buildRightPanel() -> some View {
         log.info(#function)
         return VStack {
-            EditablePathControlWrapper(path: $rightPath)
+            EditablePathControlWrapper(path: $rightPath, side: .right)
                 .onChange(of: rightPath) { _, newPath in
                     Task(priority: .low) {
                         await scanner.setRightDirectory(path: newPath)

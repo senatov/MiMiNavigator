@@ -11,9 +11,10 @@ import SwiftUI
     // MARK: -
 struct EditablePathControlWrapper: View {
     @Binding var path: String
+    let side: PanelSide        // ← вот здесь
     @State private var isEditing = false
     @FocusState private var isTextFieldFocused: Bool
-    
+
     var body: some View {
         HStack {
             if isEditing {
@@ -96,7 +97,7 @@ struct EditablePathControlWrapper: View {
     }
         // MARK: -
     private var pathControlView: some View {
-        EditablePathControlView(path: $path, onPathSelected: handlePathChanged)
+        EditablePathControlView(path: $path, side: side, onPathSelected: handlePathChanged)
     }
         // MARK: -
     private var displayView: some View {
