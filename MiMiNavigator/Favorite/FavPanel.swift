@@ -57,7 +57,8 @@ struct FavPanel: View {
             Text("Favorites").font(.callout)
             List(favoriteItems) { item in
                 HStack {
-                    Image(systemName: item.icon.isEmpty ? "questionmark" : item.icon) // Default icon if icon name is empty
+                    Image(systemName: item.icon.isEmpty ? "questionmark" : item.icon)
+                        .renderingMode(.original)
                         .foregroundColor(.blue)
                     Text(item.name)
                 }

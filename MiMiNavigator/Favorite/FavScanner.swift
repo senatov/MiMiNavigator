@@ -1,25 +1,52 @@
-    //
-    //  FavoritesScanner.swift
-    //  MiMiNavigator
-    //
-    //  Created by Iakov Senatov on 01.11.24.
-    //  Copyright © 2024 Senatov. All rights reserved.
-    //
+//
+//  FavoritesScanner.swift
+//  MiMiNavigator
+//
+//  Created by Iakov Senatov on 01.11.24.
+//  Copyright © 2024 Senatov. All rights reserved.
+//
 
+import AppKit
 import FilesProvider
 import Foundation
 
-    /// This class scans commonly used "Favorites" folders on macOS and builds a CustomFile structure
+// MARK: - This class scans commonly used "Favorites" folders on macOS and builds a CustomFile structure
+@MainActor
 class FavScanner {
 
     private var visitedPaths = Set<URL>()
-        // Limits for the breadth and depth of directory scanning
-    private let maxDirectories: Int = 125
-    private let maxDepth: Int = 3
+    // Limits for the breadth and depth of directory scanning
+    private let maxDirectories: Int = 64
+    private let maxDepth: Int = 2
     private var currentDepth: Int = 0
 
-        // MARK: - Entry Point: Scans favorite directories and builds their file trees
+    // MARK: - Sandbox Access Helper
+    func requestAccessToVolumesDirectory(completion: @escaping (URL?) -> Void) {
+        let openPanel = NSOpenPanel()
+        openPanel.title = "Пожалуйста, выберите /Volumes"
+        openPanel.message = "Это необходимо для доступа к подключённым томам."
+        openPanel.prompt = "Выбрать"
+        openPanel.canChooseFiles = false
+        openPanel.canChooseDirectories = true
+        openPanel.allowsMultipleSelection = false
+        openPanel.directoryURL = URL(fileURLWithPath: "/Volumes")
+
+        openPanel.begin { response in
+            if response == .OK, let selectedURL = openPanel.url {
+                if selectedURL.startAccessingSecurityScopedResource() {
+                    completion(selectedURL)
+                } else {
+                    completion(nil)
+                }
+            } else {
+                completion(nil)
+            }
+        }
+    }
+
+    // MARK: - Entry Point: Scans favorite directories and builds their file trees
     func scanFavoritesAndNetworkVolumes(completion: @escaping ([CustomFile]) -> Void) {
+        visitedPaths.removeAll()
         log.debug(#function)
         let provider = LocalFileProvider()
         var favorites: [CustomFile] = []
@@ -28,7 +55,7 @@ class FavScanner {
         var localDisks: [CustomFile] = []
         let favoriteURLs = FileManager.default.allDirectories
         favorites = favoriteURLs.compactMap { buildFavTreeStructure(at: $0) }
-            // iCloud Drive fallback
+        // iCloud Drive fallback
         let icloudURL = URL(fileURLWithPath: NSHomeDirectory())
             .appendingPathComponent("Library/Mobile Documents/com~apple~CloudDocs")
         if FileManager.default.fileExists(atPath: icloudURL.path) {
@@ -37,64 +64,82 @@ class FavScanner {
             }
         }
 
-            // OneDrive fallback (scan all OneDrive variants under CloudStorage)
+        // OneDrive fallback (scan all OneDrive variants under CloudStorage)
         var oneDrive: [CustomFile] = []
         let cloudStorageURL = URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent("Library/CloudStorage")
-        if let contents = try? FileManager.default.contentsOfDirectory(at: cloudStorageURL, includingPropertiesForKeys: nil, options: [.skipsHiddenFiles]) {
+        if let contents = try? FileManager.default.contentsOfDirectory(
+            at: cloudStorageURL,
+            includingPropertiesForKeys: nil,
+            options: [.skipsHiddenFiles]
+        ) {
             for item in contents where item.lastPathComponent.hasPrefix("OneDrive") {
                 if FileManager.default.fileExists(atPath: item.path),
-                   let node = buildFavTreeStructure(at: item) {
+                    let node = buildFavTreeStructure(at: item)
+                {
                     oneDrive.append(node)
                 }
             }
         }
 
-            // Получаем тома из /Volumes
-        provider.contentsOfDirectory(path: "/Volumes") { mounted, error in
-            guard error == nil else {
-                log.error("Failed to get /Volumes: \(error?.localizedDescription ?? "unknown error")")
-                let result: [CustomFile] = [
-                    CustomFile(name: "Favorites", path: "", isDirectory: true, children: favorites),
-                    CustomFile(name: "iCloud Drive", path: "", isDirectory: true, children: icloud),
-                    CustomFile(name: "OneDrive", path: "", isDirectory: true, children: oneDrive),
-                ]
-                completion(result)
-                return
-            }
-            for file in mounted where file.isDirectory {
-                let url = URL(fileURLWithPath: "/Volumes").appendingPathComponent(file.name)
-                guard FileManager.default.fileExists(atPath: url.path) else { continue }
-
-                var isNetwork = false
-                if #available(macOS 13.0, *) {
-                    let key = URLResourceKey("volumeIsNetwork")
-                    let values = try? url.resourceValues(forKeys: [key])
-                    isNetwork = values?.allValues[key] as? Bool ?? false
+        Task { @MainActor in
+            self.requestAccessToVolumesDirectory { volumesURL in
+                guard let volumesURL = volumesURL else {
+                    log.error("User did not grant access to /Volumes")
+                    let result: [CustomFile] = [
+                        CustomFile(name: "Favorites", path: "", isDirectory: true, children: favorites),
+                        CustomFile(name: "iCloud Drive", path: "", isDirectory: true, children: icloud),
+                        CustomFile(name: "OneDrive", path: "", isDirectory: true, children: oneDrive),
+                    ]
+                    completion(result)
+                    return
                 }
 
-                if isNetwork {
-                    if let node = self.buildFavTreeStructure(at: url) {
-                        network.append(node)
+                if let contents = try? FileManager.default.contentsOfDirectory(at: volumesURL, includingPropertiesForKeys: nil) {
+                    for url in contents where (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true {
+                        guard FileManager.default.fileExists(atPath: url.path) else { continue }
+                        var isNetwork = false
+                        let key = URLResourceKey("volumeIsNetwork")  // осторожно: не проверяется компилятором
+                        let values = try? url.resourceValues(forKeys: [key])
+                        isNetwork = (values?.allValues[key] as? Bool) ?? false
+
+                        if isNetwork {
+                            if let node = self.buildFavTreeStructure(at: url) {
+                                network.append(node)
+                            }
+                        } else {
+                            if let node = self.buildFavTreeStructure(at: url) {
+                                localDisks.append(node)
+                            }
+                        }
                     }
                 } else {
-                    if let node = self.buildFavTreeStructure(at: url) {
-                        localDisks.append(node)
-                    }
+                    log.error("Cannot read /Volumes contents even after user granted access.")
                 }
+
+                var result: [CustomFile] = []
+                if !favorites.isEmpty {
+                    result.append(CustomFile(name: "Favorites", path: .empty, isDirectory: true, children: favorites))
+                }
+                if !icloud.isEmpty {
+                    result.append(CustomFile(name: "iCloud Drive", path: .empty, isDirectory: true, children: icloud))
+                }
+                if !oneDrive.isEmpty {
+                    result.append(CustomFile(name: "OneDrive", path: .empty, isDirectory: true, children: oneDrive))
+                }
+                if !network.isEmpty {
+                    result.append(CustomFile(name: "Network Volumes", path: .empty, isDirectory: true, children: network))
+                }
+                if !localDisks.isEmpty {
+                    result.append(CustomFile(name: "Local Volumes", path: .empty, isDirectory: true, children: localDisks))
+                }
+                log.debug("Total groups: \(result.count)")
+                completion(result)
+                volumesURL.stopAccessingSecurityScopedResource()
             }
-            let result: [CustomFile] = [
-                CustomFile(name: "Favorites", path: "", isDirectory: true, children: favorites),
-                CustomFile(name: "iCloud Drive", path: "", isDirectory: true, children: icloud),
-                CustomFile(name: "OneDrive", path: "", isDirectory: true, children: oneDrive),
-                CustomFile(name: "Network Volumes", path: "", isDirectory: true, children: network),
-                CustomFile(name: "Local Volumes", path: "", isDirectory: true, children: localDisks),
-            ]
-            log.debug("Total groups: \(result.count)")
-            completion(result)
         }
     }
 
-        // MARK: -
+    // MARK: -
     func scanOnlyFavorites() -> [CustomFile] {
         log.debug(#function)
         let favoritePaths = FileManager.default.allDirectories
@@ -103,13 +148,13 @@ class FavScanner {
         return trees
     }
 
-        // MARK: - Iterative File Structure Scanner (BFS)
+    // MARK: - Iterative File Structure Scanner (BFS)
     private func buildFavTreeStructure(at url: URL) -> CustomFile? {
         log.debug(#function)
         currentDepth += 1
         defer { currentDepth -= 1 }
         log.debug("buildFavTreeStructure() depth: \(currentDepth) at \(url.path)")
-            // Avoid revisiting the same path
+        // Avoid revisiting the same path
         guard !visitedPaths.contains(url) else {
             return nil
         }
@@ -117,7 +162,7 @@ class FavScanner {
         guard isValidDirectory(url) else {
             return nil
         }
-            // approx. character limit to fit the visual frame
+        // approx. character limit to fit the visual frame
         let maxDisplayWidth: Int = 75
         var fileName = url.lastPathComponent
         if fileName.count > maxDisplayWidth {
@@ -128,7 +173,7 @@ class FavScanner {
         return CustomFile(name: fileName, path: url.path, isDirectory: true, children: children)
     }
 
-        // MARK: -
+    // MARK: -
     private func isValidDirectory(_ url: URL) -> Bool {
         log.debug(#function)
         let keys: [URLResourceKey] = [
@@ -139,33 +184,33 @@ class FavScanner {
             .typeIdentifierKey,
         ]
         let values = try? url.resourceValues(forKeys: Set(keys))
-            // Skip hidden items
+        // Skip hidden items
         if values?.isHidden == true {
             return false
         }
-            // Resolve and validate symbolic links
+        // Resolve and validate symbolic links
         if values?.isSymbolicLink == true {
             let resolvedURL = url.resolvingSymlinksInPath()
             var isDirFS: ObjCBool = false
             if FileManager.default.fileExists(atPath: resolvedURL.path, isDirectory: &isDirFS) {
                 return isDirFS.boolValue
             }
-                // Fallback to resource values on resolved URL
+            // Fallback to resource values on resolved URL
             let resolvedValues = try? resolvedURL.resourceValues(forKeys: [.isDirectoryKey, .fileResourceTypeKey])
             if resolvedValues?.isDirectory == true || resolvedValues?.fileResourceType == .directory {
                 return true
             }
             return false
         }
-            // Accept genuine directories
+        // Accept genuine directories
         if values?.isDirectory == true {
             return true
         }
-            // Fallback: accept if fileResourceType indicates a directory
+        // Fallback: accept if fileResourceType indicates a directory
         if values?.fileResourceType == .directory {
             return true
         }
-            // Final fallback via FileManager
+        // Final fallback via FileManager
         var isDirFS: ObjCBool = false
         if FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirFS) {
             return isDirFS.boolValue
@@ -173,17 +218,17 @@ class FavScanner {
         return false
     }
 
-        // MARK: -
+    // MARK: -
     private func buildChildren(for url: URL) -> [CustomFile]? {
         log.debug(#function)
         var result: [CustomFile]? = nil
         if currentDepth <= maxDepth {
             let contents =
-            (try? FileManager.default.contentsOfDirectory(
-                at: url,
-                includingPropertiesForKeys: [.isDirectoryKey, .isSymbolicLinkKey, .isHiddenKey, .fileResourceTypeKey, .typeIdentifierKey],
-                options: [.skipsHiddenFiles]
-            )) ?? []
+                (try? FileManager.default.contentsOfDirectory(
+                    at: url,
+                    includingPropertiesForKeys: [.isDirectoryKey, .isSymbolicLinkKey, .isHiddenKey, .fileResourceTypeKey, .typeIdentifierKey],
+                    options: [.skipsHiddenFiles]
+                )) ?? []
             let validDirectories = contents.prefix(maxDirectories).filter { url in
                 guard
                     let values = try? url.resourceValues(forKeys: [
@@ -193,29 +238,29 @@ class FavScanner {
                 else {
                     return false
                 }
-                    // Skip hidden items
+                // Skip hidden items
                 if values.isHidden == true {
                     return false
                 }
-                    // Resolve symlinks if needed
+                // Resolve symlinks if needed
                 if values.isSymbolicLink == true {
                     let resolved = url.resolvingSymlinksInPath()
                     return (try? resolved.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
                 }
-                    // Accept genuine directories
+                // Accept genuine directories
                 if values.isDirectory == true {
                     return true
                 }
-                    // Fallback: accept if fileResourceTypeKey says it's a directory
+                // Fallback: accept if fileResourceTypeKey says it's a directory
                 if values.fileResourceType == .directory {
                     return true
                 }
-                    // Final fallback via FileManager
+                // Final fallback via FileManager
                 var isDirFS: ObjCBool = false
                 if FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirFS),
-                   isDirFS.boolValue
+                    isDirFS.boolValue
                 {
-                return true
+                    return true
                 }
                 return false
             }

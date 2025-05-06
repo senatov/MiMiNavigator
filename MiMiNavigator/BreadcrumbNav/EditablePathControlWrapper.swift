@@ -8,6 +8,7 @@
 
 import SwiftUI
 
+    // MARK: -
 struct EditablePathControlWrapper: View {
     @Binding var path: String
     @State private var isEditing = false
@@ -34,7 +35,7 @@ struct EditablePathControlWrapper: View {
         )
         .padding(.vertical, 6)
     }
-    
+        // MARK: -
     private var editingView: some View {
         HStack {
             TextField("Enter path", text: $path)
@@ -43,6 +44,7 @@ struct EditablePathControlWrapper: View {
                 .background(.white)
                 .focused($isTextFieldFocused)
                 .onAppear {
+                    log.debug("Entered editing mode")
                     isTextFieldFocused = true
                     DispatchQueue.main.async {
                         if let editor = NSApp.keyWindow?.firstResponder as? NSTextView {
@@ -50,53 +52,73 @@ struct EditablePathControlWrapper: View {
                         }
                     }
                 }
-                .onExitCommand { isEditing = false }
+                .onExitCommand {
+                    log.debug("Exit command received (Escape)")
+                    isEditing = false
+                }
                 .onSubmit {
+                    log.debug("Submitted new path: \(path)")
                     withAnimation(.easeInOut(duration: 0.3)) {
                         isEditing = false
                     }
                 }
             
             Button {
+                log.debug("Checkmark button clicked")
+                log.debug("Confirmed path editing with checkmark")
                 withAnimation(.easeInOut(duration: 0.3)) {
                     isEditing = false
                 }
             } label: {
                 Image(systemName: "checkmark.circle.fill")
+                    .renderingMode(.original)
                     .foregroundColor(.accentColor)
             }
             
             Button {
+                log.debug("Cancel (X) button clicked")
+                log.debug("Cancelled path editing with X button")
                 withAnimation(.easeInOut(duration: 0.3)) {
                     isEditing = false
                 }
             } label: {
                 Image(systemName: "xmark.circle.fill")
+                    .renderingMode(.original)
                     .foregroundColor(.gray.opacity(0.7))
             }
         }
         .transition(.opacity)
     }
-    
+        // MARK: -
     private func handlePathChanged(_ newPath: String) {
+        log.debug("Path changed to: \(newPath)")
         self.path = newPath
     }
-    
+        // MARK: -
     private var pathControlView: some View {
         EditablePathControlView(path: $path, onPathSelected: handlePathChanged)
     }
-    
+        // MARK: -
     private var displayView: some View {
         pathControlView
+            // Layout
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(Color.white)
+        
+            // Typography
+            .font(.system(size: 13, weight: .light, design: .default))
+        
+            // Interaction
             .contentShape(Rectangle())
-            .allowsHitTesting(true)
             .onTapGesture {
-                withAnimation(.easeInOut(duration: 0.3)) {
+                log.debug("Switching to editing mode")
+                withAnimation(.easeInOut(duration: 0.25)) {
                     isEditing = true
                 }
             }
-            .transition(.opacity)
+        
+            // Transition & Animation
+            .transition(.opacity.combined(with: .scale))
+            .animation(.easeInOut(duration: 0.25), value: isEditing)
     }
 }
