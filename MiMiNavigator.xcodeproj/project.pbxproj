@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		976FEA882D49C8C70078EA90 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 976FEA872D49C8C70078EA90 /* README.md */; };
 		979574EC2DB3F6B000CA5F0B /* .periphery.yml in Sources */ = {isa = PBXBuildFile; fileRef = 979574EB2DB3F6A900CA5F0B /* .periphery.yml */; };
+		97B3D6382DCA54B9002F1DB7 /* SystemPackage in Frameworks */ = {isa = PBXBuildFile; productRef = 97B3D6372DCA54B9002F1DB7 /* SystemPackage */; };
 		97D128762DB62DD400274684 /* FilesProvider in Frameworks */ = {isa = PBXBuildFile; productRef = 97D128752DB62DD400274684 /* FilesProvider */; };
 		97D9156C2CD5625D00EB5FDD /* SwiftyBeaver in Frameworks */ = {isa = PBXBuildFile; productRef = 97D9156B2CD5625D00EB5FDD /* SwiftyBeaver */; };
 /* End PBXBuildFile section */
@@ -74,6 +75,7 @@
 			isa = PBXFrameworksBuildPhase;
 			files = (
 				97D9156C2CD5625D00EB5FDD /* SwiftyBeaver in Frameworks */,
+				97B3D6382DCA54B9002F1DB7 /* SystemPackage in Frameworks */,
 				97D128762DB62DD400274684 /* FilesProvider in Frameworks */,
 			);
 		};
@@ -142,6 +144,7 @@
 			name = MiMiNavigator;
 			packageProductDependencies = (
 				97D128752DB62DD400274684 /* FilesProvider */,
+				97B3D6372DCA54B9002F1DB7 /* SystemPackage */,
 			);
 			productName = MiMiNavigator;
 			productReference = 97AD1A2E2C624E020045C38D /* MiMiNavigator.app */;
@@ -224,6 +227,7 @@
 			packageReferences = (
 				97D915672CD5621500EB5FDD /* XCRemoteSwiftPackageReference "SwiftyBeaver" */,
 				97D128732DB62CB400274684 /* XCRemoteSwiftPackageReference "FileProvider" */,
+				97B3D6362DCA54A2002F1DB7 /* XCRemoteSwiftPackageReference "swift-system" */,
 			);
 			preferredProjectObjectVersion = 90;
 			productRefGroup = 97AD1A2F2C624E020045C38D /* Products */;
@@ -588,6 +592,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		97B3D6362DCA54A2002F1DB7 /* XCRemoteSwiftPackageReference "swift-system" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/apple/swift-system.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.4.2;
+			};
+		};
 		97D128732DB62CB400274684 /* XCRemoteSwiftPackageReference "FileProvider" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/amosavian/FileProvider";
@@ -607,6 +619,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		97B3D6372DCA54B9002F1DB7 /* SystemPackage */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 97B3D6362DCA54A2002F1DB7 /* XCRemoteSwiftPackageReference "swift-system" */;
+			productName = SystemPackage;
+		};
 		97D128752DB62DD400274684 /* FilesProvider */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 97D128732DB62CB400274684 /* XCRemoteSwiftPackageReference "FileProvider" */;
