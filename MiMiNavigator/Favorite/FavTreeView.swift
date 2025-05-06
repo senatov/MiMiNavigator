@@ -23,6 +23,7 @@ struct FavTreeView: View {
                 // Анимация вращения значка раскрытия
                 if file.isDirectory {
                     Image(systemName: "chevron.right.circle.fill")
+                        .renderingMode(.original)
                         .foregroundColor(.blue)
                         .rotationEffect(.degrees(isExpanded ? 90 : 0))  // Вращение
                         .animation(.spring(response: 0.3, dampingFraction: 0.6, blendDuration: 0.3), value: isExpanded)
@@ -39,7 +40,7 @@ struct FavTreeView: View {
                     .onTapGesture {
                         selectedFile = file
                         log.debug("Selected file: \(file.name)")
-                        
+
                     }
                     .contextMenu {
                         TreeViewContextMenu(file: file)

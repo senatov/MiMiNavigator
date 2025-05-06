@@ -19,10 +19,11 @@ struct EditablePathControlView: View {
             Spacer()
             ForEach(Array(pathComponents().enumerated()), id: \.1.path) { index, item in
                 if index > 0 {
-                    Image(systemName: "arrowtriangle.right")
+                    Image(systemName: "chevron.forward.dotted.chevron.forward")
                         .onTapGesture {
                             log.debug("Forward: clicked breadcrumb separator")
                         }
+                        .symbolRenderingMode(.multicolor)
                 }
                 Button(action: {
                     withAnimation(.easeInOut(duration: 0.4)) {
@@ -93,8 +94,7 @@ struct Mnu2: View {
 struct NavMnu: View {
     var body: some View {
         HStack(spacing: 4) {
-            // Navigation buttons
-            FavButtonNPopup()
+            FavButtonPopupTopPanel()
         }
         .padding(.leading, 6)
     }
@@ -113,6 +113,7 @@ struct DirIcon: View {
         return HStack(spacing: 4) {
             Image(nsImage: item.icon)
                 .resizable()
+                .renderingMode(.original)
                 .frame(width: 16, height: 16)
 
             Text(item.title)
