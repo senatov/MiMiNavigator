@@ -25,7 +25,7 @@ struct FavButtonPopupTopPanel: View {
         }) {
             Image(systemName: "arrowshape.backward").renderingMode(.original)
         }
-        .shadow(color: .blue.opacity(0.15), radius: 5.0, x: 1, y: 1)
+        .shadow(color: .blue.opacity(0.15), radius: 7.0, x: 1, y: 1)
         .help("Back: navigating to previous directory")
     }
 
@@ -36,7 +36,7 @@ struct FavButtonPopupTopPanel: View {
         }) {
             Image(systemName: "arrowshape.right").renderingMode(.original)
         }
-        .shadow(color: .blue.opacity(0.15), radius: 5.0, x: 1, y: 1)
+        .shadow(color: .blue.opacity(0.15), radius: 7.0, x: 1, y: 1)
         .disabled(true)
         .help("Forward: navigating to next directory")
     }
@@ -63,7 +63,7 @@ struct FavButtonPopupTopPanel: View {
     // MARK: -
     func buildFavTreeMenu() -> some View {
         log.debug(#function)
-        return TreeView(files: $favTreeStruct, selectedFile: $selectedFile)
+        return FavTreeMnu(files: $favTreeStruct, selectedFile: $selectedFile)
             .padding(6)
             .font(.custom("Helvetica Neue", size: 11).weight(.light))
             .foregroundColor(Color(#colorLiteral(red: 0.1294117719, green: 0.2156862766, blue: 0.06666667014, alpha: 1)))

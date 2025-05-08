@@ -22,13 +22,15 @@ class FavScanner {
 
     // MARK: - Sandbox Access Helper
     func requestAccessToVolumesDirectory(completion: @escaping (URL?) -> Void) {
+        log.debug(#function)
         let openPanel = NSOpenPanel()
-        openPanel.title = "Пожалуйста, выберите /Volumes"
-        openPanel.message = "Это необходимо для доступа к подключённым томам."
-        openPanel.prompt = "Выбрать"
+        openPanel.title = "Mimi: “Please select /Volumes"
+        openPanel.allowsConcurrentViewDrawing = true
+        openPanel.message = "Mimi: This is necessary to access mounted system volumes and favorites"
+        openPanel.prompt = "Select"
         openPanel.canChooseFiles = false
         openPanel.canChooseDirectories = true
-        openPanel.allowsMultipleSelection = false
+        openPanel.allowsMultipleSelection = true
         openPanel.directoryURL = URL(fileURLWithPath: "/Volumes")
 
         openPanel.begin { response in

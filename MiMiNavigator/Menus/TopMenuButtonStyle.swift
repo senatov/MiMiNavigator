@@ -27,9 +27,9 @@ struct TopMenuButtonStyle: ButtonStyle {
                 }
             )
             .frame(height: 22)  // Ограничиваем высоту
-            .cornerRadius(3)
+            .cornerRadius(7)
             .overlay(
-                RoundedRectangle(cornerRadius: 5)
+                RoundedRectangle(cornerRadius: 7)
                     .stroke(Color.blue.opacity(isHovered ? 0.8 : 0.4), lineWidth: isHovered ? 1.4 : 1)
             )
             .onHover { hovering in
