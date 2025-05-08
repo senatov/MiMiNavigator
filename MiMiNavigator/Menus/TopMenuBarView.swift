@@ -1,18 +1,18 @@
-    //
-    //  TopMenuBarView.swift
-    //  MiMiNavigator
-    //
-    //  Created by Iakov Senatov on 16.10.24.
-    //  Description: SwiftUI component for rendering the top menu bar with dropdown menus and shortcuts.
-    //
+//
+//  TopMenuBarView.swift
+//  MiMiNavigator
+//
+//  Created by Iakov Senatov on 16.10.24.
+//  Description: SwiftUI component for rendering the top menu bar with dropdown menus and shortcuts.
+//
 
 import SwiftUI
 
 struct TopMenuBarView: View {
-    
+
     var body: some View {
         HStack(spacing: 8) {
-                // Main menu items (excluding the final Help menu)
+            // Main menu items (excluding the final Help menu)
             ForEach(menuData.dropLast()) { menu in
                 Menu {
                     ForEach(menu.items) { item in
@@ -30,7 +30,7 @@ struct TopMenuBarView: View {
                 .buttonStyle(TopMenuButtonStyle())
             }
             Spacer()  // Pushes the Help menu to the far right
-                      // The mighty "Help" menu at the edge of the universe
+            // The mighty "Help" menu at the edge of the universe
             if let helpMenu = menuData.last {
                 Menu {
                     ForEach(helpMenu.items) { item in
@@ -52,10 +52,10 @@ struct TopMenuBarView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 20)
         .padding(.vertical, 6)
-        .background(BlurView().clipShape(RoundedRectangle(cornerRadius: 5)))  // Blurred background for the top menu bar
+        .background(BlurView().clipShape(RoundedRectangle(cornerRadius: 7)))  // Blurred background for the top menu bar
     }
-    
-        // All top-level menu categories are defined here:
+
+    // All top-level menu categories are defined here:
     private var menuData: [MenuCategory] {
         [
             filesMenuCategory,

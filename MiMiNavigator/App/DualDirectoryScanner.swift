@@ -13,7 +13,7 @@ import SwiftUI
 
 // MARK: - Manages dual directory monitoring with periodic file refreshes.
 actor DualDirectoryScanner: ObservableObject {
-    let interval = 15
+    let interval = 45
 
     // Singleton for shared file management logic
     var fileLst = FileSingleton.shared

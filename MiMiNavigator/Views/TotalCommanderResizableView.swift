@@ -87,7 +87,7 @@ struct TotalCommanderResizableView: View {
                         await fetchLeftFiles()
                     }
                 }
-                .cornerRadius(3)
+                .cornerRadius(7)
                 .padding(.horizontal, 6)
             List(displayedLeftFiles, id: \.id) { file in
                 Text(file.name)
@@ -118,7 +118,7 @@ struct TotalCommanderResizableView: View {
                         await fetchRightFiles()
                     }
                 }
-                .cornerRadius(3)
+                .cornerRadius(7)
                 .padding(.horizontal, 6)
             List(displayedRightFiles, id: \.id) { file in
                 Text(file.name)
@@ -282,7 +282,7 @@ struct TotalCommanderResizableView: View {
 
         }
         .padding()
-        .cornerRadius(3)
+        .cornerRadius(7)
     }
 
     // MARK: -

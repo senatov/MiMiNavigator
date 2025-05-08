@@ -24,11 +24,11 @@ struct DownToolbarButtonView: View {
                     .padding(.vertical, 6)
                     .frame(minWidth: 120, minHeight: 28)
                     .background(
-                        RoundedRectangle(cornerRadius: 5)
+                        RoundedRectangle(cornerRadius: 7)
                             .fill(Color.clear)
                     )
                     .overlay(
-                        RoundedRectangle(cornerRadius: 5)
+                        RoundedRectangle(cornerRadius: 7)
                             .stroke(Color.blue.opacity(0.4), lineWidth: isHovered ? 3 : 1)
                             .animation(.easeInOut(duration: 0.4), value: isHovered)
                     )

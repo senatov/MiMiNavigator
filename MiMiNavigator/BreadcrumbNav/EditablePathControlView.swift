@@ -43,7 +43,7 @@ struct EditablePathControlView: View {
             Mnu2()
         }
         .background(
-            RoundedRectangle(cornerRadius: 5)
+            RoundedRectangle(cornerRadius: 7)
                 .fill(.background)
         )
     }
@@ -128,7 +128,7 @@ struct DirIcon: View {
         }
         .padding(.vertical, 2)
         .background(
-            RoundedRectangle(cornerRadius: 5)
+            RoundedRectangle(cornerRadius: 7)
                 .fill(
                     LinearGradient(
                         colors: gradientColors,
@@ -136,7 +136,7 @@ struct DirIcon: View {
                         endPoint: .bottom
                     )
                 )
-                .shadow(color: .gray.opacity(isSelected ? 0.4 : 0), radius: 5.0, x: 0, y: 2)
+                .shadow(color: .gray.opacity(isSelected ? 0.4 : 0), radius: 7.0, x: 0, y: 2)
         )
     }
 }

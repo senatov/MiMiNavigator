@@ -1,17 +1,17 @@
-    //
-    //  EditablePathControlWrapper.swift
-    //  MiMiNavigator
-    //
-    //  Created by Iakov Senatov on 25.03.25.
-    //  Copyright © 2025 Senatov. All rights reserved.
-    //
+//
+//  EditablePathControlWrapper.swift
+//  MiMiNavigator
+//
+//  Created by Iakov Senatov on 25.03.25.
+//  Copyright © 2025 Senatov. All rights reserved.
+//
 
 import SwiftUI
 
-    // MARK: -
+// MARK: -
 struct EditablePathControlWrapper: View {
     @Binding var path: String
-    let side: PanelSide        // ← вот здесь
+    let side: PanelSide  // ← вот здесь
     @State private var isEditing = false
     @FocusState private var isTextFieldFocused: Bool
 
@@ -26,17 +26,17 @@ struct EditablePathControlWrapper: View {
         .padding(.horizontal, 6)
         .padding(.vertical, 6)
         .background(
-            RoundedRectangle(cornerRadius: 5)
+            RoundedRectangle(cornerRadius: 7)
                 .fill(Color.white)
-                .shadow(color: .black.opacity(0.15), radius: 5.0, x: 0, y: 2)
+                .shadow(color: .black.opacity(0.15), radius: 7.0, x: 0, y: 2)
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 5)
+            RoundedRectangle(cornerRadius: 7)
                 .stroke(.gray.opacity(0.3), lineWidth: 1)
         )
         .padding(.vertical, 6)
     }
-        // MARK: -
+    // MARK: -
     private var editingView: some View {
         HStack {
             TextField("Enter path", text: $path)
@@ -63,7 +63,7 @@ struct EditablePathControlWrapper: View {
                         isEditing = false
                     }
                 }
-            
+
             Button {
                 log.debug("Checkmark button clicked")
                 log.debug("Confirmed path editing with checkmark")
@@ -75,7 +75,7 @@ struct EditablePathControlWrapper: View {
                     .renderingMode(.original)
                     .foregroundColor(.accentColor)
             }
-            
+
             Button {
                 log.debug("Cancel (X) button clicked")
                 log.debug("Cancelled path editing with X button")
@@ -90,25 +90,25 @@ struct EditablePathControlWrapper: View {
         }
         .transition(.opacity)
     }
-        // MARK: -
+    // MARK: -
     private func handlePathChanged(_ newPath: String) {
         log.debug("Path changed to: \(newPath)")
         self.path = newPath
     }
-        // MARK: -
+    // MARK: -
     private var pathControlView: some View {
         EditablePathControlView(path: $path, side: side, onPathSelected: handlePathChanged)
     }
-        // MARK: -
+    // MARK: -
     private var displayView: some View {
         pathControlView
             // Layout
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(Color.white)
-        
+
             // Typography
             .font(.system(size: 13, weight: .light, design: .default))
-        
+
             // Interaction
             .contentShape(Rectangle())
             .onTapGesture {
@@ -117,7 +117,7 @@ struct EditablePathControlWrapper: View {
                     isEditing = true
                 }
             }
-        
+
             // Transition & Animation
             .transition(.opacity.combined(with: .scale))
             .animation(.easeInOut(duration: 0.25), value: isEditing)

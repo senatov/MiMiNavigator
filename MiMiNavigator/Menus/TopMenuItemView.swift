@@ -33,7 +33,7 @@ struct TopMenuItemView: View {
             .background(
                 isPressed ? Color.blue.opacity(0.7) : isHovered ? Color.blue.opacity(0.3) : Color.clear
             )
-            .cornerRadius(3)
+            .cornerRadius(7)
         }
         .buttonStyle(TopMenuButtonStyle())
         .onHover { hovering in
@@ -175,7 +175,7 @@ struct HelpPopup: View {
             .foregroundColor(.black)
             .padding(8)
             .background(Color.yellow.opacity(0.1))  // Бледно-жёлтый фон
-            .cornerRadius(3)
+            .cornerRadius(7)
             .frame(width: 200)  // Ограничение ширины
     }
 }

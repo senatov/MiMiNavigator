@@ -1,5 +1,5 @@
     //
-    //  TreeView.swift
+    //  FavTreeMnu.swift
     //  MiMiNavigator
     //
     //  Created by Iakov Senatov on 16.10.24.
@@ -8,7 +8,7 @@
 import SwiftUI
 import SwiftyBeaver
 
-struct TreeView: View {
+struct FavTreeMnu: View {
     @Binding var files: [CustomFile]
     @Binding var selectedFile: CustomFile?
     
@@ -39,10 +39,15 @@ struct TreeView: View {
             }
             .padding(.bottom, 8)
         }
-        .background(RoundedRectangle(cornerRadius: 5)
-            .stroke(Color.blue.opacity(0.3), lineWidth: 1)
-            .background(Color.white.opacity(0.05))
-            .cornerRadius(3))
+        .frame(width: 450)
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(Color.white.opacity(0.05))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(Color.blue.opacity(0.2), lineWidth: 2)
+                )
+        )
         .padding()
     }
 }
