@@ -2,23 +2,31 @@ import AppKit
 import SwiftUI
 import SwiftyBeaver
 
-// MARK: -
-struct FavButtonPopupTopPanel: View {
+    // MARK: -
+public struct FavButtonPopupTopPanel: View {
     @State private var showFavTreePopup = false
     @State private var favTreeStruct: [CustomFile] = []
-    @State private var selectedFile: CustomFile? = nil
+    @ObservedObject var selDir: SelectedDir
 
-    var body: some View {
+    public init(selected: SelectedDir) {
+        self.selDir = selected
+    }
+
+    public var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            HStack(spacing: 6) {
-                backButton
-                forwardButton
-                menuButton
-            }
+            navigationControls
         }
     }
 
-    // MARK: -
+    private var navigationControls: some View {
+        HStack(spacing: 6) {
+            backButton
+            forwardButton
+            menuButton
+        }
+    }
+
+        // MARK: -
     private var backButton: some View {
         Button(action: {
             log.debug("Back: navigating to previous directory")
@@ -29,7 +37,7 @@ struct FavButtonPopupTopPanel: View {
         .help("Back: navigating to previous directory")
     }
 
-    // MARK: -
+        // MARK: -
     private var forwardButton: some View {
         Button(action: {
             log.debug("Forward: navigating to next directory")
@@ -41,7 +49,7 @@ struct FavButtonPopupTopPanel: View {
         .help("Forward: navigating to next directory")
     }
 
-    // MARK: -
+        // MARK: -
     private var menuButton: some View {
         Button(action: {
             log.debug("Navigation between favorites")
@@ -55,22 +63,20 @@ struct FavButtonPopupTopPanel: View {
         .shadow(color: .blue.opacity(0.15), radius: 5.0, x: 1, y: 1)
         .buttonStyle(.plain)
         .popover(isPresented: $showFavTreePopup, arrowEdge: .bottom) {
-            buildFavTreeMenu()
+            favoritePopover()
         }
         .help("Navigation between favorites")
     }
 
-    // MARK: -
-    func buildFavTreeMenu() -> some View {
-        log.debug(#function)
-        return FavTreeMnu(files: $favTreeStruct, selectedFile: $selectedFile)
+    private func favoritePopover() -> some View {
+        FavTreeMnu(files: $favTreeStruct, selectedDir: selDir)
             .padding(6)
             .font(.custom("Helvetica Neue", size: 11).weight(.light))
             .foregroundColor(Color(#colorLiteral(red: 0.1294117719, green: 0.2156862766, blue: 0.06666667014, alpha: 1)))
             .animation(.spring(response: 0.4, dampingFraction: 0.7, blendDuration: 0.3), value: favTreeStruct)
     }
 
-    // MARK: -
+        // MARK: -
     @MainActor
     private func fetchFavTree() async {
         log.debug(#function)
@@ -80,7 +86,7 @@ struct FavButtonPopupTopPanel: View {
         favTreeStruct.append(contentsOf: files)
     }
 
-    // MARK: -
+        // MARK: -
     private func fetchFavoritesAsync(from scanner: FavScanner) async -> [CustomFile] {
         await withCheckedContinuation { continuation in
             scanner.scanFavoritesAndNetworkVolumes { files in

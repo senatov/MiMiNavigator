@@ -10,17 +10,17 @@ import SwiftyBeaver
 
 struct FavTreeView: View {
     @Binding var file: CustomFile
-    @Binding var selectedFile: CustomFile?
+    @ObservedObject var selDir: SelectedDir
     @Binding var expandedFolders: Set<String>
 
     var isExpanded: Bool {
         expandedFolders.contains(file.path)
     }
-
+    // MARK: -
     var body: some View {
         VStack(alignment: .leading) {
             HStack {
-                // Анимация вращения значка раскрытия
+                // Expand/collapse icon rotation animation
                 if file.isDirectory {
                     Image(systemName: "chevron.right.circle.fill")
                         .renderingMode(.original)
@@ -34,11 +34,12 @@ struct FavTreeView: View {
                     Image(systemName: "doc")
                         .foregroundColor(.gray)
                 }
-                // Клик для выбора файла
+                // Click to select the file
+                let isTheSame = selDir.selectedDir.path == file.path
                 Text(file.name)
-                    .foregroundColor(selectedFile?.path == file.path ? .blue : .primary)
+                    .foregroundColor(isTheSame ? .blue : .primary)
                     .onTapGesture {
-                        selectedFile = file
+                        selDir.selectedDir = file
                         log.debug("Selected file: \(file.name)")
 
                     }
@@ -47,8 +48,8 @@ struct FavTreeView: View {
                     }
             }
             .padding(.leading, file.isDirectory ? 5 : 15)
-            .font(.system(size: 14, weight: .regular))  // Унифицированный шрифт
-            // Анимация появления поддиректорий
+            .font(.system(size: 14, weight: .regular))  // Unified font
+            // Subdirectory appearance animation
             if isExpanded, let children = file.children, !children.isEmpty {
                 ForEach(children.indices, id: \.self) { index in
                     FavTreeView(
@@ -56,7 +57,7 @@ struct FavTreeView: View {
                             get: { file.children![index] },
                             set: { file.children![index] = $0 }
                         ),
-                        selectedFile: $selectedFile,
+                        selDir: selDir,
                         expandedFolders: $expandedFolders
                     )
                     .padding(.leading, 15)
@@ -64,15 +65,15 @@ struct FavTreeView: View {
                 }
             }
         }
-        .animation(.easeInOut(duration: 0.25), value: isExpanded)  // Плавная анимация раскрытия
+        .animation(.easeInOut(duration: 0.25), value: isExpanded)  // Smooth expansion animation
     }
-
+    // MARK: -
     private func toggleExpansion() {
         if isExpanded {
             expandedFolders.remove(file.path)
         } else {
             expandedFolders.insert(file.path)
         }
-        log.debug("Toggled folder: \(file.name), Expanded: \(isExpanded)")
+        log.debug("Toggled folder: \(file.name), expanded: \(isExpanded)")
     }
 }

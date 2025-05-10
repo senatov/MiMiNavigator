@@ -1,23 +1,20 @@
 import AppKit
-    //
-    //  EditablePathControlView.swift
-    //  MiMiNavigator
-    //
-    //  Created by Iakov Senatov on 14.11.24.
-    //  Copyright © 2024 Senatov. All rights reserved.
-    //
+//
+//  EditablePathControlView.swift
+//  MiMiNavigator
+//
+//  Created by Iakov Senatov on 14.11.24.
+//  Copyright © 2024 Senatov. All rights reserved.
+//
 import SwiftUI
 import SwiftyBeaver
-
-enum PanelSide {
-    case left, right
-}
 
 struct EditablePathControlView: View {
     @Binding var path: String
     let side: PanelSide
     var onPathSelected: (String) -> Void
-    
+
+    // MARK: -
     var body: some View {
         HStack(spacing: 2) {
             NavMnu()
@@ -47,21 +44,21 @@ struct EditablePathControlView: View {
                 .fill(.background)
         )
     }
-    
-        // Вспомогательная структура для элементов пути
+
+    // MARK: - Helper structure for path items
     struct EditablePathItem: Hashable {
         let title: String
         let path: String
         let icon: NSImage
     }
-    
-        // Генерация элементов пути
+
+    // MARK: - Generate path components
     private func pathComponents() -> [EditablePathItem] {
         log.debug(#function)
         let url = URL(fileURLWithPath: path)
         var components = url.pathComponents
         if components.first == "/" { components.removeFirst() }
-        
+
         var currentPath = "/"
         return components.map { component in
             currentPath = (currentPath as NSString).appendingPathComponent(component)
@@ -70,8 +67,9 @@ struct EditablePathControlView: View {
             return EditablePathItem(title: component, path: currentPath, icon: icon)
         }
     }
-    
+
 }
+// MARK: -
 
 struct Mnu2: View {
     var body: some View {
@@ -95,33 +93,34 @@ struct Mnu2: View {
         .menuStyle(.borderlessButton)
     }
 }
-
+// MARK: -
 struct NavMnu: View {
     var body: some View {
         HStack(spacing: 4) {
-            FavButtonPopupTopPanel()
+            FavButtonPopupTopPanel(SelectedDir: selectedDir)
         }
         .padding(.leading, 6)
     }
 }
-
+// MARK: -
 struct DirIcon: View {
     let item: EditablePathControlView.EditablePathItem
     let path: String
     let side: PanelSide
-    
+
     var body: some View {
         let isSelected = path == item.path
         let baseColor: Color = side == .left ? .green : .blue
-        let gradientColors = isSelected
-        ? [baseColor.opacity(0.2), baseColor.opacity(0.1)]
-        : [baseColor.opacity(0), baseColor.opacity(0.01)]
+        let gradientColors =
+            isSelected
+            ? [baseColor.opacity(0.2), baseColor.opacity(0.1)]
+            : [baseColor.opacity(0), baseColor.opacity(0.01)]
         return HStack(spacing: 4) {
             Image(nsImage: item.icon)
                 .resizable()
                 .renderingMode(.original)
                 .frame(width: 16, height: 16)
-            
+
             Text(item.title)
                 .foregroundStyle(.primary)
                 .font(.callout)
