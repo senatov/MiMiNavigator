@@ -10,13 +10,9 @@
 import SwiftUI
 import SwiftyBeaver
 
-// MARK: - FavoritesPanel
-
-/// A sidebar panel displaying user's favorite locations in a Finder-style interface.
+// MARK: - A sidebar panel displaying user's favorite locations in a Finder-style interface.
 struct FavPanel: View {
-    // MARK: - Favorite Item Model
-
-    @AppStorage("favoritesState") private var favoritesStateJson: String = "" // JSON storage for favorites state
+    @AppStorage("favoritesState") private var favoritesStateJson: String = ""  // JSON storage for favorites state
 
     // MARK: - Define Finder-style favorite items
     private var favoriteItems: [FavoriteItem] = [
@@ -35,23 +31,23 @@ struct FavPanel: View {
     ]
 
     // MARK: - Convert JSON string to a dictionary for accessing favorites state
-
     private var favoritesState: [String: Bool] {
         guard let data = favoritesStateJson.data(using: .utf8) else { return [:] }
         return (try? JSONDecoder().decode([String: Bool].self, from: data)) ?? [:]
     }
 
     // MARK: - Helper method to update favoritesStateJson directly
-
     private func updateFavoritesState(for itemName: String, value: Bool) {
         var state = favoritesState
         state[itemName] = value
         if let data = try? JSONEncoder().encode(state),
-           let jsonString = String(data: data, encoding: .utf8) {
+            let jsonString = String(data: data, encoding: .utf8)
+        {
             favoritesStateJson = jsonString
         }
     }
 
+    // MARK: -
     var body: some View {
         VStack {
             Text("Favorites").font(.callout)
@@ -82,4 +78,3 @@ struct FavPanel_Previews: PreviewProvider {
         FavPanel()
     }
 }
-
