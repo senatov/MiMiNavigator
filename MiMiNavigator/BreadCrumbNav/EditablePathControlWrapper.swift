@@ -9,11 +9,26 @@
 import SwiftUI
 
 // MARK: -
+/// -
 struct EditablePathControlWrapper: View {
-    @Binding var path: String
-    let side: PanelSide  // ← вот здесь
+    @ObservedObject var selection: SelectedDir
+    @State private var editedPathStr: String = ""
     @State private var isEditing = false
     @FocusState private var isTextFieldFocused: Bool
+    var selectedSide: PanelSide
+
+    init(selection: SelectedDir, selectedSide: PanelSide) {
+        self._selection = ObservedObject(wrappedValue: selection)
+        self.selectedSide = selectedSide
+    }
+
+    init(selStr: String, selectedSide: PanelSide) {
+        //FIXME: check on adequitet the code
+        let selection = SelectedDir(initialPath: selStr, side: selectedSide)
+        selection.selectedFSEntity = CustomFile(path: selStr)
+        self._selection = ObservedObject(wrappedValue: selection)
+        self.selectedSide = selectedSide
+    }
 
     var body: some View {
         HStack {
@@ -39,13 +54,14 @@ struct EditablePathControlWrapper: View {
     // MARK: -
     private var editingView: some View {
         HStack {
-            TextField("Enter path", text: $path)
+            TextField("Enter path", text: $editedPathStr)
                 .textFieldStyle(.plain)
                 .padding(6)
                 .background(.white)
                 .focused($isTextFieldFocused)
                 .onAppear {
                     log.debug("Entered editing mode")
+                    editedPathStr = selection.selectedFSEntity.pathStr
                     isTextFieldFocused = true
                     DispatchQueue.main.async {
                         if let editor = NSApp.keyWindow?.firstResponder as? NSTextView {
@@ -58,14 +74,14 @@ struct EditablePathControlWrapper: View {
                     isEditing = false
                 }
                 .onSubmit {
-                    log.debug("Submitted new path: \(path)")
+                    log.debug("Submitted new path: \(editedPathStr)")
+                    selection.selectedFSEntity = CustomFile(path: editedPathStr)
                     withAnimation(.easeInOut(duration: 0.3)) {
                         isEditing = false
                     }
                 }
 
             Button {
-                log.debug("Checkmark button clicked")
                 log.debug("Confirmed path editing with checkmark")
                 withAnimation(.easeInOut(duration: 0.3)) {
                     isEditing = false
@@ -77,7 +93,6 @@ struct EditablePathControlWrapper: View {
             }
 
             Button {
-                log.debug("Cancel (X) button clicked")
                 log.debug("Cancelled path editing with X button")
                 withAnimation(.easeInOut(duration: 0.3)) {
                     isEditing = false
@@ -90,26 +105,18 @@ struct EditablePathControlWrapper: View {
         }
         .transition(.opacity)
     }
-    // MARK: -
-    private func handlePathChanged(_ newPath: String) {
-        log.debug("Path changed to: \(newPath)")
-        self.path = newPath
-    }
+
     // MARK: -
     private var pathControlView: some View {
-        EditablePathControlView(path: $path, side: side, onPathSelected: handlePathChanged)
+        EditablePathControlView(selectedDir: selection, panelSide: selectedSide)
     }
+
     // MARK: -
     private var displayView: some View {
         pathControlView
-            // Layout
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(Color.white)
-
-            // Typography
             .font(.system(size: 13, weight: .light, design: .default))
-
-            // Interaction
             .contentShape(Rectangle())
             .onTapGesture {
                 log.debug("Switching to editing mode")
@@ -117,8 +124,6 @@ struct EditablePathControlWrapper: View {
                     isEditing = true
                 }
             }
-
-            // Transition & Animation
             .transition(.opacity.combined(with: .scale))
             .animation(.easeInOut(duration: 0.25), value: isEditing)
     }

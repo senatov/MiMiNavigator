@@ -135,6 +135,8 @@
 			buildRules = (
 			);
 			dependencies = (
+				97B47D5F2DD1265B0017B126 /* PBXTargetDependency */,
+				97B47D5D2DD126570017B126 /* PBXTargetDependency */,
 				97D915692CD5624900EB5FDD /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
@@ -287,6 +289,14 @@
 			isa = PBXTargetDependency;
 			target = 97AD1A2D2C624E020045C38D /* MiMiNavigator */;
 			targetProxy = 97AD1A4C2C624E040045C38D /* PBXContainerItemProxy */;
+		};
+		97B47D5D2DD126570017B126 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			productRef = 97B47D5C2DD126570017B126 /* FilesProvider */;
+		};
+		97B47D5F2DD1265B0017B126 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			productRef = 97B47D5E2DD1265B0017B126 /* SystemPackage */;
 		};
 		97D915692CD5624900EB5FDD /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -618,6 +628,16 @@
 
 /* Begin XCSwiftPackageProductDependency section */
 		97B3D6372DCA54B9002F1DB7 /* SystemPackage */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 97B3D6362DCA54A2002F1DB7 /* XCRemoteSwiftPackageReference "swift-system" */;
+			productName = SystemPackage;
+		};
+		97B47D5C2DD126570017B126 /* FilesProvider */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 97D128732DB62CB400274684 /* XCRemoteSwiftPackageReference "FileProvider" */;
+			productName = FilesProvider;
+		};
+		97B47D5E2DD1265B0017B126 /* SystemPackage */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 97B3D6362DCA54A2002F1DB7 /* XCRemoteSwiftPackageReference "swift-system" */;
 			productName = SystemPackage;

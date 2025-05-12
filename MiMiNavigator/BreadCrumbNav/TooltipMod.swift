@@ -8,11 +8,14 @@
 import SwiftUI
 import SwiftyBeaver
 
-// MARK: - TooltipModule is responsible for calculating the tooltip text and position.
+// MARK: -
+/// - TooltipModule is responsible for calculating the tooltip text and position.
 struct ToolTipMod {
 
     // MARK: - Tooltip text showing the ratio between left and right panels
-    static func calculateTooltip(location: CGPoint, dividerX: CGFloat, totalWidth: CGFloat) -> (String, CGPoint) {
+    static func calculateTooltip(location: CGPoint, dividerX: CGFloat, totalWidth: CGFloat) -> (
+        String, CGPoint
+    ) {
         log.info(#function)
         let leftRatio = (dividerX / totalWidth * 100).rounded()
         let rightRatio = (100 - leftRatio).rounded()

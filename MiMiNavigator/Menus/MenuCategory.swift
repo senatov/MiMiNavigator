@@ -10,11 +10,11 @@ import SwiftUI
 // MARK: - Supporting Structures
 struct MenuCategory: Identifiable {
     let id = UUID()
-    let title: String
+    let titleStr: String
     let items: [MenuItem]
 
     init(title: String, items: [MenuItem]) {
-        self.title = title
+        self.titleStr = title
         self.items = items
     }
 }

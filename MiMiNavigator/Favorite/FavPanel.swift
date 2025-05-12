@@ -12,7 +12,7 @@ import SwiftyBeaver
 
 // MARK: - A sidebar panel displaying user's favorite locations in a Finder-style interface.
 struct FavPanel: View {
-    @AppStorage("favoritesState") private var favoritesStateJson: String = ""  // JSON storage for favorites state
+    @AppStorage("favoritesState") private var favoritesStateJsonStr: String = ""  // JSON storage for favorites state
 
     // MARK: - Define Finder-style favorite items
     private var favoriteItems: [FavoriteItem] = [
@@ -32,7 +32,7 @@ struct FavPanel: View {
 
     // MARK: - Convert JSON string to a dictionary for accessing favorites state
     private var favoritesState: [String: Bool] {
-        guard let data = favoritesStateJson.data(using: .utf8) else { return [:] }
+        guard let data = favoritesStateJsonStr.data(using: .utf8) else { return [:] }
         return (try? JSONDecoder().decode([String: Bool].self, from: data)) ?? [:]
     }
 
@@ -43,7 +43,7 @@ struct FavPanel: View {
         if let data = try? JSONEncoder().encode(state),
             let jsonString = String(data: data, encoding: .utf8)
         {
-            favoritesStateJson = jsonString
+            favoritesStateJsonStr = jsonString
         }
     }
 
@@ -53,17 +53,17 @@ struct FavPanel: View {
             Text("Favorites").font(.callout)
             List(favoriteItems) { item in
                 HStack {
-                    Image(systemName: item.icon.isEmpty ? "questionmark" : item.icon)
+                    Image(systemName: item.iconStr.isEmpty ? "questionmark" : item.iconStr)
                         .renderingMode(.original)
                         .foregroundColor(.blue)
-                    Text(item.name)
+                    Text(item.nameStr)
                 }
                 .onTapGesture {
-                    log.debug("Selected favorite item: \(item.name)")
+                    log.debug("Selected favorite item: \(item.nameStr)")
                 }
                 .onAppear {
-                    if favoritesState[item.name] == nil {
-                        updateFavoritesState(for: item.name, value: false)
+                    if favoritesState[item.nameStr] == nil {
+                        updateFavoritesState(for: item.nameStr, value: false)
                     }
                 }
             }
@@ -72,9 +72,3 @@ struct FavPanel: View {
     }
 }
 
-// MARK: - Preview
-struct FavPanel_Previews: PreviewProvider {
-    static var previews: some View {
-        FavPanel()
-    }
-}

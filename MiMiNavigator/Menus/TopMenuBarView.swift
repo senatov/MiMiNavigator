@@ -19,13 +19,13 @@ struct TopMenuBarView: View {
                         TopMenuItemView(item: item)
                     }
                 } label: {
-                    Text(menu.title)
+                    Text(menu.titleStr)
                         .padding(.horizontal, 8)
                         .padding(.vertical, 8)
                         .font(.system(size: NSFont.systemFontSize, weight: .regular))
                         .foregroundColor(Color.primary)
                         .frame(height: 22)
-                        .help("Open menu: '\(menu.title)'")
+                        .help("Open menu: '\(menu.titleStr)'")
                 }
                 .buttonStyle(TopMenuButtonStyle())
             }
@@ -37,13 +37,13 @@ struct TopMenuBarView: View {
                         TopMenuItemView(item: item)
                     }
                 } label: {
-                    Text(helpMenu.title)
+                    Text(helpMenu.titleStr)
                         .padding(.horizontal, 8)
                         .padding(.vertical, 6)
                         .font(.system(size: NSFont.systemFontSize, weight: .regular))
                         .foregroundColor(Color.primary)
                         .frame(height: 22)
-                        .help("Open menu: '\(helpMenu.title)'")
+                        .help("Open menu: '\(helpMenu.titleStr)'")
                 }
                 .buttonStyle(TopMenuButtonStyle())
                 .padding(.trailing, 1)  // Adds a small spacing from the right edge
