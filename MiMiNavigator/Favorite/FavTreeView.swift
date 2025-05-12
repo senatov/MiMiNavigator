@@ -10,11 +10,11 @@ import SwiftyBeaver
 
 struct FavTreeView: View {
     @Binding var file: CustomFile
-    @ObservedObject var selDir: SelectedDir
+    @ObservedObject var selected: SelectedDir
     @Binding var expandedFolders: Set<String>
 
     var isExpanded: Bool {
-        expandedFolders.contains(file.path)
+        expandedFolders.contains(file.pathStr)
     }
     // MARK: -
     var body: some View {
@@ -26,7 +26,10 @@ struct FavTreeView: View {
                         .renderingMode(.original)
                         .foregroundColor(.blue)
                         .rotationEffect(.degrees(isExpanded ? 90 : 0))  // Вращение
-                        .animation(.spring(response: 0.3, dampingFraction: 0.6, blendDuration: 0.3), value: isExpanded)
+                        .animation(
+                            .spring(response: 0.3, dampingFraction: 0.6, blendDuration: 0.3),
+                            value: isExpanded
+                        )
                         .onTapGesture {
                             toggleExpansion()
                         }
@@ -35,12 +38,12 @@ struct FavTreeView: View {
                         .foregroundColor(.gray)
                 }
                 // Click to select the file
-                let isTheSame = selDir.selectedDir.path == file.path
-                Text(file.name)
+                let isTheSame = selected.selectedFSEntity.pathStr == file.pathStr
+                Text(file.nameStr)
                     .foregroundColor(isTheSame ? .blue : .primary)
                     .onTapGesture {
-                        selDir.selectedDir = file
-                        log.debug("Selected file: \(file.name)")
+                        selected.selectedFSEntity = file
+                        log.debug("Selected file: \(file.nameStr)")
 
                     }
                     .contextMenu {
@@ -57,7 +60,7 @@ struct FavTreeView: View {
                             get: { file.children![index] },
                             set: { file.children![index] = $0 }
                         ),
-                        selDir: selDir,
+                        selected: selected,
                         expandedFolders: $expandedFolders
                     )
                     .padding(.leading, 15)
@@ -70,10 +73,10 @@ struct FavTreeView: View {
     // MARK: -
     private func toggleExpansion() {
         if isExpanded {
-            expandedFolders.remove(file.path)
+            expandedFolders.remove(file.pathStr)
         } else {
-            expandedFolders.insert(file.path)
+            expandedFolders.insert(file.pathStr)
         }
-        log.debug("Toggled folder: \(file.name), expanded: \(isExpanded)")
+        log.debug("Toggled folder: \(file.nameStr), expanded: \(isExpanded)")
     }
 }

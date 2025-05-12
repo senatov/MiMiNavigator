@@ -12,6 +12,7 @@ import Foundation
 import SwiftUI
 
 // MARK: - Manages dual directory monitoring with periodic file refreshes.
+/// -
 actor DualDirectoryScanner: ObservableObject {
     let interval = 45
 
@@ -38,6 +39,7 @@ actor DualDirectoryScanner: ObservableObject {
     }
 
     // MARK: - Initialization
+    /// -
     init(leftDirectory: URL, rightDirectory: URL) {
         log.info(#function)
         self.leftDirectory = leftDirectory
@@ -119,7 +121,6 @@ actor DualDirectoryScanner: ObservableObject {
         let rootCustomFile = CustomFile(
             name: "...",
             path: "..",
-            isDirectory: true
         )
         let fileManager = FileManager.default
         var customFiles: [CustomFile] = [rootCustomFile]
@@ -130,11 +131,9 @@ actor DualDirectoryScanner: ObservableObject {
                 options: [.skipsHiddenFiles]
             )
             for fileURL in contents {
-                let isDirectory = (try? fileURL.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
                 let customFile = CustomFile(
                     name: fileURL.lastPathComponent,
                     path: fileURL.path,
-                    isDirectory: isDirectory
                 )
                 customFiles.append(customFile)
             }
@@ -147,13 +146,13 @@ actor DualDirectoryScanner: ObservableObject {
     }
 
     // MARK: -
-    func setLeftDirectory(path: String) {
-        self.leftDirectory = URL(fileURLWithPath: path)
+    func setLeftDirectory(pathStr: String) {
+        self.leftDirectory = URL(fileURLWithPath: pathStr)
     }
 
     // MARK: -
-    func setRightDirectory(path: String) {
-        self.rightDirectory = URL(fileURLWithPath: path)
+    func setRightDirectory(pathStr: String) {
+        self.rightDirectory = URL(fileURLWithPath: pathStr)
     }
 
 }

@@ -8,6 +8,7 @@ import Foundation
 import SwiftUI
 import SwiftyBeaver
 
+///  -
 struct UserPreferences {
     static let shared = UserPreferences()
     // Keys for storing window and UI state
@@ -60,7 +61,9 @@ struct UserPreferences {
         let x = UserDefaults.standard.object(forKey: mimiWindowPosXKey) as? CGFloat ?? defaultX
         let y = UserDefaults.standard.object(forKey: mimiWindowPosYKey) as? CGFloat ?? defaultY
 
-        log.debug("Restoring window position - X: \(x), Y: \(y) (Default if not saved - X: \(defaultX), Y: \(defaultY))")
+        log.debug(
+            "Restoring window position - X: \(x), Y: \(y) (Default if not saved - X: \(defaultX), Y: \(defaultY))"
+        )
         return CGPoint(x: x, y: y)
     }
 

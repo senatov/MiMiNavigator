@@ -5,8 +5,8 @@ struct TotalCommanderResizableView: View {
     @State private var displayedRightFiles: [CustomFile] = []
     @State private var isDividerTooltipVisible: Bool = true
     @State private var leftPanelWidth: CGFloat = 0
-    @State private var leftPath: String = ""
-    @State private var rightPath: String = ""
+    @State private var leftPathStr: String = ""
+    @State private var rightPathStr: String = ""
     @State private var tooltipPosition: CGPoint = .zero
     @State private var tooltipText: String = ""
 
@@ -18,8 +18,8 @@ struct TotalCommanderResizableView: View {
     // MARK: -
     @MainActor
     private func fetchPaths() async {
-        leftPath = await scanner.leftDirectory.path
-        rightPath = await scanner.rightDirectory.path
+        leftPathStr = await scanner.leftDirectory.path
+        rightPathStr = await scanner.rightDirectory.path
     }
 
     // MARK: - Fetch the files asynchronously from the actor
@@ -80,17 +80,17 @@ struct TotalCommanderResizableView: View {
     private func buildLeftPanel(geometry: GeometryProxy) -> some View {
         log.info(#function)
         return VStack {
-            EditablePathControlWrapper(path: $leftPath, side: .left)
-                .onChange(of: leftPath) { _, newPath in
+            EditablePathControlWrapper(selStr: leftPathStr, selectedSide: .left)
+                .onChange(of: leftPathStr) { _, newPath in
                     Task {
-                        await scanner.setLeftDirectory(path: newPath)
+                        await scanner.setLeftDirectory(pathStr: newPath)
                         await fetchLeftFiles()
                     }
                 }
                 .cornerRadius(7)
                 .padding(.horizontal, 6)
             List(displayedLeftFiles, id: \.id) { file in
-                Text(file.name)
+                Text(file.nameStr)
                     .contextMenu {
                         FileContextMenu()
                     }
@@ -111,17 +111,17 @@ struct TotalCommanderResizableView: View {
     private func buildRightPanel() -> some View {
         log.info(#function)
         return VStack {
-            EditablePathControlWrapper(path: $rightPath, side: .right)
-                .onChange(of: rightPath) { _, newPath in
+            EditablePathControlWrapper(selStr: rightPathStr, selectedSide: .right)
+                .onChange(of: rightPathStr) { _, newPath in
                     Task(priority: .low) {
-                        await scanner.setRightDirectory(path: newPath)
+                        await scanner.setRightDirectory(pathStr: newPath)
                         await fetchRightFiles()
                     }
                 }
                 .cornerRadius(7)
                 .padding(.horizontal, 6)
             List(displayedRightFiles, id: \.id) { file in
-                Text(file.name)
+                Text(file.nameStr)
                     .contextMenu {
                         FileContextMenu()
                     }

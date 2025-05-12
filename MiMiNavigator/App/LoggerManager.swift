@@ -2,10 +2,12 @@ import Compression
 import Foundation
 import SwiftyBeaver
 
+/// -
 final class LogMan {
     static let log = SwiftyBeaver.self
 
     // MARK: -
+    /// -
     static func initializeLogging() {
         let console = ConsoleDestination()
         console.format = "$DHH:mm:ss$d ➤ $L ➤ $N.$F:$l ➤ $M"
@@ -35,7 +37,8 @@ final class LogMan {
     // MARK: -
     private static func setupFileLogging() {
         let file = FileDestination()
-        let logDirectory = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask).first?.appendingPathComponent("Logs/MiMiNavigator")
+        let logDirectory = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask).first?
+            .appendingPathComponent("Logs/MiMiNavigator")
         if let logDirectory = logDirectory {
             do {
                 try FileManager.default.createDirectory(at: logDirectory, withIntermediateDirectories: true)

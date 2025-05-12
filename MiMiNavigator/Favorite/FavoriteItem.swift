@@ -11,13 +11,13 @@ import SwiftUI
 // MARK: -
 struct FavoriteItem: Identifiable {
     let id = UUID()
-    let name: String
-    let icon: String
+    let nameStr: String
+    let iconStr: String
 
     // MARK: -
     init(name: String, icon: String) {
-        self.name = name
-        self.icon = icon
+        self.nameStr = name
+        self.iconStr = icon
     }
 
 }

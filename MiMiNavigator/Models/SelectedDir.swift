@@ -1,26 +1,39 @@
-    //
-    //  SelectedDir.swift
-    //  MiMiNavigator
-    //
-    //  Created by Iakov Senatov on 10.05.25.
-    //  Copyright © 2025 Senatov. All rights reserved.
-    //
+//
+//  SelectedDir.swift
+//  MiMiNavigator
+//
+//  Created by Iakov Senatov on 09.05.25.
+//  Copyright © 2025 Senatov. All rights reserved.
+//
 
-import SwiftUI
+import Combine
+import Foundation
 
+// MARK: - PanelSide Enum
+/// Represents the panel side (left or right) in the UI
+public enum PanelSide: String, Codable, CaseIterable {
+    case left
+    case right
+}
+
+// MARK: - SelectedDir ViewModel
+/// Encapsulates the selected file system entity and its associated panel side
 public class SelectedDir: ObservableObject {
+    @Published public var selectedFSEntity: CustomFile
+    @Published public var side: PanelSide
 
-        // TODO: Currently initialized, but should be saved in UserDefaults or other persistent storage
-    @Published var selectedDir: CustomFile
+    /// Initializes with default path and panel side
+    public init(initialPath: String = "~/Documents", side: PanelSide = .left) {
+        self.selectedFSEntity = CustomFile(path: initialPath)
+        self.side = side
+    }
 
-    init() {
-        if let savedPath = UserDefaults.standard.string(forKey: "SelectedDirPath") {
-            let url = URL(fileURLWithPath: savedPath)
-            let name = url.lastPathComponent
-            let isDirectory = (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
-            self.selectedDir = CustomFile(name: name, path: savedPath, isDirectory: isDirectory)
-        } else {
-            self.selectedDir = CustomFile(name: "/", path: "/", isDirectory: true)  // Default value
-        }
+    /// Initializes from an existing SelectedDir instance
+    public init(
+        selectedDir: SelectedDir = SelectedDir(initialPath: "~/Documents"),
+        side: PanelSide = .left
+    ) {
+        self.selectedFSEntity = selectedDir.selectedFSEntity
+        self.side = side
     }
 }

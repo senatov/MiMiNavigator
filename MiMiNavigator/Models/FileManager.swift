@@ -45,7 +45,6 @@ extension FileManager {
         return homeDirectoryForCurrentUser
     }
 
-
     /// Returns the URL of the user's Music directory
     var musicDirectory: URL {
         return urls(for: .musicDirectory, in: .userDomainMask).first!
@@ -63,7 +62,9 @@ extension FileManager {
 
     // MARK: - Returns the URL of the iCloud Drive directory if available, logs error if unavailable
     var iCloudDirectory: URL? {
-        guard let iCloudURL = url(forUbiquityContainerIdentifier: nil)?.appendingPathComponent("Documents") else {
+        guard
+            let iCloudURL = url(forUbiquityContainerIdentifier: nil)?.appendingPathComponent("Documents")
+        else {
             log.error("iCloud directory not available. Ensure iCloud is enabled and accessible.")
             return nil
         }
@@ -81,7 +82,9 @@ extension FileManager {
                 return path
             }
         }
-        log.error("OneDrive directory not found. OneDrive may not be installed or is located in an unexpected directory.")
+        log.error(
+            "OneDrive directory not found. OneDrive may not be installed or is located in an unexpected directory."
+        )
         return nil
     }
 
@@ -91,7 +94,9 @@ extension FileManager {
         if fileExists(atPath: googleDrivePath.path) {
             return googleDrivePath
         } else {
-            log.error("Google Drive directory not found. Verify Google Drive is installed and accessible.")
+            log.error(
+                "Google Drive directory not found. Verify Google Drive is installed and accessible."
+            )
             return nil
         }
     }
@@ -100,11 +105,16 @@ extension FileManager {
     var networkDrives: [URL] {
         let volumesURL = URL(fileURLWithPath: "/Volumes")
         do {
-            let contents = try contentsOfDirectory(at: volumesURL, includingPropertiesForKeys: nil, options: .skipsHiddenFiles)
+            let contents = try contentsOfDirectory(
+                at: volumesURL,
+                includingPropertiesForKeys: nil,
+                options: .skipsHiddenFiles
+            )
             return contents.filter { $0 != volumesURL.appendingPathComponent("Macintosh HD") }
         } catch {
             log.error(
-                "Failed to access network drives in /Volumes: \(error.localizedDescription). Ensure network drives are connected and accessible.")
+                "Failed to access network drives in /Volumes: \(error.localizedDescription). Ensure network drives are connected and accessible."
+            )
             return []
         }
     }

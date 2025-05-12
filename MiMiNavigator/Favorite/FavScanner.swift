@@ -68,7 +68,9 @@ class FavScanner {
 
         // OneDrive fallback (scan all OneDrive variants under CloudStorage)
         var oneDrive: [CustomFile] = []
-        let cloudStorageURL = URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent("Library/CloudStorage")
+        let cloudStorageURL = URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent(
+            "Library/CloudStorage"
+        )
         if let contents = try? FileManager.default.contentsOfDirectory(
             at: cloudStorageURL,
             includingPropertiesForKeys: nil,
@@ -88,19 +90,23 @@ class FavScanner {
                 guard let volumesURL = volumesURL else {
                     log.error("User did not grant access to /Volumes")
                     let result: [CustomFile] = [
-                        CustomFile(name: "Favorites", path: "", isDirectory: true, children: favorites),
-                        CustomFile(name: "iCloud Drive", path: "", isDirectory: true, children: icloud),
-                        CustomFile(name: "OneDrive", path: "", isDirectory: true, children: oneDrive),
+                        CustomFile(name: "Favorites", path: "", children: favorites),
+                        CustomFile(name: "iCloud Drive", path: "", children: icloud),
+                        CustomFile(name: "OneDrive", path: "", children: oneDrive),
                     ]
                     completion(result)
                     return
                 }
 
-                if let contents = try? FileManager.default.contentsOfDirectory(at: volumesURL, includingPropertiesForKeys: nil) {
-                    for url in contents where (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true {
+                if let contents = try? FileManager.default.contentsOfDirectory(
+                    at: volumesURL,
+                    includingPropertiesForKeys: nil
+                ) {
+                    for url in contents
+                    where (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true {
                         guard FileManager.default.fileExists(atPath: url.path) else { continue }
                         var isNetwork = false
-                        let key = URLResourceKey("volumeIsNetwork") 
+                        let key = URLResourceKey("volumeIsNetwork")
                         let values = try? url.resourceValues(forKeys: [key])
                         isNetwork = (values?.allValues[key] as? Bool) ?? false
 
@@ -120,19 +126,19 @@ class FavScanner {
 
                 var result: [CustomFile] = []
                 if !favorites.isEmpty {
-                    result.append(CustomFile(name: "Favorites", path: .empty, isDirectory: true, children: favorites))
+                    result.append(CustomFile(name: "Favorites", path: .empty, children: favorites))
                 }
                 if !icloud.isEmpty {
-                    result.append(CustomFile(name: "iCloud Drive", path: .empty, isDirectory: true, children: icloud))
+                    result.append(CustomFile(name: "iCloud Drive", path: .empty, children: icloud))
                 }
                 if !oneDrive.isEmpty {
-                    result.append(CustomFile(name: "OneDrive", path: .empty, isDirectory: true, children: oneDrive))
+                    result.append(CustomFile(name: "OneDrive", path: .empty, children: oneDrive))
                 }
                 if !network.isEmpty {
-                    result.append(CustomFile(name: "Network Volumes", path: .empty, isDirectory: true, children: network))
+                    result.append(CustomFile(name: "Network Volumes", path: .empty, children: network))
                 }
                 if !localDisks.isEmpty {
-                    result.append(CustomFile(name: "Local Volumes", path: .empty, isDirectory: true, children: localDisks))
+                    result.append(CustomFile(name: "Local Volumes", path: .empty, children: localDisks))
                 }
                 log.debug("Total groups: \(result.count)")
                 completion(result)
@@ -172,7 +178,7 @@ class FavScanner {
         }
 
         let children = buildChildren(for: url)
-        return CustomFile(name: fileName, path: url.path, isDirectory: true, children: children)
+        return CustomFile(name: fileName, path: url.path, children: children)
     }
 
     // MARK: -
@@ -198,7 +204,9 @@ class FavScanner {
                 return isDirFS.boolValue
             }
             // Fallback to resource values on resolved URL
-            let resolvedValues = try? resolvedURL.resourceValues(forKeys: [.isDirectoryKey, .fileResourceTypeKey])
+            let resolvedValues = try? resolvedURL.resourceValues(forKeys: [
+                .isDirectoryKey, .fileResourceTypeKey,
+            ])
             if resolvedValues?.isDirectory == true || resolvedValues?.fileResourceType == .directory {
                 return true
             }
@@ -228,7 +236,10 @@ class FavScanner {
             let contents =
                 (try? FileManager.default.contentsOfDirectory(
                     at: url,
-                    includingPropertiesForKeys: [.isDirectoryKey, .isSymbolicLinkKey, .isHiddenKey, .fileResourceTypeKey, .typeIdentifierKey],
+                    includingPropertiesForKeys: [
+                        .isDirectoryKey, .isSymbolicLinkKey, .isHiddenKey, .fileResourceTypeKey,
+                        .typeIdentifierKey,
+                    ],
                     options: [.skipsHiddenFiles]
                 )) ?? []
             let validDirectories = contents.prefix(maxDirectories).filter { url in

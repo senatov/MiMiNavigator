@@ -6,6 +6,7 @@
 //  Copyright © 2025 Senatov. All rights reserved.
 //
 
+/// -
 extension String {
     static let empty = ""
     static let slash = "/"
