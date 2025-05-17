@@ -1,15 +1,15 @@
-//
-//  DirIcon.swift
-//  MiMiNavigator
-//
-//  Created by Iakov Senatov on 10.05.2025.
-//  Copyright © 2025 Senatov. All rights reserved.
-//
+    //
+    //  DirIcon.swift
+    //  MiMiNavigator
+    //
+    //  Created by Iakov Senatov on 10.05.2025.
+    //  Copyright © 2025 Senatov. All rights reserved.
+    //
 
 import SwiftUI
 import SwiftyBeaver
 
-// MARK: -
+    // MARK: -
 struct DirIcon: View {
     let item: EditablePathItem
     let pathStr: String
@@ -17,20 +17,22 @@ struct DirIcon: View {
     var body: some View {
         let gradient = LinearGradient(
             colors: pathStr == item.pathStr
-                ? [.blue.opacity(0.15), .blue.opacity(0.05)] : [.clear, .clear],
+            ? [.blue.opacity(0.1), .blue.opacity(0.03)] : [.clear, .clear],
             startPoint: .top,
             endPoint: .bottom
         )
-
+        let cleanedTitleStr = item.titleStr.replacingOccurrences(of: "⋯", with: "")
         return HStack(spacing: 4) {
             Image(nsImage: item.icon)
                 .resizable()
                 .frame(width: 16, height: 16)
-
-            Text(item.titleStr)
+            Text(cleanedTitleStr)
                 .font(.callout)
+                .lineLimit(1)
+                .truncationMode(.middle)
+                .onAppear {}
         }
-        .padding(.vertical, 2)
+        .padding(.vertical, 5)
         .padding(.horizontal, 4)
         .background(
             RoundedRectangle(cornerRadius: 6)
