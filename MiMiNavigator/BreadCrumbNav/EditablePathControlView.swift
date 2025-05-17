@@ -26,7 +26,7 @@ struct EditablePathControlView: View {
             NavMnu1(selectedDir: selected, panelSide: panelSide)
             Spacer(minLength: 3)
             let pathItem = pathComponents()
-            BreadCrumbView(selectedDir: selected, components: pathItem, panelSide: panelSide)
+            BreadCrumbView(selectedDir: selected, components: pathItem, panelSide: panelSide )
             NavMnu2()
         }
         .background(

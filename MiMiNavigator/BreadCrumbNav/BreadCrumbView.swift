@@ -15,25 +15,26 @@ struct BreadCrumbView: View {
     var components: [EditablePathItem]
     var panelSide: PanelSide
 
+    // MARK: -
     init(selectedDir: SelectedDir, components: [EditablePathItem], panelSide: PanelSide) {
         self.selected = selectedDir
         self.components = components
         self.panelSide = panelSide
     }
 
-    // MARK: - Main render pipeline for breadcrumb layout
+    // MARK: - Body
     var body: some View {
         breadcrumbItems
     }
 
-    // MARK: - Lazy render of all breadcrumb items
+    // MARK: - Breadcrumb Items
     private var breadcrumbItems: some View {
         ForEach(Array(components.enumerated()), id: \.1.pathStr) { index, item in
             breadcrumbItem(index: index, item: item)
         }
     }
 
-    // MARK: -
+    // MARK: - Breadcrumb Item
     /// Renders single breadcrumb item with optional separator
     /// - Parameters:
     ///   - index: Position of the item in the breadcrumb trail
@@ -47,7 +48,7 @@ struct BreadCrumbView: View {
         breadcrumbButton(for: item)
     }
 
-    // MARK: -
+    // MARK: - Separator View
     @ViewBuilder
     private func breadcrumbSeparator() -> some View {
         Image(systemName: "chevron.forward.dotted.chevron.forward")
@@ -57,7 +58,7 @@ struct BreadCrumbView: View {
             .symbolRenderingMode(.multicolor)
     }
 
-    // MARK: - Builds an interactive breadcrumb button for a specific path component
+    // MARK: - Breadcrumb Button
     @ViewBuilder
     private func breadcrumbButton(for item: EditablePathItem) -> some View {
         Button(action: { handlePathSelection(for: item) }) {
@@ -66,7 +67,7 @@ struct BreadCrumbView: View {
         .buttonStyle(.plain)
     }
 
-    /// Handles breadcrumb selection logic with animation
+    // MARK: - Selection Logic
     private func handlePathSelection(for item: EditablePathItem) {
         withAnimation(.easeInOut(duration: 0.4)) {
             selected.selectedFSEntity = CustomFile(path: item.pathStr)

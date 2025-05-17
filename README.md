@@ -107,47 +107,47 @@ This application highlights the strengths of **SwiftUI** in creating intuitive, 
 
 ## 📅 Recent Changes
 
-| Commit Hash | Author   | Message                                           | Date                     |
-|-------------|----------|---------------------------------------------------|--------------------------|
-| `f1e192d`   | Senatov  | Fix max branches in Tree scan                     | 2025-04-13 16:05:43 +0200 |
-| `b57a63e`   | Senatov  | Fix tree fav                                      | 2025-04-13 01:45:05 +0200 |
-| `851e4aa`   | Senatov  | Fav. URL fix                                      | 2025-04-12 22:30:07 +0200 |
-| `d9ab99a`   | Senatov  | FavTree processing                                | 2025-04-09 12:12:26 +0200 |
-| `020f864`   | Senatov  | System & network drives support                   | 2025-04-07 00:46:09 +0200 |
-| `5236768`   | Senatov  | Path panel, previews                              | 2025-04-04 01:48:37 +0200 |
-| `fba4236`   | Senatov  | UI shapes, colors, etc.                           | 2025-04-04 00:35:26 +0200 |
-| `c78f912`   | Senatov  | Preparation for cleanup                           | 2025-04-02 13:41:39 +0200 |
-| `bc720cf`   | Senatov  | Minor change                                      | 2025-04-01 22:47:06 +0200 |
-| `7333ad1`   | Senatov  | Root character handling                           | 2025-03-28 19:18:37 +0100 |
-| `9ee9e03`   | Senatov  | EditablePath group: not ready yet                 | 2025-03-28 11:04:55 +0100 |
-| `663dc33`   | Senatov  | Refactoring / selected paths                      | 2025-03-25 23:48:36 +0100 |
-| `a036ad4`   | Senatov  | Default selection color                           | 2025-03-23 21:09:16 +0100 |
-| `bbfe4bc`   | Senatov  | Path bar top (tested, not yet final)              | 2025-03-21 02:25:58 +0100 |
-| `3c70bae`   | Senatov  | Priority set to `.low`                            | 2025-03-17 22:18:51 +0100 |
-| `c7ecd23`   | Senatov  | Fix R-panel width (2nd attempt)                   | 2025-03-09 15:38:09 +0100 |
-| `600f8ff`   | Senatov  | File panel width – Stage 1                        | 2025-03-09 15:37:40 +0100 |
-| `986299b`   | Senatov  | Navigation sizes update                           | 2025-03-01 16:21:36 +0100 |
-| `6f226ca`   | Senatov  | Preview and refactoring                           | 2025-02-28 18:27:53 +0100 |
-| `6b539b7`   | Senatov  | MultiRename initial commit                        | 2025-02-25 14:12:03 +0100 |
-| `e024b68`   | Senatov  | Terminal integration                              | 2025-02-24 13:09:22 +0100 |
-| `c7b3f55`   | Senatov  | Previews and image loader                         | 2025-02-21 20:17:41 +0100 |
-| `837dbaf`   | Senatov  | DualDirectoryMonitor initial logic                | 2025-02-19 10:51:27 +0100 |
-| `fc32cd1`   | Senatov  | Added file diff logic                             | 2025-02-17 18:42:36 +0100 |
-| `a4e8f77`   | Senatov  | MenuBar updated                                   | 2025-02-14 22:15:49 +0100 |
-| `96db84b`   | Senatov  | Settings and configuration layout                 | 2025-02-10 11:03:24 +0100 |
-| `239a309`   | Senatov  | Clean path display logic                          | 2025-02-09 09:59:18 +0100 |
-| `a29b88e`   | Senatov  | Default favorites directories                     | 2025-02-08 22:03:55 +0100 |
-| `dbe11f7`   | Senatov  | Custom PathPicker                                 | 2025-02-07 15:24:01 +0100 |
-| `9b7a43f`   | Senatov  | Added progress indicators                         | 2025-02-05 14:21:14 +0100 |
-| `f0f13c6`   | Senatov  | Improved sidebar                                  | 2025-02-04 08:33:06 +0100 |
-| `83f1cf3`   | Senatov  | Icons and previews                                | 2025-02-03 17:50:44 +0100 |
-| `ea7e499`   | Senatov  | UI layout pass 3                                  | 2025-02-02 11:49:53 +0100 |
-| `14c09cf`   | Senatov  | Minor cleanup                                     | 2025-02-01 21:05:18 +0100 |
-| `8d0b0f7`   | Senatov  | File size formatting                              | 2025-01-30 23:18:27 +0100 |
-| `f84ce29`   | Senatov  | Metadata for selected file                        | 2025-01-29 20:19:41 +0100 |
-| `3e1b7a4`   | Senatov  | Better error handling                             | 2025-01-28 09:27:58 +0100 |
-| `1bdc4e5`   | Senatov  | TableStyle unified                                | 2025-01-27 07:13:00 +0100 |
-| `75bcacc`   | Senatov  | Initial commit with base UI                       | 2025-01-26 16:45:30 +0100 |
+| CommitHash| Author   | Message                                             | Date                      |
+|-----------|----------|-----------------------------------------------------|---------------------------|
+| `0027bbe` | Senatov  | (HEAD -> master, origin/master, origin/HEAD) tested | 2025-05-12 15:51:59 +0200 |
+| `2a0f44a` | Senatov  | on edit                                             | 2025-05-10 17:13:37 +0200 |
+| `ada8c88` | Senatov  | on edit                                             | 2025-05-10 17:13:14 +0200 |
+| `73c795e` | Senatov  | roung:7,  Sandbox: /Volumes sec dialog              | 2025-05-08 15:53:16 +0200 |
+| `762d554` | Senatov  | PanelSide.left & .right                             | 2025-05-06 22:15:02 +0200 |
+| `97c5d22` | Senatov  | .renderingMode(.original)                           | 2025-05-06 19:31:59 +0200 |
+| `6be43eb` | Senatov  | + add System lib                                    | 2025-05-06 18:02:29 +0200 |
+| `fb2ea0e` | Senatov  | staged                                              | 2025-05-05 00:35:03 +0200 |
+| `890ef54` | Senatov  | backup curr. changes                                | 2025-05-01 14:55:48 +0200 |
+| `7819edf` | Senatov  | Faforites Stage 1 is ready                          | 2025-04-21 15:48:52 +0200 |
+| `41abb2d` | Senatov  | OneDrive link Children                              | 2025-04-21 15:39:08 +0200 |
+| `0f046cd` | Senatov  | popup win.                                          | 2025-04-21 14:47:01 +0200 |
+| `2378c03` | Senatov  | add lib FilesProvider                               | 2025-04-21 09:53:13 +0200 |
+| `9ec75b0` | Senatov  | add package FileProvider                            | 2025-04-21 09:36:10 +0200 |
+| `54460b1` | Senatov  | tooltip for top-menu                                | 2025-04-21 08:25:46 +0200 |
+| `c0fb396` | Senatov  | colours sec.                                        | 2025-04-20 23:13:30 +0200 |
+| `3c84b4b` | Senatov  | Fix Divider onhover cursor                          | 2025-04-20 14:58:46 +0200 |
+| `9164c3f` | Senatov  | Divider cursor                                      | 2025-04-20 14:56:18 +0200 |
+| `3e4f86e` | Senatov  | NSCursor on Divider                                 | 2025-04-20 14:52:00 +0200 |
+| `dfb8fd1` | Senatov  | popup Stage I                                       | 2025-04-19 18:06:30 +0200 |
+| `0b35619` | Senatov  | popup window with favorites                         | 2025-04-19 18:05:04 +0200 |
+| `ab4cfa6` | Senatov  | FavTreePopup                                        | 2025-04-19 00:23:20 +0200 |
+| `4ce145e` | Senatov  | tooltip                                             | 2025-04-18 23:34:46 +0200 |
+| `19539c2` | Senatov  | colors of divider toolTips                          | 2025-04-18 19:24:16 +0200 |
+| `1a2ebe0` | Senatov  | tooltip % f. Paneel's divider                       | 2025-04-18 19:19:22 +0200 |
+| `f73baf9` | Senatov  | call f. cleaning code                               | 2025-04-18 18:47:25 +0200 |
+| `f5a15e5` | Senatov  | refactor breadcamp                                  | 2025-04-18 18:30:13 +0200 |
+| `3c7e16b` | Senatov  | breadcump up.                                       | 2025-04-18 17:40:51 +0200 |
+| `3d44d99` | Senatov  | new look                                            | 2025-04-18 15:29:23 +0200 |
+| `39aea82` | Senatov  | code for fav tree new created                       | 2025-04-18 01:28:14 +0200 |
+| `87766ec` | Senatov  | clean                                               | 2025-04-17 19:24:00 +0200 |
+| `9dcaa7a` | Senatov  | Err fix                                             | 2025-04-17 19:01:06 +0200 |
+| `1b9d4e7` | Senatov  | clean the prj                                       | 2025-04-16 18:24:06 +0200 |
+| `43e4735` | Senatov  | Fix. code III Stage                                 | 2025-04-16 15:37:59 +0200 |
+| `951c1ab` | Senatov  | fixing/refact. II                                   | 2025-04-16 15:08:14 +0200 |
+| `5f00095` | Senatov  | fixing/refact. on basis old src                     | 2025-04-16 15:06:54 +0200 |
+| `a94b1cc` | Senatov  | (origin/wrong_path_1.1.0.0, wrong_path_1.1.0.0) fix | 2025-04-15 19:55:53 +0200 |
+| `c6f043e` | Senatov  | fix max branches in Tree scan                       | 2025-04-13 16:05:43 +0200 |
+| `b57a63e` | Senatov  | Fix tree fav                                        | 2025-04-13 01:45:05 +0200 |
 
 ## 🔗 Related Links
 
