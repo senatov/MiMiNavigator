@@ -32,19 +32,13 @@ func openConsoleInDirectory(_ directoryStr: String) {
 
     // Step 2: Set position and size of Terminal window
     DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {  // Small delay to ensure Terminal is open
-        // Define main window dimensions
-        _ = 800  // Set your main window's width
-        _ = 600  // Set your main window's height
-        _ = 100  // Approximate height for 5 lines
-
         let script = """
             tell application "Terminal"
                 do script "cd \(directoryStr)"
                 activate
-                delay 0.5  -- Wait for terminal to become active
+                delay 0.7 -- Wait for terminal to become active
             end tell
             """
-
         let task = Process()
         task.launchPath = "/usr/bin/osascript"
         task.arguments = ["-e", script]
