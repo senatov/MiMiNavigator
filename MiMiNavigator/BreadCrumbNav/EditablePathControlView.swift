@@ -19,7 +19,8 @@ struct EditablePathControlView: View {
     }
     // MARK: - View Body
     var body: some View {
-        HStack(spacing: 2) {
+        log.debug(#function)
+        return HStack(spacing: 2) {
             NavMnu1(selectedDir: selected, panelSide: panelSide)
             Spacer(minLength: 3)
             let pathItem = pathComponents()
@@ -33,11 +34,10 @@ struct EditablePathControlView: View {
     }
     // MARK: - Generate path components for breadcrumb navigation
     private func pathComponents() -> [EditablePathItem] {
-        log.debug("pathComponents() called for panel: \(panelSide)")
+        log.debug(#function)
         let url = selected.selectedFSEntity.url
         log.debug("Selected URL: \(url.path)")
         var components = url.pathComponents
-        // Remove leading '/' only if there is more than one component
         if components.first == "/" && components.count > 1 {
             components.removeFirst()
         }

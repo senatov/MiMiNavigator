@@ -62,7 +62,7 @@ struct BreadCrumbView: View {
     @ViewBuilder
     private func breadcrumbButton(for item: EditablePathItem) -> some View {
         Button(action: { handlePathSelection(for: item) }) {
-            DirIcon(item: item, pathStr: selected.selectedFSEntity.pathStr)
+            EditablePathDirIcon(item: item, pathStr: selected.selectedFSEntity.pathStr)
         }
         .buttonStyle(.link)
     }

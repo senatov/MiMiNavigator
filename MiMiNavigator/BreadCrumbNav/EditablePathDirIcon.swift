@@ -10,7 +10,7 @@ import SwiftUI
 import SwiftyBeaver
 
     // MARK: -
-struct DirIcon: View {
+struct EditablePathDirIcon: View {
     let item: EditablePathItem
     let pathStr: String
 

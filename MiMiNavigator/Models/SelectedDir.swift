@@ -22,18 +22,24 @@ public class SelectedDir: ObservableObject {
     @Published public var selectedFSEntity: CustomFile
     @Published public var side: PanelSide
 
-    /// Initializes with default path and panel side
+    // MARK: - Initializes with default path and panel side
     public init(initialPath: String = "~/Documents", side: PanelSide = .left) {
         self.selectedFSEntity = CustomFile(path: initialPath)
         self.side = side
     }
 
-    /// Initializes from an existing SelectedDir instance
+    // MARK: - Initializes from an existing SelectedDir instance
     public init(
         selectedDir: SelectedDir = SelectedDir(initialPath: "~/Documents"),
         side: PanelSide = .left
     ) {
         self.selectedFSEntity = selectedDir.selectedFSEntity
+        self.side = side
+    }
+
+    // MARK: -
+    public func change(initialPath: String = "~/Documents", side: PanelSide = .left) {
+        self.selectedFSEntity = CustomFile(path: initialPath)
         self.side = side
     }
 }
