@@ -9,7 +9,12 @@ import SwiftUI
 import SwiftyBeaver
 
 // MARK: - EditablePathControlView
-struct EditablePathControlView: View {
+struct EditablePathControlView: View, CustomStringConvertible {
+
+    nonisolated var description: String {
+        "description"
+    }
+
     @ObservedObject var selected: SelectedDir
     var panelSide: PanelSide
     // MARK: - Initialization
@@ -35,6 +40,7 @@ struct EditablePathControlView: View {
     // MARK: - Generate path components for breadcrumb navigation
     private func pathComponents() -> [EditablePathItem] {
         log.debug(#function)
+        var items: [EditablePathItem] = []
         let url = selected.selectedFSEntity.url
         log.debug("Selected URL: \(url.path)")
         var components = url.pathComponents
@@ -42,7 +48,6 @@ struct EditablePathControlView: View {
             components.removeFirst()
         }
         var currentPath = url.isFileURL && url.path.hasPrefix("/") ? "/" : ""
-        var items: [EditablePathItem] = []
         for component in components {
             // Skip empty components
             guard !component.isEmpty else { continue }

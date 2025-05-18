@@ -10,7 +10,7 @@ import SwiftUI
 import SwiftyBeaver
 
 /// Breadcrumb trail UI component for representing navigation path
-struct BreadCrumbView: View {
+struct BreadCrumbView: View, CustomStringConvertible {
     @ObservedObject var selected: SelectedDir
     var components: [EditablePathItem]
     var panelSide: PanelSide
@@ -20,6 +20,10 @@ struct BreadCrumbView: View {
         self.selected = selectedDir
         self.components = components
         self.panelSide = panelSide
+    }
+
+    nonisolated var description: String {
+        "ConsoleCurrPath View"
     }
 
     // MARK: - Body

@@ -9,7 +9,12 @@ import Foundation
 import SwiftData
 
 @Model
-final class Item {
+final class Item: CustomStringConvertible {
+
+    public var description: String {
+        "description"
+    }
+
     var timestamp: Date
 
     init(timestamp: Date) {

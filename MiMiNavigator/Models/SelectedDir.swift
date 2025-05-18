@@ -18,9 +18,14 @@ public enum PanelSide: String, Codable, CaseIterable {
 
 // MARK: - SelectedDir ViewModel
 /// Encapsulates the selected file system entity and its associated panel side
-public class SelectedDir: ObservableObject {
+public class SelectedDir: ObservableObject, CustomStringConvertible {
     @Published public var selectedFSEntity: CustomFile
     @Published public var side: PanelSide
+
+    // MARK: -
+    public var description: String {
+        "description"
+    }
 
     // MARK: - Initializes with default path and panel side
     public init(initialPath: String = "~/Documents", side: PanelSide = .left) {

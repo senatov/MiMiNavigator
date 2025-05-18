@@ -11,7 +11,8 @@ import SwiftyBeaver
 
 // MARK: - CustomFile: File & Folder Representation
 /// Represents a file system entity (file or directory) with metadata
-public struct CustomFile: Identifiable, Equatable, Codable, Sendable {
+public struct CustomFile: Identifiable, Equatable, Codable, Sendable, CustomStringConvertible {
+
     public let id: UUID
     /// Display name of the file or folder; may be synthesized
     public let nameStr: String
@@ -19,6 +20,10 @@ public struct CustomFile: Identifiable, Equatable, Codable, Sendable {
     public let url: URL
     public let isDirectory: Bool
     public var children: [CustomFile]?
+
+    public var description: String {
+        "description"
+    }
 
     // Convenience initializer using only path
     public init(path: String) {
