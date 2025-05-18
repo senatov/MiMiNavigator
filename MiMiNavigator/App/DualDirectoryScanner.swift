@@ -1,45 +1,44 @@
-//
-//  DualDirectoryScanner.swift
-//  MiMiNavigator
-//
-//  Created by Iakov Senatov on 11.11.24.
-//  Description: Actor-based utility for monitoring and synchronizing file updates in two directories.
-//  Dependencies: Foundation, Combine, SwiftUI
-//
+    //
+    //  DualDirectoryScanner.swift
+    //  MiMiNavigator
+    //
+    //  Created by Iakov Senatov on 11.11.24.
+    //  Description: Actor-based utility for monitoring and synchronizing file updates in two directories.
+    //  Dependencies: Foundation, Combine, SwiftUI
+    //
 
 import Combine
 import Foundation
 import SwiftUI
 
-// MARK: - Manages dual directory monitoring with periodic file refreshes.
-/// -
+    // MARK: - Manages dual directory monitoring with periodic file refreshes.
+    /// -
 actor DualDirectoryScanner: ObservableObject {
     let interval = 45
-
-    // Singleton for shared file management logic
+    
+        // Singleton for shared file management logic
     var fileLst = FileSingleton.shared
-    // Timers for both directories
+        // Timers for both directories
     private var leftTimer: DispatchSourceTimer?
     private var rightTimer: DispatchSourceTimer?
-    // Directory paths
+        // Directory paths
     var leftDirectory: URL
     var rightDirectory: URL
-
-    // MARK: -
+    
+        // MARK: -
     private enum DirectorySide: CustomStringConvertible {
         case left, right
         var description: String {
             switch self {
-            case .left:
-                return "left"
-            case .right:
-                return "right"
+                case .left:
+                    return "left"
+                case .right:
+                    return "right"
             }
         }
     }
-
-    // MARK: - Initialization
-    /// -
+    
+        // - MAR Initialization
     init(leftDirectory: URL, rightDirectory: URL) {
         log.info(#function)
         self.leftDirectory = leftDirectory
@@ -49,8 +48,8 @@ actor DualDirectoryScanner: ObservableObject {
             await self.startMonitoring()
         }
     }
-
-    // MARK: - Starts timers for both directories with custom refresh intervals
+    
+        // MARK: - Starts timers for both directories with custom refresh intervals
     func startMonitoring() {
         log.info(#function)
         setupTimer(for: .left)
@@ -59,8 +58,8 @@ actor DualDirectoryScanner: ObservableObject {
             log.error("Failed to initialize one or both timers.")
         }
     }
-
-    // MARK: - Helper method to setup timers
+    
+        // MARK: - Helper method to setup timers
     private func setupTimer(for side: DirectorySide) {
         log.info(#function)
         let timer = DispatchSource.makeTimerSource(queue: DispatchQueue.global())
@@ -72,22 +71,22 @@ actor DualDirectoryScanner: ObservableObject {
         }
         timer.resume()
         switch side {
-        case .left:
-            leftTimer = timer
-        case .right:
-            rightTimer = timer
+            case .left:
+                leftTimer = timer
+            case .right:
+                rightTimer = timer
         }
     }
-
-    // MARK: - Refreshes the file list for a specific directory side
+    
+        // MARK: - Refreshes the file list for a specific directory side
     private func refreshFiles(for side: DirectorySide) async {
         log.info(#function)
         let directoryURL: URL
         switch side {
-        case .left:
-            directoryURL = leftDirectory
-        case .right:
-            directoryURL = rightDirectory
+            case .left:
+                directoryURL = leftDirectory
+            case .right:
+                directoryURL = rightDirectory
         }
         let files: [CustomFile]
         do {
@@ -98,20 +97,22 @@ actor DualDirectoryScanner: ObservableObject {
         }
         await updateFileList(for: side, with: files)
     }
-
-    // MARK: - Updates the file list for the specified directory side
+    
+        // MARK: - Updates the file list for the specified directory side
     private func updateFileList(for side: DirectorySide, with files: [CustomFile]) async {
         switch side {
-        case .left:
-            await fileLst.updateLeftFiles(files)
-            log.info("Left directory updated with \(files.count) files.")
-        case .right:
-            await fileLst.updateRightFiles(files)
-            log.info("Right directory updated with \(files.count) files.")
+            case .left:
+                log.debug("Updating left directory with \(files.count) files.")
+                await fileLst.updateLeftFiles(files)
+                log.debug("Finished updating left directory.")
+            case .right:
+                log.debug("Updating right directory with \(files.count) files.")
+                await fileLst.updateRightFiles(files)
+                log.debug("Finished updating right directory.")
         }
     }
-
-    // MARK: - Scans a directory for files and directories
+    
+        // MARK: - Scans a directory for files and directories
     private func scanDirectory(at url: URL?) async throws -> [CustomFile] {
         log.info("scanDirectory() dir: \(String(describing: url?.relativePath)))")
         guard let url = url else {
@@ -144,15 +145,15 @@ actor DualDirectoryScanner: ObservableObject {
         log.debug("Scanned files nummer: \(customFiles.count)")
         return customFiles
     }
-
-    // MARK: -
+    
+        // MARK: -
     func setLeftDirectory(pathStr: String) {
         self.leftDirectory = URL(fileURLWithPath: pathStr)
     }
-
-    // MARK: -
+    
+        // MARK: -
     func setRightDirectory(pathStr: String) {
         self.rightDirectory = URL(fileURLWithPath: pathStr)
     }
-
+    
 }

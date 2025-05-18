@@ -11,8 +11,12 @@ import SwiftUI
 import SwiftyBeaver
 
 // MARK: -
-struct ConsoleCurrPath: View {
-    // Initialize logger
+struct ConsoleCurrPath: View, CustomStringConvertible {
+
+    nonisolated var description: String {
+        "ConsoleCurrPath View"
+    }
+
     var body: some View {
         VStack {
         }

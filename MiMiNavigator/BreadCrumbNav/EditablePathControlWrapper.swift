@@ -10,7 +10,12 @@ import SwiftUI
 
 // MARK: -
 /// -
-struct EditablePathControlWrapper: View {
+struct EditablePathControlWrapper: View , CustomStringConvertible {
+
+    nonisolated var description: String {
+        "description"
+    }
+
     @ObservedObject var selection: SelectedDir
     @State private var editedPathStr: String = ""
     @State private var isEditing = false

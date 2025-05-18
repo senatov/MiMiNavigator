@@ -9,10 +9,15 @@
 import SwiftUI
 
 // MARK: -
-struct FavoriteItem: Identifiable {
+struct FavoriteItem: Identifiable, CustomStringConvertible {
     let id = UUID()
     let nameStr: String
     let iconStr: String
+
+    // MARK: -
+    public var description: String {
+        "description"
+    }
 
     // MARK: -
     init(name: String, icon: String) {

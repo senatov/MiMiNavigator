@@ -11,7 +11,12 @@ import SwiftyBeaver
 
 // MARK: -
 /// - Helper structure for path items
-public struct EditablePathItem: Identifiable, Hashable {
+public struct EditablePathItem: Identifiable, Hashable, CustomStringConvertible {
+
+    public var description: String {
+        "description"
+    }
+
     public let titleStr: String
     public let pathStr: String
     public let icon: NSImage
