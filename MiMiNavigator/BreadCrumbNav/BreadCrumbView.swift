@@ -29,7 +29,7 @@ struct BreadCrumbView: View {
 
     // MARK: - Breadcrumb Items
     private var breadcrumbItems: some View {
-        ForEach(Array(components.enumerated()), id: \.1.pathStr) { index, item in
+        ForEach(Array(components.enumerated()), id: \.element.pathStr) { index, item in
             breadcrumbItem(index: index, item: item)
         }
     }
@@ -64,7 +64,7 @@ struct BreadCrumbView: View {
         Button(action: { handlePathSelection(for: item) }) {
             DirIcon(item: item, pathStr: selected.selectedFSEntity.pathStr)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.link)
     }
 
     // MARK: - Selection Logic
