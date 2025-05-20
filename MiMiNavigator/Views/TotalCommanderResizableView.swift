@@ -35,17 +35,6 @@ struct TotalCommanderResizableView: View {
     }
 
     // MARK: -
-    private func buildMainPanels(geometry: GeometryProxy) -> some View {
-        log.debug(#function)
-        return HStack(spacing: 0) {
-            buildLeftPanel(geometry: geometry)
-            buildDivider(geometry: geometry)
-            buildRightPanel()
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color.white)
-    }
-    // MARK: -
     var body: some View {
         GeometryReader { geometry in
             ZStack {
@@ -74,6 +63,18 @@ struct TotalCommanderResizableView: View {
             }
 
         }
+    }
+
+    // MARK: -
+    private func buildMainPanels(geometry: GeometryProxy) -> some View {
+        log.debug(#function)
+        return HStack(spacing: 0) {
+            buildLeftPanel(geometry: geometry)
+            buildDivider(geometry: geometry)
+            buildRightPanel()
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.white)
     }
 
     // MARK: -

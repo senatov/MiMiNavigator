@@ -12,21 +12,23 @@ import SwiftUI
 /// -
 struct EditablePathControlWrapper: View , CustomStringConvertible {
 
-    nonisolated var description: String {
-        "description"
-    }
-
     @ObservedObject var selection: SelectedDir
     @State private var editedPathStr: String = ""
     @State private var isEditing = false
     @FocusState private var isTextFieldFocused: Bool
     var selectedSide: PanelSide
 
+        // MARK: - Initialization
     init(selection: SelectedDir, selectedSide: PanelSide) {
         self._selection = ObservedObject(wrappedValue: selection)
         self.selectedSide = selectedSide
     }
 
+    nonisolated var description: String {
+        "description"
+    }
+
+        // MARK: -
     init(selStr: String, selectedSide: PanelSide) {
         //FIXME: check on adequitet the code
         let selection = SelectedDir(initialPath: selStr, side: selectedSide)
