@@ -7,7 +7,6 @@ final class LogMan {
     static let log = SwiftyBeaver.self
 
     // MARK: -
-    /// -
     static func initializeLogging() {
         let console = ConsoleDestination()
         console.format = "$DHH:mm:ss$d ➤ $L ➤ $N.$F:$l ➤ $M"
