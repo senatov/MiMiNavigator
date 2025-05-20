@@ -131,6 +131,7 @@
 				97AD1A2A2C624E020045C38D /* Sources */,
 				97AD1A2B2C624E020045C38D /* Frameworks */,
 				97AD1A2C2C624E020045C38D /* Resources */,
+				977D9B952DDC81B200EC6957 /* ShellScript */,
 			);
 			buildRules = (
 			);
@@ -260,6 +261,21 @@
 			);
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		977D9B952DDC81B200EC6957 /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			outputPaths = (
+				/Users/senat/Develop/MMNavigator/MiMiNavigator/.versione,
+			);
+			shellPath = /Users/senat/Develop/MMNavigator/refreshVersionFile.zsh;
+			shellScript = (
+				"# Type a script or drag a script file from your workspace to insert its path.",
+				"",
+				"",
+			);
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		97AD1A2A2C624E020045C38D /* Sources */ = {

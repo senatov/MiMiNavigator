@@ -11,6 +11,7 @@ import Foundation
 
 // MARK: - PanelSide Enum
 /// Represents the panel side (left or right) in the UI
+
 public enum PanelSide: String, Codable, CaseIterable {
     case left
     case right
