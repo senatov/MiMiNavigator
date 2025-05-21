@@ -61,14 +61,20 @@ struct MiMiNavigatorApp: App {
                         log.debug("Refresh button clicked")
                     }) {
                         Image(systemName: "arrow.triangle.2.circlepath")
+                            .padding(.horizontal, 2)
+                            .padding(.vertical, 6)
+                            .background(Color.white)
+
                     }
+                    .clipShape(Circle())
+                    .offset(x: 3, y: 6)
                 }
                 ToolbarItem(placement: .status) {
-                    Text("🛠 Dev Build: ")
-                        .font(.caption)
+                    Text("🐙 Dev Build: ")
+                        .font(.title2)
                         .foregroundColor(Color(#colorLiteral(red: 0.2196078449, green: 0.007843137719, blue: 0.8549019694, alpha: 1)))
-                        + devMark.foregroundColor(Color(#colorLiteral(red: 0.4392156899, green: 0.01176470611, blue: 0.1921568662, alpha: 1)))
-                        .font(.caption)
+                        + devMark.foregroundColor(Color(#colorLiteral(red: 0.1215686277, green: 0.01176470611, blue: 0.4235294163, alpha: 1)))
+                        .font(.title3)
                 }
             }
         }

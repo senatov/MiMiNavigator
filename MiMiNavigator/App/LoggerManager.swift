@@ -2,24 +2,24 @@ import Compression
 import Foundation
 import SwiftyBeaver
 
-/// -
+    /// -
 final class LogMan {
     static let log = SwiftyBeaver.self
-
-    // MARK: -
+    
+        // MARK: -
     static func initializeLogging() {
         let console = ConsoleDestination()
         console.format = "$DHH:mm:ss$d ➤ $L ➤ $N.$F:$l ➤ $M"
-        // Customize log level icons
+            // Customize log level icons
         func getLevelIcon(for level: SwiftyBeaver.Level) -> String {
             switch level {
-            case .verbose: return "🔮"
-            case .debug: return "☘️"
-            case .info: return "🔹"
-            case .warning: return "🔸"
-            case .error: return "💢"
-            case .critical: return "💀"
-            case .fault: return "👻"
+                case .verbose: return "🔮"
+                case .debug: return "☘️"
+                case .info: return "🔹"
+                case .warning: return "🔸"
+                case .error: return "💢"
+                case .critical: return "💀"
+                case .fault: return "👻"
             }
         }
         console.levelString.verbose = getLevelIcon(for: .verbose) + " VERBOSE"
@@ -32,8 +32,8 @@ final class LogMan {
         log.addDestination(console)
         setupFileLogging()
     }
-
-    // MARK: -
+    
+        // MARK: -
     private static func setupFileLogging() {
         let file = FileDestination()
         let logDirectory = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask).first?
@@ -41,7 +41,7 @@ final class LogMan {
         if let logDirectory = logDirectory {
             do {
                 try FileManager.default.createDirectory(at: logDirectory, withIntermediateDirectories: true)
-                let logFileName = "MiMiNavigator_\(Date().timeIntervalSince1970).log"
+                let logFileName: String = "MiMiNavigator_\(Date().timeIntervalSince1970).log"
                 file.logFileURL = logDirectory.appendingPathComponent(logFileName)
                 log.addDestination(file)
             } catch {

@@ -12,7 +12,6 @@ import Foundation
 import SwiftUI
 
 // MARK: - Manages dual directory monitoring with periodic file refreshes.
-/// -
 actor DualDirectoryScanner: ObservableObject {
     let interval = 45
     var fileLst = FileSingleton.shared
@@ -60,7 +59,7 @@ actor DualDirectoryScanner: ObservableObject {
         timer.schedule(deadline: .now(), repeating: .seconds(interval))
         timer.setEventHandler { [weak self] in
             Task.detached { [weak self] in
-                await self?.refreshFiles(for: side)
+                await self?.refreshFiles(side: side)
             }
         }
         timer.resume()
@@ -73,8 +72,9 @@ actor DualDirectoryScanner: ObservableObject {
     }
 
     // MARK: - Refreshes the file list for a specific directory side
-    private func refreshFiles(for side: DirectorySide) async {
+    private func refreshFiles(side: DirectorySide) async {
         log.info(#function)
+        let files: [CustomFile]
         let directoryURL: URL
         switch side {
         case .left:
@@ -82,32 +82,17 @@ actor DualDirectoryScanner: ObservableObject {
         case .right:
             directoryURL = rightDirectory
         }
-        let files: [CustomFile]
         do {
-            files = try await scanDirectory(at: directoryURL)
+            files = try await scanDirectory(url: directoryURL, side: side)
         } catch {
             log.error("Failed to scan \(side) directory: \(error.localizedDescription)")
             files = []
         }
-        await updateFileList(for: side, with: files)
-    }
-
-    // MARK: - Updates the file list for the specified directory side
-    private func updateFileList(for side: DirectorySide, with files: [CustomFile]) async {
-        switch side {
-        case .left:
-            log.debug("Updating left directory with \(files.count) files.")
-            await fileLst.updateLeftFiles(files)
-            log.debug("Finished updating left directory.")
-        case .right:
-            log.debug("Updating right directory with \(files.count) files.")
-            await fileLst.updateRightFiles(files)
-            log.debug("Finished updating right directory.")
-        }
+        await updateFileList(side: side, with: files)
     }
 
     // MARK: - Scans a directory for files and directories
-    private func scanDirectory(at url: URL?) async throws -> [CustomFile] {
+    private func scanDirectory(url: URL?, side: DirectorySide) async throws -> [CustomFile] {
         log.info("scanDirectory() dir: \(String(describing: url?.relativePath)))")
         guard let url = url else {
             log.error("Invalid directory URL: URL is nil.")
@@ -138,6 +123,20 @@ actor DualDirectoryScanner: ObservableObject {
         }
         log.debug("Scanned files nummer: \(customFiles.count)")
         return customFiles
+    }
+
+    // MARK: - Updates the file list for the specified directory side
+    private func updateFileList(side: DirectorySide, with files: [CustomFile]) async {
+        switch side {
+        case .left:
+            log.debug("Updating left directory with \(files.count) files.")
+            await fileLst.updateLeftFiles(files)
+            log.debug("Finished updating left directory.")
+        case .right:
+            log.debug("Updating right directory with \(files.count) files.")
+            await fileLst.updateRightFiles(files)
+            log.debug("Finished updating right directory.")
+        }
     }
 
     // MARK: -
