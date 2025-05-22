@@ -4,22 +4,24 @@ import SwiftyBeaver
 
 // MARK: -
 public struct FavButtonPopupTopPanel: View {
+    @StateObject var selection = SelectedDir()
     @State private var showFavTreePopup = false
     @State private var favTreeStruct: [CustomFile] = []
-    @ObservedObject var selected: SelectedDir
-    var panelSide: PanelSide
+    private var panelSide: PanelSide
 
-    public init(selectedDir: SelectedDir, panelSide: PanelSide) {
-        self.selected = selectedDir
+    // MARK: -
+    public init(panelSide: PanelSide) {
         self.panelSide = panelSide
     }
 
+    // MARK: -
     public var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             navigationControls
         }
     }
 
+    // MARK: -
     private var navigationControls: some View {
         HStack(spacing: 6) {
             backButton
@@ -70,8 +72,9 @@ public struct FavButtonPopupTopPanel: View {
         .help("Navigation between favorites")
     }
 
+    // MARK: -
     private func favoritePopover() -> some View {
-        FavTreeMnu(files: $favTreeStruct, selected: selected)
+        FavTreeMnu(files: $favTreeStruct, selected: selection)
             .padding(6)
             .font(.custom("Helvetica Neue", size: 11).weight(.light))
             .foregroundColor(

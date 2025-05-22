@@ -11,7 +11,6 @@ import SwiftyBeaver
 struct FavTreeMnu: View {
     @Binding var files: [CustomFile]
     @ObservedObject var selected: SelectedDir
-
     @State private var expandedFolders: Set<String> = []
 
     private var headerView: some View {
@@ -39,7 +38,6 @@ struct FavTreeMnu: View {
                 ForEach($files) { $file in
                     FavTreeView(
                         file: $file,
-                        selected: selected,
                         expandedFolders: $expandedFolders
                     )
                 }

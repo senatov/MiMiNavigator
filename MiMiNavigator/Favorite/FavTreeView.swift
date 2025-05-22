@@ -9,50 +9,73 @@ import SwiftUI
 import SwiftyBeaver
 
 struct FavTreeView: View {
+    @StateObject var selection = SelectedDir()
     @Binding var file: CustomFile
-    @ObservedObject var selected: SelectedDir
     @Binding var expandedFolders: Set<String>
 
-    var isExpanded: Bool {
-        expandedFolders.contains(file.pathStr)
+    // MARK: -
+    private var fileIcon: some View {
+        Group {
+            if file.isDirectory {
+                Image(systemName: "chevron.right.circle.fill")
+                    .renderingMode(.original)
+                    .foregroundColor(.blue)
+                    .rotationEffect(.degrees(isExpanded ? 90 : 0))
+                    .animation(
+                        .spring(response: 0.3, dampingFraction: 0.6, blendDuration: 0.3),
+                        value: isExpanded
+                    )
+                    .onTapGesture {
+                        toggleExpansion()
+                    }
+            } else {
+                Image(systemName: "doc")
+                    .foregroundColor(.gray)
+            }
+        }
     }
+
+    // MARK: -
+    private var fileNameText: some View {
+        let isTheSame = selection.selectedFSEntity?.pathStr == file.pathStr
+        return Text(file.nameStr)
+            .foregroundColor(isTheSame ? .blue : .primary)
+            .onTapGesture {
+                selection.selectedFSEntity = file
+                log.debug("Selected file: \(file.nameStr)")
+            }
+            .contextMenu {
+                TreeViewContextMenu(file: file)
+            }
+    }
+
+    // MARK: -
+    private var fileRow: some View {
+        HStack {
+            fileIcon
+            fileNameText
+        }
+        .padding(.leading, file.isDirectory ? 5 : 15)
+        .font(.system(size: 14, weight: .regular))
+    }
+
     // MARK: -
     var body: some View {
         VStack(alignment: .leading) {
-            HStack {
-                // Expand/collapse icon rotation animation
-                if file.isDirectory {
-                    Image(systemName: "chevron.right.circle.fill")
-                        .renderingMode(.original)
-                        .foregroundColor(.blue)
-                        .rotationEffect(.degrees(isExpanded ? 90 : 0))  // Вращение
-                        .animation(
-                            .spring(response: 0.3, dampingFraction: 0.6, blendDuration: 0.3),
-                            value: isExpanded
-                        )
-                        .onTapGesture {
-                            toggleExpansion()
-                        }
-                } else {
-                    Image(systemName: "doc")
-                        .foregroundColor(.gray)
-                }
-                // Click to select the file
-                let isTheSame = selected.selectedFSEntity.pathStr == file.pathStr
-                Text(file.nameStr)
-                    .foregroundColor(isTheSame ? .blue : .primary)
-                    .onTapGesture {
-                        selected.selectedFSEntity = file
-                        log.debug("Selected file: \(file.nameStr)")
+            fileRow
+            childrenList
+        }
+        .animation(.easeInOut(duration: 0.25), value: isExpanded)
+    }
 
-                    }
-                    .contextMenu {
-                        TreeViewContextMenu(file: file)
-                    }
-            }
-            .padding(.leading, file.isDirectory ? 5 : 15)
-            .font(.system(size: 14, weight: .regular))  // Unified font
-            // Subdirectory appearance animation
+    // MARK: -
+    var isExpanded: Bool {
+        expandedFolders.contains(file.pathStr)
+    }
+
+    // MARK: -
+    private var childrenList: some View {
+        Group {
             if isExpanded, let children = file.children, !children.isEmpty {
                 ForEach(children.indices, id: \.self) { index in
                     FavTreeView(
@@ -60,16 +83,15 @@ struct FavTreeView: View {
                             get: { file.children![index] },
                             set: { file.children![index] = $0 }
                         ),
-                        selected: selected,
                         expandedFolders: $expandedFolders
                     )
                     .padding(.leading, 15)
-                    .transition(.opacity.combined(with: .move(edge: .leading)))  // Анимация появления
+                    .transition(.opacity.combined(with: .move(edge: .leading)))
                 }
             }
         }
-        .animation(.easeInOut(duration: 0.25), value: isExpanded)  // Smooth expansion animation
     }
+
     // MARK: -
     private func toggleExpansion() {
         if isExpanded {

@@ -19,6 +19,7 @@ actor DualDirectoryScanner: ObservableObject {
     private var rightTimer: DispatchSourceTimer?
     var leftDirectory: URL = URL.homeDirectory
     var rightDirectory: URL = URL.homeDirectory
+
     // MARK: -
     private enum DirectorySide: CustomStringConvertible {
         case left, right
@@ -35,8 +36,18 @@ actor DualDirectoryScanner: ObservableObject {
     // - MAR Initialization
     init(leftDirectory: SelectedDir, rightDirectory: SelectedDir) {
         log.debug(#function)
-        self.leftDirectory = leftDirectory.selectedFSEntity.url
-        self.rightDirectory = rightDirectory.selectedFSEntity.url
+        if let url = leftDirectory.selectedFSEntity?.url {
+            self.leftDirectory = url
+        } else {
+            log.error("leftDirectory.selectedFSEntity is nil — assigning home directory.")
+            self.leftDirectory = URL.homeDirectory
+        }
+        if let url = rightDirectory.selectedFSEntity?.url {
+            self.rightDirectory = url
+        } else {
+            log.error("rightDirectory.selectedFSEntity is nil — assigning home directory.")
+            self.rightDirectory = URL.homeDirectory
+        }
         Task(priority: .low) { @MainActor in
             await self.startMonitoring()
         }

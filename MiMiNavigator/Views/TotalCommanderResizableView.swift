@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct TotalCommanderResizableView: View {
+    @StateObject var selection = SelectedDir()
     @State private var displayedLeftFiles: [CustomFile] = []
     @State private var displayedRightFiles: [CustomFile] = []
     @State private var isDividerTooltipVisible: Bool = true

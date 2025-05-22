@@ -10,33 +10,25 @@ import SwiftUI
 
 // MARK: -
 /// -
-struct EditablePathControlWrapper: View , CustomStringConvertible {
+struct EditablePathControlWrapper: View, CustomStringConvertible {
 
-    @ObservedObject var selection: SelectedDir
+    @StateObject var selection = SelectedDir()
     @State private var editedPathStr: String = ""
     @State private var isEditing = false
     @FocusState private var isTextFieldFocused: Bool
     var selectedSide: PanelSide
 
-        // MARK: - Initialization
-    init(selection: SelectedDir, selectedSide: PanelSide) {
-        self._selection = ObservedObject(wrappedValue: selection)
+    // MARK: - Initialization
+    init(selectedSide: PanelSide) {
         self.selectedSide = selectedSide
     }
 
-    nonisolated var description: String {
-        "description"
-    }
-
-        // MARK: -
+    // MARK: -
     init(selStr: String, selectedSide: PanelSide) {
-        //FIXME: check on adequitet the code
-        let selection = SelectedDir(initialPath: selStr, side: selectedSide)
-        selection.selectedFSEntity = CustomFile(path: selStr)
-        self._selection = ObservedObject(wrappedValue: selection)
         self.selectedSide = selectedSide
     }
 
+    // MARK: -
     var body: some View {
         HStack {
             if isEditing {
@@ -58,6 +50,7 @@ struct EditablePathControlWrapper: View , CustomStringConvertible {
         )
         .padding(.vertical, 6)
     }
+
     // MARK: -
     private var editingView: some View {
         HStack {
@@ -68,7 +61,7 @@ struct EditablePathControlWrapper: View , CustomStringConvertible {
                 .focused($isTextFieldFocused)
                 .onAppear {
                     log.debug("Entered editing mode")
-                    editedPathStr = selection.selectedFSEntity.pathStr
+                    editedPathStr = selection.selectedFSEntity?.pathStr ?? ""
                     isTextFieldFocused = true
                     DispatchQueue.main.async {
                         if let editor = NSApp.keyWindow?.firstResponder as? NSTextView {
@@ -133,5 +126,10 @@ struct EditablePathControlWrapper: View , CustomStringConvertible {
             }
             .transition(.opacity.combined(with: .scale))
             .animation(.easeInOut(duration: 0.25), value: isEditing)
+    }
+
+    // MARK: -
+    nonisolated var description: String {
+        "description"
     }
 }
