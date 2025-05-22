@@ -20,13 +20,8 @@ public enum PanelSide: String, Codable, CaseIterable {
 // MARK: - SelectedDir ViewModel
 /// Encapsulates the selected file system entity and its associated panel side
 public class SelectedDir: ObservableObject, CustomStringConvertible {
-    @Published public var selectedFSEntity: CustomFile
+    @Published public var selectedFSEntity: CustomFile?
     @Published public var side: PanelSide
-
-    // MARK: -
-    public var description: String {
-        "description"
-    }
 
     // MARK: - Initializes with default path and panel side
     public init(initialPath: String = "~/Documents", side: PanelSide = .left) {
@@ -34,11 +29,15 @@ public class SelectedDir: ObservableObject, CustomStringConvertible {
         self.side = side
     }
 
+    public init(side: PanelSide = .left) {
+        self.side = side
+        if selectedFSEntity == nil {
+            selectedFSEntity = CustomFile(path: "~/Documents")
+        }
+    }
+
     // MARK: - Initializes from an existing SelectedDir instance
-    public init(
-        selectedDir: SelectedDir = SelectedDir(initialPath: "~/Documents"),
-        side: PanelSide = .left
-    ) {
+    public init(selectedDir: SelectedDir = SelectedDir(initialPath: "~/Documents"), side: PanelSide = .left) {
         self.selectedFSEntity = selectedDir.selectedFSEntity
         self.side = side
     }
@@ -48,4 +47,10 @@ public class SelectedDir: ObservableObject, CustomStringConvertible {
         self.selectedFSEntity = CustomFile(path: initialPath)
         self.side = side
     }
+
+    // MARK: -
+    public var description: String {
+        "description"
+    }
+
 }

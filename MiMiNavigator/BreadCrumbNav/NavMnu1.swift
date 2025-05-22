@@ -12,12 +12,16 @@ import SwiftyBeaver
 // MARK: -
 /// -
 struct NavMnu1: View {
-    var selectedDir: SelectedDir
+    @StateObject var selection = SelectedDir()
     var panelSide: PanelSide
+
+    init(panelSide: PanelSide) {
+        self.panelSide = panelSide
+    }
 
     var body: some View {
         HStack(spacing: 4) {
-            FavButtonPopupTopPanel(selectedDir: selectedDir, panelSide: panelSide)
+            FavButtonPopupTopPanel(panelSide: panelSide)
         }
         .padding(.leading, 6)
     }

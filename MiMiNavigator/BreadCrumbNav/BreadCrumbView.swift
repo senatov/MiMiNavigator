@@ -11,13 +11,12 @@ import SwiftyBeaver
 
 /// Breadcrumb trail UI component for representing navigation path
 struct BreadCrumbView: View, CustomStringConvertible {
-    @ObservedObject var selected: SelectedDir
+    @StateObject var selection = SelectedDir()
     var components: [EditablePathItem]
     var panelSide: PanelSide
 
     // MARK: -
-    init(selectedDir: SelectedDir, components: [EditablePathItem], panelSide: PanelSide) {
-        self.selected = selectedDir
+    init(components: [EditablePathItem], panelSide: PanelSide) {
         self.components = components
         self.panelSide = panelSide
     }
@@ -66,7 +65,7 @@ struct BreadCrumbView: View, CustomStringConvertible {
     @ViewBuilder
     private func breadcrumbButton(for item: EditablePathItem) -> some View {
         Button(action: { handlePathSelection(for: item) }) {
-            EditablePathDirIcon(item: item, pathStr: selected.selectedFSEntity.pathStr)
+            EditablePathDirIcon(item: item, pathStr: selection.selectedFSEntity?.pathStr ?? "")
         }
         .buttonStyle(.link)
     }
@@ -74,7 +73,9 @@ struct BreadCrumbView: View, CustomStringConvertible {
     // MARK: - Selection Logic
     private func handlePathSelection(for item: EditablePathItem) {
         withAnimation(.easeInOut(duration: 0.4)) {
-            selected.selectedFSEntity = CustomFile(path: item.pathStr)
+            if selection.selectedFSEntity?.pathStr != item.pathStr {
+                selection.selectedFSEntity = CustomFile(path: item.pathStr)
+            }
         }
     }
 }
