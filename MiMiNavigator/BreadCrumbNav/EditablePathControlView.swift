@@ -36,15 +36,6 @@ struct EditablePathControlView: View, CustomStringConvertible {
     }
 
     // MARK: -
-    private func getPathURL() -> URL? {
-        guard let url = selection.selectedFSEntity?.url else {
-            log.error("selectedFSEntity is nil — returning nil URL.")
-            return nil
-        }
-        return url
-    }
-
-    // MARK: -
     private func createEditablePathItems(from url: URL) -> [EditablePathItem] {
         log.debug("Selected URL: \(url.path)")
         var items: [EditablePathItem] = []
@@ -73,6 +64,15 @@ struct EditablePathControlView: View, CustomStringConvertible {
         let items = createEditablePathItems(from: url)
         log.debug("Breadcrumb items count: \(items.count)")
         return items
+    }
+
+    // MARK: -
+    private func getPathURL() -> URL? {
+        guard let url = selection.selectedFSEntity?.url else {
+            log.error("selectedFSEntity is nil — returning nil URL.")
+            return nil
+        }
+        return url
     }
 
     // MARK: -

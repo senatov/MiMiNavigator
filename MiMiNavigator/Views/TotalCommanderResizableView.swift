@@ -10,11 +10,10 @@ struct TotalCommanderResizableView: View {
     @State private var rightPathStr: String = ""
     @State private var tooltipPosition: CGPoint = .zero
     @State private var tooltipText: String = ""
-
     @StateObject private var scanner = DualDirectoryScanner(
-        leftDirectory: SelectedDir(initialPath: "/Users/senat/Downloads/Hahly"),
-        rightDirectory: SelectedDir(initialPath: "/Users/senat")
-    )
+        leftDirectory: SelectedDir(URL.documentsDirectory),
+        rightDirectory: SelectedDir(URL.downloadsDirectory))
+
 
     // MARK: -
     @MainActor
