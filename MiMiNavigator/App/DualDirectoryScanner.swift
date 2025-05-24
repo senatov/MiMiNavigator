@@ -17,8 +17,8 @@ actor DualDirectoryScanner: ObservableObject {
     var fileLst = FileSingleton.shared
     private var leftTimer: DispatchSourceTimer?
     private var rightTimer: DispatchSourceTimer?
-    var leftDirectory: URL = URL.homeDirectory
-    var rightDirectory: URL = URL.homeDirectory
+    var leftDirectory: URL = URL.documentsDirectory
+    var rightDirectory: URL = URL.downloadsDirectory
 
     // MARK: -
     private enum DirectorySide: CustomStringConvertible {
