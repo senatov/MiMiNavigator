@@ -13,12 +13,10 @@ import SwiftyBeaver
 struct BreadCrumbView: View, CustomStringConvertible {
     @StateObject var selection = SelectedDir()
     var components: [EditablePathItem]
-    var panelSide: PanelSide
 
     // MARK: -
-    init(components: [EditablePathItem], panelSide: PanelSide) {
+    init(components: [EditablePathItem]) {
         self.components = components
-        self.panelSide = panelSide
     }
 
     nonisolated var description: String {

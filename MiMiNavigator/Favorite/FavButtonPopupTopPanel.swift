@@ -3,16 +3,11 @@ import SwiftUI
 import SwiftyBeaver
 
 // MARK: -
-public struct FavButtonPopupTopPanel: View {
+struct FavButtonPopupTopPanel: View {
     @StateObject var selection = SelectedDir()
     @State private var showFavTreePopup = false
     @State private var favTreeStruct: [CustomFile] = []
-    private var panelSide: PanelSide
 
-    // MARK: -
-    public init(panelSide: PanelSide) {
-        self.panelSide = panelSide
-    }
 
     // MARK: -
     public var body: some View {

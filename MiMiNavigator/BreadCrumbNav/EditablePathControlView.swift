@@ -10,14 +10,9 @@ import SwiftyBeaver
 
 // MARK: - EditablePathControlView
 struct EditablePathControlView: View, CustomStringConvertible {
-
     @StateObject var selection = SelectedDir()
     var panelSide: PanelSide
 
-    // MARK: - Initialization
-    init(selectedDir: SelectedDir, panelSide: PanelSide) {
-        self.panelSide = panelSide
-    }
 
     // MARK: - View Body
     var body: some View {
@@ -26,7 +21,7 @@ struct EditablePathControlView: View, CustomStringConvertible {
             NavMnu1(panelSide: panelSide)
             Spacer(minLength: 3)
             let pathItem = getPathItems()
-            BreadCrumbView(components: pathItem, panelSide: panelSide)
+            BreadCrumbView(components: pathItem)
             NavMnu2()
         }
         .background(

@@ -1,24 +1,24 @@
-//
-//  EditablePathItem.swift
-//  MiMiNavigator
-//
-//  Created by Iakov Senatov on 11.05.2025.
-//  Copyright © 2025 Senatov. All rights reserved.
-//
+    //
+    //  EditablePathItem.swift
+    //  MiMiNavigator
+    //
+    //  Created by Iakov Senatov on 11.05.2025.
+    //  Copyright © 2025 Senatov. All rights reserved.
+    //
 
 import SwiftUI
 import SwiftyBeaver
 
-// MARK: -
-/// - Helper structure for path items
-public struct EditablePathItem: Identifiable, Hashable, CustomStringConvertible {
-
-    public var description: String {
-        "description"
+    // MARK: -
+    /// - Helper structure for path items
+struct EditablePathItem: Identifiable, Hashable, CustomStringConvertible {
+    
+    let titleStr: String
+    let pathStr: String
+    let icon: NSImage
+    var id: String { pathStr }
+    
+    var description: String {
+        "EditablePathItem(title: \(titleStr), path: \(pathStr))"
     }
-
-    public let titleStr: String
-    public let pathStr: String
-    public let icon: NSImage
-    public var id: String { pathStr }
 }
