@@ -10,7 +10,7 @@ import SwiftUI
 import SwiftyBeaver
 
 // MARK: -
-struct EditablePathDirIcon: View, CustomStringConvertible {
+struct EditablePathDirIcon: View {
     let item: EditablePathItem
     let pathStr: String
 
@@ -39,10 +39,6 @@ struct EditablePathDirIcon: View, CustomStringConvertible {
                 .fill(gradient)
                 .shadow(color: .gray.opacity(pathStr == item.pathStr ? 0.3 : 0), radius: 5, x: 0, y: 2)
         )
-    }
-
-    nonisolated var description: String {
-        "ConsoleCurrPath View"
     }
 
 }

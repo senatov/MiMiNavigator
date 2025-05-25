@@ -18,13 +18,8 @@ struct EditablePathControlWrapper: View, CustomStringConvertible {
     @FocusState private var isTextFieldFocused: Bool
     var selectedSide: PanelSide
 
-    // MARK: - Initialization
-    init(selectedSide: PanelSide) {
-        self.selectedSide = selectedSide
-    }
-
     // MARK: -
-    init(selStr: String, selectedSide: PanelSide) {
+    init(selectedSide: PanelSide) {
         self.selectedSide = selectedSide
     }
 
@@ -108,7 +103,7 @@ struct EditablePathControlWrapper: View, CustomStringConvertible {
 
     // MARK: -
     private var pathControlView: some View {
-        EditablePathControlView(selectedDir: selection, panelSide: selectedSide)
+        EditablePathControlView(panelSide: selectedSide)
     }
 
     // MARK: -

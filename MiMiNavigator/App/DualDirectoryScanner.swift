@@ -94,7 +94,7 @@ actor DualDirectoryScanner: ObservableObject {
             directoryURL = rightDirectory
         }
         do {
-            files = try await scanDirectory(url: directoryURL, side: side)
+            files = try await scanDirectory(url: directoryURL)
         } catch {
             log.error("Failed to scan \(side) directory: \(error.localizedDescription)")
             files = []
@@ -103,7 +103,7 @@ actor DualDirectoryScanner: ObservableObject {
     }
 
     // MARK: - Scans a directory for files and directories
-    private func scanDirectory(url: URL?, side: DirectorySide) async throws -> [CustomFile] {
+    private func scanDirectory(url: URL?) async throws -> [CustomFile] {
         log.info("scanDirectory() dir: \(String(describing: url?.relativePath)))")
         guard let url = url else {
             log.error("Invalid directory URL: URL is nil.")

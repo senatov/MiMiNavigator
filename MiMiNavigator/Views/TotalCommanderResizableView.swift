@@ -11,9 +11,9 @@ struct TotalCommanderResizableView: View {
     @State private var tooltipPosition: CGPoint = .zero
     @State private var tooltipText: String = ""
     @StateObject private var scanner = DualDirectoryScanner(
-        leftDirectory: SelectedDir(URL.documentsDirectory),
-        rightDirectory: SelectedDir(URL.downloadsDirectory))
-
+        leftDirectory: SelectedDir(side: .left),
+        rightDirectory: SelectedDir(side: .right)
+    )
 
     // MARK: -
     @MainActor
@@ -81,7 +81,7 @@ struct TotalCommanderResizableView: View {
     private func buildLeftPanel(geometry: GeometryProxy) -> some View {
         log.info(#function)
         return VStack {
-            EditablePathControlWrapper(selStr: leftPathStr, selectedSide: .left)
+            EditablePathControlWrapper(selectedSide: .left)
                 .onChange(of: leftPathStr) { _, newPath in
                     Task {
                         await scanner.setLeftDirectory(pathStr: newPath)
@@ -112,7 +112,7 @@ struct TotalCommanderResizableView: View {
     private func buildRightPanel() -> some View {
         log.info(#function)
         return VStack {
-            EditablePathControlWrapper(selStr: rightPathStr, selectedSide: .right)
+            EditablePathControlWrapper(selectedSide: .right)
                 .onChange(of: rightPathStr) { _, newPath in
                     Task(priority: .low) {
                         await scanner.setRightDirectory(pathStr: newPath)
