@@ -10,16 +10,20 @@ struct TotalCommanderResizableView: View {
     @State private var rightPathStr: String = ""
     @State private var tooltipPosition: CGPoint = .zero
     @State private var tooltipText: String = ""
-    @StateObject private var scanner = DualDirectoryScanner(
-        leftDirectory: SelectedDir(side: .left),
-        rightDirectory: SelectedDir(side: .right)
-    )
+    @StateObject private var model = DirectoryModel()
+    @State private var scanner: DualDirectoryScanner
+
+    init() {
+        let directoryModel = DirectoryModel()
+        _model = StateObject(wrappedValue: directoryModel)
+        _scanner = State(initialValue: DualDirectoryScanner(model: directoryModel))
+    }
 
     // MARK: -
     @MainActor
     private func fetchPaths() async {
-        leftPathStr = await scanner.leftDirectory.path
-        rightPathStr = await scanner.rightDirectory.path
+        leftPathStr = model.leftDirectory.path
+        rightPathStr = model.rightDirectory.path
     }
 
     // MARK: - Fetch the files asynchronously from the actor
