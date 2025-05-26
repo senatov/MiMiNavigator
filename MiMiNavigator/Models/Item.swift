@@ -14,7 +14,7 @@ final class Item: CustomStringConvertible {
     var timestamp: Date
 
     init(timestamp: Date) {
-        log.debug(#function)
+        log.info(#function)
         self.timestamp = timestamp
     }
 

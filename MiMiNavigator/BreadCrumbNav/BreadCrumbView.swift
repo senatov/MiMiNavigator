@@ -54,7 +54,7 @@ struct BreadCrumbView: View, CustomStringConvertible {
     private func breadcrumbSeparator() -> some View {
         Image(systemName: "chevron.forward.dotted.chevron.forward")
             .onTapGesture {
-                log.debug("Forward: clicked breadcrumb separator")
+                log.info("Forward: clicked breadcrumb separator")
             }
             .symbolRenderingMode(.multicolor)
     }

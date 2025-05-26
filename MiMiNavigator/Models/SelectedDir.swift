@@ -16,12 +16,14 @@ public class SelectedDir: ObservableObject, CustomStringConvertible {
 
     // MARK: - Initializes with default path and panel side
     public init(initialPath: String = "/Users", side: PanelSide = .left) {
+        log.info("# SelectedDir.init(initialPath: \(initialPath), side: \(side))")
         self.selectedFSEntity = CustomFile(path: initialPath)
         self.side = side
     }
 
     // MARK: -
     public init(side: PanelSide = .left) {
+        log.info("# SelectedDir.init(side: \(side))")
         self.side = side
         if selectedFSEntity == nil {
             selectedFSEntity = CustomFile(path: "/tmp")
@@ -31,12 +33,14 @@ public class SelectedDir: ObservableObject, CustomStringConvertible {
 
     // MARK: - Initializes from an existing SelectedDir instance
     public init(selectedDir: SelectedDir = SelectedDir(initialPath: "/Users/senat"), side: PanelSide = .left) {
+        log.info("# SelectedDir.init(selectedDir: \(selectedDir), side: \(side))")
         self.selectedFSEntity = selectedDir.selectedFSEntity
         self.side = side
     }
 
     // MARK: -
     public func change(initialPath: String = "/Users/senat/Downloads", side: PanelSide = .left) {
+        log.info("# SelectedDir.change(initialPath: \(initialPath), side: \(side))")
         self.selectedFSEntity = CustomFile(path: initialPath)
         self.side = side
     }
@@ -48,8 +52,4 @@ public class SelectedDir: ObservableObject, CustomStringConvertible {
     }
 }
 
-// MARK: - Represents the panel side (left or right) in the UI
-public enum PanelSide: String, Codable, CaseIterable {
-    case left
-    case right
-}
+

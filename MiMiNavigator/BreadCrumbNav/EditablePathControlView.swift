@@ -16,7 +16,7 @@ struct EditablePathControlView: View, CustomStringConvertible {
 
     // MARK: - View Body
     var body: some View {
-        log.debug(#function)
+        log.info(#function)
         return HStack(spacing: 2) {
             NavMnu1(panelSide: panelSide)
             Spacer(minLength: 3)
@@ -32,7 +32,7 @@ struct EditablePathControlView: View, CustomStringConvertible {
 
     // MARK: -
     private func createEditablePathItems(from url: URL) -> [EditablePathItem] {
-        log.debug("Selected URL: \(url.path)")
+        log.info("Selected URL: \(url.path)")
         var items: [EditablePathItem] = []
         var components = url.pathComponents
         if components.first == "/" && components.count > 1 {
@@ -52,18 +52,18 @@ struct EditablePathControlView: View, CustomStringConvertible {
 
     // MARK: -
     private func getPathItems() -> [EditablePathItem] {
-        log.debug(#function)
+        log.info(#function)
         guard let url = getPathURL() else {
             return []
         }
         let items = createEditablePathItems(from: url)
-        log.debug("Breadcrumb items count: \(items.count)")
+        log.info("Breadcrumb items count: \(items.count)")
         return items
     }
 
     // MARK: -
     private func getPathURL() -> URL? {
-        guard let url = selection.selectedFSEntity?.url else {
+        guard let url = selection.selectedFSEntity?.urlValue else {
             log.error("selectedFSEntity is nil — returning nil URL.")
             return nil
         }
