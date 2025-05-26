@@ -17,8 +17,13 @@ actor DualDirectoryScanner: ObservableObject {
     var fileLst = FileSingleton.shared
     private var leftTimer: DispatchSourceTimer?
     private var rightTimer: DispatchSourceTimer?
-    var leftDirectory: URL = URL.documentsDirectory
-    var rightDirectory: URL = URL.downloadsDirectory
+
+    @Published var leftDirectory: URL = URL.documentsDirectory
+    @Published var rightDirectory: URL = URL.downloadsDirectory
+    @Published var selectedDirectory: URL = URL.documentsDirectory
+    @Published var leftFiles: [CustomFile] = []
+    @Published var rightFiles: [CustomFile] = []
+
 
     // MARK: -
     private enum DirectorySide: CustomStringConvertible {
@@ -36,18 +41,6 @@ actor DualDirectoryScanner: ObservableObject {
     // - MAR Initialization
     init(leftDirectory: SelectedDir, rightDirectory: SelectedDir) {
         log.debug(#function)
-        if let url = leftDirectory.selectedFSEntity?.url {
-            self.leftDirectory = url
-        } else {
-            log.error("leftDirectory.selectedFSEntity is nil — assigning home directory.")
-            self.leftDirectory = URL.homeDirectory
-        }
-        if let url = rightDirectory.selectedFSEntity?.url {
-            self.rightDirectory = url
-        } else {
-            log.error("rightDirectory.selectedFSEntity is nil — assigning home directory.")
-            self.rightDirectory = URL.homeDirectory
-        }
         Task(priority: .low) { @MainActor in
             await self.startMonitoring()
         }
@@ -85,21 +78,18 @@ actor DualDirectoryScanner: ObservableObject {
     // MARK: - Refreshes the file list for a specific directory side
     private func refreshFiles(side: DirectorySide) async {
         log.info(#function)
-        let files: [CustomFile]
-        let directoryURL: URL
-        switch side {
-        case .left:
-            directoryURL = leftDirectory
-        case .right:
-            directoryURL = rightDirectory
-        }
         do {
-            files = try await scanDirectory(url: directoryURL)
+            switch side {
+            case .left:
+                leftFiles = try await scanDirectory(url: leftDirectory)
+                await updateFileList(side: side, with: leftFiles)
+            case .right:
+                rightFiles = try await scanDirectory(url: rightDirectory)
+                await updateFileList(side: side, with: rightFiles)
+            }
         } catch {
             log.error("Failed to scan \(side) directory: \(error.localizedDescription)")
-            files = []
         }
-        await updateFileList(side: side, with: files)
     }
 
     // MARK: - Scans a directory for files and directories
