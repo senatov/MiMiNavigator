@@ -28,7 +28,7 @@ struct FavButtonPopupTopPanel: View {
     // MARK: -
     private var backButton: some View {
         Button(action: {
-            log.debug("Back: navigating to previous directory")
+            log.info("Back: navigating to previous directory")
         }) {
             Image(systemName: "arrowshape.backward").renderingMode(.original)
         }
@@ -39,7 +39,7 @@ struct FavButtonPopupTopPanel: View {
     // MARK: -
     private var forwardButton: some View {
         Button(action: {
-            log.debug("Forward: navigating to next directory")
+            log.info("Forward: navigating to next directory")
         }) {
             Image(systemName: "arrowshape.right").renderingMode(.original)
         }
@@ -51,7 +51,7 @@ struct FavButtonPopupTopPanel: View {
     // MARK: -
     private var menuButton: some View {
         Button(action: {
-            log.debug("Navigation between favorites")
+            log.info("Navigation between favorites")
             if favTreeStruct.isEmpty {
                 Task { await fetchFavTree() }
             }
@@ -84,7 +84,7 @@ struct FavButtonPopupTopPanel: View {
     // MARK: -
     @MainActor
     private func fetchFavTree() async {
-        log.debug(#function)
+        log.info(#function)
         let favScanner = FavScanner()
         favTreeStruct = favScanner.scanOnlyFavorites()
         let files = await fetchFavoritesAsync(from: favScanner)

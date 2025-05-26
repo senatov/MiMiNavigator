@@ -23,7 +23,7 @@ class FavScanner {
     // MARK: - Entry Point: Scans favorite directories and builds their file trees
     func scanFavoritesAndNetworkVolumes(completion: @escaping ([CustomFile]) -> Void) {
         visitedPaths.removeAll()
-        log.debug(#function)
+        log.info(#function)
         _ = LocalFileProvider()
         var favorites: [CustomFile] = []
         var icloud: [CustomFile] = []
@@ -114,7 +114,7 @@ class FavScanner {
                 if !localDisks.isEmpty {
                     result.append(CustomFile(name: "Local Volumes", path: .empty, children: localDisks))
                 }
-                log.debug("Total groups: \(result.count)")
+                log.info("Total groups: \(result.count)")
                 completion(result)
                 volumesURL.stopAccessingSecurityScopedResource()
             }
@@ -123,19 +123,19 @@ class FavScanner {
 
     // MARK: -
     func scanOnlyFavorites() -> [CustomFile] {
-        log.debug(#function)
+        log.info(#function)
         let favoritePaths = FileManager.default.allDirectories
         let trees = favoritePaths.compactMap { buildFavTreeStructure(at: $0) }
-        log.debug("Total directory branches: \(trees.count)")
+        log.info("Total directory branches: \(trees.count)")
         return trees
     }
 
     // MARK: - Iterative File Structure Scanner (BFS)
     private func buildFavTreeStructure(at url: URL) -> CustomFile? {
-        log.debug(#function)
+        log.info(#function)
         currentDepth += 1
         defer { currentDepth -= 1 }
-        log.debug("buildFavTreeStructure() depth: \(currentDepth) at \(url.path)")
+        log.info("buildFavTreeStructure() depth: \(currentDepth) at \(url.path)")
         // Avoid revisiting the same path
         guard !visitedPaths.contains(url) else {
             return nil
@@ -157,7 +157,7 @@ class FavScanner {
 
     // MARK: -
     private func isValidDirectory(_ url: URL) -> Bool {
-        log.debug(#function)
+        log.info(#function)
         let keys: [URLResourceKey] = [
             .isSymbolicLinkKey,
             .isDirectoryKey,
@@ -204,7 +204,7 @@ class FavScanner {
 
     // MARK: -
     private func buildChildren(for url: URL) -> [CustomFile]? {
-        log.debug(#function)
+        log.info(#function)
         var result: [CustomFile]? = nil
         if currentDepth <= maxDepth {
             let contents =
@@ -261,7 +261,7 @@ class FavScanner {
 // MARK: - Sandbox Access
 extension FavScanner {
     func requestAccessToVolumesDirectory(completion: @escaping (URL?) -> Void) {
-        log.debug(#function)
+        log.info(#function)
         let openPanel = NSOpenPanel()
         openPanel.title = "Mimi: “Please select /Volumes"
         openPanel.allowsConcurrentViewDrawing = true

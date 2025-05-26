@@ -42,7 +42,7 @@ struct FavTreeView: View {
             .foregroundColor(isTheSame ? .blue : .primary)
             .onTapGesture {
                 selection.selectedFSEntity = file
-                log.debug("Selected file: \(file.nameStr)")
+                log.info("Selected file: \(file.nameStr)")
             }
             .contextMenu {
                 TreeViewContextMenu(file: file)
@@ -99,6 +99,6 @@ struct FavTreeView: View {
         } else {
             expandedFolders.insert(file.pathStr)
         }
-        log.debug("Toggled folder: \(file.nameStr), expanded: \(isExpanded)")
+        log.info("Toggled folder: \(file.nameStr), expanded: \(isExpanded)")
     }
 }

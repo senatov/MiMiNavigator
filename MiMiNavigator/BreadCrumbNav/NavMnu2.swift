@@ -17,13 +17,13 @@ struct NavMnu2: View {
             Button(
                 "Properties",
                 action: {
-                    log.debug("Properties menu selected")
+                    log.info("Properties menu selected")
                 }
             )
             Button(
                 "Open in Finder",
                 action: {
-                    log.debug("Open in Finder menu selected")
+                    log.info("Open in Finder menu selected")
                 }
             )
         } label: {

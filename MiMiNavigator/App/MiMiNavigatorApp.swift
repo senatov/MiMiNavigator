@@ -20,7 +20,7 @@ struct MiMiNavigatorApp: App {
         let content: String
         if let versionPath, let versionString = try? String(contentsOfFile: versionPath, encoding: .utf8) {
             content = versionString.trimmingCharacters(in: .whitespacesAndNewlines)
-            log.debug("Loaded version from .version file: \(content)")
+            log.info("Loaded version from .version file: \(content)")
         } else {
             content = "Mimi Navigator — Version unavailable"
             log.error("Failed to load .version file.")
@@ -35,7 +35,7 @@ struct MiMiNavigatorApp: App {
 
     // MARK: -
     var sharedModelContainer: ModelContainer = {
-        log.debug(#function)
+        log.info(#function)
         let schema = Schema([
             Item.self
         ])
@@ -58,7 +58,7 @@ struct MiMiNavigatorApp: App {
             .toolbar {
                 ToolbarItem(placement: .automatic) {
                     Button(action: {
-                        log.debug("Refresh button clicked")
+                        log.info("Refresh button clicked")
                     }) {
                         Image(systemName: "arrow.triangle.2.circlepath")
                             .padding(.horizontal, 2)

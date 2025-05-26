@@ -55,7 +55,7 @@ struct EditablePathControlWrapper: View, CustomStringConvertible {
                 .background(.white)
                 .focused($isTextFieldFocused)
                 .onAppear {
-                    log.debug("Entered editing mode")
+                    log.info("Entered editing mode")
                     editedPathStr = selection.selectedFSEntity?.pathStr ?? ""
                     isTextFieldFocused = true
                     DispatchQueue.main.async {
@@ -65,11 +65,11 @@ struct EditablePathControlWrapper: View, CustomStringConvertible {
                     }
                 }
                 .onExitCommand {
-                    log.debug("Exit command received (Escape)")
+                    log.info("Exit command received (Escape)")
                     isEditing = false
                 }
                 .onSubmit {
-                    log.debug("Submitted new path: \(editedPathStr)")
+                    log.info("Submitted new path: \(editedPathStr)")
                     selection.selectedFSEntity = CustomFile(path: editedPathStr)
                     withAnimation(.easeInOut(duration: 0.3)) {
                         isEditing = false
@@ -77,7 +77,7 @@ struct EditablePathControlWrapper: View, CustomStringConvertible {
                 }
 
             Button {
-                log.debug("Confirmed path editing with checkmark")
+                log.info("Confirmed path editing with checkmark")
                 withAnimation(.easeInOut(duration: 0.3)) {
                     isEditing = false
                 }
@@ -88,7 +88,7 @@ struct EditablePathControlWrapper: View, CustomStringConvertible {
             }
 
             Button {
-                log.debug("Cancelled path editing with X button")
+                log.info("Cancelled path editing with X button")
                 withAnimation(.easeInOut(duration: 0.3)) {
                     isEditing = false
                 }
@@ -114,7 +114,7 @@ struct EditablePathControlWrapper: View, CustomStringConvertible {
             .font(.system(size: 13, weight: .light, design: .default))
             .contentShape(Rectangle())
             .onTapGesture {
-                log.debug("Switching to editing mode")
+                log.info("Switching to editing mode")
                 withAnimation(.easeInOut(duration: 0.25)) {
                     isEditing = true
                 }

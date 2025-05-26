@@ -9,7 +9,7 @@
 import Foundation
 import SwiftyBeaver
 
-extension FileManager {
+extension FileManager  {
     // MARK: - Returns the URL of the user's Documents directory
     var documentsDirectory: URL {
         return urls(for: .documentDirectory, in: .userDomainMask).first!

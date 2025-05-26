@@ -44,7 +44,7 @@ struct DownToolbarButtonView: View {
 
     //MARK: - Обработчик нажатия кнопки
     private func handlePress() {
-        log.debug(#function)
+        log.info(#function)
         withAnimation(.easeInOut(duration: 0.2)) {
             isPressed = true
         }
@@ -53,13 +53,13 @@ struct DownToolbarButtonView: View {
                 isPressed = false
             }
         }
-        log.debug("Button '\(title)' pressed")
+        log.info("Button '\(title)' pressed")
         action()
     }
 
     /// Обработчик наведения курсора
     private func handleHover(_ hovering: Bool) {
-        log.debug("Hover on '\(title)': \(hovering ? "ENTER" : "EXIT")")
+        log.info("Hover on '\(title)': \(hovering ? "ENTER" : "EXIT")")
         withAnimation(.easeInOut(duration: 0.2)) {
             isHovered = hovering
         }
@@ -73,7 +73,7 @@ struct DownToolbarButtonView_Previews: PreviewProvider {
             title: "F4 Edit",
             systemImage: "pencil",
             action: {
-                log.debug("Edit button tapped")
+                log.info("Edit button tapped")
             }
         )
     }
