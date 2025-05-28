@@ -5,55 +5,68 @@
 //  Created by Iakov Senatov on 18.02.25.
 //  Copyright © 2025 Senatov. All rights reserved.
 //
+
 import SwiftUI
 
+/// Represents an individual item in a dropdown menu
 struct TopMenuItemView: View {
     let item: MenuItem
     @State private var isHovered = false
-    @State private var isPressed = false
     @State private var showHelpText = false
-
+    // MARK: -
     var body: some View {
-        Button(action: {
-            isPressed = true
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                isPressed = false
-            }
-            item.action()
-        }) {
+        Button(action: performAction) {
             HStack {
                 Text(item.title)
                 Spacer()
                 if let shortcut = item.shortcut {
-                    Text(shortcut).foregroundColor(.gray)
+                    Text(shortcut)
+                        .foregroundColor(.gray)
+                        .font(.caption)
                 }
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
-            .background(
-                isPressed ? Color.blue.opacity(0.7) : isHovered ? Color.blue.opacity(0.3) : Color.clear
-            )
+            .background(backgroundColor)
             .cornerRadius(7)
         }
-        .buttonStyle(TopMenuButtonStyle())
-        .onHover { hovering in
-            isHovered = hovering
-            if hovering {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                    if isHovered { showHelpText = true }
-                }
-            } else {
-                showHelpText = false
-            }
+        .buttonStyle(PlainButtonStyle())
+        .onHover(perform: handleHover)
+        .popover(
+            isPresented: $showHelpText,
+            attachmentAnchor: .point(.trailing),
+            arrowEdge: .leading
+        ) {
+            HelpPopup(text: "This is a help text for \(item.title).")
         }
-        .popover(isPresented: $showHelpText, attachmentAnchor: .point(.trailing), arrowEdge: .leading) {
-            HelpPopup(text: "This is a help text for \(item.title).")  // Всплывающее окно
+    }
+
+    // MARK: - Computed Background
+    private var backgroundColor: Color {
+        isHovered ? Color.blue.opacity(0.3) : Color.clear
+    }
+
+    // MARK: - Actions
+    private func performAction() {
+        item.action()
+    }
+    // MARK: -
+    private func handleHover(_ hovering: Bool) {
+        isHovered = hovering
+        if hovering {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                if isHovered {
+                    showHelpText = true
+                }
+            }
+        } else {
+            showHelpText = false
         }
     }
 }
 
 // MARK: - File Menu (Your bread-and-butter file ops)
-var filesMenuCategory: MenuCategory {
+var filesMenuCategoryTop: MenuCategory {
     MenuCategory(title: "Files", items: filesMenuItems)
 }
 
@@ -72,7 +85,7 @@ var filesMenuItems: [MenuItem] {
 }
 
 // MARK: - Mark Menu (Select, unselect... the basics)
-var markMenuCategory: MenuCategory {
+var markMenuCategoryTop: MenuCategory {
     MenuCategory(title: "Mark", items: markMenuItems)
 }
 
@@ -87,7 +100,7 @@ var markMenuItems: [MenuItem] {
 }
 
 // MARK: - Command Menu (CMD-style actions)
-var commandMenuCategory: MenuCategory {
+var commandMenuCategoryTop: MenuCategory {
     MenuCategory(title: "Commands", items: commandMenuItems)
 }
 
@@ -102,7 +115,7 @@ var commandMenuItems: [MenuItem] {
 }
 
 // MARK: - Net Menu (The web stuff, FTP, etc.)
-var netMenuCategory: MenuCategory {
+var netMenuCategoryTop: MenuCategory {
     MenuCategory(title: "Net", items: netMenuItems)
 }
 
@@ -116,7 +129,7 @@ var netMenuItems: [MenuItem] {
 }
 
 // MARK: - Show Menu (View-related options)
-var showMenuCategory: MenuCategory {
+var showMenuCategoryTop: MenuCategory {
     MenuCategory(title: "Show", items: showMenuItems)
 }
 
@@ -129,7 +142,7 @@ var showMenuItems: [MenuItem] {
 }
 
 // MARK: - Configuration Menu (The power user’s playground)
-var configMenuCategory: MenuCategory {
+var configMenuCategoryTop: MenuCategory {
     MenuCategory(title: "Configuration", items: configMenuItems)
 }
 
@@ -141,7 +154,7 @@ var configMenuItems: [MenuItem] {
 }
 
 // MARK: - Start Menu (Tabs and layout management)
-var startMenuCategory: MenuCategory {
+var startMenuCategoryTop: MenuCategory {
     MenuCategory(title: "Start", items: startMenuItems)
 }
 
@@ -154,7 +167,7 @@ var startMenuItems: [MenuItem] {
 }
 
 // MARK: - Help Menu (Docs, guides, updates)
-var helpMenuCategory: MenuCategory {
+var helpMenuCategoryTop: MenuCategory {
     MenuCategory(title: "Help", items: helpMenuItems)
 }
 
@@ -180,14 +193,5 @@ struct HelpPopup: View {
     }
 }
 
-struct BlurView: NSViewRepresentable {
-    func makeNSView(context: Context) -> NSVisualEffectView {
-        let view = NSVisualEffectView()
-        view.material = .menu  // Используем стандартное размытие меню macOS
-        view.blendingMode = .behindWindow
-        view.state = .active
-        return view
-    }
 
-    func updateNSView(_ nsView: NSVisualEffectView, context: Context) {}
-}
+

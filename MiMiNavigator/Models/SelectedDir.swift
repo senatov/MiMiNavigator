@@ -27,7 +27,6 @@ public class SelectedDir: ObservableObject, CustomStringConvertible {
         self.side = side
         if selectedFSEntity == nil {
             selectedFSEntity = CustomFile(path: "/tmp")
-
         }
     }
 

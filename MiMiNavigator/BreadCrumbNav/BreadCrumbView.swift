@@ -1,4 +1,3 @@
-import AppKit
 //
 //  EditablePathControlView.swift
 //  MiMiNavigator
@@ -6,73 +5,70 @@ import AppKit
 //  Created by Iakov Senatov on 14.11.24.
 //  Copyright © 2024 Senatov. All rights reserved.
 //
+
+import AppKit
 import SwiftUI
 import SwiftyBeaver
 
 /// Breadcrumb trail UI component for representing navigation path
-struct BreadCrumbView: View, CustomStringConvertible {
-    @StateObject var selection = SelectedDir()
-    var components: [EditablePathItem]
+struct BreadCrumbView: View {
+    @StateObject var appState = AppState() 
+    let side: PanelSide  // .left or .right
+
+    // MARK: - Initialization
+    init(side: PanelSide) {
+        self.side = side
+    }
 
     // MARK: -
-    init(components: [EditablePathItem]) {
-        self.components = components
+    private var pathComponents: [String] {
+        let path = (side == .left ? appState.leftPath : appState.rightPath)
+        return path.split(separator: "/").map(String.init)
     }
 
-    nonisolated var description: String {
-        "ConsoleCurrPath View"
-    }
-
-    // MARK: - Body
+    // MARK: -
     var body: some View {
-        breadcrumbItems
-    }
-
-    // MARK: - Breadcrumb Items
-    private var breadcrumbItems: some View {
-        ForEach(Array(components.enumerated()), id: \.element.pathStr) { index, item in
-            breadcrumbItem(index: index, item: item)
+        HStack(spacing: 4) {
+            ForEach(pathComponents.indices, id: \.self) { index in
+                breadcrumbItem(index: index)
+            }
         }
     }
 
     // MARK: - Breadcrumb Item
-    /// Renders single breadcrumb item with optional separator
-    /// - Parameters:
-    ///   - index: Position of the item in the breadcrumb trail
-    ///   - item: Logical entity representing the folder level
-    /// - Returns: SwiftUI View of the breadcrumb entry
     @ViewBuilder
-    private func breadcrumbItem(index: Int, item: EditablePathItem) -> some View {
+    private func breadcrumbItem(index: Int) -> some View {
         if index > 0 {
-            breadcrumbSeparator()
+            Image(systemName: "chevron.forward")
+                .foregroundColor(.secondary)
         }
-        breadcrumbButton(for: item)
+
+        Button(action: {
+            handlePathSelection(upTo: index)
+        }) {
+            Text(pathComponents[index])
+                .font(.callout)
+                .foregroundColor(.blue)
+        }
+        .buttonStyle(.plain)
     }
 
-    // MARK: - Separator View
-    @ViewBuilder
-    private func breadcrumbSeparator() -> some View {
-        Image(systemName: "chevron.forward.dotted.chevron.forward")
-            .onTapGesture {
-                log.info("Forward: clicked breadcrumb separator")
+    // MARK: - Handle Selection
+    private func handlePathSelection(upTo index: Int) {
+        let newPath = "/" + pathComponents.prefix(index + 1).joined(separator: "/")
+
+        switch side {
+        case .left:
+            appState.leftPath = newPath
+            Task {
+                await appState.scanner.setLeftDirectory(pathStr: newPath)
+                await appState.refreshLeftFiles()
             }
-            .symbolRenderingMode(.multicolor)
-    }
-
-    // MARK: - Breadcrumb Button
-    @ViewBuilder
-    private func breadcrumbButton(for item: EditablePathItem) -> some View {
-        Button(action: { handlePathSelection(for: item) }) {
-            EditablePathDirIcon(item: item, pathStr: selection.selectedFSEntity?.pathStr ?? "")
-        }
-        .buttonStyle(.link)
-    }
-
-    // MARK: - Selection Logic
-    private func handlePathSelection(for item: EditablePathItem) {
-        withAnimation(.easeInOut(duration: 0.4)) {
-            if selection.selectedFSEntity?.pathStr != item.pathStr {
-                selection.selectedFSEntity = CustomFile(path: item.pathStr)
+        case .right:
+            appState.rightPath = newPath
+            Task {
+                await appState.scanner.setRightDirectory(pathStr: newPath)
+                await appState.refreshRightFiles()
             }
         }
     }

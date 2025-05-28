@@ -10,7 +10,6 @@ import SwiftUI
 import SwiftyBeaver
 
 // MARK: -
-/// -
 struct NavMnu2: View {
     var body: some View {
         Menu {
