@@ -11,17 +11,14 @@ import SwiftyBeaver
 // MARK: - EditablePathControlView
 struct EditablePathControlView: View, CustomStringConvertible {
     @StateObject var selection = SelectedDir()
-    var panelSide: PanelSide
-
 
     // MARK: - View Body
     var body: some View {
         log.info(#function)
         return HStack(spacing: 2) {
-            NavMnu1(panelSide: panelSide)
+            NavMnu1(panelSide: selection.side)
             Spacer(minLength: 3)
-            let pathItem = getPathItems()
-            BreadCrumbView(components: pathItem)
+            BreadCrumbView(side: selection.side)
             NavMnu2()
         }
         .background(

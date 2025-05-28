@@ -13,6 +13,7 @@ struct FavTreeMnu: View {
     @ObservedObject var selected: SelectedDir
     @State private var expandedFolders: Set<String> = []
 
+    // MARK: -
     private var headerView: some View {
         Text("Favorites:")
             .font(.headline)
@@ -47,6 +48,7 @@ struct FavTreeMnu: View {
         .padding(.bottom, 8)
     }
 
+    // MARK: -
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             headerView

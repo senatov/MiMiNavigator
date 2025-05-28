@@ -1,44 +1,22 @@
+//
+//  FileScanner.swift
+//  MiMiNavigator
+//
+//  Created by Iakov Senatov on 26.04.2025.
+//  Copyright © 2025 Senatov. All rights reserved.
+//
+
+import AppKit
 import SwiftUI
 
 struct TotalCommanderResizableView: View {
-    @StateObject var selection = SelectedDir()
-    @State private var displayedLeftFiles: [CustomFile] = []
-    @State private var displayedRightFiles: [CustomFile] = []
+    @StateObject var appState = AppState()  // Shared application state
     @State private var isDividerTooltipVisible: Bool = true
-    @State private var leftPanelWidth: CGFloat = 0
-    @State private var leftPathStr: String = ""
-    @State private var rightPathStr: String = ""
+    @State private var leftPanelWidth: CGFloat = 0  // Stores current left panel width
     @State private var tooltipPosition: CGPoint = .zero
     @State private var tooltipText: String = ""
-    @StateObject private var model = DirectoryModel()
-    @State private var scanner: DualDirectoryScanner
 
-    init() {
-        let directoryModel = DirectoryModel()
-        _model = StateObject(wrappedValue: directoryModel)
-        _scanner = State(initialValue: DualDirectoryScanner(model: directoryModel))
-    }
-
-    // MARK: -
-    @MainActor
-    private func fetchPaths() async {
-        leftPathStr = model.leftDirectory.path
-        rightPathStr = model.rightDirectory.path
-    }
-
-    // MARK: - Fetch the files asynchronously from the actor
-    @MainActor
-    private func fetchLeftFiles() async {
-        displayedLeftFiles = await scanner.fileLst.getLeftFiles()
-    }
-
-    // MARK: - Fetch the files asynchronously from the actor
-    @MainActor
-    private func fetchRightFiles() async {
-        displayedRightFiles = await scanner.fileLst.getRightFiles()
-    }
-
-    // MARK: -
+    // MARK: - View Body
     var body: some View {
         GeometryReader { geometry in
             ZStack {
@@ -50,29 +28,49 @@ struct TotalCommanderResizableView: View {
                     buildMainPanels(geometry: geometry)
                     buildDownToolbar()
                 }
+
+                if isDividerTooltipVisible {
+                    PrettyTooltip(text: tooltipText)
+                        .position(tooltipPosition)
+                        .transition(.opacity)
+                        .opacity(0.7)
+                        .zIndex(1000)
+                }
             }
             .onAppear {
                 Task(priority: .low) {
                     await fetchPaths()
+                    await fetchLeftFiles()
+                    await fetchRightFiles()
                 }
-                initializePanelWidth(geometry: geometry)
-                addKeyPressMonitor()
+                initializePanelWidth(geometry: geometry)  // Restore divider width from user defaults
+                addKeyPressMonitor()  // Register keyboard shortcut
             }
-            if isDividerTooltipVisible {
-                PrettyTooltip(text: tooltipText)
-                    .position(tooltipPosition)
-                    .transition(.opacity)
-                    .opacity(0.7)
-                    .zIndex(1000)
-            }
-
         }
     }
 
+    // MARK: - Fetch Directory Paths
+    @MainActor
+    private func fetchPaths() async {
+        appState.leftPath = appState.model.leftDirectory.path
+        appState.rightPath = appState.model.rightDirectory.path
+    }
+
+    // MARK: - Fetch Files
+    @MainActor
+    private func fetchLeftFiles() async {
+        appState.displayedLeftFiles = await appState.scanner.fileLst.getLeftFiles()
+    }
+
     // MARK: -
+    @MainActor
+    private func fetchRightFiles() async {
+        appState.displayedRightFiles = await appState.scanner.fileLst.getRightFiles()
+    }
+
+    // MARK: - Panels
     private func buildMainPanels(geometry: GeometryProxy) -> some View {
-        log.debug(#function)
-        return HStack(spacing: 0) {
+        HStack(spacing: 0) {
             buildLeftPanel(geometry: geometry)
             buildDivider(geometry: geometry)
             buildRightPanel()
@@ -83,18 +81,16 @@ struct TotalCommanderResizableView: View {
 
     // MARK: -
     private func buildLeftPanel(geometry: GeometryProxy) -> some View {
-        log.info(#function)
-        return VStack {
-            EditablePathControlWrapper(selectedSide: .left)
-                .onChange(of: leftPathStr) { _, newPath in
+        VStack {
+            EditablePathControlWrapper(appState: appState, selectedSide: .left)
+                .onChange(of: appState.leftPath) { _, newPath in
                     Task {
-                        await scanner.setLeftDirectory(pathStr: newPath)
+                        await appState.scanner.setLeftDirectory(pathStr: newPath)
                         await fetchLeftFiles()
                     }
                 }
-                .cornerRadius(7)
-                .padding(.horizontal, 6)
-            List(displayedLeftFiles, id: \.id) { file in
+
+            List(appState.displayedLeftFiles, id: \.id) { file in
                 Text(file.nameStr)
                     .contextMenu {
                         FileContextMenu()
@@ -104,28 +100,22 @@ struct TotalCommanderResizableView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 6)
             .border(Color.secondary)
-            .onAppear {
-                Task(priority: .low) {
-                    await fetchLeftFiles()
-                }
-            }
         }
-        .frame(width: leftPanelWidth > 0 ? leftPanelWidth : geometry.size.width / 2)  // Определяем ширину панели
+        .frame(width: leftPanelWidth > 0 ? leftPanelWidth : geometry.size.width / 2)  // Determine left panel width
     }
+
     // MARK: -
     private func buildRightPanel() -> some View {
-        log.info(#function)
-        return VStack {
-            EditablePathControlWrapper(selectedSide: .right)
-                .onChange(of: rightPathStr) { _, newPath in
-                    Task(priority: .low) {
-                        await scanner.setRightDirectory(pathStr: newPath)
+        VStack {
+            EditablePathControlWrapper(appState: appState, selectedSide: .left)
+                .onChange(of: appState.rightPath) { _, newPath in
+                    Task {
+                        await appState.scanner.setRightDirectory(pathStr: newPath)
                         await fetchRightFiles()
                     }
                 }
-                .cornerRadius(7)
-                .padding(.horizontal, 6)
-            List(displayedRightFiles, id: \.id) { file in
+
+            List(appState.displayedRightFiles, id: \.id) { file in
                 Text(file.nameStr)
                     .contextMenu {
                         FileContextMenu()
@@ -135,18 +125,12 @@ struct TotalCommanderResizableView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 6)
             .border(Color.secondary)
-            .onAppear {
-                Task(priority: .low) {
-                    await fetchRightFiles()
-                }
-            }
         }
     }
 
-    // MARK: - Build Divider Between Panels
+    // MARK: - Divider
     private func buildDivider(geometry: GeometryProxy) -> some View {
-        log.info(#function)
-        return Rectangle()
+        Rectangle()
             .fill(Color(.systemGray))
             .frame(width: 4)
             .opacity(0.2)
@@ -156,10 +140,7 @@ struct TotalCommanderResizableView: View {
                         handleDividerDrag(value: value, geometry: geometry)
                     }
                     .onEnded { _ in
-                        UserDefaults.standard.set(
-                            leftPanelWidth,
-                            forKey: "leftPanelWidth"
-                        )
+                        UserDefaults.standard.set(leftPanelWidth, forKey: "leftPanelWidth")
                         isDividerTooltipVisible = false
                     }
             )
@@ -167,24 +148,69 @@ struct TotalCommanderResizableView: View {
                 handleDoubleClickDivider(geometry: geometry)
             }
             .onHover { isHovering in
-                if isHovering {
-                    DispatchQueue.main.async {
-                        NSCursor.resizeLeftRight.push()
-                    }
-                } else {
-                    DispatchQueue.main.async {
-                        NSCursor.pop()
-                    }
+                DispatchQueue.main.async {
+                    isHovering ? NSCursor.resizeLeftRight.push() : NSCursor.pop()
                 }
             }
     }
 
-    // MARK: -
+    // MARK: - Toolbar
+    private func buildDownToolbar() -> some View {
+        HStack(spacing: 18) {
+            DownToolbarButtonView(title: "F3 View", systemImage: "eye.circle") {
+                if let file = appState.selectedLeftFile {
+                    FActions.view(file)
+                } else {
+                    log.debug("No file selected for View")
+                }
+            }
+            DownToolbarButtonView(title: "F4 Edit", systemImage: "pencil") {
+                if let file = appState.selectedLeftFile {
+                    FActions.edit(file)
+                } else {
+                    log.debug("No file selected for Edit")
+                }
+            }
+            DownToolbarButtonView(title: "F5 Copy", systemImage: "document.on.document") {
+                log.debug("Copy button tapped")
+            }
+            DownToolbarButtonView(title: "F6 Move", systemImage: "square.and.arrow.down.on.square") {
+                log.debug("Move button tapped")
+            }
+            DownToolbarButtonView(title: "F7 NewFolder", systemImage: "folder.badge.plus") {
+                log.debug("NewFolder button tapped")
+            }
+            DownToolbarButtonView(title: "F8 Delete", systemImage: "minus.rectangle") {
+                if let file = appState.selectedLeftFile {
+                    FActions.deleteWithConfirmation(file) {
+                        Task {
+                            await fetchLeftFiles()
+                        }
+                    }
+                } else {
+                    log.debug("No file selected for Delete")
+                }
+            }
+            DownToolbarButtonView(title: "Settings", systemImage: "gearshape") {
+                log.debug("Settings button tapped")
+            }
+            DownToolbarButtonView(title: "Console", systemImage: "terminal") {
+                openConsoleInDirectory("~")
+            }
+            DownToolbarButtonView(title: "F4 Exit", systemImage: "power") {
+                exitApp()
+            }
+        }
+        .padding()
+        .cornerRadius(7)
+    }
+
+    // MARK: - Utility
     private func handleDividerDrag(value: DragGesture.Value, geometry: GeometryProxy) {
-        log.debug("handleDividerDrag")
         let newWidth = leftPanelWidth + value.translation.width
         let minPanelWidth: CGFloat = 100
         let maxPanelWidth = geometry.size.width - 100
+
         if newWidth > minPanelWidth && newWidth < maxPanelWidth {
             leftPanelWidth = newWidth
             let (tooltipText, tooltipPosition) = ToolTipMod.calculateTooltip(
@@ -212,93 +238,7 @@ struct TotalCommanderResizableView: View {
     }
 
     // MARK: -
-    private func buildDownToolbar() -> some View {
-        log.info(#function)
-        return HStack(spacing: 18) {  // Увеличили расстояние между кнопками
-            DownToolbarButtonView(
-                title: "F3 View",
-                systemImage: "eye.circle",
-                action: {
-                    log.debug("View selected Docu")
-                }
-            )
-
-            DownToolbarButtonView(
-                title: "F4 Edit",
-                systemImage: "pencil",
-                action: {
-                    log.debug("Edit button tapped")
-                }
-            )
-
-            DownToolbarButtonView(
-                title: "F5 Copy",
-                systemImage: "document.on.document",
-                action: {
-                    log.debug("Copy button tapped")
-                }
-            )
-
-            DownToolbarButtonView(
-                title: "F6 Move",
-                systemImage: "square.and.arrow.down.on.square",
-                action: {
-                    log.debug("Move button tapped")
-                }
-            )
-
-            DownToolbarButtonView(
-                title: "F7 NewFolder",
-                systemImage: "folder.badge.plus",
-                action: {
-                    log.debug("NewFolder button tapped")
-                }
-            )
-
-            DownToolbarButtonView(
-                title: "F8 Delete",
-                systemImage: "minus.rectangle",
-                action: {
-                    log.debug("Delete button tapped")
-                }
-            )
-            DownToolbarButtonView(
-                title: "Settings",
-                systemImage: "gearshape",
-                action: {
-                    log.debug("Settings button tapped")
-                }
-            )
-
-            DownToolbarButtonView(
-                title: "Console",
-                systemImage: "terminal",
-                action: {
-                    openConsoleInDirectory("~")
-                }
-            )
-            DownToolbarButtonView(
-                title: "F4 Exit",
-                systemImage: "power",
-                action: {
-                    exitApp()
-                }
-            )
-
-        }
-        .padding()
-        .cornerRadius(7)
-    }
-
-    // MARK: -
-    private func exitApp() {
-        log.info(#function)
-        NSApplication.shared.terminate(nil)
-    }
-
-    // MARK: -
     private func addKeyPressMonitor() {
-        log.info(#function)
         NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
             if event.modifierFlags.contains(.option) && event.keyCode == 0x76 {
                 exitApp()
@@ -306,5 +246,10 @@ struct TotalCommanderResizableView: View {
             }
             return event
         }
+    }
+
+    // MARK: -
+    private func exitApp() {
+        NSApplication.shared.terminate(nil)
     }
 }

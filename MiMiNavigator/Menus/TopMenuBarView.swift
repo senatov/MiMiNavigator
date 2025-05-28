@@ -1,61 +1,56 @@
-//
-//  TopMenuBarView.swift
-//  MiMiNavigator
-//
-//  Created by Iakov Senatov on 16.10.24.
-//  Description: SwiftUI component for rendering the top menu bar with dropdown menus and shortcuts.
-//
+    //
+    //  TopMenuBarView.swift
+    //  MiMiNavigator
+    //
+    //  Created by Iakov Senatov on 16.10.24.
+    //  Description: SwiftUI component for rendering the top menu bar with dropdown menus and shortcuts.
+    //
 
 import SwiftUI
 
 struct TopMenuBarView: View {
-
+    
     var body: some View {
         HStack(spacing: 8) {
-            // Main menu items (excluding the final Help menu)
-            ForEach(menuData.dropLast()) { menu in
+                // Render all menus except the last one (Help)
+            ForEach(Array(menuData.dropLast())) { menu in
                 Menu {
                     ForEach(menu.items) { item in
                         TopMenuItemView(item: item)
                     }
                 } label: {
-                    Text(menu.titleStr)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 8)
-                        .font(.system(size: NSFont.systemFontSize, weight: .regular))
-                        .foregroundColor(Color.primary)
-                        .frame(height: 22)
+                    TopMenuButton(title: menu.titleStr) {}
                         .help("Open menu: '\(menu.titleStr)'")
                 }
                 .buttonStyle(TopMenuButtonStyle())
             }
-            Spacer()  // Pushes the Help menu to the far right
-            // The mighty "Help" menu at the edge of the universe
+            
+            Spacer() // Push Help menu to the right edge
+            
+                // Help menu rendered separately
             if let helpMenu = menuData.last {
                 Menu {
                     ForEach(helpMenu.items) { item in
                         TopMenuItemView(item: item)
                     }
                 } label: {
-                    Text(helpMenu.titleStr)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 6)
-                        .font(.system(size: NSFont.systemFontSize, weight: .regular))
-                        .foregroundColor(Color.primary)
-                        .frame(height: 22)
+                    TopMenuButton(title: helpMenu.titleStr) {}
                         .help("Open menu: '\(helpMenu.titleStr)'")
                 }
                 .buttonStyle(TopMenuButtonStyle())
-                .padding(.trailing, 1)  // Adds a small spacing from the right edge
+                .padding(.trailing, 1)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 20)
         .padding(.vertical, 6)
-        .background(BlurView().clipShape(RoundedRectangle(cornerRadius: 7)))  // Blurred background for the top menu bar
+        .background(
+            BlurView()
+                .clipShape(RoundedRectangle(cornerRadius: 7))
+        )
     }
-
-    // All top-level menu categories are defined here:
+    
+        // All top-level menu categories are defined here:
     private var menuData: [MenuCategory] {
         [
             filesMenuCategory,

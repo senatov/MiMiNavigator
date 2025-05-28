@@ -36,6 +36,7 @@ struct UserPreferences {
         UserDefaults.standard.set(y, forKey: mimiWindowPosYKey)
     }
 
+    // MARK: -
     func saveLeftPanelWidth(_ width: CGFloat) {
         log.info(#function)
         log.info("Saving left panel width - Width: \(width)")

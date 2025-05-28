@@ -8,22 +8,15 @@
 
 import SwiftUI
 
-// MARK: -
-/// -
+/// A reusable path control component with edit mode, integrated with AppState.
 struct EditablePathControlWrapper: View, CustomStringConvertible {
-
-    @StateObject var selection = SelectedDir()
+    @StateObject var appState = AppState()
+    let selectedSide: PanelSide
     @State private var editedPathStr: String = ""
     @State private var isEditing = false
     @FocusState private var isTextFieldFocused: Bool
-    var selectedSide: PanelSide
 
-    // MARK: -
-    init(selectedSide: PanelSide) {
-        self.selectedSide = selectedSide
-    }
-
-    // MARK: -
+    // MARK: - Body
     var body: some View {
         HStack {
             if isEditing {
@@ -37,7 +30,7 @@ struct EditablePathControlWrapper: View, CustomStringConvertible {
         .background(
             RoundedRectangle(cornerRadius: 7)
                 .fill(Color.white)
-                .shadow(color: .black.opacity(0.15), radius: 7.0, x: 0, y: 2)
+                .shadow(color: .black.opacity(0.15), radius: 7, x: 0, y: 2)
         )
         .overlay(
             RoundedRectangle(cornerRadius: 7)
@@ -46,7 +39,7 @@ struct EditablePathControlWrapper: View, CustomStringConvertible {
         .padding(.vertical, 6)
     }
 
-    // MARK: -
+    // MARK: - Editing View
     private var editingView: some View {
         HStack {
             TextField("Enter path", text: $editedPathStr)
@@ -56,7 +49,7 @@ struct EditablePathControlWrapper: View, CustomStringConvertible {
                 .focused($isTextFieldFocused)
                 .onAppear {
                     log.info("Entered editing mode")
-                    editedPathStr = selection.selectedFSEntity?.pathStr ?? ""
+                    editedPathStr = currentPath
                     isTextFieldFocused = true
                     DispatchQueue.main.async {
                         if let editor = NSApp.keyWindow?.firstResponder as? NSTextView {
@@ -70,17 +63,12 @@ struct EditablePathControlWrapper: View, CustomStringConvertible {
                 }
                 .onSubmit {
                     log.info("Submitted new path: \(editedPathStr)")
-                    selection.selectedFSEntity = CustomFile(path: editedPathStr)
-                    withAnimation(.easeInOut(duration: 0.3)) {
-                        isEditing = false
-                    }
+                    applyPathUpdate()
                 }
 
             Button {
                 log.info("Confirmed path editing with checkmark")
-                withAnimation(.easeInOut(duration: 0.3)) {
-                    isEditing = false
-                }
+                applyPathUpdate()
             } label: {
                 Image(systemName: "checkmark.circle.fill")
                     .renderingMode(.original)
@@ -89,9 +77,7 @@ struct EditablePathControlWrapper: View, CustomStringConvertible {
 
             Button {
                 log.info("Cancelled path editing with X button")
-                withAnimation(.easeInOut(duration: 0.3)) {
-                    isEditing = false
-                }
+                withAnimation { isEditing = false }
             } label: {
                 Image(systemName: "xmark.circle.fill")
                     .renderingMode(.original)
@@ -101,21 +87,16 @@ struct EditablePathControlWrapper: View, CustomStringConvertible {
         .transition(.opacity)
     }
 
-    // MARK: -
-    private var pathControlView: some View {
-        EditablePathControlView(panelSide: selectedSide)
-    }
-
-    // MARK: -
+    // MARK: - Display View
     private var displayView: some View {
-        pathControlView
+        EditablePathControlView()
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(Color.white)
             .font(.system(size: 13, weight: .light, design: .default))
             .contentShape(Rectangle())
             .onTapGesture {
                 log.info("Switching to editing mode")
-                withAnimation(.easeInOut(duration: 0.25)) {
+                withAnimation {
                     isEditing = true
                 }
             }
@@ -123,8 +104,28 @@ struct EditablePathControlWrapper: View, CustomStringConvertible {
             .animation(.easeInOut(duration: 0.25), value: isEditing)
     }
 
-    // MARK: -
-    nonisolated var description: String {
-        "description"
+    // MARK: - Helpers
+    private var currentPath: String {
+        selectedSide == .left ? appState.leftPath : appState.rightPath
     }
+
+    // MARK: -
+    private func applyPathUpdate() {
+        withAnimation { isEditing = false }
+
+        Task {
+            if selectedSide == .left {
+                appState.leftPath = editedPathStr
+                await appState.scanner.setLeftDirectory(pathStr: editedPathStr)
+                await appState.refreshLeftFiles()
+            } else {
+                appState.rightPath = editedPathStr
+                await appState.scanner.setRightDirectory(pathStr: editedPathStr)
+                await appState.refreshRightFiles()
+            }
+        }
+    }
+
+    // MARK: - Conformance
+    nonisolated var description: String { "EditablePathControlWrapper" }
 }

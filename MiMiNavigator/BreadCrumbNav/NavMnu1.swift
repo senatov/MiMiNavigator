@@ -14,10 +14,12 @@ import SwiftyBeaver
 struct NavMnu1: View {
     var panelSide: PanelSide
 
+    // MARK: -
     init(panelSide: PanelSide) {
         self.panelSide = panelSide
     }
 
+    // MARK: -
     var body: some View {
         HStack(spacing: 4) {
             FavButtonPopupTopPanel()

@@ -10,7 +10,7 @@ import Foundation
 import SwiftyBeaver
 
 // MARK: - Represents a file system entity (file or directory) with metadata
-public struct CustomFile: Identifiable, Equatable, Codable, Sendable, CustomStringConvertible {
+public struct CustomFile: Identifiable, Equatable, Hashable, Codable, Sendable, CustomStringConvertible {
 
     public let id: UUID
     public let nameStr: String
@@ -32,6 +32,11 @@ public struct CustomFile: Identifiable, Equatable, Codable, Sendable, CustomStri
     // MARK: - Equatable Implementation
     public static func == (lhs: CustomFile, rhs: CustomFile) -> Bool {
         lhs.pathStr == rhs.pathStr
+    }
+
+    // MARK: - Hashable Implementation
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(pathStr)
     }
 
     // MARK: - Directory Check
