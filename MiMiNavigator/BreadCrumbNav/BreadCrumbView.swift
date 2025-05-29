@@ -28,29 +28,42 @@ struct BreadCrumbView: View {
 
     // MARK: -
     var body: some View {
-        HStack(spacing: 4) {
+        HStack(spacing: 0) {
             ForEach(pathComponents.indices, id: \.self) { index in
                 breadcrumbItem(index: index)
             }
         }
+        .padding(4)
+        .background(
+            RoundedRectangle(cornerRadius: 6)
+                .fill(Color(NSColor.controlBackgroundColor))
+                .shadow(color: Color.black.opacity(0.1), radius: 1, x: 0, y: 1)
+        )
     }
 
     // MARK: - Breadcrumb Item
     @ViewBuilder
     private func breadcrumbItem(index: Int) -> some View {
-        if index > 0 {
-            Image(systemName: "chevron.forward")
-                .foregroundColor(.secondary)
-        }
+        HStack(spacing: 0) {
+            if index > 0 {
+                Image(systemName: "chevron.right")
+                    .foregroundColor(.secondary)
+                    .padding(.horizontal, 4)
+            }
 
-        Button(action: {
-            handlePathSelection(upTo: index)
-        }) {
-            Text(pathComponents[index])
-                .font(.callout)
-                .foregroundColor(.blue)
+            Button(action: {
+                handlePathSelection(upTo: index)
+            }) {
+                Text(pathComponents[index])
+                    .font(.system(size: 13, weight: .regular))
+                    .foregroundColor(index == pathComponents.count - 1 ? .yellow : .accentColor)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 3)
+                    .background(index == pathComponents.count - 1 ? Color(NSColor.selectedContentBackgroundColor) : Color.clear)
+                    .cornerRadius(5)
+            }
+            .buttonStyle(.plain)
         }
-        .buttonStyle(.plain)
     }
 
     // MARK: - Handle Selection
