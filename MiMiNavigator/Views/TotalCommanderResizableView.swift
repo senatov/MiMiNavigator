@@ -154,49 +154,70 @@ struct TotalCommanderResizableView: View {
             }
     }
 
-    // MARK: - Toolbar
     private func buildDownToolbar() -> some View {
         HStack(spacing: 18) {
-            DownToolbarButtonView(title: "F3 View", systemImage: "eye.circle") {
-                if let file = appState.selectedLeftFile {
-                    FActions.view(file)
-                } else {
-                    log.debug("No file selected for View")
+
+            DownToolbarButtonView(title: "F5 Copy", systemImage: "doc.on.doc") {
+                let side = appState.focusedSide
+                if let file = appState.selectedFile(for: side),
+                    let targetURL = appState.pathURL(for: side.opposite)
+                {
+                    FActions.copy(file, to: targetURL)
                 }
             }
+
             DownToolbarButtonView(title: "F4 Edit", systemImage: "pencil") {
-                if let file = appState.selectedLeftFile {
+                let side = appState.focusedSide
+                if let file = appState.selectedFile(for: side) {
                     FActions.edit(file)
-                } else {
-                    log.debug("No file selected for Edit")
                 }
             }
-            DownToolbarButtonView(title: "F5 Copy", systemImage: "document.on.document") {
-                log.debug("Copy button tapped")
+
+            DownToolbarButtonView(title: "F3 View", systemImage: "eye.circle") {
+                let side = appState.focusedSide
+                if let file = appState.selectedFile(for: side) {
+                    FActions.view(file)
+                }
             }
-            DownToolbarButtonView(title: "F6 Move", systemImage: "square.and.arrow.down.on.square") {
-                log.debug("Move button tapped")
+
+            DownToolbarButtonView(title: "F6 Move", systemImage: "arrow.right.doc.on.clipboard") {
+                let side = appState.focusedSide
+                if let file = appState.selectedFile(for: side),
+                    let targetURL = appState.pathURL(for: side.opposite)
+                {
+                    FActions.move(file, to: targetURL)
+                }
             }
+
             DownToolbarButtonView(title: "F7 NewFolder", systemImage: "folder.badge.plus") {
-                log.debug("NewFolder button tapped")
+                let side = appState.focusedSide
+                if let destination = appState.pathURL(for: side) {
+                    FActions.newFolder(in: destination)
+                    Task {
+                        await appState.refreshFiles(for: side)
+                    }
+                }
             }
-            DownToolbarButtonView(title: "F8 Delete", systemImage: "minus.rectangle") {
-                if let file = appState.selectedLeftFile {
+
+            DownToolbarButtonView(title: "F8 Delete", systemImage: "trash") {
+                let side = appState.focusedSide
+                if let file = appState.selectedFile(for: side) {
                     FActions.deleteWithConfirmation(file) {
                         Task {
-                            await fetchLeftFiles()
+                            await appState.refreshFiles(for: side)
                         }
                     }
-                } else {
-                    log.debug("No file selected for Delete")
                 }
             }
+
             DownToolbarButtonView(title: "Settings", systemImage: "gearshape") {
                 log.debug("Settings button tapped")
             }
+
             DownToolbarButtonView(title: "Console", systemImage: "terminal") {
                 openConsoleInDirectory("~")
             }
+
             DownToolbarButtonView(title: "F4 Exit", systemImage: "power") {
                 exitApp()
             }
