@@ -1,25 +1,17 @@
-//
-//  EditablePathControlView.swift
-//  MiMiNavigator
-//
-//  Created by Iakov Senatov on 11.05.2024.
-//  Copyright © 2024 Senatov. All rights reserved.
-
+import AppKit
 import SwiftUI
 import SwiftyBeaver
 
-// MARK: - EditablePathControlView
-struct EditablePathControlView: View, CustomStringConvertible {
+/// A view displaying a breadcrumb-style editable path bar with panel navigation menus.
+struct EditablePathControlView: View {
     @EnvironmentObject var appState: AppState
-    @StateObject var selection = SelectedDir()
 
-    // MARK: - View Body
     var body: some View {
-        log.info(#function)
+        log.info("EditablePathControlView body")
         return HStack(spacing: 2) {
-            NavMnu1(panelSide: selection.side)
+            NavMnu1(panelSide: appState.focusedSide)
             Spacer(minLength: 3)
-            BreadCrumbView(side: selection.side)
+            BreadCrumbView(side: appState.focusedSide)
                 .environmentObject(appState)
             NavMnu2()
         }
@@ -29,30 +21,36 @@ struct EditablePathControlView: View, CustomStringConvertible {
         )
     }
 
-    // MARK: -
+    /// Converts a URL into breadcrumb items with titles and icons.
     private func createEditablePathItems(from url: URL) -> [EditablePathItem] {
-        log.info("Selected URL: \(url.path)")
+        log.info("Creating editable path items for URL: \(url.path)")
         var items: [EditablePathItem] = []
         var components = url.pathComponents
+
         if components.first == "/" && components.count > 1 {
             components.removeFirst()
         }
+
         var currentPath = url.isFileURL && url.path.hasPrefix("/") ? "/" : ""
-        for component in components {
-            guard !component.isEmpty else { continue }
+
+        for component in components where !component.isEmpty {
             currentPath = (currentPath as NSString).appendingPathComponent(component)
             let icon = NSWorkspace.shared.icon(forFile: currentPath)
             icon.size = NSSize(width: 16, height: 16)
             let displayTitle = currentPath == "/" ? "Macintosh HD" : component
-            items.append(EditablePathItem(titleStr: displayTitle, pathStr: currentPath, icon: icon))
+
+            let item = EditablePathItem(titleStr: displayTitle, pathStr: currentPath, icon: icon)
+            items.append(item)
         }
+
         return items
     }
 
-    // MARK: -
+    /// Builds an array of breadcrumb items based on the currently selected file entity.
     private func getPathItems() -> [EditablePathItem] {
-        log.info(#function)
+        log.info("Generating breadcrumb items")
         guard let url = getPathURL() else {
+            log.warning("URL is nil, returning empty breadcrumb")
             return []
         }
         let items = createEditablePathItems(from: url)
@@ -60,18 +58,16 @@ struct EditablePathControlView: View, CustomStringConvertible {
         return items
     }
 
-    // MARK: -
+    /// Retrieves the URL from the currently selected file entity.
     private func getPathURL() -> URL? {
-        guard let url = selection.selectedFSEntity?.urlValue else {
-            log.error("selectedFSEntity is nil — returning nil URL.")
+        guard
+            let selected = appState.focusedSide == .left
+                ? appState.selectedLeftFile
+                : appState.selectedRightFile
+        else {
+            log.warning("No file selected for side \(appState.focusedSide)")
             return nil
         }
-        return url
+        return selected.urlValue
     }
-
-    // MARK: -
-    nonisolated var description: String {
-        "description"
-    }
-
 }
