@@ -8,15 +8,19 @@
 
 import AppKit
 import Foundation
+import SwiftyBeaver
 
 enum FActions {
 
-    // MARK: -
+    // MARK: - Open file in default viewer (F3)
     static func view(_ file: CustomFile) {
-        NSWorkspace.shared.open(file.urlValue)  // Открытие в системе
+        let result = NSWorkspace.shared.open(file.urlValue)
+        if !result {
+            log.error("Failed to open file: \(file.pathStr)")
+        }
     }
 
-    // MARK: -
+    // MARK: - Open file in TextEdit (F4)
     static func edit(_ file: CustomFile) {
         let appURL = URL(fileURLWithPath: "/Applications/TextEdit.app")
         let configuration = NSWorkspace.OpenConfiguration()
@@ -27,14 +31,14 @@ enum FActions {
             configuration: configuration
         ) { app, error in
             if let error = error {
-                print("❌ Failed to open file with TextEdit: \(error.localizedDescription)")
+                log.error("Failed to open file with TextEdit: \(error.localizedDescription)")
             }
         }
     }
 
-    // MARK: -
+    // MARK: - Ask for delete confirmation, then delete (F8)
     @MainActor
-    static func deleteWithConfirmation(_ file: CustomFile, onConfirm: @escaping () -> Void) {
+    static func deleteWithConfirmation(_ file: CustomFile, onConfirm: @escaping () -> Void = {}) {
         let alert = NSAlert()
         alert.messageText = "Are you sure you want to delete \"\(file.nameStr)\"?"
         alert.informativeText = "This file will be moved to Trash."
@@ -49,11 +53,35 @@ enum FActions {
         }
     }
 
+    // MARK: - Move file to Trash
     private static func delete(_ file: CustomFile) {
         do {
             try FileManager.default.trashItem(at: file.urlValue, resultingItemURL: nil)
+            log.info("File moved to trash: \(file.pathStr)")
         } catch {
-            print("❌ Failed to delete file: \(error.localizedDescription)")
+            log.error("Failed to delete file: \(error.localizedDescription)")
+        }
+    }
+
+    // MARK: - Copy file to new location (F5 - future)
+    static func copy(_ file: CustomFile, to destination: URL) {
+        let destinationURL = destination.appendingPathComponent(file.nameStr)
+        do {
+            try FileManager.default.copyItem(at: file.urlValue, to: destinationURL)
+            log.info("Copied file to: \(destinationURL.path)")
+        } catch {
+            log.error("Failed to copy file: \(error.localizedDescription)")
+        }
+    }
+
+    // MARK: - Move file to new location (F6 - future)
+    static func move(_ file: CustomFile, to destination: URL) {
+        let destinationURL = destination.appendingPathComponent(file.nameStr)
+        do {
+            try FileManager.default.moveItem(at: file.urlValue, to: destinationURL)
+            log.info("Moved file to: \(destinationURL.path)")
+        } catch {
+            log.error("Failed to move file: \(error.localizedDescription)")
         }
     }
 }
