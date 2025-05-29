@@ -84,4 +84,24 @@ enum FActions {
             log.error("Failed to move file: \(error.localizedDescription)")
         }
     }
+
+    @MainActor
+    static func newFolder(in destination: URL, folderName: String = "New Folder") {
+        let targetURL = destination.appendingPathComponent(folderName)
+        var finalURL = targetURL
+        var count = 1
+
+        while FileManager.default.fileExists(atPath: finalURL.path) {
+            finalURL = destination.appendingPathComponent("\(folderName) \(count)")
+            count += 1
+        }
+
+        do {
+            try FileManager.default.createDirectory(at: finalURL, withIntermediateDirectories: true)
+            log.info("New folder created at: \(finalURL.path)")
+        } catch {
+            log.error("Failed to create folder: \(error.localizedDescription)")
+        }
+    }
+
 }
