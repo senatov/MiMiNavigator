@@ -4,9 +4,9 @@ import SwiftyBeaver
 
 // MARK: -
 struct FavButtonPopupTopPanel: View {
-    @StateObject var selection = SelectedDir()
     @State private var showFavTreePopup = false
     @State private var favTreeStruct: [CustomFile] = []
+    @EnvironmentObject var appState: AppState
 
 
     // MARK: -
@@ -69,7 +69,7 @@ struct FavButtonPopupTopPanel: View {
 
     // MARK: -
     private func favoritePopover() -> some View {
-        FavTreeMnu(files: $favTreeStruct, selected: selection)
+        FavTreeMnu(files: $favTreeStruct, selected: appState.selectedDir)
             .padding(6)
             .font(.custom("Helvetica Neue", size: 11).weight(.light))
             .foregroundColor(

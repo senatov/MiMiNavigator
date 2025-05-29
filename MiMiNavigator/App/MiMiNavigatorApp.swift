@@ -14,6 +14,7 @@ let log = SwiftyBeaver.self
 /// -
 @main
 struct MiMiNavigatorApp: App {
+    @StateObject private var appState = AppState()
 
     let devMark: Text = {
         let versionPath = Bundle.main.path(forResource: ".version", ofType: nil)
@@ -53,6 +54,7 @@ struct MiMiNavigatorApp: App {
             VStack {
                 TotalCommanderResizableView()
                     .navigationTitle("Mimi Navigator")
+                    .environmentObject(appState)
                 ConsoleCurrPath()
             }
             .toolbar {

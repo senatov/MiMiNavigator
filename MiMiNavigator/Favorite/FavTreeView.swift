@@ -9,7 +9,7 @@ import SwiftUI
 import SwiftyBeaver
 
 struct FavTreeView: View {
-    @StateObject var selection = SelectedDir()
+    @EnvironmentObject var appState: AppState
     @Binding var file: CustomFile
     @Binding var expandedFolders: Set<String>
 
@@ -37,11 +37,11 @@ struct FavTreeView: View {
 
     // MARK: -
     private var fileNameText: some View {
-        let isTheSame = selection.selectedFSEntity?.pathStr == file.pathStr
+        let isTheSame = appState.selectedDir.selectedFSEntity?.pathStr == file.pathStr
         return Text(file.nameStr)
             .foregroundColor(isTheSame ? .blue : .primary)
             .onTapGesture {
-                selection.selectedFSEntity = file
+                appState.selectedDir.selectedFSEntity = file
                 log.info("Selected file: \(file.nameStr)")
             }
             .contextMenu {

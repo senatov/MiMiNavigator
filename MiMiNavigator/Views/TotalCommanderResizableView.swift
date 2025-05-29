@@ -10,9 +10,9 @@ import AppKit
 import SwiftUI
 
 struct TotalCommanderResizableView: View {
-    @StateObject var appState = AppState()  // Shared application state
+    @EnvironmentObject var appState: AppState
+    @State private var leftPanelWidth: CGFloat = 0
     @State private var isDividerTooltipVisible: Bool = true
-    @State private var leftPanelWidth: CGFloat = 0  // Stores current left panel width
     @State private var tooltipPosition: CGPoint = .zero
     @State private var tooltipText: String = ""
 
