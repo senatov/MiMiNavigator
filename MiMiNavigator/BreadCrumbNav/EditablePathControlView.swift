@@ -10,6 +10,7 @@ import SwiftyBeaver
 
 // MARK: - EditablePathControlView
 struct EditablePathControlView: View, CustomStringConvertible {
+    @EnvironmentObject var appState: AppState
     @StateObject var selection = SelectedDir()
 
     // MARK: - View Body
@@ -19,6 +20,7 @@ struct EditablePathControlView: View, CustomStringConvertible {
             NavMnu1(panelSide: selection.side)
             Spacer(minLength: 3)
             BreadCrumbView(side: selection.side)
+                .environmentObject(appState)
             NavMnu2()
         }
         .background(

@@ -90,6 +90,7 @@ struct EditablePathControlWrapper: View, CustomStringConvertible {
     // MARK: - Display View
     private var displayView: some View {
         EditablePathControlView()
+            .environmentObject(appState)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(Color.white)
             .font(.system(size: 13, weight: .light, design: .default))

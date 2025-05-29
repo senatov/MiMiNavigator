@@ -1,5 +1,5 @@
 //
-//  EditablePathControlView.swift
+//  BreadCrumbView.swift
 //  MiMiNavigator
 //
 //  Created by Iakov Senatov on 14.11.24.
@@ -12,7 +12,7 @@ import SwiftyBeaver
 
 /// Breadcrumb trail UI component for representing navigation path
 struct BreadCrumbView: View {
-    @StateObject var appState = AppState() 
+    @EnvironmentObject var appState: AppState
     let side: PanelSide  // .left or .right
 
     // MARK: - Initialization
@@ -56,17 +56,13 @@ struct BreadCrumbView: View {
     // MARK: - Handle Selection
     private func handlePathSelection(upTo index: Int) {
         let newPath = "/" + pathComponents.prefix(index + 1).joined(separator: "/")
+        appState.updatePath(newPath, on: side)
 
-        switch side {
-        case .left:
-            appState.leftPath = newPath
-            Task {
+        Task {
+            if side == .left {
                 await appState.scanner.setLeftDirectory(pathStr: newPath)
                 await appState.refreshLeftFiles()
-            }
-        case .right:
-            appState.rightPath = newPath
-            Task {
+            } else {
                 await appState.scanner.setRightDirectory(pathStr: newPath)
                 await appState.refreshRightFiles()
             }
