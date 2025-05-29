@@ -10,7 +10,7 @@ import Foundation
 
 /// Defines all static top-level menus for the app.
 @MainActor let filesMenuCategory = MenuCategory(
-    title: "Files",
+    titleStr: "Files",
     items: [
         MenuItem(title: "Open", action: { print("Open triggered") }, shortcut: "⌘O"),
         MenuItem(title: "Rename", action: { print("Rename triggered") }, shortcut: "⏎"),
@@ -19,7 +19,7 @@ import Foundation
 )
 
 @MainActor let markMenuCategory = MenuCategory(
-    title: "Mark",
+    titleStr: "Mark",
     items: [
         MenuItem(title: "Select All", action: { print("All selected") }, shortcut: "⌘A"),
         MenuItem(title: "Unselect All", action: { print("Selection cleared") }, shortcut: "⌘⇧A"),
@@ -27,7 +27,7 @@ import Foundation
 )
 
 @MainActor let commandMenuCategory = MenuCategory(
-    title: "Command",
+    titleStr: "Command",
     items: [
         MenuItem(title: "Run", action: { print("Run command executed") }, shortcut: "⌘R"),
         MenuItem(title: "New Tab", action: { print("New tab opened") }, shortcut: "⌘T"),
@@ -35,7 +35,7 @@ import Foundation
 )
 
 @MainActor let netMenuCategory = MenuCategory(
-    title: "Net",
+    titleStr: "Net",
     items: [
         MenuItem(title: "Connect FTP", action: { print("FTP connected") }, shortcut: nil),
         MenuItem(title: "Disconnect", action: { print("Disconnected") }, shortcut: nil),
@@ -43,28 +43,28 @@ import Foundation
 )
 
 @MainActor let showMenuCategory = MenuCategory(
-    title: "Show",
+    titleStr: "Show",
     items: [
         MenuItem(title: "Hidden Files", action: { print("Toggled hidden files") }, shortcut: "⌘H")
     ]
 )
 
 @MainActor let configMenuCategory = MenuCategory(
-    title: "Config",
+    titleStr: "Config",
     items: [
         MenuItem(title: "Settings", action: { print("Settings opened") }, shortcut: "⌘,")
     ]
 )
 
 @MainActor let startMenuCategory = MenuCategory(
-    title: "Start",
+    titleStr: "Start",
     items: [
         MenuItem(title: "Reload", action: { print("App reloaded") }, shortcut: "⌘⇧R")
     ]
 )
 
 @MainActor let helpMenuCategory = MenuCategory(
-    title: "Help",
+    titleStr: "Help",
     items: [
         MenuItem(title: "Online Help", action: { print("Help shown") }, shortcut: "F1"),
         MenuItem(title: "About", action: { print("About shown") }, shortcut: nil),
