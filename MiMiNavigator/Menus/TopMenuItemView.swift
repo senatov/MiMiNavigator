@@ -67,7 +67,7 @@ struct TopMenuItemView: View {
 
 // MARK: - File Menu (Your bread-and-butter file ops)
 var filesMenuCategoryTop: MenuCategory {
-    MenuCategory(title: "Files", items: filesMenuItems)
+    MenuCategory(titleStr: "Files", items: filesMenuItems)
 }
 
 // MARK: -
@@ -86,7 +86,7 @@ var filesMenuItems: [MenuItem] {
 
 // MARK: - Mark Menu (Select, unselect... the basics)
 var markMenuCategoryTop: MenuCategory {
-    MenuCategory(title: "Mark", items: markMenuItems)
+    MenuCategory(titleStr: "Mark", items: markMenuItems)
 }
 
 var markMenuItems: [MenuItem] {
@@ -101,7 +101,7 @@ var markMenuItems: [MenuItem] {
 
 // MARK: - Command Menu (CMD-style actions)
 var commandMenuCategoryTop: MenuCategory {
-    MenuCategory(title: "Commands", items: commandMenuItems)
+    MenuCategory(titleStr: "Commands", items: commandMenuItems)
 }
 
 // MARK: -
@@ -116,7 +116,7 @@ var commandMenuItems: [MenuItem] {
 
 // MARK: - Net Menu (The web stuff, FTP, etc.)
 var netMenuCategoryTop: MenuCategory {
-    MenuCategory(title: "Net", items: netMenuItems)
+    MenuCategory(titleStr: "Net", items: netMenuItems)
 }
 
 // MARK: -
@@ -130,7 +130,7 @@ var netMenuItems: [MenuItem] {
 
 // MARK: - Show Menu (View-related options)
 var showMenuCategoryTop: MenuCategory {
-    MenuCategory(title: "Show", items: showMenuItems)
+    MenuCategory(titleStr: "Show", items: showMenuItems)
 }
 
 var showMenuItems: [MenuItem] {
@@ -143,7 +143,7 @@ var showMenuItems: [MenuItem] {
 
 // MARK: - Configuration Menu (The power user’s playground)
 var configMenuCategoryTop: MenuCategory {
-    MenuCategory(title: "Configuration", items: configMenuItems)
+    MenuCategory(titleStr: "Configuration", items: configMenuItems)
 }
 
 var configMenuItems: [MenuItem] {
@@ -155,7 +155,7 @@ var configMenuItems: [MenuItem] {
 
 // MARK: - Start Menu (Tabs and layout management)
 var startMenuCategoryTop: MenuCategory {
-    MenuCategory(title: "Start", items: startMenuItems)
+    MenuCategory(titleStr: "Start", items: startMenuItems)
 }
 
 var startMenuItems: [MenuItem] {
@@ -168,7 +168,7 @@ var startMenuItems: [MenuItem] {
 
 // MARK: - Help Menu (Docs, guides, updates)
 var helpMenuCategoryTop: MenuCategory {
-    MenuCategory(title: "Help", items: helpMenuItems)
+    MenuCategory(titleStr: "Help", items: helpMenuItems)
 }
 
 var helpMenuItems: [MenuItem] {

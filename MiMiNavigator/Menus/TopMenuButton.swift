@@ -10,14 +10,14 @@ import SwiftUI
 
 /// A custom-styled button used in the top menu bar
 struct TopMenuButton: View {
-    let title: String
+    let titleStr: String
     let action: () -> Void
     @State private var isHovered = false
 
         // MARK: -
     var body: some View {
         Button(action: action) {
-            Text(title)
+            Text(titleStr)
                 .padding(.horizontal, 30)
                 .padding(.vertical, 6)
                 .font(.system(size: NSFont.systemFontSize, weight: .regular))
