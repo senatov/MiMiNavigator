@@ -38,11 +38,7 @@ struct TotalCommanderResizableView: View {
                 }
             }
             .onAppear {
-                Task(priority: .low) {
-                    await fetchPaths()
-                    await fetchLeftFiles()
-                    await fetchRightFiles()
-                }
+                appState.initialize()
                 initializePanelWidth(geometry: geometry)  // Restore divider width from user defaults
                 addKeyPressMonitor()  // Register keyboard shortcut
             }
