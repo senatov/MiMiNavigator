@@ -37,14 +37,29 @@ final class AppState: ObservableObject {
         self.rightPath = model.rightDirectory.path
     }
 
-    // MARK: - Actions
-    func refreshLeftFiles() async {
+    public func refreshLeftFiles() async {
+        print("📂 AppState: refreshing LEFT files at path: \(leftPath)")
         displayedLeftFiles = await scanner.fileLst.getLeftFiles()
+        print("📂 Found \(displayedLeftFiles.count) left files.")
     }
-    // MARK:
-    func refreshRightFiles() async {
+
+    public func refreshRightFiles() async {
+        print("📂 AppState: refreshing RIGHT files at path: \(rightPath)")
         displayedRightFiles = await scanner.fileLst.getRightFiles()
+        print("📂 Found \(displayedRightFiles.count) right files.")
     }
+
+    public func initialize() {
+        print("⚙️ AppState: initialize() called")
+        Task {
+            await scanner.setLeftDirectory(pathStr: leftPath)
+            await refreshLeftFiles()
+
+            await scanner.setRightDirectory(pathStr: rightPath)
+            await refreshRightFiles()
+        }
+    }
+
     // MARK:
     func selectFile(_ file: CustomFile, on side: PanelSide) {
         switch side {

@@ -98,6 +98,7 @@ actor DualDirectoryScanner {
     
         // MARK: - Updates the file list for the specified directory side
     private func updateFileList(side: PanelSide, with files: [CustomFile]) async {
+        log.info(#function)
         switch side {
             case .left:
                 log.debug("Updating left directory with \(files.count) files.")
