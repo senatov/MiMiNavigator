@@ -13,8 +13,8 @@ import Foundation
 public final class AppState: ObservableObject {
 
     // MARK: - Path & Files
-    @Published var leftPath: String
-    @Published var rightPath: String
+    @Published var leftPath: String = FileManager.default.homeDirectoryForCurrentUser.path
+    @Published var rightPath: String = FileManager.default.applicationSupportDirectory.path
 
     @Published var displayedLeftFiles: [CustomFile] = []
     @Published var displayedRightFiles: [CustomFile] = []
@@ -39,15 +39,17 @@ public final class AppState: ObservableObject {
 
     // MARK: - File Refreshing
     public func refreshLeftFiles() async {
-        displayedLeftFiles = await scanner.fileLst.getLeftFiles()
+        await scanner.setLeftDirectory(pathStr: leftPath)
     }
 
+    // MARK: -
     public func refreshRightFiles() async {
-        displayedRightFiles = await scanner.fileLst.getRightFiles()
+        await scanner.setRightDirectory(pathStr: rightPath)
     }
 
     // MARK: - File Selection
     public func selectFile(_ file: CustomFile, on side: PanelSide) {
+        log.info("selectFile(\(file.pathStr)) on \(side)")
         switch side {
         case .left:
             selectedLeftFile = file
@@ -61,6 +63,7 @@ public final class AppState: ObservableObject {
 
     // MARK: - Path Updating
     public func updatePath(_ path: String, on side: PanelSide) {
+        log.info("updatePath(\(path)) on \(side)")
         switch side {
         case .left:
             leftPath = path
@@ -74,6 +77,7 @@ public final class AppState: ObservableObject {
 
     // MARK: - Convenience Accessors
     public func selectedFile(for side: PanelSide) -> CustomFile? {
+        log.info("selectedFile(for: \(side))")
         switch side {
         case .left:
             return selectedLeftFile
@@ -82,7 +86,9 @@ public final class AppState: ObservableObject {
         }
     }
 
+    // MARK: -
     public func path(for side: PanelSide) -> String {
+        log.info("path(for: \(side))")
         switch side {
         case .left:
             return leftPath
@@ -91,6 +97,7 @@ public final class AppState: ObservableObject {
         }
     }
 
+    // MARK: -
     public func pathURL(for side: PanelSide) -> URL? {
         let pathStr = path(for: side)
         return URL(fileURLWithPath: pathStr)
@@ -98,11 +105,12 @@ public final class AppState: ObservableObject {
 
     @MainActor
     func refreshFiles(for side: PanelSide) async {
+        log.info("refreshFiles(for: \(side))")
         switch side {
-            case .left:
-                await refreshLeftFiles()
-            case .right:
-                await refreshRightFiles()
+        case .left:
+            await refreshLeftFiles()
+        case .right:
+            await refreshRightFiles()
         }
     }
 }
@@ -111,9 +119,9 @@ extension PanelSide {
     var opposite: PanelSide {
         switch self {
         case .left:
-            return .right
-        case .right:
             return .left
+        case .right:
+            return .right
         }
     }
 }

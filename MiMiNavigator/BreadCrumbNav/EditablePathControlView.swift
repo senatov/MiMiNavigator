@@ -8,6 +8,7 @@ struct EditablePathControlView: View {
 
     var body: some View {
         log.info("EditablePathControlView body")
+        appState.scanner =  DualDirectoryScanner(appState: appState)
         return HStack(spacing: 2) {
             NavMnu1(panelSide: appState.focusedSide)
             Spacer(minLength: 3)
@@ -23,16 +24,14 @@ struct EditablePathControlView: View {
 
     /// Converts a URL into breadcrumb items with titles and icons.
     private func createEditablePathItems(from url: URL) -> [EditablePathItem] {
-        log.info("Creating editable path items for URL: \(url.path)")
+        log.info("\(#function) URL: \(url.absoluteString)")
         var items: [EditablePathItem] = []
         var components = url.pathComponents
 
         if components.first == "/" && components.count > 1 {
             components.removeFirst()
         }
-
         var currentPath = url.isFileURL && url.path.hasPrefix("/") ? "/" : ""
-
         for component in components where !component.isEmpty {
             currentPath = (currentPath as NSString).appendingPathComponent(component)
             let icon = NSWorkspace.shared.icon(forFile: currentPath)
@@ -42,13 +41,12 @@ struct EditablePathControlView: View {
             let item = EditablePathItem(titleStr: displayTitle, pathStr: currentPath, icon: icon)
             items.append(item)
         }
-
         return items
     }
 
     /// Builds an array of breadcrumb items based on the currently selected file entity.
     private func getPathItems() -> [EditablePathItem] {
-        log.info("Generating breadcrumb items")
+        log.info("getPathItems: \(appState.focusedSide)")
         guard let url = getPathURL() else {
             log.warning("URL is nil, returning empty breadcrumb")
             return []
@@ -60,6 +58,7 @@ struct EditablePathControlView: View {
 
     /// Retrieves the URL from the currently selected file entity.
     private func getPathURL() -> URL? {
+        log.info("getPathURL: \(appState.focusedSide)")
         guard
             let selected = appState.focusedSide == .left
                 ? appState.selectedLeftFile

@@ -38,34 +38,11 @@ struct TotalCommanderResizableView: View {
                 }
             }
             .onAppear {
-                Task(priority: .low) {
-                    await fetchPaths()
-                    await fetchLeftFiles()
-                    await fetchRightFiles()
-                }
-                initializePanelWidth(geometry: geometry)  // Restore divider width from user defaults
-                addKeyPressMonitor()  // Register keyboard shortcut
+                initializePanelWidth(geometry: geometry)
+                addKeyPressMonitor()
+
             }
         }
-    }
-
-    // MARK: - Fetch Directory Paths
-    @MainActor
-    private func fetchPaths() async {
-        appState.leftPath = appState.model.leftDirectory.path
-        appState.rightPath = appState.model.rightDirectory.path
-    }
-
-    // MARK: - Fetch Files
-    @MainActor
-    private func fetchLeftFiles() async {
-        appState.displayedLeftFiles = await appState.scanner.fileLst.getLeftFiles()
-    }
-
-    // MARK: -
-    @MainActor
-    private func fetchRightFiles() async {
-        appState.displayedRightFiles = await appState.scanner.fileLst.getRightFiles()
     }
 
     // MARK: - Panels
@@ -86,7 +63,7 @@ struct TotalCommanderResizableView: View {
                 .onChange(of: appState.leftPath) { _, newPath in
                     Task {
                         await appState.scanner.setLeftDirectory(pathStr: newPath)
-                        await fetchLeftFiles()
+                        await appState.scanner.refreshFiles(side: .left)
                     }
                 }
 
@@ -111,7 +88,7 @@ struct TotalCommanderResizableView: View {
                 .onChange(of: appState.rightPath) { _, newPath in
                     Task {
                         await appState.scanner.setRightDirectory(pathStr: newPath)
-                        await fetchRightFiles()
+                        await appState.scanner.refreshFiles(side: .right)
                     }
                 }
 
@@ -211,7 +188,7 @@ struct TotalCommanderResizableView: View {
             }
 
             DownToolbarButtonView(title: "Settings", systemImage: "gearshape") {
-                log.debug("Settings button tapped")
+                log.info("Settings button tapped")
             }
 
             DownToolbarButtonView(title: "Console", systemImage: "terminal") {
