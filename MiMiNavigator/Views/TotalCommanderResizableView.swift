@@ -38,11 +38,30 @@ struct TotalCommanderResizableView: View {
                 }
             }
             .onAppear {
-                initializePanelWidth(geometry: geometry)
-                addKeyPressMonitor()
-
+                appState.initialize()
+                initializePanelWidth(geometry: geometry)  // Restore divider width from user defaults
+                addKeyPressMonitor()  // Register keyboard shortcut
             }
         }
+    }
+
+    // MARK: - Fetch Directory Paths
+    @MainActor
+    private func fetchPaths() async {
+        appState.leftPath = appState.model.leftDirectory.path
+        appState.rightPath = appState.model.rightDirectory.path
+    }
+
+    // MARK: - Fetch Files
+    @MainActor
+    private func fetchLeftFiles() async {
+        appState.displayedLeftFiles = await appState.scanner.fileLst.getLeftFiles()
+    }
+
+    // MARK: -
+    @MainActor
+    private func fetchRightFiles() async {
+        appState.displayedRightFiles = await appState.scanner.fileLst.getRightFiles()
     }
 
     // MARK: - Panels
@@ -63,7 +82,7 @@ struct TotalCommanderResizableView: View {
                 .onChange(of: appState.leftPath) { _, newPath in
                     Task {
                         await appState.scanner.setLeftDirectory(pathStr: newPath)
-                        await appState.scanner.refreshFiles(side: .left)
+                        await fetchLeftFiles()
                     }
                 }
 
@@ -84,11 +103,11 @@ struct TotalCommanderResizableView: View {
     // MARK: -
     private func buildRightPanel() -> some View {
         VStack {
-            EditablePathControlWrapper(appState: appState, selectedSide: .left)
+            EditablePathControlWrapper(appState: appState, selectedSide: .right)
                 .onChange(of: appState.rightPath) { _, newPath in
                     Task {
                         await appState.scanner.setRightDirectory(pathStr: newPath)
-                        await appState.scanner.refreshFiles(side: .right)
+                        await fetchRightFiles()
                     }
                 }
 
@@ -131,70 +150,66 @@ struct TotalCommanderResizableView: View {
             }
     }
 
+    // MARK: - Toolbar
     private func buildDownToolbar() -> some View {
         HStack(spacing: 18) {
-
+            // MARK: -
+            DownToolbarButtonView(title: "F3 View", systemImage: "eye.circle") {
+                if let file = appState.selectedLeftFile {
+                    FActions.view(file)
+                } else {
+                    log.debug("No file selected for View")
+                }
+            }
+            // MARK: -
+            DownToolbarButtonView(title: "F4 Edit", systemImage: "pencil") {
+                if let file = appState.selectedLeftFile {
+                    FActions.edit(file)
+                } else {
+                    log.debug("No file selected for Edit")
+                }
+            }
+            // MARK: -
             DownToolbarButtonView(title: "F5 Copy", systemImage: "doc.on.doc") {
-                let side = appState.focusedSide
+                let side = appState.focusedSideValue
                 if let file = appState.selectedFile(for: side),
                     let targetURL = appState.pathURL(for: side.opposite)
                 {
                     FActions.copy(file, to: targetURL)
-                }
-            }
-
-            DownToolbarButtonView(title: "F4 Edit", systemImage: "pencil") {
-                let side = appState.focusedSide
-                if let file = appState.selectedFile(for: side) {
-                    FActions.edit(file)
-                }
-            }
-
-            DownToolbarButtonView(title: "F3 View", systemImage: "eye.circle") {
-                let side = appState.focusedSide
-                if let file = appState.selectedFile(for: side) {
-                    FActions.view(file)
-                }
-            }
-
-            DownToolbarButtonView(title: "F6 Move", systemImage: "arrow.right.doc.on.clipboard") {
-                let side = appState.focusedSide
-                if let file = appState.selectedFile(for: side),
-                    let targetURL = appState.pathURL(for: side.opposite)
-                {
-                    FActions.move(file, to: targetURL)
-                }
-            }
-
-            DownToolbarButtonView(title: "F7 NewFolder", systemImage: "folder.badge.plus") {
-                let side = appState.focusedSide
-                if let destination = appState.pathURL(for: side) {
-                    FActions.newFolder(in: destination)
                     Task {
-                        await appState.refreshFiles(for: side)
+                        await appState.refreshFiles()
                     }
                 }
             }
-
-            DownToolbarButtonView(title: "F8 Delete", systemImage: "trash") {
-                let side = appState.focusedSide
-                if let file = appState.selectedFile(for: side) {
+            // MARK: -
+            DownToolbarButtonView(title: "F6 Move", systemImage: "square.and.arrow.down.on.square") {
+                log.debug("Move button tapped")
+            }
+            // MARK: -
+            DownToolbarButtonView(title: "F7 NewFolder", systemImage: "folder.badge.plus") {
+                log.debug("NewFolder button tapped")
+            }
+            // MARK: -
+            DownToolbarButtonView(title: "F8 Delete", systemImage: "minus.rectangle") {
+                if let file = appState.selectedLeftFile {
                     FActions.deleteWithConfirmation(file) {
                         Task {
-                            await appState.refreshFiles(for: side)
+                            await fetchLeftFiles()
                         }
                     }
+                } else {
+                    log.debug("No file selected for Delete")
                 }
             }
-
+            // MARK: -
             DownToolbarButtonView(title: "Settings", systemImage: "gearshape") {
-                log.info("Settings button tapped")
+                log.debug("Settings button tapped")
             }
-
+            // MARK: -
             DownToolbarButtonView(title: "Console", systemImage: "terminal") {
                 openConsoleInDirectory("~")
             }
-
+            // MARK: -
             DownToolbarButtonView(title: "F4 Exit", systemImage: "power") {
                 exitApp()
             }
@@ -203,7 +218,9 @@ struct TotalCommanderResizableView: View {
         .cornerRadius(7)
     }
 
-    // MARK: - Utility
+
+
+    // MARK: -
     private func handleDividerDrag(value: DragGesture.Value, geometry: GeometryProxy) {
         let newWidth = leftPanelWidth + value.translation.width
         let minPanelWidth: CGFloat = 100
