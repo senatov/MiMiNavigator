@@ -10,11 +10,11 @@ import Combine
 import Foundation
 
 @MainActor
-public final class AppState: ObservableObject {
+final class AppState: ObservableObject {
 
     // MARK: - Path & Files
-    @Published var leftPath: String = FileManager.default.homeDirectoryForCurrentUser.path
-    @Published var rightPath: String = FileManager.default.applicationSupportDirectory.path
+    @Published var leftPath: String
+    @Published var rightPath: String
 
     @Published var displayedLeftFiles: [CustomFile] = []
     @Published var displayedRightFiles: [CustomFile] = []
@@ -35,93 +35,82 @@ public final class AppState: ObservableObject {
         self.model = model
         self.leftPath = model.leftDirectory.path
         self.rightPath = model.rightDirectory.path
+        self.scanner = DualDirectoryScanner(appState: self)
     }
 
-    // MARK: - File Refreshing
+    // MARK:-
     public func refreshLeftFiles() async {
-        await scanner.setLeftDirectory(pathStr: leftPath)
+        print("📂 AppState: refreshing LEFT files at path: \(leftPath)")
+        displayedLeftFiles = await scanner.fileLst.getLeftFiles()
+        print("📂 Found \(displayedLeftFiles.count) left files.")
     }
 
-    // MARK: -
+    // MARK:-
     public func refreshRightFiles() async {
-        await scanner.setRightDirectory(pathStr: rightPath)
+        print("📂 AppState: refreshing RIGHT files at path: \(rightPath)")
+        displayedRightFiles = await scanner.fileLst.getRightFiles()
+        print("📂 Found \(displayedRightFiles.count) right files.")
     }
 
-    // MARK: - File Selection
-    public func selectFile(_ file: CustomFile, on side: PanelSide) {
-        log.info("selectFile(\(file.pathStr)) on \(side)")
+    // MARK:-
+    func pathURL(for side: PanelSide) -> URL? {
+        let path: String
         switch side {
-        case .left:
-            selectedLeftFile = file
-            leftPath = file.pathStr
-        case .right:
-            selectedRightFile = file
-            rightPath = file.pathStr
+            case .left:
+                path = leftPath
+            case .right:
+                path = rightPath
+        }
+
+        return URL(fileURLWithPath: path)
+    }
+
+
+    // MARK:-
+    public func refreshFiles() async {
+        print("📂 AppState: refreshing ALL files")
+        await refreshLeftFiles()
+        await refreshRightFiles()
+    }
+
+    // MARK:-
+    func selectedFile(for side: PanelSide) -> CustomFile? {
+        switch side {
+            case .left:
+                return selectedLeftFile
+            case .right:
+                return selectedRightFile
+        }
+    }
+
+    // MARK:-
+    func updatePath(_ path: String, on side: PanelSide) {
+        switch side {
+            case .left:
+                leftPath = path
+                selectedLeftFile = nil
+            case .right:
+                rightPath = path
+                selectedRightFile = nil
         }
         focusedSide = side
-    }
-
-    // MARK: - Path Updating
-    public func updatePath(_ path: String, on side: PanelSide) {
-        log.info("updatePath(\(path)) on \(side)")
-        switch side {
-        case .left:
-            leftPath = path
-            selectedLeftFile = nil
-        case .right:
-            rightPath = path
-            selectedRightFile = nil
-        }
-        focusedSide = side
-    }
-
-    // MARK: - Convenience Accessors
-    public func selectedFile(for side: PanelSide) -> CustomFile? {
-        log.info("selectedFile(for: \(side))")
-        switch side {
-        case .left:
-            return selectedLeftFile
-        case .right:
-            return selectedRightFile
-        }
-    }
-
-    // MARK: -
-    public func path(for side: PanelSide) -> String {
-        log.info("path(for: \(side))")
-        switch side {
-        case .left:
-            return leftPath
-        case .right:
-            return rightPath
-        }
-    }
-
-    // MARK: -
-    public func pathURL(for side: PanelSide) -> URL? {
-        let pathStr = path(for: side)
-        return URL(fileURLWithPath: pathStr)
-    }
-
-    @MainActor
-    func refreshFiles(for side: PanelSide) async {
-        log.info("refreshFiles(for: \(side))")
-        switch side {
-        case .left:
-            await refreshLeftFiles()
-        case .right:
-            await refreshRightFiles()
-        }
     }
 }
 
-extension PanelSide {
-    var opposite: PanelSide {
-        switch self {
-        case .left:
-            return .left
-        case .right:
-            return .right
+extension AppState {
+
+    public var focusedSideValue: PanelSide {
+        focusedSide
+    }
+
+    public func initialize() {
+        print("⚙️ AppState: initialize() called")
+        Task {
+            await scanner.setLeftDirectory(pathStr: leftPath)
+            await refreshLeftFiles()
+            await scanner.setRightDirectory(pathStr: rightPath)
+            await refreshRightFiles()
+            await scanner.startMonitoring()
         }
     }
 }
