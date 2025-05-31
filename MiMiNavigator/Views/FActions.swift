@@ -20,7 +20,6 @@ enum FActions {
     static func edit(_ file: CustomFile) {
         let appURL = URL(fileURLWithPath: "/Applications/TextEdit.app")
         let configuration = NSWorkspace.OpenConfiguration()
-
         NSWorkspace.shared.open(
             [file.urlValue],
             withApplicationAt: appURL,
@@ -29,6 +28,27 @@ enum FActions {
             if let error = error {
                 print("❌ Failed to open file with TextEdit: \(error.localizedDescription)")
             }
+        }
+    }
+
+    // MARK: -
+    static func copy(_ file: CustomFile, to destinationURL: URL) {
+        let sourceURL = file.urlValue
+        let targetURL = destinationURL.appendingPathComponent(sourceURL.lastPathComponent)
+        do {
+            try FileManager.default.copyItem(at: sourceURL, to: targetURL)
+            print("✅ Copied to \(targetURL.path)")
+        } catch {
+            print("❌ Copy failed: \(error.localizedDescription)")
+        }
+    }
+
+    // MARK: -
+    static func delete(_ file: CustomFile) {
+        do {
+            try FileManager.default.trashItem(at: file.urlValue, resultingItemURL: nil)
+        } catch {
+            print("❌ Failed to delete file: \(error.localizedDescription)")
         }
     }
 
@@ -46,14 +66,6 @@ enum FActions {
         if response == .alertFirstButtonReturn {
             delete(file)
             onConfirm()
-        }
-    }
-
-    private static func delete(_ file: CustomFile) {
-        do {
-            try FileManager.default.trashItem(at: file.urlValue, resultingItemURL: nil)
-        } catch {
-            print("❌ Failed to delete file: \(error.localizedDescription)")
         }
     }
 }
