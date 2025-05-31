@@ -1,31 +1,31 @@
-    //
-    //  PanelSide.swift
-    //  MiMiNavigator
-    //
-    //  Created by Iakov Senatov on 26.05.2025.
-    //  Copyright © 2025 Senatov. All rights reserved.
-    //
+//
+//  PanelSide.swift
+//  MiMiNavigator
+//
+//  Created by Iakov Senatov on 26.05.2025.
+//  Copyright © 2025 Senatov. All rights reserved.
+//
 
-    // MARK: -
+// MARK: -
 import Foundation
 import SwiftyBeaver
 
-    // MARK: -
-public enum PanelSide: Equatable, Codable, Sendable, CustomStringConvertible {
+// MARK: -
+public enum PanelSide: Equatable, Codable, Sendable {
     case left
     case right
-    
+
     public static let leftString = "left"
     public static let rightString = "right"
-    
-        // MARK: -
+
+    // MARK: -
     public var stringValue: String {
         switch self {
             case .left: return Self.leftString
             case .right: return Self.rightString
         }
     }
-        // MARK: -
+    // MARK: -
     public static func from(string: String) -> PanelSide? {
         switch string.lowercased() {
             case leftString: return .left
@@ -33,9 +33,18 @@ public enum PanelSide: Equatable, Codable, Sendable, CustomStringConvertible {
             default: return nil
         }
     }
-    
-        // MARK: -
-    public var description: String {
-        return self.stringValue
+    // MARK: -
+    var opposite: PanelSide {
+        switch self {
+            case .left: return .right
+            case .right: return .left
+        }
+    }
+}
+
+
+extension PanelSide {
+    var oppositeValue: PanelSide {
+        self == .left ? .right : .left
     }
 }
