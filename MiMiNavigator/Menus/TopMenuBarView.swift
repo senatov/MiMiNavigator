@@ -9,7 +9,7 @@
 import SwiftUI
 
 struct TopMenuBarView: View {
-
+    // MARK: -
     var body: some View {
         HStack(spacing: 8) {
             ForEach(menuData.dropLast()) { menu in
@@ -23,8 +23,13 @@ struct TopMenuBarView: View {
                         TopMenuItemView(item: item)
                     }
                 } label: {
-                    TopMenuButton(titleStr: helpMenu.titleStr) {}
-                        .help("Open menu: '\(helpMenu.titleStr)'")
+                    Text(helpMenu.title)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 6)
+                        .font(.system(size: NSFont.systemFontSize, weight: .regular))
+                        .foregroundColor(Color.primary)
+                        .frame(height: 22)
+                        .help("Open menu: '\(helpMenu.title)'")
                 }
                 .buttonStyle(TopMenuButtonStyle())
                 .padding(.trailing, 1)
@@ -38,18 +43,18 @@ struct TopMenuBarView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 7))
         )
     }
-
+    // MARK: -
     private func menuView(for menu: MenuCategory) -> some View {
-        Menu(menu.titleStr) {
+        Menu(menu.title) {
             ForEach(menu.items) { item in
                 TopMenuItemView(item: item)
             }
         }
-        .help("Open menu: \(menu.titleStr)")
+        .help("Open menu: \(menu.title)")
         .buttonStyle(TopMenuButtonStyle())
     }
 
-    // All top-level menu categories are defined here:
+    // MARK: - All top-level menu categories are defined here:
     private var menuData: [MenuCategory] {
         [
             filesMenuCategory,

@@ -8,7 +8,7 @@
 
 import Foundation
 
-/// Represents a single menu item with a title, action closure, and optional keyboard shortcut.
+// MARK: - Represents a single menu item with a title, action closure, and optional keyboard shortcut.
 struct MenuItem: Identifiable, Hashable {
     let id = UUID()
     let title: String
@@ -24,9 +24,9 @@ struct MenuItem: Identifiable, Hashable {
     }
 }
 
-/// Represents a top-level menu category with a label and a list of items.
+// MARK: - Represents a top-level menu category with a label and a list of items.
 struct MenuCategory: Identifiable, Hashable {
     let id = UUID()
-    let titleStr: String
+    let title: String
     let items: [MenuItem]
 }
