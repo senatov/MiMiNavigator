@@ -24,19 +24,6 @@ actor DualDirectoryScanner {
     }
 
 
-    // MARK: -
-    @MainActor
-    private func updateScannedFiles(_ files: [CustomFile], for side: PanelSide) {
-        log.info(#function)
-        log.debug("Updating AppState.\(side)Panel with \(files.count) files.")
-        switch side {
-            case .left:
-                appState.displayedLeftFiles = files
-            case .right:
-                appState.displayedRightFiles = files
-        }
-    }
-
     // MARK: - Starts timers for both directories with custom refresh intervals
     func startMonitoring() {
         log.info(#function)
@@ -46,6 +33,7 @@ actor DualDirectoryScanner {
             log.error("Failed to initialize one or both timers.")
         }
     }
+
 
     // MARK: -
     public func setRightDirectory(pathStr: String) {
@@ -97,6 +85,21 @@ actor DualDirectoryScanner {
             log.error("Failed to scan \(side) directory: \(error.localizedDescription)")
         }
     }
+
+
+    // MARK: -
+    @MainActor
+    private func updateScannedFiles(_ files: [CustomFile], for side: PanelSide) {
+        log.info(#function)
+        log.debug("Updating AppState.\(side)Panel with \(files.count) files.")
+        switch side {
+            case .left:
+                appState.displayedLeftFiles = files
+            case .right:
+                appState.displayedRightFiles = files
+        }
+    }
+
 
     // MARK: - Updates the file list for the specified directory side
     private func updateFileList(side: PanelSide, with files: [CustomFile]) async {

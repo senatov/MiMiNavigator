@@ -27,7 +27,8 @@ struct FavButtonPopupTopPanel: View {
 
     // MARK: -
     private var backButton: some View {
-        Button(action: {
+        log.info(#function)
+        return Button(action: {
             log.info("Back: navigating to previous directory")
         }) {
             Image(systemName: "arrowshape.backward").renderingMode(.original)
@@ -38,7 +39,8 @@ struct FavButtonPopupTopPanel: View {
 
     // MARK: -
     private var forwardButton: some View {
-        Button(action: {
+        log.info(#function)
+        return Button(action: {
             log.info("Forward: navigating to next directory")
         }) {
             Image(systemName: "arrowshape.right").renderingMode(.original)
@@ -50,7 +52,8 @@ struct FavButtonPopupTopPanel: View {
 
     // MARK: -
     private var menuButton: some View {
-        Button(action: {
+        log.info(#function)
+        return Button(action: {
             log.info("Navigation between favorites")
             if favTreeStruct.isEmpty {
                 Task { await fetchFavTree() }
@@ -87,13 +90,14 @@ struct FavButtonPopupTopPanel: View {
         log.info(#function)
         let favScanner = FavScanner()
         favTreeStruct = favScanner.scanOnlyFavorites()
-        let files = await fetchFavoritesAsync(from: favScanner)
+        let files = await fetchFavNetVolumes(from: favScanner)
         favTreeStruct.append(contentsOf: files)
     }
 
     // MARK: -
-    private func fetchFavoritesAsync(from scanner: FavScanner) async -> [CustomFile] {
-        await withCheckedContinuation { continuation in
+    private func fetchFavNetVolumes(from scanner: FavScanner) async -> [CustomFile] {
+        log.info(#function)
+        return await withCheckedContinuation { continuation in
             scanner.scanFavoritesAndNetworkVolumes { files in
                 continuation.resume(returning: files)
             }
