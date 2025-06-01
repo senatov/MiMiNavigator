@@ -16,6 +16,7 @@ actor DualDirectoryScanner {
     var fileLst = FileSingleton.shared
     private var leftTimer: DispatchSourceTimer?
     private var rightTimer: DispatchSourceTimer?
+    private let timeOutRefresh: Int = 12
 
 
     init(appState: AppState) {
@@ -27,13 +28,12 @@ actor DualDirectoryScanner {
     @MainActor
     private func updateScannedFiles(_ files: [CustomFile], for side: PanelSide) {
         log.info(#function)
+        log.debug("Updating AppState.\(side)Panel with \(files.count) files.")
         switch side {
-        case .left:
-            log.debug("Updating AppState.leftPanel with \(files.count) files.")
-            appState.displayedLeftFiles = files
-        case .right:
-            log.debug("Updating AppState.rightPanel with \(files.count) files.")
-            appState.displayedRightFiles = files
+            case .left:
+                appState.displayedLeftFiles = files
+            case .right:
+                appState.displayedRightFiles = files
         }
     }
 
@@ -65,7 +65,7 @@ actor DualDirectoryScanner {
     // MARK: - Helper method to setup timers
     private func setupTimer(for side: PanelSide) {
         let timer = DispatchSource.makeTimerSource(queue: DispatchQueue.global())
-        timer.schedule(deadline: .now(), repeating: .seconds(5))
+        timer.schedule(deadline: .now(), repeating: .seconds(timeOutRefresh))
         timer.setEventHandler { [weak self] in
             guard let self = self else { return }
             Task { @MainActor in
@@ -74,8 +74,8 @@ actor DualDirectoryScanner {
         }
         timer.resume()
         switch side {
-        case .left: leftTimer = timer
-        case .right: rightTimer = timer
+            case .left: leftTimer = timer
+            case .right: rightTimer = timer
         }
     }
 
@@ -84,14 +84,14 @@ actor DualDirectoryScanner {
         log.info(#function)
         do {
             switch side {
-            case .left:
-                let scanned = try await FileScanner.scan(url: URL(fileURLWithPath: appState.leftPath))
-                await updateScannedFiles(scanned, for: .left)
-                await updateFileList(side: side, with: scanned)
-            case .right:
-                let scanned = try await FileScanner.scan(url: URL(fileURLWithPath: appState.rightPath))
-                await updateScannedFiles(scanned, for: .right)
-                await updateFileList(side: side, with: scanned)
+                case .left:
+                    let scanned = try await FileScanner.scan(url: URL(fileURLWithPath: appState.leftPath))
+                    await updateScannedFiles(scanned, for: .left)
+                    await updateFileList(side: side, with: scanned)
+                case .right:
+                    let scanned = try await FileScanner.scan(url: URL(fileURLWithPath: appState.rightPath))
+                    await updateScannedFiles(scanned, for: .right)
+                    await updateFileList(side: side, with: scanned)
             }
         } catch {
             log.error("Failed to scan \(side) directory: \(error.localizedDescription)")
@@ -101,16 +101,14 @@ actor DualDirectoryScanner {
     // MARK: - Updates the file list for the specified directory side
     private func updateFileList(side: PanelSide, with files: [CustomFile]) async {
         log.info(#function)
+        log.debug("Updating left directory with \(files.count) files on \(String(describing: side)) side")
         switch side {
-        case .left:
-            log.debug("Updating left directory with \(files.count) files.")
-            await fileLst.updateLeftFiles(files)
-            log.debug("Finished updating left directory.")
-        case .right:
-            log.debug("Updating right directory with \(files.count) files.")
-            await fileLst.updateRightFiles(files)
-            log.debug("Finished updating right directory.")
+            case .left:
+                await fileLst.updateLeftFiles(files)
+            case .right:
+                await fileLst.updateRightFiles(files)
         }
+        log.debug("Finished updating \(String(describing: side)) directory.")
     }
 
 }
