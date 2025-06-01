@@ -8,9 +8,10 @@
 
 import SwiftUI
 
+// MARK: -
 struct TopMenuButtonStyle: ButtonStyle {
     @State private var isHovered = false  // Отслеживаем наведение курсора
-
+    // MARK: -
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .padding(.horizontal, 30)  // Уменьшаем отступы
