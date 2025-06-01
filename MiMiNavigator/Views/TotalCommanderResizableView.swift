@@ -45,13 +45,6 @@ struct TotalCommanderResizableView: View {
         }
     }
 
-    // MARK: - Fetch Directory Paths
-    @MainActor
-    private func fetchPaths() async {
-        appState.leftPath = appState.model.leftDirectory.path
-        appState.rightPath = appState.model.rightDirectory.path
-    }
-
     // MARK: - Fetch Files
     @MainActor
     private func fetchLeftFiles() async {

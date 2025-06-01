@@ -10,8 +10,8 @@ import SwiftyBeaver
 
 struct FavTreeMnu: View {
     @Binding var files: [CustomFile]
-    @ObservedObject var selected: SelectedDir
     @State private var expandedFolders: Set<String> = []
+    @ObservedObject var selected: SelectedDir
 
     // MARK: -
     private var headerView: some View {

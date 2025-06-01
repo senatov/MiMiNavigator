@@ -175,8 +175,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 300,
-    "collapsed": true
+    "width": 300
   },
   "left-ribbon": {
     "hiddenItems": {
@@ -188,7 +187,7 @@
       "command-palette:Open command palette": false
     }
   },
-  "active": "ee8c8f524bae43b8",
+  "active": "96f687010ac44214",
   "lastOpenFiles": [
     "docs/Preview.png",
     "README.md"

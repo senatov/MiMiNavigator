@@ -7,8 +7,8 @@
 ##
 
 
-[![Swift Version](https://img.shields.io/badge/Swift-6.2-blue.svg)](https://swift.org)
-[![Xcode Version](https://img.shields.io/badge/Xcode-16.2-blue.svg)](https://developer.apple.com/xcode/)
+[![Swift Version](https://img.shields.io/badge/Swift-6.4-blue.svg)](https://swift.org)
+[![Xcode Version](https://img.shields.io/badge/Xcode-16.5-blue.svg)](https://developer.apple.com/xcode/)
 [![License](https://img.shields.io/badge/License-MIT-lightgrey.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-macOS-blue.svg)](https://www.apple.com/macos/)
 [![Framework](https://img.shields.io/badge/Framework-SwiftUI-blueviolet.svg)](https://developer.apple.com/xcode/swiftui/)
@@ -16,7 +16,7 @@
 [![Memory](https://img.shields.io/badge/RAM-32_GB-brightgreen.svg)]()
 [![Encryption](https://img.shields.io/badge/Encryption-Enabled-green.svg)]()
 [![Programming](https://img.shields.io/badge/Type-Free_Programming-lightblue.svg)]()
-[![Shareware](https://img.shields.io/badge/License-Shareware-yellow.svg)]()
+[![Shareware](https://img.shields.io/badge/License-Freeware-yellow.svg)]()
 
 ## 📖 Overview
 **MiMiNavigator** is a versatile navigation tool designed specifically for **macOS**. Built using **Swift** and **SwiftUI**, this project leverages the power of **Apple**'s ecosystem to provide a seamless experience. It includes advanced features that make full use of **multitasking** and **multithreading**, allowing efficient handling of directory monitoring, file operations, and user interactions.
@@ -108,62 +108,113 @@ This application highlights the strengths of **SwiftUI** in creating intuitive, 
 
 
 ## 📅 Recent Changes
+* **10ef616** - **Senatov**  (HEAD -> master, origin/master, origin/HEAD) clean 2 (7 hours ago, 2025-05-31 17:20:45 +0200)
 
-* 19f05bc - Senatov  (HEAD -> master, origin/master, origin/HEAD) fix everytwhere: @StateObject var selection = SelectedDir() (5 hours ago, 2025-05-22 17:06:44 +0200)
-* 596fa2c - Senatov  recomposition (21 hours ago, 2025-05-22 01:41:19 +0200)
-* 95c5598 - Senatov  fix-1 (21 hours ago, 2025-05-22 01:36:49 +0200)
-* 17c4ede - Senatov  UserDefaults save/restore (2 days ago, 2025-05-20 20:01:34 +0200)
-* b1aae52 - Senatov          SelectedDir var everywhere (3 days ago, 2025-05-20 10:54:24 +0200)
-* 6101772 - Senatov  aliases f. links (4 days ago, 2025-05-18 23:19:00 +0200)
-* 33e9c9a - Senatov  selectedDir on click - 1 (4 days ago, 2025-05-18 15:04:02 +0200)
-* 8fedb57 - Senatov  title w. version (4 days ago, 2025-05-18 13:12:09 +0200)
-* 8e16013 - Senatov  BreadCrump Panel II (5 days ago, 2025-05-18 09:10:26 +0200)
-* e4f22c0 - Senatov  BreadCrump fixed (wrong) (6 days ago, 2025-05-17 02:20:04 +0200)
-* 0027bbe - Senatov  tested: 1)global FileStucture cnhg 2) Formatted 3) GUI (10 days ago, 2025-05-12 15:51:59 +0200)
-* 2a0f44a - Senatov  on edit (err!) (12 days ago, 2025-05-10 17:13:37 +0200)
-* ada8c88 - Senatov  on edit (12 days ago, 2025-05-10 17:13:14 +0200)
-* 73c795e - Senatov  roung:7,  Sandbox: /Volumes sec dialog (2 weeks ago, 2025-05-08 15:53:16 +0200)
-* 762d554 - Senatov  PanelSide.left & .right (2 weeks ago, 2025-05-06 22:15:02 +0200)
-* 97c5d22 - Senatov  .renderingMode(.original) (2 weeks ago, 2025-05-06 19:31:59 +0200)
-* 6be43eb - Senatov  + add System lib (2 weeks ago, 2025-05-06 18:02:29 +0200)
-* fb2ea0e - Senatov  staged (3 weeks ago, 2025-05-05 00:35:03 +0200)
-* 890ef54 - Senatov  backup curr. changes (3 weeks ago, 2025-05-01 14:55:48 +0200)
-* 7819edf - Senatov  Faforites Stage 1 is ready (4 weeks ago, 2025-04-21 15:48:52 +0200)
-* 41abb2d - Senatov  OneDrive link Children (4 weeks ago, 2025-04-21 15:39:08 +0200)
-* 0f046cd - Senatov  popup win. (4 weeks ago, 2025-04-21 14:47:01 +0200)
-* 2378c03 - Senatov  add lib FilesProvider (5 weeks ago, 2025-04-21 09:53:13 +0200)
-* 9ec75b0 - Senatov  add package FileProvider (5 weeks ago, 2025-04-21 09:36:10 +0200)
-* 54460b1 - Senatov  tooltip for top-menu (5 weeks ago, 2025-04-21 08:25:46 +0200)
-* c0fb396 - Senatov  colours sec. (5 weeks ago, 2025-04-20 23:13:30 +0200)
-* 3c84b4b - Senatov  Fix Divider onhover cursor (5 weeks ago, 2025-04-20 14:58:46 +0200)
-* 9164c3f - Senatov  Divider cursor (5 weeks ago, 2025-04-20 14:56:18 +0200)
-* 3e4f86e - Senatov  NSCursor on Divider (5 weeks ago, 2025-04-20 14:52:00 +0200)
-* dfb8fd1 - Senatov  popup Stage I (5 weeks ago, 2025-04-19 18:06:30 +0200)
-* 0b35619 - Senatov  popup window with favorites (5 weeks ago, 2025-04-19 18:05:04 +0200)
-* ab4cfa6 - Senatov  FavTreePopup (5 weeks ago, 2025-04-19 00:23:20 +0200)
-* 4ce145e - Senatov  tooltip (5 weeks ago, 2025-04-18 23:34:46 +0200)
-* 19539c2 - Senatov  colors of divider toolTips (5 weeks ago, 2025-04-18 19:24:16 +0200)
-* 1a2ebe0 - Senatov  tooltip % f. Paneel's divider (5 weeks ago, 2025-04-18 19:19:22 +0200)
-* f73baf9 - Senatov  call f. cleaning code (5 weeks ago, 2025-04-18 18:47:25 +0200)
-* f5a15e5 - Senatov  refactor breadcamp (sub)views (5 weeks ago, 2025-04-18 18:30:13 +0200)
-* 3c7e16b - Senatov  breadcump up. (5 weeks ago, 2025-04-18 17:40:51 +0200)
-* 3d44d99 - Senatov  new look (5 weeks ago, 2025-04-18 15:29:23 +0200)
-* 39aea82 - Senatov  code for fav tree new created (5 weeks ago, 2025-04-18 01:28:14 +0200)
-* 87766ec - Senatov  clean (5 weeks ago, 2025-04-17 19:24:00 +0200)
-* 9dcaa7a - Senatov  Err fix (5 weeks ago, 2025-04-17 19:01:06 +0200)
-* 1b9d4e7 - Senatov  clean the prj (5 weeks ago, 2025-04-16 18:24:06 +0200)
-* 43e4735 - Senatov  Fix. code III Stage (5 weeks ago, 2025-04-16 15:37:59 +0200)
-* 951c1ab - Senatov  fixing/refact. II (5 weeks ago, 2025-04-16 15:08:14 +0200)
-* 5f00095 - Senatov  fixing/refact. on basis old src (5 weeks ago, 2025-04-16 15:06:54 +0200)
-* a94b1cc - Senatov  (origin/wrong_path_1.1.0.0, wrong_path_1.1.0.0) fix new look (5 weeks ago, 2025-04-15 19:55:53 +0200)
-* c6f043e - Senatov  fix max branches in Tree scan (6 weeks ago, 2025-04-13 16:05:43 +0200)
-* b57a63e - Senatov  Fix tree fav (6 weeks ago, 2025-04-13 01:45:05 +0200)
-* 851e4aa - Senatov  Fav. URL fix (6 weeks ago, 2025-04-12 22:30:07 +0200)
-* 17e3f9c - Senatov  Fav. URL fix (6 weeks ago, 2025-04-12 22:30:07 +0200)
-* d9ab99a - Senatov  FavTree processing (6 weeks ago, 2025-04-09 12:12:26 +0200)
-* 020f864 - Senatov  sys&net drives (7 weeks ago, 2025-04-07 00:46:09 +0200)
-* 5236768 - Senatov  pathPanel, previews (7 weeks ago, 2025-04-04 01:48:37 +0200)
-* fba4236 - Senatov  shapes, colors etc (7 weeks ago, 2025-04-04 00:35:26 +0200)
+* **7e6f932** - **Senatov**  clean 1 (7 hours ago, 2025-05-31 16:35:55 +0200)
+
+* **64e57fa** - **Senatov**  zombi git- branch repaired (8 hours ago, 2025-05-31 16:10:22 +0200)
+
+* **4a67f7a** - **Senatov**  Scanner n. works last 2 days (23 hours ago, 2025-05-31 00:35:40 +0200)
+
+* **f297d96** - **Senatov**  ok- хватит на сегодня, блеать (2 days ago, 2025-05-30 00:57:56 +0200)
+
+* **b423474** - **Senatov**  down buttons func. (2 days ago, 2025-05-30 00:52:16 +0200)
+
+* **38dbfbd** - **Senatov**  refactor. down & context menu (2 days ago, 2025-05-29 18:36:59 +0200)
+
+* **63c539d** - **Senatov**  Breadcrumb design (2 days ago, 2025-05-29 18:30:25 +0200)
+
+| * **c5f7ef5** - **Senatov**  (origin/detached) tested. global vars implemented. (9 hours ago, 2025-05-31 14:58:44 +0200)
+
+| * **3eef2c3** - **Senatov**  call refresh files cngs (23 hours ago, 2025-05-31 00:55:49 +0200)
+
+|/  
+
+* **6a56378** - **Senatov**  .refresh (2 days ago, 2025-05-29 18:20:17 +0200)
+
+* **88f82a6** - **Senatov**  errors fix. Compiled, starded, where are errs (2 days ago, 2025-05-29 18:19:30 +0200)
+
+* **49e70a1** - **Senatov**  + .environmentObject(appState) (2 days ago, 2025-05-29 16:06:39 +0200)
+
+* **f7da70c** - **Senatov**  cleaning, refactoring II (2 days ago, 2025-05-29 15:00:37 +0200)
+
+* **a21ab7c** - **Senatov**  cleaning, refactorimg (3 days ago, 2025-05-28 23:33:22 +0200)
+
+* **07d8a26** - **Senatov**  something .wrong (no fle list) (5 days ago, 2025-05-26 21:48:45 +0200)
+
+* **c8dbc28** - **Senatov**  small fixies (5 days ago, 2025-05-26 20:30:55 +0200)
+
+* **cdb3012** - **Senatov**  added (6 days ago, 2025-05-26 11:39:25 +0200)
+
+* **6cf8c11** - **Senatov**  +folders (6 days ago, 2025-05-26 02:41:16 +0200)
+
+* **cf342ad** - **Senatov**  + Folders Structure (6 days ago, 2025-05-26 02:40:46 +0200)
+
+* **b5053ae** - **Senatov**  select initial dir /tmp (6 days ago, 2025-05-25 23:34:55 +0200)
+
+* **02ede19** - **Senatov**  under work (7 days ago, 2025-05-24 14:59:33 +0200)
+
+* **19f05bc** - **Senatov**  fix everytwhere: @StateObject var selection = SelectedDir() (9 days ago, 2025-05-22 17:06:44 +0200)
+
+* **596fa2c** - **Senatov**  recomposition (10 days ago, 2025-05-22 01:41:19 +0200)
+
+* **95c5598** - **Senatov**  fix-1 (10 days ago, 2025-05-22 01:36:49 +0200)
+
+* **17c4ede** - **Senatov**  UserDefaults save/restore (11 days ago, 2025-05-20 20:01:34 +0200)
+
+* **b1aae52** - **Senatov**          SelectedDir var everywhere (12 days ago, 2025-05-20 10:54:24 +0200)
+
+* **6101772** - **Senatov**  aliases f. links (13 days ago, 2025-05-18 23:19:00 +0200)
+
+* **33e9c9a** - **Senatov**  selectedDir on click - 1 (13 days ago, 2025-05-18 15:04:02 +0200)
+
+* **8fedb57** - **Senatov**  title w. version (13 days ago, 2025-05-18 13:12:09 +0200)
+
+* **8e16013** - **Senatov**  BreadCrump Panel II (2 weeks ago, 2025-05-18 09:10:26 +0200)
+
+* **e4f22c0** - **Senatov**  BreadCrump fixed (wrong) (2 weeks ago, 2025-05-17 02:20:04 +0200)
+
+* **0027bbe** - **Senatov**  tested: 1)global FileStucture cnhg 2) Formatted 3) GUI (3 weeks ago, 2025-05-12 15:51:59 +0200)
+
+* **2a0f44a** - **Senatov**  on edit (err!) (3 weeks ago, 2025-05-10 17:13:37 +0200)
+
+* **ada8c88** - **Senatov**  on edit (3 weeks ago, 2025-05-10 17:13:14 +0200)
+
+* **73c795e** - **Senatov**  roung:7,  Sandbox: /Volumes sec dialog (3 weeks ago, 2025-05-08 15:53:16 +0200)
+
+* **762d554** - **Senatov**  PanelSide.left & .right (4 weeks ago, 2025-05-06 22:15:02 +0200)
+
+* **97c5d22** - **Senatov**  .renderingMode(.original) (4 weeks ago, 2025-05-06 19:31:59 +0200)
+
+* **6be43eb** - **Senatov**  + add System lib (4 weeks ago, 2025-05-06 18:02:29 +0200)
+
+* **fb2ea0e** - **Senatov**  staged (4 weeks ago, 2025-05-05 00:35:03 +0200)
+
+* **890ef54** - **Senatov**  backup curr. changes (4 weeks ago, 2025-05-01 14:55:48 +0200)
+
+* **7819edf** - **Senatov**  Faforites Stage 1 is ready (6 weeks ago, 2025-04-21 15:48:52 +0200)
+
+* **41abb2d** - **Senatov**  OneDrive link Children (6 weeks ago, 2025-04-21 15:39:08 +0200)
+
+* **0f046cd** - **Senatov**  popup win. (6 weeks ago, 2025-04-21 14:47:01 +0200)
+
+* **2378c03** - **Senatov**  add lib FilesProvider (6 weeks ago, 2025-04-21 09:53:13 +0200)
+
+* **9ec75b0** - **Senatov**  add package FileProvider (6 weeks ago, 2025-04-21 09:36:10 +0200)
+
+* **54460b1** - **Senatov**  tooltip for top-menu (6 weeks ago, 2025-04-21 08:25:46 +0200)
+
+* **c0fb396** - **Senatov**  colours sec. (6 weeks ago, 2025-04-20 23:13:30 +0200)
+
+* **3c84b4b** - **Senatov**  Fix Divider onhover cursor (6 weeks ago, 2025-04-20 14:58:46 +0200)
+
+* **9164c3f** - **Senatov**  Divider cursor (6 weeks ago, 2025-04-20 14:56:18 +0200)
+
+* **3e4f86e** - **Senatov**  NSCursor on Divider (6 weeks ago, 2025-04-20 14:52:00 +0200)
+
+* **dfb8fd1** - **Senatov**  popup Stage I (6 weeks ago, 2025-04-19 18:06:30 +0200)
+
+* **0b35619** - **Senatov**  popup window with favorites (6 weeks ago, 2025-04-19 18:05:0
 
 
 ## 🔗 Related Links

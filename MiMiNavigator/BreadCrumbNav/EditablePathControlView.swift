@@ -6,6 +6,7 @@ import SwiftyBeaver
 struct EditablePathControlView: View {
     @EnvironmentObject var appState: AppState
 
+        // MARK: -
     var body: some View {
         log.info("EditablePathControlView body")
         return HStack(spacing: 2) {
@@ -21,32 +22,8 @@ struct EditablePathControlView: View {
         )
     }
 
-    /// Converts a URL into breadcrumb items with titles and icons.
-    private func createEditablePathItems(from url: URL) -> [EditablePathItem] {
-        log.info("Creating editable path items for URL: \(url.path)")
-        var items: [EditablePathItem] = []
-        var components = url.pathComponents
 
-        if components.first == "/" && components.count > 1 {
-            components.removeFirst()
-        }
-
-        var currentPath = url.isFileURL && url.path.hasPrefix("/") ? "/" : ""
-
-        for component in components where !component.isEmpty {
-            currentPath = (currentPath as NSString).appendingPathComponent(component)
-            let icon = NSWorkspace.shared.icon(forFile: currentPath)
-            icon.size = NSSize(width: 16, height: 16)
-            let displayTitle = currentPath == "/" ? "Macintosh HD" : component
-
-            let item = EditablePathItem(titleStr: displayTitle, pathStr: currentPath, icon: icon)
-            items.append(item)
-        }
-
-        return items
-    }
-
-    /// Builds an array of breadcrumb items based on the currently selected file entity.
+    // MARK: - Builds an array of breadcrumb items based on the currently selected file entity.
     private func getPathItems() -> [EditablePathItem] {
         log.info("Generating breadcrumb items")
         guard let url = getPathURL() else {
@@ -58,7 +35,30 @@ struct EditablePathControlView: View {
         return items
     }
 
-    /// Retrieves the URL from the currently selected file entity.
+    // MARK: - Converts a URL into breadcrumb items with titles and icons.
+    private func createEditablePathItems(from url: URL) -> [EditablePathItem] {
+        log.info("Creating editable path items for URL: \(url.path)")
+        var items: [EditablePathItem] = []
+        var components = url.pathComponents
+
+        if components.first == "/" && components.count > 1 {
+            components.removeFirst()
+        }
+        var currentPath = url.isFileURL && url.path.hasPrefix("/") ? "/" : ""
+        for component in components where !component.isEmpty {
+            currentPath = (currentPath as NSString).appendingPathComponent(component)
+            let icon = NSWorkspace.shared.icon(forFile: currentPath)
+            icon.size = NSSize(width: 16, height: 16)
+            let displayTitle = currentPath == "/" ? "Macintosh HD" : component
+
+            let item = EditablePathItem(titleStr: displayTitle, pathStr: currentPath, icon: icon)
+            items.append(item)
+        }
+        return items
+    }
+
+
+    // MARK: -  Retrieves the URL from the currently selected file entity.
     private func getPathURL() -> URL? {
         guard
             let selected = appState.focusedSide == .left
