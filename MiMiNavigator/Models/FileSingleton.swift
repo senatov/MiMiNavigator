@@ -17,6 +17,12 @@ actor FileSingleton: ObservableObject, @unchecked Sendable {
         log.info(#function)
     }
 
+    // Function to notify SwiftUI observers of changes
+    @MainActor
+    private func notifyObservers() {
+        objectWillChange.send()
+    }
+
     // MARK: -
     func updateLeftFiles(_ files: [CustomFile]) async {
         _leftFiles = files
@@ -37,11 +43,5 @@ actor FileSingleton: ObservableObject, @unchecked Sendable {
     // MARK: -
     nonisolated func getRightFiles() async -> [CustomFile] {
         await _rightFiles
-    }
-
-    // Function to notify SwiftUI observers of changes
-    @MainActor
-    private func notifyObservers() {
-        objectWillChange.send()
     }
 }
