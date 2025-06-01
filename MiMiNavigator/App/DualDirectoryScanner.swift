@@ -13,15 +13,15 @@ import SwiftUI
 // MARK: - Manages dual directory monitoring with periodic file refreshes.
 actor DualDirectoryScanner {
     nonisolated let appState: AppState
+    var fileLst = FileSingleton.shared
+    private var leftTimer: DispatchSourceTimer?
+    private var rightTimer: DispatchSourceTimer?
+
 
     init(appState: AppState) {
         self.appState = appState
     }
 
-    let interval = 15
-    var fileLst = FileSingleton.shared
-    private var leftTimer: DispatchSourceTimer?
-    private var rightTimer: DispatchSourceTimer?
 
     // MARK: -
     @MainActor

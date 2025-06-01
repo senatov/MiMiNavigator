@@ -39,14 +39,14 @@ final class AppState: ObservableObject {
     }
 
     // MARK:-
-    public func refreshLeftFiles() async {
+    func refreshLeftFiles() async {
         print("📂 AppState: refreshing LEFT files at path: \(leftPath)")
         displayedLeftFiles = await scanner.fileLst.getLeftFiles()
         print("📂 Found \(displayedLeftFiles.count) left files.")
     }
 
     // MARK:-
-    public func refreshRightFiles() async {
+    func refreshRightFiles() async {
         print("📂 AppState: refreshing RIGHT files at path: \(rightPath)")
         displayedRightFiles = await scanner.fileLst.getRightFiles()
         print("📂 Found \(displayedRightFiles.count) right files.")
@@ -67,7 +67,7 @@ final class AppState: ObservableObject {
 
 
     // MARK:-
-    public func refreshFiles() async {
+    func refreshFiles() async {
         print("📂 AppState: refreshing ALL files")
         await refreshLeftFiles()
         await refreshRightFiles()

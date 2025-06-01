@@ -7,7 +7,7 @@ struct FavButtonPopupTopPanel: View {
     @State private var showFavTreePopup = false
     @State private var favTreeStruct: [CustomFile] = []
     @EnvironmentObject var appState: AppState
-
+    
 
     // MARK: -
     public var body: some View {
