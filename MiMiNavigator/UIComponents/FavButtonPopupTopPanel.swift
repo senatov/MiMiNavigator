@@ -7,14 +7,9 @@ struct FavButtonPopupTopPanel: View {
     @State private var showFavTreePopup = false
     @State private var favTreeStruct: [CustomFile] = []
     @EnvironmentObject var appState: AppState
-    
 
     // MARK: -
-    public var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            navigationControls
-        }
-    }
+    public var body: some View { VStack(alignment: .leading, spacing: 4) { navigationControls } }
 
     // MARK: -
     private var navigationControls: some View {
@@ -28,26 +23,19 @@ struct FavButtonPopupTopPanel: View {
     // MARK: -
     private var backButton: some View {
         log.info(#function)
-        return Button(action: {
-            log.info("Back: navigating to previous directory")
-        }) {
+        return Button(action: { log.info("Back: navigating to previous directory") }) {
             Image(systemName: "arrowshape.backward").renderingMode(.original)
         }
-        .shadow(color: .blue.opacity(0.15), radius: 7.0, x: 1, y: 1)
-        .help("Back: navigating to previous directory")
+        .shadow(color: .blue.opacity(0.15), radius: 7.0, x: 1, y: 1).help("Back: navigating to previous directory")
     }
 
     // MARK: -
     private var forwardButton: some View {
         log.info(#function)
-        return Button(action: {
-            log.info("Forward: navigating to next directory")
-        }) {
+        return Button(action: { log.info("Forward: navigating to next directory") }) {
             Image(systemName: "arrowshape.right").renderingMode(.original)
         }
-        .shadow(color: .blue.opacity(0.15), radius: 7.0, x: 1, y: 1)
-        .disabled(true)
-        .help("Forward: navigating to next directory")
+        .shadow(color: .blue.opacity(0.15), radius: 7.0, x: 1, y: 1).disabled(true).help("Forward: navigating to next directory")
     }
 
     // MARK: -
@@ -55,38 +43,22 @@ struct FavButtonPopupTopPanel: View {
         log.info(#function)
         return Button(action: {
             log.info("Navigation between favorites")
-            if favTreeStruct.isEmpty {
-                Task { await fetchFavTree() }
-            }
+            if favTreeStruct.isEmpty { Task { await fetchFavTree() } }
             showFavTreePopup.toggle()
-        }) {
-            Image(systemName: "menucard").renderingMode(.original)
-        }
-        .shadow(color: .blue.opacity(0.15), radius: 5.0, x: 1, y: 1)
-        .buttonStyle(.plain)
-        .popover(isPresented: $showFavTreePopup, arrowEdge: .bottom) {
-            favoritePopover()
-        }
-        .help("Navigation between favorites")
+        }) { Image(systemName: "menucard").renderingMode(.original) }
+        .shadow(color: .blue.opacity(0.15), radius: 5.0, x: 1, y: 1).buttonStyle(.plain)
+        .popover(isPresented: $showFavTreePopup, arrowEdge: .bottom) { favoritePopover() }.help("Navigation between favorites")
     }
 
     // MARK: -
     private func favoritePopover() -> some View {
-        FavTreeMnu(files: $favTreeStruct, selected: appState.selectedDir)
-            .padding(6)
-            .font(.custom("Helvetica Neue", size: 11).weight(.light))
-            .foregroundColor(
-                Color(#colorLiteral(red: 0.1294117719, green: 0.2156862766, blue: 0.06666667014, alpha: 1))
-            )
-            .animation(
-                .spring(response: 0.4, dampingFraction: 0.7, blendDuration: 0.3),
-                value: favTreeStruct
-            )
+        FavTreeMnu(files: $favTreeStruct, selected: appState.selectedDir).padding(6).font(.custom("Helvetica Neue", size: 11).weight(.light))
+            .foregroundColor(Color(#colorLiteral(red: 0.1294117719, green: 0.2156862766, blue: 0.06666667014, alpha: 1)))
+            .animation(.spring(response: 0.4, dampingFraction: 0.7, blendDuration: 0.3), value: favTreeStruct)
     }
 
     // MARK: -
-    @MainActor
-    private func fetchFavTree() async {
+    @MainActor private func fetchFavTree() async {
         log.info(#function)
         let favScanner = FavScanner()
         favTreeStruct = favScanner.scanOnlyFavorites()
@@ -98,9 +70,7 @@ struct FavButtonPopupTopPanel: View {
     private func fetchFavNetVolumes(from scanner: FavScanner) async -> [CustomFile] {
         log.info(#function)
         return await withCheckedContinuation { continuation in
-            scanner.scanFavoritesAndNetworkVolumes { files in
-                continuation.resume(returning: files)
-            }
+            scanner.scanFavoritesAndNetworkVolumes { files in continuation.resume(returning: files) }
         }
     }
 }

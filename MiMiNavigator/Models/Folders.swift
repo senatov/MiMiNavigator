@@ -7,7 +7,7 @@
 //
 import Combine
 import Foundation
-import SwiftUICore
+import SwiftUI
 
 public class Folders: ObservableObject {
 
