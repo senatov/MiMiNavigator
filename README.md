@@ -6,7 +6,6 @@
 
 ##
 
-
 [![Swift Version](https://img.shields.io/badge/Swift-6.4-blue.svg)](https://swift.org)
 [![Xcode Version](https://img.shields.io/badge/Xcode-16.5-blue.svg)](https://developer.apple.com/xcode/)
 [![License](https://img.shields.io/badge/License-MIT-lightgrey.svg)](LICENSE)
@@ -43,9 +42,9 @@ This application highlights the strengths of **SwiftUI** in creating intuitive, 
 
 ## Requirements
 
-- **macOS** 15.3 or later
+- **macOS** 15.4 or later
 - **Swift** 6.3
-- **Xcode** 16.3 or later
+- **Xcode** 16.3 or later (recommended version: 26) *
 - **macOS** Sequoia 15.0 or later
 
 ## 🚀 Installation
