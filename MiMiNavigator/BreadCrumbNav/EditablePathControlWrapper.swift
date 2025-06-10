@@ -1,22 +1,22 @@
-//
-//  EditablePathControlWrapper.swift
-//  MiMiNavigator
-//
-//  Created by Iakov Senatov on 25.03.25.
-//  Copyright © 2025 Senatov. All rights reserved.
-//
+    //
+    //  EditablePathControlWrapper.swift
+    //  MiMiNavigator
+    //
+    //  Created by Iakov Senatov on 25.03.25.
+    //  Copyright © 2025 Senatov. All rights reserved.
+    //
 
 import SwiftUI
 
-/// A reusable path control component with edit mode, integrated with AppState.
+    // MARK: -- Reusable path control component with edit mode, integrated with AppState.
 struct EditablePathControlWrapper: View, CustomStringConvertible {
     @StateObject var appState = AppState()
     let selectedSide: PanelSide
     @State private var editedPathStr: String = ""
     @State private var isEditing = false
     @FocusState private var isTextFieldFocused: Bool
-
-    // MARK: - Body
+    
+        // MARK: - Body
     var body: some View {
         HStack {
             if isEditing {
@@ -38,8 +38,8 @@ struct EditablePathControlWrapper: View, CustomStringConvertible {
         )
         .padding(.vertical, 6)
     }
-
-    // MARK: - Editing View
+    
+        // MARK: - Editing View
     private var editingView: some View {
         HStack {
             TextField("Enter path", text: $editedPathStr)
@@ -65,7 +65,7 @@ struct EditablePathControlWrapper: View, CustomStringConvertible {
                     log.info("Submitted new path: \(editedPathStr)")
                     applyPathUpdate()
                 }
-
+            
             Button {
                 log.info("Confirmed path editing with checkmark")
                 applyPathUpdate()
@@ -74,7 +74,7 @@ struct EditablePathControlWrapper: View, CustomStringConvertible {
                     .renderingMode(.original)
                     .foregroundColor(.accentColor)
             }
-
+            
             Button {
                 log.info("Cancelled path editing with X button")
                 withAnimation { isEditing = false }
@@ -86,8 +86,8 @@ struct EditablePathControlWrapper: View, CustomStringConvertible {
         }
         .transition(.opacity)
     }
-
-    // MARK: - Display View
+    
+        // MARK: - Display View
     private var displayView: some View {
         EditablePathControlView()
             .environmentObject(appState)
@@ -96,24 +96,25 @@ struct EditablePathControlWrapper: View, CustomStringConvertible {
             .font(.system(size: 13, weight: .light, design: .default))
             .contentShape(Rectangle())
             .onTapGesture {
-                log.info("Switching to editing mode")
-                withAnimation {
-                    isEditing = true
+                Task { @MainActor in
+                    log.info("Switching to editing mode")
+                    withAnimation(.easeInOut(duration: 0.25)) {
+                        isEditing = true
+                    }
                 }
             }
             .transition(.opacity.combined(with: .scale))
-            .animation(.easeInOut(duration: 0.25), value: isEditing)
     }
-
-    // MARK: - Helpers
+    
+        // MARK: - Helpers
     private var currentPath: String {
         selectedSide == .left ? appState.leftPath : appState.rightPath
     }
-
-    // MARK: -
+    
+        // MARK: -
     private func applyPathUpdate() {
         withAnimation { isEditing = false }
-
+        
         Task {
             if selectedSide == .left {
                 appState.leftPath = editedPathStr
@@ -126,7 +127,7 @@ struct EditablePathControlWrapper: View, CustomStringConvertible {
             }
         }
     }
-
-    // MARK: - Conformance
+    
+        // MARK: - Conformance
     nonisolated var description: String { "EditablePathControlWrapper" }
 }

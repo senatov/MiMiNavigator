@@ -134,7 +134,9 @@ struct TotalCommanderResizableView: View {
                     }
             )
             .onTapGesture(count: 2) {
-                handleDoubleClickDivider(geometry: geometry)
+                Task { @MainActor in
+                    handleDoubleClickDivider(geometry: geometry)
+                }
             }
             .onHover { isHovering in
                 DispatchQueue.main.async {
@@ -210,7 +212,6 @@ struct TotalCommanderResizableView: View {
         .padding()
         .cornerRadius(7)
     }
-
 
 
     // MARK: -
