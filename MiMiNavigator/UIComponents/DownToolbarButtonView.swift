@@ -1,8 +1,8 @@
-//
-//  DownToolbarButtonView.swift
-//  MiMiNavigator
-//
-//  Created by Iakov Senatov on 21.02.25.
+    //
+    //  DownToolbarButtonView.swift
+    //  MiMiNavigator
+    //
+    //  Created by Iakov Senatov on 21.02.25.
 
 import SwiftUI
 import SwiftyBeaver
@@ -30,7 +30,6 @@ struct DownToolbarButtonView: View {
                     .overlay(
                         RoundedRectangle(cornerRadius: 7)
                             .stroke(Color.blue.opacity(0.4), lineWidth: isHovered ? 3 : 1)
-                            .animation(.easeInOut(duration: 0.4), value: isHovered)
                     )
                     .scaleEffect(isPressed ? 0.92 : 1.0)
             }
@@ -42,7 +41,7 @@ struct DownToolbarButtonView: View {
         .contentShape(Rectangle())  // Гарантия, что hover обрабатывается
     }
 
-    //MARK: - Обработчик нажатия кнопки
+        //MARK: - Обработчик нажатия кнопки
     private func handlePress() {
         log.info(#function)
         withAnimation(.easeInOut(duration: 0.2)) {
@@ -57,16 +56,16 @@ struct DownToolbarButtonView: View {
         action()
     }
 
-    /// Обработчик наведения курсора
+        /// Обработчик наведения курсора
     private func handleHover(_ hovering: Bool) {
         log.info("Hover on '\(title)': \(hovering ? "ENTER" : "EXIT")")
-        withAnimation(.easeInOut(duration: 0.2)) {
+        withAnimation(.easeInOut(duration: 0.4)) {
             isHovered = hovering
         }
     }
 }
 
-// MARK: - Preview
+    // MARK: - Preview
 struct DownToolbarButtonView_Previews: PreviewProvider {
     static var previews: some View {
         DownToolbarButtonView(

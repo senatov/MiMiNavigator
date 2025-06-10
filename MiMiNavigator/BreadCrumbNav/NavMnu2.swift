@@ -11,24 +11,31 @@ import SwiftyBeaver
 
 // MARK: -
 struct NavMnu2: View {
+
+    @EnvironmentObject var appState: AppState
+
+    // MARK: --
     var body: some View {
         Menu {
-            Button(
-                "Properties",
-                action: {
-                    log.info("Properties menu selected")
-                }
-            )
-            Button(
-                "Open in Finder",
-                action: {
-                    log.info("Open in Finder menu selected")
-                }
-            )
+            Button("Properties", action: handleProperties)
+            Button("Open in Finder", action: handleOpenInFinder)
         } label: {
             Image(systemName: "ellipsis")
                 .rotationEffect(.degrees(90))
         }
         .menuStyle(.borderlessButton)
+    }
+
+    // MARK: - Private handlers
+    private func handleProperties() {
+        log.info("Properties menu selected")
+        let selected = appState.getSelectedDir()
+        log.info("Selected dir path: \(selected)")
+    }
+
+    private func handleOpenInFinder() {
+        log.info("Open in Finder menu selected")
+        let selected = appState.getSelectedDir()
+        log.info("Opening path: \(selected)")
     }
 }
