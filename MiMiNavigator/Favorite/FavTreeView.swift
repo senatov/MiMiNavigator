@@ -1,10 +1,10 @@
-    //
-    //  TreeRowView.swift
-    //  MiMiNavigator
-    //
-    //  Created by Iakov Senatov on 28.02.25.
-    //  Copyright © 2025 Senatov. All rights reserved.
-    //
+//
+//  TreeRowView.swift
+//  MiMiNavigator
+//
+//  Created by Iakov Senatov on 28.02.25.
+//  Copyright © 2025 Senatov. All rights reserved.
+//
 import SwiftUI
 import SwiftyBeaver
 
@@ -12,8 +12,18 @@ struct FavTreeView: View {
     @EnvironmentObject var appState: AppState
     @Binding var file: CustomFile
     @Binding var expandedFolders: Set<String>
-    
-        // MARK: -
+
+    // MARK: -
+    var body: some View {
+        VStack(alignment: .leading) {
+            fileRow
+            childrenList
+        }
+        .animation(.easeInOut(duration: 0.25), value: isExpanded)
+    }
+
+
+    // MARK: -
     private var fileIcon: some View {
         Group {
             if file.isDirectory {
@@ -32,8 +42,8 @@ struct FavTreeView: View {
             }
         }
     }
-    
-        // MARK: -
+
+    // MARK: -
     private var fileNameText: some View {
         let isTheSame = appState.selectedDir.selectedFSEntity?.pathStr == file.pathStr
         return Text(file.nameStr)
@@ -48,8 +58,8 @@ struct FavTreeView: View {
                 TreeViewContextMenu(file: file)
             }
     }
-    
-        // MARK: -
+
+    // MARK: -
     private var fileRow: some View {
         HStack {
             fileIcon
@@ -58,22 +68,13 @@ struct FavTreeView: View {
         .padding(.leading, file.isDirectory ? 5 : 15)
         .font(.system(size: 14, weight: .regular))
     }
-    
-        // MARK: -
-    var body: some View {
-        VStack(alignment: .leading) {
-            fileRow
-            childrenList
-        }
-        .animation(.easeInOut(duration: 0.25), value: isExpanded)
-    }
-    
-        // MARK: -
+
+    // MARK: -
     var isExpanded: Bool {
         expandedFolders.contains(file.pathStr)
     }
-    
-        // MARK: -
+
+    // MARK: -
     private var childrenList: some View {
         Group {
             if isExpanded, let children = file.children, !children.isEmpty {
@@ -91,8 +92,8 @@ struct FavTreeView: View {
             }
         }
     }
-    
-        // MARK: -
+
+    // MARK: -
     private func toggleExpansion() {
         withAnimation(.spring(response: 0.3, dampingFraction: 0.6, blendDuration: 0.3)) {
             if isExpanded {

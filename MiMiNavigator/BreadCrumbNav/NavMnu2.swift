@@ -33,6 +33,7 @@ struct NavMnu2: View {
         log.info("Selected dir path: \(selected)")
     }
 
+    // MARK: -
     private func handleOpenInFinder() {
         log.info("Open in Finder menu selected")
         let selected = appState.getSelectedDir()

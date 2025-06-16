@@ -14,6 +14,26 @@ struct FavTreeMnu: View {
     @ObservedObject var selected: SelectedDir
 
     // MARK: -
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            headerView
+            dividerView
+            fileListView
+        }
+        .frame(width: 450)
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(Color.white.opacity(0.05))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(Color.blue.opacity(0.2), lineWidth: 2)
+                )
+        )
+        .padding()
+    }
+
+
+    // MARK: -
     private var headerView: some View {
         Text("Favorites:")
             .font(.headline)
@@ -44,24 +64,5 @@ struct FavTreeMnu: View {
             .padding(.horizontal)
         }
         .padding(.bottom, 8)
-    }
-
-    // MARK: -
-    var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            headerView
-            dividerView
-            fileListView
-        }
-        .frame(width: 450)
-        .background(
-            RoundedRectangle(cornerRadius: 8)
-                .fill(Color.white.opacity(0.05))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(Color.blue.opacity(0.2), lineWidth: 2)
-                )
-        )
-        .padding()
     }
 }

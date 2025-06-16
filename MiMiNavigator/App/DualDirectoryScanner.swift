@@ -27,8 +27,8 @@ actor DualDirectoryScanner {
     // MARK: - Starts timers for both directories with custom refresh intervals
     func startMonitoring() {
         log.info(#function)
-        setupTimer(for: PanelSide.right)
-        setupTimer(for: PanelSide.left)
+        setupTimer(for: .right)
+        setupTimer(for: .left)
         if leftTimer == nil || rightTimer == nil {
             log.error("Failed to initialize one or both timers.")
         }
@@ -51,48 +51,48 @@ actor DualDirectoryScanner {
     }
 
     // MARK: - Helper method to setup timers
-    private func setupTimer(for side: PanelSide) {
+    private func setupTimer(for currSide: PanelSide) {
         let timer = DispatchSource.makeTimerSource(queue: DispatchQueue.global())
         timer.schedule(deadline: .now(), repeating: .seconds(timeOutRefresh))
         timer.setEventHandler { [weak self] in
             guard let self = self else { return }
             Task { @MainActor in
-                await self.refreshFiles(side: side)
+                await self.refreshFiles(currSide: currSide)
             }
         }
         timer.resume()
-        switch side {
+        switch currSide {
             case .left: leftTimer = timer
             case .right: rightTimer = timer
         }
     }
 
     // MARK: - Refreshes the file list for a specific directory side
-    private func refreshFiles(side: PanelSide) async {
+    private func refreshFiles(currSide: PanelSide) async {
         log.info(#function)
         do {
-            switch side {
+            switch currSide {
                 case .left:
                     let scanned = try await FileScanner.scan(url: URL(fileURLWithPath: appState.leftPath))
                     await updateScannedFiles(scanned, for: .left)
-                    await updateFileList(side: side, with: scanned)
+                    await updateFileList(currSide: currSide, with: scanned)
                 case .right:
                     let scanned = try await FileScanner.scan(url: URL(fileURLWithPath: appState.rightPath))
                     await updateScannedFiles(scanned, for: .right)
-                    await updateFileList(side: side, with: scanned)
+                    await updateFileList(currSide: currSide, with: scanned)
             }
         } catch {
-            log.error("Failed to scan \(side) directory: \(error.localizedDescription)")
+            log.error("Failed to scan \(currSide) directory: \(error.localizedDescription)")
         }
     }
 
 
     // MARK: -
     @MainActor
-    private func updateScannedFiles(_ files: [CustomFile], for side: PanelSide) {
+    private func updateScannedFiles(_ files: [CustomFile], for currSide: PanelSide) {
         log.info(#function)
-        log.debug("Updating AppState.\(side)Panel with \(files.count) files.")
-        switch side {
+        log.debug("Updating AppState.\(currSide)Panel with \(files.count) files.")
+        switch currSide {
             case .left:
                 appState.displayedLeftFiles = files
             case .right:
@@ -102,16 +102,16 @@ actor DualDirectoryScanner {
 
 
     // MARK: - Updates the file list for the specified directory side
-    private func updateFileList(side: PanelSide, with files: [CustomFile]) async {
+    private func updateFileList(currSide: PanelSide, with files: [CustomFile]) async {
         log.info(#function)
-        log.debug("Updating left directory with \(files.count) files on \(String(describing: side)) side")
-        switch side {
+        log.debug("Updating \(currSide) directory with \(files.count) files on \(String(describing: currSide)) side")
+        switch currSide {
             case .left:
                 await fileLst.updateLeftFiles(files)
             case .right:
                 await fileLst.updateRightFiles(files)
         }
-        log.debug("Finished updating \(String(describing: side)) directory.")
+        log.debug("Finished updating \(String(describing: currSide)) directory.")
     }
 
 }

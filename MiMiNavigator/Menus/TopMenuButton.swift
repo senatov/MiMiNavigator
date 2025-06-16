@@ -14,7 +14,7 @@ struct TopMenuButton: View {
     let action: () -> Void
     @State private var isHovered = false
 
-        // MARK: -
+    // MARK: -
     var body: some View {
         Button(action: action) {
             Text(titleStr)
