@@ -35,20 +35,6 @@ struct MiMiNavigatorApp: App {
     }
 
     // MARK: -
-    var sharedModelContainer: ModelContainer = {
-        log.info(#function)
-        let schema = Schema([
-            Item.self
-        ])
-        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
-        do {
-            return try ModelContainer(for: schema, configurations: [modelConfiguration])
-        } catch {
-            fatalError("Could not create ModelContainer: \(error)")
-        }
-    }()
-
-    // MARK: -
     var body: some Scene {
         WindowGroup {
             VStack {
@@ -72,7 +58,7 @@ struct MiMiNavigatorApp: App {
                     .offset(x: 3, y: 6)
                 }
                 ToolbarItem(placement: .status) {
-                    Text("🐙 Dev Build: ")
+                    Text("🐙 Dev. Build: ")
                         .font(.title2)
                         .foregroundColor(Color(#colorLiteral(red: 0.2196078449, green: 0.007843137719, blue: 0.8549019694, alpha: 1)))
                         + devMark.foregroundColor(Color(#colorLiteral(red: 0.1215686277, green: 0.01176470611, blue: 0.4235294163, alpha: 1)))
@@ -82,4 +68,19 @@ struct MiMiNavigatorApp: App {
         }
         .modelContainer(sharedModelContainer)
     }
+
+
+    // MARK: -
+    var sharedModelContainer: ModelContainer = {
+        log.info(#function)
+        let schema = Schema([
+            Item.self
+        ])
+        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
+        do {
+            return try ModelContainer(for: schema, configurations: [modelConfiguration])
+        } catch {
+            fatalError("Could not create ModelContainer: \(error)")
+        }
+    }()
 }

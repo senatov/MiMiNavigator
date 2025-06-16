@@ -48,6 +48,7 @@ struct TotalCommanderResizableView: View {
     // MARK: - Fetch Files
     @MainActor
     private func fetchLeftFiles() async {
+        log.info(#function)
         appState.displayedLeftFiles = await appState.scanner.fileLst.getLeftFiles()
     }
 
@@ -59,7 +60,8 @@ struct TotalCommanderResizableView: View {
 
     // MARK: - Panels
     private func buildMainPanels(geometry: GeometryProxy) -> some View {
-        HStack(spacing: 0) {
+        log.info(#function)
+        return HStack(spacing: 0) {
             buildLeftPanel(geometry: geometry)
             buildDivider(geometry: geometry)
             buildRightPanel()
@@ -70,7 +72,8 @@ struct TotalCommanderResizableView: View {
 
     // MARK: -
     private func buildLeftPanel(geometry: GeometryProxy) -> some View {
-        VStack {
+        log.info(#function)
+        return VStack {
             EditablePathControlWrapper(appState: appState, selectedSide: .left)
                 .onChange(of: appState.leftPath) { _, newPath in
                     Task {
@@ -95,7 +98,8 @@ struct TotalCommanderResizableView: View {
 
     // MARK: -
     private func buildRightPanel() -> some View {
-        VStack {
+        log.info(#function)
+        return VStack {
             EditablePathControlWrapper(appState: appState, selectedSide: .right)
                 .onChange(of: appState.rightPath) { _, newPath in
                     Task {
@@ -119,30 +123,38 @@ struct TotalCommanderResizableView: View {
 
     // MARK: - Divider
     private func buildDivider(geometry: GeometryProxy) -> some View {
-        Rectangle()
-            .fill(Color(.systemGray))
-            .frame(width: 4)
-            .opacity(0.2)
-            .gesture(
-                DragGesture()
-                    .onChanged { value in
-                        handleDividerDrag(value: value, geometry: geometry)
-                    }
-                    .onEnded { _ in
-                        UserDefaults.standard.set(leftPanelWidth, forKey: "leftPanelWidth")
-                        isDividerTooltipVisible = false
-                    }
-            )
-            .onTapGesture(count: 2) {
-                Task { @MainActor in
-                    handleDoubleClickDivider(geometry: geometry)
+        log.info(#function)
+        return ZStack {
+            Capsule()
+                .fill(Color.gray.opacity(0.3))
+                .frame(width: 6)
+                .shadow(color: .black.opacity(0.15), radius: 2, x: 0, y: 0)
+                .overlay(
+                    Capsule()
+                        .stroke(Color.secondary.opacity(0.4), lineWidth: 0.5)
+                )
+        }
+        .contentShape(Rectangle())
+        .gesture(
+            DragGesture()
+                .onChanged { value in
+                    handleDividerDrag(value: value, geometry: geometry)
                 }
-            }
-            .onHover { isHovering in
-                DispatchQueue.main.async {
-                    isHovering ? NSCursor.resizeLeftRight.push() : NSCursor.pop()
+                .onEnded { _ in
+                    UserDefaults.standard.set(leftPanelWidth, forKey: "leftPanelWidth")
+                    isDividerTooltipVisible = false
                 }
+        )
+        .onTapGesture(count: 2) {
+            Task { @MainActor in
+                handleDoubleClickDivider(geometry: geometry)
             }
+        }
+        .onHover { isHovering in
+            DispatchQueue.main.async {
+                isHovering ? NSCursor.resizeLeftRight.push() : NSCursor.pop()
+            }
+        }
     }
 
     // MARK: - Toolbar
@@ -150,6 +162,7 @@ struct TotalCommanderResizableView: View {
         HStack(spacing: 18) {
             // MARK: -
             DownToolbarButtonView(title: "F3 View", systemImage: "eye.circle") {
+                log.debug("View button tapped")
                 if let file = appState.selectedLeftFile {
                     FActions.view(file)
                 } else {
@@ -186,10 +199,12 @@ struct TotalCommanderResizableView: View {
             }
             // MARK: -
             DownToolbarButtonView(title: "F8 Delete", systemImage: "minus.rectangle") {
+                log.debug("Delete button tapped")
                 if let file = appState.selectedLeftFile {
                     FActions.deleteWithConfirmation(file) {
                         Task {
                             await fetchLeftFiles()
+                            await fetchRightFiles()
                         }
                     }
                 } else {
@@ -202,10 +217,12 @@ struct TotalCommanderResizableView: View {
             }
             // MARK: -
             DownToolbarButtonView(title: "Console", systemImage: "terminal") {
+                log.debug("Console button tapped")
                 openConsoleInDirectory("~")
             }
             // MARK: -
             DownToolbarButtonView(title: "F4 Exit", systemImage: "power") {
+                log.debug("Exit button tapped")
                 exitApp()
             }
         }

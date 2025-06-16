@@ -9,25 +9,6 @@
 import SwiftUI
 
 // MARK: -
-struct MenuItemContent: View {
-    let title: String
-    let shortcut: String?
-
-    var body: some View {
-        HStack {
-            Text(title)
-            Spacer()
-            if let shortcut = shortcut {
-                Text(shortcut)
-                    .foregroundColor(.gray)
-                    .font(.caption)
-            }
-        }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 6)
-    }
-}
-// MARK: -
 struct TopMenuItemView: View {
     let item: MenuItem
     @State private var isHovered = false
@@ -65,16 +46,3 @@ struct TopMenuItemView: View {
     }
 }
 
-// MARK: -
-struct HelpPopup: View {
-    let text: String
-    var body: some View {
-        Text(text)
-            .font(.system(size: 12))
-            .foregroundColor(Color(#colorLiteral(red: 0.5787474513, green: 0.3215198815, blue: 0, alpha: 1)))  // Тёмно-синий цвет
-            .padding(8)
-            .background(Color.yellow.opacity(0.1))  // Бледно-жёлтый фон
-            .cornerRadius(3)
-            .frame(width: 200)  // Ограничение ширины
-    }
-}
