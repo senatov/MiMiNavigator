@@ -131,7 +131,7 @@ struct TotalCommanderResizableView: View {
                 .shadow(color: .black.opacity(0.15), radius: 2, x: 0, y: 0)
                 .overlay(
                     Capsule()
-                        .stroke(Color.secondary.opacity(0.4), lineWidth: 0.5)
+                        .stroke(Color.blue.opacity(0.4), lineWidth: 0.5)
                 )
         }
         .contentShape(Rectangle())
