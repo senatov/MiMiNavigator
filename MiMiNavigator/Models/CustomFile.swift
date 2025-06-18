@@ -21,7 +21,7 @@ public struct CustomFile: Identifiable, Equatable, Hashable, Codable, Sendable, 
 
     // MARK: - Initializes full metadata for the file system entity
     public init(name: String? = nil, path: String, children: [CustomFile]? = nil) {
-        log.info(#function)
+        //log.info(#function)
         self.id = UUID()
         self.urlValue = URL(fileURLWithPath: path).absoluteURL
         self.pathStr = path
