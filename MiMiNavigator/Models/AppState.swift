@@ -13,6 +13,7 @@ import Foundation
 final class AppState: ObservableObject {
 
     // MARK: - Path & Files
+    @Published var showFavTreePopup: Bool = false
     @Published var leftPath: String
     @Published var rightPath: String
 
@@ -38,21 +39,21 @@ final class AppState: ObservableObject {
         self.scanner = DualDirectoryScanner(appState: self)
     }
 
-    // MARK:-
+    // MARK: -
     func refreshLeftFiles() async {
         print("📂 AppState: refreshing LEFT files at path: \(leftPath)")
         displayedLeftFiles = await scanner.fileLst.getLeftFiles()
         print("📂 Found \(displayedLeftFiles.count) left files.")
     }
 
-    // MARK:-
+    // MARK: -
     func refreshRightFiles() async {
         print("📂 AppState: refreshing RIGHT files at path: \(rightPath)")
         displayedRightFiles = await scanner.fileLst.getRightFiles()
         print("📂 Found \(displayedRightFiles.count) right files.")
     }
 
-    // MARK:-
+    // MARK: -
     func pathURL(for side: PanelSide) -> URL? {
         let path: String
         switch side {
@@ -66,15 +67,16 @@ final class AppState: ObservableObject {
     }
 
 
-    // MARK:-
+    // MARK: -
     func refreshFiles() async {
         print("📂 AppState: refreshing ALL files")
         await refreshLeftFiles()
         await refreshRightFiles()
     }
 
-    // MARK:-
+    // MARK: -
     func selectedFile(for side: PanelSide) -> CustomFile? {
+        log.info(#function)
         switch side {
             case .left:
                 return selectedLeftFile
@@ -83,8 +85,9 @@ final class AppState: ObservableObject {
         }
     }
 
-    // MARK:-
+    // MARK: -
     func updatePath(_ path: String, on side: PanelSide) {
+        log.info(#function)
         switch side {
             case .left:
                 leftPath = path
@@ -101,12 +104,15 @@ final class AppState: ObservableObject {
     }
 }
 
-extension AppState {
 
+// MARK: -
+extension AppState {
+    // MARK: -
     public var focusedSideValue: PanelSide {
         focusedSide
     }
 
+    // MARK: -
     public func initialize() {
         print("⚙️ AppState: initialize() called")
         Task {

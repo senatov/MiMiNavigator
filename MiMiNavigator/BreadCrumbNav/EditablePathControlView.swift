@@ -6,7 +6,7 @@ import SwiftyBeaver
 struct EditablePathControlView: View {
     @EnvironmentObject var appState: AppState
 
-        // MARK: -
+    // MARK: -
     var body: some View {
         log.info("EditablePathControlView body")
         return HStack(spacing: 2) {
@@ -60,6 +60,7 @@ struct EditablePathControlView: View {
 
     // MARK: -  Retrieves the URL from the currently selected file entity.
     private func getPathURL() -> URL? {
+        log.info(#function)
         guard
             let selected = appState.focusedSide == .left
                 ? appState.selectedLeftFile

@@ -28,14 +28,14 @@ struct NavMnu2: View {
 
     // MARK: - Private handlers
     private func handleProperties() {
-        log.info("Properties menu selected")
+        log.info(#function)
         let selected = appState.getSelectedDir()
         log.info("Selected dir path: \(selected)")
     }
 
     // MARK: -
     private func handleOpenInFinder() {
-        log.info("Open in Finder menu selected")
+        log.info(#function)
         let selected = appState.getSelectedDir()
         log.info("Opening path: \(selected)")
     }

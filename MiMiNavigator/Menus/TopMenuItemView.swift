@@ -41,8 +41,9 @@ struct TopMenuItemView: View {
             }
         }
         .popover(isPresented: $showHelpText, attachmentAnchor: .point(.trailing), arrowEdge: .leading) {
-            HelpPopup(text: "This is a help text for \(item.title).")  // Всплывающее окно
+            HelpPopup(text: "This is a help text for \(item.title).") 
         }
+        .keyboardShortcut(.cancelAction)
     }
 }
 

@@ -45,13 +45,15 @@ struct FavTreeView: View {
 
     // MARK: -
     private var fileNameText: some View {
+        log.info(#function)
         let isTheSame = appState.selectedDir.selectedFSEntity?.pathStr == file.pathStr
         return Text(file.nameStr)
             .foregroundColor(isTheSame ? .blue : .primary)
             .onTapGesture {
                 Task { @MainActor in
                     appState.selectedDir.selectedFSEntity = file
-                    log.info("Selected file: \(file.nameStr)")
+                    appState.showFavTreePopup = false
+                    log.info("Favorites->selected Dir: \(file.nameStr)")
                 }
             }
             .contextMenu {

@@ -55,6 +55,7 @@ struct TotalCommanderResizableView: View {
     // MARK: -
     @MainActor
     private func fetchRightFiles() async {
+        log.info(#function)
         appState.displayedRightFiles = await appState.scanner.fileLst.getRightFiles()
     }
 
@@ -159,8 +160,8 @@ struct TotalCommanderResizableView: View {
 
     // MARK: - Toolbar
     private func buildDownToolbar() -> some View {
-        HStack(spacing: 18) {
-            // MARK: -
+        log.info(#function)
+        return HStack(spacing: 18) {
             DownToolbarButtonView(title: "F3 View", systemImage: "eye.circle") {
                 log.debug("View button tapped")
                 if let file = appState.selectedLeftFile {
@@ -169,7 +170,6 @@ struct TotalCommanderResizableView: View {
                     log.debug("No file selected for View")
                 }
             }
-            // MARK: -
             DownToolbarButtonView(title: "F4 Edit", systemImage: "pencil") {
                 if let file = appState.selectedLeftFile {
                     FActions.edit(file)
@@ -177,7 +177,6 @@ struct TotalCommanderResizableView: View {
                     log.debug("No file selected for Edit")
                 }
             }
-            // MARK: -
             DownToolbarButtonView(title: "F5 Copy", systemImage: "doc.on.doc") {
                 let side = appState.focusedSideValue
                 if let file = appState.selectedFile(for: side),
@@ -189,15 +188,12 @@ struct TotalCommanderResizableView: View {
                     }
                 }
             }
-            // MARK: -
             DownToolbarButtonView(title: "F6 Move", systemImage: "square.and.arrow.down.on.square") {
                 log.debug("Move button tapped")
             }
-            // MARK: -
             DownToolbarButtonView(title: "F7 NewFolder", systemImage: "folder.badge.plus") {
                 log.debug("NewFolder button tapped")
             }
-            // MARK: -
             DownToolbarButtonView(title: "F8 Delete", systemImage: "minus.rectangle") {
                 log.debug("Delete button tapped")
                 if let file = appState.selectedLeftFile {
@@ -211,16 +207,13 @@ struct TotalCommanderResizableView: View {
                     log.debug("No file selected for Delete")
                 }
             }
-            // MARK: -
             DownToolbarButtonView(title: "Settings", systemImage: "gearshape") {
                 log.debug("Settings button tapped")
             }
-            // MARK: -
             DownToolbarButtonView(title: "Console", systemImage: "terminal") {
                 log.debug("Console button tapped")
                 openConsoleInDirectory("~")
             }
-            // MARK: -
             DownToolbarButtonView(title: "F4 Exit", systemImage: "power") {
                 log.debug("Exit button tapped")
                 exitApp()
@@ -233,6 +226,7 @@ struct TotalCommanderResizableView: View {
 
     // MARK: -
     private func handleDividerDrag(value: DragGesture.Value, geometry: GeometryProxy) {
+        log.info(#function)
         let newWidth = leftPanelWidth + value.translation.width
         let minPanelWidth: CGFloat = 100
         let maxPanelWidth = geometry.size.width - 100
@@ -252,12 +246,14 @@ struct TotalCommanderResizableView: View {
 
     // MARK: -
     private func handleDoubleClickDivider(geometry: GeometryProxy) {
+        log.info(#function)
         leftPanelWidth = geometry.size.width / 2
         UserDefaults.standard.set(leftPanelWidth, forKey: "leftPanelWidth")
     }
 
     // MARK: -
     private func initializePanelWidth(geometry: GeometryProxy) {
+        log.info(#function)
         leftPanelWidth =
             UserDefaults.standard.object(forKey: "leftPanelWidth") as? CGFloat
             ?? geometry.size.width / 2
@@ -265,6 +261,7 @@ struct TotalCommanderResizableView: View {
 
     // MARK: -
     private func addKeyPressMonitor() {
+        log.info(#function)
         NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
             if event.modifierFlags.contains(.option) && event.keyCode == 0x76 {
                 exitApp()
@@ -276,6 +273,7 @@ struct TotalCommanderResizableView: View {
 
     // MARK: -
     private func exitApp() {
+        log.info(#function)
         NSApplication.shared.terminate(nil)
     }
 }
