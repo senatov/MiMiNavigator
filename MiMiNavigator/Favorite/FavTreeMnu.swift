@@ -12,6 +12,7 @@ struct FavTreeMnu: View {
     @Binding var files: [CustomFile]
     @State private var expandedFolders: Set<String> = []
     @ObservedObject var selected: SelectedDir
+    let scanner: DualDirectoryScanner
 
     // MARK: -
     var body: some View {
@@ -51,12 +52,13 @@ struct FavTreeMnu: View {
             .padding(.vertical, 6)
     }
 
-    // MARK:
+    // MARK: -
     private var fileListView: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 5) {
                 ForEach($files) { $file in
                     FavTreeView(
+                        scanner: scanner,
                         file: $file,
                         expandedFolders: $expandedFolders
                     )
