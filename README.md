@@ -1,4 +1,4 @@
-![MiMiNavigator Logo](MiMiNavigator/Assets.xcassets/AppIcon.appiconset/128.png "just logo")
+![MiMiNavigator Logo](MiMiNavigator/Assets.xcassets/AppIcon.appiconset/128.png "just logo")
 
 
 # 📁 MiMiNavigator - MacOS File manager with two panels
@@ -45,8 +45,8 @@ MiMiNavigator is a versatile navigation tool that provides a Total Commander-sty
 
 - macOS 15.4 or later
 - Swift 6.3
-- Xcode 16.3 or later (recommended version: 26) *
-- macOS Sequoia 15.0 or later
+- Xcode 26 or later (recommended version: 26) *
+
 
 ## 🚀 Installation
 

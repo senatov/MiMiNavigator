@@ -8,7 +8,7 @@
 
 import SwiftUI
 
-// MARK: -- Reusable path control component with edit mode, integrated with AppState.
+// MARK: - Reusable path control component with edit mode, integrated with AppState.
 struct EditablePathControlWrapper: View, CustomStringConvertible {
     @StateObject var appState = AppState()
     let selectedSide: PanelSide
@@ -21,7 +21,8 @@ struct EditablePathControlWrapper: View, CustomStringConvertible {
         HStack {
             if isEditing {
                 editingView
-            } else {
+            }
+            else {
                 displayView
             }
         }
@@ -65,7 +66,6 @@ struct EditablePathControlWrapper: View, CustomStringConvertible {
                     log.info("Submitted new path: \(editedPathStr)")
                     applyPathUpdate()
                 }
-
             Button {
                 log.info("Confirmed path editing with checkmark")
                 applyPathUpdate()
@@ -74,7 +74,6 @@ struct EditablePathControlWrapper: View, CustomStringConvertible {
                     .renderingMode(.original)
                     .foregroundColor(.accentColor)
             }
-
             Button {
                 log.info("Cancelled path editing with X button")
                 withAnimation { isEditing = false }
@@ -113,14 +112,15 @@ struct EditablePathControlWrapper: View, CustomStringConvertible {
 
     // MARK: -
     private func applyPathUpdate() {
+        log.info(#function)
         withAnimation { isEditing = false }
-
         Task {
             if selectedSide == .left {
                 appState.leftPath = editedPathStr
                 await appState.scanner.setLeftDirectory(pathStr: editedPathStr)
                 await appState.refreshLeftFiles()
-            } else {
+            }
+            else {
                 appState.rightPath = editedPathStr
                 await appState.scanner.setRightDirectory(pathStr: editedPathStr)
                 await appState.refreshRightFiles()

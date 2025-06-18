@@ -11,6 +11,7 @@ import SwiftyBeaver
 
 final class FileScanner {
     static func scan(url: URL) throws -> [CustomFile] {
+        log.info(#function)
         var result: [CustomFile] = []
 
         let fileManager = FileManager.default

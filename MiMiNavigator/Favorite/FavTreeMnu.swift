@@ -35,7 +35,8 @@ struct FavTreeMnu: View {
 
     // MARK: -
     private var headerView: some View {
-        Text("Favorites:")
+        log.info(#function)
+        return Text("Favorites:")
             .font(.headline)
             .foregroundColor(Color(#colorLiteral(red: 0.06274510175, green: 0, blue: 0.1921568662, alpha: 1)))
             .padding(.horizontal, 4)

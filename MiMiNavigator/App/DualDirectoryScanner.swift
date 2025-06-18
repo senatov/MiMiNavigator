@@ -52,6 +52,7 @@ actor DualDirectoryScanner {
 
     // MARK: - Helper method to setup timers
     private func setupTimer(for currSide: PanelSide) {
+        log.info(#function)
         let timer = DispatchSource.makeTimerSource(queue: DispatchQueue.global())
         timer.schedule(deadline: .now(), repeating: .seconds(timeOutRefresh))
         timer.setEventHandler { [weak self] in

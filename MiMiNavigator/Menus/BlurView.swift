@@ -10,7 +10,9 @@
 import SwiftUI
 
 struct BlurView: NSViewRepresentable {
+
     func makeNSView(context: Context) -> NSVisualEffectView {
+        log.info(#function)
         let view = NSVisualEffectView()
         view.blendingMode = .withinWindow
         view.material = .sidebar
@@ -18,5 +20,7 @@ struct BlurView: NSViewRepresentable {
         return view
     }
 
-    func updateNSView(_ nsView: NSVisualEffectView, context: Context) {}
+    func updateNSView(_ nsView: NSVisualEffectView, context: Context) {
+        log.info(#function)
+    }
 }

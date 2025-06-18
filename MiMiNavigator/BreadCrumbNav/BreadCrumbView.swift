@@ -57,6 +57,7 @@ struct BreadCrumbView: View {
 
     // MARK: - Handle Selection
     private func handlePathSelection(upTo index: Int) {
+        log.info(#function)
         let newPath = "/" + pathComponents.prefix(index + 1).joined(separator: "/")
         appState.updatePath(newPath, on: selectedSide)
 
