@@ -10,17 +10,20 @@
 import SwiftUI
 
 struct BlurView: NSViewRepresentable {
+    @Binding var material: NSVisualEffectView.Material
 
     func makeNSView(context: Context) -> NSVisualEffectView {
-        log.info(#function)
         let view = NSVisualEffectView()
         view.blendingMode = .withinWindow
-        view.material = .sidebar
+        view.material = material
         view.state = .active
         return view
     }
 
     func updateNSView(_ nsView: NSVisualEffectView, context: Context) {
-        log.info(#function)
+        if nsView.material != material {
+            nsView.material = material
+            log.info("Material updated: \(material.rawValue)")
+        }
     }
 }

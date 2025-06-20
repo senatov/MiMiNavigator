@@ -10,24 +10,26 @@ import SwiftUI
 
 // MARK: -
 struct TopMenuButtonStyle: ButtonStyle {
-    @State private var isHovered = false  // Отслеживаем наведение курсора
+
+    @State private var isHovered = false  // Tracks mouse hover state
     // MARK: -
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .padding(.horizontal, 30)  // Уменьшаем отступы
+            .padding(.horizontal, 30)  // Reduced horizontal padding
             .padding(.vertical, 6)
             .font(.system(size: NSFont.systemFontSize, weight: .regular))
-            .foregroundColor(isHovered ? Color.blue.opacity(0.9) : Color.primary)  // Чёткий тёмно-синий цвет
+            .foregroundColor(isHovered ? Color.blue.opacity(0.9) : Color.primary)  // Crisp dark blue color on hover
             .background(
                 Group {
                     if isHovered {
-                        Color.blue.opacity(0.15)  // Лёгкий голубой фон при наведении
-                    } else {
-                        BlurView()  // Обычный фон
+                        Color.blue.opacity(0.15)  // Light blue background on hover
+                    }
+                    else {
+                        BlurView(material: .constant(NSVisualEffectView.Material.sidebar))
                     }
                 }
             )
-            .frame(height: 22)  // Ограничиваем высоту
+            .frame(height: 22)  // Fixed height
             .cornerRadius(7)
             .overlay(
                 RoundedRectangle(cornerRadius: 7)
@@ -37,8 +39,7 @@ struct TopMenuButtonStyle: ButtonStyle {
                 withAnimation(.spring(response: 0.3, dampingFraction: 0.6, blendDuration: 0)) {
                     isHovered = hovering
                 }
-
             }
-            .accessibility(label: Text("Верхний меню"))
+            .accessibility(label: Text("Top menu"))
     }
 }

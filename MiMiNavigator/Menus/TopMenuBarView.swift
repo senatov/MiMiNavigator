@@ -15,8 +15,7 @@ struct TopMenuBarView: View {
             ForEach(menuData.dropLast()) { menu in
                 menuView(for: menu)
             }
-            Spacer()  // Push Help menu to the right edge
-            // Help menu rendered separately
+            Spacer()  // Push Help menu to the right edge Help menu rendered separately
             if let helpMenu = menuData.last {
                 Menu {
                     ForEach(helpMenu.items) { item in
@@ -39,8 +38,10 @@ struct TopMenuBarView: View {
         .padding(.horizontal, 20)
         .padding(.vertical, 6)
         .background(
-            BlurView()
-                .clipShape(RoundedRectangle(cornerRadius: 7))
+            BlurView(
+                material: Binding.constant(NSVisualEffectView.Material.sidebar)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 7))
         )
     }
     // MARK: -

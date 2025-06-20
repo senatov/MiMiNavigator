@@ -27,8 +27,9 @@ struct TopMenuButton: View {
                     Group {
                         if isHovered {
                             Color.blue.opacity(0.15)
-                        } else {
-                            BlurView()
+                        }
+                        else {
+                            BlurView(material: .constant(NSVisualEffectView.Material.sidebar))
                         }
                     }
                 )

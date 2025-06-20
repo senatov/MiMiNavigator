@@ -41,6 +41,7 @@ struct FavButtonPopupTopPanel: View {
 
     // MARK: -
     private var menuButton: some View {
+        log.info(#function)
         let scanner = DualDirectoryScanner(appState: appState)
         return Button(action: {
             log.info("Navigation between favorites")
@@ -51,7 +52,7 @@ struct FavButtonPopupTopPanel: View {
         }
         .shadow(color: .blue.opacity(0.15), radius: 5.0, x: 1, y: 1)
         .buttonStyle(.plain)
-        .popover(isPresented: $appState.showFavTreePopup, arrowEdge: .bottom) {
+        .popover(isPresented: $appState.showFavTreePopup,  arrowEdge: .bottom) {
             favoritePopover(scanner: scanner)
         }
         .help("Navigation between favorites")
@@ -67,7 +68,8 @@ struct FavButtonPopupTopPanel: View {
     }
 
     // MARK: -
-    @MainActor private func fetchFavTree() async {
+    @MainActor
+    private func fetchFavTree() async {
         //log.info(#function)
         let favScanner = FavScanner()
         favTreeStruct = favScanner.scanOnlyFavorites()

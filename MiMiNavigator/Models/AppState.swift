@@ -11,50 +11,33 @@ import Foundation
 
 @MainActor
 final class AppState: ObservableObject {
-
     // MARK: - Path & Files
     @Published var showFavTreePopup: Bool = false
     @Published var leftPath: String
     @Published var rightPath: String
-
     @Published var displayedLeftFiles: [CustomFile] = []
     @Published var displayedRightFiles: [CustomFile] = []
-
     // MARK: - Selection & Focus
     @Published var selectedLeftFile: CustomFile?
     @Published var selectedRightFile: CustomFile?
     @Published var focusedSide: PanelSide = .left
     @Published var selectedDir: SelectedDir = SelectedDir()
-
     // MARK: - Dependencies
-    let model: DirectoryModel
-    lazy var scanner: DualDirectoryScanner = DualDirectoryScanner(appState: self)
+    let model: DirectoryModel = DirectoryModel()
+    var scanner: DualDirectoryScanner!
+
 
     // MARK: - Init
     init() {
-        let model = DirectoryModel()
-        self.model = model
         self.leftPath = model.leftDirectory.path
         self.rightPath = model.rightDirectory.path
         self.scanner = DualDirectoryScanner(appState: self)
     }
 
-    // MARK: -
-    func refreshLeftFiles() async {
-        print("📂 AppState: refreshing LEFT files at path: \(leftPath)")
-        displayedLeftFiles = await scanner.fileLst.getLeftFiles()
-        print("📂 Found \(displayedLeftFiles.count) left files.")
-    }
-
-    // MARK: -
-    func refreshRightFiles() async {
-        print("📂 AppState: refreshing RIGHT files at path: \(rightPath)")
-        displayedRightFiles = await scanner.fileLst.getRightFiles()
-        print("📂 Found \(displayedRightFiles.count) right files.")
-    }
 
     // MARK: -
     func pathURL(for side: PanelSide) -> URL? {
+        log.info(#function + " at path: \(side)")
         let path: String
         switch side {
             case .left:
@@ -62,17 +45,33 @@ final class AppState: ObservableObject {
             case .right:
                 path = rightPath
         }
-
         return URL(fileURLWithPath: path)
     }
 
 
     // MARK: -
     func refreshFiles() async {
-        print("📂 AppState: refreshing ALL files")
+        log.info(#function)
         await refreshLeftFiles()
         await refreshRightFiles()
     }
+
+
+    // MARK: -
+    func refreshLeftFiles() async {
+        log.info(#function + " at path: \(leftPath)")
+        displayedLeftFiles = await scanner.fileLst.getLeftFiles()
+        print(" - Found \(displayedLeftFiles.count) left files.")
+    }
+
+
+    // MARK: -
+    func refreshRightFiles() async {
+        log.info(#function + " at path: \(rightPath)")
+        displayedRightFiles = await scanner.fileLst.getRightFiles()
+        print(" - Found \(displayedRightFiles.count) right files.")
+    }
+
 
     // MARK: -
     func selectedFile(for side: PanelSide) -> CustomFile? {
@@ -84,6 +83,7 @@ final class AppState: ObservableObject {
                 return selectedRightFile
         }
     }
+
 
     // MARK: -
     func updatePath(_ path: String, on side: PanelSide) {
@@ -99,6 +99,8 @@ final class AppState: ObservableObject {
         focusedSide = side
     }
 
+
+    // MARK: -
     public func getSelectedDir() -> SelectedDir {
         return selectedDir
     }
@@ -114,7 +116,7 @@ extension AppState {
 
     // MARK: -
     public func initialize() {
-        print("⚙️ AppState: initialize() called")
+        log.info(#function)
         Task {
             await scanner.setLeftDirectory(pathStr: leftPath)
             await refreshLeftFiles()
