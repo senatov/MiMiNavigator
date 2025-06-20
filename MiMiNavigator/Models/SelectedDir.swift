@@ -10,7 +10,7 @@ import Combine
 import Foundation
 
 // MARK: - Encapsulates the selected file system entity and its associated panel side
-public class SelectedDir: ObservableObject, CustomStringConvertible {
+public class SelectedDir: ObservableObject {
     @Published public var selectedFSEntity: CustomFile?
     @Published public var side: PanelSide
 
@@ -23,7 +23,7 @@ public class SelectedDir: ObservableObject, CustomStringConvertible {
 
     // MARK: -
     public init(side: PanelSide = .left) {
-        log.info("# SelectedDir.init(side: \(side))")
+        log.info(#function + " side: \(side))")
         self.side = side
         if selectedFSEntity == nil {
             selectedFSEntity = CustomFile(path: "/tmp")
@@ -32,23 +32,15 @@ public class SelectedDir: ObservableObject, CustomStringConvertible {
 
     // MARK: - Initializes from an existing SelectedDir instance
     public init(selectedDir: SelectedDir = SelectedDir(initialPath: "/Users/senat"), side: PanelSide = .left) {
-        log.info("# SelectedDir.init(selectedDir: \(selectedDir), side: \(side))")
+        log.info(#function + "selectedDir: \(selectedDir), side: \(side))")
         self.selectedFSEntity = selectedDir.selectedFSEntity
         self.side = side
     }
 
     // MARK: -
     public func change(initialPath: String = "/Users/senat/Downloads", side: PanelSide = .left) {
-        log.info("# SelectedDir.change(initialPath: \(initialPath), side: \(side))")
+        log.info("#function + (initialPath: \(initialPath), side: \(side))")
         self.selectedFSEntity = CustomFile(path: initialPath)
         self.side = side
     }
-
-    // MARK: -
-    public var description: String {
-        let pathDescription = selectedFSEntity?.pathStr ?? "nil"
-        return "SelectedDir(side: \(side), path: \(pathDescription))"
-    }
 }
-
-

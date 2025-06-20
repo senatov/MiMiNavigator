@@ -47,7 +47,7 @@ struct FavTreeView: View {
 
     // MARK: -
     private var fileNameText: some View {
-        log.info(#function)
+        //log.info(#function)
         let isTheSame = appState.selectedDir.selectedFSEntity?.pathStr == file.pathStr
         return Text(file.nameStr)
             .foregroundColor(isTheSame ? .blue : .primary)

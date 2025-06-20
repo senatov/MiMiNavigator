@@ -13,7 +13,7 @@ import SwiftUI
 final class DirectoryModel: ObservableObject {
     @Published var leftFiles: [CustomFile] = []
     @Published var rightFiles: [CustomFile] = []
-    @Published var leftDirectory: URL = .documentsDirectory
-    @Published var rightDirectory: URL = .downloadsDirectory
-    @Published var selectedDirectory: URL = .documentsDirectory
+    @Published var leftDirectory: URL = .downloadsDirectory
+    @Published var rightDirectory: URL = .desktopDirectory
+    @Published var selectedDirectory: URL = .homeDirectory
 }

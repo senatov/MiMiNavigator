@@ -8,7 +8,7 @@ struct EditablePathControlView: View {
 
     // MARK: -
     var body: some View {
-        log.info("EditablePathControlView body")
+        log.info(#function)
         return HStack(spacing: 2) {
             NavMnu1(panelSide: appState.focusedSide)
             Spacer(minLength: 3)
@@ -25,7 +25,7 @@ struct EditablePathControlView: View {
 
     // MARK: - Builds an array of breadcrumb items based on the currently selected file entity.
     private func getPathItems() -> [EditablePathItem] {
-        log.info("Generating breadcrumb items")
+        log.info(#function)
         guard let url = getPathURL() else {
             log.warning("URL is nil, returning empty breadcrumb")
             return []
@@ -37,7 +37,7 @@ struct EditablePathControlView: View {
 
     // MARK: - Converts a URL into breadcrumb items with titles and icons.
     private func createEditablePathItems(from url: URL) -> [EditablePathItem] {
-        log.info("Creating editable path items for URL: \(url.path)")
+        log.info(#function + " for URL: \(url.path)")
         var items: [EditablePathItem] = []
         var components = url.pathComponents
 

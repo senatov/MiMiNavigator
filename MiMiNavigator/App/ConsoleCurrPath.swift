@@ -23,8 +23,7 @@ struct ConsoleCurrPath: View  {
 
     // MARK: -
 func openConsoleInDirectory(_ directoryStr: String) {
-    LogMan.log.info("openConsoleInDirectory()")  // Log for method tracking
-                                                 // Step 1: Launch Terminal
+    log.info(#function)
     let launchTask = Process()
     launchTask.launchPath = "/usr/bin/open"
     launchTask.arguments = ["/System/Applications/Utilities/Terminal.app"]

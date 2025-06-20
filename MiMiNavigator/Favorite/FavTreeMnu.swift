@@ -23,10 +23,10 @@ struct FavTreeMnu: View {
         }
         .frame(width: 450)
         .background(
-            RoundedRectangle(cornerRadius: 8)
+            RoundedRectangle(cornerRadius: 7)
                 .fill(Color.white.opacity(0.05))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 8)
+                    RoundedRectangle(cornerRadius: 7)
                         .stroke(Color.blue.opacity(0.2), lineWidth: 2)
                 )
         )
