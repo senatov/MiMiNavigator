@@ -1,4 +1,4 @@
-![MiMiNavigator Logo](MiMiNavigator/Assets.xcassets/AppIcon.appiconset/128.png "just logo")
+![MiMiNavigator Logo](MiMiNavigator/Assets.xcassets/AppIcon.appiconset/128.png "MiMi Logo")
 
 
 # 📁 MiMiNavigator - MacOS File manager with two panels
@@ -7,7 +7,7 @@
 ##
 
 [![Swift Version](https://img.shields.io/badge/Swift-6.4-blue.svg)](https://swift.org)
-[![Xcode Version](https://img.shields.io/badge/Xcode-16.5-blue.svg)](https://developer.apple.com/xcode/)
+[![Xcode Version](https://img.shields.io/badge/Xcode-26-blue.svg)](https://developer.apple.com/xcode/)
 [![License](https://img.shields.io/badge/License-MIT-lightgrey.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-macOS-blue.svg)](https://www.apple.com/macos/)
 [![Framework](https://img.shields.io/badge/Framework-SwiftUI-blueviolet.svg)](https://developer.apple.com/xcode/swiftui/)
@@ -20,11 +20,11 @@
 ![MiMiNavigator Logo](MiMiNavigator/Assets.xcassets/AppIcon.appiconset/64.png "just logo")
 
 ## 📖 Overview
-MiMiNavigator is a versatile navigation tool designed specifically for macOS. Built using Swift and SwiftUI, this project leverages the power of Apple's ecosystem to provide a seamless experience. It includes advanced features that make full use of multitasking and multithreading, allowing efficient handling of directory monitoring, file operations, and user interactions.
+-- MiMiNavigator is a versatile navigation tool designed specifically for macOS. Built using Swift and SwiftUI, this project leverages the power of Apple's ecosystem to provide a seamless experience. It includes advanced features that make full use of multitasking and multithreading, allowing efficient handling of directory monitoring, file operations, and user interactions.
 
-This application highlights the strengths of SwiftUI in creating intuitive, responsive user interfaces and utilizes multithreading for efficient background processes, such as file scanning and updating views, ensuring that the application remains responsive even with intensive tasks.
+-- This application highlights the strengths of SwiftUI in creating intuitive, responsive user interfaces and utilizes multithreading for efficient background processes, such as file scanning and updating views, ensuring that the application remains responsive even with intensive tasks.
 
-MiMiNavigator is a versatile navigation tool that provides a Total Commander-style interface with directory tree navigation. This project is built with Swift 6, delivering high-performance, real-time file operations.
+-- MiMiNavigator is a versatile navigation tool that provides a Total Commander-style interface with directory tree navigation. This project is built with Swift 6, delivering high-performance, real-time file operations.
 
 
 
@@ -32,7 +32,7 @@ MiMiNavigator is a versatile navigation tool that provides a Total Commander-sty
 
 ## Current Stage 🦾 ![Current Stage](docs/Preview.png "current preview")
 
--  Support for macOS 15.3 with Swift 6.2.
+-  Support for macOS 26 with Swift 6.2 beta.
 -  Periodic directory scanning and updating, using dynamic collections for real-time content refresh.
 -  Modular and reusable components for top navigation.
 -  Integrated file management actions including copy, rename, and delete.
@@ -43,9 +43,9 @@ MiMiNavigator is a versatile navigation tool that provides a Total Commander-sty
 
 ## Requirements
 
-- macOS 15.4 or later
-- Swift 6.3
-- Xcode 26 or later (recommended version: 26) *
+- macOS 26 or later
+- Swift 6.2
+- Xcode 26.0 beta or later (recommended version: 26) *
 
 
 ## 🚀 Installation
@@ -80,8 +80,8 @@ MiMiNavigator is a versatile navigation tool that provides a Total Commander-sty
 ## 👤 Authors
 - Iakov Senatov:  [![LinkedIn](https://www.shareicon.net/data/128x128/2017/06/16/887138_logo_512x512.png?logo=linkedin)](https://www.linkedin.com/in/iakov-senatov-07060765)
 
-| Step           | Description                                                                                    |
-|-------------------------|------------------------------------------------------------------------------------------------|
+| Step           | Description                                                                                         |
+|-------------------------|--------------------------------------------------------------------------------------------|
 | Installation        | Clone the repository, navigate to the project directory, and install dependencies as required. |
 | Running the Project | Use the command `swift run` to launch the project.                                             |
 | Usage               | Access features like configuration, file management, network, and tools from the main menu.    |
@@ -93,13 +93,13 @@ MiMiNavigator is a versatile navigation tool that provides a Total Commander-sty
 
 ##❓FAQ❓ 
 
-| Question                                 | Answer                                                                       |
-|------------------------------------------|------------------------------------------------------------------------------|
+| Question                                 | Answer                                                               |
+|------------------------------------------|----------------------------------------------------------------------|
 | How to configure settings?           | Navigate to Configuration to access display, layout, and color settings. |
 | How to compare directories?          | Use the Files menu to compare and sync directories.                      |
-| Can I rename multiple files at once? | Yes, use the Multi-Rename Tool available under Tools.                |
+| Can I rename multiple files at once? | Yes, use the Multi-Rename Tool available under Tools.                    |
 | Is FTP supported?                    | Yes, FTP connection tools are available under the Network menu.          |
-| Clean the Project                    | periphery scan --config .periphery.yml                                       |
+| Clean the Project                    | periphery scan --config .periphery.yml                                   |
 
 ---
 
@@ -168,6 +168,7 @@ MiMiNavigator is a versatile navigation tool that provides a Total Commander-sty
 * 73c795e - Senatov  roung:7,  Sandbox: /Volumes sec dialog (6 weeks ago, 2025-05-08 15:53:16 +0200):
 ...
 ```
+
 ## 🔗 Related Links
 
 - [Installation Guide](#quick-start-guide)

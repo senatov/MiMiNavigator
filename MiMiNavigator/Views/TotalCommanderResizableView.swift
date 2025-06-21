@@ -28,7 +28,6 @@ struct TotalCommanderResizableView: View {
                     buildMainPanels(geometry: geometry)
                     buildDownToolbar()
                 }
-
                 if isDividerTooltipVisible {
                     PrettyTooltip(text: tooltipText)
                         .position(tooltipPosition)
@@ -45,6 +44,7 @@ struct TotalCommanderResizableView: View {
         }
     }
 
+
     // MARK: - Fetch Files
     @MainActor
     private func fetchLeftFiles() async {
@@ -52,12 +52,14 @@ struct TotalCommanderResizableView: View {
         appState.displayedLeftFiles = await appState.scanner.fileLst.getLeftFiles()
     }
 
+
     // MARK: -
     @MainActor
     private func fetchRightFiles() async {
         log.info(#function)
         appState.displayedRightFiles = await appState.scanner.fileLst.getRightFiles()
     }
+
 
     // MARK: - Panels
     private func buildMainPanels(geometry: GeometryProxy) -> some View {
@@ -70,6 +72,7 @@ struct TotalCommanderResizableView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.white)
     }
+
 
     // MARK: -
     private func buildLeftPanel(geometry: GeometryProxy) -> some View {
@@ -97,6 +100,7 @@ struct TotalCommanderResizableView: View {
         .frame(width: leftPanelWidth > 0 ? leftPanelWidth : geometry.size.width / 2)  // Determine left panel width
     }
 
+
     // MARK: -
     private func buildRightPanel() -> some View {
         log.info(#function)
@@ -121,6 +125,7 @@ struct TotalCommanderResizableView: View {
             .border(Color.secondary)
         }
     }
+
 
     // MARK: - Divider
     private func buildDivider(geometry: GeometryProxy) -> some View {
@@ -158,6 +163,7 @@ struct TotalCommanderResizableView: View {
         }
     }
 
+
     // MARK: - Toolbar
     private func buildDownToolbar() -> some View {
         log.info(#function)
@@ -166,14 +172,16 @@ struct TotalCommanderResizableView: View {
                 log.debug("View button tapped")
                 if let file = appState.selectedLeftFile {
                     FActions.view(file)
-                } else {
+                }
+                else {
                     log.debug("No file selected for View")
                 }
             }
             DownToolbarButtonView(title: "F4 Edit", systemImage: "pencil") {
                 if let file = appState.selectedLeftFile {
                     FActions.edit(file)
-                } else {
+                }
+                else {
                     log.debug("No file selected for Edit")
                 }
             }
@@ -203,7 +211,8 @@ struct TotalCommanderResizableView: View {
                             await fetchRightFiles()
                         }
                     }
-                } else {
+                }
+                else {
                     log.debug("No file selected for Delete")
                 }
             }
@@ -244,6 +253,7 @@ struct TotalCommanderResizableView: View {
         }
     }
 
+
     // MARK: -
     private func handleDoubleClickDivider(geometry: GeometryProxy) {
         log.info(#function)
@@ -270,6 +280,7 @@ struct TotalCommanderResizableView: View {
             return event
         }
     }
+
 
     // MARK: -
     private func exitApp() {

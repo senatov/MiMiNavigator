@@ -16,7 +16,7 @@ actor DualDirectoryScanner {
     var fileLst = FileSingleton.shared
     private var leftTimer: DispatchSourceTimer?
     private var rightTimer: DispatchSourceTimer?
-    private let timeOutRefresh: Int = 12
+    private let timeOutRefresh: Int = 1200
 
 
     init(appState: AppState) {
