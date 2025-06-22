@@ -75,7 +75,7 @@ final class AppState: ObservableObject {
 
     // MARK: -
     func selectedFile(for side: PanelSide) -> CustomFile? {
-        log.info(#function)
+        log.info(#function + " at path: \(side)")
         switch side {
             case .left:
                 return selectedLeftFile
@@ -87,7 +87,7 @@ final class AppState: ObservableObject {
 
     // MARK: -
     func updatePath(_ path: String, on side: PanelSide) {
-        log.info(#function)
+        log.info(#function + " at path: \(side)")
         switch side {
             case .left:
                 leftPath = path
@@ -97,6 +97,7 @@ final class AppState: ObservableObject {
                 selectedRightFile = nil
         }
         focusedSide = side
+        initialize()
     }
 
 

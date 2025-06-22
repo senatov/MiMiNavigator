@@ -1,16 +1,16 @@
-    //
-    //  DualDirectoryScanner.swift
-    //  MiMiNavigator
-    //
-    //  Created by Iakov Senatov on 11.12.24.
-    //  Description: Actor-based utility for monitoring and synchronizing file updates in two directories.
-    //  Dependencies: Foundation, Combine, SwiftUI
-    //
+//
+//  DualDirectoryScanner.swift
+//  MiMiNavigator
+//
+//  Created by Iakov Senatov on 11.12.24.
+//  Description: Actor-based utility for monitoring and synchronizing file updates in two directories.
+//  Dependencies: Foundation, Combine, SwiftUI
+//
 import Combine
 import Foundation
 import SwiftUI
 
-    // MARK: - Manages dual directory monitoring with periodic file refreshes.
+// MARK: - Manages dual directory monitoring with periodic file refreshes.
 actor DualDirectoryScanner {
     nonisolated let appState: AppState
     var fileLst = FileSingleton.shared
@@ -24,7 +24,7 @@ actor DualDirectoryScanner {
     }
 
 
-        // MARK: - Starts timers for both directories with custom refresh intervals
+    // MARK: - Starts timers for both directories with custom refresh intervals
     func startMonitoring() {
         log.info(#function)
         setupTimer(for: .right)
@@ -35,14 +35,14 @@ actor DualDirectoryScanner {
     }
 
 
-        // MARK: -
+    // MARK: -
     public func setRightDirectory(pathStr: String) {
         log.debug("\(#function) pathStr: \(pathStr)")
         Task { @MainActor in
             appState.rightPath = pathStr
         }
     }
-        // MARK: -
+    // MARK: -
     public func setLeftDirectory(pathStr: String) {
         log.debug("\(#function) pathStr: \(pathStr)")
         Task { @MainActor in
@@ -50,7 +50,7 @@ actor DualDirectoryScanner {
         }
     }
 
-        // MARK: - Helper method to setup timers
+    // MARK: - Helper method to setup timers
     private func setupTimer(for currSide: PanelSide) {
         log.info(#function)
         let timer = DispatchSource.makeTimerSource(queue: DispatchQueue.global())
@@ -68,7 +68,7 @@ actor DualDirectoryScanner {
         }
     }
 
-        // MARK: - Refreshes the file list for a specific directory side
+    // MARK: - Refreshes the file list for a specific directory side
     public func refreshFiles(currSide: PanelSide) async {
         log.info(#function + " currSide: \(currSide)")
         do {
@@ -89,7 +89,7 @@ actor DualDirectoryScanner {
     }
 
 
-        // MARK: -
+    // MARK: -
     @MainActor
     private func updateScannedFiles(_ files: [CustomFile], for currSide: PanelSide) {
         log.info(#function + " currSide: \(currSide)")
@@ -102,7 +102,7 @@ actor DualDirectoryScanner {
         }
     }
 
-        // MARK: -
+    // MARK: -
     func resetRefreshTimer(for currSide: PanelSide) {
         log.info(#function + " currSide: \(currSide)")
         switch currSide {
@@ -118,10 +118,11 @@ actor DualDirectoryScanner {
     }
 
 
-        // MARK: - Updates the file list for the specified directory side
+    // MARK: - Updates the file list for the specified directory side
+    @MainActor
     private func updateFileList(currSide: PanelSide, with files: [CustomFile]) async {
         log.info(#function)
-        log.debug("Updating \(currSide) directory with \(files.count) files on \(String(describing: currSide)) side")
+        log.debug("Updating selected dir:\(appState.selectedDir) with \(files.count) files on \(String(describing: currSide)) side")
         switch currSide {
             case .left:
                 await fileLst.updateLeftFiles(files)
@@ -130,5 +131,4 @@ actor DualDirectoryScanner {
         }
         log.debug("Finished updating \(String(describing: currSide)) directory.")
     }
-
 }
