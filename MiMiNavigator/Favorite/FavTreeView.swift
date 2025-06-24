@@ -10,7 +10,6 @@ import SwiftyBeaver
 
 struct FavTreeView: View {
     @EnvironmentObject var appState: AppState
-    let scanner: DualDirectoryScanner
     @Binding var file: CustomFile
     @Binding var expandedFolders: Set<String>
 
@@ -55,10 +54,10 @@ struct FavTreeView: View {
                 Task { @MainActor in
                     appState.selectedDir.selectedFSEntity = file
                     appState.showFavTreePopup = false
-                    await scanner.resetRefreshTimer(for: .left)
-                    await scanner.resetRefreshTimer(for: .right)
-                    await scanner.refreshFiles(currSide: .left)
-                    await scanner.refreshFiles(currSide: .right)
+                    await appState.scanner.resetRefreshTimer(for: .left)
+                    await appState.scanner.resetRefreshTimer(for: .right)
+                    await appState.scanner.refreshFiles(currSide: .left)
+                    await appState.scanner.refreshFiles(currSide: .right)
                     log.info("Favorites->selected Dir: \(file.nameStr)")
                 }
             }
@@ -88,7 +87,6 @@ struct FavTreeView: View {
             if isExpanded, let children = file.children, !children.isEmpty {
                 ForEach(children.indices, id: \.self) { index in
                     FavTreeView(
-                        scanner: scanner,
                         file: Binding(
                             get: { file.children![index] },
                             set: { file.children![index] = $0 }

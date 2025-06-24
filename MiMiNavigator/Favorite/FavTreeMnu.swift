@@ -11,8 +11,8 @@ import SwiftyBeaver
 struct FavTreeMnu: View {
     @Binding var files: [CustomFile]
     @State private var expandedFolders: Set<String> = []
-    @ObservedObject var selected: SelectedDir
-    let scanner: DualDirectoryScanner
+    @EnvironmentObject var appState: AppState
+
 
     // MARK: -
     var body: some View {
@@ -57,11 +57,7 @@ struct FavTreeMnu: View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 5) {
                 ForEach($files) { $file in
-                    FavTreeView(
-                        scanner: scanner,
-                        file: $file,
-                        expandedFolders: $expandedFolders
-                    )
+                    FavTreeView(file: $file, expandedFolders: $expandedFolders)
                 }
             }
             .padding(.horizontal)

@@ -1,18 +1,17 @@
 #!/bin/zsh
+set -euo pipefail
 
-# Определяем путь к корню проекта
-PROJECT_ROOT="${SRCROOT:-$(pwd)}"
+DEBUG=false
 
-# Путь к .version-файлу в корне проекта
-VERSION_FILE="$PROJECT_ROOT/MiMiNavigator/.version"
+if [[ "${1:-}" == "-X" ]]; then
+  DEBUG=true
+fi
 
-# Получение git-информации
-GIT_COMMIT_HASH=$(git rev-parse --short HEAD 2>/dev/null)
-GIT_COMMIT_DATE=$(git log -1 --format=%cd --date=iso-strict 2>/dev/null)
+VERSION=$(date +"%y.%m.%d.%H%M")
+echo "$VERSION" > .version
 
-# Формируем строку версии
-if [[ -n "$GIT_COMMIT_HASH" && -n "$GIT_COMMIT_DATE" ]]; then
-  echo "Mimi Navigator — $GIT_COMMIT_HASH — Senatov — $GIT_COMMIT_DATE" > "$VERSION_FILE"
+if $DEBUG; then
+  echo "📦 Wrote version to .version: $VERSION"
 else
-  echo "Mimi Navigator — Unknown version — Senatov — $(date -Iseconds)" > "$VERSION_FILE"
+  echo "✅ Updated version: $VERSION"
 fi

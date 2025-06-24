@@ -11,12 +11,7 @@ import SwiftyBeaver
 
 // MARK: -
 struct NavMnu1: View {
-    var panelSide: PanelSide
-
-    // MARK: -
-    init(panelSide: PanelSide) {
-        self.panelSide = panelSide
-    }
+    @EnvironmentObject var appState: AppState
 
     // MARK: -
     var body: some View {
