@@ -12,13 +12,14 @@ import SwiftUI
 
 // MARK: - Manages dual directory monitoring with periodic file refreshes.
 actor DualDirectoryScanner {
-    nonisolated let appState: AppState
+    let appState: AppState
     var fileLst = FileSingleton.shared
     private var leftTimer: DispatchSourceTimer?
     private var rightTimer: DispatchSourceTimer?
     private let timeOutRefresh: Int = 1200
 
 
+    // MARK: -
     init(appState: AppState) {
         self.appState = appState
     }
@@ -42,6 +43,8 @@ actor DualDirectoryScanner {
             appState.rightPath = pathStr
         }
     }
+
+    
     // MARK: -
     public func setLeftDirectory(pathStr: String) {
         log.debug("\(#function) pathStr: \(pathStr)")
@@ -49,6 +52,7 @@ actor DualDirectoryScanner {
             appState.leftPath = pathStr
         }
     }
+
 
     // MARK: - Helper method to setup timers
     private func setupTimer(for currSide: PanelSide) {
@@ -76,11 +80,11 @@ actor DualDirectoryScanner {
                 case .left:
                     let scanned = try await FileScanner.scan(url: URL(fileURLWithPath: appState.leftPath))
                     await updateScannedFiles(scanned, for: .left)
-                    await updateFileList(currSide: currSide, with: scanned)
+                    await updateFileList(currSide: .left, with: scanned)
                 case .right:
                     let scanned = try await FileScanner.scan(url: URL(fileURLWithPath: appState.rightPath))
                     await updateScannedFiles(scanned, for: .right)
-                    await updateFileList(currSide: currSide, with: scanned)
+                    await updateFileList(currSide: .right, with: scanned)
             }
         }
         catch {
@@ -104,7 +108,7 @@ actor DualDirectoryScanner {
 
     // MARK: -
     func resetRefreshTimer(for currSide: PanelSide) {
-        log.info(#function + " currSide: \(currSide)")
+        log.info("↪️ \(#function) [currSide: \(currSide)]")
         switch currSide {
             case .left:
                 leftTimer?.cancel()
@@ -121,14 +125,18 @@ actor DualDirectoryScanner {
     // MARK: - Updates the file list for the specified directory side
     @MainActor
     private func updateFileList(currSide: PanelSide, with files: [CustomFile]) async {
-        log.info(#function)
-        log.debug("Updating selected dir:\(appState.selectedDir) with \(files.count) files on \(String(describing: currSide)) side")
+        log.info("↪️ \(#function) [currSide: \(currSide)]")
+        guard let selectedEntity = appState.selectedDir.selectedFSEntity else {
+            log.warning("No selected FSEntity for \(currSide) side.")
+            return
+        }
+        log.debug("Updating selected dir: \(selectedEntity.pathStr) with \(files.count) files on \(currSide) side")
         switch currSide {
             case .left:
                 await fileLst.updateLeftFiles(files)
             case .right:
                 await fileLst.updateRightFiles(files)
         }
-        log.debug("Finished updating \(String(describing: currSide)) directory.")
+        log.debug("Finished updating \(currSide) directory.")
     }
 }
