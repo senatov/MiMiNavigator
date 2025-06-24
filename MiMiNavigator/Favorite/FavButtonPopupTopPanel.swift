@@ -2,17 +2,18 @@ import AppKit
 import SwiftUI
 import SwiftyBeaver
 
-// MARK: -
+    // MARK: -
 struct FavButtonPopupTopPanel: View {
     @State private var favTreeStruct: [CustomFile] = []
     @EnvironmentObject var appState: AppState
 
-    // MARK: -
+
+        // MARK: -
     public var body: some View {
         VStack(alignment: .leading, spacing: 4) { navigationControls }
     }
 
-    // MARK: -
+        // MARK: -
     private var navigationControls: some View {
         HStack(spacing: 6) {
             backButton
@@ -21,7 +22,7 @@ struct FavButtonPopupTopPanel: View {
         }
     }
 
-    // MARK: -
+        // MARK: -
     private var backButton: some View {
         log.info(#function)
         return Button(action: { log.info("Back: navigating to previous directory") }) {
@@ -30,7 +31,7 @@ struct FavButtonPopupTopPanel: View {
         .shadow(color: .blue.opacity(0.15), radius: 7.0, x: 1, y: 1).help("Back: navigating to previous directory")
     }
 
-    // MARK: -
+        // MARK: -
     private var forwardButton: some View {
         log.info(#function)
         return Button(action: { log.info("Forward: navigating to next directory") }) {
@@ -39,10 +40,9 @@ struct FavButtonPopupTopPanel: View {
         .shadow(color: .blue.opacity(0.15), radius: 7.0, x: 1, y: 1).disabled(true).help("Forward: navigating to next directory")
     }
 
-    // MARK: -
+        // MARK: -
     private var menuButton: some View {
         log.info(#function)
-        let scanner = DualDirectoryScanner(appState: appState)
         return Button(action: {
             log.info("Navigation between favorites")
             if favTreeStruct.isEmpty { Task { await fetchFavTree() } }
@@ -52,25 +52,25 @@ struct FavButtonPopupTopPanel: View {
         }
         .shadow(color: .blue.opacity(0.15), radius: 5.0, x: 1, y: 1)
         .buttonStyle(.plain)
-        .popover(isPresented: $appState.showFavTreePopup,  arrowEdge: .bottom) {
-            favoritePopover(scanner: scanner)
+        .popover(isPresented: $appState.showFavTreePopup, arrowEdge: .bottom) {
+            favoritePopover()
         }
         .help("Navigation between favorites")
     }
 
-    // MARK: -
-    private func favoritePopover(scanner: DualDirectoryScanner) -> some View {
+        // MARK: -
+    private func favoritePopover() -> some View {
         log.info(#function)
-        return FavTreeMnu(files: $favTreeStruct, selected: appState.selectedDir, scanner: scanner)
+        return FavTreeMnu(files: $favTreeStruct)
             .padding(6)
             .font(.custom("Helvetica Neue", size: 11).weight(.light))
             .foregroundColor(Color(#colorLiteral(red: 0.1294117719, green: 0.2156862766, blue: 0.06666667014, alpha: 1)))
     }
 
-    // MARK: -
+        // MARK: -
     @MainActor
     private func fetchFavTree() async {
-        //log.info(#function)
+            //log.info(#function)
         let favScanner = FavScanner()
         favTreeStruct = favScanner.scanOnlyFavorites()
         let files = await fetchFavNetVolumes(from: favScanner)
@@ -79,9 +79,9 @@ struct FavButtonPopupTopPanel: View {
         }
     }
 
-    // MARK: -
+        // MARK: -
     private func fetchFavNetVolumes(from scanner: FavScanner) async -> [CustomFile] {
-        //log.info(#function)
+            //log.info(#function)
         return await withCheckedContinuation { continuation in
             scanner.scanFavoritesAndNetworkVolumes { files in continuation.resume(returning: files) }
         }

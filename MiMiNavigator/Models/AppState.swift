@@ -22,15 +22,13 @@ final class AppState: ObservableObject {
     @Published var selectedRightFile: CustomFile?
     @Published var focusedSide: PanelSide = .left
     @Published var selectedDir: SelectedDir = SelectedDir()
-    // MARK: - Dependencies
-    let model: DirectoryModel = DirectoryModel()
     var scanner: DualDirectoryScanner!
 
 
-    // MARK: - Init
+    // MARK: -
     init() {
-        self.leftPath = model.leftDirectory.path
-        self.rightPath = model.rightDirectory.path
+        self.leftPath = NSTemporaryDirectory()
+        self.rightPath = NSHomeDirectory()
         self.scanner = DualDirectoryScanner(appState: self)
     }
 
