@@ -35,6 +35,17 @@ final class AppState: ObservableObject {
     }
 
 
+    // MARK: - AppState extension for displayedFiles
+    func displayedFiles(for side: PanelSide) -> [CustomFile] {
+        switch side {
+            case .left:
+                return displayedLeftFiles
+            case .right:
+                return displayedRightFiles
+        }
+    }
+
+
     // MARK: -
     func pathURL(for side: PanelSide) -> URL? {
         log.info(#function + " at path: \(side)")
@@ -75,7 +86,7 @@ final class AppState: ObservableObject {
 
     // MARK: -
     func selectedFile(for side: PanelSide) -> CustomFile? {
-        log.info(#function + " at path: \(side)")
+        log.info(#function + " at side: \(side)")
         switch side {
             case .left:
                 return selectedLeftFile
@@ -87,7 +98,7 @@ final class AppState: ObservableObject {
 
     // MARK: -
     func updatePath(_ path: String, on side: PanelSide) {
-        log.info(#function + " at path: \(side)")
+        log.info(#function + " at path: \(side)  at path: \(path)")
         switch side {
             case .left:
                 leftPath = path
@@ -110,6 +121,7 @@ final class AppState: ObservableObject {
 
 // MARK: -
 extension AppState {
+
     // MARK: -
     public var focusedSideValue: PanelSide {
         focusedSide
