@@ -2,7 +2,7 @@ import Compression
 import Foundation
 import SwiftyBeaver
 
-/// -
+// MARK: -
 final class LogMan {
     static let log = SwiftyBeaver.self
 
@@ -13,6 +13,7 @@ final class LogMan {
 
 
         // Customize log level icons
+        // MARK: -
         func getLevelIcon(for level: SwiftyBeaver.Level) -> String {
 
             switch level {

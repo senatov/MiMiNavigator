@@ -9,12 +9,13 @@
 import SwiftUI
 
 // MARK: - Reusable path control component with edit mode, integrated with AppState.
-struct EditablePathControlWrapper: View, CustomStringConvertible {
+struct EditablePathControlWrapper: View {
     @StateObject var appState = AppState()
-    let selectedSide: PanelSide
     @State private var editedPathStr: String = ""
     @State private var isEditing = false
     @FocusState private var isTextFieldFocused: Bool
+    let selectedSide: PanelSide
+
 
     // MARK: - Body
     var body: some View {
@@ -86,6 +87,8 @@ struct EditablePathControlWrapper: View, CustomStringConvertible {
         .transition(.opacity)
     }
 
+
+
     // MARK: - Display View
     private var displayView: some View {
         EditablePathControlView()
@@ -105,10 +108,13 @@ struct EditablePathControlWrapper: View, CustomStringConvertible {
             .transition(.opacity.combined(with: .scale))
     }
 
+
     // MARK: - Helpers
     private var currentPath: String {
         selectedSide == .left ? appState.leftPath : appState.rightPath
     }
+
+
 
     // MARK: -
     private func applyPathUpdate() {
@@ -128,6 +134,4 @@ struct EditablePathControlWrapper: View, CustomStringConvertible {
         }
     }
 
-    // MARK: - Conformance
-    nonisolated var description: String { "EditablePathControlWrapper" }
 }

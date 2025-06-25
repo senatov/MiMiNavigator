@@ -11,7 +11,6 @@ import SwiftyBeaver
 
 // MARK: -
 struct NavMnu2: View {
-
     @EnvironmentObject var appState: AppState
 
     // MARK: --
@@ -26,12 +25,14 @@ struct NavMnu2: View {
         .menuStyle(.borderlessButton)
     }
 
+
     // MARK: - Private handlers
     private func handleProperties() {
         log.info(#function)
         let selected = appState.getSelectedDir()
         log.info("Selected dir path: \(selected)")
     }
+
 
     // MARK: -
     private func handleOpenInFinder() {
