@@ -1,18 +1,18 @@
-    //
-    //  ConsoleCurrPath.swift
-    //  MiMiNavigator
-    //
-    //  Created by Iakov Senatov on 28.10.24.
-    //  Copyright © 2024 Senatov. All rights reserved.
-    //
-    // Description:
+//
+//  ConsoleCurrPath.swift
+//  MiMiNavigator
+//
+//  Created by Iakov Senatov on 28.10.24.
+//  Copyright © 2024 Senatov. All rights reserved.
+//
+// Description:
 
 import SwiftUI
 import SwiftyBeaver
 
-    // MARK: -
-struct ConsoleCurrPath: View  {
-    
+// MARK: -
+struct ConsoleCurrPath: View {
+
     var body: some View {
         VStack {
         }
@@ -21,15 +21,14 @@ struct ConsoleCurrPath: View  {
     }
 }
 
-    // MARK: -
+// MARK: -
 func openConsoleInDirectory(_ directoryStr: String) {
     log.info(#function)
     let launchTask = Process()
     launchTask.launchPath = "/usr/bin/open"
     launchTask.arguments = ["/System/Applications/Utilities/Terminal.app"]
     launchTask.launch()
-    
-        // Step 2: Set position and size of Terminal window
+    // Step 2: Set position and size of Terminal window
     DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {  // Small delay to ensure Terminal is open
         let script = """
             tell application "Terminal"

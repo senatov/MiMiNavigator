@@ -44,7 +44,7 @@ actor DualDirectoryScanner {
         }
     }
 
-    
+
     // MARK: -
     public func setLeftDirectory(pathStr: String) {
         log.debug("\(#function) pathStr: \(pathStr)")
@@ -71,6 +71,7 @@ actor DualDirectoryScanner {
             case .right: rightTimer = timer
         }
     }
+
 
     // MARK: - Refreshes the file list for a specific directory side
     public func refreshFiles(currSide: PanelSide) async {
@@ -106,6 +107,7 @@ actor DualDirectoryScanner {
         }
     }
 
+
     // MARK: -
     func resetRefreshTimer(for currSide: PanelSide) {
         log.info("↪️ \(#function) [currSide: \(currSide)]")
@@ -122,8 +124,8 @@ actor DualDirectoryScanner {
     }
 
 
-    // MARK: - Updates the file list for the specified directory side
     @MainActor
+    // MARK: - Updates the file list for the specified directory side
     private func updateFileList(currSide: PanelSide, with files: [CustomFile]) async {
         log.info("↪️ \(#function) [currSide: \(currSide)]")
         guard let selectedEntity = appState.selectedDir.selectedFSEntity else {

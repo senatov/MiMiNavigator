@@ -1,10 +1,10 @@
-    //
-    //  FileScanner.swift
-    //  MiMiNavigator
-    //
-    //  Created by Iakov Senatov on 26.04.2025.
-    //  Copyright © 2025 Senatov. All rights reserved.
-    //
+//
+//  FileScanner.swift
+//  MiMiNavigator
+//
+//  Created by Iakov Senatov on 26.04.2025.
+//  Copyright © 2025 Senatov. All rights reserved.
+//
 
 import AppKit
 import SwiftUI
@@ -15,9 +15,9 @@ struct TotalCommanderResizableView: View {
     @State private var isDividerTooltipVisible: Bool = true
     @State private var tooltipPosition: CGPoint = .zero
     @State private var tooltipText: String = ""
-    
-    
-        // MARK: - View Body
+
+
+    // MARK: - View Body
     var body: some View {
         GeometryReader { geometry in
             ZStack {
@@ -44,9 +44,9 @@ struct TotalCommanderResizableView: View {
             }
         }
     }
-    
-    
-        // MARK: - Fetch Files
+
+
+    // MARK: - Fetch Files
     @MainActor
     private func fetchFiles(for side: PanelSide) async {
         log.info("↪️ \(#function) [side: \(side)]")
@@ -57,9 +57,9 @@ struct TotalCommanderResizableView: View {
                 appState.displayedRightFiles = await appState.scanner.fileLst.getRightFiles()
         }
     }
-    
-    
-        // MARK: - Panels
+
+
+    // MARK: - Panels
     private func buildMainPanels(geometry: GeometryProxy) -> some View {
         log.info(#function)
         return HStack(spacing: 0) {
@@ -70,9 +70,9 @@ struct TotalCommanderResizableView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.white)
     }
-    
-    
-        // MARK: -
+
+
+    // MARK: -
     private func buildPanel(for side: PanelSide, geometry: GeometryProxy) -> some View {
         log.info("↪️ \(#function) [side: \(side)]")
         let currentPath = appState.pathURL(for: side)
@@ -94,7 +94,7 @@ struct TotalCommanderResizableView: View {
                         FileContextMenu()
                     }
             }
-            
+
             .listStyle(PlainListStyle())
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 6)
@@ -102,9 +102,9 @@ struct TotalCommanderResizableView: View {
         }
         .frame(width: side == .left ? (leftPanelWidth > 0 ? leftPanelWidth : geometry.size.width / 2) : nil)
     }
-    
-    
-        // MARK: - Divider
+
+
+    // MARK: - Divider
     private func buildDivider(geometry: GeometryProxy) -> some View {
         log.info(#function)
         return ZStack {
@@ -139,9 +139,9 @@ struct TotalCommanderResizableView: View {
             }
         }
     }
-    
-    
-        // MARK: - Toolbar
+
+
+    // MARK: - Toolbar
     private func buildDownToolbar() -> some View {
         log.info(#function)
         return HStack(spacing: 18) {
@@ -165,12 +165,12 @@ struct TotalCommanderResizableView: View {
             DownToolbarButtonView(title: "F5 Copy", systemImage: "doc.on.doc") {
                 let side = appState.focusedSideValue
                 if let file = appState.selectedFile(for: side),
-                   let targetURL = appState.pathURL(for: side.opposite)
+                    let targetURL = appState.pathURL(for: side.opposite)
                 {
-                FActions.copy(file, to: targetURL)
-                Task {
-                    await appState.refreshFiles()
-                }
+                    FActions.copy(file, to: targetURL)
+                    Task {
+                        await appState.refreshFiles()
+                    }
                 }
             }
             DownToolbarButtonView(title: "F6 Move", systemImage: "square.and.arrow.down.on.square") {
@@ -208,15 +208,15 @@ struct TotalCommanderResizableView: View {
         .padding()
         .cornerRadius(7)
     }
-    
-    
-        // MARK: -
+
+
+    // MARK: -
     private func handleDividerDrag(value: DragGesture.Value, geometry: GeometryProxy) {
         log.info(#function)
         let newWidth = leftPanelWidth + value.translation.width
         let minPanelWidth: CGFloat = 100
         let maxPanelWidth = geometry.size.width - 100
-        
+
         if newWidth > minPanelWidth && newWidth < maxPanelWidth {
             leftPanelWidth = newWidth
             let (tooltipText, tooltipPosition) = ToolTipMod.calculateTooltip(
@@ -229,26 +229,26 @@ struct TotalCommanderResizableView: View {
             self.isDividerTooltipVisible = true
         }
     }
-    
-    
-        // MARK: -
+
+
+    // MARK: -
     private func handleDoubleClickDivider(geometry: GeometryProxy) {
         log.info(#function)
         leftPanelWidth = geometry.size.width / 2
         UserDefaults.standard.set(leftPanelWidth, forKey: "leftPanelWidth")
     }
-    
-    
-        // MARK: -
+
+
+    // MARK: -
     private func initializePanelWidth(geometry: GeometryProxy) {
         log.info(#function)
         leftPanelWidth =
-        UserDefaults.standard.object(forKey: "leftPanelWidth") as? CGFloat
-        ?? geometry.size.width / 2
+            UserDefaults.standard.object(forKey: "leftPanelWidth") as? CGFloat
+            ?? geometry.size.width / 2
     }
-    
-    
-        // MARK: -
+
+
+    // MARK: -
     private func addKeyPressMonitor() {
         log.info(#function)
         NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
@@ -259,9 +259,9 @@ struct TotalCommanderResizableView: View {
             return event
         }
     }
-    
-    
-        // MARK: -
+
+
+    // MARK: -
     private func exitApp() {
         log.info(#function)
         NSApplication.shared.terminate(nil)

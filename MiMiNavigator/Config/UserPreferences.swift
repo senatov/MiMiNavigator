@@ -18,7 +18,6 @@ struct UserPreferences {
     private let mimiWindowPosXKey = "windowPosXMiMi0"
     private let mimiWindowPosYKey = "windowPosYMiMi0"
 
-    private init() {}
 
     // MARK: -
     func saveWindowSize(width: CGFloat, height: CGFloat) {
@@ -51,6 +50,8 @@ struct UserPreferences {
         log.info("Restoring window size - Width: \(width), Height: \(height)")
         return CGSize(width: width, height: height)
     }
+
+    
     // MARK: -
     func restoreWindowPosition(screenSize: CGSize) -> CGPoint {
         log.info(#function)
@@ -75,6 +76,8 @@ struct UserPreferences {
         log.info("Restoring left panel width - Width: \(width)")
         return width
     }
+
+
     // MARK: -
     func saveMenuState(isOpen: Bool) {
         log.info(#function)

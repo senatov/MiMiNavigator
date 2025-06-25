@@ -11,7 +11,7 @@ import SwiftyBeaver
 
 let log = SwiftyBeaver.self
 
-/// -
+// MARK: -
 @main
 struct MiMiNavigatorApp: App {
     @StateObject private var appState = AppState()
@@ -22,17 +22,14 @@ struct MiMiNavigatorApp: App {
         if let versionPath, let versionString = try? String(contentsOfFile: versionPath, encoding: .utf8) {
             content = versionString.trimmingCharacters(in: .whitespacesAndNewlines)
             log.info("Loaded version from .version file: \(content)")
-        } else {
+        }
+        else {
             content = "Mimi Navigator — Version unavailable"
             log.error("Failed to load .version file.")
         }
         return Text(content)
     }()
 
-    // MARK: -
-    init() {
-        LogMan.initializeLogging()
-    }
 
     // MARK: -
     var body: some Scene {
@@ -79,7 +76,8 @@ struct MiMiNavigatorApp: App {
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
         do {
             return try ModelContainer(for: schema, configurations: [modelConfiguration])
-        } catch {
+        }
+        catch {
             fatalError("Could not create ModelContainer: \(error)")
         }
     }()
