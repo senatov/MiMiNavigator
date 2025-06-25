@@ -609,7 +609,7 @@
 			repositoryURL = "https://github.com/apple/swift-system.git";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 1.4.2;
+				minimumVersion = 1.5.0;
 			};
 		};
 		97D128732DB62CB400274684 /* XCRemoteSwiftPackageReference "FileProvider" */ = {

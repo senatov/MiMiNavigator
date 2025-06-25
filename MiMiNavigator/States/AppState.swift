@@ -70,7 +70,7 @@ final class AppState: ObservableObject {
     func refreshLeftFiles() async {
         log.info(#function + " at path: \(leftPath)")
         displayedLeftFiles = await scanner.fileLst.getLeftFiles()
-        print(" - Found \(displayedLeftFiles.count) left files.")
+        log.debug(" - Found \(displayedLeftFiles.count) left files.")
     }
 
 
@@ -78,7 +78,7 @@ final class AppState: ObservableObject {
     func refreshRightFiles() async {
         log.info(#function + " at path: \(rightPath)")
         displayedRightFiles = await scanner.fileLst.getRightFiles()
-        print(" - Found \(displayedRightFiles.count) right files.")
+        log.debug(" - Found \(displayedRightFiles.count) right files.")
     }
 
 
