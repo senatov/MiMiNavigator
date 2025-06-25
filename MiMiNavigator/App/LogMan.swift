@@ -1,4 +1,12 @@
-import Compression
+//
+//  LogMan.swift
+//  MiMiNavigator
+//
+//  Created by Iakov Senatov on 24.06.2025.
+//  Copyright © 2025 Senatov. All rights reserved.
+//
+
+import AppKit
 import Foundation
 import SwiftyBeaver
 
@@ -9,13 +17,10 @@ final class LogMan {
     // MARK: -
     static func initializeLogging() {
         let console = ConsoleDestination()
-        console.format = "$DHH:mm:ss$d ➤ $L ➤ $N.$F:$l ➤ $M"
+        console.format = "$DHH:mm:ss$d $L $N.$F:$l $M"
 
-
-        // Customize log level icons
-        // MARK: -
+        // Уровни с иконками
         func getLevelIcon(for level: SwiftyBeaver.Level) -> String {
-
             switch level {
                 case .verbose: return "🔮"
                 case .debug: return "☘️"
@@ -26,33 +31,33 @@ final class LogMan {
                 case .fault: return "👻"
             }
         }
+
         console.levelString.verbose = getLevelIcon(for: .verbose) + " VERBOSE"
         console.levelString.debug = getLevelIcon(for: .debug) + " DEBUG"
         console.levelString.info = getLevelIcon(for: .info) + " INFO"
         console.levelString.warning = getLevelIcon(for: .warning) + " WARNING"
         console.levelString.error = getLevelIcon(for: .error) + " ERROR"
-        console.levelString.critical = getLevelIcon(for: .error) + " CRITICAL"
-        console.levelString.fault = getLevelIcon(for: .error) + " FAULT"
+        console.levelString.critical = getLevelIcon(for: .critical) + " CRITICAL"
+        console.levelString.fault = getLevelIcon(for: .fault) + " FAULT"
+
         log.addDestination(console)
-        setupFileLogging()
+        setupLogging()
     }
 
     // MARK: -
-    private static func setupFileLogging() {
-        let file = FileDestination()
-        let logDirectory = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask).first?
-            .appendingPathComponent("Logs/MiMiNavigator")
-        if let logDirectory = logDirectory {
-            do {
-                try FileManager.default.createDirectory(at: logDirectory, withIntermediateDirectories: true)
-                let logFileName: String = "MiMiNavigator_\(Date().timeIntervalSince1970).log"
-                file.logFileURL = logDirectory.appendingPathComponent(logFileName)
-                log.addDestination(file)
-            }
-            catch {
-                log.error("Failed to setup file logging: \(error)")
-            }
-        }
-    }
+    private static func setupLogging() {
+        let containerURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+        let logsDir = containerURL.appendingPathComponent("Logs", isDirectory: true)
 
+        // Создать Logs/ при необходимости
+        try? FileManager.default.createDirectory(at: logsDir, withIntermediateDirectories: true)
+
+        let logFile = logsDir.appendingPathComponent("MiMiNavigator.log")
+
+        let file = FileDestination()
+        file.logFileURL = logFile
+        log.addDestination(file)
+
+        log.info("Logging to: \(logFile.path)")
+    }
 }

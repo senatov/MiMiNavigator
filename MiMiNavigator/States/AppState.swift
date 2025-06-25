@@ -8,6 +8,7 @@
 
 import Combine
 import Foundation
+import AppKit
 
 @MainActor
 final class AppState: ObservableObject {
@@ -64,6 +65,15 @@ final class AppState: ObservableObject {
         log.info(#function)
         await refreshLeftFiles()
         await refreshRightFiles()
+    }
+
+    // MARK: -
+    func revealLogFileInFinder() {
+        log.info(#function)
+        // Path to the log file (update as needed)
+        let logDir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+            .appendingPathComponent("Logs/MiMiNavigator.log")
+        NSWorkspace.shared.activateFileViewerSelecting([logDir])
     }
 
 

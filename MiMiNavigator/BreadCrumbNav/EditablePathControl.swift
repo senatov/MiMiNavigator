@@ -1,9 +1,17 @@
+//
+//  EditablePathControl.swift
+//  MiMiNavigator
+//
+//  Created by Iakov Senatov on 24.06.2025.
+//  Copyright © 2025 Senatov. All rights reserved.
+//
+
 import AppKit
 import SwiftUI
 import SwiftyBeaver
 
 /// A view displaying a breadcrumb-style editable path bar with panel navigation menus.
-struct EditablePathControlView: View {
+struct EditablePathControl: View {
     @EnvironmentObject var appState: AppState
 
     // MARK: -
@@ -23,7 +31,7 @@ struct EditablePathControlView: View {
     }
 
 
-    // MARK: - Builds an array of breadcrumb items based on the currently selected file entity.
+    // MARK: - Builds an array of breadcrumbtems based on the currently selected file entity.
     private func getPathItems() -> [EditablePathItem] {
         log.info(#function)
         guard let url = getPathURL() else {
@@ -34,6 +42,7 @@ struct EditablePathControlView: View {
         log.info("Breadcrumb items count: \(items.count)")
         return items
     }
+
 
     // MARK: - Converts a URL into breadcrumb items with titles and icons.
     private func createEditablePathItems(from url: URL) -> [EditablePathItem] {

@@ -16,6 +16,14 @@ let log = SwiftyBeaver.self
 struct MiMiNavigatorApp: App {
     @StateObject private var appState = AppState()
 
+    // MARK: -
+    init() {
+        LogMan.initializeLogging()
+        log.info("---- Logger initialized ------")
+    }
+
+
+    // MARK: -
     let devMark: Text = {
         let versionPath = Bundle.main.path(forResource: ".version", ofType: nil)
         let content: String
@@ -50,6 +58,18 @@ struct MiMiNavigatorApp: App {
                             .padding(.vertical, 6)
                             .background(Color.white)
 
+                    }
+                    .clipShape(Circle())
+                    .offset(x: 3, y: 6)
+                }
+                ToolbarItem(placement: .automatic) {
+                    Button(action: {
+                        appState.revealLogFileInFinder()
+                    }) {
+                        Image(systemName: "doc.text.magnifyingglass")
+                            .padding(.horizontal, 2)
+                            .padding(.vertical, 6)
+                            .background(Color.white)
                     }
                     .clipShape(Circle())
                     .offset(x: 3, y: 6)
