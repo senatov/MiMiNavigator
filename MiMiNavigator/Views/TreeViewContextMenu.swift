@@ -12,6 +12,7 @@ import SwiftyBeaver
 struct TreeViewContextMenu: View {
     let file: CustomFile
 
+    // MARK: -
     var body: some View {
         Group {
             Button(action: {

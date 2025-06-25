@@ -91,7 +91,7 @@ struct EditablePathControlWrapper: View {
 
     // MARK: - Display View
     private var displayView: some View {
-        EditablePathControlView()
+        EditablePathControl()
             .environmentObject(appState)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(Color.white)
