@@ -23,12 +23,13 @@ final class AppState: ObservableObject {
     @Published var focusedSide: PanelSide = .left
     @Published var selectedDir: SelectedDir = SelectedDir()
     var scanner: DualDirectoryScanner!
+    let fileManager = FileManager.default
 
 
     // MARK: -
     init() {
-        self.leftPath = NSTemporaryDirectory()
-        self.rightPath = NSHomeDirectory()
+        self.leftPath = fileManager.urls(for: .downloadsDirectory, in: .userDomainMask).first?.path ?? ""
+        self.rightPath = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first?.path ?? ""
         self.scanner = DualDirectoryScanner(appState: self)
     }
 
