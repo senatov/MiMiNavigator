@@ -17,6 +17,7 @@ public struct CustomFile: Identifiable, Equatable, Hashable, Codable, Sendable  
     public let pathStr: String
     public let urlValue: URL
     public let isDirectory: Bool
+    public let isSymbolicDirectory: Bool 
     public var children: [CustomFile]?
 
     // MARK: - Initializes full metadata for the file system entity
@@ -26,6 +27,7 @@ public struct CustomFile: Identifiable, Equatable, Hashable, Codable, Sendable  
         self.urlValue = URL(fileURLWithPath: path).absoluteURL
         self.pathStr = path
         self.isDirectory = CustomFile.isThatDirectory(atPath: path)
+        self.isSymbolicDirectory = CustomFile.isThatSymbolic(atPath: path)
         self.nameStr = name?.isEmpty == false ? name! : urlValue.lastPathComponent
         self.children = isDirectory ? children ?? [] : nil
     }
@@ -46,6 +48,11 @@ public struct CustomFile: Identifiable, Equatable, Hashable, Codable, Sendable  
         return (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
     }
 
+    // MARK: - Directory Check
+    static func isThatSymbolic(atPath path: String) -> Bool {
+        let url = URL(fileURLWithPath: path)
+        return (try? url.resourceValues(forKeys: [.isSymbolicLinkKey]).isSymbolicLink) ?? false
+    }
 }
 
 
@@ -57,8 +64,7 @@ extension CustomFile {
 
     var modifiedDateFormatted: String {
         let formatter = DateFormatter()
-        formatter.dateStyle = .medium
-        formatter.timeStyle = .short
+        formatter.dateFormat = "dd.MM.yyyy HH:mm"
         return formatter.string(from: modifiedDate)
     }
     
@@ -67,6 +73,12 @@ extension CustomFile {
     }
 
     var formattedSize: String {
-        ByteCountFormatter.string(fromByteCount: sizeInBytes, countStyle: .file)
+        if isDirectory && isSymbolicDirectory {
+            return "LINK → DIR."
+        } else if isDirectory {
+            return "DIR."
+        } else {
+            return ByteCountFormatter.string(fromByteCount: sizeInBytes, countStyle: .file)
+        }
     }
 }
