@@ -47,3 +47,26 @@ public struct CustomFile: Identifiable, Equatable, Hashable, Codable, Sendable  
     }
 
 }
+
+
+extension CustomFile {
+
+    var modifiedDate: Date {
+        (try? urlValue.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? .distantPast
+    }
+
+    var modifiedDateFormatted: String {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .short
+        return formatter.string(from: modifiedDate)
+    }
+    
+    var sizeInBytes: Int64 {
+        (try? urlValue.resourceValues(forKeys: [.fileSizeKey]).fileSize).map { Int64($0) } ?? 0
+    }
+
+    var formattedSize: String {
+        ByteCountFormatter.string(fromByteCount: sizeInBytes, countStyle: .file)
+    }
+}

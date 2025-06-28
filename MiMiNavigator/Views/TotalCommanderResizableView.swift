@@ -88,15 +88,28 @@ struct TotalCommanderResizableView: View {
                         await fetchFiles(for: side)
                     }
                 }
-            List(appState.displayedFiles(for: side), id: \.id) { file in
-                Text(file.nameStr)
-                    .contextMenu {
-                        FileContextMenu()
+            let files = appState.displayedFiles(for: side)
+            Table(files, selection: .constant(nil)) {
+                TableColumn("Name") { file in
+                    HStack {
+                        Image(systemName: file.isDirectory ? "folder.fill" : "doc.text")
+                            .foregroundColor(file.isDirectory ? .blue : .gray)
+                        Text(file.nameStr)
+                            .foregroundColor(file.isDirectory ? .cyan : .primary)
                     }
+                }
+                TableColumn("Size") { file in
+                    Text(file.formattedSize)
+                        .foregroundColor(.secondary)
+                        .monospacedDigit()
+                }
+                TableColumn("Modified") { file in
+                    Text(file.modifiedDateFormatted)
+                        .font(.footnote)
+                        .foregroundColor(.gray)
+                }
             }
-
-            .listStyle(PlainListStyle())
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
             .padding(.horizontal, 6)
             .border(Color.secondary)
         }
