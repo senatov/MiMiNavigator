@@ -6,7 +6,7 @@
 
 ##
 
-[![Swift Version](https://img.shields.io/badge/Swift-6.4-blue.svg)](https://swift.org)
+[![Swift Version](https://img.shields.io/badge/Swift-6.2-blue.svg)](https://swift.org)
 [![Xcode Version](https://img.shields.io/badge/Xcode-26-blue.svg)](https://developer.apple.com/xcode/)
 [![License](https://img.shields.io/badge/License-MIT-lightgrey.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-macOS-blue.svg)](https://www.apple.com/macos/)
