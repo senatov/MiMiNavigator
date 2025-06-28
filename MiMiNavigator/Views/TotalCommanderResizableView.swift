@@ -74,46 +74,8 @@ struct TotalCommanderResizableView: View {
 
     // MARK: -
     private func buildPanel(for side: PanelSide, geometry: GeometryProxy) -> some View {
-        log.info("↪️ \(#function) [side: \(side)]")
-        let currentPath = appState.pathURL(for: side)
-        return VStack {
-            EditablePathControlWrapper(appState: appState, selectedSide: side)
-                .onChange(of: currentPath) {
-                    guard let url = currentPath else {
-                        log.warning("Tried to set nil path for side \(side)")
-                        return
-                    }
-                    Task {
-                        appState.updatePath(url.absoluteString, on: side)
-                        await fetchFiles(for: side)
-                    }
-                }
-            let files = appState.displayedFiles(for: side)
-            Table(files, selection: .constant(nil)) {
-                TableColumn("Name") { file in
-                    HStack {
-                        Image(systemName: file.isDirectory ? "folder.fill" : "doc.text")
-                            .foregroundColor(file.isDirectory ? .blue : .gray)
-                        Text(file.nameStr)
-                            .foregroundColor(file.isDirectory ? .cyan : .primary)
-                    }
-                }
-                TableColumn("Size") { file in
-                    Text(file.formattedSize)
-                        .foregroundColor(.secondary)
-                        .monospacedDigit()
-                }
-                TableColumn("Modified") { file in
-                    Text(file.modifiedDateFormatted)
-                        .font(.footnote)
-                        .foregroundColor(.gray)
-                }
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .padding(.horizontal, 6)
-            .border(Color.secondary)
-        }
-        .frame(width: side == .left ? (leftPanelWidth > 0 ? leftPanelWidth : geometry.size.width / 2) : nil)
+        log.debug(#function + " [side: \(side)]")
+        return FilePanelView(side: side, geometry: geometry, leftPanelWidth: $leftPanelWidth, fetchFiles: fetchFiles)
     }
 
 
