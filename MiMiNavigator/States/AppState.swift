@@ -6,9 +6,9 @@
 //  Copyright © 2025 Senatov. All rights reserved.
 //
 
+import AppKit
 import Combine
 import Foundation
-import AppKit
 
 @MainActor
 final class AppState: ObservableObject {
@@ -37,6 +37,7 @@ final class AppState: ObservableObject {
 
     // MARK: - AppState extension for displayedFiles
     func displayedFiles(for side: PanelSide) -> [CustomFile] {
+        log.info(#function + " at side: \(side)")
         switch side {
             case .left:
                 return displayedLeftFiles
@@ -123,6 +124,7 @@ final class AppState: ObservableObject {
 
     // MARK: -
     public func getSelectedDir() -> SelectedDir {
+        log.info(#function + " at path: \(selectedDir.selectedFSEntity?.nameStr ?? "nil")")
         return selectedDir
     }
 }
