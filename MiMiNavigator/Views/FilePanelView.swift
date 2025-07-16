@@ -63,6 +63,7 @@ struct FilePanelView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .padding(.horizontal, 6)
+            .border(Color.secondary)
         }
         .frame(width: appState.focusedSideValue == .left ? (leftPanelWidth > 0 ? leftPanelWidth : geometry.size.width / 2) : nil)
     }
