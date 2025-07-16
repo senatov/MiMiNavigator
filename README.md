@@ -1,4 +1,4 @@
-![MiMiNavigator Logo](MiMiNavigator/Assets.xcassets/AppIcon.appiconset/128.png "MiMi Logo")
+![MiMiNavigator Logo](MiMiNavigator/Assets.xcassets/AppIcon.appiconset/128.png "MiMi Logo")
 
 
 # 📁 MiMiNavigator - MacOS File manager with two panels
