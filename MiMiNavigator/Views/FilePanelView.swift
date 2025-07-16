@@ -10,6 +10,7 @@
 import AppKit
 import SwiftUI
 
+// MARK: -
 struct FilePanelView: View {
     @EnvironmentObject var appState: AppState
     var side: PanelSide
@@ -39,7 +40,7 @@ struct FilePanelView: View {
                             .resizable()
                             .frame(width: 16, height: 16)
                         Text(file.nameStr)
-                            .foregroundColor(file.isDirectory ? .cyan : .primary)
+                            .foregroundColor(file.isDirectory ? Color(#colorLiteral(red: 0.2196078449, green: 0.007843137719, blue: 0.8549019694, alpha: 1)) : Color(#colorLiteral(red: 0.004859850742, green: 0.09608627111, blue: 0.5749928951, alpha: 1)))
                     }
                 }
                 TableColumn("Size") { file in
@@ -61,6 +62,7 @@ struct FilePanelView: View {
     }
 }
 
+// MARK: -
 private extension FilePanelView {
     var sortedFiles: [CustomFile] {
         let files = appState.displayedFiles(for: side)
