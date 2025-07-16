@@ -50,7 +50,7 @@ struct TotalCommanderResizableView: View {
                 log.info("Window size changed: \(newSize.width)x\(newSize.height)")
                 // пересчитать ширину левой панели, если нужно
                 if leftPanelWidth > 0 {
-                    let maxWidth = newSize.width - 100
+                    let maxWidth = newSize.width - 50
                     if leftPanelWidth > maxWidth {
                         leftPanelWidth = maxWidth
                     }
