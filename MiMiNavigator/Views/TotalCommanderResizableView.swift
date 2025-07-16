@@ -119,69 +119,73 @@ struct TotalCommanderResizableView: View {
     // MARK: - Toolbar
     private func buildDownToolbar() -> some View {
         log.info(#function)
-        return HStack(spacing: 18) {
-            DownToolbarButtonView(title: "F3 View", systemImage: "eye.circle") {
-                log.debug("View button tapped")
-                if let file = appState.selectedLeftFile {
-                    FActions.view(file)
-                }
-                else {
-                    log.debug("No file selected for View")
-                }
-            }
-            DownToolbarButtonView(title: "F4 Edit", systemImage: "pencil") {
-                if let file = appState.selectedLeftFile {
-                    FActions.edit(file)
-                }
-                else {
-                    log.debug("No file selected for Edit")
-                }
-            }
-            DownToolbarButtonView(title: "F5 Copy", systemImage: "doc.on.doc") {
-                let side = appState.focusedSideValue
-                if let file = appState.selectedFile(for: side),
-                    let targetURL = appState.pathURL(for: side.opposite)
-                {
-                    FActions.copy(file, to: targetURL)
-                    Task {
-                        await appState.refreshFiles()
+        return VStack(spacing: 0) {
+            HStack(spacing: 18) {
+                DownToolbarButtonView(title: "F3 View", systemImage: "eye.circle") {
+                    log.debug("View button tapped")
+                    if let file = appState.selectedLeftFile {
+                        FActions.view(file)
+                    }
+                    else {
+                        log.debug("No file selected for View")
                     }
                 }
-            }
-            DownToolbarButtonView(title: "F6 Move", systemImage: "square.and.arrow.down.on.square") {
-                log.debug("Move button tapped")
-            }
-            DownToolbarButtonView(title: "F7 NewFolder", systemImage: "folder.badge.plus") {
-                log.debug("NewFolder button tapped")
-            }
-            DownToolbarButtonView(title: "F8 Delete", systemImage: "minus.rectangle") {
-                log.debug("Delete button tapped")
-                if let file = appState.selectedLeftFile {
-                    FActions.deleteWithConfirmation(file) {
+                DownToolbarButtonView(title: "F4 Edit", systemImage: "pencil") {
+                    if let file = appState.selectedLeftFile {
+                        FActions.edit(file)
+                    }
+                    else {
+                        log.debug("No file selected for Edit")
+                    }
+                }
+                DownToolbarButtonView(title: "F5 Copy", systemImage: "doc.on.doc") {
+                    let side = appState.focusedSideValue
+                    if let file = appState.selectedFile(for: side),
+                        let targetURL = appState.pathURL(for: side.opposite)
+                    {
+                        FActions.copy(file, to: targetURL)
                         Task {
-                            await fetchFiles(for: .left)
-                            await fetchFiles(for: .right)
+                            await appState.refreshFiles()
                         }
                     }
                 }
-                else {
-                    log.debug("No file selected for Delete")
+                DownToolbarButtonView(title: "F6 Move", systemImage: "square.and.arrow.down.on.square") {
+                    log.debug("Move button tapped")
+                }
+                DownToolbarButtonView(title: "F7 NewFolder", systemImage: "folder.badge.plus") {
+                    log.debug("NewFolder button tapped")
+                }
+                DownToolbarButtonView(title: "F8 Delete", systemImage: "minus.rectangle") {
+                    log.debug("Delete button tapped")
+                    if let file = appState.selectedLeftFile {
+                        FActions.deleteWithConfirmation(file) {
+                            Task {
+                                await fetchFiles(for: .left)
+                                await fetchFiles(for: .right)
+                            }
+                        }
+                    }
+                    else {
+                        log.debug("No file selected for Delete")
+                    }
+                }
+                DownToolbarButtonView(title: "Settings", systemImage: "gearshape") {
+                    log.debug("Settings button tapped")
+                }
+                DownToolbarButtonView(title: "Console", systemImage: "terminal") {
+                    log.debug("Console button tapped")
+                    openConsoleInDirectory("~")
+                }
+                DownToolbarButtonView(title: "F4 Exit", systemImage: "power") {
+                    log.debug("Exit button tapped")
+                    exitApp()
                 }
             }
-            DownToolbarButtonView(title: "Settings", systemImage: "gearshape") {
-                log.debug("Settings button tapped")
-            }
-            DownToolbarButtonView(title: "Console", systemImage: "terminal") {
-                log.debug("Console button tapped")
-                openConsoleInDirectory("~")
-            }
-            DownToolbarButtonView(title: "F4 Exit", systemImage: "power") {
-                log.debug("Exit button tapped")
-                exitApp()
-            }
+            .padding(.horizontal, 16)
+            .padding(.top, 16)
+            .cornerRadius(7)
         }
-        .padding()
-        .cornerRadius(7)
+        .frame(maxWidth: .infinity, alignment: .bottom)
     }
 
 
