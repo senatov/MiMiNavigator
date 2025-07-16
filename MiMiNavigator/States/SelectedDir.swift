@@ -20,6 +20,7 @@ public class SelectedDir: ObservableObject {
         self.selectedFSEntity = CustomFile(path: initialPath)
         self.side = side
     }
+    
 
     // MARK: -
     public init(side: PanelSide = .left) {
@@ -29,6 +30,7 @@ public class SelectedDir: ObservableObject {
             selectedFSEntity = CustomFile(path: "/tmp")
         }
     }
+    
 
     // MARK: - Initializes from an existing SelectedDir instance
     public init(selectedDir: SelectedDir = SelectedDir(initialPath: "/Users/senat"), side: PanelSide = .left) {
