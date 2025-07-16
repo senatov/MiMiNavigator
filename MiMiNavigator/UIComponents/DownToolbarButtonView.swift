@@ -12,6 +12,7 @@ struct DownToolbarButtonView: View {
     let systemImage: String
     let action: () -> Void
 
+    @State private var isHovered = false
     @State private var isPressed = false
 
     var body: some View {
@@ -59,6 +60,7 @@ struct DownToolbarButtonView: View {
     private func handleHover(_ hovering: Bool) {
         log.info("Hover on '\(title)': \(hovering ? "ENTER" : "EXIT")")
         withAnimation(.easeInOut(duration: 0.4)) {
+            isHovered = hovering
         }
     }
 }

@@ -15,7 +15,7 @@ struct TotalCommanderResizableView: View {
     @State private var isDividerTooltipVisible: Bool = true
     @State private var tooltipPosition: CGPoint = .zero
     @State private var tooltipText: String = ""
-
+    var currSide: PanelSide = .left
 
     // MARK: - View Body
     var body: some View {
@@ -89,7 +89,7 @@ struct TotalCommanderResizableView: View {
     // MARK: -
     private func buildPanel(for side: PanelSide, geometry: GeometryProxy) -> some View {
         log.debug(#function + " [side: \(side)]")
-        return FilePanelView(geometry: geometry, leftPanelWidth: $leftPanelWidth, fetchFiles: fetchFiles)
+        return FilePanelView(currSide: side, geometry: geometry, leftPanelWidth: $leftPanelWidth, fetchFiles: fetchFiles)
     }
 
 

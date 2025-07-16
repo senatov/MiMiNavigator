@@ -13,23 +13,24 @@ import SwiftUI
 // MARK: -
 struct FilePanelView: View {
     @EnvironmentObject var appState: AppState
+    var currSide: PanelSide
     var geometry: GeometryProxy
     @Binding var leftPanelWidth: CGFloat
     let fetchFiles: @Sendable (PanelSide) async -> Void
 
     // MARK: -
     var body: some View {
-        let currentPath = appState.pathURL(for: appState.focusedSideValue)
+        let currentPath = appState.pathURL(for: currSide)
         VStack {
-            EditablePathControlWrapper(appState: appState, selectedSide: appState.focusedSideValue)
+            EditablePathControlWrapper(appState: appState, selectedSide: currSide)
                 .onChange(of: currentPath) {
                     guard let url = currentPath else {
-                        log.warning("Tried to set nil path for side \(appState.focusedSideValue)")
+                        log.warning("Tried to set nil path for side \(currSide)")
                         return
                     }
                     Task {
-                        appState.updatePath(url.absoluteString, on: appState.focusedSideValue)
-                        await fetchFiles(appState.focusedSideValue)
+                        appState.updatePath(url.absoluteString, on: currSide)
+                        await fetchFiles(currSide)
                     }
                 }
             let files = sortedFiles
@@ -65,14 +66,14 @@ struct FilePanelView: View {
             .padding(.horizontal, 6)
             .border(Color.secondary)
         }
-        .frame(width: appState.focusedSideValue == .left ? (leftPanelWidth > 0 ? leftPanelWidth : geometry.size.width / 2) : nil)
+        .frame(width: currSide == .left ? (leftPanelWidth > 0 ? leftPanelWidth : geometry.size.width / 2) : nil)
     }
 }
 
 // MARK: -
 extension FilePanelView {
     fileprivate var sortedFiles: [CustomFile] {
-        let files = appState.displayedFiles(for: appState.focusedSideValue)
+        let files = appState.displayedFiles(for: currSide)
         let directories = files.filter { $0.isDirectory || $0.isSymbolicDirectory }
             .sorted { $0.nameStr.localizedCompare($1.nameStr) == .orderedAscending }
         let others = files.filter { !($0.isDirectory || $0.isSymbolicDirectory) }
