@@ -1,5 +1,4 @@
-![MiMiNavigator Logo](MiMiNavigator/Assets.xcassets/AppIcon.appiconset/128.png "MiMi Logo")
-
+![MiMiNavigator Logo](MiMiNavigator/Assets.xcassets/AppIcon.appiconset/64.png "just logo")
 
 # 📁 MiMiNavigator - MacOS File manager with two panels
 ### (NOT READY YET, under development 🧹)
@@ -17,11 +16,14 @@
 [![Programming](https://img.shields.io/badge/Type-Free_Programming-lightblue.svg)]()
 [![Shareware](https://img.shields.io/badge/License-Freeware-yellow.svg)]()
 
-![MiMiNavigator Logo](MiMiNavigator/Assets.xcassets/AppIcon.appiconset/64.png "just logo")
+
 
 ## 📖 Overview
 MiMiNavigator is a macOS file manager built with Swift and SwiftUI.  
 The repository is organized around an Xcode project with sources under `MiMiNavigator/` and basic tests in `MiMiNavigatorTests` and `MiMiNavigatorUITests`.
+
+![Preview FrontEnd](MiMiNavigator/docs/Preview.png "Preview")
+
 
 ### General structure
 
