@@ -1,9 +1,9 @@
-![MiMiNavigator Logo](MiMiNavigator/Assets.xcassets/AppIcon.appiconset/64.png "just logo")
+![MiMiNavigator Logo](MiMiNavigator/Assets.xcassets/AppIcon.appiconset/256%201.png "just logo")
 
-# 📁 MiMiNavigator - MacOS File manager with two panels
-### (NOT READY YET, under development 🧹)
+### MiMiNavigator - MacOS File manager with two panels
+## (NOT READY YET, under development  ��)
 
-##
+
 
 [![Swift Version](https://img.shields.io/badge/Swift-6.2-blue.svg)](https://swift.org)
 [![Xcode Version](https://img.shields.io/badge/Xcode-26-blue.svg)](https://developer.apple.com/xcode/)
@@ -18,72 +18,69 @@
 
 
 
-## 📖 Overview
-MiMiNavigator is a macOS file manager built with Swift and SwiftUI.  
-The repository is organized around an Xcode project with sources under `MiMiNavigator/` and basic tests in `MiMiNavigatorTests` and `MiMiNavigatorUITests`.
+##  �� Overview
+MiMiNavigator is a macOS file manager built with Swift and SwiftUI.
+The repository is organized around an Xcode project with sources under�`MiMiNavigator/`�and basic tests in�`MiMiNavigatorTests`�and�`MiMiNavigatorUITests`.
 
-![Preview FrontEnd](MiMiNavigator/docs/Preview.png "Preview")
+![Preview FrontEnd](docs/Preview.png "Preview")
 
 
 ### General structure
 
-Key directories inside `MiMiNavigator/`:
+Key directories inside�`MiMiNavigator/`:
 
-- **App** – entry point and logging setup. The application reads a `.version` file, sets up a shared model container, and displays a main split‑view UI with a log viewer button. The code uses SwiftyBeaver for logging.
-    
-- **States** – observable classes and actors that hold runtime state. `AppState` tracks the current directories and selected files, while `DualDirectoryScanner` scans both panels using timers and async updates.
-    
-- **Models** – data structures such as `CustomFile`, an entity representing files or directories, and `FileSingleton`, an actor maintaining left/right file lists for SwiftUI updates.
-    
-- **Views** – SwiftUI views for file panels, the top menu bar, and toolbar. `TotalCommanderResizableView` composes the main UI with a draggable divider and toolbar buttons for actions like view, edit, copy, and delete.
-    
-- **BreadCrumbNav** – editable path controls and breadcrumb navigation.
-    
-- **Favorite** – scans frequently used directories and mounted volumes to show a favorites tree.
-    
-- **Menus** – menu item models and top menu rendering.
-    
+- **App** entry point and logging setup. The application reads a�`.version`�file, sets up a shared model container, and displays a main split�view UI with a log viewer button. The code uses SwiftyBeaver for logging.
 
-Other resources include asset catalogs, entitlements files, and a `refreshVersionFile.zsh` script that updates the `.version` string.
+- **States** observable classes and actors that hold runtime state.�`AppState`�tracks the current directories and selected files, while�`DualDirectoryScanner`�scans both panels using timers and async updates.
+
+- **Models** data structures such as�`CustomFile`, an entity representing files or directories, and�`FileSingleton`, an actor maintaining left/right file lists for SwiftUI updates.
+
+- **Views** SwiftUI views for file panels, the top menu bar, and toolbar.�`TotalCommanderResizableView`�composes the main UI with a draggable divider and toolbar buttons for actions like view, edit, copy, and delete.
+
+- **BreadCrumbNav** editable path controls and breadcrumb navigation.
+
+- **Favorite** scans frequently used directories and mounted volumes to show a favorites tree.
+
+- **Menus** menu item models and top menu rendering.
+
+
+Other resources include asset catalogs, entitlements files, and a�`refreshVersionFile.zsh`�script that updates the�`.version`�string.
 
 ### Important aspects
 
-- **Concurrency** – Directory scanning and file updates are handled by actors (`DualDirectoryScanner`, `FileSingleton`) and async tasks to keep the UI responsive.
-    
-- **User preferences** – Window sizes, panel widths, and other state are stored using `UserPreferences`(UserDefaults wrappers).
-    
-- **Logging** – `LogMan` sets up SwiftyBeaver console and file logging with custom icons for log levels.
-    
-- **Customization** – Many UI components (menu buttons, path control, tooltip) are implemented as reusable SwiftUI views.
-    
+- **Concurrency** Directory scanning and file updates are handled by actors (`DualDirectoryScanner`,�`FileSingleton`) and async tasks to keep the UI responsive.
+
+- **User preferences** Window sizes, panel widths, and other state are stored using�`UserPreferences`(UserDefaults wrappers).
+
+- **Logging** `LogMan`�sets up SwiftyBeaver console and file logging with custom icons for log levels.
+
+- **Customization** Many UI components (menu buttons, path control, tooltip) are implemented as reusable SwiftUI views.
+
 
 ### Getting started
 
-1. Clone the repository and open `MiMiNavigator.xcodeproj` in Xcode.
-    
-2. Build and run. The README outlines basic installation steps and features such as dual‑panel navigation and periodic directory scanning.
-    
-3. The main entry point is `MiMiNavigatorApp` which initializes logging and sets up the main view hierarchy. Explore `AppState` and `DualDirectoryScanner` to understand how directory changes propagate to the UI.
-    
+1. Clone the repository and open�`MiMiNavigator.xcodeproj`�in Xcode.
+
+2. Build and run. The README outlines basic installation steps and features such as dual�panel navigation and periodic directory scanning.
+
+3. The main entry point is�`MiMiNavigatorApp`�which initializes logging and sets up the main view hierarchy. Explore�`AppState`�and�`DualDirectoryScanner`�to understand how directory changes propagate to the UI.
+
 
 ### Learning pointers
 
-- **SwiftUI layout and modifiers** – Many views use custom modifiers and gestures (e.g., `onHover`, drag gestures for the divider).
-    
-- **Actors and concurrency** – `DualDirectoryScanner` demonstrates using timers inside an actor for periodic work.
-    
-- **AppKit interop** – Some components rely on `NSWorkspace`, `NSAlert`, and other AppKit APIs for macOS‑specific functionality.
-    
-- **Persistent data** – The app uses SwiftData `ModelContainer` for future persistence, though currently the `Item`model is minimal.
-    
+- **SwiftUI layout and modifiers** Many views use custom modifiers and gestures (e.g.,�`onHover`, drag gestures for the divider).
 
-This project is still under active development (“NOT READY YET” per the README) but provides a clear example of a SwiftUI macOS application with multithreading, logging, and modular UI components.
+- **Actors and concurrency** `DualDirectoryScanner`�demonstrates using timers inside an actor for periodic work.
+
+- **AppKit interop** Some components rely on�`NSWorkspace`,�`NSAlert`, and other AppKit APIs for macOS�specific functionality.
+
+- **Persistent data** The app uses SwiftData�`ModelContainer`�for future persistence, though currently the�`Item`model is minimal.
 
 
+This project is still under active development (�NOT READY YET� per the README) but provides a clear example of a SwiftUI macOS application with multithreading, logging, and modular UI components.
 
-# ✨ Features (NOT READY YET, under development 🧹)
 
-## Current Stage 🦾 
+## Current Stage
 
 -  Support for macOS 26 with Swift 6.2 beta.
 -  Periodic directory scanning and updating, using dynamic collections for real-time content refresh.
@@ -101,7 +98,7 @@ This project is still under active development (“NOT READY YET” per the READ
 - Xcode 26.0 beta or later (recommended version: 26) *
 
 
-## 🚀 Installation
+##  Installation
 
 1. Clone the repository:
     ```szh
@@ -116,12 +113,12 @@ This project is still under active development (“NOT READY YET” per the READ
     ```szh
     xcodebuild -scheme MiMiNavigator -sdk macosx
     ```
-4. Check sources 
+4. Check sources
     ```szh
     periphery scan --project MiMiNavigator.xcodeproj --schemes MiMiNavigator
-    ```     
+    ```
 
-## 📋 Usage
+ ## Usage
 
 1. Launching: Open the application and set directories for dual-panel mode.
 2. File Operations:
@@ -130,7 +127,7 @@ This project is still under active development (“NOT READY YET” per the READ
     - Delete: Use `Delete` to move the file to the trash.
 3. Automatic Updates: The application will periodically scan the specified directories and refresh content in real time.
 
-## 👤 Authors
+## Authors
 - Iakov Senatov:  [![LinkedIn](https://www.shareicon.net/data/128x128/2017/06/16/887138_logo_512x512.png?logo=linkedin)](https://www.linkedin.com/in/iakov-senatov-07060765)
 
 | Step           | Description                                                                                         |
@@ -144,7 +141,7 @@ This project is still under active development (“NOT READY YET” per the READ
 
 
 
-##❓FAQ❓ 
+## FAQ�
 
 | Question                                 | Answer                                                               |
 |------------------------------------------|----------------------------------------------------------------------|
@@ -158,73 +155,83 @@ This project is still under active development (“NOT READY YET” per the READ
 
 
 
-## 📅 Recent Changes
+## Recent Changes
 ```log
-* b820879 - Senatov  (HEAD -> master) .between (2 days ago, 2025-06-20 03:14:05 +0200)
-* 49beeb9 - Senatov  (origin/master, origin/HEAD, origin/2025.13, 2025.13) dir. scanner params (3 days ago, 2025-06-18 21:35:00 +0200)
-* 9217548 - Senatov  cosmetic (3 days ago, 2025-06-18 20:54:04 +0200)
-* 20ab256 - Senatov  new logos (5 days ago, 2025-06-17 02:03:51 +0200)
-* 5bdf655 - Senatov  new ver. string (5 days ago, 2025-06-16 22:32:37 +0200)
-* d6b78fe - Senatov  smi (5 days ago, 2025-06-16 22:30:52 +0200)
-* 38b0532 - Senatov  clean app. Check left and right (5 days ago, 2025-06-16 19:44:02 +0200)
-* ee1a5d9 - Senatov  (tag: preview) new ver marker (10 days ago, 2025-06-11 12:53:43 +0200)
-*   6db49aa - Senatov  Merge remote-tracking branch 'origin/detached' (10 days ago, 2025-06-11 12:51:31 +0200)
-|\  
-| * c5f7ef5 - Senatov  (origin/detached) tested. global vars implemented. (3 weeks ago, 2025-05-31 14:58:44 +0200)
-| * 3eef2c3 - Senatov  call refresh files cngs (3 weeks ago, 2025-05-31 00:55:49 +0200)
-* | 0d75775 - Senatov  new look (10 days ago, 2025-06-11 12:46:46 +0200)
-* | 71342ab - Senatov  new look (10 days ago, 2025-06-11 12:45:19 +0200)
-* | 850a462 - Senatov  convert to XCode 26. OK (11 days ago, 2025-06-11 00:34:10 +0200)
-* | 4a480ba - Senatov  to XCode ver. 26 (11 days ago, 2025-06-10 23:37:38 +0200)
-* | 18dadff - Senatov  added ndo (11 days ago, 2025-06-10 13:06:39 +0200)
-* | dcb4f32 - Senatov  min. fix of calls. Tested. Memory leaks (3 weeks ago, 2025-06-01 20:29:01 +0200)
-* | 89dcabb - Senatov      timeOutRefresh (3 weeks ago, 2025-06-01 19:50:24 +0200)
-* | 806f3fe - Senatov  Top Mnu categories as @MainActor (3 weeks ago, 2025-06-01 14:02:23 +0200)
-* | 19ea964 - Senatov  button "Help" + placeholders (3 weeks ago, 2025-06-01 13:46:57 +0200)
-* | 3771099 - Senatov  refresh info (3 weeks ago, 2025-06-01 12:29:52 +0200)
-* | 6b453d5 - Senatov  version status info (3 weeks ago, 2025-06-01 10:53:02 +0200)
-* | fc0fc7c - Senatov  scann repair (3 weeks ago, 2025-06-01 10:50:53 +0200)
-* | 10ef616 - Senatov  clean 2 (3 weeks ago, 2025-05-31 17:20:45 +0200)
-* | 7e6f932 - Senatov  clean 1 (3 weeks ago, 2025-05-31 16:35:55 +0200)
-* | 64e57fa - Senatov  zombi git- branch repaired (3 weeks ago, 2025-05-31 16:10:22 +0200)
-* | 4a67f7a - Senatov  Scanner n. works last 2 days (3 weeks ago, 2025-05-31 00:35:40 +0200)
-* | f297d96 - Senatov  ok- хватит на сегодня, блеать (3 weeks ago, 2025-05-30 00:57:56 +0200)
-* | b423474 - Senatov  down buttons func. (3 weeks ago, 2025-05-30 00:52:16 +0200)
-* | 38dbfbd - Senatov  refactor. down & context menu (3 weeks ago, 2025-05-29 18:36:59 +0200)
-* | 63c539d - Senatov  Breadcrumb design (3 weeks ago, 2025-05-29 18:30:25 +0200)
-|/  
-* 6a56378 - Senatov  .refresh (3 weeks ago, 2025-05-29 18:20:17 +0200)
-* 88f82a6 - Senatov  errors fix. Compiled, starded, where are errs (3 weeks ago, 2025-05-29 18:19:30 +0200)
-* 49e70a1 - Senatov  + .environmentObject(appState) (3 weeks ago, 2025-05-29 16:06:39 +0200)
-* f7da70c - Senatov  cleaning, refactoring II (3 weeks ago, 2025-05-29 15:00:37 +0200)
-* a21ab7c - Senatov  cleaning, refactorimg (3 weeks ago, 2025-05-28 23:33:22 +0200)
-* 07d8a26 - Senatov  something .wrong (no fle list) (4 weeks ago, 2025-05-26 21:48:45 +0200)
-* c8dbc28 - Senatov  small fixies (4 weeks ago, 2025-05-26 20:30:55 +0200)
-* cdb3012 - Senatov  added (4 weeks ago, 2025-05-26 11:39:25 +0200)
-* 6cf8c11 - Senatov  +folders (4 weeks ago, 2025-05-26 02:41:16 +0200)
-* cf342ad - Senatov  + Folders Structure (4 weeks ago, 2025-05-26 02:40:46 +0200)
-* b5053ae - Senatov  select initial dir /tmp (4 weeks ago, 2025-05-25 23:34:55 +0200)
-* 02ede19 - Senatov  under work (4 weeks ago, 2025-05-24 14:59:33 +0200)
-* 19f05bc - Senatov  fix everytwhere: @StateObject var selection = SelectedDir() (4 weeks ago, 2025-05-22 17:06:44 +0200)
-* 596fa2c - Senatov  recomposition (4 weeks ago, 2025-05-22 01:41:19 +0200)
-* 95c5598 - Senatov  fix-1 (4 weeks ago, 2025-05-22 01:36:49 +0200)
-* 17c4ede - Senatov  UserDefaults save/restore (5 weeks ago, 2025-05-20 20:01:34 +0200)
-* b1aae52 - Senatov          SelectedDir var everywhere (5 weeks ago, 2025-05-20 10:54:24 +0200)
-* 6101772 - Senatov  aliases f. links (5 weeks ago, 2025-05-18 23:19:00 +0200)
-* 33e9c9a - Senatov  selectedDir on click - 1 (5 weeks ago, 2025-05-18 15:04:02 +0200)
-* 8fedb57 - Senatov  title w. version (5 weeks ago, 2025-05-18 13:12:09 +0200)
-* 8e16013 - Senatov  BreadCrump Panel II (5 weeks ago, 2025-05-18 09:10:26 +0200)
-* e4f22c0 - Senatov  BreadCrump fixed (wrong) (5 weeks ago, 2025-05-17 02:20:04 +0200)
-* 0027bbe - Senatov  tested: 1)global FileStucture cnhg 2) Formatted 3) GUI (6 weeks ago, 2025-05-12 15:51:59 +0200)
-* 2a0f44a - Senatov  on edit (err!) (6 weeks ago, 2025-05-10 17:13:37 +0200)
-* ada8c88 - Senatov  on edit (6 weeks ago, 2025-05-10 17:13:14 +0200)
-* 73c795e - Senatov  roung:7,  Sandbox: /Volumes sec dialog (6 weeks ago, 2025-05-08 15:53:16 +0200):
+* b452414 - Senatov  (HEAD -> master) fix preview (12 minutes ago, 2025-07-17 01:09:11 +0200)
+| * 44752c2 - Senatov  (origin/master, origin/HEAD) Update README.md (31 minutes ago, 2025-07-17 00:50:23 +0200)
+| * c3f2abd - Senatov  Update README.md (33 minutes ago, 2025-07-17 00:48:26 +0200)
+|/
+* 443b60c - Senatov  fixed: intern size of panels and side var (35 minutes ago, 2025-07-17 00:46:17 +0200)
+* c0d76df - Senatov  test (2 hours ago, 2025-07-16 23:19:11 +0200)
+* 6abe2a4 - Senatov  restore preview (3 hours ago, 2025-07-16 22:35:08 +0200)
+* ebf3a9c - Senatov  file pane's headers (3 hours ago, 2025-07-16 22:28:12 +0200)
+* a9c3fd8 - Senatov  .@concurrent (6 hours ago, 2025-07-16 19:34:12 +0200)
+* 6cef802 - Senatov  down button panel paddind (8 hours ago, 2025-07-16 16:54:20 +0200)
+* 2d99e1a - Senatov  ver. string (10 hours ago, 2025-07-16 15:06:25 +0200)
+* 14c7dc4 - Senatov  nothing intresting (11 hours ago, 2025-07-16 14:43:24 +0200)
+* 5ce7f3a - Senatov  current (11 hours ago, 2025-07-16 14:13:44 +0200)
+* 2cb4f03 - Senatov  Update README.md (3 weeks ago, 2025-06-28 18:09:38 +0200)
+* b8ef797 - Senatov  pnl new look (3 weeks ago, 2025-06-28 14:24:36 +0200)
+* 61e9c2e - Senatov  panel's new look (3 weeks ago, 2025-06-28 14:24:01 +0200)
+* d8ab337 - Senatov  + new look buildPanel (left & rihgt) (3 weeks ago, 2025-06-28 13:27:00 +0200)
+* 4bc8408 - Senatov  + event-catch / logging (3 weeks ago, 2025-06-28 10:18:49 +0200)
+* 6a52d07 - Senatov  logging chng (3 weeks ago, 2025-06-26 00:52:15 +0200)
+* 2936041 - Senatov  fileManager.urls(...) - as initial (3 weeks ago, 2025-06-25 20:53:54 +0200)
+* f2b95cf - Senatov  print -> log.debug (3 weeks ago, 2025-06-25 20:44:07 +0200)
+* 837e0d5 - Senatov  reconf +State package (3 weeks ago, 2025-06-25 05:40:32 +0200)
+* c9003df - Senatov  Simplify the App code (3 weeks ago, 2025-06-24 17:45:47 +0200)
+* 2bccace - Senatov  ????? ?????-??, ?????? (3 weeks ago, 2025-06-24 07:10:34 +0200)
+* 2692c53 - Senatov  fixed. (3 weeks ago, 2025-06-22 19:38:32 +0200)
+* 88090e4 - Senatov  fix-small (4 weeks ago, 2025-06-21 18:33:40 +0200)
+* cae036b - Senatov  update log (4 weeks ago, 2025-06-21 15:55:02 +0200)
+* 5702a51 - Senatov  update log (4 weeks ago, 2025-06-21 15:54:52 +0200)
+* b820879 - Senatov  .between (4 weeks ago, 2025-06-20 03:14:05 +0200)
+* 49beeb9 - Senatov  (origin/2025.13, 2025.13) dir. scanner params (4 weeks ago, 2025-06-18 21:35:00 +0200)
+* 9217548 - Senatov  cosmetic (4 weeks ago, 2025-06-18 20:54:04 +0200)
+* 20ab256 - Senatov  new logos (4 weeks ago, 2025-06-17 02:03:51 +0200)
+* 5bdf655 - Senatov  new ver. string (4 weeks ago, 2025-06-16 22:32:37 +0200)
+* d6b78fe - Senatov  smi (4 weeks ago, 2025-06-16 22:30:52 +0200)
+* 38b0532 - Senatov  clean app. Check left and right (4 weeks ago, 2025-06-16 19:44:02 +0200)
+* ee1a5d9 - Senatov  (tag: preview) new ver marker (5 weeks ago, 2025-06-11 12:53:43 +0200)
+*   6db49aa - Senatov  Merge remote-tracking branch 'origin/detached' (5 weeks ago, 2025-06-11 12:51:31 +0200)
+|\
+| * c5f7ef5 - Senatov  (origin/detached) tested. global vars implemented. (7 weeks ago, 2025-05-31 14:58:44 +0200)
+| * 3eef2c3 - Senatov  call refresh files cngs (7 weeks ago, 2025-05-31 00:55:49 +0200)
+* | 0d75775 - Senatov  new look (5 weeks ago, 2025-06-11 12:46:46 +0200)
+* | 71342ab - Senatov  new look (5 weeks ago, 2025-06-11 12:45:19 +0200)
+* | 850a462 - Senatov  convert to XCode 26. OK (5 weeks ago, 2025-06-11 00:34:10 +0200)
+* | 4a480ba - Senatov  to XCode ver. 26 (5 weeks ago, 2025-06-10 23:37:38 +0200)
+* | 18dadff - Senatov  added ndo (5 weeks ago, 2025-06-10 13:06:39 +0200)
+* | dcb4f32 - Senatov  min. fix of calls. Tested. Memory leaks (6 weeks ago, 2025-06-01 20:29:01 +0200)
+* | 89dcabb - Senatov      timeOutRefresh (6 weeks ago, 2025-06-01 19:50:24 +0200)
+* | 806f3fe - Senatov  Top Mnu categories as @MainActor (6 weeks ago, 2025-06-01 14:02:23 +0200)
+* | 19ea964 - Senatov  button "Help" + placeholders (7 weeks ago, 2025-06-01 13:46:57 +0200)
+* | 3771099 - Senatov  refresh info (7 weeks ago, 2025-06-01 12:29:52 +0200)
+* | 6b453d5 - Senatov  version status info (7 weeks ago, 2025-06-01 10:53:02 +0200)
+* | fc0fc7c - Senatov  scann repair (7 weeks ago, 2025-06-01 10:50:53 +0200)
+* | 10ef616 - Senatov  clean 2 (7 weeks ago, 2025-05-31 17:20:45 +0200)
+* | 7e6f932 - Senatov  clean 1 (7 weeks ago, 2025-05-31 16:35:55 +0200)
+* | 64e57fa - Senatov  zombi git- branch repaired (7 weeks ago, 2025-05-31 16:10:22 +0200)
+* | 4a67f7a - Senatov  Scanner n. works last 2 days (7 weeks ago, 2025-05-31 00:35:40 +0200)
+* | f297d96 - Senatov  ok- ?????? ?? ???????, ?????? (7 weeks ago, 2025-05-30 00:57:56 +0200)
+* | b423474 - Senatov  down buttons func. (7 weeks ago, 2025-05-30 00:52:16 +0200)
+* | 38dbfbd - Senatov  refactor. down & context menu (7 weeks ago, 2025-05-29 18:36:59 +0200)
 ...
 ```
 
-## 🔗 Related Links
+ ##  Related Links
 
-- [Installation Guide](#quick-start-guide)
-- [Features and Options](#features-and-options)
+- [(NOT READY YET, under development  ��)](#not-ready-yet-under-development--�)
+- [�� Overview](#-overview)
+  - [General structure](#general-structure)
+  - [Important aspects](#important-aspects)
+  - [Getting started](#getting-started)
+  - [Learning pointers](#learning-pointers)
+- [Current Stage](#current-stage)
+- [Requirements](#requirements)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Authors](#authors)
+- [FAQ�](#faq)
 - [Recent Changes](#recent-changes)
-- [FAQ](#faq)
+- [Related Links](#related-links)
