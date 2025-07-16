@@ -16,7 +16,8 @@ struct FavTreeMnu: View {
 
     // MARK: -
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
+        log.info(#function)
+        return VStack(alignment: .leading, spacing: 0) {
             headerView
             dividerView
             fileListView
@@ -47,14 +48,16 @@ struct FavTreeMnu: View {
 
     // MARK: -
     private var dividerView: some View {
-        Divider()
+        log.info(#function)
+        return Divider()
             .padding(.horizontal)
             .padding(.vertical, 6)
     }
 
     // MARK: -
     private var fileListView: some View {
-        ScrollView {
+        log.info(#function)
+        return ScrollView {
             LazyVStack(alignment: .leading, spacing: 5) {
                 ForEach($files) { $file in
                     FavTreeView(file: $file, expandedFolders: $expandedFolders)
