@@ -62,7 +62,7 @@ final class AppState: ObservableObject {
 
 
     // MARK: -
-    @concurrent
+    @Sendable
     func refreshFiles() async {
         log.info(#function)
         await refreshLeftFiles()

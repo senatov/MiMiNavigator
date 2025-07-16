@@ -88,7 +88,6 @@ struct EditablePathControlWrapper: View {
     }
 
 
-
     // MARK: - Display View
     private var displayView: some View {
         EditablePathControl()
@@ -113,7 +112,6 @@ struct EditablePathControlWrapper: View {
     private var currentPath: String {
         selectedSide == .left ? appState.leftPath : appState.rightPath
     }
-
 
 
     // MARK: -
