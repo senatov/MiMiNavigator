@@ -1,7 +1,7 @@
 ![MiMiNavigator Logo](MiMiNavigator/Assets.xcassets/AppIcon.appiconset/256%201.png "just logo")
 
 ### MiMiNavigator - MacOS File manager with two panels
-## (NOT READY YET, under development  ßπ)
+## (NOT READY YET, under development  ÔøΩÔøΩ)
 
 
 
@@ -18,24 +18,24 @@
 
 
 
-##  ìñ Overview
+##  ÔøΩÔøΩ Overview
 MiMiNavigator is a macOS file manager built with Swift and SwiftUI.
-The repository is organized around an Xcode project with sources under†`MiMiNavigator/`†and basic tests in†`MiMiNavigatorTests`†and†`MiMiNavigatorUITests`.
+The repository is organized around an Xcode project with sources underÔøΩ`MiMiNavigator/`ÔøΩand basic tests inÔøΩ`MiMiNavigatorTests`ÔøΩandÔøΩ`MiMiNavigatorUITests`.
 
 ![Preview FrontEnd](docs/Preview.png "Preview")
 
 
 ### General structure
 
-Key directories inside†`MiMiNavigator/`:
+Key directories insideÔøΩ`MiMiNavigator/`:
 
-- **App** entry point and logging setup. The application reads a†`.version`†file, sets up a shared model container, and displays a main splitëview UI with a log viewer button. The code uses SwiftyBeaver for logging.
+- **App** entry point and logging setup. The application reads aÔøΩ`.version`ÔøΩfile, sets up a shared model container, and displays a main splitÔøΩview UI with a log viewer button. The code uses SwiftyBeaver for logging.
 
-- **States** observable classes and actors that hold runtime state.†`AppState`†tracks the current directories and selected files, while†`DualDirectoryScanner`†scans both panels using timers and async updates.
+- **States** observable classes and actors that hold runtime state.ÔøΩ`AppState`ÔøΩtracks the current directories and selected files, whileÔøΩ`DualDirectoryScanner`ÔøΩscans both panels using timers and async updates.
 
-- **Models** data structures such as†`CustomFile`, an entity representing files or directories, and†`FileSingleton`, an actor maintaining left/right file lists for SwiftUI updates.
+- **Models** data structures such asÔøΩ`CustomFile`, an entity representing files or directories, andÔøΩ`FileSingleton`, an actor maintaining left/right file lists for SwiftUI updates.
 
-- **Views** SwiftUI views for file panels, the top menu bar, and toolbar.†`TotalCommanderResizableView`†composes the main UI with a draggable divider and toolbar buttons for actions like view, edit, copy, and delete.
+- **Views** SwiftUI views for file panels, the top menu bar, and toolbar.ÔøΩ`TotalCommanderResizableView`ÔøΩcomposes the main UI with a draggable divider and toolbar buttons for actions like view, edit, copy, and delete.
 
 - **BreadCrumbNav** editable path controls and breadcrumb navigation.
 
@@ -44,40 +44,40 @@ Key directories inside†`MiMiNavigator/`:
 - **Menus** menu item models and top menu rendering.
 
 
-Other resources include asset catalogs, entitlements files, and a†`refreshVersionFile.zsh`†script that updates the†`.version`†string.
+Other resources include asset catalogs, entitlements files, and aÔøΩ`refreshVersionFile.zsh`ÔøΩscript that updates theÔøΩ`.version`ÔøΩstring.
 
 ### Important aspects
 
-- **Concurrency** Directory scanning and file updates are handled by actors (`DualDirectoryScanner`,†`FileSingleton`) and async tasks to keep the UI responsive.
+- **Concurrency** Directory scanning and file updates are handled by actors (`DualDirectoryScanner`,ÔøΩ`FileSingleton`) and async tasks to keep the UI responsive.
 
-- **User preferences** Window sizes, panel widths, and other state are stored using†`UserPreferences`(UserDefaults wrappers).
+- **User preferences** Window sizes, panel widths, and other state are stored usingÔøΩ`UserPreferences`(UserDefaults wrappers).
 
-- **Logging** `LogMan`†sets up SwiftyBeaver console and file logging with custom icons for log levels.
+- **Logging** `LogMan`ÔøΩsets up SwiftyBeaver console and file logging with custom icons for log levels.
 
 - **Customization** Many UI components (menu buttons, path control, tooltip) are implemented as reusable SwiftUI views.
 
 
 ### Getting started
 
-1. Clone the repository and open†`MiMiNavigator.xcodeproj`†in Xcode.
+1. Clone the repository and openÔøΩ`MiMiNavigator.xcodeproj`ÔøΩin Xcode.
 
-2. Build and run. The README outlines basic installation steps and features such as dualëpanel navigation and periodic directory scanning.
+2. Build and run. The README outlines basic installation steps and features such as dualÔøΩpanel navigation and periodic directory scanning.
 
-3. The main entry point is†`MiMiNavigatorApp`†which initializes logging and sets up the main view hierarchy. Explore†`AppState`†and†`DualDirectoryScanner`†to understand how directory changes propagate to the UI.
+3. The main entry point isÔøΩ`MiMiNavigatorApp`ÔøΩwhich initializes logging and sets up the main view hierarchy. ExploreÔøΩ`AppState`ÔøΩandÔøΩ`DualDirectoryScanner`ÔøΩto understand how directory changes propagate to the UI.
 
 
 ### Learning pointers
 
-- **SwiftUI layout and modifiers** Many views use custom modifiers and gestures (e.g.,†`onHover`, drag gestures for the divider).
+- **SwiftUI layout and modifiers** Many views use custom modifiers and gestures (e.g.,ÔøΩ`onHover`, drag gestures for the divider).
 
-- **Actors and concurrency** `DualDirectoryScanner`†demonstrates using timers inside an actor for periodic work.
+- **Actors and concurrency** `DualDirectoryScanner`ÔøΩdemonstrates using timers inside an actor for periodic work.
 
-- **AppKit interop** Some components rely on†`NSWorkspace`,†`NSAlert`, and other AppKit APIs for macOSëspecific functionality.
+- **AppKit interop** Some components rely onÔøΩ`NSWorkspace`,ÔøΩ`NSAlert`, and other AppKit APIs for macOSÔøΩspecific functionality.
 
-- **Persistent data** The app uses SwiftData†`ModelContainer`†for future persistence, though currently the†`Item`model is minimal.
+- **Persistent data** The app uses SwiftDataÔøΩ`ModelContainer`ÔøΩfor future persistence, though currently theÔøΩ`Item`model is minimal.
 
 
-This project is still under active development (úNOT READY YETù per the README) but provides a clear example of a SwiftUI macOS application with multithreading, logging, and modular UI components.
+This project is still under active development (ÔøΩNOT READY YETÔøΩ per the README) but provides a clear example of a SwiftUI macOS application with multithreading, logging, and modular UI components.
 
 
 ## Current Stage
@@ -128,6 +128,7 @@ This project is still under active development (úNOT READY YETù per the README) 
 3. Automatic Updates: The application will periodically scan the specified directories and refresh content in real time.
 
 ## Authors
+- 
 - Iakov Senatov:  [![LinkedIn](https://www.shareicon.net/data/128x128/2017/06/16/887138_logo_512x512.png?logo=linkedin)](https://www.linkedin.com/in/iakov-senatov-07060765)
 
 | Step           | Description                                                                                         |
@@ -141,7 +142,7 @@ This project is still under active development (úNOT READY YETù per the README) 
 
 
 
-## FAQì
+## FAQÔøΩ
 
 | Question                                 | Answer                                                               |
 |------------------------------------------|----------------------------------------------------------------------|
@@ -221,8 +222,8 @@ This project is still under active development (úNOT READY YETù per the README) 
 
  ##  Related Links
 
-- [(NOT READY YET, under development  ßπ)](#not-ready-yet-under-development--π)
-- [ìñ Overview](#-overview)
+- [(NOT READY YET, under development  ÔøΩÔøΩ)](#not-ready-yet-under-development--ÔøΩ)
+- [ÔøΩÔøΩ Overview](#-overview)
   - [General structure](#general-structure)
   - [Important aspects](#important-aspects)
   - [Getting started](#getting-started)
@@ -232,6 +233,6 @@ This project is still under active development (úNOT READY YETù per the README) 
 - [Installation](#installation)
 - [Usage](#usage)
 - [Authors](#authors)
-- [FAQì](#faq)
+- [FAQÔøΩ](#faq)
 - [Recent Changes](#recent-changes)
 - [Related Links](#related-links)
