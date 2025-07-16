@@ -17,7 +17,7 @@
 [![Programming](https://img.shields.io/badge/Type-Free_Programming-lightblue.svg)]()
 [![Shareware](https://img.shields.io/badge/License-Freeware-yellow.svg)]()
 
-![MiMiNavigator Logo](MiMiNavigator/Assets.xcassets/AppIcon.appiconset/64.png "just logo")
+![Preview](MiMiNavigator/Docs/Preview.png "Programm preview")
 
 ## 📖 Overview
 MiMiNavigator is a macOS file manager built with Swift and SwiftUI.  
