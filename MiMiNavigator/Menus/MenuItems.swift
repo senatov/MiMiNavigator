@@ -105,3 +105,5 @@ let helpMenuCategory = MenuCategory(
         MenuItem(title: "Check for Updates", action: { log.debug("Help > Check for Updates") }, shortcut: nil),
         MenuItem(title: "About MimiNav…", action: { log.debug("Help > About MimiNav") }, shortcut: nil),
     ])
+
+// NOTE: This file only contains menu item data, not UI code.
