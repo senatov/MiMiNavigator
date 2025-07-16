@@ -15,7 +15,7 @@ struct FilePanelView: View {
     @EnvironmentObject var appState: AppState
     var geometry: GeometryProxy
     @Binding var leftPanelWidth: CGFloat
-    let fetchFiles: @concurrent (PanelSide) async -> Void
+    let fetchFiles: @Sendable (PanelSide) async -> Void
 
     // MARK: -
     var body: some View {
@@ -42,25 +42,27 @@ struct FilePanelView: View {
                         Text(file.nameStr)
                             .foregroundColor(
                                 file.isDirectory
-                                    ? Color(#colorLiteral(red: 0, green: 0.5690457821, blue: 0.5746168494, alpha: 1))
+                                    ? Color(#colorLiteral(red: 0.1019607857, green: 0.2784313858, blue: 0.400000006, alpha: 1))
                                     : Color(#colorLiteral(red: 0.004859850742, green: 0.09608627111, blue: 0.5749928951, alpha: 1))
-                            ) 
+                            )
                     }
+                    .frame(minWidth: 100, maxWidth: .infinity, alignment: .leading)
                 }
                 TableColumn("Size") { file in
                     Text(file.formattedSize)
                         .foregroundColor(.secondary)
                         .monospacedDigit()
+                        .frame(width: 80, alignment: .trailing)
                 }
                 TableColumn("Modified") { file in
                     Text(file.modifiedDateFormatted)
                         .font(.footnote)
                         .foregroundColor(.gray)
+                        .frame(width: 120, alignment: .leading)
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .padding(.horizontal, 6)
-            .border(Color.secondary)
         }
         .frame(width: appState.focusedSideValue == .left ? (leftPanelWidth > 0 ? leftPanelWidth : geometry.size.width / 2) : nil)
     }

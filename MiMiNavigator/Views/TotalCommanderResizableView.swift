@@ -21,26 +21,40 @@ struct TotalCommanderResizableView: View {
     var body: some View {
         GeometryReader { geometry in
             ZStack {
-                VStack(spacing: 0) {
-                    HStack {
-                        TopMenuBarView()
-                        Spacer()
+                ZStack {
+                    VStack(spacing: 0) {
+                        HStack {
+                            TopMenuBarView()
+                            Spacer()
+                        }
+                        buildMainPanels(geometry: geometry)
+                        buildDownToolbar()
                     }
-                    buildMainPanels(geometry: geometry)
-                    buildDownToolbar()
-                }
-                if isDividerTooltipVisible {
-                    PrettyTooltip(text: tooltipText)
-                        .position(tooltipPosition)
-                        .transition(.opacity)
-                        .opacity(0.7)
-                        .zIndex(1000)
+                    if isDividerTooltipVisible {
+                        PrettyTooltip(text: tooltipText)
+                            .position(tooltipPosition)
+                            .transition(.opacity)
+                            .opacity(0.7)
+                            .zIndex(1000)
+                    }
                 }
             }
             .onAppear {
+                log.info(#function)
                 appState.initialize()
                 initializePanelWidth(geometry: geometry)  // Restore divider width from user defaults
                 addKeyPressMonitor()  // Register keyboard shortcut
+            }
+            .onChange(of: geometry.size) {
+                let newSize = geometry.size
+                log.info("Window size changed: \(newSize.width)x\(newSize.height)")
+                // пересчитать ширину левой панели, если нужно
+                if leftPanelWidth > 0 {
+                    let maxWidth = newSize.width - 100
+                    if leftPanelWidth > maxWidth {
+                        leftPanelWidth = maxWidth
+                    }
+                }
             }
         }
     }
