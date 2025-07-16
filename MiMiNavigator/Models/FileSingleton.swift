@@ -10,11 +10,11 @@ import Foundation
 
 actor FileSingleton: ObservableObject, @unchecked Sendable {
     static let shared = FileSingleton()
-    private var _leftFiles: [CustomFile] = []  // Private storage for left files
-    private var _rightFiles: [CustomFile] = []  // Private storage for right files
+    private var _leftFiles: [CustomFile] = []  // Private storage for L-files
+    private var _rightFiles: [CustomFile] = []  // Private storage for R-files
 
 
-    // Function to notify SwiftUI observers of changes
+    // MARK: - Function to notify SwiftUI observers of changes
     @MainActor
     private func notifyObservers() {
         log.info(#function)

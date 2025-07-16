@@ -12,6 +12,7 @@ import SwiftUI
 struct TopMenuButtonStyle: ButtonStyle {
 
     @State private var isHovered = false  // Tracks mouse hover state
+
     // MARK: -
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
