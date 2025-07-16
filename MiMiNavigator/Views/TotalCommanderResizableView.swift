@@ -75,7 +75,7 @@ struct TotalCommanderResizableView: View {
     // MARK: -
     private func buildPanel(for side: PanelSide, geometry: GeometryProxy) -> some View {
         log.debug(#function + " [side: \(side)]")
-        return FilePanelView(side: side, geometry: geometry, leftPanelWidth: $leftPanelWidth, fetchFiles: fetchFiles)
+        return FilePanelView(geometry: geometry, leftPanelWidth: $leftPanelWidth, fetchFiles: fetchFiles)
     }
 
 

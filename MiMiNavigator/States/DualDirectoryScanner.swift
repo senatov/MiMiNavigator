@@ -74,6 +74,7 @@ actor DualDirectoryScanner {
 
 
     // MARK: - Refreshes the file list for a specific directory side
+    @concurrent
     public func refreshFiles(currSide: PanelSide) async {
         log.info(#function + " currSide: \(currSide)")
         do {

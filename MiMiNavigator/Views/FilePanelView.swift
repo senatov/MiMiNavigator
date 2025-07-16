@@ -13,26 +13,26 @@ import SwiftUI
 // MARK: -
 struct FilePanelView: View {
     @EnvironmentObject var appState: AppState
-    var side: PanelSide
     var geometry: GeometryProxy
     @Binding var leftPanelWidth: CGFloat
     let fetchFiles: @concurrent (PanelSide) async -> Void
 
+    // MARK: -
     var body: some View {
-        let currentPath = appState.pathURL(for: side)
+        let currentPath = appState.pathURL(for: appState.focusedSideValue)
         VStack {
-            EditablePathControlWrapper(appState: appState, selectedSide: side)
+            EditablePathControlWrapper(appState: appState, selectedSide: appState.focusedSideValue)
                 .onChange(of: currentPath) {
                     guard let url = currentPath else {
-                        log.warning("Tried to set nil path for side \(side)")
+                        log.warning("Tried to set nil path for side \(appState.focusedSideValue)")
                         return
                     }
                     Task {
-                        appState.updatePath(url.absoluteString, on: side)
-                        await fetchFiles(side)
+                        appState.updatePath(url.absoluteString, on: appState.focusedSideValue)
+                        await fetchFiles(appState.focusedSideValue)
                     }
                 }
-           let files = sortedFiles
+            let files = sortedFiles
             Table(files, selection: .constant(nil)) {
                 TableColumn("Name") { file in
                     HStack {
@@ -40,7 +40,11 @@ struct FilePanelView: View {
                             .resizable()
                             .frame(width: 16, height: 16)
                         Text(file.nameStr)
-                            .foregroundColor(file.isDirectory ? Color(#colorLiteral(red: 0.2196078449, green: 0.007843137719, blue: 0.8549019694, alpha: 1)) : Color(#colorLiteral(red: 0.004859850742, green: 0.09608627111, blue: 0.5749928951, alpha: 1)))
+                            .foregroundColor(
+                                file.isDirectory
+                                    ? Color(#colorLiteral(red: 0, green: 0.5690457821, blue: 0.5746168494, alpha: 1))
+                                    : Color(#colorLiteral(red: 0.004859850742, green: 0.09608627111, blue: 0.5749928951, alpha: 1))
+                            ) 
                     }
                 }
                 TableColumn("Size") { file in
@@ -58,14 +62,14 @@ struct FilePanelView: View {
             .padding(.horizontal, 6)
             .border(Color.secondary)
         }
-        .frame(width: side == .left ? (leftPanelWidth > 0 ? leftPanelWidth : geometry.size.width / 2) : nil)
+        .frame(width: appState.focusedSideValue == .left ? (leftPanelWidth > 0 ? leftPanelWidth : geometry.size.width / 2) : nil)
     }
 }
 
 // MARK: -
-private extension FilePanelView {
-    var sortedFiles: [CustomFile] {
-        let files = appState.displayedFiles(for: side)
+extension FilePanelView {
+    fileprivate var sortedFiles: [CustomFile] {
+        let files = appState.displayedFiles(for: appState.focusedSideValue)
         let directories = files.filter { $0.isDirectory || $0.isSymbolicDirectory }
             .sorted { $0.nameStr.localizedCompare($1.nameStr) == .orderedAscending }
         let others = files.filter { !($0.isDirectory || $0.isSymbolicDirectory) }

@@ -56,7 +56,6 @@ struct MiMiNavigatorApp: App {
                         Image(systemName: "arrow.triangle.2.circlepath")
                             .padding(.horizontal, 2)
                             .padding(.vertical, 6)
-                            .background(Color.white)
 
                     }
                     .clipShape(Circle())
@@ -69,7 +68,6 @@ struct MiMiNavigatorApp: App {
                         Image(systemName: "doc.text.magnifyingglass")
                             .padding(.horizontal, 2)
                             .padding(.vertical, 6)
-                            .background(Color.white)
                     }
                     .clipShape(Circle())
                     .offset(x: 3, y: 6)

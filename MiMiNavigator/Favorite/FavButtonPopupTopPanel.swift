@@ -24,38 +24,41 @@ struct FavButtonPopupTopPanel: View {
 
         // MARK: -
     private var backButton: some View {
-        log.info(#function)
-        return Button(action: { log.info("Back: navigating to previous directory") }) {
+        Button(action: { log.info("Back: navigating to previous directory") }) {
             Image(systemName: "arrowshape.backward").renderingMode(.original)
         }
-        .shadow(color: .blue.opacity(0.15), radius: 7.0, x: 1, y: 1).help("Back: navigating to previous directory")
+        .shadow(color: .blue.opacity(0.15), radius: 7.0, x: 1, y: 1)
+        .help("Back: navigating to previous directory")
+        .accessibilityLabel("Back button")
     }
 
         // MARK: -
     private var forwardButton: some View {
-        log.info(#function)
-        return Button(action: { log.info("Forward: navigating to next directory") }) {
+        Button(action: { log.info("Forward: navigating to next directory") }) {
             Image(systemName: "arrowshape.right").renderingMode(.original)
         }
-        .shadow(color: .blue.opacity(0.15), radius: 7.0, x: 1, y: 1).disabled(true).help("Forward: navigating to next directory")
+        .shadow(color: .blue.opacity(0.15), radius: 7.0, x: 1, y: 1)
+        .disabled(true)
+        .help("Forward: navigating to next directory")
+        .accessibilityLabel("Forward button")
     }
 
         // MARK: -
     private var menuButton: some View {
-        log.info(#function)
-        return Button(action: {
+        Button(action: {
             log.info("Navigation between favorites")
             if favTreeStruct.isEmpty { Task { await fetchFavTree() } }
             appState.showFavTreePopup.toggle()
         }) {
             Image(systemName: "menucard").renderingMode(.original)
         }
-        .shadow(color: .blue.opacity(0.15), radius: 5.0, x: 1, y: 1)
+        .shadow(color: .blue.opacity(0.15), radius: 7.0, x: 2, y: 2)
         .buttonStyle(.plain)
-        .popover(isPresented: $appState.showFavTreePopup, arrowEdge: .bottom) {
+        .popover(isPresented: $appState.showFavTreePopup, attachmentAnchor: .rect(.bounds), arrowEdge: .leading) {
             favoritePopover()
         }
         .help("Navigation between favorites")
+        .accessibilityLabel("Favorites menu button")
     }
 
         // MARK: -
@@ -82,7 +85,7 @@ struct FavButtonPopupTopPanel: View {
         // MARK: -
     private func fetchFavNetVolumes(from scanner: FavScanner) async -> [CustomFile] {
             //log.info(#function)
-        return await withCheckedContinuation { continuation in
+        await withCheckedContinuation { continuation in
             scanner.scanFavoritesAndNetworkVolumes { files in continuation.resume(returning: files) }
         }
     }
