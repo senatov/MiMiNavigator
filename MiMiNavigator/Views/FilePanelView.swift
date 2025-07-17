@@ -43,8 +43,10 @@ struct FilePanelView: View {
                         Text(file.nameStr)
                             .foregroundColor(
                                 file.isDirectory
-                                    ? Color(#colorLiteral(red: 0.1019607857, green: 0.2784313858, blue: 0.400000006, alpha: 1))
-                                    : Color(#colorLiteral(red: 0.004859850742, green: 0.09608627111, blue: 0.5749928951, alpha: 1))
+                                    ? Color(#colorLiteral(red: 0.1294117719, green: 0.2156862766, blue: 0.06666667014, alpha: 1))
+                                    : file.isSymbolicDirectory
+                                        ? Color(#colorLiteral(red: 0.07102862641, green: 0.400000006, blue: 0.2974898127, alpha: 1)) // dark orange
+                                        : Color(#colorLiteral(red: 0.004859850742, green: 0.09608627111, blue: 0.5749928951, alpha: 1))
                             )
                     }
                     .frame(minWidth: 100, maxWidth: .infinity, alignment: .leading)

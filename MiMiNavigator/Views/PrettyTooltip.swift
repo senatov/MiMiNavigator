@@ -24,21 +24,14 @@ struct PrettyTooltip: View {
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 7)
-                    .stroke(
-                        Color(
-                            #colorLiteral(red: 0.1764705926, green: 0.01176470611, blue: 0.5607843399, alpha: 1)
-                        ),
-                        lineWidth: 0.5
-                    )
+                    .stroke(Color(#colorLiteral(red: 0.1764705926, green: 0.01176470611, blue: 0.5607843399, alpha: 1)), lineWidth: 0.5)
             )
             .shadow(
-                color: Color(
-                    #colorLiteral(red: 0.7540688515, green: 0.7540867925, blue: 0.7540771365, alpha: 1)
-                ),
+                color: Color(#colorLiteral(red: 0.7540688515, green: 0.7540867925, blue: 0.7540771365, alpha: 1)),
                 radius: 7.0
             )
             .fixedSize()
-            .padding(5)
+            .padding(6)
     }
 }
 
