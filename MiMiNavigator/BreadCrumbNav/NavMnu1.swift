@@ -15,28 +15,12 @@ struct NavMnu1: View {
 
     // MARK: -
     var body: some View {
-        if !appState.showFavButtonsL {
-            HStack(spacing: 4) {
-                ButtonTopPanelLeft()
-            }
-            .padding(.leading, 6)
-            .onAppear {
-                if !appState.showFavButtonsL {
-                    appState.showFavButtonsL = true
-                }
-            }
+        HStack(spacing: 4) {
+            ButtonTopPanelL()
+            //ButtonTopPanelR()
+            //if !appState.showFavButtonsL { ButtonTopPanelL() }
+            //if !appState.showFavButtonsR { ButtonTopPanelR() }
         }
-        if !appState.showFavButtonsR {
-            HStack(spacing: 4) {
-                ButtonTopPanelRight()
-            }
-            .padding(.leading, 6)
-            .onAppear {
-                if !appState.showFavButtonsR {
-                    appState.showFavButtonsR = true
-                }
-            }
-        }
-
+        .padding(.leading, 6)
     }
 }

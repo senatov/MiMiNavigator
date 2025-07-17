@@ -3,11 +3,12 @@ import SwiftUI
 import SwiftyBeaver
 
 // MARK: -
-struct ButtonTopPanelLeft: View {
+struct ButtonTopPanelL: View {
 
     @State private var favTreeStruct: [CustomFile] = []
     @EnvironmentObject var appState: AppState
-    let panelSide: PanelSide = .left 
+    let panelSide: PanelSide = .left
+
 
     // MARK: -
     public var body: some View {
@@ -16,7 +17,8 @@ struct ButtonTopPanelLeft: View {
 
     // MARK: -
     private var navigationControls: some View {
-        HStack(spacing: 6) {
+        appState.showFavButtonsL = true
+        return HStack(spacing: 6) {
             backButton
             forwardButton
             menuButton
