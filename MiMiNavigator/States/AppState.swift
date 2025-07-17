@@ -12,19 +12,20 @@ import Foundation
 
 @MainActor
 final class AppState: ObservableObject {
-    // MARK: - Path & Files
-    @Published var showFavTreePopup: Bool = false
-    @Published var leftPath: String
-    @Published var rightPath: String
+
     @Published var displayedLeftFiles: [CustomFile] = []
     @Published var displayedRightFiles: [CustomFile] = []
-    // MARK: - Selection & Focus
+    @Published var focusedSide: PanelSide = .left
+    @Published var leftPath: String
+    @Published var rightPath: String
+    @Published var selectedDir: SelectedDir = SelectedDir()
     @Published var selectedLeftFile: CustomFile?
     @Published var selectedRightFile: CustomFile?
-    @Published var focusedSide: PanelSide = .left
-    @Published var selectedDir: SelectedDir = SelectedDir()
-    var scanner: DualDirectoryScanner!
+    @Published var showFavTreePopup: Bool = false
+    @Published var showFavButtonsL = false
+    @Published var showFavButtonsR = false
     let fileManager = FileManager.default
+    var scanner: DualDirectoryScanner!
 
 
     // MARK: -

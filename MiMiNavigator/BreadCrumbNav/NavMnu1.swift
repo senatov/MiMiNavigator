@@ -15,9 +15,28 @@ struct NavMnu1: View {
 
     // MARK: -
     var body: some View {
-        HStack(spacing: 4) {
-            FavButtonPopupTopPanel()
+        if !appState.showFavButtonsL {
+            HStack(spacing: 4) {
+                ButtonTopPanelLeft()
+            }
+            .padding(.leading, 6)
+            .onAppear {
+                if !appState.showFavButtonsL {
+                    appState.showFavButtonsL = true
+                }
+            }
         }
-        .padding(.leading, 6)
+        if !appState.showFavButtonsR {
+            HStack(spacing: 4) {
+                ButtonTopPanelRight()
+            }
+            .padding(.leading, 6)
+            .onAppear {
+                if !appState.showFavButtonsR {
+                    appState.showFavButtonsR = true
+                }
+            }
+        }
+
     }
 }
