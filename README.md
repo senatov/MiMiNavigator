@@ -22,7 +22,9 @@
 MiMiNavigator is a macOS file manager built with Swift and SwiftUI.
 The repository is organized around an Xcode project with sources under `MiMiNavigator/` and basic tests in `MiMiNavigatorTests` and `MiMiNavigatorUITests`.
 
-![Preview FrontEnd](docs/Preview.png "Preview")
+<p align="center">
+  <img src="docs/Preview.png" alt="Preview FrontEnd" title="Preview" style="max-width: 100%; height: auto;" />
+</p>
 
 
 ### General structure
@@ -72,7 +74,7 @@ Other resources include asset catalogs, entitlements files, and a `refreshVersio
 
 - **Actors and concurrency** `DualDirectoryScanner` demonstrates using timers inside an actor for periodic work.
 
-- **AppKit interop** Some components rely on `NSWorkspace`, `NSAlert`, and other AppKit APIs for macOS specific functionality.
+- **AppKit interop** Some components rely on `NSWorkspace`, `NSAlert`, and other AppKit APIs for macOS 6.4 specific functionality.
 
 - **Persistent data** The app uses SwiftData `ModelContainer` for future persistence, though currently the `Item`model is minimal.
 
@@ -128,8 +130,8 @@ This project is still under active development ( NOT READY YET  per the README) 
 3. Automatic Updates: The application will periodically scan the specified directories and refresh content in real time.
 
 ## Authors
--
-- Iakov Senatov:  [![LinkedIn](https://www.shareicon.net/data/128x128/2017/06/16/887138_logo_512x512.png?logo=linkedin)](https://www.linkedin.com/in/iakov-senatov-07060765)
+
+- Iakov Senatov:  [![LinkedIn](https://img.shields.io/badge/LinkedIn-Profile-blue?style=flat&logo=linkedin)](https://www.linkedin.com/in/iakov-senatov-07060765)
 
 | Step           | Description                                                                                         |
 |-------------------------|--------------------------------------------------------------------------------------------|
