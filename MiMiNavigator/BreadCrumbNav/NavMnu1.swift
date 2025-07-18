@@ -16,10 +16,7 @@ struct NavMnu1: View {
     // MARK: -
     var body: some View {
         HStack(spacing: 4) {
-            ButtonTopPanelL()
-            //ButtonTopPanelR()
-            //if !appState.showFavButtonsL { ButtonTopPanelL() }
-            //if !appState.showFavButtonsR { ButtonTopPanelR() }
+            ButtonTopPanel()
         }
         .padding(.leading, 6)
     }
