@@ -3,11 +3,11 @@ import SwiftUI
 import SwiftyBeaver
 
 // MARK: -
-struct ButtonTopPanelRight: View {
+struct ButtonFavTopPanel: View {
 
     @State private var favTreeStruct: [CustomFile] = []
     @EnvironmentObject var appState: AppState
-    let panelSide: PanelSide = .right
+    let panelSide: PanelSide = .left
 
     // MARK: -
     public var body: some View {
@@ -17,14 +17,38 @@ struct ButtonTopPanelRight: View {
     // MARK: -
     private var navigationControls: some View {
         HStack(spacing: 6) {
-            backButton
-            forwardButton
-            menuButton
+            backButton()
+            forwardButton()
+            menuButton()
         }
     }
 
     // MARK: -
-    private var backButton: some View {
+    private func menuButton() -> some View {
+        log.info(#function)
+        return extractedFunc()
+    }
+
+    // MARK: -
+    private func extractedFunc() -> some View {
+        return Button(action: {
+            log.info("Navigation between favorites")
+            if favTreeStruct.isEmpty { Task { await fetchFavTree() } }
+            appState.showFavTreePopup.toggle()
+        }) {
+            Image(systemName: "arrow.down.left").renderingMode(.original)
+        }
+        .shadow(color: .blue.opacity(0.15), radius: 5.0, x: 1, y: 1)
+        .buttonStyle(.plain)
+        .popover(isPresented: $appState.showFavTreePopup, arrowEdge: .bottom) {
+            favoritePopover()
+        }
+        .help("Navigation between favorites - \(String(describing: panelSide))")
+    }
+
+
+    // MARK: -
+    private func backButton() -> some View {
         Button(action: { log.info("Back: navigating to previous directory") }) {
             Image(systemName: "arrowshape.backward").renderingMode(.original)
         }
@@ -34,7 +58,7 @@ struct ButtonTopPanelRight: View {
     }
 
     // MARK: -
-    private var forwardButton: some View {
+    private func forwardButton() -> some View {
         Button(action: { log.info("Forward: navigating to next directory") }) {
             Image(systemName: "arrowshape.right").renderingMode(.original)
         }
@@ -42,24 +66,6 @@ struct ButtonTopPanelRight: View {
         .disabled(true)
         .help("Forward: navigating to next directory")
         .accessibilityLabel("Forward button")
-    }
-
-    // MARK: -
-    private var menuButton: some View {
-        log.info(#function)
-        return Button(action: {
-            log.info("Navigation between favorites")
-            if favTreeStruct.isEmpty { Task { await fetchFavTree() } }
-            appState.showFavTreePopup.toggle()
-        }) {
-            Image(systemName: "arrow.down.right").renderingMode(.original)
-        }
-        .shadow(color: .blue.opacity(0.15), radius: 5.0, x: 1, y: 1)
-        .buttonStyle(.plain)
-        .popover(isPresented: $appState.showFavTreePopup, arrowEdge: .bottom) {
-            favoritePopover()
-        }
-        .help("Navigation between favorites - \(panelSide)")
     }
 
     // MARK: -
