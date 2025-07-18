@@ -15,7 +15,8 @@ struct NavMnu2: View {
 
     // MARK: --
     var body: some View {
-        Menu {
+        log.info(#function)
+        return Menu {
             Button("Properties", action: handleProperties)
             Button("Open in Finder", action: handleOpenInFinder)
         } label: {

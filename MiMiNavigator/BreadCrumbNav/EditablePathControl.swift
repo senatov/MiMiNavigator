@@ -20,8 +20,7 @@ struct EditablePathControl: View {
         return HStack(spacing: 2) {
             NavMnu1()
             Spacer(minLength: 3)
-            BreadCrumbView()
-                .environmentObject(appState)
+            BreadCrumbView().environmentObject(appState)
             NavMnu2()
         }
         .background(

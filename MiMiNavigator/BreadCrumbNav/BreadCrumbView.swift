@@ -16,7 +16,8 @@ struct BreadCrumbView: View {
 
     // MARK: -
     var body: some View {
-        HStack(spacing: 4) {
+        log.info(#function)
+        return HStack(spacing: 4) {
             ForEach(pathComponents.indices, id: \.self) { index in
                 breadcrumbItem(index: index)
             }
@@ -26,6 +27,7 @@ struct BreadCrumbView: View {
 
     // MARK: -
     private var pathComponents: [String] {
+        log.info(#function)
         let path = (appState.focusedSide == .left ? appState.leftPath : appState.rightPath)
         return path.split(separator: "/").map(String.init)
     }
