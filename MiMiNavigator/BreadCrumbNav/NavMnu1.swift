@@ -11,13 +11,10 @@ import SwiftyBeaver
 
 // MARK: -
 struct NavMnu1: View {
-    @EnvironmentObject var appState: AppState
-
     // MARK: -
     var body: some View {
-        log.info(#function)
-        return HStack(spacing: 4) {
-            ButtonTopPanel()
+        HStack(spacing: 4) {
+            ButtonFavTopPanel()
         }
         .padding(.leading, 6)
     }

@@ -169,7 +169,7 @@ This project is still under active development ( NOT READY YET  per the README) 
 | * c3f2abd - Senatov  Update README.md (19 hours ago, 2025-07-17 00:48:26 +0200)
 * | 5cbad92 - Senatov  ver. and md fix (18 hours ago, 2025-07-17 01:24:19 +0200)
 * | b452414 - Senatov  fix preview (19 hours ago, 2025-07-17 01:09:11 +0200)
-|/  
+|/
 * 443b60c - Senatov  fixed: intern size of panels and side var (19 hours ago, 2025-07-17 00:46:17 +0200)
 * c0d76df - Senatov  test (21 hours ago, 2025-07-16 23:19:11 +0200)
 * 6abe2a4 - Senatov  restore preview (21 hours ago, 2025-07-16 22:35:08 +0200)
@@ -203,7 +203,7 @@ This project is still under active development ( NOT READY YET  per the README) 
 * 38b0532 - Senatov  clean app. Check left and right (4 weeks ago, 2025-06-16 19:44:02 +0200)
 * ee1a5d9 - Senatov  (tag: preview) new ver marker (5 weeks ago, 2025-06-11 12:53:43 +0200)
 *   6db49aa - Senatov  Merge remote-tracking branch 'origin/detached' (5 weeks ago, 2025-06-11 12:51:31 +0200)
-|\  
+|\
 | * c5f7ef5 - Senatov  (origin/detached) tested. global vars implemented. (7 weeks ago, 2025-05-31 14:58:44 +0200)
 | * 3eef2c3 - Senatov  call refresh files cngs (7 weeks ago, 2025-05-31 00:55:49 +0200)
 * | 0d75775 - Senatov  new look (5 weeks ago, 2025-06-11 12:46:46 +0200)

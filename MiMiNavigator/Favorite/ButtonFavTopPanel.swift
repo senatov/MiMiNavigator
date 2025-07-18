@@ -3,12 +3,11 @@ import SwiftUI
 import SwiftyBeaver
 
 // MARK: -
-struct ButtonTopPanel: View {
+struct ButtonFavTopPanel: View {
 
     @State private var favTreeStruct: [CustomFile] = []
     @EnvironmentObject var appState: AppState
     let panelSide: PanelSide = .left
-
 
     // MARK: -
     public var body: some View {
@@ -17,38 +16,21 @@ struct ButtonTopPanel: View {
 
     // MARK: -
     private var navigationControls: some View {
-        appState.showFavButtonsL = true
-        return HStack(spacing: 6) {
-            backButton
-            forwardButton
-            menuButton
+        HStack(spacing: 6) {
+            backButton()
+            forwardButton()
+            menuButton()
         }
     }
 
     // MARK: -
-    private var backButton: some View {
-        Button(action: { log.info("Back: navigating to previous directory") }) {
-            Image(systemName: "arrowshape.backward").renderingMode(.original)
-        }
-        .shadow(color: .blue.opacity(0.15), radius: 7.0, x: 1, y: 1)
-        .help("Back: navigating to previous directory")
-        .accessibilityLabel("Back button")
-    }
-
-    // MARK: -
-    private var forwardButton: some View {
-        Button(action: { log.info("Forward: navigating to next directory") }) {
-            Image(systemName: "arrowshape.right").renderingMode(.original)
-        }
-        .shadow(color: .blue.opacity(0.15), radius: 7.0, x: 1, y: 1)
-        .disabled(true)
-        .help("Forward: navigating to next directory")
-        .accessibilityLabel("Forward button")
-    }
-
-    // MARK: -
-    private var menuButton: some View {
+    private func menuButton() -> some View {
         log.info(#function)
+        return extractedFunc()
+    }
+
+    // MARK: -
+    private func extractedFunc() -> some View {
         return Button(action: {
             log.info("Navigation between favorites")
             if favTreeStruct.isEmpty { Task { await fetchFavTree() } }
@@ -61,7 +43,29 @@ struct ButtonTopPanel: View {
         .popover(isPresented: $appState.showFavTreePopup, arrowEdge: .bottom) {
             favoritePopover()
         }
-        .help("Navigation between favorites - \(panelSide)")
+        .help("Navigation between favorites - \(String(describing: panelSide))")
+    }
+
+
+    // MARK: -
+    private func backButton() -> some View {
+        Button(action: { log.info("Back: navigating to previous directory") }) {
+            Image(systemName: "arrowshape.backward").renderingMode(.original)
+        }
+        .shadow(color: .blue.opacity(0.15), radius: 7.0, x: 1, y: 1)
+        .help("Back: navigating to previous directory")
+        .accessibilityLabel("Back button")
+    }
+
+    // MARK: -
+    private func forwardButton() -> some View {
+        Button(action: { log.info("Forward: navigating to next directory") }) {
+            Image(systemName: "arrowshape.right").renderingMode(.original)
+        }
+        .shadow(color: .blue.opacity(0.15), radius: 7.0, x: 1, y: 1)
+        .disabled(true)
+        .help("Forward: navigating to next directory")
+        .accessibilityLabel("Forward button")
     }
 
     // MARK: -
