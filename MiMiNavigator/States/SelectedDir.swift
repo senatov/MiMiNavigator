@@ -39,12 +39,5 @@ public class SelectedDir: ObservableObject {
         self.side = side
     }
 
-  
-    
-    // MARK: -
-    public func change(initialPath: String = "/Users/senat/Downloads", side: PanelSide = .left) {
-        log.info("#function + (initialPath: \(initialPath), side: \(side))")
-        self.selectedFSEntity = CustomFile(path: initialPath)
-        self.side = side
-    }
+
 }

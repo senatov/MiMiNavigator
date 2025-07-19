@@ -125,7 +125,7 @@ final class AppState: ObservableObject {
 
 
     // MARK: -
-    public func getSelectedDir() -> SelectedDir {
+    func getSelectedDir() -> SelectedDir {
         log.info(#function + " at path: \(selectedDir.selectedFSEntity?.nameStr ?? "nil")")
         return selectedDir
     }
