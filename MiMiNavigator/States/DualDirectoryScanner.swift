@@ -37,7 +37,7 @@ actor DualDirectoryScanner {
 
 
     // MARK: -
-    public func setRightDirectory(pathStr: String) {
+    func setRightDirectory(pathStr: String) {
         log.debug("\(#function) pathStr: \(pathStr)")
         Task { @MainActor in
             appState.rightPath = pathStr
@@ -46,7 +46,7 @@ actor DualDirectoryScanner {
 
 
     // MARK: -
-    public func setLeftDirectory(pathStr: String) {
+    func setLeftDirectory(pathStr: String) {
         log.debug("\(#function) pathStr: \(pathStr)")
         Task { @MainActor in
             appState.leftPath = pathStr
@@ -75,7 +75,7 @@ actor DualDirectoryScanner {
 
     // MARK: - Refreshes the file list for a specific directory side
     @Sendable
-    public func refreshFiles(currSide: PanelSide) async {
+    func refreshFiles(currSide: PanelSide) async {
         log.info(#function + " currSide: \(currSide)")
         do {
             switch currSide {

@@ -35,13 +35,6 @@ struct PrettyTooltip: View {
     }
 }
 
-struct PrettyTooltip_Previews: PreviewProvider {
-    static var previews: some View {
-        PrettyTooltip(text: "This is some ToolTip, Hurra!")
-            .frame(height: 40)
-    }
-}
-
 #Preview {
     PrettyTooltip(text: "This is some ToolTip, Hurra!")
         .frame(height: 40)
