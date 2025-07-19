@@ -133,8 +133,8 @@ This project is still under active development ( NOT READY YET  per the README) 
 
 - Iakov Senatov:  [![LinkedIn](https://img.shields.io/badge/LinkedIn-Profile-blue?style=flat&logo=linkedin)](https://www.linkedin.com/in/iakov-senatov-07060765)
 
-| Step           | Description                                                                                         |
-|-------------------------|--------------------------------------------------------------------------------------------|
+| Step                | Description                                                                                    |
+|---------------------|------------------------------------------------------------------------------------------------|
 | Installation        | Clone the repository, navigate to the project directory, and install dependencies as required. |
 | Running the Project | Use the command `swift run` to launch the project.                                             |
 | Usage               | Access features like configuration, file management, network, and tools from the main menu.    |
@@ -160,25 +160,34 @@ This project is still under active development ( NOT READY YET  per the README) 
 
 ## Recent Changes
 ```log
- 53b6dc9 - Senatov  dirs&linkeddir&files color (default after clean install) (8 hours ago, 2025-07-17 11:47:09 +0200)
-* 948d4b0 - Senatov  in utf8 (18 hours ago, 2025-07-17 01:32:19 +0200)
-* 2dad0c4 - Senatov  .merged (18 hours ago, 2025-07-17 01:28:49 +0200)
-*   142a08f - Senatov  Merge remote-tracking branch 'origin/master' (18 hours ago, 2025-07-17 01:25:37 +0200)
+*   c9e7e6d - Senatov  (HEAD -> master, origin/master, origin/HEAD) Merge branch 'refs/heads/fix_errors' (40 seconds ago, 2025-07-18 09:01:46 +0200)
 |\  
-| * 44752c2 - Senatov  Update README.md (19 hours ago, 2025-07-17 00:50:23 +0200)
-| * c3f2abd - Senatov  Update README.md (19 hours ago, 2025-07-17 00:48:26 +0200)
-* | 5cbad92 - Senatov  ver. and md fix (18 hours ago, 2025-07-17 01:24:19 +0200)
-* | b452414 - Senatov  fix preview (19 hours ago, 2025-07-17 01:09:11 +0200)
-|/
-* 443b60c - Senatov  fixed: intern size of panels and side var (19 hours ago, 2025-07-17 00:46:17 +0200)
-* c0d76df - Senatov  test (21 hours ago, 2025-07-16 23:19:11 +0200)
-* 6abe2a4 - Senatov  restore preview (21 hours ago, 2025-07-16 22:35:08 +0200)
-* ebf3a9c - Senatov  file pane's headers (21 hours ago, 2025-07-16 22:28:12 +0200)
-* a9c3fd8 - Senatov  .@concurrent (24 hours ago, 2025-07-16 19:34:12 +0200)
-* 6cef802 - Senatov  down button panel paddind (27 hours ago, 2025-07-16 16:54:20 +0200)
-* 2d99e1a - Senatov  ver. string (29 hours ago, 2025-07-16 15:06:25 +0200)
-* 14c7dc4 - Senatov  nothing intresting (29 hours ago, 2025-07-16 14:43:24 +0200)
-* 5ce7f3a - Senatov  current (30 hours ago, 2025-07-16 14:13:44 +0200)
+| * 7e63b4c - Senatov  (origin/fix_errors, fix_errors) fixed (2 hours ago, 2025-07-18 06:45:53 +0200)
+* | 787827d - Senatov  +wrong (3 hours ago, 2025-07-18 06:10:28 +0200)
+* | 2de1fd8 - Senatov  tmp wrong (3 hours ago, 2025-07-18 05:49:31 +0200)
+* | 8674f2d - Senatov  not ready (11 hours ago, 2025-07-17 21:51:25 +0200)
+* | 29713d3 - Senatov  button fav directories (13 hours ago, 2025-07-17 19:50:46 +0200)
+|/  
+* e1b6b00 - Senatov  top favorites mnu popup - not ready yet (13 hours ago, 2025-07-17 19:46:43 +0200)
+* 53b6dc9 - Senatov  dirs&linkeddir&files color (default after clean install) (21 hours ago, 2025-07-17 11:47:09 +0200)
+* 948d4b0 - Senatov  in utf8 (32 hours ago, 2025-07-17 01:32:19 +0200)
+* 2dad0c4 - Senatov  .merged (32 hours ago, 2025-07-17 01:28:49 +0200)
+*   142a08f - Senatov  Merge remote-tracking branch 'origin/master' (32 hours ago, 2025-07-17 01:25:37 +0200)
+|\  
+| * 44752c2 - Senatov  Update README.md (32 hours ago, 2025-07-17 00:50:23 +0200)
+| * c3f2abd - Senatov  Update README.md (32 hours ago, 2025-07-17 00:48:26 +0200)
+* | 5cbad92 - Senatov  ver. and md fix (32 hours ago, 2025-07-17 01:24:19 +0200)
+* | b452414 - Senatov  fix preview (32 hours ago, 2025-07-17 01:09:11 +0200)
+|/  
+* 443b60c - Senatov  fixed: intern size of panels and side var (32 hours ago, 2025-07-17 00:46:17 +0200)
+* c0d76df - Senatov  test (34 hours ago, 2025-07-16 23:19:11 +0200)
+* 6abe2a4 - Senatov  restore preview (34 hours ago, 2025-07-16 22:35:08 +0200)
+* ebf3a9c - Senatov  file pane's headers (35 hours ago, 2025-07-16 22:28:12 +0200)
+* a9c3fd8 - Senatov  .@concurrent (2 days ago, 2025-07-16 19:34:12 +0200)
+* 6cef802 - Senatov  down button panel paddind (2 days ago, 2025-07-16 16:54:20 +0200)
+* 2d99e1a - Senatov  ver. string (2 days ago, 2025-07-16 15:06:25 +0200)
+* 14c7dc4 - Senatov  nothing intresting (2 days ago, 2025-07-16 14:43:24 +0200)
+* 5ce7f3a - Senatov  current (2 days ago, 2025-07-16 14:13:44 +0200)
 * 2cb4f03 - Senatov  Update README.md (3 weeks ago, 2025-06-28 18:09:38 +0200)
 * b8ef797 - Senatov  pnl new look (3 weeks ago, 2025-06-28 14:24:36 +0200)
 * 61e9c2e - Senatov  panel's new look (3 weeks ago, 2025-06-28 14:24:01 +0200)
@@ -200,24 +209,17 @@ This project is still under active development ( NOT READY YET  per the README) 
 * 20ab256 - Senatov  new logos (4 weeks ago, 2025-06-17 02:03:51 +0200)
 * 5bdf655 - Senatov  new ver. string (4 weeks ago, 2025-06-16 22:32:37 +0200)
 * d6b78fe - Senatov  smi (4 weeks ago, 2025-06-16 22:30:52 +0200)
-* 38b0532 - Senatov  clean app. Check left and right (4 weeks ago, 2025-06-16 19:44:02 +0200)
+* 38b0532 - Senatov  clean app. Check left and right (5 weeks ago, 2025-06-16 19:44:02 +0200)
 * ee1a5d9 - Senatov  (tag: preview) new ver marker (5 weeks ago, 2025-06-11 12:53:43 +0200)
 *   6db49aa - Senatov  Merge remote-tracking branch 'origin/detached' (5 weeks ago, 2025-06-11 12:51:31 +0200)
-|\
-| * c5f7ef5 - Senatov  (origin/detached) tested. global vars implemented. (7 weeks ago, 2025-05-31 14:58:44 +0200)
+|\  
+| * c5f7ef5 - Senatov  tested. global vars implemented. (7 weeks ago, 2025-05-31 14:58:44 +0200)
 | * 3eef2c3 - Senatov  call refresh files cngs (7 weeks ago, 2025-05-31 00:55:49 +0200)
 * | 0d75775 - Senatov  new look (5 weeks ago, 2025-06-11 12:46:46 +0200)
 * | 71342ab - Senatov  new look (5 weeks ago, 2025-06-11 12:45:19 +0200)
 * | 850a462 - Senatov  convert to XCode 26. OK (5 weeks ago, 2025-06-11 00:34:10 +0200)
 * | 4a480ba - Senatov  to XCode ver. 26 (5 weeks ago, 2025-06-10 23:37:38 +0200)
-* | 18dadff - Senatov  added ndo (5 weeks ago, 2025-06-10 13:06:39 +0200)
-* | dcb4f32 - Senatov  min. fix of calls. Tested. Memory leaks (7 weeks ago, 2025-06-01 20:29:01 +0200)
-* | 89dcabb - Senatov      timeOutRefresh (7 weeks ago, 2025-06-01 19:50:24 +0200)
-* | 806f3fe - Senatov  Top Mnu categories as @MainActor (7 weeks ago, 2025-06-01 14:02:23 +0200)
-* | 19ea964 - Senatov  button "Help" + placeholders (7 weeks ago, 2025-06-01 13:46:57 +0200)
-* | 3771099 - Senatov  refresh info (7 weeks ago, 2025-06-01 12:29:52 +0200)
-* | 6b453d5 - Senatov  version status info (7 weeks ago, 2025-06-01 10:53:02 +0200)
-* | fc0fc7c - Senatov  scann repair (7 weeks ago, 2025-06-01 10:50:53 +0200)
+
 ```
 
  ##  Related Links
