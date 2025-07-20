@@ -35,15 +35,11 @@ actor FileSingleton: ObservableObject, @unchecked Sendable {
         await notifyObservers()
     }
 
-    // MARK: - Non-isolated accessor methods to allow safe access for SwiftUI
-    @Sendable
-    nonisolated func getLeftFiles() async -> [CustomFile] {
-        await _leftFiles
+    func getLeftFiles() async -> [CustomFile] {
+        _leftFiles
     }
 
-    // MARK: -
-    @Sendable
-    nonisolated func getRightFiles() async -> [CustomFile] {
-        await _rightFiles
+    func getRightFiles() async -> [CustomFile] {
+        _rightFiles
     }
 }
