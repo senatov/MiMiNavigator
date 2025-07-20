@@ -15,7 +15,8 @@ struct FavTreeView: View {
 
     // MARK: -
     var body: some View {
-        VStack(alignment: .leading) {
+        log.info(#function)
+        return VStack(alignment: .leading) {
             fileRow
             childrenList
         }

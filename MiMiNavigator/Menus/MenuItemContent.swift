@@ -16,7 +16,8 @@ struct MenuItemContent: View {
 
     // MARK: -
     var body: some View {
-        HStack {
+        log.info(#function)
+        return HStack {
             Text(title)
             Spacer()
             if let shortcut = shortcut {

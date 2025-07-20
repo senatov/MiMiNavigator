@@ -13,7 +13,8 @@ import SwiftyBeaver
 struct NavMnu1: View {
     // MARK: -
     var body: some View {
-        HStack(spacing: 4) {
+        log.info(#function)
+        return HStack(spacing: 4) {
             ButtonFavTopPanel()
         }
         .padding(.leading, 6)

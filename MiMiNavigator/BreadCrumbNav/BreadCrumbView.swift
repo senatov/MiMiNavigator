@@ -49,6 +49,7 @@ struct BreadCrumbView: View {
                 .foregroundColor(.blue)
         }
         .buttonStyle(.plain)
+        .help("Navigate to \(pathComponents[index])")
     }
 
     // MARK: - Handle Selection

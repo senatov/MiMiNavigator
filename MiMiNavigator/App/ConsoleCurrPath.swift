@@ -14,7 +14,8 @@ import SwiftyBeaver
 struct ConsoleCurrPath: View {
 
     var body: some View {
-        VStack {
+        log.info(#function)
+        return VStack {
         }
         .foregroundColor(.primary)  // System default color
         .padding()
