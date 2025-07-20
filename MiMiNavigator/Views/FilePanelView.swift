@@ -18,11 +18,11 @@ struct FilePanelView: View {
     @Binding var leftPanelWidth: CGFloat
     let fetchFiles: @Sendable (PanelSide) async -> Void
 
-    // MARK: -
+    // MARK: - View
     var body: some View {
         let currentPath = appState.pathURL(for: currSide)
         VStack {
-            EditablePathControlWrapper(appState: appState, selectedSide: currSide)
+            EditablePathControlWrapper(selectedSide: currSide)
                 .onChange(of: currentPath) {
                     guard let url = currentPath else {
                         log.warning("Tried to set nil path for side \(currSide)")
@@ -45,7 +45,7 @@ struct FilePanelView: View {
                                 file.isDirectory
                                     ? Color(#colorLiteral(red: 0.1294117719, green: 0.2156862766, blue: 0.06666667014, alpha: 1))
                                     : file.isSymbolicDirectory
-                                        ? Color(#colorLiteral(red: 0.07102862641, green: 0.400000006, blue: 0.2974898127, alpha: 1)) // dark orange
+                                        ? Color(#colorLiteral(red: 0.07102862641, green: 0.400000006, blue: 0.2974898127, alpha: 1))
                                         : Color(#colorLiteral(red: 0.004859850742, green: 0.09608627111, blue: 0.5749928951, alpha: 1))
                             )
                     }
@@ -70,11 +70,9 @@ struct FilePanelView: View {
         }
         .frame(width: currSide == .left ? (leftPanelWidth > 0 ? leftPanelWidth : geometry.size.width / 2) : nil)
     }
-}
 
-// MARK: -
-extension FilePanelView {
-    fileprivate var sortedFiles: [CustomFile] {
+    // MARK: - Helpers
+    private var sortedFiles: [CustomFile] {
         let files = appState.displayedFiles(for: currSide)
         let directories = files.filter { $0.isDirectory || $0.isSymbolicDirectory }
             .sorted { $0.nameStr.localizedCompare($1.nameStr) == .orderedAscending }

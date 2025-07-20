@@ -10,7 +10,7 @@ import SwiftUI
 
 // MARK: - Reusable path control component with edit mode, integrated with AppState.
 struct EditablePathControlWrapper: View {
-    @StateObject var appState = AppState()
+    @EnvironmentObject var appState: AppState
     @State private var editedPathStr: String = ""
     @State private var isEditing = false
     @FocusState private var isTextFieldFocused: Bool
@@ -19,7 +19,8 @@ struct EditablePathControlWrapper: View {
 
     // MARK: - Body
     var body: some View {
-        HStack {
+        log.debug("EditablePathControlWrapper body for side \(selectedSide)")
+        return HStack {
             if isEditing {
                 editingView
             }
