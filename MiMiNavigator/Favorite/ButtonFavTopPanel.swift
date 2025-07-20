@@ -11,12 +11,14 @@ struct ButtonFavTopPanel: View {
 
     // MARK: -
     public var body: some View {
-        VStack(alignment: .leading, spacing: 4) { navigationControls }
+        log.info(#function)
+        return VStack(alignment: .leading, spacing: 4) { navigationControls }
     }
 
     // MARK: -
     private var navigationControls: some View {
-        HStack(spacing: 6) {
+        log.info(#function)
+        return HStack(spacing: 6) {
             backButton()
             forwardButton()
             menuButton()

@@ -11,7 +11,8 @@ import SwiftUI
 struct TopMenuBarView: View {
     // MARK: -
     var body: some View {
-        HStack(spacing: 8) {
+        log.info(#function)
+        return HStack(spacing: 8) {
             ForEach(menuData.dropLast()) { menu in
                 menuView(for: menu)
             }

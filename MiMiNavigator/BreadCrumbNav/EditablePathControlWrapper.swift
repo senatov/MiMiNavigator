@@ -44,7 +44,8 @@ struct EditablePathControlWrapper: View {
 
     // MARK: - Editing View
     private var editingView: some View {
-        HStack {
+        log.info(#function)
+        return HStack {
             TextField("Enter path", text: $editedPathStr)
                 .textFieldStyle(.plain)
                 .padding(6)

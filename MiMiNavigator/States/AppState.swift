@@ -22,8 +22,6 @@ final class AppState: ObservableObject {
     @Published var selectedLeftFile: CustomFile?
     @Published var selectedRightFile: CustomFile?
     @Published var showFavTreePopup: Bool = false
-    @Published var showFavButtonsL = false
-    @Published var showFavButtonsR = false
     let fileManager = FileManager.default
     var scanner: DualDirectoryScanner!
 
