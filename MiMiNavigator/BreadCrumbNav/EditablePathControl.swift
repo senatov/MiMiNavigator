@@ -13,12 +13,18 @@ import SwiftyBeaver
 /// A view displaying a breadcrumb-style editable path bar with panel navigation menus.
 struct EditablePathControl: View {
     @EnvironmentObject var appState: AppState
+    let panelSide: PanelSide
+
+    init(selectedSide: PanelSide) {
+        log.info("EditablePathControl init")
+        self.panelSide = selectedSide
+    }
 
     // MARK: -
     var body: some View {
         log.info(#function)
         return HStack(spacing: 2) {
-            NavMnu1()
+            NavMnu1(selectedSide: panelSide)
             Spacer(minLength: 3)
             BreadCrumbView().environmentObject(appState)
             NavMnu2()

@@ -7,7 +7,13 @@ struct ButtonFavTopPanel: View {
 
     @State private var favTreeStruct: [CustomFile] = []
     @EnvironmentObject var appState: AppState
-    let panelSide: PanelSide = .left
+    let panelSide: PanelSide
+
+    init(selectedSide: PanelSide) {
+        log.info("ButtonFavTopPanel init")
+        self.panelSide = selectedSide
+    }
+
 
     // MARK: -
     public var body: some View {

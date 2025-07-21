@@ -14,12 +14,20 @@ struct EditablePathControlWrapper: View {
     @State private var editedPathStr: String = String.empty
     @State private var isEditing = false
     @FocusState private var isTextFieldFocused: Bool
-    let selectedSide: PanelSide
+    let panelSide: PanelSide
+
+
+    // MARK: - Initializer
+    init(selectedSide: PanelSide) {
+        log.info("EditablePathControl init")
+        self.panelSide = selectedSide
+    }
+
 
 
     // MARK: - Body
     var body: some View {
-        log.info(#function + "for side \(selectedSide)")
+        log.info(#function + "for side \(panelSide)")
         return HStack {
             if isEditing {
                 editingView
@@ -44,7 +52,7 @@ struct EditablePathControlWrapper: View {
 
     // MARK: - Editing View
     private var editingView: some View {
-        log.info(#function + " for side \(selectedSide)")
+        log.info(#function + " for side \(panelSide)")
         return HStack {
             TextField("Enter path", text: $editedPathStr)
                 .textFieldStyle(.plain)
@@ -92,8 +100,8 @@ struct EditablePathControlWrapper: View {
 
     // MARK: - Display View
     private var displayView: some View {
-        log.info(#function + " for side \(selectedSide)")
-        return EditablePathControl()
+        log.info(#function + " for side \(panelSide)")
+        return EditablePathControl(selectedSide: panelSide)
             .environmentObject(appState)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(Color.white)
@@ -113,16 +121,16 @@ struct EditablePathControlWrapper: View {
 
     // MARK: - Helpers
     private var currentPath: String {
-        selectedSide == .left ? appState.leftPath : appState.rightPath
+        panelSide == .left ? appState.leftPath : appState.rightPath
     }
 
 
     // MARK: -
     private func applyPathUpdate() {
-        log.info(#function + " for side \(selectedSide) with path: \(editedPathStr)")
+        log.info(#function + " for side \(panelSide) with path: \(editedPathStr)")
         withAnimation { isEditing = false }
         Task {
-            if selectedSide == .left {
+            if panelSide == .left {
                 appState.leftPath = editedPathStr
                 await appState.scanner.setLeftDirectory(pathStr: editedPathStr)
                 await appState.refreshLeftFiles()
