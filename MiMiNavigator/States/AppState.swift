@@ -28,8 +28,8 @@ final class AppState: ObservableObject {
 
     // MARK: -
     init() {
-        self.leftPath = fileManager.urls(for: .downloadsDirectory, in: .userDomainMask).first?.path ?? ""
-        self.rightPath = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first?.path ?? ""
+        self.leftPath = fileManager.urls(for: .downloadsDirectory, in: .userDomainMask).first?.path ?? .empty
+        self.rightPath = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first?.path ?? .empty
         self.scanner = DualDirectoryScanner(appState: self)
     }
 

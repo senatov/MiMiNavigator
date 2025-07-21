@@ -14,7 +14,7 @@ struct TotalCommanderResizableView: View {
     @State private var leftPanelWidth: CGFloat = 0
     @State private var isDividerTooltipVisible: Bool = true
     @State private var tooltipPosition: CGPoint = .zero
-    @State private var tooltipText: String = ""
+    @State private var tooltipText: String = .empty
 
     // MARK: - View Body
     var body: some View {

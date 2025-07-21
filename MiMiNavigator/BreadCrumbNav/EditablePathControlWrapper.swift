@@ -11,7 +11,7 @@ import SwiftUI
 // MARK: - Reusable path control component with edit mode, integrated with AppState.
 struct EditablePathControlWrapper: View {
     @EnvironmentObject var appState: AppState
-    @State private var editedPathStr: String = ""
+    @State private var editedPathStr: String = String.empty
     @State private var isEditing = false
     @FocusState private var isTextFieldFocused: Bool
     let selectedSide: PanelSide
@@ -19,7 +19,7 @@ struct EditablePathControlWrapper: View {
 
     // MARK: - Body
     var body: some View {
-        log.debug("EditablePathControlWrapper body for side \(selectedSide)")
+        log.info(#function + "for side \(selectedSide)")
         return HStack {
             if isEditing {
                 editingView
@@ -44,7 +44,7 @@ struct EditablePathControlWrapper: View {
 
     // MARK: - Editing View
     private var editingView: some View {
-        log.info(#function)
+        log.info(#function + " for side \(selectedSide)")
         return HStack {
             TextField("Enter path", text: $editedPathStr)
                 .textFieldStyle(.plain)
@@ -92,7 +92,7 @@ struct EditablePathControlWrapper: View {
 
     // MARK: - Display View
     private var displayView: some View {
-        log.info(#function)
+        log.info(#function + " for side \(selectedSide)")
         return EditablePathControl()
             .environmentObject(appState)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -119,7 +119,7 @@ struct EditablePathControlWrapper: View {
 
     // MARK: -
     private func applyPathUpdate() {
-        log.info(#function)
+        log.info(#function + " for side \(selectedSide) with path: \(editedPathStr)")
         withAnimation { isEditing = false }
         Task {
             if selectedSide == .left {

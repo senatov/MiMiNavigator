@@ -18,10 +18,10 @@ struct DividerView: View {
 
     var body: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 3)
+            RoundedRectangle(cornerRadius: 7)
                 .fill(.ultraThinMaterial)
                 .frame(width: 6)
-                .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 0)
+                .shadow(color: .black.opacity(0.1), radius: 7, x: 0, y: 0)
                 .overlay(
                     RoundedRectangle(cornerRadius: 3)
                         .stroke(Color.white.opacity(0.3), lineWidth: 0.5)
