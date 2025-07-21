@@ -16,7 +16,7 @@ struct PanelsRowView: View {
     let fetchFiles: @MainActor (PanelSide) async -> Void
     @EnvironmentObject var appState: AppState
 
-    @State private var tooltipText: String = ""
+    @State private var tooltipText: String = .empty
     @State private var tooltipPosition: CGPoint = .zero
     @State private var isDividerTooltipVisible: Bool = false
 
@@ -28,9 +28,6 @@ struct PanelsRowView: View {
                 leftPanelWidth: $leftPanelWidth,
                 fetchFiles: fetchFiles
             )
-            .onAppear {
-                appState.focusedSide = .left
-            }
             DividerView(
                 geometry: geometry,
                 leftPanelWidth: $leftPanelWidth,
@@ -52,13 +49,9 @@ struct PanelsRowView: View {
             FilePanelView(
                 currSide: .right,
                 geometry: geometry,
-                leftPanelWidth: $leftPanelWidth,
+                leftPanelWidth: $leftPanelWidth,  // We calculate the right part based on the total size and the left part.
                 fetchFiles: fetchFiles
             )
-            .onAppear {
-                appState.focusedSide = .right
-            }
-
         }
         .overlay(
             Group {

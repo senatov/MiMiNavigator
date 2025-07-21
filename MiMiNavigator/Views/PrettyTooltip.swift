@@ -13,11 +13,11 @@ struct PrettyTooltip: View {
     var body: some View {
         Text(text)
             .font(.system(size: 13, weight: .regular, design: .default))
-            .padding(10)
+            .padding(12)
             .background(
                 RoundedRectangle(cornerRadius: 7, style: .continuous)
-                    .fill(Color(#colorLiteral(red: 0.9764705896, green: 0.850980401, blue: 0.5490196347, alpha: 1)))  // less intense pale yellow background
-                    .shadow(color: Color(#colorLiteral(red: 0.1764705926, green: 0.01176470611, blue: 0.5607843399, alpha: 1)), radius: 7, x: 2, y: 3)
+                    .fill(Color(#colorLiteral(red: 0.9377451539, green: 0.9333333969, blue: 0.7308824062, alpha: 1)))  // less intense pale yellow background
+                    .shadow(color: Color(#colorLiteral(red: 0.1764705926, green: 0.01176470611, blue: 0.5607843399, alpha: 1)), radius: 8, x: 3, y: 4)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 7)

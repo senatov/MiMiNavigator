@@ -38,7 +38,8 @@ enum FActions {
         do {
             try FileManager.default.copyItem(at: sourceURL, to: targetURL)
             print("✅ Copied to \(targetURL.path)")
-        } catch {
+        }
+        catch {
             log.debug("❌ Copy failed: \(error.localizedDescription)")
         }
     }
@@ -47,7 +48,8 @@ enum FActions {
     static func delete(_ file: CustomFile) {
         do {
             try FileManager.default.trashItem(at: file.urlValue, resultingItemURL: nil)
-        } catch {
+        }
+        catch {
             log.debug("❌ Failed to delete file: \(error.localizedDescription)")
         }
     }
