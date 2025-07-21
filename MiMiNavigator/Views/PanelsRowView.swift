@@ -23,7 +23,7 @@ struct PanelsRowView: View {
     var body: some View {
         HStack(spacing: 0) {
             FilePanelView(
-                currSide: .left,
+                selectedSide: .left,
                 geometry: geometry,
                 leftPanelWidth: $leftPanelWidth,
                 fetchFiles: fetchFiles
@@ -47,7 +47,7 @@ struct PanelsRowView: View {
                 }
             )
             FilePanelView(
-                currSide: .right,
+                selectedSide: .right,
                 geometry: geometry,
                 leftPanelWidth: $leftPanelWidth,  // We calculate the right part based on the total size and the left part.
                 fetchFiles: fetchFiles

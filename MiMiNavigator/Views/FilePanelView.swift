@@ -13,24 +13,40 @@ import SwiftUI
 // MARK: -
 struct FilePanelView: View {
     @EnvironmentObject var appState: AppState
-    var currSide: PanelSide
     var geometry: GeometryProxy
     @Binding var leftPanelWidth: CGFloat
     let fetchFiles: @Sendable (PanelSide) async -> Void
+    let panelSide: PanelSide
+
+
+    // MARK: - Initializer
+    init(
+        selectedSide: PanelSide,
+        geometry: GeometryProxy,
+        leftPanelWidth: Binding<CGFloat>,
+        fetchFiles: @escaping @Sendable (PanelSide) async -> Void
+    ) {
+        log.info("FilePanelView init")
+        self.panelSide = selectedSide
+        self.geometry = geometry
+        self._leftPanelWidth = leftPanelWidth
+        self.fetchFiles = fetchFiles
+    }
+
 
     // MARK: - View
     var body: some View {
-        let currentPath = appState.pathURL(for: currSide)
+        let currentPath = appState.pathURL(for: panelSide)
         VStack {
-            EditablePathControlWrapper(selectedSide: currSide)
+            EditablePathControlWrapper(selectedSide: panelSide)
                 .onChange(of: currentPath) {
                     guard let url = currentPath else {
-                        log.warning("Tried to set nil path for side \(currSide)")
+                        log.warning("Tried to set nil path for side \(panelSide)")
                         return
                     }
                     Task {
-                        appState.updatePath(url.absoluteString, on: currSide)
-                        await fetchFiles(currSide)
+                        appState.updatePath(url.absoluteString, on: panelSide)
+                        await fetchFiles(panelSide)
                     }
                 }
             let files = sortedFiles
@@ -68,12 +84,12 @@ struct FilePanelView: View {
             .padding(.horizontal, 6)
             .border(Color.secondary)
         }
-        .frame(width: currSide == .left ? (leftPanelWidth > 0 ? leftPanelWidth : geometry.size.width / 2) : nil)
+        .frame(width: panelSide == .left ? (leftPanelWidth > 0 ? leftPanelWidth : geometry.size.width / 2) : nil)
     }
 
     // MARK: - Helpers
     private var sortedFiles: [CustomFile] {
-        let files = appState.displayedFiles(for: currSide)
+        let files = appState.displayedFiles(for: panelSide)
         let directories = files.filter { $0.isDirectory || $0.isSymbolicDirectory }
             .sorted { $0.nameStr.localizedCompare($1.nameStr) == .orderedAscending }
         let others = files.filter { !($0.isDirectory || $0.isSymbolicDirectory) }

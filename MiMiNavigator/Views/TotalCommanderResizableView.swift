@@ -90,7 +90,7 @@ struct TotalCommanderResizableView: View {
     {
         log.debug(#function + " [side: \(side)]")
         return FilePanelView(
-            currSide: side,
+            selectedSide: side,
             geometry: geometry,
             leftPanelWidth: $leftPanelWidth,
             fetchFiles: fetchFiles
