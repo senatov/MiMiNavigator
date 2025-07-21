@@ -2,7 +2,7 @@
 //  FilePanelView.swift
 //  MiMiNavigator
 //
-//  Created by Iakov Senatov on 28.06.2025.
+//  Created by Iakov Senatov on 28.09.2025.
 //  Copyright © 2025 Senatov. All rights reserved.
 //
 

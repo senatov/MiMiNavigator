@@ -65,25 +65,23 @@ struct TotalCommanderResizableView: View {
     private func fetchFiles(for side: PanelSide) async {
         log.info("↪️ \(#function) [side: \(side)]")
         switch side {
-        case .left:
-            appState.displayedLeftFiles = await appState.scanner.fileLst
-                .getLeftFiles()
-        case .right:
-            appState.displayedRightFiles = await appState.scanner.fileLst
-                .getRightFiles()
+            case .left:
+                appState.displayedLeftFiles = await appState.scanner.fileLst
+                    .getLeftFiles()
+            case .right:
+                appState.displayedRightFiles = await appState.scanner.fileLst
+                    .getRightFiles()
         }
     }
 
     // MARK: - Panels
     private func buildMainPanels(geometry: GeometryProxy) -> some View {
         log.info(#function)
-        return HStack(spacing: 0) {
-            buildPanel(for: .left, geometry: geometry)
-            buildDivider(geometry: geometry)
-            buildPanel(for: .right, geometry: geometry)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color.white)
+        return PanelsRowView(
+            geometry: geometry,
+            leftPanelWidth: $leftPanelWidth,
+            fetchFiles: fetchFiles
+        )
     }
 
     // MARK: -
@@ -150,14 +148,16 @@ struct TotalCommanderResizableView: View {
                     log.debug("View button tapped")
                     if let file = appState.selectedLeftFile {
                         FActions.view(file)
-                    } else {
+                    }
+                    else {
                         log.debug("No file selected for View")
                     }
                 }
                 DownToolbarButtonView(title: "F4 Edit", systemImage: "pencil") {
                     if let file = appState.selectedLeftFile {
                         FActions.edit(file)
-                    } else {
+                    }
+                    else {
                         log.debug("No file selected for Edit")
                     }
                 }
@@ -199,7 +199,8 @@ struct TotalCommanderResizableView: View {
                                 await fetchFiles(for: .right)
                             }
                         }
-                    } else {
+                    }
+                    else {
                         log.debug("No file selected for Delete")
                     }
                 }
@@ -209,8 +210,7 @@ struct TotalCommanderResizableView: View {
                 ) {
                     log.debug("Settings button tapped")
                 }
-                DownToolbarButtonView(title: "Console", systemImage: "terminal")
-                {
+                DownToolbarButtonView(title: "Console", systemImage: "terminal") {
                     log.debug("Console button tapped")
                     openConsoleInDirectory("~")
                 }
