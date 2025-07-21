@@ -22,7 +22,7 @@ struct EditablePathControl: View {
 
     // MARK: -
     var body: some View {
-        log.info(#function)
+        log.info(#function + " for side \(panelSide)")
         return HStack(spacing: 2) {
             NavMnu1(selectedSide: panelSide)
             Spacer(minLength: 3)
@@ -32,6 +32,7 @@ struct EditablePathControl: View {
         .background(
             RoundedRectangle(cornerRadius: 7)
                 .fill(.background)
+                .shadow(color: .secondary, radius: 2, x: 0, y: 1)
         )
     }
 

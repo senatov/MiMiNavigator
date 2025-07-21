@@ -141,10 +141,7 @@ struct TotalCommanderResizableView: View {
         log.info(#function)
         return VStack(spacing: 0) {
             HStack(spacing: 18) {
-                DownToolbarButtonView(
-                    title: "F3 View",
-                    systemImage: "eye.circle"
-                ) {
+                DownToolbarButtonView(title: "F3 View", systemImage: "eye.circle") {
                     log.debug("View button tapped")
                     if let file = appState.selectedLeftFile {
                         FActions.view(file)
@@ -161,10 +158,7 @@ struct TotalCommanderResizableView: View {
                         log.debug("No file selected for Edit")
                     }
                 }
-                DownToolbarButtonView(
-                    title: "F5 Copy",
-                    systemImage: "doc.on.doc"
-                ) {
+                DownToolbarButtonView(title: "F5 Copy", systemImage: "doc.on.doc") {
                     let side = appState.focusedSideValue
                     if let file = appState.selectedFile(for: side),
                         let targetURL = appState.pathURL(for: side.opposite)
@@ -175,22 +169,13 @@ struct TotalCommanderResizableView: View {
                         }
                     }
                 }
-                DownToolbarButtonView(
-                    title: "F6 Move",
-                    systemImage: "square.and.arrow.down.on.square"
-                ) {
+                DownToolbarButtonView(title: "F6 Move", systemImage: "square.and.arrow.down.on.square") {
                     log.debug("Move button tapped")
                 }
-                DownToolbarButtonView(
-                    title: "F7 NewFolder",
-                    systemImage: "folder.badge.plus"
-                ) {
+                DownToolbarButtonView(title: "F7 NewFolder", systemImage: "folder.badge.plus") {
                     log.debug("NewFolder button tapped")
                 }
-                DownToolbarButtonView(
-                    title: "F8 Delete",
-                    systemImage: "minus.rectangle"
-                ) {
+                DownToolbarButtonView(title: "F8 Delete", systemImage: "minus.rectangle") {
                     log.debug("Delete button tapped")
                     if let file = appState.selectedLeftFile {
                         FActions.deleteWithConfirmation(file) {
@@ -204,10 +189,7 @@ struct TotalCommanderResizableView: View {
                         log.debug("No file selected for Delete")
                     }
                 }
-                DownToolbarButtonView(
-                    title: "Settings",
-                    systemImage: "gearshape"
-                ) {
+                DownToolbarButtonView(title: "Settings", systemImage: "gearshape") {
                     log.debug("Settings button tapped")
                 }
                 DownToolbarButtonView(title: "Console", systemImage: "terminal") {
@@ -215,7 +197,7 @@ struct TotalCommanderResizableView: View {
                     openConsoleInDirectory("~")
                 }
                 DownToolbarButtonView(title: "F4 Exit", systemImage: "power") {
-                    log.debug("Exit button tapped")
+                    log.debug("F4 Exit button tapped")
                     exitApp()
                 }
             }

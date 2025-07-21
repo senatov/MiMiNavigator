@@ -12,6 +12,7 @@ struct FavTreeMnu: View {
     @Binding var files: [CustomFile]
     @State private var expandedFolders: Set<String> = []
     @EnvironmentObject var appState: AppState
+    let panelSide: PanelSide
 
 
     // MARK: -
