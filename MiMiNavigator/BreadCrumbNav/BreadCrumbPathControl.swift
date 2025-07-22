@@ -16,7 +16,7 @@ struct BreadCrumbPathControl: View {
     let panelSide: PanelSide
 
     init(selectedSide: PanelSide) {
-        log.info("BreadCrumbPathControl init")
+        log.info("BreadCrumbPathControl init" + " for side \(selectedSide)")
         self.panelSide = selectedSide
     }
 

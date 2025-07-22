@@ -12,16 +12,18 @@ struct FavTreeView: View {
     @EnvironmentObject var appState: AppState
     @Binding var file: CustomFile
     @Binding var expandedFolders: Set<String>
+    let panelSide: PanelSide
 
-    init(file: Binding<CustomFile>, expandedFolders: Binding<Set<String>>) {
-        log.info("FavTreeView init")
+    init(file: Binding<CustomFile>, expandedFolders: Binding<Set<String>>, selectedSide: PanelSide) {
+        log.info("FavTreeView init" + " for file \(file.wrappedValue.nameStr), side \(selectedSide)")
+        self.panelSide = selectedSide
         self._file = file
         self._expandedFolders = expandedFolders
     }
 
     // MARK: -
     var body: some View {
-        log.info(#function)
+        log.info(#function + " for file \(file.nameStr), side \(panelSide)")
         return VStack(alignment: .leading) {
             fileRow
             childrenList
@@ -98,7 +100,8 @@ struct FavTreeView: View {
                             get: { file.children![index] },
                             set: { file.children![index] = $0 }
                         ),
-                        expandedFolders: $expandedFolders
+                        expandedFolders: $expandedFolders,
+                        selectedSide: panelSide
                     )
                     .padding(.leading, 15)
                     .transition(.opacity.combined(with: .move(edge: .leading)))
