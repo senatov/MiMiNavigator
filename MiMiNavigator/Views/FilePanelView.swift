@@ -38,7 +38,7 @@ struct FilePanelView: View {
     var body: some View {
         let currentPath = appState.pathURL(for: panelSide)
         VStack {
-            EditablePathControlWrapper(selectedSide: panelSide)
+            BreadCrumbControlWrapper(selectedSide: panelSide)
                 .onChange(of: currentPath) {
                     guard let url = currentPath else {
                         log.warning("Tried to set nil path for side \(panelSide)")

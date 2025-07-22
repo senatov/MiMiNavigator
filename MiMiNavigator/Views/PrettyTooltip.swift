@@ -10,24 +10,20 @@ import SwiftUI
 struct PrettyTooltip: View {
     let text: String
 
+    // MARK: - Tooltip for divider
     var body: some View {
         Text(text)
             .font(.system(size: 13, weight: .regular, design: .default))
             .padding(12)
             .background(
                 RoundedRectangle(cornerRadius: 7, style: .continuous)
-                    .fill(Color(#colorLiteral(red: 0.9377451539, green: 0.9333333969, blue: 0.7308824062, alpha: 1)))  // less intense pale yellow background
-                    .shadow(color: Color(#colorLiteral(red: 0.1764705926, green: 0.01176470611, blue: 0.5607843399, alpha: 1)), radius: 8, x: 3, y: 4)
+                    .fill(Color(#colorLiteral(red: 0.9529411793, green: 0.6862745285, blue: 0.1333333403, alpha: 1)))  // less intense pale yellow background
+                    .shadow(color: .secondary.opacity(0.40), radius: 7.0, x: 1, y: 1)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 7)
-                    .stroke(Color(#colorLiteral(red: 0.2392156869, green: 0.6745098233, blue: 0.9686274529, alpha: 1)), lineWidth: 0.4)  // light blue border
+                    .stroke(Color(#colorLiteral(red: 0.1019607857, green: 0.2784313858, blue: 0.400000006, alpha: 1)), lineWidth: 0.4)  // light border
             )
             .foregroundColor(.black)
     }
-}
-
-#Preview {
-    PrettyTooltip(text: "This is some ToolTip, Hurra!")
-        .frame(height: 40)
 }

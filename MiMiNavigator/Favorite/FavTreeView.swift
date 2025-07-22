@@ -13,6 +13,12 @@ struct FavTreeView: View {
     @Binding var file: CustomFile
     @Binding var expandedFolders: Set<String>
 
+    init(file: Binding<CustomFile>, expandedFolders: Binding<Set<String>>) {
+        log.info("FavTreeView init")
+        self._file = file
+        self._expandedFolders = expandedFolders
+    }
+
     // MARK: -
     var body: some View {
         log.info(#function)
@@ -47,7 +53,7 @@ struct FavTreeView: View {
 
     // MARK: -
     private var fileNameText: some View {
-        //log.info(#function)
+        log.info(#function + " for \(file.nameStr)")
         let isTheSame = appState.selectedDir.selectedFSEntity?.pathStr == file.pathStr
         return Text(file.nameStr)
             .foregroundColor(isTheSame ? .blue : .primary)

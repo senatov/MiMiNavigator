@@ -9,7 +9,7 @@
 import SwiftUI
 
 // MARK: - Reusable path control component with edit mode, integrated with AppState.
-struct EditablePathControlWrapper: View {
+struct BreadCrumbControlWrapper: View {
     @EnvironmentObject var appState: AppState
     @State private var editedPathStr: String = String.empty
     @State private var isEditing = false
@@ -19,7 +19,7 @@ struct EditablePathControlWrapper: View {
 
     // MARK: - Initializer
     init(selectedSide: PanelSide) {
-        log.info("EditablePathControl init")
+        log.info("BreadCrumbControlWrapper init")
         self.panelSide = selectedSide
     }
 
@@ -41,13 +41,14 @@ struct EditablePathControlWrapper: View {
         .background(
             RoundedRectangle(cornerRadius: 7)
                 .fill(Color.white)
-                .shadow(color: .black.opacity(0.15), radius: 7, x: 0, y: 2)
+                .shadow(color: .secondary.opacity(0.15), radius: 7.0, x: 1, y: 1)
         )
         .overlay(
             RoundedRectangle(cornerRadius: 7)
                 .stroke(.gray.opacity(0.3), lineWidth: 1)
         )
         .padding(.vertical, 6)
+        .padding(.horizontal, 3)
     }
 
     // MARK: - Editing View
@@ -101,7 +102,7 @@ struct EditablePathControlWrapper: View {
     // MARK: - Display View
     private var displayView: some View {
         log.info(#function + " for side \(panelSide)")
-        return EditablePathControl(selectedSide: panelSide)
+        return BreadCrumbPathControl(selectedSide: panelSide)
             .environmentObject(appState)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(Color.white)

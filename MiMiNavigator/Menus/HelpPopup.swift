@@ -16,7 +16,7 @@ struct HelpPopup: View {
             .font(.system(size: 12))
             .foregroundColor(Color(#colorLiteral(red: 0.5787474513, green: 0.3215198815, blue: 0, alpha: 1)))  // Тёмно-синий цвет
             .padding(8)
-            .background(Color.yellow.opacity(0.1))  // Бледно-жёлтый фон
+            .background(Color.yellow.opacity(0.2))  // Бледно-жёлтый фон
             .cornerRadius(3)
             .frame(width: 200)  // Ограничение ширины
     }

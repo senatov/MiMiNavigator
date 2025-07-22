@@ -26,7 +26,7 @@ struct FavTreeMnu: View {
         .frame(width: 450)
         .background(
             RoundedRectangle(cornerRadius: 7)
-                .fill(Color.white.opacity(0.05))
+                .fill(Color.orange.opacity(0.01))
                 .overlay(
                     RoundedRectangle(cornerRadius: 7)
                         .stroke(Color.blue.opacity(0.2), lineWidth: 2)
@@ -57,7 +57,7 @@ struct FavTreeMnu: View {
 
     // MARK: -
     private var fileListView: some View {
-        log.info(#function)
+        log.info(#function + " - \(files.count) files")
         return ScrollView {
             LazyVStack(alignment: .leading, spacing: 5) {
                 ForEach($files) { $file in
