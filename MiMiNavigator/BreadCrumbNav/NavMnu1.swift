@@ -14,7 +14,7 @@ struct NavMnu1: View {
     let panelSide: PanelSide
 
     init(selectedSide: PanelSide) {
-        log.info("NavMnu1 init")
+        log.info("NavMnu1 init" + " for side \(selectedSide)")
         self.panelSide = selectedSide
     }
 

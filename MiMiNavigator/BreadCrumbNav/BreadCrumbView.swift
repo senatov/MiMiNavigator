@@ -16,14 +16,14 @@ struct BreadCrumbView: View {
     let panelSide: PanelSide
 
     init(selectedSide: PanelSide) {
-        log.info("BreadCrumbView init")
+        log.info("BreadCrumbView init" + " for side \(selectedSide)")
         self.panelSide = selectedSide
     }
 
 
     // MARK: -
     var body: some View {
-        log.info(#function)
+        log.info(#function + " for side \(panelSide)")
         return HStack(spacing: 4) {
             ForEach(pathComponents.indices, id: \.self) { index in
                 breadcrumbItem(index: index)
@@ -61,7 +61,7 @@ struct BreadCrumbView: View {
 
     // MARK: - Handle Selection
     private func handlePathSelection(upTo index: Int) {
-        log.info(#function)
+        log.info(#function + " for index \(index) on side \(panelSide)")
         let newPath = "/" + pathComponents.prefix(index + 1).joined(separator: "/")
         appState.updatePath(newPath, on: appState.focusedSide)
         Task {

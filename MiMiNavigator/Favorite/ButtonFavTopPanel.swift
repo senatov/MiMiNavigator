@@ -10,7 +10,7 @@ struct ButtonFavTopPanel: View {
     let panelSide: PanelSide
 
     init(selectedSide: PanelSide) {
-        log.info("ButtonFavTopPanel init")
+        log.info("ButtonFavTopPanel init" + " for side \(selectedSide)")
         self.panelSide = selectedSide
     }
 
