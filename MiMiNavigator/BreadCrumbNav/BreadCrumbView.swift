@@ -13,6 +13,13 @@ import SwiftyBeaver
 /// Breadcrumb trail UI component for representing navigation path
 struct BreadCrumbView: View {
     @EnvironmentObject var appState: AppState
+    let panelSide: PanelSide
+
+    init(selectedSide: PanelSide) {
+        log.info("BreadCrumbView init")
+        self.panelSide = selectedSide
+    }
+
 
     // MARK: -
     var body: some View {
@@ -28,7 +35,7 @@ struct BreadCrumbView: View {
     // MARK: -
     private var pathComponents: [String] {
         log.info(#function)
-        let path = (appState.focusedSide == .left ? appState.leftPath : appState.rightPath)
+        let path = (panelSide == .left ? appState.leftPath : appState.rightPath)
         return path.split(separator: "/").map(String.init)
     }
 
@@ -58,7 +65,7 @@ struct BreadCrumbView: View {
         let newPath = "/" + pathComponents.prefix(index + 1).joined(separator: "/")
         appState.updatePath(newPath, on: appState.focusedSide)
         Task {
-            if appState.focusedSide == .left {
+            if panelSide == .left {
                 await appState.scanner.setLeftDirectory(pathStr: newPath)
                 await appState.refreshLeftFiles()
             }

@@ -26,7 +26,7 @@ struct BreadCrumbPathControl: View {
         return HStack(spacing: 2) {
             NavMnu1(selectedSide: panelSide)
             Spacer(minLength: 3)
-            BreadCrumbView().environmentObject(appState)
+            BreadCrumbView(selectedSide: panelSide).environmentObject(appState)
             NavMnu2()
         }
         .background(
