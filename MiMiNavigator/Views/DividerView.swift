@@ -21,11 +21,11 @@ struct DividerView: View {
             RoundedRectangle(cornerRadius: 7)
                 .fill(.ultraThinMaterial)
                 .frame(width: 6)
-                .shadow(color: .black.opacity(0.1), radius: 7, x: 0, y: 0)
+                .shadow(color: .secondary.opacity(0.15), radius: 7.0, x: 1, y: 1)
                 .overlay(
                     RoundedRectangle(cornerRadius: 3)
                         .stroke(Color.white.opacity(0.3), lineWidth: 0.5)
-                )
+                ) 
         }
         .contentShape(Rectangle())
         .gesture(

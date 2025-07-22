@@ -49,10 +49,10 @@ struct ButtonFavTopPanel: View {
                     .renderingMode(.original)
                     .foregroundColor(Color(#colorLiteral(red: 0.09019608051, green: 0, blue: 0.3019607961, alpha: 1)))
                     .scaleEffect(CGSize(width: 0.9, height: 1.3), anchor: .leading)
-                    .border(Color(#colorLiteral(red: 0.09019608051, green: 0, blue: 0.3019607961, alpha: 1)))
+                    .border(Color(#colorLiteral(red: 0.3647058904, green: 0.06666667014, blue: 0.9686274529, alpha: 1)))
             }
         }
-        .shadow(color: .blue.opacity(0.15), radius: 5.0, x: 1, y: 1)
+        .shadow(color: .secondary.opacity(0.15), radius: 7.0, x: 1, y: 1)
         .buttonStyle(.plain)
         .popover(isPresented: $appState.showFavTreePopup, arrowEdge: .bottom) {
             favoritePopover()
@@ -65,7 +65,7 @@ struct ButtonFavTopPanel: View {
         Button(action: { log.info("Back: navigating to previous directory") }) {
             Image(systemName: "arrowshape.backward").renderingMode(.original)
         }
-        .shadow(color: .blue.opacity(0.15), radius: 7.0, x: 1, y: 1)
+        .shadow(color: .secondary.opacity(0.15), radius: 7.0, x: 1, y: 1)
         .help("Back: navigating to previous directory")
         .accessibilityLabel("Back button")
     }
@@ -75,7 +75,7 @@ struct ButtonFavTopPanel: View {
         Button(action: { log.info("Forward: navigating to next directory") }) {
             Image(systemName: "arrowshape.right").renderingMode(.original)
         }
-        .shadow(color: .blue.opacity(0.15), radius: 7.0, x: 1, y: 1)
+        .shadow(color: .secondary.opacity(0.15), radius: 7.0, x: 1, y: 1)
         .disabled(true)
         .help("Forward: navigating to next directory")
         .accessibilityLabel("Forward button")

@@ -29,13 +29,7 @@ struct TotalCommanderResizableView: View {
                         buildMainPanels(geometry: geometry)
                         buildDownToolbar()
                     }
-                    if isDividerTooltipVisible {
-                        PrettyTooltip(text: tooltipText)
-                            .position(tooltipPosition)
-                            .transition(.opacity)
-                            .opacity(0.7)
-                            .zIndex(1000)
-                    }
+                    .padding(.horizontal, 10)
                 }
             }
             .onAppear {
@@ -104,7 +98,7 @@ struct TotalCommanderResizableView: View {
             Capsule()
                 .fill(Color.gray.opacity(0.3))
                 .frame(width: 6)
-                .shadow(color: .black.opacity(0.15), radius: 2, x: 0, y: 0)
+                .shadow(color: .blue.opacity(0.15), radius: 7.0, x: 1, y: 1)
                 .overlay(
                     Capsule()
                         .stroke(Color.blue.opacity(0.4), lineWidth: 0.5)

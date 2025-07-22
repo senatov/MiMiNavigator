@@ -11,12 +11,12 @@ import SwiftUI
 import SwiftyBeaver
 
 /// A view displaying a breadcrumb-style editable path bar with panel navigation menus.
-struct EditablePathControl: View {
+struct BreadCrumbPathControl: View {
     @EnvironmentObject var appState: AppState
     let panelSide: PanelSide
 
     init(selectedSide: PanelSide) {
-        log.info("EditablePathControl init")
+        log.info("BreadCrumbPathControl init")
         self.panelSide = selectedSide
     }
 
@@ -32,7 +32,7 @@ struct EditablePathControl: View {
         .background(
             RoundedRectangle(cornerRadius: 7)
                 .fill(.background)
-                .shadow(color: .secondary, radius: 2, x: 0, y: 1)
+                .shadow(color: .secondary.opacity(0.15), radius: 7.0, x: 1, y: 1)
         )
     }
 
