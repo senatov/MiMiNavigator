@@ -9,6 +9,7 @@ struct ButtonFavTopPanel: View {
     @EnvironmentObject var appState: AppState
     let panelSide: PanelSide
 
+    // MARK: -
     init(selectedSide: PanelSide) {
         log.info("ButtonFavTopPanel init" + " for side \(selectedSide)")
         self.panelSide = selectedSide

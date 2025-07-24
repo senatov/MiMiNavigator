@@ -11,15 +11,16 @@ import SwiftUI
 import SwiftyBeaver
 
 struct PanelsRowView: View {
-    let geometry: GeometryProxy
-    @Binding var leftPanelWidth: CGFloat
-    let fetchFiles: @MainActor (PanelSide) async -> Void
     @EnvironmentObject var appState: AppState
-
+    @Binding var leftPanelWidth: CGFloat
     @State private var tooltipText: String = .empty
     @State private var tooltipPosition: CGPoint = .zero
     @State private var isDividerTooltipVisible: Bool = false
+    let geometry: GeometryProxy
+    let fetchFiles: @MainActor (PanelSide) async -> Void
 
+
+    // MARK: -
     var body: some View {
         HStack(spacing: 0) {
             FilePanelView(

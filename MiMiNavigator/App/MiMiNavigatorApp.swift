@@ -28,9 +28,9 @@ struct MiMiNavigatorApp: App {
             VStack {
                 TotalCommanderResizableView()
                     .navigationTitle("Mimi Navigator")
-                    .environmentObject(appState)
                 ConsoleCurrPath()
             }
+            .environmentObject(appState)
             .toolbar {
                 ToolbarItem(placement: .automatic) {
                     Button(action: {

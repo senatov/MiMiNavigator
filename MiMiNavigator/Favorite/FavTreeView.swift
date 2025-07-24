@@ -14,6 +14,7 @@ struct FavTreeView: View {
     @Binding var expandedFolders: Set<String>
     let panelSide: PanelSide
 
+    // MARK: - Initializer
     init(file: Binding<CustomFile>, expandedFolders: Binding<Set<String>>, selectedSide: PanelSide) {
         log.info("FavTreeView init" + " for file \(file.wrappedValue.nameStr), side \(selectedSide)")
         self.panelSide = selectedSide
