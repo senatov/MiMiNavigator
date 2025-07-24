@@ -32,6 +32,9 @@ final class AppState: ObservableObject {
         self.leftPath = fileManager.urls(for: .downloadsDirectory, in: .userDomainMask).first?.path ?? .empty
         self.rightPath = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first?.path ?? .empty
         self.scanner = DualDirectoryScanner(appState: self)
+        log.info("restore State")
+        self.leftPath = UserDefaults.standard.string(forKey: "lastLeftPath") ?? self.leftPath
+        self.rightPath = UserDefaults.standard.string(forKey: "lastRightPath") ?? self.rightPath
     }
 
 
@@ -96,7 +99,14 @@ final class AppState: ObservableObject {
 
 
     // MARK: -
-    func selectedFile(for side: PanelSide) -> CustomFile? {
+    func setSide(for side: PanelSide) {
+        log.info(#function + " at side: \(side)")
+        focusedSide = side
+    }
+
+
+    // MARK: -
+    func setSideFile(for side: PanelSide) -> CustomFile? {
         log.info(#function + " at side: \(side)")
         switch side {
             case .left:
@@ -128,6 +138,23 @@ final class AppState: ObservableObject {
         log.info(#function + " at path: \(selectedDir.selectedFSEntity?.nameStr ?? "nil")")
         return selectedDir
     }
+
+    func saveBeforeExit() {
+        log.debug(#function)
+        // Save left and right panel paths
+        UserDefaults.standard.set(leftPath, forKey: "lastLeftPath")
+        UserDefaults.standard.set(rightPath, forKey: "lastRightPath")
+
+        // Save selected files if available
+        if let left = selectedLeftFile {
+            UserDefaults.standard.set(left.urlValue, forKey: "lastSelectedLeftFilePath")
+        }
+        if let right = selectedRightFile {
+            UserDefaults.standard.set(right.urlValue, forKey: "lastSelectedRightFilePath")
+        }
+    }
+
+
 }
 
 

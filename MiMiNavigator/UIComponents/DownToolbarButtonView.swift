@@ -58,7 +58,7 @@ struct DownToolbarButtonView: View {
 
     // MARK: -  Обработчик наведения курсора
     private func handleHover(_ hovering: Bool) {
-        log.info("Hover on '\(title)': \(hovering ? "ENTER" : "EXIT")")
+        log.info(#function + "Hover on '\(title)': \(hovering ? "ENTER" : "EXIT")")
         withAnimation(.easeInOut(duration: 0.4)) {
             isHovered = hovering
         }

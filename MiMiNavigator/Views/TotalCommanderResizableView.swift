@@ -153,9 +153,8 @@ struct TotalCommanderResizableView: View {
                     }
                 }
                 DownToolbarButtonView(title: "F5 Copy", systemImage: "doc.on.doc") {
-                    let side = appState.focusedSideValue
-                    if let file = appState.selectedFile(for: side),
-                        let targetURL = appState.pathURL(for: side.opposite)
+                    if let file = appState.setSideFile(for: appState.focusedSide),
+                       let targetURL = appState.pathURL(for: appState.focusedSide.opposite)
                     {
                         FActions.copy(file, to: targetURL)
                         Task {
@@ -255,6 +254,7 @@ struct TotalCommanderResizableView: View {
     // MARK: -
     private func exitApp() {
         log.info(#function)
+        appState.saveBeforeExit()
         NSApplication.shared.terminate(nil)
     }
 }
