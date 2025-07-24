@@ -18,7 +18,6 @@ struct BreadCrumbView: View {
     init(selectedSide: PanelSide) {
         log.info("BreadCrumbView init" + " for side \(selectedSide)")
         self.panelSide = selectedSide
-        appState.focusedSide = panelSide
     }
 
 
