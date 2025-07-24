@@ -20,9 +20,8 @@ struct BreadCrumbControlWrapper: View {
     // MARK: - Initializer
     init(selectedSide: PanelSide) {
         log.info("BreadCrumbControlWrapper init" + " for side \(selectedSide)")
-        self.panelSide = selectedSide
+        panelSide = selectedSide
     }
-
 
 
     // MARK: - Body

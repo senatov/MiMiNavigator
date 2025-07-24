@@ -18,6 +18,7 @@ struct BreadCrumbView: View {
     init(selectedSide: PanelSide) {
         log.info("BreadCrumbView init" + " for side \(selectedSide)")
         self.panelSide = selectedSide
+        appState.focusedSide = panelSide
     }
 
 
@@ -43,6 +44,7 @@ struct BreadCrumbView: View {
     // MARK: - Breadcrumb Item
     @ViewBuilder
     private func breadcrumbItem(index: Int) -> some View {
+
         if index > 0 {
             Image(systemName: "chevron.forward")
                 .foregroundColor(.secondary)
