@@ -28,6 +28,7 @@ final class AppState: ObservableObject {
 
     // MARK: -
     init() {
+        log.info(#function + " - Initializing AppState")
         self.leftPath = fileManager.urls(for: .downloadsDirectory, in: .userDomainMask).first?.path ?? .empty
         self.rightPath = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first?.path ?? .empty
         self.scanner = DualDirectoryScanner(appState: self)
@@ -80,7 +81,7 @@ final class AppState: ObservableObject {
 
     // MARK: -
     func refreshLeftFiles() async {
-        log.info(#function + " at path: \(leftPath)")
+        log.info(#function + " at path: \(leftPath.description)")
         displayedLeftFiles = await scanner.fileLst.getLeftFiles()
         log.debug(" - Found \(displayedLeftFiles.count) left files.")
     }
@@ -88,7 +89,7 @@ final class AppState: ObservableObject {
 
     // MARK: -
     func refreshRightFiles() async {
-        log.info(#function + " at path: \(rightPath)")
+        log.info(#function + " at path: \(rightPath.description)")
         displayedRightFiles = await scanner.fileLst.getRightFiles()
         log.debug(" - Found \(displayedRightFiles.count) right files.")
     }
@@ -108,7 +109,7 @@ final class AppState: ObservableObject {
 
     // MARK: -
     func updatePath(_ path: String, on side: PanelSide) {
-        log.info(#function + " at path: \(side)  at path: \(path)")
+        log.info("\(#function) – updating path on side: \(side) to \(path)")
         switch side {
             case .left:
                 leftPath = path

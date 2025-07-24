@@ -19,8 +19,8 @@ VERSION="$NOW at Host: $HOSTNAME"
 
 # ✅ Определение пути к целевому файлу
 SCRIPT_DIR="$(cd -- "$(dirname "$0")" && pwd)"
-TARGET_DIR="${SCRIPT_DIR}/MiMiNavigator"
-TARGET_FILE="${TARGET_DIR}/.version"
+TARGET_DIR="$HOME/Develop/MMNavigator/MiMiNavigator"
+TARGET_FILE="${TARGET_DIR}/curr_version.asc"
 
 # ✅ Диагностика
 echo "👣 Script started"
