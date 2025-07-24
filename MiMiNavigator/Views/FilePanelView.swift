@@ -15,7 +15,7 @@ struct FilePanelView: View {
     @EnvironmentObject var appState: AppState
     var geometry: GeometryProxy
     @Binding var leftPanelWidth: CGFloat
-    let fetchFiles: @Sendable (PanelSide) async -> Void
+    let fetchFiles: @Sendable @concurrent (PanelSide) async -> Void
     let panelSide: PanelSide
 
 
@@ -24,7 +24,7 @@ struct FilePanelView: View {
         selectedSide: PanelSide,
         geometry: GeometryProxy,
         leftPanelWidth: Binding<CGFloat>,
-        fetchFiles: @escaping @Sendable (PanelSide) async -> Void
+        fetchFiles: @escaping @Sendable @concurrent (PanelSide) async -> Void
     ) {
         log.info("FilePanelView init")
         self.panelSide = selectedSide

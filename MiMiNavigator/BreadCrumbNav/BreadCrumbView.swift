@@ -34,7 +34,7 @@ struct BreadCrumbView: View {
 
     // MARK: -
     private var pathComponents: [String] {
-        log.info(#function)
+        log.info(#function + " for side \(panelSide)")
         let path = (panelSide == .left ? appState.leftPath : appState.rightPath)
         return path.split(separator: "/").map(String.init)
     }
@@ -63,6 +63,7 @@ struct BreadCrumbView: View {
     private func handlePathSelection(upTo index: Int) {
         log.info(#function + " for index \(index) on side \(panelSide)")
         let newPath = "/" + pathComponents.prefix(index + 1).joined(separator: "/")
+        appState.focusedSide = panelSide
         appState.updatePath(newPath, on: appState.focusedSide)
         Task {
             if panelSide == .left {

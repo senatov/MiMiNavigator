@@ -22,23 +22,6 @@ struct MiMiNavigatorApp: App {
         log.info("---- Logger initialized ------")
     }
 
-
-    // MARK: -
-    let devMark: Text = {
-        let versionPath = Bundle.main.path(forResource: ".version", ofType: nil)
-        let content: String
-        if let versionPath, let versionString = try? String(contentsOfFile: versionPath, encoding: .utf8) {
-            content = versionString.trimmingCharacters(in: .whitespacesAndNewlines)
-            log.info("Loaded version from .version file: \(content)")
-        }
-        else {
-            content = "Mimi Navigator — Version unavailable"
-            log.error("Failed to load .version file.")
-        }
-        return Text(content)
-    }()
-
-
     // MARK: -
     var body: some Scene {
         WindowGroup {
@@ -73,10 +56,10 @@ struct MiMiNavigatorApp: App {
                     .offset(x: 3, y: 6)
                 }
                 ToolbarItem(placement: .status) {
-                    Text("🐙 Dev. Build: ")
+                    Text("🐈‍⬛ Dev. Build: ")
                         .font(.title2)
                         .foregroundColor(Color(#colorLiteral(red: 0.2196078449, green: 0.007843137719, blue: 0.8549019694, alpha: 1)))
-                        + devMark.foregroundColor(Color(#colorLiteral(red: 0.1215686277, green: 0.01176470611, blue: 0.4235294163, alpha: 1)))
+                        + makeDevMark().foregroundColor(Color(#colorLiteral(red: 0.1215686277, green: 0.01176470611, blue: 0.4235294163, alpha: 1)))
                         .font(.title3)
                 }
             }
@@ -86,7 +69,24 @@ struct MiMiNavigatorApp: App {
 
 
     // MARK: -
-    var sharedModelContainer: ModelContainer = {
+    private func makeDevMark() -> Text {
+        let versionPath = Bundle.main.path(forResource: "curr_version.asc", ofType: nil)
+        let content: String
+        if let versionPath, let versionString = try? String(contentsOfFile: versionPath, encoding: .utf8) {
+            content = versionString.trimmingCharacters(in: .whitespacesAndNewlines)
+            log.info("Loaded version from .version file: \(content)")
+        } else {
+            content = "Mimi Navigator — Version unavailable"
+            log.error("Failed to load .version file.")
+        }
+        return Text(content)
+    }
+
+
+    // MARK: -
+    var sharedModelContainer: ModelContainer = makeSharedModelContainer()
+
+    private static func makeSharedModelContainer() -> ModelContainer {
         log.info(#function)
         let schema = Schema([
             Item.self
@@ -94,9 +94,8 @@ struct MiMiNavigatorApp: App {
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
         do {
             return try ModelContainer(for: schema, configurations: [modelConfiguration])
-        }
-        catch {
+        } catch {
             fatalError("Could not create ModelContainer: \(error)")
         }
-    }()
+    }
 }
