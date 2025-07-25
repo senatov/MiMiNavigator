@@ -35,10 +35,12 @@ actor FileSingleton: ObservableObject, @unchecked Sendable {
         await notifyObservers()
     }
 
+    // MARK: -
     func getLeftFiles() async -> [CustomFile] {
         _leftFiles
     }
 
+    // MARK: -
     func getRightFiles() async -> [CustomFile] {
         _rightFiles
     }

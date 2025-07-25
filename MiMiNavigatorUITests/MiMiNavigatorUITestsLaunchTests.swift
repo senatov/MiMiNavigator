@@ -9,10 +9,12 @@ import XCTest
 
 final class MiMiNavigatorUITestsLaunchTests: XCTestCase {
 
+    // MARK: -
     override class var runsForEachTargetApplicationUIConfiguration: Bool {
         true
     }
 
+    // MARK: -
     override func setUpWithError() throws {
         continueAfterFailure = false
     }

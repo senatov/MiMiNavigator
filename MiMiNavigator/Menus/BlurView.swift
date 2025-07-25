@@ -13,6 +13,7 @@ struct BlurView: NSViewRepresentable {
     @Binding var material: NSVisualEffectView.Material
     var onClick: (() -> Void)? = nil
 
+    // MARK: -
     func makeNSView(context: Context) -> NSVisualEffectView {
         let view = NSVisualEffectView()
         view.blendingMode = .withinWindow
@@ -25,6 +26,7 @@ struct BlurView: NSViewRepresentable {
         return view
     }
 
+    // MARK: -
     func updateNSView(_ nsView: NSVisualEffectView, context: Context) {
         if nsView.material != material {
             nsView.material = material
@@ -32,10 +34,12 @@ struct BlurView: NSViewRepresentable {
         }
     }
 
+    // MARK: -
     func makeCoordinator() -> Coordinator {
         Coordinator(onClick: onClick)
     }
 
+    // MARK: -
     class Coordinator: NSObject {
         let onClick: (() -> Void)?
 

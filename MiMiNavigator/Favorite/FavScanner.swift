@@ -168,6 +168,7 @@ class FavScanner {
         return trees
     }
 
+    
     // MARK: - Iterative File Structure Scanner (BFS)
     private func buildFavTreeStructure(at url: URL) -> CustomFile? {
         log.info(#function)
@@ -273,4 +274,3 @@ class FavScanner {
     }
 }
 
-// MARK: - Helper to resolve /Volumes access or return partial result
