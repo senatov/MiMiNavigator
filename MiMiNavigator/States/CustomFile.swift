@@ -56,22 +56,27 @@ public struct CustomFile: Identifiable, Equatable, Hashable, Codable, Sendable  
 }
 
 
+// MARK: -
 extension CustomFile {
 
+    // MARK: -
     var modifiedDate: Date {
         (try? urlValue.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? .distantPast
     }
 
+    // MARK: -
     var modifiedDateFormatted: String {
         let formatter = DateFormatter()
         formatter.dateFormat = "dd.MM.yyyy HH:mm"
         return formatter.string(from: modifiedDate)
     }
     
+    // MARK: -
     var sizeInBytes: Int64 {
         (try? urlValue.resourceValues(forKeys: [.fileSizeKey]).fileSize).map { Int64($0) } ?? 0
     }
 
+    // MARK: -
     var formattedSize: String {
         if isDirectory && isSymbolicDirectory {
             return "LINK → DIR."

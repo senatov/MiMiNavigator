@@ -74,8 +74,9 @@ struct MiMiNavigatorApp: App {
         let content: String
         if let versionPath, let versionString = try? String(contentsOfFile: versionPath, encoding: .utf8) {
             content = versionString.trimmingCharacters(in: .whitespacesAndNewlines)
-            log.info("Loaded version from .version file: \(content)")
-        } else {
+            log.info("Loaded version from 'curr_version.asc' file: '\(content)'")
+        }
+        else {
             content = "Mimi Navigator — Version unavailable"
             log.error("Failed to load .version file.")
         }
@@ -86,6 +87,7 @@ struct MiMiNavigatorApp: App {
     // MARK: -
     var sharedModelContainer: ModelContainer = makeSharedModelContainer()
 
+    // MARK: -
     private static func makeSharedModelContainer() -> ModelContainer {
         log.info(#function)
         let schema = Schema([
@@ -94,7 +96,8 @@ struct MiMiNavigatorApp: App {
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
         do {
             return try ModelContainer(for: schema, configurations: [modelConfiguration])
-        } catch {
+        }
+        catch {
             fatalError("Could not create ModelContainer: \(error)")
         }
     }

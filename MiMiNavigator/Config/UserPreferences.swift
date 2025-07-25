@@ -85,6 +85,7 @@ struct UserPreferences {
         UserDefaults.standard.set(isOpen, forKey: mimiMenuStateKey)
     }
 
+    // MARK: -
     func restoreMenuState() -> Bool {
         log.info(#function)
         let state = UserDefaults.standard.object(forKey: mimiMenuStateKey) as? Bool ?? true

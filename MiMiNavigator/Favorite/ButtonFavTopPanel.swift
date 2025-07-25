@@ -45,7 +45,8 @@ struct ButtonFavTopPanel: View {
                     .foregroundColor(Color(#colorLiteral(red: 0, green: 0.3285208941, blue: 0.5748849511, alpha: 1)))
                     .scaleEffect(CGSize(width: 0.9, height: 1.3), anchor: .leading)
                     .border(Color(#colorLiteral(red: 0, green: 0.3285208941, blue: 0.5748849511, alpha: 1)))
-            } else {
+            }
+            else {
                 Image(systemName: "sidebar.right")
                     .renderingMode(.original)
                     .foregroundColor(Color(#colorLiteral(red: 0.09019608051, green: 0, blue: 0.3019607961, alpha: 1)))
@@ -106,9 +107,7 @@ struct ButtonFavTopPanel: View {
     }
 
     // MARK: -
-    private func fetchFavNetVolumes(from scanner: FavScanner) async
-        -> [CustomFile]
-    {
+    private func fetchFavNetVolumes(from scanner: FavScanner) async -> [CustomFile] {
         //log.info(#function)
         await withCheckedContinuation { continuation in
             scanner.scanFavoritesAndNetworkVolumes { files in

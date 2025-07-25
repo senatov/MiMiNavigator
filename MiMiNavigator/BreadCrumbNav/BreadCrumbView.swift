@@ -65,7 +65,7 @@ struct BreadCrumbView: View {
         log.info(#function + " for index \(index) on side \(panelSide)")
         let newPath = "/" + pathComponents.prefix(index + 1).joined(separator: "/")
         appState.focusedSide = panelSide
-        appState.updatePath(newPath, on: appState.focusedSide)
+        appState.updatePath(newPath)
         Task {
             if panelSide == .left {
                 await appState.scanner.setLeftDirectory(pathStr: newPath)

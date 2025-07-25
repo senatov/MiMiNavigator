@@ -118,17 +118,16 @@ final class AppState: ObservableObject {
 
 
     // MARK: -
-    func updatePath(_ path: String, on side: PanelSide) {
-        log.info("\(#function) – updating path on side: \(side) to \(path)")
-        switch side {
+    func updatePath(_ path: String) {
+        log.info("\(#function) – updating path on side: \(focusedSide) to \(path)")
+        switch focusedSide {
             case .left:
                 leftPath = path
-                selectedLeftFile = nil
+                selectedLeftFile = displayedLeftFiles.first
             case .right:
                 rightPath = path
-                selectedRightFile = nil
+                selectedRightFile = displayedRightFiles.first
         }
-        focusedSide = side
         initialize()
     }
 
@@ -139,12 +138,13 @@ final class AppState: ObservableObject {
         return selectedDir
     }
 
+
+    // MARK: -
     func saveBeforeExit() {
         log.debug(#function)
         // Save left and right panel paths
         UserDefaults.standard.set(leftPath, forKey: "lastLeftPath")
         UserDefaults.standard.set(rightPath, forKey: "lastRightPath")
-
         // Save selected files if available
         if let left = selectedLeftFile {
             UserDefaults.standard.set(left.urlValue, forKey: "lastSelectedLeftFilePath")

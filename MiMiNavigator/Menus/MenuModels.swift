@@ -15,10 +15,12 @@ struct MenuItem: Identifiable, Hashable {
     let action: () -> Void
     let shortcut: String?
 
+    // MARK: -
     static func == (lhs: MenuItem, rhs: MenuItem) -> Bool {
         lhs.id == rhs.id
     }
 
+    // MARK: -
     func hash(into hasher: inout Hasher) {
         hasher.combine(id)
     }

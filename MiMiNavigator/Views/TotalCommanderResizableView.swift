@@ -230,6 +230,7 @@ struct TotalCommanderResizableView: View {
         leftPanelWidth = geometry.size.width / 2
         UserDefaults.standard.set(leftPanelWidth, forKey: "leftPanelWidth")
     }
+    
 
     // MARK: -
     private func initializePanelWidth(geometry: GeometryProxy) {
