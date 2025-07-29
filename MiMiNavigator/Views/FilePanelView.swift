@@ -45,8 +45,7 @@ struct FilePanelView: View {
                         return
                     }
                     Task {
-                        appState.focusedSide = panelSide
-                        appState.updatePath(url.absoluteString)
+                        appState.updatePath(url.absoluteString, for: panelSide)
                         await fetchFiles(panelSide)
                     }
                 }
