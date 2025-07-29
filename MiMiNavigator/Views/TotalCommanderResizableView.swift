@@ -33,16 +33,14 @@ struct TotalCommanderResizableView: View {
                 }
             }
             .onAppear {
-                log.info(#function)
+                log.info(#function + " - Initializing app state and panels")
                 appState.initialize()
                 initializePanelWidth(geometry: geometry)  // Restore divider width from user defaults
                 addKeyPressMonitor()  // Register keyboard shortcut
             }
             .onChange(of: geometry.size) {
                 let newSize = geometry.size
-                log.info(
-                    "Window size changed: \(newSize.width)x\(newSize.height)"
-                )
+                log.info("Window size changed: \(newSize.width)x\(newSize.height)")
                 // пересчитать ширину левой панели, если нужно
                 if leftPanelWidth > 0 {
                     let maxWidth = newSize.width - 50
@@ -78,10 +76,9 @@ struct TotalCommanderResizableView: View {
         )
     }
 
+
     // MARK: -
-    private func buildPanel(for side: PanelSide, geometry: GeometryProxy)
-        -> some View
-    {
+    private func buildPanel(for side: PanelSide, geometry: GeometryProxy) -> some View {
         log.debug(#function + " [side: \(side)]")
         return FilePanelView(
             selectedSide: side,
@@ -90,6 +87,7 @@ struct TotalCommanderResizableView: View {
             fetchFiles: fetchFiles
         )
     }
+    
 
     // MARK: - Divider
     private func buildDivider(geometry: GeometryProxy) -> some View {
@@ -154,7 +152,7 @@ struct TotalCommanderResizableView: View {
                 }
                 DownToolbarButtonView(title: "F5 Copy", systemImage: "doc.on.doc") {
                     if let file = appState.setSideFile(for: appState.focusedSide),
-                       let targetURL = appState.pathURL(for: appState.focusedSide.opposite)
+                        let targetURL = appState.pathURL(for: appState.focusedSide.opposite)
                     {
                         FActions.copy(file, to: targetURL)
                         Task {
@@ -201,11 +199,9 @@ struct TotalCommanderResizableView: View {
         .frame(maxWidth: .infinity, alignment: .bottom)
     }
 
+
     // MARK: -
-    private func handleDividerDrag(
-        value: DragGesture.Value,
-        geometry: GeometryProxy
-    ) {
+    private func handleDividerDrag(value: DragGesture.Value, geometry: GeometryProxy) {
         log.info(#function)
         let newWidth = leftPanelWidth + value.translation.width
         let minPanelWidth: CGFloat = 100
@@ -224,13 +220,14 @@ struct TotalCommanderResizableView: View {
         }
     }
 
+
     // MARK: -
     private func handleDoubleClickDivider(geometry: GeometryProxy) {
         log.info(#function)
         leftPanelWidth = geometry.size.width / 2
         UserDefaults.standard.set(leftPanelWidth, forKey: "leftPanelWidth")
     }
-    
+
 
     // MARK: -
     private func initializePanelWidth(geometry: GeometryProxy) {
@@ -239,6 +236,7 @@ struct TotalCommanderResizableView: View {
             UserDefaults.standard.object(forKey: "leftPanelWidth") as? CGFloat
             ?? geometry.size.width / 2
     }
+
 
     // MARK: -
     private func addKeyPressMonitor() {

@@ -118,9 +118,16 @@ final class AppState: ObservableObject {
 
 
     // MARK: -
-    func updatePath(_ path: String) {
-        log.info("\(#function) – updating path on side: \(focusedSide) to \(path)")
-        switch focusedSide {
+    func updatePath(_ path: String, for side: PanelSide) {
+        log.debug(#function + " at side: \(side) with path: \(path)")
+        focusedSide = side
+        let currentPath = (side == .left ? leftPath : rightPath)
+        guard toCanonical(from: currentPath) != toCanonical(from: path) else {
+            log.debug("\(#function) – skipping update: path unchanged (\(path))")
+            return
+        }
+        log.info("\(#function) – updating path on side: \(side) to \(path)")
+        switch side {
             case .left:
                 leftPath = path
                 selectedLeftFile = displayedLeftFiles.first
@@ -128,7 +135,16 @@ final class AppState: ObservableObject {
                 rightPath = path
                 selectedRightFile = displayedRightFiles.first
         }
-        initialize()
+    }
+
+    // MARK: -
+    func toCanonical(from path: String) -> String {
+        if let url = URL(string: path), url.isFileURL {
+            return url.standardized.resolvingSymlinksInPath().path
+        }
+        else {
+            return (path as NSString).standardizingPath
+        }
     }
 
 
