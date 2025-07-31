@@ -22,8 +22,10 @@ final class AppState: ObservableObject {
     @Published var selectedLeftFile: CustomFile?
     @Published var selectedRightFile: CustomFile?
     @Published var showFavTreePopup: Bool = false
+    let selectionsHistory = SelectionsHistory()
     let fileManager = FileManager.default
     var scanner: DualDirectoryScanner!
+    private var cancellables = Set<AnyCancellable>()
 
 
     // MARK: -
@@ -32,9 +34,18 @@ final class AppState: ObservableObject {
         self.leftPath = fileManager.urls(for: .downloadsDirectory, in: .userDomainMask).first?.path ?? .empty
         self.rightPath = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first?.path ?? .empty
         self.scanner = DualDirectoryScanner(appState: self)
-        log.info("restore State")
+
+        // Restore saved paths
         self.leftPath = UserDefaults.standard.string(forKey: "lastLeftPath") ?? self.leftPath
         self.rightPath = UserDefaults.standard.string(forKey: "lastRightPath") ?? self.rightPath
+
+        // Подписка на изменения selectedDir
+        $selectedDir
+            .compactMap { $0.selectedFSEntity?.urlValue.path }
+            .sink { [weak self] newPath in
+                self?.selectionsHistory.add(newPath)
+            }
+            .store(in: &cancellables)
     }
 
 

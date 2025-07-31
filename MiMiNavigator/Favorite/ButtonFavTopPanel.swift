@@ -6,6 +6,7 @@ import SwiftyBeaver
 struct ButtonFavTopPanel: View {
 
     @State private var favTreeStruct: [CustomFile] = []
+    @State private var showBackPopover: Bool = false
     @EnvironmentObject var appState: AppState
     let panelSide: PanelSide
 
@@ -63,18 +64,57 @@ struct ButtonFavTopPanel: View {
     }
 
     // MARK: -
+    fileprivate func doNavigatingPrevDir() {
+        // intentionally left blank; navigation handled by popover in backButton
+    }
+
     private func backButton() -> some View {
-        Button(action: { log.info("Back: navigating to previous directory") }) {
+        log.info(#function)
+        return Button(action: {
+            showBackPopover.toggle()
+        }) {
             Image(systemName: "arrowshape.backward").renderingMode(.original)
         }
         .shadow(color: .secondary.opacity(0.15), radius: 7.0, x: 1, y: 1)
+        .popover(isPresented: $showBackPopover, arrowEdge: .bottom) {
+            backPopover()
+        }
         .help("Back: navigating to previous directory")
         .accessibilityLabel("Back button")
     }
 
     // MARK: -
+    private func backPopover() -> some View {
+        VStack(alignment: .leading) {
+            ForEach(appState.selectionsHistory.recentSelections, id: \.self) { path in
+                Button(action: {
+                    Task {
+                        if panelSide == .left {
+                            await appState.scanner.setLeftDirectory(pathStr: path)
+                            await appState.refreshLeftFiles()
+                        } else {
+                            await appState.scanner.setRightDirectory(pathStr: path)
+                            await appState.refreshRightFiles()
+                        }
+                        showBackPopover = false
+                    }
+                }) {
+                    Text(path)
+                        .font(.system(size: 11))
+                        .foregroundColor(.blue)
+                        .padding(.vertical, 2)
+                }
+                Divider()
+            }
+        }
+        .padding(6)
+        .frame(maxWidth: 400, maxHeight: 300)
+    }
+
+    // MARK: -
     private func forwardButton() -> some View {
-        Button(action: { log.info("Forward: navigating to next directory") }) {
+        log.info(#function)
+        return Button(action: { log.info("Forward: navigating to next directory") }) {
             Image(systemName: "arrowshape.right").renderingMode(.original)
         }
         .shadow(color: .secondary.opacity(0.15), radius: 7.0, x: 1, y: 1)
