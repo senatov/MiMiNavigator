@@ -3,26 +3,29 @@ import SwiftUI
 import SwiftyBeaver
 
 // MARK: -
-struct ButtonFavTopPanel: View {
 
+struct ButtonFavTopPanel: View {
     @State private var favTreeStruct: [CustomFile] = []
     @State private var showBackPopover: Bool = false
     @EnvironmentObject var appState: AppState
     let panelSide: PanelSide
 
     // MARK: -
+
     init(selectedSide: PanelSide) {
         log.info("ButtonFavTopPanel init" + " for side \(selectedSide)")
         self.panelSide = selectedSide
     }
 
     // MARK: -
-    public var body: some View {
+
+    var body: some View {
         log.info(#function)
         return VStack(alignment: .leading, spacing: 4) { navigationControls }
     }
 
     // MARK: -
+
     private var navigationControls: some View {
         log.info(#function)
         return HStack(spacing: 6) {
@@ -32,12 +35,15 @@ struct ButtonFavTopPanel: View {
         }
     }
 
-    // MARK: -
+    // MARK:
+
     private func menuButton() -> some View {
         log.info(#function + " - \(String(describing: panelSide))")
         return Button(action: {
             log.info("Navigation between favorites")
-            if favTreeStruct.isEmpty { Task { await fetchFavTree() } }
+            if favTreeStruct.isEmpty {
+                Task { await fetchFavTree() }
+            }
             appState.showFavTreePopup.toggle()
         }) {
             if panelSide == .left {
@@ -46,8 +52,7 @@ struct ButtonFavTopPanel: View {
                     .foregroundColor(Color(#colorLiteral(red: 0, green: 0.3285208941, blue: 0.5748849511, alpha: 1)))
                     .scaleEffect(CGSize(width: 0.9, height: 1.3), anchor: .leading)
                     .border(Color(#colorLiteral(red: 0, green: 0.3285208941, blue: 0.5748849511, alpha: 1)))
-            }
-            else {
+            } else {
                 Image(systemName: "sidebar.right")
                     .renderingMode(.original)
                     .foregroundColor(Color(#colorLiteral(red: 0.09019608051, green: 0, blue: 0.3019607961, alpha: 1)))
@@ -64,9 +69,6 @@ struct ButtonFavTopPanel: View {
     }
 
     // MARK: -
-    fileprivate func doNavigatingPrevDir() {
-        // intentionally left blank; navigation handled by popover in backButton
-    }
 
     private func backButton() -> some View {
         log.info(#function)
@@ -84,6 +86,7 @@ struct ButtonFavTopPanel: View {
     }
 
     // MARK: -
+
     private func backPopover() -> some View {
         VStack(alignment: .leading) {
             ForEach(appState.selectionsHistory.recentSelections, id: \.self) { path in
@@ -112,6 +115,7 @@ struct ButtonFavTopPanel: View {
     }
 
     // MARK: -
+
     private func forwardButton() -> some View {
         log.info(#function)
         return Button(action: { log.info("Forward: navigating to next directory") }) {
@@ -124,6 +128,7 @@ struct ButtonFavTopPanel: View {
     }
 
     // MARK: -
+
     private func favoritePopover() -> some View {
         log.info(#function)
         return FavTreeMnu(files: $favTreeStruct, panelSide: panelSide)
@@ -133,9 +138,10 @@ struct ButtonFavTopPanel: View {
     }
 
     // MARK: -
+
     @MainActor
     private func fetchFavTree() async {
-        //log.info(#function)
+        // log.info(#function)
         let favScanner = FavScanner()
         favTreeStruct = favScanner.scanOnlyFavorites()
         let files = await fetchFavNetVolumes(from: favScanner)
@@ -147,8 +153,9 @@ struct ButtonFavTopPanel: View {
     }
 
     // MARK: -
+
     private func fetchFavNetVolumes(from scanner: FavScanner) async -> [CustomFile] {
-        //log.info(#function)
+        // log.info(#function)
         await withCheckedContinuation { continuation in
             scanner.scanFavoritesAndNetworkVolumes { files in
                 continuation.resume(returning: files)

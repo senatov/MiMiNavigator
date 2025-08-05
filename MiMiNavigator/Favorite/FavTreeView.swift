@@ -15,8 +15,15 @@ struct FavTreeView: View {
     let panelSide: PanelSide
 
     // MARK: - Initializer
-    init(file: Binding<CustomFile>, expandedFolders: Binding<Set<String>>, selectedSide: PanelSide) {
-        log.info("FavTreeView init" + " for file \(file.wrappedValue.nameStr), side \(selectedSide)")
+    init(
+        file: Binding<CustomFile>,
+        expandedFolders: Binding<Set<String>>,
+        selectedSide: PanelSide
+    ) {
+        log.info(
+            "FavTreeView init"
+                + " for file \(file.wrappedValue.nameStr), side \(selectedSide)"
+        )
         self.panelSide = selectedSide
         self._file = file
         self._expandedFolders = expandedFolders
@@ -32,7 +39,6 @@ struct FavTreeView: View {
         .animation(.easeInOut(duration: 0.25), value: isExpanded)
     }
 
-
     // MARK: -
     private var fileIcon: some View {
         Group {
@@ -46,8 +52,7 @@ struct FavTreeView: View {
                             toggleExpansion()
                         }
                     }
-            }
-            else {
+            } else {
                 Image(systemName: "doc")
                     .foregroundColor(.gray)
             }
@@ -57,7 +62,8 @@ struct FavTreeView: View {
     // MARK: -
     private var fileNameText: some View {
         log.info(#function + " for \(file.nameStr)")
-        let isTheSame = appState.selectedDir.selectedFSEntity?.pathStr == file.pathStr
+        let isTheSame =
+            appState.selectedDir.selectedFSEntity?.pathStr == file.pathStr
         return Text(file.nameStr)
             .foregroundColor(isTheSame ? .blue : .primary)
             .onTapGesture {
@@ -113,11 +119,12 @@ struct FavTreeView: View {
 
     // MARK: -
     private func toggleExpansion() {
-        withAnimation(.spring(response: 0.3, dampingFraction: 0.6, blendDuration: 0.3)) {
+        withAnimation(
+            .spring(response: 0.3, dampingFraction: 0.6, blendDuration: 0.3)
+        ) {
             if isExpanded {
                 expandedFolders.remove(file.pathStr)
-            }
-            else {
+            } else {
                 expandedFolders.insert(file.pathStr)
             }
         }

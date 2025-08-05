@@ -13,10 +13,12 @@ import SwiftUI
 // MARK: -
 struct FilePanelView: View {
     @EnvironmentObject var appState: AppState
+    @State private var selectedFile: CustomFile.ID?
     var geometry: GeometryProxy
     @Binding var leftPanelWidth: CGFloat
     let fetchFiles: @Sendable @concurrent (PanelSide) async -> Void
     let panelSide: PanelSide
+
 
 
     // MARK: - Initializer
@@ -66,6 +68,13 @@ struct FilePanelView: View {
                             )
                     }
                     .frame(minWidth: 100, maxWidth: .infinity, alignment: .leading)
+                    .padding(.vertical, 2)
+                    .background(
+                        selectedFile == file.id
+                            ? Color(red: 0.82, green: 0.91, blue: 0.99) // Windows 11 selection blue
+                            : Color.clear
+                    )
+                    .cornerRadius(4)
                 }
                 TableColumn("Size") { file in
                     Text(file.formattedSize)
