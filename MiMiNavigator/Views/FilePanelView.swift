@@ -6,7 +6,6 @@
 //  Copyright © 2025 Senatov. All rights reserved.
 //
 
-
 import AppKit
 import SwiftUI
 
@@ -52,41 +51,39 @@ struct FilePanelView: View {
                     }
                 }
             let files = sortedFiles
-            Table(files, selection: .constant(nil)) {
+            Table(files, selection: $selectedFile) {
                 TableColumn("Name") { file in
-                    HStack {
-                        Image(nsImage: NSWorkspace.shared.icon(forFile: file.urlValue.path))
-                            .resizable()
-                            .frame(width: 16, height: 16)
-                        Text(file.nameStr)
-                            .foregroundColor(
-                                file.isDirectory
-                                    ? Color(#colorLiteral(red: 0.1294117719, green: 0.2156862766, blue: 0.06666667014, alpha: 1))
-                                    : file.isSymbolicDirectory
-                                        ? Color(#colorLiteral(red: 0.07102862641, green: 0.400000006, blue: 0.2974898127, alpha: 1))
-                                        : Color(#colorLiteral(red: 0.004859850742, green: 0.09608627111, blue: 0.5749928951, alpha: 1))
-                            )
+                    rowContent(for: file) {
+                        HStack {
+                            Image(nsImage: NSWorkspace.shared.icon(forFile: file.urlValue.path))
+                                .resizable()
+                                .frame(width: 16, height: 16)
+                            Text(file.nameStr)
+                                .foregroundColor(
+                                    file.isDirectory
+                                        ? Color(#colorLiteral(red: 0.1294117719, green: 0.2156862766, blue: 0.06666667014, alpha: 1))
+                                        : file.isSymbolicDirectory
+                                            ? Color(#colorLiteral(red: 0.1215686277, green: 0.01176470611, blue: 0.4235294163, alpha: 1))
+                                            : Color(#colorLiteral(red: 0.05882352963, green: 0.180392161, blue: 0.2470588237, alpha: 1))
+                                )
+                        }
                     }
-                    .frame(minWidth: 100, maxWidth: .infinity, alignment: .leading)
-                    .padding(.vertical, 2)
-                    .background(
-                        selectedFile == file.id
-                            ? Color(red: 0.82, green: 0.91, blue: 0.99) // Windows 11 selection blue
-                            : Color.clear
-                    )
-                    .cornerRadius(4)
                 }
                 TableColumn("Size") { file in
-                    Text(file.formattedSize)
-                        .foregroundColor(.secondary)
-                        .monospacedDigit()
-                        .frame(width: 80, alignment: .trailing)
+                    rowContent(for: file) {
+                        Text(file.formattedSize)
+                            .foregroundColor(.secondary)
+                            .monospacedDigit()
+                            .frame(width: 80, alignment: .trailing)
+                    }
                 }
                 TableColumn("Modified") { file in
-                    Text(file.modifiedDateFormatted)
-                        .font(.footnote)
-                        .foregroundColor(.gray)
-                        .frame(width: 120, alignment: .leading)
+                    rowContent(for: file) {
+                        Text(file.modifiedDateFormatted)
+                            .font(.footnote)
+                            .foregroundColor(.gray)
+                            .frame(width: 120, alignment: .leading)
+                    }
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -104,5 +101,12 @@ struct FilePanelView: View {
         let others = files.filter { !($0.isDirectory || $0.isSymbolicDirectory) }
             .sorted { $0.nameStr.localizedCompare($1.nameStr) == .orderedAscending }
         return directories + others
+    }
+
+    private func rowContent<Content: View>(for file: CustomFile, @ViewBuilder content: () -> Content) -> some View {
+        content()
+            .padding(.vertical, 2)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(selectedFile == file.id ? Color.blue.opacity(0.2) : Color.clear)
     }
 }
