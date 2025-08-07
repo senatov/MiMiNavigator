@@ -39,32 +39,42 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		9751D0782CCEB1BC005B1D64 /* Exceptions for "MiMiNavigator" folder in "MiMiNavigator" target */ = {
+		97E4E59F2E44A084001B4027 /* Exceptions for "Gui" folder in "MiMiNavigator" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
+				Tests/MiMiNavigatorTests/MiMiNavigatorTests.swift,
+				Tests/MiMiNavigatorUITests/MiMiNavigatorUITests.swift,
+				Tests/MiMiNavigatorUITests/MiMiNavigatorUITestsLaunchTests.swift,
 			);
 			target = 97AD1A2D2C624E020045C38D /* MiMiNavigator */;
+		};
+		97E4E5A02E44A084001B4027 /* Exceptions for "Gui" folder in "MiMiNavigatorTests" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Tests/MiMiNavigatorTests/MiMiNavigatorTests.swift,
+			);
+			target = 97AD1A402C624E040045C38D /* MiMiNavigatorTests */;
+		};
+		97E4E5A12E44A084001B4027 /* Exceptions for "Gui" folder in "MiMiNavigatorUITests" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Tests/MiMiNavigatorUITests/MiMiNavigatorUITests.swift,
+				Tests/MiMiNavigatorUITests/MiMiNavigatorUITestsLaunchTests.swift,
+			);
+			target = 97AD1A4A2C624E040045C38D /* MiMiNavigatorUITests */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		9751D0502CCEB1B6005B1D64 /* MiMiNavigatorUITests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = MiMiNavigatorUITests;
-			sourceTree = "<group>";
-		};
-		9751D0542CCEB1B9005B1D64 /* MiMiNavigatorTests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = MiMiNavigatorTests;
-			sourceTree = "<group>";
-		};
-		9751D0682CCEB1BC005B1D64 /* MiMiNavigator */ = {
+		97E4E59E2E44A072001B4027 /* Gui */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				9751D0782CCEB1BC005B1D64 /* Exceptions for "MiMiNavigator" folder in "MiMiNavigator" target */,
+				97E4E59F2E44A084001B4027 /* Exceptions for "Gui" folder in "MiMiNavigator" target */,
+				97E4E5A02E44A084001B4027 /* Exceptions for "Gui" folder in "MiMiNavigatorTests" target */,
+				97E4E5A12E44A084001B4027 /* Exceptions for "Gui" folder in "MiMiNavigatorUITests" target */,
 			);
-			path = MiMiNavigator;
+			path = Gui;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -94,12 +104,9 @@
 		97AD1A252C624E020045C38D = {
 			isa = PBXGroup;
 			children = (
+				97E4E59E2E44A072001B4027 /* Gui */,
 				976FEA872D49C8C70078EA90 /* README.md */,
 				979574EB2DB3F6A900CA5F0B /* .periphery.yml */,
-				9751D0682CCEB1BC005B1D64 /* MiMiNavigator */,
-				9751D0542CCEB1B9005B1D64 /* MiMiNavigatorTests */,
-				9751D0502CCEB1B6005B1D64 /* MiMiNavigatorUITests */,
-				97D128742DB62DD400274684 /* Frameworks */,
 				97AD1A2F2C624E020045C38D /* Products */,
 			);
 			sourceTree = "<group>";
@@ -112,13 +119,6 @@
 				97AD1A4B2C624E040045C38D /* MiMiNavigatorUITests.xctest */,
 			);
 			name = Products;
-			sourceTree = "<group>";
-		};
-		97D128742DB62DD400274684 /* Frameworks */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -140,7 +140,7 @@
 				97D915692CD5624900EB5FDD /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				9751D0682CCEB1BC005B1D64 /* MiMiNavigator */,
+				97E4E59E2E44A072001B4027 /* Gui */,
 			);
 			name = MiMiNavigator;
 			packageProductDependencies = (
@@ -164,9 +164,6 @@
 			dependencies = (
 				97AD1A432C624E040045C38D /* PBXTargetDependency */,
 			);
-			fileSystemSynchronizedGroups = (
-				9751D0542CCEB1B9005B1D64 /* MiMiNavigatorTests */,
-			);
 			name = MiMiNavigatorTests;
 			productName = MiMiNavigatorTests;
 			productReference = 97AD1A412C624E040045C38D /* MiMiNavigatorTests.xctest */;
@@ -184,9 +181,6 @@
 			);
 			dependencies = (
 				97AD1A4D2C624E040045C38D /* PBXTargetDependency */,
-			);
-			fileSystemSynchronizedGroups = (
-				9751D0502CCEB1B6005B1D64 /* MiMiNavigatorUITests */,
 			);
 			name = MiMiNavigatorUITests;
 			productName = MiMiNavigatorUITests;
@@ -441,12 +435,12 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				AUTOMATION_APPLE_EVENTS = YES;
-				CODE_SIGN_ENTITLEMENTS = MiMiNavigator/MiMiNavigator.entitlements;
+				CODE_SIGN_ENTITLEMENTS = Gui/MiMiNavigator.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_ASSET_PATHS = "\"MiMiNavigator/Preview Content\"";
+				DEVELOPMENT_ASSET_PATHS = "\"Gui/Sources/Preview Content\"";
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = YES;
@@ -456,7 +450,7 @@
 				ENABLE_RESOURCE_ACCESS_LOCATION = YES;
 				ENABLE_RESOURCE_ACCESS_PHOTO_LIBRARY = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = MiMiNavigator/Info.plist;
+				INFOPLIST_FILE = Gui/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "I. Senatov";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -486,13 +480,13 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				AUTOMATION_APPLE_EVENTS = YES;
-				CODE_SIGN_ENTITLEMENTS = MiMiNavigator/MiMiNavigatorRelease.entitlements;
+				CODE_SIGN_ENTITLEMENTS = Gui/MiMiNavigatorRelease.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_ASSET_PATHS = "\"MiMiNavigator/Preview Content\"";
+				DEVELOPMENT_ASSET_PATHS = "\"Gui/Sources/Preview Content\"";
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = YES;
@@ -502,7 +496,7 @@
 				ENABLE_RESOURCE_ACCESS_LOCATION = YES;
 				ENABLE_RESOURCE_ACCESS_PHOTO_LIBRARY = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = MiMiNavigator/Info.plist;
+				INFOPLIST_FILE = Gui/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "I. Senatov";
 				LD_RUNPATH_SEARCH_PATHS = (

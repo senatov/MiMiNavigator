@@ -23,7 +23,7 @@ MiMiNavigator is a macOS file manager built with Swift and SwiftUI.
 The repository is organized around an Xcode project with sources under `MiMiNavigator/` and basic tests in `MiMiNavigatorTests` and `MiMiNavigatorUITests`.
 
 <p align="center">
-  <img src="docs/Preview.png" alt="Preview FrontEnd" title="Preview" style="max-width: 100%; height: auto;" />
+  <img src="Docs/Preview.png" alt="Preview FrontEnd" title="Preview" style="max-width: 100%; height: auto;" />
 </p>
 
 
