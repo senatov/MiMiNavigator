@@ -1,4 +1,4 @@
-![MiMiNavigator Logo](MiMiNavigator/Assets.xcassets/AppIcon.appiconset/256%201.png "just logo")
+![MiMiNavigator Logo](MiMiNavigator/Gui/Assets.xcassets/AppIcon.appiconset/256%201.png "just logo")
 
 ### MiMiNavigator - MacOS File manager with two panels
 ## (NOT READY YET, under development    )
@@ -24,7 +24,7 @@ The repository is organized around an Xcode project with sources under `MiMiNavi
 
 <div style="text-align: center;">
   <img 
-    src="docs/Preview.png" 
+    src="Gui/Docs/Preview.png" 
     alt="Preview FrontEnd" 
     title="Preview" 
     style="max-width: 100%; height: auto; border: 1px solid #87CEFA; border-radius: 4px;" />
