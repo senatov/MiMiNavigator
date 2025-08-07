@@ -1,13 +1,6 @@
+![MiMiNavigator Logo](Gui/Assets.xcassets/AppIcon.appiconset/256 1.png "just logo")
 
-<div style="text-align: center;">
-  <img 
-    src="Gui/Assets.xcassets/AppIcon.appiconset/120.png" 
-    alt="Preview FrontEnd" 
-    title="Logo" 
-    style="max-width: 100%; height: auto; border: 1px solid #87CEFA; border-radius: 4px;" />
-</div>
 
----
 ### MiMiNavigator - MacOS File manager with two panels
 ## (NOT READY YET, under development    )
 
