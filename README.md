@@ -183,9 +183,15 @@ This project is still under active development ( NOT READY YET  per the README) 
 ---
 ## Recent Changes
 ```text
-* 06d8906 - Senatov  (HEAD -> new_prj_structure, origin/new_prj_structure) new project structure (18 minutes ago, 2025-08-07 11:05:07 +0200)
-* 7e33650 - Senatov  new project structure (18 minutes ago, 2025-08-07 11:04:59 +0200)
-* 8829a33 - Senatov  (origin/master, origin/HEAD, master) .error fixing (9 hours ago, 2025-08-07 02:28:55 +0200)
+* 626f362 - Senatov  (HEAD -> master, origin/new_prj_structure, new_prj_structure) preview & logo fixed (5 minutes ago, 2025-08-07 11:59:42 +0200)
+* 891e539 - Senatov  Update README.md (17 minutes ago, 2025-08-07 11:47:26 +0200)
+* fee99fa - Senatov  preview & logo fixed (7 minutes ago, 2025-08-07 11:57:01 +0200)
+* 1bfdc29 - Senatov  Update README.md (12 minutes ago, 2025-08-07 11:52:46 +0200)
+* 4b29a36 - Senatov  fix paths (22 minutes ago, 2025-08-07 11:42:32 +0200)
+* 29c4690 - Senatov  some fixies (31 minutes ago, 2025-08-07 11:33:08 +0200)
+* 06d8906 - Senatov  new project structure (59 minutes ago, 2025-08-07 11:05:07 +0200)
+* 7e33650 - Senatov  new project structure (59 minutes ago, 2025-08-07 11:04:59 +0200)
+* 8829a33 - Senatov  (origin/master, origin/HEAD) .error fixing (10 hours ago, 2025-08-07 02:28:55 +0200)
 * 4ddde6d - Senatov  the same (2 days ago, 2025-08-05 11:09:49 +0200)
 * 7e8615a - Senatov  fix file selection balk (2 days ago, 2025-08-05 10:26:31 +0200)
 | * c7e1636 - Senatov  (2025.08.02-1) tmp (5 days ago, 2025-08-02 01:27:17 +0200)
@@ -233,15 +239,7 @@ This project is still under active development ( NOT READY YET  per the README) 
 | * c3f2abd - Senatov  Update README.md (3 weeks ago, 2025-07-17 00:48:26 +0200)
 * | 5cbad92 - Senatov  ver. and md fix (3 weeks ago, 2025-07-17 01:24:19 +0200)
 * | b452414 - Senatov  fix preview (3 weeks ago, 2025-07-17 01:09:11 +0200)
-|/  
-* 443b60c - Senatov  fixed: intern size of panels and side var (3 weeks ago, 2025-07-17 00:46:17 +0200)
-* c0d76df - Senatov  test (3 weeks ago, 2025-07-16 23:19:11 +0200)
-* 6abe2a4 - Senatov  restore preview (3 weeks ago, 2025-07-16 22:35:08 +0200)
-* ebf3a9c - Senatov  file pane's headers (3 weeks ago, 2025-07-16 22:28:12 +0200)
-* a9c3fd8 - Senatov  .@concurrent (3 weeks ago, 2025-07-16 19:34:12 +0200)
-* 6cef802 - Senatov  down button panel paddind (3 weeks ago, 2025-07-16 16:54:20 +0200)
-* 2d99e1a - Senatov  ver. string (3 weeks ago, 2025-07-16 15:06:25 +0200)
-* 14c7dc4 - Senatov  nothing intresting (3 weeks ago, 2025-07-16 14:43:24 +0200)
+
 ```
 
 
