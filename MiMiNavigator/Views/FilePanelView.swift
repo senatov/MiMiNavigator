@@ -10,6 +10,7 @@ import AppKit
 import SwiftUI
 
 // MARK: -
+
 struct FilePanelView: View {
     @EnvironmentObject var appState: AppState
     @State private var selectedFile: CustomFile.ID?
@@ -18,27 +19,27 @@ struct FilePanelView: View {
     let fetchFiles: @Sendable @concurrent (PanelSide) async -> Void
     let panelSide: PanelSide
 
-
-
     // MARK: - Initializer
+
     init(
         selectedSide: PanelSide,
         geometry: GeometryProxy,
         leftPanelWidth: Binding<CGFloat>,
         fetchFiles: @escaping @Sendable @concurrent (PanelSide) async -> Void
     ) {
-        log.info("FilePanelView init")
+        log.info(#function)
         self.panelSide = selectedSide
         self.geometry = geometry
         self._leftPanelWidth = leftPanelWidth
         self.fetchFiles = fetchFiles
     }
 
-
     // MARK: - View
+
     var body: some View {
         let currentPath = appState.pathURL(for: panelSide)
-        VStack {
+        log.info(#function + " for side \(panelSide) with path: \(currentPath?.path ?? "nil")")
+        return VStack {
             BreadCrumbControlWrapper(selectedSide: panelSide)
                 .onChange(of: currentPath) {
                     guard let url = currentPath else {
@@ -63,8 +64,8 @@ struct FilePanelView: View {
                                     file.isDirectory
                                         ? Color(#colorLiteral(red: 0.1294117719, green: 0.2156862766, blue: 0.06666667014, alpha: 1))
                                         : file.isSymbolicDirectory
-                                            ? Color(#colorLiteral(red: 0.1215686277, green: 0.01176470611, blue: 0.4235294163, alpha: 1))
-                                            : Color(#colorLiteral(red: 0.05882352963, green: 0.180392161, blue: 0.2470588237, alpha: 1))
+                                        ? Color(#colorLiteral(red: 0.1215686277, green: 0.01176470611, blue: 0.4235294163, alpha: 1))
+                                        : Color(#colorLiteral(red: 0.05882352963, green: 0.180392161, blue: 0.2470588237, alpha: 1))
                                 )
                         }
                     }
@@ -72,16 +73,14 @@ struct FilePanelView: View {
                 TableColumn("Size") { file in
                     rowContent(for: file) {
                         Text(file.formattedSize)
-                            .foregroundColor(.secondary)
-                            .monospacedDigit()
+                            .foregroundColor(.black)
                             .frame(width: 80, alignment: .trailing)
                     }
                 }
                 TableColumn("Modified") { file in
                     rowContent(for: file) {
                         Text(file.modifiedDateFormatted)
-                            .font(.footnote)
-                            .foregroundColor(.gray)
+                            .foregroundColor(.black)
                             .frame(width: 120, alignment: .leading)
                     }
                 }
@@ -94,7 +93,9 @@ struct FilePanelView: View {
     }
 
     // MARK: - Helpers
+
     private var sortedFiles: [CustomFile] {
+        log.info(#function)
         let files = appState.displayedFiles(for: panelSide)
         let directories = files.filter { $0.isDirectory || $0.isSymbolicDirectory }
             .sorted { $0.nameStr.localizedCompare($1.nameStr) == .orderedAscending }
@@ -103,10 +104,34 @@ struct FilePanelView: View {
         return directories + others
     }
 
-    private func rowContent<Content: View>(for file: CustomFile, @ViewBuilder content: () -> Content) -> some View {
-        content()
-            .padding(.vertical, 2)
+    // MARK: - Helpers
+
+    private func rowContent<Content: View>(
+        for file: CustomFile,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        let isSelected = selectedFile == file.id
+
+        return content()
+            .foregroundColor(isSelected ? .primary : nil) // общее правило
+            .padding(.vertical, 1)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(selectedFile == file.id ? Color.blue.opacity(0.2) : Color.clear)
+            .background {
+                if isSelected {
+                    Rectangle()
+                        .fill(Color(#colorLiteral(red: 0.9843817323, green: 0.9755823184, blue: 0.7459971547, alpha: 1))) // светло-жёлтый
+                        .overlay(
+                            Rectangle()
+                                .stroke(Color.orange, lineWidth: 1)
+                        )
+                } else {
+                    Color.clear
+                }
+            }
+            .onTapGesture {
+                log.info("Selected file: '\(file.pathStr)' in panel \(panelSide)")
+                appState.selectedDir.selectedFSEntity = file
+                appState.showFavTreePopup = false
+            }
     }
 }

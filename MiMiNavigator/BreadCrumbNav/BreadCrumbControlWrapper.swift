@@ -104,7 +104,7 @@ struct BreadCrumbControlWrapper: View {
         return BreadCrumbPathControl(selectedSide: panelSide)
             .environmentObject(appState)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color.white)
+            .background(.background)
             .font(.system(size: 13, weight: .light, design: .default))
             .contentShape(Rectangle())
             .onTapGesture {
