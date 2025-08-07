@@ -10,15 +10,16 @@ import AppKit
 import Combine
 import Foundation
 
+// MARK: - AppState
+
 @MainActor
 final class AppState: ObservableObject {
-
     @Published var displayedLeftFiles: [CustomFile] = []
     @Published var displayedRightFiles: [CustomFile] = []
     @Published var focusedSide: PanelSide = .left
     @Published var leftPath: String
     @Published var rightPath: String
-    @Published var selectedDir: SelectedDir = SelectedDir()
+    @Published var selectedDir: SelectedDir = .init()
     @Published var selectedLeftFile: CustomFile?
     @Published var selectedRightFile: CustomFile?
     @Published var showFavTreePopup: Bool = false
@@ -27,17 +28,24 @@ final class AppState: ObservableObject {
     var scanner: DualDirectoryScanner!
     private var cancellables = Set<AnyCancellable>()
 
-
     // MARK: -
     init() {
         log.info(#function + " - Initializing AppState")
-        self.leftPath = fileManager.urls(for: .downloadsDirectory, in: .userDomainMask).first?.path ?? .empty
-        self.rightPath = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first?.path ?? .empty
+        self.leftPath =
+            fileManager.urls(for: .downloadsDirectory, in: .userDomainMask)
+                .first?.path ?? .empty
+        self.rightPath =
+            fileManager.urls(for: .documentDirectory, in: .userDomainMask)
+                .first?.path ?? .empty
         self.scanner = DualDirectoryScanner(appState: self)
 
         // Restore saved paths
-        self.leftPath = UserDefaults.standard.string(forKey: "lastLeftPath") ?? self.leftPath
-        self.rightPath = UserDefaults.standard.string(forKey: "lastRightPath") ?? self.rightPath
+        self.leftPath =
+            UserDefaults.standard.string(forKey: "lastLeftPath")
+                ?? leftPath
+        self.rightPath =
+            UserDefaults.standard.string(forKey: "lastRightPath")
+                ?? rightPath
 
         // Подписка на изменения selectedDir
         $selectedDir
@@ -48,32 +56,29 @@ final class AppState: ObservableObject {
             .store(in: &cancellables)
     }
 
-
     // MARK: - AppState extension for displayedFiles
     func displayedFiles(for side: PanelSide) -> [CustomFile] {
         log.info(#function + " at side: \(side)")
         switch side {
-            case .left:
-                return displayedLeftFiles
-            case .right:
-                return displayedRightFiles
+        case .left:
+            return displayedLeftFiles
+        case .right:
+            return displayedRightFiles
         }
     }
-
 
     // MARK: -
     func pathURL(for side: PanelSide) -> URL? {
         log.info(#function + " at path: \(side)")
         let path: String
         switch side {
-            case .left:
-                path = leftPath
-            case .right:
-                path = rightPath
+        case .left:
+            path = leftPath
+        case .right:
+            path = rightPath
         }
         return URL(fileURLWithPath: path)
     }
-
 
     // MARK: -
     @Sendable
@@ -87,11 +92,13 @@ final class AppState: ObservableObject {
     func revealLogFileInFinder() {
         log.info(#function)
         // Path to the log file (update as needed)
-        let logDir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+        let logDir = FileManager.default.urls(
+            for: .applicationSupportDirectory,
+            in: .userDomainMask
+        ).first!
             .appendingPathComponent("Logs/MiMiNavigator.log")
         NSWorkspace.shared.activateFileViewerSelecting([logDir])
     }
-
 
     // MARK: -
     func refreshLeftFiles() async {
@@ -100,7 +107,6 @@ final class AppState: ObservableObject {
         log.debug(" - Found \(displayedLeftFiles.count) left files.")
     }
 
-
     // MARK: -
     func refreshRightFiles() async {
         log.info(#function + " at path: \(rightPath.description)")
@@ -108,25 +114,22 @@ final class AppState: ObservableObject {
         log.debug(" - Found \(displayedRightFiles.count) right files.")
     }
 
-
     // MARK: -
     func setSide(for side: PanelSide) {
         log.info(#function + " at side: \(side)")
         focusedSide = side
     }
 
-
     // MARK: -
     func setSideFile(for side: PanelSide) -> CustomFile? {
         log.info(#function + " at side: \(side)")
         switch side {
-            case .left:
-                return selectedLeftFile
-            case .right:
-                return selectedRightFile
+        case .left:
+            return selectedLeftFile
+        case .right:
+            return selectedRightFile
         }
     }
-
 
     // MARK: -
     func updatePath(_ path: String, for side: PanelSide) {
@@ -134,17 +137,20 @@ final class AppState: ObservableObject {
         focusedSide = side
         let currentPath = (side == .left ? leftPath : rightPath)
         guard toCanonical(from: currentPath) != toCanonical(from: path) else {
-            log.debug("\(#function) – skipping update: path unchanged (\(path))")
+            log.debug(
+                "\(#function) – skipping update: path unchanged (\(path))"
+            )
             return
         }
         log.info("\(#function) – updating path on side: \(side) to \(path)")
         switch side {
-            case .left:
-                leftPath = path
-                selectedLeftFile = displayedLeftFiles.first
-            case .right:
-                rightPath = path
-                selectedRightFile = displayedRightFiles.first
+        case .left:
+            leftPath = path
+            selectedLeftFile = displayedLeftFiles.first
+
+        case .right:
+            rightPath = path
+            selectedRightFile = displayedRightFiles.first
         }
     }
 
@@ -152,19 +158,19 @@ final class AppState: ObservableObject {
     func toCanonical(from path: String) -> String {
         if let url = URL(string: path), url.isFileURL {
             return url.standardized.resolvingSymlinksInPath().path
-        }
-        else {
+        } else {
             return (path as NSString).standardizingPath
         }
     }
 
-
     // MARK: -
     func getSelectedDir() -> SelectedDir {
-        log.info(#function + " at path: \(selectedDir.selectedFSEntity?.nameStr ?? "nil")")
+        log.info(
+            #function
+                + " at path: \(selectedDir.selectedFSEntity?.nameStr ?? "nil")"
+        )
         return selectedDir
     }
-
 
     // MARK: -
     func saveBeforeExit() {
@@ -174,27 +180,39 @@ final class AppState: ObservableObject {
         UserDefaults.standard.set(rightPath, forKey: "lastRightPath")
         // Save selected files if available
         if let left = selectedLeftFile {
-            UserDefaults.standard.set(left.urlValue, forKey: "lastSelectedLeftFilePath")
+            UserDefaults.standard.set(
+                left.urlValue,
+                forKey: "lastSelectedLeftFilePath"
+            )
         }
         if let right = selectedRightFile {
-            UserDefaults.standard.set(right.urlValue, forKey: "lastSelectedRightFilePath")
+            UserDefaults.standard.set(
+                right.urlValue,
+                forKey: "lastSelectedRightFilePath"
+            )
         }
     }
 
-
+    // MARK: -
+    func selectedFileId(for side: PanelSide) -> CustomFile.ID? {
+        switch side {
+        case .left:
+            return selectedLeftFile?.id
+        case .right:
+            return selectedRightFile?.id
+        }
+    }
 }
-
 
 // MARK: -
 extension AppState {
-
     // MARK: -
-    public var focusedSideValue: PanelSide {
+    var focusedSideValue: PanelSide {
         focusedSide
     }
 
     // MARK: -
-    public func initialize() {
+    func initialize() {
         log.info(#function)
         Task {
             await scanner.setLeftDirectory(pathStr: leftPath)

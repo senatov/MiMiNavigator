@@ -17,24 +17,23 @@ struct BreadCrumbPathControl: View {
 
     // MARK: -
     init(selectedSide: PanelSide) {
-        log.info("BreadCrumbPathControl init" + " for side \(selectedSide)")
+        log.info(#function + " for side \(selectedSide)")
         self.panelSide = selectedSide
     }
 
     // MARK: -
     var body: some View {
         log.info(#function + " for side \(panelSide)")
-        return HStack(spacing: 2) {
+        return HStack(spacing: 1) {
             NavMnu1(selectedSide: panelSide)
-            Spacer(minLength: 3)
+            Spacer(minLength: 2)
             BreadCrumbView(selectedSide: panelSide).environmentObject(appState)
             NavMnu2()
         }
         .background(
             RoundedRectangle(cornerRadius: 7)
+                .strokeBorder(Color.secondary.opacity(0.15), lineWidth: 1)
                 .fill(.background)
-                .shadow(color: .secondary.opacity(0.15), radius: 7.0, x: 1, y: 1)
         )
     }
-
 }

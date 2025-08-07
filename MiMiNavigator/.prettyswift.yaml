@@ -1,0 +1,17 @@
+//
+//  .prettyswift.yaml
+//  MiMiNavigator
+//
+//  Created by Iakov Senatov on 07.08.2025.
+//  Copyright © 2025 Senatov. All rights reserved.
+//
+
+lineLength: 155
+tabSize: 23
+useTabs: false
+spaceAfterColon: true
+spaceBeforeColon: true
+lineBreakBeforeEachArgument: false
+lineBreakBeforeEachGenericRequirement: false
+removeTrailingWhitespace: true
+ensureTrailingNewlineAtEOF: true

@@ -10,19 +10,18 @@
 import SwiftUI
 import SwiftyBeaver
 
-// MARK: -
-struct ConsoleCurrPath: View {
+// MARK: - ConsoleCurrPath
 
+struct ConsoleCurrPath: View {
     var body: some View {
         log.info(#function)
-        return VStack {
-        }
-        .foregroundColor(.primary)  // System default color
-        .padding()
+        return VStack {}
+            .foregroundColor(.primary) // System default color
+            .padding()
     }
 }
 
-// MARK: -
+// MARK: - -
 func openConsoleInDirectory(_ directoryStr: String) {
     log.info(#function)
     let launchTask = Process()
@@ -30,14 +29,14 @@ func openConsoleInDirectory(_ directoryStr: String) {
     launchTask.arguments = ["/System/Applications/Utilities/Terminal.app"]
     launchTask.launch()
     // Step 2: Set position and size of Terminal window
-    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {  // Small delay to ensure Terminal is open
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { // Small delay to ensure Terminal is open
         let script = """
-            tell application "Terminal"
-                do script "cd \(directoryStr)"
-                activate
-                delay 0.7 -- Wait for terminal to become active
-            end tell
-            """
+        tell application "Terminal"
+            do script "cd \(directoryStr)"
+            activate
+            delay 0.7 -- Wait for terminal to become active
+        end tell
+        """
         let task = Process()
         task.launchPath = "/usr/bin/osascript"
         task.arguments = ["-e", script]

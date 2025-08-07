@@ -3,29 +3,26 @@ import SwiftUI
 import SwiftyBeaver
 
 // MARK: -
-
 struct ButtonFavTopPanel: View {
     @State private var favTreeStruct: [CustomFile] = []
     @State private var showBackPopover: Bool = false
+    @State private var showForwardPopover: Bool = false
     @EnvironmentObject var appState: AppState
     let panelSide: PanelSide
 
-    // MARK: -
-
+    // MARK: --
     init(selectedSide: PanelSide) {
         log.info("ButtonFavTopPanel init" + " for side \(selectedSide)")
         self.panelSide = selectedSide
     }
 
-    // MARK: -
-
+    // MARK: --
     var body: some View {
         log.info(#function)
         return VStack(alignment: .leading, spacing: 4) { navigationControls }
     }
 
     // MARK: -
-
     private var navigationControls: some View {
         log.info(#function)
         return HStack(spacing: 6) {
@@ -35,8 +32,7 @@ struct ButtonFavTopPanel: View {
         }
     }
 
-    // MARK:
-
+    // MARK: --
     private func menuButton() -> some View {
         log.info(#function + " - \(String(describing: panelSide))")
         return Button(action: {
@@ -51,13 +47,13 @@ struct ButtonFavTopPanel: View {
                     .renderingMode(.original)
                     .foregroundColor(Color(#colorLiteral(red: 0, green: 0.3285208941, blue: 0.5748849511, alpha: 1)))
                     .scaleEffect(CGSize(width: 0.9, height: 1.3), anchor: .leading)
-                    .border(Color(#colorLiteral(red: 0, green: 0.3285208941, blue: 0.5748849511, alpha: 1)))
+                    .border(Color(#colorLiteral(red: 0.1215686277, green: 0.01176470611, blue: 0.4235294163, alpha: 1)))
             } else {
                 Image(systemName: "sidebar.right")
                     .renderingMode(.original)
                     .foregroundColor(Color(#colorLiteral(red: 0.09019608051, green: 0, blue: 0.3019607961, alpha: 1)))
                     .scaleEffect(CGSize(width: 0.9, height: 1.3), anchor: .leading)
-                    .border(Color(#colorLiteral(red: 0.3647058904, green: 0.06666667014, blue: 0.9686274529, alpha: 1)))
+                    .border(Color(#colorLiteral(red: 0.09019608051, green: 0, blue: 0.3019607961, alpha: 1)))
             }
         }
         .shadow(color: .secondary.opacity(0.15), radius: 7.0, x: 1, y: 1)
@@ -69,15 +65,34 @@ struct ButtonFavTopPanel: View {
     }
 
     // MARK: -
+    private func forwardButton() -> some View {
+        log.info(#function)
+        return Button(action: {
+            log.info("Forward: navigating to next directory")
+            showForwardPopover.toggle()
+        }) {
+            Image(systemName: "arrowshape.right").renderingMode( .original)
+        }
+        .buttonStyle(.plain)
+        //.shadow(color: .gray, radius: 7.0, x: 1, y: 1)
+        .popover(isPresented: $showForwardPopover, arrowEdge: .bottom) {
+            forwardPopover()
+        }
+        .help("Forward: navigating to next directory")
+        .accessibilityLabel("Forward button")
+    }
 
+    // MARK: -
     private func backButton() -> some View {
         log.info(#function)
         return Button(action: {
+            log.info("Backward: navigating to previous directory")
             showBackPopover.toggle()
         }) {
             Image(systemName: "arrowshape.backward").renderingMode(.original)
         }
-        .shadow(color: .secondary.opacity(0.15), radius: 7.0, x: 1, y: 1)
+        .buttonStyle(.plain)
+        //.shadow(color: .gray, radius: 7.0, x: 1, y: 1)
         .popover(isPresented: $showBackPopover, arrowEdge: .bottom) {
             backPopover()
         }
@@ -86,9 +101,9 @@ struct ButtonFavTopPanel: View {
     }
 
     // MARK: -
-
-    private func backPopover() -> some View {
-        VStack(alignment: .leading) {
+    private func forwardPopover() -> some View {
+        log.info(#function)
+        return VStack(alignment: .leading) {
             ForEach(appState.selectionsHistory.recentSelections, id: \.self) { path in
                 Button(action: {
                     Task {
@@ -115,20 +130,35 @@ struct ButtonFavTopPanel: View {
     }
 
     // MARK: -
-
-    private func forwardButton() -> some View {
+    private func backPopover() -> some View {
         log.info(#function)
-        return Button(action: { log.info("Forward: navigating to next directory") }) {
-            Image(systemName: "arrowshape.right").renderingMode(.original)
+        return VStack(alignment: .leading) {
+            ForEach(appState.selectionsHistory.recentSelections, id: \.self) { path in
+                Button(action: {
+                    Task {
+                        if panelSide == .left {
+                            await appState.scanner.setLeftDirectory(pathStr: path)
+                            await appState.refreshLeftFiles()
+                        } else {
+                            await appState.scanner.setRightDirectory(pathStr: path)
+                            await appState.refreshRightFiles()
+                        }
+                        showBackPopover = false
+                    }
+                }) {
+                    Text(path)
+                        .font(.system(size: 11))
+                        .foregroundColor(.blue)
+                        .padding(.vertical, 2)
+                }
+                Divider()
+            }
         }
-        .shadow(color: .secondary.opacity(0.15), radius: 7.0, x: 1, y: 1)
-        .disabled(true)
-        .help("Forward: navigating to next directory")
-        .accessibilityLabel("Forward button")
+        .padding(6)
+        .frame(maxWidth: 400, maxHeight: 300)
     }
 
     // MARK: -
-
     private func favoritePopover() -> some View {
         log.info(#function)
         return FavTreeMnu(files: $favTreeStruct, panelSide: panelSide)
@@ -138,7 +168,6 @@ struct ButtonFavTopPanel: View {
     }
 
     // MARK: -
-
     @MainActor
     private func fetchFavTree() async {
         // log.info(#function)
@@ -153,7 +182,6 @@ struct ButtonFavTopPanel: View {
     }
 
     // MARK: -
-
     private func fetchFavNetVolumes(from scanner: FavScanner) async -> [CustomFile] {
         // log.info(#function)
         await withCheckedContinuation { continuation in
