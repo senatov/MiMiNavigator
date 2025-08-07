@@ -1,5 +1,6 @@
 ![MiMiNavigator Logo](MiMiNavigator/Gui/Assets.xcassets/AppIcon.appiconset/256%201.png "just logo")
 
+
 ### MiMiNavigator - MacOS File manager with two panels
 ## (NOT READY YET, under development    )
 
