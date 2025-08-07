@@ -17,12 +17,7 @@
 *.xcworkspace
 /.idea/
 Carthage/Build/**
-DerivedData
-DerivedData/MiMiNavigator/Build/Intermediates.noindex/
-DerivedData/MiMiNavigator/Index.noindex
-DerivedData/MiMiNavigator/Index.noindex/Build/Intermediates.noindex/
-DerivedData/MiMiNavigator/Index.noindex/UniDB/MiMiNavigator.xcindex/
-DerivedData/MiMiNavigator/logs
+DerivedData/
 fastlane/Preview.html
 fastlane/report.xml
 fastlane/test_output
