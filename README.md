@@ -24,7 +24,7 @@ The repository is organized around an Xcode project with sources under `MiMiNavi
 
 <div style="text-align: center;">
   <img 
-    src="Docs/Preview.png" 
+    src="docs/Preview.png" 
     alt="Preview FrontEnd" 
     title="Preview" 
     style="max-width: 100%; height: auto; border: 1px solid #87CEFA; border-radius: 4px;" />
