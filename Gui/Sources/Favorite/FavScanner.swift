@@ -165,7 +165,7 @@ class FavScanner {
 
     // MARK: -
     func scanOnlyFavorites() -> [CustomFile] {
-        log.info(#function)
+        log.info(#function + " at maxDepth: \(maxDepth)")
         let favoritePaths = FileManager.default.allDirectories
         let trees = favoritePaths.compactMap { buildFavTreeStructure(at: $0) }
         log.info("Total directory branches: \(trees.count)")

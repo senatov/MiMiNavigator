@@ -12,9 +12,6 @@ import SwiftUI
 struct TotalCommanderResizableView: View {
     @EnvironmentObject var appState: AppState
     @State private var leftPanelWidth: CGFloat = 0
-    @State private var isDividerTooltipVisible: Bool = true
-    @State private var tooltipPosition: CGPoint = .zero
-    @State private var tooltipText: String = ""
 
     // MARK: - View Body
     var body: some View {
@@ -77,56 +74,6 @@ struct TotalCommanderResizableView: View {
     }
 
 
-    // MARK: -
-    private func buildPanel(for side: PanelSide, geometry: GeometryProxy) -> some View {
-        log.debug(#function + " [side: \(side)]")
-        return FilePanelView(
-            selectedSide: side,
-            geometry: geometry,
-            leftPanelWidth: $leftPanelWidth,
-            fetchFiles: fetchFiles
-        )
-    }
-    
-
-    // MARK: - Divider
-    private func buildDivider(geometry: GeometryProxy) -> some View {
-        log.info(#function)
-        return ZStack {
-            Capsule()
-                .fill(Color.gray.opacity(0.3))
-                .frame(width: 6)
-                .shadow(color: .blue.opacity(0.15), radius: 7.0, x: 1, y: 1)
-                .overlay(
-                    Capsule()
-                        .stroke(Color.blue.opacity(0.4), lineWidth: 0.5)
-                )
-        }
-        .contentShape(Rectangle())
-        .gesture(
-            DragGesture()
-                .onChanged { value in
-                    handleDividerDrag(value: value, geometry: geometry)
-                }
-                .onEnded { _ in
-                    UserDefaults.standard.set(
-                        leftPanelWidth,
-                        forKey: "leftPanelWidth"
-                    )
-                    isDividerTooltipVisible = false
-                }
-        )
-        .onTapGesture(count: 2) {
-            Task { @MainActor in
-                handleDoubleClickDivider(geometry: geometry)
-            }
-        }
-        .onHover { isHovering in
-            DispatchQueue.main.async {
-                isHovering ? NSCursor.resizeLeftRight.push() : NSCursor.pop()
-            }
-        }
-    }
 
     // MARK: - Toolbar
     private func buildDownToolbar() -> some View {
@@ -199,34 +146,6 @@ struct TotalCommanderResizableView: View {
         .frame(maxWidth: .infinity, alignment: .bottom)
     }
 
-
-    // MARK: -
-    private func handleDividerDrag(value: DragGesture.Value, geometry: GeometryProxy) {
-        log.info(#function)
-        let newWidth = leftPanelWidth + value.translation.width
-        let minPanelWidth: CGFloat = 100
-        let maxPanelWidth = geometry.size.width - 100
-
-        if newWidth > minPanelWidth && newWidth < maxPanelWidth {
-            leftPanelWidth = newWidth
-            let (tooltipText, tooltipPosition) = ToolTipMod.calculateTooltip(
-                location: value.location,
-                dividerX: newWidth,
-                totalWidth: geometry.size.width
-            )
-            self.tooltipText = tooltipText
-            self.tooltipPosition = tooltipPosition
-            self.isDividerTooltipVisible = true
-        }
-    }
-
-
-    // MARK: -
-    private func handleDoubleClickDivider(geometry: GeometryProxy) {
-        log.info(#function)
-        leftPanelWidth = geometry.size.width / 2
-        UserDefaults.standard.set(leftPanelWidth, forKey: "leftPanelWidth")
-    }
 
 
     // MARK: -

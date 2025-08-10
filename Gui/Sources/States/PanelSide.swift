@@ -11,7 +11,7 @@ import Foundation
 import SwiftyBeaver
 
 // MARK: -
-public enum PanelSide: Equatable, Codable, Sendable {
+enum PanelSide: Equatable, Codable, Sendable {
     case left
     case right
 

@@ -19,10 +19,10 @@ final class SelectionsHistory: ObservableObject {
 
     func add(_ path: String) {
         guard !path.isEmpty else { return }
-        let canonical = (path as NSString).standardizingPath
-        if recentSelections.first != canonical {
-            recentSelections.insert(canonical, at: 0)
-            recentSelections = Array(recentSelections.prefix(20))  // ограничим до 20
+        let pathAsNSString = (path as NSString).standardizingPath
+        if recentSelections.first != pathAsNSString {
+            recentSelections.insert(pathAsNSString, at: 0)
+            recentSelections = Array(recentSelections.prefix(32))
             save()
         }
     }
