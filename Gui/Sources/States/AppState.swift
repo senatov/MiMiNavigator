@@ -114,12 +114,6 @@ final class AppState: ObservableObject {
     }
 
     // MARK: -
-    func setSide(for side: PanelSide) {
-        log.info(#function + " at side: \(side)")
-        focusedSide = side
-    }
-
-    // MARK: -
     func setSideFile(for side: PanelSide) -> CustomFile? {
         log.info(#function + " at side: \(side)")
         switch side {
@@ -191,24 +185,10 @@ final class AppState: ObservableObject {
             )
         }
     }
-
-    // MARK: -
-    func selectedFileId(for side: PanelSide) -> CustomFile.ID? {
-        switch side {
-        case .left:
-            return selectedLeftFile?.id
-        case .right:
-            return selectedRightFile?.id
-        }
-    }
 }
 
 // MARK: -
 extension AppState {
-    // MARK: -
-    var focusedSideValue: PanelSide {
-        focusedSide
-    }
 
     // MARK: -
     func initialize() {

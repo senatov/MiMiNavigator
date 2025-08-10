@@ -61,7 +61,7 @@ struct FavTreeView: View {
 
     // MARK: -
     private var fileNameText: some View {
-        log.info(#function + " for \(file.nameStr)")
+        log.info(#function + " for file \(file.nameStr), side \(panelSide)")
         let isTheSame =
             appState.selectedDir.selectedFSEntity?.pathStr == file.pathStr
         return Text(file.nameStr)
@@ -119,6 +119,7 @@ struct FavTreeView: View {
 
     // MARK: -
     private func toggleExpansion() {
+        log.info(#function + " for file \(file.nameStr), isExpanded: \(isExpanded)")
         withAnimation(
             .spring(response: 0.3, dampingFraction: 0.6, blendDuration: 0.3)
         ) {
