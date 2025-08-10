@@ -1,95 +1,152 @@
+//
 //  UserPreferences.swift
 //  MiMiNavigator
 //
-//  Created by Iakov Senatov on 27.10.24.
+//  Created by ChatGPT on 10.08.2025.
 //
 
+import AppKit
+import Combine
 import Foundation
-import SwiftUI
-import SwiftyBeaver
 
-///  -
-struct UserPreferences {
+// MARK: - PreferencesSnapshot
+
+struct PreferencesSnapshot: Codable, Sendable {
+    var leftPath: String
+    var rightPath: String
+    var showHiddenFiles: Bool
+    var favoritesMaxDepth: Int
+    var expandedFolders: Set<String>
+    var lastSelectedLeftFilePath: String?
+    var lastSelectedRightFilePath: String?
+
+    static let `default` = PreferencesSnapshot(
+        leftPath: FileManager.default.urls(
+            for: .downloadsDirectory,
+            in: .userDomainMask
+        ).first?.path ?? "/",
+        rightPath: FileManager.default.urls(
+            for: .documentDirectory,
+            in: .userDomainMask
+        ).first?.path ?? "/",
+        showHiddenFiles: false,
+        favoritesMaxDepth: 2,
+        expandedFolders: [],
+        lastSelectedLeftFilePath: nil,
+        lastSelectedRightFilePath: nil
+    )
+}
+
+// MARK: - PrefKey
+
+private enum PrefKey: String, CaseIterable {
+    case leftPath
+    case rightPath
+    case showHiddenFiles
+    case favoritesMaxDepth
+    case expandedFolders
+    case lastSelectedLeftFilePath
+    case lastSelectedRightFilePath
+}
+
+// MARK: - UserPreferences
+
+@MainActor
+final class UserPreferences: ObservableObject {
     static let shared = UserPreferences()
-    private let mimiWidthKey = "windowWidthMimi0"
-    private let mimiHeightKey = "windowHeightMiMi0"
-    private let mimiLeftPanelWidthKey = "leftPanelWidthMiMi0"
-    private let mimiMenuStateKey = "menuStatemiMi0"
-    private let mimiWindowPosXKey = "windowPosXMiMi0"
-    private let mimiWindowPosYKey = "windowPosYMiMi0"
+    private let defaults = UserDefaults.standard
 
-
-    // MARK: -
-    func saveWindowSize(width: CGFloat, height: CGFloat) {
-        log.info(#function)
-        log.info("Saving window size - Width: \(width), Height: \(height)")
-        UserDefaults.standard.set(width, forKey: mimiWidthKey)
-        UserDefaults.standard.set(height, forKey: mimiHeightKey)
+    @Published var snapshot: PreferencesSnapshot = .default {
+        didSet { save() }
     }
 
-    // MARK: -
-    func saveWindowPosition(x: CGFloat, y: CGFloat) {
-        log.info(#function)
-        log.info("Saving window position - X: \(x), Y: \(y)")
-        UserDefaults.standard.set(x, forKey: mimiWindowPosXKey)
-        UserDefaults.standard.set(y, forKey: mimiWindowPosYKey)
+    private init() {
+        log.info("UserPreferences initialized.")
+        subscribeTermination()
     }
 
-    // MARK: -
-    func saveLeftPanelWidth(_ width: CGFloat) {
-        log.info(#function)
-        log.info("Saving left panel width - Width: \(width)")
-        UserDefaults.standard.set(width, forKey: mimiLeftPanelWidthKey)
+    func load() {
+        log.info("Loading preferences…")
+        var s = PreferencesSnapshot.default
+
+        if let value = defaults.string(forKey: PrefKey.leftPath.rawValue),
+           !value.isEmpty
+        {
+            s.leftPath = value
+        } else {
+            log.warning("Missing leftPath — using default.")
+        }
+
+        if let value = defaults.string(forKey: PrefKey.rightPath.rawValue),
+           !value.isEmpty
+        {
+            s.rightPath = value
+        } else {
+            log.warning("Missing rightPath — using default.")
+        }
+
+        if defaults.object(forKey: PrefKey.showHiddenFiles.rawValue) != nil {
+            s.showHiddenFiles = defaults.bool(forKey: PrefKey.showHiddenFiles.rawValue)
+        } else {
+            log.warning("Missing showHiddenFiles — using default.")
+        }
+
+        if defaults.object(forKey: PrefKey.favoritesMaxDepth.rawValue) != nil {
+            let val = defaults.integer(forKey: PrefKey.favoritesMaxDepth.rawValue)
+            s.favoritesMaxDepth = max(val, 0)
+        } else {
+            log.warning("Missing favoritesMaxDepth — using default.")
+        }
+
+        if let arr = defaults.array(forKey: PrefKey.expandedFolders.rawValue) as? [String] {
+            s.expandedFolders = Set(arr)
+        } else {
+            log.warning("Missing expandedFolders — using default.")
+        }
+
+        s.lastSelectedLeftFilePath = defaults.string(forKey: PrefKey.lastSelectedLeftFilePath.rawValue)
+        s.lastSelectedRightFilePath = defaults.string(forKey: PrefKey.lastSelectedRightFilePath.rawValue)
+
+        snapshot = s
+        log.info("Preferences loaded.")
     }
 
-    // MARK: -
-    func restoreWindowSize() -> CGSize {
-        log.info(#function)
-        let width = UserDefaults.standard.object(forKey: mimiWidthKey) as? CGFloat ?? 1600
-        let height = UserDefaults.standard.object(forKey: mimiHeightKey) as? CGFloat ?? 1200
-        log.info("Restoring window size - Width: \(width), Height: \(height)")
-        return CGSize(width: width, height: height)
+    func save() {
+        defaults.set(snapshot.leftPath, forKey: PrefKey.leftPath.rawValue)
+        defaults.set(snapshot.rightPath, forKey: PrefKey.rightPath.rawValue)
+        defaults.set(snapshot.showHiddenFiles, forKey: PrefKey.showHiddenFiles.rawValue)
+        defaults.set(snapshot.favoritesMaxDepth, forKey: PrefKey.favoritesMaxDepth.rawValue)
+        defaults.set(Array(snapshot.expandedFolders), forKey: PrefKey.expandedFolders.rawValue)
+        defaults.set(snapshot.lastSelectedLeftFilePath, forKey: PrefKey.lastSelectedLeftFilePath.rawValue)
+        defaults.set(snapshot.lastSelectedRightFilePath, forKey: PrefKey.lastSelectedRightFilePath.rawValue)
+
+        log.debug("Preferences saved.")
     }
 
-    
-    // MARK: -
-    func restoreWindowPosition(screenSize: CGSize) -> CGPoint {
-        log.info(#function)
-        // Default to the center of the screen if no saved position is found
-        let defaultX = (screenSize.width - 1600) / 2
-        let defaultY = (screenSize.height - 1200) / 2
-
-        let x = UserDefaults.standard.object(forKey: mimiWindowPosXKey) as? CGFloat ?? defaultX
-        let y = UserDefaults.standard.object(forKey: mimiWindowPosYKey) as? CGFloat ?? defaultY
-
-        log.info(
-            "Restoring window position - X: \(x), Y: \(y) (Default if not saved - X: \(defaultX), Y: \(defaultY))"
-        )
-        return CGPoint(x: x, y: y)
+    func apply(to appState: AppState) {
+        log.info("Applying preferences to AppState.")
+        appState.leftPath = snapshot.leftPath
+        appState.rightPath = snapshot.rightPath
     }
 
-    // MARK: -
-    func restoreLeftPanelWidth() -> CGFloat {
-        log.info(#function)
-        // Restore saved width or use default left panel width (320) if not set
-        let width = UserDefaults.standard.object(forKey: mimiLeftPanelWidthKey) as? CGFloat ?? 320
-        log.info("Restoring left panel width - Width: \(width)")
-        return width
+    func capture(from appState: AppState) {
+        log.info("Capturing AppState into preferences.")
+        snapshot.leftPath = appState.leftPath
+        snapshot.rightPath = appState.rightPath
+        snapshot.lastSelectedLeftFilePath = appState.selectedLeftFile?.pathStr
+        snapshot.lastSelectedRightFilePath = appState.selectedRightFile?.pathStr
     }
 
-
-    // MARK: -
-    func saveMenuState(isOpen: Bool) {
-        log.info(#function)
-        log.info("Saving menu state - isOpen: \(isOpen)")
-        UserDefaults.standard.set(isOpen, forKey: mimiMenuStateKey)
-    }
-
-    // MARK: -
-    func restoreMenuState() -> Bool {
-        log.info(#function)
-        let state = UserDefaults.standard.object(forKey: mimiMenuStateKey) as? Bool ?? true
-        log.info("Restoring menu state - isOpen: \(state)")
-        return state
+    private func subscribeTermination() {
+        NotificationCenter.default.addObserver(
+            forName: NSApplication.willTerminateNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in
+                self?.save()
+                log.info("Preferences saved on termination.")
+            }
+        }
     }
 }
