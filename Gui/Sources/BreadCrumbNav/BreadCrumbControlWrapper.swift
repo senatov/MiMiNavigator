@@ -11,18 +11,16 @@ import SwiftUI
 // MARK: - Reusable path control component with edit mode, integrated with AppState.
 struct BreadCrumbControlWrapper: View {
     @EnvironmentObject var appState: AppState
-    @State private var editedPathStr: String = String.empty
+    @State private var editedPathStr: String = ""
     @State private var isEditing = false
     @FocusState private var isTextFieldFocused: Bool
     let panelSide: PanelSide
-
 
     // MARK: - Initializer
     init(selectedSide: PanelSide) {
         log.info("BreadCrumbControlWrapper init" + " for side \(selectedSide)")
         panelSide = selectedSide
     }
-
 
     // MARK: - Body
     var body: some View {
@@ -97,7 +95,6 @@ struct BreadCrumbControlWrapper: View {
         .transition(.opacity)
     }
 
-
     // MARK: - Display View
     private var displayView: some View {
         log.info(#function + " for side \(panelSide)")
@@ -118,12 +115,10 @@ struct BreadCrumbControlWrapper: View {
             .transition(.opacity.combined(with: .scale))
     }
 
-
     // MARK: - Helpers
     private var currentPath: String {
         panelSide == .left ? appState.leftPath : appState.rightPath
     }
-
 
     // MARK: -
     private func applyPathUpdate() {
@@ -142,5 +137,4 @@ struct BreadCrumbControlWrapper: View {
             }
         }
     }
-
 }

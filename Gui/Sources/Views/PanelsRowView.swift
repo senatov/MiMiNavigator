@@ -13,7 +13,7 @@ import SwiftyBeaver
 struct PanelsRowView: View {
     @EnvironmentObject var appState: AppState
     @Binding var leftPanelWidth: CGFloat
-    @State private var tooltipText: String = .empty
+    @State private var tooltipText: String = ""
     @State private var tooltipPosition: CGPoint = .zero
     @State private var isDividerTooltipVisible: Bool = false
     let geometry: GeometryProxy

@@ -11,7 +11,6 @@ import Combine
 import Foundation
 
 // MARK: - AppState
-
 @MainActor
 final class AppState: ObservableObject {
     @Published var displayedLeftFiles: [CustomFile] = []
@@ -33,10 +32,10 @@ final class AppState: ObservableObject {
         log.info(#function + " - Initializing AppState")
         self.leftPath =
             fileManager.urls(for: .downloadsDirectory, in: .userDomainMask)
-                .first?.path ?? .empty
+                .first?.path ?? ""
         self.rightPath =
             fileManager.urls(for: .documentDirectory, in: .userDomainMask)
-                .first?.path ?? .empty
+                .first?.path ?? ""
         self.scanner = DualDirectoryScanner(appState: self)
 
         // Restore saved paths

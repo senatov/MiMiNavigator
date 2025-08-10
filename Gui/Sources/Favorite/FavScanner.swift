@@ -10,6 +10,7 @@ import _Concurrency
 import AppKit
 import FilesProvider
 import Foundation
+import SwifterSwift
 
 // MARK: - This class scans commonly used "Favorites" folders on macOS and builds a CustomFile structure
 @MainActor
@@ -126,24 +127,24 @@ class FavScanner {
         }
         if !favorites.isEmpty {
             result.append(
-                CustomFile(name: "Favorites", path: .empty, children: favorites)
+                CustomFile(name: "Favorites", path: "", children: favorites)
             )
         }
         if !icloud.isEmpty {
             result.append(
-                CustomFile(name: "iCloud Drive", path: .empty, children: icloud)
+                CustomFile(name: "iCloud Drive", path: "", children: icloud)
             )
         }
         if !oneDrive.isEmpty {
             result.append(
-                CustomFile(name: "OneDrive", path: .empty, children: oneDrive)
+                CustomFile(name: "OneDrive", path: "", children: oneDrive)
             )
         }
         if !network.isEmpty {
             result.append(
                 CustomFile(
                     name: "Network Volumes",
-                    path: .empty,
+                    path: "",
                     children: network
                 )
             )
@@ -152,7 +153,7 @@ class FavScanner {
             result.append(
                 CustomFile(
                     name: "Local Volumes",
-                    path: .empty,
+                    path: "",
                     children: localDisks
                 )
             )
