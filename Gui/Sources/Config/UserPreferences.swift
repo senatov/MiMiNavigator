@@ -56,15 +56,19 @@ final class UserPreferences: ObservableObject {
     static let shared = UserPreferences()
     private let defaults = UserDefaults.standard
 
-    @Published var snapshot: PreferencesSnapshot = .default {
+    // MARK: -
+    @Published
+    var snapshot: PreferencesSnapshot = .default {
         didSet { save() }
     }
 
+    // MARK: -
     private init() {
         log.info("UserPreferences initialized.")
         subscribeTermination()
     }
 
+    // MARK: -
     func load() {
         log.info("Loading preferences…")
         var s = PreferencesSnapshot.default
@@ -111,6 +115,7 @@ final class UserPreferences: ObservableObject {
         log.info("Preferences loaded.")
     }
 
+    // MARK: -
     func save() {
         defaults.set(snapshot.leftPath, forKey: PrefKey.leftPath.rawValue)
         defaults.set(snapshot.rightPath, forKey: PrefKey.rightPath.rawValue)
@@ -123,12 +128,14 @@ final class UserPreferences: ObservableObject {
         log.debug("Preferences saved.")
     }
 
+    // MARK: -
     func apply(to appState: AppState) {
         log.info("Applying preferences to AppState.")
         appState.leftPath = snapshot.leftPath
         appState.rightPath = snapshot.rightPath
     }
 
+    // MARK: -
     func capture(from appState: AppState) {
         log.info("Capturing AppState into preferences.")
         snapshot.leftPath = appState.leftPath
@@ -137,6 +144,7 @@ final class UserPreferences: ObservableObject {
         snapshot.lastSelectedRightFilePath = appState.selectedRightFile?.pathStr
     }
 
+    // MARK: -
     private func subscribeTermination() {
         NotificationCenter.default.addObserver(
             forName: NSApplication.willTerminateNotification,
