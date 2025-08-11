@@ -132,7 +132,7 @@ This project is still under active development ( NOT READY YET  per the README) 
     ```
 3. Build and Run through Xcode or with the command:
     ```szh
-    xcodebuild -scheme MiMiNavigator -sdk macosx
+    xcodebuild -scheme MiMiNavigator -configuration Debug CODE_SIGNING_ALLOWED=YES
     ```
 4. Check sources
     ```szh
