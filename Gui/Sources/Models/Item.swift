@@ -10,18 +10,16 @@ import SwiftData
 
 @Model
 final class Item: CustomStringConvertible {
-
     var timestamp: Date
 
     // MARK: -
     init(timestamp: Date) {
-       
         log.info(#function)
         self.timestamp = timestamp
     }
 
     // MARK: -
-    public var description: String {
+    var description: String {
         "Item(timestamp: \(timestamp))"
     }
 }
