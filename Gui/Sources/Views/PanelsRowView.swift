@@ -19,16 +19,11 @@ struct PanelsRowView: View {
     let geometry: GeometryProxy
     let fetchFiles: @MainActor (PanelSide) async -> Void
 
-
     // MARK: -
     var body: some View {
         HStack(spacing: 0) {
-            FilePanelView(
-                selectedSide: .left,
-                geometry: geometry,
-                leftPanelWidth: $leftPanelWidth,
-                fetchFiles: fetchFiles
-            )
+            FilePanelView(selectedSide: .left, geometry: geometry, leftPanelWidth: $leftPanelWidth,
+                          fetchFiles: fetchFiles, appState: appState)
             DividerView(
                 geometry: geometry,
                 leftPanelWidth: $leftPanelWidth,
@@ -50,8 +45,9 @@ struct PanelsRowView: View {
             FilePanelView(
                 selectedSide: .right,
                 geometry: geometry,
-                leftPanelWidth: $leftPanelWidth,  // We calculate the right part based on the total size and the left part.
-                fetchFiles: fetchFiles
+                leftPanelWidth: $leftPanelWidth, // We calculate the right part based on the total size and the left part.
+                fetchFiles: fetchFiles,
+                appState: appState
             )
         }
         .overlay(
