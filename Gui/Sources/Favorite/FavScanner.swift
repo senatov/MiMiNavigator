@@ -10,7 +10,7 @@ import _Concurrency
 import AppKit
 import FilesProvider
 import Foundation
-import SwifterSwift
+
 
 // MARK: - This class scans commonly used "Favorites" folders on macOS and builds a CustomFile structure
 @MainActor
