@@ -16,6 +16,7 @@ final class FilePanelViewModel: ObservableObject {
     private let appState: AppState
     private let fetchFiles: @Sendable @concurrent (PanelSide) async -> Void
 
+    // MARK: -
     init(
         panelSide: PanelSide,
         appState: AppState,
@@ -27,10 +28,9 @@ final class FilePanelViewModel: ObservableObject {
         self.fetchFiles = fetchFiles
     }
 
-    var currentPath: URL? { appState.pathURL(for: panelSide) }
-
+    // MARK: -
     var sortedFiles: [CustomFile] {
-        log.info(#function)
+        log.info(#function + " for side \(panelSide)")
         let files = appState.displayedFiles(for: panelSide)
         let directories = files
             .filter { $0.isDirectory || $0.isSymbolicDirectory }
@@ -41,7 +41,9 @@ final class FilePanelViewModel: ObservableObject {
         return directories + others
     }
 
+    // MARK: -
     func handlePathChange(to url: URL?) {
+        log.info(#function + " for side \(panelSide)")
         guard let url else {
             log.warning("Tried to set nil path for side \(panelSide)")
             return
@@ -52,7 +54,9 @@ final class FilePanelViewModel: ObservableObject {
         }
     }
 
+    // MARK: -
     func select(_ file: CustomFile) {
+        log.info(#function + " for file \(file.nameStr), side \(panelSide)")
         log.info("Selected file: '\(file.pathStr)' in panel \(panelSide)")
         selectedFileID = file.id
         appState.selectedDir.selectedFSEntity = file
