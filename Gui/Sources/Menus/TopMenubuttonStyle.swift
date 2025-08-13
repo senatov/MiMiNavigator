@@ -1,21 +1,21 @@
-//
-//  TopMenuBarStyle.swift
-//  MiMiNavigator
-//
-//  Created by Iakov Senatov on 09.03.25.
-//  Copyright © 2025 Senatov. All rights reserved.
-//
+    //
+    //  TopMenuBarStyle.swift
+    //  MiMiNavigator
+    //
+    //  Created by Iakov Senatov on 09.03.25.
+    //  Copyright © 2025 Senatov. All rights reserved.
+    //
 
 import SwiftUI
 
-// MARK: -
-struct TopMenuButtonStyle: ButtonStyle {
-
-    @State private var isHovered = false  // Tracks mouse hover state
-
     // MARK: -
+struct TopMenuButtonStyle: ButtonStyle {
+    
+    @State private var isHovered = false  // Tracks mouse hover state
+    
+        // MARK: -
     func makeBody(configuration: Configuration) -> some View {
-        configuration.label
+        return configuration.label
             .padding(.horizontal, 30)  // Reduced horizontal padding
             .padding(.vertical, 6)
             .font(.system(size: NSFont.systemFontSize, weight: .regular))
@@ -26,7 +26,8 @@ struct TopMenuButtonStyle: ButtonStyle {
                         Color.blue.opacity(0.15)  // Light blue background on hover
                     }
                     else {
-                        BlurView(material: .constant(NSVisualEffectView.Material.sidebar))
+                            // Minimal BlurView has no parameters
+                        BlurView()
                     }
                 }
             )

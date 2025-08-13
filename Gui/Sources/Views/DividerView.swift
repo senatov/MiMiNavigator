@@ -16,6 +16,7 @@ struct DividerView: View {
     let onDrag: (DragGesture.Value) -> Void
     let onDragEnd: () -> Void
 
+    // MARK: -
     var body: some View {
         ZStack {
             RoundedRectangle(cornerRadius: 7)
@@ -25,7 +26,7 @@ struct DividerView: View {
                 .overlay(
                     RoundedRectangle(cornerRadius: 3)
                         .stroke(Color.white.opacity(0.3), lineWidth: 0.5)
-                ) 
+                )
         }
         .contentShape(Rectangle())
         .gesture(
@@ -34,12 +35,12 @@ struct DividerView: View {
                     let newWidth = leftPanelWidth + value.translation.width
                     let minPanelWidth: CGFloat = 100
                     let maxPanelWidth = geometry.size.width - 100
-                    if newWidth > minPanelWidth && newWidth < maxPanelWidth {
+                    if newWidth > minPanelWidth, newWidth < maxPanelWidth {
                         leftPanelWidth = newWidth
                         onDrag(value)
                     }
                 }
-                .onEnded { value in
+                .onEnded { _ in
                     UserDefaults.standard.set(
                         leftPanelWidth,
                         forKey: "leftPanelWidth"

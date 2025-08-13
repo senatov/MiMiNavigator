@@ -1,10 +1,10 @@
-//
-//  Untitled.swift
-//  MiMiNavigator
-//
-//  Created by Iakov Senatov on 11.08.2025.
-//  Copyright © 2025 Senatov. All rights reserved.
-//
+    //
+    //  Untitled.swift
+    //  MiMiNavigator
+    //
+    //  Created by Iakov Senatov on 11.08.2025.
+    //  Copyright © 2025 Senatov. All rights reserved.
+    //
 
 import AppKit
 import SwiftUI
@@ -13,8 +13,8 @@ struct FileRowView: View {
     let file: CustomFile
     let isSelected: Bool
     let onTap: () -> Void
-
-    // MARK: - Constants for styling
+    
+        // MARK: - Constants for styling
     var nameColor: Color {
         log.info(#function + " for file: \(file.nameStr)")
         if file.isDirectory {
@@ -25,8 +25,8 @@ struct FileRowView: View {
         }
         return FilePanelStyle.fileNameColor
     }
-
-    // MARK: - View Body
+    
+        // MARK: - View Body
     var body: some View {
         log.info(#function + " for file: \(file.nameStr)")
         return HStack {
@@ -40,18 +40,25 @@ struct FileRowView: View {
                 .padding(.trailing, 6) // Breathing room between icon and text
             Text(file.nameStr)
                 .foregroundColor(nameColor)
+                .background(Color.clear)
+            
         }
         .padding(.vertical, 1)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background {
-            if isSelected {
-                Rectangle()
-                    .fill(FilePanelStyle.selectedRowFill)
-                    .overlay(Rectangle().stroke(FilePanelStyle.selectedRowStroke, lineWidth: FilePanelStyle.selectedBorderWidth))
-            } else {
-                Color.clear
+        .background(
+            Group {
+                if isSelected {
+                    Rectangle()
+                        .fill(FilePanelStyle.selectedRowFill)
+                        .overlay(
+                            Rectangle()
+                                .stroke(FilePanelStyle.selectedRowStroke, lineWidth: FilePanelStyle.selectedBorderWidth)
+                        )
+                } else {
+                    Color.clear
+                }
             }
-        }
+        )
         .contentShape(Rectangle())
         .onTapGesture(perform: onTap)
     }
