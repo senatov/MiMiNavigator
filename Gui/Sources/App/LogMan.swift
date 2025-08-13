@@ -18,7 +18,8 @@ enum LogMan {
     static func initializeLogging() {
         let console = ConsoleDestination()
         console.format = "$DHH:mm:ss$d $L $N.$F:$l $M"
-        // Уровни с иконками
+
+        // MARK: - -
         func getLevelIcon(for level: SwiftyBeaver.Level) -> String {
             switch level {
             case .verbose: return "🔮"

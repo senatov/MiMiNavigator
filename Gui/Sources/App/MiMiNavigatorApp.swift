@@ -68,6 +68,7 @@ struct MiMiNavigatorApp: App {
 
     // MARK: -
     private func makeDevMark() -> Text {
+        log.info(#function + " - creating development mark")
         let versionPath = Bundle.main.path(forResource: "curr_version.asc", ofType: nil)
         let content: String
         if let versionPath,
@@ -77,7 +78,7 @@ struct MiMiNavigatorApp: App {
             log.info("Loaded version from 'curr_version.asc' file: '\(content)'")
         } else {
             content = "Mimi Navigator — Version unavailable"
-            log.error("Failed to load .version file.")
+            log.error("Failed to load 'curr_version.asc' file.")
         }
         return Text(content)
     }

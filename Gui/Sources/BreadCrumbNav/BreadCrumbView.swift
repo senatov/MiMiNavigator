@@ -69,7 +69,7 @@ struct BreadCrumbView: View {
             .replacingOccurrences(of: "//", with: "/")
             .trimmingCharacters(in: .whitespacesAndNewlines)
         let currentPath = (panelSide == .left ? appState.leftPath : appState.rightPath)
-        // ⚠️ Защита от бесконечного вызова
+        // ⚠️ threat from recursive calls
         guard appState.toCanonical(from: newPath) != appState.toCanonical(from: currentPath) else {
             log.debug("Path unchanged, skipping update")
             return
