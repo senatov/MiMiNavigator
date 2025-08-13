@@ -15,11 +15,11 @@ struct BlurView: NSViewRepresentable {
 
     // MARK: -
     func makeNSView(context: Context) -> NSVisualEffectView {
+        log.info(#function +    "Creating NSVisualEffectView with material: \(material.rawValue)")
         let view = NSVisualEffectView()
         view.blendingMode = .withinWindow
         view.material = material
         view.state = .active
-
         let clickGesture = NSClickGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handleClick))
         view.addGestureRecognizer(clickGesture)
 
@@ -28,6 +28,7 @@ struct BlurView: NSViewRepresentable {
 
     // MARK: -
     func updateNSView(_ nsView: NSVisualEffectView, context: Context) {
+        log.info(#function + "Updating NSVisualEffectView with material: \(material.rawValue)")
         if nsView.material != material {
             nsView.material = material
             log.info("Material updated: \(material.rawValue)")
@@ -36,20 +37,8 @@ struct BlurView: NSViewRepresentable {
 
     // MARK: -
     func makeCoordinator() -> Coordinator {
-        Coordinator(onClick: onClick)
+        log.info(#function + "Creating Coordinator for BlurView")
+        return Coordinator(onClick: onClick)
     }
 
-    // MARK: -
-    class Coordinator: NSObject {
-        let onClick: (() -> Void)?
-
-        init(onClick: (() -> Void)?) {
-            self.onClick = onClick
-        }
-
-        @objc func handleClick() {
-            log.debug("BlurView clicked")
-            onClick?()
-        }
-    }
 }

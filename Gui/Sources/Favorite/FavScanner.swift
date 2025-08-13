@@ -11,7 +11,6 @@ import AppKit
 import FilesProvider
 import Foundation
 
-
 // MARK: - This class scans commonly used "Favorites" folders on macOS and builds a CustomFile structure
 @MainActor
 class FavScanner {
@@ -76,16 +75,10 @@ class FavScanner {
     }
 
     // MARK: -
-    private func scanVolumesAndComplete(
-        favorites: [CustomFile],
-        icloud: [CustomFile],
-        oneDrive: [CustomFile],
-        completion: @escaping ([CustomFile]) -> Void
-    ) async {
+    private func scanVolumesAndComplete(favorites: [CustomFile], icloud: [CustomFile], oneDrive: [CustomFile], completion: @escaping ([CustomFile]) -> Void) async {
         var network: [CustomFile] = []
         var localDisks: [CustomFile] = []
         var result: [CustomFile] = []
-
         guard
             let volumesURL = await resolveVolumesURLOrReturnPartialResult(
                 favorites: favorites,

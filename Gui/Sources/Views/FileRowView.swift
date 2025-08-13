@@ -1,10 +1,10 @@
-    //
-    //  Untitled.swift
-    //  MiMiNavigator
-    //
-    //  Created by Iakov Senatov on 11.08.2025.
-    //  Copyright © 2025 Senatov. All rights reserved.
-    //
+//
+//  Untitled.swift
+//  MiMiNavigator
+//
+//  Created by Iakov Senatov on 11.08.2025.
+//  Copyright © 2025 Senatov. All rights reserved.
+//
 
 import AppKit
 import SwiftUI
@@ -14,7 +14,9 @@ struct FileRowView: View {
     let isSelected: Bool
     let onTap: () -> Void
 
+    // MARK: - Constants for styling
     var nameColor: Color {
+        log.info(#function + " for file: \(file.nameStr)")
         if file.isDirectory {
             return FilePanelStyle.dirNameColor
         }
@@ -24,8 +26,10 @@ struct FileRowView: View {
         return FilePanelStyle.fileNameColor
     }
 
+    // MARK: - View Body
     var body: some View {
-        HStack {
+        log.info(#function + " for file: \(file.nameStr)")
+        return HStack {
             Image(nsImage: NSWorkspace.shared.icon(forFile: file.urlValue.path))
                 .resizable()
                 .interpolation(.high) // Improve visual quality for resized icons
@@ -43,7 +47,7 @@ struct FileRowView: View {
             if isSelected {
                 Rectangle()
                     .fill(FilePanelStyle.selectedRowFill)
-                    .overlay(Rectangle().stroke(FilePanelStyle.selectedRowStroke, lineWidth: FilePanelStyle.selectedBorderWidth ))
+                    .overlay(Rectangle().stroke(FilePanelStyle.selectedRowStroke, lineWidth: FilePanelStyle.selectedBorderWidth))
             } else {
                 Color.clear
             }

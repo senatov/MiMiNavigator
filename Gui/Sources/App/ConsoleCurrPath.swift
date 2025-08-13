@@ -21,7 +21,7 @@ struct ConsoleCurrPath: View {
     }
 }
 
-// MARK: - -
+// MARK: --
 func openConsoleInDirectory(_ directoryStr: String) {
     log.info(#function)
     let launchTask = Process()

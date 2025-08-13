@@ -13,8 +13,10 @@ struct FileTableView: View {
     @Binding var selectedID: CustomFile.ID?
     let onSelect: (CustomFile) -> Void
 
+    // MARK: - Initializer
     var body: some View {
-        Table(files, selection: $selectedID) {
+        log.info(#function + " with \(files.count) files, selectedID: \(String(describing: selectedID))")
+        return Table(files, selection: $selectedID) {
             TableColumn("Name") { file in
                 FileRowView(file: file, isSelected: selectedID == file.id) {
                     onSelect(file)
