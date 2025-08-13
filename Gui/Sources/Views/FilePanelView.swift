@@ -15,7 +15,6 @@ struct FilePanelView: View {
     var geometry: GeometryProxy
     @Binding var leftPanelWidth: CGFloat
 
-    // MARK: - -
     init(selectedSide: PanelSide, geometry: GeometryProxy, leftPanelWidth: Binding<CGFloat>,
          fetchFiles: @escaping @Sendable @concurrent (PanelSide) async -> Void, appState: AppState)
     {
@@ -31,26 +30,37 @@ struct FilePanelView: View {
         log.info(#function + " for side \(viewModel.panelSide) with width: \(leftPanelWidth)")
         let currentPath = appState.pathURL(for: viewModel.panelSide)
         log.info(#function + " for side \(viewModel.panelSide) with path: \(currentPath?.path ?? "nil")")
-        return VStack {
-            makeBreadCrumb(currentPath: currentPath)
-            makeFileTable()
-        }
-        .frame(width: viewModel.panelSide == .left
-            ? (leftPanelWidth > 0 ? leftPanelWidth : geometry.size.width / 2)
-            : nil)
+        return buildPanelContent(currentPath: currentPath)
+            .frame(width: viewModel.panelSide == .left
+                ? (leftPanelWidth > 0 ? leftPanelWidth : geometry.size.width / 2)
+                : nil)
+            .panelFocus(panelSide: viewModel.panelSide) {
+                // When focus moves away from this panel, clear selection here
+                log.debug("Focus lost on \(viewModel.panelSide); clearing selection")
+                viewModel.selectedFileID = nil
+            }
     }
 
-    // MARK: - - Creates the breadcrumb control with an onChange handler for path updates.
-    private func makeBreadCrumb(currentPath: URL?) -> some View {
+    // MARK: - Content
+    private func buildPanelContent(currentPath: URL?) -> some View {
+        log.info(#function + " for side \(viewModel.panelSide)")
+        return VStack {
+            buildBreadcrumbSection(currentPath: currentPath)
+            buildFileTableSection()
+        }
+    }
+
+    // MARK: - Sections
+    private func buildBreadcrumbSection(currentPath: URL?) -> some View {
         log.info(#function + " for side \(viewModel.panelSide) with current path: \(currentPath?.path ?? "nil")")
         return BreadCrumbControlWrapper(selectedSide: viewModel.panelSide)
-            .onChange(of: currentPath) { _, newValue in
+            .onChange(of: currentPath, initial: false) { _, newValue in
                 viewModel.handlePathChange(to: newValue)
             }
     }
 
-    // MARK: - - Creates the file table view with selection handling.
-    private func makeFileTable() -> some View {
+    // MARK: - -
+    private func buildFileTableSection() -> some View {
         log.info(#function + " for side \(viewModel.panelSide)")
         return FileTableView(
             files: viewModel.sortedFiles,
