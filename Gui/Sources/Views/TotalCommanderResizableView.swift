@@ -1,10 +1,10 @@
-    //
-    //  FileScanner.swift
-    //  MiMiNavigator
-    //
-    //  Created by Iakov Senatov on 26.04.2025.
-    //  Copyright © 2025 Senatov. All rights reserved.
-    //
+//
+//  FileScanner.swift
+//  MiMiNavigator
+//
+//  Created by Iakov Senatov on 26.04.2025.
+//  Copyright © 2025 Senatov. All rights reserved.
+//
 
 import AppKit
 import SwiftUI
@@ -12,8 +12,8 @@ import SwiftUI
 struct TotalCommanderResizableView: View {
     @EnvironmentObject var appState: AppState
     @State private var leftPanelWidth: CGFloat = 0
-    
-        // MARK: - View Body
+
+    // MARK: - View Body
     var body: some View {
         GeometryReader { geometry in
             ZStack {
@@ -32,13 +32,13 @@ struct TotalCommanderResizableView: View {
             .onAppear {
                 log.info(#function + " - Initializing app state and panels")
                 appState.initialize()
-                initializePanelWidth(geometry: geometry)  // Restore divider width from user defaults
-                addKeyPressMonitor()  // Register keyboard shortcut
+                initializePanelWidth(geometry: geometry) // Restore divider width from user defaults
+                addKeyPressMonitor() // Register keyboard shortcut
             }
             .onChange(of: geometry.size) {
                 let newSize = geometry.size
                 log.info("Window size changed: \(newSize.width)x\(newSize.height)")
-                    // пересчитать ширину левой панели, если нужно
+                // пересчитать ширину левой панели, если нужно
                 if leftPanelWidth > 0 {
                     let maxWidth = newSize.width - 50
                     if leftPanelWidth > maxWidth {
@@ -48,8 +48,8 @@ struct TotalCommanderResizableView: View {
             }
         }
     }
-    
-        // MARK: - Fetch Files
+
+    // MARK: - Fetch Files
     @MainActor
     private func fetchFiles(for side: PanelSide) async {
         log.info("↪️ \(#function) [side: \(side)]")
@@ -57,13 +57,14 @@ struct TotalCommanderResizableView: View {
         case .left:
             appState.displayedLeftFiles = await appState.scanner.fileLst
                 .getLeftFiles()
+
         case .right:
             appState.displayedRightFiles = await appState.scanner.fileLst
                 .getRightFiles()
         }
     }
-    
-        // MARK: - Panels
+
+    // MARK: - Panels
     private func buildMainPanels(geometry: GeometryProxy) -> some View {
         log.info(#function)
         return PanelsRowView(
@@ -72,10 +73,8 @@ struct TotalCommanderResizableView: View {
             fetchFiles: fetchFiles
         )
     }
-    
-    
-    
-        // MARK: - Toolbar
+
+    // MARK: - Toolbar
     private func buildDownToolbar() -> some View {
         log.info(#function)
         return VStack(spacing: 0) {
@@ -101,10 +100,10 @@ struct TotalCommanderResizableView: View {
                     if let file = appState.setSideFile(for: appState.focusedPanel),
                        let targetURL = appState.pathURL(for: appState.focusedPanel.opposite)
                     {
-                       FActions.copy(file, to: targetURL)
-                       Task {
-                           await appState.refreshFiles()
-                       }
+                        FActions.copy(file, to: targetURL)
+                        Task {
+                            await appState.refreshFiles()
+                        }
                     }
                 }
                 DownToolbarButtonView(title: "F6 Move", systemImage: "square.and.arrow.down.on.square") {
@@ -145,31 +144,29 @@ struct TotalCommanderResizableView: View {
         }
         .frame(maxWidth: .infinity, alignment: .bottom)
     }
-    
-    
-    
+
+
         // MARK: -
     private func initializePanelWidth(geometry: GeometryProxy) {
         log.info(#function)
         leftPanelWidth =
-        UserDefaults.standard.object(forKey: "leftPanelWidth") as? CGFloat
-        ?? geometry.size.width / 2
+            UserDefaults.standard.object(forKey: "leftPanelWidth") as? CGFloat
+                ?? geometry.size.width / 2
     }
-    
-    
-        // MARK: -
+
+    // MARK: -
     private func addKeyPressMonitor() {
         log.info(#function)
         NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
-            if event.modifierFlags.contains(.option) && event.keyCode == 0x76 {
+            if event.modifierFlags.contains(.option), event.keyCode == 0x76 {
                 exitApp()
                 return nil
             }
             return event
         }
     }
-    
-        // MARK: -
+
+    // MARK: -
     private func exitApp() {
         log.info(#function)
         appState.saveBeforeExit()

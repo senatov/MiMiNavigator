@@ -57,7 +57,6 @@ final class FilePanelViewModel: ObservableObject {
     // MARK: -
     func select(_ file: CustomFile) {
         log.info(#function + " for file \(file.nameStr), side \(panelSide)")
-        log.info("Selected file: '\(file.pathStr)' in panel \(panelSide)")
         selectedFileID = file.id
         appState.selectedDir.selectedFSEntity = file
         appState.showFavTreePopup = false
