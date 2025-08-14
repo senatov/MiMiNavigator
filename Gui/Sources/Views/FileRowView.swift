@@ -29,7 +29,7 @@ struct FileRowView: View {
     var body: some View {
         log.info(#function + " for '\(file.nameStr)'")
         return HStack {
-            Image(nsImage: NSWorkspace.shared.icon(forFile: file.urlValue.path))
+            Image(nsImage: NSWorkspace.shared.icon(forFile: file.urlValue.path))
                 .resizable()
                 .interpolation(.high) // Improve visual quality for resized icons
                 .frame(width: FilePanelStyle.iconSize, height: FilePanelStyle.iconSize)

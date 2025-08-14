@@ -27,8 +27,7 @@ struct MiMiNavigatorApp: App {
     var body: some Scene {
         WindowGroup {
             VStack {
-                TotalCommanderResizableView()
-                    .navigationTitle("Mimi Navigator")
+                TotalCommanderResizableView().navigationTitle("Mimi Navigator")
                 ConsoleCurrPath()
             }
             .environmentObject(appState)
