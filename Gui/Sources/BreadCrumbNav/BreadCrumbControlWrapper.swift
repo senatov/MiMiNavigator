@@ -1,28 +1,31 @@
-//
-//  EditablePathControlWrapper.swift
-//  MiMiNavigator
-//
-//  Created by Iakov Senatov on 25.03.25.
-//  Copyright © 2025 Senatov. All rights reserved.
-//
+    //
+    //  EditablePathControlWrapper.swift
+    //  MiMiNavigator
+    //
+    //  Created by Iakov Senatov on 25.03.25.
+    //  Copyright © 2025 Senatov. All rights reserved.
+    //
 
 import SwiftUI
 
-// MARK: - Reusable path control component with edit mode, integrated with AppState.
+    // MARK: - Reusable path control component with edit mode, integrated with AppState.
 struct BreadCrumbControlWrapper: View {
     @EnvironmentObject var appState: AppState
     @State private var editedPathStr: String = ""
     @State private var isEditing = false
     @FocusState private var isTextFieldFocused: Bool
+    @State private var isHovering = false
+        // Pale yellow color for focused/editing state selection background
+    private let selectionPaleYellow = Color(red: 1.0, green: 0.98, blue: 0.78)
     let panelSide: PanelSide
 
-    // MARK: - Initializer
+        // MARK: - Initializer
     init(selectedSide: PanelSide) {
         log.info("BreadCrumbControlWrapper init" + " for side \(selectedSide)")
         panelSide = selectedSide
     }
 
-    // MARK: - Body
+        // MARK: - Body
     var body: some View {
         log.info(#function + "for side \(panelSide)")
         return HStack {
@@ -35,20 +38,27 @@ struct BreadCrumbControlWrapper: View {
         }
         .padding(.horizontal, 6)
         .padding(.vertical, 6)
+        .onHover { hovering in
+            isHovering = hovering
+        }
         .background(
             RoundedRectangle(cornerRadius: 7)
-                .fill(Color.white)
-                .shadow(color: .secondary.opacity(0.15), radius: 7.0, x: 1, y: 1)
+            // Use pale yellow when editing, otherwise subtle platform background
+                .fill(isEditing ? selectionPaleYellow.opacity(0.6)
+                      : Color(nsColor: NSColor.windowBackgroundColor))
         )
         .overlay(
+            // Blue border when editing, subtle gray when idle; no internal separators
             RoundedRectangle(cornerRadius: 7)
-                .stroke(.gray.opacity(0.3), lineWidth: 1)
+                .stroke(isEditing ? Color.accentColor : Color.gray.opacity(isHovering ? 0.5 : 0.3),
+                        lineWidth: isEditing ? 1.5 : 1)
         )
+        .shadow(color: .secondary.opacity(isHovering ? 0.18 : 0.12), radius: 7, x: 1, y: 1)
         .padding(.vertical, 6)
         .padding(.horizontal, 3)
     }
 
-    // MARK: - Editing View
+        // MARK: - Editing View
     private var editingView: some View {
         log.info(#function + " for side \(panelSide)")
         return HStack {
@@ -95,13 +105,13 @@ struct BreadCrumbControlWrapper: View {
         .transition(.opacity)
     }
 
-    // MARK: - Display View
+        // MARK: - Display View
     private var displayView: some View {
         log.info(#function + " for side \(panelSide)")
         return BreadCrumbPathControl(selectedSide: panelSide)
             .environmentObject(appState)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(.background)
+            .background(Color.clear)
             .font(.system(size: 13, weight: .light, design: .default))
             .contentShape(Rectangle())
             .onTapGesture {
@@ -116,12 +126,12 @@ struct BreadCrumbControlWrapper: View {
             .transition(.opacity.combined(with: .scale))
     }
 
-    // MARK: - Helpers
+        // MARK: - Helpers
     private var currentPath: String {
         panelSide == .left ? appState.leftPath : appState.rightPath
     }
 
-    // MARK: -
+        // MARK: -
     private func applyPathUpdate() {
         log.info(#function + " for side \(panelSide) with path: \(editedPathStr)")
         withAnimation { isEditing = false }
