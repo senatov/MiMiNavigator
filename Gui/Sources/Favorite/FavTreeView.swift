@@ -5,8 +5,10 @@
 //  Created by Iakov Senatov on 28.02.25.
 //  Copyright © 2025 Senatov. All rights reserved.
 //
+import AppKit
 import SwiftUI
 import SwiftyBeaver
+
 
 struct FavTreeView: View {
     @EnvironmentObject var appState: AppState
@@ -47,6 +49,11 @@ struct FavTreeView: View {
                     .renderingMode(.original)
                     .foregroundColor(.blue)
                     .rotationEffect(.degrees(isExpanded ? 90 : 0))
+                    .frame(width: FilePanelStyle.iconSize, height: FilePanelStyle.iconSize)
+                    .shadow(color: .black.opacity(0.22), radius: 2, x: 0, y: 1) // Subtle drop shadow for depth
+                    .contrast(1.12) // Slightly increase contrast
+                    .saturation(1.06) // Slightly richer colors
+                    .padding(.trailing, 5) // Breathing room between icon and text
                     .onTapGesture {
                         log.info(#function)
                         Task { @MainActor in

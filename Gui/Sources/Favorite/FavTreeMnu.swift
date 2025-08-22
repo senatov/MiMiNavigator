@@ -1,9 +1,9 @@
-//
-//  FavTreeMnu.swift
-//  MiMiNavigator
-//
-//  Created by Iakov Senatov on 16.10.24.
-//
+    //
+    //  FavTreeMnu.swift
+    //  MiMiNavigator
+    //
+    //  Created by Iakov Senatov on 16.10.24.
+    //
 
 import SwiftUI
 import SwiftyBeaver
@@ -13,9 +13,9 @@ struct FavTreeMnu: View {
     @State private var expandedFolders: Set<String> = []
     @EnvironmentObject var appState: AppState
     let panelSide: PanelSide
-
-
-    // MARK: -
+    
+    
+        // MARK: -
     var body: some View {
         log.info(#function)
         return VStack(alignment: .leading, spacing: 0) {
@@ -26,7 +26,7 @@ struct FavTreeMnu: View {
         .frame(width: 450)
         .background(
             RoundedRectangle(cornerRadius: 7)
-                .fill(Color.orange.opacity(0.01))
+                .fill(Color(#colorLiteral(red: 1.0, green: 0.64705884, blue: 0.0, alpha: 0.01)))
                 .overlay(
                     RoundedRectangle(cornerRadius: 7)
                         .stroke(Color.blue.opacity(0.2), lineWidth: 2)
@@ -34,9 +34,9 @@ struct FavTreeMnu: View {
         )
         .padding()
     }
-
-
-    // MARK: -
+    
+    
+        // MARK: -
     private var headerView: some View {
         log.info(#function)
         return Text("Favorites:")
@@ -46,16 +46,16 @@ struct FavTreeMnu: View {
             .padding(.top, 6)
             .frame(maxWidth: .infinity, alignment: .center)
     }
-
-    // MARK: -
+    
+        // MARK: -
     private var dividerView: some View {
         log.info(#function)
         return Divider()
             .padding(.horizontal)
             .padding(.vertical, 6)
     }
-
-    // MARK: -
+    
+        // MARK: -
     private var fileListView: some View {
         log.info(#function + " - \(files.count) files")
         return ScrollView {
