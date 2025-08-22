@@ -31,6 +31,7 @@ struct TopMenuItemView: View {
         }
         .buttonStyle(TopMenuButtonStyle())
         .onHover { hovering in
+            log.info(#function)
             isHovered = hovering
             if hovering {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {

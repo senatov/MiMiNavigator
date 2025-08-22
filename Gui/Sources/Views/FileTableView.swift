@@ -1,5 +1,5 @@
 //
-//  FileTableView.swift
+//  FileRowView.swift
 //  MiMiNavigator
 //
 //  Created by Iakov Senatov on 11.08.2025.
@@ -20,13 +20,13 @@ struct FileTableView: View {
             TableColumn("Name") { file in
                 FileRowView(file: file, isSelected: selectedID == file.id) {
                     onSelect(file)
-                }
+        }
             }
             TableColumn("Size") { file in
                 Text(file.formattedSize)
                     .foregroundColor(.primary)
                     .frame(width: FilePanelStyle.sizeColumnWidth, alignment: .trailing)
-            }
+        }
             TableColumn("Modified") { file in
                 Text(file.modifiedDateFormatted)
                     .foregroundColor(.primary)

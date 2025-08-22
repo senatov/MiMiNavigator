@@ -48,6 +48,7 @@ struct FavTreeView: View {
                     .foregroundColor(.blue)
                     .rotationEffect(.degrees(isExpanded ? 90 : 0))
                     .onTapGesture {
+                        log.info(#function)
                         Task { @MainActor in
                             toggleExpansion()
                         }
@@ -67,6 +68,7 @@ struct FavTreeView: View {
         return Text(file.nameStr)
             .foregroundColor(isTheSame ? .blue : .primary)
             .onTapGesture {
+                log.info(#function)
                 Task { @MainActor in
                     appState.selectedDir.selectedFSEntity = file
                     appState.showFavTreePopup = false
