@@ -4,7 +4,7 @@
     src="Gui/Assets.xcassets/AppIcon.appiconset/120.png"
     alt="Preview FrontEnd"
     title="Logo"
-    style="max-width: 100%; height: auto; border: 1px solid #87CEFA; border-radius: 4px;" />
+    style="max-width: 100%; height: auto; border: 2px; border-radius: 4px;" />
 </div>
 
 ---
@@ -30,12 +30,12 @@
 MiMiNavigator is a macOS file manager built with Swift and SwiftUI.
 The repository is organized around an Xcode project with sources under `MiMiNavigator/` and basic tests in `MiMiNavigatorTests` and `MiMiNavigatorUITests`.
 
-<div style="text-align: center;">
+<div style="text-align: center;" >
   <img
     src="Gui/Docs/Preview.png"
     alt="Preview FrontEnd"
     title="Preview"
-    style="max-width: 100%; height: auto; border: 1px solid #87CEFA; border-radius: 4px;" />
+    style="max-width: 100%; height: auto; border: 2px solid #133347ff; border-radius: 4px;" />
 </div>
 
 
@@ -57,7 +57,6 @@ Key directories inside `MiMiNavigator/`:
 - **Favorite** scans frequently used directories and mounted volumes to show a favorites tree.
 
 - **Menus** menu item models and top menu rendering.
-
 
 Other resources include asset catalogs, entitlements files, and a `refreshVersionFile.zsh` script that updates the `Gui/curr_version.asc` string.
 
@@ -93,7 +92,6 @@ Other resources include asset catalogs, entitlements files, and a `refreshVersio
 
 - **Persistent data** The app uses SwiftData `ModelContainer` for future persistence, though currently the `Item`model is minimal.
 
-
 This project is still under active development ( NOT READY YET  per the README) but provides a clear example of a SwiftUI macOS application with multithreading, logging, and modular UI components.
 
 ---
@@ -122,20 +120,20 @@ This project is still under active development ( NOT READY YET  per the README) 
 ##  Installation
 
 1. Clone the repository:
-    ```szh
+    ```sh
     git clone https://github.com/username/MiMiNavigator.git
     cd MiMiNavigator
     ```
 2. Open the project in Xcode:
-    ```szh
+    ```sh
     open MiMiNavigator.xcodeproj
     ```
 3. Build and Run through Xcode or with the command:
-    ```szh
+    ```sh
     xcodebuild -scheme MiMiNavigator -configuration Debug CODE_SIGNING_ALLOWED=YES
     ```
 4. Check sources
-    ```szh
+    ```sh
     periphery scan --project MiMiNavigator.xcodeproj --schemes MiMiNavigator
     ```
 
@@ -158,7 +156,7 @@ This project is still under active development ( NOT READY YET  per the README) 
 - Iakov Senatov:  [![LinkedIn](https://img.shields.io/badge/LinkedIn-Profile-blue?style=flat&logo=linkedin)](https://www.linkedin.com/in/iakov-senatov-07060765)
 
 | Step                | Description                                                                                    |
-|---------------------|------------------------------------------------------------------------------------------------|
+| ------------------- | ---------------------------------------------------------------------------------------------- |
 | Installation        | Clone the repository, navigate to the project directory, and install dependencies as required. |
 | Running the Project | Use the command `swift run` to launch the project.                                             |
 | Usage               | Access features like configuration, file management, network, and tools from the main menu.    |
@@ -170,78 +168,78 @@ This project is still under active development ( NOT READY YET  per the README) 
 ---
 ## FAQ
 
-| Question                                 | Answer                                                               |
-|------------------------------------------|----------------------------------------------------------------------|
+| Question                             | Answer                                                                   |
+| ------------------------------------ | ------------------------------------------------------------------------ |
 | How to configure settings?           | Navigate to Configuration to access display, layout, and color settings. |
 | How to compare directories?          | Use the Files menu to compare and sync directories.                      |
 | Can I rename multiple files at once? | Yes, use the Multi-Rename Tool available under Tools.                    |
 | Is FTP supported?                    | Yes, FTP connection tools are available under the Network menu.          |
-| Clean the Project                    | periphery scan --config .periphery.yml                                   |
+| Clean the Project from artefacts     | periphery scan --config .periphery.yml                                   |
 
 
 
 ---
 ## Recent Changes
-```text
-* 11cd09f - Senatov  (HEAD -> master, origin/master, origin/HEAD) screenshot new (15 minutes ago, 2025-08-12 03:15:57 +0200)
-* 5551c06 - Senatov  new time stamp (19 minutes ago, 2025-08-12 03:11:40 +0200)
-* cf85e07 - Senatov  time marker (21 minutes ago, 2025-08-12 03:09:36 +0200)
-* 315006c - Senatov  fix select file style (29 minutes ago, 2025-08-12 03:01:36 +0200)
-* 2bd2ca4 - Senatov  Update README.md (10 hours ago, 2025-08-11 17:25:06 +0200)
-* 0275db5 - Senatov  fix security attr. (10 hours ago, 2025-08-11 17:21:58 +0200)
-* b0142f5 - Senatov  add some features (11 hours ago, 2025-08-11 16:15:15 +0200)
-* ffc2de3 - Senatov  save prev (15 hours ago, 2025-08-11 12:45:01 +0200)
-* 914a1be - Senatov  fix save/loas user's preferences (29 hours ago, 2025-08-10 22:57:37 +0200)
-* 974d90e - Senatov  clean on 'periphery scan --project MiMiNavigator.xcodeproj --schemes MiMiNavigator' (29 hours ago, 2025-08-10 22:35:36 +0200)
-* ac0c4bb - Senatov  fix String (29 hours ago, 2025-08-10 22:14:13 +0200)
-* 7e6c73b - Senatov  remove obsolete configs (32 hours ago, 2025-08-10 19:52:23 +0200)
-* ee66113 - Senatov  Update README.md (5 days ago, 2025-08-07 12:15:07 +0200)
-* a24a585 - Senatov  remove Derived/ (5 days ago, 2025-08-07 12:10:58 +0200)
-* 24d85b2 - Senatov  Update .gitignore (5 days ago, 2025-08-07 12:09:01 +0200)
-* 1756bd0 - Senatov  preview & logo fixed (5 days ago, 2025-08-07 12:05:28 +0200)
-* 626f362 - Senatov  (origin/new_prj_structure) preview & logo fixed (5 days ago, 2025-08-07 11:59:42 +0200)
-* 891e539 - Senatov  Update README.md (5 days ago, 2025-08-07 11:47:26 +0200)
-* fee99fa - Senatov  preview & logo fixed (5 days ago, 2025-08-07 11:57:01 +0200)
-* 1bfdc29 - Senatov  Update README.md (5 days ago, 2025-08-07 11:52:46 +0200)
-* 7cc55a4 - Senatov  Update README.md (5 days ago, 2025-08-07 11:50:52 +0200)
-* c9c4b6a - Senatov  Update README.md (5 days ago, 2025-08-07 11:49:03 +0200)
-* a654aef - Senatov  Update README.md (5 days ago, 2025-08-07 11:47:26 +0200)
-* 4b29a36 - Senatov  fix paths (5 days ago, 2025-08-07 11:42:32 +0200)
-* 29c4690 - Senatov  some fixies (5 days ago, 2025-08-07 11:33:08 +0200)
-* 06d8906 - Senatov  new project structure (5 days ago, 2025-08-07 11:05:07 +0200)
-* 7e33650 - Senatov  new project structure (5 days ago, 2025-08-07 11:04:59 +0200)
-* 8829a33 - Senatov  .error fixing (5 days ago, 2025-08-07 02:28:55 +0200)
-* 4ddde6d - Senatov  the same (7 days ago, 2025-08-05 11:09:49 +0200)
-* 7e8615a - Senatov  fix file selection balk (7 days ago, 2025-08-05 10:26:31 +0200)
-* 519ee90 - Senatov  impl select history I (11 days ago, 2025-07-31 19:00:54 +0200)
-* 6ccbde8 - Senatov  click on breadCrump - fixed (2 weeks ago, 2025-07-29 02:17:52 +0200)
-* db3def8 - Senatov  update md (2 weeks ago, 2025-07-29 00:40:30 +0200)
-* 1b7cc0a - Senatov  fix: recursion on path - on works (2 weeks ago, 2025-07-25 19:11:58 +0200)
-* a433406 - Senatov  fixies: ver new (3 weeks ago, 2025-07-25 00:49:28 +0200)
-* d2808d8 - Senatov  fixies: -- (3 weeks ago, 2025-07-25 00:46:37 +0200)
-* 46b9ac5 - Senatov  fixies: next (3 weeks ago, 2025-07-25 00:42:55 +0200)
-* 7564737 - Senatov  fixed AppState (3 weeks ago, 2025-07-24 17:24:23 +0200)
-* 4614581 - Senatov  fixies: between (3 weeks ago, 2025-07-24 03:27:12 +0200)
-* f5fe17f - Senatov  selectedSide next fixies (3 weeks ago, 2025-07-22 12:26:36 +0200)
-* 4bd8706 - Senatov  path in panel and und crumb synchronised (3 weeks ago, 2025-07-22 12:03:37 +0200)
-* 080c288 - Senatov  ver (3 weeks ago, 2025-07-22 09:54:04 +0200)
-* bb0e963 - Senatov  shadows fixed (3 weeks ago, 2025-07-22 09:53:53 +0200)
-* 9bcb6cd - Senatov  .new preview (3 weeks ago, 2025-07-21 23:52:16 +0200)
-* 7cc4117 - Senatov  .ver (3 weeks ago, 2025-07-21 23:48:50 +0200)
-* c132de5 - Senatov  .fix sides (not ready) (3 weeks ago, 2025-07-21 23:48:15 +0200)
-* 781bbe6 - Senatov  .right & .left repaired. ok (3 weeks ago, 2025-07-21 17:29:53 +0200)
-* 3087ed4 - Senatov  search on Error left an right (3 weeks ago, 2025-07-21 17:07:29 +0200)
-* 6c5ed55 - Senatov  PrettyTooltip (3 weeks ago, 2025-07-21 13:41:22 +0200)
-* 89a0d53 - Senatov  stage saved (3 weeks ago, 2025-07-21 01:08:37 +0200)
-* d32baa8 - Senatov  clean after scan --project MiMiNavigator (3 weeks ago, 2025-07-20 19:12:34 +0200)
-* f7d4092 - Senatov  EditablePathControlWrapper(selectedSide: currSide) / remove @Environment (3 weeks ago, 2025-07-20 12:18:13 +0200)
-* 2e6e19a - Senatov  after periphery scan (3 weeks ago, 2025-07-20 01:09:55 +0200)
-* 06c6dd5 - Senatov  after "periphery scan" (3 weeks ago, 2025-07-19 23:57:15 +0200)
-* 1f8f445 - Senatov  .initial (3 weeks ago, 2025-07-19 23:22:00 +0200)
-*   c9e7e6d - Senatov  Merge branch 'refs/heads/fix_errors' (4 weeks ago, 2025-07-18 09:01:46 +0200)
-|\
-| * 7e63b4c - Senatov  fixed (4 weeks ago, 2025-07-18 06:45:53 +0200)
-* | 787827d - Senatov  +wrong (4 weeks ago, 2025-07-18 06:10:28 +0200)
+```sh
+* cb19ebd - Senatov  (HEAD -> master, origin/master, origin/HEAD) move selection on file panels. Under work (8 days ago, 2025-08-14 03:06:31 +0200)
+* a6c6221 - Senatov  .cannot select right ! (8 days ago, 2025-08-13 21:11:54 +0200)
+* a8f3f2a - Senatov  .fix selection (8 days ago, 2025-08-13 20:40:50 +0200)
+* c1e4350 - Senatov  fix logs + refactoring (8 days ago, 2025-08-13 16:25:03 +0200)
+* 64732f0 - Senatov  versioning (10 days ago, 2025-08-12 03:33:06 +0200)
+* 11cd09f - Senatov  screenshot new (10 days ago, 2025-08-12 03:15:57 +0200)
+* 5551c06 - Senatov  new time stamp (10 days ago, 2025-08-12 03:11:40 +0200)
+* cf85e07 - Senatov  time marker (10 days ago, 2025-08-12 03:09:36 +0200)
+* 315006c - Senatov  fix select file style (10 days ago, 2025-08-12 03:01:36 +0200)
+* 2bd2ca4 - Senatov  Update README.md (10 days ago, 2025-08-11 17:25:06 +0200)
+* 0275db5 - Senatov  fix security attr. (10 days ago, 2025-08-11 17:21:58 +0200)
+* b0142f5 - Senatov  add some features (10 days ago, 2025-08-11 16:15:15 +0200)
+* ffc2de3 - Senatov  save prev (10 days ago, 2025-08-11 12:45:01 +0200)
+* 914a1be - Senatov  fix save/loas user's preferences (11 days ago, 2025-08-10 22:57:37 +0200)
+* 974d90e - Senatov  clean on 'periphery scan --project MiMiNavigator.xcodeproj --schemes MiMiNavigator' (11 days ago, 2025-08-10 22:35:36 +0200)
+* ac0c4bb - Senatov  fix String (11 days ago, 2025-08-10 22:14:13 +0200)
+* 7e6c73b - Senatov  remove obsolete configs (11 days ago, 2025-08-10 19:52:23 +0200)
+* ee66113 - Senatov  Update README.md (2 weeks ago, 2025-08-07 12:15:07 +0200)
+* a24a585 - Senatov  remove Derived/ (2 weeks ago, 2025-08-07 12:10:58 +0200)
+* 24d85b2 - Senatov  Update .gitignore (2 weeks ago, 2025-08-07 12:09:01 +0200)
+* 1756bd0 - Senatov  preview & logo fixed (2 weeks ago, 2025-08-07 12:05:28 +0200)
+* 626f362 - Senatov  (origin/new_prj_structure) preview & logo fixed (2 weeks ago, 2025-08-07 11:59:42 +0200)
+* 891e539 - Senatov  Update README.md (2 weeks ago, 2025-08-07 11:47:26 +0200)
+* fee99fa - Senatov  preview & logo fixed (2 weeks ago, 2025-08-07 11:57:01 +0200)
+* 1bfdc29 - Senatov  Update README.md (2 weeks ago, 2025-08-07 11:52:46 +0200)
+* 7cc55a4 - Senatov  Update README.md (2 weeks ago, 2025-08-07 11:50:52 +0200)
+* c9c4b6a - Senatov  Update README.md (2 weeks ago, 2025-08-07 11:49:03 +0200)
+* a654aef - Senatov  Update README.md (2 weeks ago, 2025-08-07 11:47:26 +0200)
+* 4b29a36 - Senatov  fix paths (2 weeks ago, 2025-08-07 11:42:32 +0200)
+* 29c4690 - Senatov  some fixies (2 weeks ago, 2025-08-07 11:33:08 +0200)
+* 06d8906 - Senatov  new project structure (2 weeks ago, 2025-08-07 11:05:07 +0200)
+* 7e33650 - Senatov  new project structure (2 weeks ago, 2025-08-07 11:04:59 +0200)
+* 8829a33 - Senatov  .error fixing (2 weeks ago, 2025-08-07 02:28:55 +0200)
+* 4ddde6d - Senatov  the same (2 weeks ago, 2025-08-05 11:09:49 +0200)
+* 7e8615a - Senatov  fix file selection balk (2 weeks ago, 2025-08-05 10:26:31 +0200)
+* 519ee90 - Senatov  impl select history I (3 weeks ago, 2025-07-31 19:00:54 +0200)
+* 6ccbde8 - Senatov  click on breadCrump - fixed (3 weeks ago, 2025-07-29 02:17:52 +0200)
+* db3def8 - Senatov  update md (3 weeks ago, 2025-07-29 00:40:30 +0200)
+* 1b7cc0a - Senatov  fix: recursion on path - on works (4 weeks ago, 2025-07-25 19:11:58 +0200)
+* a433406 - Senatov  fixies: ver new (4 weeks ago, 2025-07-25 00:49:28 +0200)
+* d2808d8 - Senatov  fixies: -- (4 weeks ago, 2025-07-25 00:46:37 +0200)
+* 46b9ac5 - Senatov  fixies: next (4 weeks ago, 2025-07-25 00:42:55 +0200)
+* 7564737 - Senatov  fixed AppState (4 weeks ago, 2025-07-24 17:24:23 +0200)
+* 4614581 - Senatov  fixies: between (4 weeks ago, 2025-07-24 03:27:12 +0200)
+* f5fe17f - Senatov  selectedSide next fixies (4 weeks ago, 2025-07-22 12:26:36 +0200)
+* 4bd8706 - Senatov  path in panel and und crumb synchronised (4 weeks ago, 2025-07-22 12:03:37 +0200)
+* 080c288 - Senatov  ver (4 weeks ago, 2025-07-22 09:54:04 +0200)
+* bb0e963 - Senatov  shadows fixed (4 weeks ago, 2025-07-22 09:53:53 +0200)
+* 9bcb6cd - Senatov  .new preview (4 weeks ago, 2025-07-21 23:52:16 +0200)
+* 7cc4117 - Senatov  .ver (4 weeks ago, 2025-07-21 23:48:50 +0200)
+* c132de5 - Senatov  .fix sides (not ready) (4 weeks ago, 2025-07-21 23:48:15 +0200)
+* 781bbe6 - Senatov  .right & .left repaired. ok (4 weeks ago, 2025-07-21 17:29:53 +0200)
+* 3087ed4 - Senatov  search on Error left an right (4 weeks ago, 2025-07-21 17:07:29 +0200)
+* 6c5ed55 - Senatov  PrettyTooltip (4 weeks ago, 2025-07-21 13:41:22 +0200)
+* 89a0d53 - Senatov  stage saved (5 weeks ago, 2025-07-21 01:08:37 +0200)
+* d32baa8 - Senatov  clean after scan --project MiMiNavigator (5 weeks ago, 2025-07-20 19:12:34 +0200)
+* f7d4092 - Senatov  EditablePathControlWrapper(selectedSide: currSide) / remove @Environment (5 weeks ago, 2025-07-20 12:18:13 +0200)
+* 2e6e19a - Senatov  after periphery scan (5 weeks ago, 2025-07-20 01:09:55 +0200)
+* 06c6dd5 - Senatov  after "periphery scan" (5 weeks ago, 2025-07-19 23:57:15 +0200)
 
 ```
 

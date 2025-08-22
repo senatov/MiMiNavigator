@@ -35,6 +35,7 @@ struct DividerView: View {
                     let newWidth = leftPanelWidth + value.translation.width
                     let minPanelWidth: CGFloat = 100
                     let maxPanelWidth = geometry.size.width - 100
+                    log.info(#function)
                     if newWidth > minPanelWidth, newWidth < maxPanelWidth {
                         leftPanelWidth = newWidth
                         onDrag(value)

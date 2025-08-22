@@ -39,6 +39,7 @@ struct TopMenuButtonStyle: ButtonStyle {
             )
             .onHover { hovering in
                 withAnimation(.spring(response: 0.3, dampingFraction: 0.6, blendDuration: 0)) {
+                    log.info(#function)
                     isHovered = hovering
                 }
             }

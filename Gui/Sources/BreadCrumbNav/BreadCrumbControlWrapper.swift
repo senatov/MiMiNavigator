@@ -105,6 +105,7 @@ struct BreadCrumbControlWrapper: View {
             .font(.system(size: 13, weight: .light, design: .default))
             .contentShape(Rectangle())
             .onTapGesture {
+                log.info(#function)
                 Task { @MainActor in
                     log.info("Switching to editing mode")
                     withAnimation(.easeInOut(duration: 0.25)) {

@@ -34,25 +34,19 @@ struct PanelsRowView: View {
 
     // MARK: - - Creates the left file panel view.
     private func makeLeftPanel() -> some View {
-        FilePanelView(selectedSide: .left, geometry: geometry, leftPanelWidth: $leftPanelWidth,
-                      fetchFiles: fetchFiles, appState: appState)
+        log.info(#function + " with leftPanelWidth: \(leftPanelWidth.rounded())")
+        return FilePanelView(selectedSide: .left, geometry: geometry, leftPanelWidth: $leftPanelWidth, fetchFiles: fetchFiles, appState: appState)
     }
 
     /// Creates the right file panel view.
     private func makeRightPanel() -> some View {
-        log.info(#function + " with leftPanelWidth: \(leftPanelWidth)")
-        return FilePanelView(
-            selectedSide: .right,
-            geometry: geometry,
-            leftPanelWidth: $leftPanelWidth, // We calculate the right part based on the total size and the left part.
-            fetchFiles: fetchFiles,
-            appState: appState
-        )
+        log.info(#function + " with leftPanelWidth: \(leftPanelWidth.rounded())")
+        return FilePanelView(selectedSide: .right, geometry: geometry, leftPanelWidth: $leftPanelWidth, fetchFiles: fetchFiles, appState: appState)
     }
 
     // MARK: - - Creates the divider view with drag handlers.
     private func makeDivider() -> some View {
-        log.info(#function + " with leftPanelWidth: \(leftPanelWidth)")
+        log.info(#function + " with leftPanelWidth: \(leftPanelWidth.rounded())")
         return DividerView(
             geometry: geometry,
             leftPanelWidth: $leftPanelWidth,
