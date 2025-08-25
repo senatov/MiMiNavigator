@@ -1,29 +1,28 @@
-//
-//  BreadCrumbView.swift
-//  MiMiNavigator
-//
-//  Created by Iakov Senatov on 14.11.24.
-//  Copyright © 2024 Senatov. All rights reserved.
-//
+    //
+    //  BreadCrumbView.swift
+    //  MiMiNavigator
+    //
+    //  Created by Iakov Senatov on 14.11.24.
+    //  Copyright © 2024 Senatov. All rights reserved.
+    //
 
 import AppKit
 import SwiftUI
 import SwiftyBeaver
 
-// MARK: - Breadcrumb trail UI component for representing navigation path
+    // MARK: - Breadcrumb trail UI component for representing navigation path
 struct BreadCrumbView: View {
     @EnvironmentObject var appState: AppState
     let panelSide: PanelSide
+    private let barHeight: CGFloat = 30
 
-
-    // MARK: -
+        // MARK: -
     init(selectedSide: PanelSide) {
         log.info("BreadCrumbView init" + " for side \(selectedSide)")
         self.panelSide = selectedSide
     }
 
-
-    // MARK: -
+        // MARK: -
     var body: some View {
         log.info(#function + " for side \(panelSide)")
         return HStack(spacing: 4) {
@@ -31,25 +30,32 @@ struct BreadCrumbView: View {
                 breadcrumbItem(index: index)
             }
         }
+        .padding(.horizontal, 6)
+        .padding(.vertical, 2)
+        .frame(minHeight: barHeight, alignment: .center)
+        .controlSize(.large)
     }
 
-
-    // MARK: -
+        // MARK: -
     private var pathComponents: [String] {
         let path = (panelSide == .left ? appState.leftPath : appState.rightPath)
         log.info(#function + " for side \(panelSide)" + " with path: \(path)")
         return path.split(separator: "/").map(String.init).filter { !$0.isEmpty }
     }
 
-
-    // MARK: - Breadcrumb Item
+        // MARK: -
     @ViewBuilder
     private func breadcrumbItem(index: Int) -> some View {
         if index > 0 {
             Image(systemName: "chevron.forward").foregroundColor(.secondary)
         }
-        Button(action: { handlePathSelection(upTo: index) }) {
-            Text(pathComponents[index]).font(.callout).foregroundColor(.blue)
+        getMnuButton(index)
+    }
+
+        // MARK: - Breadcrumb Item
+    fileprivate func getMnuButton(_ index: Int) -> some View {
+        return Button(action: { handlePathSelection(upTo: index) }) {
+            Text(pathComponents[index]).font(.callout).foregroundColor(FilePanelStyle.symlinkDirNameColor).padding(.vertical, 2)
         }
         .buttonStyle(.plain)
         .help("Click to open: /" + pathComponents.prefix(index + 1).joined(separator: "/"))
@@ -62,20 +68,20 @@ struct BreadCrumbView: View {
         }
     }
 
-
-    // MARK: - Handle Selection
+        // MARK: - Handle Selection
     private func handlePathSelection(upTo index: Int) {
         log.info(#function + " for index \(index) on side \(panelSide)")
         let newPath = ("/" + pathComponents.prefix(index + 1).joined(separator: "/"))
             .replacingOccurrences(of: "//", with: "/")
+            .replacingOccurrences(of: "///", with: "/")
             .trimmingCharacters(in: .whitespacesAndNewlines)
         let currentPath = (panelSide == .left ? appState.leftPath : appState.rightPath)
-        // ⚠️ threat from recursive calls
+            // ⚠️ threat from recursive calls
         guard appState.toCanonical(from: newPath) != appState.toCanonical(from: currentPath) else {
             log.debug("Path unchanged, skipping update")
             return
         }
-        // Focus is updated by AppState.updatePath(_:for:)
+            // Focus is updated by AppState.updatePath(_:for:)
         appState.updatePath(newPath, for: panelSide)
         let semaphore = DispatchSemaphore(value: 0)
         Task {
@@ -84,8 +90,7 @@ struct BreadCrumbView: View {
         }
     }
 
-
-    // MARK: -
+        // MARK: -
     @MainActor
     private func performDirectoryUpdate(for panelSide: PanelSide, path: String) async {
         log.debug("Task started for side \(panelSide) with path: \(path)")
