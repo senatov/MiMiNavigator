@@ -9,7 +9,7 @@
 
 ---
 ### MiMiNavigator - MacOS File manager with two panels
-## (NOT READY YET, under development    )
+## (NOT READY YET, still under Development)
 
 
 
@@ -249,7 +249,7 @@ This project is still under active development ( NOT READY YET  per the README) 
 ---
  ##  Related Links
 
-- [(NOT READY YET, under development    )](#not-ready-yet-under-development----)
+- [(NOT READY YET, still under Development)](#not-ready-yet-under-development----)
 - [Overview](#overview)
   - [General structure](#general-structure)
   - [Important aspects](#important-aspects)
