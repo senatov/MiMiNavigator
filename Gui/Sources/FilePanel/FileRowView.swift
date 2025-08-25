@@ -1,10 +1,10 @@
-    //
-    //  FileRowView.swift
-    //  MiMiNavigator
-    //
-    //  Created by Iakov Senatov on 11.08.2025.
-    //  Copyright © 2025 Senatov. All rights reserved.
-    //
+//
+//  FileRowView.swift
+//  MiMiNavigator
+//
+//  Created by Iakov Senatov on 11.08.2025.
+//  Copyright © 2025 Senatov. All rights reserved.
+//
 
 import AppKit
 import SwiftUI
@@ -12,9 +12,8 @@ import SwiftUI
 struct FileRowView: View {
     let file: CustomFile
     let isSelected: Bool
-    let onTap: () -> Void
 
-        // MARK: - Constants for styling
+    // MARK: - Constants for styling
     var nameColor: Color {
         log.info(#function + " for file: \(file.nameStr)")
         if file.isDirectory {
@@ -26,7 +25,7 @@ struct FileRowView: View {
         return FilePanelStyle.fileNameColor
     }
 
-        // MARK: - View Body
+    // MARK: - View Body
     var body: some View {
         log.info(#function + " for '\(file.nameStr)'")
         return HStack {
@@ -52,20 +51,16 @@ struct FileRowView: View {
                         .offset(x: 0, y: 0)
                 }
             }
-            Text(file.nameStr)
-                .foregroundColor(nameColor)
-                .background(Color.clear)
+            Text(file.nameStr).foregroundColor(nameColor).background(Color.clear)
         }
         .padding(.vertical, 1)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             GeometryReader { geo in
                 if isSelected {
-                    let stroke = Rectangle()
-                        .stroke(Color(#colorLiteral(red: 0.2588235438, green: 0.7568627596, blue: 0.9686274529, alpha: 1)), lineWidth: 0.5) // blue border
-
+                    let stroke = Rectangle().stroke(FilePanelStyle.selectedRowStroke, lineWidth: FilePanelStyle.selectedBorderWidth) // blue border
                     Rectangle()
-                        .fill(Color(#colorLiteral(red: 1.0, green: 1.0, blue: 0.9, alpha: 1))) // pale yellow fill
+                        .fill(FilePanelStyle.selectedRowFill) // pale yellow fill
                         .overlay(stroke)
                         .frame(width: geo.size.width, height: geo.size.height)
                         .position(x: geo.size.width / 2, y: geo.size.height / 2)

@@ -7,16 +7,17 @@ struct ButtonFavTopPanel: View {
     @State private var favTreeStruct: [CustomFile] = []
     @State private var showBackPopover: Bool = false
     @State private var showForwardPopover: Bool = false
+    @State private var showUpPopover: Bool = false
     @EnvironmentObject var appState: AppState
     let panelSide: PanelSide
 
-    // MARK: --
+    // MARK: - -
     init(selectedSide: PanelSide) {
         log.info("ButtonFavTopPanel init" + " for side \(selectedSide)")
         self.panelSide = selectedSide
     }
 
-    // MARK: --
+    // MARK: - -
     var body: some View {
         log.info(#function)
         return VStack(alignment: .leading, spacing: 4) { navigationControls }
@@ -27,12 +28,67 @@ struct ButtonFavTopPanel: View {
         log.info(#function)
         return HStack(spacing: 6) {
             backButton()
+            upButton()
             forwardButton()
             menuButton()
         }
     }
 
-    // MARK: --
+    // MARK: -
+    private func backButton() -> some View {
+        log.info(#function)
+        return Button(action: {
+            log.info("Backward: navigating to previous directory")
+            showBackPopover.toggle()
+        }) {
+            Image(systemName: "arrowshape.backward").renderingMode(.original)
+        }
+        .buttonStyle(.plain)
+        .shadow(color: .gray, radius: 7.0, x: 1, y: 1)
+        .popover(isPresented: $showBackPopover, arrowEdge: .bottom) {
+            backPopover()
+        }
+        .help("Back: navigating to previous directory")
+        .accessibilityLabel("Back button")
+    }
+
+    // MARK: -
+    private func upButton() -> some View {
+        log.info(#function)
+        return Button(action: {
+            log.info("Up: navigating to up directory")
+            showUpPopover.toggle()
+        }) {
+            Image(systemName: "arrowshape.up").renderingMode(.original)
+        }
+        .buttonStyle(.plain)
+        .shadow(color: .gray, radius: 7.0, x: 1, y: 1)
+        .popover(isPresented: $showForwardPopover, arrowEdge: .bottom) {
+            forwardPopover()
+        }
+        .help("Up: navigating to up directory")
+        .accessibilityLabel("up button")
+    }
+
+    // MARK: -
+    private func forwardButton() -> some View {
+        log.info(#function)
+        return Button(action: {
+            log.info("Forward: navigating to next directory")
+            showForwardPopover.toggle()
+        }) {
+            Image(systemName: "arrowshape.right").renderingMode(.original)
+        }
+        .buttonStyle(.plain)
+        .shadow(color: .gray, radius: 7.0, x: 1, y: 1)
+        .popover(isPresented: $showForwardPopover, arrowEdge: .bottom) {
+            forwardPopover()
+        }
+        .help("Forward: navigating to next directory")
+        .accessibilityLabel("Forward button")
+    }
+
+    // MARK: - -
     private func menuButton() -> some View {
         log.info(#function + " - \(String(describing: panelSide))")
         return Button(action: {
@@ -62,42 +118,6 @@ struct ButtonFavTopPanel: View {
             favoritePopover()
         }
         .help("Navigation between favorites - \(String(describing: panelSide))")
-    }
-
-    // MARK: -
-    private func forwardButton() -> some View {
-        log.info(#function)
-        return Button(action: {
-            log.info("Forward: navigating to next directory")
-            showForwardPopover.toggle()
-        }) {
-            Image(systemName: "arrowshape.right").renderingMode( .original)
-        }
-        .buttonStyle(.plain)
-        //.shadow(color: .gray, radius: 7.0, x: 1, y: 1)
-        .popover(isPresented: $showForwardPopover, arrowEdge: .bottom) {
-            forwardPopover()
-        }
-        .help("Forward: navigating to next directory")
-        .accessibilityLabel("Forward button")
-    }
-
-    // MARK: -
-    private func backButton() -> some View {
-        log.info(#function)
-        return Button(action: {
-            log.info("Backward: navigating to previous directory")
-            showBackPopover.toggle()
-        }) {
-            Image(systemName: "arrowshape.backward").renderingMode(.original)
-        }
-        .buttonStyle(.plain)
-        //.shadow(color: .gray, radius: 7.0, x: 1, y: 1)
-        .popover(isPresented: $showBackPopover, arrowEdge: .bottom) {
-            backPopover()
-        }
-        .help("Back: navigating to previous directory")
-        .accessibilityLabel("Back button")
     }
 
     // MARK: -

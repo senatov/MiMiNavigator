@@ -36,8 +36,8 @@ struct BreadCrumbControlWrapper: View {
                 displayView
             }
         }
-        .padding(.horizontal, 6)
-        .padding(.vertical, 6)
+        .padding(.horizontal, 1)
+        .padding(.vertical, 1)
         .onHover { hovering in
             isHovering = hovering
         }
@@ -50,12 +50,12 @@ struct BreadCrumbControlWrapper: View {
         .overlay(
             // Blue border when editing, subtle gray when idle; no internal separators
             RoundedRectangle(cornerRadius: 7)
-                .stroke(isEditing ? Color.accentColor : Color.gray.opacity(isHovering ? 0.5 : 0.3),
+                .stroke(isEditing ? Color.accentColor : Color.blue.opacity(isHovering ? 0.5 : 0.3),
                         lineWidth: isEditing ? 1.5 : 1)
         )
         .shadow(color: .secondary.opacity(isHovering ? 0.18 : 0.12), radius: 7, x: 1, y: 1)
-        .padding(.vertical, 6)
-        .padding(.horizontal, 3)
+        .padding(.vertical, 2)
+        .padding(.horizontal, 1)
     }
 
         // MARK: - Editing View

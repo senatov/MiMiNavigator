@@ -24,7 +24,7 @@ struct BreadCrumbPathControl: View {
     // MARK: -
     var body: some View {
         log.info(#function + " for side \(panelSide)")
-        return HStack(spacing: 1) {
+        return HStack(spacing: 2) {
             NavMnu1(selectedSide: panelSide)
             Spacer(minLength: 2)
             BreadCrumbView(selectedSide: panelSide).environmentObject(appState)
