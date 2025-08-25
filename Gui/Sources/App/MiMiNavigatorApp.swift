@@ -76,7 +76,7 @@ struct MiMiNavigatorApp: App {
             content = versionString.trimmingCharacters(in: .whitespacesAndNewlines)
             log.info("Loaded version from 'curr_version.asc' file: '\(content)'")
         } else {
-            content = "Mimi Navigator — Version unavailable"
+            content = "Mimi Navigator — cannot find version file"
             log.error("Failed to load 'curr_version.asc' file.")
         }
         return Text(content)
