@@ -77,7 +77,7 @@ extension CustomFile {
     }
 
     // MARK: -
-    var formattedSize: String {
+    var fileObjTypEnum: String {
         if isDirectory && isSymbolicDirectory {
             return "LINK → DIR."
         } else if isDirectory {
