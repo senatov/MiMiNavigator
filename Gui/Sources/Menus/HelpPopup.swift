@@ -18,7 +18,7 @@ struct HelpPopup: View {
             .font(.system(size: 12))
             .foregroundColor(Color(#colorLiteral(red: 0.5787474513, green: 0.3215198815, blue: 0, alpha: 1)))
             .padding(8)
-            .background(Color(#colorLiteral(red: 0.9995340705, green: 0.9802359024, blue: 0.9185159122, alpha: 1)))
+            .background(FilePanelStyle.selectedRowFill)
             .cornerRadius(3)
             .frame(width: 200)
     }

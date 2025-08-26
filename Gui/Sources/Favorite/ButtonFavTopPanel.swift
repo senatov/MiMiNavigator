@@ -101,15 +101,15 @@ struct ButtonFavTopPanel: View {
             if panelSide == .left {
                 Image(systemName: "sidebar.left")
                     .renderingMode(.original)
-                    .foregroundColor(Color(#colorLiteral(red: 0, green: 0.3285208941, blue: 0.5748849511, alpha: 1)))
+                    .foregroundColor(FilePanelStyle.dirNameColor)
                     .scaleEffect(CGSize(width: 0.9, height: 1.3), anchor: .leading)
-                    .border(Color(#colorLiteral(red: 0.1215686277, green: 0.01176470611, blue: 0.4235294163, alpha: 1)))
+                    .border(FilePanelStyle.fileNameColor)
             } else {
                 Image(systemName: "sidebar.right")
                     .renderingMode(.original)
-                    .foregroundColor(Color(#colorLiteral(red: 0.09019608051, green: 0, blue: 0.3019607961, alpha: 1)))
+                    .foregroundColor(FilePanelStyle.fileNameColor)
                     .scaleEffect(CGSize(width: 0.9, height: 1.3), anchor: .leading)
-                    .border(Color(#colorLiteral(red: 0.09019608051, green: 0, blue: 0.3019607961, alpha: 1)))
+                    .border(FilePanelStyle.fileNameColor)
             }
         }
         .shadow(color: .secondary.opacity(0.15), radius: 7.0, x: 1, y: 1)
@@ -184,7 +184,7 @@ struct ButtonFavTopPanel: View {
         return FavTreeMnu(files: $favTreeStruct, panelSide: panelSide)
             .padding(6)
             .font(.custom("Helvetica Neue", size: 11).weight(.light))
-            .foregroundColor(Color(#colorLiteral(red: 0.2196078449, green: 0.007843137719, blue: 0.8549019694, alpha: 1)))
+            .foregroundColor(FilePanelStyle.fileNameColor)
     }
 
     // MARK: -

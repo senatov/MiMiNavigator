@@ -24,7 +24,7 @@ struct DividerView: View {
                 .frame(width: 6)
                 .shadow(color: .secondary.opacity(0.15), radius: 7.0, x: 1, y: 1)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 3)
+                    RoundedRectangle(cornerRadius: 7)
                         .stroke(Color.white.opacity(0.3), lineWidth: 0.5)
                 )
         }
