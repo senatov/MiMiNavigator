@@ -41,7 +41,7 @@ struct DownToolbarButtonView: View {
                 )
                 .overlay(
                     RoundedRectangle(cornerRadius: 7)
-                        .stroke(Color(#colorLiteral(red: 0.4745098054, green: 0.8392156959, blue: 0.9764705896, alpha: 1)), lineWidth: 2)
+                        .stroke(FilePanelStyle.skyBlauColor, lineWidth: 2)
                 )
                 .scaleEffect(isPressed ? 0.92 : 1.0)
         }

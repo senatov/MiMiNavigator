@@ -1,9 +1,9 @@
-    //
-    //  FavTreeMnu.swift
-    //  MiMiNavigator
-    //
-    //  Created by Iakov Senatov on 16.10.24.
-    //
+//
+//  FavTreeMnu.swift
+//  MiMiNavigator
+//
+//  Created by Iakov Senatov on 16.10.24.
+//
 
 import SwiftUI
 import SwiftyBeaver
@@ -14,8 +14,7 @@ struct FavTreeMnu: View {
     @EnvironmentObject var appState: AppState
     let panelSide: PanelSide
     
-    
-        // MARK: -
+    // MARK: -
     var body: some View {
         log.info(#function)
         return VStack(alignment: .leading, spacing: 0) {
@@ -35,8 +34,7 @@ struct FavTreeMnu: View {
         .padding()
     }
     
-    
-        // MARK: -
+    // MARK: -
     private var headerView: some View {
         log.info(#function)
         return Text("Favorites:")
@@ -47,7 +45,7 @@ struct FavTreeMnu: View {
             .frame(maxWidth: .infinity, alignment: .center)
     }
     
-        // MARK: -
+    // MARK: -
     private var dividerView: some View {
         log.info(#function)
         return Divider()
@@ -55,7 +53,7 @@ struct FavTreeMnu: View {
             .padding(.vertical, 6)
     }
     
-        // MARK: -
+    // MARK: -
     private var fileListView: some View {
         log.info(#function + " - \(files.count) files")
         return ScrollView {

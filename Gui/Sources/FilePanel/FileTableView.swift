@@ -118,9 +118,9 @@ struct FileTableView: View {
                 .padding(.horizontal, 6)
                 .background(Color(nsColor: .windowBackgroundColor))
                 .overlay(
-                    Rectangle()
+                    RoundedRectangle(cornerRadius: 7)
                         .frame(height: 0.6)
-                        .foregroundColor(FilePanelStyle.selectedRowStroke),
+                        .foregroundColor(FilePanelStyle.symlinkDirNameColor.opacity(0.15)),
                     alignment: .bottom
                 )
             }
@@ -133,10 +133,10 @@ struct FileTableView: View {
                             .allowsHitTesting(false)
                         if isSel {
                             Rectangle()
-                                .fill(FilePanelStyle.selectedRowStroke)
+                                .fill(FilePanelStyle.selectedRowFill)
                                 .overlay(
                                     Rectangle()
-                                        .stroke(Color(#colorLiteral(red: 1.0, green: 0.6, blue: 0.0, alpha: 1)), lineWidth: 1)
+                                        .stroke(FilePanelStyle.selectedRowStroke, lineWidth: 0.8)
                                 )
                                 .allowsHitTesting(false)
                         }
@@ -181,7 +181,7 @@ struct FileTableView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(.horizontal, 6)
         .background(
-            RoundedRectangle(cornerRadius: 6)
+            RoundedRectangle(cornerRadius: 7)
                 .stroke(FilePanelStyle.symlinkDirNameColor, lineWidth: FilePanelStyle.selectedBorderWidth)
                 .shadow(color: .black.opacity(0.15), radius: 3, x: 0, y: 1)
         )

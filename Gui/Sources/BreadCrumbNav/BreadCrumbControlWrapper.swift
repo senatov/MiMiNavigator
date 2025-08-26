@@ -16,7 +16,6 @@ struct BreadCrumbControlWrapper: View {
     @FocusState private var isTextFieldFocused: Bool
     @State private var isHovering = false
     // Pale yellow color for focused/editing state selection background
-    private let selectionPaleYellow = Color(red: 1.0, green: 0.98, blue: 0.78)
     let panelSide: PanelSide
 
     // MARK: - Initializer
@@ -44,7 +43,7 @@ struct BreadCrumbControlWrapper: View {
         .background(
             RoundedRectangle(cornerRadius: 7)
                 // Use pale yellow when editing, otherwise subtle platform background
-                .fill(isEditing ? selectionPaleYellow.opacity(0.6)
+                .fill(isEditing ? FilePanelStyle.selectedRowStroke.opacity(0.6)
                     : Color(nsColor: NSColor.windowBackgroundColor))
         )
         .overlay(
