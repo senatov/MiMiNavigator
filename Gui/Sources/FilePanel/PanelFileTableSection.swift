@@ -17,9 +17,8 @@ struct PanelFileTableSection: View {
     let panelSide: PanelSide
     let onPanelTap: (PanelSide) -> Void
     let onSelect: (CustomFile) -> Void
-        
     @State private var rowRects: [CustomFile.ID: CGRect] = [:]
-        
+
     var body: some View {
         log.info(#function + " for side \(panelSide)")
         return FileTableView(
@@ -43,7 +42,7 @@ struct PanelFileTableSection: View {
                             .frame(width: w, height: h)
                             .offset(x: 0, y: y)
                         RoundedRectangle(cornerRadius: 4)
-                            .stroke(Color.accentColor, lineWidth: 1) // blue border
+                            .stroke(FilePanelStyle.symlinkDirNameColor, lineWidth: FilePanelStyle.selectedBorderWidth)
                             .frame(width: w, height: h)
                             .offset(x: 0, y: y)
                     }
@@ -81,7 +80,7 @@ struct PanelFileTableSection: View {
                         log.debug("Move command but no selection on \(panelSide)")
                     }
                 }
-                    
+
             default:
                 log.debug("on onMoveCommand on table, side \(panelSide)")
             }

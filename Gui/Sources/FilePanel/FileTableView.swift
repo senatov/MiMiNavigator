@@ -18,6 +18,7 @@ struct FileTableView: View {
     @State private var sortKey: SortKey = .name
     @State private var sortAscending: Bool = true
 
+    // MARK: -
     private var sortedFiles: [CustomFile] {
         let base = files
         switch sortKey {
@@ -118,8 +119,8 @@ struct FileTableView: View {
                 .background(Color(nsColor: .windowBackgroundColor))
                 .overlay(
                     Rectangle()
-                        .frame(height: 1)
-                        .foregroundColor(.secondary),
+                        .frame(height: 0.6)
+                        .foregroundColor(FilePanelStyle.selectedRowStroke),
                     alignment: .bottom
                 )
             }
@@ -132,7 +133,7 @@ struct FileTableView: View {
                             .allowsHitTesting(false)
                         if isSel {
                             Rectangle()
-                                .fill(Color(#colorLiteral(red: 1.0, green: 1.0, blue: 0.9, alpha: 1)))
+                                .fill(FilePanelStyle.selectedRowStroke)
                                 .overlay(
                                     Rectangle()
                                         .stroke(Color(#colorLiteral(red: 1.0, green: 0.6, blue: 0.0, alpha: 1)), lineWidth: 1)
@@ -179,6 +180,10 @@ struct FileTableView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(.horizontal, 6)
-        .border(Color.secondary)
+        .background(
+            RoundedRectangle(cornerRadius: 6)
+                .stroke(FilePanelStyle.symlinkDirNameColor, lineWidth: FilePanelStyle.selectedBorderWidth)
+                .shadow(color: .black.opacity(0.15), radius: 3, x: 0, y: 1)
+        )
     }
 }
