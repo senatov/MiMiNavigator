@@ -9,10 +9,10 @@
 import SwiftUI
 
 struct FileTableView: View {
+    @EnvironmentObject var appState: AppState
     let files: [CustomFile]
     @Binding var selectedID: CustomFile.ID?
     let onSelect: (CustomFile) -> Void
-
     // MARK: - Sorting State
     private enum SortKey { case name, size, date }
     @State private var sortKey: SortKey = .name
@@ -32,8 +32,8 @@ struct FileTableView: View {
         case .size:
             // сортировка по отображаемой строке размера как безопасный дефолт
             return base.sorted { lhs, rhs in
-                let l = lhs.formattedSize
-                let r = rhs.formattedSize
+                let l = lhs.fileObjTypEnum
+                let r = rhs.fileObjTypEnum
                 return sortAscending ? (l < r) : (l > r)
             }
 
@@ -65,10 +65,13 @@ struct FileTableView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .contentShape(Rectangle())
                     .onTapGesture {
+                        log.info("Tapped Name header for sorting")
                         if sortKey == .name {
                             sortAscending.toggle()
+                            appState.updateSorting(key: .name, ascending: !appState.sortAscending)
                         } else {
                             sortKey = .name; sortAscending = true
+                            appState.updateSorting(key: .name, ascending: appState.sortAscending)
                         }
                     }
                     // vertical separator
@@ -86,10 +89,13 @@ struct FileTableView: View {
                     .frame(width: FilePanelStyle.sizeColumnWidth, alignment: .leading)
                     .contentShape(Rectangle())
                     .onTapGesture {
+                        log.info("Size header tapped")
                         if sortKey == .size {
                             sortAscending.toggle()
+                            appState.updateSorting(key: .size, ascending: !appState.sortAscending)
                         } else {
                             sortKey = .size; sortAscending = true
+                            appState.updateSorting(key: .size, ascending: appState.sortAscending)
                         }
                     }
                     // vertical separator
@@ -107,10 +113,13 @@ struct FileTableView: View {
                     .frame(width: FilePanelStyle.modifiedColumnWidth + 10, alignment: .leading)
                     .contentShape(Rectangle())
                     .onTapGesture {
+                        log.info("Date header tapped")
                         if sortKey == .date {
                             sortAscending.toggle()
+                            appState.updateSorting(key: .date, ascending: !appState.sortAscending)
                         } else {
                             sortKey = .date; sortAscending = true
+                            appState.updateSorting(key: .date, ascending: appState.sortAscending)
                         }
                     }
                 }
@@ -151,7 +160,7 @@ struct FileTableView: View {
                                 .padding(.vertical, 2)
 
                             // Size column
-                            Text(file.formattedSize)
+                            Text(file.fileObjTypEnum)
                                 .foregroundColor(Color(#colorLiteral(red: 0.1215686277, green: 0.01176470611, blue: 0.4235294163, alpha: 1)))
                                 .frame(width: FilePanelStyle.sizeColumnWidth, alignment: .leading)
 
