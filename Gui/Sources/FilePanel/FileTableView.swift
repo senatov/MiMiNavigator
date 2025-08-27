@@ -10,6 +10,7 @@ import SwiftUI
 
 struct FileTableView: View {
     @EnvironmentObject var appState: AppState
+    let panelSide: PanelSide
     let files: [CustomFile]
     @Binding var selectedID: CustomFile.ID?
     let onSelect: (CustomFile) -> Void
@@ -49,7 +50,7 @@ struct FileTableView: View {
 
     // MARK: - Initializer
     var body: some View {
-        log.info(#function + " with \(files.count) files, selectedID: \(String(describing: selectedID))")
+        log.info("FileTableView body(side: \(panelSide)) with \(files.count) files, selectedID: \(String(describing: selectedID)))")
         return ScrollView {
             VStack(spacing: 0) {
                 // File Table header
@@ -64,16 +65,21 @@ struct FileTableView: View {
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .contentShape(Rectangle())
-                    .onTapGesture {
-                        log.info("Tapped Name header for sorting")
-                        if sortKey == .name {
-                            sortAscending.toggle()
-                            appState.updateSorting(key: .name, ascending: !appState.sortAscending)
-                        } else {
-                            sortKey = .name; sortAscending = true
-                            appState.updateSorting(key: .name, ascending: appState.sortAscending)
-                        }
-                    }
+                    .gesture(
+                        DragGesture(minimumDistance: 0)
+                            .onEnded { value in
+                                log.info("Tapped at \(value.location) on side: \(panelSide)")
+                                appState.focusedPanel = panelSide
+                                // сортировка по имени, как было
+                                if sortKey == .name {
+                                    sortAscending.toggle()
+                                    appState.updateSorting(key: .name, ascending: !appState.sortAscending)
+                                } else {
+                                    sortKey = .name; sortAscending = true
+                                    appState.updateSorting(key: .name, ascending: appState.sortAscending)
+                                }
+                            }
+                    )
                     // vertical separator
                     Rectangle().frame(width: 1)
                         .foregroundColor(Color.secondary.opacity(0.25))
@@ -89,6 +95,8 @@ struct FileTableView: View {
                     .frame(width: FilePanelStyle.sizeColumnWidth, alignment: .leading)
                     .contentShape(Rectangle())
                     .onTapGesture {
+                        appState.focusedPanel = panelSide
+                        log.info("Size header tapped on side: \(panelSide)")
                         log.info("Size header tapped")
                         if sortKey == .size {
                             sortAscending.toggle()
@@ -113,6 +121,8 @@ struct FileTableView: View {
                     .frame(width: FilePanelStyle.modifiedColumnWidth + 10, alignment: .leading)
                     .contentShape(Rectangle())
                     .onTapGesture {
+                        appState.focusedPanel = panelSide
+                        log.info("Date header tapped on side: \(panelSide)")
                         log.info("Date header tapped")
                         if sortKey == .date {
                             sortAscending.toggle()

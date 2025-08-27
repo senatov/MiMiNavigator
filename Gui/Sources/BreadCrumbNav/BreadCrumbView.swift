@@ -38,6 +38,7 @@ struct BreadCrumbView: View {
 
         // MARK: -
     private var pathComponents: [String] {
+        log.info(#function + " for side \(panelSide)")
         let path = (panelSide == .left ? appState.leftPath : appState.rightPath)
         log.info(#function + " for side \(panelSide)" + " with path: \(path)")
         return path.split(separator: "/").map(String.init).filter { !$0.isEmpty }

@@ -10,14 +10,6 @@ import AppKit
 import Combine
 import Foundation
 
-// MARK: - SortKey
-
-enum SortKey {
-    case name
-    case date
-    case size
-}
-
 // MARK: - AppState
 @MainActor
 final class AppState: ObservableObject {
@@ -31,7 +23,7 @@ final class AppState: ObservableObject {
     @Published var selectedRightFile: CustomFile?
     @Published var showFavTreePopup: Bool = false
     // Sorting configuration
-    @Published var sortKey: SortKey = .name
+    @Published var sortKey: SortKeysEnum = .name
     @Published var sortAscending: Bool = true
     let selectionsHistory = SelectionsHistory()
     let fileManager = FileManager.default
@@ -41,29 +33,17 @@ final class AppState: ObservableObject {
     // MARK: -
     init() {
         log.info(#function + " - Initializing AppState")
-        self.leftPath =
-            fileManager.urls(for: .downloadsDirectory, in: .userDomainMask)
-                .first?.path ?? ""
-        self.rightPath =
-            fileManager.urls(for: .documentDirectory, in: .userDomainMask)
-                .first?.path ?? ""
+        self.leftPath = fileManager.urls(for: .downloadsDirectory, in: .userDomainMask).first?.path ?? ""
+        self.rightPath = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first?.path ?? ""
         self.scanner = DualDirectoryScanner(appState: self)
-
         // Restore saved paths
-        self.leftPath =
-            UserDefaults.standard.string(forKey: "lastLeftPath")
-                ?? leftPath
-        self.rightPath =
-            UserDefaults.standard.string(forKey: "lastRightPath")
-                ?? rightPath
-
+        self.leftPath = UserDefaults.standard.string(forKey: "lastLeftPath") ?? leftPath
+        self.rightPath = UserDefaults.standard.string(forKey: "lastRightPath") ?? rightPath
         // Подписка на изменения selectedDir
-        $selectedDir
-            .compactMap { $0.selectedFSEntity?.urlValue.path }
-            .sink { [weak self] newPath in
-                self?.selectionsHistory.add(newPath)
-            }
-            .store(in: &cancellables)
+        $selectedDir.compactMap { $0.selectedFSEntity?.urlValue.path }.sink { [weak self] newPath in
+            self?.selectionsHistory.add(newPath)
+        }
+        .store(in: &cancellables)
     }
 
     // MARK: - AppState extension for displayedFiles
@@ -99,45 +79,61 @@ final class AppState: ObservableObject {
     }
 
     // MARK: - Sorting control
-    func updateSorting(key: SortKey? = nil, ascending: Bool? = nil) {
+    func updateSorting(key: SortKeysEnum? = nil, ascending: Bool? = nil) {
+        log.info("updateSorting(key: \(key ?? sortKey), asc: \(ascending ?? sortAscending), side: \(focusedPanel))")
         if let newKey = key {
             sortKey = newKey
         }
         if let newAsc = ascending {
             sortAscending = newAsc
         }
-
         // Resort currently displayed files
-        displayedLeftFiles = applySorting(displayedLeftFiles)
-        displayedRightFiles = applySorting(displayedRightFiles)
-
-        log.info("updateSorting: key=\(sortKey), asc=\(sortAscending)")
+        if focusedPanel == .left {
+            displayedLeftFiles = applySorting(displayedLeftFiles)
+        } else {
+            displayedRightFiles = applySorting(displayedRightFiles)
+        }
+        log.info("updateSorting: key=\(sortKey), asc=\(sortAscending) on \(focusedPanel) side")
     }
 
-    // MARK: -
-    func revealLogFileInFinder() {
-        log.info(#function)
-        // Path to the log file (update as needed)
-        let logDir = FileManager.default.urls(
-            for: .applicationSupportDirectory,
-            in: .userDomainMask
-        ).first!
-            .appendingPathComponent("Logs/MiMiNavigator.log")
-        NSWorkspace.shared.activateFileViewerSelecting([logDir])
+    /// English: Treat real directories and symlinks-to-directories as folder-like. Bundles treated as files by default.
+    private func isFolderLike(_ f: CustomFile) -> Bool {
+        if f.isDirectory {
+            return true
+        }
+        if f.isSymbolicDirectory {
+            return true
+        }
+        // Fallback via URL if flags are not set in the model
+        let url = f.urlValue
+        do {
+            let rv = try url.resourceValues(forKeys: [.isSymbolicLinkKey])
+            if rv.isSymbolicLink == true {
+                let dst = url.resolvingSymlinksInPath()
+                if let r2 = try? dst.resourceValues(forKeys: [.isDirectoryKey]), r2.isDirectory == true {
+                    return true
+                }
+            }
+        } catch {
+            // ignore
+        }
+        return false
     }
 
     // MARK: - apply sorting with directories pinned to the top
     func applySorting(_ items: [CustomFile]) -> [CustomFile] {
-        // English comment: Stable, deterministic sorting.
-        // 1) Directories are always before files (independent of ascending/descending).
+        // Stable, deterministic sorting.
+        // 1) Folder-like entries (real or symbolic) are always before files (independent of ascending/descending).
         // 2) Within the same kind, use the active key and direction.
         // 3) Tie-breaker is case-insensitive name to keep order deterministic.
+        log.info(#function)
         let sorted = items.sorted { (a: CustomFile, b: CustomFile) in
-            // 1) Directories first
-            if a.isDirectory != b.isDirectory {
-                return a.isDirectory && !b.isDirectory
+            // 1) Folder-like entries (real or symbolic) first
+            let aIsFolder = isFolderLike(a)
+            let bIsFolder = isFolderLike(b)
+            if aIsFolder != bIsFolder {
+                return aIsFolder && !bIsFolder
             }
-
             // 2) Same kind → compare by selected key
             switch sortKey {
             case .name:
@@ -149,8 +145,8 @@ final class AppState: ObservableObject {
                 return a.nameStr.localizedCaseInsensitiveCompare(b.nameStr) == .orderedAscending
 
             case .date:
-                let da: Date = a.modifiedDate
-                let db: Date = b.modifiedDate
+                let da: Date = (a.modifiedDate as Date?) ?? Date.distantPast
+                let db: Date = (b.modifiedDate as Date?) ?? Date.distantPast
                 if da != db {
                     return sortAscending ? (da < db) : (da > db)
                 }
@@ -158,8 +154,8 @@ final class AppState: ObservableObject {
                 return a.nameStr.localizedCaseInsensitiveCompare(b.nameStr) == .orderedAscending
 
             case .size:
-                let sa: Int64 = a.sizeInBytes
-                let sb: Int64 = b.sizeInBytes
+                let sa: Int64 = ((a.sizeInBytes as Any) as? Int64) ?? Int64(((a.sizeInBytes as Any) as? Int) ?? 0)
+                let sb: Int64 = ((b.sizeInBytes as Any) as? Int64) ?? Int64(((b.sizeInBytes as Any) as? Int) ?? 0)
                 if sa != sb {
                     return sortAscending ? (sa < sb) : (sa > sb)
                 }
@@ -169,6 +165,33 @@ final class AppState: ObservableObject {
         }
         log.debug("applySorting: dirs first, key=\(sortKey), asc=\(sortAscending), total=\(sorted.count)")
         return sorted
+    }
+
+    // MARK: -
+    func revealLogFileInFinder() {
+        log.info(#function)
+        // English comment: Use the user Logs folder: ~/Library/Logs/MiMiNavigator.log
+        let fm = FileManager.default
+        let logsDir = fm.urls(for: .libraryDirectory, in: .userDomainMask)
+            .first!
+            .appendingPathComponent("Logs", isDirectory: true)
+        let logFileURL = logsDir.appendingPathComponent("MiMiNavigator.log", isDirectory: false)
+        if fm.fileExists(atPath: logFileURL.path) {
+            log.debug("Revealing existing log file at: \(logFileURL.path)")
+            NSWorkspace.shared.activateFileViewerSelecting([logFileURL])
+            return
+        }
+        // Fallback: open/create the Logs directory if missing
+        if !fm.fileExists(atPath: logsDir.path) {
+            do {
+                try fm.createDirectory(at: logsDir, withIntermediateDirectories: true)
+                log.debug("Created Logs directory at: \(logsDir.path)")
+            } catch {
+                log.error("Failed to create Logs directory: \(error.localizedDescription)")
+            }
+        }
+        log.debug("Opening Logs directory at: \(logsDir.path)")
+        NSWorkspace.shared.activateFileViewerSelecting([logsDir])
     }
 
     // MARK: -
@@ -242,22 +265,18 @@ final class AppState: ObservableObject {
     // MARK: -
     func saveBeforeExit() {
         log.debug(#function)
-
         // Update snapshot in UserPreferences
         UserPreferences.shared.capture(from: self)
         UserPreferences.shared.save()
-
         // Optional: keep legacy direct UserDefaults writes if needed
         UserDefaults.standard.set(leftPath, forKey: "lastLeftPath")
         UserDefaults.standard.set(rightPath, forKey: "lastRightPath")
-
         if let left = selectedLeftFile {
             UserDefaults.standard.set(left.urlValue, forKey: "lastSelectedLeftFilePath")
         }
         if let right = selectedRightFile {
             UserDefaults.standard.set(right.urlValue, forKey: "lastSelectedRightFilePath")
         }
-
         log.info("Application state saved before exit.")
     }
 }
