@@ -115,7 +115,7 @@ final class AppState: ObservableObject {
                 }
             }
         } catch {
-            // ignore
+            log.error("isFolderLike: failed to get resource values for \(url.path): \(error.localizedDescription)")
         }
         return false
     }

@@ -9,22 +9,22 @@
 import Foundation
 import SwiftyBeaver
 
-// MARK: - Represents a file system entity (file or directory) with metadata
-public struct CustomFile: Identifiable, Equatable, Hashable, Codable, Sendable  {
+// MARK: - CustomFile
 
-    public let id: UUID
+public struct CustomFile: Identifiable, Equatable, Hashable, Codable, Sendable {
+    public let id: String
     public let nameStr: String
     public let pathStr: String
     public let urlValue: URL
     public let isDirectory: Bool
-    public let isSymbolicDirectory: Bool 
+    public let isSymbolicDirectory: Bool
     public var children: [CustomFile]?
 
     // MARK: - Initializes full metadata for the file system entity
     public init(name: String? = nil, path: String, children: [CustomFile]? = nil) {
-        //log.info(#function)
-        self.id = UUID()
+        // log.info(#function)
         self.urlValue = URL(fileURLWithPath: path).absoluteURL
+        self.id = urlValue.path()
         self.pathStr = path
         self.isDirectory = CustomFile.isThatDirectory(atPath: path)
         self.isSymbolicDirectory = CustomFile.isThatSymbolic(atPath: path)
@@ -55,10 +55,8 @@ public struct CustomFile: Identifiable, Equatable, Hashable, Codable, Sendable  
     }
 }
 
-
 // MARK: -
 extension CustomFile {
-
     // MARK: -
     var modifiedDate: Date {
         (try? urlValue.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? .distantPast
@@ -70,7 +68,7 @@ extension CustomFile {
         formatter.dateFormat = "dd.MM.yyyy HH:mm"
         return formatter.string(from: modifiedDate)
     }
-    
+
     // MARK: -
     var sizeInBytes: Int64 {
         (try? urlValue.resourceValues(forKeys: [.fileSizeKey]).fileSize).map { Int64($0) } ?? 0

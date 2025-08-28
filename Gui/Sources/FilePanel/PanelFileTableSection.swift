@@ -1,16 +1,16 @@
-    //
-    //  PanelFileTableSection.swift
-    //  MiMiNavigator
-    //
-    //  Created by Iakov Senatov on 24.08.2025.
-    //  Copyright © 2025 Senatov. All rights reserved.
-    //
+//
+//  PanelFileTableSection.swift
+//  MiMiNavigator
+//
+//  Created by Iakov Senatov on 24.08.2025.
+//  Copyright © 2025 Senatov. All rights reserved.
+//
 
 import AppKit
 import SwiftUI
 import SwiftyBeaver
 
-    // MARK: -
+// MARK: -
 struct PanelFileTableSection: View {
     let files: [CustomFile]
     @Binding var selectedID: CustomFile.ID?
@@ -19,6 +19,7 @@ struct PanelFileTableSection: View {
     let onSelect: (CustomFile) -> Void
     @State private var rowRects: [CustomFile.ID: CGRect] = [:]
 
+    // MARK: -
     var body: some View {
         log.info(#function + " for side \(panelSide)")
         return FileTableView(
@@ -39,7 +40,7 @@ struct PanelFileTableSection: View {
                     let w = g.size.width
                     ZStack {
                         RoundedRectangle(cornerRadius: 7)
-                            .fill(Color(#colorLiteral(red: 1.0, green: 1.0, blue: 0.94, alpha: 1))) // very-light yellow background
+                            .fill(FilePanelStyle.selectedRowFill)
                             .frame(width: w, height: h)
                             .offset(x: 0, y: y)
                         RoundedRectangle(cornerRadius: 7)
@@ -51,14 +52,14 @@ struct PanelFileTableSection: View {
                 }
             }
         }
-            // Unified click area for the table — keep previous behavior and style
+        // Unified click area for the table — keep previous behavior and style
         .simultaneousGesture(
             TapGesture().onEnded {
                 onPanelTap(panelSide)
                 log.debug("table tap (simultaneous) on side \(panelSide)")
             }
         )
-            // React to selection changes
+        // React to selection changes
         .onChange(of: selectedID, initial: false) { _, newValue in
             log.debug("on onChange on table, side \(panelSide)")
             if let id = newValue, let file = files.first(where: { $0.id == id }) {
@@ -68,11 +69,11 @@ struct PanelFileTableSection: View {
                 log.debug("Selection cleared on \(panelSide)")
             }
         }
-            // Navigation with arrow keys — same as before
+        // Navigation with arrow keys — same as before
         .onMoveCommand { direction in
             switch direction {
             case .up,
-                    .down:
+                 .down:
                 log.debug("Move command: \(direction) on side \(panelSide)")
                 DispatchQueue.main.async {
                     if let id = selectedID, let file = files.first(where: { $0.id == id }) {

@@ -11,7 +11,6 @@ import SwiftUI
 import SwiftyBeaver
 
 // MARK: - ConsoleCurrPath
-
 struct ConsoleCurrPath: View {
     var body: some View {
         log.info(#function)
@@ -21,7 +20,7 @@ struct ConsoleCurrPath: View {
     }
 }
 
-// MARK: --
+// MARK: - -
 func openConsoleInDirectory(_ directoryStr: String) {
     log.info(#function)
     let launchTask = Process()
