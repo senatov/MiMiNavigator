@@ -1,10 +1,10 @@
-    //
-    //  FileRowView.swift
-    //  MiMiNavigator
-    //
-    //  Created by Iakov Senatov on 11.08.2025.
-    //  Copyright © 2025 Senatov. All rights reserved.
-    //
+//
+//  FileRowView.swift
+//  MiMiNavigator
+//
+//  Created by Iakov Senatov on 11.08.2025.
+//  Copyright © 2025 Senatov. All rights reserved.
+//
 
 import AppKit
 import SwiftUI
@@ -12,8 +12,8 @@ import SwiftUI
 struct FileRowView: View {
     let file: CustomFile
     let isSelected: Bool
-    
-        // MARK: - Constants for styling
+
+    // MARK: - Constants for styling
     var nameColor: Color {
         log.info(#function + " for file: \(file.nameStr)")
         if file.isDirectory {
@@ -24,8 +24,8 @@ struct FileRowView: View {
         }
         return FilePanelStyle.fileNameColor
     }
-    
-        // MARK: - View Body
+
+    // MARK: - View Body
     var body: some View {
         log.info(#function + " for '\(file.nameStr)'")
         return HStack {
