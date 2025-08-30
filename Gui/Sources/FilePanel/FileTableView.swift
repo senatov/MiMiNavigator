@@ -19,45 +19,63 @@ struct FileTableView: View {
     @State private var sortKey: SortKey = .name
     @State private var sortAscending: Bool = true
 
+        // MARK: - Sorting comparator extracted to help the type-checker
+    private func compare(_ a: CustomFile, _ b: CustomFile) -> Bool {
+        let aIsFolder = a.isDirectory || a.isSymbolicDirectory
+        let bIsFolder = b.isDirectory || b.isSymbolicDirectory
+        if aIsFolder != bIsFolder { return aIsFolder && !bIsFolder }
+        switch sortKey {
+        case .name:
+            let cmp = a.nameStr.localizedCaseInsensitiveCompare(b.nameStr)
+            return sortAscending ? (cmp == .orderedAscending) : (cmp == .orderedDescending)
+        case .size:
+            let lhs: Int64 = a.sizeInBytes
+            let rhs: Int64 = b.sizeInBytes
+            if lhs != rhs { return sortAscending ? (lhs < rhs) : (lhs > rhs) }
+            return a.nameStr.localizedCaseInsensitiveCompare(b.nameStr) == .orderedAscending
+        case .date:
+            let lhs = a.modifiedDate ?? Date.distantPast
+            let rhs = b.modifiedDate ?? Date.distantPast
+            if lhs != rhs { return sortAscending ? (lhs < rhs) : (lhs > rhs) }
+            return a.nameStr.localizedCaseInsensitiveCompare(b.nameStr) == .orderedAscending
+        }
+    }
+
         // MARK: -
     private var sortedFiles: [CustomFile] {
             // Always sort directories first, then apply selected column sort
         log.info(#function + " for side \(panelSide), sorting by \(sortKey), ascending: \(sortAscending)")
         let base: [CustomFile] = files
-        let sorted = base.sorted { (a: CustomFile, b: CustomFile) in
-                // 1) Directories first
-            if a.isDirectory != b.isDirectory {
-                return a.isDirectory && !b.isDirectory
-            }
-                // 2) Then by selected key
-            switch sortKey {
-            case .name:
-                log.info("sort by Name, ascending: \(sortAscending)")
-                let cmp = a.nameStr.localizedCaseInsensitiveCompare(b.nameStr)
-                return sortAscending ? (cmp == .orderedAscending) : (cmp == .orderedDescending)
-            case .size:
-                log.info("sort by Size, ascending: \(sortAscending)")
-                let lhs: Int64 = a.sizeInBytes
-                let rhs: Int64 = b.sizeInBytes
-                if lhs != rhs {
-                    return sortAscending ? (lhs < rhs) : (lhs > rhs)
-                }
-                    // tie‑break by name
-                let cmp = a.nameStr.localizedCaseInsensitiveCompare(b.nameStr)
-                return cmp == .orderedAscending
-            case .date:
-                log.info("sort by Date, ascending: \(sortAscending)")
-                let lhs = a.modifiedDate
-                let rhs = b.modifiedDate
-                if lhs != rhs {
-                    return sortAscending ? (lhs < rhs) : (lhs > rhs)
-                }
-                    // tie‑break by name
-                let cmp = a.nameStr.localizedCaseInsensitiveCompare(b.nameStr)
-                return cmp == .orderedAscending
-            }
-        }
+        let sorted = base.sorted(by: compare)
         return sorted
+    }
+
+        // MARK: - Row content extracted to reduce view-builder complexity
+    @ViewBuilder
+    private func rowContent(file: CustomFile, isSel: Bool, index: Int) -> some View {
+        HStack(alignment: .center, spacing: 8) {
+                // Name column (expands)
+            FileRowView(file: file, isSelected: isSel)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                // vertical separator
+            Rectangle().frame(width: 1)
+                .foregroundColor(Color.secondary.opacity(0.15))
+                .padding(.vertical, 2)
+                // Size column
+            Text(file.fileObjTypEnum)
+                .foregroundColor(Color(#colorLiteral(red: 0.1215686277, green: 0.01176470611, blue: 0.4235294163, alpha: 1)))
+                .frame(width: FilePanelStyle.sizeColumnWidth, alignment: .leading)
+                // vertical separator
+            Rectangle().frame(width: 1)
+                .foregroundColor(Color.secondary.opacity(0.15))
+                .padding(.vertical, 2)
+                // Date column
+            Text(file.modifiedDateFormatted)
+                .foregroundColor(Color(#colorLiteral(red: 0.3098039329, green: 0.01568627544, blue: 0.1294117719, alpha: 1)))
+                .frame(width: FilePanelStyle.modifiedColumnWidth + 10, alignment: .leading)
+        }
+        .padding(.vertical, 2)
+        .padding(.horizontal, 6)
     }
 
         // MARK: - Initializer
@@ -161,29 +179,7 @@ struct FileTableView: View {
                                 .fill(FilePanelStyle.selectedRowFill)
                                 .allowsHitTesting(false)
                         }
-                        HStack(alignment: .center, spacing: 8) {
-                                // Name column (expands)
-                            FileRowView(file: file, isSelected: isSel)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                // vertical separator
-                            Rectangle().frame(width: 1)
-                                .foregroundColor(Color.secondary.opacity(0.15))
-                                .padding(.vertical, 2)
-                                // Size column
-                            Text(file.fileObjTypEnum)
-                                .foregroundColor(Color(#colorLiteral(red: 0.1215686277, green: 0.01176470611, blue: 0.4235294163, alpha: 1)))
-                                .frame(width: FilePanelStyle.sizeColumnWidth, alignment: .leading)
-                                // vertical separator
-                            Rectangle().frame(width: 1)
-                                .foregroundColor(Color.secondary.opacity(0.15))
-                                .padding(.vertical, 2)
-                                // Date column
-                            Text(file.modifiedDateFormatted)
-                                .foregroundColor(Color(#colorLiteral(red: 0.3098039329, green: 0.01568627544, blue: 0.1294117719, alpha: 1)))
-                                .frame(width: FilePanelStyle.modifiedColumnWidth + 10, alignment: .leading)
-                        }
-                        .padding(.vertical, 2)
-                        .padding(.horizontal, 6)
+                        rowContent(file: file, isSel: isSel, index: index)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .contentShape(Rectangle())

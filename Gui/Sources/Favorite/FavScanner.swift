@@ -93,18 +93,13 @@ class FavScanner {
             at: volumesURL,
             includingPropertiesForKeys: nil
         ) {
-            for url in contents
-                where
-                (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory)
-                == true
-            {
+            for url in contents where (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true {
                 guard FileManager.default.fileExists(atPath: url.path) else {
                     continue
                 }
                 let key = URLResourceKey("volumeIsNetwork")
                 let values = try? url.resourceValues(forKeys: [key])
                 let isNetwork = (values?.allValues[key] as? Bool) ?? false
-
                 if let node = buildFavTreeStructure(at: url) {
                     if isNetwork {
                         network.append(node)
@@ -114,41 +109,23 @@ class FavScanner {
                 }
             }
         } else {
-            log.error(
-                "Cannot read /Volumes contents even after user granted access."
-            )
+            log.error("Cannot read /Volumes contents even after user granted access.")
         }
         if !favorites.isEmpty {
-            result.append(
-                CustomFile(name: "Favorites", path: "", children: favorites)
-            )
+            result.append(CustomFile(name: "Favorites", path: "", children: favorites))
         }
         if !icloud.isEmpty {
-            result.append(
-                CustomFile(name: "iCloud Drive", path: "", children: icloud)
-            )
+            result.append(CustomFile(name: "iCloud Drive", path: "", children: icloud))
         }
         if !oneDrive.isEmpty {
-            result.append(
-                CustomFile(name: "OneDrive", path: "", children: oneDrive)
-            )
+            result.append(CustomFile(name: "OneDrive", path: "", children: oneDrive))
         }
         if !network.isEmpty {
-            result.append(
-                CustomFile(
-                    name: "Network Volumes",
-                    path: "",
-                    children: network
-                )
-            )
+            result.append(CustomFile(name: "Network Volumes", path: "", children: network))
         }
         if !localDisks.isEmpty {
             result.append(
-                CustomFile(
-                    name: "Local Volumes",
-                    path: "",
-                    children: localDisks
-                )
+                CustomFile(name: "Local Volumes", path: "", children: localDisks)
             )
         }
         log.info("Total groups: \(result.count)")
@@ -170,9 +147,7 @@ class FavScanner {
         log.info(#function)
         currentDepth += 1
         defer { currentDepth -= 1 }
-        log.info(
-            "buildFavTreeStructure() depth: \(currentDepth) at \(url.path)"
-        )
+        log.info("buildFavTreeStructure() depth: \(currentDepth) at \(url.path)")
         // Avoid revisiting the same path
         guard !visitedPaths.contains(url) else {
             return nil
@@ -223,12 +198,10 @@ class FavScanner {
         guard currentDepth <= maxDepth else {
             return nil
         }
-        let contents =
-            (try? FileManager.default.contentsOfDirectory(
-                at: url,
-                includingPropertiesForKeys: [.isDirectoryKey, .isHiddenKey],
-                options: [.skipsHiddenFiles]
-            )) ?? []
+        let contents = (try? FileManager.default.contentsOfDirectory(
+            at: url,
+            includingPropertiesForKeys: [.isDirectoryKey, .isHiddenKey],
+            options: [.skipsHiddenFiles])) ?? []
         return contents.prefix(maxDirectories)
             .filter { item in
                 guard
@@ -249,8 +222,7 @@ class FavScanner {
         let openPanel = NSOpenPanel()
         openPanel.title = "Mimi: Please select /Volumes"
         openPanel.allowsConcurrentViewDrawing = true
-        openPanel.message =
-            "This is necessary to access mounted system volumes and favorites"
+        openPanel.message = "This is necessary to access mounted system volumes and favorites"
         openPanel.prompt = "Select"
         openPanel.canChooseFiles = false
         openPanel.canChooseDirectories = true

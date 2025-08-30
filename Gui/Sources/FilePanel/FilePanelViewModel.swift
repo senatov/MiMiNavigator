@@ -1,10 +1,10 @@
-//
-//  FilePanelViewModel.swift
-//  MiMiNavigator
-//
-//  Created by Iakov Senatov on 11.08.2025.
-//  Copyright © 2025 Senatov. All rights reserved.
-//
+    //
+    //  FilePanelViewModel.swift
+    //  MiMiNavigator
+    //
+    //  Created by Iakov Senatov on 11.08.2025.
+    //  Copyright © 2025 Senatov. All rights reserved.
+    //
 
 import Foundation
 import SwiftUI
@@ -15,8 +15,8 @@ final class FilePanelViewModel: ObservableObject {
     let panelSide: PanelSide
     private let appState: AppState
     private let fetchFiles: @Sendable @concurrent (PanelSide) async -> Void
-
-    // MARK: -
+    
+        // MARK: -
     init(
         panelSide: PanelSide,
         appState: AppState,
@@ -27,21 +27,23 @@ final class FilePanelViewModel: ObservableObject {
         self.appState = appState
         self.fetchFiles = fetchFiles
     }
-
-    // MARK: -
+    
+        // MARK: -
     var sortedFiles: [CustomFile] {
         log.info(#function + " for side \(panelSide)")
         let files = appState.displayedFiles(for: panelSide)
-        let directories = files
-            .filter { $0.isDirectory || $0.isSymbolicDirectory }
-            .sorted { $0.nameStr.localizedCompare($1.nameStr) == .orderedAscending }
-        let others = files
-            .filter { !($0.isDirectory || $0.isSymbolicDirectory) }
-            .sorted { $0.nameStr.localizedCompare($1.nameStr) == .orderedAscending }
-        return directories + others
+        let sorted = files.sorted { a, b in
+            let aIsFolder = a.isDirectory || a.isSymbolicDirectory
+            let bIsFolder = b.isDirectory || b.isSymbolicDirectory
+            if aIsFolder != bIsFolder {
+                return aIsFolder && !bIsFolder
+            }
+            return a.nameStr.localizedCaseInsensitiveCompare(b.nameStr) == .orderedAscending
+        }
+        return sorted
     }
-
-    // MARK: -
+    
+        // MARK: -
     func handlePathChange(to url: URL?) {
         log.info(#function + " for side \(panelSide)")
         guard let url else {
@@ -53,8 +55,8 @@ final class FilePanelViewModel: ObservableObject {
             await fetchFiles(panelSide)
         }
     }
-
-    // MARK: -
+    
+        // MARK: -
     func select(_ file: CustomFile) {
         log.info(#function + " for file \(file.nameStr), side \(panelSide)")
         selectedFileID = file.id

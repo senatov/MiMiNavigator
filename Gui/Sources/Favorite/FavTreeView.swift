@@ -1,10 +1,10 @@
-//
-//  TreeRowView.swift
-//  MiMiNavigator
-//
-//  Created by Iakov Senatov on 28.02.25.
-//  Copyright © 2025 Senatov. All rights reserved.
-//
+    //
+    //  TreeRowView.swift
+    //  MiMiNavigator
+    //
+    //  Created by Iakov Senatov on 28.02.25.
+    //  Copyright © 2025 Senatov. All rights reserved.
+    //
 import AppKit
 import SwiftUI
 import SwiftyBeaver
@@ -16,7 +16,7 @@ struct FavTreeView: View {
     @Binding var expandedFolders: Set<String>
     let panelSide: PanelSide
 
-    // MARK: - Initializer
+        // MARK: - Initializer
     init(
         file: Binding<CustomFile>,
         expandedFolders: Binding<Set<String>>,
@@ -24,14 +24,14 @@ struct FavTreeView: View {
     ) {
         log.info(
             "FavTreeView init"
-                + " for file \(file.wrappedValue.nameStr), side \(selectedSide)"
+            + " for file \(file.wrappedValue.nameStr), side \(selectedSide)"
         )
         self.panelSide = selectedSide
         self._file = file
         self._expandedFolders = expandedFolders
     }
 
-    // MARK: -
+        // MARK: -
     var body: some View {
         log.info(#function + " for file \(file.nameStr), side \(panelSide)")
         return VStack(alignment: .leading) {
@@ -41,10 +41,10 @@ struct FavTreeView: View {
         .animation(.easeInOut(duration: 0.25), value: isExpanded)
     }
 
-    // MARK: -
+        // MARK: -
     private var fileIcon: some View {
         Group {
-            if file.isDirectory {
+            if file.isDirectory || file.isSymbolicDirectory {
                 Image(systemName: "chevron.right.circle.fill")
                     .renderingMode(.original)
                     .foregroundColor(.blue)
@@ -67,11 +67,11 @@ struct FavTreeView: View {
         }
     }
 
-    // MARK: -
+        // MARK: -
     private var fileNameText: some View {
         log.info(#function + " for file \(file.nameStr), side \(panelSide)")
         let isTheSame =
-            appState.selectedDir.selectedFSEntity?.pathStr == file.pathStr
+        appState.selectedDir.selectedFSEntity?.pathStr == file.pathStr
         return Text(file.nameStr)
             .foregroundColor(isTheSame ? .blue : .primary)
             .onTapGesture {
@@ -91,22 +91,22 @@ struct FavTreeView: View {
             }
     }
 
-    // MARK: -
+        // MARK: -
     private var fileRow: some View {
         HStack {
             fileIcon
             fileNameText
         }
-        .padding(.leading, file.isDirectory ? 5 : 15)
+        .padding(.leading, (file.isDirectory || file.isSymbolicDirectory) ? 5 : 15)
         .font(.system(size: 14, weight: .regular))
     }
 
-    // MARK: -
+        // MARK: -
     var isExpanded: Bool {
         expandedFolders.contains(file.pathStr)
     }
 
-    // MARK: -
+        // MARK: -
     private var childrenList: some View {
         Group {
             if isExpanded, let children = file.children, !children.isEmpty {
@@ -126,9 +126,14 @@ struct FavTreeView: View {
         }
     }
 
-    // MARK: -
+        // MARK: -
     private func toggleExpansion() {
         log.info(#function + " for file \(file.nameStr), isExpanded: \(isExpanded)")
+            // Expand/collapse only folders (real or symbolic)
+        guard file.isDirectory || file.isSymbolicDirectory else {
+            log.debug("toggleExpansion ignored: not a directory or symbolic directory")
+            return
+        }
         withAnimation(
             .spring(response: 0.3, dampingFraction: 0.6, blendDuration: 0.3)
         ) {
