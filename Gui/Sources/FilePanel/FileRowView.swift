@@ -20,7 +20,7 @@ struct FileRowView: View {
             return FilePanelStyle.dirNameColor
         }
         if file.isSymbolicDirectory {
-            return FilePanelStyle.symlinkDirNameColor
+            return FilePanelStyle.blueSymlinkDirNameColor
         }
         return FilePanelStyle.fileNameColor
     }
@@ -56,7 +56,7 @@ struct FileRowView: View {
         .padding(.vertical, 1)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
-            isSelected ? FilePanelStyle.selectedRowFill : Color.clear
+            isSelected ? FilePanelStyle.yelloeSelectedRowFill : Color.clear
         )
         .shadow(color: isSelected ? .gray.opacity(0.1) : .clear, radius: 4, x: 1, y: 1)
         .animation(.spring(response: 0.4, dampingFraction: 0.8), value: isSelected)
