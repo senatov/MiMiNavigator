@@ -27,7 +27,7 @@ struct MiMiNavigatorApp: App {
     var body: some Scene {
         WindowGroup {
             VStack {
-                TotalCommanderResizableView().navigationTitle("Mimi Navigator")
+                TotalCommanderResizableView()
                 ConsoleCurrPath()
             }
             .environmentObject(appState)
@@ -57,7 +57,7 @@ struct MiMiNavigatorApp: App {
                 ToolbarItem(placement: .status) {
                     Text("🐈‍⬛ Dev. Build: ")
                         .font(.title2)
-                        .foregroundColor(FilePanelStyle.symlinkDirNameColor) + makeDevMark()
+                        .foregroundColor(FilePanelStyle.blueSymlinkDirNameColor) + makeDevMark()
                         .foregroundColor(FilePanelStyle.dirNameColor)
                         .font(.title3)
                 }

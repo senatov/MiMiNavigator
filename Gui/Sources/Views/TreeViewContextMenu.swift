@@ -32,7 +32,7 @@ struct TreeViewContextMenu: View {
             }) {
                 Label("Delete", systemImage: "trash")
             }
-            .foregroundColor(FilePanelStyle.selectedRowStroke)
+            .foregroundColor(FilePanelStyle.orangeSelectedRowStroke)
 
             Button(action: {
                 log.info("More info action for \(file.nameStr)")

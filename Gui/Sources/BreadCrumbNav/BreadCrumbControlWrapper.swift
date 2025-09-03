@@ -43,7 +43,7 @@ struct BreadCrumbControlWrapper: View {
         .background(
             RoundedRectangle(cornerRadius: 7)
                 // Use pale yellow when editing, otherwise subtle platform background
-                .fill(isEditing ? FilePanelStyle.selectedRowStroke.opacity(0.6)
+                .fill(isEditing ? FilePanelStyle.orangeSelectedRowStroke.opacity(0.6)
                     : Color(nsColor: NSColor.windowBackgroundColor))
         )
         .overlay(

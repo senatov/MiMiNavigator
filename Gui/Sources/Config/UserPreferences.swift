@@ -9,7 +9,6 @@ import AppKit
 import Combine
 import Foundation
 
-// MARK: - PreferencesSnapshot
 
 struct PreferencesSnapshot: Codable, Sendable {
     var leftPath: String
