@@ -74,7 +74,6 @@ struct TotalCommanderResizableView: View {
         )
     }
 
-    // MARK: - Toolbar
     private func buildDownToolbar() -> some View {
         log.info(#function)
         return VStack(spacing: 0) {
@@ -97,14 +96,7 @@ struct TotalCommanderResizableView: View {
                     }
                 }
                 DownToolbarButtonView(title: "F5 Copy", systemImage: "doc.on.doc") {
-                    if let file = appState.setSideFile(for: appState.focusedPanel),
-                       let targetURL = appState.pathURL(for: appState.focusedPanel.opposite)
-                    {
-                        FActions.copy(file, to: targetURL)
-                        Task {
-                            await appState.refreshFiles()
-                        }
-                    }
+                    doCopy()
                 }
                 DownToolbarButtonView(title: "F6 Move", systemImage: "square.and.arrow.down.on.square") {
                     log.debug("Move button tapped")
@@ -145,8 +137,28 @@ struct TotalCommanderResizableView: View {
         .frame(maxWidth: .infinity, alignment: .bottom)
     }
 
+    // MARK: - Toolbar
+    fileprivate func doCopy() {
+        // Determine source file based on focused panel (deprecated API removed)
+        let sourceFile = (appState.focusedPanel == .left) ? appState.selectedLeftFile : appState.selectedRightFile
 
-        // MARK: -
+        // Determine target side explicitly to avoid 'opposite' ambiguity
+        let targetSide: PanelSide = (appState.focusedPanel == .left) ? .right : .left
+
+        if let file = sourceFile,
+           let targetURL = appState.pathURL(for: targetSide)
+        {
+            FActions.copy(file, to: targetURL)
+            Task {
+                await appState.refreshFiles()
+            }
+        }
+        else {
+            log.debug("No source file selected or target URL missing for Copy")
+        }
+    }
+
+    // MARK: -
     private func initializePanelWidth(geometry: GeometryProxy) {
         log.info(#function)
         leftPanelWidth =
@@ -160,6 +172,17 @@ struct TotalCommanderResizableView: View {
         NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
             if event.modifierFlags.contains(.option), event.keyCode == 0x76 {
                 exitApp()
+                return nil
+            }
+            // Handle Tab key (keyCode 0x30 / 48) — Tab and Shift+Tab toggle focus
+            if event.keyCode == 0x30 { // Tab
+                if event.modifierFlags.contains(.shift) {
+                    log.debug("Shift+Tab pressed → toggle focused panel (reverse)")
+                }
+                else {
+                    log.debug("Tab pressed → toggle focused panel")
+                }
+                appState.toggleFocus()
                 return nil
             }
             return event

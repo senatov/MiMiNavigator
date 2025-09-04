@@ -14,13 +14,4 @@ import SwiftyBeaver
 enum PanelSide: Equatable, Codable, Sendable {
     case left
     case right
-
-
-    // MARK: -
-    var opposite: PanelSide {
-        switch self {
-            case .left: return .right
-            case .right: return .left
-        }
-    }
 }

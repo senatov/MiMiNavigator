@@ -1,10 +1,10 @@
-//
-//  FileRowView.swift
-//  MiMiNavigator
-//
-//  Created by Iakov Senatov on 11.08.2025.
-//  Copyright © 2025 Senatov. All rights reserved.
-//
+    //
+    //  FileRowView.swift
+    //  MiMiNavigator
+    //
+    //  Created by Iakov Senatov on 11.08.2025.
+    //  Copyright © 2025 Senatov. All rights reserved.
+    //
 
 import SwiftUI
 
@@ -14,23 +14,24 @@ struct FileTableView: View {
     let files: [CustomFile]
     @Binding var selectedID: CustomFile.ID?
     let onSelect: (CustomFile) -> Void
-    // MARK: - Sorting State
+        // MARK: - Sorting State
     private enum SortKey { case name, size, date }
     @State private var sortKey: SortKey = .name
     @State private var sortAscending: Bool = true
     
-    // MARK: -
+        // MARK: -
     var body: some View {
-        log.info(#function + "side: \(panelSide) with \(files.count) files, selectedID: \(String(describing: selectedID)))")
+        log.info(#function + " side: \(panelSide) with \(files.count) files, selectedID: \(String(describing: selectedID)))")
+        // appState.focusedPanel = panelSide
         return ScrollView {
             VStack(alignment: .leading, spacing: 0) {
-                // File Table header
+                    // File Table header
                 HStack(spacing: 8) {
                     getNameColSortableHeader()
-                    // vertical separator
+                        // vertical separator
                     Rectangle().frame(width: 1).foregroundColor(Color.secondary.opacity(0.25)).padding(.vertical, 2)
                     getSizeColSortableHeader()
-                    // vertical separator
+                        // vertical separator
                     Rectangle().frame(width: 1).foregroundColor(Color.secondary.opacity(0.25)).padding(.vertical, 2)
                     getDateSortableHeader()
                 }
@@ -48,7 +49,7 @@ struct FileTableView: View {
             LazyVStack(spacing: 0) {
                 ForEach(Array(sortedFiles.enumerated()), id: \.element.id) { index, file in
                     let isSel = (selectedID == file.id)
-                    drowFileLineInTheTable(index, isSel, file)
+                    drawFileLineInTheTable(index, isSel, file)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -62,7 +63,7 @@ struct FileTableView: View {
         )
     }
     
-    // MARK: -
+        // MARK: -
     fileprivate func getNameColSortableHeader() -> some View {
         log.info(#function + " for side: \(panelSide), sortKey: \(sortKey), ascending: \(sortAscending)")
         return HStack(spacing: 4) {
@@ -87,7 +88,7 @@ struct FileTableView: View {
         }
     }
     
-    // MARK: -
+        // MARK: -
     fileprivate func getSizeColSortableHeader() -> some View {
         log.info(#function + " for side: \(panelSide), sortKey: \(sortKey), ascending: \(sortAscending)")
         return HStack(spacing: 4) {
@@ -112,7 +113,7 @@ struct FileTableView: View {
         }
     }
     
-    // MARK: -
+        // MARK: -
     fileprivate func getDateSortableHeader() -> some View {
         log.info(#function + " for side: \(panelSide), sortKey: \(sortKey), ascending: \(sortAscending)")
         return HStack(spacing: 4) {
@@ -137,23 +138,23 @@ struct FileTableView: View {
         }
     }
     
-    // MARK: -
-    // Draws a subtle selection outline when the row is selected; returns EmptyView otherwise.
+        // MARK: -
+    @ViewBuilder
     fileprivate func highlightedSquare(_ isSel: Bool) -> some View {
-        Group {
-            if isSel {
-                Rectangle()
-                    .inset(by: 0.2)
-                    .stroke(FilePanelStyle.blueSymlinkDirNameColor.gradient, lineWidth: 1.0)
-            }
+        if isSel {
+            Rectangle()
+                .inset(by: 0.2)
+                .stroke(FilePanelStyle.blueSymlinkDirNameColor.gradient, lineWidth: 1.0)
+        } else {
+            EmptyView()
         }
     }
     
-    // MARK: -
-    fileprivate func drowFileLineInTheTable(_ index: Int, _ isSel: Bool, _ file: CustomFile) -> some View {
+        // MARK: -
+    fileprivate func drawFileLineInTheTable(_ index: Int, _ isSel: Bool, _ file: CustomFile) -> some View {
         log.info(#function + " for side: \(panelSide), index: \(index), file: \(file.nameStr), isSel: \(isSel)")
         return ZStack(alignment: .leading) {
-            // Zebra background stripes (Finder-like)
+                // Zebra background stripes (Finder-like)
             (index.isMultiple(of: 2) ? Color.white : Color.gray.opacity(0.06))
                 .allowsHitTesting(false)
             if isSel {
@@ -176,7 +177,7 @@ struct FileTableView: View {
         .animation(.spring(response: 0.4, dampingFraction: 0.7), value: isSel)
     }
     
-    // MARK: - Sorting comparator extracted to help the type-checker
+        // MARK: - Sorting comparator extracted to help the type-checker
     private func compare(_ a: CustomFile, _ b: CustomFile) -> Bool {
         let aIsFolder = a.isDirectory || a.isSymbolicDirectory
         let bIsFolder = b.isDirectory || b.isSymbolicDirectory
@@ -206,35 +207,35 @@ struct FileTableView: View {
         }
     }
     
-    // MARK: -
+        // MARK: -
     private var sortedFiles: [CustomFile] {
-        // Always sort directories first, then apply selected column sort
+            // Always sort directories first, then apply selected column sort
         log.info(#function + " for side \(panelSide), sorting by \(sortKey), ascending: \(sortAscending)")
         let base: [CustomFile] = files
         let sorted = base.sorted(by: compare)
         return sorted
     }
     
-    // MARK: - Row content extracted to reduce view-builder complexity
+        // MARK: - Row content extracted to reduce view-builder complexity
     @ViewBuilder
     private func rowContent(file: CustomFile, isSel: Bool) -> some View {
         HStack(alignment: .center, spacing: 8) {
-            // Name column (expands)
+                // Name column (expands)
             FileRowView(file: file, isSelected: isSel)
                 .frame(maxWidth: .infinity, alignment: .leading)
-            // vertical separator
+                // vertical separator
             Rectangle().frame(width: 1)
                 .foregroundColor(Color.secondary.opacity(0.15))
                 .padding(.vertical, 2)
-            // Size column
+                // Size column
             Text(file.fileObjTypEnum)
                 .foregroundColor(Color(#colorLiteral(red: 0.1215686277, green: 0.01176470611, blue: 0.4235294163, alpha: 1)))
                 .frame(width: FilePanelStyle.sizeColumnWidth, alignment: .leading)
-            // vertical separator
+                // vertical separator
             Rectangle().frame(width: 1)
                 .foregroundColor(Color.secondary.opacity(0.15))
                 .padding(.vertical, 2)
-            // Date column
+                // Date column
             Text(file.modifiedDateFormatted)
                 .foregroundColor(Color(#colorLiteral(red: 0.3098039329, green: 0.01568627544, blue: 0.1294117719, alpha: 1)))
                 .frame(width: FilePanelStyle.modifiedColumnWidth + 10, alignment: .leading)

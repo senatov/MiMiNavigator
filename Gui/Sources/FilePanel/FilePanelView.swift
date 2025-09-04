@@ -33,12 +33,12 @@ struct FilePanelView: View {
         ))
         self.onPanelTap = onPanelTap
     }
-    
+
     // MARK: - View
     var body: some View {
         let currentPath = appState.pathURL(for: viewModel.panelSide)
         log.info(#function + " for side \(viewModel.panelSide) with path: \(currentPath?.path ?? "nil")")
-        
+
         return VStack {
             PanelBreadcrumbSection(
                 panelSide: viewModel.panelSide,
@@ -65,8 +65,4 @@ struct FilePanelView: View {
             viewModel.selectedFileID = nil
         }
     }
-    
-
-    
-  
 }

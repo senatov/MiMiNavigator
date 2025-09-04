@@ -16,7 +16,8 @@ let log = SwiftyBeaver.self
 @main
 struct MiMiNavigatorApp: App {
     @StateObject private var appState = AppState()
-
+    var sharedModelContainer: ModelContainer = makeSharedModelContainer()
+    
     // MARK: -
     init() {
         LogMan.initializeLogging()
@@ -69,21 +70,35 @@ struct MiMiNavigatorApp: App {
     // MARK: -
     private func makeDevMark() -> Text {
         log.info(#function + " - creating development mark")
-        let versionPath = Bundle.main.path(forResource: "curr_version.asc", ofType: nil)
+        // Prefer reading from bundled file 'curr_version.asc'; fall back to Info.plist values
+        let versionURL = Bundle.main.url(forResource: "curr_version", withExtension: "asc")
         let content: String
-        if let versionPath,
-            let versionString = try? String(contentsOfFile: versionPath, encoding: .utf8) {
-            content = versionString.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let url = versionURL,
+           let versionString = try? String(contentsOf: url, encoding: .utf8)
+        {
+            let trimmed = versionString.trimmingCharacters(in: .whitespacesAndNewlines)
+            content = trimmed
             log.info("Loaded version from 'curr_version.asc' file: '\(content)'")
         } else {
-            content = "Mimi Navigator — cannot find version file"
-            log.error("Failed to load 'curr_version.asc' file.")
+            // Fallback: build version string from Info.plist values
+            let short = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String
+            let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String
+            if let s = short, let b = build {
+                content = "v\(s) (\(b))"
+                log.info("Fallback to Info.plist version: '\(content)'")
+            } else if let s = short {
+                content = "v\(s)"
+                log.info("Fallback to Info.plist short version: '\(content)'")
+            } else if let b = build {
+                content = "build \(b)"
+                log.info("Fallback to Info.plist build: '\(content)'")
+            } else {
+                content = "Mimi Navigator — cannot determine version"
+                log.error("Failed to load version from file and Info.plist.")
+            }
         }
         return Text(content)
     }
-
-    // MARK: -
-    var sharedModelContainer: ModelContainer = makeSharedModelContainer()
 
     // MARK: -
     private static func makeSharedModelContainer() -> ModelContainer {
