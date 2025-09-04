@@ -72,8 +72,7 @@ struct MiMiNavigatorApp: App {
         let versionPath = Bundle.main.path(forResource: "curr_version.asc", ofType: nil)
         let content: String
         if let versionPath,
-           let versionString = try? String(contentsOfFile: versionPath, encoding: .utf8)
-        {
+            let versionString = try? String(contentsOfFile: versionPath, encoding: .utf8) {
             content = versionString.trimmingCharacters(in: .whitespacesAndNewlines)
             log.info("Loaded version from 'curr_version.asc' file: '\(content)'")
         } else {
