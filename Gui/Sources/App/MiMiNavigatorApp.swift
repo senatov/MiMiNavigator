@@ -40,6 +40,8 @@ struct MiMiNavigatorApp: App {
                         Image(systemName: "arrow.triangle.2.circlepath")
                             .padding(.horizontal, 2)
                             .padding(.vertical, 6)
+                            .symbolEffect(.pulse) // Варианты: .bounce, .variableColor, .scale
+
                     }
                     .clipShape(Circle())
                     .offset(x: 3, y: 6)
@@ -51,6 +53,7 @@ struct MiMiNavigatorApp: App {
                         Image(systemName: "doc.text.magnifyingglass")
                             .padding(.horizontal, 2)
                             .padding(.vertical, 6)
+                            .symbolEffect(.pulse) // Варианты: .bounce, .variableColor, .scale
                     }
                     .clipShape(Circle())
                     .offset(x: 3, y: 6)

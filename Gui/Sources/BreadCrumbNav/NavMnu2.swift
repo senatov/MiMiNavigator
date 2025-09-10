@@ -22,6 +22,7 @@ struct NavMnu2: View {
         } label: {
             Image(systemName: "ellipsis")
                 .rotationEffect(.degrees(90))
+                .symbolEffect(.scale)
         }
         .menuStyle(.borderlessButton)
     }
@@ -30,7 +31,7 @@ struct NavMnu2: View {
     // MARK: - Private handlers
     private func handleProperties() {
         log.info(#function)
-        let selected = appState.getSelectedDir()
+        let selected = appState.selectedDir
         log.info("Selected dir path: \(selected)")
     }
 
@@ -38,7 +39,7 @@ struct NavMnu2: View {
     // MARK: -
     private func handleOpenInFinder() {
         log.info(#function)
-        let selected = appState.getSelectedDir()
+        let selected = appState.selectedDir
         log.info("Opening path: \(selected)")
     }
 }

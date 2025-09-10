@@ -54,7 +54,7 @@ enum FileScanner {
             result.append(customFile)
         }
 
-        log.debug("scan stats: dirs=\(regularDirCount), symlinkDirs=\(symlinkDirCount), files=\(fileCount)")
+        log.info("scan stats: dirs=\(regularDirCount), symlinkDirs=\(symlinkDirCount), files=\(fileCount)")
         return result
     }
 }

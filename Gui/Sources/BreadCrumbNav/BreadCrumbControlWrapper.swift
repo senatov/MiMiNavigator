@@ -91,6 +91,7 @@ struct BreadCrumbControlWrapper: View {
                 Image(systemName: "checkmark.circle.fill")
                     .renderingMode(.original)
                     .foregroundColor(.accentColor)
+                    .symbolEffect(.pulse) // Варианты: .bounce, .variableColor, .scale
             }
             Button {
                 log.info("Cancelled path editing with X button")
@@ -99,6 +100,7 @@ struct BreadCrumbControlWrapper: View {
                 Image(systemName: "xmark.circle.fill")
                     .renderingMode(.original)
                     .foregroundColor(.gray.opacity(0.7))
+                    .symbolEffect(.pulse) // Варианты: .bounce, .variableColor, .scale
             }
         }
         .transition(.opacity)
