@@ -124,7 +124,7 @@ final class UserPreferences: ObservableObject {
         defaults.set(snapshot.lastSelectedLeftFilePath, forKey: PrefKey.lastSelectedLeftFilePath.rawValue)
         defaults.set(snapshot.lastSelectedRightFilePath, forKey: PrefKey.lastSelectedRightFilePath.rawValue)
 
-        log.debug("Preferences saved.")
+        log.info("Preferences saved.")
     }
 
     // MARK: -

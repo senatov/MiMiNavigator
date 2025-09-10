@@ -26,7 +26,7 @@ enum FActions {
             configuration: configuration
         ) { _, error in
             if let error = error {
-                log.debug(
+                log.info(
                     "❌ Failed to open file with TextEdit: \(error.localizedDescription)"
                 )
             }
@@ -44,7 +44,7 @@ enum FActions {
             try FileManager.default.copyItem(at: sourceURL, to: targetURL)
             log.info("Copied to \(targetURL.path)")
         } catch {
-            log.debug("Copy failed: \(error.localizedDescription)")
+            log.info("Copy failed: \(error.localizedDescription)")
         }
     }
 
@@ -57,7 +57,7 @@ enum FActions {
                 resultingItemURL: nil
             )
         } catch {
-            log.debug("❌ Failed to delete file: \(error.localizedDescription)")
+            log.info("❌ Failed to delete file: \(error.localizedDescription)")
         }
     }
 

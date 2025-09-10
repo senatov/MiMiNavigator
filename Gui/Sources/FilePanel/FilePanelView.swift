@@ -22,7 +22,7 @@ struct FilePanelView: View {
          leftPanelWidth: Binding<CGFloat>,
          fetchFiles: @escaping @Sendable @concurrent (PanelSide) async -> Void,
          appState: AppState,
-         onPanelTap: @escaping (PanelSide) -> Void = { side in log.debug("onPanelTap default for \(side)") })
+         onPanelTap: @escaping (PanelSide) -> Void = { side in log.info("onPanelTap default for \(side)") })
     {
         self._leftPanelWidth = leftPanelWidth
         self.geometry = geometry
@@ -61,7 +61,7 @@ struct FilePanelView: View {
             ? (leftPanelWidth > 0 ? leftPanelWidth : geometry.size.width / 2)
             : nil)
         .panelFocus(panelSide: viewModel.panelSide) {
-            log.debug("Focus lost on \(viewModel.panelSide); clearing selection")
+            log.info("Focus lost on \(viewModel.panelSide); clearing selection")
             viewModel.selectedFileID = nil
         }
     }

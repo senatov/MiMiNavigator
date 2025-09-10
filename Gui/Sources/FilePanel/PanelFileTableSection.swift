@@ -56,17 +56,17 @@ struct PanelFileTableSection: View {
         .simultaneousGesture(
             TapGesture().onEnded {
                 onPanelTap(panelSide)
-                log.debug("table tap (simultaneous) on side \(panelSide)")
+                log.info("table tap (simultaneous) on side \(panelSide)")
             }
         )
         // React to selection changes
         .onChange(of: selectedID, initial: false) { _, newValue in
-            log.debug("on onChange on table, side \(panelSide)")
+            log.info("on onChange on table, side \(panelSide)")
             if let id = newValue, let file = files.first(where: { $0.id == id }) {
-                log.debug("Row selected: id=\(id) on side \(panelSide)")
+                log.info("Row selected: id=\(id) on side \(panelSide)")
                 onSelect(file)
             } else {
-                log.debug("Selection cleared on \(panelSide)")
+                log.info("Selection cleared on \(panelSide)")
             }
         }
         // Navigation with arrow keys — same as before
@@ -74,17 +74,17 @@ struct PanelFileTableSection: View {
             switch direction {
             case .up,
                  .down:
-                log.debug("Move command: \(direction) on side \(panelSide)")
+                log.info("Move command: \(direction) on side \(panelSide)")
                 DispatchQueue.main.async {
                     if let id = selectedID, let file = files.first(where: { $0.id == id }) {
                         onSelect(file)
                     } else {
-                        log.debug("Move command but no selection on \(panelSide)")
+                        log.info("Move command but no selection on \(panelSide)")
                     }
                 }
 
             default:
-                log.debug("on onMoveCommand on table, side \(panelSide)")
+                log.info("on onMoveCommand on table, side \(panelSide)")
             }
         }
     }

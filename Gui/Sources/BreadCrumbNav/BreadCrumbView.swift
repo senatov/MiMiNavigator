@@ -87,7 +87,7 @@ struct BreadCrumbView: View {
         let currentPath = (panelSide == .left ? appState.leftPath : appState.rightPath)
         // ⚠️ threat from recursive calls
         guard appState.toCanonical(from: newPath) != appState.toCanonical(from: currentPath) else {
-            log.debug("Path unchanged, skipping update")
+            log.info("Path unchanged, skipping update")
             return
         }
         // Focus is updated by AppState.updatePath(_:for:)
@@ -102,7 +102,7 @@ struct BreadCrumbView: View {
     // MARK: -
     @MainActor
     private func performDirectoryUpdate(for panelSide: PanelSide, path: String) async {
-        log.debug("Task started for side \(panelSide) with path: \(path)")
+        log.info("Task started for side \(panelSide) with path: \(path)")
         if panelSide == .left {
             await appState.scanner.setLeftDirectory(pathStr: path)
             await appState.scanner.refreshFiles(currSide: .left)
@@ -113,6 +113,6 @@ struct BreadCrumbView: View {
             await appState.scanner.refreshFiles(currSide: .right)
             await appState.refreshRightFiles()
         }
-        log.debug("Task finished successfully")
+        log.info("Task finished successfully")
     }
 }

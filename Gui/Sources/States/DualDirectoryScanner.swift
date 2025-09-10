@@ -35,7 +35,7 @@ actor DualDirectoryScanner {
 
     // MARK: -
     func setRightDirectory(pathStr: String) {
-        log.debug("\(#function) pathStr: \(pathStr)")
+        log.info("\(#function) pathStr: \(pathStr)")
         Task { @MainActor in
             appState.rightPath = pathStr
         }
@@ -43,7 +43,7 @@ actor DualDirectoryScanner {
 
     // MARK: -
     func setLeftDirectory(pathStr: String) {
-        log.debug("\(#function) pathStr: \(pathStr)")
+        log.info("\(#function) pathStr: \(pathStr)")
         Task { @MainActor in
             appState.leftPath = pathStr
         }
@@ -95,7 +95,7 @@ actor DualDirectoryScanner {
     @MainActor
     private func updateScannedFiles(_ files: [CustomFile], for currSide: PanelSide) {
         log.info(#function + " currSide: \(currSide)")
-        log.debug("Updating AppState.\(currSide)Panel with \(files.count) files.")
+        log.info("Updating AppState.\(currSide)Panel with \(files.count) files.")
         let sorted = appState.applySorting(files)
         switch currSide {
         case .left:
@@ -129,13 +129,13 @@ actor DualDirectoryScanner {
             log.warning("No selected FSEntity for \(currSide) side.")
             return
         }
-        log.debug("Updating selected dir: \(selectedEntity.pathStr) with \(files.count) files on \(currSide) side")
+        log.info("Updating selected dir: \(selectedEntity.pathStr) with \(files.count) files on \(currSide) side")
         switch currSide {
         case .left:
             await fileLst.updateLeftFiles(files)
         case .right:
             await fileLst.updateRightFiles(files)
         }
-        log.debug("Finished updating \(currSide) directory.")
+        log.info("Finished updating \(currSide) directory.")
     }
 }

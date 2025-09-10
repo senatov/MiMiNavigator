@@ -131,7 +131,7 @@ struct FavTreeView: View {
         log.info(#function + " for file \(file.nameStr), isExpanded: \(isExpanded)")
             // Expand/collapse only folders (real or symbolic)
         guard file.isDirectory || file.isSymbolicDirectory else {
-            log.debug("toggleExpansion ignored: not a directory or symbolic directory")
+            log.info("toggleExpansion ignored: not a directory or symbolic directory")
             return
         }
         withAnimation(

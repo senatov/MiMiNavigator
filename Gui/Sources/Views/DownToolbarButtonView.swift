@@ -7,6 +7,7 @@
 import SwiftUI
 import SwiftyBeaver
 
+//  MARK: -
 struct DownToolbarButtonView: View {
     let title: String
     let systemImage: String
@@ -15,7 +16,7 @@ struct DownToolbarButtonView: View {
     @State private var isHovered = false
     @State private var isPressed = false
 
-    // MARK: --
+    // MARK: - -
     var body: some View {
         // Only call to makeButton() and wrappers for SRP
         ZStack {
@@ -44,6 +45,7 @@ struct DownToolbarButtonView: View {
                         .stroke(FilePanelStyle.skyBlauColor, lineWidth: 2)
                 )
                 .scaleEffect(isPressed ? 0.92 : 1.0)
+                .foregroundColor(isHovered ? Color(#colorLiteral(red: 0.1921568662, green: 0.007843137719, blue: 0.09019608051, alpha: 1)) : FilePanelStyle.dirNameColor)
         }
         .buttonStyle(PlainButtonStyle())
         .help(title)

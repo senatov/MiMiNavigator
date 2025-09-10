@@ -79,12 +79,12 @@ struct TotalCommanderResizableView: View {
         return VStack(spacing: 0) {
             HStack(spacing: 18) {
                 DownToolbarButtonView(title: "F3 View", systemImage: "eye.circle") {
-                    log.debug("View button tapped")
+                    log.info("View button tapped")
                     if let file = appState.selectedLeftFile {
                         FActions.view(file)
                     }
                     else {
-                        log.debug("No file selected for View")
+                        log.info("No file selected for View")
                     }
                 }
                 DownToolbarButtonView(title: "F4 Edit", systemImage: "pencil") {
@@ -92,20 +92,20 @@ struct TotalCommanderResizableView: View {
                         FActions.edit(file)
                     }
                     else {
-                        log.debug("No file selected for Edit")
+                        log.info("No file selected for Edit")
                     }
                 }
                 DownToolbarButtonView(title: "F5 Copy", systemImage: "doc.on.doc") {
                     doCopy()
                 }
                 DownToolbarButtonView(title: "F6 Move", systemImage: "square.and.arrow.down.on.square") {
-                    log.debug("Move button tapped")
+                    log.info("Move button tapped")
                 }
                 DownToolbarButtonView(title: "F7 NewFolder", systemImage: "folder.badge.plus") {
-                    log.debug("NewFolder button tapped")
+                    log.info("NewFolder button tapped")
                 }
                 DownToolbarButtonView(title: "F8 Delete", systemImage: "minus.rectangle") {
-                    log.debug("Delete button tapped")
+                    log.info("Delete button tapped")
                     if let file = appState.selectedLeftFile {
                         FActions.deleteWithConfirmation(file) {
                             Task {
@@ -115,18 +115,18 @@ struct TotalCommanderResizableView: View {
                         }
                     }
                     else {
-                        log.debug("No file selected for Delete")
+                        log.info("No file selected for Delete")
                     }
                 }
                 DownToolbarButtonView(title: "Settings", systemImage: "gearshape") {
-                    log.debug("Settings button tapped")
+                    log.info("Settings button tapped")
                 }
                 DownToolbarButtonView(title: "Console", systemImage: "terminal") {
-                    log.debug("Console button tapped")
+                    log.info("Console button tapped")
                     openConsoleInDirectory("~")
                 }
                 DownToolbarButtonView(title: "F4 Exit", systemImage: "power") {
-                    log.debug("F4 Exit button tapped")
+                    log.info("F4 Exit button tapped")
                     exitApp()
                 }
             }
@@ -154,7 +154,7 @@ struct TotalCommanderResizableView: View {
             }
         }
         else {
-            log.debug("No source file selected or target URL missing for Copy")
+            log.info("No source file selected or target URL missing for Copy")
         }
     }
 
@@ -177,10 +177,10 @@ struct TotalCommanderResizableView: View {
             // Handle Tab key (keyCode 0x30 / 48) — Tab and Shift+Tab toggle focus
             if event.keyCode == 0x30 { // Tab
                 if event.modifierFlags.contains(.shift) {
-                    log.debug("Shift+Tab pressed → toggle focused panel (reverse)")
+                    log.info ("Shift+Tab pressed → toggle focused panel (reverse)")
                 }
                 else {
-                    log.debug("Tab pressed → toggle focused panel")
+                    log.info("Tab pressed → toggle focused panel")
                 }
                 appState.toggleFocus()
                 return nil
