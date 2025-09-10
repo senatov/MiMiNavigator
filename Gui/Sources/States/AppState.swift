@@ -60,7 +60,7 @@ final class AppState: ObservableObject {
     // MARK: - Toggle focus between left and right panel.
     func toggleFocus() {
         focusedPanel = (focusedPanel == .left) ? .right : .left
-        log.info("Focused panel toggled to: \(focusedPanel)")
+        log.info("TAB - Focused panel toggled to: \(focusedPanel)")
     }
 
     // MARK: - AppState extension for displayedFiles

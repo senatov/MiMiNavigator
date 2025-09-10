@@ -64,7 +64,7 @@ struct FileTableView: View {
     }
     
         // MARK: -
-    fileprivate func getNameColSortableHeader() -> some View {
+    private func getNameColSortableHeader() -> some View {
         log.info(#function + " for side: \(panelSide), sortKey: \(sortKey), ascending: \(sortAscending)")
         return HStack(spacing: 4) {
             Text("Name")
@@ -89,7 +89,7 @@ struct FileTableView: View {
     }
     
         // MARK: -
-    fileprivate func getSizeColSortableHeader() -> some View {
+    private func getSizeColSortableHeader() -> some View {
         log.info(#function + " for side: \(panelSide), sortKey: \(sortKey), ascending: \(sortAscending)")
         return HStack(spacing: 4) {
             Text("Size")
@@ -114,7 +114,7 @@ struct FileTableView: View {
     }
     
         // MARK: -
-    fileprivate func getDateSortableHeader() -> some View {
+    private func getDateSortableHeader() -> some View {
         log.info(#function + " for side: \(panelSide), sortKey: \(sortKey), ascending: \(sortAscending)")
         return HStack(spacing: 4) {
             Text("Date")
@@ -140,7 +140,7 @@ struct FileTableView: View {
     
         // MARK: -
     @ViewBuilder
-    fileprivate func highlightedSquare(_ isSel: Bool) -> some View {
+    private func highlightedSquare(_ isSel: Bool) -> some View {
         if isSel {
             Rectangle()
                 .inset(by: 0.2)
@@ -151,7 +151,7 @@ struct FileTableView: View {
     }
     
         // MARK: -
-    fileprivate func drawFileLineInTheTable(_ index: Int, _ isSel: Bool, _ file: CustomFile) -> some View {
+    private func drawFileLineInTheTable(_ index: Int, _ isSel: Bool, _ file: CustomFile) -> some View {
         log.info(#function + " for side: \(panelSide), index: \(index), file: \(file.nameStr), isSel: \(isSel)")
         return ZStack(alignment: .leading) {
                 // Zebra background stripes (Finder-like)

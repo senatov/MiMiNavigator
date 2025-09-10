@@ -62,7 +62,7 @@ struct BreadCrumbView: View {
     }
 
     // MARK: - Breadcrumb Item
-    fileprivate func getMnuButton(_ index: Int) -> some View {
+    private func getMnuButton(_ index: Int) -> some View {
         return Button(action: { handlePathSelection(upTo: index) }) {
             Text(pathComponents[index]).font(.callout).foregroundColor(FilePanelStyle.blueSymlinkDirNameColor).padding(.vertical, 2)
         }
