@@ -138,7 +138,7 @@ struct TotalCommanderResizableView: View {
     }
 
     // MARK: - Toolbar
-    fileprivate func doCopy() {
+    private func doCopy() {
         // Determine source file based on focused panel (deprecated API removed)
         let sourceFile = (appState.focusedPanel == .left) ? appState.selectedLeftFile : appState.selectedRightFile
 
@@ -175,18 +175,24 @@ struct TotalCommanderResizableView: View {
                 return nil
             }
             // Handle Tab key (keyCode 0x30 / 48) — Tab and Shift+Tab toggle focus
-            if event.keyCode == 0x30 { // Tab
-                if event.modifierFlags.contains(.shift) {
-                    log.info ("Shift+Tab pressed → toggle focused panel (reverse)")
-                }
-                else {
-                    log.info("Tab pressed → toggle focused panel")
-                }
-                appState.toggleFocus()
-                return nil
+            if event.keyCode == 0x30 {
+                return doPanelToggled(event)
             }
             return event
         }
+    }
+
+    // MARK: -
+    private func doPanelToggled(_ event: NSEvent) -> NSEvent? {
+        log.info(#function)
+        appState.toggleFocus()
+        if event.modifierFlags.contains(.shift) {
+            log.info("Shift+Tab pressed → toggle focused panel (reverse)")
+        }
+        else {
+            log.info("Tab pressed → toggle focused panel")
+        }
+        return nil
     }
 
     // MARK: -
