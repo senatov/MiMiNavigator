@@ -1,10 +1,10 @@
-//
-//  FileScanner.swift
-//  MiMiNavigator
-//
-//  Created by Iakov Senatov on 26.04.2025.
-//  Copyright © 2025 Senatov. All rights reserved.
-//
+    //
+    //  FileScanner.swift
+    //  MiMiNavigator
+    //
+    //  Created by Iakov Senatov on 26.04.2025.
+    //  Copyright © 2025 Senatov. All rights reserved.
+    //
 
 import AppKit
 import SwiftUI
@@ -12,8 +12,8 @@ import SwiftUI
 struct TotalCommanderResizableView: View {
     @EnvironmentObject var appState: AppState
     @State private var leftPanelWidth: CGFloat = 0
-
-    // MARK: - View Body
+    
+        // MARK: - View Body
     var body: some View {
         GeometryReader { geometry in
             ZStack {
@@ -34,11 +34,11 @@ struct TotalCommanderResizableView: View {
                 appState.initialize()
                 initializePanelWidth(geometry: geometry) // Restore divider width from user defaults
                 addKeyPressMonitor() // Register keyboard shortcut
+                appState.forceFocusSelection()
             }
-            .onChange(of: geometry.size) {
-                let newSize = geometry.size
+            .onChange(of: geometry.size) { newSize in
                 log.info("Window size changed: \(newSize.width)x\(newSize.height)")
-                // пересчитать ширину левой панели, если нужно
+                    // Recalculate left panel width if needed
                 if leftPanelWidth > 0 {
                     let maxWidth = newSize.width - 50
                     if leftPanelWidth > maxWidth {
@@ -48,8 +48,8 @@ struct TotalCommanderResizableView: View {
             }
         }
     }
-
-    // MARK: - Fetch Files
+    
+        // MARK: - Fetch Files
     @MainActor
     private func fetchFiles(for side: PanelSide) async {
         log.info("↪️ \(#function) [side: \(side)]")
@@ -57,14 +57,14 @@ struct TotalCommanderResizableView: View {
         case .left:
             appState.displayedLeftFiles = await appState.scanner.fileLst
                 .getLeftFiles()
-
+            
         case .right:
             appState.displayedRightFiles = await appState.scanner.fileLst
                 .getRightFiles()
         }
     }
-
-    // MARK: - Panels
+    
+        // MARK: - Panels
     private func buildMainPanels(geometry: GeometryProxy) -> some View {
         log.info(#function)
         return PanelsRowView(
@@ -73,7 +73,7 @@ struct TotalCommanderResizableView: View {
             fetchFiles: fetchFiles
         )
     }
-
+    
     private func buildDownToolbar() -> some View {
         log.info(#function)
         return VStack(spacing: 0) {
@@ -136,37 +136,37 @@ struct TotalCommanderResizableView: View {
         }
         .frame(maxWidth: .infinity, alignment: .bottom)
     }
-
-    // MARK: - Toolbar
+    
+        // MARK: - Toolbar
     private func doCopy() {
-        // Determine source file based on focused panel (deprecated API removed)
+            // Determine source file based on focused panel (deprecated API removed)
         let sourceFile = (appState.focusedPanel == .left) ? appState.selectedLeftFile : appState.selectedRightFile
-
-        // Determine target side explicitly to avoid 'opposite' ambiguity
+        
+            // Determine target side explicitly to avoid 'opposite' ambiguity
         let targetSide: PanelSide = (appState.focusedPanel == .left) ? .right : .left
-
+        
         if let file = sourceFile,
            let targetURL = appState.pathURL(for: targetSide)
         {
-            FActions.copy(file, to: targetURL)
-            Task {
-                await appState.refreshFiles()
-            }
+           FActions.copy(file, to: targetURL)
+           Task {
+               await appState.refreshFiles()
+           }
         }
         else {
             log.info("No source file selected or target URL missing for Copy")
         }
     }
-
-    // MARK: -
+    
+        // MARK: -
     private func initializePanelWidth(geometry: GeometryProxy) {
         log.info(#function)
         leftPanelWidth =
-            UserDefaults.standard.object(forKey: "leftPanelWidth") as? CGFloat
-                ?? geometry.size.width / 2
+        UserDefaults.standard.object(forKey: "leftPanelWidth") as? CGFloat
+        ?? geometry.size.width / 2
     }
-
-    // MARK: -
+    
+        // MARK: -
     private func addKeyPressMonitor() {
         log.info(#function)
         NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
@@ -174,18 +174,19 @@ struct TotalCommanderResizableView: View {
                 exitApp()
                 return nil
             }
-            // Handle Tab key (keyCode 0x30 / 48) — Tab and Shift+Tab toggle focus
+                // Handle Tab key (keyCode 0x30 / 48) — Tab and Shift+Tab toggle focus
             if event.keyCode == 0x30 {
                 return doPanelToggled(event)
             }
             return event
         }
     }
-
-    // MARK: -
+    
+        // MARK: -
     private func doPanelToggled(_ event: NSEvent) -> NSEvent? {
         log.info(#function)
         appState.toggleFocus()
+        appState.forceFocusSelection()
         if event.modifierFlags.contains(.shift) {
             log.info("Shift+Tab pressed → toggle focused panel (reverse)")
         }
@@ -195,7 +196,8 @@ struct TotalCommanderResizableView: View {
         return nil
     }
 
-    // MARK: -
+
+        // MARK: -
     private func exitApp() {
         log.info(#function)
         appState.saveBeforeExit()

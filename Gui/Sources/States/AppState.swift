@@ -1,53 +1,88 @@
-//
-//  AppState.swift
-//  MiMiNavigator
-//
-//  Created by Iakov Senatov on 28.05.2025.
-//  Copyright © 2025 Senatov. All rights reserved.
-//
+    //
+    //  AppState.swift
+    //  MiMiNavigator
+    //
+    //  Created by Iakov Senatov on 28.05.2025.
+    //  Copyright © 2025 Senatov. All rights reserved.
+    //
 
 import AppKit
 import Combine
 import Foundation
 
-// MARK: - AppState
+    // MARK: - AppState
 @MainActor
 final class AppState: ObservableObject {
     @Published var displayedLeftFiles: [CustomFile] = []
     @Published var displayedRightFiles: [CustomFile] = []
-    @Published var focusedPanel: PanelSide = .left
+    @Published var focusedPanel: PanelSide = .left {
+        didSet {
+            syncSelectionWithFocus()
+        }
+    }
     @Published var leftPath: String
     @Published var rightPath: String
     @Published var selectedDir: SelectedDir = .init()
     @Published var selectedLeftFile: CustomFile?
     @Published var selectedRightFile: CustomFile?
     @Published var showFavTreePopup: Bool = false
-
-    // Sorting configuration
+    
+        // Sorting configuration
     @Published var sortKey: SortKeysEnum = .name
     @Published var sortAscending: Bool = true
     let selectionsHistory = SelectionsHistory()
     let fileManager = FileManager.default
     var scanner: DualDirectoryScanner!
     private var cancellables = Set<AnyCancellable>()
-
-    // MARK: -
+    
+        // MARK: -
     init() {
         log.info(#function + " - Initializing AppState")
         self.leftPath = fileManager.urls(for: .downloadsDirectory, in: .userDomainMask).first?.path ?? ""
         self.rightPath = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first?.path ?? ""
         self.scanner = DualDirectoryScanner(appState: self)
-        // Restore saved paths
+            // Restore saved paths
         self.leftPath = UserDefaults.standard.string(forKey: "lastLeftPath") ?? leftPath
         self.rightPath = UserDefaults.standard.string(forKey: "lastRightPath") ?? rightPath
-        // Подписка на изменения selectedDir
+            // Подписка на изменения selectedDir
         $selectedDir.compactMap { $0.selectedFSEntity?.urlValue.path }.sink { [weak self] newPath in
             self?.selectionsHistory.add(newPath)
         }
         .store(in: &cancellables)
     }
+    
+        // MARK: - Keep selection consistent with the focused panel
+    private func syncSelectionWithFocus() {
+        log.info("syncSelectionWithFocus: now \(focusedPanel)")
+        switch focusedPanel {
+        case .left:
+            if selectedRightFile != nil {
+                log.info("Clearing right selection because focus moved to left")
+                selectedRightFile = nil
+            }
+            if selectedLeftFile == nil, let first = displayedLeftFiles.first {
+                log.info("Auto-select first left item: \(first.nameStr)")
+                selectedLeftFile = first
+            }
+        case .right:
+            if selectedLeftFile != nil {
+                log.info("Clearing left selection because focus moved to right")
+                selectedLeftFile = nil
+            }
+            if selectedRightFile == nil, let first = displayedRightFiles.first {
+                log.info("Auto-select first right item: \(first.nameStr)")
+                selectedRightFile = first
+            }
+        }
+    }
 
-    // MARK: - Focus management Set focus explicitly to a panel side and log the change.
+    @MainActor
+    func forceFocusSelection() {
+        syncSelectionWithFocus()
+    }
+
+
+        // MARK: - Focus management Set focus explicitly to a panel side and log the change.
     func focus(_ side: PanelSide) {
         if focusedPanel != side {
             log.info("Focus set to: \(side)")
@@ -56,14 +91,14 @@ final class AppState: ObservableObject {
             log.info("Focus remains at: \(side)")
         }
     }
-
-    // MARK: - Toggle focus between left and right panel.
+    
+        // MARK: - Toggle focus between left and right panel.
     func toggleFocus() {
         focusedPanel = (focusedPanel == .left) ? .right : .left
         log.info("TAB - Focused panel toggled to: \(focusedPanel)")
     }
-
-    // MARK: - AppState extension for displayedFiles
+    
+        // MARK: - AppState extension for displayedFiles
     func displayedFiles(for side: PanelSide) -> [CustomFile] {
         log.info(#function + " at side: \(side)")
         switch side {
@@ -73,8 +108,8 @@ final class AppState: ObservableObject {
             return displayedRightFiles
         }
     }
-
-    // MARK: -
+    
+        // MARK: -
     func pathURL(for side: PanelSide) -> URL? {
         log.info(#function + "|side: \(side)" + "| paths: \(leftPath),| \(rightPath)")
         let path: String
@@ -86,16 +121,16 @@ final class AppState: ObservableObject {
         }
         return URL(fileURLWithPath: path)
     }
-
-    // MARK: -
+    
+        // MARK: -
     @Sendable
     func refreshFiles() async {
         log.info(#function)
         await refreshLeftFiles()
         await refreshRightFiles()
     }
-
-    // MARK: - Sorting control
+    
+        // MARK: - Sorting control
     func updateSorting(key: SortKeysEnum? = nil, ascending: Bool? = nil) {
         log.info("updateSorting(key: \(key ?? sortKey), asc: \(ascending ?? sortAscending), side: \(focusedPanel))")
         if let newKey = key {
@@ -104,7 +139,7 @@ final class AppState: ObservableObject {
         if let newAsc = ascending {
             sortAscending = newAsc
         }
-        // Resort currently displayed files
+            // Resort currently displayed files
         if focusedPanel == .left {
             displayedLeftFiles = applySorting(displayedLeftFiles)
         } else {
@@ -112,8 +147,8 @@ final class AppState: ObservableObject {
         }
         log.info("updateSorting: key=\(sortKey), asc=\(sortAscending) on \(focusedPanel) side")
     }
-
-    // MARK: - Treat real directories and symlinks-to-directories as folder-like. Bundles treated as files by default.
+    
+        // MARK: - Treat real directories and symlinks-to-directories as folder-like. Bundles treated as files by default.
     private func isFolderLike(_ f: CustomFile) -> Bool {
         if f.isDirectory {
             return true
@@ -121,7 +156,7 @@ final class AppState: ObservableObject {
         if f.isSymbolicDirectory {
             return true
         }
-        // Fallback via URL if flags are not set in the model
+            // Fallback via URL if flags are not set in the model
         let url = f.urlValue
         do {
             let rv = try url.resourceValues(forKeys: [.isSymbolicLinkKey])
@@ -136,58 +171,58 @@ final class AppState: ObservableObject {
         }
         return false
     }
-
-    // MARK: - apply sorting with directories pinned to the top
+    
+        // MARK: - apply sorting with directories pinned to the top
     func applySorting(_ items: [CustomFile]) -> [CustomFile] {
-        // Stable, deterministic sorting.
-        // 1) Folder-like entries (real or symbolic) are always before files (independent of ascending/descending).
-        // 2) Within the same kind, use the active key and direction.
-        // 3) Tie-breaker is case-insensitive name to keep order deterministic.
+            // Stable, deterministic sorting.
+            // 1) Folder-like entries (real or symbolic) are always before files (independent of ascending/descending).
+            // 2) Within the same kind, use the active key and direction.
+            // 3) Tie-breaker is case-insensitive name to keep order deterministic.
         log.info(#function)
         let sorted = items.sorted { (a: CustomFile, b: CustomFile) in
-            // 1) Folder-like entries (real or symbolic) first
+                // 1) Folder-like entries (real or symbolic) first
             let aIsFolder = isFolderLike(a)
             let bIsFolder = isFolderLike(b)
             if aIsFolder != bIsFolder {
                 return aIsFolder && !bIsFolder
             }
-            // 2) Same kind → compare by selected key
+                // 2) Same kind → compare by selected key
             switch sortKey {
             case .name:
                 let primary = a.nameStr.localizedCaseInsensitiveCompare(b.nameStr)
                 if primary != .orderedSame {
                     return sortAscending ? (primary == .orderedAscending) : (primary == .orderedDescending)
                 }
-                // 3) Tie-breaker by name (ascending) for stability
+                    // 3) Tie-breaker by name (ascending) for stability
                 return a.nameStr.localizedCaseInsensitiveCompare(b.nameStr) == .orderedAscending
-
+                
             case .date:
                 let da = a.modifiedDate ?? Date.distantPast
                 let db = b.modifiedDate ?? Date.distantPast
                 if da != db {
                     return sortAscending ? (da < db) : (da > db)
                 }
-                // Tie-breaker by name (ascending)
+                    // Tie-breaker by name (ascending)
                 return a.nameStr.localizedCaseInsensitiveCompare(b.nameStr) == .orderedAscending
-
+                
             case .size:
                 let sa: Int64 = a.sizeInBytes
                 let sb: Int64 = b.sizeInBytes
                 if sa != sb {
                     return sortAscending ? (sa < sb) : (sa > sb)
                 }
-                // Tie-breaker by name (ascending)
+                    // Tie-breaker by name (ascending)
                 return a.nameStr.localizedCaseInsensitiveCompare(b.nameStr) == .orderedAscending
             }
         }
         log.info("applySorting: dirs first, key=\(sortKey), asc=\(sortAscending), total=\(sorted.count)")
         return sorted
     }
-
-    // MARK: -
+    
+        // MARK: -
     func revealLogFileInFinder() {
         log.info(#function)
-        // English comment: Use the user Logs folder: ~/Library/Logs/MiMiNavigator.log
+            // English comment: Use the user Logs folder: ~/Library/Logs/MiMiNavigator.log
         let fm = FileManager.default
         let logsDir = fm.urls(for: .libraryDirectory, in: .userDomainMask)
             .first!
@@ -198,7 +233,7 @@ final class AppState: ObservableObject {
             NSWorkspace.shared.activateFileViewerSelecting([logFileURL])
             return
         }
-        // Fallback: open/create the Logs directory if missing
+            // Fallback: open/create the Logs directory if missing
         if !fm.fileExists(atPath: logsDir.path) {
             do {
                 try fm.createDirectory(at: logsDir, withIntermediateDirectories: true)
@@ -210,24 +245,32 @@ final class AppState: ObservableObject {
         log.info("Opening Logs directory at: \(logsDir.path)")
         NSWorkspace.shared.activateFileViewerSelecting([logsDir])
     }
-
-    // MARK: -
+    
+        // MARK: -
     func refreshLeftFiles() async {
         log.info(#function + " at path: \(leftPath.description)")
         let items = await scanner.fileLst.getLeftFiles()
         displayedLeftFiles = applySorting(items)
+        if focusedPanel == .left && selectedLeftFile == nil {
+            selectedLeftFile = displayedLeftFiles.first
+            if let f = selectedLeftFile { log.info("Auto-selected left: \(f.nameStr)") }
+        }
         log.info(" - Found \(displayedLeftFiles.count) left files (dirs first).")
     }
-
-    // MARK: -
+    
+        // MARK: -
     func refreshRightFiles() async {
         log.info(#function + " at path: \(rightPath.description)")
         let items = await scanner.fileLst.getRightFiles()
         displayedRightFiles = applySorting(items)
+        if focusedPanel == .right && selectedRightFile == nil {
+            selectedRightFile = displayedRightFiles.first
+            if let f = selectedRightFile { log.info("Auto-selected right: \(f.nameStr)") }
+        }
         log.info(" - Found \(displayedRightFiles.count) right files (dirs first).")
     }
-
-    // MARK: -
+    
+        // MARK: -
     @available(*, deprecated, message: "Access selectedLeftFile/selectedRightFile directly")
     func setSideFile(for side: PanelSide) -> CustomFile? {
         log.info(#function + " at side: \(side)")
@@ -238,8 +281,8 @@ final class AppState: ObservableObject {
             return selectedRightFile
         }
     }
-
-    // MARK: -
+    
+        // MARK: -
     func updatePath(_ path: String, for side: PanelSide) {
         log.info(#function + " at side: \(side) with path: \(path)")
         focusedPanel = side // Set focus to the side; do not use binding ($)
@@ -255,14 +298,14 @@ final class AppState: ObservableObject {
         case .left:
             leftPath = path
             selectedLeftFile = displayedLeftFiles.first
-
+            
         case .right:
             rightPath = path
             selectedRightFile = displayedRightFiles.first
         }
     }
-
-    // MARK: -
+    
+        // MARK: -
     func toCanonical(from path: String) -> String {
         if let url = URL(string: path), url.isFileURL {
             return url.standardized.resolvingSymlinksInPath().path
@@ -270,14 +313,14 @@ final class AppState: ObservableObject {
             return (path as NSString).standardizingPath
         }
     }
-
-    // MARK: -
+    
+        // MARK: -
     func saveBeforeExit() {
         log.info(#function)
-        // Update snapshot in UserPreferences
+            // Update snapshot in UserPreferences
         UserPreferences.shared.capture(from: self)
         UserPreferences.shared.save()
-        // Optional: keep legacy direct UserDefaults writes if needed
+            // Optional: keep legacy direct UserDefaults writes if needed
         UserDefaults.standard.set(leftPath, forKey: "lastLeftPath")
         UserDefaults.standard.set(rightPath, forKey: "lastRightPath")
         if let left = selectedLeftFile {
@@ -290,16 +333,16 @@ final class AppState: ObservableObject {
     }
 }
 
-// MARK: -
-extension AppState {
     // MARK: -
+extension AppState {
+        // MARK: -
     func initialize() {
         log.info(#function)
-        // 1) Load preferences
+            // 1) Load preferences
         UserPreferences.shared.load()
         UserPreferences.shared.apply(to: self)
-
-        // 2) Остальная инициализация
+        
+            // 2) Остальная инициализация
         Task {
             await scanner.setLeftDirectory(pathStr: leftPath)
             await refreshLeftFiles()
@@ -310,7 +353,7 @@ extension AppState {
     }
 }
 
-// MARK: - Small convenience for toggling panel side
+    // MARK: - Small convenience for toggling panel side
 extension PanelSide {
     var opposite: PanelSide { self == .left ? .right : .left }
 }

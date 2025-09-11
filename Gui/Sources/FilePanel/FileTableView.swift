@@ -18,11 +18,14 @@ struct FileTableView: View {
     private enum SortKey { case name, size, date }
     @State private var sortKey: SortKey = .name
     @State private var sortAscending: Bool = true
-    
+
+        // Focus state helper
+    private var isFocused: Bool { appState.focusedPanel == panelSide }
+
         // MARK: -
     var body: some View {
         log.info(#function + " side: \(panelSide) with \(files.count) files, selectedID: \(String(describing: selectedID)))")
-        // appState.focusedPanel = panelSide
+            // appState.focusedPanel = panelSide
         return ScrollView {
             VStack(alignment: .leading, spacing: 0) {
                     // File Table header
@@ -56,13 +59,18 @@ struct FileTableView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(.horizontal, 6)
-        .background(
+        .overlay(
             RoundedRectangle(cornerRadius: 7)
-                .stroke(FilePanelStyle.blueSymlinkDirNameColor, lineWidth: FilePanelStyle.selectedBorderWidth)
-                .shadow(color: .black.opacity(0.15), radius: 3, x: 1, y: 1)
+                .stroke(
+                    isFocused ? Color(nsColor: .systemBlue) : FilePanelStyle.blueSymlinkDirNameColor.opacity(0.35),
+                    lineWidth: isFocused ? max(FilePanelStyle.selectedBorderWidth, 2) : 1
+                )
+                .shadow(color: isFocused ? .black.opacity(0.25) : .black.opacity(0.1), radius: isFocused ? 4 : 2, x: 1, y: 1)
         )
+        .onTapGesture { appState.focusedPanel = panelSide }
+        .animation(.easeInOut(duration: 0.15), value: isFocused)
     }
-    
+
         // MARK: -
     private func getNameColSortableHeader() -> some View {
         log.info(#function + " for side: \(panelSide), sortKey: \(sortKey), ascending: \(sortAscending)")
@@ -87,7 +95,7 @@ struct FileTableView: View {
             appState.updateSorting(key: .name, ascending: sortAscending)
         }
     }
-    
+
         // MARK: -
     private func getSizeColSortableHeader() -> some View {
         log.info(#function + " for side: \(panelSide), sortKey: \(sortKey), ascending: \(sortAscending)")
@@ -112,7 +120,7 @@ struct FileTableView: View {
             appState.updateSorting(key: .size, ascending: sortAscending)
         }
     }
-    
+
         // MARK: -
     private func getDateSortableHeader() -> some View {
         log.info(#function + " for side: \(panelSide), sortKey: \(sortKey), ascending: \(sortAscending)")
@@ -137,7 +145,7 @@ struct FileTableView: View {
             appState.updateSorting(key: .date, ascending: sortAscending)
         }
     }
-    
+
         // MARK: -
     @ViewBuilder
     private func highlightedSquare(_ isSel: Bool) -> some View {
@@ -149,7 +157,7 @@ struct FileTableView: View {
             EmptyView()
         }
     }
-    
+
         // MARK: -
     private func drawFileLineInTheTable(_ index: Int, _ isSel: Bool, _ file: CustomFile) -> some View {
         log.info(#function + " for side: \(panelSide), index: \(index), file: \(file.nameStr), isSel: \(isSel)")
@@ -176,7 +184,7 @@ struct FileTableView: View {
         .shadow(color: isSel ? .black.opacity(0.2) : .clear, radius: 4, x: 0, y: 2)
         .animation(.spring(response: 0.4, dampingFraction: 0.7), value: isSel)
     }
-    
+
         // MARK: - Sorting comparator extracted to help the type-checker
     private func compare(_ a: CustomFile, _ b: CustomFile) -> Bool {
         let aIsFolder = a.isDirectory || a.isSymbolicDirectory
@@ -188,7 +196,7 @@ struct FileTableView: View {
         case .name:
             let cmp = a.nameStr.localizedCaseInsensitiveCompare(b.nameStr)
             return sortAscending ? (cmp == .orderedAscending) : (cmp == .orderedDescending)
-            
+
         case .size:
             let lhs: Int64 = a.sizeInBytes
             let rhs: Int64 = b.sizeInBytes
@@ -196,7 +204,7 @@ struct FileTableView: View {
                 return sortAscending ? (lhs < rhs) : (lhs > rhs)
             }
             return a.nameStr.localizedCaseInsensitiveCompare(b.nameStr) == .orderedAscending
-            
+
         case .date:
             let lhs = a.modifiedDate ?? Date.distantPast
             let rhs = b.modifiedDate ?? Date.distantPast
@@ -206,7 +214,7 @@ struct FileTableView: View {
             return a.nameStr.localizedCaseInsensitiveCompare(b.nameStr) == .orderedAscending
         }
     }
-    
+
         // MARK: -
     private var sortedFiles: [CustomFile] {
             // Always sort directories first, then apply selected column sort
@@ -215,7 +223,7 @@ struct FileTableView: View {
         let sorted = base.sorted(by: compare)
         return sorted
     }
-    
+
         // MARK: - Row content extracted to reduce view-builder complexity
     @ViewBuilder
     private func rowContent(file: CustomFile, isSel: Bool) -> some View {
