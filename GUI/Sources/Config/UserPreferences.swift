@@ -116,6 +116,7 @@ final class UserPreferences: ObservableObject {
 
     // MARK: -
     func save() {
+        log.info(#function)
         defaults.set(snapshot.leftPath, forKey: PrefKey.leftPath.rawValue)
         defaults.set(snapshot.rightPath, forKey: PrefKey.rightPath.rawValue)
         defaults.set(snapshot.showHiddenFiles, forKey: PrefKey.showHiddenFiles.rawValue)
