@@ -11,13 +11,27 @@ import SwiftyBeaver
 
 let log = SwiftyBeaver.self
 
+func bootstrapLogging() {
+    let console = ConsoleDestination()
+    console.minLevel = .verbose  // показывать info/verbose в Debug
+    console.asynchronously = false  // <<< ключ к выводу при пошаговом дебаге
+    console.format = "$DHH:mm:ss.SSS$d $L $N.$F:$l — $M"
+    SwiftyBeaver.addDestination(console)
+
+    // Дополнительно — файл, чтобы сверять, даже если Xcode ничего не показывает
+    let file = FileDestination()
+    file.minLevel = .verbose
+    SwiftyBeaver.addDestination(file)
+
+    log.info("Logging initialized")
+}
+
 // MARK: - MiMiNavigatorApp
 
-@main
-struct MiMiNavigatorApp: App {
+@main struct MiMiNavigatorApp: App {
     @StateObject private var appState = AppState()
-    var sharedModelContainer: ModelContainer = makeSharedModelContainer()
-    
+    // Make it lazy so logging is initialized before container creation during app startup
+    lazy var sharedModelContainer: ModelContainer = Self.makeSharedModelContainer()
     // MARK: -
     init() {
         LogMan.initializeLogging()
@@ -30,44 +44,26 @@ struct MiMiNavigatorApp: App {
             VStack {
                 TotalCommanderResizableView()
                 ConsoleCurrPath()
-            }
-            .environmentObject(appState)
-            .toolbar {
+            }.environmentObject(appState).toolbar {
                 ToolbarItem(placement: .automatic) {
-                    Button(action: {
-                        log.info("Refresh button clicked")
-                    }) {
-                        Image(systemName: "arrow.triangle.2.circlepath")
-                            .padding(.horizontal, 2)
-                            .padding(.vertical, 6)
-                            .symbolEffect(.pulse) // Варианты: .bounce, .variableColor, .scale
+                    Button(action: { log.info("Refresh button clicked") }) {
+                        Image(systemName: "arrow.triangle.2.circlepath").padding(.horizontal, 2).padding(.vertical, 6).symbolEffect(.pulse)  // Варианты: .bounce, .variableColor, .scale
 
-                    }
-                    .clipShape(Circle())
-                    .offset(x: 3, y: 6)
+                    }.clipShape(Circle()).offset(x: 3, y: 6)
                 }
                 ToolbarItem(placement: .automatic) {
-                    Button(action: {
-                        appState.revealLogFileInFinder()
-                    }) {
-                        Image(systemName: "doc.text.magnifyingglass")
-                            .padding(.horizontal, 2)
-                            .padding(.vertical, 6)
-                            .symbolEffect(.pulse) // Варианты: .bounce, .variableColor, .scale
-                    }
-                    .clipShape(Circle())
-                    .offset(x: 3, y: 6)
+                    Button(action: { appState.revealLogFileInFinder() }) {
+                        Image(systemName: "doc.text.magnifyingglass").padding(.horizontal, 2).padding(.vertical, 6).symbolEffect(.pulse)  // Варианты: .bounce, .variableColor, .scale
+                    }.clipShape(Circle()).offset(x: 3, y: 6)
                 }
                 ToolbarItem(placement: .status) {
-                    Text("🐈‍⬛ Dev. Build: ")
-                        .font(.title2)
-                        .foregroundColor(FilePanelStyle.blueSymlinkDirNameColor) + makeDevMark()
-                        .foregroundColor(FilePanelStyle.dirNameColor)
-                        .font(.title3)
+                    HStack(spacing: 4) {
+                        Text("🐈‍⬛ Dev. Build:").font(.title2).foregroundColor(FilePanelStyle.blueSymlinkDirNameColor)
+                        makeDevMark().foregroundColor(FilePanelStyle.dirNameColor).font(.title3)
+                    }
                 }
             }
         }
-        .modelContainer(sharedModelContainer)
     }
 
     // MARK: -
@@ -76,9 +72,7 @@ struct MiMiNavigatorApp: App {
         // Prefer reading from bundled file 'curr_version.asc'; fall back to Info.plist values
         let versionURL = Bundle.main.url(forResource: "curr_version", withExtension: "asc")
         let content: String
-        if let url = versionURL,
-           let versionString = try? String(contentsOf: url, encoding: .utf8)
-        {
+        if let url = versionURL, let versionString = try? String(contentsOf: url, encoding: .utf8) {
             let trimmed = versionString.trimmingCharacters(in: .whitespacesAndNewlines)
             content = trimmed
             log.info("Loaded version from 'curr_version.asc' file: '\(content)'")
@@ -106,13 +100,9 @@ struct MiMiNavigatorApp: App {
     // MARK: -
     private static func makeSharedModelContainer() -> ModelContainer {
         log.info(#function)
-        let schema = Schema([
-            Item.self
-        ])
+        let schema = Schema([Item.self])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
-        do {
-            return try ModelContainer(for: schema, configurations: [modelConfiguration])
-        } catch {
+        do { return try ModelContainer(for: schema, configurations: [modelConfiguration]) } catch {
             fatalError("Could not create ModelContainer: \(error)")
         }
     }

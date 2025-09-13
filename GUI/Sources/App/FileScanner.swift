@@ -13,10 +13,8 @@ enum FileScanner {
     // MARK: -
     static func scan(url: URL) throws -> [CustomFile] {
         log.info("scan(url:) \(url.path)")
-
         var result: [CustomFile] = []
         let fileManager = FileManager.default
-
         // Ask for both directory and symlink flags so we can distinguish symlinked folders from regular files.
         let wantedKeys: [URLResourceKey] = [.isDirectoryKey, .isSymbolicLinkKey]
         let contents = try fileManager.contentsOfDirectory(

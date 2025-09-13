@@ -19,8 +19,9 @@ enum LogMan {
         let console = ConsoleDestination()
         console.format = "$DHH:mm:ss$d $L $N.$F:$l $M"
 
-        // MARK: - -
+        // MARK: -
         func getLevelIcon(for level: SwiftyBeaver.Level) -> String {
+            log.info(#function)
             switch level {
             case .verbose: return "🔮"
             case .debug: return "☘️"
@@ -45,6 +46,7 @@ enum LogMan {
 
     // MARK: -
     private static func setupLogging() {
+        log.info(#function)
         let containerURL = FileManager.default.urls(
             for: .applicationSupportDirectory,
             in: .userDomainMask
