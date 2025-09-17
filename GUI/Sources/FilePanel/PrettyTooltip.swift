@@ -17,7 +17,7 @@ struct PrettyTooltip: View {
             .padding(12)
             .background(
                 RoundedRectangle(cornerRadius: 7, style: .continuous)
-                    .fill(FilePanelStyle.orangeSelectedRowStroke) // less intense pale yellow background
+                    .fill(FilePanelStyle.orangeSelRowStroke) // less intense pale yellow background
                     .shadow(color: .secondary.opacity(0.40), radius: 7.0, x: 1, y: 1)
             )
             .overlay(

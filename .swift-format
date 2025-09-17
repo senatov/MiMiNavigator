@@ -1,65 +1,12 @@
-{
+﻿{
   "version": 1,
-
-  // Общие правила
-  "lineLength": 155,
-  "indentation": { "spaces": 4 },
-  "tabWidth": 8,
+  "lineLength": 120,
+  "indentation": {
+    "spaces": 4
+  },
   "maximumBlankLines": 1,
   "respectsExistingLineBreaks": false,
-  "respectsExistingBlankLines": true,
-
-  // Переносы
-  "lineBreakBeforeControlFlowKeywords": false,
-  "lineBreakBeforeEachArgument": false,
-  "lineBreakBeforeEachCollectionElement": false,
-  "prioritizeKeepingFunctionOutputTogether": false,
-
-  // Пробелы
-  "spacesAroundRangeFormationOperators": true,
-  "spacesAroundOperators": true,
-  "spacesInsideParens": false,
-  "spacesInsideBraces": false,
-  "spacesInsideSquareBrackets": false,
-  "spacesInsideComments": false,
-  "spacesAroundGenerics": false,
-
-  // Комментарии
-  "wrapComments": true,
-  "wrapCommentsLength": 130,
-
-  // Инициализаторы и вызовы
-  "indentConditionalCompilationBlocks": true,
-  "indentSwitchCaseLabels": true,
-  "indentIfElse": true,
-  "indentDoCatch": true,
-
-  // Разное
-  "placeElseOnNewLine": false,
-  "placeCatchOnNewLine": false,
-  "placeWhileOnNewLine": false,
-  "blankLineBetweenMembers": true,
-  "blankLineBetweenImports": true,
-  "blankLineBetweenTypeDeclarations": true,
-  "blankLineBeforeReturn": false,
-
-  // Импорты
-  "groupImports": true,
-  "sortImports": true,
-
-  // Атрибуты
-  "attributesOnSameLineAsDeclaration": true,
-  "alwaysUseLowerCamelCase": true,
-
-  // Литералы
-  "hexLiteralCase": "lowercase",
-  "exponentCase": "lowercase",
-  "groupDigits": true,
-
-  // Специфичное для Swift
-  "wrapConditionalCompilationBlocks": true,
-  "wrapFunctionBodies": true,
-  "wrapCollections": true,
-  "wrapClosures": true,
-  "wrapMultilineStrings": true
+  "lineBreakBeforeEachArgument": true,
+  "lineBreakBeforeEachGenericRequirement": true,
+  "lineBreakAroundMultilineExpressionChainComponents": true
 }

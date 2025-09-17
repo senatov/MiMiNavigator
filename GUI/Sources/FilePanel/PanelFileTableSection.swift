@@ -40,7 +40,7 @@ struct PanelFileTableSection: View {
                     let w = g.size.width
                     ZStack {
                         RoundedRectangle(cornerRadius: 7)
-                            .fill(FilePanelStyle.yelloeSelectedRowFill)
+                            .fill(FilePanelStyle.yellowSelRowFill)
                             .frame(width: w, height: h)
                             .offset(x: 0, y: y)
                         RoundedRectangle(cornerRadius: 7)
