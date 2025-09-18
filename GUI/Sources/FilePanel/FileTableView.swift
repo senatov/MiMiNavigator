@@ -25,6 +25,7 @@ struct FileTableView: View {
         log.info(
             #function + " side: \(panelSide) with \(files.count) files, selectedID: \(String(describing: selectedID)))"
         )
+        // appState.focusedPanel = panelSide
         return ScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 // File Table header
@@ -204,7 +205,7 @@ struct FileTableView: View {
     @ViewBuilder private func rowContent(file: CustomFile, isSel: Bool) -> some View {
         HStack(alignment: .center, spacing: 8) {
             // Name column (expands)
-            FileRowView(file: file, isSelected: isSel, isActivePanel: isFocused)
+            FileRowView(file: file, panelSide: panelSide)
                 .frame(maxWidth: .infinity, alignment: .leading)
             // vertical separator
             Rectangle().frame(width: 1).foregroundColor(Color.secondary.opacity(0.15)).padding(.vertical, 2)
@@ -226,4 +227,3 @@ struct FileTableView: View {
         .padding(.vertical, 2).padding(.horizontal, 6)
     }
 }
-
