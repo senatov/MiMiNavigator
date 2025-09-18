@@ -25,9 +25,7 @@ struct FileRowView: View {
         return rowContainer(baseContent())
     }
 
-    // MARK: - Local helpers (keep logic local to this view)
-
-    /// True when this row represents the selected file of the focused panel.
+    // MARK: - True when this row represents the selected file of the focused panel.
     private var isActiveSelection: Bool {
         switch panelSide {
         case .left: return appState.focusedPanel == .left && appState.selectedLeftFile == file
@@ -35,7 +33,7 @@ struct FileRowView: View {
         }
     }
 
-    /// Text color for the file name based on file attributes and selection state.
+    // MARK: - Text color for the file name based on file attributes and selection state.
     private var nameColor: Color {
         if isActiveSelection { return .primary }  // keep readable on selected background
         if file.isSymbolicDirectory { return FilePanelStyle.fileNameColor }
@@ -43,9 +41,10 @@ struct FileRowView: View {
         return .primary
     }
 
-    /// Base content for a single file row (icon + name) preserving original visuals.
+    // MARK: -  Base content for a single file row (icon + name) preserving original visuals.
     private func baseContent() -> some View {
-        HStack {
+        log.debug(#function + " for '\(file.nameStr)'")
+        return HStack {
             ZStack(alignment: .bottomLeading) {
                 Image(nsImage: NSWorkspace.shared.icon(forFile: file.urlValue.path)).resizable().interpolation(.high)  // Improve visual quality for resized icons
                     .frame(width: FilePanelStyle.iconSize, height: FilePanelStyle.iconSize)
@@ -56,7 +55,7 @@ struct FileRowView: View {
                     .allowsHitTesting(false)
                     .colorMultiply(
                         file.isSymbolicDirectory
-                            ? Color(#colorLiteral(red: 0.5412748303, green: 0.9764705896, blue: 0.6294356168, alpha: 1))
+                            ? Color(#colorLiteral(red: 0.3300087425, green: 0.5964453125, blue: 0.3848833733, alpha: 1))
                             : Color.white
                     )  // Highlight effect when selected
                     .shadow(color: isActiveSelection ? .gray.opacity(0.07) : .clear, radius: 4, x: 1, y: 1)
@@ -73,11 +72,30 @@ struct FileRowView: View {
         }
     }
 
-    /// Applies common container styling for a file row.
+    // MARK: - Row Container with conditional debug logic
     private func rowContainer<Content: View>(_ content: Content) -> some View {
-        content.padding(.vertical, 1).frame(maxWidth: .infinity, alignment: .leading)
-            .background(isActiveSelection ? FilePanelStyle.yellowSelRowFill : Color.clear)
-            .shadow(color: isActiveSelection ? .gray.opacity(0.07) : .clear, radius: 4, x: 1, y: 1)
-            .animation(.spring(response: 0.4, dampingFraction: 0.8), value: isActiveSelection).contentShape(Rectangle())
+        log.debug("\(#function) for '\(file.nameStr)'") // Debug log
+        var bkgColor: Color = .clear
+        var shadowColor: Color = .clear
+        if isActiveSelection {
+            bkgColor = FilePanelStyle.yellowSelRowFill
+            shadowColor = Color.gray.opacity(0.07)
+        }
+        let rowCnt = content
+            .padding(.vertical, 1)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(bkgColor)
+            .shadow(color: shadowColor, radius: 4, x: 1, y: 1)
+        if isActiveSelection {
+            log.debug("Active selection → applying animation & contentShape")
+            return AnyView(
+                rowCnt
+                    .animation(.spring(response: 0.4, dampingFraction: 0.8), value: isActiveSelection)
+                    .contentShape(Rectangle())
+            )
+        } else {
+            log.debug("Inactive row → returning without animation")
+            return AnyView(rowCnt)
+        }
     }
 }
