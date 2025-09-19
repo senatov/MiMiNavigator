@@ -42,7 +42,6 @@ public struct CustomFile: Identifiable, Equatable, Hashable, Codable, Sendable {
         var dir = false
         var symlink = false
         var symDir = false
-
         if let attrs = try? fm.attributesOfItem(atPath: path),
            let type = attrs[.type] as? FileAttributeType
         {

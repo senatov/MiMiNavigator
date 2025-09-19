@@ -44,17 +44,23 @@ func bootstrapLogging() {
             VStack {
                 TotalCommanderResizableView()
                 ConsoleCurrPath()
-            }.environmentObject(appState).toolbar {
+            }
+            .environmentObject(appState)
+            .toolbar {
                 ToolbarItem(placement: .automatic) {
                     Button(action: { log.info("Refresh button clicked") }) {
-                        Image(systemName: "arrow.triangle.2.circlepath").padding(.horizontal, 2).padding(.vertical, 6).symbolEffect(.pulse)  // Варианты: .bounce, .variableColor, .scale
+                        Image(systemName: "arrow.triangle.2.circlepath").padding(.horizontal, 2).padding(.vertical, 6)
+                            .symbolEffect(.pulse)  // Варианты: .bounce, .variableColor, .scale
 
-                    }.clipShape(Circle()).offset(x: 3, y: 6)
+                    }
+                    .clipShape(Circle()).offset(x: 3, y: 6)
                 }
                 ToolbarItem(placement: .automatic) {
                     Button(action: { appState.revealLogFileInFinder() }) {
-                        Image(systemName: "doc.text.magnifyingglass").padding(.horizontal, 2).padding(.vertical, 6).symbolEffect(.pulse)  // Варианты: .bounce, .variableColor, .scale
-                    }.clipShape(Circle()).offset(x: 3, y: 6)
+                        Image(systemName: "doc.text.magnifyingglass").padding(.horizontal, 2).padding(.vertical, 6)
+                            .symbolEffect(.pulse)  // Варианты: .bounce, .variableColor, .scale
+                    }
+                    .clipShape(Circle()).offset(x: 3, y: 6)
                 }
                 ToolbarItem(placement: .status) {
                     HStack(spacing: 4) {
