@@ -23,9 +23,7 @@ struct FileTableView: View {
     // MARK: -
     var body: some View {
         log.info(
-            #function + " side: \(panelSide) with \(files.count) files, selectedID: \(String(describing: selectedID)))"
-        )
-        // appState.focusedPanel = panelSide
+            #function + " side: \(panelSide) with \(files.count) files, selectedID: \(String(describing: selectedID)))")
         return ScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 // File Table header
@@ -72,7 +70,7 @@ struct FileTableView: View {
 
     // MARK: -
     private func getNameColSortableHeader() -> some View {
-        // log.info(#function + " for side: \(panelSide), sortKey: \(sortKey), ascending: \(sortAscending)")
+        log.info(#function)
         return HStack(spacing: 4) {
             Text("Name").font(.subheadline)
             if sortKey == .name {
@@ -149,12 +147,14 @@ struct FileTableView: View {
     }
 
     // MARK: -
-    private func drawFileLineInTheTable(_ index: Int, _ isSel: Bool, _ file: CustomFile) -> some View {
+    private func drawFileLineInTheTable(_ index: Int, _ isSelected: Bool, _ file: CustomFile) -> some View {
         return ZStack(alignment: .leading) {
             // Zebra background stripes (Finder-like)
-            (index.isMultiple(of: 2) ? Color.white : Color.gray.opacity(0.06)).allowsHitTesting(false)
-            if isSel { Rectangle().fill(FilePanelStyle.yellowSelRowFill).allowsHitTesting(false) }
-            rowContent(file: file, isSel: isSel)
+            (index.isMultiple(of: 2) ? Color.white : Color.gray.opacity(0.08)).allowsHitTesting(false)
+            if isSelected {
+                Rectangle().fill(FilePanelStyle.yellowSelRowFill).allowsHitTesting(false)
+            }
+            rowContent(file: file, isSel: isSelected)
         }
         .frame(maxWidth: .infinity, alignment: .leading).contentShape(Rectangle())
         .highPriorityGesture(
@@ -164,8 +164,8 @@ struct FileTableView: View {
                     onSelect(file)
                 }
         )
-        .overlay(highlightedSquare(isSel)).shadow(color: isSel ? .black.opacity(0.2) : .clear, radius: 4, x: 0, y: 2)
-        .animation(.spring(response: 0.4, dampingFraction: 0.7), value: isSel)
+        .overlay(highlightedSquare(isSelected)).shadow(color: isSelected ? .black.opacity(0.2) : .clear, radius: 4, x: 0, y: 2)
+        .animation(.spring(response: 0.4, dampingFraction: 0.7), value: isSelected)
     }
 
     // MARK: - Sorting comparator extracted to help the type-checker
