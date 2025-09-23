@@ -157,6 +157,7 @@ struct FileTableView: View {
             rowContent(file: file, isSel: isSelected)
         }
         .frame(maxWidth: .infinity, alignment: .leading).contentShape(Rectangle())
+        .help(file.id)
         .highPriorityGesture(
             TapGesture()
                 .onEnded {
@@ -164,7 +165,8 @@ struct FileTableView: View {
                     onSelect(file)
                 }
         )
-        .overlay(highlightedSquare(isSelected)).shadow(color: isSelected ? .black.opacity(0.2) : .clear, radius: 4, x: 0, y: 2)
+        .overlay(highlightedSquare(isSelected))
+        .shadow(color: isSelected ? .black.opacity(0.2) : .clear, radius: 4, x: 0, y: 2)
         .animation(.spring(response: 0.4, dampingFraction: 0.7), value: isSelected)
     }
 
