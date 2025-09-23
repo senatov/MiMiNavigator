@@ -23,6 +23,11 @@ struct FileRowView: View {
     var body: some View {
         log.info(#function + " for '\(file.nameStr)'")
         return rowContainer(baseContent())
+            .onAppear {
+                // Wire up env only when the view is alive; @EnvironmentObject isn't ready in init
+                appState.focusedPanel = panelSide
+                appState.selectedDir = SelectedDir(side: panelSide)
+            }
     }
 
     // MARK: - True when this row represents the selected file of the focused panel.
@@ -74,14 +79,15 @@ struct FileRowView: View {
 
     // MARK: - Row Container with conditional debug logic
     private func rowContainer<Content: View>(_ content: Content) -> some View {
-        log.debug("\(#function) for '\(file.nameStr)'") // Debug log
+        log.debug("\(#function) for '\(file.nameStr)'")  // Debug log
         var bkgColor: Color = .clear
         var shadowColor: Color = .clear
         if isActiveSelection {
             bkgColor = FilePanelStyle.yellowSelRowFill
             shadowColor = Color.gray.opacity(0.07)
         }
-        let rowCnt = content
+        let rowCnt =
+            content
             .padding(.vertical, 1)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(bkgColor)

@@ -150,7 +150,7 @@ struct FileTableView: View {
     private func drawFileLineInTheTable(_ index: Int, _ isSelected: Bool, _ file: CustomFile) -> some View {
         return ZStack(alignment: .leading) {
             // Zebra background stripes (Finder-like)
-            (index.isMultiple(of: 2) ? Color.white : Color.gray.opacity(0.08)).allowsHitTesting(false)
+            (index.isMultiple(of: 2) ? Color.white : Color.gray.opacity(0.1)).allowsHitTesting(false)
             if isSelected {
                 Rectangle().fill(FilePanelStyle.yellowSelRowFill).allowsHitTesting(false)
             }

@@ -18,6 +18,8 @@ class SelectedDir: ObservableObject {
         log.info(#function + " side: \(side))")
         if selectedFSEntity == nil {
             selectedFSEntity = CustomFile(path: "/tmp")
+        } else {
+            selectedFSEntity = CustomFile(path: selectedFSEntity?.nameStr ?? "/tmp")
         }
     }
 }
