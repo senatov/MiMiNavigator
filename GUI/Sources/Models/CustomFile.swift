@@ -31,66 +31,109 @@ public struct CustomFile: Identifiable, Equatable, Hashable, Codable, Sendable {
 
     // MARK: - Init
     public init(name: String? = nil, path: String, children: [CustomFile]? = nil) {
-        // NOTE: Keep logs succinct to avoid noise
+        #if DEBUG
         log.info("CustomFile.init(\(path))")
+        #endif
+
         let url = URL(fileURLWithPath: path).absoluteURL
         self.urlValue = url
-        self.id = url.path()
         self.pathStr = path
-        // Resolve FS flags once, with strict symlink handling
+        self.nameStr = (name?.isEmpty == false) ? name! : url.lastPathComponent
+
         let fm = FileManager.default
+
         var dir = false
         var symlink = false
         var symDir = false
-        if let attrs = try? fm.attributesOfItem(atPath: path),
-           let type = attrs[.type] as? FileAttributeType
-        {
-            switch type {
-            case .typeDirectory:
-                // Real on-disk directory
-                dir = true
+        var size: Int64 = 0
+        var mdate: Date? = nil
 
-            case .typeSymbolicLink:
-                // This item is a symlink; resolve its target to decide folder-likeness
-                symlink = true
-                let resolved = url.resolvingSymlinksInPath()
-                if let isDir = try? resolved.resourceValues(forKeys: [.isDirectoryKey]).isDirectory, isDir == true {
-                    dir = true // Treat as directory for UI/metadata grouping
-                    symDir = true // Specifically: symlink that points to directory
-                }
-
-            default:
-                // Regular file, device, socket, etc.
-                break
-            }
-        } else {
-            // Fallback via URL resource values if attributes are unavailable
-            if let isDir = try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory, isDir == true {
-                dir = true
-            }
-            if let isSym = try? url.resourceValues(forKeys: [.isSymbolicLinkKey]).isSymbolicLink, isSym == true {
-                symlink = true
-                let resolved = url.resolvingSymlinksInPath()
-                if let isDir = try? resolved.resourceValues(forKeys: [.isDirectoryKey]).isDirectory, isDir == true {
+        // 1) Основной быстрый путь — один вызов attributesOfItem
+        if !path.isEmpty, let attrs = try? fm.attributesOfItem(atPath: path) {
+            if let type = attrs[.type] as? FileAttributeType {
+                switch type {
+                case .typeDirectory:
                     dir = true
-                    symDir = true
+
+                case .typeSymbolicLink:
+                    symlink = true
+                    // Разрешаем ссылку и проверяем, указывает ли она на каталог
+                    if let dst = try? fm.destinationOfSymbolicLink(atPath: path) {
+                        // destination может быть относительным — нормализуем относительно папки, где находится линк
+                        let base = (path as NSString).deletingLastPathComponent
+                        let target = (dst as NSString).isAbsolutePath ? dst : (base as NSString).appendingPathComponent(dst)
+                        var isDirFlag = ObjCBool(false)
+                        if fm.fileExists(atPath: target, isDirectory: &isDirFlag), isDirFlag.boolValue {
+                            dir = true
+                            symDir = true
+                        }
+                    } else {
+                        // Резерв: через URL, если destination получить не удалось
+                        let resolved = url.resolvingSymlinksInPath()
+                        if let rVals = try? resolved.resourceValues(forKeys: [.isDirectoryKey]), rVals.isDirectory == true {
+                            dir = true
+                            symDir = true
+                        }
+                    }
+
+                default:
+                    break
                 }
+            }
+            // size и modificationDate из тех же attrs
+            if let num = attrs[.size] as? NSNumber {
+                size = num.int64Value
+            }
+            if let md = attrs[.modificationDate] as? Date {
+                mdate = md
+            }
+
+        } else {
+            // 2) Резервный путь — один fetch всех нужных ключей из URL.resourceValues
+            let keys: Set<URLResourceKey> = [.isDirectoryKey, .isSymbolicLinkKey, .fileSizeKey, .contentModificationDateKey]
+            if let vals = try? url.resourceValues(forKeys: keys) {
+                if vals.isDirectory == true { dir = true }
+                if vals.isSymbolicLink == true {
+                    symlink = true
+                    let resolved = url.resolvingSymlinksInPath()
+                    if let r2 = try? resolved.resourceValues(forKeys: [.isDirectoryKey]), r2.isDirectory == true {
+                        dir = true
+                        symDir = true
+                    }
+                }
+                if let fs = vals.fileSize { size = Int64(fs) }
+                mdate = vals.contentModificationDate
             }
         }
+
         self.isDirectory = dir
         self.isSymbolicLink = symlink
         self.isSymbolicDirectory = symDir
-        self.nameStr = (name?.isEmpty == false) ? name! : url.lastPathComponent
-        // Metadata (best-effort, safe defaults)
-        let values = try? url.resourceValues(forKeys: [.fileSizeKey, .contentModificationDateKey])
-        if let fileSize = values?.fileSize {
-            self.sizeInBytes = Int64(fileSize)
-        } else {
-            self.sizeInBytes = 0
-        }
-        self.modifiedDate = values?.contentModificationDate
-        // Children are only meaningful for directories (including symlink-to-dir)
+        self.sizeInBytes = size
+        self.modifiedDate = mdate
+
+        // Дети осмысленны только для каталогов (включая symlink → dir)
         self.children = dir ? (children ?? []) : nil
+
+        // Идентификатор держим по каноническому пути URL, чтобы сравнение было дёшевым и детерминированным
+        self.id = url.path
+    }
+
+    // Thread-safe helpers: create fresh formatters per call to avoid shared mutable state
+    private static func formatBytes(_ count: Int64) -> String {
+        // Create a new formatter each time; Foundation formatters are not Sendable
+        let f = ByteCountFormatter()
+        f.allowedUnits = .useAll
+        f.countStyle = .file
+        return f.string(fromByteCount: count)
+    }
+
+    private static func formatDate(_ date: Date) -> String {
+        // Create a new formatter per call to stay concurrency-safe
+        let df = DateFormatter()
+        df.dateStyle = .short
+        df.timeStyle = .short
+        return df.string(from: date)
     }
 
     // MARK: - Derived presentation helpers
@@ -104,27 +147,18 @@ public struct CustomFile: Identifiable, Equatable, Hashable, Codable, Sendable {
         if isSymbolicLink {
             return "LINK → FILE"
         }
-        return ByteCountFormatter.string(fromByteCount: sizeInBytes, countStyle: .file)
+        return CustomFile.formatBytes(sizeInBytes)
     }
 
     // MARK: - Equatable / Hashable
-    /// Identity by canonical path is usually sufficient for file objects.
     public static func == (lhs: CustomFile, rhs: CustomFile) -> Bool { lhs.id == rhs.id }
     public func hash(into hasher: inout Hasher) { hasher.combine(id) }
-
-    // MARK: - Reusable formatters
-    private static let modifiedDateFormatter: DateFormatter = {
-        let df = DateFormatter()
-        df.dateStyle = .short
-        df.timeStyle = .short
-        return df
-    }()
 
     // MARK: - Derived presentation
     public var modifiedDateFormatted: String {
         guard let d = modifiedDate else {
             return "—"
         }
-        return CustomFile.modifiedDateFormatter.string(from: d)
+        return CustomFile.formatDate(d)
     }
 }
