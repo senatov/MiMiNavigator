@@ -10,6 +10,13 @@ import AppKit
 import SwiftUI
 import SwiftyBeaver
 
+extension Notification.Name {
+    /// Posted right before a panel is about to select a file so others can reset their selections
+    static let panelWillSelectFile = Notification.Name("PanelWillSelectFile")
+    /// Posted when a panel cleared its selection
+    static let panelDidClearSelection = Notification.Name("PanelDidClearSelection")
+}
+
 // MARK: -
 struct PanelFileTableSection: View {
     let files: [CustomFile]
@@ -19,6 +26,30 @@ struct PanelFileTableSection: View {
     let onSelect: (CustomFile) -> Void
     @State private var rowRects: [CustomFile.ID: CGRect] = [:]
 
+    // MARK: - Selection coordination helpers
+    private func notifyWillSelect(_ file: CustomFile) {
+        // Let other parts know that this panel is about to select a row, so they can reset their own selections
+        NotificationCenter.default.post(
+            name: .panelWillSelectFile,
+            object: nil,
+            userInfo: [
+                "panelSide": panelSide,
+                "fileID": file.id,
+                "fileName": file.nameStr
+            ]
+        )
+    }
+
+    private func notifyDidClearSelection() {
+        NotificationCenter.default.post(
+            name: .panelDidClearSelection,
+            object: nil,
+            userInfo: [
+                "panelSide": panelSide
+            ]
+        )
+    }
+
     // MARK: -
     var body: some View {
         log.info(#function + " for side \(panelSide)")
@@ -26,7 +57,7 @@ struct PanelFileTableSection: View {
             panelSide: panelSide,
             files: files,
             selectedID: $selectedID,
-            onSelect: { _ in } // selection handled below
+            onSelect: { _ in }  // selection handled below
         )
         .coordinateSpace(name: "fileTableSpace")
         .onPreferenceChange(RowRectPreference.self) { value in
@@ -44,7 +75,9 @@ struct PanelFileTableSection: View {
                             .frame(width: w, height: h)
                             .offset(x: 0, y: y)
                         RoundedRectangle(cornerRadius: 7)
-                            .stroke(FilePanelStyle.blueSymlinkDirNameColor, lineWidth: FilePanelStyle.selectedBorderWidth)
+                            .stroke(
+                                FilePanelStyle.blueSymlinkDirNameColor, lineWidth: FilePanelStyle.selectedBorderWidth
+                            )
                             .frame(width: w, height: h)
                             .offset(x: 0, y: y)
                     }
@@ -54,29 +87,34 @@ struct PanelFileTableSection: View {
         }
         // Unified click area for the table — keep previous behavior and style
         .simultaneousGesture(
-            TapGesture().onEnded {
-                onPanelTap(panelSide)
-                log.info("table tap (simultaneous) on side \(panelSide)")
-            }
+            TapGesture()
+                .onEnded {
+                    onPanelTap(panelSide)
+                    log.info("table tap (simultaneous) on side \(panelSide)")
+                }
         )
         // React to selection changes
         .onChange(of: selectedID, initial: false) { _, newValue in
             log.info("on onChange on table, side \(panelSide)")
             if let id = newValue, let file = files.first(where: { $0.id == id }) {
                 log.info("Row selected: id=\(id) on side \(panelSide)")
+                // Notify others to clear their selections before we commit this one
+                notifyWillSelect(file)
                 onSelect(file)
             } else {
                 log.info("Selection cleared on \(panelSide)")
+                notifyDidClearSelection()
             }
         }
         // Navigation with arrow keys — same as before
         .onMoveCommand { direction in
             switch direction {
             case .up,
-                 .down:
+                .down:
                 log.info("Move command: \(direction) on side \(panelSide)")
                 DispatchQueue.main.async {
                     if let id = selectedID, let file = files.first(where: { $0.id == id }) {
+                        notifyWillSelect(file)
                         onSelect(file)
                     } else {
                         log.info("Move command but no selection on \(panelSide)")

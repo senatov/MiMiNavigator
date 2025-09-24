@@ -84,14 +84,14 @@ struct FileRowView: View {
         var shadowColor: Color = .clear
         if isActiveSelection {
             bkgColor = FilePanelStyle.yellowSelRowFill
-            shadowColor = Color.gray.opacity(0.07)
+            shadowColor = .black.opacity(0.2)
         }
         let rowCnt =
             content
             .padding(.vertical, 1)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(bkgColor)
-            .shadow(color: shadowColor, radius: 4, x: 1, y: 1)
+            .shadow(color: shadowColor, radius: 4, x: 0, y: 2)
         if isActiveSelection {
             log.debug("Active selection → applying animation & contentShape")
             return AnyView(

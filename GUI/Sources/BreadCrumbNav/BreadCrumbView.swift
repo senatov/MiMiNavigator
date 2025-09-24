@@ -25,6 +25,7 @@ struct BreadCrumbView: View {
     // MARK: -
     var body: some View {
         log.info(#function + " for side \(panelSide)")
+        /// Main breadcrumb container
         return HStack(alignment: .center, spacing: 4) {
             ForEach(pathComponents.indices, id: \.self) { index in
                 breadcrumbItem(index: index)
