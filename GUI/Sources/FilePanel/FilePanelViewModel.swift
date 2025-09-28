@@ -1,10 +1,10 @@
-    //
-    //  FilePanelViewModel.swift
-    //  MiMiNavigator
-    //
-    //  Created by Iakov Senatov on 11.08.2025.
-    //  Copyright © 2025 Senatov. All rights reserved.
-    //
+//
+//  FilePanelViewModel.swift
+//  MiMiNavigator
+//
+//  Created by Iakov Senatov on 11.08.2025.
+//  Copyright © 2025 Senatov. All rights reserved.
+//
 
 import Foundation
 import SwiftUI
@@ -15,8 +15,8 @@ final class FilePanelViewModel: ObservableObject {
     let panelSide: PanelSide
     private let appState: AppState
     private let fetchFiles: @Sendable @concurrent (PanelSide) async -> Void
-    
-        // MARK: -
+
+    // MARK: -
     init(
         panelSide: PanelSide,
         appState: AppState,
@@ -27,8 +27,8 @@ final class FilePanelViewModel: ObservableObject {
         self.appState = appState
         self.fetchFiles = fetchFiles
     }
-    
-        // MARK: -
+
+    // MARK: -
     var sortedFiles: [CustomFile] {
         log.info(#function + " for side \(panelSide)")
         let files = appState.displayedFiles(for: panelSide)
@@ -42,8 +42,8 @@ final class FilePanelViewModel: ObservableObject {
         }
         return sorted
     }
-    
-        // MARK: -
+
+    // MARK: -
     func handlePathChange(to url: URL?) {
         log.info(#function + " for side \(panelSide)")
         guard let url else {
@@ -55,12 +55,25 @@ final class FilePanelViewModel: ObservableObject {
             await fetchFiles(panelSide)
         }
     }
-    
-        // MARK: -
+
+    // MARK: -
     func select(_ file: CustomFile) {
         log.info(#function + " for file \(file.nameStr), side \(panelSide)")
+        unselectAll()
         selectedFileID = file.id
         appState.selectedDir.selectedFSEntity = file
+        appState.showFavTreePopup = false
+    }
+
+    // MARK: - Clears selection on both panels and resets related fields in AppState.
+    func unselectAll() {
+        log.info(#function + " — clearing selection on both panels")
+        // local (this panel)
+        selectedFileID = nil
+        // global (both panels)
+        appState.selectedLeftFile = nil
+        appState.selectedRightFile = nil
+        appState.selectedDir.selectedFSEntity = nil
         appState.showFavTreePopup = false
     }
 }
