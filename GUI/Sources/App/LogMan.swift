@@ -53,6 +53,9 @@ enum LogMan {
                 in: .userDomainMask
             )
             .first!
+
+
+
         let logsDir = containerURL.appendingPathComponent(
             "Logs",
             isDirectory: true
