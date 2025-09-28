@@ -7,7 +7,6 @@
 //
 // MARK: -
 import Foundation
-import SwiftyBeaver
 
 // MARK: -
 enum ScrCnst {

@@ -7,7 +7,6 @@
 //
 
 import SwiftUI
-import SwiftyBeaver
 
 struct TreeViewContextMenu: View {
     let file: CustomFile

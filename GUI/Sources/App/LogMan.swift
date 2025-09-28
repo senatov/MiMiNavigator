@@ -17,15 +17,15 @@ enum LogMan {
     // MARK: -
     static func initializeLogging() {
         let console = ConsoleDestination()
+        console.useTerminalColors = true
+        console.useNSLog = false
         console.format = "$DHH:mm:ss$d $L $N.$F:$l $M"
-
-        // MARK: -
+        // Уровни с иконками
         func getLevelIcon(for level: SwiftyBeaver.Level) -> String {
-            log.info(#function)
             switch level {
             case .verbose: return "🔮"
-            case .debug: return "☈"
-            case .info: return "✎"
+            case .debug: return "☘️"
+            case .info: return "🔹"
             case .warning: return "🔸"
             case .error: return "💢"
             case .critical: return "💀"
@@ -46,16 +46,10 @@ enum LogMan {
 
     // MARK: -
     private static func setupLogging() {
-        log.info(#function)
-        let containerURL = FileManager.default
-            .urls(
-                for: .applicationSupportDirectory,
-                in: .userDomainMask
-            )
-            .first!
-
-
-
+        let containerURL = FileManager.default.urls(
+            for: .applicationSupportDirectory,
+            in: .userDomainMask
+        ).first!
         let logsDir = containerURL.appendingPathComponent(
             "Logs",
             isDirectory: true

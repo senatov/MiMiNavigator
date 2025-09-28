@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import SwiftyBeaver
 
 struct FavTreeMnu: View {
     @Binding var files: [CustomFile]

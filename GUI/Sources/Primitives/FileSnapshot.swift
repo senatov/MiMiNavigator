@@ -8,11 +8,8 @@
 
 import AppKit
 import Combine
-import Foundation
-
 // MARK: -
 import Foundation
-import SwiftyBeaver
 
 // MARK: -
 struct FileSnapshot: Codable, Equatable {

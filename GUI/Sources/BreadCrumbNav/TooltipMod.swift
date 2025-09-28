@@ -6,7 +6,6 @@
 //  Description: This file contains the implementation of XYZ functionality.
 //
 import SwiftUI
-import SwiftyBeaver
 
 // MARK: -
 /// - TooltipModule is responsible for calculating the tooltip text and position.

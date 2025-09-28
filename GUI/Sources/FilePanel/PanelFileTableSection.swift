@@ -8,7 +8,6 @@
 
 import AppKit
 import SwiftUI
-import SwiftyBeaver
 
 extension Notification.Name {
     /// Posted right before a panel is about to select a file so others can reset their selections

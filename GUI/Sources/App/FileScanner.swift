@@ -7,7 +7,6 @@
 //
 import Combine
 import Foundation
-import SwiftyBeaver
 
 enum FileScanner {
     // MARK: -

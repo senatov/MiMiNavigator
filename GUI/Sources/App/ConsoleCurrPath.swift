@@ -8,10 +8,6 @@
 // Description:
 
 import SwiftUI
-import SwiftyBeaver
-
-// MARK: - ScriptConstants
-
 
 // MARK: - ConsoleCurrPath
 struct ConsoleCurrPath: View {
