@@ -10,23 +10,26 @@
 import SwiftUI
 
 struct FocusCommands: Commands {
-    @EnvironmentObject var appState: AppState
-    @Environment(\.openWindow) private var openWindow  // if you use multiple windows
+    let appState: AppState  // direct reference
 
+    // MARK: -
+    init(appState: AppState) {
+        self.appState = appState
+    }
+
+    // MARK: -
     var body: some Commands {
-        CommandMenu("Panels") {
-            Button("Toggle Panel Focus") {
-                // Your coordinator call:
-                appState.togglePanel()
-                log.debug("KB: Tab → toggle panel")
-            }
-            .keyboardShortcut(.tab, modifiers: [])   // Tab
-
-            Button("Toggle Panel Focus (Reverse)") {
-                appState.togglePanel()
-                log.debug("KB: Shift+Tab → toggle panel (reverse)")
-            }
-            .keyboardShortcut(.tab, modifiers: [.shift]) // Shift+Tab
+        CommandMenu("Panels / Navigation") {
+            Button("Toggle Panel Focus") { appState.togglePanel() }
+                .keyboardShortcut(.tab, modifiers: [])
+            Button("Toggle Panel Focus (Ctrl+Tab)") { appState.togglePanel() }
+                .keyboardShortcut(.tab, modifiers: [.control])
+            Button("Move Up") { appState.selectionMove(by: -1) }
+                .keyboardShortcut(.upArrow, modifiers: [])
+            Button("Move Down") { appState.selectionMove(by: 1) }
+                .keyboardShortcut(.downArrow, modifiers: [])
+            Button("Copy") { appState.selectionCopy() }
+                .keyboardShortcut("c", modifiers: [.command])
         }
     }
 }

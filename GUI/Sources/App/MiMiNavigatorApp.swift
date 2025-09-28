@@ -5,58 +5,62 @@
 //  Created by Iakov Senatov on 06.08.24.
 //
 
-import SwiftData
 import SwiftUI
 import SwiftyBeaver
 
 let log = SwiftyBeaver.self
 
-// MARK: - MiMiNavigatorApp
 @main
 struct MiMiNavigatorApp: App {
-    @StateObject private var appState = AppState()
-    // Make it lazy so logging is initialized before container creation during app startup
+    @StateObject private var appState = AppState()  // single source of truth
 
-    // MARK: -
-    init() {
-        LogMan.initializeLogging()
-        log.info("---- Logger initialized ------")
-    }
-
-    // MARK: -
     var body: some Scene {
         WindowGroup {
             VStack {
                 TotalCommanderResizableView()
                 ConsoleCurrPath()
             }
-            .environmentObject(appState)
+            .environmentObject(appState)  // make AppState visible to the whole scene
+            .onAppear {
+                // Initialize file lists, watchers, and restore state once at launch
+                log.debug("App launched → initializing AppState")
+                appState.initialize()
+            }
             .toolbar {
                 ToolbarItem(placement: .automatic) {
                     Button(action: { log.info("Refresh button clicked") }) {
-                        Image(systemName: "arrow.triangle.2.circlepath").padding(.horizontal, 2).padding(.vertical, 6)
-                            .symbolEffect(.pulse)  // Варианты: .bounce, .variableColor, .scale
-
+                        Image(systemName: "arrow.triangle.2.circlepath")
+                            .padding(.horizontal, 2)
+                            .padding(.vertical, 6)
+                            .symbolEffect(.pulse)  // .bounce, .variableColor, .scale
                     }
-                    .clipShape(Circle()).offset(x: 3, y: 6)
+                    .clipShape(Circle())
+                    .offset(x: 3, y: 6)
                 }
                 ToolbarItem(placement: .automatic) {
                     Button(action: { appState.revealLogFileInFinder() }) {
-                        Image(systemName: "doc.text.magnifyingglass").padding(.horizontal, 2).padding(.vertical, 6)
-                            .symbolEffect(.pulse)  // Варианты: .bounce, .variableColor, .scale
+                        Image(systemName: "doc.text.magnifyingglass")
+                            .padding(.horizontal, 2)
+                            .padding(.vertical, 6)
+                            .symbolEffect(.pulse)
                     }
-                    .clipShape(Circle()).offset(x: 3, y: 6)
+                    .clipShape(Circle())
+                    .offset(x: 3, y: 6)
                 }
                 ToolbarItem(placement: .status) {
                     HStack(spacing: 4) {
-                        Text("🐈‍⬛ Dev. Build:").font(.title2).foregroundColor(FilePanelStyle.blueSymlinkDirNameColor)
-                        makeDevMark().foregroundColor(FilePanelStyle.dirNameColor).font(.title3)
+                        Text("🐈 Dev. Build:")
+                            .font(.title2)
+                            .foregroundColor(FilePanelStyle.blueSymlinkDirNameColor)
+                        makeDevMark()
+                            .foregroundColor(FilePanelStyle.dirNameColor)
+                            .font(.title3)
                     }
                 }
             }
         }
         .commands {
-            AppCommands(coordinator: SelectionCoordinator(appState: appState))
+            FocusCommands(appState: appState) // reads AppState via @EnvironmentObject
         }
     }
 
