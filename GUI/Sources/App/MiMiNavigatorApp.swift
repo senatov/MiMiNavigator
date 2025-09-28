@@ -11,28 +11,12 @@ import SwiftyBeaver
 
 let log = SwiftyBeaver.self
 
-func bootstrapLogging() {
-    let console = ConsoleDestination()
-    console.minLevel = .verbose  // показывать info/verbose в Debug
-    console.asynchronously = false  // <<< ключ к выводу при пошаговом дебаге
-    console.format = "$DHH:mm:ss.SSS$d $L $N.$F:$l — $M"
-    SwiftyBeaver.addDestination(console)
-
-    // Дополнительно — файл, чтобы сверять, даже если Xcode ничего не показывает
-    let file = FileDestination()
-    file.minLevel = .verbose
-    SwiftyBeaver.addDestination(file)
-
-    log.info("Logging initialized")
-}
-
 // MARK: - MiMiNavigatorApp
-
 @main
 struct MiMiNavigatorApp: App {
     @StateObject private var appState = AppState()
     // Make it lazy so logging is initialized before container creation during app startup
-    lazy var sharedModelContainer: ModelContainer = Self.makeSharedModelContainer()
+
     // MARK: -
     init() {
         LogMan.initializeLogging()
@@ -107,13 +91,4 @@ struct MiMiNavigatorApp: App {
         return Text(content)
     }
 
-    // MARK: -
-    private static func makeSharedModelContainer() -> ModelContainer {
-        log.info(#function)
-        let schema = Schema([Item.self])
-        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
-        do { return try ModelContainer(for: schema, configurations: [modelConfiguration]) } catch {
-            fatalError("Could not create ModelContainer: \(error)")
-        }
-    }
 }

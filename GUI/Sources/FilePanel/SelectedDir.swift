@@ -12,12 +12,11 @@ import Foundation
 // MARK: - Encapsulates the selected file system entity and its associated panel side
 class SelectedDir: ObservableObject {
     @Published var selectedFSEntity: CustomFile?
-    let side: PanelSide
 
     // MARK: - Config keys
     private static let kLastFocusedPanel = "app.lastFocusedPanel"
-    private static let kLeftLastPath     = "panel.left.lastPath"
-    private static let kRightLastPath    = "panel.right.lastPath"
+    private static let kLeftLastPath = "panel.left.lastPath"
+    private static let kRightLastPath = "panel.right.lastPath"
 
     // MARK: - Config helpers
     private static func parsePanelSide(_ raw: String) -> PanelSide? {
@@ -56,8 +55,6 @@ class SelectedDir: ObservableObject {
     init(side: PanelSide = .left, initialPath: String? = nil) {
         // Prefer side from config if available; otherwise use the passed-in value
         let restoredSide = SelectedDir.loadSideFromConfig() ?? side
-        self.side = restoredSide
-
         // Determine start path: explicit parameter > config > default
         let configPath = SelectedDir.resolveStartPath(for: restoredSide)
         let startPath = initialPath ?? configPath ?? "/tmp"

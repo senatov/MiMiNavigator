@@ -15,43 +15,13 @@ import Foundation
     // MARK: - Public (for UI compatibility)
     // Flat list for UI popovers (shows non-deleted paths in order)
     @Published private(set) var recentSelections: [String] = []
-
-    // MARK: - Internal storage
-    private let userDefaultsKey = "SelectionsHistory.v2"
-    private let maxEntries = 32
-
-    // MARK: -
-    private struct Persisted: Codable {
-        var entries: [HistoryEntry]
-        var currentIndex: Int?
-    }
-
-    // MARK: -
-    private struct FileSnapshot: Codable, Equatable {
-        var size: Int64
-        var mtime: Date?
-    }
-
-    // MARK: -
-    private enum Status: String, Codable {
-        case added
-        case modified
-        case deleted
-    }
-
-    // MARK: -
-    private struct HistoryEntry: Codable, Equatable {
-        var path: String
-        var timestamp: Date
-        var status: Status
-        var snapshot: FileSnapshot?
-
-        static func == (lhs: HistoryEntry, rhs: HistoryEntry) -> Bool { lhs.path == rhs.path }
-    }
     // MARK: -
     private var entries: [HistoryEntry] = [] { didSet { rebuildRecentSelections() } }
     // MARK: -
     private var currentIndex: Int? { didSet { /* keep as-is; UI derives from recentSelections */  } }
+    // MARK: - Internal storage
+    private let userDefaultsKey = "SelectionsHistory.v2"
+    private let maxEntries = 32
 
     // MARK: - Init
     init() {
@@ -67,6 +37,17 @@ import Foundation
         log.info(#function + " - \(norm)")
         // Build snapshot (best-effort)
         let snap = makeSnapshot(for: norm)
+        // Ensure uniqueness: remove all existing occurrences of this path (including deleted ones).
+        if let firstIdx = entries.firstIndex(where: { $0.path == norm }) {
+            // Remove all duplicates except the first occurrence to simplify index math.
+            var i = entries.count - 1
+            while i >= 0 {
+                if i != firstIdx && entries[i].path == norm {
+                    entries.remove(at: i)
+                }
+                i -= 1
+            }
+        }
         if let idx = entries.firstIndex(where: { $0.path == norm }) {
             // Existing path: update status and move to front if not already first
             var e = entries[idx]
@@ -89,9 +70,11 @@ import Foundation
             currentIndex = 0
         }
         // Trim
-        if entries.count > maxEntries {
-            entries = Array(entries.prefix(maxEntries))
-            if let ci = currentIndex, ci >= entries.count { currentIndex = entries.isEmpty ? nil : (entries.count - 1) }
+        while entries.count > maxEntries {
+            _ = entries.popLast()
+        }
+        if let ci = currentIndex, ci >= entries.count {
+            currentIndex = entries.isEmpty ? nil : (entries.count - 1)
         }
         save()
     }
@@ -115,7 +98,8 @@ import Foundation
     }
 
     // MARK: - Navigation
-    @discardableResult func firstPath() -> String? {
+    @discardableResult
+    func firstPath() -> String? {
         guard !entries.isEmpty else { return nil }
         // Move to oldest non-deleted
         for i in stride(from: entries.count - 1, through: 0, by: -1) {
@@ -129,7 +113,8 @@ import Foundation
     }
 
     // MARK: -
-    @discardableResult func lastPath() -> String? {
+    @discardableResult
+    func lastPath() -> String? {
         // Most recent non-deleted (head)
         guard let e = entries.first(where: { $0.status != .deleted }) else { return nil }
         if let idx = entries.firstIndex(of: e) { currentIndex = idx }
@@ -138,7 +123,8 @@ import Foundation
     }
 
     // MARK: -
-    @discardableResult func previousPath() -> String? {
+    @discardableResult
+    func previousPath() -> String? {
         guard !entries.isEmpty else { return nil }
         let start = (currentIndex ?? 0)
         var i = start + 1
@@ -154,7 +140,8 @@ import Foundation
     }
 
     // MARK: -
-    @discardableResult func nextPath() -> String? {
+    @discardableResult
+    func nextPath() -> String? {
         guard !entries.isEmpty else { return nil }
         let start = (currentIndex ?? 0)
         var i = max(start - 1, 0)
@@ -225,7 +212,6 @@ import Foundation
         } catch { log.error("SelectionsHistory.save: \(error.localizedDescription)") }
     }
 
-    
     // MARK: -
     private func load() {
         guard let data = UserDefaults.standard.data(forKey: userDefaultsKey) else {
@@ -246,14 +232,15 @@ import Foundation
         }
     }
 
-    
     // MARK: -
     private func migrateFromV1() {
         let oldKey = "SelectionsHistory"
         if let arr = UserDefaults.standard.stringArray(forKey: oldKey) {
             log.info("Migrating legacy SelectionsHistory (\(arr.count) items)")
             let now = Date()
-            let mapped: [HistoryEntry] = arr.map { p in HistoryEntry(path: normalize(p), timestamp: now, status: .added, snapshot: makeSnapshot(for: p)) }
+            let mapped: [HistoryEntry] = arr.map { p in
+                HistoryEntry(path: normalize(p), timestamp: now, status: .added, snapshot: makeSnapshot(for: p))
+            }
             self.entries = Array(mapped.prefix(maxEntries))
             self.currentIndex = self.entries.isEmpty ? nil : 0
             // Remove old payload
@@ -292,7 +279,6 @@ import Foundation
         return nil
     }
 
-    
     // MARK: -
     private func rebuildRecentSelections() {
         // Publish non-deleted paths in current order
