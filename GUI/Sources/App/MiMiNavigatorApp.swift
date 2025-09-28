@@ -28,7 +28,8 @@ func bootstrapLogging() {
 
 // MARK: - MiMiNavigatorApp
 
-@main struct MiMiNavigatorApp: App {
+@main
+struct MiMiNavigatorApp: App {
     @StateObject private var appState = AppState()
     // Make it lazy so logging is initialized before container creation during app startup
     lazy var sharedModelContainer: ModelContainer = Self.makeSharedModelContainer()
@@ -69,6 +70,9 @@ func bootstrapLogging() {
                     }
                 }
             }
+        }
+        .commands {
+            AppCommands(coordinator: SelectionCoordinator(appState: appState))
         }
     }
 
