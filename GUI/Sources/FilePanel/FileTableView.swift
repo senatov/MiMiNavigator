@@ -154,7 +154,7 @@ struct FileTableView: View {
             if isSelected {
                 Rectangle().fill(FilePanelStyle.yellowSelRowFill).allowsHitTesting(false)
             }
-            rowContent(file: file, isSel: isSelected)
+            rowContent(file: file)
         }
         .frame(maxWidth: .infinity, alignment: .leading).contentShape(Rectangle())
         .help(file.id)
@@ -204,7 +204,7 @@ struct FileTableView: View {
     }
 
     // MARK: - Row content extracted to reduce view-builder complexity
-    @ViewBuilder private func rowContent(file: CustomFile, isSel: Bool) -> some View {
+    @ViewBuilder private func rowContent(file: CustomFile) -> some View {
         HStack(alignment: .center, spacing: 8) {
             // Name column (expands)
             FileRowView(file: file, panelSide: panelSide)

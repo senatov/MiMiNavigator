@@ -19,8 +19,8 @@ import Foundation
     @Published var leftPath: String
     @Published var rightPath: String
     @Published var selectedDir: SelectedDir = .init()
-    @Published var selectedLeftFile: CustomFile?
-    @Published var selectedRightFile: CustomFile?
+    @Published var selectedLeftFile: CustomFile? { didSet { recordSelection(.left, file: selectedLeftFile) } }
+    @Published var selectedRightFile: CustomFile? { didSet { recordSelection(.right, file: selectedRightFile) } }
     @Published var showFavTreePopup: Bool = false
 
     // Sorting configuration
@@ -41,10 +41,16 @@ import Foundation
         leftPath = UserDefaults.standard.string(forKey: "lastLeftPath") ?? leftPath
         rightPath = UserDefaults.standard.string(forKey: "lastRightPath") ?? rightPath
         // Подписка на изменения selectedDir
-        $selectedDir.compactMap { $0.selectedFSEntity?.urlValue.path }.sink { [weak self] newPath in self?.selectionsHistory.add(newPath) }.store(
-            in: &cancellables)
+        $selectedDir.compactMap { $0.selectedFSEntity?.urlValue.path }
+            .sink { [weak self] newPath in self?.selectionsHistory.add(newPath) }
+            .store(
+                in: &cancellables)
         // Restore last focused panel early (default .left)
-        if let raw = UserDefaults.standard.string(forKey: "lastFocusedPanel"), raw == "right" { focusedPanel = .right } else { focusedPanel = .left }
+        if let raw = UserDefaults.standard.string(forKey: "lastFocusedPanel"), raw == "right" {
+            focusedPanel = .right
+        } else {
+            focusedPanel = .left
+        }
     }
 
     // MARK: -
@@ -58,7 +64,11 @@ import Foundation
         log.info(#function)
         let ud = UserDefaults.standard
         // Restore focused panel (default to .left)
-        if let raw = ud.string(forKey: "lastFocusedPanel"), raw == "right" { focusedPanel = .right } else { focusedPanel = .left }
+        if let raw = ud.string(forKey: "lastFocusedPanel"), raw == "right" {
+            focusedPanel = .right
+        } else {
+            focusedPanel = .left
+        }
         // Restore selected file on the focused side only, keep other side consistent with current rules
         if focusedPanel == .left {
             if let url = ud.url(forKey: "lastSelectedLeftFilePath") {
@@ -83,7 +93,8 @@ import Foundation
     private func syncSelectionWithFocus() {
         log.info("syncSelectionWithFocus: now \(focusedPanel)")
         let ud = UserDefaults.standard
-        switch focusedPanel { case .left:
+        switch focusedPanel {
+        case .left:
             if selectedRightFile != nil {
                 log.info("Clearing right selection because focus moved to left")
                 selectedRightFile = nil
@@ -91,14 +102,17 @@ import Foundation
             if selectedLeftFile == nil {
                 // Try to restore selection from UserDefaults
                 if let url = ud.url(forKey: "lastSelectedLeftFilePath") {
-                    if let match = displayedLeftFiles.first(where: { canonicalPath($0.urlValue) == canonicalPath(url) }) {
+                    if let match = displayedLeftFiles.first(where: { canonicalPath($0.urlValue) == canonicalPath(url) })
+                    {
                         log.info("Restored left selection from saved config: \(match.nameStr)")
                         selectedLeftFile = match
                     }
                 }
                 // If still nil, try to restore from selectionsHistory
                 if selectedLeftFile == nil {
-                    if let lastPath = selectionsHistory.last, let match = displayedLeftFiles.first(where: { canonicalPath($0.urlValue) == lastPath }) {
+                    if let lastPath = selectionsHistory.last,
+                        let match = displayedLeftFiles.first(where: { canonicalPath($0.urlValue) == lastPath })
+                    {
                         log.info("Restored left selection from history: \(match.nameStr)")
                         selectedLeftFile = match
                     }
@@ -110,49 +124,93 @@ import Foundation
                 }
             }
 
-            case .right:
-                if selectedLeftFile != nil {
-                    log.info("Clearing left selection because focus moved to right")
-                    selectedLeftFile = nil
+        case .right:
+            if selectedLeftFile != nil {
+                log.info("Clearing left selection because focus moved to right")
+                selectedLeftFile = nil
+            }
+            if selectedRightFile == nil {
+                // Try to restore selection from UserDefaults
+                if let url = ud.url(forKey: "lastSelectedRightFilePath") {
+                    if let match = displayedRightFiles.first(where: { canonicalPath($0.urlValue) == canonicalPath(url) }
+                    ) {
+                        log.info("Restored right selection from saved config: \(match.nameStr)")
+                        selectedRightFile = match
+                    }
                 }
+                // If still nil, try to restore from selectionsHistory
                 if selectedRightFile == nil {
-                    // Try to restore selection from UserDefaults
-                    if let url = ud.url(forKey: "lastSelectedRightFilePath") {
-                        if let match = displayedRightFiles.first(where: { canonicalPath($0.urlValue) == canonicalPath(url) }) {
-                            log.info("Restored right selection from saved config: \(match.nameStr)")
-                            selectedRightFile = match
-                        }
-                    }
-                    // If still nil, try to restore from selectionsHistory
-                    if selectedRightFile == nil {
-                        if let lastPath = selectionsHistory.last, let match = displayedRightFiles.first(where: { canonicalPath($0.urlValue) == lastPath })
-                        {
-                            log.info("Restored right selection from history: \(match.nameStr)")
-                            selectedRightFile = match
-                        }
-                    }
-                    // If still nil, fallback to first item in displayedRightFiles
-                    if selectedRightFile == nil, let first = displayedRightFiles.first {
-                        log.info("Fallback: auto-select first right item: \(first.nameStr)")
-                        selectedRightFile = first
+                    if let lastPath = selectionsHistory.last,
+                        let match = displayedRightFiles.first(where: { canonicalPath($0.urlValue) == lastPath })
+                    {
+                        log.info("Restored right selection from history: \(match.nameStr)")
+                        selectedRightFile = match
                     }
                 }
+                // If still nil, fallback to first item in displayedRightFiles
+                if selectedRightFile == nil, let first = displayedRightFiles.first {
+                    log.info("Fallback: auto-select first right item: \(first.nameStr)")
+                    selectedRightFile = first
+                }
+            }
         }
     }
 
-    // MARK: - Focus management Set focus explicitly to a panel side and log the change.
-    func focus(_ side: PanelSide) {
-        log.info(#function)
-        if focusedPanel != side {
-            log.info("Focus set to: \(side)")
-            focusedPanel = side
+    // MARK: - History integration
+    private func recordSelection(_ side: PanelSide, file: CustomFile?) {
+        // English-only comments:
+        // Record file path into selectionsHistory when a selection changes.
+        guard let f = file else { return }
+        log.debug("History: set current to \(canonicalPath(f.urlValue))")
+        selectionsHistory.setCurrent(to: canonicalPath(f.urlValue))
+    }
+
+    func goBackInHistory() {
+        if let p = selectionsHistory.previousPath() {
+            log.debug("History: previous \(p)")
+            selectPath(p)
         } else {
-            log.info("Focus remains at: \(side)")
+            log.debug("History: no previous path")
+        }
+    }
+
+    func goForwardInHistory() {
+        if let p = selectionsHistory.nextPath() {
+            log.debug("History: next \(p)")
+            selectPath(p)
+        } else {
+            log.debug("History: no next path")
+        }
+    }
+
+    private func selectPath(_ path: String) {
+        // English-only comments:
+        // Try to select in the focused panel first; if not present then try the other.
+        let target = toCanonical(from: path)
+        switch focusedPanel {
+        case .left:
+            if let f = displayedLeftFiles.first(where: { canonicalPath($0.urlValue) == target }) {
+                selectedLeftFile = f
+            } else if let f = displayedRightFiles.first(where: { canonicalPath($0.urlValue) == target }) {
+                focusedPanel = .right
+                selectedRightFile = f
+            } else {
+                log.debug("History: path \(path) not found in current listings")
+            }
+        case .right:
+            if let f = displayedRightFiles.first(where: { canonicalPath($0.urlValue) == target }) {
+                selectedRightFile = f
+            } else if let f = displayedLeftFiles.first(where: { canonicalPath($0.urlValue) == target }) {
+                focusedPanel = .left
+                selectedLeftFile = f
+            } else {
+                log.debug("History: path \(path) not found in current listings")
+            }
         }
     }
 
     // MARK: - Toggle focus between left and right panel.
-    func toggleFocus() {
+    func togglePanel() {
         focusedPanel = (focusedPanel == .left) ? .right : .left
         log.info("TAB - Focused panel toggled to: \(focusedPanel)")
     }
@@ -160,7 +218,9 @@ import Foundation
     // MARK: - AppState extension for displayedFiles
     func displayedFiles(for side: PanelSide) -> [CustomFile] {
         log.info(#function + " at side: \(side)")
-        switch side { case .left: return displayedLeftFiles case .right: return displayedRightFiles
+        switch side {
+        case .left: return displayedLeftFiles
+        case .right: return displayedRightFiles
         }
     }
 
@@ -168,7 +228,9 @@ import Foundation
     func pathURL(for side: PanelSide) -> URL? {
         log.info(#function + "|side: \(side)" + "| paths: \(leftPath),| \(rightPath)")
         let path: String
-        switch side { case .left: path = leftPath case .right: path = rightPath
+        switch side {
+        case .left: path = leftPath
+        case .right: path = rightPath
         }
         return URL(fileURLWithPath: path)
     }
@@ -186,7 +248,11 @@ import Foundation
         if let newKey = key { sortKey = newKey }
         if let newAsc = ascending { sortAscending = newAsc }
         // Resort currently displayed files
-        if focusedPanel == .left { displayedLeftFiles = applySorting(displayedLeftFiles) } else { displayedRightFiles = applySorting(displayedRightFiles) }
+        if focusedPanel == .left {
+            displayedLeftFiles = applySorting(displayedLeftFiles)
+        } else {
+            displayedRightFiles = applySorting(displayedRightFiles)
+        }
         log.info("updateSorting: key=\(sortKey), asc=\(sortAscending) on \(focusedPanel) side")
     }
 
@@ -202,7 +268,9 @@ import Foundation
                 let dst = url.resolvingSymlinksInPath()
                 if let r2 = try? dst.resourceValues(forKeys: [.isDirectoryKey]), r2.isDirectory == true { return true }
             }
-        } catch { log.error("isFolderLike: failed to get resource values for \(url.path): \(error.localizedDescription)") }
+        } catch {
+            log.error("isFolderLike: failed to get resource values for \(url.path): \(error.localizedDescription)")
+        }
         return false
     }
 
@@ -219,25 +287,28 @@ import Foundation
             let bIsFolder = isFolderLike(b)
             if aIsFolder != bIsFolder { return aIsFolder && !bIsFolder }
             // 2) Same kind → compare by selected key
-            switch sortKey { case .name:
+            switch sortKey {
+            case .name:
                 let primary = a.nameStr.localizedCaseInsensitiveCompare(b.nameStr)
-                if primary != .orderedSame { return sortAscending ? (primary == .orderedAscending) : (primary == .orderedDescending) }
+                if primary != .orderedSame {
+                    return sortAscending ? (primary == .orderedAscending) : (primary == .orderedDescending)
+                }
                 // 3) Tie-breaker by name (ascending) for stability
                 return a.nameStr.localizedCaseInsensitiveCompare(b.nameStr) == .orderedAscending
 
-                case .date:
-                    let da = a.modifiedDate ?? Date.distantPast
-                    let db = b.modifiedDate ?? Date.distantPast
-                    if da != db { return sortAscending ? (da < db) : (da > db) }
-                    // Tie-breaker by name (ascending)
-                    return a.nameStr.localizedCaseInsensitiveCompare(b.nameStr) == .orderedAscending
+            case .date:
+                let da = a.modifiedDate ?? Date.distantPast
+                let db = b.modifiedDate ?? Date.distantPast
+                if da != db { return sortAscending ? (da < db) : (da > db) }
+                // Tie-breaker by name (ascending)
+                return a.nameStr.localizedCaseInsensitiveCompare(b.nameStr) == .orderedAscending
 
-                case .size:
-                    let sa: Int64 = a.sizeInBytes
-                    let sb: Int64 = b.sizeInBytes
-                    if sa != sb { return sortAscending ? (sa < sb) : (sa > sb) }
-                    // Tie-breaker by name (ascending)
-                    return a.nameStr.localizedCaseInsensitiveCompare(b.nameStr) == .orderedAscending
+            case .size:
+                let sa: Int64 = a.sizeInBytes
+                let sb: Int64 = b.sizeInBytes
+                if sa != sb { return sortAscending ? (sa < sb) : (sa > sb) }
+                // Tie-breaker by name (ascending)
+                return a.nameStr.localizedCaseInsensitiveCompare(b.nameStr) == .orderedAscending
             }
         }
         log.info("applySorting: dirs first, key=\(sortKey), asc=\(sortAscending), total=\(sorted.count)")
@@ -249,7 +320,8 @@ import Foundation
         log.info(#function)
         // English comment: Use the user Logs folder: ~/Library/Logs/MiMiNavigator.log
         let fm = FileManager.default
-        let logsDir = fm.urls(for: .libraryDirectory, in: .userDomainMask).first!.appendingPathComponent("Logs", isDirectory: true)
+        let logsDir = fm.urls(for: .libraryDirectory, in: .userDomainMask).first!
+            .appendingPathComponent("Logs", isDirectory: true)
         let logFileURL = logsDir.appendingPathComponent("MiMiNavigator.log", isDirectory: false)
         if fm.fileExists(atPath: logFileURL.path) {
             log.info("Revealing existing log file at: \(logFileURL.path)")
@@ -292,13 +364,6 @@ import Foundation
     }
 
     // MARK: -
-    @available(*, deprecated, message: "Access selectedLeftFile/selectedRightFile directly") func setSideFile(for side: PanelSide) -> CustomFile? {
-        log.info(#function + " at side: \(side)")
-        switch side { case .left: return selectedLeftFile case .right: return selectedRightFile
-        }
-    }
-
-    // MARK: -
     func updatePath(_ path: String, for side: PanelSide) {
         log.info(#function + " at side: \(side) with path: \(path)")
         focusedPanel = side  // Set focus to the side; do not use binding ($)
@@ -308,13 +373,14 @@ import Foundation
             return
         }
         log.info("\(#function) – updating path on side: \(side) to \(path)")
-        switch side { case .left:
+        switch side {
+        case .left:
             leftPath = path
             selectedLeftFile = displayedLeftFiles.first
 
-            case .right:
-                rightPath = path
-                selectedRightFile = displayedRightFiles.first
+        case .right:
+            rightPath = path
+            selectedRightFile = displayedRightFiles.first
         }
     }
 
@@ -340,7 +406,9 @@ import Foundation
         UserDefaults.standard.set(focusedPanel == .left ? "left" : "right", forKey: "lastFocusedPanel")
         // Persist last selected files (as URL)
         if let left = selectedLeftFile?.urlValue { UserDefaults.standard.set(left, forKey: "lastSelectedLeftFilePath") }
-        if let right = selectedRightFile?.urlValue { UserDefaults.standard.set(right, forKey: "lastSelectedRightFilePath") }
+        if let right = selectedRightFile?.urlValue {
+            UserDefaults.standard.set(right, forKey: "lastSelectedRightFilePath")
+        }
         log.info("Application state saved before exit.")
     }
 }
@@ -366,6 +434,3 @@ extension AppState {
         }
     }
 }
-
-// MARK: - Small convenience for toggling panel side
-extension PanelSide { var opposite: PanelSide { self == .left ? .right : .left } }

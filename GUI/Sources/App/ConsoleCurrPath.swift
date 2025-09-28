@@ -12,12 +12,6 @@ import SwiftyBeaver
 
 // MARK: - ScriptConstants
 
-private enum ScrCnst {
-    static let NAME = "OpenTerminal"
-    static let EXT = "scpt"
-    static let SUBDIR = "Gui/OSScript"
-    static let ERR0 = "(unknown bundle resourceURL)"
-}
 
 // MARK: - ConsoleCurrPath
 struct ConsoleCurrPath: View {
