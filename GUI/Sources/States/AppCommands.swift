@@ -9,7 +9,7 @@
 import SwiftUI
 
 struct AppCommands: Commands {
-    @EnvironmentObject var appState: AppState
+    let appState: AppState
 
     var body: some Commands {
         CommandMenu("Panels / Navigation") {

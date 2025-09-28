@@ -7,7 +7,6 @@
 //
 
 import SwiftUI
-import SwiftyBeaver
 
 // MARK: -
 struct NavMnu2: View {

@@ -8,8 +8,7 @@
 
 import AppKit
 import SwiftUI
-import SwiftyBeaver
-
+// MARK: - Main view containing two file panels and a draggable divider.
 struct PanelsRowView: View {
     @EnvironmentObject var appState: AppState
     @Binding var leftPanelWidth: CGFloat

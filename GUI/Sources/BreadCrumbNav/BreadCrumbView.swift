@@ -8,7 +8,6 @@
 
 import AppKit
 import SwiftUI
-import SwiftyBeaver
 
 // MARK: - Breadcrumb trail UI component for representing navigation path
 struct BreadCrumbView: View {

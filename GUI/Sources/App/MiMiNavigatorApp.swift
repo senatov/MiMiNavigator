@@ -6,14 +6,20 @@
 //
 
 import SwiftUI
-import SwiftyBeaver
 
-let log = SwiftyBeaver.self
+let log = LogMan.log
 
 @main
 struct MiMiNavigatorApp: App {
     @StateObject private var appState = AppState()  // single source of truth
 
+    // MARK: -
+    init() {
+        LogMan.initializeLogging()
+        log.info("---- Logger initialized ------")
+    }
+
+    // MARK: -
     var body: some Scene {
         WindowGroup {
             VStack {
@@ -21,6 +27,7 @@ struct MiMiNavigatorApp: App {
                 ConsoleCurrPath()
             }
             .environmentObject(appState)  // make AppState visible to the whole scene
+            .focusable(true)
             .onAppear {
                 // Initialize file lists, watchers, and restore state once at launch
                 log.debug("App launched → initializing AppState")
@@ -60,7 +67,7 @@ struct MiMiNavigatorApp: App {
             }
         }
         .commands {
-            FocusCommands(appState: appState) // reads AppState via @EnvironmentObject
+            AppCommands(appState: appState)
         }
     }
 

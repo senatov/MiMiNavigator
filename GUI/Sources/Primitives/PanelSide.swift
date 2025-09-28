@@ -8,7 +8,6 @@
 
 // MARK: -
 import Foundation
-import SwiftyBeaver
 
 // MARK: -
 enum PanelSide: Equatable, Codable, Sendable {

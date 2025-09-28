@@ -5,7 +5,6 @@
 //  Created by Iakov Senatov on 21.02.25.
 
 import SwiftUI
-import SwiftyBeaver
 
 //  MARK: -
 struct DownToolbarButtonView: View {
@@ -23,7 +22,7 @@ struct DownToolbarButtonView: View {
             makeButton()
         }
         .frame(minWidth: 120, minHeight: 20)
-        .contentShape(Rectangle()) // Ensure hover is handled
+        .contentShape(Rectangle())  // Ensure hover is handled
     }
 
     //  MARK: - Builds and configures the toolbar button
@@ -45,7 +44,10 @@ struct DownToolbarButtonView: View {
                         .stroke(FilePanelStyle.skyBlauColor, lineWidth: 2)
                 )
                 .scaleEffect(isPressed ? 0.92 : 1.0)
-                .foregroundColor(isHovered ? Color(#colorLiteral(red: 0.1921568662, green: 0.007843137719, blue: 0.09019608051, alpha: 1)) : FilePanelStyle.dirNameColor)
+                .foregroundColor(
+                    isHovered
+                        ? Color(#colorLiteral(red: 0.1921568662, green: 0.007843137719, blue: 0.09019608051, alpha: 1))
+                        : FilePanelStyle.dirNameColor)
         }
         .buttonStyle(PlainButtonStyle())
         .help(title)

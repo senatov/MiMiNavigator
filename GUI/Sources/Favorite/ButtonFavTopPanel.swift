@@ -1,6 +1,5 @@
 import AppKit
 import SwiftUI
-import SwiftyBeaver
 
 // MARK: -
 struct ButtonFavTopPanel: View {

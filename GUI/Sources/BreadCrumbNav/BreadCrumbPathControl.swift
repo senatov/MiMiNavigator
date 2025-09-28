@@ -8,7 +8,7 @@
 
 import AppKit
 import SwiftUI
-import SwiftyBeaver
+
 
 // MARK: - A view displaying a breadcrumb-style editable path bar with panel navigation menus.
 struct BreadCrumbPathControl: View {
