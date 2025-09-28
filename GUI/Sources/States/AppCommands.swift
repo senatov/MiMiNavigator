@@ -9,27 +9,36 @@
 import SwiftUI
 
 struct AppCommands: Commands {
-    let coordinator: SelectionCoordinator
+    @EnvironmentObject var appState: AppState
 
     var body: some Commands {
         CommandMenu("Panels / Navigation") {
             Button("Toggle Panel Focus") {
-                coordinator.togglePanel(shift: false)
+                // Use AppState passthrough to avoid Binding traps and ensure same instance
+                log.debug("KB: Tab → toggle panel")
+                appState.togglePanel()
             }
             .keyboardShortcut(.tab, modifiers: [])
 
+            Button("Toggle Panel Focus (Ctrl+Tab)") {
+                // Diagnostic alternate shortcut to avoid system focus traversal swallowing Tab
+                log.debug("KB: Ctrl+Tab → toggle panel (diagnostic)")
+                appState.togglePanel()
+            }
+            .keyboardShortcut(.tab, modifiers: [.control])
+
             Button("Move Up") {
-                coordinator.moveSelection(step: -1)
+                appState.selectionMove(by: -1)
             }
             .keyboardShortcut(.upArrow, modifiers: [])
 
             Button("Move Down") {
-                coordinator.moveSelection(step: 1)
+                appState.selectionMove(by: 1)
             }
             .keyboardShortcut(.downArrow, modifiers: [])
 
             Button("Copy") {
-                coordinator.copySelection()
+                appState.selectionCopy()
             }
             .keyboardShortcut("c", modifiers: [.command])  // пример: ⌘C для Copy
         }

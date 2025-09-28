@@ -165,6 +165,7 @@ import Foundation
         selectionsHistory.setCurrent(to: canonicalPath(f.urlValue))
     }
 
+    // MARK: -
     func goBackInHistory() {
         if let p = selectionsHistory.previousPath() {
             log.debug("History: previous \(p)")
@@ -174,6 +175,7 @@ import Foundation
         }
     }
 
+    // MARK: -
     func goForwardInHistory() {
         if let p = selectionsHistory.nextPath() {
             log.debug("History: next \(p)")
@@ -183,6 +185,7 @@ import Foundation
         }
     }
 
+    // MARK: -
     private func selectPath(_ path: String) {
         // English-only comments:
         // Try to select in the focused panel first; if not present then try the other.
@@ -213,6 +216,70 @@ import Foundation
     func togglePanel() {
         focusedPanel = (focusedPanel == .left) ? .right : .left
         log.info("TAB - Focused panel toggled to: \(focusedPanel)")
+    }
+
+    // MARK: - Commands bridging (unified via AppState)
+    func selectionMove(by step: Int) {
+        log.debug("AppState.selectionMove(by: \(step)) | focused: \(focusedPanel)")
+        let items = (focusedPanel == .left) ? displayedLeftFiles : displayedRightFiles
+        guard !items.isEmpty else { return }
+        // Find current index; if none, start at 0 or end depending on step
+        let current: CustomFile? = (focusedPanel == .left) ? selectedLeftFile : selectedRightFile
+        let currentIdx: Int
+        if let cur = current {
+            let curPath = canonicalPath(cur.urlValue)
+            currentIdx = items.firstIndex { canonicalPath($0.urlValue) == curPath } ?? 0
+        } else {
+            currentIdx = (step >= 0) ? 0 : (items.count - 1)
+        }
+        let nextIdx = max(0, min(items.count - 1, currentIdx + step))
+        let next = items[nextIdx]
+        if focusedPanel == .left {
+            selectedLeftFile = next
+        } else {
+            selectedRightFile = next
+        }
+        log.debug("Selection moved to index \(nextIdx): \(next.nameStr)")
+    }
+
+    // MARK: - Copy current selection from focused panel to the opposite panel's directory
+    func selectionCopy() {
+        log.debug("AppState.selectionCopy() | focused: \(focusedPanel)")
+        // Determine source selected file
+        let srcFile: CustomFile?
+        let dstSide: PanelSide
+        switch focusedPanel {
+        case .left:
+            srcFile = selectedLeftFile
+            dstSide = .right
+        case .right:
+            srcFile = selectedRightFile
+            dstSide = .left
+        }
+        guard let file = srcFile else {
+            log.debug("Copy skipped: no selection")
+            return
+        }
+        guard let dstDirURL = pathURL(for: dstSide) else {
+            log.error("Copy failed: destination path unavailable")
+            return
+        }
+        let srcURL = file.urlValue
+        let dstURL = dstDirURL.appendingPathComponent(srcURL.lastPathComponent)
+        do {
+            if FileManager.default.fileExists(atPath: dstURL.path) {
+                log.debug("Copy skipped: destination already exists → \(dstURL.path)")
+                return
+            }
+            try FileManager.default.copyItem(at: srcURL, to: dstURL)
+            log.info("Copied \(srcURL.lastPathComponent) → \(dstURL.path)")
+            // Refresh destination listing
+            Task { @MainActor in
+                if dstSide == .left { await refreshLeftFiles() } else { await refreshRightFiles() }
+            }
+        } catch {
+            log.error("Copy failed: \(error.localizedDescription)")
+        }
     }
 
     // MARK: - AppState extension for displayedFiles
