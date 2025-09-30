@@ -9,7 +9,6 @@
 import AppKit
 import SwiftUI
 
-
 // MARK: - A view displaying a breadcrumb-style editable path bar with panel navigation menus.
 struct BreadCrumbPathControl: View {
     @EnvironmentObject var appState: AppState
@@ -35,5 +34,8 @@ struct BreadCrumbPathControl: View {
                 .strokeBorder(Color.secondary.opacity(0.15), lineWidth: 1)
                 .fill(.background)
         )
+        .task { @MainActor in
+            appState.focusedPanel = panelSide
+        }
     }
 }

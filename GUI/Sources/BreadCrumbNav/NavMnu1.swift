@@ -8,16 +8,15 @@
 
 import SwiftUI
 
-
 // MARK: -
 struct NavMnu1: View {
+    @EnvironmentObject var appState: AppState
     let panelSide: PanelSide
 
     init(selectedSide: PanelSide) {
         log.info("NavMnu1 init" + " for side \(selectedSide)")
         self.panelSide = selectedSide
     }
-
 
     // MARK: -
     var body: some View {
@@ -26,5 +25,8 @@ struct NavMnu1: View {
             ButtonFavTopPanel(selectedSide: panelSide)
         }
         .padding(.leading, 6)
+        .task { @MainActor in
+            appState.focusedPanel = panelSide
+        }
     }
 }

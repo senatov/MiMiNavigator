@@ -3,11 +3,11 @@ import SwiftUI
 
 // MARK: -
 struct ButtonFavTopPanel: View {
+    @EnvironmentObject var appState: AppState
     @State private var favTreeStruct: [CustomFile] = []
     @State private var showBackPopover: Bool = false
     @State private var showForwardPopover: Bool = false
     @State private var showUpPopover: Bool = false
-    @EnvironmentObject var appState: AppState
     let panelSide: PanelSide
 
     // MARK: - -
@@ -30,6 +30,9 @@ struct ButtonFavTopPanel: View {
             upButton()
             forwardButton()
             menuButton()
+        }
+        .task { @MainActor in
+            appState.focusedPanel = panelSide
         }
     }
 

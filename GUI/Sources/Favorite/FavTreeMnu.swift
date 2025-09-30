@@ -8,9 +8,9 @@
 import SwiftUI
 
 struct FavTreeMnu: View {
+    @EnvironmentObject var appState: AppState
     @Binding var files: [CustomFile]
     @State private var expandedFolders: Set<String> = []
-    @EnvironmentObject var appState: AppState
     let panelSide: PanelSide
     
     // MARK: -
@@ -31,6 +31,9 @@ struct FavTreeMnu: View {
                 )
         )
         .padding()
+        .task { @MainActor in
+            appState.focusedPanel = panelSide
+        }
     }
     
     // MARK: -

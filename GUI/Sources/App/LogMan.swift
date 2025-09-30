@@ -23,13 +23,13 @@ enum LogMan {
         // Уровни с иконками
         func getLevelIcon(for level: SwiftyBeaver.Level) -> String {
             switch level {
-            case .verbose: return "🔮"
-            case .debug: return "☘️"
-            case .info: return "🔹"
-            case .warning: return "🔸"
-            case .error: return "💢"
-            case .critical: return "💀"
-            case .fault: return "👻"
+            case .verbose: return "􀐯"
+            case .debug: return "􀌚"
+            case .info: return "􀅴"
+            case .warning: return "⚠️"
+            case .error: return "❗️"
+            case .critical: return "🔥"
+            case .fault: return "💥"
             }
         }
         console.levelString.verbose = getLevelIcon(for: .verbose) + " VERBOSE"

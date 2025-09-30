@@ -30,11 +30,14 @@ struct BreadCrumbView: View {
                 breadcrumbItem(index: index)
             }
         }
-        .frame(maxWidth: .infinity, alignment: .leading) // растянуть и прижать влево
+        .frame(maxWidth: .infinity, alignment: .leading)  // растянуть и прижать влево
         .padding(.horizontal, 6)
         .padding(.vertical, 2)
         .frame(minHeight: barHeight, alignment: .center)
         .controlSize(.large)
+        .task { @MainActor in
+            appState.focusedPanel = panelSide
+        }
     }
 
     // MARK: -
@@ -66,7 +69,8 @@ struct BreadCrumbView: View {
     private func getMnuButton(_ index: Int) -> some View {
         log.info(#function)
         return Button(action: { handlePathSelection(upTo: index) }) {
-            Text(pathComponents[index]).font(.callout).foregroundColor(FilePanelStyle.blueSymlinkDirNameColor).padding(.vertical, 2)
+            Text(pathComponents[index]).font(.callout).foregroundColor(FilePanelStyle.blueSymlinkDirNameColor)
+                .padding(.vertical, 2)
         }
         .buttonStyle(.plain)
         .help("Click to open: /" + pathComponents.prefix(index + 1).joined(separator: "/"))
@@ -109,8 +113,7 @@ struct BreadCrumbView: View {
             await appState.scanner.setLeftDirectory(pathStr: path)
             await appState.scanner.refreshFiles(currSide: .left)
             await appState.refreshLeftFiles()
-        }
-        else {
+        } else {
             await appState.scanner.setRightDirectory(pathStr: path)
             await appState.scanner.refreshFiles(currSide: .right)
             await appState.refreshRightFiles()

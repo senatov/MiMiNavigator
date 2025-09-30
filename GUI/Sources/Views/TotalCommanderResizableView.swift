@@ -14,6 +14,7 @@ struct TotalCommanderResizableView: View {
     @EnvironmentObject var appState: AppState
     @State private var leftPanelWidth: CGFloat = 0
 
+    // MARK: -
     var body: some View {
         GeometryReader { geometry in
             ZStack {
@@ -46,9 +47,9 @@ struct TotalCommanderResizableView: View {
 
     // MARK: - Fetch Files
     @MainActor
-    private func fetchFiles(for side: PanelSide) async {
-        log.info("↪️ \(#function) [side: \(side)]")
-        switch side {
+    private func fetchFiles(for panelSide: PanelSide) async {
+        log.info("\(#function) [side: \(panelSide)]")
+        switch panelSide {
         case .left:
             appState.displayedLeftFiles = await appState.scanner.fileLst
                 .getLeftFiles()

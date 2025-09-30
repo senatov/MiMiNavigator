@@ -11,15 +11,9 @@ import Foundation
 
 // MARK: - SelectionsHistory
 @MainActor final class SelectionsHistory: ObservableObject {
-
-    // MARK: - Public (for UI compatibility)
-    // Flat list for UI popovers (shows non-deleted paths in order)
     @Published private(set) var recentSelections: [String] = []
-    // MARK: -
     private var entries: [HistoryEntry] = [] { didSet { rebuildRecentSelections() } }
-    // MARK: -
     private var currentIndex: Int? { didSet { /* keep as-is; UI derives from recentSelections */  } }
-    // MARK: - Internal storage
     private let userDefaultsKey = "SelectionsHistory.v2"
     private let maxEntries = 32
 
@@ -86,6 +80,8 @@ import Foundation
         let e = entries[ci]
         return e.status == .deleted ? nil : e.path
     }
+    
+    
     // MARK: -
     var firstNonDeleted: String? {
         guard let lastIndex = entries.indices.last else { return nil }
