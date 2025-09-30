@@ -10,6 +10,7 @@ import SwiftUI
 
 // MARK: - Subviews
 struct PanelBreadcrumbSection: View {
+    @EnvironmentObject var appState: AppState
     let panelSide: PanelSide
     let currentPath: URL?
     let onPathChange: (URL?) -> Void
@@ -19,6 +20,9 @@ struct PanelBreadcrumbSection: View {
         return BreadCrumbControlWrapper(selectedSide: panelSide)
             .onChange(of: currentPath, initial: false) { _, newValue in
                 onPathChange(newValue)
+            }
+            .task { @MainActor in
+                appState.focusedPanel = panelSide
             }
     }
 }

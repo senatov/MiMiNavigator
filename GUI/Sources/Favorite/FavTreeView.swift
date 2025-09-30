@@ -15,15 +15,8 @@ struct FavTreeView: View {
     let panelSide: PanelSide
 
     // MARK: - Initializer
-    init(
-        file: Binding<CustomFile>,
-        expandedFolders: Binding<Set<String>>,
-        selectedSide: PanelSide
-    ) {
-        log.info(
-            "FavTreeView init"
-                + " for file \(file.wrappedValue.nameStr), side \(selectedSide)"
-        )
+    init(file: Binding<CustomFile>, expandedFolders: Binding<Set<String>>, selectedSide: PanelSide) {
+        log.info("FavTreeView init for file \(file.wrappedValue.nameStr), side \(selectedSide)")
         self.panelSide = selectedSide
         self._file = file
         self._expandedFolders = expandedFolders
@@ -37,6 +30,9 @@ struct FavTreeView: View {
             childrenList
         }
         .animation(.easeInOut(duration: 0.25), value: isExpanded)
+        .task { @MainActor in
+            appState.focusedPanel = panelSide
+        }
     }
 
     // MARK: -

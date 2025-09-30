@@ -20,8 +20,8 @@ struct BreadCrumbControlWrapper: View {
 
     // MARK: - Initializer
     init(selectedSide: PanelSide) {
-        log.info("BreadCrumbControlWrapper init" + " for side \(selectedSide)")
-        panelSide = selectedSide
+        log.info("BreadCrumbControlWrapper init for side: \(selectedSide)")
+        self.panelSide = selectedSide
     }
 
     // MARK: - Body
@@ -55,6 +55,9 @@ struct BreadCrumbControlWrapper: View {
         .shadow(color: .secondary.opacity(isHovering ? 0.18 : 0.12), radius: 7, x: 1, y: 1)
         .padding(.vertical, 2)
         .padding(.horizontal, 1)
+        .task { @MainActor in
+            appState.focusedPanel = panelSide
+        }
     }
 
     // MARK: - Editing View
