@@ -30,13 +30,18 @@ struct FileTableView: View {
                 HStack(spacing: 8) {
                     getNameColSortableHeader()
                     // vertical separator
-                    Rectangle().frame(width: 1).foregroundColor(Color.secondary.opacity(0.25)).padding(.vertical, 2)
+                    Rectangle().frame(width: 1)
+                        .foregroundColor(Color.secondary.opacity(0.25)).padding(.vertical, 2)
                     getSizeColSortableHeader()
                     // vertical separator
-                    Rectangle().frame(width: 1).foregroundColor(Color.secondary.opacity(0.25)).padding(.vertical, 2)
+                    Rectangle()
+                        .frame(width: 1)
+                        .foregroundColor(Color.secondary.opacity(0.25)).padding(.vertical, 2)
                     getDateSortableHeader()
                 }
-                .padding(.vertical, 4).padding(.horizontal, 6).background(Color(nsColor: .windowBackgroundColor))
+                .padding(.vertical, 4)
+                .padding(.horizontal, 6)
+                .background(Color(nsColor: .windowBackgroundColor))
                 .overlay(
                     RoundedRectangle(cornerRadius: 7).frame(height: 0.6).foregroundColor(.secondary.opacity(0.55)),
                     alignment: .bottom
@@ -55,17 +60,18 @@ struct FileTableView: View {
         .overlay(
             RoundedRectangle(cornerRadius: 7)
                 .stroke(
-                    isFocused ? Color(nsColor: .systemBlue) : FilePanelStyle.blueSymlinkDirNameColor.opacity(0.35),
-                    lineWidth: isFocused ? max(FilePanelStyle.selectedBorderWidth, 2) : 1
+                    isFocused ? Color(nsColor: .systemBlue) : .gray.opacity(0.3),
+                    lineWidth: isFocused ? max(FilePanelStyle.selectedBorderWidth, 1.2) : 1
                 )
                 .shadow(
                     color: isFocused ? .black.opacity(0.25) : .black.opacity(0.1),
-                    radius: isFocused ? 4 : 2,
+                    radius: isFocused ? 1 : 2,
                     x: 1,
                     y: 1
                 )
         )
-        .onTapGesture { appState.focusedPanel = panelSide }.animation(.easeInOut(duration: 0.15), value: isFocused)
+        .onTapGesture { appState.focusedPanel = panelSide }
+        .animation(.easeInOut(duration: 0.15), value: isFocused)
     }
 
     // MARK: -
@@ -93,7 +99,6 @@ struct FileTableView: View {
 
     // MARK: -
     private func getSizeColSortableHeader() -> some View {
-        // log.info(#function + " for side: \(panelSide), sortKey: \(sortKey), ascending: \(sortAscending)")
         return HStack(spacing: 4) {
             Text("Size").font(.subheadline)
             if sortKey == .size {
@@ -116,7 +121,6 @@ struct FileTableView: View {
 
     // MARK: -
     private func getDateSortableHeader() -> some View {
-        // log.info(#function + " for side: \(panelSide), sortKey: \(sortKey), ascending: \(sortAscending)")
         return HStack(spacing: 4) {
             Text("Date").font(.subheadline)
             if sortKey == .date {
@@ -138,9 +142,10 @@ struct FileTableView: View {
     }
 
     // MARK: -
-    @ViewBuilder private func highlightedSquare(_ isSel: Bool) -> some View {
-        if isSel {
-            Rectangle().inset(by: 0.2).stroke(FilePanelStyle.blueSymlinkDirNameColor.gradient, lineWidth: 1.0)
+    @ViewBuilder
+    private func highlightedSquare(_ isLineSelected: Bool) -> some View {
+        if isLineSelected {
+            Rectangle().inset(by: 0.2).stroke(FilePanelStyle.blueSymlinkDirNameColor.gradient, lineWidth: 0.7)
         } else {
             EmptyView()
         }
@@ -176,21 +181,21 @@ struct FileTableView: View {
         let bIsFolder = b.isDirectory || b.isSymbolicDirectory
         if aIsFolder != bIsFolder { return aIsFolder && !bIsFolder }
         switch sortKey {
-        case .name:
-            let cmp = a.nameStr.localizedCaseInsensitiveCompare(b.nameStr)
-            return sortAscending ? (cmp == .orderedAscending) : (cmp == .orderedDescending)
+            case .name:
+                let cmp = a.nameStr.localizedCaseInsensitiveCompare(b.nameStr)
+                return sortAscending ? (cmp == .orderedAscending) : (cmp == .orderedDescending)
 
-        case .size:
-            let lhs: Int64 = a.sizeInBytes
-            let rhs: Int64 = b.sizeInBytes
-            if lhs != rhs { return sortAscending ? (lhs < rhs) : (lhs > rhs) }
-            return a.nameStr.localizedCaseInsensitiveCompare(b.nameStr) == .orderedAscending
+            case .size:
+                let lhs: Int64 = a.sizeInBytes
+                let rhs: Int64 = b.sizeInBytes
+                if lhs != rhs { return sortAscending ? (lhs < rhs) : (lhs > rhs) }
+                return a.nameStr.localizedCaseInsensitiveCompare(b.nameStr) == .orderedAscending
 
-        case .date:
-            let lhs = a.modifiedDate ?? Date.distantPast
-            let rhs = b.modifiedDate ?? Date.distantPast
-            if lhs != rhs { return sortAscending ? (lhs < rhs) : (lhs > rhs) }
-            return a.nameStr.localizedCaseInsensitiveCompare(b.nameStr) == .orderedAscending
+            case .date:
+                let lhs = a.modifiedDate ?? Date.distantPast
+                let rhs = b.modifiedDate ?? Date.distantPast
+                if lhs != rhs { return sortAscending ? (lhs < rhs) : (lhs > rhs) }
+                return a.nameStr.localizedCaseInsensitiveCompare(b.nameStr) == .orderedAscending
         }
     }
 
@@ -204,7 +209,8 @@ struct FileTableView: View {
     }
 
     // MARK: - Row content extracted to reduce view-builder complexity
-    @ViewBuilder private func rowContent(file: CustomFile) -> some View {
+    @ViewBuilder
+    private func rowContent(file: CustomFile) -> some View {
         HStack(alignment: .center, spacing: 8) {
             // Name column (expands)
             FileRowView(file: file, panelSide: panelSide)

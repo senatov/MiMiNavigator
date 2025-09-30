@@ -15,7 +15,7 @@ struct FileRowView: View {
     let panelSide: PanelSide
 
     init(file: CustomFile, panelSide: PanelSide) {
-        log.info(#function + " for '\(file.nameStr)' on side \(panelSide)")
+        //log.info(#function + " for '\(file.nameStr)' on side \(panelSide)")
         self.file = file
         self.panelSide = panelSide
     }
@@ -24,7 +24,6 @@ struct FileRowView: View {
         log.info(#function + " for '\(file.nameStr)'")
         return rowContainer(baseContent())
             .onAppear {
-                // Wire up env only when the view is alive; @EnvironmentObject isn't ready in init
                 appState.focusedPanel = panelSide
                 appState.selectedDir = SelectedDir(side: panelSide)
             }
@@ -33,8 +32,8 @@ struct FileRowView: View {
     // MARK: - True when this row represents the selected file of the focused panel.
     private var isActiveSelection: Bool {
         switch panelSide {
-        case .left: return appState.focusedPanel == .left && appState.selectedLeftFile == file
-        case .right: return appState.focusedPanel == .right && appState.selectedRightFile == file
+            case .left: return appState.focusedPanel == .left && appState.selectedLeftFile == file
+            case .right: return appState.focusedPanel == .right && appState.selectedRightFile == file
         }
     }
 

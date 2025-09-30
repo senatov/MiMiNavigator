@@ -158,7 +158,6 @@ import Foundation
 
     // MARK: - History integration
     private func recordSelection(_ side: PanelSide, file: CustomFile?) {
-        // English-only comments:
         // Record file path into selectionsHistory when a selection changes.
         guard let f = file else { return }
         log.debug("History: set current to \(canonicalPath(f.urlValue))")
@@ -187,7 +186,6 @@ import Foundation
 
     // MARK: -
     private func selectPath(_ path: String) {
-        // English-only comments:
         // Try to select in the focused panel first; if not present then try the other.
         let target = toCanonical(from: path)
         switch focusedPanel {
@@ -214,6 +212,8 @@ import Foundation
 
     // MARK: - Toggle focus between left and right panel.
     func togglePanel() {
+        // With two panels, Shift-Tab behavior is identical.
+        // Keep this overload so commands can pass a boolean without branching here.
         focusedPanel = (focusedPanel == .left) ? .right : .left
         log.info("TAB - Focused panel toggled to: \(focusedPanel)")
     }
@@ -385,7 +385,7 @@ import Foundation
     // MARK: -
     func revealLogFileInFinder() {
         log.info(#function)
-        // English comment: Use the user Logs folder: ~/Library/Logs/MiMiNavigator.log
+        // Use the user Logs folder: ~/Library/Logs/MiMiNavigator.log
         let fm = FileManager.default
         let logsDir = fm.urls(for: .libraryDirectory, in: .userDomainMask).first!
             .appendingPathComponent("Logs", isDirectory: true)
