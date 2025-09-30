@@ -30,8 +30,7 @@ struct BreadCrumbControlWrapper: View {
         return HStack {
             if isEditing {
                 editingView
-            }
-            else {
+            } else {
                 displayView
             }
         }
@@ -43,14 +42,17 @@ struct BreadCrumbControlWrapper: View {
         .background(
             RoundedRectangle(cornerRadius: 7)
                 // Use pale yellow when editing, otherwise subtle platform background
-                .fill(isEditing ? FilePanelStyle.orangeSelRowStroke.opacity(0.6)
-                    : Color(nsColor: NSColor.windowBackgroundColor))
+                .fill(
+                    isEditing
+                        ? FilePanelStyle.orangeSelRowStroke.opacity(0.6)
+                        : Color(nsColor: NSColor.windowBackgroundColor))
         )
         .overlay(
             // Blue border when editing, subtle gray when idle; no internal separators
             RoundedRectangle(cornerRadius: 7)
-                .stroke(isEditing ? Color.accentColor : Color.blue.opacity(isHovering ? 0.5 : 0.3),
-                        lineWidth: isEditing ? 1.5 : 1)
+                .stroke(
+                    isEditing ? Color.accentColor : Color.blue.opacity(isHovering ? 0.5 : 0.3),  //no
+                    lineWidth: isEditing ? 1.5 : 1)
         )
         .shadow(color: .secondary.opacity(isHovering ? 0.18 : 0.12), radius: 7, x: 1, y: 1)
         .padding(.vertical, 2)
@@ -94,7 +96,7 @@ struct BreadCrumbControlWrapper: View {
                 Image(systemName: "checkmark.circle.fill")
                     .renderingMode(.original)
                     .foregroundColor(.accentColor)
-                    .symbolEffect(.pulse) // Варианты: .bounce, .variableColor, .scale
+                    .symbolEffect(.pulse)
             }
             Button {
                 log.info("Cancelled path editing with X button")
@@ -103,7 +105,7 @@ struct BreadCrumbControlWrapper: View {
                 Image(systemName: "xmark.circle.fill")
                     .renderingMode(.original)
                     .foregroundColor(.gray.opacity(0.7))
-                    .symbolEffect(.pulse) // Варианты: .bounce, .variableColor, .scale
+                    .symbolEffect(.pulse)
             }
         }
         .transition(.opacity)
@@ -144,8 +146,7 @@ struct BreadCrumbControlWrapper: View {
                 appState.leftPath = editedPathStr
                 await appState.scanner.setLeftDirectory(pathStr: editedPathStr)
                 await appState.refreshLeftFiles()
-            }
-            else {
+            } else {
                 appState.rightPath = editedPathStr
                 await appState.scanner.setRightDirectory(pathStr: editedPathStr)
                 await appState.refreshRightFiles()

@@ -26,13 +26,7 @@ struct MiMiNavigatorApp: App {
                 TotalCommanderResizableView()
                 ConsoleCurrPath()
             }
-            .environmentObject(appState)  // make AppState visible to the whole scene
-            .focusable(true)
-            .onAppear {
-                // Initialize file lists, watchers, and restore state once at launch
-                log.debug("App launched → initializing AppState")
-                appState.initialize()
-            }
+            .environmentObject(appState)
             .toolbar {
                 ToolbarItem(placement: .automatic) {
                     Button(action: { log.info("Refresh button clicked") }) {

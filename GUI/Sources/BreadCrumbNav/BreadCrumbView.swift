@@ -58,9 +58,7 @@ struct BreadCrumbView: View {
                 .shadow(color: .black.opacity(0.22), radius: 2, x: 1, y: 1)
                 .contrast(1.12)
                 .saturation(1.06)
-                .onTapGesture {
-                    log.info(#function)
-                }
+                .padding(.horizontal, 2)
         }
         getMnuButton(index)
     }
