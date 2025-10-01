@@ -6,12 +6,14 @@
 //
 
 import SwiftUI
+import AppKit
 
 let log = LogMan.log
 
 @main
 struct MiMiNavigatorApp: App {
     @StateObject private var appState = AppState()  // single source of truth
+    @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
 
     // MARK: -
     init() {
@@ -27,6 +29,7 @@ struct MiMiNavigatorApp: App {
                 ConsoleCurrPath()
             }
             .environmentObject(appState)
+            .onAppear { appDelegate.bind(appState) }
             .toolbar {
                 ToolbarItem(placement: .automatic) {
                     Button(action: { log.info("Refresh button clicked") }) {
@@ -97,3 +100,4 @@ struct MiMiNavigatorApp: App {
     }
 
 }
+

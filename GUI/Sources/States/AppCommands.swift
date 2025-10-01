@@ -7,25 +7,18 @@
 //
 
 import SwiftUI
+import AppKit
 
 struct AppCommands: Commands {
     let appState: AppState
 
     var body: some Commands {
         CommandMenu("Panels / Navigation") {
-            Button("Toggle Panel Focus") {
-                // Use AppState passthrough to avoid Binding traps and ensure same instance
-                log.debug("KB: Tab → toggle panel")
+            Button("Toggle Panel Focus (⌘⌥T)") {
+                log.debug("KB: Cmd+Opt+T → toggle panel (definitive diagnostic)")
                 appState.togglePanel()
             }
-            .keyboardShortcut(.tab, modifiers: [])
-
-            Button("Toggle Panel Focus (Ctrl+Tab)") {
-                // Diagnostic alternate shortcut to avoid system focus traversal swallowing Tab
-                log.debug("KB: Ctrl+Tab → toggle panel (diagnostic)")
-                appState.togglePanel()
-            }
-            .keyboardShortcut(.tab, modifiers: [.control])
+            .keyboardShortcut("t", modifiers: [.command, .option])
 
             Button("Move Up") {
                 appState.selectionMove(by: -1)
