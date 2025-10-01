@@ -1,24 +1,32 @@
 project: MiMiNavigator.xcodeproj
 workspace: MiMiNavigator.xcworkspace
+
 schemes:
   - MiMiNavigator
 
-targets:
+analyze_targets:
   - MiMiNavigator
 
-retain-public: true
-retain-assign-only-properties: true
-enable-test-target-analysis: true
+retain_public: true
+retain_assign_only_properties: true
+enable_test_target_analysis: true
 
-retain-patterns:
+retain_patterns:
   - ".*View$"
   - ".*Model$"
   - ".*Controller$"
 
-exclude-files:
-  - Tests/
-  - Scripts/
+exclude_targets:
+  - MiMiNavigatorTests
+
+exclude_files:
+  - "Tests/*"
+  - "Scripts/*"
   - "**/*.generated.swift"
+
+report_exclude:
+  - "Carthage/*"
+  - "Pods/*"
 
 format: xcode
 strict: true
