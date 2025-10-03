@@ -18,6 +18,7 @@ extension Notification.Name {
 
 // MARK: -
 struct PanelFileTableSection: View {
+    @EnvironmentObject var appState: AppState
     let files: [CustomFile]
     @Binding var selectedID: CustomFile.ID?
     let panelSide: PanelSide
