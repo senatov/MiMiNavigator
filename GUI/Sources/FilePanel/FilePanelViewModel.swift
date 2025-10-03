@@ -11,7 +11,6 @@ import SwiftUI
 
 @MainActor
 final class FilePanelViewModel: ObservableObject {
-    @Published var selectedFileID: CustomFile.ID?
     let panelSide: PanelSide
     private let appState: AppState
     private let fetchFiles: @Sendable @concurrent (PanelSide) async -> Void
@@ -56,11 +55,21 @@ final class FilePanelViewModel: ObservableObject {
         }
     }
 
-    // MARK: -
+    // MARK: - Select file on this panel and clear other panel's selection
     func select(_ file: CustomFile) {
         log.info(#function + " for file \(file.nameStr), side \(panelSide)")
-        unselectAll()
-        selectedFileID = file.id
+
+        // Clear both to avoid double-selection and keep global invariants
+        appState.selectedLeftFile = nil
+        appState.selectedRightFile = nil
+
+        switch panelSide {
+            case .left:
+                appState.selectedLeftFile = file
+            case .right:
+                appState.selectedRightFile = file
+        }
+        // Keep other global flags in sync
         appState.selectedDir.selectedFSEntity = file
         appState.showFavTreePopup = false
     }
@@ -68,9 +77,6 @@ final class FilePanelViewModel: ObservableObject {
     // MARK: - Clears selection on both panels and resets related fields in AppState.
     func unselectAll() {
         log.info(#function + " — clearing selection on both panels")
-        // local (this panel)
-        selectedFileID = nil
-        // global (both panels)
         appState.selectedLeftFile = nil
         appState.selectedRightFile = nil
         appState.selectedDir.selectedFSEntity = nil

@@ -17,6 +17,34 @@ struct FilePanelView: View {
     /// Called when user clicks anywhere inside the panel (left/right)
     let onPanelTap: (PanelSide) -> Void
 
+    // MARK: - compound Variable: Bridge binding to AppState-selected file for this panel
+    private var selectedIDBinding: Binding<CustomFile.ID?> {
+        Binding<CustomFile.ID?>(
+            get: {
+                switch viewModel.panelSide {
+                    case .left:
+                        return appState.selectedLeftFile?.id
+                    case .right:
+                        return appState.selectedRightFile?.id
+                }
+            },
+            set: { newValue in
+                // We only handle clearing via the binding. Non-nil selection is set via onSelect below.
+                if newValue == nil {
+                    log.info("Clearing selection via binding for side \(viewModel.panelSide)")
+                    switch viewModel.panelSide {
+                        case .left:
+                            appState.selectedLeftFile = nil
+                        case .right:
+                            appState.selectedRightFile = nil
+                    }
+                    appState.selectedDir.selectedFSEntity = nil
+                    appState.showFavTreePopup = false
+                }
+            }
+        )
+    }
+
     // MARK: - Init
     init(
         selectedSide: PanelSide,
@@ -52,10 +80,11 @@ struct FilePanelView: View {
             )
             PanelFileTableSection(
                 files: viewModel.sortedFiles,
-                selectedID: $viewModel.selectedFileID,
+                selectedID: selectedIDBinding,
                 panelSide: viewModel.panelSide,
                 onPanelTap: onPanelTap,
                 onSelect: { file in
+                    // Centralized selection; will clear the other panel via ViewModel.select(_:)
                     viewModel.select(file)
                 }
             )
@@ -67,7 +96,15 @@ struct FilePanelView: View {
         )
         .panelFocus(panelSide: viewModel.panelSide) {
             log.info("Focus lost on \(viewModel.panelSide); clearing selection")
-            viewModel.selectedFileID = nil
+            switch viewModel.panelSide {
+                case .left:
+                    appState.selectedLeftFile = nil
+                case .right:
+                    appState.selectedRightFile = nil
+            }
+            appState.selectedDir.selectedFSEntity = nil
+            appState.showFavTreePopup = false
+            log.info("Cleared selection due to focus loss for side \(viewModel.panelSide)")
         }
     }
 }
