@@ -155,23 +155,26 @@ struct FileTableView: View {
     private func drawFileLineInTheTable(_ index: Int, _ isSelected: Bool, _ file: CustomFile) -> some View {
         return ZStack(alignment: .leading) {
             // Zebra background stripes (Finder-like)
-            (index.isMultiple(of: 2) ? Color.white : Color.gray.opacity(0.1)).allowsHitTesting(false)
+            (index.isMultiple(of: 2) ? Color.white : Color.gray.opacity(0.08)).allowsHitTesting(false)
             if isSelected {
-                Rectangle().fill(FilePanelStyle.yellowSelRowFill).allowsHitTesting(false)
+                FilePanelStyle.yellowSelRowFill
+                    .overlay(FilePanelStyle.yellowSelRowFill)
+                    .allowsHitTesting(false)
             }
             rowContent(file: file)
         }
         .frame(maxWidth: .infinity, alignment: .leading).contentShape(Rectangle())
-        .help(file.id)
+        .help(file.id + "" + file.modifiedDateFormatted + " " + file.fileObjTypEnum)
         .highPriorityGesture(
             TapGesture()
                 .onEnded {
-                    selectedID = file.id
+                    // Centralized selection: keep both panels in sync via onSelect
+                    appState.focusedPanel = panelSide
                     onSelect(file)
                 }
         )
         .overlay(highlightedSquare(isSelected))
-        .shadow(color: isSelected ? .black.opacity(0.2) : .clear, radius: 4, x: 0, y: 2)
+        .shadow(color: isSelected ? .gray.opacity(0.07) : .clear, radius: 4, x: 1, y: 1)
         .animation(.spring(response: 0.4, dampingFraction: 0.7), value: isSelected)
     }
 

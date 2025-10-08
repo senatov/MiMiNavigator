@@ -89,10 +89,18 @@ struct FilePanelView: View {
                 }
             )
         }
+        .contentShape(Rectangle())
         .frame(
             width: viewModel.panelSide == .left
                 ? (leftPanelWidth > 0 ? leftPanelWidth : geometry.size.width / 2)
                 : nil
+        )
+        .simultaneousGesture(
+            TapGesture().onEnded {
+                // Focus the panel on any click within its bounds without stealing row taps
+                log.info("Panel tapped for focus: \(viewModel.panelSide)")
+                onPanelTap(viewModel.panelSide)
+            }
         )
         .panelFocus(panelSide: viewModel.panelSide) {
             log.info("Focus lost on \(viewModel.panelSide); clearing selection")

@@ -57,8 +57,8 @@ struct PanelFileTableSection: View {
             panelSide: panelSide,
             files: files,
             selectedID: $selectedID,
-            onSelect: { _ in }  // selection handled below
-        )
+            onSelect: onSelect   // ← вместо { _ in }
+          )
         .coordinateSpace(name: "fileTableSpace")
         .onPreferenceChange(RowRectPreference.self) { value in
             rowRects = value
