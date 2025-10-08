@@ -53,9 +53,9 @@ struct FileRowView: View {
                 Image(nsImage: NSWorkspace.shared.icon(forFile: file.urlValue.path)).resizable().interpolation(.high)  // Improve visual quality for resized icons
                     .frame(width: FilePanelStyle.iconSize, height: FilePanelStyle.iconSize)
                     .shadow(color: .black.opacity(0.22), radius: 2, x: 1, y: 1)  // Subtle drop shadow for depth
-                    .contrast(1.12)  // Slightly increase contrast
-                    .saturation(1.06)  // Slightly richer colors
-                    .padding(.trailing, 5)  // Breathing room between icon and text
+                    .contrast(1.12)
+                    .saturation(1.06)
+                    .padding(.trailing, 5)
                     .allowsHitTesting(false)
                     .colorMultiply(
                         file.isSymbolicDirectory
@@ -63,7 +63,6 @@ struct FileRowView: View {
                             : Color.white
                     )  // Highlight effect when selected
                     .shadow(color: isActiveSelection ? .gray.opacity(0.07) : .clear, radius: 4, x: 1, y: 1)
-
                 if file.isSymbolicDirectory {
                     Image(systemName: "arrowshape.turn.up.right.fill").resizable().scaledToFit()
                         .frame(width: FilePanelStyle.iconSize / 3, height: FilePanelStyle.iconSize / 3)
@@ -78,26 +77,9 @@ struct FileRowView: View {
 
     // MARK: - Row Container with conditional debug logic
     private func rowContainer<Content: View>(_ content: Content) -> some View {
-        log.debug("\(#function) for '\(file.nameStr)'")  // Debug log
-        var bkgColor: Color = .clear
-        var shadowColor: Color = .clear
+        let rowCnt = content.frame(maxWidth: .infinity, alignment: .leading).background(.clear)
         if isActiveSelection {
-            bkgColor = FilePanelStyle.yellowSelRowFill
-            shadowColor = .black.opacity(0.2)
-        }
-        let rowCnt =
-            content
-            .padding(.vertical, 1)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(bkgColor)
-            .shadow(color: shadowColor, radius: 4, x: 0, y: 2)
-        if isActiveSelection {
-            log.debug("Active selection → applying animation & contentShape")
-            return AnyView(
-                rowCnt
-                    .animation(.spring(response: 0.4, dampingFraction: 0.8), value: isActiveSelection)
-                    .contentShape(Rectangle())
-            )
+            return AnyView(rowCnt.contentShape(Rectangle()))
         } else {
             log.debug("Inactive row → returning without animation")
             return AnyView(rowCnt)
