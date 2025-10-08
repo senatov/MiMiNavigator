@@ -8,6 +8,7 @@
 
 import SwiftUI
 
+// MARK: -
 struct FileTableView: View {
     @EnvironmentObject var appState: AppState
     let panelSide: PanelSide
@@ -176,10 +177,69 @@ struct FileTableView: View {
         .overlay(highlightedSquare(isSelected))
         .shadow(color: isSelected ? .gray.opacity(0.07) : .clear, radius: 4, x: 1, y: 1)
         .animation(.spring(response: 0.4, dampingFraction: 0.7), value: isSelected)
+        .contextMenu {
+            if file.isDirectory {
+                DirectoryContextMenu(file: file) { action in
+                    handleDirectoryAction(action, for: file)
+                }
+            } else {
+                FileContextMenu(file: file) { action in
+                    handleFileAction(action, for: file)
+                }
+            }
+        }
+
+        // MARK: - File actions handler
+        func handleFileAction(_ action: FileAction, for file: CustomFile) {
+            switch action {
+                case .cut:
+                    log.debug("File action: cut → \(file.pathStr)")
+                case .copy:
+                    log.debug("File action: copy → \(file.pathStr)")
+                case .pack:
+                    log.debug("File action: pack → \(file.pathStr)")
+                case .viewLister:
+                    log.debug("File action: viewLister → \(file.pathStr)")
+                case .createLink:
+                    log.debug("File action: createLink → \(file.pathStr)")
+                case .delete:
+                    log.debug("File action: delete → \(file.pathStr)")
+                case .rename:
+                    log.debug("File action: rename → \(file.pathStr)")
+                case .properties:
+                    log.debug("File action: properties → \(file.pathStr)")
+            }
+        }
+    }
+
+    // MARK: - Directory actions handler
+    func handleDirectoryAction(_ action: DirectoryAction, for file: CustomFile) {
+        switch action {
+            case .open:
+                log.debug("Action: open → \(file.pathStr)")
+            case .openInNewTab:
+                log.debug("Action: openInNewTab → \(file.pathStr)")
+            case .viewLister:
+                log.debug("Action: viewLister → \(file.pathStr)")
+            case .cut:
+                log.debug("Action: cut → \(file.pathStr)")
+            case .copy:
+                log.debug("Action: copy → \(file.pathStr)")
+            case .pack:
+                log.debug("Action: pack → \(file.pathStr)")
+            case .createLink:
+                log.debug("Action: createLink → \(file.pathStr)")
+            case .delete:
+                log.debug("Action: delete → \(file.pathStr)")
+            case .rename:
+                log.debug("Action: rename → \(file.pathStr)")
+            case .properties:
+                log.debug("Action: properties → \(file.pathStr)")
+        }
     }
 
     // MARK: - Sorting comparator extracted to help the type-checker
-    private func compare(_ a: CustomFile, _ b: CustomFile) -> Bool {
+    func compare(_ a: CustomFile, _ b: CustomFile) -> Bool {
         let aIsFolder = a.isDirectory || a.isSymbolicDirectory
         let bIsFolder = b.isDirectory || b.isSymbolicDirectory
         if aIsFolder != bIsFolder { return aIsFolder && !bIsFolder }
@@ -203,7 +263,7 @@ struct FileTableView: View {
     }
 
     // MARK: -
-    private var sortedFiles: [CustomFile] {
+    var sortedFiles: [CustomFile] {
         // Always sort directories first, then apply selected column sort
         log.info(#function + " for side \(panelSide), sorting by \(sortKey), ascending: \(sortAscending)")
         let base: [CustomFile] = files
@@ -213,7 +273,7 @@ struct FileTableView: View {
 
     // MARK: - Row content extracted to reduce view-builder complexity
     @ViewBuilder
-    private func rowContent(file: CustomFile) -> some View {
+    func rowContent(file: CustomFile) -> some View {
         HStack(alignment: .center, spacing: 8) {
             // Name column (expands)
             FileRowView(file: file, panelSide: panelSide)

@@ -11,7 +11,7 @@ import Foundation
 // MARK: - File Menu
 @MainActor
 let filesMenuCategory = MenuCategory(
-    title: "Files",
+    title: "Files...",
     items: [
         MenuItem(title: "Rename/Move", action: { log.info("Menu > Files > Rename/Move") }, shortcut: "F6"),
         MenuItem(title: "Change Attributes...", action: { log.info("Menu > Files > Change Attributes...") }, shortcut: "Ctrl+A"),
@@ -29,7 +29,7 @@ let filesMenuCategory = MenuCategory(
 // MARK: - Mark Menu
 @MainActor
 let markMenuCategory = MenuCategory(
-    title: "Mark",
+    title: "Mark...",
     items: [
         MenuItem(title: "Select Group...", action: { log.info("Menu > Mark > Select Group...") }, shortcut: "Num+"),
         MenuItem(title: "Unselect Group...", action: { log.info("Menu > Mark > Unselect Group...") }, shortcut: "Num-"),
@@ -41,7 +41,7 @@ let markMenuCategory = MenuCategory(
 // MARK: - Commands Menu
 @MainActor
 let commandMenuCategory = MenuCategory(
-    title: "Commands",
+    title: "Commands...",
     items: [
         MenuItem(
             title: "Open Command Prompt...", action: { log.info("Menu > Commands > Open Command Prompt...") }, shortcut: "Ctrl+P"
@@ -56,7 +56,7 @@ let commandMenuCategory = MenuCategory(
 // MARK: - Net Menu
 @MainActor
 let netMenuCategory = MenuCategory(
-    title: "Net",
+    title: "Net...",
     items: [
         MenuItem(title: "FTP Connect...", action: { log.info("Menu > Net > FTP Connect...") }, shortcut: "Ctrl+N"),
         MenuItem(title: "FTP Disconnect", action: { log.info("Menu > Net > FTP Disconnect") }, shortcut: nil),
@@ -66,7 +66,7 @@ let netMenuCategory = MenuCategory(
 // MARK: - Show Menu
 @MainActor
 let showMenuCategory = MenuCategory(
-    title: "Show",
+    title: "Show...",
     items: [
         MenuItem(title: "Full View", action: { log.info("Menu > Show > Full View") }, shortcut: nil),
         MenuItem(title: "Brief View", action: { log.info("Menu > Show > Brief View") }, shortcut: nil),
@@ -76,7 +76,7 @@ let showMenuCategory = MenuCategory(
 // MARK: - Configuration Menu
 @MainActor
 let configMenuCategory = MenuCategory(
-    title: "Configuration",
+    title: "Configuration...",
     items: [
         MenuItem(title: "Options...", action: { log.info("Menu > Configuration > Options...") }, shortcut: "Alt+O"),
         MenuItem(
@@ -86,7 +86,7 @@ let configMenuCategory = MenuCategory(
 // MARK: - Start Menu
 @MainActor
 let startMenuCategory = MenuCategory(
-    title: "Start",
+    title: "Start...",
     items: [
         MenuItem(title: "New Tab", action: { log.info("Menu > Start > New Tab") }, shortcut: "Ctrl+T"),
         MenuItem(title: "Duplicate Tab", action: { log.info("Menu > Start > Duplicate Tab") }, shortcut: "Ctrl+D"),
@@ -96,7 +96,7 @@ let startMenuCategory = MenuCategory(
 // MARK: - Help Menu
 @MainActor
 let helpMenuCategory = MenuCategory(
-    title: "Help",
+    title: "Help...",
     items: [
         MenuItem(title: "Index", action: { log.info("Help > Index") }, shortcut: "F1"),
         MenuItem(title: "Keyboard", action: { log.info("Help > Keyboard") }, shortcut: nil),
