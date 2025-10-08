@@ -41,7 +41,7 @@ struct TopMenuBarView: View {
         .background(
             // Minimal BlurView has no parameters
             BlurView()
-                .clipShape(RoundedRectangle(cornerRadius: 7))
+                .clipShape(RoundedRectangle(cornerRadius: 12))
         )
     }
         // MARK: -
