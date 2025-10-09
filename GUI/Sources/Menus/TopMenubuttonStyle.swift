@@ -1,48 +1,86 @@
-    //
-    //  TopMenuBarStyle.swift
-    //  MiMiNavigator
-    //
-    //  Created by Iakov Senatov on 09.03.25.
-    //  Copyright © 2025 Senatov. All rights reserved.
-    //
+//
+//  TopMenuBarStyle.swift
+//  MiMiNavigator
+//
+//  Created by Iakov Senatov on 09.03.25.
+//  Copyright © 2025 Senatov. All rights reserved.
+//
 
 import SwiftUI
 
-    // MARK: -
-struct TopMenuButtonStyle: ButtonStyle {
+    // MARK: - TopMenuButtonStyle
+    // Visual style for top-row text buttons to match macOS/Figma menu look.
+    // - Subtle hover/press background (no opaque fills)
+    // - Small typography (13pt), compact paddings
+    // - Rounded hit area, thin separator stroke only on hover/press
+    // - Works in light/dark mode; no ignoresSafeArea usage
+public struct TopMenuButtonStyle: ButtonStyle {
+    public init() {}
     
-    @State private var isHovered = false  // Tracks mouse hover state
+    public func makeBody(configuration: Configuration) -> some View {
+        _TopMenuButton(configuration: configuration)
+    }
     
-        // MARK: -
-    func makeBody(configuration: Configuration) -> some View {
-        return configuration.label
-            .padding(.horizontal, 30)  // Reduced horizontal padding
-            .padding(.vertical, 6)
-            .font(.system(size: NSFont.systemFontSize, weight: .regular))
-            .foregroundColor(isHovered ? Color.blue.opacity(0.9) : Color.primary)  // Crisp dark blue color on hover
-            .background(
-                Group {
-                    if isHovered {
-                        Color.blue.opacity(0.15)  // Light blue background on hover
-                    }
-                    else {
-                            // Minimal BlurView has no parameters
-                        BlurView()
-                    }
-                }
-            )
-            .frame(height: 22)  // Fixed height
-            .cornerRadius(7)
-            .overlay(
-                RoundedRectangle(cornerRadius: 7)
-                    .stroke(Color.blue.opacity(isHovered ? 0.8 : 0.4), lineWidth: isHovered ? 1.4 : 1)
-            )
-            .onHover { hovering in
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.6, blendDuration: 0)) {
-                    log.info(#function)
-                    isHovered = hovering
+        // Internal view managing hover state and visuals
+    private struct _TopMenuButton: View {
+        let configuration: Configuration
+        
+            // Layout constants tuned for macOS menu-like row
+        private let cornerRadius: CGFloat = 6
+        private let horizontalPadding: CGFloat = 10
+        private let verticalPadding: CGFloat = 4
+        private let minHeight: CGFloat = 26
+        private let fontSize: CGFloat = 13
+        
+        @Environment(\.isEnabled) private var isEnabled
+        @State private var isHovered: Bool = false
+        
+            // Background for hover/press, transparent by default
+        private var background: some View {
+            Group {
+                if configuration.isPressed {
+                    RoundedRectangle(cornerRadius: cornerRadius)
+                        .fill(.tertiary)    // slightly stronger for pressed
+                } else if isHovered {
+                    RoundedRectangle(cornerRadius: cornerRadius)
+                        .fill(.quaternary)  // subtle hover
+                } else {
+                    RoundedRectangle(cornerRadius: cornerRadius)
+                        .fill(.clear)
                 }
             }
-            .accessibility(label: Text("Top menu"))
+        }
+        
+            // Hairline stroke only when interactive (hover/press)
+        private var stroke: some View {
+            Group {
+                if configuration.isPressed || isHovered {
+                    RoundedRectangle(cornerRadius: cornerRadius)
+                        .strokeBorder(.separator, lineWidth: 0.5)
+                } else {
+                    RoundedRectangle(cornerRadius: cornerRadius)
+                        .strokeBorder(.clear, lineWidth: 0)
+                }
+            }
+        }
+        
+        var body: some View {
+            configuration.label
+                .font(.system(size: fontSize, weight: .regular))
+                .padding(.horizontal, horizontalPadding)
+                .padding(.vertical, verticalPadding)
+                .frame(minHeight: minHeight, alignment: .center)
+                .foregroundStyle(isEnabled ? .primary : .secondary)
+                .contentShape(RoundedRectangle(cornerRadius: cornerRadius)) // precise hit area
+                .background(background)
+                .overlay(stroke)
+                .cornerRadius(cornerRadius)
+                .onHover { isHovered = $0 }
+                .animation(.easeInOut(duration: 0.12), value: isHovered)
+                .animation(.easeInOut(duration: 0.08), value: configuration.isPressed)
+                .opacity(isEnabled ? 1.0 : 0.5)
+                .focusable(false)               // avoid focus ring around text-like buttons
+                .textSelection(.disabled)       // no text selection in menu row
+        }
     }
 }

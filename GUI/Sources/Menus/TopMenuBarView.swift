@@ -12,37 +12,49 @@ struct TopMenuBarView: View {
         // MARK: -
     var body: some View {
         log.info(#function)
-        return HStack(spacing: 8) {
-            ForEach(menuData.dropLast()) { menu in
-                menuView(for: menu)
-            }
-            Spacer()  // Push Help menu to the right edge Help menu rendered separately
-            if let helpMenu = menuData.last {
-                Menu {
-                    ForEach(helpMenu.items) { item in
-                        TopMenuItemView(item: item)
-                    }
-                } label: {
-                    Text(helpMenu.title)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 6)
-                        .font(.system(size: NSFont.systemFontSize, weight: .regular))
-                        .foregroundColor(Color.primary)
-                        .frame(height: 22)
-                        .help("Open menu: '\(helpMenu.title)'")
+        return ZStack(alignment: .top) {
+                // Glass-like background bar with a thin bottom separator (Figma/macOS 26)
+            Rectangle()
+                .fill(.regularMaterial)
+                .frame(height: 36)
+                .overlay(alignment: .bottom) {
+                    Rectangle()
+                        .frame(height: 0.5)
+                        .foregroundStyle(.separator)
                 }
-                .buttonStyle(TopMenuButtonStyle())
-                .padding(.trailing, 1)
+            
+                // Existing menu row kept intact (structure/logic unchanged)
+            HStack(spacing: 6) {
+                ForEach(menuData.dropLast()) { menu in
+                    menuView(for: menu)
+                }
+                Spacer(minLength: 12) // keep Help menu pushed to the right with consistent gap
+                
+                if let helpMenu = menuData.last {
+                    Menu {
+                        ForEach(helpMenu.items) { item in
+                            TopMenuItemView(item: item)
+                        }
+                    } label: {
+                        Text(helpMenu.title)
+                            .font(.system(size: 13, weight: .regular))
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 4)
+                            .frame(minHeight: 26, alignment: .center)
+                            .contentShape(RoundedRectangle(cornerRadius: 6))
+                            .help("Open menu: '\(helpMenu.title)'")
+                    }
+                    .menuStyle(.borderlessButton)      // flat, menu-like appearance
+                    .buttonStyle(TopMenuButtonStyle()) // keep your custom text-button look
+                    .padding(.trailing, 1)
+                }
             }
+            .padding(.horizontal, 10)
+            .frame(height: 36, alignment: .center)
+            .accessibilityElement(children: .contain)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 20)
-        .padding(.vertical, 6)
-        .background(
-            // Minimal BlurView has no parameters
-            BlurView()
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-        )
+        .frame(maxWidth: .infinity, alignment: .topLeading)
+        .background(.clear) // no opaque backgrounds behind the bar
     }
         // MARK: -
     private func menuView(for menu: MenuCategory) -> some View {
@@ -53,6 +65,7 @@ struct TopMenuBarView: View {
             }
         }
         .help("Open menu: \(menu.title)")
+        .menuStyle(.borderlessButton)     // ensure flat dropdown look per Figma/macOS
         .buttonStyle(TopMenuButtonStyle())
     }
     

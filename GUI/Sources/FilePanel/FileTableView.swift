@@ -59,7 +59,7 @@ struct FileTableView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity).padding(.horizontal, 6)
         .overlay(
-            RoundedRectangle(cornerRadius: 7)
+            RoundedRectangle(cornerRadius: 12)
                 .stroke(
                     isFocused ? Color(nsColor: .systemBlue) : .gray.opacity(0.3),
                     lineWidth: isFocused ? max(FilePanelStyle.selectedBorderWidth, 1.2) : 1

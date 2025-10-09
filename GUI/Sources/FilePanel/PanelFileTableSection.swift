@@ -70,11 +70,11 @@ struct PanelFileTableSection: View {
                     let h = rect.height
                     let w = g.size.width
                     ZStack {
-                        RoundedRectangle(cornerRadius: 7)
+                        RoundedRectangle(cornerRadius: 12)
                             .fill(FilePanelStyle.yellowSelRowFill)
                             .frame(width: w, height: h)
                             .offset(x: 0, y: y)
-                        RoundedRectangle(cornerRadius: 7)
+                        RoundedRectangle(cornerRadius: 12)
                             .stroke(
                                 FilePanelStyle.blueSymlinkDirNameColor, lineWidth: FilePanelStyle.selectedBorderWidth
                             )
