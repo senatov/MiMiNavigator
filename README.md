@@ -1,7 +1,7 @@
 
 <div style="text-align: center;">
   <img
-    src="Gui/Assets.xcassets/AppIcon.appiconset/120.png"
+    src="GUI/Assets.xcassets/AppIcon.appiconset/120.png"
     alt="Preview FrontEnd"
     title="Logo"
     style="max-width: 100%; height: auto; border: 2px; border-radius: 4px;" />
@@ -32,7 +32,7 @@ The repository is organized around an Xcode project with sources under `MiMiNavi
 
 <div style="text-align: center;" >
   <img
-    src="Gui/Docs/Preview.png"
+    src="GUI/Docs/Preview.png"
     alt="Preview FrontEnd"
     title="Preview"
     style="max-width: 100%; height: auto; border: 2px solid #133347ff; border-radius: 4px;" />
