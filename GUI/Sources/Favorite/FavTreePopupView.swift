@@ -8,7 +8,7 @@
 import AppKit
 import SwiftUI
 
-struct FavTreeView: View {
+struct FavTreePopupView: View {
     @EnvironmentObject var appState: AppState
     @Binding var file: CustomFile
     @Binding var expandedFolders: Set<String>
@@ -105,7 +105,7 @@ struct FavTreeView: View {
         Group {
             if isExpanded, let children = file.children, !children.isEmpty {
                 ForEach(children.indices, id: \.self) { index in
-                    FavTreeView(
+                    FavTreePopupView(
                         file: Binding(
                             get: { file.children![index] },
                             set: { file.children![index] = $0 }

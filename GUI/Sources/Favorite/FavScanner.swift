@@ -1,5 +1,5 @@
 //
-//  FavoritesScanner.swift
+//  FavScanner.swift
 //  MiMiNavigator
 //
 //  Created by Iakov Senatov on 01.11.24.
