@@ -34,12 +34,12 @@ struct FileContextMenu: View {
         }
         .frame(minWidth: 220)
         .background(
-            RoundedRectangle(cornerRadius: 7, style: .continuous)
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .fill(Color(nsColor: .windowBackgroundColor))
                 .shadow(color: .secondary.opacity(0.25), radius: 7, x: 1, y: 1)
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 7)
+            RoundedRectangle(cornerRadius: 12)
                 .stroke(Color.secondary.opacity(0.35), lineWidth: 0.6)
         )
     }

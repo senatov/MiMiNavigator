@@ -16,12 +16,12 @@ struct PrettyTooltip: View {
             .font(.system(size: 13, weight: .regular, design: .default))
             .padding(12)
             .background(
-                RoundedRectangle(cornerRadius: 7, style: .continuous)
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
                     .fill(FilePanelStyle.orangeSelRowStroke) // less intense pale yellow background
                     .shadow(color: .secondary.opacity(0.40), radius: 7.0, x: 1, y: 1)
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 7)
+                RoundedRectangle(cornerRadius: 12)
                     .stroke(FilePanelStyle.dirNameColor, lineWidth: 0.6) // light border
             )
             .foregroundColor(.black)

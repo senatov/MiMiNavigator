@@ -30,7 +30,7 @@ struct BreadCrumbPathControl: View {
             NavMnu2()
         }
         .background(
-            RoundedRectangle(cornerRadius: 7)
+            RoundedRectangle(cornerRadius: 8)
                 .strokeBorder(Color.secondary.opacity(0.15), lineWidth: 1)
                 .fill(.background)
         )

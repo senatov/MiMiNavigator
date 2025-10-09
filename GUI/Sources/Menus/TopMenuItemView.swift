@@ -27,7 +27,7 @@ struct TopMenuItemView: View {
                 .background(
                     isPressed ? Color.blue.opacity(0.7) : isHovered ? Color.blue.opacity(0.3) : Color.clear
                 )
-                .cornerRadius(7)
+                .cornerRadius(8)
         }
         .buttonStyle(TopMenuButtonStyle())
         .onHover { hovering in
@@ -42,9 +42,8 @@ struct TopMenuItemView: View {
             }
         }
         .popover(isPresented: $showHelpText, attachmentAnchor: .point(.trailing), arrowEdge: .leading) {
-            HelpPopup(text: "This is a help text for \(item.title).") 
+            HelpPopup(text: "This is a help text for \(item.title).")
         }
         .keyboardShortcut(.cancelAction)
     }
 }
-

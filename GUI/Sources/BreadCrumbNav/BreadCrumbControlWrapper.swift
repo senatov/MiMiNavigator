@@ -40,7 +40,7 @@ struct BreadCrumbControlWrapper: View {
             isHovering = hovering
         }
         .background(
-            RoundedRectangle(cornerRadius: 7)
+            RoundedRectangle(cornerRadius: 12)
                 // Use pale yellow when editing, otherwise subtle platform background
                 .fill(
                     isEditing
@@ -49,7 +49,7 @@ struct BreadCrumbControlWrapper: View {
         )
         .overlay(
             // Blue border when editing, subtle gray when idle; no internal separators
-            RoundedRectangle(cornerRadius: 7)
+            RoundedRectangle(cornerRadius: 12)
                 .stroke(
                     isEditing ? Color.accentColor : Color.blue.opacity(isHovering ? 0.5 : 0.3),  //no
                     lineWidth: isEditing ? 1.5 : 1)

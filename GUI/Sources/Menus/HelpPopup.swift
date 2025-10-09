@@ -19,7 +19,7 @@ struct HelpPopup: View {
             .foregroundColor(Color(#colorLiteral(red: 0.5787474513, green: 0.3215198815, blue: 0, alpha: 1)))
             .padding(8)
             .background(FilePanelStyle.yellowSelRowFill)
-            .cornerRadius(3)
+            .cornerRadius(8)
             .frame(width: 200)
     }
 }

@@ -121,7 +121,7 @@ struct TotalCommanderResizableView: View {
             }
             .padding(.horizontal, 16)
             .padding(.top, 16)
-            .cornerRadius(7)
+            .cornerRadius(12)
         }
         .frame(maxWidth: .infinity, alignment: .bottom)
     }

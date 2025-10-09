@@ -36,11 +36,11 @@ struct DownToolbarButtonView: View {
                 .padding(.vertical, 6)
                 .frame(minWidth: 120, minHeight: 28)
                 .background(
-                    RoundedRectangle(cornerRadius: 7)
+                    RoundedRectangle(cornerRadius: 8)
                         .fill(Color.clear)
                 )
                 .overlay(
-                    RoundedRectangle(cornerRadius: 7)
+                    RoundedRectangle(cornerRadius: 8)
                         .stroke(FilePanelStyle.skyBlauColor, lineWidth: 2)
                 )
                 .scaleEffect(isPressed ? 0.92 : 1.0)
