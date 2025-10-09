@@ -74,6 +74,7 @@ final class FilePanelViewModel: ObservableObject {
         appState.showFavTreePopup = false
     }
 
+    // periphery:ignore
     // MARK: - Clears selection on both panels and resets related fields in AppState.
     func unselectAll() {
         log.info(#function + " — clearing selection on both panels")

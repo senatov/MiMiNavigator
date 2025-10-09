@@ -6,36 +6,40 @@
 //  Copyright © 2025 Senatov. All rights reserved.
 //
 
-
-import SwiftUI
 import AppKit
+import SwiftUI
 
 @MainActor
 final class FavTreePopoverController: ObservableObject {
     private var popover: NSPopover?
 
+    // periphery:ignore
     @MainActor
-    func show(for file: Binding<CustomFile>,
-              expandedFolders: Binding<Set<String>>,
-              side: PanelSide,
-              relativeTo button: NSView,
-              appState: AppState) {
+    func show(
+        for file: Binding<CustomFile>,
+        expandedFolders: Binding<Set<String>>,
+        side: PanelSide,
+        relativeTo button: NSView,
+        appState: AppState
+    ) {
 
         if popover?.isShown == true {
             popover?.performClose(nil)
             return
         }
 
-        let content = FavTreePopupView(file: file,
-                                       expandedFolders: expandedFolders,
-                                       selectedSide: side,
-                                       manageWindow: false)
-            .environmentObject(appState)
+        let content = FavTreePopupView(
+            file: file,
+            expandedFolders: expandedFolders,
+            selectedSide: side,
+            manageWindow: false
+        )
+        .environmentObject(appState)
 
         let hosting = NSHostingController(rootView: content)
         let pop = NSPopover()
         pop.contentViewController = hosting
-        pop.behavior = .transient // closes on click outside or ESC
+        pop.behavior = .transient  // closes on click outside or ESC
         pop.animates = true
         pop.contentSize = NSSize(width: 360, height: 420)
         pop.show(relativeTo: button.bounds, of: button, preferredEdge: .maxY)
