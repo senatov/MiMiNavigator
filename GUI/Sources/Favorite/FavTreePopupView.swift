@@ -1,106 +1,175 @@
-//
-//  TreeRowView.swift
-//  MiMiNavigator
-//
-//  Created by Iakov Senatov on 28.02.25.
-//  Copyright © 2025 Senatov. All rights reserved.
-//
+    //
+    //  FavTreePopupView.swift
+    //  MiMiNavigator
+    //
+    //  Created by Iakov Senatov on 28.02.2025.
+    //  Updated for macOS 2026 Figma style on 09.10.2025
+    //
+
 import AppKit
 import SwiftUI
 
+@MainActor
 struct FavTreePopupView: View {
+        // MARK: - Environment / Dependencies
     @EnvironmentObject var appState: AppState
+        // MARK: - Bindings
     @Binding var file: CustomFile
     @Binding var expandedFolders: Set<String>
+        // MARK: - Parameters
     let panelSide: PanelSide
-
-    // MARK: - Initializer
-    init(file: Binding<CustomFile>, expandedFolders: Binding<Set<String>>, selectedSide: PanelSide) {
-        log.info("FavTreeView init for file \(file.wrappedValue.nameStr), side \(selectedSide)")
-        self.panelSide = selectedSide
+    
+        /// Deprecated: window-managed mode is no longer used. The view is designed for NSPopover content.
+    let manageWindow: Bool // kept for source compatibility, ignored
+    
+        // Popover controller to allow closing on ESC
+    @StateObject private var popoverController = FavTreePopoverController()
+    @State private var headerButtonAnchor: NSView?
+    
+        // MARK: - Init
+    init(
+        file: Binding<CustomFile>,
+        expandedFolders: Binding<Set<String>>,
+        selectedSide: PanelSide,
+        manageWindow: Bool = true
+    ) {
         self._file = file
         self._expandedFolders = expandedFolders
+        self.panelSide = selectedSide
+        self.manageWindow = manageWindow
+        log.info("FavTreePopupView init for file \(file.wrappedValue.nameStr), side \(selectedSide)")
     }
-
-    // MARK: -
+    
+        // MARK: - Body
     var body: some View {
-        log.info(#function + " for file \(file.nameStr), side \(panelSide)")
-        return VStack(alignment: .leading) {
-            fileRow
-            childrenList
+        ZStack {
+                // Glass background (macOS 2026 Figma style: subtle, not balloon-like)
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(.ultraThinMaterial)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .stroke(.white.opacity(0.12), lineWidth: 0.5)
+                )
+            
+            VStack(alignment: .leading, spacing: 8) {
+                header
+                Divider().opacity(0.25)
+                
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 4) {
+                        fileRow
+                        childrenList
+                    }
+                    .padding(.vertical, 2)
+                }
+            }
+            .padding(10)
         }
-        .animation(.easeInOut(duration: 0.25), value: isExpanded)
-        .task { @MainActor in
+        .frame(minWidth: 340, minHeight: 420)
+            // Create standalone dialog window only when requested
+        .onAppear {
+                // No window creation here; this view is used as NSPopover content.
             appState.focusedPanel = panelSide
         }
+            // ESC to close
+        .onExitCommand {
+            log.info("ESC pressed → closing FavTreePopover")
+            popoverController.close()
+        }
     }
-
-    // MARK: -
+    
+        // MARK: - Subviews
+    
+    private var header: some View {
+        HStack(spacing: 8) {
+            Text("Favorites")
+                .font(.system(size: 15, weight: .semibold))
+            Spacer(minLength: 0)
+            Button(action: {
+                Task { @MainActor in
+                    do {
+                            // Present as a sheet anchored to our window; the anchor view is available if needed for popovers
+                        let data = try await grantAccessToVolumeAndSaveBookmark()
+                        log.info("User granted access. Bookmark bytes: \(data.count)")
+                    } catch {
+                        log.error("Grant access failed: \(error.localizedDescription)")
+                    }
+                }
+            }) {
+                Image(systemName: "externaldrive.badge.plus")
+                    .help("Allow access to a volume…")
+            }
+            .background(
+                AnchorCaptureView { nsView in
+                    self.headerButtonAnchor = nsView
+                    log.debug("Captured header button NSView for precise popover anchoring")
+                }
+            )
+            .buttonStyle(.borderless)
+        }
+        .padding(.top, 2)
+        .padding(.horizontal, 2)
+    }
+    
     private var fileIcon: some View {
         Group {
             if file.isDirectory || file.isSymbolicDirectory {
-                Image(systemName: "chevron.right.circle.fill")
-                    .renderingMode(.original)
-                    .foregroundColor(.blue)
+                Image(systemName: "chevron.right")
                     .rotationEffect(.degrees(isExpanded ? 90 : 0))
-                    .frame(width: FilePanelStyle.iconSize, height: FilePanelStyle.iconSize)
-                    .shadow(color: .black.opacity(0.22), radius: 2, x: 0, y: 1)  // Subtle drop shadow for depth
-                    .contrast(1.12)  // Slightly increase contrast
-                    .saturation(1.06)  // Slightly richer colors
-                    .padding(.trailing, 5)  // Breathing room between icon and text
+                    .foregroundStyle(.accent)
+                    .frame(width: 14, alignment: .leading)
+                    .contentShape(Rectangle())
                     .onTapGesture {
-                        log.info(#function)
-                        Task { @MainActor in
-                            toggleExpansion()
-                        }
+                        log.debug("Icon tap → toggleExpansion() for \(file.nameStr)")
+                        toggleExpansion()
                     }
             } else {
-                Image(systemName: "doc")
-                    .foregroundColor(.gray)
+                Image(systemName: "doc.text")
+                    .foregroundStyle(.secondary)
+                    .frame(width: 14, alignment: .leading)
             }
         }
     }
-
-    // MARK: -
+    
     private var fileNameText: some View {
-        log.info(#function + " for file \(file.nameStr), side \(panelSide)")
-        let isTheSame =
-            appState.selectedDir.selectedFSEntity?.pathStr == file.pathStr
+            // Selected state: compare with appState
+        let isCurrent = (appState.selectedDir.selectedFSEntity?.pathStr == file.pathStr)
         return Text(file.nameStr)
-            .foregroundColor(isTheSame ? .blue : .primary)
+            .font(.system(size: 13))
+            .foregroundColor(isCurrent ? .accentColor : .primary)
+            .contentShape(Rectangle())
             .onTapGesture {
-                log.info(#function)
+                log.info("Favorites select: \(file.nameStr)")
                 Task { @MainActor in
                     appState.selectedDir.selectedFSEntity = file
-                    appState.showFavTreePopup = false
                     await appState.scanner.resetRefreshTimer(for: .left)
                     await appState.scanner.resetRefreshTimer(for: .right)
                     await appState.scanner.refreshFiles(currSide: .left)
                     await appState.scanner.refreshFiles(currSide: .right)
-                    log.info("Favorites->selected Dir: \(file.nameStr)")
                 }
             }
             .contextMenu {
                 TreeViewContextMenu(file: file)
             }
     }
-
-    // MARK: -
+    
     private var fileRow: some View {
-        HStack {
+        HStack(spacing: 6) {
             fileIcon
             fileNameText
         }
+        .padding(.vertical, 3)
+        .padding(.horizontal, 8)
+        .background(
+            // Very subtle selection/expanded cue, no heavy buttons
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .fill(isExpanded ? Color.accentColor.opacity(0.10) : .clear)
+        )
+        .contentShape(Rectangle())
         .padding(.leading, (file.isDirectory || file.isSymbolicDirectory) ? 5 : 15)
         .font(.system(size: 14, weight: .regular))
     }
-
-    // MARK: -
-    var isExpanded: Bool {
-        expandedFolders.contains(file.pathStr)
-    }
-
-    // MARK: -
+    
     private var childrenList: some View {
         Group {
             if isExpanded, let children = file.children, !children.isEmpty {
@@ -111,32 +180,37 @@ struct FavTreePopupView: View {
                             set: { file.children![index] = $0 }
                         ),
                         expandedFolders: $expandedFolders,
-                        selectedSide: panelSide
+                        selectedSide: panelSide,
+                        manageWindow: false  // prevent nested windows
                     )
-                    .padding(.leading, 15)
+                    .environmentObject(appState)
+                    .padding(.leading, 14)
                     .transition(.opacity.combined(with: .move(edge: .leading)))
                 }
             }
         }
+        .animation(.easeInOut(duration: 0.22), value: isExpanded)
     }
-
-    // MARK: -
+    
+        // MARK: - State & Logic
+    var isExpanded: Bool {
+        expandedFolders.contains(file.pathStr)
+    }
+    
     private func toggleExpansion() {
-        log.info(#function + " for file \(file.nameStr), isExpanded: \(isExpanded)")
-        // Expand/collapse only folders (real or symbolic)
+        log.info("toggleExpansion for \(file.nameStr), current: \(isExpanded)")
         guard file.isDirectory || file.isSymbolicDirectory else {
-            log.info("toggleExpansion ignored: not a directory or symbolic directory")
+            log.info("Ignored toggle: not a directory/symbolic directory")
             return
         }
-        withAnimation(
-            .spring(response: 0.3, dampingFraction: 0.6, blendDuration: 0.3)
-        ) {
+        withAnimation(.spring(response: 0.26, dampingFraction: 0.7, blendDuration: 0.2)) {
             if isExpanded {
                 expandedFolders.remove(file.pathStr)
             } else {
                 expandedFolders.insert(file.pathStr)
             }
         }
-        log.info("Toggled folder: \(file.nameStr), expanded: \(isExpanded)")
+        log.debug("Toggled folder: \(file.nameStr), expanded -> \(isExpanded)")
     }
+    
 }
