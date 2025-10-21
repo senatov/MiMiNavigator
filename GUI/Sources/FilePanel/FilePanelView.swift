@@ -81,7 +81,6 @@ struct FilePanelView: View {
             PanelFileTableSection(
                 files: viewModel.sortedFiles,
                 selectedID: selectedIDBinding,
-                panelSide: viewModel.panelSide,
                 onPanelTap: onPanelTap,
                 onSelect: { file in
                     // Centralized selection; will clear the other panel via ViewModel.select(_:)
