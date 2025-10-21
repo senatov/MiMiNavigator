@@ -55,23 +55,22 @@ func grantAccessToVolumeAndSaveBookmark(
     allowsMultiple: Bool = false
 ) async throws -> Data {
     let panel = NSOpenPanel()
-    panel.title = "Allow access to a volume"
-    panel.message = "This is necessary to access mounted system volumes and favorites."
-    panel.directoryURL = url
-    panel.canChooseFiles = false
-    panel.canChooseDirectories = true
     panel.allowsMultipleSelection = allowsMultiple
-    panel.canCreateDirectories = false
-    panel.showsHiddenFiles = false
+    panel.allowsOtherFileTypes = true
+    panel.canChooseDirectories = true
+    panel.canChooseFiles = true
+    panel.canCreateDirectories = true
+    panel.directoryURL = url
+    panel.message = "This is necessary to access mounted system volumes and favorites."
     panel.prompt = "Allow"
+    panel.showsHiddenFiles = true
+    panel.title = "Allow access to a volume"
     panel.treatsFilePackagesAsDirectories = true
-
     let response = panel.runModal()
     guard response == .OK, let picked = panel.urls.first else {
         log.warning("User cancelled volume access panel")
         throw NSError(domain: "FavAccess", code: 1, userInfo: [NSLocalizedDescriptionKey: "User cancelled"])
     }
-
     do {
         let bookmark = try picked.bookmarkData(
             options: [.withSecurityScope],
