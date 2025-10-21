@@ -23,8 +23,6 @@ struct FileTableView: View {
 
     // MARK: -
     var body: some View {
-        log.info(
-            #function + " side: \(panelSide) with \(files.count) files, selectedID: \(String(describing: selectedID)))")
         return ScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 // File Table header
@@ -77,7 +75,7 @@ struct FileTableView: View {
 
     // MARK: -
     private func getNameColSortableHeader() -> some View {
-        log.info(#function)
+        //log.info(#function)
         return HStack(spacing: 4) {
             Text("Name").font(.subheadline)
             if sortKey == .name {

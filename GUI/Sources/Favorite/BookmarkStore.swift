@@ -10,7 +10,6 @@ import AppKit
 import SwiftUI
 
 // MARK: - Security-Scoped Bookmarks Helpers (Sandbox-Friendly)
-
 /// Simple bookmark store backed by UserDefaults. In production, replace with your DB.
 actor BookmarkStore {
     static let shared = BookmarkStore()
@@ -153,8 +152,7 @@ func presentAccessPanelAsSheet(
 
     let bookmark = try pickedURL.bookmarkData(
         options: [.withSecurityScope],
-        includingResourceValuesForKeys: nil,
-        relativeTo: nil)
+        includingResourceValuesForKeys: nil, relativeTo: nil)
     await BookmarkStore.shared.saveBookmark(for: pickedURL.path, data: bookmark)
     log.info("Saved security-scoped bookmark (sheet) for: \(pickedURL.path)")
     return bookmark

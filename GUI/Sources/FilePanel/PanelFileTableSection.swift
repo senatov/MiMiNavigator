@@ -35,7 +35,7 @@ struct PanelFileTableSection: View {
             userInfo: [
                 "panelSide": panelSide,
                 "fileID": file.id,
-                "fileName": file.nameStr
+                "fileName": file.nameStr,
             ]
         )
     }
@@ -52,13 +52,13 @@ struct PanelFileTableSection: View {
 
     // MARK: -
     var body: some View {
-        log.info(#function + " for side \(panelSide)")
+        // log.info(#function + " for side \(panelSide)")
         return FileTableView(
             panelSide: panelSide,
             files: files,
             selectedID: $selectedID,
-            onSelect: onSelect   // ← вместо { _ in }
-          )
+            onSelect: onSelect  // ← вместо { _ in }
+        )
         .coordinateSpace(name: "fileTableSpace")
         .onPreferenceChange(RowRectPreference.self) { value in
             rowRects = value
@@ -109,20 +109,20 @@ struct PanelFileTableSection: View {
         // Navigation with arrow keys — same as before
         .onMoveCommand { direction in
             switch direction {
-            case .up,
-                .down:
-                log.info("Move command: \(direction) on side \(panelSide)")
-                DispatchQueue.main.async {
-                    if let id = selectedID, let file = files.first(where: { $0.id == id }) {
-                        notifyWillSelect(file)
-                        onSelect(file)
-                    } else {
-                        log.info("Move command but no selection on \(panelSide)")
+                case .up,
+                    .down:
+                    log.info("Move command: \(direction) on side \(panelSide)")
+                    DispatchQueue.main.async {
+                        if let id = selectedID, let file = files.first(where: { $0.id == id }) {
+                            notifyWillSelect(file)
+                            onSelect(file)
+                        } else {
+                            log.info("Move command but no selection on \(panelSide)")
+                        }
                     }
-                }
 
-            default:
-                log.info("on onMoveCommand on table, side \(panelSide)")
+                default:
+                    log.info("on onMoveCommand on table, side \(panelSide)")
             }
         }
     }
