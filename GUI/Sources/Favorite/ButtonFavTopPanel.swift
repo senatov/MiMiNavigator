@@ -192,7 +192,7 @@ struct ButtonFavTopPanel: View {
     // MARK: -
     @MainActor
     private func fetchFavTree() async {
-        // log.info(#function)
+        log.info(#function)
         let favScanner = FavScanner()
         favTreeStruct = favScanner.scanOnlyFavorites()
         let files = await fetchFavNetVolumes(from: favScanner)
@@ -205,8 +205,8 @@ struct ButtonFavTopPanel: View {
 
     // MARK: -
     private func fetchFavNetVolumes(from scanner: FavScanner) async -> [CustomFile] {
-        // log.info(#function)
-        await withCheckedContinuation { continuation in
+        log.info(#function)
+        return await withCheckedContinuation { (continuation: CheckedContinuation<[CustomFile], Never>) in
             scanner.scanFavoritesAndNetworkVolumes { files in
                 continuation.resume(returning: files)
             }

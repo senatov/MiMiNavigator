@@ -15,7 +15,6 @@ struct FavTreePopupView: View {
     @EnvironmentObject var appState: AppState
     @Binding var file: CustomFile
     @Binding var expandedFolders: Set<String>
-    let panelSide: PanelSide
     let manageWindow: Bool  // kept for source compatibility, ignored
     @StateObject private var popoverController = FavTreePopoverController()
     @State private var headerButtonAnchor: NSView?
@@ -24,14 +23,12 @@ struct FavTreePopupView: View {
     init(
         file: Binding<CustomFile>,
         expandedFolders: Binding<Set<String>>,
-        selectedSide: PanelSide,
         manageWindow: Bool = true
     ) {
         self._file = file
         self._expandedFolders = expandedFolders
-        self.panelSide = selectedSide
         self.manageWindow = manageWindow
-        log.info("FavTreePopupView init for file \(file.wrappedValue.nameStr), side \(selectedSide)")
+        log.info("FavTreePopupView init for file \(file.wrappedValue.nameStr), side \(appState.focusedPanel)")
     }
 
     // MARK: - Body
@@ -63,7 +60,7 @@ struct FavTreePopupView: View {
         // Create standalone dialog window only when requested
         .onAppear {
             // No window creation here; this view is used as NSPopover content.
-            appState.focusedPanel = panelSide
+            appState.focusedPanel = appState.focusedPanel
         }
         // ESC to close
         .onExitCommand {
@@ -174,7 +171,6 @@ struct FavTreePopupView: View {
                             set: { file.children![index] = $0 }
                         ),
                         expandedFolders: $expandedFolders,
-                        selectedSide: panelSide,
                         manageWindow: false  // prevent nested windows
                     )
                     .environmentObject(appState)
