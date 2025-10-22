@@ -1,32 +1,29 @@
-//
-//  EditablePathControlWrapper.swift
-//  MiMiNavigator
-//
-//  Created by Iakov Senatov on 25.03.25.
-//  Copyright © 2025 Senatov. All rights reserved.
-//
+    //
+    //  EditablePathControlWrapper.swift
+    //  MiMiNavigator
+    //
+    //  Created by Iakov Senatov on 25.03.25.
+    //  Copyright © 2025 Senatov. All rights reserved.
+    //
 
 import SwiftUI
 
-// MARK: - Reusable path control component with edit mode, integrated with AppState.
+    // MARK: - Reusable path control component with edit mode, integrated with AppState.
 struct BreadCrumbControlWrapper: View {
     @EnvironmentObject var appState: AppState
     @State private var editedPathStr: String = ""
     @State private var isEditing = false
     @FocusState private var isTextFieldFocused: Bool
     @State private var isHovering = false
-    // Pale yellow color for focused/editing state selection background
-    let panelSide: PanelSide
-
-    // MARK: - Initializer
-    init(selectedSide: PanelSide) {
-        log.info("BreadCrumbControlWrapper init for side: \(selectedSide)")
-        self.panelSide = selectedSide
-    }
-
-    // MARK: - Body
+    var side: PanelSide? = nil
+    
+        // Effective side used by the wrapper; falls back to AppState.focusedPanel if not provided
+    private var effectiveSide: PanelSide { side ?? appState.focusedPanel }
+    
+    
+        // MARK: - Body
     var body: some View {
-        log.info(#function + "for side \(panelSide)")
+        log.debug(#function + " — effectiveSide=\(effectiveSide)")
         return HStack {
             if isEditing {
                 editingView
@@ -41,11 +38,11 @@ struct BreadCrumbControlWrapper: View {
         }
         .background(
             RoundedRectangle(cornerRadius: 12)
-                // Use pale yellow when editing, otherwise subtle platform background
+            // Use pale yellow when editing, otherwise subtle platform background
                 .fill(
                     isEditing
-                        ? FilePanelStyle.orangeSelRowStroke.opacity(0.6)
-                        : Color(nsColor: NSColor.windowBackgroundColor))
+                    ? FilePanelStyle.orangeSelRowStroke.opacity(0.6)
+                    : Color(nsColor: NSColor.windowBackgroundColor))
         )
         .overlay(
             // Blue border when editing, subtle gray when idle; no internal separators
@@ -57,14 +54,11 @@ struct BreadCrumbControlWrapper: View {
         .shadow(color: .secondary.opacity(isHovering ? 0.18 : 0.12), radius: 7, x: 1, y: 1)
         .padding(.vertical, 2)
         .padding(.horizontal, 1)
-        .task { @MainActor in
-            appState.focusedPanel = panelSide
-        }
     }
-
-    // MARK: - Editing View
+    
+        // MARK: - Editing View
     private var editingView: some View {
-        log.info(#function + " for side \(panelSide)")
+        log.debug(#function + " — effectiveSide=\(effectiveSide)")
         return HStack {
             TextField("Enter path", text: $editedPathStr)
                 .textFieldStyle(.plain)
@@ -110,11 +104,11 @@ struct BreadCrumbControlWrapper: View {
         }
         .transition(.opacity)
     }
-
-    // MARK: - Display View
+    
+        // MARK: - Display View
     private var displayView: some View {
-        log.info(#function + " for side \(panelSide)")
-        return BreadCrumbPathControl(selectedSide: panelSide)
+        log.debug(#function + " — effectiveSide=\(effectiveSide)")
+        return BreadCrumbPathControl(selectedSide: effectiveSide)
             .environmentObject(appState)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(Color.clear)
@@ -131,18 +125,18 @@ struct BreadCrumbControlWrapper: View {
             }
             .transition(.opacity.combined(with: .scale))
     }
-
-    // MARK: - Helpers
+    
+        // MARK: - Helpers
     private var currentPath: String {
-        panelSide == .left ? appState.leftPath : appState.rightPath
+        effectiveSide == .left ? appState.leftPath : appState.rightPath
     }
-
-    // MARK: -
+    
+        // MARK: -
     private func applyPathUpdate() {
-        log.info(#function + " for side \(panelSide) with path: \(editedPathStr)")
+        log.debug(#function + " — effectiveSide=\(effectiveSide), path=\(editedPathStr)")
         withAnimation { isEditing = false }
         Task {
-            if panelSide == .left {
+            if effectiveSide == .left {
                 appState.leftPath = editedPathStr
                 await appState.scanner.setLeftDirectory(pathStr: editedPathStr)
                 await appState.refreshLeftFiles()

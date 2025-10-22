@@ -31,7 +31,6 @@ final class FavTreePopoverController: ObservableObject {
         let content = FavTreePopupView(
             file: file,
             expandedFolders: expandedFolders,
-            selectedSide: side,
             manageWindow: false
         )
         .environmentObject(appState)
