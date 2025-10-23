@@ -23,6 +23,8 @@ struct FileTableView: View {
 
     // MARK: -
     var body: some View {
+        log.info(
+            #function + " side: \(panelSide) with \(files.count) files, selectedID: \(String(describing: selectedID)))")
         return ScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 // File Table header

@@ -13,24 +13,22 @@ import SwiftUI
 struct FavTreePopupView: View {
     // MARK: - Environment / Dependencies
     @EnvironmentObject var appState: AppState
-    // MARK: - Bindings
     @Binding var file: CustomFile
     @Binding var expandedFolders: Set<String>
-    // MARK: - Parameters
-    let panelSide: PanelSide
-    /// Deprecated: window-managed mode is no longer used. The view is designed for NSPopover content.
     let manageWindow: Bool  // kept for source compatibility, ignored
-    // Popover controller to allow closing on ESC
     @StateObject private var popoverController = FavTreePopoverController()
     @State private var headerButtonAnchor: NSView?
 
     // MARK: - Init
-    init(        file: Binding<CustomFile>,        expandedFolders: Binding<Set<String>>,        selectedSide: PanelSide,        manageWindow: Bool = true    ) {
+    init(
+        file: Binding<CustomFile>,
+        expandedFolders: Binding<Set<String>>,
+        manageWindow: Bool = true
+    ) {
         self._file = file
         self._expandedFolders = expandedFolders
-        self.panelSide = selectedSide
         self.manageWindow = manageWindow
-        log.info("FavTreePopupView init for file \(file.wrappedValue.nameStr), side \(selectedSide)")
+        log.info("FavTreePopupView init for file \(file.wrappedValue.nameStr), side \(appState.focusedPanel)")
     }
 
     // MARK: - Body
@@ -43,9 +41,11 @@ struct FavTreePopupView: View {
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
                         .stroke(.white.opacity(0.12), lineWidth: 0.5)
                 )
+
             VStack(alignment: .leading, spacing: 8) {
                 header
                 Divider().opacity(0.25)
+
                 ScrollView {
                     VStack(alignment: .leading, spacing: 4) {
                         fileRow
@@ -60,7 +60,7 @@ struct FavTreePopupView: View {
         // Create standalone dialog window only when requested
         .onAppear {
             // No window creation here; this view is used as NSPopover content.
-            appState.focusedPanel = panelSide
+            appState.focusedPanel = appState.focusedPanel
         }
         // ESC to close
         .onExitCommand {
@@ -171,7 +171,6 @@ struct FavTreePopupView: View {
                             set: { file.children![index] = $0 }
                         ),
                         expandedFolders: $expandedFolders,
-                        selectedSide: panelSide,
                         manageWindow: false  // prevent nested windows
                     )
                     .environmentObject(appState)

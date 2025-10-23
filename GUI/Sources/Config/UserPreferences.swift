@@ -9,7 +9,6 @@ import AppKit
 import Combine
 import Foundation
 
-
 struct PreferencesSnapshot: Codable, Sendable {
     var leftPath: String
     var rightPath: String
@@ -20,14 +19,20 @@ struct PreferencesSnapshot: Codable, Sendable {
     var lastSelectedRightFilePath: String?
 
     static let `default` = PreferencesSnapshot(
-        leftPath: FileManager.default.urls(
-            for: .downloadsDirectory,
-            in: .userDomainMask
-        ).first?.path ?? "/",
-        rightPath: FileManager.default.urls(
-            for: .documentDirectory,
-            in: .userDomainMask
-        ).first?.path ?? "/",
+        leftPath: FileManager.default
+            .urls(
+                for: .downloadsDirectory,
+                in: .userDomainMask
+            )
+            .first?
+            .path ?? "/",
+        rightPath: FileManager.default
+            .urls(
+                for: .documentDirectory,
+                in: .userDomainMask
+            )
+            .first?
+            .path ?? "/",
         showHiddenFiles: false,
         favoritesMaxDepth: 2,
         expandedFolders: [],
@@ -37,7 +42,6 @@ struct PreferencesSnapshot: Codable, Sendable {
 }
 
 // MARK: - PrefKey
-
 private enum PrefKey: String, CaseIterable {
     case leftPath
     case rightPath
@@ -73,7 +77,7 @@ final class UserPreferences: ObservableObject {
         var s = PreferencesSnapshot.default
 
         if let value = defaults.string(forKey: PrefKey.leftPath.rawValue),
-           !value.isEmpty
+            !value.isEmpty
         {
             s.leftPath = value
         } else {
@@ -81,7 +85,7 @@ final class UserPreferences: ObservableObject {
         }
 
         if let value = defaults.string(forKey: PrefKey.rightPath.rawValue),
-           !value.isEmpty
+            !value.isEmpty
         {
             s.rightPath = value
         } else {

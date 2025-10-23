@@ -61,7 +61,7 @@ struct FavTreeMnu: View {
         return ScrollView {
             LazyVStack(alignment: .leading, spacing: 5) {
                 ForEach($files) { $file in
-                    FavTreePopupView(file: $file, expandedFolders: $expandedFolders, selectedSide: panelSide)
+                    FavTreePopupView(file: $file, expandedFolders: $expandedFolders)
                 }
             }
             .padding(.horizontal)
