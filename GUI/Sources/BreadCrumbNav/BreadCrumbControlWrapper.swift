@@ -23,7 +23,7 @@ struct BreadCrumbControlWrapper: View {
 
     // MARK: - Body
     var body: some View {
-        log.debug(#function + " — effectiveSide=\(effectiveSide)")
+        log.debug(#function + " — effectiveSide=<<\(effectiveSide)>>")
         return HStack {
             if isEditing {
                 editingView
@@ -58,7 +58,7 @@ struct BreadCrumbControlWrapper: View {
 
     // MARK: - Editing View
     private var editingView: some View {
-        log.debug(#function + " — effectiveSide=\(effectiveSide)")
+        log.debug(#function + " — effectiveSide=<<\(effectiveSide)>>")
         return HStack {
             TextField("Enter path", text: $editedPathStr)
                 .textFieldStyle(.plain)
@@ -107,7 +107,7 @@ struct BreadCrumbControlWrapper: View {
 
     // MARK: - Display View
     private var displayView: some View {
-        log.debug(#function + " — effectiveSide=\(effectiveSide)")
+        log.debug(#function + " — effectiveSide=<<\(effectiveSide)>>")
         return BreadCrumbPathControl(selectedSide: effectiveSide)
             .environmentObject(appState)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -133,7 +133,7 @@ struct BreadCrumbControlWrapper: View {
 
     // MARK: -
     private func applyPathUpdate() {
-        log.debug(#function + " — effectiveSide=\(effectiveSide), path=\(editedPathStr)")
+        log.debug(#function + " — effectiveSide=<<\(effectiveSide), path=\(editedPathStr)>>")
         withAnimation { isEditing = false }
         Task {
             if effectiveSide == .left {

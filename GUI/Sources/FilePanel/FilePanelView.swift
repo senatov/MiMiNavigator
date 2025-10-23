@@ -40,7 +40,7 @@ struct FilePanelView: View {
             set: { newValue in
                     // We only handle clearing via the binding. Non-nil selection is set via onSelect below.
                 if newValue == nil {
-                    log.debug("Clearing selection via binding for side \(viewModel.panelSide)")
+                    log.debug("Clearing selection via binding for side <<\(viewModel.panelSide)>>")
                     switch viewModel.panelSide {
                         case .left:
                             appState.selectedLeftFile = nil
@@ -63,7 +63,7 @@ struct FilePanelView: View {
         appState: AppState,
         onPanelTap: @escaping (PanelSide) -> Void = { side in log.info("onPanelTap default for \(side)") }
     ) {
-        log.debug(#function + " for side \(selectedSide)" + " with leftPanelWidth: \(leftPanelWidth.wrappedValue.rounded())")
+        log.debug(#function + " for side <<\(selectedSide)>>" + " with leftPanelWidth: \(leftPanelWidth.wrappedValue.rounded())")
         self._leftPanelWidth = leftPanelWidth
         self.geometry = geometry
         self._viewModel = StateObject(
@@ -78,7 +78,7 @@ struct FilePanelView: View {
         // MARK: - View
     var body: some View {
         let currentPath = appState.pathURL(for: viewModel.panelSide)
-        log.debug(#function + " for side \(viewModel.panelSide) with path: \(currentPath?.path ?? "nil")")
+        log.debug(#function + " for side <<\(viewModel.panelSide)>> with path: \(currentPath?.path ?? "nil")")
         return VStack {
             PanelBreadcrumbSection(
                 currentPath: currentPath,
@@ -131,7 +131,7 @@ struct FilePanelView: View {
             }
             appState.selectedDir.selectedFSEntity = nil
             appState.showFavTreePopup = false
-            log.debug("Cleared selection due to focus loss for side \(viewModel.panelSide)")
+            log.debug("Cleared selection due to focus loss for side <<\(viewModel.panelSide)>>")
         }
     }
 }
