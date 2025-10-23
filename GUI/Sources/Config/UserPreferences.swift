@@ -9,51 +9,7 @@ import AppKit
 import Combine
 import Foundation
 
-struct PreferencesSnapshot: Codable, Sendable {
-    var leftPath: String
-    var rightPath: String
-    var showHiddenFiles: Bool
-    var favoritesMaxDepth: Int
-    var expandedFolders: Set<String>
-    var lastSelectedLeftFilePath: String?
-    var lastSelectedRightFilePath: String?
-
-    static let `default` = PreferencesSnapshot(
-        leftPath: FileManager.default
-            .urls(
-                for: .downloadsDirectory,
-                in: .userDomainMask
-            )
-            .first?
-            .path ?? "/",
-        rightPath: FileManager.default
-            .urls(
-                for: .documentDirectory,
-                in: .userDomainMask
-            )
-            .first?
-            .path ?? "/",
-        showHiddenFiles: false,
-        favoritesMaxDepth: 2,
-        expandedFolders: [],
-        lastSelectedLeftFilePath: nil,
-        lastSelectedRightFilePath: nil
-    )
-}
-
-// MARK: - PrefKey
-private enum PrefKey: String, CaseIterable {
-    case leftPath
-    case rightPath
-    case showHiddenFiles
-    case favoritesMaxDepth
-    case expandedFolders
-    case lastSelectedLeftFilePath
-    case lastSelectedRightFilePath
-}
-
 // MARK: - UserPreferences
-
 @MainActor
 final class UserPreferences: ObservableObject {
     static let shared = UserPreferences()

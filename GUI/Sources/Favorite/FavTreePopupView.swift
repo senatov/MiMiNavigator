@@ -28,7 +28,7 @@ struct FavTreePopupView: View {
         self._file = file
         self._expandedFolders = expandedFolders
         self.manageWindow = manageWindow
-        log.info("FavTreePopupView init for file \(file.wrappedValue.nameStr), side \(appState.focusedPanel)")
+        log.info("FavTreePopupView init for file \(file.wrappedValue.nameStr), side <<\(appState.focusedPanel)>>")
     }
 
     // MARK: - Body

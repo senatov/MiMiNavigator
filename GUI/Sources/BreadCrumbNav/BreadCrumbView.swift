@@ -17,13 +17,13 @@ struct BreadCrumbView: View {
 
     // MARK: -
     init(selectedSide: PanelSide) {
-        log.info("BreadCrumbView init" + " for side \(selectedSide)")
+        log.info("BreadCrumbView init" + " for side <<\(selectedSide)>>")
         self.panelSide = selectedSide
     }
 
     // MARK: -
     var body: some View {
-        log.info(#function + " for side \(panelSide)")
+        log.info(#function + " for side <<\(panelSide)>>")
         /// Main breadcrumb container
         return HStack(alignment: .center, spacing: 4) {
             ForEach(pathComponents.indices, id: \.self) { index in
@@ -42,9 +42,9 @@ struct BreadCrumbView: View {
 
     // MARK: -
     private var pathComponents: [String] {
-        log.info(#function + " for side \(panelSide)")
+        log.info(#function + " for side <<\(panelSide)>>")
         let path = (panelSide == .left ? appState.leftPath : appState.rightPath)
-        log.info(#function + " for side \(panelSide)" + " with path: \(path)")
+        log.info(#function + " for side <<\(panelSide)>>" + " with path: \(path)")
         return path.split(separator: "/").map(String.init).filter { !$0.isEmpty }
     }
 
@@ -83,7 +83,7 @@ struct BreadCrumbView: View {
 
     // MARK: - Handle Selection
     private func handlePathSelection(upTo index: Int) {
-        log.info(#function + " for index \(index) on side \(panelSide)")
+        log.info(#function + " for index \(index) on side <<\(panelSide)>>")
         let newPath = ("/" + pathComponents.prefix(index + 1).joined(separator: "/"))
             .replacingOccurrences(of: "//", with: "/")
             .replacingOccurrences(of: "///", with: "/")
@@ -106,7 +106,7 @@ struct BreadCrumbView: View {
     // MARK: -
     @MainActor
     private func performDirectoryUpdate(for panelSide: PanelSide, path: String) async {
-        log.info("Task started for side \(panelSide) with path: \(path)")
+        log.info("Task started for side <<\(panelSide)>> with path: \(path)")
         if panelSide == .left {
             await appState.scanner.setLeftDirectory(pathStr: path)
             await appState.scanner.refreshFiles(currSide: .left)
