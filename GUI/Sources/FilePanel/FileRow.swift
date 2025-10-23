@@ -1,14 +1,14 @@
-//
-//  FileRow.swift
-//  MiMiNavigator
-//
-//  Created by Iakov Senatov on 23.10.2025.
-//  Copyright © 2025 Senatov. All rights reserved.
-//
+    //
+    //  FileRow.swift
+    //  MiMiNavigator
+    //
+    //  Created by Iakov Senatov on 23.10.2025.
+    //  Copyright © 2025 Senatov. All rights reserved.
+    //
 
 import SwiftUI
 
-// MARK: - Lightweight row view to reduce type-checker complexity
+    // MARK: - Lightweight row view to reduce type-checker complexity
 struct FileRow: View {
     let index: Int
     let file: CustomFile
@@ -18,13 +18,13 @@ struct FileRow: View {
     let onFileAction: (FileAction, CustomFile) -> Void
     let onDirectoryAction: (DirectoryAction, CustomFile) -> Void
     @EnvironmentObject var appState: AppState
-
+    
     var body: some View {
-        // Zebra background stripes (Finder-like)
+            // Zebra background stripes (Finder-like)
         ZStack(alignment: .leading) {
             let zebra = index.isMultiple(of: 2) ? Color.white : Color.gray.opacity(0.08)
             zebra.allowsHitTesting(false)
-
+            
             if isSelected {
                 RoundedRectangle(cornerRadius: 12)
                     .fill(.ultraThinMaterial)
@@ -34,16 +34,16 @@ struct FileRow: View {
                     )
                     .allowsHitTesting(false)
             }
-
+            
             rowContent
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .contentShape(Rectangle())
-        .help("\(file.id)  \(file.modifiedDateFormatted)  \(file.fileObjTypEnum)")
+        .help(makeHelpTooltip())
         .highPriorityGesture(
             TapGesture()
                 .onEnded {
-                    // Centralized selection and focus
+                        // Centralized selection and focus
                     onSelect(file)
                 }
         )
@@ -57,8 +57,8 @@ struct FileRow: View {
                 onDirectoryAction: onDirectoryAction)
         }
     }
-
-    // MARK: - Context menu builder to simplify type-checking
+    
+        // MARK: - Context menu builder to simplify type-checking
     @ViewBuilder
     func menuContent(
         for file: CustomFile,
@@ -75,22 +75,22 @@ struct FileRow: View {
             }
         }
     }
-
-    // MARK: - Extracted row content
+    
+        // MARK: - Extracted row content
     private var rowContent: some View {
         HStack(alignment: .center, spacing: 8) {
-            // Name column (expands)
+                // Name column (expands)
             FileRowView(file: file, panelSide: panelSide)
                 .frame(maxWidth: .infinity, alignment: .leading)
-            // vertical separator
+                // vertical separator
             Divider().padding(.vertical, 2)
-            // Size column (here showing type string as in original)
+                // Size column (here showing type string as in original)
             Text(file.fileObjTypEnum)
                 .foregroundStyle(.secondary)
                 .frame(width: FilePanelStyle.sizeColumnWidth, alignment: .leading)
-            // vertical separator
+                // vertical separator
             Divider().padding(.vertical, 2)
-            // Date column
+                // Date column
             Text(file.modifiedDateFormatted)
                 .foregroundStyle(.tertiary)
                 .frame(width: FilePanelStyle.modifiedColumnWidth + 10, alignment: .leading)
@@ -98,8 +98,8 @@ struct FileRow: View {
         .padding(.vertical, 2)
         .padding(.horizontal, 6)
     }
-
-    // MARK: - Highlight helper (forward to the one in FileTableView through a local copy)
+    
+        // MARK: - Highlight helper (forward to the one in FileTableView through a local copy)
     @ViewBuilder
     private func highlightedSquare(_ isLineSelected: Bool) -> some View {
         if isLineSelected {
@@ -107,5 +107,18 @@ struct FileRow: View {
         } else {
             EmptyView()
         }
+    }
+        // MARK: - Tooltip helper
+    private func makeHelpTooltip() -> String {
+        var details = ""
+        if file.isDirectory {
+            details = "📁 Directory"
+        } else {
+            details = "📄 File"
+        }
+        let idPart = file.id
+        let datePart = file.modifiedDateFormatted
+        let typePart = file.fileObjTypEnum
+        return "\(details)\n🆔 \(idPart)\n📅 \(datePart)\n🧩 \(typePart)"
     }
 }

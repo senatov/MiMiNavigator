@@ -60,7 +60,6 @@ func openConsoleInDirectory(_ directoryStr: String) -> Bool {
     task.terminationHandler = { proc in
         log.debug("osascript terminated with status: \(proc.terminationStatus)")
     }
-
     do {
         try task.run()
         log.debug("osascript started, pid=\(task.processIdentifier)")

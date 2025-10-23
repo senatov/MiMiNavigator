@@ -18,24 +18,28 @@ struct TotalCommanderResizableView: View {
     var body: some View {
         GeometryReader { geometry in
             ZStack {
-                VStack(spacing: 0) {
-                    HStack {
-                        TopMenuBarView()
-                        Spacer()
+                ZStack {
+                    VStack(spacing: 0) {
+                        HStack {
+                            TopMenuBarView()
+                            Spacer()
+                        }
+                        buildMainPanels(geometry: geometry)
+                        buildDownToolbar()
                     }
-                    buildMainPanels(geometry: geometry)
-                    buildDownToolbar()
+                    .padding(.horizontal, 10)
                 }
-                .padding(.horizontal, 10)
             }
             .onAppear {
-                log.info("onAppear")
+                log.info(#function + " - Initializing app state and panels")
                 appState.initialize()
-                initializePanelWidth(geometry: geometry)
+                initializePanelWidth(geometry: geometry)  // Restore divider width from user defaults
+                addKeyPressMonitor()  // Register keyboard shortcut
                 appState.forceFocusSelection()
             }
             .onChange(of: geometry.size) { oldSize, newSize in
-                log.info("onChange")
+                log.info("Window size changed from: \(oldSize.width)x\(oldSize.height) → \(newSize.width)x\(newSize.height)")
+                // Recalculate left panel width if needed
                 if leftPanelWidth > 0 {
                     let maxWidth = newSize.width - 50
                     if leftPanelWidth > maxWidth {
@@ -46,18 +50,47 @@ struct TotalCommanderResizableView: View {
         }
     }
 
+    // MARK: -
+    private func addKeyPressMonitor() {
+        log.info(#function)
+        NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+            if event.modifierFlags.contains(.option), event.keyCode == 0x76 {
+                exitApp()
+                return nil
+            }
+            // Handle Tab key (keyCode 0x30 / 48) — Tab and Shift+Tab toggle focus
+            if event.keyCode == 0x30 {
+                return doPanelToggled(event)
+            }
+            return event
+        }
+    }
+
+    // MARK: -
+    private func doPanelToggled(_ event: NSEvent) -> NSEvent? {
+        log.info(#function)
+        appState.toggleFocus()
+        appState.forceFocusSelection()
+        if event.modifierFlags.contains(.shift) {
+            log.info("Shift+Tab pressed → toggle focused panel (reverse)")
+        } else {
+            log.info("Tab pressed → toggle focused panel")
+        }
+        return nil
+    }
+
     // MARK: - Fetch Files
     @MainActor
     private func fetchFiles(for panelSide: PanelSide) async {
         log.info("\(#function) [side: \(panelSide)]")
         switch panelSide {
-        case .left:
-            appState.displayedLeftFiles = await appState.scanner.fileLst
-                .getLeftFiles()
+            case .left:
+                appState.displayedLeftFiles = await appState.scanner.fileLst
+                    .getLeftFiles()
 
-        case .right:
-            appState.displayedRightFiles = await appState.scanner.fileLst
-                .getRightFiles()
+            case .right:
+                appState.displayedRightFiles = await appState.scanner.fileLst
+                    .getRightFiles()
         }
     }
 
@@ -122,7 +155,7 @@ struct TotalCommanderResizableView: View {
             }
             .padding(.horizontal, 16)
             .padding(.top, 16)
-            .cornerRadius(12)
+            .cornerRadius(7)
         }
         .frame(maxWidth: .infinity, alignment: .bottom)
     }

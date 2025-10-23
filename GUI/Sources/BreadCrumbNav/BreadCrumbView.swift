@@ -71,7 +71,7 @@ struct BreadCrumbView: View {
                 .padding(.vertical, 2)
         }
         .buttonStyle(.plain)
-        .help("Click to open: /" + pathComponents.prefix(index + 1).joined(separator: "/"))
+        .help(makeHelpTooltip(for: index))
         .contextMenu {
             Button("Copy path") {
                 let fullPath = "/" + pathComponents.prefix(index + 1).joined(separator: "/")
@@ -79,6 +79,21 @@ struct BreadCrumbView: View {
                 NSPasteboard.general.setString(fullPath, forType: .string)
             }
         }
+    }
+
+    // MARK: - Tooltip helper
+    private func makeHelpTooltip(for index: Int) -> String {
+        let fullPath = "/" + pathComponents.prefix(index + 1).joined(separator: "/")
+        let maxLength = 60
+        let displayedPath: String
+        if fullPath.count > maxLength {
+            let prefix = fullPath.prefix(25)
+            let suffix = fullPath.suffix(30)
+            displayedPath = "\(prefix)…\(suffix)"
+        } else {
+            displayedPath = fullPath
+        }
+        return "📂 Open \(displayedPath)"
     }
 
     // MARK: - Handle Selection
