@@ -9,19 +9,11 @@
 import AppKit
 import SwiftUI
 
-extension Notification.Name {
-    /// Posted right before a panel is about to select a file so others can reset their selections
-    static let panelWillSelectFile = Notification.Name("PanelWillSelectFile")
-    /// Posted when a panel cleared its selection
-    static let panelDidClearSelection = Notification.Name("PanelDidClearSelection")
-}
-
 // MARK: -
 struct PanelFileTableSection: View {
     @EnvironmentObject var appState: AppState
     let files: [CustomFile]
     @Binding var selectedID: CustomFile.ID?
-    let panelSide: PanelSide
     let onPanelTap: (PanelSide) -> Void
     let onSelect: (CustomFile) -> Void
     @State private var rowRects: [CustomFile.ID: CGRect] = [:]
@@ -33,28 +25,29 @@ struct PanelFileTableSection: View {
             name: .panelWillSelectFile,
             object: nil,
             userInfo: [
-                "panelSide": panelSide,
+                "panelSide": appState.focusedPanel,
                 "fileID": file.id,
-                "fileName": file.nameStr
+                "fileName": file.nameStr,
             ]
         )
     }
 
+    // MARK: -
     private func notifyDidClearSelection() {
         NotificationCenter.default.post(
             name: .panelDidClearSelection,
             object: nil,
             userInfo: [
-                "panelSide": panelSide
+                "panelSide": appState.focusedPanel
             ]
         )
     }
 
     // MARK: -
     var body: some View {
-        log.info(#function + " for side \(panelSide)")
+        log.info(#function + " for side \(appState.focusedPanel)")
         return FileTableView(
-            panelSide: panelSide,
+            panelSide: appState.focusedPanel,
             files: files,
             selectedID: $selectedID,
             onSelect: onSelect  // ← вместо { _ in }
@@ -89,20 +82,20 @@ struct PanelFileTableSection: View {
         .simultaneousGesture(
             TapGesture()
                 .onEnded {
-                    onPanelTap(panelSide)
-                    log.info("table tap (simultaneous) on side \(panelSide)")
+                    onPanelTap(appState.focusedPanel)
+                    log.info("table tap (simultaneous) on side \(appState.focusedPanel)")
                 }
         )
         // React to selection changes
         .onChange(of: selectedID, initial: false) { _, newValue in
-            log.info("on onChange on table, side \(panelSide)")
+            log.info("on onChange on table, side \(appState.focusedPanel)")
             if let id = newValue, let file = files.first(where: { $0.id == id }) {
-                log.info("Row selected: id=\(id) on side \(panelSide)")
+                log.info("Row selected: id=\(id) on side \(appState.focusedPanel)")
                 // Notify others to clear their selections before we commit this one
                 notifyWillSelect(file)
                 onSelect(file)
             } else {
-                log.info("Selection cleared on \(panelSide)")
+                log.info("Selection cleared on \(appState.focusedPanel)")
                 notifyDidClearSelection()
             }
         }
@@ -111,19 +104,26 @@ struct PanelFileTableSection: View {
             switch direction {
                 case .up,
                     .down:
-                    log.info("Move command: \(direction) on side \(panelSide)")
+                    log.info("Move command: \(direction) on side \(appState.focusedPanel)")
                     DispatchQueue.main.async {
                         if let id = selectedID, let file = files.first(where: { $0.id == id }) {
                             notifyWillSelect(file)
                             onSelect(file)
                         } else {
-                            log.info("Move command but no selection on \(panelSide)")
+                            log.info("Move command but no selection on \(appState.focusedPanel)")
                         }
                     }
 
                 default:
-                    log.info("on onMoveCommand on table, side \(panelSide)")
+                    log.info("on onMoveCommand on table, side \(appState.focusedPanel)")
             }
         }
     }
+}
+
+extension Notification.Name {
+    /// Posted right before a panel is about to select a file so others can reset their selections
+    static let panelWillSelectFile = Notification.Name("PanelWillSelectFile")
+    /// Posted when a panel cleared its selection
+    static let panelDidClearSelection = Notification.Name("PanelDidClearSelection")
 }

@@ -16,40 +16,41 @@ enum LogMan {
 
     // MARK: -
     static func initializeLogging() {
-        let console = ConsoleDestination()
-        console.useTerminalColors = true
-        console.useNSLog = false
-        console.format = "$DHH:mm:ss$d $L $N.$F:$l $M"
+        let cn = ConsoleDestination()
+        cn.useTerminalColors = true
+        cn.useNSLog = false
+        cn.format = "$DHH:mm:ss$d $L $N.$F:$l $M"
         // Уровни с иконками
         func getLevelIcon(for level: SwiftyBeaver.Level) -> String {
             switch level {
-            case .verbose: return "􀐯"
-            case .debug: return "􀌚"
-            case .info: return "􀅴"
-            case .warning: return "⚠️"
-            case .error: return "❗️"
-            case .critical: return "🔥"
-            case .fault: return "💥"
+                case .verbose: return "􀐯"
+                case .debug: return "􀌚"
+                case .info: return "􀅴"
+                case .warning: return "⚠️"
+                case .error: return "❗️"
+                case .critical: return "🔥"
+                case .fault: return "💥"
             }
         }
-        console.levelString.verbose = getLevelIcon(for: .verbose) + " VERBOSE"
-        console.levelString.debug = getLevelIcon(for: .debug) + " DEBUG"
-        console.levelString.info = getLevelIcon(for: .info) + " INFO"
-        console.levelString.warning = getLevelIcon(for: .warning) + " WARNING"
-        console.levelString.error = getLevelIcon(for: .error) + " ERROR"
-        console.levelString.critical =
-            getLevelIcon(for: .critical) + " CRITICAL"
-        console.levelString.fault = getLevelIcon(for: .fault) + " FAULT"
-        log.addDestination(console)
+        cn.levelString.verbose = getLevelIcon(for: .verbose) + " VERBOSE"
+        cn.levelString.debug = getLevelIcon(for: .debug) + " DEBUG"
+        cn.levelString.info = getLevelIcon(for: .info) + " INFO"
+        cn.levelString.warning = getLevelIcon(for: .warning) + " WARNING"
+        cn.levelString.error = getLevelIcon(for: .error) + " ERROR"
+        cn.levelString.critical = getLevelIcon(for: .critical) + " CRITICAL"
+        cn.levelString.fault = getLevelIcon(for: .fault) + " FAULT"
+        log.addDestination(cn)
         setupLogging()
     }
 
     // MARK: -
     private static func setupLogging() {
-        let containerURL = FileManager.default.urls(
-            for: .applicationSupportDirectory,
-            in: .userDomainMask
-        ).first!
+        let containerURL = FileManager.default
+            .urls(
+                for: .applicationSupportDirectory,
+                in: .userDomainMask
+            )
+            .first!
         let logsDir = containerURL.appendingPathComponent(
             "Logs",
             isDirectory: true

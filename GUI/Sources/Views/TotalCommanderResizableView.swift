@@ -29,12 +29,13 @@ struct TotalCommanderResizableView: View {
                 .padding(.horizontal, 10)
             }
             .onAppear {
-                log.info(#function + " - Initializing app state and panels")
+                log.info("onAppear")
                 appState.initialize()
                 initializePanelWidth(geometry: geometry)
                 appState.forceFocusSelection()
             }
             .onChange(of: geometry.size) { oldSize, newSize in
+                log.info("onChange")
                 if leftPanelWidth > 0 {
                     let maxWidth = newSize.width - 50
                     if leftPanelWidth > maxWidth {
@@ -53,6 +54,7 @@ struct TotalCommanderResizableView: View {
         case .left:
             appState.displayedLeftFiles = await appState.scanner.fileLst
                 .getLeftFiles()
+
         case .right:
             appState.displayedRightFiles = await appState.scanner.fileLst
                 .getRightFiles()
