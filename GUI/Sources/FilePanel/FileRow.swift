@@ -51,10 +51,28 @@ struct FileRow: View {
         .shadow(color: isSelected ? .gray.opacity(0.07) : .clear, radius: 4, x: 1, y: 1)
         .animation(.spring(response: 0.4, dampingFraction: 0.7), value: isSelected)
         .contextMenu {
-            FileTableView.menuContent(
+            menuContent(
                 for: file,
                 onFileAction: onFileAction,
                 onDirectoryAction: onDirectoryAction)
+        }
+    }
+
+    // MARK: - Context menu builder to simplify type-checking
+    @ViewBuilder
+    func menuContent(
+        for file: CustomFile,
+        onFileAction: @escaping (FileAction, CustomFile) -> Void,
+        onDirectoryAction: @escaping (DirectoryAction, CustomFile) -> Void
+    ) -> some View {
+        if file.isDirectory {
+            DirectoryContextMenu(file: file) { action in
+                onDirectoryAction(action, file)
+            }
+        } else {
+            FileContextMenu(file: file) { action in
+                onFileAction(action, file)
+            }
         }
     }
 
