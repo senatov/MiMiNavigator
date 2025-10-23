@@ -265,7 +265,7 @@ struct FileTableView: View {
     // MARK: -
     var sortedFiles: [CustomFile] {
         // Always sort directories first, then apply selected column sort
-        log.info(#function + " for side \(panelSide), sorting by \(sortKey), ascending: \(sortAscending)")
+        log.info(#function + " for side <<\(panelSide)>>, sorting by \(sortKey), ascending: \(sortAscending)")
         let base: [CustomFile] = files
         let sorted = base.sorted(by: compare)
         return sorted
