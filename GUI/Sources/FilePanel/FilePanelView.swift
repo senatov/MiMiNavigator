@@ -1,32 +1,23 @@
-//
-//  FilePanelView.swift
-//  MiMiNavigator
-//
-//  Restored and refactored: keeps clean components and adds custom row highlight
-//
+    //
+    //  FilePanelView.swift
+    //  MiMiNavigator
+    //
+    //  Restored and refactored: keeps clean components and adds custom row highlight
+    //
 
 import AppKit
 import SwiftUI
 
-// Design tokens aligned with Figma macOS 26.1 (8pt grid, system materials)
-private enum DesignTokens {
-    static let grid: CGFloat = 8
-    static let radius: CGFloat = 8
-    static let card = Color(nsColor: .windowBackgroundColor)
-    static let panelBg = Color(nsColor: .controlBackgroundColor)
-    static let separator = Color(nsColor: .separatorColor)
-}
-
-// MARK: - FilePanelView
+    // MARK: - FilePanelView
 struct FilePanelView: View {
     @EnvironmentObject var appState: AppState
     @StateObject private var viewModel: FilePanelViewModel
     var geometry: GeometryProxy
     @Binding var leftPanelWidth: CGFloat
-    /// Called when user clicks anywhere inside the panel (left/right)
+        /// Called when user clicks anywhere inside the panel (left/right)
     let onPanelTap: (PanelSide) -> Void
-
-    // MARK: - compound Variable: Bridge binding to AppState-selected file for this panel
+    
+        // MARK: - compound Variable: Bridge binding to AppState-selected file for this panel
     private var selectedIDBinding: Binding<CustomFile.ID?> {
         Binding<CustomFile.ID?>(
             get: {
@@ -38,7 +29,7 @@ struct FilePanelView: View {
                 }
             },
             set: { newValue in
-                // We only handle clearing via the binding. Non-nil selection is set via onSelect below.
+                    // We only handle clearing via the binding. Non-nil selection is set via onSelect below.
                 if newValue == nil {
                     log.debug("Clearing selection via binding for side <<\(viewModel.panelSide)>>")
                     switch viewModel.panelSide {
@@ -53,8 +44,8 @@ struct FilePanelView: View {
             }
         )
     }
-
-    // MARK: - Init
+    
+        // MARK: - Init
     init(
         selectedSide: PanelSide,
         geometry: GeometryProxy,
@@ -74,8 +65,8 @@ struct FilePanelView: View {
             ))
         self.onPanelTap = onPanelTap
     }
-
-    // MARK: - View
+    
+        // MARK: - View
     var body: some View {
         let currentPath = appState.pathURL(for: viewModel.panelSide)
         log.debug(#function + " for side <<\(viewModel.panelSide)>> with path: \(currentPath?.path ?? "nil")")
@@ -87,12 +78,12 @@ struct FilePanelView: View {
                 }
             )
             PanelFileTableSection(
-                panelSide: <#PanelSide#>,
+                panelSide: viewModel.panelSide,
                 files: viewModel.sortedFiles,
                 selectedID: selectedIDBinding,
                 onPanelTap: onPanelTap,
                 onSelect: { file in
-                    // Centralized selection; will clear the other panel via ViewModel.select(_:)
+                        // Centralized selection; will clear the other panel via ViewModel.select(_:)
                     viewModel.select(file)
                 }
             )
@@ -110,15 +101,15 @@ struct FilePanelView: View {
         .contentShape(Rectangle())
         .frame(
             width: viewModel.panelSide == .left
-                ? (leftPanelWidth > 0 ? leftPanelWidth : geometry.size.width / 2)
-                : nil
+            ? (leftPanelWidth > 0 ? leftPanelWidth : geometry.size.width / 2)
+            : nil
         )
         .background(DesignTokens.panelBg)
         .controlSize(.regular)
         .simultaneousGesture(
             TapGesture()
                 .onEnded {
-                    // Focus the panel on any click within its bounds without stealing row taps
+                        // Focus the panel on any click within its bounds without stealing row taps
                     log.debug("Panel tapped for focus: \(viewModel.panelSide)")
                     onPanelTap(viewModel.panelSide)
                 }
