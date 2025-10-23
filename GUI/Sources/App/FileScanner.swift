@@ -12,8 +12,12 @@ enum FileScanner {
     // MARK: -
     static func scan(url: URL) throws -> [CustomFile] {
         log.info("scan(url:) \(url.path)")
+        var regularDirCount = 0
+        var symlinkDirCount = 0
+        var fileCount = 0
         var result: [CustomFile] = []
         let fileManager = FileManager.default
+
         // Ask for both directory and symlink flags so we can distinguish symlinked folders from regular files.
         let wantedKeys: [URLResourceKey] = [.isDirectoryKey, .isSymbolicLinkKey]
         let contents = try fileManager.contentsOfDirectory(
@@ -21,11 +25,6 @@ enum FileScanner {
             includingPropertiesForKeys: wantedKeys,
             options: [.skipsHiddenFiles]
         )
-
-        var regularDirCount = 0
-        var symlinkDirCount = 0
-        var fileCount = 0
-
         for fileURL in contents {
             // Read resource values once per URL for performance and clarity.
             let values = try? fileURL.resourceValues(forKeys: Set(wantedKeys))
@@ -50,7 +49,6 @@ enum FileScanner {
             let customFile = CustomFile(name: fileURL.lastPathComponent, path: fileURL.path)
             result.append(customFile)
         }
-
         log.info("scan stats: dirs=\(regularDirCount), symlinkDirs=\(symlinkDirCount), files=\(fileCount)")
         return result
     }

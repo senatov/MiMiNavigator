@@ -26,14 +26,12 @@ struct NavMnu2: View {
         .menuStyle(.borderlessButton)
     }
 
-
     // MARK: - Private handlers
     private func handleProperties() {
         log.info(#function)
         let selected = appState.selectedDir
         log.info("Selected dir path: \(selected)")
     }
-
 
     // MARK: -
     private func handleOpenInFinder() {
