@@ -51,7 +51,7 @@ struct FileRow: View {
         .shadow(color: isSelected ? .gray.opacity(0.07) : .clear, radius: 4, x: 1, y: 1)
         .animation(.spring(response: 0.4, dampingFraction: 0.7), value: isSelected)
         .contextMenu {
-            menuContent(
+            FileTableView.menuContent(
                 for: file,
                 onFileAction: onFileAction,
                 onDirectoryAction: onDirectoryAction)
