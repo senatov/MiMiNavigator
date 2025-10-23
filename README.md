@@ -7,6 +7,12 @@
     style="max-width: 100%; height: auto; border: 2px; border-radius: 4px;" />
 </div>
 
+
+> 💡 **If you are only interested in the source code implementation of this app,  
+> you can explore it directly here:**  
+> <span style="color:#8B0000; font-weight:bold;">👉 [MiMiNavigator / GUI / Sources](https://github.com/senatov/MiMiNavigator/tree/master/GUI/Sources)</span>
+
+
 ---
 ### MiMiNavigator - MacOS File manager with two panels
 ## (NOT READY YET, still under Development)
