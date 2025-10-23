@@ -26,7 +26,8 @@ struct FileTableView: View {
 
     // MARK: -
     var body: some View {
-        ScrollView {
+        log.info(#function)
+        return ScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 // File Table header
                 HStack(spacing: 8) {
@@ -49,39 +50,22 @@ struct FileTableView: View {
                 )
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            LazyVStack(spacing: 0) {
-                ForEach(sortedRows, id: \.element.id) { pair in
-                    let index = pair.offset
-                    let file = pair.element
-                    FileRow(
-                        index: index,
-                        file: file,
-                        isSelected: selectedID == file.id,
-                        panelSide: panelSide,
-                        onSelect: { tapped in
-                            // Centralize selection and focus side-effects
-                            selectedID = tapped.id
-                            appState.focusedPanel = panelSide
-                            onSelect(tapped)
-                            log.info("Row tapped: \(tapped.nameStr) [\(tapped.id)] on &lt;&lt;\(panelSide)&gt;&gt;")
-                        },
-                        onFileAction: { action, f in
-                            handleFileAction(action, for: f)
-                        },
-                        onDirectoryAction: { action, f in
-                            handleDirectoryAction(action, for: f)
-                        }
-                    )
-                }
-            }
+            FileTableRowsView(
+                rows: sortedRows,
+                selectedID: $selectedID,
+                panelSide: panelSide,
+                onSelect: onSelect,
+                handleFileAction: handleFileAction,
+                handleDirectoryAction: handleDirectoryAction
+            )
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity).padding(.horizontal, 6)
         .overlay(
             RoundedRectangle(cornerRadius: 12)
                 .stroke(
-                    isFocused ? Color(nsColor: .systemBlue) : .separator.opacity(0.6),
-                    lineWidth: isFocused ? max(FilePanelStyle.selectedBorderWidth, 1.0) : 1
+                    isFocused ? Color(nsColor: .systemBlue) : Color(.gray).opacity(0.6),
+                    lineWidth: isFocused ? max(FilePanelStyle.selectedBorderWidth, 0.7) : 0.5
                 )
         )
         .overlay(
@@ -94,6 +78,7 @@ struct FileTableView: View {
 
     // MARK: - File actions handler
     func handleFileAction(_ action: FileAction, for file: CustomFile) {
+        log.info(#function + ": \(action)")
         switch action {
             case .cut:
                 log.debug("File action: cut → \(file.pathStr)")
@@ -139,6 +124,7 @@ struct FileTableView: View {
 
     // MARK: -
     private func getSizeColSortableHeader() -> some View {
+        log.info(#function)
         return HStack(spacing: 4) {
             Text("Size").font(.subheadline)
             if sortKey == .size {
@@ -161,6 +147,7 @@ struct FileTableView: View {
 
     // MARK: -
     private func getDateSortableHeader() -> some View {
+        log.info(#function)
         return HStack(spacing: 4) {
             Text("Date").font(.subheadline)
             if sortKey == .date {
@@ -181,19 +168,9 @@ struct FileTableView: View {
         }
     }
 
-    // MARK: -
-    @ViewBuilder
-    private func highlightedSquare(_ isLineSelected: Bool) -> some View {
-        if isLineSelected {
-            Rectangle().inset(by: 0.2).stroke(FilePanelStyle.blueSymlinkDirNameColor.gradient, lineWidth: 0.7)
-        } else {
-            EmptyView()
-        }
-    }
-
-
     // MARK: - Directory actions handler
     func handleDirectoryAction(_ action: DirectoryAction, for file: CustomFile) {
+        log.info(#function + " for \(file.pathStr)")
         switch action {
             case .open:
                 log.debug("Action: open → \(file.pathStr)")
@@ -249,28 +226,5 @@ struct FileTableView: View {
         let base: [CustomFile] = files
         let sorted = base.sorted(by: compare)
         return sorted
-    }
-
-    // MARK: - Row content extracted to reduce view-builder complexity
-    @ViewBuilder
-    func rowContent(file: CustomFile) -> some View {
-        HStack(alignment: .center, spacing: 8) {
-            // Name column (expands)
-            FileRowView(file: file, panelSide: panelSide)
-                .frame(maxWidth: .infinity, alignment: .leading)
-            // vertical separator
-            Divider().padding(.vertical, 2)
-            // Size column
-            Text(file.fileObjTypEnum)
-                .foregroundStyle(.secondary)
-                .frame(width: FilePanelStyle.sizeColumnWidth, alignment: .leading)
-            // vertical separator
-            Divider().padding(.vertical, 2)
-            // Date column
-            Text(file.modifiedDateFormatted)
-                .foregroundStyle(.tertiary)
-                .frame(width: FilePanelStyle.modifiedColumnWidth + 10, alignment: .leading)
-        }
-        .padding(.vertical, 2).padding(.horizontal, 6)
     }
 }

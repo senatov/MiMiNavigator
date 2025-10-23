@@ -14,7 +14,6 @@ enum RowDesignTokens {
     static let grid: CGFloat = 8
     static let radius: CGFloat = 6
     static let iconSize: CGFloat = FilePanelStyle.iconSize
-    static let sep = Color(nsColor: .separatorColor)
     static let selBG = FilePanelStyle.yellowSelRowFill
     static let hoverBG = Color.primary.opacity(0.04)
 }

@@ -13,6 +13,7 @@ struct NavMnu1: View {
     @EnvironmentObject var appState: AppState
     let panelSide: PanelSide
 
+    // MARK: -
     init(selectedSide: PanelSide) {
         log.info("NavMnu1 init" + " for side <<\(selectedSide)>>")
         self.panelSide = selectedSide
