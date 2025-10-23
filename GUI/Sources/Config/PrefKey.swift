@@ -11,7 +11,7 @@ import Combine
 import Foundation
 
 // MARK: - PrefKey
-private enum PrefKey: String, CaseIterable {
+enum PrefKey: String, CaseIterable {
     case leftPath
     case rightPath
     case showHiddenFiles

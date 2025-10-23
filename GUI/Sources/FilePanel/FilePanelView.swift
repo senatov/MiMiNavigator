@@ -1,23 +1,23 @@
-    //
-    //  FilePanelView.swift
-    //  MiMiNavigator
-    //
-    //  Restored and refactored: keeps clean components and adds custom row highlight
-    //
+//
+//  FilePanelView.swift
+//  MiMiNavigator
+//
+//  Restored and refactored: keeps clean components and adds custom row highlight
+//
 
 import AppKit
 import SwiftUI
 
-    // MARK: - FilePanelView
+// MARK: - FilePanelView
 struct FilePanelView: View {
     @EnvironmentObject var appState: AppState
     @StateObject private var viewModel: FilePanelViewModel
     var geometry: GeometryProxy
     @Binding var leftPanelWidth: CGFloat
-        /// Called when user clicks anywhere inside the panel (left/right)
+    /// Called when user clicks anywhere inside the panel (left/right)
     let onPanelTap: (PanelSide) -> Void
-    
-        // MARK: - compound Variable: Bridge binding to AppState-selected file for this panel
+
+    // MARK: - compound Variable: Bridge binding to AppState-selected file for this panel
     private var selectedIDBinding: Binding<CustomFile.ID?> {
         Binding<CustomFile.ID?>(
             get: {
@@ -29,7 +29,7 @@ struct FilePanelView: View {
                 }
             },
             set: { newValue in
-                    // We only handle clearing via the binding. Non-nil selection is set via onSelect below.
+                // We only handle clearing via the binding. Non-nil selection is set via onSelect below.
                 if newValue == nil {
                     log.debug("Clearing selection via binding for side <<\(viewModel.panelSide)>>")
                     switch viewModel.panelSide {
@@ -44,8 +44,8 @@ struct FilePanelView: View {
             }
         )
     }
-    
-        // MARK: - Init
+
+    // MARK: - Init
     init(
         selectedSide: PanelSide,
         geometry: GeometryProxy,
@@ -54,7 +54,6 @@ struct FilePanelView: View {
         appState: AppState,
         onPanelTap: @escaping (PanelSide) -> Void = { side in log.info("onPanelTap default for \(side)") }
     ) {
-        log.debug(#function + " for side <<\(selectedSide)>>" + " with leftPanelWidth: \(leftPanelWidth.wrappedValue.rounded())")
         self._leftPanelWidth = leftPanelWidth
         self.geometry = geometry
         self._viewModel = StateObject(
@@ -65,8 +64,8 @@ struct FilePanelView: View {
             ))
         self.onPanelTap = onPanelTap
     }
-    
-        // MARK: - View
+
+    // MARK: - View
     var body: some View {
         let currentPath = appState.pathURL(for: viewModel.panelSide)
         log.debug(#function + " for side <<\(viewModel.panelSide)>> with path: \(currentPath?.path ?? "nil")")
@@ -83,7 +82,7 @@ struct FilePanelView: View {
                 selectedID: selectedIDBinding,
                 onPanelTap: onPanelTap,
                 onSelect: { file in
-                        // Centralized selection; will clear the other panel via ViewModel.select(_:)
+                    // Centralized selection; will clear the other panel via ViewModel.select(_:)
                     viewModel.select(file)
                 }
             )
@@ -101,15 +100,15 @@ struct FilePanelView: View {
         .contentShape(Rectangle())
         .frame(
             width: viewModel.panelSide == .left
-            ? (leftPanelWidth > 0 ? leftPanelWidth : geometry.size.width / 2)
-            : nil
+                ? (leftPanelWidth > 0 ? leftPanelWidth : geometry.size.width / 2)
+                : nil
         )
         .background(DesignTokens.panelBg)
         .controlSize(.regular)
         .simultaneousGesture(
             TapGesture()
                 .onEnded {
-                        // Focus the panel on any click within its bounds without stealing row taps
+                    // Focus the panel on any click within its bounds without stealing row taps
                     log.debug("Panel tapped for focus: \(viewModel.panelSide)")
                     onPanelTap(viewModel.panelSide)
                 }
