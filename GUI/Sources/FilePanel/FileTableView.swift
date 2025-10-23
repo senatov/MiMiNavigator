@@ -15,8 +15,7 @@ struct FileTableView: View {
     let files: [CustomFile]
     @Binding var selectedID: CustomFile.ID?
     let onSelect: (CustomFile) -> Void
-    private enum SortKey { case name, size, date }
-    @State private var sortKey: SortKey = .name
+    @State private var sortKey: SortKeysEnum = .name
     @State private var sortAscending: Bool = true
     // Precomputed rows to ease type checker
     private var sortedRows: [(offset: Int, element: CustomFile)] {
@@ -91,6 +90,28 @@ struct FileTableView: View {
         )
         .onTapGesture { appState.focusedPanel = panelSide }
         .animation(.easeInOut(duration: 0.15), value: isFocused)
+    }
+
+    // MARK: - File actions handler
+    func handleFileAction(_ action: FileAction, for file: CustomFile) {
+        switch action {
+            case .cut:
+                log.debug("File action: cut → \(file.pathStr)")
+            case .copy:
+                log.debug("File action: copy → \(file.pathStr)")
+            case .pack:
+                log.debug("File action: pack → \(file.pathStr)")
+            case .viewLister:
+                log.debug("File action: viewLister → \(file.pathStr)")
+            case .createLink:
+                log.debug("File action: createLink → \(file.pathStr)")
+            case .delete:
+                log.debug("File action: delete → \(file.pathStr)")
+            case .rename:
+                log.debug("File action: rename → \(file.pathStr)")
+            case .properties:
+                log.debug("File action: properties → \(file.pathStr)")
+        }
     }
 
     // MARK: -
@@ -170,23 +191,6 @@ struct FileTableView: View {
         }
     }
 
-    // MARK: - Context menu builder to simplify type-checking
-    @ViewBuilder
-    func menuContent(
-        for file: CustomFile,
-        onFileAction: @escaping (FileAction, CustomFile) -> Void,
-        onDirectoryAction: @escaping (DirectoryAction, CustomFile) -> Void
-    ) -> some View {
-        if file.isDirectory {
-            DirectoryContextMenu(file: file) { action in
-                onDirectoryAction(action, file)
-            }
-        } else {
-            FileContextMenu(file: file) { action in
-                onFileAction(action, file)
-            }
-        }
-    }
 
     // MARK: - Directory actions handler
     func handleDirectoryAction(_ action: DirectoryAction, for file: CustomFile) {

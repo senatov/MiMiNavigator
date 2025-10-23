@@ -12,29 +12,13 @@ import SwiftUI
 // MARK: -
 struct PanelFileTableSection: View {
     @EnvironmentObject var appState: AppState
-    let panelSide: PanelSide
     let files: [CustomFile]
     @Binding var selectedID: CustomFile.ID?
+    let panelSide: PanelSide
     let onPanelTap: (PanelSide) -> Void
     let onSelect: (CustomFile) -> Void
     @State private var rowRects: [CustomFile.ID: CGRect] = [:]
 
-    init(
-        panelSide: PanelSide,
-        files: [CustomFile],
-        selectedID: CustomFile.ID,
-        onPanelTap: @escaping (PanelSide) -> Void,
-        onSelect: @escaping (CustomFile) -> Void,
-        rowRects: [CustomFile.ID: CGRect]
-    ) {
-        log.info(#function)
-        self.panelSide = panelSide
-        self.files = files
-        self.selectedID = selectedID
-        self.onPanelTap = onPanelTap
-        self.onSelect = onSelect
-        self.rowRects = rowRects
-    }
 
     // MARK: -
     var body: some View {
