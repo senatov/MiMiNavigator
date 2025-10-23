@@ -45,7 +45,7 @@ struct PanelFileTableSection: View {
 
     // MARK: -
     var body: some View {
-        log.info(#function + " for side \(appState.focusedPanel)")
+        log.info(#function + " for side <<\(appState.focusedPanel)>>")
         return FileTableView(
             panelSide: appState.focusedPanel,
             files: files,
@@ -83,14 +83,14 @@ struct PanelFileTableSection: View {
             TapGesture()
                 .onEnded {
                     onPanelTap(appState.focusedPanel)
-                    log.info("table tap (simultaneous) on side \(appState.focusedPanel)")
+                    log.info("table tap (simultaneous) on side <<\(appState.focusedPanel)>>")
                 }
         )
         // React to selection changes
         .onChange(of: selectedID, initial: false) { _, newValue in
-            log.info("on onChange on table, side \(appState.focusedPanel)")
+            log.info("on onChange on table, side <<\(appState.focusedPanel)>>")
             if let id = newValue, let file = files.first(where: { $0.id == id }) {
-                log.info("Row selected: id=\(id) on side \(appState.focusedPanel)")
+                log.info("Row selected: id=\(id) on side <<\(appState.focusedPanel)>>")
                 // Notify others to clear their selections before we commit this one
                 notifyWillSelect(file)
                 onSelect(file)
@@ -104,18 +104,18 @@ struct PanelFileTableSection: View {
             switch direction {
                 case .up,
                     .down:
-                    log.info("Move command: \(direction) on side \(appState.focusedPanel)")
+                    log.info("Move command: \(direction) on side <<\(appState.focusedPanel)>>")
                     DispatchQueue.main.async {
                         if let id = selectedID, let file = files.first(where: { $0.id == id }) {
                             notifyWillSelect(file)
                             onSelect(file)
                         } else {
-                            log.info("Move command but no selection on \(appState.focusedPanel)")
+                            log.info("Move command but no selection on <<\(appState.focusedPanel)>>")
                         }
                     }
 
                 default:
-                    log.info("on onMoveCommand on table, side \(appState.focusedPanel)")
+                    log.info("on onMoveCommand on table, side <<\(appState.focusedPanel)>>")
             }
         }
     }

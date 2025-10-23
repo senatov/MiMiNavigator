@@ -26,7 +26,7 @@ struct FileRowView: View {
     @State private var isHovering = false
     
     init(file: CustomFile, panelSide: PanelSide) {
-            //log.info(#function + " for '\(file.nameStr)' on side \(panelSide)")
+        log.info(#function + " for '\(file.nameStr)' on side <<\(panelSide)>>")
         self.file = file
         self.panelSide = panelSide
     }

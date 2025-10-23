@@ -29,7 +29,7 @@ final class FilePanelViewModel: ObservableObject {
 
     // MARK: -
     var sortedFiles: [CustomFile] {
-        log.info(#function + " for side \(panelSide)")
+        log.info(#function + " for side <<\(panelSide)>>")
         let files = appState.displayedFiles(for: panelSide)
         let sorted = files.sorted { a, b in
             let aIsFolder = a.isDirectory || a.isSymbolicDirectory
@@ -44,9 +44,9 @@ final class FilePanelViewModel: ObservableObject {
 
     // MARK: -
     func handlePathChange(to url: URL?) {
-        log.info(#function + " for side \(panelSide)")
+        log.info(#function + " for side <<\(panelSide)>>")
         guard let url else {
-            log.warning("Tried to set nil path for side \(panelSide)")
+            log.warning("Tried to set nil path for side <<\(panelSide)>>")
             return
         }
         Task { @MainActor in
@@ -57,7 +57,7 @@ final class FilePanelViewModel: ObservableObject {
 
     // MARK: - Select file on this panel and clear other panel's selection
     func select(_ file: CustomFile) {
-        log.info(#function + " for file \(file.nameStr), side \(panelSide)")
+        log.info(#function + " for file \(file.nameStr), side <<\(panelSide)>>")
 
         // Clear both to avoid double-selection and keep global invariants
         appState.selectedLeftFile = nil
