@@ -35,7 +35,7 @@ struct PanelFileTableSection: View {
             userInfo: [
                 "panelSide": panelSide,
                 "fileID": file.id,
-                "fileName": file.nameStr,
+                "fileName": file.nameStr
             ]
         )
     }
@@ -52,7 +52,7 @@ struct PanelFileTableSection: View {
 
     // MARK: -
     var body: some View {
-        // log.info(#function + " for side \(panelSide)")
+        log.info(#function + " for side \(panelSide)")
         return FileTableView(
             panelSide: panelSide,
             files: files,

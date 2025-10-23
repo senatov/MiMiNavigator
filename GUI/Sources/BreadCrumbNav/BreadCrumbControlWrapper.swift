@@ -26,7 +26,7 @@ struct BreadCrumbControlWrapper: View {
 
     // MARK: - Body
     var body: some View {
-        //log.info(#function + "for side \(panelSide)")
+        log.info(#function + "for side \(panelSide)")
         return HStack {
             if isEditing {
                 editingView
@@ -113,7 +113,7 @@ struct BreadCrumbControlWrapper: View {
 
     // MARK: - Display View
     private var displayView: some View {
-        //log.info(#function + " for side \(panelSide)")
+        log.info(#function + " for side \(panelSide)")
         return BreadCrumbPathControl(selectedSide: panelSide)
             .environmentObject(appState)
             .frame(maxWidth: .infinity, alignment: .leading)

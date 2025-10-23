@@ -53,7 +53,6 @@ struct TotalCommanderResizableView: View {
         case .left:
             appState.displayedLeftFiles = await appState.scanner.fileLst
                 .getLeftFiles()
-
         case .right:
             appState.displayedRightFiles = await appState.scanner.fileLst
                 .getRightFiles()
