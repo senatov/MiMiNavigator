@@ -18,41 +18,61 @@ struct FileTableView: View {
     private enum SortKey { case name, size, date }
     @State private var sortKey: SortKey = .name
     @State private var sortAscending: Bool = true
+    // Precomputed rows to ease type checker
+    private var sortedRows: [(offset: Int, element: CustomFile)] {
+        Array(sortedFiles.enumerated())
+    }
     // Focus state helper
     private var isFocused: Bool { appState.focusedPanel == panelSide }
 
     // MARK: -
     var body: some View {
-        log.info(
-            #function + " side: \(panelSide) with \(files.count) files, selectedID: \(String(describing: selectedID)))")
-        return ScrollView {
+        ScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 // File Table header
                 HStack(spacing: 8) {
                     getNameColSortableHeader()
                     // vertical separator
-                    Rectangle().frame(width: 1)
-                        .foregroundColor(Color.secondary.opacity(0.25)).padding(.vertical, 2)
+                    Divider().padding(.vertical, 2)
                     getSizeColSortableHeader()
                     // vertical separator
-                    Rectangle()
-                        .frame(width: 1)
-                        .foregroundColor(Color.secondary.opacity(0.25)).padding(.vertical, 2)
+                    Divider().padding(.vertical, 2)
                     getDateSortableHeader()
                 }
                 .padding(.vertical, 4)
                 .padding(.horizontal, 6)
-                .background(Color(nsColor: .windowBackgroundColor))
+                .background(.ultraThinMaterial)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 7).frame(height: 0.6).foregroundColor(.secondary.opacity(0.55)),
+                    Rectangle()
+                        .frame(height: 1)
+                        .foregroundStyle(.separator),
                     alignment: .bottom
                 )
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             LazyVStack(spacing: 0) {
-                ForEach(Array(sortedFiles.enumerated()), id: \.element.id) { index, file in
-                    let isSel = (selectedID == file.id)
-                    drawFileLineInTheTable(index, isSel, file)
+                ForEach(sortedRows, id: \.element.id) { pair in
+                    let index = pair.offset
+                    let file = pair.element
+                    FileRow(
+                        index: index,
+                        file: file,
+                        isSelected: selectedID == file.id,
+                        panelSide: panelSide,
+                        onSelect: { tapped in
+                            // Centralize selection and focus side-effects
+                            selectedID = tapped.id
+                            appState.focusedPanel = panelSide
+                            onSelect(tapped)
+                            log.info("Row tapped: \(tapped.nameStr) [\(tapped.id)] on &lt;&lt;\(panelSide)&gt;&gt;")
+                        },
+                        onFileAction: { action, f in
+                            handleFileAction(action, for: f)
+                        },
+                        onDirectoryAction: { action, f in
+                            handleDirectoryAction(action, for: f)
+                        }
+                    )
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -61,15 +81,13 @@ struct FileTableView: View {
         .overlay(
             RoundedRectangle(cornerRadius: 12)
                 .stroke(
-                    isFocused ? Color(nsColor: .systemBlue) : .gray.opacity(0.3),
-                    lineWidth: isFocused ? max(FilePanelStyle.selectedBorderWidth, 1.2) : 1
+                    isFocused ? Color(nsColor: .systemBlue) : .separator.opacity(0.6),
+                    lineWidth: isFocused ? max(FilePanelStyle.selectedBorderWidth, 1.0) : 1
                 )
-                .shadow(
-                    color: isFocused ? .black.opacity(0.25) : .black.opacity(0.1),
-                    radius: isFocused ? 1 : 2,
-                    x: 1,
-                    y: 1
-                )
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(Color.white.opacity(isFocused ? 0.10 : 0.05), lineWidth: 1)
         )
         .onTapGesture { appState.focusedPanel = panelSide }
         .animation(.easeInOut(duration: 0.15), value: isFocused)
@@ -152,62 +170,20 @@ struct FileTableView: View {
         }
     }
 
-    // MARK: -
-    private func drawFileLineInTheTable(_ index: Int, _ isSelected: Bool, _ file: CustomFile) -> some View {
-        return ZStack(alignment: .leading) {
-            // Zebra background stripes (Finder-like)
-            (index.isMultiple(of: 2) ? Color.white : Color.gray.opacity(0.08)).allowsHitTesting(false)
-            if isSelected {
-                FilePanelStyle.yellowSelRowFill
-                    .overlay(FilePanelStyle.yellowSelRowFill)
-                    .allowsHitTesting(false)
+    // MARK: - Context menu builder to simplify type-checking
+    @ViewBuilder
+    func menuContent(
+        for file: CustomFile,
+        onFileAction: @escaping (FileAction, CustomFile) -> Void,
+        onDirectoryAction: @escaping (DirectoryAction, CustomFile) -> Void
+    ) -> some View {
+        if file.isDirectory {
+            DirectoryContextMenu(file: file) { action in
+                onDirectoryAction(action, file)
             }
-            rowContent(file: file)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading).contentShape(Rectangle())
-        .help(file.id + "" + file.modifiedDateFormatted + " " + file.fileObjTypEnum)
-        .highPriorityGesture(
-            TapGesture()
-                .onEnded {
-                    // Centralized selection: keep both panels in sync via onSelect
-                    appState.focusedPanel = panelSide
-                    onSelect(file)
-                }
-        )
-        .overlay(highlightedSquare(isSelected))
-        .shadow(color: isSelected ? .gray.opacity(0.07) : .clear, radius: 4, x: 1, y: 1)
-        .animation(.spring(response: 0.4, dampingFraction: 0.7), value: isSelected)
-        .contextMenu {
-            if file.isDirectory {
-                DirectoryContextMenu(file: file) { action in
-                    handleDirectoryAction(action, for: file)
-                }
-            } else {
-                FileContextMenu(file: file) { action in
-                    handleFileAction(action, for: file)
-                }
-            }
-        }
-
-        // MARK: - File actions handler
-        func handleFileAction(_ action: FileAction, for file: CustomFile) {
-            switch action {
-                case .cut:
-                    log.debug("File action: cut → \(file.pathStr)")
-                case .copy:
-                    log.debug("File action: copy → \(file.pathStr)")
-                case .pack:
-                    log.debug("File action: pack → \(file.pathStr)")
-                case .viewLister:
-                    log.debug("File action: viewLister → \(file.pathStr)")
-                case .createLink:
-                    log.debug("File action: createLink → \(file.pathStr)")
-                case .delete:
-                    log.debug("File action: delete → \(file.pathStr)")
-                case .rename:
-                    log.debug("File action: rename → \(file.pathStr)")
-                case .properties:
-                    log.debug("File action: properties → \(file.pathStr)")
+        } else {
+            FileContextMenu(file: file) { action in
+                onFileAction(action, file)
             }
         }
     }
@@ -279,20 +255,16 @@ struct FileTableView: View {
             FileRowView(file: file, panelSide: panelSide)
                 .frame(maxWidth: .infinity, alignment: .leading)
             // vertical separator
-            Rectangle().frame(width: 1).foregroundColor(Color.secondary.opacity(0.15)).padding(.vertical, 2)
+            Divider().padding(.vertical, 2)
             // Size column
             Text(file.fileObjTypEnum)
-                .foregroundColor(
-                    Color(#colorLiteral(red: 0.1215686277, green: 0.01176470611, blue: 0.4235294163, alpha: 1))
-                )
+                .foregroundStyle(.secondary)
                 .frame(width: FilePanelStyle.sizeColumnWidth, alignment: .leading)
             // vertical separator
-            Rectangle().frame(width: 1).foregroundColor(Color.secondary.opacity(0.15)).padding(.vertical, 2)
+            Divider().padding(.vertical, 2)
             // Date column
             Text(file.modifiedDateFormatted)
-                .foregroundColor(
-                    Color(#colorLiteral(red: 0.3098039329, green: 0.01568627544, blue: 0.1294117719, alpha: 1))
-                )
+                .foregroundStyle(.tertiary)
                 .frame(width: FilePanelStyle.modifiedColumnWidth + 10, alignment: .leading)
         }
         .padding(.vertical, 2).padding(.horizontal, 6)
