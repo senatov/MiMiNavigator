@@ -75,7 +75,7 @@ struct FileTableView: View {
 
     // MARK: -
     private func getNameColSortableHeader() -> some View {
-        //log.info(#function)
+        log.info(#function)
         return HStack(spacing: 4) {
             Text("Name").font(.subheadline)
             if sortKey == .name {
