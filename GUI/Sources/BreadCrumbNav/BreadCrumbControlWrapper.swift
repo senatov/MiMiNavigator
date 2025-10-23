@@ -1,14 +1,14 @@
-    //
-    //  EditablePathControlWrapper.swift
-    //  MiMiNavigator
-    //
-    //  Created by Iakov Senatov on 25.03.25.
-    //  Copyright © 2025 Senatov. All rights reserved.
-    //
+//
+//  EditablePathControlWrapper.swift
+//  MiMiNavigator
+//
+//  Created by Iakov Senatov on 25.03.25.
+//  Copyright © 2025 Senatov. All rights reserved.
+//
 
 import SwiftUI
 
-    // MARK: - Reusable path control component with edit mode, integrated with AppState.
+// MARK: - Reusable path control component with edit mode, integrated with AppState.
 struct BreadCrumbControlWrapper: View {
     @EnvironmentObject var appState: AppState
     @State private var editedPathStr: String = ""
@@ -19,9 +19,9 @@ struct BreadCrumbControlWrapper: View {
     
         // Effective side used by the wrapper; falls back to AppState.focusedPanel if not provided
     private var effectiveSide: PanelSide { side ?? appState.focusedPanel }
-    
-    
-        // MARK: - Body
+
+
+    // MARK: - Body
     var body: some View {
         log.debug(#function + " — effectiveSide=\(effectiveSide)")
         return HStack {
@@ -38,11 +38,11 @@ struct BreadCrumbControlWrapper: View {
         }
         .background(
             RoundedRectangle(cornerRadius: 12)
-            // Use pale yellow when editing, otherwise subtle platform background
+                // Use pale yellow when editing, otherwise subtle platform background
                 .fill(
                     isEditing
-                    ? FilePanelStyle.orangeSelRowStroke.opacity(0.6)
-                    : Color(nsColor: NSColor.windowBackgroundColor))
+                        ? FilePanelStyle.orangeSelRowStroke.opacity(0.6)
+                        : Color(nsColor: NSColor.windowBackgroundColor))
         )
         .overlay(
             // Blue border when editing, subtle gray when idle; no internal separators
@@ -55,8 +55,8 @@ struct BreadCrumbControlWrapper: View {
         .padding(.vertical, 2)
         .padding(.horizontal, 1)
     }
-    
-        // MARK: - Editing View
+
+    // MARK: - Editing View
     private var editingView: some View {
         log.debug(#function + " — effectiveSide=\(effectiveSide)")
         return HStack {
@@ -104,8 +104,8 @@ struct BreadCrumbControlWrapper: View {
         }
         .transition(.opacity)
     }
-    
-        // MARK: - Display View
+
+    // MARK: - Display View
     private var displayView: some View {
         log.debug(#function + " — effectiveSide=\(effectiveSide)")
         return BreadCrumbPathControl(selectedSide: effectiveSide)
@@ -125,13 +125,13 @@ struct BreadCrumbControlWrapper: View {
             }
             .transition(.opacity.combined(with: .scale))
     }
-    
-        // MARK: - Helpers
+
+    // MARK: - Helpers
     private var currentPath: String {
         effectiveSide == .left ? appState.leftPath : appState.rightPath
     }
-    
-        // MARK: -
+
+    // MARK: -
     private func applyPathUpdate() {
         log.debug(#function + " — effectiveSide=\(effectiveSide), path=\(editedPathStr)")
         withAnimation { isEditing = false }
