@@ -1,27 +1,27 @@
-//
-//  FileRowView.swift
-//  MiMiNavigator
-//
-//  Created by Iakov Senatov on 11.08.2025.
-//  Copyright © 2025 Senatov. All rights reserved.
-//
+    //
+    //  FileRowView.swift
+    //  MiMiNavigator
+    //
+    //  Created by Iakov Senatov on 11.08.2025.
+    //  Copyright © 2025 Senatov. All rights reserved.
+    //
 
 import Foundation
 import SwiftUI
 
-// MARK: -
+    // MARK: -
 struct FileRowView: View {
     @EnvironmentObject var appState: AppState
     let file: CustomFile
     let panelSide: PanelSide
     @State private var isHovering = false
-
+    
     init(file: CustomFile, panelSide: PanelSide) {
-        log.info(#function + " for '\(file.nameStr)' on side <<\(panelSide)>>")
+        log.debug(#function + " for '\(file.nameStr)' on side <<\(panelSide)>>")
         self.file = file
         self.panelSide = panelSide
     }
-    // MARK: - View Body
+        // MARK: - View Body
     var body: some View {
         log.debug(#function + " for '\(file.nameStr)'")
         return rowContainer(baseContent())
@@ -30,24 +30,24 @@ struct FileRowView: View {
                 appState.selectedDir = SelectedDir(side: panelSide)
             }
     }
-
-    // MARK: - True when this row represents the selected file of the focused panel.
+    
+        // MARK: - True when this row represents the selected file of the focused panel.
     private var isActiveSelection: Bool {
         switch panelSide {
             case .left: return appState.focusedPanel == .left && appState.selectedLeftFile == file
             case .right: return appState.focusedPanel == .right && appState.selectedRightFile == file
         }
     }
-
-    // MARK: - Text color for the file name based on file attributes and selection state.
+    
+        // MARK: - Text color for the file name based on file attributes and selection state.
     private var nameColor: Color {
         if isActiveSelection { return .primary }  // keep readable on selected background
         if file.isSymbolicDirectory { return FilePanelStyle.fileNameColor }
         if file.isDirectory { return FilePanelStyle.dirNameColor }
         return .primary
     }
-
-    // MARK: -  Base content for a single file row (icon + name) preserving original visuals.
+    
+        // MARK: -  Base content for a single file row (icon + name) preserving original visuals.
     private func baseContent() -> some View {
         log.debug(#function + " for '\(file.nameStr)'")
         return HStack {
@@ -71,35 +71,23 @@ struct FileRowView: View {
             Text(file.nameStr).foregroundColor(nameColor)
         }
     }
-
-    // MARK: - Row Container with unified selection and hover visuals
+    
+    
+        // MARK: - Row Container with unified selection and hover visuals
     private func rowContainer<Content: View>(_ content: Content) -> some View {
-        // Base content aligned to 8pt grid
+            // Base content aligned to 8pt grid
         let base =
-            content
+        content
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.vertical, RowDesignTokens.grid / 2)
             .padding(.horizontal, RowDesignTokens.grid)
-
-        // Selection and hover backgrounds styled to macOS 26.1
-        let bg = Group {
-            if isActiveSelection {
-                RoundedRectangle(cornerRadius: RowDesignTokens.radius, style: .continuous)
-                    .fill(RowDesignTokens.selBG)
-            } else if isHovering {
-                RoundedRectangle(cornerRadius: RowDesignTokens.radius, style: .continuous)
-                    .fill(RowDesignTokens.hoverBG)
-            } else {
-                Color.clear
-            }
-        }
-
+        
         return
-            base
-            .background(bg)
+        base
+            .background(Color.clear)
             .contentShape(Rectangle())
             .onHover { hovering in
-                // Hover feedback only when not selected, to match macOS subtlety
+                    // Hover feedback only when not selected, to match macOS subtlety
                 if !isActiveSelection {
                     isHovering = hovering
                 }

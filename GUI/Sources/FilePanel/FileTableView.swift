@@ -1,14 +1,14 @@
-//
-//  FileRowView.swift
-//  MiMiNavigator
-//
-//  Created by Iakov Senatov on 11.08.2025.
-//  Copyright © 2025 Senatov. All rights reserved.
-//
+    //
+    //  FileRowView.swift
+    //  MiMiNavigator
+    //
+    //  Created by Iakov Senatov on 11.08.2025.
+    //  Copyright © 2025 Senatov. All rights reserved.
+    //
 
 import SwiftUI
 
-// MARK: -
+    // MARK: -
 struct FileTableView: View {
     @EnvironmentObject var appState: AppState
     let panelSide: PanelSide
@@ -17,25 +17,24 @@ struct FileTableView: View {
     let onSelect: (CustomFile) -> Void
     @State private var sortKey: SortKeysEnum = .name
     @State private var sortAscending: Bool = true
-    // Precomputed rows to ease type checker
+        // Precomputed rows to ease type checker
     private var sortedRows: [(offset: Int, element: CustomFile)] {
         Array(sortedFiles.enumerated())
     }
-    // Focus state helper
+        // Focus state helper
     private var isFocused: Bool { appState.focusedPanel == panelSide }
-
-    // MARK: -
+    
+        // MARK: -
     var body: some View {
-        log.info(#function)
-        return ScrollView {
+        ScrollView {
             VStack(alignment: .leading, spacing: 0) {
-                // File Table header
+                    // File Table header
                 HStack(spacing: 8) {
                     getNameColSortableHeader()
-                    // vertical separator
+                        // vertical separator
                     Divider().padding(.vertical, 2)
                     getSizeColSortableHeader()
-                    // vertical separator
+                        // vertical separator
                     Divider().padding(.vertical, 2)
                     getDateSortableHeader()
                 }
@@ -64,7 +63,7 @@ struct FileTableView: View {
         .overlay(
             RoundedRectangle(cornerRadius: 12)
                 .stroke(
-                    isFocused ? Color(nsColor: .systemBlue) : Color(.gray).opacity(0.6),
+                    isFocused ? Color(nsColor: .systemBlue) : Color(Color.secondary).opacity(0.6),
                     lineWidth: isFocused ? max(FilePanelStyle.selectedBorderWidth, 0.7) : 0.5
                 )
         )
@@ -75,10 +74,10 @@ struct FileTableView: View {
         .onTapGesture { appState.focusedPanel = panelSide }
         .animation(.easeInOut(duration: 0.15), value: isFocused)
     }
-
-    // MARK: - File actions handler
+    
+        // MARK: - File actions handler
     func handleFileAction(_ action: FileAction, for file: CustomFile) {
-        log.info(#function + ": \(action)")
+        log.debug(#function + ": \(action)")
         switch action {
             case .cut:
                 log.debug("File action: cut → \(file.pathStr)")
@@ -98,10 +97,9 @@ struct FileTableView: View {
                 log.debug("File action: properties → \(file.pathStr)")
         }
     }
-
-    // MARK: -
+    
+        // MARK: -
     private func getNameColSortableHeader() -> some View {
-        log.info(#function)
         return HStack(spacing: 4) {
             Text("Name").font(.subheadline)
             if sortKey == .name {
@@ -110,7 +108,7 @@ struct FileTableView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading).contentShape(Rectangle())
         .onTapGesture {
-            log.info("Name header tapped on side: \(panelSide)")
+            log.debug("Name header tapped on side: \(panelSide)")
             appState.focusedPanel = panelSide
             if sortKey == .name {
                 sortAscending.toggle()
@@ -121,10 +119,9 @@ struct FileTableView: View {
             appState.updateSorting(key: .name, ascending: sortAscending)
         }
     }
-
-    // MARK: -
+    
+        // MARK: -
     private func getSizeColSortableHeader() -> some View {
-        log.info(#function)
         return HStack(spacing: 4) {
             Text("Size").font(.subheadline)
             if sortKey == .size {
@@ -134,7 +131,7 @@ struct FileTableView: View {
         .frame(width: FilePanelStyle.sizeColumnWidth, alignment: .leading).contentShape(Rectangle())
         .onTapGesture {
             appState.focusedPanel = panelSide
-            log.info("Size header tapped on side: \(panelSide)")
+            log.debug("Size header tapped on side: \(panelSide)")
             if sortKey == .size {
                 sortAscending.toggle()
             } else {
@@ -144,10 +141,9 @@ struct FileTableView: View {
             appState.updateSorting(key: .size, ascending: sortAscending)
         }
     }
-
-    // MARK: -
+    
+        // MARK: -
     private func getDateSortableHeader() -> some View {
-        log.info(#function)
         return HStack(spacing: 4) {
             Text("Date").font(.subheadline)
             if sortKey == .date {
@@ -157,7 +153,7 @@ struct FileTableView: View {
         .frame(width: FilePanelStyle.modifiedColumnWidth + 10, alignment: .leading).contentShape(Rectangle())
         .onTapGesture {
             appState.focusedPanel = panelSide
-            log.info("Date header tapped on side: \(panelSide)")
+            log.debug("Date header tapped on side: \(panelSide)")
             if sortKey == .date {
                 sortAscending.toggle()
             } else {
@@ -167,10 +163,10 @@ struct FileTableView: View {
             appState.updateSorting(key: .date, ascending: sortAscending)
         }
     }
-
-    // MARK: - Directory actions handler
+    
+        // MARK: - Directory actions handler
     func handleDirectoryAction(_ action: DirectoryAction, for file: CustomFile) {
-        log.info(#function + " for \(file.pathStr)")
+        log.debug(#function + " for \(file.pathStr)")
         switch action {
             case .open:
                 log.debug("Action: open → \(file.pathStr)")
@@ -194,8 +190,8 @@ struct FileTableView: View {
                 log.debug("Action: properties → \(file.pathStr)")
         }
     }
-
-    // MARK: - Sorting comparator extracted to help the type-checker
+    
+        // MARK: - Sorting comparator extracted to help the type-checker
     func compare(_ a: CustomFile, _ b: CustomFile) -> Bool {
         let aIsFolder = a.isDirectory || a.isSymbolicDirectory
         let bIsFolder = b.isDirectory || b.isSymbolicDirectory
@@ -204,13 +200,13 @@ struct FileTableView: View {
             case .name:
                 let cmp = a.nameStr.localizedCaseInsensitiveCompare(b.nameStr)
                 return sortAscending ? (cmp == .orderedAscending) : (cmp == .orderedDescending)
-
+                
             case .size:
                 let lhs: Int64 = a.sizeInBytes
                 let rhs: Int64 = b.sizeInBytes
                 if lhs != rhs { return sortAscending ? (lhs < rhs) : (lhs > rhs) }
                 return a.nameStr.localizedCaseInsensitiveCompare(b.nameStr) == .orderedAscending
-
+                
             case .date:
                 let lhs = a.modifiedDate ?? Date.distantPast
                 let rhs = b.modifiedDate ?? Date.distantPast
@@ -218,13 +214,14 @@ struct FileTableView: View {
                 return a.nameStr.localizedCaseInsensitiveCompare(b.nameStr) == .orderedAscending
         }
     }
-
-    // MARK: -
+    
+        // MARK: -
     var sortedFiles: [CustomFile] {
-        // Always sort directories first, then apply selected column sort
-        log.info(#function + " for side <<\(panelSide)>>, sorting by \(sortKey), ascending: \(sortAscending)")
+            // Always sort directories first, then apply selected column sort
+        log.debug(#function + " for side <<\(panelSide)>>, sorting by \(sortKey), ascending: \(sortAscending)")
         let base: [CustomFile] = files
         let sorted = base.sorted(by: compare)
         return sorted
     }
 }
+

@@ -173,28 +173,34 @@ This project is still under active development ( NOT READY YET  per the README) 
 ---
 ## FAQ
 
-| Question                             | Answer                                                                   |
-| ------------------------------------ | ------------------------------------------------------------------------ |
-| How to configure settings?           | Navigate to Configuration to access display, layout, and color settings. |
-| How to compare directories?          | Use the Files menu to compare and sync directories.                      |
-| Can I rename multiple files at once? | Yes, use the Multi-Rename Tool available under Tools.                    |
-| Is FTP supported?                    | Yes, FTP connection tools are available under the Network menu.          |
-| Clean the Project from artefacts     | periphery scan --config .periphery.yml                                   |
+| Question                             | Answer                                                                    |
+| ------------------------------------ | ------------------------------------------------------------------------- |
+| How to configure settings?           | Navigate to Configuration to access display, layout, and color settings.  |
+| How to compare directories?          | Use the Files menu to compare and sync directories.                       |
+| Can I rename multiple files at once? | Yes, use the Multi-Rename Tool available under Tools.                     |
+| Is FTP supported?                    | Yes, FTP connection tools are available under the Network menu.           |
+| Clean the Project from artefacts     | periphery scan --config .periphery.yml                                    |
 
 
 
 ---
 ## Recent Changes
 ```sh
-*   b9ac683 - Senatov  (HEAD -> master) Merge branch 'check_popups_fix' (12 seconds ago, 2025-10-23 15:35:08 +0200)
+
+* b8b8513 - Senatov  (HEAD -> master, origin/master, origin/HEAD) history ok. Но выделение строки и низ по-прежнему дерьмово провисает. (64 minutes ago, 2025-10-23 23:01:17 +0200)
+* 8491639 - Senatov  FileTableView   - err (4 hours ago, 2025-10-23 20:03:08 +0200)
+* 2324bf2 - Senatov  error (5 hours ago, 2025-10-23 19:04:14 +0200)
+* c6f9938 - Senatov  compillation error (5 hours ago, 2025-10-23 18:41:21 +0200)
+* f2c227e - Senatov  build info (8 hours ago, 2025-10-23 15:38:37 +0200)
+*   b9ac683 - Senatov  Merge branch 'check_popups_fix' (9 hours ago, 2025-10-23 15:35:08 +0200)
 |\  
-| * 1fdce74 - Senatov  (origin/check_popups_fix, check_popups_fix) ok. Not tested yet! (6 minutes ago, 2025-10-23 15:29:09 +0200)
-| * 0492725 - Senatov  Fix popup on prozess. Selection focuser panel side in logs with "<< >>" (70 minutes ago, 2025-10-23 14:25:40 +0200)
-| * a087fa6 - Senatov  def. fixed before test (10 hours ago, 2025-10-23 05:11:43 +0200)
-| * 9ba4e47 - Senatov  wrong (11 hours ago, 2025-10-23 04:52:03 +0200)
+| * 1fdce74 - Senatov  (origin/check_popups_fix, check_popups_fix) ok. Not tested yet! (9 hours ago, 2025-10-23 15:29:09 +0200)
+| * 0492725 - Senatov  Fix popup on prozess. Selection focuser panel side in logs with "<< >>" (10 hours ago, 2025-10-23 14:25:40 +0200)
+| * a087fa6 - Senatov  def. fixed before test (19 hours ago, 2025-10-23 05:11:43 +0200)
+| * 9ba4e47 - Senatov  wrong (19 hours ago, 2025-10-23 04:52:03 +0200)
 | * dce701f - Senatov  just try fix popup. Hasnt successfull. (2 days ago, 2025-10-21 21:20:07 +0200)
-* | 26b1be3 - Senatov  (origin/master, origin/HEAD) wrong (11 hours ago, 2025-10-23 04:18:43 +0200)
-* | 46e4a71 - Senatov  colors, Styles - ok. Working on popup panel - not ok yet (25 hours ago, 2025-10-22 14:24:08 +0200)
+* | 26b1be3 - Senatov  wrong (20 hours ago, 2025-10-23 04:18:43 +0200)
+ | 46e4a71 - Senatov  colors, Styles - ok. Working on popup panel - not ok yet (34 hours ago, 2025-10-22 14:24:08 +0200)
 * | a19d8bf - Senatov  fix deive popup. in process (2 days ago, 2025-10-22 00:35:38 +0200)
 * | 55a6778 - Senatov  something 2 Weeks old, don't know (2 days ago, 2025-10-21 17:05:02 +0200)
 |/  
@@ -244,7 +250,7 @@ This project is still under active development ( NOT READY YET  per the README) 
 * 2df3694 - Senatov  file + dir list sorting.ready! (8 weeks ago, 2025-08-30 23:31:53 +0200)
 * d91e3a8 - Senatov  select colors, select frame fixed again (8 weeks ago, 2025-08-29 00:02:31 +0200)
 * 693d44b - Senatov  temp save (8 weeks ago, 2025-08-27 02:38:22 +0200)
- 
+
 
 ```
 q
