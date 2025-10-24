@@ -26,11 +26,11 @@ struct FileRow: View {
             zebra.allowsHitTesting(false)
             
             if isSelected {
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(.ultraThinMaterial)
+                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    .fill(FilePanelStyle.yellowSelRowFill) // pale yellow per spec
                     .overlay(
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(Color.white.opacity(0.28), lineWidth: 1)
+                        RoundedRectangle(cornerRadius: 6, style: .continuous)
+                            .stroke(FilePanelStyle.blueSymlinkDirNameColor, lineWidth: FilePanelStyle.selectedBorderWidth)
                     )
                     .allowsHitTesting(false)
             }
@@ -47,15 +47,17 @@ struct FileRow: View {
                     onSelect(file)
                 }
         )
-        .overlay(highlightedSquare(isSelected))
-        .shadow(color: isSelected ? .gray.opacity(0.07) : .clear, radius: 4, x: 1, y: 1)
-        .animation(.spring(response: 0.4, dampingFraction: 0.7), value: isSelected)
+        .animation(nil, value: isSelected)
+        .transaction { txn in
+            txn.disablesAnimations = true
+        }
         .contextMenu {
             menuContent(
                 for: file,
                 onFileAction: onFileAction,
                 onDirectoryAction: onDirectoryAction)
         }
+        .id("\(panelSide)_\(String(describing: file.id))_\(isSelected ? "sel" : "no")")
     }
     
         // MARK: - Context menu builder to simplify type-checking
@@ -103,7 +105,9 @@ struct FileRow: View {
     @ViewBuilder
     private func highlightedSquare(_ isLineSelected: Bool) -> some View {
         if isLineSelected {
-            Rectangle().inset(by: 0.2).stroke(FilePanelStyle.blueSymlinkDirNameColor.gradient, lineWidth: 0.7)
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .inset(by: 0.2)
+                .stroke(FilePanelStyle.blueSymlinkDirNameColor, lineWidth: FilePanelStyle.selectedBorderWidth)
         } else {
             EmptyView()
         }
