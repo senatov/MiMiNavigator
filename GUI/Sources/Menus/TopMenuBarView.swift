@@ -1,34 +1,34 @@
-//
-//  TopMenuBarView.swift
-//  MiMiNavigator
-//
-//  Created by Iakov Senatov on 16.10.24.
-//  Description: SwiftUI component for rendering the top menu bar with dropdown menus and shortcuts.
-//
+    //
+    //  TopMenuBarView.swift
+    //  MiMiNavigator
+    //
+    //  Created by Iakov Senatov on 16.10.24.
+    //  Description: SwiftUI component for rendering the top menu bar with dropdown menus and shortcuts.
+    //
 
 import SwiftUI
 
 struct TopMenuBarView: View {
-    // MARK: -
+        // MARK: -
     var body: some View {
-        log.info(#function)
+        log.debug(#function)
         return ZStack(alignment: .top) {
-            // Glass-like background bar with a thin bottom separator (Figma/macOS 26)
+                // Glass-like background bar with a thin bottom separator (Figma/macOS 26)
             Rectangle()
-                .fill(.regularMaterial)
+                .fill(Material.thin)
                 .frame(height: 36)
                 .overlay(alignment: .bottom) {
                     Rectangle()
                         .frame(height: 0.5)
                         .foregroundStyle(.separator)
                 }
-            // Existing menu row kept intact (structure/logic unchanged)
+                // Existing menu row kept intact (structure/logic unchanged)
             HStack(spacing: 6) {
                 ForEach(menuData.dropLast()) { menu in
                     menuView(for: menu)
                 }
                 Spacer(minLength: 12)  // keep Help menu pushed to the right with consistent gap
-
+                
                 if let helpMenu = menuData.last {
                     Menu {
                         ForEach(helpMenu.items) { item in
@@ -48,16 +48,18 @@ struct TopMenuBarView: View {
                     .padding(.trailing, 1)
                 }
             }
-            .padding(.horizontal, 10)
+            .padding(.horizontal, 5)
             .frame(height: 36, alignment: .center)
-            .accessibilityElement(children: .contain)
+            .controlSize(.small)
+            .accessibilityElement(children: AccessibilityChildBehavior.contain)
+            .accessibilityLabel("Top menu bar")
         }
         .frame(maxWidth: .infinity, alignment: .topLeading)
         .background(.clear)  // no opaque backgrounds behind the bar
     }
-    // MARK: -
+        // MARK: -
     private func menuView(for menu: MenuCategory) -> some View {
-        // Explicit return for clarity
+            // Explicit return for clarity
         return Menu(menu.title) {
             ForEach(menu.items) { item in
                 TopMenuItemView(item: item)
@@ -65,12 +67,13 @@ struct TopMenuBarView: View {
         }
         .help("Open menu: \(menu.title)")
         .menuStyle(.borderlessButton)  // ensure flat dropdown look per Figma/macOS
+        .controlSize(.small)
         .buttonStyle(TopMenuButtonStyle())
     }
-
-    // MARK: - All top-level menu categories are defined here:
+    
+        // MARK: - All top-level menu categories are defined here:
     private var menuData: [MenuCategory] {
-        // Explicit return for clarity
+            // Explicit return for clarity
         return [
             filesMenuCategory,
             markMenuCategory,
