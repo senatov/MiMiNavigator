@@ -1,14 +1,14 @@
-//
-//  PanelsRowView.swift
-//  MiMiNavigator
-//
-//  Created by Iakov Senatov on 21.10.2025.
-//  Copyright © 2025 Senatov. All rights reserved.
-//
+    //
+    //  PanelsRowView.swift
+    //  MiMiNavigator
+    //
+    //  Created by Iakov Senatov on 21.10.2025.
+    //  Copyright © 2025 Senatov. All rights reserved.
+    //
 
 import AppKit
 import SwiftUI
-// MARK: - Main view containing two file panels and a draggable divider.
+    // MARK: - Main view containing two file panels and a draggable divider.
 struct PanelsRowView: View {
     @EnvironmentObject var appState: AppState
     @Binding var leftPanelWidth: CGFloat
@@ -17,10 +17,10 @@ struct PanelsRowView: View {
     @State private var isDividerTooltipVisible: Bool = false
     let geometry: GeometryProxy
     let fetchFiles: @MainActor (PanelSide) async -> Void
-
-    // MARK: -
+    
+        // MARK: -
     var body: some View {
-        log.info(#function + " with leftPanelWidth: \(leftPanelWidth)")
+        log.debug(#function + " with leftPanelWidth: \(leftPanelWidth)")
         return HStack(spacing: 0) {
             makeLeftPanel()
             makeDivider()
@@ -30,22 +30,22 @@ struct PanelsRowView: View {
             makeTooltipOverlay()
         )
     }
-
-    // MARK: - - Creates the left file panel view.
+    
+        // MARK: - - Creates the left file panel view.
     private func makeLeftPanel() -> some View {
-        log.info(#function + " with leftPanelWidth: \(leftPanelWidth.rounded())")
+        log.debug(#function + " with leftPanelWidth: \(leftPanelWidth.rounded())")
         return FilePanelView(selectedSide: .left, geometry: geometry, leftPanelWidth: $leftPanelWidth, fetchFiles: fetchFiles, appState: appState)
     }
-
-    /// Creates the right file panel view.
+    
+        /// Creates the right file panel view.
     private func makeRightPanel() -> some View {
-        log.info(#function + " with leftPanelWidth: \(leftPanelWidth.rounded())")
+        log.debug(#function + " with leftPanelWidth: \(leftPanelWidth.rounded())")
         return FilePanelView(selectedSide: .right, geometry: geometry, leftPanelWidth: $leftPanelWidth, fetchFiles: fetchFiles, appState: appState)
     }
-
-    // MARK: - - Creates the divider view with drag handlers.
+    
+        // MARK: - - Creates the divider view with drag handlers.
     private func makeDivider() -> some View {
-        log.info(#function + " with leftPanelWidth: \(leftPanelWidth.rounded())")
+        log.debug(#function + " with leftPanelWidth: \(leftPanelWidth.rounded())")
         return DividerView(
             geometry: geometry,
             leftPanelWidth: $leftPanelWidth,
@@ -65,10 +65,10 @@ struct PanelsRowView: View {
             }
         )
     }
-
-    // MARK: - - Creates the tooltip overlay view.
+    
+        // MARK: - - Creates the tooltip overlay view.
     private func makeTooltipOverlay() -> some View {
-        log.info(#function + " with isDividerTooltipVisible: \(isDividerTooltipVisible)")
+        log.debug(#function + " with isDividerTooltipVisible: \(isDividerTooltipVisible)")
         return Group {
             if isDividerTooltipVisible {
                 PrettyTooltip(text: tooltipText)
