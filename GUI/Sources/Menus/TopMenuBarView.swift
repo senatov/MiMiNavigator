@@ -9,6 +9,8 @@
 import SwiftUI
 
 struct TopMenuBarView: View {
+    @EnvironmentObject var appState: AppState
+    @State private var favoritesTargetSide: PanelSide = .left
         // MARK: -
     var body: some View {
         log.debug(#function)
@@ -56,6 +58,11 @@ struct TopMenuBarView: View {
         }
         .frame(maxWidth: .infinity, alignment: .topLeading)
         .background(.clear)  // no opaque backgrounds behind the bar
+        .onChange(of: appState.showFavTreePopup) { newValue in
+            if newValue {
+                favoritesTargetSide = appState.focusedPanel
+            }
+        }
     }
         // MARK: -
     private func menuView(for menu: MenuCategory) -> some View {
