@@ -36,24 +36,26 @@ struct MiMiNavigatorApp: App {
                 ToolbarItem(placement: .automatic) {
                     Button(action: { log.debug("Refresh button clicked") }) {
                         Image(systemName: "arrow.triangle.2.circlepath")
-                            .symbolRenderingMode(.hierarchical)
+                            .symbolRenderingMode(.multicolor)
                             .font(.system(size: 13, weight: .semibold))
                             .help("Refresh")
                             .accessibilityLabel("Refresh")
                     }
                     .buttonStyle(.borderless)
                     .controlSize(.small)
+                    .padding(.horizontal, 12)
                 }
                 ToolbarItem(placement: .automatic) {
                     Button(action: { appState.revealLogFileInFinder() }) {
                         Image(systemName: "doc.text.magnifyingglass")
-                            .symbolRenderingMode(.hierarchical)
+                            .symbolRenderingMode(.multicolor)
                             .font(.system(size: 13, weight: .semibold))
                             .help("Reveal log file in Finder")
                             .accessibilityLabel("Reveal log file in Finder")
                     }
                     .buttonStyle(.borderless)
                     .controlSize(.small)
+                    .padding(.horizontal, 12)
                 }
                 ToolbarItem(placement: .status) {
                     HStack(spacing: 8) {
@@ -78,12 +80,12 @@ struct MiMiNavigatorApp: App {
                                 .foregroundColor(FilePanelStyle.dirNameColor)
                         }
                     }
-                    .padding(.horizontal, 8)
+                    .padding(.horizontal, 18)
                     .padding(.vertical, 4)
                     .background(Material.ultraThin, in: Capsule())
                     .overlay(
                         Capsule()
-                            .strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5)
+                            .strokeBorder(.red, lineWidth: 0.5)
                     )
                     .help("Current development build version")
                 }

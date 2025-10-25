@@ -80,18 +80,20 @@ struct PanelFileTableSection: View {
                             log.debug("Move command but no selection on <<\(panelSide)>>")
                         }
                     }
-                    
                 default:
                     log.debug("on onMoveCommand on table, side <<\(panelSide)>>")
             }
         }
         .onChange(of: appState.focusedPanel, initial: false) { _, newSide in
                 // When this panel receives keyboard focus (e.g., via Tab), ensure a visible selection exists
-            if newSide == panelSide, selectedID == nil, let first = files.first {
-                isFocused = true
-                log.debug("Auto-select first row on focus gain for side <<\(panelSide)>>: \(first.nameStr)")
+            guard newSide == panelSide else { return }
+            isFocused = true
+            if selectedID == nil, let first = files.first {
+                log.debug("Auto-select first row on focusedPanel change for side <<\(panelSide)>>: \(first.nameStr)")
                 selectedID = first.id
                 onSelect(first)
+            } else {
+                log.debug("focusedPanel change on <<\(panelSide)>> but selection already present: \(String(describing: selectedID))")
             }
         }
         .onChange(of: isFocused, initial: false) { _, nowFocused in
@@ -102,6 +104,8 @@ struct PanelFileTableSection: View {
                     log.debug("FocusState gained, auto-select first on <<\(panelSide)>>: \(first.nameStr)")
                     selectedID = first.id
                     onSelect(first)
+                } else {
+                    log.debug("FocusState gained on <<\(panelSide)>>, selection exists: \(String(describing: selectedID))")
                 }
             }
         }

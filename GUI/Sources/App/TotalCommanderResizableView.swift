@@ -13,6 +13,7 @@ import SwiftUI
 struct TotalCommanderResizableView: View {
     @EnvironmentObject var appState: AppState
     @State private var leftPanelWidth: CGFloat = 0
+    @State private var keyMonitor: Any? = nil
 
     // MARK: -
     var body: some View {
@@ -22,12 +23,16 @@ struct TotalCommanderResizableView: View {
                     VStack(spacing: 0) {
                         HStack {
                             TopMenuBarView()
-                            Spacer()
                         }
                         PanelsRowView(leftPanelWidth: $leftPanelWidth, geometry: geometry, fetchFiles: fetchFiles)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                         buildDownToolbar()
+                            .frame(maxWidth: .infinity, alignment: .bottom)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
-                    .padding(.horizontal, 10)
+                    .padding(.horizontal, 2)
+                    .padding(.bottom, 0)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                 }
             }
             .onAppear {
@@ -36,6 +41,13 @@ struct TotalCommanderResizableView: View {
                 initializePanelWidth(geometry: geometry)  // Restore divider width from user defaults
                 addKeyPressMonitor()  // Register keyboard shortcut
                 appState.forceFocusSelection()
+            }
+            .onDisappear {
+                if let monitor = keyMonitor {
+                    NSEvent.removeMonitor(monitor)
+                    keyMonitor = nil
+                    log.debug("Removed key monitor on disappear")
+                }
             }
             .onChange(of: geometry.size) { oldSize, newSize in
                 log.debug("Window size changed from: \(oldSize.width)x\(oldSize.height) → \(newSize.width)x\(newSize.height)")
@@ -53,7 +65,9 @@ struct TotalCommanderResizableView: View {
     // MARK: -
     private func addKeyPressMonitor() {
         log.debug(#function)
-        NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+        // Avoid installing multiple monitors when the view re-appears
+        if keyMonitor != nil { return }
+        keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
             if event.modifierFlags.contains(.option), event.keyCode == 0x76 {
                 exitApp()
                 return nil
@@ -64,6 +78,7 @@ struct TotalCommanderResizableView: View {
             }
             return event
         }
+        log.debug("Installed key monitor: \(String(describing: keyMonitor))")
     }
 
     // MARK: -
@@ -82,7 +97,7 @@ struct TotalCommanderResizableView: View {
     // MARK: - Fetch Files
     @MainActor
     private func fetchFiles(for panelSide: PanelSide) async {
-        log.debug("\(#function) [side: \(panelSide)]")
+        log.debug("\(#function) [side:<<\(panelSide)]>>")
         switch panelSide {
             case .left:
                 appState.displayedLeftFiles = await appState.scanner.fileLst
@@ -143,16 +158,39 @@ struct TotalCommanderResizableView: View {
                     log.debug("Console button tapped")
                     openConsoleInDirectory("~")
                 }
-                DownToolbarButtonView(title: "F4 Exit", systemImage: "power") {
+                DownToolbarButtonView(title: "Alt-F4 Exit", systemImage: "power") {
                     log.debug("F4 Exit button tapped")
                     exitApp()
                 }
             }
-            .padding(.horizontal, 16)
-            .padding(.top, 16)
-            .cornerRadius(7)
+            .padding(.horizontal, 20)
+            .padding(.vertical, 14)
+            .background(
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .fill(
+                        LinearGradient(
+                            gradient: Gradient(colors: [Color.clear, Color.black.opacity(0.07)]),
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 18, style: .continuous)
+                            .strokeBorder(Color.white.opacity(0.12), lineWidth: 0.8)
+                    )
+                    .shadow(color: Color.black.opacity(0.2), radius: 16, x: 0, y: 8)
+            )
+            .padding(.horizontal, 24)
+            .padding(.bottom, 12)
         }
         .frame(maxWidth: .infinity, alignment: .bottom)
+        .background(
+            LinearGradient(
+                gradient: Gradient(colors: [Color.clear, Color.black.opacity(0.05)]),
+                startPoint: .top,
+                endPoint: .bottom
+            )
+        )
     }
 
     // MARK: - Toolbar

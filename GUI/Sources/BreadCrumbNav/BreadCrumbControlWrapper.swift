@@ -26,7 +26,7 @@ struct BreadCrumbControlWrapper: View {
 
     // MARK: - Body
     var body: some View {
-        log.info(#function + "for side \(panelSide)")
+        log.info(#function + "for side <<\(panelSide)>>")
         return HStack {
             if isEditing {
                 editingView
@@ -64,7 +64,7 @@ struct BreadCrumbControlWrapper: View {
 
     // MARK: - Editing View
     private var editingView: some View {
-        log.info(#function + " for side \(panelSide)")
+        log.info(#function + " for side <<\(panelSide)>>")
         return HStack {
             TextField("Enter path", text: $editedPathStr)
                 .textFieldStyle(.plain)
@@ -113,7 +113,7 @@ struct BreadCrumbControlWrapper: View {
 
     // MARK: - Display View
     private var displayView: some View {
-        log.info(#function + " for side \(panelSide)")
+        log.info(#function + " for side <<\(panelSide)>>")
         return BreadCrumbPathControl(selectedSide: panelSide)
             .environmentObject(appState)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -139,7 +139,7 @@ struct BreadCrumbControlWrapper: View {
 
     // MARK: -
     private func applyPathUpdate() {
-        log.info(#function + " for side \(panelSide) with path: \(editedPathStr)")
+        log.info(#function + " for side <<\(panelSide)>> with path: \(editedPathStr)")
         withAnimation { isEditing = false }
         Task {
             if panelSide == .left {

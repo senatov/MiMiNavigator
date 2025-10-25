@@ -89,7 +89,7 @@ struct ButtonFavTopPanel: View {
 
     // MARK: - -
     private func menuButton() -> some View {
-        log.debug(#function + " - \(String(describing: panelSide))")
+        log.debug(#function + " - <<\(String(describing: panelSide))>>")
         return Button(action: {
             log.debug("Navigation between favorites")
             if favTreeStruct.isEmpty {
