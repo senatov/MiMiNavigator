@@ -1,11 +1,11 @@
-//
-//  TotalCommanderResizableView.swift
-//  MiMiNavigator
-//
-//  Created by Iakov Senatov on 26.04.2025.
-//  Copyright © 2025 Senatov. All rights reserved.
-//
-//  Note: addKeyPressMonitor() also handles moving row selection with Up/Down arrows.
+    //
+    //  TotalCommanderResizableView.swift
+    //  MiMiNavigator
+    //
+    //  Created by Iakov Senatov on 26.04.2025.
+    //  Copyright © 2025 Senatov. All rights reserved.
+    //
+    //  Note: addKeyPressMonitor() also handles moving row selection with Up/Down arrows.
 
 import AppKit
 import SwiftUI
@@ -13,8 +13,8 @@ import SwiftUI
 struct TotalCommanderResizableView: View {
     @EnvironmentObject var appState: AppState
     @State private var leftPanelWidth: CGFloat = 0
-
-    // MARK: -
+    
+        // MARK: -
     var body: some View {
         GeometryReader { geometry in
             ZStack {
@@ -31,15 +31,15 @@ struct TotalCommanderResizableView: View {
                 }
             }
             .onAppear {
-                log.info(#function + " - Initializing app state and panels")
+                log.debug(#function + " - Initializing app state and panels")
                 appState.initialize()
                 initializePanelWidth(geometry: geometry)  // Restore divider width from user defaults
                 addKeyPressMonitor()  // Register keyboard shortcut
                 appState.forceFocusSelection()
             }
             .onChange(of: geometry.size) { oldSize, newSize in
-                log.info("Window size changed from: \(oldSize.width)x\(oldSize.height) → \(newSize.width)x\(newSize.height)")
-                // Recalculate left panel width if needed
+                log.debug("Window size changed from: \(oldSize.width)x\(oldSize.height) → \(newSize.width)x\(newSize.height)")
+                    // Recalculate left panel width if needed
                 if leftPanelWidth > 0 {
                     let maxWidth = newSize.width - 50
                     if leftPanelWidth > maxWidth {
@@ -49,87 +49,87 @@ struct TotalCommanderResizableView: View {
             }
         }
     }
-
-    // MARK: -
+    
+        // MARK: -
     private func addKeyPressMonitor() {
-        log.info(#function)
+        log.debug(#function)
         NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
             if event.modifierFlags.contains(.option), event.keyCode == 0x76 {
                 exitApp()
                 return nil
             }
-            // Handle Tab key (keyCode 0x30 / 48) — Tab and Shift+Tab toggle focus
+                // Handle Tab key (keyCode 0x30 / 48) — Tab and Shift+Tab toggle focus
             if event.keyCode == 0x30 {
                 return doPanelToggled(event)
             }
             return event
         }
     }
-
-    // MARK: -
+    
+        // MARK: -
     private func doPanelToggled(_ event: NSEvent) -> NSEvent? {
-        log.info(#function)
+        log.debug(#function)
         appState.toggleFocus()
         appState.forceFocusSelection()
         if event.modifierFlags.contains(.shift) {
-            log.info("Shift+Tab pressed → toggle focused panel (reverse)")
+            log.debug("Shift+Tab pressed → toggle focused panel (reverse)")
         } else {
-            log.info("Tab pressed → toggle focused panel")
+            log.debug("Tab pressed → toggle focused panel")
         }
         return nil
     }
-
-    // MARK: - Fetch Files
+    
+        // MARK: - Fetch Files
     @MainActor
     private func fetchFiles(for panelSide: PanelSide) async {
-        log.info("\(#function) [side: \(panelSide)]")
+        log.debug("\(#function) [side: \(panelSide)]")
         switch panelSide {
             case .left:
                 appState.displayedLeftFiles = await appState.scanner.fileLst
                     .getLeftFiles()
-
+                
             case .right:
                 appState.displayedRightFiles = await appState.scanner.fileLst
                     .getRightFiles()
         }
     }
-
-    // MARK: - Panels
+    
+        // MARK: - Panels
     private func buildMainPanels(geometry: GeometryProxy) -> some View {
         PanelsRowView(leftPanelWidth: $leftPanelWidth, geometry: geometry, fetchFiles: fetchFiles)
     }
-
-    // MARK: -
+    
+        // MARK: -
     private func buildDownToolbar() -> some View {
-        log.info(#function)
+        log.debug(#function)
         return VStack(spacing: 0) {
             HStack(spacing: 18) {
                 DownToolbarButtonView(title: "F3 View", systemImage: "eye.circle") {
-                    log.info("View button tapped")
+                    log.debug("View button tapped")
                     if let file = appState.selectedLeftFile {
                         FActions.view(file)
                     } else {
-                        log.info("No file selected for View")
+                        log.debug("No file selected for View")
                     }
                 }
                 DownToolbarButtonView(title: "F4 Edit", systemImage: "pencil") {
                     if let file = appState.selectedLeftFile {
                         FActions.edit(file)
                     } else {
-                        log.info("No file selected for Edit")
+                        log.debug("No file selected for Edit")
                     }
                 }
                 DownToolbarButtonView(title: "F5 Copy", systemImage: "doc.on.doc") {
                     doCopy()
                 }
                 DownToolbarButtonView(title: "F6 Move", systemImage: "square.and.arrow.down.on.square") {
-                    log.info("Move button tapped")
+                    log.debug("Move button tapped")
                 }
                 DownToolbarButtonView(title: "F7 NewFolder", systemImage: "folder.badge.plus") {
-                    log.info("NewFolder button tapped")
+                    log.debug("NewFolder button tapped")
                 }
                 DownToolbarButtonView(title: "F8 Delete", systemImage: "minus.rectangle") {
-                    log.info("Delete button tapped")
+                    log.debug("Delete button tapped")
                     if let file = appState.selectedLeftFile {
                         FActions.deleteWithConfirmation(file) {
                             Task {
@@ -138,18 +138,18 @@ struct TotalCommanderResizableView: View {
                             }
                         }
                     } else {
-                        log.info("No file selected for Delete")
+                        log.debug("No file selected for Delete")
                     }
                 }
                 DownToolbarButtonView(title: "Settings", systemImage: "gearshape") {
-                    log.info("Settings button tapped")
+                    log.debug("Settings button tapped")
                 }
                 DownToolbarButtonView(title: "Console", systemImage: "terminal") {
-                    log.info("Console button tapped")
+                    log.debug("Console button tapped")
                     openConsoleInDirectory("~")
                 }
                 DownToolbarButtonView(title: "F4 Exit", systemImage: "power") {
-                    log.info("F4 Exit button tapped")
+                    log.debug("F4 Exit button tapped")
                     exitApp()
                 }
             }
@@ -159,38 +159,38 @@ struct TotalCommanderResizableView: View {
         }
         .frame(maxWidth: .infinity, alignment: .bottom)
     }
-
-    // MARK: - Toolbar
+    
+        // MARK: - Toolbar
     private func doCopy() {
-        // Determine source file based on focused panel (deprecated API removed)
+            // Determine source file based on focused panel (deprecated API removed)
         let sourceFile = (appState.focusedPanel == .left) ? appState.selectedLeftFile : appState.selectedRightFile
-
-        // Determine target side explicitly to avoid 'opposite' ambiguity
+        
+            // Determine target side explicitly to avoid 'opposite' ambiguity
         let targetSide: PanelSide = (appState.focusedPanel == .left) ? .right : .left
-
+        
         if let file = sourceFile,
-            let targetURL = appState.pathURL(for: targetSide)
+           let targetURL = appState.pathURL(for: targetSide)
         {
-            FActions.copy(file, to: targetURL)
-            Task {
-                await appState.refreshFiles()
-            }
+           FActions.copy(file, to: targetURL)
+           Task {
+               await appState.refreshFiles()
+           }
         } else {
-            log.info("No source file selected or target URL missing for Copy")
+            log.debug("No source file selected or target URL missing for Copy")
         }
     }
-
-    // MARK: -
+    
+        // MARK: -
     private func initializePanelWidth(geometry: GeometryProxy) {
-        log.info(#function)
+        log.debug(#function)
         leftPanelWidth =
-            UserDefaults.standard.object(forKey: "leftPanelWidth") as? CGFloat
-            ?? geometry.size.width / 2
+        UserDefaults.standard.object(forKey: "leftPanelWidth") as? CGFloat
+        ?? geometry.size.width / 2
     }
-
-    // MARK: -
+    
+        // MARK: -
     private func exitApp() {
-        log.info(#function)
+        log.debug(#function)
         appState.saveBeforeExit()
         NSApplication.shared.terminate(nil)
     }

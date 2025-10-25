@@ -71,8 +71,10 @@ struct FileTableView: View {
             RoundedRectangle(cornerRadius: 12)
                 .stroke(Color.white.opacity(isFocused ? 0.10 : 0.05), lineWidth: 1)
         )
-        .onTapGesture { appState.focusedPanel = panelSide }
-        .animation(.easeInOut(duration: 0.15), value: isFocused)
+        .contentShape(Rectangle())
+        .highPriorityGesture(TapGesture().onEnded { appState.focusedPanel = panelSide })
+        .animation(nil, value: isFocused)
+        .transaction { txn in txn.disablesAnimations = true }
     }
     
         // MARK: - File actions handler

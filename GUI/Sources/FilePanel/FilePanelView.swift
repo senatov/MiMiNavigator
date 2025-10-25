@@ -52,7 +52,7 @@ struct FilePanelView: View {
         leftPanelWidth: Binding<CGFloat>,
         fetchFiles: @escaping @Sendable @concurrent (PanelSide) async -> Void,
         appState: AppState,
-        onPanelTap: @escaping (PanelSide) -> Void = { side in log.info("onPanelTap default for \(side)") }
+        onPanelTap: @escaping (PanelSide) -> Void = { side in log.debug("onPanelTap default for \(side)") }
     ) {
         self._leftPanelWidth = leftPanelWidth
         self.geometry = geometry
@@ -68,7 +68,6 @@ struct FilePanelView: View {
         // MARK: - View
     var body: some View {
         let currentPath = appState.pathURL(for: viewModel.panelSide)
-        let selectionKey = "\(viewModel.panelSide == .left ? "L" : "R")_\(String(describing: selectedIDBinding.wrappedValue))"
         log.debug(#function + " for side <<\(viewModel.panelSide)>> with path: \(currentPath?.path ?? "nil")")
         return VStack {
             PanelBreadcrumbSection(
@@ -87,7 +86,6 @@ struct FilePanelView: View {
                     viewModel.select(file)
                 }
             )
-            .id(selectionKey)
         }
         .padding(.horizontal, DesignTokens.grid)
         .padding(.vertical, DesignTokens.grid - 2)
@@ -113,35 +111,7 @@ struct FilePanelView: View {
                         // Focus the panel on any click within its bounds without stealing row taps
                     log.debug("Panel tapped for focus: \(viewModel.panelSide)")
                     onPanelTap(viewModel.panelSide)
-                        // Ensure this panel owns the selection immediately upon focus by mouse
-                    switch viewModel.panelSide {
-                        case .left:
-                                // First, clear opposite side to avoid dual-highlight
-                            if appState.selectedRightFile != nil {
-                                log.debug("Clearing RIGHT selection due to LEFT panel focus")
-                                appState.selectedRightFile = nil
-                            }
-                                // If LEFT has no selection, auto-select first row immediately
-                            if appState.selectedLeftFile == nil, let first = viewModel.sortedFiles.first {
-                                log.debug("Auto-select first row on LEFT after panel tap: \(first.nameStr)")
-                                DispatchQueue.main.async {
-                                    viewModel.select(first)
-                                }
-                            }
-                        case .right:
-                                // First, clear opposite side to avoid dual-highlight
-                            if appState.selectedLeftFile != nil {
-                                log.debug("Clearing LEFT selection due to RIGHT panel focus")
-                                appState.selectedLeftFile = nil
-                            }
-                                // If RIGHT has no selection, auto-select first row immediately
-                            if appState.selectedRightFile == nil, let first = viewModel.sortedFiles.first {
-                                log.debug("Auto-select first row on RIGHT after panel tap: \(first.nameStr)")
-                                DispatchQueue.main.async {
-                                    viewModel.select(first)
-                                }
-                            }
-                    }
+                        // Selection is coordinated inside PanelFileTableSection; do not auto-select here to avoid double handling
                 }
         )
         .panelFocus(panelSide: viewModel.panelSide) {

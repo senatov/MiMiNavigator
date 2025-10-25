@@ -14,7 +14,6 @@ struct FileRowView: View {
     @EnvironmentObject var appState: AppState
     let file: CustomFile
     let panelSide: PanelSide
-    @State private var isHovering = false
     
     init(file: CustomFile, panelSide: PanelSide) {
         log.debug(#function + " for '\(file.nameStr)' on side <<\(panelSide)>>")
@@ -25,10 +24,6 @@ struct FileRowView: View {
     var body: some View {
         log.debug(#function + " for '\(file.nameStr)'")
         return rowContainer(baseContent())
-            .onAppear {
-                appState.focusedPanel = panelSide
-                appState.selectedDir = SelectedDir(side: panelSide)
-            }
     }
     
         // MARK: - True when this row represents the selected file of the focused panel.
@@ -86,11 +81,5 @@ struct FileRowView: View {
         base
             .background(Color.clear)
             .contentShape(Rectangle())
-            .onHover { hovering in
-                    // Hover feedback only when not selected, to match macOS subtlety
-                if !isActiveSelection {
-                    isHovering = hovering
-                }
-            }
     }
 }
