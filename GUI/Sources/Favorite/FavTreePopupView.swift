@@ -56,7 +56,7 @@ struct FavTreePopupView: View {
             }
             .padding(10)
         }
-        .frame(minWidth: 340, minHeight: 420)
+        .frame(minWidth: 340, minHeight: 220)
             // Create standalone dialog window only when requested
         .onAppear {
                 // No window creation here; this view is used as NSPopover content.
