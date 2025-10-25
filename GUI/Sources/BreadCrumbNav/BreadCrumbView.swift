@@ -31,7 +31,7 @@ struct BreadCrumbView: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)  // растянуть и прижать влево
-        .padding(.horizontal, 6)
+        .padding(.horizontal, 0)
         .padding(.vertical, 2)
         .frame(minHeight: barHeight, alignment: .center)
         .controlSize(.large)
@@ -67,7 +67,9 @@ struct BreadCrumbView: View {
     private func getMnuButton(_ index: Int) -> some View {
         log.info(#function)
         return Button(action: { handlePathSelection(upTo: index) }) {
-            Text(pathComponents[index]).font(.callout).foregroundColor(FilePanelStyle.blueSymlinkDirNameColor)
+            Text(pathComponents[index])
+                .font(.callout)
+                .foregroundColor(FilePanelStyle.blueSymlinkDirNameColor)
                 .padding(.vertical, 2)
         }
         .buttonStyle(.plain)

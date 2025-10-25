@@ -44,7 +44,8 @@ struct FileTableView: View {
                 .overlay(
                     Rectangle()
                         .frame(height: 1)
-                        .foregroundStyle(.separator),
+                        .foregroundStyle(.separator)
+                        .allowsHitTesting(false),
                     alignment: .bottom
                 )
             }
@@ -64,12 +65,14 @@ struct FileTableView: View {
             RoundedRectangle(cornerRadius: 12)
                 .stroke(
                     isFocused ? Color(nsColor: .systemBlue) : Color(Color.secondary).opacity(0.6),
-                    lineWidth: isFocused ? max(FilePanelStyle.selectedBorderWidth, 0.7) : 0.5
+                    lineWidth: isFocused ? 0.7 : 0.5
                 )
+                .allowsHitTesting(false)
         )
         .overlay(
             RoundedRectangle(cornerRadius: 12)
                 .stroke(Color.white.opacity(isFocused ? 0.10 : 0.05), lineWidth: 1)
+                .allowsHitTesting(false)
         )
         .contentShape(Rectangle())
         .highPriorityGesture(TapGesture().onEnded { appState.focusedPanel = panelSide })
@@ -226,4 +229,3 @@ struct FileTableView: View {
         return sorted
     }
 }
-

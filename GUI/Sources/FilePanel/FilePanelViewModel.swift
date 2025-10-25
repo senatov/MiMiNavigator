@@ -58,7 +58,7 @@ final class FilePanelViewModel: ObservableObject {
         // MARK: - Select file on this panel and clear other panel's selection
     func select(_ file: CustomFile) {
             // Centralized selection: update AppState and clear the opposite side via AppState API.
-        log.debug("VM.select() on \(panelSide): \(file.nameStr) [\(file.id)]")
+        log.debug("VM.select() on <<\(panelSide)>>: \(file.nameStr) [\(file.id)]")
         appState.select(file, on: panelSide)
         self.appState.showFavTreePopup = false
     }

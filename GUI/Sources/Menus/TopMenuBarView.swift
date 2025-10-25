@@ -16,21 +16,27 @@ struct TopMenuBarView: View {
         log.debug(#function)
         return ZStack(alignment: .top) {
                 // Glass-like background bar with a thin bottom separator (Figma/macOS 26)
-            Rectangle()
-                .fill(Material.thin)
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(.ultraThinMaterial)
                 .frame(height: 36)
                 .overlay(alignment: .bottom) {
                     Rectangle()
+                        .fill(LinearGradient(
+                            colors: [Color.white.opacity(0.16), Color.white.opacity(0.02)],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        ))
                         .frame(height: 0.5)
-                        .foregroundStyle(.separator)
+                        .blendMode(.plusLighter)
                 }
+                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                 // Existing menu row kept intact (structure/logic unchanged)
             HStack(spacing: 6) {
                 ForEach(menuData.dropLast()) { menu in
                     menuView(for: menu)
                 }
                 Spacer(minLength: 12)  // keep Help menu pushed to the right with consistent gap
-                
                 if let helpMenu = menuData.last {
                     Menu {
                         ForEach(helpMenu.items) { item in
@@ -40,7 +46,7 @@ struct TopMenuBarView: View {
                         Text(helpMenu.title)
                             .font(.system(size: 13, weight: .regular))
                             .padding(.horizontal, 10)
-                            .padding(.vertical, 4)
+                            .padding(.vertical, 6)
                             .frame(minHeight: 26, alignment: .center)
                             .contentShape(RoundedRectangle(cornerRadius: 6))
                             .help("Open menu: '\(helpMenu.title)'")
@@ -50,7 +56,7 @@ struct TopMenuBarView: View {
                     .padding(.trailing, 1)
                 }
             }
-            .padding(.horizontal, 5)
+            .padding(.horizontal, 8)
             .frame(height: 36, alignment: .center)
             .controlSize(.small)
             .accessibilityElement(children: AccessibilityChildBehavior.contain)
@@ -58,8 +64,8 @@ struct TopMenuBarView: View {
         }
         .frame(maxWidth: .infinity, alignment: .topLeading)
         .background(.clear)  // no opaque backgrounds behind the bar
-        .onChange(of: appState.showFavTreePopup) {
-            if appState.showFavTreePopup {
+        .onChange(of: appState.showFavTreePopup) { oldValue, newValue in
+            if newValue {
                 favoritesTargetSide = appState.focusedPanel
             }
         }

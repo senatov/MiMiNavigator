@@ -18,8 +18,8 @@ enum FilePanelStyle {
     static let skyBlauColor = Color(#colorLiteral(red: 0.4745098054, green: 0.8392156959, blue: 0.9764705896, alpha: 1))
 
     // Layout
-    static let iconSize: CGFloat = 18
+    static let iconSize: CGFloat = 22
     static let modifiedColumnWidth: CGFloat = 110
-    static let selectedBorderWidth: CGFloat = 0.6
+    static let selectedBorderWidth: CGFloat = 0.4
     static let sizeColumnWidth: CGFloat = 120
 }
