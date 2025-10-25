@@ -58,8 +58,8 @@ struct TopMenuBarView: View {
         }
         .frame(maxWidth: .infinity, alignment: .topLeading)
         .background(.clear)  // no opaque backgrounds behind the bar
-        .onChange(of: appState.showFavTreePopup) { newValue in
-            if newValue {
+        .onChange(of: appState.showFavTreePopup) {
+            if appState.showFavTreePopup {
                 favoritesTargetSide = appState.focusedPanel
             }
         }

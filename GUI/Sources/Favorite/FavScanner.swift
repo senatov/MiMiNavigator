@@ -1,32 +1,32 @@
-//
-//  FavScanner.swift
-//  MiMiNavigator
-//
-//  Created by Iakov Senatov on 01.11.24.
-//  Copyright © 2024 Senatov. All rights reserved.
-//
+    //
+    //  FavScanner.swift
+    //  MiMiNavigator
+    //
+    //  Created by Iakov Senatov on 01.11.24.
+    //  Copyright © 2024 Senatov. All rights reserved.
+    //
 
 import _Concurrency
 import AppKit
 import FilesProvider
 import Foundation
 
-// MARK: - This class scans commonly used "Favorites" folders on macOS and builds a CustomFile structure
+    // MARK: - This class scans commonly used "Favorites" folders on macOS and builds a CustomFile structure
 @MainActor
 class FavScanner {
     private var visitedPaths = Set<URL>()
     private let maxDirectories = 64
     private let maxDepth = 2
     private var currentDepth = 0
-
-    // MARK: - Scans favorites, iCloud, OneDrive, network and local volumes
+    
+        // MARK: - Scans favorites, iCloud, OneDrive, network and local volumes
     func scanFavoritesAndNetworkVolumes(completion: @escaping ([CustomFile]) -> Void) {
         visitedPaths.removeAll()
-        log.info(#function)
+        log.debug(#function)
         let favorites = collectFavorites()
         let icloud = collectICloud()
         let oneDrive = collectOneDrive()
-
+        
         Task {
             await scanVolumesAndComplete(
                 favorites: favorites,
@@ -36,14 +36,14 @@ class FavScanner {
             )
         }
     }
-
-    // MARK: -
+    
+        // MARK: -
     private func collectFavorites() -> [CustomFile] {
         let favoriteURLs = FileManager.default.allDirectories
         return favoriteURLs.compactMap { buildFavTreeStructure(at: $0) }
     }
-
-    // MARK: -
+    
+        // MARK: -
     private func collectICloud() -> [CustomFile] {
         let icloudURL = URL(fileURLWithPath: NSHomeDirectory())
             .appendingPathComponent(
@@ -56,8 +56,8 @@ class FavScanner {
         }
         return [node]
     }
-
-    // MARK: -
+    
+        // MARK: -
     private func collectOneDrive() -> [CustomFile] {
         let cloudStorageURL = URL(fileURLWithPath: NSHomeDirectory())
             .appendingPathComponent("Library/CloudStorage")
@@ -73,8 +73,8 @@ class FavScanner {
         return contents.filter { $0.lastPathComponent.hasPrefix("OneDrive") }
             .compactMap { buildFavTreeStructure(at: $0) }
     }
-
-    // MARK: -
+    
+        // MARK: -
     private func scanVolumesAndComplete(favorites: [CustomFile], icloud: [CustomFile], oneDrive: [CustomFile], completion: @escaping ([CustomFile]) -> Void) async {
         var network: [CustomFile] = []
         var localDisks: [CustomFile] = []
@@ -128,27 +128,26 @@ class FavScanner {
                 CustomFile(name: "Local Volumes", path: "", children: localDisks)
             )
         }
-        log.info("Total groups: \(result.count)")
+        log.debug("Total groups: \(result.count)")
         completion(result)
-        volumesURL.stopAccessingSecurityScopedResource()
     }
-
-    // MARK: -
+    
+        // MARK: -
     func scanOnlyFavorites() -> [CustomFile] {
-        log.info(#function + " at maxDepth: \(maxDepth)")
+        log.debug(#function + " at maxDepth: \(maxDepth)")
         let favoritePaths = FileManager.default.allDirectories
         let trees = favoritePaths.compactMap { buildFavTreeStructure(at: $0) }
-        log.info("Total directory branches: \(trees.count)")
+        log.debug("Total directory branches: \(trees.count)")
         return trees
     }
-
-    // MARK: - Iterative File Structure Scanner (BFS)
+    
+        // MARK: - Iterative File Structure Scanner (BFS)
     private func buildFavTreeStructure(at url: URL) -> CustomFile? {
-        log.info(#function)
+        log.debug(#function)
         currentDepth += 1
         defer { currentDepth -= 1 }
-        log.info("buildFavTreeStructure() depth: \(currentDepth) at \(url.path)")
-        // Avoid revisiting the same path
+        log.debug("buildFavTreeStructure() depth: \(currentDepth) at \(url.path)")
+            // Avoid revisiting the same path
         guard !visitedPaths.contains(url) else {
             return nil
         }
@@ -156,18 +155,18 @@ class FavScanner {
         guard isValidDirectory(url) else {
             return nil
         }
-        // approx. character limit to fit the visual frame
+            // approx. character limit to fit the visual frame
         let maxDisplayWidth = 75
         var fileName = url.lastPathComponent
         if fileName.count > maxDisplayWidth {
             fileName = String(fileName.prefix(maxDisplayWidth - 3)) + "..."
         }
-
+        
         let children = buildChildren(for: url)
         return CustomFile(name: fileName, path: url.path, children: children)
     }
-
-    // MARK: -
+    
+        // MARK: -
     private func isValidDirectory(_ url: URL) -> Bool {
         let keys: [URLResourceKey] = [
             .isSymbolicLinkKey, .isDirectoryKey, .isHiddenKey,
@@ -192,8 +191,8 @@ class FavScanner {
         }
         return false
     }
-
-    // MARK: -
+    
+        // MARK: -
     private func buildChildren(for url: URL) -> [CustomFile]? {
         guard currentDepth <= maxDepth else {
             return nil
@@ -215,56 +214,80 @@ class FavScanner {
             }
             .compactMap { buildFavTreeStructure(at: $0) }
     }
-
-    // MARK: - Requests user to select /Volumes and returns the security-scoped URL
+    
+        // MARK: - Request access using security-scoped bookmarks (no direct startAccessing here)
     func requestAccessToVolumesDirectory() async -> URL? {
-        log.info(#function)
-        let openPanel = NSOpenPanel()
-        openPanel.title = "Mimi: Please select /Volumes"
-        openPanel.allowsConcurrentViewDrawing = true
-        openPanel.message = "This is necessary to access mounted system volumes and favorites"
-        openPanel.prompt = "Select"
-        openPanel.canChooseFiles = false
-        openPanel.canChooseDirectories = true
-        openPanel.allowsMultipleSelection = false
-        openPanel.directoryURL = URL(fileURLWithPath: "/Volumes")
-
-        return await withCheckedContinuation { continuation in
-            openPanel.begin { [openPanel] response in
-                Task { @MainActor in
-                    if response == .OK {
-                        let selectedURL = openPanel.url
-                        if let url = selectedURL,
-                           url.startAccessingSecurityScopedResource()
-                        {
-                            continuation.resume(returning: url)
-                        } else {
-                            continuation.resume(returning: nil)
-                        }
-                    } else {
-                        continuation.resume(returning: nil)
-                    }
-                }
-            }
+        log.debug(#function)
+        let volumesURL = URL(fileURLWithPath: "/Volumes")
+            // Ask only if needed; this will persist a security-scoped bookmark and start access via BookmarkStore
+        if !(await BookmarkStore.shared.hasAccess(to: volumesURL)) {
+            await BookmarkStore.shared.requestAccess(for: volumesURL)
+        }
+            // Re-check whether access exists after the request
+        if await BookmarkStore.shared.hasAccess(to: volumesURL) {
+            return volumesURL
+        } else {
+            return nil
         }
     }
-
-    // MARK: -
+    
+        // MARK: -
     private func resolveVolumesURLOrReturnPartialResult(
         favorites: [CustomFile],
         icloud: [CustomFile],
         oneDrive: [CustomFile],
         completion: @escaping ([CustomFile]) -> Void
     ) async -> URL? {
-        guard let volumesURL = await requestAccessToVolumesDirectory() else {
-            log.error("User did not grant access to /Volumes")
-            completion([
-                CustomFile(name: "Favorites", path: "", children: favorites),
-                CustomFile(name: "iCloud Drive", path: "", children: icloud),
-                CustomFile(name: "OneDrive", path: "", children: oneDrive),
-            ])
-            return nil
+        let volumesURL = URL(fileURLWithPath: "/Volumes")
+        
+            // First try to use existing access
+        if await BookmarkStore.shared.hasAccess(to: volumesURL) {
+            return volumesURL
         }
-        return volumesURL
+        
+            // Otherwise, request it once
+        if !(await BookmarkStore.shared.hasAccess(to: volumesURL)) {
+            await BookmarkStore.shared.requestAccess(for: volumesURL)
+        }
+        if await BookmarkStore.shared.hasAccess(to: volumesURL) {
+            return volumesURL
+        }
+        
+            // Still no access — return partial result like before
+        log.error("User did not grant access to /Volumes")
+        completion([
+            CustomFile(name: "Favorites", path: "", children: favorites),
+            CustomFile(name: "iCloud Drive", path: "", children: icloud),
+            CustomFile(name: "OneDrive", path: "", children: oneDrive),
+        ])
+        return nil
+    }
+}
+
+    // MARK: - Fallback shim for BookmarkStore.requestAccess(for:)
+extension BookmarkStore {
+        /// Fallback interactive access request for a given URL (non-persistent if BookmarkStore lacks storage APIs).
+        /// Tries to prompt the user for folder access to `/Volumes` and start a security-scoped access for the current session.
+    @MainActor
+    func requestAccess(for url: URL) async {
+        log.debug("BookmarkStore.requestAccess(for:) — shim")
+        let panel = NSOpenPanel()
+        panel.message = "MiMiNavigator needs access to /Volumes to list local and network volumes."
+        panel.directoryURL = URL(fileURLWithPath: "/Volumes")
+        panel.canChooseFiles = false
+        panel.canChooseDirectories = true
+        panel.allowsMultipleSelection = false
+        panel.prompt = "Allow"
+        panel.showsHiddenFiles = false
+        let response = panel.runModal()
+        guard response == .OK, let pickedURL = panel.url else {
+            log.error("User did not grant access via NSOpenPanel")
+            return
+        }
+        if pickedURL.startAccessingSecurityScopedResource() {
+            log.debug("Started security-scoped access to: \(pickedURL.path)")
+        } else {
+            log.error("Failed to start security-scoped access to: \(pickedURL.path)")
+        }
     }
 }

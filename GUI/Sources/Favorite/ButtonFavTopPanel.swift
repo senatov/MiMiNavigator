@@ -12,35 +12,32 @@ struct ButtonFavTopPanel: View {
 
     // MARK: - -
     init(selectedSide: PanelSide) {
-        log.info("ButtonFavTopPanel init" + " for side <<\(selectedSide)>>")
+        log.debug("ButtonFavTopPanel init" + " for side <<\(selectedSide)>>")
         self.panelSide = selectedSide
     }
 
     // MARK: - -
     var body: some View {
-        log.info(#function)
+        log.debug(#function)
         return VStack(alignment: .leading, spacing: 4) { navigationControls }
     }
 
     // MARK: -
     private var navigationControls: some View {
-        log.info(#function)
+        log.debug(#function)
         return HStack(spacing: 6) {
             backButton()
             upButton()
             forwardButton()
             menuButton()
         }
-        .task { @MainActor in
-            appState.focusedPanel = panelSide
-        }
     }
 
     // MARK: -
     private func backButton() -> some View {
-        log.info(#function)
+        log.debug(#function)
         return Button(action: {
-            log.info("Backward: navigating to previous directory")
+            log.debug("Backward: navigating to previous directory")
             showBackPopover.toggle()
         }) {
             Image(systemName: "arrowshape.backward").renderingMode(.original)
@@ -56,16 +53,16 @@ struct ButtonFavTopPanel: View {
 
     // MARK: -
     private func upButton() -> some View {
-        log.info(#function)
+        log.debug(#function)
         return Button(action: {
-            log.info("Up: navigating to up directory")
+            log.debug("Up: navigating to up directory")
             showUpPopover.toggle()
         }) {
             Image(systemName: "arrowshape.up").renderingMode(.original)
         }
         .buttonStyle(.plain)
         .shadow(color: .gray, radius: 7.0, x: 1, y: 1)
-        .popover(isPresented: $showForwardPopover, arrowEdge: .bottom) {
+        .popover(isPresented: $showUpPopover, arrowEdge: .bottom) {
             forwardPopover()
         }
         .help("Up: navigating to up directory")
@@ -74,9 +71,9 @@ struct ButtonFavTopPanel: View {
 
     // MARK: -
     private func forwardButton() -> some View {
-        log.info(#function)
+        log.debug(#function)
         return Button(action: {
-            log.info("Forward: navigating to next directory")
+            log.debug("Forward: navigating to next directory")
             showForwardPopover.toggle()
         }) {
             Image(systemName: "arrowshape.right").renderingMode(.original)
@@ -92,12 +89,13 @@ struct ButtonFavTopPanel: View {
 
     // MARK: - -
     private func menuButton() -> some View {
-        log.info(#function + " - \(String(describing: panelSide))")
+        log.debug(#function + " - \(String(describing: panelSide))")
         return Button(action: {
-            log.info("Navigation between favorites")
+            log.debug("Navigation between favorites")
             if favTreeStruct.isEmpty {
                 Task { await fetchFavTree() }
             }
+            appState.focusedPanel = panelSide
             appState.showFavTreePopup.toggle()
         }) {
             if panelSide == .left {
@@ -117,14 +115,14 @@ struct ButtonFavTopPanel: View {
         .shadow(color: .secondary.opacity(0.15), radius: 7.0, x: 1, y: 1)
         .buttonStyle(.plain)
         .popover(isPresented: $appState.showFavTreePopup, arrowEdge: .bottom) {
-            favoritePopover()
+            favoritePopover(targetSide: appState.focusedPanel)
         }
         .help("Navigation between favorites - \(String(describing: panelSide))")
     }
 
     // MARK: -
     private func forwardPopover() -> some View {
-        log.info(#function)
+        log.debug(#function)
         return VStack(alignment: .leading) {
             ForEach(appState.selectionsHistory.recentSelections, id: \.self) { path in
                 Button(action: {
@@ -136,7 +134,7 @@ struct ButtonFavTopPanel: View {
                             await appState.scanner.setRightDirectory(pathStr: path)
                             await appState.refreshRightFiles()
                         }
-                        showBackPopover = false
+                        showForwardPopover = false
                     }
                 }) {
                     Text(path)
@@ -153,7 +151,7 @@ struct ButtonFavTopPanel: View {
 
     // MARK: -
     private func backPopover() -> some View {
-        log.info(#function)
+        log.debug(#function)
         return VStack(alignment: .leading) {
             ForEach(appState.selectionsHistory.recentSelections, id: \.self) { path in
                 Button(action: {
@@ -181,9 +179,9 @@ struct ButtonFavTopPanel: View {
     }
 
     // MARK: -
-    private func favoritePopover() -> some View {
-        log.info(#function)
-        return FavTreeMnu(files: $favTreeStruct, panelSide: panelSide)
+    private func favoritePopover(targetSide: PanelSide) -> some View {
+        log.debug(#function)
+        return FavTreeMnu(files: $favTreeStruct, panelSide: targetSide)
             .padding(6)
             .font(.custom("Helvetica Neue", size: 11).weight(.light))
             .foregroundColor(FilePanelStyle.fileNameColor)
@@ -192,7 +190,7 @@ struct ButtonFavTopPanel: View {
     // MARK: -
     @MainActor
     private func fetchFavTree() async {
-        log.info(#function)
+        log.debug(#function)
         let favScanner = FavScanner()
         favTreeStruct = favScanner.scanOnlyFavorites()
         let files = await fetchFavNetVolumes(from: favScanner)
@@ -205,7 +203,7 @@ struct ButtonFavTopPanel: View {
 
     // MARK: -
     private func fetchFavNetVolumes(from scanner: FavScanner) async -> [CustomFile] {
-        log.info(#function)
+        log.debug(#function)
         return await withCheckedContinuation { (continuation: CheckedContinuation<[CustomFile], Never>) in
             scanner.scanFavoritesAndNetworkVolumes { files in
                 continuation.resume(returning: files)
