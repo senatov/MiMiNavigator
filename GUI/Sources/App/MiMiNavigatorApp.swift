@@ -1,9 +1,9 @@
-    //
-    //  MiMiNavigatorApp.swift
-    //  MiMiNavigator
-    //
-    //  Created by Iakov Senatov on 06.08.24.
-    //
+//
+//  MiMiNavigatorApp.swift
+//  MiMiNavigator
+//
+//  Created by Iakov Senatov on 06.08.24.
+//
 
 import AppKit
 import SwiftUI
@@ -14,14 +14,16 @@ let log = LogMan.log
 struct MiMiNavigatorApp: App {
     @StateObject private var appState = AppState()  // single source of truth
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
-    
-        // MARK: -
+    @Environment(\.scenePhase) private var scenePhase
+
+    // MARK: -
     init() {
         LogMan.initializeLogging()
         log.debug("---- Logger initialized ------")
+        Task { await BookmarkStore.shared.restoreAll() }
     }
-    
-        // MARK: -
+
+    // MARK: -
     var body: some Scene {
         WindowGroup {
             VStack {
@@ -55,7 +57,7 @@ struct MiMiNavigatorApp: App {
                 }
                 ToolbarItem(placement: .status) {
                     HStack(spacing: 8) {
-                            // Badge icon styled for macOS 26 "liquid glass" look
+                        // Badge icon styled for macOS 26 "liquid glass" look
                         Text("🐈")
                             .font(.title3)
                             .padding(4)
@@ -64,7 +66,7 @@ struct MiMiNavigatorApp: App {
                                 Circle()
                                     .strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5)
                             )
-                        
+
                         VStack(alignment: .leading, spacing: 0) {
                             Text("DEV BUILD")
                                 .font(.caption2)
@@ -88,17 +90,22 @@ struct MiMiNavigatorApp: App {
             }
             .toolbarBackground(Material.thin, for: ToolbarPlacement.windowToolbar)
             .toolbarBackgroundVisibility(Visibility.visible, for: ToolbarPlacement.windowToolbar)
+            .onChange(of: scenePhase) {
+                if scenePhase == .background {
+                    Task { await BookmarkStore.shared.stopAll() }
+                }
+            }
         }
         .windowToolbarStyle(.unifiedCompact)
         .commands {
             AppCommands(appState: appState)
         }
     }
-    
-        // MARK: -
+
+    // MARK: -
     private func makeDevMark() -> Text {
         log.debug(#function + " - creating development mark")
-            // Prefer reading from bundled file 'curr_version.asc'; fall back to Info.plist values
+        // Prefer reading from bundled file 'curr_version.asc'; fall back to Info.plist values
         let versionURL = Bundle.main.url(forResource: "curr_version", withExtension: "asc")
         let content: String
         if let url = versionURL, let versionString = try? String(contentsOf: url, encoding: .utf8) {
@@ -106,7 +113,7 @@ struct MiMiNavigatorApp: App {
             content = trimmed
             log.debug("Loaded version from 'curr_version.asc' file: '\(content)'")
         } else {
-                // Fallback: build version string from Info.plist values
+            // Fallback: build version string from Info.plist values
             let short = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String
             let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String
             if let s = short, let b = build {
@@ -125,5 +132,5 @@ struct MiMiNavigatorApp: App {
         }
         return Text(content)
     }
-    
+
 }
