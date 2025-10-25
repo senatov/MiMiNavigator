@@ -12,10 +12,10 @@ struct FavTreeMnu: View {
     @Binding var files: [CustomFile]
     @State private var expandedFolders: Set<String> = []
     let panelSide: PanelSide
-    
+
     // MARK: -
     var body: some View {
-        log.info(#function)
+        log.debug(#function)
         return VStack(alignment: .leading, spacing: 0) {
             headerView
             dividerView
@@ -35,10 +35,10 @@ struct FavTreeMnu: View {
             appState.focusedPanel = panelSide
         }
     }
-    
+
     // MARK: -
     private var headerView: some View {
-        log.info(#function)
+        log.debug(#function)
         return Text("Favorites:")
             .font(.headline)
             .foregroundColor(Color(#colorLiteral(red: 0.06274510175, green: 0, blue: 0.1921568662, alpha: 1)))
@@ -46,25 +46,50 @@ struct FavTreeMnu: View {
             .padding(.top, 6)
             .frame(maxWidth: .infinity, alignment: .center)
     }
-    
+
     // MARK: -
     private var dividerView: some View {
-        log.info(#function)
+        log.debug(#function)
         return Divider()
             .padding(.horizontal)
             .padding(.vertical, 6)
     }
-    
+
     // MARK: -
     private var fileListView: some View {
-        log.info(#function + " - \(files.count) files")
+        // Log outside the render hot path (on appear/changes)
+        let _ = {
+            #if DEBUG
+                log.debug("\(#function) — \(files.count) files")
+            #endif
+        }()
+
         return ScrollView {
-            LazyVStack(alignment: .leading, spacing: 5) {
+            LazyVStack(alignment: .leading, spacing: 6) {
                 ForEach($files) { $file in
                     FavTreePopupView(file: $file, expandedFolders: $expandedFolders)
                 }
             }
-            .padding(.horizontal)
+            .padding(.horizontal, 12)  // Figma spacing
+            .padding(.vertical, 8)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        // Lightweight "liquid glass" container
+        .background(Material.thin)  // вместо .regularMaterial; совместимо на macOS
+        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .stroke(Color.primary.opacity(0.06), lineWidth: 0.5)  // subtle outline per macOS design
+        )
+        .onAppear {
+            #if DEBUG
+                log.debug("FavTree — appear with \(files.count) files")
+            #endif
+        }
+        .onChange(of: files.count) { _, newCount in
+            #if DEBUG
+                log.debug("FavTree — files changed: \(newCount)")
+            #endif
         }
         .padding(.bottom, 8)
     }
