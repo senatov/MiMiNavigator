@@ -39,8 +39,7 @@ struct PanelsRowView: View {
                 makeDivider()
                 makeRightPanel()
             }
-            .frame(height: geometry.size.height) // lock panels row to full available height
-                                                 // Tooltip is rendered as sibling overlay (non-intrusive to layout)
+                // Tooltip is rendered as sibling overlay (non-intrusive to layout)
             makeTooltipOverlay()
         }
             // Occupy all available space (no top alignment!)
@@ -58,6 +57,7 @@ struct PanelsRowView: View {
                         containerSize = gp.size
                         log.debug("PanelsRowView.size changed → \(Int(gp.size.width))x\(Int(gp.size.height))")
                     }
+                    .onDisappear { log.debug("PanelsRowView.size onDisappear") }
             }
         )
             // Log width changes coming from divider drag (to detect jitter)
@@ -82,7 +82,6 @@ struct PanelsRowView: View {
             fetchFiles: fetchFiles,
             appState: appState
         )
-        .frame(height: geometry.size.height)
             // If you need to force width strictly, uncomment:
             // .frame(width: leftPanelWidth)
             // But usually FilePanelView handles its width using GeometryProxy + leftPanelWidth.
@@ -98,7 +97,6 @@ struct PanelsRowView: View {
             fetchFiles: fetchFiles,
             appState: appState
         )
-        .frame(height: geometry.size.height)
             // Same note as left panel about explicit width if needed.
     }
     
