@@ -3,7 +3,7 @@
     //  MiMiNavigator
     //
     //  Created by Iakov Senatov on 21.10.2025.
-    //  Updated by ChatGPT on 26.10.2025
+    //  Updated on 26.10.2025
     //
 
 import AppKit
@@ -23,26 +23,58 @@ struct PanelsRowView: View {
     @State private var tooltipPosition: CGPoint = .zero
     @State private var isDividerTooltipVisible: Bool = false
     
+        // Local diagnostics
+    @State private var containerSize: CGSize = .zero
+    @State private var lastLoggedWidth: CGFloat = -1
+    
         // MARK: - Body
     var body: some View {
-        log.debug(#function + " with leftPanelWidth: \(leftPanelWidth)")
-        return HStack(spacing: 0) {
-            makeLeftPanel()
-            makeDivider()
-            makeRightPanel()
-        }
-            // Overlay that shows helper tooltip during divider drag
-        .overlay(
+            // Log creation (useful to detect excessive re-renders)
+        log.debug("PanelsRowView.body init with leftPanelWidth=\(leftPanelWidth.rounded())")
+        
+            // Use ZStack to ensure tooltip does not affect layout/height of panels
+        return ZStack(alignment: .center) {
+            HStack(spacing: 0) {
+                makeLeftPanel()
+                makeDivider()
+                makeRightPanel()
+            }
+            .frame(height: geometry.size.height) // lock panels row to full available height
+                                                 // Tooltip is rendered as sibling overlay (non-intrusive to layout)
             makeTooltipOverlay()
-        )
-            // Fill the available space between top bar and bottom toolbar
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        }
+            // Occupy all available space (no top alignment!)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .layoutPriority(1)
+            // Lightweight size reporting for diagnostics (no layout mutation)
+        .background(
+            GeometryReader { gp in
+                Color.clear
+                    .onAppear {
+                        containerSize = gp.size
+                        log.debug("PanelsRowView.size onAppear → \(Int(gp.size.width))x\(Int(gp.size.height))")
+                    }
+                    .onChange(of: gp.size) {
+                        containerSize = gp.size
+                        log.debug("PanelsRowView.size changed → \(Int(gp.size.width))x\(Int(gp.size.height))")
+                    }
+            }
+        )
+            // Log width changes coming from divider drag (to detect jitter)
+        .onChange(of: leftPanelWidth) {
+            let w = leftPanelWidth.rounded()
+                // Avoid flooding logs with identical values
+            if w != lastLoggedWidth {
+                lastLoggedWidth = w
+                log.debug("PanelsRowView.leftPanelWidth changed → \(w)")
+            }
+        }
     }
     
-        // MARK: - Creates the left file panel view.
+        // MARK: - Left panel
     private func makeLeftPanel() -> some View {
-        log.debug(#function + " with leftPanelWidth: \(leftPanelWidth.rounded())")
+            // Note: FilePanelView should internally size to provided geometry width.
+        log.debug("makeLeftPanel() with leftPanelWidth=\(leftPanelWidth.rounded())")
         return FilePanelView(
             selectedSide: .left,
             geometry: geometry,
@@ -50,11 +82,15 @@ struct PanelsRowView: View {
             fetchFiles: fetchFiles,
             appState: appState
         )
+        .frame(height: geometry.size.height)
+            // If you need to force width strictly, uncomment:
+            // .frame(width: leftPanelWidth)
+            // But usually FilePanelView handles its width using GeometryProxy + leftPanelWidth.
     }
     
-        // MARK: - Creates the right file panel view.
+        // MARK: - Right panel
     private func makeRightPanel() -> some View {
-        log.debug(#function + " with leftPanelWidth: \(leftPanelWidth.rounded())")
+        log.debug("makeRightPanel() with leftPanelWidth=\(leftPanelWidth.rounded())")
         return FilePanelView(
             selectedSide: .right,
             geometry: geometry,
@@ -62,18 +98,21 @@ struct PanelsRowView: View {
             fetchFiles: fetchFiles,
             appState: appState
         )
+        .frame(height: geometry.size.height)
+            // Same note as left panel about explicit width if needed.
     }
     
-        // MARK: - Creates the divider view with drag handlers.
+        // MARK: - Divider
     private func makeDivider() -> some View {
-        log.debug(#function + " with leftPanelWidth: \(leftPanelWidth.rounded())")
+        log.debug("makeDivider() with leftPanelWidth=\(leftPanelWidth.rounded())")
         return DividerView(
             geometry: geometry,
             leftPanelWidth: $leftPanelWidth,
             onDrag: { value in
                     // Update live width during drag
                 let newWidth = leftPanelWidth + value.translation.width
-                leftPanelWidth = max(0, min(newWidth, geometry.size.width))
+                let clamped = max(0, min(newWidth, geometry.size.width))
+                leftPanelWidth = clamped
                 
                     // Calculate tooltip content and position (helper)
                 let (text, pos) = ToolTipMod.calculateTooltip(
@@ -84,25 +123,31 @@ struct PanelsRowView: View {
                 self.tooltipText = text
                 self.tooltipPosition = pos
                 self.isDividerTooltipVisible = true
+                
+                    // Log drag diagnostics
+                log.debug(
+                    "Divider drag → loc=(\(Int(value.location.x));\(Int(value.location.y))) lpw=\(Int(leftPanelWidth))/\(Int(geometry.size.width))"
+                )
             },
             onDragEnd: {
                     // Hide tooltip when user finishes dragging
                 self.isDividerTooltipVisible = false
+                log.debug("Divider drag end → leftPanelWidth=\(Int(leftPanelWidth)) totalW=\(Int(geometry.size.width))")
             }
         )
     }
     
-        // MARK: - Creates the tooltip overlay view.
+        // MARK: - Tooltip overlay (non-intrusive to layout)
     private func makeTooltipOverlay() -> some View {
-        log.debug(#function + " with isDividerTooltipVisible: \(isDividerTooltipVisible)")
+        log.debug("makeTooltipOverlay() visible=\(isDividerTooltipVisible)")
         return Group {
             if isDividerTooltipVisible {
                 PrettyTooltip(text: tooltipText)
                     .position(tooltipPosition)
                     .transition(.opacity)
-                    .opacity(0.8)
+                    .opacity(0.85)
                     .zIndex(1000)
-                    .allowsHitTesting(false) // do not block mouse events behind the tooltip
+                    .allowsHitTesting(false)  // do not block mouse events behind the tooltip
             }
         }
     }
