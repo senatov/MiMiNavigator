@@ -60,6 +60,9 @@ struct FileTableView: View {
         .onChange(of: files) { recomputeSortedCache() }
         .onChange(of: sortKey) { recomputeSortedCache() }
         .onChange(of: sortAscending) { recomputeSortedCache() }
+        .onChange(of: selectedID, { oldValue, newValue in
+            log.debug("FTV.selectedID changed: \(String(describing: oldValue)) → \(String(describing: newValue)) on \(panelSide)")
+        })
     }
     
     @ViewBuilder
@@ -76,9 +79,22 @@ struct FileTableView: View {
                     handleDirectoryAction: handleDirectoryAction
                 )
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .id(panelSide)
+                .background(
+                    GeometryReader { gp in
+                        Color.clear
+                            .onAppear { log.debug("FTV.content appear → size=\(Int(gp.size.width))x\(Int(gp.size.height)) on \(panelSide)") }
+                            .onChange(of: gp.size) { log.debug("FTV.content size changed → \(Int(gp.size.width))x\(Int(gp.size.height)) on \(panelSide)") }
+                    }
+                )
             }
         }
+        .background(
+            GeometryReader { gp in
+                Color.clear
+                    .onAppear { log.debug("FTV.viewport appear → size=\(Int(gp.size.width))x\(Int(gp.size.height)) on \(panelSide)") }
+                    .onChange(of: gp.size) { log.debug("FTV.viewport size changed → \(Int(gp.size.width))x\(Int(gp.size.height)) on \(panelSide)") }
+            }
+        )
         .background(keyboardShortcutsLayer(proxy: proxy))
     }
     

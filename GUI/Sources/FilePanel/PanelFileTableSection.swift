@@ -36,18 +36,18 @@ struct PanelFileTableSection: View {
         .onPreferenceChange(RowRectPreference.self) { value in
             rowRects = value
         }
-        .highPriorityGesture(
+        .simultaneousGesture(
             TapGesture()
                 .onEnded {
                     isFocused = true
                     appState.focusedPanel = panelSide
                     onPanelTap(panelSide)
-                    log.debug("table tap (highPriority) on side <<\(panelSide)>>")
-                        // Ensure there is a visible selection immediately upon panel tap
+                    log.debug("table tap (simultaneous) on side <<\(panelSide)>>")
+                        // Ensure there is a visible selection only when none exists
                     if selectedID == nil, let first = files.first {
                         log.debug("Auto-select first row on tap for side <<\(panelSide)>>: \(first.nameStr)")
-                        selectedID = first.id  // Update binding for row highlights
-                        onSelect(first)  // Propagate to ViewModel/AppState immediately
+                        selectedID = first.id
+                        onSelect(first)
                     }
                 }
         )
@@ -114,7 +114,7 @@ struct PanelFileTableSection: View {
         .transaction { txn in
             txn.disablesAnimations = true
         }
-        .id("PFTS_\(panelSide)_\(String(describing: selectedID))")
+        .id("PFTS_\(panelSide)")
     }
     
         // MARK: - Selection coordination helpers

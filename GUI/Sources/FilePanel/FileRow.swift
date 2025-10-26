@@ -40,10 +40,11 @@ struct FileRow: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .contentShape(Rectangle())
         .help(makeHelpTooltip())
-        .highPriorityGesture(
+        .simultaneousGesture(
             TapGesture()
                 .onEnded {
-                        // Centralized selection and focus
+                        // Centralized selection and focus without stealing header/row gestures
+                    log.debug("Row tap → index=\(index) name=\(file.nameStr) id=\(file.id) side=<<\(panelSide)>>")
                     onSelect(file)
                 }
         )
@@ -57,7 +58,7 @@ struct FileRow: View {
                 onFileAction: onFileAction,
                 onDirectoryAction: onDirectoryAction)
         }
-        .id("\(panelSide)_\(String(describing: file.id))_\(isSelected ? "sel" : "no")")
+        .id("\(panelSide)_\(String(describing: file.id))")
     }
     
         // MARK: - Context menu builder to simplify type-checking
