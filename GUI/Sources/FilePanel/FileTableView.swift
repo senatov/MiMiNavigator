@@ -17,67 +17,134 @@ struct FileTableView: View {
     let onSelect: (CustomFile) -> Void
     @State private var sortKey: SortKeysEnum = .name
     @State private var sortAscending: Bool = true
+    @State private var cachedSortedFiles: [CustomFile] = []
+    
+        // Keeps a stable sorted array to avoid ScrollView content rebuilds on every render
+    private func recomputeSortedCache() {
+            // Always sort directories first, then apply selected column sort
+        let base: [CustomFile] = files
+        let sorted = base.sorted(by: compare)
+        cachedSortedFiles = sorted
+        log.debug("recomputeSortedCache → side: \(panelSide), key: \(sortKey), asc: \(sortAscending), count: \(cachedSortedFiles.count)")
+    }
         // Precomputed rows to ease type checker
     private var sortedRows: [(offset: Int, element: CustomFile)] {
-        Array(sortedFiles.enumerated())
+        let rows = Array(cachedSortedFiles.enumerated())
+        log.debug("sortedRows recalculated for side \(panelSide) → \(rows.count) items (cached)")
+        return rows
     }
         // Focus state helper
     private var isFocused: Bool { appState.focusedPanel == panelSide }
     
         // MARK: -
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 0) {
-                    // File Table header
-                HStack(spacing: 8) {
-                    getNameColSortableHeader()
-                        // vertical separator
-                    Divider().padding(.vertical, 2)
-                    getSizeColSortableHeader()
-                        // vertical separator
-                    Divider().padding(.vertical, 2)
-                    getDateSortableHeader()
-                }
-                .padding(.vertical, 4)
-                .padding(.horizontal, 6)
-                .background(.ultraThinMaterial)
-                .overlay(
-                    Rectangle()
-                        .frame(height: 1)
-                        .foregroundStyle(.separator)
-                        .allowsHitTesting(false),
-                    alignment: .bottom
-                )
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            FileTableRowsView(
-                rows: sortedRows,
-                selectedID: $selectedID,
-                panelSide: panelSide,
-                onSelect: onSelect,
-                handleFileAction: handleFileAction,
-                handleDirectoryAction: handleDirectoryAction
-            )
-            .frame(maxWidth: .infinity, alignment: .leading)
+        ScrollViewReader { proxy in
+            mainScrollView(proxy: proxy)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity).padding(.horizontal, 6)
-        .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(
-                    isFocused ? Color(nsColor: .systemBlue) : Color(Color.secondary).opacity(0.6),
-                    lineWidth: isFocused ? 0.7 : 0.5
-                )
-                .allowsHitTesting(false)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(Color.white.opacity(isFocused ? 0.10 : 0.05), lineWidth: 1)
-                .allowsHitTesting(false)
-        )
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(.horizontal, 6)
+        .overlay(focusBorder)
+        .overlay(lightBorder)
         .contentShape(Rectangle())
-        .highPriorityGesture(TapGesture().onEnded { appState.focusedPanel = panelSide })
+        .simultaneousGesture(
+            TapGesture().onEnded {
+                    // Focus the panel on any background tap without stealing row/header taps
+                log.debug("Panel tap focus → \(panelSide)")
+                appState.focusedPanel = panelSide
+            }
+        )
         .animation(nil, value: isFocused)
         .transaction { txn in txn.disablesAnimations = true }
+        .focusable(true)
+        .onAppear { recomputeSortedCache() }
+        .onChange(of: files) { recomputeSortedCache() }
+        .onChange(of: sortKey) { recomputeSortedCache() }
+        .onChange(of: sortAscending) { recomputeSortedCache() }
+    }
+    
+    @ViewBuilder
+    private func mainScrollView(proxy: ScrollViewProxy) -> some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 0) {
+                headerView()
+                FileTableRowsView(
+                    rows: sortedRows,
+                    selectedID: $selectedID,
+                    panelSide: panelSide,
+                    onSelect: onSelect,
+                    handleFileAction: handleFileAction,
+                    handleDirectoryAction: handleDirectoryAction
+                )
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .id(panelSide)
+            }
+        }
+        .background(keyboardShortcutsLayer(proxy: proxy))
+    }
+    
+    @ViewBuilder
+    private func headerView() -> some View {
+        HStack(spacing: 8) {
+            getNameColSortableHeader()
+            Divider().padding(.vertical, 2)
+            getSizeColSortableHeader()
+            Divider().padding(.vertical, 2)
+            getDateSortableHeader()
+        }
+        .padding(.vertical, 4)
+        .padding(.horizontal, 6)
+        .background(.ultraThinMaterial)
+        .overlay(
+            Rectangle()
+                .frame(height: 1)
+                .foregroundStyle(.separator)
+                .allowsHitTesting(false),
+            alignment: .bottom
+        )
+    }
+    
+    @ViewBuilder
+    private func keyboardShortcutsLayer(proxy: ScrollViewProxy) -> some View {
+            // Invisible buttons to capture PageUp/PageDown and emulate TC behavior
+        ZStack {
+            Button(action: {
+                guard isFocused else { return }
+                if let first = cachedSortedFiles.first?.id {
+                    selectedID = first
+                    withAnimation { proxy.scrollTo(first, anchor: .top) }
+                    log.debug("PageUp (kbd) → jump to top on \(panelSide)")
+                }
+            }) { EmptyView() }
+                .keyboardShortcut(.pageUp)
+            
+            Button(action: {
+                guard isFocused else { return }
+                if let last = cachedSortedFiles.last?.id {
+                    selectedID = last
+                    withAnimation { proxy.scrollTo(last, anchor: .bottom) }
+                    log.debug("PageDown (kbd) → jump to bottom on \(panelSide)")
+                }
+            }) { EmptyView() }
+                .keyboardShortcut(.pageDown)
+        }
+        .frame(width: 0, height: 0)
+        .opacity(0.001)
+        .allowsHitTesting(false)
+    }
+    
+    private var focusBorder: some View {
+        RoundedRectangle(cornerRadius: 12)
+            .stroke(
+                isFocused ? Color(nsColor: .systemBlue) : Color(Color.secondary).opacity(0.6),
+                lineWidth: isFocused ? 0.7 : 0.5
+            )
+            .allowsHitTesting(false)
+    }
+    
+    private var lightBorder: some View {
+        RoundedRectangle(cornerRadius: 12)
+            .stroke(Color.white.opacity(isFocused ? 0.10 : 0.05), lineWidth: 1)
+            .allowsHitTesting(false)
     }
     
         // MARK: - File actions handler
@@ -220,12 +287,4 @@ struct FileTableView: View {
         }
     }
     
-        // MARK: -
-    var sortedFiles: [CustomFile] {
-            // Always sort directories first, then apply selected column sort
-        log.debug(#function + " for side <<\(panelSide)>>, sorting by \(sortKey), ascending: \(sortAscending)")
-        let base: [CustomFile] = files
-        let sorted = base.sorted(by: compare)
-        return sorted
-    }
 }

@@ -20,9 +20,11 @@ struct FileTableRowsView: View {
     let handleDirectoryAction: (DirectoryAction, CustomFile) -> Void
     
     var body: some View {
-        LazyVStack(spacing: 0) {
-            ForEach(rows, id: \.element.id) { pair in
-                row(for: pair.element, index: pair.offset)
+        ScrollViewReader { proxy in
+            LazyVStack(spacing: 0) {
+                ForEach(rows, id: \.element.id) { pair in
+                    row(for: pair.element, index: pair.offset)
+                }
             }
         }
     }
@@ -67,6 +69,6 @@ struct FileTableRowsView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .contentShape(Rectangle())  // allows clicks across entire row width
-        .id("\(panelSide)_\(String(describing: file.id))_\(isSelected ? "sel" : "no")")
+        .id("\(panelSide)_\(String(describing: file.id))")
     }
 }
