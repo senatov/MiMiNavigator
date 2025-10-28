@@ -61,11 +61,11 @@ class SelectedDir: ObservableObject {
 
         // Log what we restored
         if initialPath != nil {
-            log.info("\(#function) side=\(restoredSide) (explicit path)")
+            log.info("\(#function) side= <<\(restoredSide)>> (explicit path)")
         } else if configPath != nil {
-            log.info("\(#function) side=\(restoredSide) (restored from config)")
+            log.info("\(#function) side= <<\(restoredSide)>> (restored from config)")
         } else {
-            log.info("\(#function) side=\(restoredSide) (using defaults)")
+            log.info("\(#function) side= <<\(restoredSide)>> (using defaults)")
         }
 
         // Initialize selection with resolved path

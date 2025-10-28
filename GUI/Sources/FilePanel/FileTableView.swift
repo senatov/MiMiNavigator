@@ -25,12 +25,12 @@ struct FileTableView: View {
         let base: [CustomFile] = files
         let sorted = base.sorted(by: compare)
         cachedSortedFiles = sorted
-        log.debug("recomputeSortedCache → side: \(panelSide), key: \(sortKey), asc: \(sortAscending), count: \(cachedSortedFiles.count)")
+        log.debug("recomputeSortedCache → side: <<\(panelSide)>>, key: \(sortKey), asc: \(sortAscending), count: \(cachedSortedFiles.count)")
     }
         // Precomputed rows to ease type checker
     private var sortedRows: [(offset: Int, element: CustomFile)] {
         let rows = Array(cachedSortedFiles.enumerated())
-        log.debug("sortedRows recalculated for side \(panelSide) → \(rows.count) items (cached)")
+        log.debug("sortedRows recalculated for side <<\(panelSide)>> → \(rows.count) items (cached)")
         return rows
     }
         // Focus state helper
