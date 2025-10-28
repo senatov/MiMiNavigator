@@ -219,16 +219,13 @@ class FavScanner {
     func requestAccessToVolumesDirectory() async -> URL? {
         log.debug(#function)
         let volumesURL = URL(fileURLWithPath: "/Volumes")
-            // Ask only if needed; this will persist a security-scoped bookmark and start access via BookmarkStore
-        if !(await BookmarkStore.shared.hasAccess(to: volumesURL)) {
-            await BookmarkStore.shared.requestAccess(for: volumesURL)
-        }
-            // Re-check whether access exists after the request
+            // If we already have access via persistent bookmark, just return it.
         if await BookmarkStore.shared.hasAccess(to: volumesURL) {
             return volumesURL
-        } else {
-            return nil
         }
+            // Otherwise ask once; the shim will start security-scoped access for this session.
+        let granted = await BookmarkStore.shared.requestAccess(for: volumesURL)
+        return granted ? volumesURL : nil
     }
     
         // MARK: -
@@ -238,56 +235,115 @@ class FavScanner {
         oneDrive: [CustomFile],
         completion: @escaping ([CustomFile]) -> Void
     ) async -> URL? {
+        var network: [CustomFile] = []
+        var localDisks: [CustomFile] = []
+        var result: [CustomFile] = []
+        
         let volumesURL = URL(fileURLWithPath: "/Volumes")
         
-            // First try to use existing access
-        if await BookmarkStore.shared.hasAccess(to: volumesURL) {
-            return volumesURL
+            // Try existing access first.
+        if await BookmarkStore.shared.hasAccess(to: volumesURL) == false {
+                // Request once if we don't have it yet.
+            let granted = await BookmarkStore.shared.requestAccess(for: volumesURL)
+            if granted == false {
+                log.error("User did not grant access to /Volumes")
+                completion([
+                    CustomFile(name: "Favorites", path: "", children: favorites),
+                    CustomFile(name: "iCloud Drive", path: "", children: icloud),
+                    CustomFile(name: "OneDrive", path: "", children: oneDrive),
+                ])
+                return nil
+            }
         }
         
-            // Otherwise, request it once
-        if !(await BookmarkStore.shared.hasAccess(to: volumesURL)) {
-            await BookmarkStore.shared.requestAccess(for: volumesURL)
-        }
-        if await BookmarkStore.shared.hasAccess(to: volumesURL) {
-            return volumesURL
+            // At this point we can enumerate /Volumes.
+        if let contents = try? FileManager.default.contentsOfDirectory(
+            at: volumesURL,
+            includingPropertiesForKeys: nil
+        ) {
+            for url in contents where (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true {
+                guard FileManager.default.fileExists(atPath: url.path) else {
+                    continue
+                }
+                let key = URLResourceKey("volumeIsNetwork")
+                let values = try? url.resourceValues(forKeys: [key])
+                let isNetwork = (values?.allValues[key] as? Bool) ?? false
+                if let node = buildFavTreeStructure(at: url) {
+                    if isNetwork {
+                        network.append(node)
+                    } else {
+                        localDisks.append(node)
+                    }
+                }
+            }
+        } else {
+            log.error("Cannot read /Volumes contents even after user granted access.")
         }
         
-            // Still no access — return partial result like before
-        log.error("User did not grant access to /Volumes")
-        completion([
-            CustomFile(name: "Favorites", path: "", children: favorites),
-            CustomFile(name: "iCloud Drive", path: "", children: icloud),
-            CustomFile(name: "OneDrive", path: "", children: oneDrive),
-        ])
-        return nil
+        if !favorites.isEmpty {
+            result.append(CustomFile(name: "Favorites", path: "", children: favorites))
+        }
+        if !icloud.isEmpty {
+            result.append(CustomFile(name: "iCloud Drive", path: "", children: icloud))
+        }
+        if !oneDrive.isEmpty {
+            result.append(CustomFile(name: "OneDrive", path: "", children: oneDrive))
+        }
+        if !network.isEmpty {
+            result.append(CustomFile(name: "Network Volumes", path: "", children: network))
+        }
+        if !localDisks.isEmpty {
+            result.append(CustomFile(name: "Local Volumes", path: "", children: localDisks))
+        }
+        
+        log.debug("Total groups: \(result.count)")
+        completion(result)
+        return volumesURL
     }
 }
 
     // MARK: - Fallback shim for BookmarkStore.requestAccess(for:)
 extension BookmarkStore {
-        /// Fallback interactive access request for a given URL (non-persistent if BookmarkStore lacks storage APIs).
-        /// Tries to prompt the user for folder access to `/Volumes` and start a security-scoped access for the current session.
+        /// Interactive, non-persistent fallback for requesting access to a directory.
+        /// Returns true if security-scoped access was started for the chosen location.
     @MainActor
-    func requestAccess(for url: URL) async {
+    @discardableResult
+    func requestAccess(for url: URL) async -> Bool {
         log.debug("BookmarkStore.requestAccess(for:) — shim")
+        
+            // Decide a reasonable starting directory: if file, use its parent.
+        let startDir: URL = {
+            var isDir: ObjCBool = false
+            if FileManager.default.fileExists(atPath: url.path, isDirectory: &isDir), isDir.boolValue {
+                return url
+            } else {
+                return url.deletingLastPathComponent()
+            }
+        }()
+        
         let panel = NSOpenPanel()
-        panel.message = "MiMiNavigator needs access to /Volumes to list local and network volumes."
-        panel.directoryURL = URL(fileURLWithPath: "/Volumes")
+        panel.message = "MiMiNavigator needs access to \(startDir.path) to proceed."
+        panel.directoryURL = startDir
         panel.canChooseFiles = false
         panel.canChooseDirectories = true
         panel.allowsMultipleSelection = false
         panel.prompt = "Allow"
         panel.showsHiddenFiles = false
+        
         let response = panel.runModal()
         guard response == .OK, let pickedURL = panel.url else {
             log.error("User did not grant access via NSOpenPanel")
-            return
+            return false
         }
+        
         if pickedURL.startAccessingSecurityScopedResource() {
             log.debug("Started security-scoped access to: \(pickedURL.path)")
+                // Optionally persist a bookmark here if your BookmarkStore supports it.
+            return true
         } else {
             log.error("Failed to start security-scoped access to: \(pickedURL.path)")
+            return false
         }
     }
 }
+
