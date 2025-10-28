@@ -85,6 +85,16 @@ struct PanelsRowView: View {
             // If you need to force width strictly, uncomment:
             // .frame(width: leftPanelWidth)
             // But usually FilePanelView handles its width using GeometryProxy + leftPanelWidth.
+        .id("panel-left")
+        .contentShape(Rectangle()) // ensure taps on empty space count
+        .highPriorityGesture(
+            TapGesture().onEnded {
+                    // Explicitly focus left panel
+                appState.focusedPanel = .left
+                appState.forceFocusSelection()
+                log.debug("PanelsRowView: focus -> .left via tap")
+            }
+        )
     }
     
         // MARK: - Right panel
@@ -98,6 +108,16 @@ struct PanelsRowView: View {
             appState: appState
         )
             // Same note as left panel about explicit width if needed.
+        .id("panel-right")
+        .contentShape(Rectangle()) // ensure taps on empty space count
+        .highPriorityGesture(
+            TapGesture().onEnded {
+                    // Explicitly focus right panel
+                appState.focusedPanel = .right
+                appState.forceFocusSelection()
+                log.debug("PanelsRowView: focus -> .right via tap")
+            }
+        )
     }
     
         // MARK: - Divider
@@ -133,6 +153,7 @@ struct PanelsRowView: View {
                 log.debug("Divider drag end → leftPanelWidth=\(Int(leftPanelWidth)) totalW=\(Int(geometry.size.width))")
             }
         )
+        .allowsHitTesting(true)
     }
     
         // MARK: - Tooltip overlay (non-intrusive to layout)
