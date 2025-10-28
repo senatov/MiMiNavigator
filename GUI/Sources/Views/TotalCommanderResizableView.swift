@@ -1,11 +1,11 @@
-    //
-    //  TotalCommanderResizableView.swift
-    //  MiMiNavigator
-    //
-    //  Created by Iakov Senatov on 26.04.2025.
-    //  Copyright © 2025 Senatov. All rights reserved.
-    //
-    //  Note: addKeyPressMonitor() also handles moving row selection with Up/Down arrows.
+//
+//  TotalCommanderResizableView.swift
+//  MiMiNavigator
+//
+//  Created by Iakov Senatov on 26.04.2025.
+//  Copyright © 2025 Senatov. All rights reserved.
+//
+//  Note: addKeyPressMonitor() also handles moving row selection with Up/Down arrows.
 
 import AppKit
 import SwiftUI
@@ -14,8 +14,8 @@ struct TotalCommanderResizableView: View {
     @EnvironmentObject var appState: AppState
     @State private var leftPanelWidth: CGFloat = 0
     @State private var keyMonitor: Any? = nil
-    
-        // MARK: -
+
+    // MARK: -
     var body: some View {
         GeometryReader { geometry in
             ZStack {
@@ -24,15 +24,15 @@ struct TotalCommanderResizableView: View {
                         HStack {
                             TopMenuBarView()
                         }
-                        
-                            // Panels occupy all remaining vertical space
+
+                        // Panels occupy all remaining vertical space
                         PanelsRowView(leftPanelWidth: $leftPanelWidth, geometry: geometry, fetchFiles: fetchFiles)
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                             .layoutPriority(1)
-                        
+
                         Spacer(minLength: 0)
-                        
-                            // Bottom toolbar fixed at bottom
+
+                        // Bottom toolbar fixed at bottom
                         buildDownToolbar()
                             .frame(maxWidth: .infinity)
                             .fixedSize(horizontal: false, vertical: true)
@@ -56,7 +56,7 @@ struct TotalCommanderResizableView: View {
             }
             .onChange(of: geometry.size) { oldSize, newSize in
                 log.debug("Window size changed from: \(oldSize.width)x\(oldSize.height) → \(newSize.width)x\(newSize.height)")
-                    // Recalculate left panel width if needed
+                // Recalculate left panel width if needed
                 if leftPanelWidth > 0 {
                     let maxWidth = newSize.width - 50
                     if leftPanelWidth > maxWidth {
@@ -66,10 +66,8 @@ struct TotalCommanderResizableView: View {
             }
         }
     }
-    
-    
-    
-        // MARK: - Fetch Files
+
+    // MARK: - Fetch Files
     @MainActor
     private func fetchFiles(for panelSide: PanelSide) async {
         log.debug("\(#function) [side:<<\(panelSide)]>>")
@@ -77,14 +75,14 @@ struct TotalCommanderResizableView: View {
             case .left:
                 appState.displayedLeftFiles = await appState.scanner.fileLst
                     .getLeftFiles()
-                
+
             case .right:
                 appState.displayedRightFiles = await appState.scanner.fileLst
                     .getRightFiles()
         }
     }
-    
-        // MARK: -
+
+    // MARK: -
     private func buildDownToolbar() -> some View {
         log.debug(#function)
         return VStack(spacing: 0) {
@@ -149,16 +147,16 @@ struct TotalCommanderResizableView: View {
                             endPoint: .bottom
                         )
                     )
-                // Subtle bevel highlight (keeps main colors intact)
+                    // Subtle bevel highlight (keeps main colors intact)
                     .overlay(
                         RoundedRectangle(cornerRadius: 18, style: .continuous)
                             .strokeBorder(Color.white.opacity(0.12), lineWidth: 0.8)
                     )
-                // Ambient soft shadow close to the surface
+                    // Ambient soft shadow close to the surface
                     .shadow(color: Color.black.opacity(0.12), radius: 6, x: 0, y: 2)
-                // Main drop shadow per macOS 26.1 liquid glass
+                    // Main drop shadow per macOS 26.1 liquid glass
                     .shadow(color: Color.black.opacity(0.28), radius: 20, x: 0, y: 12)
-                // Optional subtle top highlight glow
+                    // Optional subtle top highlight glow
                     .overlay(
                         RoundedRectangle(cornerRadius: 18, style: .continuous)
                             .strokeBorder(Color.white.opacity(0.05), lineWidth: 0.6)
@@ -176,46 +174,46 @@ struct TotalCommanderResizableView: View {
             )
         )
     }
-    
-        // MARK: - Toolbar
+
+    // MARK: - Toolbar
     private func doCopy() {
-            // Determine source file based on focused panel (deprecated API removed)
+        // Determine source file based on focused panel (deprecated API removed)
         let sourceFile = (appState.focusedPanel == .left) ? appState.selectedLeftFile : appState.selectedRightFile
-        
-            // Determine target side explicitly to avoid 'opposite' ambiguity
+
+        // Determine target side explicitly to avoid 'opposite' ambiguity
         let targetSide: PanelSide = (appState.focusedPanel == .left) ? .right : .left
-        
+
         if let file = sourceFile,
-           let targetURL = appState.pathURL(for: targetSide)
+            let targetURL = appState.pathURL(for: targetSide)
         {
-           FActions.copy(file, to: targetURL)
-           Task {
-               await appState.refreshFiles()
-           }
+            FActions.copy(file, to: targetURL)
+            Task {
+                await appState.refreshFiles()
+            }
         } else {
             log.debug("No source file selected or target URL missing for Copy")
         }
     }
-    
-        // MARK: -
+
+    // MARK: -
     private func initializePanelWidth(geometry: GeometryProxy) {
         log.debug(#function)
         leftPanelWidth =
-        UserDefaults.standard.object(forKey: "leftPanelWidth") as? CGFloat
-        ?? geometry.size.width / 2
+            UserDefaults.standard.object(forKey: "leftPanelWidth") as? CGFloat
+            ?? geometry.size.width / 2
     }
-    
-        // MARK: -
+
+    // MARK: -
     private func addKeyPressMonitor() {
         log.debug(#function)
-            // Avoid installing multiple monitors when the view re-appears
+        // Avoid installing multiple monitors when the view re-appears
         if keyMonitor != nil { return }
         keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
             if event.modifierFlags.contains(.option), event.keyCode == 0x76 {
                 exitApp()
                 return nil
             }
-                // Handle Tab key (keyCode 0x30 / 48) — Tab and Shift+Tab toggle focus
+            // Handle Tab key (keyCode 0x30 / 48) — Tab and Shift+Tab toggle focus
             if event.keyCode == 0x30 {
                 return doPanelToggled(event)
             }
@@ -223,8 +221,8 @@ struct TotalCommanderResizableView: View {
         }
         log.debug("Installed key monitor: \(String(describing: keyMonitor))")
     }
-    
-        // MARK: -
+
+    // MARK: -
     private func doPanelToggled(_ event: NSEvent) -> NSEvent? {
         log.debug(#function)
         appState.toggleFocus()
@@ -236,9 +234,8 @@ struct TotalCommanderResizableView: View {
         }
         return nil
     }
-    
-    
-        // MARK: -
+
+    // MARK: -
     private func exitApp() {
         log.debug(#function)
         appState.saveBeforeExit()
