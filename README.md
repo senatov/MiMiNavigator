@@ -55,7 +55,7 @@ Key directories inside `MiMiNavigator/`:
 
 - **Models** data structures such as `CustomFile`, an entity representing files or directories, and `FileSingleton`, an actor maintaining left/right file lists for SwiftUI updates.
 
-- **Views** SwiftUI views for file panels, the top menu bar, and toolbar. `TotalCommanderResizableView` composes the main UI with a draggable divider and toolbar buttons for actions like view, edit, copy, and delete.
+- 	**Views** — SwiftUI views for file panels, the top menu bar, and the bottom command panel.**DownPanelView** represents only the bottom command button bar, similar to the one in Total Commander, with buttons for actions like View, Edit, Copy, Move, Delete, and more.
 
 - **BreadCrumbNav** editable path controls and breadcrumb navigation.
 

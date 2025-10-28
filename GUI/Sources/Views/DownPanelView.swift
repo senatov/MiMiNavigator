@@ -1,8 +1,8 @@
 //
-//  TotalCommanderResizableView.swift
+//  DownPanelView.swift
 //  MiMiNavigator
 //
-//  Created by Iakov Senatov on 26.04.2025.
+//  Created by Iakov Senatov on 26.10.2025.
 //  Copyright © 2025 Senatov. All rights reserved.
 //
 //  Note: addKeyPressMonitor() also handles moving row selection with Up/Down arrows.
@@ -10,7 +10,7 @@
 import AppKit
 import SwiftUI
 
-struct TotalCommanderResizableView: View {
+struct DownPanelView: View {
     @EnvironmentObject var appState: AppState
     @State private var leftPanelWidth: CGFloat = 0
     @State private var keyMonitor: Any? = nil
