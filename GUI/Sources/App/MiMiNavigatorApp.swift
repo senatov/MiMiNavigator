@@ -27,7 +27,7 @@ struct MiMiNavigatorApp: App {
     var body: some Scene {
         WindowGroup {
             VStack {
-                DownPanelView()
+                DuoFilePanelView()
                 ConsoleCurrPath()
             }
             .environmentObject(appState)
