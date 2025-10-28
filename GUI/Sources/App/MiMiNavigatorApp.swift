@@ -61,31 +61,28 @@ struct MiMiNavigatorApp: App {
                     HStack(spacing: 8) {
                         // Badge icon styled for macOS 26 "liquid glass" look
                         Text("🐈")
-                            .font(.title3)
-                            .padding(4)
-                            .background(Material.ultraThin, in: Circle())
+                            .font(.caption2)
+                            .padding(8)
+                            .background(Circle().fill(Color.yellow.opacity(0.1)))
                             .overlay(
-                                Circle()
-                                    .strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5)
+                                Circle().strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.3)
                             )
-
-                        VStack(alignment: .leading, spacing: 0) {
+                        VStack(alignment: .leading, spacing: 1) {
                             Text("DEV BUILD")
                                 .font(.caption2)
                                 .textCase(.uppercase)
                                 .foregroundStyle(.secondary)
                             makeDevMark()
-                                .font(.callout)
-                                .monospacedDigit()
+                                .font(.caption2)
                                 .foregroundColor(FilePanelStyle.dirNameColor)
                         }
                     }
                     .padding(.horizontal, 18)
-                    .padding(.vertical, 4)
-                    .background(Material.ultraThin, in: Capsule())
+                    .padding(.vertical, 0)
+                    .background(.yellow.opacity(0.05), in: Capsule())
                     .overlay(
                         Capsule()
-                            .strokeBorder(.red, lineWidth: 0.5)
+                            .strokeBorder(.red, lineWidth: 0.8)
                     )
                     .help("Current development build version")
                 }
