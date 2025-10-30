@@ -10,6 +10,7 @@ import SwiftUI
 
 let log = LogMan.log
 
+// MARK: -
 @main
 struct MiMiNavigatorApp: App {
     @StateObject private var appState = AppState()  // single source of truth
@@ -131,5 +132,4 @@ struct MiMiNavigatorApp: App {
         }
         return Text(content)
     }
-
 }
