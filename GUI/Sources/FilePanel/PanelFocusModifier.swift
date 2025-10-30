@@ -2,8 +2,8 @@
 //  PanelFocusModifier.swift
 //  MiMiNavigator
 //
-//  Created by Iakov Senatov on 13.08.2025.
-//  Copyright © 2025 Senatov. All rights reserved.
+//  Clean focus observer: does NOT set focus itself; only reacts to focus loss.
+//  Swift 6.2 / macOS 15.4+. Comments in English only.
 //
 
 import AppKit
@@ -16,20 +16,14 @@ struct PanelFocusModifier: ViewModifier {
     let panelSide: PanelSide
     let onFocusLost: () -> Void
 
-    // MARK: - -
     func body(content: Content) -> some View {
-        log.info(#function + " for panel side: \(panelSide)")
-        return content
+        content
             .contentShape(Rectangle())
-            .onTapGesture {
-                // Set focus to this panel when the user interacts with it
-                log.info("Panel tapped, focus -> \(panelSide)")
-                appState.focusedPanel = panelSide
-            }
-            .onChange(of: appState.focusedPanel, initial: false) { oldValue, newValue in
-                // When focus moves away from this panel, clear selection here
-                if newValue != panelSide {
-                    log.info("Focus moved from \(oldValue) to \(newValue); clearing selection on \(panelSide)")
+            // React only when focus moves AWAY from this panel
+            .onChange(of: appState.focusedPanel) { oldValue, newValue in
+                log.info("PanelFocusModifier.onChange: \(oldValue) → \(newValue) for side=\(panelSide)")
+                if oldValue == panelSide && newValue != panelSide {
+                    log.info("Focus moved from this panel (\(panelSide)) to \(newValue); invoking onFocusLost()")
                     onFocusLost()
                 }
             }
@@ -37,7 +31,8 @@ struct PanelFocusModifier: ViewModifier {
 }
 
 extension View {
-    // MARK: - Applies focus behavior for a file panel; sets focus on tap and clears selection when losing focus.
+    /// Applies focus behavior for a file panel; **does not** set focus.
+    /// It only reports when the panel loses focus so the caller can react (e.g., hide popups).
     func panelFocus(panelSide: PanelSide, onFocusLost: @escaping () -> Void) -> some View {
         log.info(#function + " for panel side: \(panelSide)")
         return modifier(PanelFocusModifier(panelSide: panelSide, onFocusLost: onFocusLost))

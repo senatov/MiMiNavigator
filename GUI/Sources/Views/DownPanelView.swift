@@ -1,25 +1,19 @@
-    //
-    //  DownPanelView.swift
-    //  MiMiNavigator
-    //
-    //  Created by Iakov Senatov on 28.10.2025.
-    //  Copyright © 2025 Senatov. All rights reserved.
-    //
+//
+//  DownPanelView.swift
+//  MiMiNavigator
+//
+//  Created by Iakov Senatov on 28.10.2025.
+//  Copyright © 2025 Senatov. All rights reserved.
+//
 
-    //
-    //  DownPanelView.swift
-    //  mimi_project
-    //
-    //  Created automatically from PanelsRowView extraction
-    //
-
+import AppKit
 import SwiftUI
 
-    /// Bottom command toolbar similar to Total Commander.
-    /// Provides buttons for quick file operations: View, Edit, Copy, Move, Delete, New Folder, and Properties.
+/// Bottom command toolbar similar to Total Commander.
+/// Provides buttons for quick file operations: View, Edit, Copy, Move, Delete, New Folder, and Properties.
 struct DownPanelView: View {
     @EnvironmentObject var appState: AppState
-    
+
     var body: some View {
         VStack(spacing: 0) {
             HStack(spacing: 18) {
@@ -82,16 +76,16 @@ struct DownPanelView: View {
                             endPoint: .bottom
                         )
                     )
-                // Subtle bevel highlight (keeps main colors intact)
+                    // Subtle bevel highlight (keeps main colors intact)
                     .overlay(
                         RoundedRectangle(cornerRadius: 18, style: .continuous)
                             .strokeBorder(Color.white.opacity(0.12), lineWidth: 0.8)
                     )
-                // Ambient soft shadow close to the surface
+                    // Ambient soft shadow close to the surface
                     .shadow(color: Color.black.opacity(0.12), radius: 6, x: 0, y: 2)
-                // Main drop shadow per macOS 26.1 liquid glass
+                    // Main drop shadow per macOS 26.1 liquid glass
                     .shadow(color: Color.black.opacity(0.28), radius: 20, x: 0, y: 12)
-                // Optional subtle top highlight glow
+                    // Optional subtle top highlight glow
                     .overlay(
                         RoundedRectangle(cornerRadius: 18, style: .continuous)
                             .strokeBorder(Color.white.opacity(0.05), lineWidth: 0.6)
@@ -109,41 +103,35 @@ struct DownPanelView: View {
             )
         )
     }
-    
-        // MARK: -
-    func doPanelToggled(_ event: NSEvent) -> NSEvent? {
-        log.debug(#function)
+
+    // MARK: - Static handler (safe outside SwiftUI hierarchy)
+    static func handlePanelToggle(event: NSEvent, appState: AppState) -> NSEvent? {
+        log.debug("DownPanelView.handlePanelToggle")
         appState.toggleFocus()
-        appState.forceFocusSelection()
-        if event.modifierFlags.contains(.shift) {
-            log.debug("Shift+Tab pressed → toggle focused panel (reverse)")
-        } else {
-            log.debug("Tab pressed → toggle focused panel")
-        }
         return nil
     }
-    
-        // MARK: - Toolbar
+
+    // MARK: - Toolbar
     func doCopy() {
-            // Determine source file based on focused panel (deprecated API removed)
+        // Determine source file based on focused panel (deprecated API removed)
         let sourceFile = (appState.focusedPanel == .left) ? appState.selectedLeftFile : appState.selectedRightFile
-        
-            // Determine target side explicitly to avoid 'opposite' ambiguity
+
+        // Determine target side explicitly to avoid 'opposite' ambiguity
         let targetSide: PanelSide = (appState.focusedPanel == .left) ? .right : .left
-        
+
         if let file = sourceFile,
-           let targetURL = appState.pathURL(for: targetSide)
+            let targetURL = appState.pathURL(for: targetSide)
         {
-           FActions.copy(file, to: targetURL)
-           Task {
-               await appState.refreshFiles()
-           }
+            FActions.copy(file, to: targetURL)
+            Task {
+                await appState.refreshFiles()
+            }
         } else {
             log.debug("No source file selected or target URL missing for Copy")
         }
     }
-    
-        // MARK: -
+
+    // MARK: -
     func exitApp() {
         log.debug(#function)
         appState.saveBeforeExit()
