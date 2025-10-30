@@ -2,7 +2,8 @@
     //  FilePanelView.swift
     //  MiMiNavigator
     //
-    //  Restored and refactored: keeps clean components and adds custom row highlight
+    //  Created by Iakov Senatov on 24.06.2025.
+    //  Copyright © 2025 Senatov. All rights reserved.
     //
 
 import AppKit
@@ -13,6 +14,7 @@ struct FilePanelView: View {
     @EnvironmentObject var appState: AppState
     @StateObject private var viewModel: FilePanelViewModel
     var geometry: GeometryProxy
+    let containerSize: CGSize
     @Binding var leftPanelWidth: CGFloat
         /// Called when user clicks anywhere inside the panel (left/right)
     let onPanelTap: (PanelSide) -> Void
@@ -49,6 +51,7 @@ struct FilePanelView: View {
     init(
         selectedSide: PanelSide,
         geometry: GeometryProxy,
+        containerSize: CGSize,
         leftPanelWidth: Binding<CGFloat>,
         fetchFiles: @escaping @Sendable @concurrent (PanelSide) async -> Void,
         appState: AppState,
@@ -56,6 +59,7 @@ struct FilePanelView: View {
     ) {
         self._leftPanelWidth = leftPanelWidth
         self.geometry = geometry
+        self.containerSize = containerSize
         self._viewModel = StateObject(
             wrappedValue: FilePanelViewModel(
                 panelSide: selectedSide,
@@ -70,33 +74,44 @@ struct FilePanelView: View {
         let currentPath = appState.pathURL(for: viewModel.panelSide)
         log.debug(#function + " for side <<\(viewModel.panelSide)>> with path: \(currentPath?.path ?? "nil")")
         return VStack {
-            PanelBreadcrumbSection(
-                currentPath: currentPath,
-                onPathChange: { newValue in
-                    viewModel.handlePathChange(to: newValue)
-                }
-            )
-            PanelFileTableSection(
-                files: viewModel.sortedFiles,
-                selectedID: selectedIDBinding,
-                panelSide: viewModel.panelSide,
-                onPanelTap: onPanelTap,
-                onSelect: { file in
-                        // Centralized selection; will clear the other panel via ViewModel.select(_:)
-                    viewModel.select(file)
-                }
-            )
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-            .background(
-                GeometryReader { gp in
-                    Color.clear
-                        .onAppear { log.debug("PFT.section appear → size=\(Int(gp.size.width))x\(Int(gp.size.height)) on <<\(viewModel.panelSide)>>") }
-                        .onChange(of: gp.size) { log.debug("PFT.section size changed → \(Int(gp.size.width))x\(Int(gp.size.height)) on <<\(viewModel.panelSide)>>") }
-                }
-            )
+                // Inner content container with internal padding only
+            VStack(spacing: DesignTokens.grid - 2) {
+                PanelBreadcrumbSection(
+                    currentPath: currentPath,
+                    onPathChange: { newValue in
+                        viewModel.handlePathChange(to: newValue)
+                    }
+                )
+                PanelFileTableSection(
+                    files: viewModel.sortedFiles,
+                    selectedID: selectedIDBinding,
+                    panelSide: viewModel.panelSide,
+                    onPanelTap: onPanelTap,
+                    onSelect: { file in
+                            // Centralized selection; will clear the other panel via ViewModel.select(_:)
+                        viewModel.select(file)
+                    }
+                )
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                .background(
+                    GeometryReader { gp in
+                        Color.clear
+                            .onAppear {
+                                log.debug(
+                                    "PFT.section appear → size=\(Int(gp.size.width))x\(Int(gp.size.height)) on <<\(viewModel.panelSide)>>"
+                                )
+                            }
+                            .onChange(of: gp.size) {
+                                log.debug(
+                                    "PFT.section size changed → \(Int(gp.size.width))x\(Int(gp.size.height)) on <<\(viewModel.panelSide)>>"
+                                )
+                            }
+                    }
+                )
+            }
+            .padding(.horizontal, DesignTokens.grid)
+            .padding(.vertical, DesignTokens.grid - 2)
         }
-        .padding(.horizontal, DesignTokens.grid)
-        .padding(.vertical, DesignTokens.grid - 2)
         .background(
             RoundedRectangle(cornerRadius: DesignTokens.radius, style: .continuous)
                 .fill(DesignTokens.card)
@@ -105,51 +120,44 @@ struct FilePanelView: View {
             RoundedRectangle(cornerRadius: DesignTokens.radius, style: .continuous)
                 .stroke(DesignTokens.separator.opacity(0.35), lineWidth: 1)
         )
-        .contentShape(Rectangle())
-        .frame(
-            width: viewModel.panelSide == .left
-            ? (leftPanelWidth > 0 ? leftPanelWidth : geometry.size.width / 2)
-            : nil
+        .overlay(
+            RoundedRectangle(cornerRadius: DesignTokens.radius, style: .continuous)
+                .stroke(
+                    appState.focusedPanel == viewModel.panelSide ? FilePanelStyle.dirNameColor.opacity(0.95) : .clear, lineWidth: 1)
         )
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .clipped(antialiased: true)
+        .contentShape(Rectangle())
+        .transaction { $0.disablesAnimations = true }
+        .animation(nil, value: appState.focusedPanel)
         .background(DesignTokens.panelBg)
         .controlSize(.regular)
-        .simultaneousGesture(
-            TapGesture()
-                .onEnded {
-                        // Focus the panel on any click within its bounds without stealing row taps
-                    log.debug("Panel tapped for focus: \(viewModel.panelSide)")
-                    onPanelTap(viewModel.panelSide)
-                        // Selection is coordinated inside PanelFileTableSection; do not auto-select here to avoid double handling
-                }
-        )
         .panelFocus(panelSide: viewModel.panelSide) {
             log.debug("Focus lost on \(viewModel.panelSide); keep selection")
             appState.showFavTreePopup = false
         }
         .onChange(of: appState.focusedPanel) { oldSide, newSide in
-                // Run only when focus actually changes to this panel
-            guard newSide == viewModel.panelSide, oldSide != newSide else { return }
+                // Skip redundant or recursive focus updates
+            guard newSide != oldSide else { return }
+            log.debug("onChange(focusedPanel): \(oldSide) → \(newSide) on <<\(viewModel.panelSide)>>")
             
-                // If this panel just became focused and has no selection, select the first row
-            let files = viewModel.sortedFiles
-            if selectedIDBinding.wrappedValue == nil, let first = files.first {
-                log.debug("Auto-select on focus gain (<<\(viewModel.panelSide))>>: \(first.nameStr)")
-                viewModel.select(first)
+                // Only act if this panel is the newly focused one
+            guard newSide == viewModel.panelSide else {
+                log.debug("Focus moved away from <<\(viewModel.panelSide)>> → ignoring")
+                return
             }
             
-                // Clear opposite side selection to avoid dual highlight
-            switch viewModel.panelSide {
-                case .left:
-                    if appState.selectedRightFile != nil {
-                        log.debug("Clearing RIGHT selection due to LEFT focus gain")
-                        appState.selectedRightFile = nil
-                    }
-                case .right:
-                    if appState.selectedLeftFile != nil {
-                        log.debug("Clearing LEFT selection due to RIGHT focus gain")
-                        appState.selectedLeftFile = nil
-                    }
+                // Avoid re-entrance: do not auto-select again if already selecting or already has selection
+            if selectedIDBinding.wrappedValue != nil {
+                log.debug("Already has selection on <<\(viewModel.panelSide)>> → skip auto-select")
+            } else if let first = viewModel.sortedFiles.first {
+                log.debug("Auto-selecting first item on <<\(viewModel.panelSide)>>: \(first.nameStr)")
+                    // Call select with a minimal guard to prevent triggering another focus update
+                if appState.focusedPanel == viewModel.panelSide {
+                    viewModel.select(first)
+                }
             }
+            
         }
     }
 }

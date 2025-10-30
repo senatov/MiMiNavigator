@@ -1,14 +1,14 @@
-    //
-    //  FileRowView.swift
-    //  MiMiNavigator
-    //
-    //  Created by Iakov Senatov on 11.08.2025.
-    //  Copyright © 2025 Senatov. All rights reserved.
-    //
+//
+//  FileRowView.swift
+//  MiMiNavigator
+//
+//  Created by Iakov Senatov on 11.08.2025.
+//  Copyright © 2025 Senatov. All rights reserved.
+//
 
 import SwiftUI
 
-    // MARK: -
+// MARK: -
 struct FileTableView: View {
     @EnvironmentObject var appState: AppState
     let panelSide: PanelSide
@@ -18,25 +18,26 @@ struct FileTableView: View {
     @State private var sortKey: SortKeysEnum = .name
     @State private var sortAscending: Bool = true
     @State private var cachedSortedFiles: [CustomFile] = []
-    
-        // Keeps a stable sorted array to avoid ScrollView content rebuilds on every render
+
+    // Keeps a stable sorted array to avoid ScrollView content rebuilds on every render
     private func recomputeSortedCache() {
-            // Always sort directories first, then apply selected column sort
+        // Always sort directories first, then apply selected column sort
         let base: [CustomFile] = files
         let sorted = base.sorted(by: compare)
         cachedSortedFiles = sorted
-        log.debug("recomputeSortedCache → side: <<\(panelSide)>>, key: \(sortKey), asc: \(sortAscending), count: \(cachedSortedFiles.count)")
+        log.debug(
+            "recomputeSortedCache → side: <<\(panelSide)>>, key: \(sortKey), asc: \(sortAscending), count: \(cachedSortedFiles.count)")
     }
-        // Precomputed rows to ease type checker
+    // Precomputed rows to ease type checker
     private var sortedRows: [(offset: Int, element: CustomFile)] {
         let rows = Array(cachedSortedFiles.enumerated())
         log.debug("sortedRows recalculated for side <<\(panelSide)>> → \(rows.count) items (cached)")
         return rows
     }
-        // Focus state helper
+    // Focus state helper
     private var isFocused: Bool { appState.focusedPanel == panelSide }
-    
-        // MARK: -
+
+    // MARK: -
     var body: some View {
         ScrollViewReader { proxy in
             mainScrollView(proxy: proxy)
@@ -47,11 +48,12 @@ struct FileTableView: View {
         .overlay(lightBorder)
         .contentShape(Rectangle())
         .simultaneousGesture(
-            TapGesture().onEnded {
+            TapGesture()
+                .onEnded {
                     // Focus the panel on any background tap without stealing row/header taps
-                log.debug("Panel tap focus → \(panelSide)")
-                appState.focusedPanel = panelSide
-            }
+                    log.debug("Panel tap focus → \(panelSide)")
+                    appState.focusedPanel = panelSide
+                }
         )
         .animation(nil, value: isFocused)
         .transaction { txn in txn.disablesAnimations = true }
@@ -60,11 +62,13 @@ struct FileTableView: View {
         .onChange(of: files) { recomputeSortedCache() }
         .onChange(of: sortKey) { recomputeSortedCache() }
         .onChange(of: sortAscending) { recomputeSortedCache() }
-        .onChange(of: selectedID, { oldValue, newValue in
-            log.debug("FTV.selectedID changed: \(String(describing: oldValue)) → \(String(describing: newValue)) on \(panelSide)")
-        })
+        .onChange(
+            of: selectedID,
+            { oldValue, newValue in
+                log.debug("FTV.selectedID changed: \(String(describing: oldValue)) → \(String(describing: newValue)) on \(panelSide)")
+            })
     }
-    
+
     @ViewBuilder
     private func mainScrollView(proxy: ScrollViewProxy) -> some View {
         ScrollView {
@@ -79,25 +83,12 @@ struct FileTableView: View {
                     handleDirectoryAction: handleDirectoryAction
                 )
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(
-                    GeometryReader { gp in
-                        Color.clear
-                            .onAppear { log.debug("FTV.content appear → size=\(Int(gp.size.width))x\(Int(gp.size.height)) on \(panelSide)") }
-                            .onChange(of: gp.size) { log.debug("FTV.content size changed → \(Int(gp.size.width))x\(Int(gp.size.height)) on \(panelSide)") }
-                    }
-                )
             }
         }
-        .background(
-            GeometryReader { gp in
-                Color.clear
-                    .onAppear { log.debug("FTV.viewport appear → size=\(Int(gp.size.width))x\(Int(gp.size.height)) on \(panelSide)") }
-                    .onChange(of: gp.size) { log.debug("FTV.viewport size changed → \(Int(gp.size.width))x\(Int(gp.size.height)) on \(panelSide)") }
-            }
-        )
-        .background(keyboardShortcutsLayer(proxy: proxy))
+        .id("scroll-\(panelSide)")
+        .overlay(keyboardShortcutsLayer(proxy: proxy))
     }
-    
+
     @ViewBuilder
     private func headerView() -> some View {
         HStack(spacing: 8) {
@@ -118,10 +109,10 @@ struct FileTableView: View {
             alignment: .bottom
         )
     }
-    
+
     @ViewBuilder
     private func keyboardShortcutsLayer(proxy: ScrollViewProxy) -> some View {
-            // Invisible buttons to capture PageUp/PageDown and emulate TC behavior
+        // Invisible buttons to capture PageUp/PageDown and emulate TC behavior
         ZStack {
             Button(action: {
                 guard isFocused else { return }
@@ -131,8 +122,8 @@ struct FileTableView: View {
                     log.debug("PageUp (kbd) → jump to top on \(panelSide)")
                 }
             }) { EmptyView() }
-                .keyboardShortcut(.pageUp)
-            
+            .keyboardShortcut(.pageUp)
+
             Button(action: {
                 guard isFocused else { return }
                 if let last = cachedSortedFiles.last?.id {
@@ -141,13 +132,13 @@ struct FileTableView: View {
                     log.debug("PageDown (kbd) → jump to bottom on \(panelSide)")
                 }
             }) { EmptyView() }
-                .keyboardShortcut(.pageDown)
+            .keyboardShortcut(.pageDown)
         }
         .frame(width: 0, height: 0)
         .opacity(0.001)
         .allowsHitTesting(false)
     }
-    
+
     private var focusBorder: some View {
         RoundedRectangle(cornerRadius: 12)
             .stroke(
@@ -156,14 +147,14 @@ struct FileTableView: View {
             )
             .allowsHitTesting(false)
     }
-    
+
     private var lightBorder: some View {
         RoundedRectangle(cornerRadius: 12)
             .stroke(Color.white.opacity(isFocused ? 0.10 : 0.05), lineWidth: 1)
             .allowsHitTesting(false)
     }
-    
-        // MARK: - File actions handler
+
+    // MARK: - File actions handler
     func handleFileAction(_ action: FileAction, for file: CustomFile) {
         log.debug(#function + ": \(action)")
         switch action {
@@ -185,8 +176,8 @@ struct FileTableView: View {
                 log.debug("File action: properties → \(file.pathStr)")
         }
     }
-    
-        // MARK: -
+
+    // MARK: -
     private func getNameColSortableHeader() -> some View {
         return HStack(spacing: 4) {
             Text("Name").font(.subheadline)
@@ -207,8 +198,8 @@ struct FileTableView: View {
             appState.updateSorting(key: .name, ascending: sortAscending)
         }
     }
-    
-        // MARK: -
+
+    // MARK: -
     private func getSizeColSortableHeader() -> some View {
         return HStack(spacing: 4) {
             Text("Size").font(.subheadline)
@@ -229,8 +220,8 @@ struct FileTableView: View {
             appState.updateSorting(key: .size, ascending: sortAscending)
         }
     }
-    
-        // MARK: -
+
+    // MARK: -
     private func getDateSortableHeader() -> some View {
         return HStack(spacing: 4) {
             Text("Date").font(.subheadline)
@@ -251,8 +242,8 @@ struct FileTableView: View {
             appState.updateSorting(key: .date, ascending: sortAscending)
         }
     }
-    
-        // MARK: - Directory actions handler
+
+    // MARK: - Directory actions handler
     func handleDirectoryAction(_ action: DirectoryAction, for file: CustomFile) {
         log.debug(#function + " for \(file.pathStr)")
         switch action {
@@ -278,8 +269,8 @@ struct FileTableView: View {
                 log.debug("Action: properties → \(file.pathStr)")
         }
     }
-    
-        // MARK: - Sorting comparator extracted to help the type-checker
+
+    // MARK: - Sorting comparator extracted to help the type-checker
     func compare(_ a: CustomFile, _ b: CustomFile) -> Bool {
         let aIsFolder = a.isDirectory || a.isSymbolicDirectory
         let bIsFolder = b.isDirectory || b.isSymbolicDirectory
@@ -288,13 +279,13 @@ struct FileTableView: View {
             case .name:
                 let cmp = a.nameStr.localizedCaseInsensitiveCompare(b.nameStr)
                 return sortAscending ? (cmp == .orderedAscending) : (cmp == .orderedDescending)
-                
+
             case .size:
                 let lhs: Int64 = a.sizeInBytes
                 let rhs: Int64 = b.sizeInBytes
                 if lhs != rhs { return sortAscending ? (lhs < rhs) : (lhs > rhs) }
                 return a.nameStr.localizedCaseInsensitiveCompare(b.nameStr) == .orderedAscending
-                
+
             case .date:
                 let lhs = a.modifiedDate ?? Date.distantPast
                 let rhs = b.modifiedDate ?? Date.distantPast
@@ -302,5 +293,5 @@ struct FileTableView: View {
                 return a.nameStr.localizedCaseInsensitiveCompare(b.nameStr) == .orderedAscending
         }
     }
-    
+
 }

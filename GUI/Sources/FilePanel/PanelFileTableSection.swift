@@ -40,9 +40,7 @@ struct PanelFileTableSection: View {
             TapGesture()
                 .onEnded {
                     isFocused = true
-                    appState.focusedPanel = panelSide
-                    onPanelTap(panelSide)
-                    log.debug("table tap (simultaneous) on side <<\(panelSide)>>")
+                    log.debug("table tap on side <<\(panelSide)>> (focus only; no appState focus change)")
                         // Ensure there is a visible selection only when none exists
                     if selectedID == nil, let first = files.first {
                         log.debug("Auto-select first row on tap for side <<\(panelSide)>>: \(first.nameStr)")
@@ -53,7 +51,7 @@ struct PanelFileTableSection: View {
         )
             // React to selection changes
         .onChange(of: selectedID, initial: false) { _, newValue in
-            appState.focusedPanel = panelSide
+            if appState.focusedPanel != panelSide { appState.focusedPanel = panelSide }
             log.debug("on onChange on table, side <<\(panelSide)>>")
             if let id = newValue, let file = files.first(where: { $0.id == id }) {
                 log.debug("Row selected: id=\(id) on side <<\(panelSide)>>")
@@ -67,7 +65,7 @@ struct PanelFileTableSection: View {
         }
             // Navigation with arrow keys — same as before
         .onMoveCommand { direction in
-            appState.focusedPanel = panelSide
+            if appState.focusedPanel != panelSide { appState.focusedPanel = panelSide }
             switch direction {
                 case .up,
                         .down:
@@ -82,31 +80,6 @@ struct PanelFileTableSection: View {
                     }
                 default:
                     log.debug("on onMoveCommand on table, side <<\(panelSide)>>")
-            }
-        }
-        .onChange(of: appState.focusedPanel, initial: false) { _, newSide in
-                // When this panel receives keyboard focus (e.g., via Tab), ensure a visible selection exists
-            guard newSide == panelSide else { return }
-            isFocused = true
-            if selectedID == nil, let first = files.first {
-                log.debug("Auto-select first row on focusedPanel change for side <<\(panelSide)>>: \(first.nameStr)")
-                selectedID = first.id
-                onSelect(first)
-            } else {
-                log.debug("focusedPanel change on <<\(panelSide)>> but selection already present: \(String(describing: selectedID))")
-            }
-        }
-        .onChange(of: isFocused, initial: false) { _, nowFocused in
-            log.debug("Panel focus state changed (FocusState) for <<\(panelSide)>>: \(nowFocused)")
-            if nowFocused {
-                appState.focusedPanel = panelSide
-                if selectedID == nil, let first = files.first {
-                    log.debug("FocusState gained, auto-select first on <<\(panelSide)>>: \(first.nameStr)")
-                    selectedID = first.id
-                    onSelect(first)
-                } else {
-                    log.debug("FocusState gained on <<\(panelSide)>>, selection exists: \(String(describing: selectedID))")
-                }
             }
         }
         .animation(nil, value: selectedID)
