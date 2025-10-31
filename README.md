@@ -8,7 +8,7 @@
 </div>
 
 
-> 💡 ***If you are only interested in the source code implementation of this app, you can explore it directly here:***  
+> 💡 ***If you are only interested in the source code implementation of this app, you can explore it directly here:***
 > <span style="color:#8B0000; font-weight:bold;">👉 [MiMiNavigator / GUI / Sources](https://github.com/senatov/MiMiNavigator/tree/master/GUI/Sources)</span>
 
 
@@ -118,7 +118,7 @@ This project is still under active development ( NOT READY YET  per the README) 
 
 - macOS 26 or later
 - Swift 6.2
-- Xcode 26.1 beta 
+- Xcode 26.1 beta
 
 
 ---
@@ -187,37 +187,51 @@ This project is still under active development ( NOT READY YET  per the README) 
 ## Recent Changes
 ```sh
 
-* 84637c5 - Senatov  (HEAD -> master, origin/master, origin/HEAD, origin/Error_Fix, Error_Fix) fixed panel focus (7 minutes ago, 2025-10-28 16:07:48 +0100)
-* 0b3f040 - Senatov  focus repaired (8 minutes ago, 2025-10-28 16:06:55 +0100)
-* c7befc0 - Senatov  next fix (24 minutes ago, 2025-10-28 15:50:39 +0100)
-* 644c56a - Senatov  nex fix (50 minutes ago, 2025-10-28 15:24:44 +0100)
-* d47eef1 - Senatov  log fix (4 hours ago, 2025-10-28 11:47:03 +0100)
-* 9e9d0e2 - Senatov  wrong jump on Top of List - fixed (2 days ago, 2025-10-26 21:31:21 +0100)
-* 5bf0ea5 - Senatov  R-Mouse mnu ,fix focus jump on down selection (2 days ago, 2025-10-26 19:15:22 +0100)
-* 602b0a9 - Senatov  logs, fix styles, macOS 26.1 liquid glass style (3 days ago, 2025-10-25 23:53:40 +0200)
-* 8df17a9 - Senatov  scweinkram (3 days ago, 2025-10-25 23:11:33 +0200)
-* a81a9b2 - Senatov  The left and right sides get mixed up when I click on “Navigation between favorites” — apparently it’s caused by favoritePopover() (3 days ago, 2025-10-25 19:20:38 +0200)
-* c5e6d9f - Senatov  security bookmarks (3 days ago, 2025-10-25 18:18:07 +0200)
-* ec7edfe - Senatov  UX Design fix (3 days ago, 2025-10-25 17:51:41 +0200)
-* d939f0f - Senatov  Excellent. Everything works! Navigation with mouse and Tab (3 days ago, 2025-10-25 15:07:54 +0200)
-* 169da9f - Senatov  save between fixies (works wrong) (4 days ago, 2025-10-24 17:08:55 +0200)
-* b8b8513 - Senatov  history ok. Но выделение строки и низ по-прежнему дерьмово провисает. (5 days ago, 2025-10-23 23:01:17 +0200)
-* 8491639 - Senatov  FileTableView   - err (5 days ago, 2025-10-23 20:03:08 +0200)
-* 2324bf2 - Senatov  error (5 days ago, 2025-10-23 19:04:14 +0200)
-* c6f9938 - Senatov  compillation error (5 days ago, 2025-10-23 18:41:21 +0200)
-* f2c227e - Senatov  build info (5 days ago, 2025-10-23 15:38:37 +0200)
-*   b9ac683 - Senatov  Merge branch 'check_popups_fix' (5 days ago, 2025-10-23 15:35:08 +0200)
-|\  
-| * 1fdce74 - Senatov  ok. Not tested yet! (5 days ago, 2025-10-23 15:29:09 +0200)
-| * 0492725 - Senatov  Fix popup on prozess. Selection focuser panel side in logs with "<< >>" (5 days ago, 2025-10-23 14:25:40 +0200)
-| * a087fa6 - Senatov  def. fixed before test (6 days ago, 2025-10-23 05:11:43 +0200)
-| * 9ba4e47 - Senatov  wrong (6 days ago, 2025-10-23 04:52:03 +0200)
-| * dce701f - Senatov  just try fix popup. Hasnt successfull. (7 days ago, 2025-10-21 21:20:07 +0200)
-* | 26b1be3 - Senatov  wrong (6 days ago, 2025-10-23 04:18:43 +0200)
-* | 46e4a71 - Senatov  colors, Styles - ok. Working on popup panel - not ok yet (6 days ago, 2025-10-22 14:24:08 +0200)
-* | a19d8bf - Senatov  fix deive popup. in process (7 days ago, 2025-10-22 00:35:38 +0200)
-* | 55a6778 - Senatov  something 2 Weeks old, don't know (7 days ago, 2025-10-21 17:05:02 +0200)
-|/  
+* 4aa1520 - Senatov  (HEAD -> master, origin/master, origin/HEAD) ok. tested (11 minutes ago, 2025-10-31 20:43:14 +0100)
+* 895c93c - Senatov  trottling DONE. tested ok (6 hours ago, 2025-10-31 14:53:51 +0100)
+*   c89deba - Senatov  merging (6 hours ago, 2025-10-31 14:44:18 +0100)
+|\
+| * 6e08dd8 - Senatov  (origin/Dua-MainPanel-correction, Dua-MainPanel-correction) temp: pre-rollback (7 hours ago, 2025-10-31 14:14:47 +0100)
+| * 441c2a3 - Senatov  rename TotalCommanderResizableView  to DuoFilePanelView (7 hours ago, 2025-10-31 14:09:31 +0100)
+| * 0a01186 - Senatov  fix4 (20 hours ago, 2025-10-31 01:22:16 +0100)
+| * a74d8f6 - Senatov  pre-build (25 hours ago, 2025-10-30 20:10:49 +0100)
+* | 1f383e1 - Senatov  (origin/advanced-but-tab-problem, advanced-but-tab-problem) temp: pre-rollback (25 hours ago, 2025-10-30 19:46:10 +0100)
+* | ca8bd18 - Senatov  (tag: tabbing-ok) rename on DuoFilePanelView (3 days ago, 2025-10-28 21:49:50 +0100)
+* | 5885b9a - Senatov  merge (3 days ago, 2025-10-28 21:39:27 +0100)
+|/
+* 2f3bf45 - Senatov  panel divider fixed. Test ok (3 days ago, 2025-10-28 21:05:10 +0100)
+* 21bea20 - Senatov  cosmetic (3 days ago, 2025-10-28 16:18:07 +0100)
+* 84637c5 - Senatov  (origin/Error_Fix, Error_Fix) fixed panel focus - just formatted (3 days ago, 2025-10-28 16:07:48 +0100)
+* 0b3f040 - Senatov  focus repaired (3 days ago, 2025-10-28 16:06:55 +0100)
+* c7befc0 - Senatov  next fix (3 days ago, 2025-10-28 15:50:39 +0100)
+* 644c56a - Senatov  nex fix (3 days ago, 2025-10-28 15:24:44 +0100)
+* d47eef1 - Senatov  log fix (3 days ago, 2025-10-28 11:47:03 +0100)
+* 9e9d0e2 - Senatov  wrong jump on Top of List - fixed (5 days ago, 2025-10-26 21:31:21 +0100)
+* 5bf0ea5 - Senatov  R-Mouse mnu ,fix focus jump on down selection (5 days ago, 2025-10-26 19:15:22 +0100)
+* 602b0a9 - Senatov  logs, fix styles, macOS 26.1 liquid glass style (6 days ago, 2025-10-25 23:53:40 +0200)
+* 8df17a9 - Senatov  scweinkram (6 days ago, 2025-10-25 23:11:33 +0200)
+* a81a9b2 - Senatov  The left and right sides get mixed up when I click on “Navigation between favorites” — apparently it’s caused by favoritePopover() (6 days ago, 2025-10-25 19:20:38 +0200)
+* c5e6d9f - Senatov  security bookmarks (6 days ago, 2025-10-25 18:18:07 +0200)
+* ec7edfe - Senatov  UX Design fix (6 days ago, 2025-10-25 17:51:41 +0200)
+* d939f0f - Senatov  Excellent. Everything works! Navigation with mouse and Tab (6 days ago, 2025-10-25 15:07:54 +0200)
+* 169da9f - Senatov  save between fixies (works wrong) (7 days ago, 2025-10-24 17:08:55 +0200)
+* b8b8513 - Senatov  history ok. Но выделение строки и низ по-прежнему дерьмово провисает. (8 days ago, 2025-10-23 23:01:17 +0200)
+* 8491639 - Senatov  FileTableView   - err (8 days ago, 2025-10-23 20:03:08 +0200)
+* 2324bf2 - Senatov  error (8 days ago, 2025-10-23 19:04:14 +0200)
+* c6f9938 - Senatov  compillation error (8 days ago, 2025-10-23 18:41:21 +0200)
+* f2c227e - Senatov  build info (8 days ago, 2025-10-23 15:38:37 +0200)
+*   b9ac683 - Senatov  Merge branch 'check_popups_fix' (8 days ago, 2025-10-23 15:35:08 +0200)
+|\
+| * 1fdce74 - Senatov  ok. Not tested yet! (8 days ago, 2025-10-23 15:29:09 +0200)
+| * 0492725 - Senatov  Fix popup on prozess. Selection focuser panel side in logs with "<< >>" (8 days ago, 2025-10-23 14:25:40 +0200)
+| * a087fa6 - Senatov  def. fixed before test (9 days ago, 2025-10-23 05:11:43 +0200)
+| * 9ba4e47 - Senatov  wrong (9 days ago, 2025-10-23 04:52:03 +0200)
+| * dce701f - Senatov  just try fix popup. Hasnt successfull. (10 days ago, 2025-10-21 21:20:07 +0200)
+* | 26b1be3 - Senatov  wrong (9 days ago, 2025-10-23 04:18:43 +0200)
+* | 46e4a71 - Senatov  colors, Styles - ok. Working on popup panel - not ok yet (9 days ago, 2025-10-22 14:24:08 +0200)
+* | a19d8bf - Senatov  fix deive popup. in process (10 days ago, 2025-10-22 00:35:38 +0200)
+* | 55a6778 - Senatov  something 2 Weeks old, don't know (10 days ago, 2025-10-21 17:05:02 +0200)
+|/
 * e5671b8 - Senatov  UIViewRepresentable was need only f. SwiftUI 5 (3 weeks ago, 2025-10-09 18:34:33 +0200)
 * 577fd9f - Senatov  opening ok. Ugly popup fav. self w. ugly closed functional err. (3 weeks ago, 2025-10-09 15:18:52 +0200)
 * 8661332 - Senatov  renaming. Tests OK (3 weeks ago, 2025-10-09 14:53:05 +0200)
@@ -232,24 +246,17 @@ This project is still under active development ( NOT READY YET  per the README) 
 * db78b41 - Senatov  The "Tab" System hook works (4 weeks ago, 2025-10-01 19:31:44 +0200)
 * 78bfb90 - Senatov  big blue focus frame fixed (4 weeks ago, 2025-10-01 01:42:59 +0200)
 * 012a850 - Senatov  toogle panel fix (4 weeks ago, 2025-09-30 20:57:57 +0200)
-* 75cb07f - Senatov  cnhg logging (4 weeks ago, 2025-09-28 22:53:12 +0200)
-* 63e65ed - Senatov  Err. on Tab - not fixed (4 weeks ago, 2025-09-28 18:13:24 +0200)
-* d9c31f9 - Senatov  new hist. collection package, panels navigation I + fix sel. history file (4 weeks ago, 2025-09-28 14:41:41 +0200)
-*   897352e - Senatov  Merge branch 'new_fix' (4 weeks ago, 2025-09-28 14:27:17 +0200)
-|\  
-| * aff10ad - Senatov  Tab not works, up/down works so-so. Shit! (4 weeks ago, 2025-09-28 14:22:08 +0200)
-| | * cbaf596 - Senatov  (refs/stash) On master: just repair prj func. bugs (4 weeks ago, 2025-09-28 14:26:45 +0200)
-| |/| 
-|/| | 
-| | * 7a30f4c - Senatov  index on master: 07160d1 "selection" w. mouse & Tab on FilePanels (4 weeks ago, 2025-09-28 14:26:45 +0200)
-| |/  
-|/|   
-* | 07160d1 - Senatov  "selection" w. mouse & Tab on FilePanels (5 weeks ago, 2025-09-24 17:05:36 +0200)
-|/  
-* 1c8a5de - Senatov  paths navigation / panel change (5 weeks ago, 2025-09-23 20:45:13 +0200)
-* b1c5d72 - Senatov  optimize it (5 weeks ago, 2025-09-23 10:50:58 +0200)
-* eeafe2b - Senatov  optimize (5 weeks ago, 2025-09-23 10:47:13 +0200)
-* c2271b8 - Senatov  (tag: invisible) tmp (5 weeks ago, 2025-09-23 03:21:20 +0200)
+* 75cb07f - Senatov  cnhg logging (5 weeks ago, 2025-09-28 22:53:12 +0200)
+* 63e65ed - Senatov  Err. on Tab - not fixed (5 weeks ago, 2025-09-28 18:13:24 +0200)
+* d9c31f9 - Senatov  new hist. collection package, panels navigation I + fix sel. history file (5 weeks ago, 2025-09-28 14:41:41 +0200)
+*   897352e - Senatov  Merge branch 'new_fix' (5 weeks ago, 2025-09-28 14:27:17 +0200)
+|\
+| * aff10ad - Senatov  Tab not works, up/down works so-so. Shit! (5 weeks ago, 2025-09-28 14:22:08 +0200)
+| | * cbaf596 - Senatov  (refs/stash) On master: just repair prj func. bugs (5 weeks ago, 2025-09-28 14:26:45 +0200)
+| |/|
+|/| |
+:
+
 
 ```
 
@@ -258,7 +265,7 @@ This project is still under active development ( NOT READY YET  per the README) 
 ---
  ##  Related Links
 
-- [(NOT READY YET, still under Development)](#not-ready-yet-under-development----)
+- [(NOT READY YET, still under Development)](#not-ready-yet-still-under-development)
 - [Overview](#overview)
   - [General structure](#general-structure)
   - [Important aspects](#important-aspects)
