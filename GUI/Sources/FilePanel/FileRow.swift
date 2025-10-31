@@ -1,21 +1,21 @@
-    //
-    //  FileRow.swift
-    //  MiMiNavigator
-    //
-    //  Created by Iakov Senatov on 23.10.2025.
-    //  Copyright © 2025 Senatov. All rights reserved.
-    //
+//
+//  FileRow.swift
+//  MiMiNavigator
+//
+//  Created by Iakov Senatov on 23.10.2025.
+//  Copyright © 2025 Senatov. All rights reserved.
+//
 
 import SwiftUI
 
-    // MARK: - Equatable wrapper to avoid unnecessary recomputation on divider drags
+// MARK: - Equatable wrapper to avoid unnecessary recomputation on divider drags
 private struct EquatableView<Value: Hashable, Content: View>: View {
     let value: Value
     let content: () -> Content
     @MainActor var body: some View { content().id(value) }
 }
 
-    // MARK: - Lightweight row view to reduce type-checker complexity
+// MARK: - Lightweight row view to reduce type-checker complexity
 struct FileRow: View {
     let index: Int
     let file: CustomFile
@@ -25,24 +25,24 @@ struct FileRow: View {
     let onFileAction: (FileAction, CustomFile) -> Void
     let onDirectoryAction: (DirectoryAction, CustomFile) -> Void
     @EnvironmentObject var appState: AppState
-    
+
     var body: some View {
         EquatableView(value: file.id.hashValue ^ (isSelected ? 1 : 0)) {
-                // Zebra background stripes (Finder-like)
+            // Zebra background stripes (Finder-like)
             ZStack(alignment: .leading) {
                 let zebra = index.isMultiple(of: 2) ? Color.white : Color.gray.opacity(0.08)
                 zebra.allowsHitTesting(false)
-                
+
                 if isSelected {
                     RoundedRectangle(cornerRadius: 6, style: .continuous)
-                        .fill(FilePanelStyle.yellowSelRowFill) // pale yellow per spec
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 6, style: .continuous)
-                                .stroke(FilePanelStyle.blueSymlinkDirNameColor, lineWidth: FilePanelStyle.selectedBorderWidth)
-                        )
-                        .allowsHitTesting(false)
+                    .fill(FilePanelStyle.yellowSelRowFill) // pale yellow per spec
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 6, style: .continuous)
+                        .stroke(FilePanelStyle.blueSymlinkDirNameColor, lineWidth: FilePanelStyle.selectedBorderWidth)
+                    )
+                    .allowsHitTesting(false)
                 }
-                
+
                 rowContent
             }
         }
@@ -52,12 +52,12 @@ struct FileRow: View {
         .help(makeHelpTooltip())
         .simultaneousGesture(
             TapGesture()
-                .onEnded {
-                    if Int.random(in: 0..<6) == 0 { // sample roughly 1/6 taps to reduce IO
-                        log.debug("Row tap → index=\(index) name=\(file.nameStr) id=\(file.id) side=<<\(panelSide)>>")
-                    }
-                    onSelect(file)
+            .onEnded {
+                if Int.random(in: 0..<6) == 0 { // sample roughly 1/6 taps to reduce IO
+                    log.debug("Row tap → index=\(index) name=\(file.nameStr) id=\(file.id) side=<<\(panelSide)>>")
                 }
+                onSelect(file)
+            }
         )
         .animation(nil, value: isSelected)
         .transaction { txn in
@@ -71,13 +71,13 @@ struct FileRow: View {
         }
         .id("\(panelSide)_\(String(describing: file.id))")
     }
-    
-        // MARK: - Context menu builder to simplify type-checking
+
+    // MARK: - Context menu builder to simplify type-checking
     @ViewBuilder
     func menuContent(
-        for file: CustomFile,
-        onFileAction: @escaping (FileAction, CustomFile) -> Void,
-        onDirectoryAction: @escaping (DirectoryAction, CustomFile) -> Void
+    for file: CustomFile,
+    onFileAction: @escaping (FileAction, CustomFile) -> Void,
+    onDirectoryAction: @escaping (DirectoryAction, CustomFile) -> Void
     ) -> some View {
         if file.isDirectory {
             DirectoryContextMenu(file: file) { action in
@@ -89,37 +89,37 @@ struct FileRow: View {
             }
         }
     }
-    
-        // MARK: - Extracted row content
+
+    // MARK: - Extracted row content
     private var rowContent: some View {
         HStack(alignment: .center, spacing: 8) {
-                // Name column (expands)
+            // Name column (expands)
             FileRowView(file: file, panelSide: panelSide)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                // vertical separator
+            .frame(maxWidth: .infinity, alignment: .leading)
+            // vertical separator
             Rectangle()
-                .frame(width: 1)
-                .foregroundStyle(Color(nsColor: .separatorColor))
-                .padding(.vertical, 2)
-                // Size column (here showing type string as in original)
+            .frame(width: 1)
+            .foregroundStyle(Color(nsColor: .separatorColor))
+            .padding(.vertical, 2)
+            // Size column (here showing type string as in original)
             Text(file.fileObjTypEnum)
-                .foregroundStyle(.secondary)
-                .frame(width: FilePanelStyle.sizeColumnWidth, alignment: .leading)
-                // vertical separator
+            .foregroundStyle(.secondary)
+            .frame(width: FilePanelStyle.sizeColumnWidth, alignment: .leading)
+            // vertical separator
             Rectangle()
-                .frame(width: 1)
-                .foregroundStyle(Color(nsColor: .separatorColor))
-                .padding(.vertical, 2)
-                // Date column
+            .frame(width: 1)
+            .foregroundStyle(Color(nsColor: .separatorColor))
+            .padding(.vertical, 2)
+            // Date column
             Text(file.modifiedDateFormatted)
-                .foregroundStyle(.tertiary)
-                .frame(width: FilePanelStyle.modifiedColumnWidth + 10, alignment: .leading)
+            .foregroundStyle(.tertiary)
+            .frame(width: FilePanelStyle.modifiedColumnWidth + 10, alignment: .leading)
         }
         .padding(.vertical, 2)
         .padding(.horizontal, 6)
     }
-    
-        // MARK: - Tooltip helper
+
+    // MARK: - Tooltip helper
     private func makeHelpTooltip() -> String {
         var details = ""
         if file.isDirectory {
