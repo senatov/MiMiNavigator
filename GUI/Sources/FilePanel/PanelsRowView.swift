@@ -8,17 +8,9 @@
 import AppKit
 import SwiftUI
 
-    // Lightweight clamp helper for percentages and other comparables
-extension Comparable {
-    fileprivate func clamped(to limits: ClosedRange<Self>) -> Self {
-        min(max(self, limits.lowerBound), limits.upperBound)
-    }
-}
-
     // MARK: - Main view containing two file panels and a draggable divider.
 struct PanelsRowView: View {
     @EnvironmentObject var appState: AppState
-    
         // External state
     @Binding var leftPanelWidth: CGFloat
     let geometry: GeometryProxy
@@ -148,7 +140,6 @@ struct PanelsRowView: View {
         }
         .contentShape(Rectangle())
         .onHover { inside in
-                // Set appropriate cursor when hovering over the divider
             if inside {
                 NSCursor.resizeLeftRight.set()
             } else {
@@ -160,18 +151,18 @@ struct PanelsRowView: View {
                 .onChanged { value in
                     if !isDividerDragging { isDividerDragging = true }
                     if dragStartWidth.isNaN { dragStartWidth = leftPanelWidth }
-                    
                     let proposed = dragStartWidth + value.translation.width
-                    let clamped = max(0, min(proposed, geometry.size.width))
+                    let minW: CGFloat = 80
+                    let clamped = max(minW, min(proposed, geometry.size.width - minW))
                     let scale = NSScreen.main?.backingScaleFactor ?? 2.0
                     let snapped = (clamped * scale).rounded() / scale
-                    
-                    var t = Transaction(); t.disablesAnimations = true
+                    var t = Transaction()
+                    t.disablesAnimations = true
                     withTransaction(t) {
-                        if abs(snapped - leftPanelWidth) >= 0.5 { // smoother tracking, avoid subpixel churn
+                        if abs(snapped - leftPanelWidth) >= 0.5 {  // smoother tracking, avoid subpixel churn
                             leftPanelWidth = snapped
                             lastAppliedWidth = snapped
-                            if Int(snapped) % 8 == 0 { // log less often to reduce IO pauses
+                            if Int(snapped) % 8 == 0 {  // log less often to reduce IO pauses
                                 log.debug("Divider drag width → \(Int(snapped))/\(Int(geometry.size.width))")
                             }
                         }
@@ -179,15 +170,17 @@ struct PanelsRowView: View {
                     
                         // Throttle tooltip updates to reduce layout churn
                     let delta = abs((lastTooltipLeft.isNaN ? -9999 : lastTooltipLeft) - snapped)
-                    if delta >= 2 { // update every ~2pt only
+                    if delta >= 3 {  // update every ~3pt only
+                        log.debug("Divider drag tooltip update at width=\(Int(snapped)) totalW=\(Int(geometry.size.width))")
                         lastTooltipLeft = snapped
                         let percent = Int((snapped / max(geometry.size.width, 1)) * 100).clamped(to: 0...100)
                         tooltipText = "\(percent)%"
-                        tooltipPosition = CGPoint(x: snapped + 90, y: max(34, value.location.y - 90))
+                        tooltipPosition = CGPoint(x: snapped + 120, y: max(34, value.location.y - 70))
                         isDividerTooltipVisible = true
                     }
                 }
                 .onEnded { _ in
+                    log.debug("Divider drag ended at width=\(Int(lastAppliedWidth)) totalW=\(Int(geometry.size.width))")
                     var t = Transaction()
                     t.disablesAnimations = true
                     withTransaction(t) {
@@ -200,6 +193,7 @@ struct PanelsRowView: View {
                 }
         )
         .onTapGesture(count: 2) {
+            log.debug("Divider double-click detected")
             let half = geometry.size.width / 2
             var t = Transaction()
             t.disablesAnimations = true
@@ -207,7 +201,7 @@ struct PanelsRowView: View {
                 leftPanelWidth = half
             }
             tooltipText = "50%"
-            tooltipPosition = CGPoint(x: half + 52, y: 34)
+            tooltipPosition = CGPoint(x: half + 120, y: 46)
             isDividerTooltipVisible = true
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
                 isDividerTooltipVisible = false
@@ -226,29 +220,35 @@ struct PanelsRowView: View {
                     cornerRadius: 14,
                     tailOffset: .init(x: -10, y: 12)
                 )
-                .fill(Color.yellow.opacity(0.14))
+                .fill(Color(nsColor: NSColor.systemYellow.withAlphaComponent(0.18)))
                 .overlay(
                     SpeechBubble(
                         tailSize: CGSize(width: 14, height: 10),
                         cornerRadius: 14,
                         tailOffset: .init(x: -10, y: 12)
                     )
-                    .stroke(Color.primary.opacity(0.18), lineWidth: 0.8)
+                    .stroke(Color.primary.opacity(0.25), lineWidth: 0.8)
                 )
                 .frame(width: 120, height: 60)
                 .overlay(
                     Text(tooltipText)
-                        .font(.system(size: 24, weight: .medium, design: .rounded))
+                        .font(.system(size: 19, weight: .regular, design: .rounded))
                         .monospacedDigit()
                         .foregroundStyle(Color(.sRGB, red: 0.08, green: 0.18, blue: 0.45, opacity: 1.0))
                 )
                 .shadow(radius: 10, x: 0, y: 3)
                 .position(tooltipPosition)
                 .transition(.opacity)
-                .opacity(0.98)
                 .zIndex(1000)
                 .allowsHitTesting(false)
             }
         }
+    }
+}
+
+    // Lightweight clamp helper for percentages and other comparables
+extension Comparable {
+    fileprivate func clamped(to limits: ClosedRange<Self>) -> Self {
+        min(max(self, limits.lowerBound), limits.upperBound)
     }
 }
