@@ -8,6 +8,13 @@
 import AppKit
 import SwiftUI
 
+    // MARK: - Stable identity wrapper to prevent recomputation without Equatable/actor crossing
+private struct StableBy<Key: Hashable, Content: View>: View {
+    let key: Key
+    let content: () -> Content
+    @MainActor var body: some View { content().id(key) }
+}
+
     // MARK: - FilePanelView
 struct FilePanelView: View {
     @EnvironmentObject var appState: AppState
@@ -16,6 +23,9 @@ struct FilePanelView: View {
     @Binding var leftPanelWidth: CGFloat
         /// Called when user clicks anywhere inside the panel (left/right)
     let onPanelTap: (PanelSide) -> Void
+    
+    @State private var lastLoggedWidth: CGFloat = -1
+    @State private var lastBodyLogTime: TimeInterval = 0
     
         // MARK: - compound Variable: Bridge binding to AppState-selected file for this panel
     private var selectedIDBinding: Binding<CustomFile.ID?> {
@@ -68,49 +78,73 @@ struct FilePanelView: View {
         // MARK: - View
     var body: some View {
         let currentPath = appState.pathURL(for: viewModel.panelSide)
-        log.debug(#function + " for side <<\(viewModel.panelSide)>> with path: \(currentPath?.path ?? "nil")")
+        let now = ProcessInfo.processInfo.systemUptime
+        if now - lastBodyLogTime >= 0.25 {  // throttle body logs to max ~4/sec
+            lastBodyLogTime = now
+            log.debug(#function + " side=<<\(viewModel.panelSide)>> path=\(currentPath?.path ?? "nil")")
+        }
         return VStack {
-            PanelBreadcrumbSection(
-                currentPath: currentPath,
-                onPathChange: { newValue in
-                    viewModel.handlePathChange(to: newValue)
-                }
-            )
-            PanelFileTableSection(
-                files: viewModel.sortedFiles,
-                selectedID: selectedIDBinding,
-                panelSide: viewModel.panelSide,
-                onPanelTap: onPanelTap,
-                onSelect: { file in
-                        // Centralized selection; will clear the other panel via ViewModel.select(_:)
-                    viewModel.select(file)
-                }
-            )
+            StableBy(key: currentPath?.path ?? "") {
+                PanelBreadcrumbSection(
+                    currentPath: currentPath,
+                    onPathChange: { newValue in
+                        viewModel.handlePathChange(to: newValue)
+                    }
+                )
+            }
+            StableBy(key: (currentPath?.path ?? "") + "|" + String(appState.focusedPanel == viewModel.panelSide)) {
+                PanelFileTableSection(
+                    files: viewModel.sortedFiles,
+                    selectedID: selectedIDBinding,
+                    panelSide: viewModel.panelSide,
+                    onPanelTap: onPanelTap,
+                    onSelect: { file in
+                            // Centralized selection; will clear the other panel via ViewModel.select(_:)
+                        viewModel.select(file)
+                    }
+                )
+            }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             .background(
                 GeometryReader { gp in
                     Color.clear
-                        .onAppear { log.debug("PFT.section appear → size=\(Int(gp.size.width))x\(Int(gp.size.height)) on <<\(viewModel.panelSide)>>") }
-                        .onChange(of: gp.size) { log.debug("PFT.section size changed → \(Int(gp.size.width))x\(Int(gp.size.height)) on <<\(viewModel.panelSide)>>") }
+                        .onAppear {
+                            log.debug(
+                                "PFT.section appear → size=\(Int(gp.size.width))x\(Int(gp.size.height)) on <<\(viewModel.panelSide)>>")
+                        }
+                        .onChange(of: gp.size) {
+                            let now = ProcessInfo.processInfo.systemUptime
+                            if now - lastBodyLogTime >= 0.25 {
+                                lastBodyLogTime = now
+                                log.debug(
+                                    "PFT.section size changed → \(Int(gp.size.width))x\(Int(gp.size.height)) on <<\(viewModel.panelSide)>>"
+                                )
+                            }
+                        }
                 }
             )
         }
         .padding(.horizontal, DesignTokens.grid)
         .padding(.vertical, DesignTokens.grid - 2)
         .background(
-            RoundedRectangle(cornerRadius: DesignTokens.radius, style: .continuous)
-                .fill(DesignTokens.card)
+            ZStack {
+                RoundedRectangle(cornerRadius: DesignTokens.radius, style: .continuous)
+                    .fill(DesignTokens.card)
+                RoundedRectangle(cornerRadius: DesignTokens.radius, style: .continuous)
+                    .stroke(DesignTokens.separator.opacity(0.35), lineWidth: 1)
+            }
+                .drawingGroup() // flatten vector ops for cheaper compositing during drags
         )
-        .overlay(
-            RoundedRectangle(cornerRadius: DesignTokens.radius, style: .continuous)
-                .stroke(DesignTokens.separator.opacity(0.35), lineWidth: 1)
-        )
-        .contentShape(Rectangle())
         .frame(
             width: viewModel.panelSide == .left
             ? (leftPanelWidth > 0 ? leftPanelWidth : geometry.size.width / 2)
             : nil
         )
+        .animation(nil, value: leftPanelWidth)
+        .transaction { tx in
+            tx.disablesAnimations = true
+            tx.animation = nil
+        }
         .background(DesignTokens.panelBg)
         .controlSize(.regular)
         .simultaneousGesture(

@@ -8,6 +8,13 @@
 
 import SwiftUI
 
+    // MARK: - Equatable wrapper to avoid unnecessary recomputation on divider drags
+private struct EquatableView<Value: Hashable, Content: View>: View {
+    let value: Value
+    let content: () -> Content
+    @MainActor var body: some View { content().id(value) }
+}
+
     // MARK: - Lightweight row view to reduce type-checker complexity
 struct FileRow: View {
     let index: Int
@@ -20,31 +27,35 @@ struct FileRow: View {
     @EnvironmentObject var appState: AppState
     
     var body: some View {
-            // Zebra background stripes (Finder-like)
-        ZStack(alignment: .leading) {
-            let zebra = index.isMultiple(of: 2) ? Color.white : Color.gray.opacity(0.08)
-            zebra.allowsHitTesting(false)
-            
-            if isSelected {
-                RoundedRectangle(cornerRadius: 6, style: .continuous)
-                    .fill(FilePanelStyle.yellowSelRowFill) // pale yellow per spec
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 6, style: .continuous)
-                            .stroke(FilePanelStyle.blueSymlinkDirNameColor, lineWidth: FilePanelStyle.selectedBorderWidth)
-                    )
-                    .allowsHitTesting(false)
+        EquatableView(value: file.id.hashValue ^ (isSelected ? 1 : 0)) {
+                // Zebra background stripes (Finder-like)
+            ZStack(alignment: .leading) {
+                let zebra = index.isMultiple(of: 2) ? Color.white : Color.gray.opacity(0.08)
+                zebra.allowsHitTesting(false)
+                
+                if isSelected {
+                    RoundedRectangle(cornerRadius: 6, style: .continuous)
+                        .fill(FilePanelStyle.yellowSelRowFill) // pale yellow per spec
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                .stroke(FilePanelStyle.blueSymlinkDirNameColor, lineWidth: FilePanelStyle.selectedBorderWidth)
+                        )
+                        .allowsHitTesting(false)
+                }
+                
+                rowContent
             }
-            
-            rowContent
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .contentShape(Rectangle())
+        .drawingGroup()
         .help(makeHelpTooltip())
         .simultaneousGesture(
             TapGesture()
                 .onEnded {
-                        // Centralized selection and focus without stealing header/row gestures
-                    log.debug("Row tap → index=\(index) name=\(file.nameStr) id=\(file.id) side=<<\(panelSide)>>")
+                    if Int.random(in: 0..<6) == 0 { // sample roughly 1/6 taps to reduce IO
+                        log.debug("Row tap → index=\(index) name=\(file.nameStr) id=\(file.id) side=<<\(panelSide)>>")
+                    }
                     onSelect(file)
                 }
         )
@@ -86,13 +97,19 @@ struct FileRow: View {
             FileRowView(file: file, panelSide: panelSide)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 // vertical separator
-            Divider().padding(.vertical, 2)
+            Rectangle()
+                .frame(width: 1)
+                .foregroundStyle(Color(nsColor: .separatorColor))
+                .padding(.vertical, 2)
                 // Size column (here showing type string as in original)
             Text(file.fileObjTypEnum)
                 .foregroundStyle(.secondary)
                 .frame(width: FilePanelStyle.sizeColumnWidth, alignment: .leading)
                 // vertical separator
-            Divider().padding(.vertical, 2)
+            Rectangle()
+                .frame(width: 1)
+                .foregroundStyle(Color(nsColor: .separatorColor))
+                .padding(.vertical, 2)
                 // Date column
             Text(file.modifiedDateFormatted)
                 .foregroundStyle(.tertiary)
@@ -102,17 +119,6 @@ struct FileRow: View {
         .padding(.horizontal, 6)
     }
     
-        // MARK: - Highlight helper (forward to the one in FileTableView through a local copy)
-    @ViewBuilder
-    private func highlightedSquare(_ isLineSelected: Bool) -> some View {
-        if isLineSelected {
-            RoundedRectangle(cornerRadius: 6, style: .continuous)
-                .inset(by: 0.2)
-                .stroke(FilePanelStyle.blueSymlinkDirNameColor, lineWidth: FilePanelStyle.selectedBorderWidth)
-        } else {
-            EmptyView()
-        }
-    }
         // MARK: - Tooltip helper
     private func makeHelpTooltip() -> String {
         var details = ""
