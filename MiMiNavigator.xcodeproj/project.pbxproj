@@ -43,7 +43,6 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
-				Sources/BreadCrumbNav/.swift,
 				Tests/MiMiNavigatorTests/MiMiNavigatorTests.swift,
 				Tests/MiMiNavigatorUITests/MiMiNavigatorUITests.swift,
 				Tests/MiMiNavigatorUITests/MiMiNavigatorUITestsLaunchTests.swift,
@@ -67,22 +66,11 @@
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
-/* Begin PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
-		9717D1132EB43775004174E2 /* Exceptions for "Gui" folder in "Compile Sources" phase from "MiMiNavigator" target */ = {
-			isa = PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet;
-			buildPhase = 97AD1A2A2C624E020045C38D /* Sources */;
-			membershipExceptions = (
-				Sources/BreadCrumbNav/.swift,
-			);
-		};
-/* End PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
-
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		97E4E59E2E44A072001B4027 /* Gui */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
 				97E4E59F2E44A084001B4027 /* Exceptions for "Gui" folder in "MiMiNavigator" target */,
-				9717D1132EB43775004174E2 /* Exceptions for "Gui" folder in "Compile Sources" phase from "MiMiNavigator" target */,
 				97E4E5A02E44A084001B4027 /* Exceptions for "Gui" folder in "MiMiNavigatorTests" target */,
 				97E4E5A12E44A084001B4027 /* Exceptions for "Gui" folder in "MiMiNavigatorUITests" target */,
 			);
