@@ -1,5 +1,5 @@
 //
-//  TotalCommanderResizableView.swift
+//  DuoFilePanelView.swift
 //  MiMiNavigator
 //
 //  Created by Iakov Senatov on 26.04.2025.
@@ -10,7 +10,7 @@
 import AppKit
 import SwiftUI
 
-struct TotalCommanderResizableView: View {
+struct DuoFilePanelView: View {
     @EnvironmentObject var appState: AppState
     @State private var leftPanelWidth: CGFloat = 0
     @State private var keyMonitor: Any? = nil
