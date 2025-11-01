@@ -1,43 +1,43 @@
-    //
-    //  SpeechBubbleView.swift
-    //  MiMiNavigator
-    //
-    //  Created by Iakov Senatov on 31.10.2025.
-    //  Copyright © 2025 Senatov. All rights reserved.
-    //
+//
+//  SpeechBubbleView.swift
+//  MiMiNavigator
+//
+//  Created by Iakov Senatov on 31.10.2025.
+//  Copyright © 2025 Senatov. All rights reserved.
+//
 
 import Foundation
 import SwiftUI
 
-    // MARK: - Bubble view
+// MARK: - Bubble view
 
-    /// A stylable speech bubble view with configurable background, stroke, tail and content insets.
+/// A stylable speech bubble view with configurable background, stroke, tail and content insets.
 public struct SpeechBubbleView<Content: View>: View {
-        // Style
+    // Style
     public var background: Color
     public var strokeColor: Color
     public var strokeWidth: CGFloat
     public var shadowRadius: CGFloat
     public var shadowOffset: CGSize
-    
-        // Shape
+
+    // Shape
     public var cornerRadius: CGFloat
     public var tailLength: CGFloat
     public var tailWidth: CGFloat
     public var tailDirection: SpeechBubbleShape.Direction
     public var tailOffset: CGFloat
-    
-        // Content
+
+    // Content
     public var contentInsets: EdgeInsets
     @ViewBuilder public var content: () -> Content
-    
+
     public init(
-        background: Color = Color.white,
-        strokeColor: Color = Color.black.opacity(0.6),
+        background: Color = Color(#colorLiteral(red: 0.9995340705, green: 0.9802359024, blue: 0.9185159122, alpha: 1)),
+        strokeColor: Color = Color(#colorLiteral(red: 0.2392156863, green: 0.2901960784, blue: 0.8745098039, alpha: 1)),
         strokeWidth: CGFloat = 0.8,
-        shadowRadius: CGFloat = 10,
+        shadowRadius: CGFloat = 18,
         shadowOffset: CGSize = CGSize(width: 0, height: 3),
-        cornerRadius: CGFloat = 14,
+        cornerRadius: CGFloat = 18,
         tailLength: CGFloat = 36,
         tailWidth: CGFloat = 16,
         tailDirection: SpeechBubbleShape.Direction = .left,
@@ -58,7 +58,7 @@ public struct SpeechBubbleView<Content: View>: View {
         self.contentInsets = contentInsets
         self.content = content
     }
-    
+
     public var body: some View {
         let shape = SpeechBubbleShape(
             cornerRadius: cornerRadius,
@@ -67,10 +67,10 @@ public struct SpeechBubbleView<Content: View>: View {
             tailDirection: tailDirection,
             tailOffset: tailOffset
         )
-        
+
         ZStack {
             shape
-                .fill(background) // keep caller's alpha; defaults are opaque
+                .fill(background)  // keep caller's alpha; defaults are opaque
                 .overlay(
                     shape.stroke(strokeColor.opacity(0.9), lineWidth: strokeWidth * 1.2)
                         .shadow(color: .black.opacity(0.25), radius: 2, x: 1, y: 1)
@@ -78,43 +78,46 @@ public struct SpeechBubbleView<Content: View>: View {
             content()
                 .padding(contentInsetsForTail(base: contentInsets))
             Rectangle()
-                .fill(LinearGradient(colors: [Color.white.opacity(0.2), Color.clear], startPoint: .topLeading, endPoint: .bottomTrailing))
+                .fill(
+                    LinearGradient(
+                        colors: [Color.white.opacity(0.2), Color.clear], startPoint: .topLeading, endPoint: .bottomTrailing)
+                )
                 .clipShape(shape)
         }
         .shadow(radius: shadowRadius, x: shadowOffset.width, y: shadowOffset.height)
         .drawingGroup()  // keep edges crisp under scaling
     }
-    
-        // Adds extra padding on the tail side so content does not overlap the tail base.
+
+    // Adds extra padding on the tail side so content does not overlap the tail base.
     private func contentInsetsForTail(base: EdgeInsets) -> EdgeInsets {
         var i = base
         switch tailDirection {
             case .left: i.leading += tailLength * 0.6
             case .right: i.trailing += tailLength * 0.6
-            case .top: i.top += tailLength * 0.6
-            case .bottom: i.bottom += tailLength * 0.6
+            case .up: i.top += tailLength * 0.6
+            case .down: i.bottom += tailLength * 0.6
         }
         return i
     }
 }
 
-    // MARK: - Convenience initializers
+// MARK: - Convenience initializers
 extension SpeechBubbleView where Content == Text {
-        /// Convenience initializer for text content.
+    /// Convenience initializer for text content.
     public init(
         _ text: String,
         background: Color = Color.white,
         strokeColor: Color = Color.black.opacity(0.6),
         strokeWidth: CGFloat = 0.8,
-        shadowRadius: CGFloat = 10,
+        shadowRadius: CGFloat = 18,
         shadowOffset: CGSize = CGSize(width: 0, height: 3),
-        cornerRadius: CGFloat = 14,
+        cornerRadius: CGFloat = 18,
         tailLength: CGFloat = 36,
         tailWidth: CGFloat = 16,
         tailDirection: SpeechBubbleShape.Direction = .left,
         tailOffset: CGFloat = 0,
         textFont: Font = .custom("Arial", size: 18),
-        textColor: Color = Color(.sRGB, red: 0.08, green: 0.18, blue: 0.45, opacity: 1.0),
+        textColor: Color = Color(#colorLiteral(red: 0.2392156863, green: 0.2901960784, blue: 0.8745098039, alpha: 1)),
         contentInsets: EdgeInsets = EdgeInsets(top: 10, leading: 14, bottom: 10, trailing: 14)
     ) {
         self.init(

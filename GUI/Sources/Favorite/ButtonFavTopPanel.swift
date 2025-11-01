@@ -100,13 +100,15 @@ struct ButtonFavTopPanel: View {
         }) {
             if panelSide == .left {
                 Image(systemName: "sidebar.left")
-                    .renderingMode(.original)
+                    .symbolRenderingMode(.hierarchical)
+                    .foregroundStyle(.blue)
                     .foregroundColor(FilePanelStyle.dirNameColor)
                     .scaleEffect(CGSize(width: 0.9, height: 1.3), anchor: .leading)
                     .border(FilePanelStyle.fileNameColor)
             } else {
                 Image(systemName: "sidebar.right")
-                    .renderingMode(.original)
+                    .symbolRenderingMode(.hierarchical)
+                    .foregroundStyle(.blue)
                     .foregroundColor(FilePanelStyle.fileNameColor)
                     .scaleEffect(CGSize(width: 0.9, height: 1.3), anchor: .leading)
                     .border(FilePanelStyle.fileNameColor)
@@ -117,7 +119,7 @@ struct ButtonFavTopPanel: View {
         .popover(isPresented: $appState.showFavTreePopup, arrowEdge: .bottom) {
             favoritePopover(targetSide: appState.focusedPanel)
         }
-        .help("Navigation between favorites - \(String(describing: panelSide))")
+        .help("Navigation between favorites - << \(String(describing: panelSide))>>")
     }
 
     // MARK: -

@@ -56,10 +56,10 @@ import Foundation
     // MARK: - Centralized selection API
     /// Set selection for a given side and clear the opposite side. Also sets focusedPanel to `side`.
     @MainActor
-    func select(_ file: CustomFile, on side: PanelSide) {
-        log.debug(#function + " on: <<\(side)>>")
-        focusedPanel = side
-        switch side {
+    func select(_ file: CustomFile, on panelSide: PanelSide) {
+        log.debug(#function + " on: <<\(panelSide)>>")
+        focusedPanel = panelSide
+        switch panelSide {
             case .left:
                 if selectedRightFile != nil { selectedRightFile = nil }
                 selectedLeftFile = file

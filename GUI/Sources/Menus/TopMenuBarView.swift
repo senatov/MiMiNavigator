@@ -16,7 +16,7 @@ struct TopMenuBarView: View {
         log.debug(#function)
         return ZStack(alignment: .top) {
                 // Glass-like background bar with a thin bottom separator (Figma/macOS 26)
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .fill(.ultraThinMaterial)
                 .frame(height: 36)
                 .overlay(alignment: .bottom) {
@@ -29,8 +29,8 @@ struct TopMenuBarView: View {
                         .frame(height: 0.5)
                         .blendMode(.plusLighter)
                 }
-                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                 // Existing menu row kept intact (structure/logic unchanged)
             HStack(spacing: 6) {
                 ForEach(menuData.dropLast()) { menu in
@@ -48,7 +48,7 @@ struct TopMenuBarView: View {
                             .padding(.horizontal, 10)
                             .padding(.vertical, 6)
                             .frame(minHeight: 26, alignment: .center)
-                            .contentShape(RoundedRectangle(cornerRadius: 6))
+                            .contentShape(RoundedRectangle(cornerRadius: 8))
                             .help("Open menu: '\(helpMenu.title)'")
                     }
                     .menuStyle(.borderlessButton)  // flat, menu-like appearance

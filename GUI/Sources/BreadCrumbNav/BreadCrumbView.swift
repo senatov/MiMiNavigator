@@ -53,7 +53,8 @@ struct BreadCrumbView: View {
     private func breadcrumbItem(index: Int) -> some View {
         if index > 0 {
             Image(systemName: "arrowtriangle.forward")
-                .renderingMode(.original)
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(.blue)
                 .foregroundColor(.secondary)
                 .shadow(color: .black.opacity(0.22), radius: 2, x: 1, y: 1)
                 .contrast(1.12)

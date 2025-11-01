@@ -78,12 +78,12 @@ actor DualDirectoryScanner {
             case .left:
                 let scanned = try await FileScanner.scan(url: URL(fileURLWithPath: appState.leftPath))
                 await updateScannedFiles(scanned, for: .left)
-                await updateFileList(currSide: .left, with: scanned)
+                await updateFileList(panelSide: .left, with: scanned)
 
             case .right:
                 let scanned = try await FileScanner.scan(url: URL(fileURLWithPath: appState.rightPath))
                 await updateScannedFiles(scanned, for: .right)
-                await updateFileList(currSide: .right, with: scanned)
+                await updateFileList(panelSide: .right, with: scanned)
             }
         }
         catch {
@@ -123,19 +123,19 @@ actor DualDirectoryScanner {
 
     @MainActor
     // MARK: - Updates the file list for the specified directory side
-    private func updateFileList(currSide: PanelSide, with files: [CustomFile]) async {
-        log.info("↪️ \(#function) [currSide: \(currSide)]")
+    private func updateFileList(panelSide: PanelSide, with files: [CustomFile]) async {
+        log.info("↪️ \(#function) [currSide: <<\(panelSide)>>]")
         guard let selectedEntity = appState.selectedDir.selectedFSEntity else {
-            log.warning("No selected FSEntity for \(currSide) side.")
+            log.warning("No selected FSEntity for <<\(panelSide)>> side.")
             return
         }
-        log.info("Updating selected dir: \(selectedEntity.pathStr) with \(files.count) files on \(currSide) side")
-        switch currSide {
+        log.info("Updating selected dir: \(selectedEntity.pathStr) with \(files.count) files on <<\(panelSide)>> side")
+        switch panelSide {
         case .left:
             await fileLst.updateLeftFiles(files)
         case .right:
             await fileLst.updateRightFiles(files)
         }
-        log.info("Finished updating \(currSide) directory.")
+        log.info("Finished updating <<\(panelSide)>> directory.")
     }
 }

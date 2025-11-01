@@ -37,7 +37,8 @@ struct MiMiNavigatorApp: App {
                 ToolbarItem(placement: .automatic) {
                     Button(action: { log.debug("Refresh button clicked") }) {
                         Image(systemName: "arrow.triangle.2.circlepath")
-                            .symbolRenderingMode(.multicolor)
+                            .symbolRenderingMode(.hierarchical)
+                            .foregroundStyle(.blue)
                             .font(.system(size: 13, weight: .semibold))
                             .help("Refresh")
                             .accessibilityLabel("Refresh")
@@ -49,7 +50,8 @@ struct MiMiNavigatorApp: App {
                 ToolbarItem(placement: .automatic) {
                     Button(action: { appState.revealLogFileInFinder() }) {
                         Image(systemName: "doc.text.magnifyingglass")
-                            .symbolRenderingMode(.multicolor)
+                            .symbolRenderingMode(.hierarchical)
+                            .foregroundStyle(.blue)
                             .font(.system(size: 13, weight: .semibold))
                             .help("Reveal log file in Finder")
                             .accessibilityLabel("Reveal log file in Finder")

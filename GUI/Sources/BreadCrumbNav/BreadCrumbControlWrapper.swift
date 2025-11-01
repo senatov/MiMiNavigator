@@ -94,7 +94,8 @@ struct BreadCrumbControlWrapper: View {
                 applyPathUpdate()
             } label: {
                 Image(systemName: "checkmark.circle.fill")
-                    .renderingMode(.original)
+                    .symbolRenderingMode(.hierarchical)
+                    .foregroundStyle(.blue)
                     .foregroundColor(.accentColor)
                     .symbolEffect(.pulse)
             }
@@ -103,7 +104,8 @@ struct BreadCrumbControlWrapper: View {
                 withAnimation { isEditing = false }
             } label: {
                 Image(systemName: "xmark.circle.fill")
-                    .renderingMode(.original)
+                    .symbolRenderingMode(.hierarchical)
+                    .foregroundStyle(.blue)
                     .foregroundColor(.gray.opacity(0.7))
                     .symbolEffect(.pulse)
             }

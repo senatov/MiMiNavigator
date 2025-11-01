@@ -6,35 +6,40 @@
     //  Copyright © 2025 Senatov. All rights reserved.
     //
 
-
     //
     //  SpeechBubbleView.swift
     //  Reusable speech bubble with a tail for tooltips/chat balloons
     //
-
 import SwiftUI
 
-    // MARK: - Tail shape
-
-    /// A speech bubble shape with a configurable tail.
+    /// Speech bubble with configurable tail direction and offset along the edge.
 public struct SpeechBubbleShape: Shape {
+    
     public enum Direction: Sendable {
-        case left, right, top, bottom
+        case up, down, left, right
     }
     
     public var cornerRadius: CGFloat
     public var tailLength: CGFloat
     public var tailWidth: CGFloat
     public var tailDirection: Direction
-        /// Offset along the edge in points (0 = centered on that edge).
+        /// Offset of the tail anchor along the edge where the tail sits.
+        /// For horizontal edges (up/down): measured from the left corner.
+        /// For vertical edges (left/right): measured from the top corner.
     public var tailOffset: CGFloat
     
+        // Animate tail offset smoothly
+    public var animatableData: CGFloat {
+        get { tailOffset }
+        set { tailOffset = newValue }
+    }
+    
     public init(
-        cornerRadius: CGFloat = 14,
-        tailLength: CGFloat = 36,     // longer tail by default
-        tailWidth: CGFloat = 16,
-        tailDirection: Direction = .left,
-        tailOffset: CGFloat = 0
+        cornerRadius: CGFloat = 12,
+        tailLength: CGFloat = 12,
+        tailWidth: CGFloat = 18,
+        tailDirection: Direction = .up,
+        tailOffset: CGFloat = 40
     ) {
         self.cornerRadius = cornerRadius
         self.tailLength = tailLength
@@ -44,56 +49,124 @@ public struct SpeechBubbleShape: Shape {
     }
     
     public func path(in rect: CGRect) -> Path {
-            // Base rounded rect
-        let bubbleRect = rect
-        var path = Path(roundedRect: bubbleRect, cornerRadius: cornerRadius)
-        
-            // Compute tail triangle points inside rect; caller should allocate enough space.
-        let halfTail = tailWidth / 2
-        
+            // Reserve space for the tail
+            // Body is the rounded rectangle area excluding the tail protrusion.
+        let body: CGRect
         switch tailDirection {
+            case .up:
+                    // Reserve space on top for the tail
+                body = CGRect(
+                    x: rect.minX,
+                    y: rect.minY + tailLength,
+                    width: rect.width,
+                    height: rect.height - tailLength
+                )
+            case .down:
+                    // Reserve space at bottom for the tail
+                body = CGRect(
+                    x: rect.minX,
+                    y: rect.minY,
+                    width: rect.width,
+                    height: rect.height - tailLength
+                )
             case .left:
-                    // Tail points outward to the left edge.
-                let midY = bubbleRect.midY + tailOffset
-                let baseTop = CGPoint(x: bubbleRect.minX + cornerRadius, y: max(bubbleRect.minY + cornerRadius, midY - halfTail))
-                let baseBot = CGPoint(x: bubbleRect.minX + cornerRadius, y: min(bubbleRect.maxY - cornerRadius, midY + halfTail))
-                let tip     = CGPoint(x: bubbleRect.minX - tailLength, y: midY)
-                path.move(to: baseTop)
-                path.addLine(to: tip)
-                path.addLine(to: baseBot)
-                path.closeSubpath()
-                
+                    // Reserve space at left for the tail
+                body = CGRect(
+                    x: rect.minX + tailLength,
+                    y: rect.minY,
+                    width: rect.width - tailLength,
+                    height: rect.height
+                )
             case .right:
-                let midY = bubbleRect.midY + tailOffset
-                let baseTop = CGPoint(x: bubbleRect.maxX - cornerRadius, y: max(bubbleRect.minY + cornerRadius, midY - halfTail))
-                let baseBot = CGPoint(x: bubbleRect.maxX - cornerRadius, y: min(bubbleRect.maxY - cornerRadius, midY + halfTail))
-                let tip     = CGPoint(x: bubbleRect.maxX + tailLength, y: midY)
-                path.move(to: baseTop)
-                path.addLine(to: tip)
-                path.addLine(to: baseBot)
-                path.closeSubpath()
-                
-            case .top:
-                let midX = bubbleRect.midX + tailOffset
-                let baseLeft = CGPoint(x: max(bubbleRect.minX + cornerRadius, midX - halfTail), y: bubbleRect.minY + cornerRadius)
-                let baseRight = CGPoint(x: min(bubbleRect.maxX - cornerRadius, midX + halfTail), y: bubbleRect.minY + cornerRadius)
-                let tip       = CGPoint(x: midX, y: bubbleRect.minY - tailLength)
-                path.move(to: baseLeft)
-                path.addLine(to: tip)
-                path.addLine(to: baseRight)
-                path.closeSubpath()
-                
-            case .bottom:
-                let midX = bubbleRect.midX + tailOffset
-                let baseLeft = CGPoint(x: max(bubbleRect.minX + cornerRadius, midX - halfTail), y: bubbleRect.maxY - cornerRadius)
-                let baseRight = CGPoint(x: min(bubbleRect.maxX - cornerRadius, midX + halfTail), y: bubbleRect.maxY - cornerRadius)
-                let tip       = CGPoint(x: midX, y: bubbleRect.maxY + tailLength)
-                path.move(to: baseLeft)
-                path.addLine(to: tip)
-                path.addLine(to: baseRight)
-                path.closeSubpath()
+                    // Reserve space at right for the tail
+                body = CGRect(
+                    x: rect.minX,
+                    y: rect.minY,
+                    width: rect.width - tailLength,
+                    height: rect.height
+                )
         }
         
-        return path
+        let r = min(cornerRadius, min(body.width, body.height) * 0.5)
+        
+            // Compute tail base center along the chosen edge and clamp to stay inside rounded corners.
+        let halfBase = tailWidth * 0.5
+        
+            // Helpers to clamp along top/bottom (horizontal) or left/right (vertical) edges
+        func clampedX(for raw: CGFloat) -> CGFloat {
+            let minX = body.minX + r + halfBase
+            let maxX = body.maxX - r - halfBase
+            return max(minX, min(maxX, raw))
+        }
+        func clampedY(for raw: CGFloat) -> CGFloat {
+            let minY = body.minY + r + halfBase
+            let maxY = body.maxY - r - halfBase
+            return max(minY, min(maxY, raw))
+        }
+        
+            // Tail base center point on the body edge
+        let baseCenter: CGPoint
+        switch tailDirection {
+            case .up:
+                baseCenter = CGPoint(x: clampedX(for: body.minX + tailOffset), y: body.minY)
+            case .down:
+                baseCenter = CGPoint(x: clampedX(for: body.minX + tailOffset), y: body.maxY)
+            case .left:
+                baseCenter = CGPoint(x: body.minX, y: clampedY(for: body.minY + tailOffset))
+            case .right:
+                baseCenter = CGPoint(x: body.maxX, y: clampedY(for: body.minY + tailOffset))
+        }
+        
+        var p = Path()
+        
+            // Start at top-left rounded corner start
+        p.move(to: CGPoint(x: body.minX + r, y: body.minY))
+        
+            // TOP EDGE (left → right), insert tail if needed
+        if tailDirection == .up {
+                // to left base
+            p.addLine(to: CGPoint(x: baseCenter.x - halfBase, y: body.minY))
+                // tail tip
+            p.addLine(to: CGPoint(x: baseCenter.x, y: rect.minY))
+                // to right base
+            p.addLine(to: CGPoint(x: baseCenter.x + halfBase, y: body.minY))
+        }
+            // continue to top-right corner
+        p.addLine(to: CGPoint(x: body.maxX - r, y: body.minY))
+        p.addQuadCurve(to: CGPoint(x: body.maxX, y: body.minY + r),
+                       control: CGPoint(x: body.maxX, y: body.minY))
+        
+            // RIGHT EDGE (top → bottom)
+        if tailDirection == .right {
+            p.addLine(to: CGPoint(x: body.maxX, y: baseCenter.y - halfBase))
+            p.addLine(to: CGPoint(x: rect.maxX, y: baseCenter.y))
+            p.addLine(to: CGPoint(x: body.maxX, y: baseCenter.y + halfBase))
+        }
+        p.addLine(to: CGPoint(x: body.maxX, y: body.maxY - r))
+        p.addQuadCurve(to: CGPoint(x: body.maxX - r, y: body.maxY),
+                       control: CGPoint(x: body.maxX, y: body.maxY))
+        
+            // BOTTOM EDGE (right → left)
+        if tailDirection == .down {
+            p.addLine(to: CGPoint(x: baseCenter.x + halfBase, y: body.maxY))
+            p.addLine(to: CGPoint(x: baseCenter.x, y: rect.maxY))
+            p.addLine(to: CGPoint(x: baseCenter.x - halfBase, y: body.maxY))
+        }
+        p.addLine(to: CGPoint(x: body.minX + r, y: body.maxY))
+        p.addQuadCurve(to: CGPoint(x: body.minX, y: body.maxY - r),
+                       control: CGPoint(x: body.minX, y: body.maxY))
+        
+            // LEFT EDGE (bottom → top)
+        if tailDirection == .left {
+            p.addLine(to: CGPoint(x: body.minX, y: baseCenter.y + halfBase))
+            p.addLine(to: CGPoint(x: rect.minX, y: baseCenter.y))
+            p.addLine(to: CGPoint(x: body.minX, y: baseCenter.y - halfBase))
+        }
+        p.addLine(to: CGPoint(x: body.minX, y: body.minY + r))
+        p.addQuadCurve(to: CGPoint(x: body.minX + r, y: body.minY),
+                       control: CGPoint(x: body.minX, y: body.minY))
+        
+        p.closeSubpath()
+        return p
     }
 }

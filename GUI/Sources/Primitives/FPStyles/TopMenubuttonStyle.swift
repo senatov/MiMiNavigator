@@ -26,7 +26,7 @@ public struct TopMenuButtonStyle: ButtonStyle {
         let configuration: Configuration
         
             // Layout constants tuned for macOS menu-like row
-        private let cornerRadius: CGFloat = 6
+        private let cornerRadius: CGFloat = 8
         private let horizontalPadding: CGFloat = 10
         private let verticalPadding: CGFloat = 4
         private let minHeight: CGFloat = 26

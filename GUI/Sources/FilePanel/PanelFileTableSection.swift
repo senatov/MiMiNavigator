@@ -1,23 +1,15 @@
-    //
-    //  PanelFileTableSection.swift
-    //  MiMiNavigator
-    //
-    //  Created by Iakov Senatov on 24.08.2025.
-    //  Copyright © 2025 Senatov. All rights reserved.
-    //
-
+//
+//  PanelFileTableSection.swift
+//  MiMiNavigator
+//
+//  Created by Iakov Senatov on 24.08.2025.
+//  Copyright © 2025 Senatov. All rights reserved.
+//
 
 import AppKit
 import SwiftUI
 
-    // MARK: - Stable identity wrapper to prevent unnecessary subtree recomputation
-private struct StableBy<Key: Hashable, Content: View>: View {
-    let key: Key
-    let content: () -> Content
-    @MainActor var body: some View { content().id(key) }
-}
-
-    // MARK: -
+// MARK: -
 struct PanelFileTableSection: View {
     @EnvironmentObject var appState: AppState
     let files: [CustomFile]
@@ -26,18 +18,23 @@ struct PanelFileTableSection: View {
     let onPanelTap: (PanelSide) -> Void
     let onSelect: (CustomFile) -> Void
     @State private var rowRects: [CustomFile.ID: CGRect] = [:]
-    @State private var lastBodyLogTime: TimeInterval = 0
     @FocusState private var isFocused: Bool
-    
-        // MARK: -
+
+    // Throttle for body logs without mutating SwiftUI state
+    @MainActor
+    private enum LogThrottle {
+        static var last: TimeInterval = 0
+    }
+
+    // MARK: -
     var body: some View {
         let now = ProcessInfo.processInfo.systemUptime
-        if now - lastBodyLogTime >= 0.25 { // throttle body logs to max ~4/sec
-            lastBodyLogTime = now
+        if now - LogThrottle.last >= 0.25 {  // throttle body logs to max ~4/sec without touching @State
+            LogThrottle.last = now
             log.debug(#function + " side=<<\(panelSide)>> files=\(files.count) sel=\(String(describing: selectedID))")
         }
         let stableKey = files.count.hashValue ^ (selectedID?.hashValue ?? 0) ^ panelSide.hashValue
-        return StableBy(key: stableKey) {
+        return StableBy(stableKey) {
             FileTableView(
                 panelSide: panelSide,
                 files: files,
@@ -60,7 +57,7 @@ struct PanelFileTableSection: View {
                         appState.focusedPanel = panelSide
                         onPanelTap(panelSide)
                         log.debug("table tap (simultaneous) on side <<\(panelSide)>>")
-                            // Ensure there is a visible selection only when none exists
+                        // Ensure there is a visible selection only when none exists
                         if selectedID == nil, let first = files.first {
                             log.debug("Auto-select first row on tap for side <<\(panelSide)>>: \(first.nameStr)")
                             selectedID = first.id
@@ -68,13 +65,13 @@ struct PanelFileTableSection: View {
                         }
                     }
             )
-                // React to selection changes
+            // React to selection changes
             .onChange(of: selectedID, initial: false) { _, newValue in
                 appState.focusedPanel = panelSide
                 log.debug("on onChange on table, side <<\(panelSide)>>")
                 if let id = newValue, let file = files.first(where: { $0.id == id }) {
                     log.debug("Row selected: id=\(id) on side <<\(panelSide)>>")
-                        // Notify others to clear their selections before we commit this one
+                    // Notify others to clear their selections before we commit this one
                     notifyWillSelect(file)
                     onSelect(file)
                 } else {
@@ -82,12 +79,12 @@ struct PanelFileTableSection: View {
                     notifyDidClearSelection()
                 }
             }
-                // Navigation with arrow keys — same as before
+            // Navigation with arrow keys — same as before
             .onMoveCommand { direction in
                 appState.focusedPanel = panelSide
                 switch direction {
                     case .up,
-                            .down:
+                        .down:
                         log.debug("Move command: \(direction) on side <<\(panelSide)>>")
                         DispatchQueue.main.async {
                             if let id = selectedID, let file = files.first(where: { $0.id == id }) {
@@ -102,7 +99,7 @@ struct PanelFileTableSection: View {
                 }
             }
             .onChange(of: appState.focusedPanel, initial: false) { _, newSide in
-                    // When this panel receives keyboard focus (e.g., via Tab), ensure a visible selection exists
+                // When this panel receives keyboard focus (e.g., via Tab), ensure a visible selection exists
                 guard newSide == panelSide else { return }
                 isFocused = true
                 if selectedID == nil, let first = files.first {
@@ -110,7 +107,8 @@ struct PanelFileTableSection: View {
                     selectedID = first.id
                     onSelect(first)
                 } else {
-                    log.debug("focusedPanel change on <<\(panelSide)>> but selection already present: \(String(describing: selectedID))")
+                    log.debug(
+                        "focusedPanel change on <<\(panelSide)>> but selection already present: \(String(describing: selectedID))")
                 }
             }
             .onChange(of: isFocused, initial: false) { _, nowFocused in
@@ -134,10 +132,10 @@ struct PanelFileTableSection: View {
             .id("PFTS_\(panelSide)")
         }
     }
-    
-        // MARK: - Selection coordination helpers
+
+    // MARK: - Selection coordination helpers
     private func notifyWillSelect(_ file: CustomFile) {
-            // Let other parts know that this panel is about to select a row, so they can reset their own selections
+        // Let other parts know that this panel is about to select a row, so they can reset their own selections
         NotificationCenter.default.post(
             name: .panelWillSelectFile,
             object: nil,
@@ -148,8 +146,8 @@ struct PanelFileTableSection: View {
             ]
         )
     }
-    
-        // MARK: -
+
+    // MARK: -
     private func notifyDidClearSelection() {
         NotificationCenter.default.post(
             name: .panelDidClearSelection,
@@ -162,8 +160,8 @@ struct PanelFileTableSection: View {
 }
 
 extension Notification.Name {
-        /// Posted right before a panel is about to select a file so others can reset their selections
+    /// Posted right before a panel is about to select a file so others can reset their selections
     static let panelWillSelectFile = Notification.Name("PanelWillSelectFile")
-        /// Posted when a panel cleared its selection
+    /// Posted when a panel cleared its selection
     static let panelDidClearSelection = Notification.Name("PanelDidClearSelection")
 }
