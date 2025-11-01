@@ -29,7 +29,7 @@ struct PanelFocusModifier: ViewModifier {
             .onChange(of: appState.focusedPanel, initial: false) { oldValue, newValue in
                 // When focus moves away from this panel, clear selection here
                 if newValue != panelSide {
-                    log.info("Focus moved from \(oldValue) to \(newValue); clearing selection on \(panelSide)")
+                    log.info("Focus moved from \(oldValue) to \(newValue); clearing selection on <<\(panelSide)>>")
                     onFocusLost()
                 }
             }
@@ -39,7 +39,7 @@ struct PanelFocusModifier: ViewModifier {
 extension View {
     // MARK: - Applies focus behavior for a file panel; sets focus on tap and clears selection when losing focus.
     func panelFocus(panelSide: PanelSide, onFocusLost: @escaping () -> Void) -> some View {
-        log.info(#function + " for panel side: \(panelSide)")
+        log.info(#function + " for panel side: <<\(panelSide)>>")
         return modifier(PanelFocusModifier(panelSide: panelSide, onFocusLost: onFocusLost))
     }
 }

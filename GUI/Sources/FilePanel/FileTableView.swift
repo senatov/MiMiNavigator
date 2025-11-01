@@ -8,13 +8,6 @@
 
 import SwiftUI
 
-// MARK: - Stable identity wrapper to prevent unnecessary subtree recomputation
-private struct StableBy<Key: Hashable, Content: View>: View {
-    let key: Key
-    let content: () -> Content
-    @MainActor var body: some View { content().id(key) }
-}
-
 // MARK: -
 struct FileTableView: View {
     @EnvironmentObject var appState: AppState
@@ -34,7 +27,7 @@ struct FileTableView: View {
         let sorted = base.sorted(by: compare)
         cachedSortedFiles = sorted
         if cachedSortedFiles.count != sorted.count || true {
-            log.debug("recomputeSortedCache → side=<<\(panelSide)>> key=\(sortKey) asc=\(sortAscending) count=\(sorted.count)")
+            log.debug("recomputeSortedCache → side= <<\(panelSide)>> key=\(sortKey) asc=\(sortAscending) count=\(sorted.count)")
         }
     }
     // Precomputed rows to ease type checker
@@ -83,7 +76,7 @@ struct FileTableView: View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 0) {
                 headerView()
-                StableBy(key: cachedSortedFiles.count ^ (selectedID?.hashValue ?? 0)) {
+                StableBy(cachedSortedFiles.count ^ (selectedID?.hashValue ?? 0)) {
                     FileTableRowsView(
                         rows: sortedRows,
                         selectedID: $selectedID,
@@ -106,7 +99,7 @@ struct FileTableView: View {
                                 if now - (lastBodyLogTime ?? 0) > 0.25 {  // introduce local cache below
                                     lastBodyLogTime = now
                                     log.debug(
-                                        "FTV.content size changed → \(Int(gp.size.width))x\(Int(gp.size.height)) on \(panelSide)")
+                                        "FTV.content size changed → \(Int(gp.size.width))x\(Int(gp.size.height)) on <<\(panelSide)>>")
                                 }
                             }
                     }
@@ -116,12 +109,12 @@ struct FileTableView: View {
         .background(
             GeometryReader { gp in
                 Color.clear
-                    .onAppear { log.debug("FTV.viewport appear → size=\(Int(gp.size.width))x\(Int(gp.size.height)) on \(panelSide)") }
+                    .onAppear { log.debug("FTV.viewport appear → size=\(Int(gp.size.width))x\(Int(gp.size.height)) on <<\(panelSide)>>") }
                     .onChange(of: gp.size) {
                         let now = ProcessInfo.processInfo.systemUptime
                         if now - (lastBodyLogTime ?? 0) > 0.25 {
                             lastBodyLogTime = now
-                            log.debug("FTV.viewport size changed → \(Int(gp.size.width))x\(Int(gp.size.height)) on \(panelSide)")
+                            log.debug("FTV.viewport size changed → \(Int(gp.size.width))x\(Int(gp.size.height)) on <<\(panelSide)>>")
                         }
                     }
             }
@@ -159,7 +152,7 @@ struct FileTableView: View {
                 if let first = cachedSortedFiles.first?.id {
                     selectedID = first
                     withAnimation { proxy.scrollTo(first, anchor: .top) }
-                    log.debug("PageUp (kbd) → jump to top on \(panelSide)")
+                    log.debug("PageUp (kbd) → jump to top on <<\(panelSide)>>")
                 }
             }) { EmptyView() }
             .keyboardShortcut(.pageUp)
@@ -169,7 +162,7 @@ struct FileTableView: View {
                 if let last = cachedSortedFiles.last?.id {
                     selectedID = last
                     withAnimation { proxy.scrollTo(last, anchor: .bottom) }
-                    log.debug("PageDown (kbd) → jump to bottom on \(panelSide)")
+                    log.debug("PageDown (kbd) → jump to bottom on <<\(panelSide)>>")
                 }
             }) { EmptyView() }
             .keyboardShortcut(.pageDown)
@@ -179,6 +172,7 @@ struct FileTableView: View {
         .allowsHitTesting(false)
     }
 
+    // MARK: -
     private var focusBorder: some View {
         RoundedRectangle(cornerRadius: 12)
             .stroke(
@@ -188,6 +182,7 @@ struct FileTableView: View {
             .allowsHitTesting(false)
     }
 
+    // MARK: -
     private var lightBorder: some View {
         RoundedRectangle(cornerRadius: 12)
             .stroke(Color.white.opacity(isFocused ? 0.10 : 0.05), lineWidth: 1)
@@ -227,7 +222,7 @@ struct FileTableView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading).contentShape(Rectangle())
         .onTapGesture {
-            log.debug("Name header tapped on side: \(panelSide)")
+            log.debug("Name header tapped on side: <<\(panelSide)>>")
             appState.focusedPanel = panelSide
             if sortKey == .name {
                 sortAscending.toggle()
@@ -250,7 +245,7 @@ struct FileTableView: View {
         .frame(width: FilePanelStyle.sizeColumnWidth, alignment: .leading).contentShape(Rectangle())
         .onTapGesture {
             appState.focusedPanel = panelSide
-            log.debug("Size header tapped on side: \(panelSide)")
+            log.debug("Size header tapped on side: <<\(panelSide)>>")
             if sortKey == .size {
                 sortAscending.toggle()
             } else {
@@ -272,7 +267,7 @@ struct FileTableView: View {
         .frame(width: FilePanelStyle.modifiedColumnWidth + 10, alignment: .leading).contentShape(Rectangle())
         .onTapGesture {
             appState.focusedPanel = panelSide
-            log.debug("Date header tapped on side: \(panelSide)")
+            log.debug("Date header tapped on side: <<\(panelSide)>>")
             if sortKey == .date {
                 sortAscending.toggle()
             } else {

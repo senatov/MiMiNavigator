@@ -153,7 +153,7 @@ struct FavTreePopupView: View {
         .padding(.horizontal, 8)
         .background(
             // Very subtle selection/expanded cue, no heavy buttons
-            RoundedRectangle(cornerRadius: 6, style: .continuous)
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
                 .fill(isExpanded ? Color.accentColor.opacity(0.10) : .clear)
         )
         .contentShape(Rectangle())

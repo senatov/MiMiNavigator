@@ -45,10 +45,10 @@ struct FileTableRowsView: View {
         ZStack(alignment: .leading) {
             // Unified full-width row background
             if isSelected {
-                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
                     .fill(Color(FilePanelStyle.yellowSelRowFill))
                     .overlay(
-                        RoundedRectangle(cornerRadius: 6, style: .continuous)
+                        RoundedRectangle(cornerRadius: 8, style: .continuous)
                             .stroke(
                                 FilePanelStyle.blueSymlinkDirNameColor,
                                 lineWidth: FilePanelStyle.selectedBorderWidth)

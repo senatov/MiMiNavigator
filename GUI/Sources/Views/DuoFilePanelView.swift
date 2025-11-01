@@ -26,14 +26,14 @@ struct DuoFilePanelView: View {
                         }
                         // Panels occupy all remaining vertical space
                         PanelsRowView(leftPanelWidth: $leftPanelWidth, geometry: geometry, fetchFiles: fetchFiles)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .layoutPriority(1)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .layoutPriority(1)
                         Spacer(minLength: 0)
                         // Bottom toolbar fixed at bottom
                         HStack {
                             buildDownToolbar()
-                            .frame(maxWidth: .infinity)
-                            .fixedSize(horizontal: false, vertical: true)
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                .fixedSize(horizontal: false, vertical: false)
                         }
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -71,10 +71,10 @@ struct DuoFilePanelView: View {
     private func fetchFiles(for panelSide: PanelSide) async {
         log.debug("\(#function) [side:<<\(panelSide)]>>")
         switch panelSide {
-        case .left:
-            appState.displayedLeftFiles = await appState.scanner.fileLst.getLeftFiles()
-        case .right:
-            appState.displayedRightFiles = await appState.scanner.fileLst.getRightFiles()
+            case .left:
+                appState.displayedLeftFiles = await appState.scanner.fileLst.getLeftFiles()
+            case .right:
+                appState.displayedRightFiles = await appState.scanner.fileLst.getRightFiles()
         }
     }
 
@@ -135,28 +135,24 @@ struct DuoFilePanelView: View {
             .padding(.horizontal, 20)
             .padding(.vertical, 14)
             .background(
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(
-                    LinearGradient(
-                        gradient: Gradient(colors: [Color.clear, Color.black.opacity(0.07)]),
-                        startPoint: .top,
-                        endPoint: .bottom
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(
+                        LinearGradient(
+                            gradient: Gradient(colors: [Color.clear, Color.black.opacity(0.07)]),
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
                     )
-                )
-                // Subtle bevel highlight (keeps main colors intact)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .strokeBorder(Color.white.opacity(0.12), lineWidth: 0.8)
-                )
-                // Ambient soft shadow close to the surface
-                .shadow(color: Color.black.opacity(0.12), radius: 6, x: 0, y: 2)
-                // Main drop shadow per macOS 26.1 liquid glass
-                .shadow(color: Color.black.opacity(0.28), radius: 20, x: 0, y: 12)
-                // Optional subtle top highlight glow
-                .overlay(
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .strokeBorder(Color.white.opacity(0.05), lineWidth: 0.6)
-                )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .strokeBorder(Color.white.opacity(0.12), lineWidth: 0.8)
+                    )
+                    .shadow(color: Color.black.opacity(0.12), radius: 6, x: 0, y: 2)
+                    .shadow(color: Color.black.opacity(0.28), radius: 20, x: 0, y: 12)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .strokeBorder(Color.white.opacity(0.05), lineWidth: 0.6)
+                    )
             )
             .padding(.horizontal, 24)
             .padding(.bottom, 12)
@@ -175,13 +171,9 @@ struct DuoFilePanelView: View {
     private func doCopy() {
         // Determine source file based on focused panel (deprecated API removed)
         let sourceFile = (appState.focusedPanel == .left) ? appState.selectedLeftFile : appState.selectedRightFile
-
         // Determine target side explicitly to avoid 'opposite' ambiguity
         let targetSide: PanelSide = (appState.focusedPanel == .left) ? .right : .left
-
-        if let file = sourceFile,
-        let targetURL = appState.pathURL(for: targetSide)
-            {
+        if let file = sourceFile, let targetURL = appState.pathURL(for: targetSide) {
             FActions.copy(file, to: targetURL)
             Task {
                 await appState.refreshFiles()
@@ -195,7 +187,7 @@ struct DuoFilePanelView: View {
     private func initializePanelWidth(geometry: GeometryProxy) {
         log.debug(#function)
         leftPanelWidth =
-        UserDefaults.standard.object(forKey: "leftPanelWidth") as? CGFloat
+            UserDefaults.standard.object(forKey: "leftPanelWidth") as? CGFloat
         ?? geometry.size.width / 2
     }
 

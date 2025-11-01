@@ -23,7 +23,6 @@ struct FileRowView: View {
     let panelSide: PanelSide
 
     init(file: CustomFile, panelSide: PanelSide) {
-        // log.debug(#function + " for '\(file.nameStr)' on side <<\(panelSide)>>")
         self.file = file
         self.panelSide = panelSide
     }

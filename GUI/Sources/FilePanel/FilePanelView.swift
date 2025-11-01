@@ -8,12 +8,6 @@
 import AppKit
 import SwiftUI
 
-    // MARK: - Stable identity wrapper to prevent recomputation without Equatable/actor crossing
-private struct StableBy<Key: Hashable, Content: View>: View {
-    let key: Key
-    let content: () -> Content
-    @MainActor var body: some View { content().id(key) }
-}
 
     // MARK: - FilePanelView
 struct FilePanelView: View {
@@ -23,7 +17,6 @@ struct FilePanelView: View {
     @Binding var leftPanelWidth: CGFloat
         /// Called when user clicks anywhere inside the panel (left/right)
     let onPanelTap: (PanelSide) -> Void
-    
     @State private var lastLoggedWidth: CGFloat = -1
     @State private var lastBodyLogTime: TimeInterval = 0
     
@@ -78,13 +71,8 @@ struct FilePanelView: View {
         // MARK: - View
     var body: some View {
         let currentPath = appState.pathURL(for: viewModel.panelSide)
-        let now = ProcessInfo.processInfo.systemUptime
-        if now - lastBodyLogTime >= 0.25 {  // throttle body logs to max ~4/sec
-            lastBodyLogTime = now
-            log.debug(#function + " side=<<\(viewModel.panelSide)>> path=\(currentPath?.path ?? "nil")")
-        }
         return VStack {
-            StableBy(key: currentPath?.path ?? "") {
+            StableBy(currentPath?.path ?? "") {
                 PanelBreadcrumbSection(
                     currentPath: currentPath,
                     onPathChange: { newValue in
@@ -92,7 +80,7 @@ struct FilePanelView: View {
                     }
                 )
             }
-            StableBy(key: (currentPath?.path ?? "") + "|" + String(appState.focusedPanel == viewModel.panelSide)) {
+            StableBy((currentPath?.path ?? "") + "|" + String(appState.focusedPanel == viewModel.panelSide)) {
                 PanelFileTableSection(
                     files: viewModel.sortedFiles,
                     selectedID: selectedIDBinding,
@@ -124,6 +112,19 @@ struct FilePanelView: View {
                 }
             )
         }
+        .onAppear {
+                // Log once on first appearance; no throttling needed here
+            let pathStr = appState.pathURL(for: viewModel.panelSide)?.path ?? "nil"
+            log.debug("FilePanelView.onAppear side=<<\(viewModel.panelSide)>> path=\(pathStr)")
+        }
+        .onChange(of: appState.pathURL(for: viewModel.panelSide)?.path) { oldValue, newValue in
+                // Throttle path-change logs to avoid noise on rapid updates
+            let now = ProcessInfo.processInfo.systemUptime
+            if now - lastBodyLogTime >= 0.25 {
+                lastBodyLogTime = now
+                log.debug("FilePanelView.path changed side= <<\(viewModel.panelSide)>> → \(newValue ?? "nil")")
+            }
+        }
         .padding(.horizontal, DesignTokens.grid)
         .padding(.vertical, DesignTokens.grid - 2)
         .background(
@@ -133,7 +134,7 @@ struct FilePanelView: View {
                 RoundedRectangle(cornerRadius: DesignTokens.radius, style: .continuous)
                     .stroke(DesignTokens.separator.opacity(0.35), lineWidth: 1)
             }
-                .drawingGroup() // flatten vector ops for cheaper compositing during drags
+                .drawingGroup()  // flatten vector ops for cheaper compositing during drags
         )
         .frame(
             width: viewModel.panelSide == .left
@@ -157,7 +158,7 @@ struct FilePanelView: View {
                 }
         )
         .panelFocus(panelSide: viewModel.panelSide) {
-            log.debug("Focus lost on \(viewModel.panelSide); keep selection")
+            log.debug("Focus lost on << \(viewModel.panelSide)>>; keep selection")
             appState.showFavTreePopup = false
         }
         .onChange(of: appState.focusedPanel) { oldSide, newSide in
