@@ -28,9 +28,9 @@ class SelectedDir: ObservableObject {
     }
 
     /// Returns a stored start path for a given side if present and non-empty
-    private static func resolveStartPath(for side: PanelSide) -> String? {
+    private static func resolveStartPath(for panelSide: PanelSide) -> String? {
         let defaults = UserDefaults.standard
-        let key = (side == .left) ? kLeftLastPath : kRightLastPath
+        let key = (panelSide == .left) ? kLeftLastPath : kRightLastPath
         if let path = defaults.string(forKey: key), !path.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             // Validate path exists; if not, treat as absent
             if FileManager.default.fileExists(atPath: path) {
