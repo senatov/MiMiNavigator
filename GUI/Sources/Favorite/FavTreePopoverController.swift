@@ -18,7 +18,7 @@ final class FavTreePopoverController: ObservableObject {
     func show(
         for file: Binding<CustomFile>,
         expandedFolders: Binding<Set<String>>,
-        side: PanelSide,
+        panelSide: PanelSide,
         relativeTo button: NSView,
         appState: AppState
     ) {

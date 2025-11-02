@@ -18,7 +18,7 @@ struct PanelFocusModifier: ViewModifier {
 
     // MARK: - -
     func body(content: Content) -> some View {
-        log.info(#function + " for panel side: \(panelSide)")
+        log.info(#function + " for panel side: <<\(panelSide)>>")
         return content
             .contentShape(Rectangle())
             .onTapGesture {
