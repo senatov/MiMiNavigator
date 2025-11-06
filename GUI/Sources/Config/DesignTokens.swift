@@ -9,6 +9,7 @@
 import AppKit
 import SwiftUI
 
+// MARK: -
 enum DesignTokens {
     static let grid: CGFloat = 8
     static let radius: CGFloat = 8

@@ -9,9 +9,7 @@
 import Foundation
 import SwiftUI
 
-// MARK: - Bubble view
-
-/// A stylable speech bubble view with configurable background, stroke, tail and content insets.
+// MARK: - A stylable speech bubble view with configurable background, stroke, tail and content insets.
 public struct SpeechBubbleView<Content: View>: View {
     // Style
     public var background: Color
@@ -31,6 +29,7 @@ public struct SpeechBubbleView<Content: View>: View {
     public var contentInsets: EdgeInsets
     @ViewBuilder public var content: () -> Content
 
+    // MARK: -
     public init(
         background: Color = Color(#colorLiteral(red: 0.9995340705, green: 0.9802359024, blue: 0.9185159122, alpha: 1)),
         strokeColor: Color = Color(#colorLiteral(red: 0.2392156863, green: 0.2901960784, blue: 0.8745098039, alpha: 1)),
@@ -59,6 +58,7 @@ public struct SpeechBubbleView<Content: View>: View {
         self.content = content
     }
 
+    // MARK: -
     public var body: some View {
         let shape = SpeechBubbleShape(
             cornerRadius: cornerRadius,
@@ -88,7 +88,7 @@ public struct SpeechBubbleView<Content: View>: View {
         .drawingGroup()  // keep edges crisp under scaling
     }
 
-    // Adds extra padding on the tail side so content does not overlap the tail base.
+    // MARK: - Adds extra padding on the tail side so content does not overlap the tail base.
     private func contentInsetsForTail(base: EdgeInsets) -> EdgeInsets {
         var i = base
         switch tailDirection {
@@ -103,7 +103,7 @@ public struct SpeechBubbleView<Content: View>: View {
 
 // MARK: - Convenience initializers
 extension SpeechBubbleView where Content == Text {
-    /// Convenience initializer for text content.
+    // MARK: - Convenience initializer for text content.
     public init(
         _ text: String,
         background: Color = Color.white,

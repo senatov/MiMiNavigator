@@ -23,15 +23,14 @@ final class UserPreferences: ObservableObject {
 
     // MARK: -
     private init() {
-        log.info("UserPreferences initialized.")
+        log.info(#function)
         subscribeTermination()
     }
 
     // MARK: -
     func load() {
-        log.info("Loading preferences…")
+        log.info(#function)
         var s = PreferencesSnapshot.default
-
         if let value = defaults.string(forKey: PrefKey.leftPath.rawValue),
             !value.isEmpty
         {
@@ -39,7 +38,6 @@ final class UserPreferences: ObservableObject {
         } else {
             log.warning("Missing leftPath — using default.")
         }
-
         if let value = defaults.string(forKey: PrefKey.rightPath.rawValue),
             !value.isEmpty
         {
@@ -47,26 +45,22 @@ final class UserPreferences: ObservableObject {
         } else {
             log.warning("Missing rightPath — using default.")
         }
-
         if defaults.object(forKey: PrefKey.showHiddenFiles.rawValue) != nil {
             s.showHiddenFiles = defaults.bool(forKey: PrefKey.showHiddenFiles.rawValue)
         } else {
             log.warning("Missing showHiddenFiles — using default.")
         }
-
         if defaults.object(forKey: PrefKey.favoritesMaxDepth.rawValue) != nil {
             let val = defaults.integer(forKey: PrefKey.favoritesMaxDepth.rawValue)
             s.favoritesMaxDepth = max(val, 0)
         } else {
             log.warning("Missing favoritesMaxDepth — using default.")
         }
-
         if let arr = defaults.array(forKey: PrefKey.expandedFolders.rawValue) as? [String] {
             s.expandedFolders = Set(arr)
         } else {
             log.warning("Missing expandedFolders — using default.")
         }
-
         s.lastSelectedLeftFilePath = defaults.string(forKey: PrefKey.lastSelectedLeftFilePath.rawValue)
         s.lastSelectedRightFilePath = defaults.string(forKey: PrefKey.lastSelectedRightFilePath.rawValue)
 
