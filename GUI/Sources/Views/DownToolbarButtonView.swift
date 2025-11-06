@@ -27,8 +27,6 @@ struct DownToolbarButtonView: View {
 
     //  MARK: - Builds and configures the toolbar button (macOS 26.1 liquid glass style)
     private func makeButton() -> some View {
-        // Log button creation for debugging
-        log.info(#function + " for button '\(title)'")
         return Button(action: handlePress) {
             Label {
                 Text(title)

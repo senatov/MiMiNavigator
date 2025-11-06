@@ -14,6 +14,7 @@ struct DuoFilePanelView: View {
     @EnvironmentObject var appState: AppState
     @State private var leftPanelWidth: CGFloat = 0
     @State private var keyMonitor: Any? = nil
+    private let dividerHitAreaWidth: CGFloat = 24
 
     // MARK: -
     var body: some View {
@@ -43,6 +44,13 @@ struct DuoFilePanelView: View {
                 log.debug(#function + " - Initializing app state and panels")
                 appState.initialize()
                 initializePanelWidth(geometry: geometry)  // Restore divider width from user defaults
+                DispatchQueue.main.async {
+                    let halfLeft = preciseHalfLeft(totalWidth: geometry.size.width)
+                    if abs(leftPanelWidth - halfLeft) > 0.5 {
+                        log.debug("DuoFilePanelView.onAppear: re-assert halfLeft=\(Int(halfLeft)) against external override")
+                        leftPanelWidth = halfLeft
+                    }
+                }
                 addKeyPressMonitor()  // Register keyboard shortcut
                 appState.forceFocusSelection()
             }
@@ -54,14 +62,18 @@ struct DuoFilePanelView: View {
                 }
             }
             .onChange(of: geometry.size) { oldSize, newSize in
-                log.debug("Window size changed from: \(oldSize.width)x\(oldSize.height) → \(newSize.width)x\(newSize.height)")
-                // Recalculate left panel width if needed
-                if leftPanelWidth > 0 {
-                    let maxWidth = newSize.width - 50
-                    if leftPanelWidth > maxWidth {
-                        leftPanelWidth = maxWidth
-                    }
+                log.debug("Window size changed from: \(Int(oldSize.width))x\(Int(oldSize.height)) → \(Int(newSize.width))x\(Int(newSize.height))")
+                let minW: CGFloat = 80
+                let maxW = max(minW, newSize.width - minW - dividerHitAreaWidth)
+                if leftPanelWidth < minW || leftPanelWidth > maxW {
+                    let clamped = min(max(leftPanelWidth, minW), maxW)
+                    log.debug("Clamp leftPanelWidth → \(Int(clamped)) [min=\(Int(minW)) max=\(Int(maxW))]")
+                    leftPanelWidth = clamped
                 }
+            }
+            .onChange(of: leftPanelWidth) { oldValue, newValue in
+                UserDefaults.standard.set(newValue, forKey: "leftPanelWidth")
+                log.debug("DuoFilePanelView.leftPanelWidth changed → \(Int(oldValue)) → \(Int(newValue)) (persisted)")
             }
         }
     }
@@ -186,9 +198,17 @@ struct DuoFilePanelView: View {
     // MARK: -
     private func initializePanelWidth(geometry: GeometryProxy) {
         log.debug(#function)
-        leftPanelWidth =
-            UserDefaults.standard.object(forKey: "leftPanelWidth") as? CGFloat
-        ?? geometry.size.width / 2
+        let total = geometry.size.width
+        let scale = NSScreen.main?.backingScaleFactor ?? 2.0
+        // Exact pixel-aligned center for divider, convert to left width
+        let halfCenter = (total / 2.0 * scale).rounded() / scale
+        let halfLeft = halfCenter - dividerHitAreaWidth / 2
+        let minW: CGFloat = 80
+        let maxW = max(minW, total - minW - dividerHitAreaWidth)
+        let saved = (UserDefaults.standard.object(forKey: "leftPanelWidth") as? CGFloat)
+        let initial = saved.map { min(max($0, minW), maxW) } ?? halfLeft
+        leftPanelWidth = initial
+        log.debug("INIT leftPanelWidth: total=\(Int(total)) scale=\(scale) halfCenter=\(Int(halfCenter)) halfLeft=\(Int(halfLeft)) saved=\(saved.map{Int($0)}?.description ?? "nil") → set=\(Int(leftPanelWidth))")
     }
 
     // MARK: -
@@ -228,5 +248,11 @@ struct DuoFilePanelView: View {
         log.debug(#function)
         appState.saveBeforeExit()
         NSApplication.shared.terminate(nil)
+    }
+
+    private func preciseHalfLeft(totalWidth: CGFloat) -> CGFloat {
+        let scale = NSScreen.main?.backingScaleFactor ?? 2.0
+        let halfCenter = (totalWidth / 2.0 * scale).rounded() / scale
+        return halfCenter - dividerHitAreaWidth / 2
     }
 }
