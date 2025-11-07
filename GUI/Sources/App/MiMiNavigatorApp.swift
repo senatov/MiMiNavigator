@@ -33,63 +33,6 @@ struct MiMiNavigatorApp: App {
             }
             .environmentObject(appState)
             .onAppear { appDelegate.bind(appState) }
-            .toolbar {
-                ToolbarItem(placement: .automatic) {
-                    Button(action: { log.debug("Refresh button clicked") }) {
-                        Image(systemName: "arrow.triangle.2.circlepath")
-                            .symbolRenderingMode(.hierarchical)
-                            .foregroundStyle(.blue)
-                            .font(.system(size: 13, weight: .semibold))
-                            .help("Refresh")
-                            .accessibilityLabel("Refresh")
-                    }
-                    .buttonStyle(.borderless)
-                    .controlSize(.small)
-                    .padding(.horizontal, 12)
-                }
-                ToolbarItem(placement: .automatic) {
-                    Button(action: { appState.revealLogFileInFinder() }) {
-                        Image(systemName: "doc.text.magnifyingglass")
-                            .symbolRenderingMode(.hierarchical)
-                            .foregroundStyle(.blue)
-                            .font(.system(size: 13, weight: .semibold))
-                            .help("Reveal log file in Finder")
-                            .accessibilityLabel("Reveal log file in Finder")
-                    }
-                    .buttonStyle(.borderless)
-                    .controlSize(.small)
-                    .padding(.horizontal, 12)
-                }
-                ToolbarItem(placement: .status) {
-                    HStack(spacing: 8) {
-                        // Badge icon styled for macOS 26 "liquid glass" look
-                        Text("🐈")
-                            .font(.caption2)
-                            .padding(8)
-                            .background(Circle().fill(Color.yellow.opacity(0.1)))
-                            .overlay(
-                                Circle().strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.3)
-                            )
-                        VStack(alignment: .leading, spacing: 1) {
-                            Text("DEV BUILD")
-                                .font(.caption2)
-                                .textCase(.uppercase)
-                                .foregroundStyle(.secondary)
-                            makeDevMark()
-                                .font(.caption2)
-                                .foregroundColor(FilePanelStyle.dirNameColor)
-                        }
-                    }
-                    .padding(.horizontal, 18)
-                    .padding(.vertical, 0)
-                    .background(.yellow.opacity(0.05), in: Capsule())
-                    .overlay(
-                        Capsule()
-                            .strokeBorder(.red, lineWidth: 0.8)
-                    )
-                    .help("Current development build version")
-                }
-            }
             .toolbarBackground(Material.thin, for: ToolbarPlacement.windowToolbar)
             .toolbarBackgroundVisibility(Visibility.visible, for: ToolbarPlacement.windowToolbar)
             .onChange(of: scenePhase) {
@@ -97,10 +40,82 @@ struct MiMiNavigatorApp: App {
                     Task { await BookmarkStore.shared.stopAll() }
                 }
             }
+            .toolbar {
+                toolBarItemRefresh()
+                toolBarItemMagnify()
+                toolBarItemBuildInfo()
+            }
         }
         .windowToolbarStyle(.unifiedCompact)
         .commands {
             AppCommands(appState: appState)
+        }
+    }
+
+    // MARK: -
+    fileprivate func toolBarItemRefresh() -> ToolbarItem<(), some View> {
+        return ToolbarItem(placement: .automatic) {
+            Button(action: { log.debug("Refresh button clicked") }) {
+                Image(systemName: "arrow.triangle.2.circlepath")
+                    .symbolRenderingMode(.hierarchical)
+                    .foregroundStyle(.blue)
+                    .font(.system(size: 13, weight: .semibold))
+                    .help("Refresh")
+                    .accessibilityLabel("Refresh")
+            }
+            .buttonStyle(.borderless)
+            .controlSize(.small)
+            .padding(.horizontal, 12)
+        }
+    }
+
+    // MARK: -
+    fileprivate func toolBarItemMagnify() -> ToolbarItem<(), some View> {
+        return ToolbarItem(placement: .automatic) {
+            Button(action: { appState.revealLogFileInFinder() }) {
+                Image(systemName: "doc.text.magnifyingglass")
+                    .symbolRenderingMode(.hierarchical)
+                    .foregroundStyle(.blue)
+                    .font(.system(size: 13, weight: .semibold))
+                    .help("Reveal log file in Finder")
+                    .accessibilityLabel("Reveal log file in Finder")
+            }
+            .buttonStyle(.borderless)
+            .controlSize(.small)
+            .padding(.horizontal, 12)
+        }
+    }
+
+    // MARK: -
+    fileprivate func toolBarItemBuildInfo() -> ToolbarItem<(), some View> {
+        return ToolbarItem(placement: .status) {
+            HStack(spacing: 8) {
+                // Badge icon styled for macOS 26 "liquid glass" look
+                Text("🐈")
+                    .font(.caption2)
+                    .padding(8)
+                    .background(Circle().fill(Color.yellow.opacity(0.1)))
+                    .overlay(
+                        Circle().strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.3)
+                    )
+                VStack(alignment: .leading, spacing: 1) {
+                    Text("DEV BUILD")
+                        .font(.caption2)
+                        .textCase(.uppercase)
+                        .foregroundStyle(.secondary)
+                    makeDevMark()
+                        .font(.caption2)
+                        .foregroundColor(FilePanelStyle.dirNameColor)
+                }
+            }
+            .padding(.horizontal, 18)
+            .padding(.vertical, 0)
+            .background(.yellow.opacity(0.05), in: Capsule())
+            .overlay(
+                Capsule()
+                    .strokeBorder(.red, lineWidth: 0.8)
+            )
+            .help("Current development build version")
         }
     }
 

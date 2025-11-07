@@ -43,7 +43,9 @@ struct PanelsRowView: View {
             let scale = NSScreen.main?.backingScaleFactor ?? 2.0
             let halfCenter = (geomW / 2.0 * scale).rounded() / scale
             let halfLeft = halfCenter - dividerHitAreaWidth / 2
-            log.debug("DIV-INIT: geomW=\(Int(geomW)) scale=\(scale) halfCenter=\(Int(halfCenter)) halfLeft=\(Int(halfLeft)) currentLeft=\(Int(leftPanelWidth))")
+            log.debug(
+                "DIV-INIT: geomW=\(Int(geomW)) scale=\(scale) halfCenter=\(Int(halfCenter)) halfLeft=\(Int(halfLeft)) currentLeft=\(Int(leftPanelWidth))"
+            )
         }
         return ZStack(alignment: .center) {
             HStack(spacing: 0) {
@@ -177,7 +179,9 @@ struct PanelsRowView: View {
                                 if Int(snapped) % 16 == 0 {
                                     let centerX = snapped + dividerHitAreaWidth / 2
                                     let percentLog = Int(((centerX / max(geometry.size.width, 1)) * 100.0).rounded())
-                                    log.debug("DIV-PREVIEW: proposed=\(Int(proposed)) clamped=\(Int(clamped)) snapped=\(Int(snapped)) centerX=\(Int(centerX)) percent=\(percentLog)% minW=80 maxW=\(Int(maxW))")
+                                    log.debug(
+                                        "DIV-PREVIEW: proposed=\(Int(proposed)) clamped=\(Int(clamped)) snapped=\(Int(snapped)) centerX=\(Int(centerX)) percent=\(percentLog)% minW=80 maxW=\(Int(maxW))"
+                                    )
                                 }
                             }
                             let delta = abs((lastTooltipLeft.isNaN ? -9999 : lastTooltipLeft) - snapped)
