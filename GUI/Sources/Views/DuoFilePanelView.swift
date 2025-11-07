@@ -25,12 +25,11 @@ struct DuoFilePanelView: View {
                 PanelsRowView(leftPanelWidth: $leftPanelWidth, geometry: geometry, fetchFiles: fetchFiles)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .layoutPriority(1)
-                Spacer(minLength: 0)
-                    // Bottom toolbar fixed at bottom
-                HStack {
-                    buildDownToolbar()
-                        .frame(maxWidth: .infinity)
-                }
+            }
+            .overlay(alignment: .bottom) {
+                HStack { buildDownToolbar().frame(maxWidth: .infinity) }
+                    .padding(.bottom, FilePanelStyle.toolbarBottomOffset)
+                    .zIndex(10)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .onAppear {
@@ -138,44 +137,40 @@ struct DuoFilePanelView: View {
                     exitApp()
                 }
             }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 10)
-            .frame(minHeight: 44)
+            .frame(minHeight: FilePanelStyle.toolbarMinHeight)
             .frame(maxWidth: .infinity)
+            .padding(.horizontal, FilePanelStyle.toolbarHorizontalPadding)
+            .padding(.vertical, 10)
             .background(
-                // Liquid glass container with very soft elevation
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(.regularMaterial)
+                RoundedRectangle(cornerRadius: FilePanelStyle.toolbarCornerRadius, style: .continuous)
+                    .fill(FilePanelStyle.toolbarMaterial)
                     .overlay(
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .fill(Color.black.opacity(0.05))
+                        RoundedRectangle(cornerRadius: FilePanelStyle.toolbarCornerRadius, style: .continuous)
+                            .fill(FilePanelStyle.toolbarBackgroundTint)
                     )
                     .overlay(
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .strokeBorder(Color.white.opacity(0.08), lineWidth: 0.75)
+                        RoundedRectangle(cornerRadius: FilePanelStyle.toolbarCornerRadius, style: .continuous)
+                            .strokeBorder(FilePanelStyle.toolbarStrokeOuter, lineWidth: 0.75)
                     )
                     .overlay(
-                        // Inner subtle highlight
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .strokeBorder(Color.white.opacity(0.04), lineWidth: 0.5)
+                        RoundedRectangle(cornerRadius: FilePanelStyle.toolbarCornerRadius, style: .continuous)
+                            .strokeBorder(FilePanelStyle.toolbarStrokeInner, lineWidth: 0.5)
                             .blendMode(.screen)
                     )
                     .overlay(alignment: .top) {
                         Rectangle()
-                            .fill(Color.white.opacity(0.06))
+                            .fill(FilePanelStyle.toolbarHairlineTop)
                             .frame(height: 0.5)
                     }
-                    .shadow(color: Color.black.opacity(0.12), radius: 3, x: 0, y: 1)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: FilePanelStyle.toolbarCornerRadius + 0.5, style: .continuous)
+                            .strokeBorder(FilePanelStyle.toolbarOuterRing, lineWidth: 0.75)
+                    )
+                    .compositingGroup()
+                    .shadow(color: FilePanelStyle.toolbarShadowColor, radius: FilePanelStyle.toolbarShadowRadius, x: 0, y: FilePanelStyle.toolbarShadowYOffset)
             )
-            .padding(.horizontal, 8)
-            .padding(.bottom, 6)
-        }
-        .frame(maxWidth: .infinity)
-        .background(Color.clear)
-        .overlay(alignment: .top) {
-            Rectangle()
-                .fill(Color.black.opacity(0.06))
-                .frame(height: 0.5)
+            .padding(.horizontal, FilePanelStyle.toolbarHorizontalPadding)
+            .padding(.bottom, FilePanelStyle.toolbarBottomPadding)
         }
     }
     
