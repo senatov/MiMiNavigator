@@ -14,15 +14,15 @@ struct DownToolbarButtonView: View {
 
     @State private var isHovered = false
     @State private var isPressed = false
+    @FocusState private var isFocused: Bool
+    @Environment(\.isEnabled) private var isEnabled
 
     // MARK: -
     var body: some View {
         // Only call to makeButton() and wrappers for SRP
-        ZStack {
-            makeButton()
-        }
-        .frame(minWidth: 120, minHeight: 20)
-        .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        ZStack { makeButton() }
+            .frame(minWidth: 120, minHeight: 20)
+            .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
 
     //  MARK: - Builds and configures the toolbar button (macOS 26.1 liquid glass style)
@@ -36,65 +36,81 @@ struct DownToolbarButtonView: View {
             } icon: {
                 Image(systemName: systemImage)
                     .imageScale(.medium)
+                    .alignmentGuide(.firstTextBaseline) { $0[.firstTextBaseline] }
             }
             .labelStyle(.titleAndIcon)
             .padding(.horizontal, 14)
             .padding(.vertical, 8)
             .frame(minWidth: 120, minHeight: 28)
             .background(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(
-                        (isHovered || isPressed)
-                            ? AnyShapeStyle(.ultraThinMaterial)
-                            : AnyShapeStyle(Color.clear))
+                // Hover/pressed get ultraThinMaterial, idle gets faint fill
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill((isHovered || isPressed) ? AnyShapeStyle(.ultraThinMaterial) : AnyShapeStyle(Color.white.opacity(0.02)))
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                // Primary stroke changes with hover/press, disabled dims
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
                     .strokeBorder(
                         isPressed
                             ? FilePanelStyle.skyBlauColor.opacity(0.9)
-                            : (isHovered ? FilePanelStyle.skyBlauColor.opacity(0.6) : Color.primary.opacity(0.15)),
-                        lineWidth: isPressed ? 2 : 1
+                            : (isHovered ? FilePanelStyle.skyBlauColor.opacity(0.6) : Color.primary.opacity(0.2)),
+                        lineWidth: isPressed ? 1.5 : 1
                     )
             )
+            .overlay(
+                // Inner subtle highlight for glass look
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .strokeBorder(Color.white.opacity(0.06), lineWidth: 0.5)
+                    .blendMode(.screen)
+            )
+            .overlay(alignment: .top) {
+                // Hairline top separator per Figma macOS 26.1
+                Rectangle()
+                    .fill(Color.white.opacity(0.05))
+                    .frame(height: 0.5)
+                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+            }
+            .overlay(
+                // Focus ring for keyboard navigation
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .strokeBorder(FilePanelStyle.skyBlauColor.opacity(isFocused ? 0.9 : 0), lineWidth: isFocused ? 2 : 0)
+            )
             .shadow(
-                color: Color.black.opacity(isPressed ? 0.18 : (isHovered ? 0.12 : 0)),
-                radius: isPressed ? 10 : (isHovered ? 8 : 0),
-                x: 0, y: isPressed ? 2 : 1
+                color: Color.black.opacity(isPressed ? 0.16 : (isHovered ? 0.10 : 0)),
+                radius: isPressed ? 6 : (isHovered ? 5 : 0), x: 0, y: isPressed ? 2 : 1
             )
-            .scaleEffect(isPressed ? 0.98 : (isHovered ? 1.01 : 1.0))
+            .scaleEffect(isPressed ? 0.985 : (isHovered ? 1.005 : 1.0))
             .foregroundColor(
-                isHovered
-                    ? Color(#colorLiteral(red: 0.1921568662, green: 0.007843137719, blue: 0.09019608051, alpha: 1))
-                    : FilePanelStyle.dirNameColor
+                isEnabled
+                    ? (isHovered ? FilePanelStyle.dirNameColor : FilePanelStyle.dirNameColor)
+                    : FilePanelStyle.dirNameColor.opacity(0.5)
             )
+            .opacity(isEnabled ? 1 : 0.6)
         }
         .buttonStyle(.plain)
         .help(title)
         .onHover(perform: handleHover)
+        .focusable(true)
+        .focused($isFocused)
         .animation(.spring(response: 0.38, dampingFraction: 1.12), value: isHovered)
         .animation(.spring(response: 0.35, dampingFraction: 1.05), value: isPressed)
     }
 
     // MARK: - handle button press
     private func handlePress() {
-        log.info(#function + " for button '\(title)'")
-        withAnimation(.easeInOut(duration: 0.2)) {
-            isPressed = true
+        log.debug("DownToolbarButton pressed: \(title)")
+        withAnimation(.easeInOut(duration: 0.18)) { isPressed = true }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
+            withAnimation(.easeInOut(duration: 0.22)) { isPressed = false }
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-            withAnimation(.easeInOut(duration: 0.3)) {
-                isPressed = false
-            }
-        }
-        log.info("Button '\(title)' pressed")
         action()
     }
 
     // MARK: - handle cursor hover
     private func handleHover(_ hovering: Bool) {
-        log.info(#function + "Hover on '\(title)': \(hovering ? "ENTER" : "EXIT")")
-        withAnimation(.easeInOut(duration: 0.4)) {
+        if hovering == isHovered { return }
+        log.debug("Hover \(hovering ? "ENTER" : "EXIT") on: \(title)")
+        withAnimation(.easeInOut(duration: 0.25)) {
             isHovered = hovering
         }
     }
