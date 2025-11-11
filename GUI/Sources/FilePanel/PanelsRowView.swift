@@ -82,6 +82,10 @@ struct PanelsRowView: View {
         )
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .layoutPriority(1)
+            // Reserve space for the bottom toolbar so panel overlays never cover it
+        .padding(.bottom, FilePanelStyle.toolbarMinHeight + FilePanelStyle.toolbarBottomPadding + 6)
+            // Ensure the panels root always renders below the bottom toolbar
+        .zIndex(0)
         .onChange(of: leftPanelWidth) {
             let w = leftPanelWidth.rounded()
             if w != lastLoggedWidth {
