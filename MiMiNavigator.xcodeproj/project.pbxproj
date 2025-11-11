@@ -442,7 +442,7 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_ASSET_PATHS = "\"Gui/Sources/Preview Content\"";
+				DEVELOPMENT_ASSET_PATHS = "Gui/Sources/Preview\\ Content";
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = YES;
@@ -453,6 +453,7 @@
 				ENABLE_RESOURCE_ACCESS_PHOTO_LIBRARY = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Gui/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = MiMiNav;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "I. Senatov";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "";
@@ -490,7 +491,7 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_ASSET_PATHS = "\"Gui/Sources/Preview Content\"";
+				DEVELOPMENT_ASSET_PATHS = "Gui/Sources/Preview\\ Content";
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = YES;
@@ -501,6 +502,7 @@
 				ENABLE_RESOURCE_ACCESS_PHOTO_LIBRARY = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Gui/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = MiMiNav;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "I. Senatov";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "";
@@ -637,7 +639,7 @@
 			repositoryURL = "https://github.com/apple/swift-system.git";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 1.5.0;
+				minimumVersion = 1.6.1;
 			};
 		};
 		97D128732DB62CB400274684 /* XCRemoteSwiftPackageReference "FileProvider" */ = {

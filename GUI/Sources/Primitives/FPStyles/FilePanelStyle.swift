@@ -38,7 +38,6 @@ enum FilePanelStyle {
     static let toolbarShadowYOffset: CGFloat = 2
 
     // Toolbar button tokens
-    static let toolbarBottomOffset: CGFloat = 10
     static let toolbarStrokeOuter = Color.white.opacity(0.16)
     static let toolbarStrokeInner = Color.white.opacity(0.08)
     static let toolbarOuterRing = Color(red: 0.22, green: 0.24, blue: 0.28).opacity(0.22)
