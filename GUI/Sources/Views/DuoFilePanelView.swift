@@ -21,15 +21,38 @@ struct DuoFilePanelView: View {
         GeometryReader { geometry in
             VStack(spacing: 0) {
                 TopMenuBarView()
-                    // Panels occupy all remaining vertical space
+                    // The central panels occupy all remaining vertical space
                 PanelsRowView(leftPanelWidth: $leftPanelWidth, geometry: geometry, fetchFiles: fetchFiles)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .frame(maxWidth: .infinity)
+                    .frame(maxHeight: .infinity)
                     .layoutPriority(1)
-            }
-            .overlay(alignment: .bottom) {
-                HStack { buildDownToolbar().frame(maxWidth: .infinity) }
-                    .padding(.bottom, FilePanelStyle.toolbarBottomOffset)
-                    .zIndex(10)
+                    .zIndex(0)
+                
+                    // Thin divider and small decorative gap (Figma style)
+                Divider()
+                    .frame(height: 0.75)
+                    .background(FilePanelStyle.toolbarHairlineTop)
+                    .opacity(0.35)
+                    .padding(.horizontal, 2)
+                    .padding(.top, 6)
+                
+                    // Bottom toolbar (directly in layout, no overlay or safeAreaInset)
+                buildDownToolbar()
+                    .frame(maxWidth: .infinity)
+                    .frame(height: FilePanelStyle.toolbarMinHeight + 20)
+                    .background(Color.secondary.opacity(0.06))
+                    .zIndex(100)
+                    .overlay(
+                        GeometryReader { gp in
+                            Color.clear
+                                .onAppear {
+                                    log.debug("DFPV: DownToolbar host size=\(Int(gp.size.width))x\(Int(gp.size.height))")
+                                }
+                                .onChange(of: gp.size) { oldSize, newSize in
+                                    log.debug("DFPV: DownToolbar host resized → \(Int(newSize.width))x\(Int(newSize.height))")
+                                }
+                        }
+                    )
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .onAppear {
@@ -178,9 +201,9 @@ struct DuoFilePanelView: View {
     
         // MARK: - Toolbar
     private func doCopy() {
-            // Determine source file based on focused panel (deprecated API removed)
+            // Determine the source file based on the focused panel
         let sourceFile = (appState.focusedPanel == .left) ? appState.selectedLeftFile : appState.selectedRightFile
-            // Determine target side explicitly to avoid 'opposite' ambiguity
+            // Determine the target side explicitly to avoid ambiguity
         let targetSide: PanelSide = (appState.focusedPanel == .left) ? .right : .left
         if let file = sourceFile, let targetURL = appState.pathURL(for: targetSide) {
             FActions.copy(file, to: targetURL)
@@ -197,7 +220,7 @@ struct DuoFilePanelView: View {
         log.debug(#function)
         let total = geometry.size.width
         let scale = NSScreen.main?.backingScaleFactor ?? 2.0
-            // Exact pixel-aligned center for divider, convert to left width
+            // Calculate exact pixel-aligned center for the divider and convert to left width
         let halfCenter = (total / 2.0 * scale).rounded() / scale
         let halfLeft = halfCenter - dividerHitAreaWidth / 2
         let minW: CGFloat = 80
@@ -213,14 +236,14 @@ struct DuoFilePanelView: View {
         // MARK: -
     private func addKeyPressMonitor() {
         log.debug(#function)
-            // Avoid installing multiple monitors when the view re-appears
+            // Prevent multiple key monitors from being installed when the view reappears
         if keyMonitor != nil { return }
         let monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
             if event.modifierFlags.contains(.option), event.keyCode == 0x76 {
                 exitApp()
                 return nil
             }
-                // Handle Tab key (keyCode 0x30 / 48) — Tab and Shift+Tab toggle focus
+                // Handle the Tab key (keyCode 0x30 / 48) — Tab and Shift+Tab toggle focus
             if event.keyCode == 0x30 {
                 return doPanelToggled(event)
             }

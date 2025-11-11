@@ -34,6 +34,7 @@ struct MiMiNavigatorApp: App {
                     .padding(.horizontal, 8)
                     .padding(.bottom, FilePanelStyle.toolbarMinHeight + FilePanelStyle.toolbarBottomPadding + 8)
                     .allowsHitTesting(false)
+                    .zIndex(-1)  // ensure it never covers the bottom toolbar visually
             }
             .environmentObject(appState)
             .onAppear { appDelegate.bind(appState) }
