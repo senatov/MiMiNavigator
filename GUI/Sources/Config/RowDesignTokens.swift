@@ -12,8 +12,5 @@ import SwiftUI
 // MARK: -Design tokens aligned with Figma macOS 26.1 (8pt grid)
 enum RowDesignTokens {
     static let grid: CGFloat = 8
-    static let radius: CGFloat = 6
     static let iconSize: CGFloat = FilePanelStyle.iconSize
-    static let selBG = FilePanelStyle.yellowSelRowFill
-    static let hoverBG = Color.primary.opacity(0.04)
 }

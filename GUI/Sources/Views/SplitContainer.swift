@@ -25,17 +25,6 @@ struct SplitContainer<Left: View, Right: View>: NSViewRepresentable {
         if Self.verboseLogs { log.debug(msg()) }
     }
 
-    // MARK: -
-    private func fmtPoint(_ p: NSPoint) -> String { "(\(String(format: "%.1f", p.x)), \(String(format: "%.1f", p.y)))" }
-
-    // MARK: -
-    private func fmtSize(_ s: NSSize) -> String { "(\(String(format: "%.1f", s.width))×\(String(format: "%.1f", s.height)))" }
-
-    // MARK: -
-    private func fmtRect(_ r: NSRect) -> String {
-        "[x:\(String(format: "%.1f", r.origin.x)) y:\(String(format: "%.1f", r.origin.y)) w:\(String(format: "%.1f", r.size.width)) h:\(String(format: "%.1f", r.size.height))]"
-    }
-
     // MARK: -Custom NSSplitView that intercepts double-clicks on the divider
     final class ResettableSplitView: NSSplitView {
         weak var coordinatorRef: Coordinator?
@@ -236,7 +225,6 @@ struct SplitContainer<Left: View, Right: View>: NSViewRepresentable {
             // Respect system proposal, but never allow the left panel to be smaller than our minimum
             return max(proposedMinimumPosition, parent.minPanelWidth)
         }
-
 
         // MARK: - MARK: - Max coordinate constraint
         func splitView(
