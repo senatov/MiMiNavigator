@@ -39,20 +39,17 @@ struct DuoFilePanelView: View {
                     // Bottom toolbar (directly in layout, no overlay or safeAreaInset)
                 buildDownToolbar()
                     .frame(maxWidth: .infinity)
-                    .frame(height: FilePanelStyle.toolbarMinHeight + 20)
-                    .background(Color.secondary.opacity(0.06))
+                    .frame(minHeight: FilePanelStyle.toolbarMinHeight)
+                    .padding(.bottom, FilePanelStyle.toolbarBottomPadding)
+                    .background(.ultraThinMaterial.opacity(0.85))  // slightly stronger contrast for Liquid Glass
+                    .overlay(alignment: .top) {  // slightly brighter top hairline
+                        Rectangle()
+                            .fill(FilePanelStyle.toolbarHairlineTop.opacity(0.45))
+                            .frame(height: 0.75)
+                    }
+                    .shadow(color: FilePanelStyle.toolbarShadowColor.opacity(0.4), radius: FilePanelStyle.toolbarShadowRadius + 1, x: 0, y: FilePanelStyle.toolbarShadowYOffset + 0.5)
+                    .layoutPriority(2)
                     .zIndex(100)
-                    .overlay(
-                        GeometryReader { gp in
-                            Color.clear
-                                .onAppear {
-                                    log.debug("DFPV: DownToolbar host size=\(Int(gp.size.width))x\(Int(gp.size.height))")
-                                }
-                                .onChange(of: gp.size) { oldSize, newSize in
-                                    log.debug("DFPV: DownToolbar host resized → \(Int(newSize.width))x\(Int(newSize.height))")
-                                }
-                        }
-                    )
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .onAppear {
@@ -164,6 +161,8 @@ struct DuoFilePanelView: View {
             .frame(maxWidth: .infinity)
             .padding(.horizontal, FilePanelStyle.toolbarHorizontalPadding)
             .padding(.vertical, 10)
+            .foregroundStyle(Color.primary.opacity(0.9))  // richer icon and label tone
+            .saturation(1.2)                              // slightly more vibrant color rendering
             .background(
                 RoundedRectangle(cornerRadius: FilePanelStyle.toolbarCornerRadius, style: .continuous)
                     .fill(FilePanelStyle.toolbarMaterial)
