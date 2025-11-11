@@ -23,7 +23,7 @@ struct PanelFocusModifier: ViewModifier {
             .contentShape(Rectangle())
             .onTapGesture {
                 // Set focus to this panel when the user interacts with it
-                log.info("Panel tapped, focus -> \(panelSide)")
+                log.info("Panel tapped, focus -> <<\(panelSide)>>")
                 appState.focusedPanel = panelSide
             }
             .onChange(of: appState.focusedPanel, initial: false) { oldValue, newValue in

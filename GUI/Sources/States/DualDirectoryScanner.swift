@@ -72,7 +72,7 @@ actor DualDirectoryScanner {
     // MARK: - Refreshes the file list for a specific directory side
     @Sendable
     func refreshFiles(currSide: PanelSide) async {
-        log.info(#function + " currSide: \(currSide)")
+        log.info(#function + " currSide: <<\(currSide)>>")
         do {
             switch currSide {
             case .left:
@@ -87,15 +87,15 @@ actor DualDirectoryScanner {
             }
         }
         catch {
-            log.error("Failed to scan \(currSide) directory: \(error.localizedDescription)")
+            log.error("Failed to scan <<\(currSide)>> directory: \(error.localizedDescription)")
         }
     }
 
     // MARK: -
     @MainActor
     private func updateScannedFiles(_ files: [CustomFile], for currSide: PanelSide) {
-        log.info(#function + " currSide: \(currSide)")
-        log.info("Updating AppState.\(currSide)Panel with \(files.count) files.")
+        log.info(#function + "<<currSide: \(currSide)>>")
+        log.info("Updating <<AppState.\(currSide)>> Panel with \(files.count) files.")
         let sorted = appState.applySorting(files)
         switch currSide {
         case .left:
@@ -107,7 +107,7 @@ actor DualDirectoryScanner {
 
     // MARK: -
     func resetRefreshTimer(for currSide: PanelSide) {
-        log.info("↪️ \(#function) [currSide: \(currSide)]")
+        log.info("↪️ \(#function) [currSide: <<\(currSide)>>]")
         switch currSide {
         case .left:
             leftTimer?.cancel()

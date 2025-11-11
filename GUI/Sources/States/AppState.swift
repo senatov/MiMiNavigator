@@ -242,7 +242,7 @@ import Foundation
                 }
                 lastRecordedPathRight = path
         }
-        log.debug("History[\(panelSide)] → \(path)")
+        log.debug("History[<<\(panelSide)]>> → \(path)")
         selectionsHistory.setCurrent(to: path)
     }
     

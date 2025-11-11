@@ -17,7 +17,6 @@ struct FilePanelView: View {
     @Binding var leftPanelWidth: CGFloat
         /// Called when user clicks anywhere inside the panel (left/right)
     let onPanelTap: (PanelSide) -> Void
-    @State private var lastLoggedWidth: CGFloat = -1
     @State private var lastBodyLogTime: TimeInterval = 0
     
         // MARK: - compound Variable: Bridge binding to AppState-selected file for this panel
@@ -115,7 +114,7 @@ struct FilePanelView: View {
         .onAppear {
                 // Log once on first appearance; no throttling needed here
             let pathStr = appState.pathURL(for: viewModel.panelSide)?.path ?? "nil"
-            log.debug("FilePanelView.onAppear side=<<\(viewModel.panelSide)>> path=\(pathStr)")
+            log.debug("FilePanelView.onAppear side= <<\(viewModel.panelSide)>> path=\(pathStr)")
         }
         .onChange(of: appState.pathURL(for: viewModel.panelSide)?.path) { oldValue, newValue in
                 // Throttle path-change logs to avoid noise on rapid updates
@@ -152,7 +151,7 @@ struct FilePanelView: View {
             TapGesture()
                 .onEnded {
                         // Focus the panel on any click within its bounds without stealing row taps
-                    log.debug("Panel tapped for focus: \(viewModel.panelSide)")
+                    log.debug("Panel tapped for focus: <<\(viewModel.panelSide)>>")
                     onPanelTap(viewModel.panelSide)
                         // Selection is coordinated inside PanelFileTableSection; do not auto-select here to avoid double handling
                 }

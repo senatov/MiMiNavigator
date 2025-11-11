@@ -75,7 +75,7 @@ struct DuoFilePanelView: View {
         // MARK: - Fetch Files
     @MainActor
     private func fetchFiles(for panelSide: PanelSide) async {
-        log.debug("\(#function) [side: \(panelSide)]")
+        log.debug("\(#function) [side: <<\(panelSide)>>]")
         switch panelSide {
             case .left:
                 appState.displayedLeftFiles = await appState.scanner.fileLst.getLeftFiles()
@@ -164,13 +164,15 @@ struct DuoFilePanelView: View {
                     }
                     .overlay(
                         RoundedRectangle(cornerRadius: FilePanelStyle.toolbarCornerRadius + 0.5, style: .continuous)
-                            .strokeBorder(FilePanelStyle.toolbarOuterRing, lineWidth: 0.75)
+                            .strokeBorder(FilePanelStyle.toolbarOuterRing, lineWidth: 1.0)
+                            .blendMode(.normal)
                     )
                     .compositingGroup()
-                    .shadow(color: FilePanelStyle.toolbarShadowColor, radius: FilePanelStyle.toolbarShadowRadius, x: 0, y: FilePanelStyle.toolbarShadowYOffset)
+                    .shadow(
+                        color: FilePanelStyle.toolbarShadowColor, radius: FilePanelStyle.toolbarShadowRadius, x: 0,
+                        y: FilePanelStyle.toolbarShadowYOffset)
             )
             .padding(.horizontal, FilePanelStyle.toolbarHorizontalPadding)
-            .padding(.bottom, FilePanelStyle.toolbarBottomPadding)
         }
     }
     

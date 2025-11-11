@@ -50,7 +50,7 @@ struct FileTableView: View {
         .contentShape(Rectangle())
         .onTapGesture {
             // Focus the panel on any background tap without stealing row/header taps
-            log.debug("Panel tap focus → \(panelSide)")
+            log.debug("Panel tap focus → <<\(panelSide)>>")
             appState.focusedPanel = panelSide
         }
         .animation(nil, value: isFocused)
@@ -64,7 +64,7 @@ struct FileTableView: View {
         .onChange(
             of: selectedID,
             { oldValue, newValue in
-                log.debug("FTV.selectedID changed: \(String(describing: oldValue)) → \(String(describing: newValue)) on \(panelSide)")
+                log.debug("FTV.selectedID changed: \(String(describing: oldValue)) → \(String(describing: newValue)) on <<\(panelSide)>>")
             })
     }
 

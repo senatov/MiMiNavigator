@@ -31,7 +31,7 @@ struct PanelFileTableSection: View {
         let now = ProcessInfo.processInfo.systemUptime
         if now - LogThrottle.last >= 0.25 {  // throttle body logs to max ~4/sec without touching @State
             LogThrottle.last = now
-            log.debug(#function + " side=<<\(panelSide)>> files=\(files.count) sel=\(String(describing: selectedID))")
+            log.debug(#function + " side= <<\(panelSide)>> files=\(files.count) sel=\(String(describing: selectedID))")
         }
         let stableKey = files.count.hashValue ^ (selectedID?.hashValue ?? 0) ^ panelSide.hashValue
         return StableBy(stableKey) {
@@ -75,7 +75,7 @@ struct PanelFileTableSection: View {
                     notifyWillSelect(file)
                     onSelect(file)
                 } else {
-                    log.debug("Selection cleared on \(panelSide)")
+                    log.debug("Selection cleared on <<\(panelSide)>>")
                     notifyDidClearSelection()
                 }
             }

@@ -54,7 +54,7 @@ struct FileRow: View {
             TapGesture()
             .onEnded {
                 if Int.random(in: 0..<6) == 0 { // sample roughly 1/6 taps to reduce IO
-                    log.debug("Row tap → index=\(index) name=\(file.nameStr) id=\(file.id) side=<<\(panelSide)>>")
+                    log.debug("Row tap → index=\(index) name=\(file.nameStr) id=\(file.id) side= <<\(panelSide)>>")
                 }
                 onSelect(file)
             }
