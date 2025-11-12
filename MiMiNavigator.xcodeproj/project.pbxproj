@@ -128,9 +128,12 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 97AD1A552C624E040045C38D /* Build configuration list for PBXNativeTarget "MiMiNavigator" */;
 			buildPhases = (
+				975036A22EC54E7100FD62D6 /* ShellScript */,
+				975036A42EC54FF800FD62D6 /* ShellScript */,
 				97AD1A2A2C624E020045C38D /* Sources */,
 				97AD1A2B2C624E020045C38D /* Frameworks */,
 				97AD1A2C2C624E020045C38D /* Resources */,
+				975036A32EC54FF100FD62D6 /* ShellScript */,
 			);
 			buildRules = (
 			);
@@ -254,6 +257,50 @@
 			);
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		975036A22EC54E7100FD62D6 /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			shellPath = /bin/zsh;
+			shellScript = (
+				"# Ensure swift-format is available",
+				"if ! command -v swift-format >/dev/null 2>&1; then",
+				"  echo \"warning: swift-format not installed; run 'brew install swift-format'\"",
+				"  exit 0",
+				"fi",
+				"",
+				"# Root of the project",
+				"PROJECT_ROOT=\"${SRCROOT}\"",
+				"",
+				"# Format all Swift files in the main sources directory in-place",
+				"swift-format \\",
+				"  --configuration \"/Users/senat/Develop/MiMiNavigator/.swift-format\" \\",
+				"  --recursive \"/Users/senat/Develop/MiMiNavigator/Gui\" \\",
+				"  --in-place",
+				"",
+			);
+		};
+		975036A32EC54FF100FD62D6 /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			shellPath = /bin/sh;
+			shellScript = (
+				"",
+			);
+		};
+		975036A42EC54FF800FD62D6 /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			shellPath = /bin/zsh;
+			shellScript = (
+				"if ! command -v swiftlint >/dev/null 2>&1; then",
+				"  echo \"warning: SwiftLint not installed; run 'brew install swiftlint'\"",
+				"  exit 0",
+				"fi",
+				"",
+				"swiftlint lint --quiet --config \"${SRCROOT}/.swiftlint.yml\" --path \"${SRCROOT}/Gui\"",
+				"",
+			);
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		97AD1A2A2C624E020045C38D /* Sources */ = {

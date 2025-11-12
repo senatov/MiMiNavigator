@@ -32,7 +32,7 @@ struct TopMenuBarView: View {
                             LinearGradient(
                                 colors: [
                                     Color.white.opacity(0.30),  // top highlight
-                                    Color.blue.opacity(0.12),
+                                    Color.blue.opacity(0.08),
                                     Color.black.opacity(0.12),  // bottom subtle shadow
                                 ],
                                 startPoint: .top,

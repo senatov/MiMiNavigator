@@ -8,6 +8,7 @@
   "maximumBlankLines": 1,
   "respectsExistingLineBreaks": true,
   "lineBreakBeforeEachArgument": false,
+   "lineBreakBeforeEachParameter": false,
   "lineBreakBeforeEachGenericRequirement": true,
   "lineBreakAroundMultilineExpressionChainComponents": true
 }
