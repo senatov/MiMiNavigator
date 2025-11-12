@@ -1,42 +1,72 @@
-    //
-    //  TopMenuBarView.swift
-    //  MiMiNavigator
-    //
-    //  Created by Iakov Senatov on 16.10.24.
-    //  Description: SwiftUI component for rendering the top menu bar with dropdown menus and shortcuts.
-    //
+//
+//  TopMenuBarView.swift
+//  MiMiNavigator
+//
+//  Created by Iakov Senatov on 16.10.24.
+//  Description: SwiftUI component for rendering the top menu bar with dropdown menus and shortcuts.
+//
 
+import AppKit
 import SwiftUI
 
 struct TopMenuBarView: View {
     @EnvironmentObject var appState: AppState
     @State private var favoritesTargetSide: PanelSide = .left
-        // MARK: -
+
+    // MARK: - Metrics
+    private enum MenuBarMetrics {
+        static let height: CGFloat = 36
+        static let corner: CGFloat = 10
+        static let horizontalPadding: CGFloat = 8
+    }
+    // MARK: -
     var body: some View {
-        log.debug(#function)
-        return ZStack(alignment: .top) {
-                // Glass-like background bar with a thin bottom separator (Figma/macOS 26)
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
+        ZStack(alignment: .top) {
+            // Glass bar background (liquid-glass, macOS 26.1 style)
+            RoundedRectangle(cornerRadius: MenuBarMetrics.corner, style: .continuous)
                 .fill(.ultraThinMaterial)
-                .frame(height: 36)
+                // Decorative hairline ring (crisp, gradient)
+                .overlay(
+                    RoundedRectangle(cornerRadius: MenuBarMetrics.corner, style: .continuous)
+                        .strokeBorder(
+                            LinearGradient(
+                                colors: [
+                                    Color.white.opacity(0.30),  // top highlight
+                                    Color.blue.opacity(0.12),
+                                    Color.black.opacity(0.12),  // bottom subtle shadow
+                                ],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            ),
+                            lineWidth: px
+                        )
+                )
+                // Soft top glow
+                .overlay(alignment: .top) {
+                    LinearGradient(
+                        colors: [Color.white.opacity(0.22), Color.blue.opacity(0.08), .clear],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                    .frame(height: MenuBarMetrics.height * 0.55)
+                }
+                // Crisp bottom hairline
                 .overlay(alignment: .bottom) {
                     Rectangle()
-                        .fill(LinearGradient(
-                            colors: [Color.white.opacity(0.16), Color.white.opacity(0.02)],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        ))
-                        .frame(height: 0.5)
-                        .blendMode(.plusLighter)
+                        .fill(Color.blue.opacity(0.20))
+                        .frame(height: px)
                 }
-                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                // Existing menu row kept intact (structure/logic unchanged)
+                .clipShape(RoundedRectangle(cornerRadius: MenuBarMetrics.corner, style: .continuous))
+                .contentShape(RoundedRectangle(cornerRadius: MenuBarMetrics.corner, style: .continuous))
+                .shadow(color: Color.black.opacity(0.10), radius: 8, x: 0, y: 2)
+                .shadow(color: Color.blue.opacity(0.06), radius: 18, x: 0, y: 10)
+
+            // Menu row
             HStack(spacing: 6) {
                 ForEach(menuData.dropLast()) { menu in
                     menuView(for: menu)
                 }
-                Spacer(minLength: 12)  // keep Help menu pushed to the right with consistent gap
+                Spacer(minLength: 12)
                 if let helpMenu = menuData.last {
                     Menu {
                         ForEach(helpMenu.items) { item in
@@ -51,28 +81,39 @@ struct TopMenuBarView: View {
                             .contentShape(RoundedRectangle(cornerRadius: 8))
                             .help("Open menu: '\(helpMenu.title)'")
                     }
-                    .menuStyle(.borderlessButton)  // flat, menu-like appearance
-                    .buttonStyle(TopMenuButtonStyle())  // keep your custom text-button look
+                    .menuStyle(.borderlessButton)
+                    .buttonStyle(TopMenuButtonStyle())
                     .padding(.trailing, 1)
                 }
             }
-            .padding(.horizontal, 8)
-            .frame(height: 36, alignment: .center)
+            .padding(.horizontal, MenuBarMetrics.horizontalPadding)
+            .frame(height: MenuBarMetrics.height, alignment: .center)
             .controlSize(.small)
-            .accessibilityElement(children: AccessibilityChildBehavior.contain)
+            .accessibilityElement(children: .contain)
             .accessibilityLabel("Top menu bar")
         }
         .frame(maxWidth: .infinity, alignment: .topLeading)
-        .background(.clear)  // no opaque backgrounds behind the bar
+        .background(.clear)
+        .onAppear {
+            log.debug("TopMenuBarView appeared")
+            if appState.showFavTreePopup {
+                favoritesTargetSide = appState.focusedPanel
+            }
+        }
         .onChange(of: appState.showFavTreePopup) { oldValue, newValue in
             if newValue {
                 favoritesTargetSide = appState.focusedPanel
             }
         }
     }
-        // MARK: -
+    // MARK: - Pixel helpers
+    private var px: CGFloat {
+        let scale = NSScreen.main?.backingScaleFactor ?? 2.0
+        return 1.0 / scale
+    }
+    // MARK: -
     private func menuView(for menu: MenuCategory) -> some View {
-            // Explicit return for clarity
+        // Explicit return for clarity
         return Menu(menu.title) {
             ForEach(menu.items) { item in
                 TopMenuItemView(item: item)
@@ -83,10 +124,10 @@ struct TopMenuBarView: View {
         .controlSize(.small)
         .buttonStyle(TopMenuButtonStyle())
     }
-    
-        // MARK: - All top-level menu categories are defined here:
+
+    // MARK: - All top-level menu categories are defined here:
     private var menuData: [MenuCategory] {
-            // Explicit return for clarity
+        // Explicit return for clarity
         return [
             filesMenuCategory,
             markMenuCategory,
