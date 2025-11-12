@@ -23,36 +23,11 @@ struct DuoFilePanelView: View {
                 TopMenuBarView()
                 // The central panels occupy all remaining vertical space
                 PanelsRowView(leftPanelWidth: $leftPanelWidth, geometry: geometry, fetchFiles: fetchFiles)
-                    .frame(maxWidth: .infinity)
-                    .frame(maxHeight: .infinity)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .layoutPriority(1)
-                    .zIndex(0)
-
-                // Thin divider and small decorative gap (Figma style)
-                Divider()
-                    .frame(height: 0.75)
-                    .background(FilePanelStyle.toolbarHairlineTop)
-                    .opacity(0.35)
-                    .padding(.horizontal, 2)
-                    .padding(.top, 6)
-
+                // Small decorative gap (Figma style)
+                Color.clear.frame(height: 6)
                 // Bottom toolbar (directly in layout, no overlay or safeAreaInset)
-                buildDownToolbar()
-                    .frame(maxWidth: .infinity)
-                    .frame(minHeight: FilePanelStyle.toolbarMinHeight)
-                    .padding(.bottom, FilePanelStyle.toolbarBottomPadding)
-                    .background(.ultraThinMaterial.opacity(0.85))  // slightly stronger contrast for Liquid Glass
-                    .overlay(alignment: .top) {  // slightly brighter top hairline
-                        Rectangle()
-                            .fill(FilePanelStyle.toolbarHairlineTop.opacity(0.45))
-                            .frame(height: 0.75)
-                    }
-                    .shadow(
-                        color: FilePanelStyle.toolbarShadowColor.opacity(0.4), radius: FilePanelStyle.toolbarShadowRadius + 1, x: 0,
-                        y: FilePanelStyle.toolbarShadowYOffset + 0.5
-                    )
-                    .layoutPriority(2)
-                    .zIndex(100)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .onAppear {
@@ -92,6 +67,17 @@ struct DuoFilePanelView: View {
                 UserDefaults.standard.set(newValue, forKey: "leftPanelWidth")
                 log.debug("DuoFilePanelView.leftPanelWidth changed → \(Int(oldValue)) → \(Int(newValue)) (persisted)")
             }
+            buildDownToolbar()
+                .frame(maxWidth: .infinity)
+                .frame(minHeight: FilePanelStyle.toolbarMinHeight)
+                .layoutPriority(1000)
+                .shadow(
+                    color: FilePanelStyle.toolbarShadowColor.opacity(0.4),
+                    radius: FilePanelStyle.toolbarShadowRadius + 1,
+                    x: 0,
+                    y: FilePanelStyle.toolbarShadowYOffset + 0.5
+                )
+                .zIndex(10)
         }
     }
 
@@ -111,6 +97,8 @@ struct DuoFilePanelView: View {
     private func buildDownToolbar() -> some View {
         return VStack(spacing: 0) {
             HStack(spacing: 16) {
+
+                // MARK: -
                 DownToolbarButtonView(title: "F3 View", systemImage: "eye.circle") {
                     log.debug("View button tapped")
                     if let file = appState.selectedLeftFile {
@@ -119,6 +107,8 @@ struct DuoFilePanelView: View {
                         log.debug("No file selected for View")
                     }
                 }
+
+                // MARK: -
                 DownToolbarButtonView(title: "F4 Edit", systemImage: "pencil") {
                     if let file = appState.selectedLeftFile {
                         FActions.edit(file)
@@ -126,15 +116,20 @@ struct DuoFilePanelView: View {
                         log.debug("No file selected for Edit")
                     }
                 }
+                // MARK: -
                 DownToolbarButtonView(title: "F5 Copy", systemImage: "doc.on.doc") {
                     doCopy()
                 }
+
+                // MARK: -
                 DownToolbarButtonView(title: "F6 Move", systemImage: "square.and.arrow.down.on.square") {
                     log.debug("Move button tapped")
                 }
+                // MARK: -
                 DownToolbarButtonView(title: "F7 NewFolder", systemImage: "folder.badge.plus") {
                     log.debug("NewFolder button tapped")
                 }
+                // MARK: -
                 DownToolbarButtonView(title: "F8 Delete", systemImage: "minus.rectangle") {
                     log.debug("Delete button tapped")
                     if let file = appState.selectedLeftFile {
@@ -148,19 +143,22 @@ struct DuoFilePanelView: View {
                         log.debug("No file selected for Delete")
                     }
                 }
+                // MARK: -
                 DownToolbarButtonView(title: "Settings", systemImage: "gearshape") {
                     log.debug("Settings button tapped")
                 }
+                // MARK: -
                 DownToolbarButtonView(title: "Console", systemImage: "terminal") {
                     log.debug("Console button tapped")
-                    ConsoleCurrPath.open(in: "~")
+                    let targetPath = appState.pathURL(for: appState.focusedPanel)?.path ?? "/"
+                    _ = ConsoleCurrPath.open(in: targetPath)
                 }
+                // MARK: -
                 DownToolbarButtonView(title: "Exit", systemImage: "power") {
                     log.debug("F4 Exit button tapped")
                     exitApp()
                 }
             }
-            .frame(minHeight: FilePanelStyle.toolbarMinHeight)
             .frame(maxWidth: .infinity)
             .padding(.horizontal, FilePanelStyle.toolbarHorizontalPadding)
             .padding(.vertical, 10)
@@ -184,8 +182,8 @@ struct DuoFilePanelView: View {
                     )
                     .overlay(alignment: .top) {
                         Rectangle()
-                            .fill(FilePanelStyle.toolbarHairlineTop)
-                            .frame(height: 0.5)
+                            .fill(FilePanelStyle.toolbarHairlineTop.opacity(0.45))
+                            .frame(height: hairlineHeight)
                     }
                     .overlay(
                         RoundedRectangle(cornerRadius: FilePanelStyle.toolbarCornerRadius + 0.5, style: .continuous)
@@ -275,9 +273,16 @@ struct DuoFilePanelView: View {
         NSApplication.shared.terminate(nil)
     }
 
+    // MARK: -
     private func preciseHalfLeft(totalWidth: CGFloat) -> CGFloat {
         let scale = NSScreen.main?.backingScaleFactor ?? 2.0
         let halfCenter = (totalWidth / 2.0 * scale).rounded() / scale
         return halfCenter - dividerHitAreaWidth / 2
+    }
+
+    // MARK: -
+    private var hairlineHeight: CGFloat {
+        let scale = NSScreen.main?.backingScaleFactor ?? 2.0
+        return 1.0 / scale
     }
 }
