@@ -40,9 +40,8 @@ struct MiMiNavigatorApp: App {
                 }
             }
             .safeAreaInset(edge: .bottom, spacing: 0) {
-                    // Diagnostic bottom stripe to verify that window content reaches the bottom edge
                 Rectangle()
-                    .fill(Color.green.opacity(0.35))
+                    .fill(Color.green.opacity(0.42))
                     .frame(height: 6)
             }
             .toolbar {

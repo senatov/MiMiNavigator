@@ -1,0 +1,3 @@
+Command line invocation:
+    /Applications/Xcode-beta.app/Contents/Developer/usr/bin/xcodebuild -workspace MiMiNavigator.xcworkspace -scheme MiMiNavigator -configuration Debug -destination platform=macOS build
+
