@@ -1,40 +1,34 @@
-//
-//  MiMiNavigatorApp.swift
-//  MiMiNavigator
-//
-//  Created by Iakov Senatov on 06.08.24.
-//
+    //
+    //  MiMiNavigatorApp.swift
+    //  MiMiNavigator
+    //
+    //  Created by Iakov Senatov on 06.08.24.
+    //
 
 import AppKit
 import SwiftUI
 
 let log = LogMan.log
 
-// MARK: -
+    // MARK: -
 @main
 struct MiMiNavigatorApp: App {
     @StateObject private var appState = AppState()  // single source of truth
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @Environment(\.scenePhase) private var scenePhase
-
-    // MARK: -
+    
+        // MARK: -
     init() {
         LogMan.initializeLogging()
         log.debug("---- Logger initialized ------")
         Task { await BookmarkStore.shared.restoreAll() }
     }
-
-    // MARK: -
+    
+        // MARK: -
     var body: some Scene {
         WindowGroup {
-            ZStack(alignment: .bottomLeading) {
+            VStack{
                 DuoFilePanelView()
-                // Overlay console path so it does not reserve layout height
-                ConsoleCurrPath()
-                    .padding(.horizontal, 8)
-                    .padding(.bottom, FilePanelStyle.toolbarMinHeight + FilePanelStyle.toolbarBottomPadding + 8)
-                    .allowsHitTesting(false)
-                    .zIndex(-1)  // ensure it never covers the bottom toolbar visually
             }
             .environmentObject(appState)
             .onAppear { appDelegate.bind(appState) }
@@ -46,7 +40,7 @@ struct MiMiNavigatorApp: App {
                 }
             }
             .safeAreaInset(edge: .bottom, spacing: 0) {
-                // Diagnostic bottom stripe to verify that window content reaches the bottom edge
+                    // Diagnostic bottom stripe to verify that window content reaches the bottom edge
                 Rectangle()
                     .fill(Color.green.opacity(0.35))
                     .frame(height: 6)
@@ -62,8 +56,8 @@ struct MiMiNavigatorApp: App {
             AppCommands(appState: appState)
         }
     }
-
-    // MARK: -
+    
+        // MARK: -
     fileprivate func toolBarItemRefresh() -> ToolbarItem<(), some View> {
         return ToolbarItem(placement: .automatic) {
             Button(action: { log.debug("Refresh button clicked") }) {
@@ -79,8 +73,8 @@ struct MiMiNavigatorApp: App {
             .padding(.horizontal, 12)
         }
     }
-
-    // MARK: -
+    
+        // MARK: -
     fileprivate func toolBarItemMagnify() -> ToolbarItem<(), some View> {
         return ToolbarItem(placement: .automatic) {
             Button(action: { appState.revealLogFileInFinder() }) {
@@ -96,12 +90,12 @@ struct MiMiNavigatorApp: App {
             .padding(.horizontal, 12)
         }
     }
-
-    // MARK: -
+    
+        // MARK: -
     fileprivate func toolBarItemBuildInfo() -> ToolbarItem<(), some View> {
         return ToolbarItem(placement: .status) {
             HStack(spacing: 8) {
-                // Badge icon styled for macOS 26 "liquid glass" look
+                    // Badge icon styled for macOS 26 "liquid glass" look
                 Text("🐈")
                     .font(.caption2)
                     .padding(8)
@@ -129,11 +123,11 @@ struct MiMiNavigatorApp: App {
             .help("Current development build version")
         }
     }
-
-    // MARK: -
+    
+        // MARK: -
     private func makeDevMark() -> Text {
         log.debug(#function + " - creating development mark")
-        // Prefer reading from bundled file 'curr_version.asc'; fall back to Info.plist values
+            // Prefer reading from bundled file 'curr_version.asc'; fall back to Info.plist values
         let versionURL = Bundle.main.url(forResource: "curr_version", withExtension: "asc")
         let content: String
         if let url = versionURL, let versionString = try? String(contentsOf: url, encoding: .utf8) {
@@ -141,7 +135,7 @@ struct MiMiNavigatorApp: App {
             content = trimmed
             log.debug("Loaded version from 'curr_version.asc' file: '\(content)'")
         } else {
-            // Fallback: build version string from Info.plist values
+                // Fallback: build version string from Info.plist values
             let short = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String
             let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String
             if let s = short, let b = build {
