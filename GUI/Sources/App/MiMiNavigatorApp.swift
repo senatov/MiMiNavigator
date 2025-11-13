@@ -27,28 +27,21 @@ struct MiMiNavigatorApp: App {
         // MARK: -
     var body: some Scene {
         WindowGroup {
-            VStack{
-                DuoFilePanelView()
-            }
-            .environmentObject(appState)
-            .onAppear { appDelegate.bind(appState) }
-            .toolbarBackground(Material.thin, for: ToolbarPlacement.windowToolbar)
-            .toolbarBackgroundVisibility(Visibility.visible, for: ToolbarPlacement.windowToolbar)
-            .onChange(of: scenePhase) {
-                if scenePhase == .background {
-                    Task { await BookmarkStore.shared.stopAll() }
+            DuoFilePanelView()
+                .environmentObject(appState)
+                .onAppear { appDelegate.bind(appState) }
+                .toolbarBackground(Material.thin, for: ToolbarPlacement.windowToolbar)
+                .toolbarBackgroundVisibility(Visibility.visible, for: ToolbarPlacement.windowToolbar)
+                .onChange(of: scenePhase) {
+                    if scenePhase == .background {
+                        Task { await BookmarkStore.shared.stopAll() }
+                    }
                 }
-            }
-            .safeAreaInset(edge: .bottom, spacing: 0) {
-                Rectangle()
-                    .fill(Color.green.opacity(0.42))
-                    .frame(height: 6)
-            }
-            .toolbar {
-                toolBarItemRefresh()
-                toolBarItemMagnify()
-                toolBarItemBuildInfo()
-            }
+                .toolbar {
+                    toolBarItemRefresh()
+                    toolBarItemMagnify()
+                    toolBarItemBuildInfo()
+                }
         }
         .windowToolbarStyle(.unifiedCompact)
         .commands {

@@ -4,6 +4,7 @@
 .xcuserdata/
 *.dSYM
 *.dSYM.zip
+*.log
 *.hmap
 *.ipa
 *.mdb
