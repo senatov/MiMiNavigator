@@ -1,41 +1,41 @@
-    //  PanelsRowView.swift
-    //  MiMiNavigator
-    //
-    //  Created by Iakov Senatov on 21.10.2025.
-    //
+//  PanelsRowView.swift
+//  MiMiNavigator
+//
+//  Created by Iakov Senatov on 21.10.2025.
+//
 
 import AppKit
 import SwiftUI
 
-    // MARK: - PanelsRowView
+// MARK: - PanelsRowView
 struct PanelsRowView: View {
     @EnvironmentObject var appState: AppState
-        // External
+    // External
     @Binding var leftPanelWidth: CGFloat
     let geometry: GeometryProxy
     let fetchFiles: @MainActor (PanelSide) async -> Void
-        // Tooltip state
+    // Tooltip state
     @State private var tooltipText: String = ""
     @State private var tooltipPosition: CGPoint = .zero
     @State private var isDividerTooltipVisible: Bool = false
-    
+
     @State private var lastLoggedWidth: CGFloat = -1
-        // Drag state
+    // Drag state
     @State private var dragStartWidth: CGFloat = .nan
     @State private var lastAppliedWidth: CGFloat = -1
     @State private var isDividerDragging: Bool = false
-        // Tooltip throttle
+    // Tooltip throttle
     @State private var lastTooltipLeft: CGFloat = .nan
     @State private var dragGrabOffset: CGFloat = 0
     @State private var suppressDragUntilMouseUp: Bool = false
     private let dividerHitAreaWidth: CGFloat = 24
-    
-        // Do not relayout panels while dragging; draw a preview line instead
+
+    // Do not relayout panels while dragging; draw a preview line instead
     @State private var dragPreviewLeft: CGFloat? = nil
-        // Throttle UI logs for divider hover, cleaner output
+    // Throttle UI logs for divider hover, cleaner output
     @State private var lastUILogTS: TimeInterval = 0
-    
-        // MARK: - Body
+
+    // MARK: - Body
     var body: some View {
         if Int(leftPanelWidth.rounded()) != Int(lastLoggedWidth) {
             log.debug("PanelsRowView.body init with leftPanelWidth=\(leftPanelWidth.rounded())")
@@ -60,12 +60,12 @@ struct PanelsRowView: View {
                     tx.animation = nil
                 }
             }
-                // Preview divider that does not trigger layout during drag
+            // Preview divider that does not trigger layout during drag
             if let previewX = dragPreviewLeft {
                 Rectangle()
                     .fill(
                         isDividerDragging
-                        ? Color(nsColor: .systemOrange) : Color(nsColor: NSColor.systemOrange.withAlphaComponent(0.55))
+                            ? Color(nsColor: .systemOrange) : Color(nsColor: NSColor.systemOrange.withAlphaComponent(0.55))
                     )
                     .frame(width: isDividerDragging ? 3.0 : 1.5, height: geometry.size.height)
                     .shadow(color: Color.black.opacity(isDividerDragging ? 0.16 : 0.0), radius: isDividerDragging ? 2 : 0, x: 0, y: 0)
@@ -89,8 +89,8 @@ struct PanelsRowView: View {
             }
         }
     }
-    
-        // MARK: - Left & Right Panels
+
+    // MARK: - Left Panels
     private func makeLeftPanel() -> some View {
         log.debug("makeLeftPanel() with leftPanelWidth=\(leftPanelWidth.rounded())")
         return FilePanelView(
@@ -110,8 +110,8 @@ struct PanelsRowView: View {
         .zIndex(0)
         .animation(nil, value: leftPanelWidth)
     }
-    
-        // MARK: -
+
+    // MARK: - Right Panels
     private func makeRightPanel() -> some View {
         log.debug("makeRightPanel() with leftPanelWidth=\(leftPanelWidth.rounded())")
         return FilePanelView(
@@ -131,22 +131,22 @@ struct PanelsRowView: View {
         .zIndex(0)
         .animation(nil, value: leftPanelWidth)
     }
-    
-        // MARK: - Divider (macOS-like, custom color, smooth drag)
+
+    // MARK: - Divider (macOS-like, custom color, smooth drag)
     private func makePanelHDivider() -> some View {
-            // Visual states
+        // Visual states
         let normalColor = Color(nsColor: NSColor.systemOrange.withAlphaComponent(0.42))
         let activeColor = Color(nsColor: .systemOrange)
         let lineWidth: CGFloat = isDividerDragging ? 3.0 : 1.5
         let lineColor: Color = isDividerDragging ? activeColor : normalColor
         return ZStack {
-                // Visible divider line
+            // Visible divider line
             Rectangle()
                 .fill(lineColor)
                 .frame(width: lineWidth, height: geometry.size.height)
                 .shadow(color: Color.black.opacity(isDividerDragging ? 0.16 : 0.0), radius: isDividerDragging ? 2 : 0, x: 0, y: 0)
                 .allowsHitTesting(false)
-                // Invisible comfort grab zone
+            // Invisible comfort grab zone
             Color.clear
                 .frame(width: dividerHitAreaWidth, height: geometry.size.height)
                 .contentShape(Rectangle())
@@ -159,14 +159,14 @@ struct PanelsRowView: View {
                                 log.debug("Divider drag begin")
                                 if dragPreviewLeft == nil {
                                     dragPreviewLeft = leftPanelWidth
-                                        // Capture offset relative to divider CENTER, not left edge
+                                    // Capture offset relative to divider CENTER, not left edge
                                     dragGrabOffset = value.startLocation.x - (leftPanelWidth + dividerHitAreaWidth / 2)
                                 }
                             }
-                                // Convert cursor position (near divider center) back to left panel width
+                            // Convert cursor position (near divider center) back to left panel width
                             let proposed = (value.location.x - dragGrabOffset) - (dividerHitAreaWidth / 2)
                             let minW: CGFloat = 80
-                                // Reserve min for right panel and the divider itself
+                            // Reserve min for right panel and the divider itself
                             let maxW = geometry.size.width - minW - dividerHitAreaWidth
                             let clamped = max(minW, min(proposed, maxW))
                             let scale = NSScreen.main?.backingScaleFactor ?? 2.0
@@ -186,7 +186,7 @@ struct PanelsRowView: View {
                             let delta = abs((lastTooltipLeft.isNaN ? -9999 : lastTooltipLeft) - snapped)
                             if delta >= 2 {
                                 lastTooltipLeft = snapped
-                                    // Percentage is based on divider CENTER position over the full width
+                                // Percentage is based on divider CENTER position over the full width
                                 let centerX = snapped + dividerHitAreaWidth / 2
                                 let percent = Int(((centerX / max(geometry.size.width, 1)) * 100.0).rounded()).clamped(to: 0...100)
                                 tooltipText = "\(percent)%"
@@ -227,7 +227,7 @@ struct PanelsRowView: View {
                         .onEnded {
                             suppressDragUntilMouseUp = true
                             let scale = NSScreen.main?.backingScaleFactor ?? 2.0
-                                // Center of divider at exact half; compute left width from it
+                            // Center of divider at exact half; compute left width from it
                             let halfCenter = (geometry.size.width / 2.0 * scale).rounded() / scale
                             let halfLeft = halfCenter - dividerHitAreaWidth / 2
                             lastAppliedWidth = halfLeft
@@ -252,7 +252,7 @@ struct PanelsRowView: View {
                         .onEnded {
                             suppressDragUntilMouseUp = true
                             let scale = NSScreen.main?.backingScaleFactor ?? 2.0
-                                // Snap divider CENTER to exact half, then derive left panel width
+                            // Snap divider CENTER to exact half, then derive left panel width
                             let halfCenter = (geometry.size.width / 2.0 * scale).rounded() / scale
                             let halfLeft = halfCenter - dividerHitAreaWidth / 2
                             lastAppliedWidth = halfLeft
@@ -276,7 +276,7 @@ struct PanelsRowView: View {
         .frame(width: dividerHitAreaWidth, height: geometry.size.height)
         .background(Color.black.opacity(0.001))
         .contentShape(Rectangle())
-            // Resize cursor via hover (SwiftUI .cursor may be unavailable on some targets)
+        // Resize cursor via hover (SwiftUI .cursor may be unavailable on some targets)
         .onHover { inside in
             if inside { NSCursor.resizeLeftRight.set() } else { NSCursor.arrow.set() }
             let now = ProcessInfo.processInfo.systemUptime
@@ -290,9 +290,9 @@ struct PanelsRowView: View {
     }
 }
 
-    // MARK: -
+// MARK: -
 extension Comparable {
-        /// Clamp value to a closed range.
+    /// Clamp value to a closed range.
     fileprivate func clamped(to limits: ClosedRange<Self>) -> Self {
         min(max(self, limits.lowerBound), limits.upperBound)
     }
