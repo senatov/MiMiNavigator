@@ -80,7 +80,6 @@ struct PanelsRowView: View {
                 position: tooltipPosition
             )
         )
-        .frame(maxWidth: .infinity, alignment: .top)
         .onChange(of: leftPanelWidth) {
             let w = leftPanelWidth.rounded()
             if w != lastLoggedWidth {

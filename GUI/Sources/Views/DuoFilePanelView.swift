@@ -1,11 +1,11 @@
-//
-//  DuoFilePanelView.swift
-//  MiMiNavigator
-//
-//  Created by Iakov Senatov on 26.10.2025.
-//  Copyright © 2025 Senatov. All rights reserved.
-//
-//  Note: addKeyPressMonitor() also handles moving row selection with Up/Down arrows.
+    //
+    //  DuoFilePanelView.swift
+    //  MiMiNavigator
+    //
+    //  Created by Iakov Senatov on 26.10.2025.
+    //  Copyright © 2025 Senatov. All rights reserved.
+    //
+    //  Note: addKeyPressMonitor() also handles moving row selection with Up/Down arrows.
 
 import AppKit
 import SwiftUI
@@ -15,29 +15,24 @@ struct DuoFilePanelView: View {
     @State private var leftPanelWidth: CGFloat = 0
     @State private var keyMonitor: Any? = nil
     private let dividerHitAreaWidth: CGFloat = 24
-
-    // MARK: -
+    
+        // MARK: -
     var body: some View {
         GeometryReader { geometry in
-            VStack(spacing: 0) {
+            VStack(spacing: 4) {
                 TopMenuBarView()
                     .frame(maxWidth: .infinity)
-
+                    .padding(.all, 4)
                 PanelsRowView(
                     leftPanelWidth: $leftPanelWidth,
                     geometry: geometry,
                     fetchFiles: fetchFiles(for:)
                 )
-                .frame(maxWidth: .infinity, alignment: .top)
-                .layoutPriority(1)
-
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                 buildDownToolbar()
-                    .frame(
-                        maxWidth: .infinity,
-                        minHeight: FilePanelStyle.toolbarMinHeight,
-                        alignment: .center
-                    )
+                    .frame(maxWidth: .infinity)
                     .padding(.bottom, FilePanelStyle.toolbarBottomOffset)
+                
             }
             .onAppear {
                 log.debug(#function + " - Initializing app state and panels")
@@ -78,8 +73,8 @@ struct DuoFilePanelView: View {
             }
         }
     }
-
-    // MARK: - Fetch Files
+    
+        // MARK: - Fetch Files
     @MainActor
     private func fetchFiles(for panelSide: PanelSide) async {
         log.debug("\(#function) [side: <<\(panelSide)>>]")
@@ -90,8 +85,8 @@ struct DuoFilePanelView: View {
                 appState.displayedRightFiles = await appState.scanner.fileLst.getRightFiles()
         }
     }
-
-    // MARK: -
+    
+        // MARK: -
     private func buildDownToolbar() -> some View {
         log.debug(#function)
         return HStack(spacing: 16) {
@@ -103,7 +98,7 @@ struct DuoFilePanelView: View {
                     log.debug("No file selected for View")
                 }
             }
-            // MARK: -
+                // MARK: -
             DownToolbarButtonView(title: "F4 Edit", systemImage: "pencil") {
                 if let file = appState.selectedLeftFile {
                     FActions.edit(file)
@@ -111,19 +106,19 @@ struct DuoFilePanelView: View {
                     log.debug("No file selected for Edit")
                 }
             }
-            // MARK: -
+                // MARK: -
             DownToolbarButtonView(title: "F5 Copy", systemImage: "doc.on.doc") {
                 doCopy()
             }
-            // MARK: -
+                // MARK: -
             DownToolbarButtonView(title: "F6 Move", systemImage: "square.and.arrow.down.on.square") {
                 log.debug("Move button tapped")
             }
-            // MARK: -
+                // MARK: -
             DownToolbarButtonView(title: "F7 NewFolder", systemImage: "folder.badge.plus") {
                 log.debug("NewFolder button tapped")
             }
-            // MARK: -
+                // MARK: -
             DownToolbarButtonView(title: "F8 Delete", systemImage: "minus.rectangle") {
                 log.debug("Delete button tapped")
                 if let file = appState.selectedLeftFile {
@@ -191,13 +186,13 @@ struct DuoFilePanelView: View {
         )
         .padding(.horizontal, FilePanelStyle.toolbarHorizontalPadding)
     }
-
-    // MARK: - Toolbar
+    
+        // MARK: - Toolbar
     private func doCopy() {
         log.debug(#function)
-        // Determine the source file based on the focused panel
+            // Determine the source file based on the focused panel
         let sourceFile = (appState.focusedPanel == .left) ? appState.selectedLeftFile : appState.selectedRightFile
-        // Determine the target side explicitly to avoid ambiguity
+            // Determine the target side explicitly to avoid ambiguity
         let targetSide: PanelSide = (appState.focusedPanel == .left) ? .right : .left
         if let file = sourceFile, let targetURL = appState.pathURL(for: targetSide) {
             FActions.copy(file, to: targetURL)
@@ -208,13 +203,13 @@ struct DuoFilePanelView: View {
             log.debug("No source file selected or target URL missing for Copy")
         }
     }
-
-    // MARK: -
+    
+        // MARK: -
     private func initializePanelWidth(geometry: GeometryProxy) {
         log.debug(#function)
         let total = geometry.size.width
         let scale = NSScreen.main?.backingScaleFactor ?? 2.0
-        // Calculate exact pixel-aligned center for the divider and convert to left width
+            // Calculate exact pixel-aligned center for the divider and convert to left width
         let halfCenter = (total / 2.0 * scale).rounded() / scale
         let halfLeft = halfCenter - dividerHitAreaWidth / 2
         let minW: CGFloat = 80
@@ -227,18 +222,18 @@ struct DuoFilePanelView: View {
             "Init leftPanelWidth: total=\(Int(total)) scale=\(scale) halfCenter=\(Int(halfCenter)) halfLeft=\(Int(halfLeft)) saved=\(savedStr) → set=\(Int(leftPanelWidth))"
         )
     }
-
-    // MARK: -
+    
+        // MARK: -
     private func addKeyPressMonitor() {
         log.debug(#function)
-        // Prevent multiple key monitors from being installed when the view reappears
+            // Prevent multiple key monitors from being installed when the view reappears
         if keyMonitor != nil { return }
         let monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
             if event.modifierFlags.contains(.option), event.keyCode == 0x76 {
                 exitApp()
                 return nil
             }
-            // Handle the Tab key (keyCode 0x30 / 48) — Tab and Shift+Tab toggle focus
+                // Handle the Tab key (keyCode 0x30 / 48) — Tab and Shift+Tab toggle focus
             if event.keyCode == 0x30 {
                 return doPanelToggled(event)
             }
@@ -247,8 +242,8 @@ struct DuoFilePanelView: View {
         self.keyMonitor = monitor
         log.debug("Installed key monitor: \(String(describing: monitor))")
     }
-
-    // MARK: -
+    
+        // MARK: -
     private func doPanelToggled(_ event: NSEvent) -> NSEvent? {
         log.debug(#function)
         appState.toggleFocus()
@@ -260,22 +255,22 @@ struct DuoFilePanelView: View {
         }
         return nil
     }
-
-    // MARK: -
+    
+        // MARK: -
     private func exitApp() {
         log.debug(#function)
         appState.saveBeforeExit()
         NSApplication.shared.terminate(nil)
     }
-
-    // MARK: -
+    
+        // MARK: -
     private func preciseHalfLeft(totalWidth: CGFloat) -> CGFloat {
         let scale = NSScreen.main?.backingScaleFactor ?? 2.0
         let halfCenter = (totalWidth / 2.0 * scale).rounded() / scale
         return halfCenter - dividerHitAreaWidth / 2
     }
-
-    // MARK: -
+    
+        // MARK: -
     private var hairlineHeight: CGFloat {
         let scale = NSScreen.main?.backingScaleFactor ?? 2.0
         return 1.0 / scale
