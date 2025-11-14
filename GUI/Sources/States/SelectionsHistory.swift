@@ -26,6 +26,7 @@ import Foundation
 
     // MARK: - Public API (compatibility)
     func add(_ path: String) {
+        log.debug(#function)
         let norm = normalize(path)
         guard !norm.isEmpty else { return }
         log.info(#function + " - \(norm)")
@@ -44,6 +45,7 @@ import Foundation
         }
         if let idx = entries.firstIndex(where: { $0.path == norm }) {
             // Existing path: update status and move to front if not already first
+            log.debug(#function + " - updating existing entry at index \(idx)")
             var e = entries[idx]
             let was = e.snapshot
             if was != snap {
@@ -72,7 +74,6 @@ import Foundation
         }
         save()
     }
-
     // MARK: - Convenience accessors used elsewhere
     var last: String? { entries.first(where: { $0.status != .deleted })?.path }
     var current: String? {
@@ -80,10 +81,10 @@ import Foundation
         let e = entries[ci]
         return e.status == .deleted ? nil : e.path
     }
-    
-    
+
     // MARK: -
     var firstNonDeleted: String? {
+        log.debug(#function)
         guard let lastIndex = entries.indices.last else { return nil }
         // "first" in user terms = oldest non-deleted
         for i in stride(from: lastIndex, through: 0, by: -1) {
@@ -96,6 +97,7 @@ import Foundation
     // MARK: - Navigation
     @discardableResult
     func firstPath() -> String? {
+        log.debug(#function)
         guard !entries.isEmpty else { return nil }
         // Move to oldest non-deleted
         for i in stride(from: entries.count - 1, through: 0, by: -1) {
@@ -111,6 +113,7 @@ import Foundation
     // MARK: -
     @discardableResult
     func lastPath() -> String? {
+        log.debug(#function)
         // Most recent non-deleted (head)
         guard let e = entries.first(where: { $0.status != .deleted }) else { return nil }
         if let idx = entries.firstIndex(of: e) { currentIndex = idx }
@@ -121,6 +124,7 @@ import Foundation
     // MARK: -
     @discardableResult
     func previousPath() -> String? {
+        log.debug(#function)
         guard !entries.isEmpty else { return nil }
         let start = (currentIndex ?? 0)
         var i = start + 1
@@ -138,6 +142,7 @@ import Foundation
     // MARK: -
     @discardableResult
     func nextPath() -> String? {
+        log.debug(#function)
         guard !entries.isEmpty else { return nil }
         let start = (currentIndex ?? 0)
         var i = max(start - 1, 0)
@@ -154,6 +159,7 @@ import Foundation
 
     // MARK: -
     func setCurrent(to path: String) {
+        log.debug(#function)
         let norm = normalize(path)
         if let idx = entries.firstIndex(where: { $0.path == norm && $0.status != .deleted }) {
             currentIndex = idx
@@ -163,6 +169,7 @@ import Foundation
 
     // MARK: - Status management
     func markDeleted(path: String) {
+        log.debug(#function)
         let norm = normalize(path)
         guard let idx = entries.firstIndex(where: { $0.path == norm }) else { return }
         entries[idx].status = .deleted
@@ -173,6 +180,7 @@ import Foundation
 
     // MARK: -
     func markModified(path: String) {
+        log.debug(#function)
         let norm = normalize(path)
         guard let idx = entries.firstIndex(where: { $0.path == norm }) else { return }
         entries[idx].status = .modified
@@ -183,6 +191,7 @@ import Foundation
 
     // MARK: -
     func remove(path: String) {
+        log.debug(#function)
         let norm = normalize(path)
         if let idx = entries.firstIndex(where: { $0.path == norm }) {
             entries.remove(at: idx)
@@ -193,6 +202,7 @@ import Foundation
 
     // MARK: -
     func clear() {
+        log.debug(#function)
         entries.removeAll()
         currentIndex = nil
         save()
@@ -200,6 +210,7 @@ import Foundation
 
     // MARK: - Persistence
     private func save() {
+        log.debug(#function)
         let persisted = Persisted(entries: entries, currentIndex: currentIndex)
         do {
             let data = try JSONEncoder().encode(persisted)
@@ -210,6 +221,7 @@ import Foundation
 
     // MARK: -
     private func load() {
+        log.debug(#function)
         guard let data = UserDefaults.standard.data(forKey: userDefaultsKey) else {
             // Backward-compat: try to migrate old plain string array if present
             migrateFromV1()
@@ -230,6 +242,7 @@ import Foundation
 
     // MARK: -
     private func migrateFromV1() {
+        log.debug(#function)
         let oldKey = "SelectionsHistory"
         if let arr = UserDefaults.standard.stringArray(forKey: oldKey) {
             log.info("Migrating legacy SelectionsHistory (\(arr.count) items)")
@@ -250,6 +263,7 @@ import Foundation
 
     // MARK: - Helpers
     private func normalize(_ path: String) -> String {
+        log.debug(#function)
         // Accept both URL string and path; prefer standardized file path
         if let url = URL(string: path), url.isFileURL {
             return url.standardized.resolvingSymlinksInPath().path
@@ -260,6 +274,7 @@ import Foundation
 
     // MARK: -
     private func makeSnapshot(for path: String) -> FileSnapshot? {
+        log.debug(#function)
         let fm = FileManager.default
         var isDir: ObjCBool = false
         guard fm.fileExists(atPath: path, isDirectory: &isDir), !isDir.boolValue else {
@@ -277,6 +292,7 @@ import Foundation
 
     // MARK: -
     private func rebuildRecentSelections() {
+        log.debug(#function)
         // Publish non-deleted paths in current order
         let list = entries.filter { $0.status != .deleted }.map { $0.path }
         if recentSelections != list { recentSelections = list }
