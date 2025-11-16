@@ -19,6 +19,10 @@ struct FileTableView: View {
     @State private var sortAscending: Bool = true
     @State private var cachedSortedFiles: [CustomFile] = []
     @State private var lastBodyLogTime: TimeInterval? = nil
+    fileprivate var px: CGFloat {
+        let scale = NSScreen.main?.backingScaleFactor ?? 2.0
+        return 1.0 / scale
+    }
 
     // Keeps a stable sorted array to avoid ScrollView content rebuilds on every render
     private func recomputeSortedCache() {
@@ -45,6 +49,11 @@ struct FileTableView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(.horizontal, 6)
+        // Clip content to the same rounded shape as the outer borders,
+        // so header background corners visually match side borders.
+        .clipShape(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+        )
         .overlay(focusBorder)
         .overlay(lightBorder)
         .contentShape(Rectangle())
@@ -64,10 +73,12 @@ struct FileTableView: View {
         .onChange(
             of: selectedID,
             { oldValue, newValue in
-                log.debug("FTV.selectedID changed: \(String(describing: oldValue)) → \(String(describing: newValue)) on <<\(panelSide)>>")
+                log.debug(
+                    "FTV.selectedID changed: \(String(describing: oldValue)) → \(String(describing: newValue)) on <<\(panelSide)>>")
             })
     }
 
+    // MARK: -
     @ViewBuilder
     private func mainScrollView(proxy: ScrollViewProxy) -> some View {
         ScrollView {
@@ -106,7 +117,9 @@ struct FileTableView: View {
         .background(
             GeometryReader { gp in
                 Color.clear
-                    .onAppear { log.debug("FTV.viewport appear → size=\(Int(gp.size.width))x\(Int(gp.size.height)) on <<\(panelSide)>>") }
+                    .onAppear {
+                        log.debug("FTV.viewport appear → size=\(Int(gp.size.width))x\(Int(gp.size.height)) on <<\(panelSide)>>")
+                    }
                     .onChange(of: gp.size) {
                         let now = ProcessInfo.processInfo.systemUptime
                         if now - (lastBodyLogTime ?? 0) > 0.25 {
@@ -119,27 +132,66 @@ struct FileTableView: View {
         .background(keyboardShortcutsLayer(proxy: proxy))
     }
 
+    // MARK: -
     @ViewBuilder
     private func headerView() -> some View {
         HStack(spacing: 8) {
             getNameColSortableHeader()
-            Divider().padding(.vertical, 2)
+            headerColumnDivider
             getSizeColSortableHeader()
-            Divider().padding(.vertical, 2)
+            headerColumnDivider
             getDateSortableHeader()
         }
         .padding(.vertical, 4)
         .padding(.horizontal, 6)
-        .background(.ultraThinMaterial)
-        .overlay(
-            Rectangle()
-                .frame(height: 1)
-                .foregroundStyle(.separator)
-                .allowsHitTesting(false),
-            alignment: .bottom
+        .background(
+            LinearGradient(
+                colors: [
+                    Color(nsColor: .systemBlue).opacity(0.060),  // top bright blue highlight
+                    Color(nsColor: .systemBlue).opacity(0.035),  // mid blue
+                    Color.black.opacity(0.25),  // subtle shadow edge
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
         )
+        .overlay(alignment: .bottom) {
+            Rectangle()
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            Color(nsColor: .systemBlue).opacity(0.060),  // top bright blue highlight
+                            Color(nsColor: .systemBlue).opacity(0.035),  // mid blue
+                            Color.black.opacity(0.25),  // subtle shadow edge
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+                .frame(height: max(px, 1.0))
+                .allowsHitTesting(false)
+        }
     }
 
+    // MARK: - Header divider
+    private var headerColumnDivider: some View {
+        Rectangle()
+            .fill(
+                LinearGradient(
+                    colors: [
+                        Color.black.opacity(0.36),
+                        Color.black.opacity(0.26),
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            )
+            .frame(width: px)
+            .padding(.vertical, 3)
+            .allowsHitTesting(false)
+    }
+
+    // MARK: -
     @ViewBuilder
     private func keyboardShortcutsLayer(proxy: ScrollViewProxy) -> some View {
         // Invisible buttons to capture PageUp/PageDown and emulate TC behavior

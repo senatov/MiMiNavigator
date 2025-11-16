@@ -1,10 +1,10 @@
-//
-//  TopMenuBarView.swift
-//  MiMiNavigator
-//
-//  Created by Iakov Senatov on 16.10.24.
-//  Description: SwiftUI component for rendering the top menu bar with dropdown menus and shortcuts.
-//
+    //
+    //  TopMenuBarView.swift
+    //  MiMiNavigator
+    //
+    //  Created by Iakov Senatov on 16.10.24.
+    //  Description: SwiftUI component for rendering the top menu bar with dropdown menus and shortcuts.
+    //
 
 import AppKit
 import SwiftUI
@@ -12,17 +12,15 @@ import SwiftUI
 struct TopMenuBarView: View {
     @EnvironmentObject var appState: AppState
     @State private var favoritesTargetSide: PanelSide = .left
-
-    // MARK: - Metrics
-    private enum MenuBarMetrics {
-        static let height: CGFloat = 36
-        static let corner: CGFloat = 10
-        static let horizontalPadding: CGFloat = 8
+        // MARK: - Pixel helpers
+    fileprivate var px: CGFloat {
+        let scale = NSScreen.main?.backingScaleFactor ?? 2.0
+        return 1.0 / scale
     }
-    // MARK: -
+        // MARK: -
     var body: some View {
         ZStack(alignment: .top) {
-            // Glass bar background (liquid-glass, macOS 26.1 style)
+                // Glass bar background (liquid-glass, macOS 26.1 style)
             RoundedRectangle(cornerRadius: MenuBarMetrics.corner, style: .continuous)
                 .fill(.ultraThinMaterial)
                 // Decorative hairline ring (crisp, gradient)
@@ -53,15 +51,27 @@ struct TopMenuBarView: View {
                 // Crisp bottom hairline
                 .overlay(alignment: .bottom) {
                     Rectangle()
-                        .fill(Color.blue.opacity(0.20))
+                        .fill(
+                            LinearGradient(
+                                colors: [
+                                    Color.white.opacity(0.40),  // upper edge highlight
+                                    Color.white.opacity(0.18),
+                                    Color.black.opacity(0.20)   // lower subtle shadow
+                                ],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
                         .frame(height: px)
+                        .padding(.horizontal, 0.5)
+                        .allowsHitTesting(false)
                 }
                 .clipShape(RoundedRectangle(cornerRadius: MenuBarMetrics.corner, style: .continuous))
                 .contentShape(RoundedRectangle(cornerRadius: MenuBarMetrics.corner, style: .continuous))
                 .shadow(color: Color.black.opacity(0.10), radius: 8, x: 0, y: 2)
                 .shadow(color: Color.blue.opacity(0.06), radius: 18, x: 0, y: 10)
-
-            // Menu row
+            
+                // Menu row
             HStack(spacing: 6) {
                 ForEach(menuData.dropLast()) { menu in
                     menuView(for: menu)
@@ -106,14 +116,10 @@ struct TopMenuBarView: View {
             }
         }
     }
-    // MARK: - Pixel helpers
-    private var px: CGFloat {
-        let scale = NSScreen.main?.backingScaleFactor ?? 2.0
-        return 1.0 / scale
-    }
-    // MARK: -
+    
+        // MARK: -
     private func menuView(for menu: MenuCategory) -> some View {
-        // Explicit return for clarity
+            // Explicit return for clarity
         return Menu(menu.title) {
             ForEach(menu.items) { item in
                 TopMenuItemView(item: item)
@@ -124,10 +130,10 @@ struct TopMenuBarView: View {
         .controlSize(.small)
         .buttonStyle(TopMenuButtonStyle())
     }
-
-    // MARK: - All top-level menu categories are defined here:
+    
+        // MARK: - All top-level menu categories are defined here:
     private var menuData: [MenuCategory] {
-        // Explicit return for clarity
+            // Explicit return for clarity
         return [
             filesMenuCategory,
             markMenuCategory,
