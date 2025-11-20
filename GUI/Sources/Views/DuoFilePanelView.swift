@@ -10,11 +10,21 @@
 import AppKit
 import SwiftUI
 
+// PreferenceKey для измерения высоты TopMenuBarView
+struct TopMenuHeightKey: PreferenceKey {
+    static let defaultValue: CGFloat = 0  // let вместо var
+    
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = nextValue()
+    }
+}
+
 struct DuoFilePanelView: View {
     @EnvironmentObject var appState: AppState
+    @State private var topMenuHeight: CGFloat = 0
     @State private var leftPanelWidth: CGFloat = 0
     @State private var keyMonitor: Any? = nil
-    @State private var toolbarHeight: CGFloat = 0   // измеряемая высота нижнего тулбара
+    @State private var toolbarHeight: CGFloat = 0  // измеряемая высота нижнего тулбара
     private let dividerHitAreaWidth: CGFloat = 24
 
     // MARK: -
@@ -25,6 +35,14 @@ struct DuoFilePanelView: View {
                 TopMenuBarView()
                     .frame(maxWidth: .infinity)
                     .padding(.all, 2)
+                    .background(
+                        GeometryReader { topGeo in
+                            Color.clear.preference(
+                                key: TopMenuHeightKey.self,
+                                value: topGeo.size.height
+                            )
+                        }
+                    )
 
                 // Средняя панель — заполняет всё пространство между верхней и нижней панелями
                 PanelsRowView(
@@ -32,14 +50,17 @@ struct DuoFilePanelView: View {
                     geometry: geometry,
                     fetchFiles: fetchFiles(for:)
                 )
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(Color.red.opacity(0.06)) // DIAG: временно подсветим область PanelsRowView
+                .frame(maxWidth: .infinity)
+                .frame(height: geometry.size.height - topMenuHeight - toolbarHeight - 140)
+                .background(Color.red.opacity(0.06))
 
                 // Нижний тулбар — участвует в потоке, занимает свою высоту
                 buildDownToolbar()
                     .frame(maxWidth: .infinity)
-                    // .padding(.bottom, FilePanelStyle.toolbarBottomOffset)  // УБРАНО: не сдвигать тулбар за край окна
-                    .background(Color.blue.opacity(0.06)) // DIAG: временно подсветим область тулбара
+                    .background(Color.blue.opacity(0.06))
+            }
+            .onPreferenceChange(TopMenuHeightKey.self) { newHeight in
+                self.topMenuHeight = newHeight
             }
             .onAppear {
                 log.debug(#function + " - Initializing app state and panels")
