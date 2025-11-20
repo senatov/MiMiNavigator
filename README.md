@@ -12,6 +12,13 @@
 > <span style="color:#8B0000; font-weight:bold;">👉 [MiMiNavigator / GUI / Sources](https://github.com/senatov/MiMiNavigator/tree/master/GUI/Sources)</span>
 
 
+
+> ⚠️ **Status**
+>
+> MiMiNavigator is under active development and **not ready for daily production use yet**.
+> APIs, layouts, and internal structure may change without notice.
+
+
 ---
 ### MiMiNavigator - MacOS File manager with two panels
 ## (NOT READY YET, still under Development)
@@ -31,70 +38,104 @@
 
 
 ---
-##     Overview
-MiMiNavigator is a macOS file manager built with Swift and SwiftUI.
-The repository is organized around an Xcode project with sources under `MiMiNavigator/` and basic tests in `MiMiNavigatorTests` and `MiMiNavigatorUITests`.
+## Overview
 
+**MiMiNavigator** is a two-panel file manager for macOS.  
+The goal of the project is to explore modern SwiftUI patterns on macOS:
+
+- dual file panels with synchronized navigation;
+- live directory monitoring;
+- clean separation of UI, state, and services;
+- structured logging for debugging complex layouts and async flows.
+
+If you are mainly interested in the implementation of the GUI, you can start here:
+
+👉 <https://github.com/senatov/MiMiNavigator/tree/master/GUI/Sources>
 ---
+
+
+## Features (current state)
+
+- 🔹 Two side-by-side file panels with independent navigation
+- 🔹 Custom split view divider with hover and drag behavior
+- 🔹 Directory monitoring via a dedicated scanner component
+- 🔹 Favorites & quick access sections (Finder-like grouping)
+- 🔹 Logging using **SwiftyBeaver** (console & file outputs)
+- 🔹 Basic SwiftData model prepared for future persistence
+
+Planned / in progress:
+
+- ⏳ More file operations from the UI (copy/move, multi-selection improvements)
+- ⏳ Better error handling and user notifications
+- ⏳ Refined macOS 26-style visuals and animations
+
+
 ## 
 
-<div style="text-align: center;" >
+<p align="center">
   <img
-    src="GUI/Docs/Preview1.png"
-    alt="Preview FrontEnd"
-    title="Preview"
-    alt="Preview FrontEnd"
-    aria-dropeffect="true"
-    style="max-width: 100%; height: auto; border: 2px solid #133347ff; border-radius: 4px;" />
-</div>
+    src="GUI/Assets.xcassets/AppIcon.appiconset/120.png"
+    alt="MiMiNavigator Icon"
+    title="MiMiNavigator"
+    width="120"
+  />
+</p>
 
----
-##
+<p align="center">
+  <strong>MiMiNavigator</strong> · Two-panel file manager for macOS built with SwiftUI
+</p>
 
-<div style="text-align: center;" >
-  <img
-    src="GUI/Docs/Preview2.png"
-    alt="Preview FrontEnd"
-    alt="Preview FrontEnd"
-    aria-dropeffect="true" 
-    title="Preview"
-    style="max-width: 100%; height: auto; border: 2px solid #133347ff; border-radius: 4px;" />
-</div>
+<p align="center">
+  <a href="https://github.com/senatov/MiMiNavigator">
+    <img src="https://img.shields.io/badge/Platform-macOS%2015.4+-lightgrey?logo=apple&logoColor=white" alt="Platform" />
+  </a>
+  <img src="https://img.shields.io/badge/Swift-6.2-orange?logo=swift" alt="Swift 6.2" />
+  <img src="https://img.shields.io/badge/Framework-SwiftUI-blue?logo=swift" alt="SwiftUI" />
+  <img src="https://img.shields.io/badge/Status-Work%20in%20Progress-yellow" alt="Status: WIP" />
+</p>
 
-
-
----
-### General structure
-
-Key directories inside `MiMiNavigator/`:
-
-- **App** entry point and logging setup. The application reads a `.version` file, sets up a shared model container, and displays a main split view UI with a log viewer button. The code uses SwiftyBeaver for logging.
-
-- **States** observable classes and actors that hold runtime state. `AppState` tracks the current directories and selected files, while `DualDirectoryScanner` scans both panels using timers and async updates.
-
-- **Models** data structures such as `CustomFile`, an entity representing files or directories, and `FileSingleton`, an actor maintaining left/right file lists for SwiftUI updates.
-
-- **Views** SwiftUI views for file panels, the top menu bar, and toolbar. `TotalCommanderResizableView` composes the main UI with a draggable divider and toolbar buttons for actions like view, edit, copy, and delete.
-
-- **BreadCrumbNav** editable path controls and breadcrumb navigation.
-
-- **Favorite** scans frequently used directories and mounted volumes to show a favorites tree.
-
-- **Menus** menu item models and top menu rendering.
-
-Other resources include asset catalogs, entitlements files, and a `refreshVersionFile.zsh` script that updates the `Gui/curr_version.asc` string.
 
 
 ---
-### Important aspects
 
-- **Concurrency** Directory scanning and file updates are handled by actors (`DualDirectoryScanner`, `FileSingleton`) and async tasks to keep the UI responsive.
+## Features (current state)
 
-- **User preferences** Window sizes, panel widths, and other state are stored using `UserPreferences`(UserDefaults wrappers).
+- 🔹 Two side-by-side file panels with independent navigation
+- 🔹 Custom split view divider with hover and drag behavior
+- 🔹 Directory monitoring via a dedicated scanner component
+- 🔹 Favorites & quick access sections (Finder-like grouping)
+- 🔹 Logging using **SwiftyBeaver** (console & file outputs)
+- 🔹 Basic SwiftData model prepared for future persistence
 
-- **Logging** `LogMan` sets up **SwiftyBeaver** console and file logging with custom icons for log levels.
+Planned / in progress:
 
-- **Customization** Many UI components (menu buttons, path control, tooltip) are implemented as reusable **SwiftUI** views.
+- ⏳ More file operations from the UI (copy/move, multi-selection improvements)
+- ⏳ Better error handling and user notifications
+- ⏳ Refined macOS 26-style visuals and animations
+
+---
+## Learning pointers
+
+This project may be useful as a reference for:
+
+- **SwiftUI layout on macOS**  
+  Custom containers, overlays, and handling of complex view hierarchies.
+
+- **Gestures & hover effects**  
+  Hover-based hints, drag gestures for the divider, and subtle visual feedback.
+
+- **Actors & timers**  
+  `DualDirectoryScanner` demonstrates periodic work running inside an actor.
+
+- **AppKit interop**  
+  Use of `NSWorkspace` and other AppKit APIs where SwiftUI alone is not enough.
+
+- **Logging strategy**  
+  Central configuration of SwiftyBeaver, consistent logging in critical components.
+
+---
+
+
 
 ---
 ### Getting started
