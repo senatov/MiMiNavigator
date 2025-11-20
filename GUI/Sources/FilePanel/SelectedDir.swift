@@ -1,5 +1,5 @@
 //
-//  SelectedDir.swift
+// SelectedDir.swift
 //  MiMiNavigator
 //
 //  Created by Iakov Senatov on 09.05.25.
@@ -27,7 +27,7 @@ class SelectedDir: ObservableObject {
         }
     }
 
-    /// Returns a stored start path for a given side if present and non-empty
+    // / Returns a stored start path for a given side if present+non-empty
     private static func resolveStartPath(for panelSide: PanelSide) -> String? {
         let defaults = UserDefaults.standard
         let key = (panelSide == .left) ? kLeftLastPath : kRightLastPath
@@ -42,7 +42,7 @@ class SelectedDir: ObservableObject {
         return nil
     }
 
-    /// Attempts to load the last focused panel side from config
+    // / Attempts to load the last focus'd panel side from config
     private static func loadSideFromConfig() -> PanelSide? {
         let defaults = UserDefaults.standard
         if let raw = defaults.string(forKey: kLastFocusedPanel), let s = parsePanelSide(raw) {
@@ -53,9 +53,9 @@ class SelectedDir: ObservableObject {
 
     // MARK: - Designated initializer
     init(side: PanelSide = .left, initialPath: String? = nil) {
-        // Prefer side from config if available; otherwise use the passed-in value
+        // Prefer side<-config if available; otherwise use passed-in value
         let restoredSide = SelectedDir.loadSideFromConfig() ?? side
-        // Determine start path: explicit parameter > config > default
+        // Determine start path: explicit param > config > default
         let configPath = SelectedDir.resolveStartPath(for: restoredSide)
         let startPath = initialPath ?? configPath ?? "/tmp"
 
@@ -68,7 +68,7 @@ class SelectedDir: ObservableObject {
             log.info("\(#function) side= <<\(restoredSide)>> (using defaults)")
         }
 
-        // Initialize selection with resolved path
+        // init sel with resolved path
         self.selectedFSEntity = CustomFile(path: startPath)
 
         // Extra debug

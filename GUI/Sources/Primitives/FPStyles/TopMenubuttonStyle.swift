@@ -1,5 +1,5 @@
 //
-//  TopMenuBarStyle.swift
+// TopMenuBarStyle.swift
 //  MiMiNavigator
 //
 //  Created by Iakov Senatov on 09.03.25.
@@ -15,7 +15,7 @@ import SwiftUI
 // - Rounded hit area, thin separator stroke only on hover/press
 // - Works in light/dark mode; no ignoresSafeArea usage
 struct TopMenuButtonStyle: ButtonStyle {
-    public init() {}
+    init() {}
 
     // MARK: -
     public func makeBody(configuration: Configuration) -> some View {

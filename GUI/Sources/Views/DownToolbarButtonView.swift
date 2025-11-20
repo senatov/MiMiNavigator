@@ -1,5 +1,5 @@
 //
-//  DownToolbarButtonView.swift
+// DownToolbarButtonView.swift
 //  MiMiNavigator
 //
 //  Created by Iakov Senatov on 21.02.25.
@@ -70,7 +70,7 @@ struct DownToolbarButtonView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
             }
             .overlay(
-                // Focus ring for keyboard navigation
+                // Focus ring for keyboard nav
                 RoundedRectangle(cornerRadius: 10, style: .continuous)
                     .strokeBorder(FilePanelStyle.skyBlauColor.opacity(isFocused ? 0.9 : 0), lineWidth: isFocused ? 2 : 0)
             )

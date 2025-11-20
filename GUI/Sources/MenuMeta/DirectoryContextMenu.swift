@@ -1,5 +1,5 @@
 //
-//  DirectoryContextMenu.swift
+// DirContextMenu.swift
 //  MiMiNavigator
 //
 //  Created by Iakov Senatov on 08.10.2025.
@@ -9,7 +9,7 @@
 import Foundation
 import SwiftUI
 
-/// Popup-like menu shown on hover and reused by right-click context menu.
+// / Popup-like menu shown on hover+reused by right-click context menu.
 struct DirectoryContextMenu: View {
     let file: CustomFile
     let onAction: (DirectoryAction) -> Void
@@ -42,7 +42,7 @@ struct DirectoryContextMenu: View {
         )
     }
 
-    /// Creates a single menu button row for a given directory action.
+    // / Creates a single menu button row for a given dir action.
     @ViewBuilder
     private func menuButton(_ action: DirectoryAction) -> some View {
         Button {

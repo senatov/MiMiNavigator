@@ -1,9 +1,9 @@
     //
-    //  TopMenuBarView.swift
+    // TopMenuBarView.swift
     //  MiMiNavigator
     //
     //  Created by Iakov Senatov on 16.10.24.
-    //  Description: SwiftUI component for rendering the top menu bar with dropdown menus and shortcuts.
+    // Description: SwiftUI component for rendering top menu barw/dropdown menus+shortcuts.
     //
 
 import AppKit

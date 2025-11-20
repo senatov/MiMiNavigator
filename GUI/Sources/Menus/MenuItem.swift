@@ -1,5 +1,5 @@
 //
-//  MenuItem 2.swift
+// MenuItem 2.swift
 //  MiMiNavigator
 //
 //  Created by Iakov Senatov on 28.05.2025.

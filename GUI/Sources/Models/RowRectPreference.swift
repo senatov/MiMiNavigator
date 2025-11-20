@@ -1,5 +1,5 @@
 //
-//  RowRectPreference.swift
+// RowRectPref.swift
 //  MiMiNavigator
 //
 //  Created by Iakov Senatov on 23.08.2025.

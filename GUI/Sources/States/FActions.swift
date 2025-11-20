@@ -1,5 +1,5 @@
 //
-//  FActions.swift
+// FActions.swift
 //  MiMiNavigator
 //
 //  Created by Iakov Senatov on 28.05.2025.
@@ -12,7 +12,7 @@ import Foundation
 enum FActions {
     // MARK: -
     static func view(_ file: CustomFile) {
-        NSWorkspace.shared.open(file.urlValue) // Открытие в системе
+        NSWorkspace.shared.open(file.urlValue)
     }
 
     // MARK: -
@@ -26,25 +26,23 @@ enum FActions {
             configuration: configuration
         ) { _, error in
             if let error = error {
-                log.info(
-                    "❌ Failed to open file with TextEdit: \(error.localizedDescription)"
-                )
+                log.info("❌ failed to open w/ TextEdit: \(error.localizedDescription)")
             }
         }
     }
 
     // MARK: -
     static func copy(_ file: CustomFile, to destinationURL: URL) {
-        log.info(#function + " - \(file.nameStr) to \(destinationURL.path)")
+        log.info(#function + " - \(file.nameStr) -> \(destinationURL.path)")
         let sourceURL = file.urlValue
         let targetURL = destinationURL.appendingPathComponent(
             sourceURL.lastPathComponent
         )
         do {
             try FileManager.default.copyItem(at: sourceURL, to: targetURL)
-            log.info("Copied to \(targetURL.path)")
+            log.info("copied to \(targetURL.path)")
         } catch {
-            log.info("Copy failed: \(error.localizedDescription)")
+            log.info("copy failed: \(error.localizedDescription)")
         }
     }
 
@@ -57,7 +55,7 @@ enum FActions {
                 resultingItemURL: nil
             )
         } catch {
-            log.info("❌ Failed to delete file: \(error.localizedDescription)")
+            log.info("❌ delete failed: \(error.localizedDescription)")
         }
     }
 
@@ -66,9 +64,8 @@ enum FActions {
     static func deleteWithConfirmation(_ file: CustomFile, onConfirm: @escaping () -> Void) {
         log.info(#function + " - \(file.nameStr)")
         let alert = NSAlert()
-        alert.messageText =
-            "Are you sure you want to delete \"\(file.nameStr)\"?"
-        alert.informativeText = "This file will be moved to Trash."
+        alert.messageText = "Delete \"\(file.nameStr)\"?"
+        alert.informativeText = "File will be moved to Trash."
         alert.alertStyle = .warning
         alert.addButton(withTitle: "Delete")
         alert.addButton(withTitle: "Cancel")

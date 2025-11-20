@@ -1,5 +1,5 @@
 //
-//  EditablePathControlWrapper.swift
+// EditablePathControlWrapper.swift
 //  MiMiNavigator
 //
 //  Created by Iakov Senatov on 25.03.25.
@@ -15,7 +15,7 @@ struct BreadCrumbControlWrapper: View {
     @State private var isEditing = false
     @FocusState private var isTextFieldFocused: Bool
     @State private var isHovering = false
-    // Pale yellow color for focused/editing state selection background
+    // Pale yellow color for focus'd/editing state sel background
     let panelSide: PanelSide
 
     // MARK: - Initializer
@@ -44,7 +44,7 @@ struct BreadCrumbControlWrapper: View {
                 // Use pale yellow when editing, otherwise subtle platform background
                 .fill(
                     isEditing
-                        ? FilePanelStyle.orangeSelRowStroke.opacity(0.6)
+                        ? .red
                         : Color(nsColor: NSColor.windowBackgroundColor))
         )
         .overlay(

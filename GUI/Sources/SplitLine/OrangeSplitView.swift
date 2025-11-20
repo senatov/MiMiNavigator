@@ -1,5 +1,5 @@
 //
-//  OrangeSplitView.swift
+// OrangeSplitView.swift
 //  MiMiNavigator
 //
 //  Created by Iakov Senatov on 30.10.2025.
@@ -10,7 +10,7 @@ import AppKit
 import SwiftUI
 
 // MARK: - SwiftUI wrapper around a customized NSSplitView
-public struct OrangeSplitView<Left: View, Right: View>: NSViewRepresentable {
+struct OrangeSplitView<Left: View, Right: View>: NSViewRepresentable {
     // External state
     @Binding var leftWidth: CGFloat
     let totalWidth: CGFloat
@@ -22,24 +22,24 @@ public struct OrangeSplitView<Left: View, Right: View>: NSViewRepresentable {
     var onDoubleClick: (() -> Void)? = nil
 
     // Appearance
-    var normalThickness: CGFloat = 1.5
-    var activeThickness: CGFloat = 3.0
-    var normalColor: NSColor = NSColor.systemOrange.withAlphaComponent(0.55)
-    var activeColor: NSColor = .systemOrange
+    var normalThickness: CGFloat = 1.0
+    var activeThickness: CGFloat = 1.5
+    var normalColor: NSColor = NSColor.separatorColor
+    var activeColor: NSColor = NSColor.controlAccentColor
     var hitExpansion: CGFloat = 24
 
     // MARK: -
-    public init(
+    init(
         leftWidth: Binding<CGFloat>,
         totalWidth: CGFloat,
         @ViewBuilder left: () -> Left,
         @ViewBuilder right: () -> Right,
         onResize: ((CGFloat, CGFloat) -> Void)? = nil,
         onDoubleClick: (() -> Void)? = nil,
-        normalThickness: CGFloat = 1.5,
-        activeThickness: CGFloat = 3.0,
-        normalColor: NSColor = NSColor.systemOrange.withAlphaComponent(0.55),
-        activeColor: NSColor = .systemOrange,
+        normalThickness: CGFloat = 1.0,
+        activeThickness: CGFloat = 1.5,
+        normalColor: NSColor = NSColor.separatorColor,
+        activeColor: NSColor = NSColor.controlAccentColor,
         hitExpansion: CGFloat = 24
     ) {
         log.debug(#function + " leftWidth=\(leftWidth.wrappedValue) totalWidth=\(totalWidth)")

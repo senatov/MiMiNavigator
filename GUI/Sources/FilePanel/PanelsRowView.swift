@@ -1,4 +1,4 @@
-//  PanelsRowView.swift
+// PanelsRowView.swift
 //  MiMiNavigator
 //
 //  Created by Iakov Senatov on 21.10.2025.
@@ -63,10 +63,9 @@ struct PanelsRowView: View {
                 Rectangle()
                     .fill(
                         isDividerDragging
-                            ? Color(nsColor: .systemOrange) : Color(nsColor: NSColor.systemOrange.withAlphaComponent(0.55))
+                            ? Color(NSColor.green) : Color(nsColor: NSColor.blue)
                     )
-                    .frame(width: isDividerDragging ? 3.0 : 1.5, height: geometry.size.height)
-                    .shadow(color: Color.black.opacity(isDividerDragging ? 0.16 : 0.0), radius: isDividerDragging ? 2 : 0, x: 0, y: 0)
+                    .frame(width: isDividerDragging ? 2.0 : 1.5, height: geometry.size.height)
                     .position(x: previewX, y: geometry.size.height / 2)
                     .allowsHitTesting(false)
             }
@@ -132,9 +131,9 @@ struct PanelsRowView: View {
     // MARK: - Divider (macOS-like, custom color, smooth drag)
     private func makePanelHDivider() -> some View {
         // Visual states
-        let normalColor = Color(nsColor: NSColor.systemOrange.withAlphaComponent(0.42))
-        let activeColor = Color(nsColor: .systemOrange)
-        let lineWidth: CGFloat = isDividerDragging ? 3.0 : 1.5
+        let normalColor = Color(nsColor: NSColor.separatorColor)
+        let activeColor = Color(nsColor: .systemBlue)
+        let lineWidth: CGFloat = isDividerDragging ? 2.0 : 1.2
         let lineColor: Color = isDividerDragging ? activeColor : normalColor
         return ZStack {
             // Visible divider line
@@ -289,7 +288,7 @@ struct PanelsRowView: View {
 
 // MARK: -
 extension Comparable {
-    /// Clamp value to a closed range.
+    // / Clamp value to a closed range.
     fileprivate func clamped(to limits: ClosedRange<Self>) -> Self {
         min(max(self, limits.lowerBound), limits.upperBound)
     }

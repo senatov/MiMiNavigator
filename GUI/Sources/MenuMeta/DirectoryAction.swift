@@ -1,5 +1,5 @@
     //
-    //  DirectoryAction.swift
+    // DirAction.swift
     //  MiMiNavigator
     //
     //  Created by Iakov Senatov on 08.10.2025.
@@ -8,7 +8,7 @@
 
 import Foundation
 
-    /// Represents all possible context actions available for a directory.
+    // / Represents all possible context actions available for a dir.
 enum DirectoryAction: String, CaseIterable, Identifiable {
     case open
     case openInNewTab
@@ -23,7 +23,7 @@ enum DirectoryAction: String, CaseIterable, Identifiable {
     
     var id: String { rawValue }
     
-        /// Human-readable title for each action.
+        // / Human-readable title for each action.
     var title: String {
         switch self {
             case .open:            return "Open"
@@ -39,7 +39,7 @@ enum DirectoryAction: String, CaseIterable, Identifiable {
         }
     }
     
-        /// System image name for SF Symbol icon.
+        // / System image name for SF Symbol icon.
     var systemImage: String {
         switch self {
             case .open:            return "folder.fill"

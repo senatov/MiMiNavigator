@@ -10,10 +10,9 @@ import SwiftUI
 
 let log = LogMan.log
 
-// MARK: -
 @main
 struct MiMiNavigatorApp: App {
-    @StateObject private var appState = AppState()  // single source of truth
+    @StateObject private var appState = AppState()
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @Environment(\.scenePhase) private var scenePhase
 
@@ -90,7 +89,6 @@ struct MiMiNavigatorApp: App {
         log.debug(#function)
         return ToolbarItem(placement: .status) {
             HStack(spacing: 8) {
-                // Badge icon styled for macOS 26 "liquid glass" look
                 Text("🐈")
                     .font(.caption2)
                     .padding(8)
@@ -121,30 +119,28 @@ struct MiMiNavigatorApp: App {
 
     // MARK: -
     private func makeDevMark() -> Text {
-        log.debug(#function + " - creating development mark")
-        // Prefer reading from bundled file 'curr_version.asc'; fall back to Info.plist values
+        log.debug(#function + " - creating dev mark")
         let versionURL = Bundle.main.url(forResource: "curr_version", withExtension: "asc")
         let content: String
         if let url = versionURL, let versionString = try? String(contentsOf: url, encoding: .utf8) {
             let trimmed = versionString.trimmingCharacters(in: .whitespacesAndNewlines)
             content = trimmed
-            log.debug("Loaded version from 'curr_version.asc' file: '\(content)'")
+            log.debug("loaded version from file: '\(content)'")
         } else {
-            // Fallback: build version string from Info.plist values
             let short = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String
             let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String
             if let s = short, let b = build {
                 content = "v\(s) (\(b))"
-                log.debug("Fallback to Info.plist version: '\(content)'")
+                log.debug("fallback to Info.plist: '\(content)'")
             } else if let s = short {
                 content = "v\(s)"
-                log.debug("Fallback to Info.plist short version: '\(content)'")
+                log.debug("fallback to short version: '\(content)'")
             } else if let b = build {
                 content = "build \(b)"
-                log.debug("Fallback to Info.plist build: '\(content)'")
+                log.debug("fallback to build: '\(content)'")
             } else {
                 content = "Mimi Navigator — cannot determine version"
-                log.error("Failed to load version from file and Info.plist.")
+                log.error("failed to load version")
             }
         }
         return Text(content)

@@ -1,5 +1,5 @@
 //
-//  FileRowView.swift
+// FileRowView.swift
 //  MiMiNavigator
 //
 //  Created by Iakov Senatov on 11.08.2025.
@@ -28,7 +28,7 @@ struct FileRowView: View {
     }
     // MARK: - View Body
     var body: some View {
-        // log.debug(#function + " for '\(file.nameStr)'")
+        // log.debug(#fn + " for '\(file.nameStr)'")
         EquatableView(value: file.id.hashValue ^ (isActiveSelection ? 1 : 0)) {
             rowContainer(baseContent())
                 .animation(nil, value: isActiveSelection)
@@ -58,7 +58,7 @@ struct FileRowView: View {
 
     // MARK: -  Base content for a single file row (icon + name) preserving original visuals.
     private func baseContent() -> some View {
-        // log.debug(#function + " for '\(file.nameStr)'")
+        // log.debug(#fn + " for '\(file.nameStr)'")
         return HStack {
             ZStack(alignment: .bottomLeading) {
                 let icon = NSWorkspace.shared.icon(forFile: file.urlValue.path)

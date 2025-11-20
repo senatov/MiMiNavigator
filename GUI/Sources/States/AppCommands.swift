@@ -1,5 +1,5 @@
 //
-//  AppCommands.swift
+// AppCommands.swift
 //  MiMiNavigator
 //
 //  Created by Iakov Senatov on 27.09.2025.
@@ -15,7 +15,7 @@ struct AppCommands: Commands {
     var body: some Commands {
         CommandMenu("Panels / Navigation") {
             Button("Toggle Panel Focus (⌘⌥T)") {
-                log.debug("KB: Cmd+Opt+T → toggle panel (definitive diagnostic)")
+                log.debug("KB: Cmd+Opt+T → toggle panel")
                 appState.togglePanel()
             }
             .keyboardShortcut("t", modifiers: [.command, .option])
@@ -33,7 +33,7 @@ struct AppCommands: Commands {
             Button("Copy") {
                 appState.selectionCopy()
             }
-            .keyboardShortcut("c", modifiers: [.command])  // пример: ⌘C для Copy
+            .keyboardShortcut("c", modifiers: [.command])
         }
         CommandGroup(replacing: .appTermination) {
             Button("Exit") {

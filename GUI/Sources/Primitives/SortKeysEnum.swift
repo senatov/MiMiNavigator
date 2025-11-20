@@ -1,5 +1,5 @@
 //
-//  SortKeysEnum.swift
+// SortKeysEnum.swift
 //  MiMiNavigator
 //
 //  Created by Iakov Senatov on 26.08.2025.

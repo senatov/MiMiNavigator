@@ -1,5 +1,5 @@
 //
-//  NavMnu2.swift
+// NavMnu2.swift
 //  MiMiNavigator
 //
 //  Created by Iakov Senatov on 10.05.2025.

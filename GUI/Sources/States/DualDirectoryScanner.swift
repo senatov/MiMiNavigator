@@ -1,16 +1,13 @@
 //
-//  DualDirectoryScanner.swift
+// DualDirScanner.swift
 //  MiMiNavigator
 //
 //  Created by Iakov Senatov on 11.12.24.
-//  Description: Actor-based utility for monitoring and synchronizing file updates in two directories.
-//  Dependencies: Foundation, Combine, SwiftUI
 //
 import Combine
 import Foundation
 import SwiftUI
 
-// MARK: - Manages dual directory monitoring with periodic file refreshes.
 actor DualDirectoryScanner {
     let appState: AppState
     var fileLst = FileSingleton.shared
@@ -23,19 +20,19 @@ actor DualDirectoryScanner {
         self.appState = appState
     }
 
-    // MARK: - Starts timers for both directories with custom refresh intervals
+    // MARK: -
     func startMonitoring() {
         log.info(#function)
         setupTimer(for: .right)
         setupTimer(for: .left)
         if leftTimer == nil || rightTimer == nil {
-            log.error("Failed to initialize one or both timers.")
+            log.error("failed to init timers")
         }
     }
 
     // MARK: -
     func setRightDirectory(pathStr: String) {
-        log.info("\(#function) pathStr: \(pathStr)")
+        log.info("\(#function) path: \(pathStr)")
         Task { @MainActor in
             appState.rightPath = pathStr
         }
@@ -43,13 +40,13 @@ actor DualDirectoryScanner {
 
     // MARK: -
     func setLeftDirectory(pathStr: String) {
-        log.info("\(#function) pathStr: \(pathStr)")
+        log.info("\(#function) path: \(pathStr)")
         Task { @MainActor in
             appState.leftPath = pathStr
         }
     }
 
-    // MARK: - Helper method to setup timers
+    // MARK: -
     private func setupTimer(for currSide: PanelSide) {
         log.info(#function)
         let timer = DispatchSource.makeTimerSource(queue: DispatchQueue.global())
@@ -69,10 +66,10 @@ actor DualDirectoryScanner {
         }
     }
 
-    // MARK: - Refreshes the file list for a specific directory side
+    // MARK: -
     @Sendable
     func refreshFiles(currSide: PanelSide) async {
-        log.info(#function + " currSide: <<\(currSide)>>")
+        log.info(#function + " side: <<\(currSide)>>")
         do {
             switch currSide {
             case .left:
@@ -87,15 +84,15 @@ actor DualDirectoryScanner {
             }
         }
         catch {
-            log.error("Failed to scan <<\(currSide)>> directory: \(error.localizedDescription)")
+            log.error("scan failed <<\(currSide)>>: \(error.localizedDescription)")
         }
     }
 
     // MARK: -
     @MainActor
     private func updateScannedFiles(_ files: [CustomFile], for currSide: PanelSide) {
-        log.info(#function + "<<currSide: \(currSide)>>")
-        log.info("Updating <<AppState.\(currSide)>> Panel with \(files.count) files.")
+        log.info(#function + " side: \(currSide)")
+        log.info("updating AppState.\(currSide) w/ \(files.count) files")
         let sorted = appState.applySorting(files)
         switch currSide {
         case .left:
@@ -107,7 +104,7 @@ actor DualDirectoryScanner {
 
     // MARK: -
     func resetRefreshTimer(for currSide: PanelSide) {
-        log.info("↪️ \(#function) [currSide: <<\(currSide)>>]")
+        log.info(#function + " side: <<\(currSide)>>")
         switch currSide {
         case .left:
             leftTimer?.cancel()
@@ -121,21 +118,21 @@ actor DualDirectoryScanner {
         }
     }
 
+    // MARK: -
     @MainActor
-    // MARK: - Updates the file list for the specified directory side
     private func updateFileList(panelSide: PanelSide, with files: [CustomFile]) async {
-        log.info("↪️ \(#function) [currSide: <<\(panelSide)>>]")
+        log.info(#function + " side: <<\(panelSide)>>")
         guard let selectedEntity = appState.selectedDir.selectedFSEntity else {
-            log.warning("No selected FSEntity for <<\(panelSide)>> side.")
+            log.warning("no sel'd FSEntity for <<\(panelSide)>>")
             return
         }
-        log.info("Updating selected dir: \(selectedEntity.pathStr) with \(files.count) files on <<\(panelSide)>> side")
+        log.info("updating sel'd dir: \(selectedEntity.pathStr) w/ \(files.count) files on <<\(panelSide)>>")
         switch panelSide {
         case .left:
             await fileLst.updateLeftFiles(files)
         case .right:
             await fileLst.updateRightFiles(files)
         }
-        log.info("Finished updating <<\(panelSide)>> directory.")
+        log.info("finished updating <<\(panelSide)>>")
     }
 }

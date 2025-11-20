@@ -1,5 +1,5 @@
 //
-//  PanelSide.swift
+// PanelSide.swift
 //  MiMiNavigator
 //
 //  Created by Iakov Senatov on 26.05.2025.

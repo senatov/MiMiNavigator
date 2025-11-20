@@ -1,5 +1,5 @@
 //
-//  HelpPopup.swift
+// HelpPopup.swift
 //  MiMiNavigator
 //
 //  Created by Iakov Senatov on 16.06.2025.

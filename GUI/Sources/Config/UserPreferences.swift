@@ -1,5 +1,5 @@
 //
-//  UserPreferences.swift
+// UserPrefs.swift
 //  MiMiNavigator
 //
 //  Created by ChatGPT on 10.08.2025.

@@ -1,5 +1,5 @@
 //
-//  PanelFocusModifier.swift
+// PanelFocusModifier.swift
 //  MiMiNavigator
 //
 //  Created by Iakov Senatov on 13.08.2025.
@@ -27,7 +27,7 @@ struct PanelFocusModifier: ViewModifier {
                 appState.focusedPanel = panelSide
             }
             .onChange(of: appState.focusedPanel, initial: false) { oldValue, newValue in
-                // When focus moves away from this panel, clear selection here
+                // When focus moves away from this panel, clear sel here
                 if newValue != panelSide {
                     log.info("Focus moved from \(oldValue) to \(newValue); clearing selection on <<\(panelSide)>>")
                     onFocusLost()

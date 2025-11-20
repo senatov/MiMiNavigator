@@ -1,5 +1,5 @@
 //
-//  ToolTipMod.swift
+// ToolTipMod.swift
 //  MiMiNavigator
 //
 //  Created by Iakov Senatov on 31.10.2025.

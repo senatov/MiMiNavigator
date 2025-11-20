@@ -1,5 +1,5 @@
 //
-//  FavTreeMnu.swift
+// FavTreeMnu.swift
 //  MiMiNavigator
 //
 //  Created by Iakov Senatov on 16.10.24.
