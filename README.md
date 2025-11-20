@@ -4,7 +4,7 @@
     src="GUI/Assets.xcassets/AppIcon.appiconset/120.png"
     alt="Preview FrontEnd"
     title="Logo"
-    style="max-width: 100%; height: auto; border: 2px; border-radius: 4px;" />
+    style="max-width: 80%; height: auto; border: 2px; border-radius: 8px;" />
 </div>
 
 
@@ -35,10 +35,28 @@
 MiMiNavigator is a macOS file manager built with Swift and SwiftUI.
 The repository is organized around an Xcode project with sources under `MiMiNavigator/` and basic tests in `MiMiNavigatorTests` and `MiMiNavigatorUITests`.
 
+---
+## 
+
 <div style="text-align: center;" >
   <img
-    src="GUI/Docs/Screenshot 2025-11-07 at 21.52.17.png"
+    src="GUI/Docs/Preview1.png"
     alt="Preview FrontEnd"
+    title="Preview"
+    alt="Preview FrontEnd"
+    aria-dropeffect="true"
+    style="max-width: 100%; height: auto; border: 2px solid #133347ff; border-radius: 4px;" />
+</div>
+
+---
+##
+
+<div style="text-align: center;" >
+  <img
+    src="GUI/Docs/Preview2.png"
+    alt="Preview FrontEnd"
+    alt="Preview FrontEnd"
+    aria-dropeffect="true" 
     title="Preview"
     style="max-width: 100%; height: auto; border: 2px solid #133347ff; border-radius: 4px;" />
 </div>
@@ -119,7 +137,7 @@ This project is still under active development ( NOT READY YET  per the README) 
 
 - macOS 26 or later
 - Swift 6.2
-- Xcode 26.1 beta
+- Xcode 26.2 beta
 
 
 ---
@@ -187,68 +205,47 @@ This project is still under active development ( NOT READY YET  per the README) 
 ---
 ## Recent Changes
 ```sh
-
-* e75bc8f - Senatov  (HEAD -> master, origin/master, origin/HEAD) new class refactoring (10 minutes ago, 2025-11-14 00:23:11 +0100)
-* 4361879 - Senatov  na also (4 hours ago, 2025-11-13 20:55:33 +0100)
-* d741cfc - Senatov  hueta (23 hours ago, 2025-11-13 01:04:34 +0100)
-* 0b02ce5 - Senatov  new prj configs and new formatted sources (24 hours ago, 2025-11-13 00:44:49 +0100)
-* ad0125e - Senatov  struct (26 hours ago, 2025-11-12 22:41:35 +0100)
-* 085a426 - Senatov  command shell call (26 hours ago, 2025-11-12 22:37:23 +0100)
-* 8fcc8ff - Senatov  no more View just helper:  ConsoleCurrPath.open (28 hours ago, 2025-11-12 20:09:07 +0100)
-* 8da07ff - Senatov  NOT TESTED fix(ui): bottom toolbar visibility & layout restored, added LiquidGlass contrast + vibrant icons (2 days ago, 2025-11-11 22:23:41 +0100)
-* 2469d80 - Senatov  ensure it never covers the bottom toolbar visually (2 days ago, 2025-11-11 18:49:08 +0100)
-* 3c33a70 - Senatov  cleaned prj from obsoletes (2 days ago, 2025-11-11 14:01:29 +0100)
-* f34489a - Senatov  fix3-6: drop some shit, Figma Styles (6 days ago, 2025-11-07 21:49:58 +0100)
-* 1ea884f - Senatov  fix 2-3: Figma Style/macOS 26.1 (6 days ago, 2025-11-07 21:45:27 +0100)
-* eefbd04 - Senatov  fix1 Figma Style macOS 26.1 (6 days ago, 2025-11-07 20:39:06 +0100)
-* 4c99e82 - Senatov  refactor, UI-test -OK (6 days ago, 2025-11-07 15:56:43 +0100)
-* 9a513c1 - Senatov  jump to 50% on Double Click on Divider (7 days ago, 2025-11-06 20:36:00 +0100)
-* 094c19e - Senatov  err on panels divider = 54% on Start (7 days ago, 2025-11-06 19:49:51 +0100)
-* b363863 - Senatov  clean & refactoring. Tested. ok (11 days ago, 2025-11-02 19:33:56 +0100)
-* 628ca77 - Senatov  popup percentage booble-tooltip (13 days ago, 2025-11-01 03:19:08 +0100)
-* 4c50c1c - Senatov  popup percentage booble-tooltip (13 days ago, 2025-11-01 03:19:08 +0100)
-* a7923e8 - Senatov  щл (11 days ago, 2025-11-02 15:17:22 +0100)
-* 922e02a - Senatov  (tag: from_01.11.2025) Stage 1. OK. (13 days ago, 2025-10-31 20:55:41 +0100)
-* 4aa1520 - Senatov  ok. tested (13 days ago, 2025-10-31 20:43:14 +0100)
-* 895c93c - Senatov  trottling DONE. tested ok (13 days ago, 2025-10-31 14:53:51 +0100)
-*   c89deba - Senatov  merging (13 days ago, 2025-10-31 14:44:18 +0100)
-|\
-| * 6e08dd8 - Senatov  temp: pre-rollback (13 days ago, 2025-10-31 14:14:47 +0100)
-| * 441c2a3 - Senatov  rename TotalCommanderResizableView  to DuoFilePanelView (13 days ago, 2025-10-31 14:09:31 +0100)
-| * 0a01186 - Senatov  fix4 (2 weeks ago, 2025-10-31 01:22:16 +0100)
-| * a74d8f6 - Senatov  pre-build (2 weeks ago, 2025-10-30 20:10:49 +0100)
-* | 1f383e1 - Senatov  temp: pre-rollback (2 weeks ago, 2025-10-30 19:46:10 +0100)
-* | ca8bd18 - Senatov  (tag: tabbing-ok) rename on DuoFilePanelView (2 weeks ago, 2025-10-28 21:49:50 +0100)
-* | 5885b9a - Senatov  merge (2 weeks ago, 2025-10-28 21:39:27 +0100)
-|/
-* 2f3bf45 - Senatov  panel divider fixed. Test ok (2 weeks ago, 2025-10-28 21:05:10 +0100)
-* 21bea20 - Senatov  cosmetic (2 weeks ago, 2025-10-28 16:18:07 +0100)
-* 84637c5 - Senatov  fixed panel focus - just formatted (2 weeks ago, 2025-10-28 16:07:48 +0100)
-* 0b3f040 - Senatov  focus repaired (2 weeks ago, 2025-10-28 16:06:55 +0100)
-* c7befc0 - Senatov  next fix (2 weeks ago, 2025-10-28 15:50:39 +0100)
-* 644c56a - Senatov  nex fix (2 weeks ago, 2025-10-28 15:24:44 +0100)
-* d47eef1 - Senatov  log fix (2 weeks ago, 2025-10-28 11:47:03 +0100)
-* 9e9d0e2 - Senatov  wrong jump on Top of List - fixed (3 weeks ago, 2025-10-26 21:31:21 +0100)
-* 5bf0ea5 - Senatov  R-Mouse mnu ,fix focus jump on down selection (3 weeks ago, 2025-10-26 19:15:22 +0100)
-* 602b0a9 - Senatov  logs, fix styles, macOS 26.1 liquid glass style (3 weeks ago, 2025-10-25 23:53:40 +0200)
-* 8df17a9 - Senatov  scweinkram (3 weeks ago, 2025-10-25 23:11:33 +0200)
-* a81a9b2 - Senatov  The left and right sides get mixed up when I click on “Navigation between favorites” — apparently it’s caused by favoritePopover() (3 weeks ago, 2025-10-25 19:20:38 +0200)
-* c5e6d9f - Senatov  security bookmarks (3 weeks ago, 2025-10-25 18:18:07 +0200)
-* ec7edfe - Senatov  UX Design fix (3 weeks ago, 2025-10-25 17:51:41 +0200)
-* d939f0f - Senatov  Excellent. Everything works! Navigation with mouse and Tab (3 weeks ago, 2025-10-25 15:07:54 +0200)
-* 169da9f - Senatov  save between fixies (works wrong) (3 weeks ago, 2025-10-24 17:08:55 +0200)
-* b8b8513 - Senatov  history ok. Но выделение строки и низ по-прежнему дерьмово провисает. (3 weeks ago, 2025-10-23 23:01:17 +0200)
-* 8491639 - Senatov  FileTableView   - err (3 weeks ago, 2025-10-23 20:03:08 +0200)
-* 2324bf2 - Senatov  error (3 weeks ago, 2025-10-23 19:04:14 +0200)
-* c6f9938 - Senatov  compillation error (3 weeks ago, 2025-10-23 18:41:21 +0200)
-* f2c227e - Senatov  build info (3 weeks ago, 2025-10-23 15:38:37 +0200)
-*   b9ac683 - Senatov  Merge branch 'check_popups_fix' (3 weeks ago, 2025-10-23 15:35:08 +0200)
-|\
-| * 1fdce74 - Senatov  ok. Not tested yet! (3 weeks ago, 2025-10-23 15:29:09 +0200)
-| * 0492725 - Senatov  Fix popup on prozess. Selection focuser panel side in logs with "<< >>" (3 weeks ago, 2025-10-23 14:25:40 +0200)
-| * a087fa6 - Senatov  def. fixed before test (3 weeks ago, 2025-10-23 05:11:43 +0200)
-| * 9ba4e47 - Senatov  wrong (3 weeks ago, 2025-10-23 04:52:03 +0200)
-| * dce701f - Senatov  just try fix popup. Hasnt successfull. (3 weeks ago, 2025-10-21 21:20:07 +0200)
+* 8e6a5a0 - Senatov  (HEAD -> master, origin/master, origin/feature-down-toolbar-2, origin/HEAD, feature-down-toolbar-2) save (4 minutes ago, 2025-11-20 17:25:45 +0100)
+* a4cd29a - Senatov  conditional stage save (6 minutes ago, 2025-11-20 17:24:11 +0100)
+* 958fe8d - Senatov  Fix: panels on main view (4 days ago, 2025-11-16 22:49:41 +0100)
+* 493f9d2 - Senatov  fix: tab header (4 days ago, 2025-11-16 22:45:28 +0100)
+* b8c096f - Senatov  3 panel: under construction (6 days ago, 2025-11-15 00:27:00 +0100)
+* f2a5add - Senatov  refactor *Split* (6 days ago, 2025-11-14 17:00:25 +0100)
+* dc72773 - Senatov  fix: down toolbar & split refactor (7 days ago, 2025-11-14 00:36:40 +0100)
+* e75bc8f - Senatov  new class refactoring (7 days ago, 2025-11-14 00:23:11 +0100)
+* 4361879 - Senatov  na also (7 days ago, 2025-11-13 20:55:33 +0100)
+* d741cfc - Senatov  hueta (8 days ago, 2025-11-13 01:04:34 +0100)
+* 0b02ce5 - Senatov  new prj configs and new formatted sources (8 days ago, 2025-11-13 00:44:49 +0100)
+* ad0125e - Senatov  struct (8 days ago, 2025-11-12 22:41:35 +0100)
+* 085a426 - Senatov  command shell call (8 days ago, 2025-11-12 22:37:23 +0100)
+* 8fcc8ff - Senatov  no more View just helper:  ConsoleCurrPath.open (8 days ago, 2025-11-12 20:09:07 +0100)
+* 8da07ff - Senatov  NOT TESTED fix(ui): bottom toolbar visibility & layout restored, added LiquidGlass contrast + vibrant icons (9 days ago, 2025-11-11 22:23:41 +0100)
+* 2469d80 - Senatov  ensure it never covers the bottom toolbar visually (9 days ago, 2025-11-11 18:49:08 +0100)
+* 3c33a70 - Senatov  cleaned prj from obsoletes (9 days ago, 2025-11-11 14:01:29 +0100)
+* f34489a - Senatov  fix3-6: drop some shit, Figma Styles (13 days ago, 2025-11-07 21:49:58 +0100)
+* 1ea884f - Senatov  fix 2-3: Figma Style/macOS 26.1 (13 days ago, 2025-11-07 21:45:27 +0100)
+* eefbd04 - Senatov  fix1 Figma Style macOS 26.1 (13 days ago, 2025-11-07 20:39:06 +0100)
+* 4c99e82 - Senatov  refactor, UI-test -OK (13 days ago, 2025-11-07 15:56:43 +0100)
+* 9a513c1 - Senatov  jump to 50% on Double Click on Divider (2 weeks ago, 2025-11-06 20:36:00 +0100)
+* 094c19e - Senatov  err on panels divider = 54% on Start (2 weeks ago, 2025-11-06 19:49:51 +0100)
+* b363863 - Senatov  clean & refactoring. Tested. ok (3 weeks ago, 2025-11-02 19:33:56 +0100)
+* 628ca77 - Senatov  popup percentage booble-tooltip (3 weeks ago, 2025-11-01 03:19:08 +0100)
+* 4c50c1c - Senatov  popup percentage booble-tooltip (3 weeks ago, 2025-11-01 03:19:08 +0100)
+* a7923e8 - Senatov  щл (3 weeks ago, 2025-11-02 15:17:22 +0100)
+* 922e02a - Senatov  (tag: from_01.11.2025) Stage 1. OK. (3 weeks ago, 2025-10-31 20:55:41 +0100)
+* 4aa1520 - Senatov  ok. tested (3 weeks ago, 2025-10-31 20:43:14 +0100)
+* 895c93c - Senatov  trottling DONE. tested ok (3 weeks ago, 2025-10-31 14:53:51 +0100)
+*   c89deba - Senatov  merging (3 weeks ago, 2025-10-31 14:44:18 +0100)
+|\  
+| * 6e08dd8 - Senatov  temp: pre-rollback (3 weeks ago, 2025-10-31 14:14:47 +0100)
+| * 441c2a3 - Senatov  rename TotalCommanderResizableView  to DuoFilePanelView (3 weeks ago, 2025-10-31 14:09:31 +0100)
+| * 0a01186 - Senatov  fix4 (3 weeks ago, 2025-10-31 01:22:16 +0100)
+| * a74d8f6 - Senatov  pre-build (3 weeks ago, 2025-10-30 20:10:49 +0100)
+* | 1f383e1 - Senatov  temp: pre-rollback (3 weeks ago, 2025-10-30 19:46:10 +0100)
+* | ca8bd18 - Senatov  (tag: tabbing-ok) rename on DuoFilePanelView (3 weeks ago, 2025-10-28 21:49:50 +0100)
+* | 5885b9a - Senatov  merge (3 weeks ago, 2025-10-28 21:39:27 +0100)
+|/  
+* 2f3bf45 - Senatov  panel divider fixed. Test ok (3 weeks ago, 2025-10-28 21:05:10 +0100)
 
 ```
 ---
