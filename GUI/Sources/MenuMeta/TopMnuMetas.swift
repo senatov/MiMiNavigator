@@ -1,5 +1,5 @@
 //
-//  TopMnuMetas.swift
+// TopMnuMetas.swift
 //  MiMiNavigator
 //
 //  Created by Iakov Senatov on 01.06.2025.

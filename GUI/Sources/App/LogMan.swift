@@ -1,5 +1,5 @@
 //
-//  LogMan.swift
+// LogMan.swift
 //  MiMiNavigator
 //
 //  Created by Iakov Senatov on 24.06.2025.
@@ -10,7 +10,6 @@ import AppKit
 import Foundation
 import SwiftyBeaver
 
-// MARK: -
 enum LogMan {
     static let log = SwiftyBeaver.self
 
@@ -20,7 +19,7 @@ enum LogMan {
         cn.useTerminalColors = true
         cn.useNSLog = false
         cn.format = "$DHH:mm:ss$d $L $N.$F:$l $M"
-        // Уровни с иконками
+        
         func getLevelIcon(for level: SwiftyBeaver.Level) -> String {
             switch level {
                 case .verbose: return "􀐯"
@@ -55,7 +54,6 @@ enum LogMan {
             "Logs",
             isDirectory: true
         )
-        // Создать Logs/ при необходимости
         try? FileManager.default.createDirectory(
             at: logsDir,
             withIntermediateDirectories: true

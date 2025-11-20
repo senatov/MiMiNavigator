@@ -1,5 +1,5 @@
 //
-//  PanelFileTableSection.swift
+// PanelFileTableSection.swift
 //  MiMiNavigator
 //
 //  Created by Iakov Senatov on 24.08.2025.
@@ -57,7 +57,7 @@ struct PanelFileTableSection: View {
                         appState.focusedPanel = panelSide
                         onPanelTap(panelSide)
                         log.debug("table tap (simultaneous) on side <<\(panelSide)>>")
-                        // Ensure there is a visible selection only when none exists
+                        // Ensure there is a visible sel only when none exists
                         if selectedID == nil, let first = files.first {
                             log.debug("Auto-select first row on tap for side <<\(panelSide)>>: \(first.nameStr)")
                             selectedID = first.id
@@ -65,13 +65,13 @@ struct PanelFileTableSection: View {
                         }
                     }
             )
-            // React to selection changes
+            // React to sel changes
             .onChange(of: selectedID, initial: false) { _, newValue in
                 appState.focusedPanel = panelSide
                 log.debug("on onChange on table, side <<\(panelSide)>>")
                 if let id = newValue, let file = files.first(where: { $0.id == id }) {
                     log.debug("Row selected: id=\(id) on side <<\(panelSide)>>")
-                    // Notify others to clear their selections before we commit this one
+                    // Notify others to clear their sels before we commit this one
                     notifyWillSelect(file)
                     onSelect(file)
                 } else {
@@ -79,7 +79,7 @@ struct PanelFileTableSection: View {
                     notifyDidClearSelection()
                 }
             }
-            // Navigation with arrow keys — same as before
+            // Nav with arrow keys — same as before
             .onMoveCommand { direction in
                 appState.focusedPanel = panelSide
                 switch direction {
@@ -99,7 +99,7 @@ struct PanelFileTableSection: View {
                 }
             }
             .onChange(of: appState.focusedPanel, initial: false) { _, newSide in
-                // When this panel receives keyboard focus (e.g., via Tab), ensure a visible selection exists
+                // When this panel receives keyboard focus (e.g., via Tab), ensure a visible sel exists
                 guard newSide == panelSide else { return }
                 isFocused = true
                 if selectedID == nil, let first = files.first {
@@ -135,7 +135,7 @@ struct PanelFileTableSection: View {
 
     // MARK: - Selection coordination helpers
     private func notifyWillSelect(_ file: CustomFile) {
-        // Let other parts know that this panel is about to select a row, so they can reset their own selections
+        // Let other parts know that this panel is about->select a row, so they can reset their own sels
         NotificationCenter.default.post(
             name: .panelWillSelectFile,
             object: nil,
@@ -160,8 +160,8 @@ struct PanelFileTableSection: View {
 }
 
 extension Notification.Name {
-    /// Posted right before a panel is about to select a file so others can reset their selections
+    // / Posted right before a panel is about->select a file so others can reset their sels
     static let panelWillSelectFile = Notification.Name("PanelWillSelectFile")
-    /// Posted when a panel cleared its selection
+    // / Posted when a panel cleared its sel
     static let panelDidClearSelection = Notification.Name("PanelDidClearSelection")
 }

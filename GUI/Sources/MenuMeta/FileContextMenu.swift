@@ -1,5 +1,5 @@
 //
-//  FileContextMenu.swift
+// FileContextMenu.swift
 //  MiMiNavigator
 //
 //  Created by Iakov Senatov on 08.10.2025.
@@ -7,14 +7,14 @@
 //
 
 //
-//  FileContextMenu.swift
+// FileContextMenu.swift
 //  MiMiNavigator
 //
 
 import Foundation
 import SwiftUI
 
-/// Context menu for non-directory file items.
+// / Context menu for non-dir file items.
 struct FileContextMenu: View {
     let file: CustomFile
     let onAction: (FileAction) -> Void

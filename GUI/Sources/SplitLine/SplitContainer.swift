@@ -1,27 +1,27 @@
-    //
-    //  SplitContainer.swift
-    //  MiMiNavigator
-    //
-    //  Created by Iakov Senatov on 30.10.2025.
-    //
+//
+// SplitContainer.swift
+//  MiMiNavigator
+//
+//  Created by Iakov Senatov on 30.10.2025.
+//
 
 import AppKit
 import SwiftUI
 
-    // MARK: - Native NSSplitView wrapper that manages left/right panels with min widths and persistent left width
+// MARK: - Native NSSplitView wrapper that manages left/right panels with min widths and persistent left width
 struct SplitContainer<Left: View, Right: View>: NSViewRepresentable {
     typealias NSViewType = NSSplitView
     let leftPanel: () -> Left
     let rightPanel: () -> Right
     let minPanelWidth: CGFloat
-    
-        // MARK: - Coordinator
+
+    // MARK: - Coordinator
     typealias Coordinator = SplitContainerCoordinator<Left, Right>
-    
-        // MARK: - Verbose logging toggle for interaction diagnostics (computed to avoid static stored property in generics)
+
+    // MARK: - Verbose logging toggle for interaction diagnostics (computed to avoid static stored property in generics)
     static var verboseLogs: Bool { true }
-    
-        // MARK: -
+
+    // MARK: -
     init(
         minPanelWidth: CGFloat = 120,
         @ViewBuilder leftPanel: @escaping () -> Left,
@@ -32,26 +32,26 @@ struct SplitContainer<Left: View, Right: View>: NSViewRepresentable {
         self.leftPanel = leftPanel
         self.rightPanel = rightPanel
     }
-    
-        // MARK: -
+
+    // MARK: -
     func makeCoordinator() -> Coordinator {
         Coordinator(self)
     }
-    
-        // MARK: -
+
+    // MARK: -
     private func V(_ msg: @autoclosure () -> String) {
         if Self.verboseLogs { log.debug(msg()) }
     }
-    
-        // MARK: - Persisted left panel width
+
+    // MARK: - Persisted left panel width
     @AppStorage("leftPanelWidth") fileprivate var leftPanelWidthValue: Double = 400
-    
+
     var leftPanelWidth: CGFloat {
         get { CGFloat(leftPanelWidthValue) }
         set { leftPanelWidthValue = Double(newValue) }
     }
-    
-        // MARK: - NSViewRepresentable
+
+    // MARK: - NSViewRepresentable
     func makeNSView(context: Context) -> NSSplitView {
         log.debug(#function)
         let splitView = ResettableSplitView()
@@ -59,18 +59,18 @@ struct SplitContainer<Left: View, Right: View>: NSViewRepresentable {
         splitView.isVertical = true
         splitView.dividerStyle = .thin
         splitView.delegate = context.coordinator
-            // Prefer keeping the left panel width stable; right side flexes first on window resize
+        // Prefer keeping left panel width stable; right side flexes first on window resize
         splitView.setHoldingPriority(NSLayoutConstraint.Priority(260), forSubviewAt: 0)
         splitView.setHoldingPriority(NSLayoutConstraint.Priority(250), forSubviewAt: 1)
         splitView.translatesAutoresizingMaskIntoConstraints = false
         splitView.identifier = NSUserInterfaceItemIdentifier("MiMiSplitView")
         V("SV.init isVertical=\(splitView.isVertical) dividerStyle=\(splitView.dividerStyle.rawValue) minWidth=\(minPanelWidth)")
-            // Host SwiftUI children
+        // Host SwiftUI children
         let leftHost = NSHostingView(rootView: leftPanel())
         let rightHost = NSHostingView(rootView: rightPanel())
         splitView.addArrangedSubview(leftHost)
         splitView.addArrangedSubview(rightHost)
-            // Apply initial divider position on next runloop when bounds are valid
+        // Apply initial divider position on next runloop when bounds are valid
         DispatchQueue.main.async {
             let total = max(splitView.bounds.width, 1)
             let clamped = clampLeftWidth(
@@ -82,11 +82,11 @@ struct SplitContainer<Left: View, Right: View>: NSViewRepresentable {
             context.coordinator.isProgrammatic = false
             log.debug("SplitContainer.makeNSView → initial left=\(Int(clamped)) total=\(Int(total))")
         }
-            // Gesture recognizer not needed: Option+Left click is handled in ResettableSplitView.mouseDown(_:).
+        // Gesture recognizer not needed: Option+Left click is handled in ResettableSplitView.mouseDown(_:).
         return splitView
     }
-    
-        // MARK: - Update hosted SwiftUI content
+
+    // MARK: - Update hosted SwiftUI content
     func updateNSView(_ splitView: NSSplitView, context: Context) {
         log.debug(#function)
         if let leftHost = splitView.arrangedSubviews.first as? NSHostingView<Left> {
@@ -95,7 +95,7 @@ struct SplitContainer<Left: View, Right: View>: NSViewRepresentable {
         if let rightHost = splitView.arrangedSubviews.last as? NSHostingView<Right> {
             rightHost.rootView = rightPanel()
         }
-            // Sync divider position with persisted width without causing feedback loops
+        // Sync divider positionw/persisted width without causing feedback loops
         let total = max(splitView.bounds.width, 1)
         let desired = clampLeftWidth(
             leftPanelWidth,
@@ -114,13 +114,13 @@ struct SplitContainer<Left: View, Right: View>: NSViewRepresentable {
             }
         }
     }
-    
-        // MARK: - Clamp left width to respect min width on both sides
+
+    // MARK: - Clamp left width to respect min width on both sides
     func clampLeftWidth(_ left: CGFloat, totalWidth: CGFloat, minPanelWidth: CGFloat, dividerThickness: CGFloat) -> CGFloat {
         log.debug(#function)
         let minLeft = minPanelWidth
         let maxLeft = max(minPanelWidth, totalWidth - minPanelWidth - dividerThickness)
-            // Snap to pixel grid to avoid half-pixel jitter
+        // Snap to pixel grid to avoid half-pixel jitter
         let scale = NSApp.mainWindow?.backingScaleFactor ?? 2.0
         let clamped = max(minLeft, min(left, maxLeft))
         return (clamped * scale).rounded() / scale

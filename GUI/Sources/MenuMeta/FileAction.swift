@@ -1,5 +1,5 @@
 //
-//  FileAction.swift
+// FileAction.swift
 //  MiMiNavigator
 //
 //  Created by Iakov Senatov on 08.10.2025.
@@ -8,7 +8,7 @@
 
 import Foundation
 
-/// Represents context actions available for a regular file.
+// / Represents context actions available for a regular file.
 enum FileAction: String, CaseIterable, Identifiable {
     case cut
     case copy
@@ -21,7 +21,7 @@ enum FileAction: String, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
-    /// Human-readable title for each action.
+    // / Human-readable title for each action.
     var title: String {
         switch self {
             case .cut: return "Cut"
@@ -35,7 +35,7 @@ enum FileAction: String, CaseIterable, Identifiable {
         }
     }
 
-    /// SF Symbol for each action.
+    // / SF Symbol for each action.
     var systemImage: String {
         switch self {
             case .cut: return "scissors"

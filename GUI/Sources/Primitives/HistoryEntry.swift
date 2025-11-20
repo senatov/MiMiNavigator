@@ -1,5 +1,5 @@
 //
-//  HistoryEntry.swift
+// HistoryEntry.swift
 //  MiMiNavigator
 //
 //  Created by Iakov Senatov on 28.09.2025.

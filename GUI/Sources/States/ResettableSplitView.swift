@@ -1,5 +1,5 @@
 //
-//  ResettableSplitView.swift
+// ResettableSplitView.swift
 //  MiMiNavigator
 //
 //  Created by Iakov Senatov on 13.11.2025.
@@ -19,7 +19,7 @@ final class ResettableSplitView: NSSplitView {
     weak var coordinatorRef: SplitViewDoubleClickHandler?
     private static let verboseLogs = true
 
-    // Responder overrides to allow keyboard/focus and modifier event handling
+    // Responder overrides->allow keyboard/focus+modifier event handling
     override var acceptsFirstResponder: Bool { true }
     override func becomeFirstResponder() -> Bool { true }
 

@@ -1,5 +1,5 @@
 //
-//  CustomSplitView.swift
+// CustomSplitView.swift
 //  MiMiNavigator
 //
 //  Created by Iakov Senatov on 30.10.2025.
@@ -13,7 +13,7 @@ import SwiftUI
 public final class CustomSplitView: NSSplitView {
     let appearanceProxy = DividerAppearance()
 
-    // Callback invoked when user requests a 50/50 reset (wired from OrangeSplitView.Coordinator)
+    // Callback invoked when user requests a 50/50 reset (wired<-OrangeSplitView.Coordinator)
     public var onDividerReset: ((CustomSplitView) -> Void)?
 
     // Ensure we can receive modifier key changes and precise mouse events
@@ -51,9 +51,8 @@ public final class CustomSplitView: NSSplitView {
         super.flagsChanged(with: event)
     }
 
-    // MARK: -
+    // MARK: - Capture focus so flagsChanged/drag state are visible
     public override func mouseDown(with event: NSEvent) {
-        // Capture focus so flagsChanged/drag state are visible
         print("CSV.mouseDown fired", event.clickCount, event.modifierFlags)
         window?.makeFirstResponder(self)
         let loc = convert(event.locationInWindow, from: nil)

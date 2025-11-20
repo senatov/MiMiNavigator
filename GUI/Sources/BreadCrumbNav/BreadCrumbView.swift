@@ -1,5 +1,5 @@
 //
-//  BreadCrumbView.swift
+// BreadCrumbView.swift
 //  MiMiNavigator
 //
 //  Created by Iakov Senatov on 14.11.24.
@@ -24,7 +24,7 @@ struct BreadCrumbView: View {
     // MARK: -
     var body: some View {
         log.info(#function + " for side <<\(panelSide)>>")
-        /// Main breadcrumb container
+        // / Main breadcrumb container
         return HStack(alignment: .center, spacing: 4) {
             ForEach(pathComponents.indices, id: \.self) { index in
                 breadcrumbItem(index: index)

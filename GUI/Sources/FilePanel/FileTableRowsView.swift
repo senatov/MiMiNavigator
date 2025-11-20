@@ -1,5 +1,5 @@
 //
-//  FileTableRowsView.swift
+// FileTableRowsView.swift
 //  MiMiNavigator
 //
 //  Created by Iakov Senatov on 23.10.2025.
@@ -15,8 +15,8 @@ private struct EquatableView<Value: Hashable, Content: View>: View {
     @MainActor var body: some View { content().id(value) }
 }
 
-/// Separate view to simplify type-checking of the main FileTableView.
-/// Responsible only for rendering the LazyVStack of rows.
+// / Separate view to simplify type-checking of the main FileTableView.
+// / Responsible only for rendering the LazyVStack of rows.
 struct FileTableRowsView: View {
     @EnvironmentObject var appState: AppState
     let rows: [(offset: Int, element: CustomFile)]

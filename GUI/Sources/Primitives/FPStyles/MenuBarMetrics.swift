@@ -1,5 +1,5 @@
 //
-//  MenuBarMetrics.swift
+// MenuBarMetrics.swift
 //  MiMiNavigator
 //
 //  Created by Iakov Senatov on 16.11.2025.

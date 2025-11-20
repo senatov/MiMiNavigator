@@ -1,5 +1,5 @@
 //
-//  FileRowView.swift
+// FileRowView.swift
 //  MiMiNavigator
 //
 //  Created by Iakov Senatov on 11.08.2025.
@@ -24,9 +24,9 @@ struct FileTableView: View {
         return 1.0 / scale
     }
 
-    // Keeps a stable sorted array to avoid ScrollView content rebuilds on every render
+    // Keeps a stable sorted array->avoid ScrollView content rebuilds on every render
     private func recomputeSortedCache() {
-        // Always sort directories first, then apply selected column sort
+        // Always sort dirs first, then apply sel'd column sort
         let base: [CustomFile] = files
         let sorted = base.sorted(by: compare)
         cachedSortedFiles = sorted

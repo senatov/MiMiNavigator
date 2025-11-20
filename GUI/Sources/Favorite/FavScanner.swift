@@ -1,5 +1,5 @@
 //
-//  FavScanner.swift
+// FavScanner.swift
 //  MiMiNavigator
 //
 //  Created by Iakov Senatov on 01.11.24.
@@ -227,7 +227,7 @@ class FavScanner {
         if await BookmarkStore.shared.hasAccess(to: volumesURL) {
             return volumesURL
         }
-        // Otherwise ask once; the shim will start security-scoped access for this session.
+        // Otherwise ask once; shim will start security-scoped access for this session.
         let granted = await BookmarkStore.shared.requestAccessPersisting(for: volumesURL)
         return granted ? volumesURL : nil
     }

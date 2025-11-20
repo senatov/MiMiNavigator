@@ -1,5 +1,5 @@
     //
-    //  MenuItemView.swift
+    // MenuItemView.swift
     //  MiMiNavigator
     //
     //  Created by Iakov Senatov on 18.02.25.

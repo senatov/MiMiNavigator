@@ -1,5 +1,5 @@
 //
-//  FileSinglton.swift
+// FileSinglton.swift
 //  MiMiNavigator
 //
 //  Created by Iakov Senatov on 07.11.24.

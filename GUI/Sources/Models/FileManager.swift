@@ -1,5 +1,5 @@
 //
-//  FavoritesManager.swift
+// FavoritesManager.swift
 //  MiMiNavigator
 //
 //  Created by Iakov Senatov on 02.11.24.
@@ -45,7 +45,7 @@ extension FileManager {
         return homeDirectoryForCurrentUser
     }
 
-    /// Returns the URL of the user's Music directory
+    // / Returns the URL of the user's Music dir
     var musicDirectory: URL {
         return urls(for: .musicDirectory, in: .userDomainMask).first!
     }
@@ -134,7 +134,7 @@ extension FileManager {
             picturesDirectory,
             moviesDirectory,
         ]
-        // Optionally add iCloud, OneDrive, Google Drive, and network drives if available
+        // Optionally add iCloud, OneDrive, Google Drive,+network drives if available
         if let iCloud = iCloudDirectory {
             directories.append(iCloud)
         }

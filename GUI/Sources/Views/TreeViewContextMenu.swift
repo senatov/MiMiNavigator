@@ -1,5 +1,5 @@
 //
-//  TreeViewContextMenu.swift
+// TreeViewContextMenu.swift
 //  MiMiNavigator
 //
 //  Created by Iakov Senatov on 28.02.25.

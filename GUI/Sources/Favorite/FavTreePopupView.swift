@@ -1,9 +1,9 @@
     //
-    //  FavTreePopupView.swift
+    // FavTreePopupView.swift
     //  MiMiNavigator
     //
     //  Created by Iakov Senatov on 28.02.2025.
-    //  Updated for macOS 2026 Figma style on 09.10.2025
+    // Updated for macOS 2026 Figma style on 09.10.2025
     //
 
 import AppKit
@@ -79,7 +79,7 @@ struct FavTreePopupView: View {
             Button(action: {
                 Task { @MainActor in
                     do {
-                            // Present as a sheet anchored to our window; the anchor view is available if needed for popovers
+                            // Present as a sheet anchored->our window; anchor view is available if needed for popovers
                         let data = try await grantAccessToVolumeAndSaveBookmark()
                         log.info("User granted access. Bookmark bytes: \(data.count)")
                     } catch {
@@ -152,7 +152,7 @@ struct FavTreePopupView: View {
         .padding(.vertical, 3)
         .padding(.horizontal, 8)
         .background(
-            // Very subtle selection/expanded cue, no heavy buttons
+            // Very subtle sel/expanded cue, no heavy buttons
             RoundedRectangle(cornerRadius: 8, style: .continuous)
                 .fill(isExpanded ? Color.accentColor.opacity(0.10) : .clear)
         )

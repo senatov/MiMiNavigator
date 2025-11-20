@@ -1,10 +1,10 @@
-    //
-    //  FilePanelViewModel.swift
-    //  MiMiNavigator
-    //
-    //  Created by Iakov Senatov on 11.08.2025.
-    //  Copyright © 2025 Senatov. All rights reserved.
-    //
+//
+// FilePanelViewModel.swift
+//  MiMiNavigator
+//
+//  Created by Iakov Senatov on 11.08.2025.
+//  Copyright © 2025 Senatov. All rights reserved.
+//
 
 import Foundation
 import SwiftUI
@@ -15,7 +15,7 @@ final class FilePanelViewModel: ObservableObject {
     private let appState: AppState
     private let fetchFiles: @Sendable @concurrent (PanelSide) async -> Void
     
-        // MARK: -
+    // MARK: -
     init(
         panelSide: PanelSide,
         appState: AppState,
@@ -27,7 +27,7 @@ final class FilePanelViewModel: ObservableObject {
         self.fetchFiles = fetchFiles
     }
     
-        // MARK: -
+    // MARK: -
     var sortedFiles: [CustomFile] {
         log.debug(#function + " for side <<\(panelSide)>>")
         let files = appState.displayedFiles(for: panelSide)
@@ -42,11 +42,11 @@ final class FilePanelViewModel: ObservableObject {
         return sorted
     }
     
-        // MARK: -
+    // MARK: -
     func handlePathChange(to url: URL?) {
         log.debug(#function + " for side <<\(panelSide)>>")
         guard let url else {
-            log.warning("Tried to set nil path for side <<\(panelSide)>>")
+            log.warning("tried to set nil path for <<\(panelSide)>>")
             return
         }
         Task { @MainActor in
@@ -55,18 +55,16 @@ final class FilePanelViewModel: ObservableObject {
         }
     }
     
-        // MARK: - Select file on this panel and clear other panel's selection
+    // MARK: -
     func select(_ file: CustomFile) {
-            // Centralized selection: update AppState and clear the opposite side via AppState API.
         log.debug("VM.select() on <<\(panelSide)>>: \(file.nameStr) [\(file.id)]")
         appState.select(file, on: panelSide)
         self.appState.showFavTreePopup = false
     }
     
-        // periphery:ignore
-        // MARK: - Clears selection on both panels and resets related fields in AppState.
+    // MARK: - periphery:ignore
     func unselectAll() {
-        log.debug(#function + " — clearing selection on both panels")
+        log.debug(#function + " — clearing sel on both panels")
         appState.clearSelection(on: .left)
         appState.clearSelection(on: .right)
         appState.selectedDir.selectedFSEntity = nil

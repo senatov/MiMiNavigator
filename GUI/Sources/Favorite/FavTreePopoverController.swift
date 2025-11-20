@@ -1,5 +1,5 @@
 //
-//  FavTreePopoverController.swift
+// FavTreePopoverController.swift
 //  MiMiNavigator
 //
 //  Created by Iakov Senatov on 09.10.2025.

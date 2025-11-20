@@ -1,5 +1,5 @@
 //
-//  PanelBreadcrumbSection.swift
+// PanelBreadcrumbSection.swift
 //  MiMiNavigator
 //
 //  Created by Iakov Senatov on 24.08.2025.

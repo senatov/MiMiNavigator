@@ -1,5 +1,5 @@
 //
-//  EditablePathControl.swift
+// EditablePathControl.swift
 //  MiMiNavigator
 //
 //  Created by Iakov Senatov on 24.06.2025.

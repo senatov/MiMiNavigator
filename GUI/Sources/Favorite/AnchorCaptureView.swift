@@ -1,5 +1,5 @@
 //
-//  AnchorCaptureView.swift
+// AnchorCaptureView.swift
 //  MiMiNavigator
 //
 //  Created by Iakov Senatov on 09.10.2025.

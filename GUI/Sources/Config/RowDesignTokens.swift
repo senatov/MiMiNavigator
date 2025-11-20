@@ -1,5 +1,5 @@
 //
-//  RowDesignTokens.swift
+// RowDesignTokens.swift
 //  MiMiNavigator
 //
 //  Created by Iakov Senatov on 23.10.2025.

@@ -1,4 +1,4 @@
-//  SelectionHistory.swift
+// SelHistory.swift
 //  MiMiNavigator
 //
 //  Created by Iakov Senatov on 03.08.2025.
@@ -34,7 +34,7 @@ import Foundation
         let snap = makeSnapshot(for: norm)
         // Ensure uniqueness: remove all existing occurrences of this path (including deleted ones).
         if let firstIdx = entries.firstIndex(where: { $0.path == norm }) {
-            // Remove all duplicates except the first occurrence to simplify index math.
+            // Remove all dupes except the first occurrence to simplify index math.
             var i = entries.count - 1
             while i >= 0 {
                 if i != firstIdx && entries[i].path == norm {
@@ -278,7 +278,7 @@ import Foundation
         let fm = FileManager.default
         var isDir: ObjCBool = false
         guard fm.fileExists(atPath: path, isDirectory: &isDir), !isDir.boolValue else {
-            // For directories, snapshot can be nil (we don't compute aggregate size)
+            // For dirs, snapshot can be nil (we don't compute aggregate size)
             // For non-existing paths, also nil
             return nil
         }
@@ -293,7 +293,7 @@ import Foundation
     // MARK: -
     private func rebuildRecentSelections() {
         log.debug(#function)
-        // Publish non-deleted paths in current order
+        // Publish non-deleted paths in curr order
         let list = entries.filter { $0.status != .deleted }.map { $0.path }
         if recentSelections != list { recentSelections = list }
     }
