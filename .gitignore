@@ -27,3 +27,14 @@ Packages/
 playground.xcworkspace
 Pods/
 timeline.xctimeline
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Build logs
+build-logs/
+
+# Xcode user state
+*.xcuserstate
