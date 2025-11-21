@@ -1,10 +1,11 @@
-<p align="center">
+
+<div style="text-align: center;">
   <img
-    src="Gui/Assets.xcassets/AppIcon.appiconset/120.png"
-    alt="MiMiNavigator Icon"
-    width="120"
-  />
-</p>
+    src="GUI/Assets.xcassets/AppIcon.appiconset/120.png"
+    alt="Preview FrontEnd"
+    title="Logo"
+    style="max-width: 60%; height: auto; border: 2px; border-radius: 12px;" />
+</div>
 
 <h1 align="center">MiMiNavigator</h1>
 
@@ -24,9 +25,29 @@
 
 ---
 
+
+
 > ⚠️ **Status**: MiMiNavigator is under active development and **not ready for production use yet**. APIs, layouts, and internal structure may change without notice.
 
 ## Overview
+<div style="text-align: center;" >
+  <img
+    src="GUI/Docs/Preview1.png"
+    alt="Preview FrontEnd"
+    title="Preview"
+    style="max-width: 100%; height: auto; border: 1px solid #133347ff; border-radius: 12px;" />
+</div>
+
+
+<div style="text-align: center;" >
+  <img
+    src="GUI/Docs/Preview2.png"
+    alt="Preview FrontEnd"
+    title="Preview"
+    style="max-width: 100%; height: auto; border: 1px solid #133347ff; border-radius: 12px;" />
+</div>
+
+
 
 **MiMiNavigator** is a modern two-panel file manager for macOS, built to explore SwiftUI patterns and provide an efficient file management experience.
 
