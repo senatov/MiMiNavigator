@@ -1,112 +1,144 @@
     //
-    //  DuoFilePanelView.swift
+    // DuoFilePanelView.swift
     //  MiMiNavigator
     //
     //  Created by Iakov Senatov on 26.10.2025.
     //  Copyright © 2025 Senatov. All rights reserved.
     //
-    //  Note: addKeyPressMonitor() also handles moving row selection with Up/Down arrows.
 
 import AppKit
 import SwiftUI
 
-    // PreferenceKey для измерения высоты TopMenuBarView
-struct TopMenuHeightKey: PreferenceKey {
-    static let defaultValue: CGFloat = 0  // let вместо var
+struct DuoFilePanelView: View {
+        // MARK: - Environment & State
+    @EnvironmentObject private var appState: AppState
+    @State private var leftPanelWidth: CGFloat = 0
+    @State private var keyMonitor: Any?
     
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-        value = nextValue()
+        // MARK: - Constants
+    private enum Layout {
+        static let dividerHitAreaWidth: CGFloat = 24
+        static let topMenuPadding: CGFloat = 8
+        static let toolbarHorizontalPadding: CGFloat = 16
+        static let toolbarVerticalPadding: CGFloat = 12
+        static let toolbarCornerRadius: CGFloat = 10
+        static let toolbarOuterPadding: CGFloat = 8
+        static let toolbarBottomPadding: CGFloat = 8
+        static let toolbarButtonSpacing: CGFloat = 12
+        static let minPanelWidth: CGFloat = 80
+    }
+    
+        // MARK: - Body
+    var body: some View {
+        VStack(spacing: 0) {
+            topMenuBar
+            filePanels
+            bottomToolbar
+        }
+        .onAppear {
+            appState.initialize()
+            initializePanelWidth()
+            registerKeyboardShortcuts()
+            appState.forceFocusSelection()
+        }
+        .onDisappear {
+            unregisterKeyboardShortcuts()
+        }
+        .onChange(of: leftPanelWidth) { _, newValue in
+            UserDefaults.standard.set(newValue, forKey: "leftPanelWidth")
+        }
     }
 }
 
-struct DuoFilePanelView: View {
-    @EnvironmentObject var appState: AppState
-    @State private var topMenuHeight: CGFloat = 0
-    @State private var leftPanelWidth: CGFloat = 0
-    @State private var keyMonitor: Any? = nil
-    @State private var toolbarHeight: CGFloat = 0  // измеряемая высота нижнего тулбара
-    private let dividerHitAreaWidth: CGFloat = 24
-    
-        // MARK: -
-    var body: some View {
-        GeometryReader { geometry in
-            VStack(spacing: 0) {
-                    // Верхнее меню
-                TopMenuBarView()
-                    .frame(maxWidth: .infinity)
-                    .padding(.all, 2)
-                    .background(
-                        GeometryReader { topGeo in
-                            Color.clear.preference(
-                                key: TopMenuHeightKey.self,
-                                value: topGeo.size.height
-                            )
-                        }
-                    )
-                
-                    // Средняя панель — заполняет всё пространство между верхней и нижней панелями
-                PanelsRowView(
-                    leftPanelWidth: $leftPanelWidth,
-                    geometry: geometry,
-                    fetchFiles: fetchFiles(for:)
-                )
-                .frame(maxWidth: .infinity)
-                .frame(height: geometry.size.height - topMenuHeight - toolbarHeight - 140)
-                .background(Color.red.opacity(0.06))
-                
-                    // Нижний тулбар — участвует в потоке, занимает свою высоту
-                buildDownToolbar()
-                    .frame(maxWidth: .infinity)
-                    .background(Color.blue.opacity(0.06))
-            }
-            .onPreferenceChange(TopMenuHeightKey.self) { newHeight in
-                self.topMenuHeight = newHeight
-            }
-            .onAppear {
-                log.debug(#function + " - Initializing app state and panels")
-                appState.initialize()
-                initializePanelWidth(geometry: geometry)  // Restore divider width from user defaults
-                DispatchQueue.main.async {
-                    let halfLeft = preciseHalfLeft(totalWidth: geometry.size.width)
-                    if abs(leftPanelWidth - halfLeft) > 0.5 {
-                        log.debug("DuoFilePanelView.onAppear: re-assert halfLeft=\(Int(halfLeft)) against external override")
-                        leftPanelWidth = halfLeft
-                    }
-                }
-                addKeyPressMonitor()  // Register keyboard shortcut
-                appState.forceFocusSelection()
-            }
-            .onDisappear {
-                if let monitor = keyMonitor {
-                    NSEvent.removeMonitor(monitor)
-                    keyMonitor = nil
-                    log.debug("Removed key monitor on disappear")
-                }
-            }
-            .onChange(of: geometry.size) { oldSize, newSize in
-                log.debug(
-                    "Window size changed from: \(Int(oldSize.width))x\(Int(oldSize.height)) → \(Int(newSize.width))x\(Int(newSize.height))"
-                )
-                let minW: CGFloat = 80
-                let maxW = max(minW, newSize.width - minW - dividerHitAreaWidth)
-                if leftPanelWidth < minW || leftPanelWidth > maxW {
-                    let clamped = min(max(leftPanelWidth, minW), maxW)
-                    log.debug("Clamp leftPanelWidth → \(Int(clamped)) [min=\(Int(minW)) max=\(Int(maxW))]")
-                    leftPanelWidth = clamped
-                }
-            }
-            .onChange(of: leftPanelWidth) { oldValue, newValue in
-                UserDefaults.standard.set(newValue, forKey: "leftPanelWidth")
-                log.debug("DuoFilePanelView.leftPanelWidth changed → \(Int(oldValue)) → \(Int(newValue)) (persisted)")
-            }
-        }
+    // MARK: - View Components
+extension DuoFilePanelView {
+    private var topMenuBar: some View {
+        TopMenuBarView()
+            .frame(maxWidth: .infinity)
+            .padding(Layout.topMenuPadding)
+            .fixedSize(horizontal: false, vertical: true)
     }
     
-        // MARK: - Fetch Files
+    private var filePanels: some View {
+        GeometryReader { geometry in
+            PanelsRowView(
+                leftPanelWidth: $leftPanelWidth,
+                geometry: geometry,
+                fetchFiles: fetchFiles
+            )
+        }
+        .frame(maxWidth: .infinity)
+    }
+    
+    private var bottomToolbar: some View {
+        HStack(spacing: Layout.toolbarButtonSpacing) {
+            makeButton(title: "F3 View", icon: "eye.circle", action: performView)
+            makeButton(title: "F4 Edit", icon: "pencil", action: performEdit)
+            makeButton(title: "F5 Copy", icon: "doc.on.doc", action: performCopy)
+            makeButton(title: "F6 Move", icon: "square.and.arrow.down.on.square", action: performMove)
+            makeButton(title: "F7 NewFolder", icon: "folder.badge.plus", action: performNewFolder)
+            makeButton(title: "F8 Delete", icon: "minus.rectangle", action: performDelete)
+            makeButton(title: "Settings", icon: "gearshape", action: performSettings)
+            makeButton(title: "Console", icon: "terminal", action: performConsole)
+            makeButton(title: "Exit", icon: "power", action: performExit)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, Layout.toolbarHorizontalPadding)
+        .padding(.vertical, Layout.toolbarVerticalPadding)
+        .background(toolbarBackgroundView)
+        .padding(.horizontal, Layout.toolbarOuterPadding)
+        .padding(.bottom, Layout.toolbarBottomPadding)
+    }
+    
+    private var toolbarBackgroundView: some View {
+        ZStack {
+            baseMaterial
+            overlayTint
+            borderStroke
+            topHighlight
+        }
+        .shadow(color: .black.opacity(0.12), radius: 4, y: 2)
+    }
+    
+    private var baseMaterial: some View {
+        RoundedRectangle(cornerRadius: Layout.toolbarCornerRadius, style: .continuous)
+            .fill(.regularMaterial)
+    }
+    
+    private var overlayTint: some View {
+        RoundedRectangle(cornerRadius: Layout.toolbarCornerRadius, style: .continuous)
+            .fill(.white.opacity(0.05))
+    }
+    
+    private var borderStroke: some View {
+        RoundedRectangle(cornerRadius: Layout.toolbarCornerRadius, style: .continuous)
+            .strokeBorder(.separator.opacity(0.5), lineWidth: 0.5)
+    }
+    
+    private var topHighlight: some View {
+        VStack(spacing: 0) {
+            Rectangle()
+                .fill(.white.opacity(0.08))
+                .frame(height: 1)
+            Spacer(minLength: 0)
+        }
+        .clipShape(RoundedRectangle(cornerRadius: Layout.toolbarCornerRadius, style: .continuous))
+    }
+    
+    private func makeButton(title: String, icon: String, action: @escaping () -> Void) -> some View {
+        DownToolbarButtonView(
+            title: title,
+            systemImage: icon,
+            action: action
+        )
+    }
+}
+
+    // MARK: - File Operations
+extension DuoFilePanelView {
     @MainActor
-    private func fetchFiles(for panelSide: PanelSide) async {
-        log.debug("\(#function) [side: <<\(panelSide)>>]")
-        switch panelSide {
+    private func fetchFiles(for side: PanelSide) async {
+        switch side {
             case .left:
                 appState.displayedLeftFiles = await appState.scanner.fileLst.getLeftFiles()
             case .right:
@@ -114,203 +146,124 @@ struct DuoFilePanelView: View {
         }
     }
     
-        // MARK: -
-    private func buildDownToolbar() -> some View {
-        log.debug(#function)
-        return HStack(spacing: 16) {
-            DownToolbarButtonView(title: "F3 View", systemImage: "eye.circle") {
-                log.debug("View button tapped")
-                if let file = appState.selectedLeftFile {
-                    FActions.view(file)
-                } else {
-                    log.debug("No file selected for View")
-                }
-            }
-                // MARK: -
-            DownToolbarButtonView(title: "F4 Edit", systemImage: "pencil") {
-                if let file = appState.selectedLeftFile {
-                    FActions.edit(file)
-                } else {
-                    log.debug("No file selected for Edit")
-                }
-            }
-                // MARK: -
-            DownToolbarButtonView(title: "F5 Copy", systemImage: "doc.on.doc") {
-                doCopy()
-            }
-                // MARK: -
-            DownToolbarButtonView(title: "F6 Move", systemImage: "square.and.arrow.down.on.square") {
-                log.debug("Move button tapped")
-            }
-                // MARK: -
-            DownToolbarButtonView(title: "F7 NewFolder", systemImage: "folder.badge.plus") {
-                log.debug("NewFolder button tapped")
-            }
-                // MARK: -
-            DownToolbarButtonView(title: "F8 Delete", systemImage: "minus.rectangle") {
-                log.debug("Delete button tapped")
-                if let file = appState.selectedLeftFile {
-                    FActions.deleteWithConfirmation(file) {
-                        Task {
-                            await fetchFiles(for: .left)
-                            await fetchFiles(for: .right)
-                        }
-                    }
-                } else {
-                    log.debug("No file selected for Delete")
-                }
-            }
-            DownToolbarButtonView(title: "Settings", systemImage: "gearshape") {
-                log.debug("Settings button tapped")
-            }
-            DownToolbarButtonView(title: "Console", systemImage: "terminal") {
-                log.debug("Console button tapped")
-                let targetPath = appState.pathURL(for: appState.focusedPanel)?.path ?? "/"
-                _ = ConsoleCurrPath.open(in: targetPath)
-            }
-            DownToolbarButtonView(title: "Exit", systemImage: "power") {
-                log.debug("F4 Exit button tapped")
-                exitApp()
-            }
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.horizontal, FilePanelStyle.toolbarHorizontalPadding)
-        .padding(.vertical, 10)
-        .foregroundStyle(Color.primary.opacity(0.9))
-        .saturation(1.2)
-        .background(
-            RoundedRectangle(cornerRadius: FilePanelStyle.toolbarCornerRadius, style: .continuous)
-                .fill(FilePanelStyle.toolbarMaterial)
-                .overlay(
-                    RoundedRectangle(cornerRadius: FilePanelStyle.toolbarCornerRadius, style: .continuous)
-                        .fill(FilePanelStyle.toolbarBackgroundTint)
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: FilePanelStyle.toolbarCornerRadius, style: .continuous)
-                        .strokeBorder(FilePanelStyle.toolbarStrokeOuter, lineWidth: 0.75)
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: FilePanelStyle.toolbarCornerRadius, style: .continuous)
-                        .strokeBorder(FilePanelStyle.toolbarStrokeInner, lineWidth: 0.5)
-                        .blendMode(.screen)
-                )
-                .overlay(alignment: .top) {
-                    Rectangle()
-                        .fill(FilePanelStyle.toolbarHairlineTop.opacity(0.45))
-                        .frame(height: hairlineHeight)
-                }
-                .overlay(
-                    RoundedRectangle(cornerRadius: FilePanelStyle.toolbarCornerRadius + 0.5, style: .continuous)
-                        .strokeBorder(FilePanelStyle.toolbarOuterRing, lineWidth: 1.0)
-                        .blendMode(.normal)
-                )
-                .compositingGroup()
-                .shadow(
-                    color: FilePanelStyle.toolbarShadowColor,
-                    radius: FilePanelStyle.toolbarShadowRadius,
-                    x: 0,
-                    y: FilePanelStyle.toolbarShadowYOffset
-                )
-        )
-        .padding(.horizontal, FilePanelStyle.toolbarHorizontalPadding)
-            // Можно оставить измерение высоты на будущее, но оно тут не требуется для раскладки
-        .background(
-            GeometryReader { gp in
-                Color.clear
-                    .onAppear { toolbarHeight = gp.size.height }
-                    .onChange(of: gp.size.height) { newHeight in
-                        toolbarHeight = newHeight
-                    }
-            }
-        )
+    private func performView() {
+        guard let file = appState.selectedLeftFile else { return }
+        FActions.view(file)
     }
     
-        // MARK: - Toolbar
-    private func doCopy() {
-        log.debug(#function)
-            // Determine the source file based on the focused panel
-        let sourceFile = (appState.focusedPanel == .left) ? appState.selectedLeftFile : appState.selectedRightFile
-            // Determine the target side explicitly to avoid ambiguity
-        let targetSide: PanelSide = (appState.focusedPanel == .left) ? .right : .left
-        if let file = sourceFile, let targetURL = appState.pathURL(for: targetSide) {
-            FActions.copy(file, to: targetURL)
+    private func performEdit() {
+        guard let file = appState.selectedLeftFile else { return }
+        FActions.edit(file)
+    }
+    
+    private func performCopy() {
+        guard let source = currentSelectedFile,
+              let destination = targetPanelURL else { return }
+        
+        FActions.copy(source, to: destination)
+        Task { await appState.refreshFiles() }
+    }
+    
+    private func performMove() {
+            // TODO: Implement move
+    }
+    
+    private func performNewFolder() {
+            // TODO: Implement new folder
+    }
+    
+    private func performDelete() {
+        guard let file = appState.selectedLeftFile else { return }
+        
+        FActions.deleteWithConfirmation(file) {
             Task {
-                await appState.refreshFiles()
+                await fetchFiles(for: .left)
+                await fetchFiles(for: .right)
             }
-        } else {
-            log.debug("No source file selected or target URL missing for Copy")
         }
     }
     
-        // MARK: -
-    private func initializePanelWidth(geometry: GeometryProxy) {
-        log.debug(#function)
-        let total = geometry.size.width
-        let scale = NSScreen.main?.backingScaleFactor ?? 2.0
-            // Calculate exact pixel-aligned center for the divider and convert to left width
-        let halfCenter = (total / 2.0 * scale).rounded() / scale
-        let halfLeft = halfCenter - dividerHitAreaWidth / 2
-        let minW: CGFloat = 80
-        let maxW = max(minW, total - minW - dividerHitAreaWidth)
-        let saved = (UserDefaults.standard.object(forKey: "leftPanelWidth") as? CGFloat)
-        let initial = saved.map { min(max($0, minW), maxW) } ?? halfLeft
-        leftPanelWidth = initial
-        let savedStr = saved.map { String(Int($0)) } ?? "nil"
-        log.debug(
-            "Init leftPanelWidth: total=\(Int(total)) scale=\(scale) halfCenter=\(Int(halfCenter)) halfLeft=\(Int(halfLeft)) saved=\(savedStr) → set=\(Int(leftPanelWidth))"
-        )
+    private func performSettings() {
+            // TODO: Implement settings
     }
     
-        // MARK: -
-    private func addKeyPressMonitor() {
-        log.debug(#function)
-            // Prevent multiple key monitors from being installed when the view reappears
-        if keyMonitor != nil { return }
-        let monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
-            if event.modifierFlags.contains(.option), event.keyCode == 0x76 {
-                exitApp()
-                return nil
-            }
-                // Handle the Tab key (keyCode 0x30 / 48) — Tab and Shift+Tab toggle focus
-            if event.keyCode == 0x30 {
-                return doPanelToggled(event)
-            }
-            return event
-        }
-        self.keyMonitor = monitor
-        log.debug("Installed key monitor: \(String(describing: monitor))")
+    private func performConsole() {
+        let path = appState.pathURL(for: appState.focusedPanel)?.path ?? "/"
+        _ = ConsoleCurrPath.open(in: path)
     }
     
-        // MARK: -
-    private func doPanelToggled(_ event: NSEvent) -> NSEvent? {
-        log.debug(#function)
-        appState.toggleFocus()
-        appState.forceFocusSelection()
-        if event.modifierFlags.contains(.shift) {
-            log.debug("Shift+Tab pressed → toggle focused panel (reverse)")
-        } else {
-            log.debug("Tab pressed → toggle focused panel")
-        }
-        return nil
-    }
-    
-        // MARK: -
-    private func exitApp() {
-        log.debug(#function)
+    private func performExit() {
         appState.saveBeforeExit()
         NSApplication.shared.terminate(nil)
     }
-    
-        // MARK: -
-    private func preciseHalfLeft(totalWidth: CGFloat) -> CGFloat {
-        let scale = NSScreen.main?.backingScaleFactor ?? 2.0
-        let halfCenter = (totalWidth / 2.0 * scale).rounded() / scale
-        return halfCenter - dividerHitAreaWidth / 2
+}
+
+    // MARK: - Computed Properties
+extension DuoFilePanelView {
+    private var currentSelectedFile: CustomFile? {
+        appState.focusedPanel == .left ?
+        appState.selectedLeftFile :
+        appState.selectedRightFile
     }
     
-        // MARK: -
-    private var hairlineHeight: CGFloat {
-        let scale = NSScreen.main?.backingScaleFactor ?? 2.0
-        return 1.0 / scale
+    private var targetPanelURL: URL? {
+        let targetSide: PanelSide = appState.focusedPanel == .left ? .right : .left
+        return appState.pathURL(for: targetSide)
+    }
+}
+
+    // MARK: - Panel Width Management
+extension DuoFilePanelView {
+    private func initializePanelWidth() {
+        guard let screen = NSScreen.main else { return }
+        
+        let screenWidth = screen.frame.width
+        let scale = screen.backingScaleFactor
+        
+        let centerX = (screenWidth / 2.0 * scale).rounded() / scale
+        let defaultLeftWidth = centerX - Layout.dividerHitAreaWidth / 2
+        
+        let maxWidth = screenWidth - Layout.minPanelWidth - Layout.dividerHitAreaWidth
+        let constrainedWidth = min(max(defaultLeftWidth, Layout.minPanelWidth), maxWidth)
+        
+        if let savedWidth = UserDefaults.standard.object(forKey: "leftPanelWidth") as? CGFloat {
+            leftPanelWidth = min(max(savedWidth, Layout.minPanelWidth), maxWidth)
+        } else {
+            leftPanelWidth = constrainedWidth
+        }
+    }
+}
+
+    // MARK: - Keyboard Shortcuts
+extension DuoFilePanelView {
+    private func registerKeyboardShortcuts() {
+        guard keyMonitor == nil else { return }
+        
+        keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak appState] event in
+            self.handleKeyEvent(event, appState: appState)
+        }
+    }
+    
+    private func unregisterKeyboardShortcuts() {
+        if let monitor = keyMonitor {
+            NSEvent.removeMonitor(monitor)
+            keyMonitor = nil
+        }
+    }
+    
+    private func handleKeyEvent(_ event: NSEvent, appState: AppState?) -> NSEvent? {
+        if event.modifierFlags.contains(.option) && event.keyCode == 0x76 {
+            appState?.saveBeforeExit()
+            NSApplication.shared.terminate(nil)
+            return nil
+        }
+        
+        if event.keyCode == 0x30 {
+            appState?.toggleFocus()
+            appState?.forceFocusSelection()
+            return nil
+        }
+        
+        return event
     }
 }
