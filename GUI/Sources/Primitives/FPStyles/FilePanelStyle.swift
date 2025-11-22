@@ -22,20 +22,4 @@ enum FilePanelStyle {
     static let modifiedColumnWidth: CGFloat = 110
     static let selectedBorderWidth: CGFloat = 0.4
     static let sizeColumnWidth: CGFloat = 120
-
-    // Toolbar (bottom) style tokens
-    static let toolbarBackgroundTint = Color.white.opacity(0.07)
-    static let toolbarCornerRadius: CGFloat = 14
-    static let toolbarHairlineTop = Color.white.opacity(0.06)
-    static let toolbarHorizontalPadding: CGFloat = 8
-    static let toolbarMaterial: Material = .regularMaterial
-
-    // New: toolbar shadow tokens used in DuoFilePanelView
-    static let toolbarShadowColor = Color(#colorLiteral(red: 0.1019607857, green: 0.2784313858, blue: 0.400000006, alpha: 1))
-    static let toolbarShadowRadius: CGFloat = 8
-    static let toolbarShadowYOffset: CGFloat = 2
-
-    // Toolbar button tokens
-    static let toolbarOuterRing = Color(#colorLiteral(red: 0.3647058904, green: 0.06666667014, blue: 0.9686274529, alpha: 1))
-    static let toolbarStrokeOuter = Color.white.opacity(0.16)
 }

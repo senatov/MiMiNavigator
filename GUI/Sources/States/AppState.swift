@@ -10,6 +10,7 @@ import AppKit
 import Combine
 import Foundation
 
+// MARK: -
 @MainActor final class AppState: ObservableObject {
     @Published var displayedLeftFiles: [CustomFile] = []
     @Published var displayedRightFiles: [CustomFile] = []
@@ -135,7 +136,6 @@ import Foundation
                 }
             }
         }
-
         syncSelectionWithFocus()
     }
 
