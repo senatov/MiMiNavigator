@@ -151,26 +151,26 @@ struct FilePanelView: View {
         }
         .background(DesignTokens.panelBg)
         .controlSize(.regular)
-        .simultaneousGesture(
-            TapGesture()
-                .onEnded {
-                    // Focus panel on any click within its bounds without stealing row taps
-                    log.debug("Panel tapped for focus: <<\(viewModel.panelSide)>>")
-                    onPanelTap(viewModel.panelSide)
-                    // Sel is coordinated inside PanelFileTableSection; do not auto-select here->avoid double handling
-                }
-        )
+        .contentShape(Rectangle())
+        .onTapGesture {
+            // This tap has LOWER priority than FileRow taps
+            // Only fires when clicking empty space, not on rows
+            log.debug("Panel background tapped for focus: <<\(viewModel.panelSide)>>")
+            onPanelTap(viewModel.panelSide)
+        }
         .panelFocus(panelSide: viewModel.panelSide) {
             log.debug("Focus lost on << \(viewModel.panelSide)>>; keep selection")
             appState.showFavTreePopup = false
         }
         .onChange(of: appState.focusedPanel) { oldSide, newSide in
-            log.debug("[SELECT-FLOW] 6️⃣ FilePanelView.onChange(focusedPanel): \(oldSide) → \(newSide), this panel: <<\(viewModel.panelSide)>>")
-            guard oldSide != newSide else { 
+            log.debug(
+                "[SELECT-FLOW] 6️⃣ FilePanelView.onChange(focusedPanel): \(oldSide) → \(newSide), this panel: <<\(viewModel.panelSide)>>"
+            )
+            guard oldSide != newSide else {
                 log.debug("[SELECT-FLOW] 6️⃣ No actual focus change, skipping")
-                return 
+                return
             }
-            
+
             if newSide == viewModel.panelSide {
                 log.debug("[SELECT-FLOW] 6️⃣ Focus GAINED on <<\(viewModel.panelSide)>>")
             } else {
