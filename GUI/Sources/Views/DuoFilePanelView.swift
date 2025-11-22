@@ -1,21 +1,21 @@
-    //
-    // DuoFilePanelView.swift
-    //  MiMiNavigator
-    //
-    //  Created by Iakov Senatov on 26.10.2025.
-    //  Copyright © 2025 Senatov. All rights reserved.
-    //
+//
+// DuoFilePanelView.swift
+//  MiMiNavigator
+//
+//  Created by Iakov Senatov on 26.10.2025.
+//  Copyright © 2025 Senatov. All rights reserved.
+//
 
 import AppKit
 import SwiftUI
 
 struct DuoFilePanelView: View {
-        // MARK: - Environment & State
+    // MARK: - Environment & State
     @EnvironmentObject private var appState: AppState
     @State private var leftPanelWidth: CGFloat = 0
     @State private var keyMonitor: Any?
-    
-        // MARK: - Constants
+
+    // MARK: - Constants
     private enum Layout {
         static let dividerHitAreaWidth: CGFloat = 24
         static let topMenuPadding: CGFloat = 8
@@ -27,8 +27,8 @@ struct DuoFilePanelView: View {
         static let toolbarButtonSpacing: CGFloat = 12
         static let minPanelWidth: CGFloat = 80
     }
-    
-        // MARK: - Body
+
+    // MARK: - Body
     var body: some View {
         VStack(spacing: 0) {
             topMenuBar
@@ -50,7 +50,7 @@ struct DuoFilePanelView: View {
     }
 }
 
-    // MARK: - View Components
+// MARK: - View Components
 extension DuoFilePanelView {
     private var topMenuBar: some View {
         TopMenuBarView()
@@ -58,7 +58,8 @@ extension DuoFilePanelView {
             .padding(Layout.topMenuPadding)
             .fixedSize(horizontal: false, vertical: true)
     }
-    
+
+    // MARK: -
     private var filePanels: some View {
         GeometryReader { geometry in
             PanelsRowView(
@@ -69,7 +70,8 @@ extension DuoFilePanelView {
         }
         .frame(maxWidth: .infinity)
     }
-    
+
+    // MARK: -
     private var bottomToolbar: some View {
         HStack(spacing: Layout.toolbarButtonSpacing) {
             makeButton(title: "F3 View", icon: "eye.circle", action: performView)
@@ -89,7 +91,8 @@ extension DuoFilePanelView {
         .padding(.horizontal, Layout.toolbarOuterPadding)
         .padding(.bottom, Layout.toolbarBottomPadding)
     }
-    
+
+    // MARK: -
     private var toolbarBackgroundView: some View {
         ZStack {
             baseMaterial
@@ -99,22 +102,26 @@ extension DuoFilePanelView {
         }
         .shadow(color: .black.opacity(0.12), radius: 4, y: 2)
     }
-    
+
+    // MARK: -
     private var baseMaterial: some View {
         RoundedRectangle(cornerRadius: Layout.toolbarCornerRadius, style: .continuous)
             .fill(.regularMaterial)
     }
-    
+
+    // MARK: -
     private var overlayTint: some View {
         RoundedRectangle(cornerRadius: Layout.toolbarCornerRadius, style: .continuous)
             .fill(.white.opacity(0.05))
     }
-    
+
+    // MARK: -
     private var borderStroke: some View {
         RoundedRectangle(cornerRadius: Layout.toolbarCornerRadius, style: .continuous)
             .strokeBorder(.separator.opacity(0.5), lineWidth: 0.5)
     }
-    
+
+    // MARK: -
     private var topHighlight: some View {
         VStack(spacing: 0) {
             Rectangle()
@@ -124,7 +131,8 @@ extension DuoFilePanelView {
         }
         .clipShape(RoundedRectangle(cornerRadius: Layout.toolbarCornerRadius, style: .continuous))
     }
-    
+
+    // MARK: -
     private func makeButton(title: String, icon: String, action: @escaping () -> Void) -> some View {
         DownToolbarButtonView(
             title: title,
@@ -134,10 +142,12 @@ extension DuoFilePanelView {
     }
 }
 
-    // MARK: - File Operations
+// MARK: - File Operations
 extension DuoFilePanelView {
+    // MARK: -
     @MainActor
     private func fetchFiles(for side: PanelSide) async {
+        log.debug(#function + "for \(side)")
         switch side {
             case .left:
                 appState.displayedLeftFiles = await appState.scanner.fileLst.getLeftFiles()
@@ -145,36 +155,45 @@ extension DuoFilePanelView {
                 appState.displayedRightFiles = await appState.scanner.fileLst.getRightFiles()
         }
     }
-    
+
+    // MARK: -
     private func performView() {
+        log.debug(#function + "View button pressed")
         guard let file = appState.selectedLeftFile else { return }
         FActions.view(file)
     }
-    
+
+    // MARK: -
     private func performEdit() {
+        log.debug(#function + "Edit button pressed")
         guard let file = appState.selectedLeftFile else { return }
         FActions.edit(file)
     }
-    
+
+    // MARK: -
     private func performCopy() {
+        log.debug(#function + "Copy button pressed")
         guard let source = currentSelectedFile,
-              let destination = targetPanelURL else { return }
-        
+            let destination = targetPanelURL
+        else { return }
         FActions.copy(source, to: destination)
         Task { await appState.refreshFiles() }
     }
-    
+
+    // MARK: -
     private func performMove() {
-            // TODO: Implement move
+        log.debug(#function + "Move button pressed")
     }
-    
+
+    // MARK: -
     private func performNewFolder() {
-            // TODO: Implement new folder
+        log.debug(#function + "New Folder button pressed")
     }
-    
+
+    // MARK: -
     private func performDelete() {
+        log.debug(#function + "Delete button pressed")
         guard let file = appState.selectedLeftFile else { return }
-        
         FActions.deleteWithConfirmation(file) {
             Task {
                 await fetchFiles(for: .left)
@@ -182,50 +201,53 @@ extension DuoFilePanelView {
             }
         }
     }
-    
+
+    // MARK: -
     private func performSettings() {
-            // TODO: Implement settings
+        log.debug(#function + "Settings button pressed")
     }
-    
+
+    // MARK: -
     private func performConsole() {
+        log.debug(#function + "Console button pressed")
         let path = appState.pathURL(for: appState.focusedPanel)?.path ?? "/"
         _ = ConsoleCurrPath.open(in: path)
     }
-    
+
+    // MARK: -
     private func performExit() {
+        log.debug(#function + "Exit button pressed")
         appState.saveBeforeExit()
         NSApplication.shared.terminate(nil)
     }
 }
 
-    // MARK: - Computed Properties
+// MARK: - Computed Properties
 extension DuoFilePanelView {
+
+    // MARK: -
     private var currentSelectedFile: CustomFile? {
-        appState.focusedPanel == .left ?
-        appState.selectedLeftFile :
-        appState.selectedRightFile
+        appState.focusedPanel == .left ? appState.selectedLeftFile : appState.selectedRightFile
     }
-    
+    // MARK: -
     private var targetPanelURL: URL? {
         let targetSide: PanelSide = appState.focusedPanel == .left ? .right : .left
         return appState.pathURL(for: targetSide)
     }
 }
 
-    // MARK: - Panel Width Management
+// MARK: - Panel Width Management
 extension DuoFilePanelView {
+
+    // MARK: -
     private func initializePanelWidth() {
         guard let screen = NSScreen.main else { return }
-        
         let screenWidth = screen.frame.width
         let scale = screen.backingScaleFactor
-        
         let centerX = (screenWidth / 2.0 * scale).rounded() / scale
         let defaultLeftWidth = centerX - Layout.dividerHitAreaWidth / 2
-        
         let maxWidth = screenWidth - Layout.minPanelWidth - Layout.dividerHitAreaWidth
         let constrainedWidth = min(max(defaultLeftWidth, Layout.minPanelWidth), maxWidth)
-        
         if let savedWidth = UserDefaults.standard.object(forKey: "leftPanelWidth") as? CGFloat {
             leftPanelWidth = min(max(savedWidth, Layout.minPanelWidth), maxWidth)
         } else {
@@ -234,36 +256,36 @@ extension DuoFilePanelView {
     }
 }
 
-    // MARK: - Keyboard Shortcuts
+// MARK: - Keyboard Shortcuts
 extension DuoFilePanelView {
     private func registerKeyboardShortcuts() {
         guard keyMonitor == nil else { return }
-        
+
         keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak appState] event in
             self.handleKeyEvent(event, appState: appState)
         }
     }
-    
+
     private func unregisterKeyboardShortcuts() {
         if let monitor = keyMonitor {
             NSEvent.removeMonitor(monitor)
             keyMonitor = nil
         }
     }
-    
+
     private func handleKeyEvent(_ event: NSEvent, appState: AppState?) -> NSEvent? {
         if event.modifierFlags.contains(.option) && event.keyCode == 0x76 {
             appState?.saveBeforeExit()
             NSApplication.shared.terminate(nil)
             return nil
         }
-        
+
         if event.keyCode == 0x30 {
             appState?.toggleFocus()
             appState?.forceFocusSelection()
             return nil
         }
-        
+
         return event
     }
 }
