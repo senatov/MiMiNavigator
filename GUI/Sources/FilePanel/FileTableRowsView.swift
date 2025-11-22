@@ -47,13 +47,11 @@ struct FileTableRowsView: View {
             panelSide: panelSide,
             onSelect: { tapped in
                 log.debug("[SELECT-FLOW] 3️⃣ FileTableRowsView.onSelect: \(tapped.nameStr) on <<\(panelSide)>>")
-                log.debug("[SELECT-FLOW] 3️⃣ Setting selectedID to: \(tapped.id)")
-                selectedID = tapped.id
-                log.debug("[SELECT-FLOW] 3️⃣ Calling parent onSelect...")
+                log.debug("[SELECT-FLOW] 3️⃣ Calling parent onSelect (will update AppState)...")
                 onSelect(tapped)
                 log.debug("[SELECT-FLOW] 3️⃣ Setting focusedPanel to: <<\(panelSide)>>")
                 appState.focusedPanel = panelSide
-                log.debug("[SELECT-FLOW] 3️⃣ DONE")
+                log.debug("[SELECT-FLOW] 3️⃣ DONE (selectedID will update via binding)")
             },
             onFileAction: { action, f in
                 log.debug(#function)
