@@ -14,7 +14,13 @@ import Foundation
 @MainActor final class AppState: ObservableObject {
     @Published var displayedLeftFiles: [CustomFile] = []
     @Published var displayedRightFiles: [CustomFile] = []
-    @Published var focusedPanel: PanelSide = .left { didSet { syncSelectionWithFocus() } }
+    @Published var focusedPanel: PanelSide = .left { 
+        didSet { 
+            if oldValue != focusedPanel {
+                syncSelectionWithFocus() 
+            }
+        } 
+    }
     @Published var leftPath: String
     @Published var rightPath: String
     @Published var selectedDir: SelectedDir = .init()
@@ -65,18 +71,28 @@ import Foundation
     // MARK: - sel on side, clear opposite
     @MainActor
     func select(_ file: CustomFile, on panelSide: PanelSide) {
-        log.debug(#function + " on: <<\(panelSide)>>")
-        suppressSync = true
-        focusedPanel = panelSide
-        suppressSync = false
+        log.debug("[SELECT-FLOW] 1️⃣ select(_:on:) CALLED on: <<\(panelSide)>> file: \(file.nameStr)")
+        log.debug("[SELECT-FLOW] 1️⃣ BEFORE: L=\(selectedLeftFile?.nameStr ?? "nil") R=\(selectedRightFile?.nameStr ?? "nil")")
+        
         switch panelSide {
             case .left:
-                if selectedRightFile != nil { selectedRightFile = nil }
                 selectedLeftFile = file
+                selectedRightFile = nil
+                log.debug("[SELECT-FLOW] 1️⃣ SET: L=\(file.nameStr), cleared R")
             case .right:
-                if selectedLeftFile != nil { selectedLeftFile = nil }
                 selectedRightFile = file
+                selectedLeftFile = nil
+                log.debug("[SELECT-FLOW] 1️⃣ SET: R=\(file.nameStr), cleared L")
         }
+        
+        log.debug("[SELECT-FLOW] 1️⃣ AFTER: L=\(selectedLeftFile?.nameStr ?? "nil") R=\(selectedRightFile?.nameStr ?? "nil")")
+        
+        suppressSync = true
+        let oldFocus = focusedPanel
+        focusedPanel = panelSide
+        suppressSync = false
+        
+        log.debug("[SELECT-FLOW] 1️⃣ Focus changed: \(oldFocus) → \(focusedPanel)")
     }
 
     // MARK: -
@@ -149,59 +165,8 @@ import Foundation
     private func syncSelectionWithFocus() {
         guard !suppressSync, !isRestoringSelections else { return }
         log.debug("syncSelectionWithFocus: now \(focusedPanel)")
-        let ud = UserDefaults.standard
-        switch focusedPanel {
-            case .left:
-                if selectedRightFile != nil {
-                    log.debug("clearing R sel (focus -> L)")
-                    selectedRightFile = nil
-                }
-                if selectedLeftFile == nil {
-                    if let url = ud.url(forKey: "lastSelectedLeftFilePath") {
-                        if let match = displayedLeftFiles.first(where: { canonicalPath($0.urlValue) == canonicalPath(url) }) {
-                            log.debug("restored L sel from config: \(match.nameStr)")
-                            selectedLeftFile = match
-                        }
-                    }
-                    if selectedLeftFile == nil {
-                        if let lastPath = selectionsHistory.last,
-                            let match = displayedLeftFiles.first(where: { canonicalPath($0.urlValue) == lastPath })
-                        {
-                            log.debug("restored L sel from history: \(match.nameStr)")
-                            selectedLeftFile = match
-                        }
-                    }
-                    if selectedLeftFile == nil, let first = displayedLeftFiles.first {
-                        log.debug("fallback: auto-sel 1st L item: \(first.nameStr)")
-                        selectedLeftFile = first
-                    }
-                }
-            case .right:
-                if selectedLeftFile != nil {
-                    log.debug("clearing L sel (focus -> R)")
-                    selectedLeftFile = nil
-                }
-                if selectedRightFile == nil {
-                    if let url = ud.url(forKey: "lastSelectedRightFilePath") {
-                        if let match = displayedRightFiles.first(where: { canonicalPath($0.urlValue) == canonicalPath(url) }) {
-                            log.debug("restored R sel from config: \(match.nameStr)")
-                            selectedRightFile = match
-                        }
-                    }
-                    if selectedRightFile == nil {
-                        if let lastPath = selectionsHistory.last,
-                            let match = displayedRightFiles.first(where: { canonicalPath($0.urlValue) == lastPath })
-                        {
-                            log.debug("restored R sel from history: \(match.nameStr)")
-                            selectedRightFile = match
-                        }
-                    }
-                    if selectedRightFile == nil, let first = displayedRightFiles.first {
-                        log.debug("fallback: auto-sel 1st R item: \(first.nameStr)")
-                        selectedRightFile = first
-                    }
-                }
-        }
+        // Don't auto-clear opposite panel selection - let user clicks handle that
+        // Don't auto-select first item - only restore from history if available
     }
 
     // MARK: -
