@@ -50,34 +50,19 @@ struct PanelFileTableSection: View {
                     rowRects = value
                 }
             }
-            .simultaneousGesture(
-                TapGesture()
-                    .onEnded {
-                        isFocused = true
-                        appState.focusedPanel = panelSide
-                        onPanelTap(panelSide)
-                        log.debug("table tap (simultaneous) on side <<\(panelSide)>>")
-                        // Ensure there is a visible sel only when none exists
-                        if selectedID == nil, let first = files.first {
-                            log.debug("Auto-select first row on tap for side <<\(panelSide)>>: \(first.nameStr)")
-                            selectedID = first.id
-                            onSelect(first)
-                        }
-                    }
-            )
             // React to sel changes
             .onChange(of: selectedID, initial: false) { _, newValue in
+                log.debug("[SELECT-FLOW] 5️⃣ PanelFileTableSection.onChange(selectedID): \(String(describing: newValue)) on <<\(panelSide)>>")
                 appState.focusedPanel = panelSide
-                log.debug("on onChange on table, side <<\(panelSide)>>")
                 if let id = newValue, let file = files.first(where: { $0.id == id }) {
-                    log.debug("Row selected: id=\(id) on side <<\(panelSide)>>")
-                    // Notify others to clear their sels before we commit this one
+                    log.debug("[SELECT-FLOW] 5️⃣ File found: \(file.nameStr), notifying & calling onSelect")
                     notifyWillSelect(file)
                     onSelect(file)
                 } else {
-                    log.debug("Selection cleared on <<\(panelSide)>>")
+                    log.debug("[SELECT-FLOW] 5️⃣ Selection cleared, notifying")
                     notifyDidClearSelection()
                 }
+                log.debug("[SELECT-FLOW] 5️⃣ DONE")
             }
             // Nav with arrow keys — same as before
             .onMoveCommand { direction in
@@ -99,29 +84,16 @@ struct PanelFileTableSection: View {
                 }
             }
             .onChange(of: appState.focusedPanel, initial: false) { _, newSide in
-                // When this panel receives keyboard focus (e.g., via Tab), ensure a visible sel exists
+                // When panel receives focus via Tab, update FocusState
                 guard newSide == panelSide else { return }
                 isFocused = true
-                if selectedID == nil, let first = files.first {
-                    log.debug("Auto-select first row on focusedPanel change for side <<\(panelSide)>>: \(first.nameStr)")
-                    selectedID = first.id
-                    onSelect(first)
-                } else {
-                    log.debug(
-                        "focusedPanel change on <<\(panelSide)>> but selection already present: \(String(describing: selectedID))")
-                }
+                log.debug("focusedPanel changed to <<\(panelSide)>>, selection: \(String(describing: selectedID))")
             }
             .onChange(of: isFocused, initial: false) { _, nowFocused in
                 log.debug("Panel focus state changed (FocusState) for <<\(panelSide)>>: \(nowFocused)")
                 if nowFocused {
                     appState.focusedPanel = panelSide
-                    if selectedID == nil, let first = files.first {
-                        log.debug("FocusState gained, auto-select first on <<\(panelSide)>>: \(first.nameStr)")
-                        selectedID = first.id
-                        onSelect(first)
-                    } else {
-                        log.debug("FocusState gained on <<\(panelSide)>>, selection exists: \(String(describing: selectedID))")
-                    }
+                    log.debug("FocusState gained on <<\(panelSide)>>, selection: \(String(describing: selectedID))")
                 }
             }
             .animation(nil, value: selectedID)
