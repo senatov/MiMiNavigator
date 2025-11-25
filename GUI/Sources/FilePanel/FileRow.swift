@@ -50,15 +50,12 @@ struct FileRow: View {
         .contentShape(Rectangle())
         .drawingGroup()
         .help(makeHelpTooltip())
-        .simultaneousGesture(
-            TapGesture()
-            .onEnded {
-                if Int.random(in: 0..<6) == 0 { // sample roughly 1/6 taps to reduce IO
-                    log.debug("Row tap → index=\(index) name=\(file.nameStr) id=\(file.id) side= <<\(panelSide)>>")
-                }
-                onSelect(file)
-            }
-        )
+        .onTapGesture {
+            log.debug("[SELECT-FLOW] 4️⃣ FileRow.onTapGesture: index=\(index) name=\(file.nameStr) side=<<\(panelSide)>>")
+            log.debug("[SELECT-FLOW] 4️⃣ Calling onSelect closure...")
+            onSelect(file)
+            log.debug("[SELECT-FLOW] 4️⃣ onSelect returned")
+        }
         .animation(nil, value: isSelected)
         .transaction { txn in
             txn.disablesAnimations = true

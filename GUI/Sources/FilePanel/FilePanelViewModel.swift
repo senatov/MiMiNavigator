@@ -57,9 +57,12 @@ final class FilePanelViewModel: ObservableObject {
     
     // MARK: -
     func select(_ file: CustomFile) {
-        log.debug("VM.select() on <<\(panelSide)>>: \(file.nameStr) [\(file.id)]")
+        log.debug("[SELECT-FLOW] 2️⃣ FilePanelViewModel.select() on <<\(panelSide)>>: \(file.nameStr)")
+        log.debug("[SELECT-FLOW] 2️⃣ Calling appState.select...")
         appState.select(file, on: panelSide)
+        log.debug("[SELECT-FLOW] 2️⃣ Closing popups...")
         self.appState.showFavTreePopup = false
+        log.debug("[SELECT-FLOW] 2️⃣ DONE")
     }
     
     // MARK: - periphery:ignore

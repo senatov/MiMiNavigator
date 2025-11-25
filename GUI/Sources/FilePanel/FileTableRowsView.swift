@@ -27,12 +27,10 @@ struct FileTableRowsView: View {
     let handleDirectoryAction: (DirectoryAction, CustomFile) -> Void
 
     var body: some View {
-        ScrollViewReader { proxy in
-            LazyVStack(spacing: 0) {
-                ForEach(rows, id: \.element.id) { pair in
-                    EquatableView(value: pair.element.id) {
-                        row(for: pair.element, index: pair.offset)
-                    }
+        LazyVStack(spacing: 0) {
+            ForEach(rows, id: \.element.id) { pair in
+                EquatableView(value: pair.element.id) {
+                    row(for: pair.element, index: pair.offset)
                 }
             }
         }
@@ -42,45 +40,27 @@ struct FileTableRowsView: View {
     @ViewBuilder
     private func row(for file: CustomFile, index: Int) -> some View {
         let isSelected = selectedID == file.id
-        ZStack(alignment: .leading) {
-            // Unified full-width row background
-            if isSelected {
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(Color(FilePanelStyle.yellowSelRowFill))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 8, style: .continuous)
-                            .stroke(
-                                FilePanelStyle.blueSymlinkDirNameColor,
-                                lineWidth: FilePanelStyle.selectedBorderWidth)
-                    )
+        FileRow(
+            index: index,
+            file: file,
+            isSelected: isSelected,
+            panelSide: panelSide,
+            onSelect: { tapped in
+                log.debug("[SELECT-FLOW] 3️⃣ FileTableRowsView.onSelect: \(tapped.nameStr) on <<\(panelSide)>>")
+                log.debug("[SELECT-FLOW] 3️⃣ Calling parent onSelect (will update AppState)...")
+                onSelect(tapped)
+                log.debug("[SELECT-FLOW] 3️⃣ Setting focusedPanel to: <<\(panelSide)>>")
+                appState.focusedPanel = panelSide
+                log.debug("[SELECT-FLOW] 3️⃣ DONE (selectedID will update via binding)")
+            },
+            onFileAction: { action, f in
+                log.debug(#function)
+                handleFileAction(action, f)
+            },
+            onDirectoryAction: { action, f in
+                log.debug(#function)
+                handleDirectoryAction(action, f)
             }
-            // Actual row content (name, size, date columns)
-            FileRow(
-                index: index,
-                file: file,
-                isSelected: isSelected,
-                panelSide: panelSide,
-                onSelect: { tapped in
-                    selectedID = tapped.id
-                    appState.focusedPanel = panelSide
-                    onSelect(tapped)
-                    if Int.random(in: 0..<8) == 0 {  // sample roughly every 1/8 taps
-                        log.debug("Row tapped: \(tapped.nameStr) [\(tapped.id)] on <<\(panelSide)>>")
-                    }
-                },
-                onFileAction: { action, f in
-                    log.debug(#function)
-                    handleFileAction(action, f)
-                },
-                onDirectoryAction: { action, f in
-                    log.debug(#function)
-                    handleDirectoryAction(action, f)
-                }
-            )
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .contentShape(Rectangle())  // allows clicks across entire row width
-        .drawingGroup()
-        .id("\(panelSide)_\(String(describing: file.id))")
+        )
     }
 }

@@ -22,17 +22,21 @@ struct FilePanelView: View {
     private var selectedIDBinding: Binding<CustomFile.ID?> {
         Binding<CustomFile.ID?>(
             get: {
+                let result: CustomFile.ID?
                 switch viewModel.panelSide {
                     case .left:
-                        return appState.selectedLeftFile?.id
+                        result = appState.selectedLeftFile?.id
                     case .right:
-                        return appState.selectedRightFile?.id
+                        result = appState.selectedRightFile?.id
                 }
+                log.debug("[SELECT-FLOW] 7️⃣ selectedIDBinding.GET on <<\(viewModel.panelSide)>>: \(result ?? "nil")")
+                return result
             },
             set: { newValue in
+                log.debug("[SELECT-FLOW] 7️⃣ selectedIDBinding.SET on <<\(viewModel.panelSide)>>: \(newValue ?? "nil")")
                 // We only handle clearing via binding. Non-nil sel is set via onSelect below.
                 if newValue == nil {
-                    log.debug("Clearing selection via binding for side <<\(viewModel.panelSide)>>")
+                    log.debug("[SELECT-FLOW] 7️⃣ Clearing selection via binding")
                     switch viewModel.panelSide {
                         case .left:
                             appState.selectedLeftFile = nil
@@ -42,6 +46,7 @@ struct FilePanelView: View {
                     appState.selectedDir.selectedFSEntity = nil
                     appState.showFavTreePopup = false
                 }
+                log.debug("[SELECT-FLOW] 7️⃣ DONE")
             }
         )
     }
@@ -146,43 +151,32 @@ struct FilePanelView: View {
         }
         .background(DesignTokens.panelBg)
         .controlSize(.regular)
-        .simultaneousGesture(
-            TapGesture()
-                .onEnded {
-                    // Focus panel on any click within its bounds without stealing row taps
-                    log.debug("Panel tapped for focus: <<\(viewModel.panelSide)>>")
-                    onPanelTap(viewModel.panelSide)
-                    // Sel is coordinated inside PanelFileTableSection; do not auto-select here->avoid double handling
-                }
-        )
+        .contentShape(Rectangle())
+        .onTapGesture {
+            // This tap has LOWER priority than FileRow taps
+            // Only fires when clicking empty space, not on rows
+            log.debug("Panel background tapped for focus: <<\(viewModel.panelSide)>>")
+            onPanelTap(viewModel.panelSide)
+        }
         .panelFocus(panelSide: viewModel.panelSide) {
             log.debug("Focus lost on << \(viewModel.panelSide)>>; keep selection")
             appState.showFavTreePopup = false
         }
         .onChange(of: appState.focusedPanel) { oldSide, newSide in
-            // Run only when focus actually changes to this panel
-            guard newSide == viewModel.panelSide, oldSide != newSide else { return }
-
-            // If this panel just became focus'd and has no sel, select the first row
-            let files = viewModel.sortedFiles
-            if selectedIDBinding.wrappedValue == nil, let first = files.first {
-                log.debug("Auto-select on focus gain (<<\(viewModel.panelSide))>>: \(first.nameStr)")
-                viewModel.select(first)
+            log.debug(
+                "[SELECT-FLOW] 6️⃣ FilePanelView.onChange(focusedPanel): \(oldSide) → \(newSide), this panel: <<\(viewModel.panelSide)>>"
+            )
+            guard oldSide != newSide else {
+                log.debug("[SELECT-FLOW] 6️⃣ No actual focus change, skipping")
+                return
             }
 
-            // Clear opposite side sel to avoid dual highlight
-            switch viewModel.panelSide {
-                case .left:
-                    if appState.selectedRightFile != nil {
-                        log.debug("Clearing RIGHT selection due to <<LEFT>> focus gain")
-                        appState.selectedRightFile = nil
-                    }
-                case .right:
-                    if appState.selectedLeftFile != nil {
-                        log.debug("Clearing LEFT selection due to <<RIGHT>> focus gain")
-                        appState.selectedLeftFile = nil
-                    }
+            if newSide == viewModel.panelSide {
+                log.debug("[SELECT-FLOW] 6️⃣ Focus GAINED on <<\(viewModel.panelSide)>>")
+            } else {
+                log.debug("[SELECT-FLOW] 6️⃣ Focus LOST on <<\(viewModel.panelSide)>>")
             }
+            log.debug("[SELECT-FLOW] 6️⃣ DONE")
         }
     }
 }

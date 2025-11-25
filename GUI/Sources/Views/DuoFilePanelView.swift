@@ -52,6 +52,7 @@ struct DuoFilePanelView: View {
 
 // MARK: - View Components
 extension DuoFilePanelView {
+    // MARK: -
     private var topMenuBar: some View {
         TopMenuBarView()
             .frame(maxWidth: .infinity)
