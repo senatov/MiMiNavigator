@@ -19,6 +19,7 @@ struct FileTableView: View {
     @State private var sortAscending: Bool = true
     @State private var cachedSortedFiles: [CustomFile] = []
     @State private var lastBodyLogTime: TimeInterval? = nil
+    @State private var scrollProxy: ScrollViewProxy? = nil
     fileprivate var px: CGFloat {
         let scale = NSScreen.main?.backingScaleFactor ?? 2.0
         return 1.0 / scale
@@ -46,6 +47,9 @@ struct FileTableView: View {
     var body: some View {
         ScrollViewReader { proxy in
             mainScrollView(proxy: proxy)
+                .onAppear {
+                    scrollProxy = proxy
+                }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(.horizontal, 6)
@@ -74,7 +78,22 @@ struct FileTableView: View {
             of: selectedID,
             { oldValue, newValue in
                 log.debug(
-                    "FTV.selectedID changed: \(String(describing: oldValue)) → \(String(describing: newValue)) on <<\(panelSide)>>")
+                    "[SELECT-FLOW] 8️⃣ FTV.onChange(selectedID): \(String(describing: oldValue)) → \(String(describing: newValue)) on <<\(panelSide)>>"
+                )
+                // Auto-scroll to selected item with slight delay for UI update
+                if let id = newValue, let proxy = scrollProxy {
+                    log.debug("[SELECT-FLOW] 8️⃣ Scheduling scroll to: \(id)")
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            // Smart anchor: avoid "jumpy" scroll for edge items
+                            let idx = cachedSortedFiles.firstIndex(where: { $0.id == id }) ?? 0
+                            let isNearEnd = idx >= cachedSortedFiles.count - 3
+                            let anchor: UnitPoint = isNearEnd ? .bottom : .center
+                            proxy.scrollTo(id, anchor: anchor)
+                            log.debug("[SELECT-FLOW] 8️⃣ Scroll executed with anchor: \(anchor)")
+                        }
+                    }
+                }
             })
     }
 
@@ -113,6 +132,10 @@ struct FileTableView: View {
                     }
                 )
             }
+        }
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            // Reserve space for bottom toolbar - prevents last items from being cut off
+            Color.clear.frame(height: 40)
         }
         .background(
             GeometryReader { gp in
