@@ -1,28 +1,29 @@
 name: CI
-
 on:
   push:
     branches: [ master ]
   pull_request:
     branches: [ master ]
-
 jobs:
   build:
     name: Build and Test
-    runs-on: macos-14
+    runs-on: macos-15
     
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
     
     - name: Select Xcode version
-      run: sudo xcode-select -s /Applications/Xcode_16.0.app/Contents/Developer
+      run: sudo xcode-select -s /Applications/Xcode_16.1.app/Contents/Developer
     
     - name: Show Xcode version
       run: xcodebuild -version
     
     - name: Show Swift version
       run: swift --version
+    
+    - name: Install xcpretty
+      run: gem install xcpretty
     
     - name: Build project
       run: |
@@ -42,10 +43,9 @@ jobs:
           CODE_SIGNING_ALLOWED=NO \
           | xcpretty
       continue-on-error: true
-
   lint:
     name: SwiftLint
-    runs-on: macos-14
+    runs-on: macos-15
     
     steps:
     - name: Checkout code
@@ -56,17 +56,16 @@ jobs:
     
     - name: Run SwiftLint
       run: swiftlint lint --strict
-
   format:
     name: Swift Format Check
-    runs-on: macos-14
+    runs-on: macos-15
     
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
     
     - name: Select Xcode version
-      run: sudo xcode-select -s /Applications/Xcode_16.0.app/Contents/Developer
+      run: sudo xcode-select -s /Applications/Xcode_16.1.app/Contents/Developer
     
     - name: Check formatting
       run: |
