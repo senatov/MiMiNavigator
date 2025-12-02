@@ -1,9 +1,20 @@
 disabled_rules:
   - trailing_whitespace
   - line_length
+  - opening_brace
+  - static_over_final_class
 
 opt_in_rules:
   - empty_count
   - force_unwrapping
+
+identifier_name:
+  min_length: 1
+  validates_start_with_lowercase: false
+
+excluded:
+  - Carthage
+  - Pods
+  - .build
 
 reporter: "xcode"
