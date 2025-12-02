@@ -32,6 +32,41 @@ struct ButtonFavTopPanel: View {
             menuButton()
         }
     }
+    
+    // MARK: - -
+    private func menuButton() -> some View {
+        log.debug(#function + " - <<\(String(describing: panelSide))>>")
+        return Button(action: {
+            log.debug("Navigation between favorites")
+            if favTreeStruct.isEmpty {
+                Task { await fetchFavTree() }
+            }
+            appState.focusedPanel = panelSide
+            appState.showFavTreePopup.toggle()
+        }) {
+            if panelSide == .left {
+                Image(systemName: "sidebar.left")
+                    .symbolRenderingMode(.hierarchical)
+                    .foregroundStyle(.blue)
+                    .foregroundColor(FilePanelStyle.dirNameColor)
+                    .scaleEffect(CGSize(width: 0.9, height: 1.3), anchor: .leading)
+                    .border(FilePanelStyle.fileNameColor)
+            } else {
+                Image(systemName: "sidebar.right")
+                    .symbolRenderingMode(.hierarchical)
+                    .foregroundStyle(.blue)
+                    .foregroundColor(FilePanelStyle.fileNameColor)
+                    .scaleEffect(CGSize(width: 0.9, height: 1.3), anchor: .leading)
+                    .border(FilePanelStyle.fileNameColor)
+            }
+        }
+        .shadow(color: .secondary.opacity(0.15), radius: 7.0, x: 1, y: 1)
+        .buttonStyle(.plain)
+        .popover(isPresented: $appState.showFavTreePopup, arrowEdge: .bottom) {
+            favoritePopover(targetSide: appState.focusedPanel)
+        }
+        .help("Navigation between favorites - << \(String(describing: panelSide))>>")
+    }
 
     // MARK: -
     private func backButton() -> some View {
@@ -87,40 +122,6 @@ struct ButtonFavTopPanel: View {
         .accessibilityLabel("Forward button")
     }
 
-    // MARK: - -
-    private func menuButton() -> some View {
-        log.debug(#function + " - <<\(String(describing: panelSide))>>")
-        return Button(action: {
-            log.debug("Navigation between favorites")
-            if favTreeStruct.isEmpty {
-                Task { await fetchFavTree() }
-            }
-            appState.focusedPanel = panelSide
-            appState.showFavTreePopup.toggle()
-        }) {
-            if panelSide == .left {
-                Image(systemName: "sidebar.left")
-                    .symbolRenderingMode(.hierarchical)
-                    .foregroundStyle(.blue)
-                    .foregroundColor(FilePanelStyle.dirNameColor)
-                    .scaleEffect(CGSize(width: 0.9, height: 1.3), anchor: .leading)
-                    .border(FilePanelStyle.fileNameColor)
-            } else {
-                Image(systemName: "sidebar.right")
-                    .symbolRenderingMode(.hierarchical)
-                    .foregroundStyle(.blue)
-                    .foregroundColor(FilePanelStyle.fileNameColor)
-                    .scaleEffect(CGSize(width: 0.9, height: 1.3), anchor: .leading)
-                    .border(FilePanelStyle.fileNameColor)
-            }
-        }
-        .shadow(color: .secondary.opacity(0.15), radius: 7.0, x: 1, y: 1)
-        .buttonStyle(.plain)
-        .popover(isPresented: $appState.showFavTreePopup, arrowEdge: .bottom) {
-            favoritePopover(targetSide: appState.focusedPanel)
-        }
-        .help("Navigation between favorites - << \(String(describing: panelSide))>>")
-    }
 
     // MARK: -
     private func forwardPopover() -> some View {

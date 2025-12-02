@@ -39,7 +39,7 @@ struct SplitContainer<Left: View, Right: View>: NSViewRepresentable {
     }
 
     // MARK: -
-    private func V(_ msg: @autoclosure () -> String) {
+    private func vu(_ msg: @autoclosure () -> String) {
         if Self.verboseLogs { log.debug(msg()) }
     }
 
@@ -64,7 +64,7 @@ struct SplitContainer<Left: View, Right: View>: NSViewRepresentable {
         splitView.setHoldingPriority(NSLayoutConstraint.Priority(250), forSubviewAt: 1)
         splitView.translatesAutoresizingMaskIntoConstraints = false
         splitView.identifier = NSUserInterfaceItemIdentifier("MiMiSplitView")
-        V("SV.init isVertical=\(splitView.isVertical) dividerStyle=\(splitView.dividerStyle.rawValue) minWidth=\(minPanelWidth)")
+        vu("SV.init isVertical=\(splitView.isVertical) dividerStyle=\(splitView.dividerStyle.rawValue) minWidth=\(minPanelWidth)")
         // Host SwiftUI children
         let leftHost = NSHostingView(rootView: leftPanel())
         let rightHost = NSHostingView(rootView: rightPanel())

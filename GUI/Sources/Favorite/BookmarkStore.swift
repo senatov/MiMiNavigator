@@ -168,8 +168,18 @@ actor BookmarkStore {
             pickedURL = sel
         }
 
+        // ✅ FIX: If requesting access to /Volumes and user picked a volume inside it,
+        // save bookmark for /Volumes itself, not the picked volume
+        let urlToSave: URL
+        if url.path == "/Volumes" && pickedURL.path.hasPrefix("/Volumes/") {
+            urlToSave = URL(fileURLWithPath: "/Volumes")
+            log.debug("BookmarkStore: User picked \(pickedURL.path), but saving bookmark for /Volumes")
+        } else {
+            urlToSave = pickedURL
+        }
+
         // Defer persistence->the BookmarkStore actor, avoid mutating actor state<-MainActor.
-        return await BookmarkStore.shared.persistAccess(for: pickedURL)
+        return await BookmarkStore.shared.persistAccess(for: urlToSave)
     }
 
     // / Persists a security-scoped bookmark+activates access for picked URL (no UI).

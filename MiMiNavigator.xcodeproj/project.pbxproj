@@ -128,6 +128,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 97AD1A552C624E040045C38D /* Build configuration list for PBXNativeTarget "MiMiNavigator" */;
 			buildPhases = (
+				977B59492EDF6F9700F7F80F /* ShellScript */,
 				97AD1A2A2C624E020045C38D /* Sources */,
 				97AD1A2B2C624E020045C38D /* Frameworks */,
 				97AD1A2C2C624E020045C38D /* Resources */,
@@ -254,6 +255,21 @@
 			);
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		977B59492EDF6F9700F7F80F /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			shellPath = /bin/sh;
+			shellScript = (
+				"if which Swiftlint >/dev/null; then",
+				"  /opt/homebrew/bin/Swiftlint lint --use-script-input-files",
+				"else",
+				"  echo \"warning: SwiftLint not installed\"",
+				"fi",
+				"",
+			);
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		97AD1A2A2C624E020045C38D /* Sources */ = {
