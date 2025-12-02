@@ -239,10 +239,6 @@ class FavScanner {
         oneDrive: [CustomFile],
         completion: @escaping ([CustomFile]) -> Void
     ) async -> URL? {
-        var network: [CustomFile] = []
-        var localDisks: [CustomFile] = []
-        var result: [CustomFile] = []
-
         let volumesURL = URL(fileURLWithPath: "/Volumes")
 
         // Try existing access first.
@@ -251,6 +247,7 @@ class FavScanner {
             let granted = await BookmarkStore.shared.requestAccessPersisting(for: volumesURL)
             if granted == false {
                 log.error("User did not grant access to /Volumes")
+                // ✅ Return partial result WITHOUT volumes
                 completion([
                     CustomFile(name: "Favorites", path: "", children: favorites),
                     CustomFile(name: "iCloud Drive", path: "", children: icloud),
@@ -260,48 +257,7 @@ class FavScanner {
             }
         }
 
-        // At this point we can enumerate /Volumes.
-        if let contents = try? FileManager.default.contentsOfDirectory(
-            at: volumesURL,
-            includingPropertiesForKeys: nil
-        ) {
-            for url in contents where (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true {
-                guard FileManager.default.fileExists(atPath: url.path) else {
-                    continue
-                }
-                let key = URLResourceKey("volumeIsNetwork")
-                let values = try? url.resourceValues(forKeys: [key])
-                let isNetwork = (values?.allValues[key] as? Bool) ?? false
-                if let node = buildFavTreeStructure(at: url) {
-                    if isNetwork {
-                        network.append(node)
-                    } else {
-                        localDisks.append(node)
-                    }
-                }
-            }
-        } else {
-            log.error("Cannot read /Volumes contents even after user granted access.")
-        }
-
-        if !favorites.isEmpty {
-            result.append(CustomFile(name: "Favorites", path: "", children: favorites))
-        }
-        if !icloud.isEmpty {
-            result.append(CustomFile(name: "iCloud Drive", path: "", children: icloud))
-        }
-        if !oneDrive.isEmpty {
-            result.append(CustomFile(name: "OneDrive", path: "", children: oneDrive))
-        }
-        if !network.isEmpty {
-            result.append(CustomFile(name: "Network Volumes", path: "", children: network))
-        }
-        if !localDisks.isEmpty {
-            result.append(CustomFile(name: "Local Volumes", path: "", children: localDisks))
-        }
-
-        log.debug("Total groups: \(result.count)")
-        completion(result)
+        // ✅ Return URL for further processing in scanVolumesAndComplete
         return volumesURL
     }
 }

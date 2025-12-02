@@ -6,7 +6,7 @@
 
 import SwiftUI
 
-//  MARK: -
+// MARK:  -
 struct DownToolbarButtonView: View {
     let title: String
     let systemImage: String
@@ -24,7 +24,7 @@ struct DownToolbarButtonView: View {
             .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
 
-    //  MARK: - Builds and configures the toolbar button (macOS 26.1 liquid glass style)
+    // MARK: - Builds and configures the toolbar button (macOS 26.1 liquid glass style)
     private func makeButton() -> some View {
         return Button(action: handlePress) {
             Label {

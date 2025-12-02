@@ -95,42 +95,60 @@ extension DuoFilePanelView {
 
     // MARK: -
     private var toolbarBackgroundView: some View {
-        ZStack {
-            baseMaterial
-            overlayTint
-            borderStroke
-            topHighlight
-        }
-        .shadow(color: .black.opacity(0.12), radius: 4, y: 2)
-    }
-
-    // MARK: -
-    private var baseMaterial: some View {
-        RoundedRectangle(cornerRadius: Layout.toolbarCornerRadius, style: .continuous)
-            .fill(.regularMaterial)
-    }
-
-    // MARK: -
-    private var overlayTint: some View {
-        RoundedRectangle(cornerRadius: Layout.toolbarCornerRadius, style: .continuous)
-            .fill(.white.opacity(0.05))
-    }
-
-    // MARK: -
-    private var borderStroke: some View {
-        RoundedRectangle(cornerRadius: Layout.toolbarCornerRadius, style: .continuous)
-            .strokeBorder(.separator.opacity(0.5), lineWidth: 0.5)
-    }
-
-    // MARK: -
-    private var topHighlight: some View {
-        VStack(spacing: 0) {
-            Rectangle()
-                .fill(.white.opacity(0.08))
-                .frame(height: 1)
-            Spacer(minLength: 0)
-        }
-        .clipShape(RoundedRectangle(cornerRadius: Layout.toolbarCornerRadius, style: .continuous))
+        let px: CGFloat = {
+            let scale = NSScreen.main?.backingScaleFactor ?? 2.0
+            return 1.0 / scale
+        }()
+        
+        return RoundedRectangle(cornerRadius: Layout.toolbarCornerRadius, style: .continuous)
+            .fill(.ultraThinMaterial)
+            // Decorative hairline ring (crisp, gradient)
+            .overlay(
+                RoundedRectangle(cornerRadius: Layout.toolbarCornerRadius, style: .continuous)
+                    .strokeBorder(
+                        LinearGradient(
+                            colors: [
+                                Color.white.opacity(0.30),  // top highlight
+                                Color.blue.opacity(0.08),
+                                Color.black.opacity(0.12),  // bottom subtle shadow
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        ),
+                        lineWidth: px
+                    )
+            )
+            // Soft top glow
+            .overlay(alignment: .top) {
+                LinearGradient(
+                    colors: [Color.white.opacity(0.22), Color.blue.opacity(0.08), .clear],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .frame(height: 20)
+            }
+            // Crisp bottom hairline
+            .overlay(alignment: .bottom) {
+                Rectangle()
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                Color.white.opacity(0.40),  // upper edge highlight
+                                Color.white.opacity(0.18),
+                                Color.black.opacity(0.20)   // lower subtle shadow
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+                    .frame(height: px)
+                    .padding(.horizontal, 0.5)
+                    .allowsHitTesting(false)
+            }
+            .clipShape(RoundedRectangle(cornerRadius: Layout.toolbarCornerRadius, style: .continuous))
+            .contentShape(RoundedRectangle(cornerRadius: Layout.toolbarCornerRadius, style: .continuous))
+            .shadow(color: Color.black.opacity(0.10), radius: 8, x: 0, y: 2)
+            .shadow(color: Color.blue.opacity(0.06), radius: 18, x: 0, y: 10)
     }
 
     // MARK: -

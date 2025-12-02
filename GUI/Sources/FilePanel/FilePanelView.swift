@@ -77,6 +77,7 @@ struct FilePanelView: View {
         return VStack {
             StableBy(currentPath?.path ?? "") {
                 PanelBreadcrumbSection(
+                    panelSide: viewModel.panelSide,
                     currentPath: currentPath,
                     onPathChange: { newValue in
                         viewModel.handlePathChange(to: newValue)
@@ -135,7 +136,12 @@ struct FilePanelView: View {
                 RoundedRectangle(cornerRadius: DesignTokens.radius, style: .continuous)
                     .fill(DesignTokens.card)
                 RoundedRectangle(cornerRadius: DesignTokens.radius, style: .continuous)
-                    .stroke(DesignTokens.separator.opacity(0.35), lineWidth: 1)
+                    .stroke(
+                        appState.focusedPanel == viewModel.panelSide
+                            ? Color.orange.opacity(0.5)
+                            : DesignTokens.separator.opacity(0.35),
+                        lineWidth: 1
+                    )
             }
             .drawingGroup()  // flatten vector ops for cheaper compositing during drags
         )

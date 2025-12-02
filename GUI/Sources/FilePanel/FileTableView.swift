@@ -170,9 +170,9 @@ struct FileTableView: View {
         .background(
             LinearGradient(
                 colors: [
-                    Color(nsColor: .systemBlue).opacity(0.060),  // top bright blue highlight
-                    Color(nsColor: .systemBlue).opacity(0.035),  // mid blue
-                    Color.black.opacity(0.25),  // subtle shadow edge
+                    Color(nsColor: .systemBlue).opacity(0.040),
+                    Color(nsColor: .systemGray).opacity(0.010),
+                    Color.black.opacity(0.15),  // subtle shadow edge
                 ],
                 startPoint: .top,
                 endPoint: .bottom
@@ -183,9 +183,9 @@ struct FileTableView: View {
                 .fill(
                     LinearGradient(
                         colors: [
-                            Color(nsColor: .systemBlue).opacity(0.060),  // top bright blue highlight
-                            Color(nsColor: .systemBlue).opacity(0.035),  // mid blue
-                            Color.black.opacity(0.25),  // subtle shadow edge
+                            Color(nsColor: .systemBlue).opacity(0.040),  // top bright blue highlight
+                            Color(nsColor: .systemBlue).opacity(0.010),  // mid blue
+                            Color.black.opacity(0.15),  // subtle shadow edge
                         ],
                         startPoint: .top,
                         endPoint: .bottom
@@ -202,8 +202,8 @@ struct FileTableView: View {
             .fill(
                 LinearGradient(
                     colors: [
+                        Color.black.opacity(0.46),
                         Color.black.opacity(0.36),
-                        Color.black.opacity(0.26),
                     ],
                     startPoint: .top,
                     endPoint: .bottom
@@ -244,12 +244,12 @@ struct FileTableView: View {
         .allowsHitTesting(false)
     }
 
-    // MARK: -
+    // MARK: - Tab Borders
     private var focusBorder: some View {
         RoundedRectangle(cornerRadius: 12)
             .stroke(
-                isFocused ? Color(nsColor: .systemBlue) : Color(Color.secondary).opacity(0.6),
-                lineWidth: isFocused ? 0.7 : 0.5
+                isFocused ? Color(#colorLiteral(red: 0.09019608051, green: 0, blue: 0.3019607961, alpha: 1)) : Color(Color.secondary).opacity(0.8),
+                lineWidth: isFocused ? 0.8 : 0.4
             )
             .allowsHitTesting(false)
     }

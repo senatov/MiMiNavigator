@@ -165,8 +165,6 @@ import Foundation
     private func syncSelectionWithFocus() {
         guard !suppressSync, !isRestoringSelections else { return }
         log.debug("syncSelectionWithFocus: now \(focusedPanel)")
-        // Don't auto-clear opposite panel selection - let user clicks handle that
-        // Don't auto-select first item - only restore from history if available
     }
 
     // MARK: -
@@ -248,12 +246,12 @@ import Foundation
     // MARK: -
     func togglePanel() {
         focusedPanel = (focusedPanel == .left) ? .right : .left
-        log.info("TAB toggled panel to: \(focusedPanel)")
+        log.info(#function + " TAB toggled panel to: \(focusedPanel)")
     }
 
     // MARK: -
     func selectionMove(by step: Int) {
-        log.debug("selectionMove(by: \(step)) | focus: \(focusedPanel)")
+        log.debug(#function + " selectionMove(by: \(step)) | focus: \(focusedPanel)")
         let items = (focusedPanel == .left) ? displayedLeftFiles : displayedRightFiles
         guard !items.isEmpty else { return }
 
@@ -277,7 +275,7 @@ import Foundation
 
     // MARK: -
     func selectionCopy() {
-        log.debug("selectionCopy() | focus: \(focusedPanel)")
+        log.debug(#function + "  focus: \(focusedPanel)")
         let srcFile: CustomFile?
         let dstSide: PanelSide
         switch focusedPanel {
