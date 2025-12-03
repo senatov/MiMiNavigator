@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct FavTreeMnu: View {
+struct FavTreePopup: View {
     @EnvironmentObject var appState: AppState
     @Binding var files: [CustomFile]
     @State private var expandedFolders: Set<String> = []
