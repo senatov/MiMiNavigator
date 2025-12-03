@@ -8,6 +8,7 @@ struct ButtonFavTopPanel: View {
     @State private var showBackPopover: Bool = false
     @State private var showForwardPopover: Bool = false
     @State private var showUpPopover: Bool = false
+    @State private var showFavTreePopup: Bool = false  // Local state for each panel
     let panelSide: PanelSide
 
     // MARK: - -
@@ -42,7 +43,7 @@ struct ButtonFavTopPanel: View {
                 Task { await fetchFavTree() }
             }
             appState.focusedPanel = panelSide
-            appState.showFavTreePopup.toggle()
+            showFavTreePopup.toggle()  // Use local state
         }) {
             if panelSide == .left {
                 Image(systemName: "sidebar.left")
@@ -62,8 +63,9 @@ struct ButtonFavTopPanel: View {
         }
         .shadow(color: .secondary.opacity(0.15), radius: 7.0, x: 1, y: 1)
         .buttonStyle(.plain)
-        .popover(isPresented: $appState.showFavTreePopup, arrowEdge: .bottom) {
+        .popover(isPresented: $showFavTreePopup, arrowEdge: .bottom) {
             favoritePopover(targetSide: appState.focusedPanel)
+                .interactiveDismissDisabled()  // Don't close on click outside
         }
         .help("Navigation between favorites - << \(String(describing: panelSide))>>")
     }
@@ -184,7 +186,7 @@ struct ButtonFavTopPanel: View {
     // MARK: -
     private func favoritePopover(targetSide: PanelSide) -> some View {
         log.debug(#function)
-        return FavTreeMnu(files: $favTreeStruct, panelSide: targetSide)
+        return FavTreePopup(files: $favTreeStruct, isPresented: $showFavTreePopup, panelSide: targetSide)
             .padding(6)
             .font(.custom("Helvetica Neue", size: 11).weight(.light))
             .foregroundColor(FilePanelStyle.fileNameColor)

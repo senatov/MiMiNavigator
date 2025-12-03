@@ -1,17 +1,18 @@
 //
-// FavTreePopoverController.swift
+// FavTreePopupController.swift
 //  MiMiNavigator
 //
-//  Created by Iakov Senatov on 09.10.2025.
-//  Copyright © 2025 Senatov. All rights reserved.
+//  Created by Iakov Senatov on 09.10.2024.
+//  Copyright © 2024 Senatov. All rights reserved.
 //
 
 import AppKit
 import SwiftUI
 
 @MainActor
-final class FavTreePopoverController: ObservableObject {
+final class FavTreePopupController: ObservableObject {
     private var popover: NSPopover?
+    @Published var isPresented: Bool = false  // Popup state
 
     // periphery:ignore
     @MainActor
@@ -31,21 +32,35 @@ final class FavTreePopoverController: ObservableObject {
         let content = FavTreePopupView(
             file: file,
             expandedFolders: expandedFolders,
-            manageWindow: false
+            isPresented: Binding(
+                get: { self.isPresented },
+                set: { self.isPresented = $0 }
+            )
         )
         .environmentObject(appState)
 
         let hosting = NSHostingController(rootView: content)
         let pop = NSPopover()
         pop.contentViewController = hosting
-        pop.behavior = .transient  // closes on click outside or ESC
+        pop.behavior = .semitransient  // closes only on ESC or explicit action
         pop.animates = true
         pop.contentSize = NSSize(width: 360, height: 420)
         pop.show(relativeTo: button.bounds, of: button, preferredEdge: .maxY)
         popover = pop
+        isPresented = true
+        
+        // Observe isPresented changes
+        Task { @MainActor in
+            for await _ in self.$isPresented.values where !self.isPresented {
+                self.close()
+                break
+            }
+        }
     }
 
     func close() {
+        isPresented = false
         popover?.performClose(nil)
+        popover = nil
     }
 }
