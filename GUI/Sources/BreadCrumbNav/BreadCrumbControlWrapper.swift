@@ -20,13 +20,13 @@ struct BreadCrumbControlWrapper: View {
 
     // MARK: - Initializer
     init(selectedSide: PanelSide) {
-        log.info("BreadCrumbControlWrapper init for side: <<\(selectedSide)>>")
+        log.info(#function + " BreadCrumbControlWrapper init for side: <<\(selectedSide)>>")
         self.panelSide = selectedSide
     }
 
     // MARK: - Body
     var body: some View {
-        log.info(#function + "for side <<\(panelSide)>>")
+        log.info(#function + " for side <<\(panelSide)>>")
         return HStack {
             if isEditing {
                 editingView

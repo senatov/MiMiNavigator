@@ -1,206 +1,311 @@
-    //
-    // FavTreePopupView.swift
-    //  MiMiNavigator
-    //
-    //  Created by Iakov Senatov on 28.02.2025.
-    // Updated for macOS 2026 Figma style on 09.10.2025
-    //
+//
+// FavTreePopupView.swift
+// MiMiNavigator
+//
+// Created by Iakov Senatov on 28.10.2024.
+// Updated for macOS Design Guidelines on 03.12.2024
+//
 
 import AppKit
 import SwiftUI
 
 @MainActor
 struct FavTreePopupView: View {
-        // MARK: - Environment / Dependencies
+    // MARK: - Environment / Dependencies
+
     @EnvironmentObject var appState: AppState
     @Binding var file: CustomFile
     @Binding var expandedFolders: Set<String>
-    let manageWindow: Bool  // kept for source compatibility, ignored
-    @StateObject private var popoverController = FavTreePopoverController()
-    @State private var headerButtonAnchor: NSView?
-    
-        // MARK: - Init
+    @Binding var isPresented: Bool
+
+    // MARK: - Init
+
     init(
         file: Binding<CustomFile>,
         expandedFolders: Binding<Set<String>>,
-        manageWindow: Bool = true
+        isPresented: Binding<Bool>
     ) {
-        self._file = file
-        self._expandedFolders = expandedFolders
-        self.manageWindow = manageWindow
+        _file = file
+        _expandedFolders = expandedFolders
+        _isPresented = isPresented
         log.debug("FavTreePopupView init for file \(file.wrappedValue.nameStr)")
     }
-    
-        // MARK: - Body
+
+    // MARK: - Body
+
     var body: some View {
-        ZStack {
-                // Glass background (macOS 2026 Figma style: subtle, not balloon-like)
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(.ultraThinMaterial)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .stroke(.white.opacity(0.12), lineWidth: 0.5)
-                )
-            
-            VStack(alignment: .leading, spacing: 8) {
-                header
-                Divider().opacity(0.25)
-                
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 4) {
-                        fileRow
-                        childrenList
-                    }
-                    .padding(.vertical, 2)
-                }
-            }
-            .padding(10)
+        VStack(alignment: .leading, spacing: 0) {
+            fileRow
+            childrenList
         }
-        .frame(minWidth: 340, minHeight: 220)
-            // Create standalone dialog window only when requested
         .onAppear {
-                // No window creation here; this view is used as NSPopover content.
-            appState.focusedPanel = appState.focusedPanel
-        }
-            // ESC to close
-        .onExitCommand {
-            log.info("ESC pressed → closing FavTreePopover")
-            popoverController.close()
+            autoExpandIfNeeded()
         }
     }
-    
-        // MARK: - Subviews
-    
-    private var header: some View {
-        HStack(spacing: 8) {
-            Text("Favorites")
-                .font(.system(size: 15, weight: .semibold))
-            Spacer(minLength: 0)
-            Button(action: {
-                Task { @MainActor in
-                    do {
-                            // Present as a sheet anchored->our window; anchor view is available if needed for popovers
-                        let data = try await grantAccessToVolumeAndSaveBookmark()
-                        log.info("User granted access. Bookmark bytes: \(data.count)")
-                    } catch {
-                        log.error("Grant access failed: \(error.localizedDescription)")
-                    }
-                }
-            }) {
-                Image(systemName: "externaldrive.badge.plus")
-                    .help("Allow access to a volume…")
-            }
-            .background(
-                AnchorCaptureView { nsView in
-                    self.headerButtonAnchor = nsView
-                    log.debug("Captured header button NSView for precise popover anchoring")
-                }
-            )
-            .buttonStyle(.borderless)
-        }
-        .padding(.top, 2)
-        .padding(.horizontal, 2)
+
+    // MARK: - Computed Properties
+
+    private var isExpanded: Bool {
+        expandedFolders.contains(file.pathStr)
     }
-    
+
+    private var isDirectoryType: Bool {
+        file.isDirectory || file.isSymbolicDirectory
+    }
+
+    private var isCurrent: Bool {
+        appState.selectedDir.selectedFSEntity?.pathStr == file.pathStr
+    }
+
+    private var indentLevel: Int {
+        let components = file.pathStr.split(separator: "/")
+        return max(0, components.count - 3)
+    }
+
+    // MARK: - Subviews
+
     private var fileIcon: some View {
-        Group {
-            if file.isDirectory || file.isSymbolicDirectory {
-                Image(systemName: "chevron.right")
-                    .rotationEffect(.degrees(isExpanded ? 90 : 0))
-                    .foregroundStyle(.accent)
-                    .frame(width: 14, alignment: .leading)
+        HStack(spacing: 4) {
+            if isDirectoryType {
+                Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(.secondary)
+                    .frame(width: 12, height: 12)
                     .contentShape(Rectangle())
                     .onTapGesture {
-                        log.debug("Icon tap → toggleExpansion() for \(file.nameStr)")
                         toggleExpansion()
                     }
             } else {
-                Image(systemName: "doc.text")
-                    .foregroundStyle(.secondary)
-                    .frame(width: 14, alignment: .leading)
+                Spacer().frame(width: 12)
             }
+
+            Image(systemName: iconName)
+                .font(.system(size: 13))
+                .foregroundStyle(iconColor)
+                .symbolRenderingMode(.hierarchical)
+                .frame(width: 16, height: 16)
         }
     }
-    
+
     private var fileNameText: some View {
-            // Selected state: compare with appState
-        let isCurrent = (appState.selectedDir.selectedFSEntity?.pathStr == file.pathStr)
-        return Text(file.nameStr)
-            .font(.system(size: 13))
-            .foregroundColor(isCurrent ? .accentColor : .primary)
-            .contentShape(Rectangle())
-            .onTapGesture {
-                log.info("Favorites select: \(file.nameStr)")
-                Task { @MainActor in
-                    appState.selectedDir.selectedFSEntity = file
-                    await appState.scanner.resetRefreshTimer(for: .left)
-                    await appState.scanner.resetRefreshTimer(for: .right)
-                    await appState.scanner.refreshFiles(currSide: .left)
-                    await appState.scanner.refreshFiles(currSide: .right)
-                }
+        HStack(spacing: 4) {
+            Text(file.nameStr)
+                .font(.system(size: 12))
+                .foregroundColor(isCurrent ? .accentColor : .primary)
+                .lineLimit(1)
+                .truncationMode(.middle)
+
+            Spacer(minLength: 0)
+
+            if let children = file.children, !children.isEmpty {
+                Text("\(children.count)")
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundColor(.secondary)
+                    .padding(.horizontal, 4)
+                    .padding(.vertical, 1)
+                    .background(
+                        Capsule()
+                            .fill(Color.secondary.opacity(0.15))
+                    )
             }
-            .contextMenu {
-                TreeViewContextMenu(file: file)
-            }
+        }
+        .contentShape(Rectangle())
+        .onTapGesture {
+            handleFileTap()
+        }
+        .help(fileInfoTooltip)
     }
-    
+
     private var fileRow: some View {
-        HStack(spacing: 6) {
+        HStack(spacing: 4) {
             fileIcon
             fileNameText
         }
         .padding(.vertical, 3)
-        .padding(.horizontal, 8)
+        .padding(.horizontal, 6)
         .background(
-            // Very subtle sel/expanded cue, no heavy buttons
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(isExpanded ? Color.accentColor.opacity(0.10) : .clear)
+            RoundedRectangle(cornerRadius: 4, style: .continuous)
+                .fill(isExpanded ? Color.accentColor.opacity(0.08) : .clear)
         )
         .contentShape(Rectangle())
-        .padding(.leading, (file.isDirectory || file.isSymbolicDirectory) ? 5 : 15)
-        .font(.system(size: 14, weight: .regular))
+        .padding(.leading, CGFloat(indentLevel * 16))
     }
-    
+
+    @ViewBuilder
     private var childrenList: some View {
-        Group {
-            if isExpanded, let children = file.children, !children.isEmpty {
-                ForEach(children.indices, id: \.self) { index in
-                    FavTreePopupView(
-                        file: Binding(
-                            get: { file.children![index] },
-                            set: { file.children![index] = $0 }
-                        ),
-                        expandedFolders: $expandedFolders,
-                        manageWindow: false  // prevent nested windows
-                    )
-                    .environmentObject(appState)
-                    .padding(.leading, 14)
-                    .transition(.opacity.combined(with: .move(edge: .leading)))
+        if isExpanded, let children = file.children, !children.isEmpty {
+            ForEach(children.indices, id: \.self) { index in
+                childView(at: index)
+            }
+        }
+    }
+
+    private func childView(at index: Int) -> some View {
+        FavTreePopupView(
+            file: Binding(
+                get: { file.children?[index] ?? file },
+                set: { newValue in
+                    file.children?[index] = newValue
                 }
-            }
-        }
-        .animation(.easeInOut(duration: 0.22), value: isExpanded)
+            ),
+            expandedFolders: $expandedFolders,
+            isPresented: $isPresented
+        )
+        .environmentObject(appState)
     }
-    
-        // MARK: - State & Logic
-    var isExpanded: Bool {
-        expandedFolders.contains(file.pathStr)
-    }
-    
+
+    // MARK: - Actions
+
     private func toggleExpansion() {
-        log.info("toggleExpansion for \(file.nameStr), current: \(isExpanded)")
-        guard file.isDirectory || file.isSymbolicDirectory else {
-            log.info("Ignored toggle: not a directory/symbolic directory")
-            return
+        guard isDirectoryType else { return }
+
+        if isExpanded {
+            expandedFolders.remove(file.pathStr)
+        } else {
+            expandedFolders.insert(file.pathStr)
         }
-        withAnimation(.spring(response: 0.26, dampingFraction: 0.7, blendDuration: 0.2)) {
-            if isExpanded {
-                expandedFolders.remove(file.pathStr)
-            } else {
-                expandedFolders.insert(file.pathStr)
-            }
-        }
-        log.debug("Toggled folder: \(file.nameStr), expanded -> \(isExpanded)")
+
+        log.debug("Toggled expansion for '\(file.nameStr)': now \(isExpanded ? "expanded" : "collapsed")")
     }
-    
+
+    private func handleFileTap() {
+        if isDirectoryType {
+            toggleExpansion()
+        }
+
+        log.info("Selected favorite: \(file.nameStr)")
+
+        Task { @MainActor in
+            appState.selectedDir.selectedFSEntity = file
+            let targetPanel = appState.focusedPanel
+            await appState.scanner.resetRefreshTimer(for: targetPanel)
+            await appState.scanner.refreshFiles(currSide: targetPanel)
+            isPresented = false
+        }
+    }
+
+    private func autoExpandIfNeeded() {
+        guard indentLevel <= 1 else { return }
+        guard isDirectoryType else { return }
+        guard let children = file.children, !children.isEmpty else { return }
+        guard children.count <= 5, !isExpanded else { return }
+
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(100))
+            expandedFolders.insert(file.pathStr)
+            log.debug("Auto-expanded '\(file.nameStr)' with \(children.count) items")
+        }
+    }
+
+    // MARK: - Icon Helpers
+
+    private var iconName: String {
+        let path = file.pathStr.lowercased()
+        let name = file.nameStr
+
+        // Network drives
+        if name.hasPrefix("smb://") || name.hasPrefix("afp://") {
+            return "server.rack"
+        }
+
+        // Volumes/Drives
+        if path.hasPrefix("/volumes/") || path == "/volumes" {
+            if path.contains("network") || name.hasPrefix("smb://") {
+                return "network.badge.shield.half.filled"
+            }
+            return "externaldrive.fill"
+        }
+
+        // System folders
+        if path.contains("/applications") { return "square.grid.3x3.fill" }
+        if path.contains("/library") { return "building.columns.fill" }
+        if path.contains("/system") { return "gearshape.2.fill" }
+        if path.contains("/users") || path.contains("/home") { return "person.crop.circle.fill" }
+
+        // User folders
+        if path.contains("/desktop") { return "desktopcomputer" }
+        if path.contains("/documents") { return "doc.text.fill" }
+        if path.contains("/downloads") { return "arrow.down.circle.fill" }
+        if path.contains("/movies") || path.contains("/videos") { return "film.fill" }
+        if path.contains("/music") { return "music.note" }
+        if path.contains("/pictures") || path.contains("/photos") { return "photo.fill" }
+
+        // Default
+        return isDirectoryType ? "folder.fill" : "doc.fill"
+    }
+
+    private var iconColor: Color {
+        let path = file.pathStr.lowercased()
+        let name = file.nameStr
+
+        // Network - blue
+        if name.hasPrefix("smb://") || name.hasPrefix("afp://") {
+            return .blue
+        }
+
+        // Drives - purple
+        if path.hasPrefix("/volumes/") || path == "/volumes" {
+            return .purple
+        }
+
+        // System - red
+        if path.contains("/system") || path.contains("/library") {
+            return .red
+        }
+
+        // Applications - green
+        if path.contains("/applications") {
+            return .green
+        }
+
+        // User folders - orange
+        if path.contains("/users") || path.contains("/home") {
+            return .orange
+        }
+
+        // Directories - blue tint
+        if isDirectoryType {
+            return .blue.opacity(0.7)
+        }
+
+        // Files - gray
+        return .secondary
+    }
+
+    // MARK: - Info Helpers
+
+    private var fileInfoTooltip: String {
+        var lines: [String] = []
+
+        // Type
+        if file.isSymbolicDirectory {
+            lines.append("Symbolic Link (Directory)")
+        } else if file.isDirectory {
+            lines.append("Folder")
+        } else {
+            lines.append("File")
+        }
+
+        // Path
+        lines.append("Path: \(file.pathStr)")
+
+        // Children count
+        if let children = file.children, !children.isEmpty {
+            lines.append("Items: \(children.count)")
+        }
+
+        // Size
+        if file.sizeInBytes > 0 {
+            lines.append("Size: \(formattedSize(file.sizeInBytes))")
+        }
+
+        return lines.joined(separator: "\n")
+    }
+
+    private func formattedSize(_ bytes: Int64) -> String {
+        let formatter = ByteCountFormatter()
+        formatter.allowedUnits = [.useKB, .useMB, .useGB, .useTB]
+        formatter.countStyle = .file
+        return formatter.string(fromByteCount: bytes)
+    }
 }
