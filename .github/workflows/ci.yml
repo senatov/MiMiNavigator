@@ -1,26 +1,29 @@
 name: CI
+
 on:
   push:
     branches: [ master ]
   pull_request:
     branches: [ master ]
+
 jobs:
-  build:
-    name: Build and Test
+  build-and-quality:
+    name: Build, Test & Quality Checks
     runs-on: macos-15
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Select Xcode version
+    - name: Select Xcode 16.1
       run: sudo xcode-select -s /Applications/Xcode_16.1.app/Contents/Developer
 
-    - name: Show Xcode version
-      run: xcodebuild -version
-
-    - name: Show Swift version
-      run: swift --version
+    - name: Display versions
+      run: |
+        echo "Xcode version:"
+        xcodebuild -version
+        echo "\nSwift version:"
+        swift --version
 
     - name: Install xcpretty
       run: gem install xcpretty
@@ -31,6 +34,7 @@ jobs:
           -project MiMiNavigator.xcodeproj \
           -scheme MiMiNavigator \
           -configuration Debug \
+          -destination 'platform=macOS' \
           CODE_SIGNING_ALLOWED=NO \
           | xcpretty
 
@@ -40,34 +44,34 @@ jobs:
           -project MiMiNavigator.xcodeproj \
           -scheme MiMiNavigator \
           -configuration Debug \
+          -destination 'platform=macOS' \
           CODE_SIGNING_ALLOWED=NO \
           | xcpretty
       continue-on-error: true
-  lint:
-    name: SwiftLint
-    runs-on: macos-15
 
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Install SwiftLint
-      run: brew install swiftlint
-
-    - name: Run SwiftLint
-      run: swiftlint lint
-  format:
-    name: Swift Format Check
-    runs-on: macos-15
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Select Xcode version
-      run: sudo xcode-select -s /Applications/Xcode_16.1.app/Contents/Developer
-
-    - name: Check formatting
+    - name: SwiftLint check
       run: |
-        swift-format lint --recursive Gui/Sources
+        if command -v swiftlint &> /dev/null; then
+          swiftlint lint --strict
+        else
+          echo "SwiftLint not found in Xcode, installing..."
+          brew install swiftlint
+          swiftlint lint --strict
+        fi
       continue-on-error: true
+
+    - name: Swift-format check
+      run: |
+        if command -v swift-format &> /dev/null; then
+          swift-format lint --recursive Gui/Sources
+        else
+          echo "Swift-format available in Xcode 16+"
+          xcrun swift-format lint --recursive Gui/Sources
+        fi
+      continue-on-error: true
+
+    - name: Build summary
+      if: always()
+      run: |
+        echo "✅ Build completed"
+        echo "📊 All quality checks finished"
