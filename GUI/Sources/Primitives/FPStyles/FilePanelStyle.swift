@@ -16,6 +16,7 @@ enum FilePanelStyle {
     static let orangeSelRowStroke = Color(#colorLiteral(red: 0.9411764741, green: 0.4980392158, blue: 0.3529411852, alpha: 1))
     static let skyBlauColor = Color(#colorLiteral(red: 0.4745098054, green: 0.8392156959, blue: 0.9764705896, alpha: 1))
     static let yellowSelRowFill = Color(#colorLiteral(red: 0.9995340705, green: 0.9802359024, blue: 0.9185159122, alpha: 1))
+    static let orangeSelRowFill = Color(#colorLiteral(red: 0.9764705896, green: 0.850980401, blue: 0.5490196347, alpha: 1))
 
     // Layout
     static let iconSize: CGFloat = 22
