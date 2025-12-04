@@ -35,10 +35,10 @@ struct FileRow: View {
 
                 if isSelected {
                     RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(FilePanelStyle.yellowSelRowFill) // pale yellow per spec
+                        .fill(FilePanelStyle.orangeSelRowFill).opacity(0.4) // pale yellow per spec
                     .overlay(
                         RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .stroke(FilePanelStyle.blueSymlinkDirNameColor, lineWidth: FilePanelStyle.selectedBorderWidth)
+                        .stroke(FilePanelStyle.blueSymlinkDirNameColor, lineWidth: 1)
                     )
                     .allowsHitTesting(false)
                 }
