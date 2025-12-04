@@ -94,7 +94,7 @@ struct MiMiNavigatorApp: App {
                     .padding(8)
                     .background(Circle().fill(Color.yellow.opacity(0.1)))
                     .overlay(
-                        Circle().strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.3)
+                        Circle().strokeBorder(Color.blue.opacity(0.8), lineWidth: 0.04)
                     )
                 VStack(alignment: .leading, spacing: 1) {
                     Text("DEV BUILD")
@@ -106,8 +106,8 @@ struct MiMiNavigatorApp: App {
                         .foregroundColor(FilePanelStyle.dirNameColor)
                 }
             }
-            .padding(.horizontal, 18)
-            .padding(.vertical, 0)
+            .padding(.horizontal, 22)
+            .padding(.vertical, 1)
             .background(.yellow.opacity(0.05), in: Capsule())
             .overlay(
                 Capsule()
