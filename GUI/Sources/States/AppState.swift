@@ -14,12 +14,12 @@ import Foundation
 @MainActor final class AppState: ObservableObject {
     @Published var displayedLeftFiles: [CustomFile] = []
     @Published var displayedRightFiles: [CustomFile] = []
-    @Published var focusedPanel: PanelSide = .left { 
-        didSet { 
+    @Published var focusedPanel: PanelSide = .left {
+        didSet {
             if oldValue != focusedPanel {
-                syncSelectionWithFocus() 
+                syncSelectionWithFocus()
             }
-        } 
+        }
     }
     @Published var leftPath: String
     @Published var rightPath: String
@@ -73,7 +73,7 @@ import Foundation
     func select(_ file: CustomFile, on panelSide: PanelSide) {
         log.debug("[SELECT-FLOW] 1️⃣ select(_:on:) CALLED on: <<\(panelSide)>> file: \(file.nameStr)")
         log.debug("[SELECT-FLOW] 1️⃣ BEFORE: L=\(selectedLeftFile?.nameStr ?? "nil") R=\(selectedRightFile?.nameStr ?? "nil")")
-        
+
         switch panelSide {
             case .left:
                 selectedLeftFile = file
@@ -84,14 +84,14 @@ import Foundation
                 selectedLeftFile = nil
                 log.debug("[SELECT-FLOW] 1️⃣ SET: R=\(file.nameStr), cleared L")
         }
-        
+
         log.debug("[SELECT-FLOW] 1️⃣ AFTER: L=\(selectedLeftFile?.nameStr ?? "nil") R=\(selectedRightFile?.nameStr ?? "nil")")
-        
+
         suppressSync = true
         let oldFocus = focusedPanel
         focusedPanel = panelSide
         suppressSync = false
-        
+
         log.debug("[SELECT-FLOW] 1️⃣ Focus changed: \(oldFocus) → \(focusedPanel)")
     }
 
@@ -194,6 +194,7 @@ import Foundation
         }
         log.debug("History[<<\(panelSide)]>> → \(path)")
         selectionsHistory.setCurrent(to: path)
+        selectionsHistory.add(path)
     }
 
     // MARK: -
