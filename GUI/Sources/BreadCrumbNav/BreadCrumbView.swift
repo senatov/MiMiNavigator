@@ -17,13 +17,13 @@ struct BreadCrumbView: View {
 
     // MARK: -
     init(selectedSide: PanelSide) {
-        log.info("BreadCrumbView init" + " for side <<\(selectedSide)>>")
+        // Log removed - too verbose
         self.panelSide = selectedSide
     }
 
     // MARK: -
     var body: some View {
-        log.info(#function + " for side <<\(panelSide)>>")
+        // Log removed - too verbose
         // / Main breadcrumb container
         return HStack(alignment: .center, spacing: 4) {
             ForEach(pathComponents.indices, id: \.self) { index in
@@ -35,16 +35,13 @@ struct BreadCrumbView: View {
         .padding(.vertical, 2)
         .frame(minHeight: barHeight, alignment: .center)
         .controlSize(.large)
-        .task { @MainActor in
-            appState.focusedPanel = panelSide
-        }
+        // Focus management removed - handled by parent views
     }
 
     // MARK: -
     private var pathComponents: [String] {
-        log.info(#function + " for side <<\(panelSide)>>")
+        // Log removed - too verbose
         let path = (panelSide == .left ? appState.leftPath : appState.rightPath)
-        log.info(#function + " for side <<\(panelSide)>>" + " with path: \(path)")
         return path.split(separator: "/").map(String.init).filter { !$0.isEmpty }
     }
 

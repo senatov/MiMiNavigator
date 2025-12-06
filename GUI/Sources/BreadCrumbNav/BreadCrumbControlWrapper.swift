@@ -46,13 +46,13 @@ struct BreadCrumbControlWrapper: View {
 
     // MARK: - Initializer
     init(selectedSide: PanelSide) {
-        log.info(#function + " BreadCrumbControlWrapper init for side: <<\(selectedSide)>>")
+        // Log removed - init happens frequently during view updates
         self.panelSide = selectedSide
     }
 
     // MARK: - Body
     var body: some View {
-        log.info(#function + " for side <<\(panelSide)>>")
+        // Throttled logging removed - only log on state changes
         return contentView
             .padding(.horizontal, Design.Padding.horizontal)
             .padding(.vertical, Design.Padding.horizontal)
@@ -118,7 +118,7 @@ struct BreadCrumbControlWrapper: View {
 
     // MARK: - Editing View
     private var editingView: some View {
-        log.info(#function + " for side <<\(panelSide)>>")
+        // Log removed - too verbose
         return HStack(spacing: 8) {
             pathTextField
             confirmButton
@@ -200,7 +200,7 @@ struct BreadCrumbControlWrapper: View {
 
     // MARK: - Display View
     private var displayView: some View {
-        log.info(#function + " for side <<\(panelSide)>>")
+        // Log removed - too verbose
         return BreadCrumbPathControl(selectedSide: panelSide)
             .environmentObject(appState)
             .frame(maxWidth: .infinity, alignment: .leading)

@@ -16,13 +16,13 @@ struct BreadCrumbPathControl: View {
 
     // MARK: -
     init(selectedSide: PanelSide) {
-        log.info(#function + " for side <<\(selectedSide)>>")
+        // Log removed - too verbose
         self.panelSide = selectedSide
     }
 
     // MARK: -
     var body: some View {
-        log.info(#function + " for side <<\(panelSide)>>")
+        // Log removed - too verbose
         return HStack(spacing: 2) {
             NavMnu1(selectedSide: panelSide)
             Spacer(minLength: 2)

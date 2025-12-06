@@ -50,12 +50,14 @@ struct FileRow: View {
         .contentShape(Rectangle())
         .drawingGroup()
         .help(makeHelpTooltip())
-        .onTapGesture {
-            log.debug("[SELECT-FLOW] 4️⃣ FileRow.onTapGesture: index=\(index) name=\(file.nameStr) side=<<\(panelSide)>>")
-            log.debug("[SELECT-FLOW] 4️⃣ Calling onSelect closure...")
-            onSelect(file)
-            log.debug("[SELECT-FLOW] 4️⃣ onSelect returned")
-        }
+        .highPriorityGesture(
+            TapGesture().onEnded { _ in
+                log.debug("[SELECT-FLOW] 4️⃣ FileRow.highPriorityGesture: index=\(index) name=\(file.nameStr) side=<<\(panelSide)>>")
+                log.debug("[SELECT-FLOW] 4️⃣ Calling onSelect closure...")
+                onSelect(file)
+                log.debug("[SELECT-FLOW] 4️⃣ onSelect returned")
+            }
+        )
         .animation(nil, value: isSelected)
         .transaction { txn in
             txn.disablesAnimations = true
