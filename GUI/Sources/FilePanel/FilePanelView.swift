@@ -29,7 +29,7 @@ struct FilePanelView: View {
                     case .right:
                         result = appState.selectedRightFile?.id
                 }
-                log.debug("[SELECT-FLOW] 7️⃣ selectedIDBinding.GET on <<\(viewModel.panelSide)>>: \(result ?? "nil")")
+                // Log removed - too verbose, floods console
                 return result
             },
             set: { newValue in

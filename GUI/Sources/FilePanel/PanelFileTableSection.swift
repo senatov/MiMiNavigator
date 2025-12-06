@@ -28,8 +28,9 @@ struct PanelFileTableSection: View {
 
     // MARK: -
     var body: some View {
+        // Throttled logging - only log every 1 second max
         let now = ProcessInfo.processInfo.systemUptime
-        if now - LogThrottle.last >= 0.25 {  // throttle body logs to max ~4/sec without touching @State
+        if now - LogThrottle.last >= 1.0 {
             LogThrottle.last = now
             log.debug(#function + " side= <<\(panelSide)>> files=\(files.count) sel=\(String(describing: selectedID))")
         }
