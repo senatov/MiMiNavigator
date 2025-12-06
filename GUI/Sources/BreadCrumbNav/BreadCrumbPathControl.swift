@@ -34,8 +34,6 @@ struct BreadCrumbPathControl: View {
                 .strokeBorder(Color.secondary.opacity(0.15), lineWidth: 1)
                 .fill(.background)
         )
-        .task { @MainActor in
-            appState.focusedPanel = panelSide
-        }
+        // Note: Focus is now managed by BreadCrumbControlWrapper to avoid conflicts
     }
 }

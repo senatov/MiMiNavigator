@@ -158,12 +158,15 @@ struct FilePanelView: View {
         .background(DesignTokens.panelBg)
         .controlSize(.regular)
         .contentShape(Rectangle())
-        .onTapGesture {
-            // This tap has LOWER priority than FileRow taps
-            // Only fires when clicking empty space, not on rows
-            log.debug("Panel background tapped for focus: <<\(viewModel.panelSide)>>")
-            onPanelTap(viewModel.panelSide)
-        }
+        .simultaneousGesture(
+            TapGesture().onEnded { _ in
+                // This tap works simultaneously with FileRow taps
+                // Sets focus when clicking empty space or on rows
+                log.debug("Panel tapped for focus (simultaneous): <<\(viewModel.panelSide)>>")
+                appState.focusedPanel = viewModel.panelSide
+                onPanelTap(viewModel.panelSide)
+            }
+        )
         .panelFocus(panelSide: viewModel.panelSide) {
             log.debug("Focus lost on << \(viewModel.panelSide)>>; keep selection")
             appState.showFavTreePopup = false
