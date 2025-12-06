@@ -20,16 +20,10 @@ struct PanelFocusModifier: ViewModifier {
     func body(content: Content) -> some View {
         log.info(#function + " for panel side: <<\(panelSide)>>")
         return content
-            .contentShape(Rectangle())
-            .onTapGesture {
-                // Set focus to this panel when the user interacts with it
-                log.info("Panel tapped, focus -> <<\(panelSide)>>")
-                appState.focusedPanel = panelSide
-            }
             .onChange(of: appState.focusedPanel, initial: false) { oldValue, newValue in
-                // When focus moves away from this panel, clear sel here
-                if newValue != panelSide {
-                    log.info("Focus moved from \(oldValue) to \(newValue); clearing selection on <<\(panelSide)>>")
+                // When focus moves away from this panel, trigger the onFocusLost callback
+                if newValue != panelSide && oldValue == panelSide {
+                    log.info("Focus moved from \(oldValue) to \(newValue); calling onFocusLost on <<\(panelSide)>>")
                     onFocusLost()
                 }
             }

@@ -61,11 +61,14 @@ struct FileTableView: View {
         .overlay(focusBorder)
         .overlay(lightBorder)
         .contentShape(Rectangle())
-        .onTapGesture {
-            // Focus the panel on any background tap without stealing row/header taps
-            log.debug("Panel tap focus → <<\(panelSide)>>")
-            appState.focusedPanel = panelSide
-        }
+        .simultaneousGesture(
+            // Use simultaneousGesture so file row taps are not blocked
+            TapGesture().onEnded { _ in
+                // Focus the panel on any background tap, but allow row taps to proceed
+                log.debug("Panel tap focus (simultaneous) → <<\(panelSide)>>")
+                appState.focusedPanel = panelSide
+            }
+        )
         .animation(nil, value: isFocused)
         .transaction { txn in txn.disablesAnimations = true }
         .animation(nil, value: selectedID)
