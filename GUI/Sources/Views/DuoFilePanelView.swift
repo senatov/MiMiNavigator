@@ -39,7 +39,6 @@ struct DuoFilePanelView: View {
             appState.initialize()
             initializePanelWidth()
             registerKeyboardShortcuts()
-            appState.forceFocusSelection()
         }
         .onDisappear {
             unregisterKeyboardShortcuts()
@@ -301,7 +300,6 @@ extension DuoFilePanelView {
 
         if event.keyCode == 0x30 {
             appState?.toggleFocus()
-            appState?.forceFocusSelection()
             return nil
         }
 
