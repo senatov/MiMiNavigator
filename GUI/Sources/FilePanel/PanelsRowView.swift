@@ -100,7 +100,6 @@ struct PanelsRowView: View {
         .contentShape(Rectangle())
         .onTapGesture {
             appState.focusedPanel = .left
-            appState.forceFocusSelection()
             log.debug("PanelsRowView: focus -> .left via tap")
         }
         .zIndex(0)
@@ -121,7 +120,6 @@ struct PanelsRowView: View {
         .contentShape(Rectangle())
         .onTapGesture {
             appState.focusedPanel = .right
-            appState.forceFocusSelection()
             log.debug("PanelsRowView: focus -> .right via tap")
         }
         .zIndex(0)

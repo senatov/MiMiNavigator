@@ -14,13 +14,7 @@ import Foundation
 @MainActor final class AppState: ObservableObject {
     @Published var displayedLeftFiles: [CustomFile] = []
     @Published var displayedRightFiles: [CustomFile] = []
-    @Published var focusedPanel: PanelSide = .left {
-        didSet {
-            if oldValue != focusedPanel {
-                syncSelectionWithFocus()
-            }
-        }
-    }
+    @Published var focusedPanel: PanelSide = .left
     @Published var leftPath: String
     @Published var rightPath: String
     @Published var selectedDir: SelectedDir = .init()
@@ -68,21 +62,20 @@ import Foundation
         }
     }
 
-    // MARK: - sel on side, clear opposite
+    // MARK: - sel on side, keep opposite selection (shown as gray)
     @MainActor
     func select(_ file: CustomFile, on panelSide: PanelSide) {
         log.debug("[SELECT-FLOW] 1️⃣ select(_:on:) CALLED on: <<\(panelSide)>> file: \(file.nameStr)")
         log.debug("[SELECT-FLOW] 1️⃣ BEFORE: L=\(selectedLeftFile?.nameStr ?? "nil") R=\(selectedRightFile?.nameStr ?? "nil")")
 
+        // Set selection on the target panel, keep the other panel's selection (will show as gray)
         switch panelSide {
             case .left:
                 selectedLeftFile = file
-                selectedRightFile = nil
-                log.debug("[SELECT-FLOW] 1️⃣ SET: L=\(file.nameStr), cleared R")
+                log.debug("[SELECT-FLOW] 1️⃣ SET: L=\(file.nameStr), keeping R=\(selectedRightFile?.nameStr ?? "nil")")
             case .right:
                 selectedRightFile = file
-                selectedLeftFile = nil
-                log.debug("[SELECT-FLOW] 1️⃣ SET: R=\(file.nameStr), cleared L")
+                log.debug("[SELECT-FLOW] 1️⃣ SET: R=\(file.nameStr), keeping L=\(selectedLeftFile?.nameStr ?? "nil")")
         }
 
         log.debug("[SELECT-FLOW] 1️⃣ AFTER: L=\(selectedLeftFile?.nameStr ?? "nil") R=\(selectedRightFile?.nameStr ?? "nil")")
@@ -116,10 +109,6 @@ import Foundation
     }
 
     // MARK: -
-    @MainActor
-    func forceFocusSelection() { syncSelectionWithFocus() }
-
-    // MARK: -
     private func canonicalPath(_ url: URL) -> String {
         return url.standardized.resolvingSymlinksInPath().path
     }
@@ -137,34 +126,23 @@ import Foundation
             focusedPanel = .left
         }
 
-        if focusedPanel == .left {
-            if let url = ud.url(forKey: "lastSelectedLeftFilePath") {
-                if let match = displayedLeftFiles.first(where: { canonicalPath($0.urlValue) == canonicalPath(url) }) {
-                    selectedLeftFile = match
-                    selectedRightFile = nil
-                }
-            }
-        } else {
-            if let url = ud.url(forKey: "lastSelectedRightFilePath") {
-                if let match = displayedRightFiles.first(where: { canonicalPath($0.urlValue) == canonicalPath(url) }) {
-                    selectedRightFile = match
-                    selectedLeftFile = nil
-                }
+        // Restore both panels' selections (keep selections on both panels)
+        if let leftUrl = ud.url(forKey: "lastSelectedLeftFilePath") {
+            if let match = displayedLeftFiles.first(where: { canonicalPath($0.urlValue) == canonicalPath(leftUrl) }) {
+                selectedLeftFile = match
             }
         }
-        syncSelectionWithFocus()
+        if let rightUrl = ud.url(forKey: "lastSelectedRightFilePath") {
+            if let match = displayedRightFiles.first(where: { canonicalPath($0.urlValue) == canonicalPath(rightUrl) }) {
+                selectedRightFile = match
+            }
+        }
     }
 
     // MARK: -
     func toggleFocus() {
         focusedPanel = (focusedPanel == .left) ? .right : .left
         log.debug("TAB toggled focus to: \(focusedPanel)")
-    }
-
-    // MARK: -
-    private func syncSelectionWithFocus() {
-        guard !suppressSync, !isRestoringSelections else { return }
-        log.debug("syncSelectionWithFocus: now \(focusedPanel)")
     }
 
     // MARK: -
@@ -244,10 +222,9 @@ import Foundation
         }
     }
 
-    // MARK: -
+    // MARK: - Alias for toggleFocus (deprecated, use toggleFocus instead)
     func togglePanel() {
-        focusedPanel = (focusedPanel == .left) ? .right : .left
-        log.info(#function + " TAB toggled panel to: \(focusedPanel)")
+        toggleFocus()
     }
 
     // MARK: -

@@ -6,70 +6,49 @@
 //  Copyright © 2025 Senatov. All rights reserved.
 //
 
-import Foundation
+import AppKit
 import SwiftUI
 
-// MARK: - EquatableView wrapper to avoid redundant recomputation
-private struct EquatableView<Value: Hashable, Content: View>: View {
-    let value: Value
-    let content: () -> Content
-    @MainActor var body: some View { content().id(value) }
-}
-
-// MARK: -
+// MARK: - File row content view (icon + name)
+// Note: Selection background is handled by parent FileRow
 struct FileRowView: View {
-    @EnvironmentObject var appState: AppState
     let file: CustomFile
-    let panelSide: PanelSide
+    let isSelected: Bool
+    let isActivePanel: Bool
 
-    init(file: CustomFile, panelSide: PanelSide) {
-        self.file = file
-        self.panelSide = panelSide
-    }
     // MARK: - View Body
     var body: some View {
-        // log.debug(#fn + " for '\(file.nameStr)'")
-        EquatableView(value: file.id.hashValue ^ (isActiveSelection ? 1 : 0)) {
-            rowContainer(baseContent())
-                .animation(nil, value: isActiveSelection)
-                .transaction { tx in
-                    tx.disablesAnimations = true
-                    tx.animation = nil
-                }
-                .drawingGroup()
-        }
+        baseContent()
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.vertical, RowDesignTokens.grid / 2)
+            .padding(.horizontal, RowDesignTokens.grid)
+            .contentShape(Rectangle())
     }
 
-    // MARK: - True when this row represents the selected file of the focused panel.
-    private var isActiveSelection: Bool {
-        switch panelSide {
-            case .left: return appState.focusedPanel == .left && appState.selectedLeftFile == file
-            case .right: return appState.focusedPanel == .right && appState.selectedRightFile == file
-        }
-    }
-
-    // MARK: - Text color for the file name based on file attributes and selection state.
+    // MARK: - Text color for the file name based on file attributes and selection
     private var nameColor: Color {
-        if isActiveSelection { return .primary }  // keep readable on selected background
+        // White text on blue selection background (active panel)
+        if isSelected && isActivePanel {
+            return .white
+        }
+        // Standard colors for non-selected or inactive panel
         if file.isSymbolicDirectory { return FilePanelStyle.fileNameColor }
         if file.isDirectory { return FilePanelStyle.dirNameColor }
         return .primary
     }
 
-    // MARK: -  Base content for a single file row (icon + name) preserving original visuals.
+    // MARK: - Base content for a single file row (icon + name)
     private func baseContent() -> some View {
-        // log.debug(#fn + " for '\(file.nameStr)'")
-        return HStack {
+        HStack(spacing: 6) {
+            // File icon with optional symlink badge
             ZStack(alignment: .bottomLeading) {
-                let icon = NSWorkspace.shared.icon(forFile: file.urlValue.path)
-                Image(nsImage: icon)
+                Image(nsImage: NSWorkspace.shared.icon(forFile: file.urlValue.path))
                     .resizable()
                     .interpolation(.medium)
                     .antialiased(true)
                     .frame(width: RowDesignTokens.iconSize, height: RowDesignTokens.iconSize)
                     .shadow(color: .black.opacity(0.08), radius: 0.5, x: 1, y: 1)
-                    .padding(.trailing, RowDesignTokens.grid - 3)
-                    .allowsHitTesting(false)
+                
                 if file.isSymbolicDirectory {
                     Image(systemName: "arrowshape.turn.up.right.fill")
                         .resizable()
@@ -77,26 +56,17 @@ struct FileRowView: View {
                         .frame(width: RowDesignTokens.iconSize / 3, height: RowDesignTokens.iconSize / 3)
                         .foregroundColor(.orange)
                         .shadow(color: .black.opacity(0.08), radius: 0.5, x: 1, y: 1)
-                        .allowsHitTesting(false)
                 }
             }
+            .allowsHitTesting(false)
+            
+            // File name
             Text(file.nameStr)
                 .font(.system(size: 13, weight: .regular, design: .default))
                 .foregroundColor(nameColor)
+                .lineLimit(1)
+                .truncationMode(.middle)
         }
-    }
-
-    // MARK: - Row Container with unified selection and hover visuals
-    private func rowContainer<Content: View>(_ content: Content) -> some View {
-        // Base content aligned to 8pt grid
-        let base =
-            content
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.vertical, RowDesignTokens.grid / 2)
-            .padding(.horizontal, RowDesignTokens.grid)
-            .background(Color.clear)
-            .contentShape(Rectangle())
-        return base
     }
 }
 

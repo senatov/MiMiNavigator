@@ -6,6 +6,7 @@
 //  Copyright © 2025 Senatov. All rights reserved.
 //
 
+import AppKit
 import SwiftUI
 
 // MARK: - Equatable wrapper to avoid unnecessary recomputation on divider drags
@@ -25,20 +26,36 @@ struct FileRow: View {
     let onFileAction: (FileAction, CustomFile) -> Void
     let onDirectoryAction: (DirectoryAction, CustomFile) -> Void
     @EnvironmentObject var appState: AppState
+    
+    // MARK: - Design Constants for selection colors (macOS style)
+    private enum SelectionColors {
+        // Active panel: system accent color (like Finder)
+        static let activeFill = Color(nsColor: .selectedContentBackgroundColor)
+        static let activeBorder = Color(nsColor: .keyboardFocusIndicatorColor).opacity(0.6)
+        // Inactive panel: subtle gray (like unfocused Finder window)
+        static let inactiveFill = Color(nsColor: .unemphasizedSelectedContentBackgroundColor)
+        static let inactiveBorder = Color(nsColor: .separatorColor)
+    }
+    
+    // MARK: - Is this panel currently focused
+    private var isActivePanel: Bool {
+        appState.focusedPanel == panelSide
+    }
 
     var body: some View {
-        EquatableView(value: file.id.hashValue ^ (isSelected ? 1 : 0)) {
-            // Zebra background stripes (Finder-like)
+        EquatableView(value: file.id.hashValue ^ (isSelected ? 1 : 0) ^ (isActivePanel ? 2 : 0)) {
+            // Zebra background stripes (macOS system colors)
             ZStack(alignment: .leading) {
-                let zebra = index.isMultiple(of: 2) ? Color.white : Color.gray.opacity(0.08)
+                let zebraColors = NSColor.alternatingContentBackgroundColors
+                let zebra = Color(nsColor: zebraColors[index % zebraColors.count])
                 zebra.allowsHitTesting(false)
 
                 if isSelected {
                     RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .fill(FilePanelStyle.orangeSelRowFill).opacity(0.4) // pale yellow per spec
+                        .fill(isActivePanel ? SelectionColors.activeFill : SelectionColors.inactiveFill)
                     .overlay(
                         RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .stroke(FilePanelStyle.blueSymlinkDirNameColor, lineWidth: 1)
+                        .stroke(isActivePanel ? SelectionColors.activeBorder : SelectionColors.inactiveBorder, lineWidth: 1)
                     )
                     .allowsHitTesting(false)
                 }
@@ -89,30 +106,39 @@ struct FileRow: View {
         }
     }
 
+    // MARK: - Text color for secondary columns (size, date)
+    private var secondaryTextColor: Color {
+        (isSelected && isActivePanel) ? .white.opacity(0.85) : Color(nsColor: .secondaryLabelColor)
+    }
+    
+    private var tertiaryTextColor: Color {
+        (isSelected && isActivePanel) ? .white.opacity(0.7) : Color(nsColor: .tertiaryLabelColor)
+    }
+
     // MARK: - Extracted row content
     private var rowContent: some View {
         HStack(alignment: .center, spacing: 8) {
             // Name column (expands)
-            FileRowView(file: file, panelSide: panelSide)
-            .frame(maxWidth: .infinity, alignment: .leading)
+            FileRowView(file: file, isSelected: isSelected, isActivePanel: isActivePanel)
+                .frame(maxWidth: .infinity, alignment: .leading)
             // vertical separator
             Rectangle()
-            .frame(width: 1)
-            .foregroundStyle(Color(nsColor: .separatorColor))
-            .padding(.vertical, 2)
+                .frame(width: 1)
+                .foregroundStyle(Color(nsColor: .separatorColor))
+                .padding(.vertical, 2)
             // Size column (here showing type string as in original)
             Text(file.fileObjTypEnum)
-            .foregroundStyle(.secondary)
-            .frame(width: FilePanelStyle.sizeColumnWidth, alignment: .leading)
+                .foregroundStyle(secondaryTextColor)
+                .frame(width: FilePanelStyle.sizeColumnWidth, alignment: .leading)
             // vertical separator
             Rectangle()
-            .frame(width: 1)
-            .foregroundStyle(Color(nsColor: .separatorColor))
-            .padding(.vertical, 2)
+                .frame(width: 1)
+                .foregroundStyle(Color(nsColor: .separatorColor))
+                .padding(.vertical, 2)
             // Date column
             Text(file.modifiedDateFormatted)
-            .foregroundStyle(.tertiary)
-            .frame(width: FilePanelStyle.modifiedColumnWidth + 10, alignment: .leading)
+                .foregroundStyle(tertiaryTextColor)
+                .frame(width: FilePanelStyle.modifiedColumnWidth + 10, alignment: .leading)
         }
         .padding(.vertical, 2)
         .padding(.horizontal, 6)
