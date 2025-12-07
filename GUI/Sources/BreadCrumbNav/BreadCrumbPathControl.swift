@@ -13,6 +13,19 @@ import SwiftUI
 struct BreadCrumbPathControl: View {
     @EnvironmentObject var appState: AppState
     let panelSide: PanelSide
+    
+    // MARK: - Design Constants
+    private enum Design {
+        static let cornerRadius: CGFloat = 8
+        static let activeBackgroundColor = Color.yellow.opacity(0.07)
+        static let inactiveBackgroundColor = Color.clear
+        static let borderOpacity: CGFloat = 0.15
+    }
+    
+    // MARK: - Is Active Panel
+    private var isActivePanel: Bool {
+        appState.focusedPanel == panelSide
+    }
 
     // MARK: -
     init(selectedSide: PanelSide) {
@@ -30,10 +43,14 @@ struct BreadCrumbPathControl: View {
             NavMnu2()
         }
         .background(
-            RoundedRectangle(cornerRadius: 8)
-                .strokeBorder(Color.secondary.opacity(0.15), lineWidth: 1)
-                .fill(.background)
+            RoundedRectangle(cornerRadius: Design.cornerRadius)
+                .fill(isActivePanel ? Design.activeBackgroundColor : Design.inactiveBackgroundColor)
         )
+        .background(
+            RoundedRectangle(cornerRadius: Design.cornerRadius)
+                .strokeBorder(Color.secondary.opacity(Design.borderOpacity), lineWidth: 1)
+        )
+        .animation(.easeInOut(duration: 0.2), value: isActivePanel)
         // Note: Focus is now managed by BreadCrumbControlWrapper to avoid conflicts
     }
 }
