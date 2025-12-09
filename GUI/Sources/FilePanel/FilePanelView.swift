@@ -12,11 +12,10 @@ import SwiftUI
 struct FilePanelView: View {
     @Environment(AppState.self) var appState
     @State private var viewModel: FilePanelViewModel
-    var geometry: GeometryProxy
+    let containerWidth: CGFloat
     @Binding var leftPanelWidth: CGFloat
     // / Called when user clicks anywhere inside the panel (left/right)
     let onPanelTap: (PanelSide) -> Void
-    @State private var lastBodyLogTime: TimeInterval = 0
 
     // MARK: - compound Variable: Bridge binding to AppState-selected file for this panel
     private var selectedIDBinding: Binding<CustomFile.ID?> {
@@ -54,14 +53,14 @@ struct FilePanelView: View {
     // MARK: - Init
     init(
         selectedSide: PanelSide,
-        geometry: GeometryProxy,
+        containerWidth: CGFloat,
         leftPanelWidth: Binding<CGFloat>,
         fetchFiles: @escaping @Sendable @concurrent (PanelSide) async -> Void,
         appState: AppState,
         onPanelTap: @escaping (PanelSide) -> Void = { side in log.debug("onPanelTap default for \(side)") }
     ) {
         self._leftPanelWidth = leftPanelWidth
-        self.geometry = geometry
+        self.containerWidth = containerWidth
         self._viewModel = State(
             initialValue: FilePanelViewModel(
                 panelSide: selectedSide,
@@ -97,37 +96,14 @@ struct FilePanelView: View {
                 )
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-            .background(
-                GeometryReader { gp in
-                    Color.clear
-                        .onAppear {
-                            log.debug(
-                                "PFT.section appear → size=\(Int(gp.size.width))x\(Int(gp.size.height)) on <<\(viewModel.panelSide)>>")
-                        }
-                        .onChange(of: gp.size) {
-                            let now = ProcessInfo.processInfo.systemUptime
-                            if now - lastBodyLogTime >= 0.25 {
-                                lastBodyLogTime = now
-                                log.debug(
-                                    "PFT.section size changed → \(Int(gp.size.width))x\(Int(gp.size.height)) on <<\(viewModel.panelSide)>>"
-                                )
-                            }
-                        }
-                }
-            )
         }
         .onAppear {
             // Log once on first appearance; no throttling needed here
             let pathStr = appState.pathURL(for: viewModel.panelSide)?.path ?? "nil"
             log.debug("FilePanelView.onAppear side= <<\(viewModel.panelSide)>> path=\(pathStr)")
         }
-        .onChange(of: appState.pathURL(for: viewModel.panelSide)?.path) { oldValue, newValue in
-            // Throttle path-change logs to avoid noise on rapid updates
-            let now = ProcessInfo.processInfo.systemUptime
-            if now - lastBodyLogTime >= 0.25 {
-                lastBodyLogTime = now
-                log.debug("FilePanelView.path changed side= <<\(viewModel.panelSide)>> → \(newValue ?? "nil")")
-            }
+        .onChange(of: appState.pathURL(for: viewModel.panelSide)?.path) { _, newValue in
+            log.debug("FilePanelView.path changed side= <<\(viewModel.panelSide)>> → \(newValue ?? "nil")")
         }
         .padding(.horizontal, DesignTokens.grid)
         .padding(.vertical, DesignTokens.grid - 2)
@@ -147,7 +123,7 @@ struct FilePanelView: View {
         )
         .frame(
             width: viewModel.panelSide == .left
-                ? (leftPanelWidth > 0 ? leftPanelWidth : geometry.size.width / 2)
+                ? (leftPanelWidth > 0 ? leftPanelWidth : containerWidth / 2)
                 : nil
         )
         .animation(nil, value: leftPanelWidth)
