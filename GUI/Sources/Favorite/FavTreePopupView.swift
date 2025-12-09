@@ -91,7 +91,7 @@ struct FavTreePopupView: View {
         HStack(spacing: 4) {
             Text(file.nameStr)
                 .font(.system(size: 12))
-                .foregroundColor(isCurrent ? .accentColor : .primary)
+                .foregroundStyle(isCurrent ? .accentColor : .primary)
                 .lineLimit(1)
                 .truncationMode(.middle)
 
@@ -100,7 +100,7 @@ struct FavTreePopupView: View {
             if let children = file.children, !children.isEmpty {
                 Text("\(children.count)")
                     .font(.system(size: 10, weight: .medium))
-                    .foregroundColor(.secondary)
+                    .foregroundStyle(.secondary)
                     .padding(.horizontal, 4)
                     .padding(.vertical, 1)
                     .background(

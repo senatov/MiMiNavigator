@@ -56,7 +56,7 @@ struct ButtonFavTopPanel: View {
                 Image(systemName: "sidebar.right")
                     .symbolRenderingMode(.hierarchical)
                     .foregroundStyle(.blue)
-                    .foregroundColor(FilePanelStyle.fileNameColor)
+                    .foregroundStyle(FilePanelStyle.fileNameColor)
                     .scaleEffect(CGSize(width: 0.9, height: 1.3), anchor: .leading)
                     .border(FilePanelStyle.fileNameColor)
             }
@@ -144,7 +144,7 @@ struct ButtonFavTopPanel: View {
                 }) {
                     Text(path)
                         .font(.system(size: 11))
-                        .foregroundColor(.blue)
+                        .foregroundStyle(.blue)
                         .padding(.vertical, 2)
                 }
                 Divider()
@@ -173,7 +173,7 @@ struct ButtonFavTopPanel: View {
                 }) {
                     Text(path)
                         .font(.system(size: 11))
-                        .foregroundColor(.blue)
+                        .foregroundStyle(.blue)
                         .padding(.vertical, 2)
                 }
                 Divider()
@@ -189,7 +189,7 @@ struct ButtonFavTopPanel: View {
         return FavTreePopup(files: $favTreeStruct, isPresented: $showFavTreePopup, panelSide: targetSide)
             .padding(6)
             .font(.custom("Helvetica Neue", size: 11).weight(.light))
-            .foregroundColor(FilePanelStyle.fileNameColor)
+            .foregroundStyle(FilePanelStyle.fileNameColor)
     }
 
     // MARK: -
