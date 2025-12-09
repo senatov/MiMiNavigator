@@ -17,6 +17,7 @@ struct PanelFileTableSection: View {
     let panelSide: PanelSide
     let onPanelTap: (PanelSide) -> Void
     let onSelect: (CustomFile) -> Void
+    let onDoubleClick: (CustomFile) -> Void
     @State private var rowRects: [CustomFile.ID: CGRect] = [:]
     @FocusState private var isFocused: Bool
 
@@ -40,7 +41,8 @@ struct PanelFileTableSection: View {
                 panelSide: panelSide,
                 files: files,
                 selectedID: $selectedID,
-                onSelect: onSelect  // ← вместо { _ в }
+                onSelect: onSelect,
+                onDoubleClick: onDoubleClick
             )
             .contentShape(Rectangle())
             .focusable(true)

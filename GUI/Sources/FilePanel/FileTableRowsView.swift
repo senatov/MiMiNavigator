@@ -23,6 +23,7 @@ struct FileTableRowsView: View {
     @Binding var selectedID: CustomFile.ID?
     let panelSide: PanelSide
     let onSelect: (CustomFile) -> Void
+    let onDoubleClick: (CustomFile) -> Void
     let handleFileAction: (FileAction, CustomFile) -> Void
     let handleDirectoryAction: (DirectoryAction, CustomFile) -> Void
 
@@ -52,6 +53,10 @@ struct FileTableRowsView: View {
                 log.debug("[SELECT-FLOW] 3️⃣ Setting focusedPanel to: <<\(panelSide)>>")
                 appState.focusedPanel = panelSide
                 log.debug("[SELECT-FLOW] 3️⃣ DONE (selectedID will update via binding)")
+            },
+            onDoubleClick: { tapped in
+                log.debug("[DOUBLE-CLICK] FileTableRowsView: \(tapped.nameStr) on <<\(panelSide)>>")
+                onDoubleClick(tapped)
             },
             onFileAction: { action, f in
                 log.debug(#function)

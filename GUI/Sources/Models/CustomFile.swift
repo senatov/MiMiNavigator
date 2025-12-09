@@ -42,30 +42,30 @@ public struct CustomFile: Identifiable, Equatable, Hashable, Codable, Sendable {
         if !path.isEmpty, let attrs = try? fm.attributesOfItem(atPath: path) {
             if let type = attrs[.type] as? FileAttributeType {
                 switch type {
-                case .typeDirectory:
-                    dir = true
-                case .typeSymbolicLink:
-                    symlink = true
-                    if let dst = try? fm.destinationOfSymbolicLink(atPath: path) {
-                        let base = (path as NSString).deletingLastPathComponent
-                        let target =
-                            (dst as NSString).isAbsolutePath ? dst : (base as NSString).appendingPathComponent(dst)
-                        var isDirFlag = ObjCBool(false)
-                        if fm.fileExists(atPath: target, isDirectory: &isDirFlag), isDirFlag.boolValue {
-                            dir = true
-                            symDir = true
+                    case .typeDirectory:
+                        dir = true
+                    case .typeSymbolicLink:
+                        symlink = true
+                        if let dst = try? fm.destinationOfSymbolicLink(atPath: path) {
+                            let base = (path as NSString).deletingLastPathComponent
+                            let target =
+                                (dst as NSString).isAbsolutePath ? dst : (base as NSString).appendingPathComponent(dst)
+                            var isDirFlag = ObjCBool(false)
+                            if fm.fileExists(atPath: target, isDirectory: &isDirFlag), isDirFlag.boolValue {
+                                dir = true
+                                symDir = true
+                            }
+                        } else {
+                            let resolved = url.resolvingSymlinksInPath()
+                            if let rVals = try? resolved.resourceValues(forKeys: [.isDirectoryKey]),
+                                rVals.isDirectory == true
+                            {
+                                dir = true
+                                symDir = true
+                            }
                         }
-                    } else {
-                        let resolved = url.resolvingSymlinksInPath()
-                        if let rVals = try? resolved.resourceValues(forKeys: [.isDirectoryKey]),
-                            rVals.isDirectory == true
-                        {
-                            dir = true
-                            symDir = true
-                        }
-                    }
-                default:
-                    break
+                    default:
+                        break
                 }
             }
             if let num = attrs[.size] as? NSNumber {

@@ -32,7 +32,6 @@ final class AppState {
     let fileManager = FileManager.default
     var scanner: DualDirectoryScanner!
 
-
     // MARK: -
     init() {
         log.info(#function + " - init AppState")
@@ -68,9 +67,7 @@ final class AppState {
                 selectedRightFile = file
                 log.debug("[SELECT-FLOW] 1️⃣ SET: R=\(file.nameStr), keeping L=\(selectedLeftFile?.nameStr ?? "nil")")
         }
-
         log.debug("[SELECT-FLOW] 1️⃣ AFTER: L=\(selectedLeftFile?.nameStr ?? "nil") R=\(selectedRightFile?.nameStr ?? "nil")")
-
         suppressSync = true
         let oldFocus = focusedPanel
         focusedPanel = panelSide
