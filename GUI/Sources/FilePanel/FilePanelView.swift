@@ -181,9 +181,11 @@ struct FilePanelView: View {
                 appState.updatePath(newPath, for: viewModel.panelSide)
                 if viewModel.panelSide == .left {
                     await appState.scanner.setLeftDirectory(pathStr: newPath)
+                    await appState.scanner.refreshFiles(currSide: .left)
                     await appState.refreshLeftFiles()
                 } else {
                     await appState.scanner.setRightDirectory(pathStr: newPath)
+                    await appState.scanner.refreshFiles(currSide: .right)
                     await appState.refreshRightFiles()
                 }
             }
