@@ -103,7 +103,7 @@ struct MiMiNavigatorApp: App {
                         .foregroundStyle(.secondary)
                     makeDevMark()
                         .font(.caption2)
-                        .foregroundColor(FilePanelStyle.dirNameColor)
+                        .foregroundStyle(FilePanelStyle.dirNameColor)
                 }
             }
             .padding(.horizontal, 22)

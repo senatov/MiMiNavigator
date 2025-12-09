@@ -60,7 +60,7 @@ struct FavTreePopup: View {
             
             Text("\(files.count)")
                 .font(.system(size: 11, weight: .medium))
-                .foregroundColor(.secondary)
+                .foregroundStyle(.secondary)
                 .padding(.horizontal, 6)
                 .padding(.vertical, 2)
                 .background(

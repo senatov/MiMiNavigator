@@ -52,7 +52,7 @@ struct BreadCrumbView: View {
             Image(systemName: "arrowtriangle.forward")
                 .symbolRenderingMode(.hierarchical)
                 .foregroundStyle(.blue)
-                .foregroundColor(.secondary)
+                .foregroundStyle(.secondary)
                 .shadow(color: .black.opacity(0.22), radius: 2, x: 1, y: 1)
                 .contrast(1.12)
                 .saturation(1.06)
@@ -67,7 +67,7 @@ struct BreadCrumbView: View {
         return Button(action: { handlePathSelection(upTo: index) }) {
             Text(pathComponents[index])
                 .font(.callout)
-                .foregroundColor(FilePanelStyle.blueSymlinkDirNameColor)
+                .foregroundStyle(FilePanelStyle.blueSymlinkDirNameColor)
                 .padding(.vertical, 2)
         }
         .buttonStyle(.plain)

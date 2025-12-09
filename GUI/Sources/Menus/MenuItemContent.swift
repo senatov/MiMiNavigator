@@ -22,7 +22,7 @@ struct MenuItemContent: View {
             Spacer()
             if let shortcut = shortcut {
                 Text(shortcut)
-                    .foregroundColor(.gray)
+                    .foregroundStyle(.gray)
                     .font(.caption)
             }
         }

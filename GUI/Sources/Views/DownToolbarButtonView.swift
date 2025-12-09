@@ -79,7 +79,7 @@ struct DownToolbarButtonView: View {
                 radius: isPressed ? 6 : (isHovered ? 5 : 0), x: 0, y: isPressed ? 2 : 1
             )
             .scaleEffect(isPressed ? 0.985 : (isHovered ? 1.005 : 1.0))
-            .foregroundColor(
+            .foregroundStyle(
                 isEnabled
                     ? (isHovered ? FilePanelStyle.dirNameColor : FilePanelStyle.dirNameColor)
                     : FilePanelStyle.dirNameColor.opacity(0.5)

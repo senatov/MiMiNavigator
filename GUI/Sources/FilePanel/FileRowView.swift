@@ -54,7 +54,7 @@ struct FileRowView: View {
                         .resizable()
                         .scaledToFit()
                         .frame(width: RowDesignTokens.iconSize / 3, height: RowDesignTokens.iconSize / 3)
-                        .foregroundColor(.orange)
+                        .foregroundStyle(.orange)
                         .shadow(color: .black.opacity(0.08), radius: 0.5, x: 1, y: 1)
                 }
             }
@@ -63,7 +63,7 @@ struct FileRowView: View {
             // File name
             Text(file.nameStr)
                 .font(.system(size: 13, weight: .regular, design: .default))
-                .foregroundColor(nameColor)
+                .foregroundStyle(nameColor)
                 .lineLimit(1)
                 .truncationMode(.middle)
         }
