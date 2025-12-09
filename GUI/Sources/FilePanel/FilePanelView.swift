@@ -92,6 +92,9 @@ struct FilePanelView: View {
                     onSelect: { file in
                         // central sel; will clear the other panel via ViewModel.select(_:)
                         viewModel.select(file)
+                    },
+                    onDoubleClick: { file in
+                        handleDoubleClick(file)
                     }
                 )
             }
@@ -162,6 +165,45 @@ struct FilePanelView: View {
                 log.debug("[SELECT-FLOW] 6️⃣ Focus LOST on <<\(viewModel.panelSide)>>")
             }
             log.debug("[SELECT-FLOW] 6️⃣ DONE")
+        }
+    }
+
+    // MARK: - Handle double click on file/directory
+    private func handleDoubleClick(_ file: CustomFile) {
+        log.debug("[DOUBLE-CLICK] handleDoubleClick: \(file.nameStr) isDir=\(file.isDirectory) isSymDir=\(file.isSymbolicDirectory)")
+        
+        if file.isDirectory || file.isSymbolicDirectory {
+            // Enter directory
+            let newPath = file.urlValue.path
+            log.info("[DOUBLE-CLICK] Entering directory: \(newPath)")
+            
+            Task { @MainActor in
+                appState.updatePath(newPath, for: viewModel.panelSide)
+                if viewModel.panelSide == .left {
+                    await appState.scanner.setLeftDirectory(pathStr: newPath)
+                    await appState.refreshLeftFiles()
+                } else {
+                    await appState.scanner.setRightDirectory(pathStr: newPath)
+                    await appState.refreshRightFiles()
+                }
+            }
+        } else {
+            // Open file with default application
+            let fileURL = file.urlValue
+            log.info("[DOUBLE-CLICK] Opening file: \(fileURL.path)")
+            
+            let workspace = NSWorkspace.shared
+            let configuration = NSWorkspace.OpenConfiguration()
+            
+            workspace.open(fileURL, configuration: configuration) { app, error in
+                if let error = error {
+                    log.error("[DOUBLE-CLICK] Failed to open file: \(error.localizedDescription)")
+                } else if let app = app {
+                    log.info("[DOUBLE-CLICK] File opened with: \(app.localizedName ?? "unknown app")")
+                } else {
+                    log.warning("[DOUBLE-CLICK] No default application for file type: \(fileURL.pathExtension)")
+                }
+            }
         }
     }
 }

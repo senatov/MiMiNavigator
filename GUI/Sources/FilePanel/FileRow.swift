@@ -23,6 +23,7 @@ struct FileRow: View {
     let isSelected: Bool
     let panelSide: PanelSide
     let onSelect: (CustomFile) -> Void
+    let onDoubleClick: (CustomFile) -> Void
     let onFileAction: (FileAction, CustomFile) -> Void
     let onDirectoryAction: (DirectoryAction, CustomFile) -> Void
     @Environment(AppState.self) var appState
@@ -68,8 +69,14 @@ struct FileRow: View {
         .drawingGroup()
         .help(makeHelpTooltip())
         .highPriorityGesture(
+            TapGesture(count: 2).onEnded { _ in
+                log.debug("[DOUBLE-CLICK] FileRow: index=\(index) name=\(file.nameStr) side=<<\(panelSide)>>")
+                onDoubleClick(file)
+            }
+        )
+        .simultaneousGesture(
             TapGesture().onEnded { _ in
-                log.debug("[SELECT-FLOW] 4️⃣ FileRow.highPriorityGesture: index=\(index) name=\(file.nameStr) side=<<\(panelSide)>>")
+                log.debug("[SELECT-FLOW] 4️⃣ FileRow.simultaneousGesture: index=\(index) name=\(file.nameStr) side=<<\(panelSide)>>")
                 log.debug("[SELECT-FLOW] 4️⃣ Calling onSelect closure...")
                 onSelect(file)
                 log.debug("[SELECT-FLOW] 4️⃣ onSelect returned")

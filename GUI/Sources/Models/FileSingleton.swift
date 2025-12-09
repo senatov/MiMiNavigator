@@ -13,7 +13,6 @@ actor FileSingleton: ObservableObject, @unchecked Sendable {
     private var _leftFiles: [CustomFile] = []  // Private storage for L-files
     private var _rightFiles: [CustomFile] = []  // Private storage for R-files
 
-
     // MARK: - Function to notify SwiftUI observers of changes
     @MainActor
     private func notifyObservers() {

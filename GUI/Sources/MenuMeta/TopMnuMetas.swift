@@ -23,7 +23,7 @@ let filesMenuCategory = MenuCategory(
         MenuItem(
             title: "Synchronize Directories...", action: { log.info("Menu > Files > Synchronize Directories...") },
             shortcut: "Ctrl+S"),
-        MenuItem(title: "Quit", action: { log.info("Menu > Files > Quit") }, shortcut: "Alt+F4")
+        MenuItem(title: "Quit", action: { log.info("Menu > Files > Quit") }, shortcut: "Alt+F4"),
     ])
 
 // MARK: - Mark Menu
@@ -35,7 +35,7 @@ let markMenuCategory = MenuCategory(
         MenuItem(title: "Unselect Group...", action: { log.info("Menu > Mark > Unselect Group...") }, shortcut: "Num-"),
         MenuItem(title: "Select All", action: { log.info("Menu > Mark > Select All") }, shortcut: "Ctrl+A"),
         MenuItem(title: "Unselect All", action: { log.info("Menu > Mark > Unselect All") }, shortcut: "Ctrl+U"),
-        MenuItem(title: "Invert Selection", action: { log.info("Menu > Mark > Invert Selection") }, shortcut: nil)
+        MenuItem(title: "Invert Selection", action: { log.info("Menu > Mark > Invert Selection") }, shortcut: nil),
     ])
 
 // MARK: - Commands Menu
@@ -50,7 +50,7 @@ let commandMenuCategory = MenuCategory(
         MenuItem(title: "CD Tree...", action: { log.info("Menu > Commands > CD Tree...") }, shortcut: "Ctrl+D"),
         MenuItem(
             title: "Branch View (With Subdirs)", action: { log.info("Menu > Commands > Branch View (With Subdirs)") },
-            shortcut: "Ctrl+B")
+            shortcut: "Ctrl+B"),
     ])
 
 // MARK: - Net Menu
@@ -60,7 +60,7 @@ let netMenuCategory = MenuCategory(
     items: [
         MenuItem(title: "FTP Connect...", action: { log.info("Menu > Net > FTP Connect...") }, shortcut: "Ctrl+N"),
         MenuItem(title: "FTP Disconnect", action: { log.info("Menu > Net > FTP Disconnect") }, shortcut: nil),
-        MenuItem(title: "Network Neighborhood", action: { log.info("Menu > Net > Network Neighborhood") }, shortcut: nil)
+        MenuItem(title: "Network Neighborhood", action: { log.info("Menu > Net > Network Neighborhood") }, shortcut: nil),
     ])
 
 // MARK: - Show Menu
@@ -70,7 +70,7 @@ let showMenuCategory = MenuCategory(
     items: [
         MenuItem(title: "Full View", action: { log.info("Menu > Show > Full View") }, shortcut: nil),
         MenuItem(title: "Brief View", action: { log.info("Menu > Show > Brief View") }, shortcut: nil),
-        MenuItem(title: "Hidden Files", action: { log.info("Menu > Show > Hidden Files") }, shortcut: "Ctrl+H")
+        MenuItem(title: "Hidden Files", action: { log.info("Menu > Show > Hidden Files") }, shortcut: "Ctrl+H"),
     ])
 
 // MARK: - Configuration Menu
@@ -80,7 +80,7 @@ let configMenuCategory = MenuCategory(
     items: [
         MenuItem(title: "Options...", action: { log.info("Menu > Configuration > Options...") }, shortcut: "Alt+O"),
         MenuItem(
-            title: "Customize Toolbar...", action: { log.info("Menu > Configuration > Customize Toolbar...") }, shortcut: nil)
+            title: "Customize Toolbar...", action: { log.info("Menu > Configuration > Customize Toolbar...") }, shortcut: nil),
     ])
 
 // MARK: - Start Menu
@@ -90,7 +90,7 @@ let startMenuCategory = MenuCategory(
     items: [
         MenuItem(title: "New Tab", action: { log.info("Menu > Start > New Tab") }, shortcut: "Ctrl+T"),
         MenuItem(title: "Duplicate Tab", action: { log.info("Menu > Start > Duplicate Tab") }, shortcut: "Ctrl+D"),
-        MenuItem(title: "Close Tab", action: { log.info("Menu > Start > Close Tab") }, shortcut: "Ctrl+W")
+        MenuItem(title: "Close Tab", action: { log.info("Menu > Start > Close Tab") }, shortcut: "Ctrl+W"),
     ])
 
 // MARK: - Help Menu
@@ -103,7 +103,7 @@ let helpMenuCategory = MenuCategory(
         MenuItem(title: "Registration Info", action: { log.info("Help > Registration Info") }, shortcut: nil),
         MenuItem(title: "Visit MimiNav Website", action: { log.info("Help > Website") }, shortcut: nil),
         MenuItem(title: "Check for Updates", action: { log.info("Help > Check for Updates") }, shortcut: nil),
-        MenuItem(title: "About MimiNav…", action: { log.info("Help > About MimiNav") }, shortcut: nil)
+        MenuItem(title: "About MimiNav…", action: { log.info("Help > About MimiNav") }, shortcut: nil),
     ])
 
 // NOTE: This file only contains menu item data, not UI code.

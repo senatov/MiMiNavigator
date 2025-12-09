@@ -15,6 +15,7 @@ struct FileTableView: View {
     let files: [CustomFile]
     @Binding var selectedID: CustomFile.ID?
     let onSelect: (CustomFile) -> Void
+    let onDoubleClick: (CustomFile) -> Void
     @State private var sortKey: SortKeysEnum = .name
     @State private var sortAscending: Bool = true
     @State private var cachedSortedFiles: [CustomFile] = []
@@ -113,6 +114,7 @@ struct FileTableView: View {
                         selectedID: $selectedID,
                         panelSide: panelSide,
                         onSelect: onSelect,
+                        onDoubleClick: onDoubleClick,
                         handleFileAction: handleFileAction,
                         handleDirectoryAction: handleDirectoryAction
                     )

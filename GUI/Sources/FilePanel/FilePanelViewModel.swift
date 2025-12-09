@@ -51,7 +51,7 @@ final class FilePanelViewModel {
             return
         }
         Task { @MainActor in
-            appState.updatePath(url.absoluteString, for: panelSide)
+            appState.updatePath(url.path, for: panelSide)
             await fetchFiles(panelSide)
         }
     }

@@ -6,8 +6,8 @@
 //  Copyright © 2025 Senatov. All rights reserved.
 //
 
-import SwiftUI
 import AppKit
+import SwiftUI
 
 struct AppCommands: Commands {
     let appState: AppState
