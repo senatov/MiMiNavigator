@@ -39,7 +39,8 @@ private enum DividerStyle {
 struct PanelsRowView: View {
     @Environment(AppState.self) var appState
     @Binding var leftPanelWidth: CGFloat
-    let geometry: GeometryProxy
+    let containerWidth: CGFloat
+    let containerHeight: CGFloat
     let fetchFiles: @MainActor (PanelSide) async -> Void
     
     @State private var divider = DividerState()
@@ -66,8 +67,8 @@ struct PanelsRowView: View {
             if let previewX = divider.dragPreviewLeft {
                 Rectangle()
                     .fill(DividerStyle.activeColor)
-                    .frame(width: DividerStyle.activeWidth, height: geometry.size.height)
-                    .position(x: previewX, y: geometry.size.height / 2)
+                    .frame(width: DividerStyle.activeWidth, height: containerHeight)
+                    .position(x: previewX, y: containerHeight / 2)
                     .allowsHitTesting(false)
             }
         }
@@ -91,12 +92,11 @@ struct PanelsRowView: View {
     private func logWidthChangeIfNeeded() {
         if Int(leftPanelWidth.rounded()) != Int(divider.lastLoggedWidth) {
             log.debug("PanelsRowView.body init with leftPanelWidth=\(leftPanelWidth.rounded())")
-            let geomW = geometry.size.width
             let scale = NSScreen.main?.backingScaleFactor ?? 2.0
-            let halfCenter = (geomW / 2.0 * scale).rounded() / scale
+            let halfCenter = (containerWidth / 2.0 * scale).rounded() / scale
             let halfLeft = halfCenter - DividerStyle.hitAreaWidth / 2
             log.debug(
-                "DIV-INIT: geomW=\(Int(geomW)) scale=\(scale) halfCenter=\(Int(halfCenter)) halfLeft=\(Int(halfLeft)) currentLeft=\(Int(leftPanelWidth))"
+                "DIV-INIT: containerW=\(Int(containerWidth)) scale=\(scale) halfCenter=\(Int(halfCenter)) halfLeft=\(Int(halfLeft)) currentLeft=\(Int(leftPanelWidth))"
             )
         }
     }
@@ -105,7 +105,7 @@ struct PanelsRowView: View {
     private func makeLeftPanel() -> some View {
         FilePanelView(
             selectedSide: .left,
-            geometry: geometry,
+            containerWidth: containerWidth,
             leftPanelWidth: $leftPanelWidth,
             fetchFiles: fetchFiles,
             appState: appState
@@ -124,7 +124,7 @@ struct PanelsRowView: View {
     private func makeRightPanel() -> some View {
         FilePanelView(
             selectedSide: .right,
-            geometry: geometry,
+            containerWidth: containerWidth,
             leftPanelWidth: $leftPanelWidth,
             fetchFiles: fetchFiles,
             appState: appState
@@ -148,7 +148,7 @@ struct PanelsRowView: View {
             // Visible divider line
             Rectangle()
                 .fill(lineColor)
-                .frame(width: lineWidth, height: geometry.size.height)
+                .frame(width: lineWidth, height: containerHeight)
                 .shadow(
                     color: Color.black.opacity(divider.isDragging ? 0.16 : 0.0),
                     radius: divider.isDragging ? 2 : 0
@@ -157,13 +157,13 @@ struct PanelsRowView: View {
             
             // Invisible hit area for comfortable grabbing
             Color.clear
-                .frame(width: DividerStyle.hitAreaWidth, height: geometry.size.height)
+                .frame(width: DividerStyle.hitAreaWidth, height: containerHeight)
                 .contentShape(Rectangle())
                 .gesture(makeDragGesture())
                 .simultaneousGesture(makeDoubleTapGesture())
                 .simultaneousGesture(makeOptionTapGesture())
         }
-        .frame(width: DividerStyle.hitAreaWidth, height: geometry.size.height)
+        .frame(width: DividerStyle.hitAreaWidth, height: containerHeight)
         .background(Color.black.opacity(0.001))
         .contentShape(Rectangle())
         .onHover { inside in
@@ -198,7 +198,7 @@ struct PanelsRowView: View {
                 }
                 
                 let proposed = (value.location.x - divider.dragGrabOffset) - (DividerStyle.hitAreaWidth / 2)
-                let maxW = geometry.size.width - DividerStyle.minPanelWidth - DividerStyle.hitAreaWidth
+                let maxW = containerWidth - DividerStyle.minPanelWidth - DividerStyle.hitAreaWidth
                 let clamped = max(DividerStyle.minPanelWidth, min(proposed, maxW))
                 let snapped = snapToPixelGrid(clamped)
                 
@@ -208,7 +208,7 @@ struct PanelsRowView: View {
                     #if DEBUG
                     if Int(snapped) % 16 == 0 {
                         let centerX = snapped + DividerStyle.hitAreaWidth / 2
-                        let percentLog = Int(((centerX / max(geometry.size.width, 1)) * 100.0).rounded())
+                        let percentLog = Int(((centerX / max(containerWidth, 1)) * 100.0).rounded())
                         log.debug("DIV-PREVIEW: snapped=\(Int(snapped)) percent=\(percentLog)%")
                     }
                     #endif
@@ -243,7 +243,7 @@ struct PanelsRowView: View {
     private func snapToCenter() {
         divider.suppressDragUntilMouseUp = true
         let scale = NSScreen.main?.backingScaleFactor ?? 2.0
-        let halfCenter = (geometry.size.width / 2.0 * scale).rounded() / scale
+        let halfCenter = (containerWidth / 2.0 * scale).rounded() / scale
         let halfLeft = halfCenter - DividerStyle.hitAreaWidth / 2
         
         divider.lastAppliedWidth = halfLeft
@@ -292,7 +292,7 @@ struct PanelsRowView: View {
             divider.dragPreviewLeft = nil
         }
         
-        log.debug("Divider commit → leftPanelWidth=\(Int(leftPanelWidth)) totalW=\(Int(geometry.size.width))")
+        log.debug("Divider commit → leftPanelWidth=\(Int(leftPanelWidth)) totalW=\(Int(containerWidth))")
     }
     
     // MARK: - Update tooltip during drag
@@ -302,7 +302,7 @@ struct PanelsRowView: View {
         
         divider.lastTooltipLeft = snapped
         let centerX = snapped + DividerStyle.hitAreaWidth / 2
-        let percent = Int(((centerX / max(geometry.size.width, 1)) * 100.0).rounded()).clamped(to: 0...100)
+        let percent = Int(((centerX / max(containerWidth, 1)) * 100.0).rounded()).clamped(to: 0...100)
         
         showTooltip(
             text: "\(percent)%",

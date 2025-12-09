@@ -64,11 +64,12 @@ extension DuoFilePanelView {
         GeometryReader { geometry in
             PanelsRowView(
                 leftPanelWidth: $leftPanelWidth,
-                geometry: geometry,
+                containerWidth: geometry.size.width,
+                containerHeight: geometry.size.height,
                 fetchFiles: fetchFiles
             )
         }
-        .frame(maxWidth: .infinity)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     // MARK: -
