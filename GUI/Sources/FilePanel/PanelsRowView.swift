@@ -7,89 +7,103 @@
 import AppKit
 import SwiftUI
 
+// MARK: - Divider drag state (grouped)
+private struct DividerState {
+    var isDragging: Bool = false
+    var dragStartWidth: CGFloat = .nan
+    var lastAppliedWidth: CGFloat = -1
+    var dragGrabOffset: CGFloat = 0
+    var dragPreviewLeft: CGFloat?
+    var suppressDragUntilMouseUp: Bool = false
+    // Tooltip
+    var tooltipText: String = ""
+    var tooltipPosition: CGPoint = .zero
+    var isTooltipVisible: Bool = false
+    var lastTooltipLeft: CGFloat = .nan
+    // Throttling
+    var lastLoggedWidth: CGFloat = -1
+    var lastUILogTS: TimeInterval = 0
+}
+
+// MARK: - Divider appearance constants
+private enum DividerStyle {
+    static let hitAreaWidth: CGFloat = 24
+    static let normalWidth: CGFloat = 1.2
+    static let activeWidth: CGFloat = 4.0
+    static let normalColor = Color(nsColor: NSColor.separatorColor)
+    static let activeColor = Color.red
+    static let minPanelWidth: CGFloat = 80
+}
+
 // MARK: - PanelsRowView
 struct PanelsRowView: View {
     @Environment(AppState.self) var appState
-    // External
     @Binding var leftPanelWidth: CGFloat
     let geometry: GeometryProxy
     let fetchFiles: @MainActor (PanelSide) async -> Void
-    // Tooltip state
-    @State private var tooltipText: String = ""
-    @State private var tooltipPosition: CGPoint = .zero
-    @State private var isDividerTooltipVisible: Bool = false
-    @State private var lastLoggedWidth: CGFloat = -1
-    // Drag state
-    @State private var dragStartWidth: CGFloat = .nan
-    @State private var lastAppliedWidth: CGFloat = -1
-    @State private var isDividerDragging: Bool = false
-    // Tooltip throttle
-    @State private var lastTooltipLeft: CGFloat = .nan
-    @State private var dragGrabOffset: CGFloat = 0
-    @State private var suppressDragUntilMouseUp: Bool = false
-    private let dividerHitAreaWidth: CGFloat = 24
-    // Do not relayout panels while dragging; draw a preview line instead
-    @State private var dragPreviewLeft: CGFloat? = nil
-    // Throttle UI logs for divider hover, cleaner output
-    @State private var lastUILogTS: TimeInterval = 0
+    
+    @State private var divider = DividerState()
 
     // MARK: - Body
     var body: some View {
-        if Int(leftPanelWidth.rounded()) != Int(lastLoggedWidth) {
-            log.debug("PanelsRowView.body init with leftPanelWidth=\(leftPanelWidth.rounded())")
-            let geomW = geometry.size.width
-            let scale = NSScreen.main?.backingScaleFactor ?? 2.0
-            let halfCenter = (geomW / 2.0 * scale).rounded() / scale
-            let halfLeft = halfCenter - dividerHitAreaWidth / 2
-            log.debug(
-                "DIV-INIT: geomW=\(Int(geomW)) scale=\(scale) halfCenter=\(Int(halfCenter)) halfLeft=\(Int(halfLeft)) currentLeft=\(Int(leftPanelWidth))"
-            )
-        }
+        logWidthChangeIfNeeded()
+        
         return ZStack(alignment: .center) {
             HStack(spacing: 0) {
                 makeLeftPanel()
-                makePanelHDivider()
+                makePanelDivider()
                 makeRightPanel()
             }
             .animation(nil, value: leftPanelWidth)
             .transaction { tx in
-                if isDividerDragging {
+                if divider.isDragging {
                     tx.disablesAnimations = true
                     tx.animation = nil
                 }
             }
-            // Preview divider that does not trigger layout during drag
-            if let previewX = dragPreviewLeft {
+            
+            // Preview divider (doesn't trigger layout during drag)
+            if let previewX = divider.dragPreviewLeft {
                 Rectangle()
-                    .fill(
-                        isDividerDragging
-                            ? Color(NSColor.green) : Color(nsColor: NSColor.blue)
-                    )
-                    .frame(width: isDividerDragging ? 2.0 : 1.5, height: geometry.size.height)
+                    .fill(DividerStyle.activeColor)
+                    .frame(width: DividerStyle.activeWidth, height: geometry.size.height)
                     .position(x: previewX, y: geometry.size.height / 2)
                     .allowsHitTesting(false)
             }
         }
         .modifier(
             ToolTipMod(
-                isVisible: $isDividerTooltipVisible,
-                text: tooltipText,
-                position: tooltipPosition
+                isVisible: $divider.isTooltipVisible,
+                text: divider.tooltipText,
+                position: divider.tooltipPosition
             )
         )
         .onChange(of: leftPanelWidth) {
             let w = leftPanelWidth.rounded()
-            if w != lastLoggedWidth {
-                lastLoggedWidth = w
+            if w != divider.lastLoggedWidth {
+                divider.lastLoggedWidth = w
                 log.debug("PanelsRowView.leftPanelWidth changed → \(w)")
             }
         }
     }
+    
+    // MARK: - Width change logging (throttled)
+    private func logWidthChangeIfNeeded() {
+        if Int(leftPanelWidth.rounded()) != Int(divider.lastLoggedWidth) {
+            log.debug("PanelsRowView.body init with leftPanelWidth=\(leftPanelWidth.rounded())")
+            let geomW = geometry.size.width
+            let scale = NSScreen.main?.backingScaleFactor ?? 2.0
+            let halfCenter = (geomW / 2.0 * scale).rounded() / scale
+            let halfLeft = halfCenter - DividerStyle.hitAreaWidth / 2
+            log.debug(
+                "DIV-INIT: geomW=\(Int(geomW)) scale=\(scale) halfCenter=\(Int(halfCenter)) halfLeft=\(Int(halfLeft)) currentLeft=\(Int(leftPanelWidth))"
+            )
+        }
+    }
 
-    // MARK: - Left Panels
+    // MARK: - Left Panel
     private func makeLeftPanel() -> some View {
-        log.debug("makeLeftPanel() with leftPanelWidth=\(leftPanelWidth.rounded())")
-        return FilePanelView(
+        FilePanelView(
             selectedSide: .left,
             geometry: geometry,
             leftPanelWidth: $leftPanelWidth,
@@ -106,10 +120,9 @@ struct PanelsRowView: View {
         .animation(nil, value: leftPanelWidth)
     }
 
-    // MARK: - Right Panels
+    // MARK: - Right Panel
     private func makeRightPanel() -> some View {
-        log.debug("makeRightPanel() with leftPanelWidth=\(leftPanelWidth.rounded())")
-        return FilePanelView(
+        FilePanelView(
             selectedSide: .right,
             geometry: geometry,
             leftPanelWidth: $leftPanelWidth,
@@ -126,169 +139,193 @@ struct PanelsRowView: View {
         .animation(nil, value: leftPanelWidth)
     }
 
-    // MARK: - Divider (macOS-like, custom color, smooth drag)
-    private func makePanelHDivider() -> some View {
-        // Visual states
-        let normalColor = Color(nsColor: NSColor.separatorColor)
-        let activeColor = Color(nsColor: .systemBlue)
-        let lineWidth: CGFloat = isDividerDragging ? 2.0 : 1.2
-        let lineColor: Color = isDividerDragging ? activeColor : normalColor
+    // MARK: - Panel Divider
+    private func makePanelDivider() -> some View {
+        let lineWidth = divider.isDragging ? DividerStyle.activeWidth : DividerStyle.normalWidth
+        let lineColor = divider.isDragging ? DividerStyle.activeColor : DividerStyle.normalColor
+        
         return ZStack {
             // Visible divider line
             Rectangle()
                 .fill(lineColor)
                 .frame(width: lineWidth, height: geometry.size.height)
-                .shadow(color: Color.black.opacity(isDividerDragging ? 0.16 : 0.0), radius: isDividerDragging ? 2 : 0, x: 0, y: 0)
+                .shadow(
+                    color: Color.black.opacity(divider.isDragging ? 0.16 : 0.0),
+                    radius: divider.isDragging ? 2 : 0
+                )
                 .allowsHitTesting(false)
-            // Invisible comfort grab zone
+            
+            // Invisible hit area for comfortable grabbing
             Color.clear
-                .frame(width: dividerHitAreaWidth, height: geometry.size.height)
+                .frame(width: DividerStyle.hitAreaWidth, height: geometry.size.height)
                 .contentShape(Rectangle())
-                .gesture(
-                    DragGesture(minimumDistance: 3)
-                        .onChanged { value in
-                            if suppressDragUntilMouseUp { return }
-                            if !isDividerDragging { isDividerDragging = true }
-                            if isDividerDragging && dragPreviewLeft == nil {
-                                log.debug("Divider drag begin")
-                                if dragPreviewLeft == nil {
-                                    dragPreviewLeft = leftPanelWidth
-                                    // Capture offset relative to divider CENTER, not left edge
-                                    dragGrabOffset = value.startLocation.x - (leftPanelWidth + dividerHitAreaWidth / 2)
-                                }
-                            }
-                            // Convert cursor position (near divider center) back to left panel width
-                            let proposed = (value.location.x - dragGrabOffset) - (dividerHitAreaWidth / 2)
-                            let minW: CGFloat = 80
-                            // Reserve min for right panel and the divider itself
-                            let maxW = geometry.size.width - minW - dividerHitAreaWidth
-                            let clamped = max(minW, min(proposed, maxW))
-                            let scale = NSScreen.main?.backingScaleFactor ?? 2.0
-                            let snapped = (clamped * scale).rounded() / scale
-                            if dragPreviewLeft == nil { dragPreviewLeft = leftPanelWidth }
-                            let moved = abs((dragPreviewLeft ?? leftPanelWidth) - snapped) >= 0.5
-                            if moved {
-                                dragPreviewLeft = snapped
-                                if Int(snapped) % 16 == 0 {
-                                    let centerX = snapped + dividerHitAreaWidth / 2
-                                    let percentLog = Int(((centerX / max(geometry.size.width, 1)) * 100.0).rounded())
-                                    log.debug(
-                                        "DIV-PREVIEW: proposed=\(Int(proposed)) clamped=\(Int(clamped)) snapped=\(Int(snapped)) centerX=\(Int(centerX)) percent=\(percentLog)% minW=80 maxW=\(Int(maxW))"
-                                    )
-                                }
-                            }
-                            let delta = abs((lastTooltipLeft.isNaN ? -9999 : lastTooltipLeft) - snapped)
-                            if delta >= 2 {
-                                lastTooltipLeft = snapped
-                                // Percentage is based on divider CENTER position over the full width
-                                let centerX = snapped + dividerHitAreaWidth / 2
-                                let percent = Int(((centerX / max(geometry.size.width, 1)) * 100.0).rounded()).clamped(to: 0...100)
-                                tooltipText = "\(percent)%"
-                                tooltipPosition = CGPoint(
-                                    x: centerX,
-                                    y: max(34, value.location.y - 70)
-                                )
-                                isDividerTooltipVisible = true
-                            }
-                        }
-                        .onEnded { _ in
-                            suppressDragUntilMouseUp = false
-                            var t = Transaction()
-                            t.disablesAnimations = true
-                            withTransaction(t) {
-                                if let finalX = dragPreviewLeft {
-                                    if leftPanelWidth != finalX { leftPanelWidth = finalX }
-                                    Task { @MainActor in
-                                        if abs(leftPanelWidth - (finalX)) > 0.5 {
-                                            log.debug("DIV-COMMIT: external override detected, re-asserting final width")
-                                            leftPanelWidth = finalX
-                                        }
-                                    }
-                                    lastAppliedWidth = finalX
-                                }
-                                dragGrabOffset = 0
-                                dragStartWidth = .nan
-                                isDividerTooltipVisible = false
-                                isDividerDragging = false
-                                lastTooltipLeft = .nan
-                                dragPreviewLeft = nil
-                            }
-                            log.debug("Divider commit → leftPanelWidth=\(Int(leftPanelWidth)) totalW=\(Int(geometry.size.width))")
-                        }
-                )
-                .simultaneousGesture(
-                    TapGesture(count: 2)
-                        .onEnded {
-                            suppressDragUntilMouseUp = true
-                            let scale = NSScreen.main?.backingScaleFactor ?? 2.0
-                            // Center of divider at exact half; compute left width from it
-                            let halfCenter = (geometry.size.width / 2.0 * scale).rounded() / scale
-                            let halfLeft = halfCenter - dividerHitAreaWidth / 2
-                            lastAppliedWidth = halfLeft
-                            leftPanelWidth = halfLeft
-                            Task { @MainActor in
-                                if abs(leftPanelWidth - halfLeft) > 0.5 {
-                                    log.debug("DIV-DBL(simul): external override detected, re-asserting 50%")
-                                    leftPanelWidth = halfLeft
-                                }
-                            }
-                            tooltipText = "50%"
-                            tooltipPosition = CGPoint(x: halfCenter, y: 46)
-                            isDividerTooltipVisible = true
-                            Task {
-                                try? await Task.sleep(for: .milliseconds(800))
-                                isDividerTooltipVisible = false
-                            }
-                            log.debug("Divider double-click (simul) → 50/50 center snap")
-                        }
-                )
-                .simultaneousGesture(
-                    TapGesture().modifiers(.option)
-                        .onEnded {
-                            suppressDragUntilMouseUp = true
-                            let scale = NSScreen.main?.backingScaleFactor ?? 2.0
-                            // Snap divider CENTER to exact half, then derive left panel width
-                            let halfCenter = (geometry.size.width / 2.0 * scale).rounded() / scale
-                            let halfLeft = halfCenter - dividerHitAreaWidth / 2
-                            lastAppliedWidth = halfLeft
-                            leftPanelWidth = halfLeft
-                            Task { @MainActor in
-                                if abs(leftPanelWidth - halfLeft) > 0.5 {
-                                    log.debug("DIV-OPT(simul-mod): external override detected, re-asserting 50%")
-                                    leftPanelWidth = halfLeft
-                                }
-                            }
-                            tooltipText = "50%"
-                            tooltipPosition = CGPoint(x: halfCenter, y: 46)
-                            isDividerTooltipVisible = true
-                            Task {
-                                try? await Task.sleep(for: .milliseconds(800))
-                                isDividerTooltipVisible = false
-                            }
-                            log.debug("Divider option-tap (simul-mod) → 50/50 center snap")
-                        }
-                )
+                .gesture(makeDragGesture())
+                .simultaneousGesture(makeDoubleTapGesture())
+                .simultaneousGesture(makeOptionTapGesture())
         }
-        .frame(width: dividerHitAreaWidth, height: geometry.size.height)
+        .frame(width: DividerStyle.hitAreaWidth, height: geometry.size.height)
         .background(Color.black.opacity(0.001))
         .contentShape(Rectangle())
-        // Resize cursor via hover (SwiftUI .cursor may be unavailable on some targets)
         .onHover { inside in
-            if inside { NSCursor.resizeLeftRight.set() } else { NSCursor.arrow.set() }
+            if inside {
+                NSCursor.resizeLeftRight.set()
+            } else {
+                NSCursor.arrow.set()
+            }
+            #if DEBUG
             let now = ProcessInfo.processInfo.systemUptime
-            if now - lastUILogTS > 0.5 {
-                lastUILogTS = now
+            if now - divider.lastUILogTS > 0.5 {
+                divider.lastUILogTS = now
                 log.debug("Divider hover → inside=\(inside)")
             }
+            #endif
         }
         .allowsHitTesting(true)
-        .zIndex(10)  // keep above rows but below bottom toolbar (Liquid Glass design)
+        .zIndex(10)
+    }
+    
+    // MARK: - Drag Gesture
+    private func makeDragGesture() -> some Gesture {
+        DragGesture(minimumDistance: 3)
+            .onChanged { value in
+                guard !divider.suppressDragUntilMouseUp else { return }
+                
+                if !divider.isDragging {
+                    divider.isDragging = true
+                    divider.dragPreviewLeft = leftPanelWidth
+                    divider.dragGrabOffset = value.startLocation.x - (leftPanelWidth + DividerStyle.hitAreaWidth / 2)
+                    log.debug("Divider drag begin")
+                }
+                
+                let proposed = (value.location.x - divider.dragGrabOffset) - (DividerStyle.hitAreaWidth / 2)
+                let maxW = geometry.size.width - DividerStyle.minPanelWidth - DividerStyle.hitAreaWidth
+                let clamped = max(DividerStyle.minPanelWidth, min(proposed, maxW))
+                let snapped = snapToPixelGrid(clamped)
+                
+                let moved = abs((divider.dragPreviewLeft ?? leftPanelWidth) - snapped) >= 0.5
+                if moved {
+                    divider.dragPreviewLeft = snapped
+                    #if DEBUG
+                    if Int(snapped) % 16 == 0 {
+                        let centerX = snapped + DividerStyle.hitAreaWidth / 2
+                        let percentLog = Int(((centerX / max(geometry.size.width, 1)) * 100.0).rounded())
+                        log.debug("DIV-PREVIEW: snapped=\(Int(snapped)) percent=\(percentLog)%")
+                    }
+                    #endif
+                }
+                
+                updateTooltip(snapped: snapped, locationY: value.location.y)
+            }
+            .onEnded { _ in
+                commitDrag()
+            }
+    }
+    
+    // MARK: - Double Tap Gesture (50/50 reset)
+    private func makeDoubleTapGesture() -> some Gesture {
+        TapGesture(count: 2)
+            .onEnded {
+                snapToCenter()
+                log.debug("Divider double-click → 50/50 center snap")
+            }
+    }
+    
+    // MARK: - Option+Tap Gesture (50/50 reset)
+    private func makeOptionTapGesture() -> some Gesture {
+        TapGesture().modifiers(.option)
+            .onEnded {
+                snapToCenter()
+                log.debug("Divider option-tap → 50/50 center snap")
+            }
+    }
+    
+    // MARK: - Snap to 50/50 center
+    private func snapToCenter() {
+        divider.suppressDragUntilMouseUp = true
+        let scale = NSScreen.main?.backingScaleFactor ?? 2.0
+        let halfCenter = (geometry.size.width / 2.0 * scale).rounded() / scale
+        let halfLeft = halfCenter - DividerStyle.hitAreaWidth / 2
+        
+        divider.lastAppliedWidth = halfLeft
+        leftPanelWidth = halfLeft
+        
+        Task { @MainActor in
+            if abs(leftPanelWidth - halfLeft) > 0.5 {
+                leftPanelWidth = halfLeft
+            }
+        }
+        
+        showTooltip(text: "50%", at: CGPoint(x: halfCenter, y: 46))
+        
+        Task {
+            try? await Task.sleep(for: .milliseconds(800))
+            divider.isTooltipVisible = false
+        }
+    }
+    
+    // MARK: - Commit drag changes
+    private func commitDrag() {
+        divider.suppressDragUntilMouseUp = false
+        
+        var transaction = Transaction()
+        transaction.disablesAnimations = true
+        
+        withTransaction(transaction) {
+            if let finalX = divider.dragPreviewLeft {
+                if leftPanelWidth != finalX {
+                    leftPanelWidth = finalX
+                }
+                Task { @MainActor in
+                    if abs(leftPanelWidth - finalX) > 0.5 {
+                        leftPanelWidth = finalX
+                    }
+                }
+                divider.lastAppliedWidth = finalX
+            }
+            
+            // Reset state
+            divider.dragGrabOffset = 0
+            divider.dragStartWidth = .nan
+            divider.isTooltipVisible = false
+            divider.isDragging = false
+            divider.lastTooltipLeft = .nan
+            divider.dragPreviewLeft = nil
+        }
+        
+        log.debug("Divider commit → leftPanelWidth=\(Int(leftPanelWidth)) totalW=\(Int(geometry.size.width))")
+    }
+    
+    // MARK: - Update tooltip during drag
+    private func updateTooltip(snapped: CGFloat, locationY: CGFloat) {
+        let delta = abs((divider.lastTooltipLeft.isNaN ? -9999 : divider.lastTooltipLeft) - snapped)
+        guard delta >= 2 else { return }
+        
+        divider.lastTooltipLeft = snapped
+        let centerX = snapped + DividerStyle.hitAreaWidth / 2
+        let percent = Int(((centerX / max(geometry.size.width, 1)) * 100.0).rounded()).clamped(to: 0...100)
+        
+        showTooltip(
+            text: "\(percent)%",
+            at: CGPoint(x: centerX, y: max(34, locationY - 70))
+        )
+    }
+    
+    // MARK: - Show tooltip
+    private func showTooltip(text: String, at position: CGPoint) {
+        divider.tooltipText = text
+        divider.tooltipPosition = position
+        divider.isTooltipVisible = true
+    }
+    
+    // MARK: - Snap to pixel grid
+    private func snapToPixelGrid(_ value: CGFloat) -> CGFloat {
+        let scale = NSScreen.main?.backingScaleFactor ?? 2.0
+        return (value * scale).rounded() / scale
     }
 }
 
-// MARK: -
+// MARK: - Comparable extension
 extension Comparable {
-    // / Clamp value to a closed range.
     fileprivate func clamped(to limits: ClosedRange<Self>) -> Self {
         min(max(self, limits.lowerBound), limits.upperBound)
     }
