@@ -78,7 +78,7 @@ struct OrangeSplitView<Left: View, Right: View>: NSViewRepresentable {
         sv.addArrangedSubview(leftHost)
         sv.addArrangedSubview(rightHost)
         // Initial divider position
-        DispatchQueue.main.async {
+        Task { @MainActor in
             let total = max(self.totalWidth, 1)
             let clamped = min(max(self.leftWidth, 0), total)
             sv.setPosition(clamped, ofDividerAt: 0)

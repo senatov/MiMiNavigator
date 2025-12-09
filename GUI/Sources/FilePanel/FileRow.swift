@@ -25,7 +25,7 @@ struct FileRow: View {
     let onSelect: (CustomFile) -> Void
     let onFileAction: (FileAction, CustomFile) -> Void
     let onDirectoryAction: (DirectoryAction, CustomFile) -> Void
-    @EnvironmentObject var appState: AppState
+    @Environment(AppState.self) var appState
     
     // MARK: - Design Constants for selection colors (macOS style)
     private enum SelectionColors {

@@ -1,25 +1,26 @@
-    //
-    // MenuItemView.swift
-    //  MiMiNavigator
-    //
-    //  Created by Iakov Senatov on 18.02.25.
-    //  Copyright © 2025 Senatov. All rights reserved.
-    //
+//
+// MenuItemView.swift
+//  MiMiNavigator
+//
+//  Created by Iakov Senatov on 18.02.25.
+//  Copyright © 2025 Senatov. All rights reserved.
+//
 
 import SwiftUI
 
-    // MARK: -
+// MARK: -
 struct TopMenuItemView: View {
     let item: MenuItem
     @State private var isHovered = false
     @State private var isPressed = false
     @State private var showHelpText = false
     @State private var hoverTask: Task<Void, Never>? = nil
-    
+
     var body: some View {
         Button(action: {
             isPressed = true
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+            Task {
+                try? await Task.sleep(for: .milliseconds(200))
                 isPressed = false
             }
             item.action()
@@ -38,9 +39,11 @@ struct TopMenuItemView: View {
             isHovered = hovering
             hoverTask?.cancel()
             if hovering {
-                hoverTask = Task { @MainActor in
-                    try? await Task.sleep(nanoseconds: 500_000_000) // 0.5s debounce
-                    if !Task.isCancelled && isHovered { showHelpText = true }
+                hoverTask = Task {
+                    try? await Task.sleep(for: .milliseconds(500))
+                    if !Task.isCancelled {
+                        showHelpText = true
+                    }
                 }
             } else {
                 showHelpText = false

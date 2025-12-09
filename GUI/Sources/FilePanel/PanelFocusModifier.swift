@@ -12,14 +12,15 @@ import SwiftUI
 // MARK: - PanelFocusModifier
 
 struct PanelFocusModifier: ViewModifier {
-    @EnvironmentObject var appState: AppState
+    @Environment(AppState.self) var appState
     let panelSide: PanelSide
     let onFocusLost: () -> Void
 
     // MARK: - -
     func body(content: Content) -> some View {
         // Log removed - called too frequently
-        return content
+        return
+            content
             .onChange(of: appState.focusedPanel, initial: false) { oldValue, newValue in
                 // When focus moves away from this panel, trigger the onFocusLost callback
                 if newValue != panelSide && oldValue == panelSide {

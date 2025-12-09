@@ -74,7 +74,7 @@ struct TopMenuButtonStyle: ButtonStyle {
                 .contentShape(RoundedRectangle(cornerRadius: cornerRadius))  // precise hit area
                 .background(background)
                 .overlay(stroke)
-                .cornerRadius(cornerRadius)
+                .clipShape(.rect(cornerRadius: cornerRadius))
                 .onHover { isHovered = $0 }
                 .animation(.easeInOut(duration: 0.12), value: isHovered)
                 .animation(.easeInOut(duration: 0.08), value: configuration.isPressed)

@@ -59,7 +59,7 @@ final class ResettableSplitView: NSSplitView {
         {
             log.debug("SV.option-left inside divider hitbox → reset to 50/50")
             if let coord = coordinatorRef {
-                DispatchQueue.main.async { coord.handleDoubleClickFromSplitView(self) }
+                Task { @MainActor in coord.handleDoubleClickFromSplitView(self) }
             }
             return
         }
@@ -67,7 +67,7 @@ final class ResettableSplitView: NSSplitView {
         if event.clickCount == 2, hit.contains(loc) {
             log.debug("SV.double-click divider → reset to 50/50")
             if let coord = coordinatorRef {
-                DispatchQueue.main.async { coord.handleDoubleClickFromSplitView(self) }
+                Task { @MainActor in coord.handleDoubleClickFromSplitView(self) }
             }
             return
         }
@@ -95,7 +95,7 @@ final class ResettableSplitView: NSSplitView {
                 log.debug("SV.right → inside divider hitbox, forwarding to coordinator")
             }
             if let coord = coordinatorRef {
-                DispatchQueue.main.async { coord.handleDoubleClickFromSplitView(self) }
+                Task { @MainActor in coord.handleDoubleClickFromSplitView(self) }
             }
             return
         }

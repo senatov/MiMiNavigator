@@ -10,11 +10,12 @@ import Foundation
 import SwiftUI
 
 @MainActor
-final class FilePanelViewModel: ObservableObject {
+@Observable
+final class FilePanelViewModel {
     let panelSide: PanelSide
     private let appState: AppState
     private let fetchFiles: @Sendable @concurrent (PanelSide) async -> Void
-    
+
     // MARK: -
     init(
         panelSide: PanelSide,
@@ -26,7 +27,7 @@ final class FilePanelViewModel: ObservableObject {
         self.appState = appState
         self.fetchFiles = fetchFiles
     }
-    
+
     // MARK: -
     var sortedFiles: [CustomFile] {
         log.debug(#function + " for side <<\(panelSide)>>")
@@ -41,7 +42,7 @@ final class FilePanelViewModel: ObservableObject {
         }
         return sorted
     }
-    
+
     // MARK: -
     func handlePathChange(to url: URL?) {
         log.debug(#function + " for side <<\(panelSide)>>")
@@ -54,7 +55,7 @@ final class FilePanelViewModel: ObservableObject {
             await fetchFiles(panelSide)
         }
     }
-    
+
     // MARK: -
     func select(_ file: CustomFile) {
         log.debug("[SELECT-FLOW] 2️⃣ FilePanelViewModel.select() on <<\(panelSide)>>: \(file.nameStr)")
@@ -64,7 +65,7 @@ final class FilePanelViewModel: ObservableObject {
         self.appState.showFavTreePopup = false
         log.debug("[SELECT-FLOW] 2️⃣ DONE")
     }
-    
+
     // MARK: - periphery:ignore
     func unselectAll() {
         log.debug(#function + " — clearing sel on both panels")
