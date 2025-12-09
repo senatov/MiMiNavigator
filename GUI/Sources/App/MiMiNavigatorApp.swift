@@ -12,7 +12,7 @@ let log = LogMan.log
 
 @main
 struct MiMiNavigatorApp: App {
-    @StateObject private var appState = AppState()
+    @State private var appState = AppState()
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @Environment(\.scenePhase) private var scenePhase
 
@@ -27,7 +27,7 @@ struct MiMiNavigatorApp: App {
     var body: some Scene {
         WindowGroup {
             DuoFilePanelView()
-                .environmentObject(appState)
+                .environment(appState)
                 .onAppear { appDelegate.bind(appState) }
                 .toolbarBackground(Material.thin, for: ToolbarPlacement.windowToolbar)
                 .toolbarBackgroundVisibility(Visibility.visible, for: ToolbarPlacement.windowToolbar)

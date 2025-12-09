@@ -13,7 +13,7 @@ import SwiftUI
 struct FavTreePopupView: View {
     // MARK: - Environment / Dependencies
 
-    @EnvironmentObject var appState: AppState
+    @Environment(AppState.self) var appState
     @Binding var file: CustomFile
     @Binding var expandedFolders: Set<String>
     @Binding var isPresented: Bool
@@ -91,7 +91,7 @@ struct FavTreePopupView: View {
         HStack(spacing: 4) {
             Text(file.nameStr)
                 .font(.system(size: 12))
-                .foregroundStyle(isCurrent ? .accentColor : .primary)
+                .foregroundStyle(isCurrent ? Color.accentColor : .primary)
                 .lineLimit(1)
                 .truncationMode(.middle)
 
@@ -151,7 +151,7 @@ struct FavTreePopupView: View {
             expandedFolders: $expandedFolders,
             isPresented: $isPresented
         )
-        .environmentObject(appState)
+        .environment(appState)
     }
 
     // MARK: - Actions

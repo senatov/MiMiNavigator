@@ -9,7 +9,7 @@ import SwiftUI
 
 // MARK: -
 struct FavTreePopup: View {
-    @EnvironmentObject var appState: AppState
+    @Environment(AppState.self) var appState
     @Binding var files: [CustomFile]
     @Binding var isPresented: Bool
     @State private var expandedFolders: Set<String> = []

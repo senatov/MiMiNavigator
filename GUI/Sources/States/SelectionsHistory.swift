@@ -6,14 +6,15 @@
 //
 
 import AppKit
-import Combine
 import Foundation
 
 // MARK: - SelectionsHistory
-@MainActor final class SelectionsHistory: ObservableObject {
-    @Published private(set) var recentSelections: [String] = []
-    private var entries: [HistoryEntry] = [] { didSet { rebuildRecentSelections() } }
-    private var currentIndex: Int? { didSet { /* keep as-is; UI derives from recentSelections */  } }
+@MainActor
+@Observable
+final class SelectionsHistory {
+    private(set) var recentSelections: [String] = []
+    private var entries: [HistoryEntry] = []
+    private var currentIndex: Int?
     private let userDefaultsKey = "SelectionsHistory.v2"
     private let maxEntries = 32
 
@@ -211,6 +212,7 @@ import Foundation
     // MARK: - Persistence
     private func save() {
         log.debug(#function)
+        rebuildRecentSelections()
         let persisted = Persisted(entries: entries, currentIndex: currentIndex)
         do {
             let data = try JSONEncoder().encode(persisted)
@@ -232,11 +234,13 @@ import Foundation
             self.entries = persisted.entries
             self.currentIndex = persisted.currentIndex
             log.info(#function + " - loaded \(entries.count) entries, currentIndex=\(String(describing: currentIndex))")
+            rebuildRecentSelections()
         } catch {
             log.error("SelectionsHistory.load decode failed: \(error.localizedDescription)")
             // Fallback: clear
             self.entries = []
             self.currentIndex = nil
+            rebuildRecentSelections()
         }
     }
 
@@ -258,6 +262,7 @@ import Foundation
         } else {
             self.entries = []
             self.currentIndex = nil
+            rebuildRecentSelections()
         }
     }
 

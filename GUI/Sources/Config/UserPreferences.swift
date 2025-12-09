@@ -6,17 +6,16 @@
 //
 
 import AppKit
-import Combine
 import Foundation
 
 // MARK: - UserPreferences
 @MainActor
-final class UserPreferences: ObservableObject {
+@Observable
+final class UserPreferences {
     static let shared = UserPreferences()
     private let defaults = UserDefaults.standard
 
     // MARK: -
-    @Published
     var snapshot: PreferencesSnapshot = .default {
         didSet { save() }
     }

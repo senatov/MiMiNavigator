@@ -11,7 +11,7 @@ import SwiftUI
 
 // MARK: - Subviews
 struct PanelBreadcrumbSection: View {
-    @EnvironmentObject var appState: AppState
+    @Environment(AppState.self) var appState
     let panelSide: PanelSide
     let currentPath: URL?
     let onPathChange: (URL?) -> Void
@@ -21,7 +21,7 @@ struct PanelBreadcrumbSection: View {
         log.debug(
             #function + " — panelSide=\(panelSide), focusedPanel=\(appState.focusedPanel), currentPath=\(currentPath?.path ?? "nil")")  // SwiftBeaver: debug level
         return BreadCrumbControlWrapper(selectedSide: panelSide)
-            .environmentObject(appState)
+            .environment(appState)
             .onChange(of: currentPath, initial: false) { _, newValue in
                 onPathChange(newValue)
             }

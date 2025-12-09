@@ -99,7 +99,8 @@ struct DownToolbarButtonView: View {
     private func handlePress() {
         log.debug("DownToolbarButton pressed: \(title)")
         withAnimation(.easeInOut(duration: 0.18)) { isPressed = true }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
+        Task {
+            try? await Task.sleep(for: .milliseconds(120))
             withAnimation(.easeInOut(duration: 0.22)) { isPressed = false }
         }
         action()

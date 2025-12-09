@@ -7,22 +7,23 @@
 //
 
 import AppKit
-import Combine
 import Foundation
 
 // MARK: -
-@MainActor final class AppState: ObservableObject {
-    @Published var displayedLeftFiles: [CustomFile] = []
-    @Published var displayedRightFiles: [CustomFile] = []
-    @Published var focusedPanel: PanelSide = .left
-    @Published var leftPath: String
-    @Published var rightPath: String
-    @Published var selectedDir: SelectedDir = .init()
-    @Published var selectedLeftFile: CustomFile? { didSet { recordSelection(.left, file: selectedLeftFile) } }
-    @Published var selectedRightFile: CustomFile? { didSet { recordSelection(.right, file: selectedRightFile) } }
-    @Published var showFavTreePopup: Bool = false
-    @Published var sortKey: SortKeysEnum = .name
-    @Published var sortAscending: Bool = true
+@MainActor
+@Observable
+final class AppState {
+    var displayedLeftFiles: [CustomFile] = []
+    var displayedRightFiles: [CustomFile] = []
+    var focusedPanel: PanelSide = .left
+    var leftPath: String
+    var rightPath: String
+    var selectedDir: SelectedDir = .init()
+    var selectedLeftFile: CustomFile? { didSet { recordSelection(.left, file: selectedLeftFile) } }
+    var selectedRightFile: CustomFile? { didSet { recordSelection(.right, file: selectedRightFile) } }
+    var showFavTreePopup: Bool = false
+    var sortKey: SortKeysEnum = .name
+    var sortAscending: Bool = true
     private var isRestoringSelections = false
     private var suppressSync = false
     private var lastRecordedPathLeft: String?
@@ -30,7 +31,7 @@ import Foundation
     let selectionsHistory = SelectionsHistory()
     let fileManager = FileManager.default
     var scanner: DualDirectoryScanner!
-    private var cancellables = Set<AnyCancellable>()
+
 
     // MARK: -
     init() {
@@ -42,18 +43,8 @@ import Foundation
         leftPath = UserDefaults.standard.string(forKey: "lastLeftPath") ?? leftPath
         rightPath = UserDefaults.standard.string(forKey: "lastRightPath") ?? rightPath
 
-        $selectedDir
-            .compactMap { $0.selectedFSEntity?.urlValue.path }
-            .sink { [weak self] newPath in
-                guard let self = self else { return }
-                if self.isRestoringSelections {
-                    log.debug("History: sink skipped (restoring)")
-                    return
-                }
-                if let last = self.selectionsHistory.last, last == newPath { return }
-                self.selectionsHistory.add(newPath)
-            }
-            .store(in: &cancellables)
+        // Note: With @Observable, property observation works differently
+        // Consider using Task-based observation if needed
 
         if let raw = UserDefaults.standard.string(forKey: "lastFocusedPanel"), raw == "right" {
             focusedPanel = .right

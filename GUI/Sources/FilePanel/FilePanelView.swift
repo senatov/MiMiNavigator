@@ -10,8 +10,8 @@ import SwiftUI
 
 // MARK: - FilePanelView
 struct FilePanelView: View {
-    @EnvironmentObject var appState: AppState
-    @StateObject private var viewModel: FilePanelViewModel
+    @Environment(AppState.self) var appState
+    @State private var viewModel: FilePanelViewModel
     var geometry: GeometryProxy
     @Binding var leftPanelWidth: CGFloat
     // / Called when user clicks anywhere inside the panel (left/right)
@@ -62,8 +62,8 @@ struct FilePanelView: View {
     ) {
         self._leftPanelWidth = leftPanelWidth
         self.geometry = geometry
-        self._viewModel = StateObject(
-            wrappedValue: FilePanelViewModel(
+        self._viewModel = State(
+            initialValue: FilePanelViewModel(
                 panelSide: selectedSide,
                 appState: appState,
                 fetchFiles: fetchFiles

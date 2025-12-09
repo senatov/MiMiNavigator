@@ -11,7 +11,7 @@ import SwiftUI
 
 struct DuoFilePanelView: View {
     // MARK: - Environment & State
-    @EnvironmentObject private var appState: AppState
+    @Environment(AppState.self) var appState
     @State private var leftPanelWidth: CGFloat = 0
     @State private var keyMonitor: Any?
 
@@ -98,7 +98,7 @@ extension DuoFilePanelView {
             let scale = NSScreen.main?.backingScaleFactor ?? 2.0
             return 1.0 / scale
         }()
-        
+
         return RoundedRectangle(cornerRadius: Layout.toolbarCornerRadius, style: .continuous)
             .fill(.ultraThinMaterial)
             // Decorative hairline ring (crisp, gradient)
@@ -134,7 +134,7 @@ extension DuoFilePanelView {
                             colors: [
                                 Color.white.opacity(0.40),  // upper edge highlight
                                 Color.white.opacity(0.18),
-                                Color.black.opacity(0.20)   // lower subtle shadow
+                                Color.black.opacity(0.20),  // lower subtle shadow
                             ],
                             startPoint: .top,
                             endPoint: .bottom

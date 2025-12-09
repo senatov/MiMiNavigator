@@ -10,7 +10,7 @@ import SwiftUI
 
 // MARK: -
 struct FileTableView: View {
-    @EnvironmentObject var appState: AppState
+    @Environment(AppState.self) var appState
     let panelSide: PanelSide
     let files: [CustomFile]
     @Binding var selectedID: CustomFile.ID?
@@ -86,7 +86,8 @@ struct FileTableView: View {
                 // Auto-scroll to selected item with slight delay for UI update
                 if let id = newValue, let proxy = scrollProxy {
                     log.debug("[SELECT-FLOW] 8️⃣ Scheduling scroll to: \(id)")
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                    Task {
+                        try? await Task.sleep(for: .milliseconds(50))
                         withAnimation(.easeInOut(duration: 0.2)) {
                             // Smart anchor: avoid "jumpy" scroll for edge items
                             let idx = cachedSortedFiles.firstIndex(where: { $0.id == id }) ?? 0

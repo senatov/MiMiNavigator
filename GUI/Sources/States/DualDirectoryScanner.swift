@@ -4,7 +4,6 @@
 //
 //  Created by Iakov Senatov on 11.12.24.
 //
-import Combine
 import Foundation
 import SwiftUI
 
@@ -61,8 +60,8 @@ actor DualDirectoryScanner {
         }
         timer.resume()
         switch currSide {
-        case .left: leftTimer = timer
-        case .right: rightTimer = timer
+            case .left: leftTimer = timer
+            case .right: rightTimer = timer
         }
     }
 
@@ -72,18 +71,17 @@ actor DualDirectoryScanner {
         log.info(#function + " side: <<\(currSide)>>")
         do {
             switch currSide {
-            case .left:
-                let scanned = try await FileScanner.scan(url: URL(fileURLWithPath: appState.leftPath))
-                await updateScannedFiles(scanned, for: .left)
-                await updateFileList(panelSide: .left, with: scanned)
+                case .left:
+                    let scanned = try await FileScanner.scan(url: URL(fileURLWithPath: appState.leftPath))
+                    await updateScannedFiles(scanned, for: .left)
+                    await updateFileList(panelSide: .left, with: scanned)
 
-            case .right:
-                let scanned = try await FileScanner.scan(url: URL(fileURLWithPath: appState.rightPath))
-                await updateScannedFiles(scanned, for: .right)
-                await updateFileList(panelSide: .right, with: scanned)
+                case .right:
+                    let scanned = try await FileScanner.scan(url: URL(fileURLWithPath: appState.rightPath))
+                    await updateScannedFiles(scanned, for: .right)
+                    await updateFileList(panelSide: .right, with: scanned)
             }
-        }
-        catch {
+        } catch {
             log.error("scan failed <<\(currSide)>>: \(error.localizedDescription)")
         }
     }
@@ -95,10 +93,10 @@ actor DualDirectoryScanner {
         log.info("updating AppState.\(currSide) w/ \(files.count) files")
         let sorted = appState.applySorting(files)
         switch currSide {
-        case .left:
-            appState.displayedLeftFiles = sorted
-        case .right:
-            appState.displayedRightFiles = sorted
+            case .left:
+                appState.displayedLeftFiles = sorted
+            case .right:
+                appState.displayedRightFiles = sorted
         }
     }
 
@@ -106,15 +104,15 @@ actor DualDirectoryScanner {
     func resetRefreshTimer(for currSide: PanelSide) {
         log.info(#function + " side: <<\(currSide)>>")
         switch currSide {
-        case .left:
-            leftTimer?.cancel()
-            leftTimer = nil
-            setupTimer(for: .left)
+            case .left:
+                leftTimer?.cancel()
+                leftTimer = nil
+                setupTimer(for: .left)
 
-        case .right:
-            rightTimer?.cancel()
-            rightTimer = nil
-            setupTimer(for: .right)
+            case .right:
+                rightTimer?.cancel()
+                rightTimer = nil
+                setupTimer(for: .right)
         }
     }
 
@@ -128,10 +126,10 @@ actor DualDirectoryScanner {
         }
         log.info("updating sel'd dir: \(selectedEntity.pathStr) w/ \(files.count) files on <<\(panelSide)>>")
         switch panelSide {
-        case .left:
-            await fileLst.updateLeftFiles(files)
-        case .right:
-            await fileLst.updateRightFiles(files)
+            case .left:
+                await fileLst.updateLeftFiles(files)
+            case .right:
+                await fileLst.updateRightFiles(files)
         }
         log.info("finished updating <<\(panelSide)>>")
     }

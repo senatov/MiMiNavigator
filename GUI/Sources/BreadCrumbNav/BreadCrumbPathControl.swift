@@ -11,9 +11,9 @@ import SwiftUI
 
 // MARK: - A view displaying a breadcrumb-style editable path bar with panel navigation menus.
 struct BreadCrumbPathControl: View {
-    @EnvironmentObject var appState: AppState
+    @Environment(AppState.self) var appState
     let panelSide: PanelSide
-    
+
     // MARK: - Design Constants
     private enum Design {
         static let cornerRadius: CGFloat = 8
@@ -21,7 +21,7 @@ struct BreadCrumbPathControl: View {
         static let inactiveBackgroundColor = Color.clear
         static let borderOpacity: CGFloat = 0.15
     }
-    
+
     // MARK: - Is Active Panel
     private var isActivePanel: Bool {
         appState.focusedPanel == panelSide
@@ -39,7 +39,8 @@ struct BreadCrumbPathControl: View {
         return HStack(spacing: 2) {
             NavMnu1(selectedSide: panelSide)
             Spacer(minLength: 2)
-            BreadCrumbView(selectedSide: panelSide).environmentObject(appState)
+            BreadCrumbView(selectedSide: panelSide)
+                .environment(appState)
             NavMnu2()
         }
         .background(

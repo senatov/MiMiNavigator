@@ -11,7 +11,7 @@ import SwiftUI
 
 // MARK: - Breadcrumb trail UI component for representing navigation path
 struct BreadCrumbView: View {
-    @EnvironmentObject var appState: AppState
+    @Environment(AppState.self) var appState
     let panelSide: PanelSide
     private let barHeight: CGFloat = 30
 
@@ -111,10 +111,8 @@ struct BreadCrumbView: View {
         }
         // Focus is updated by AppState.updatePath(_:for:)
         appState.updatePath(newPath, for: panelSide)
-        let semaphore = DispatchSemaphore(value: 0)
         Task {
             await performDirectoryUpdate(for: panelSide, path: newPath)
-            semaphore.signal()
         }
     }
 

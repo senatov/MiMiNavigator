@@ -6,12 +6,12 @@
 //  Copyright © 2025 Senatov. All rights reserved.
 //
 
-import Combine
 import Foundation
 
 // MARK: - Encapsulates the selected file system entity and its associated panel side
-class SelectedDir: ObservableObject {
-    @Published var selectedFSEntity: CustomFile?
+@Observable
+class SelectedDir {
+    var selectedFSEntity: CustomFile?
 
     // MARK: - Config keys
     private static let kLastFocusedPanel = "app.lastFocusedPanel"
@@ -21,9 +21,9 @@ class SelectedDir: ObservableObject {
     // MARK: - Config helpers
     private static func parsePanelSide(_ raw: String) -> PanelSide? {
         switch raw.lowercased() {
-        case "left": return .left
-        case "right": return .right
-        default: return nil
+            case "left": return .left
+            case "right": return .right
+            default: return nil
         }
     }
 

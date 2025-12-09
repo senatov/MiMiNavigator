@@ -18,7 +18,7 @@ private struct EquatableView<Value: Hashable, Content: View>: View {
 // / Separate view to simplify type-checking of the main FileTableView.
 // / Responsible only for rendering the LazyVStack of rows.
 struct FileTableRowsView: View {
-    @EnvironmentObject var appState: AppState
+    @Environment(AppState.self) var appState
     let rows: [(offset: Int, element: CustomFile)]
     @Binding var selectedID: CustomFile.ID?
     let panelSide: PanelSide

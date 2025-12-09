@@ -11,7 +11,7 @@ import SwiftUI
 
 // MARK: -
 struct PanelFileTableSection: View {
-    @EnvironmentObject var appState: AppState
+    @Environment(AppState.self) var appState
     let files: [CustomFile]
     @Binding var selectedID: CustomFile.ID?
     let panelSide: PanelSide
@@ -53,7 +53,8 @@ struct PanelFileTableSection: View {
             }
             // React to sel changes
             .onChange(of: selectedID, initial: false) { _, newValue in
-                log.debug("[SELECT-FLOW] 5️⃣ PanelFileTableSection.onChange(selectedID): \(String(describing: newValue)) on <<\(panelSide)>>")
+                log.debug(
+                    "[SELECT-FLOW] 5️⃣ PanelFileTableSection.onChange(selectedID): \(String(describing: newValue)) on <<\(panelSide)>>")
                 appState.focusedPanel = panelSide
                 if let id = newValue, let file = files.first(where: { $0.id == id }) {
                     log.debug("[SELECT-FLOW] 5️⃣ File found: \(file.nameStr), notifying & calling onSelect")
@@ -72,7 +73,7 @@ struct PanelFileTableSection: View {
                     case .up,
                         .down:
                         log.debug("Move command: \(direction) on side <<\(panelSide)>>")
-                        DispatchQueue.main.async {
+                        Task { @MainActor in
                             if let id = selectedID, let file = files.first(where: { $0.id == id }) {
                                 notifyWillSelect(file)
                                 onSelect(file)

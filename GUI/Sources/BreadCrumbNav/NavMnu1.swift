@@ -10,13 +10,13 @@ import SwiftUI
 
 // MARK: -
 struct NavMnu1: View {
-    @EnvironmentObject var appState: AppState
+    @Environment(AppState.self) var appState
     let panelSide: PanelSide
 
     // MARK: -
     init(selectedSide: PanelSide) {
-        log.info("NavMnu1 init" + " for side <<\(selectedSide)>>")
         self.panelSide = selectedSide
+        log.info("NavMnu1 init for side <<\(selectedSide)>>")
     }
 
     // MARK: -

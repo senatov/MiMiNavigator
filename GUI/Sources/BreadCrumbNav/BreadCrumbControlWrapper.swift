@@ -10,14 +10,14 @@ import SwiftUI
 // MARK: - Reusable path control component with edit mode, integrated with AppState.
 struct BreadCrumbControlWrapper: View {
     // MARK: - Properties
-    @EnvironmentObject var appState: AppState
+    @Environment(AppState.self) var appState
     @State private var editedPathStr: String = ""
     @State private var isEditing = false
     @FocusState private var isTextFieldFocused: Bool
     @State private var isHovering = false
-    
+
     let panelSide: PanelSide
-    
+
     // MARK: - Constants
     private enum Design {
         static let cornerRadius: CGFloat = 12
@@ -28,13 +28,13 @@ struct BreadCrumbControlWrapper: View {
         static let shadowOpacityIdle: CGFloat = 0.12
         static let animationDuration: CGFloat = 0.25
         static let fontSize: CGFloat = 13
-        
+
         enum Padding {
             static let horizontal: CGFloat = 1
             static let vertical: CGFloat = 2
             static let textFieldPadding: CGFloat = 6
         }
-        
+
         enum Colors {
             static let editingBackground = Color(nsColor: .controlAccentColor).opacity(0.08)
             static let idleBackground = Color(nsColor: .windowBackgroundColor)
@@ -53,7 +53,8 @@ struct BreadCrumbControlWrapper: View {
     // MARK: - Body
     var body: some View {
         // Throttled logging removed - only log on state changes
-        return contentView
+        return
+            contentView
             .padding(.horizontal, Design.Padding.horizontal)
             .padding(.vertical, Design.Padding.horizontal)
             .onHover { hovering in
@@ -79,7 +80,7 @@ struct BreadCrumbControlWrapper: View {
                 }
             }
     }
-    
+
     // MARK: - Content View
     @ViewBuilder
     private var contentView: some View {
@@ -89,13 +90,13 @@ struct BreadCrumbControlWrapper: View {
             displayView
         }
     }
-    
+
     // MARK: - Background Shape
     private var backgroundShape: some View {
         RoundedRectangle(cornerRadius: Design.cornerRadius)
             .fill(isEditing ? Design.Colors.editingBackground : Design.Colors.idleBackground)
     }
-    
+
     // MARK: - Border Shape
     private var borderShape: some View {
         RoundedRectangle(cornerRadius: Design.cornerRadius)
@@ -104,7 +105,7 @@ struct BreadCrumbControlWrapper: View {
                 lineWidth: isEditing ? Design.borderWidth : Design.idleBorderWidth
             )
     }
-    
+
     // MARK: - Border Color
     private var borderColor: Color {
         if isEditing {
@@ -126,14 +127,14 @@ struct BreadCrumbControlWrapper: View {
         }
         .transition(.opacity)
     }
-    
+
     // MARK: - Path TextField
     private var pathTextField: some View {
         TextField("Enter path", text: $editedPathStr)
             .textFieldStyle(.plain)
             .padding(Design.Padding.textFieldPadding)
             .background(Design.Colors.textFieldBackground)
-            .cornerRadius(6)
+            .clipShape(.rect(cornerRadius: 6))
             .focused($isTextFieldFocused)
             .onAppear {
                 setupEditingMode()
@@ -149,7 +150,7 @@ struct BreadCrumbControlWrapper: View {
                 applyPathUpdate()
             }
     }
-    
+
     // MARK: - Confirm Button
     private var confirmButton: some View {
         Button {
@@ -165,7 +166,7 @@ struct BreadCrumbControlWrapper: View {
         .buttonStyle(.plain)
         .help("Apply changes (⏎)")
     }
-    
+
     // MARK: - Cancel Button
     private var cancelButton: some View {
         Button {
@@ -183,13 +184,13 @@ struct BreadCrumbControlWrapper: View {
         .buttonStyle(.plain)
         .help("Cancel (⎋)")
     }
-    
+
     // MARK: - Setup Editing Mode
     private func setupEditingMode() {
         log.info("Entered editing mode")
         editedPathStr = currentPath
         isTextFieldFocused = true
-        
+
         // Select all text on appearing
         DispatchQueue.main.async {
             if let editor = NSApp.keyWindow?.firstResponder as? NSTextView {
@@ -202,20 +203,21 @@ struct BreadCrumbControlWrapper: View {
     private var displayView: some View {
         // Log removed - too verbose
         return BreadCrumbPathControl(selectedSide: panelSide)
-            .environmentObject(appState)
+            .environment(appState)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(Color.clear)
             .font(.system(size: Design.fontSize, weight: .light, design: .default))
             .contentShape(Rectangle())
             .simultaneousGesture(
-                TapGesture(count: 2).onEnded {
-                    // Double-click enters editing mode
-                    enterEditingMode()
-                }
+                TapGesture(count: 2)
+                    .onEnded {
+                        // Double-click enters editing mode
+                        enterEditingMode()
+                    }
             )
             .transition(.opacity.combined(with: .scale))
     }
-    
+
     // MARK: - Enter Editing Mode
     private func enterEditingMode() {
         log.info("Switching to editing mode for side: \(panelSide)")
@@ -234,10 +236,10 @@ struct BreadCrumbControlWrapper: View {
     // MARK: - Apply Path Update
     private func applyPathUpdate() {
         log.info(#function + " for side <<\(panelSide)>> with path: \(editedPathStr)")
-        
+
         // Trim whitespace and validate path
         let trimmedPath = editedPathStr.trimmingCharacters(in: .whitespacesAndNewlines)
-        
+
         guard !trimmedPath.isEmpty else {
             log.warning("Empty path provided, ignoring update")
             withAnimation(.easeInOut(duration: Design.animationDuration)) {
@@ -245,11 +247,11 @@ struct BreadCrumbControlWrapper: View {
             }
             return
         }
-        
+
         withAnimation(.easeInOut(duration: Design.animationDuration)) {
             isEditing = false
         }
-        
+
         Task {
             if panelSide == .left {
                 appState.leftPath = trimmedPath

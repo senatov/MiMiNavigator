@@ -9,7 +9,7 @@ import SwiftUI
 
 // MARK: - PanelsRowView
 struct PanelsRowView: View {
-    @EnvironmentObject var appState: AppState
+    @Environment(AppState.self) var appState
     // External
     @Binding var leftPanelWidth: CGFloat
     let geometry: GeometryProxy
@@ -198,7 +198,7 @@ struct PanelsRowView: View {
                             withTransaction(t) {
                                 if let finalX = dragPreviewLeft {
                                     if leftPanelWidth != finalX { leftPanelWidth = finalX }
-                                    DispatchQueue.main.async {
+                                    Task { @MainActor in
                                         if abs(leftPanelWidth - (finalX)) > 0.5 {
                                             log.debug("DIV-COMMIT: external override detected, re-asserting final width")
                                             leftPanelWidth = finalX
@@ -226,7 +226,7 @@ struct PanelsRowView: View {
                             let halfLeft = halfCenter - dividerHitAreaWidth / 2
                             lastAppliedWidth = halfLeft
                             leftPanelWidth = halfLeft
-                            DispatchQueue.main.async {
+                            Task { @MainActor in
                                 if abs(leftPanelWidth - halfLeft) > 0.5 {
                                     log.debug("DIV-DBL(simul): external override detected, re-asserting 50%")
                                     leftPanelWidth = halfLeft
@@ -235,7 +235,8 @@ struct PanelsRowView: View {
                             tooltipText = "50%"
                             tooltipPosition = CGPoint(x: halfCenter, y: 46)
                             isDividerTooltipVisible = true
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+                            Task {
+                                try? await Task.sleep(for: .milliseconds(800))
                                 isDividerTooltipVisible = false
                             }
                             log.debug("Divider double-click (simul) → 50/50 center snap")
@@ -251,7 +252,7 @@ struct PanelsRowView: View {
                             let halfLeft = halfCenter - dividerHitAreaWidth / 2
                             lastAppliedWidth = halfLeft
                             leftPanelWidth = halfLeft
-                            DispatchQueue.main.async {
+                            Task { @MainActor in
                                 if abs(leftPanelWidth - halfLeft) > 0.5 {
                                     log.debug("DIV-OPT(simul-mod): external override detected, re-asserting 50%")
                                     leftPanelWidth = halfLeft
@@ -260,7 +261,8 @@ struct PanelsRowView: View {
                             tooltipText = "50%"
                             tooltipPosition = CGPoint(x: halfCenter, y: 46)
                             isDividerTooltipVisible = true
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+                            Task {
+                                try? await Task.sleep(for: .milliseconds(800))
                                 isDividerTooltipVisible = false
                             }
                             log.debug("Divider option-tap (simul-mod) → 50/50 center snap")

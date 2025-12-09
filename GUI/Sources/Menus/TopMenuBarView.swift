@@ -10,7 +10,7 @@ import AppKit
 import SwiftUI
 
 struct TopMenuBarView: View {
-    @EnvironmentObject var appState: AppState
+    @Environment(AppState.self) var appState
     @State private var favoritesTargetSide: PanelSide = .left
         // MARK: - Pixel helpers
     fileprivate var px: CGFloat {

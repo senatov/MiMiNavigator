@@ -16,8 +16,8 @@ struct AnchorCaptureView: NSViewRepresentable {
     func makeNSView(context: Context) -> NSView {
         let v = NSView(frame: .zero)
         // Defer to next runloop so hierarchy is ready
-        DispatchQueue.main.async { [weak v] in
-            if let v { onResolve(v) }
+        Task { @MainActor in
+            onResolve(v)
         }
         return v
     }

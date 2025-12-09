@@ -10,7 +10,7 @@ import SwiftUI
 
 // MARK: -
 struct NavMnu2: View {
-    @EnvironmentObject var appState: AppState
+    @Environment(AppState.self) var appState
 
     // MARK: --
     var body: some View {

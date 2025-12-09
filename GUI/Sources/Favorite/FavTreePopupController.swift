@@ -10,9 +10,10 @@ import AppKit
 import SwiftUI
 
 @MainActor
-final class FavTreePopupController: ObservableObject {
+@Observable
+final class FavTreePopupController {
     private var popover: NSPopover?
-    @Published var isPresented: Bool = false  // Popup state
+    var isPresented: Bool = false  // Popup state
 
     // periphery:ignore
     @MainActor
@@ -37,7 +38,7 @@ final class FavTreePopupController: ObservableObject {
                 set: { self.isPresented = $0 }
             )
         )
-        .environmentObject(appState)
+        .environment(appState)
 
         let hosting = NSHostingController(rootView: content)
         let pop = NSPopover()
@@ -48,14 +49,8 @@ final class FavTreePopupController: ObservableObject {
         pop.show(relativeTo: button.bounds, of: button, preferredEdge: .maxY)
         popover = pop
         isPresented = true
-        
-        // Observe isPresented changes
-        Task { @MainActor in
-            for await _ in self.$isPresented.values where !self.isPresented {
-                self.close()
-                break
-            }
-        }
+
+        // Popover will be closed via close() method
     }
 
     func close() {
