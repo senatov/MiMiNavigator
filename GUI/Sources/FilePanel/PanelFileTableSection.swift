@@ -45,6 +45,17 @@ struct PanelFileTableSection: View {
                 onDoubleClick: onDoubleClick
             )
             .contentShape(Rectangle())
+            // Use simultaneousGesture to activate panel on ANY click without blocking child clicks
+            .simultaneousGesture(
+                TapGesture(count: 1)
+                    .onEnded {
+                        if appState.focusedPanel != panelSide {
+                            log.debug("[PANEL-ACTIVATE] simultaneousGesture activating <<\(panelSide)>>")
+                            appState.focusedPanel = panelSide
+                            isFocused = true
+                        }
+                    }
+            )
             .focusable(true)
             .focused($isFocused)
             .coordinateSpace(name: "fileTableSpace")
