@@ -72,12 +72,16 @@ actor DualDirectoryScanner {
         do {
             switch currSide {
                 case .left:
-                    let scanned = try await FileScanner.scan(url: URL(fileURLWithPath: appState.leftPath))
+                    // Resolve symlinks to ensure we can read the directory contents
+                    let resolvedURL = URL(fileURLWithPath: appState.leftPath).resolvingSymlinksInPath()
+                    let scanned = try await FileScanner.scan(url: resolvedURL)
                     await updateScannedFiles(scanned, for: .left)
                     await updateFileList(panelSide: .left, with: scanned)
 
                 case .right:
-                    let scanned = try await FileScanner.scan(url: URL(fileURLWithPath: appState.rightPath))
+                    // Resolve symlinks to ensure we can read the directory contents
+                    let resolvedURL = URL(fileURLWithPath: appState.rightPath).resolvingSymlinksInPath()
+                    let scanned = try await FileScanner.scan(url: resolvedURL)
                     await updateScannedFiles(scanned, for: .right)
                     await updateFileList(panelSide: .right, with: scanned)
             }

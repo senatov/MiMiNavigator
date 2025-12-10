@@ -8,10 +8,9 @@
 
 import SwiftUI
 
-// / Separate view to simplify type-checking of the main FileTableView.
-// / Responsible only for rendering the LazyVStack of rows.
+/// Separate view to simplify type-checking of the main FileTableView.
+/// Responsible only for rendering the LazyVStack of rows.
 struct FileTableRowsView: View {
-    @Environment(AppState.self) var appState
     let rows: [(offset: Int, element: CustomFile)]
     @Binding var selectedID: CustomFile.ID?
     let panelSide: PanelSide
@@ -40,23 +39,20 @@ struct FileTableRowsView: View {
             isSelected: isSelected,
             panelSide: panelSide,
             onSelect: { tapped in
-                log.debug("[SELECT-FLOW] 3️⃣ FileTableRowsView.onSelect: \(tapped.nameStr) on <<\(panelSide)>>")
-                log.debug("[SELECT-FLOW] 3️⃣ Calling parent onSelect (will update AppState)...")
+                log.debug("[SELECT-FLOW] FileTableRowsView.onSelect: \(tapped.nameStr) on <<\(panelSide)>>")
+                // Just forward to parent — all logic is centralized in PanelFileTableSection
                 onSelect(tapped)
-                log.debug("[SELECT-FLOW] 3️⃣ Setting focusedPanel to: <<\(panelSide)>>")
-                appState.focusedPanel = panelSide
-                log.debug("[SELECT-FLOW] 3️⃣ DONE (selectedID will update via binding)")
             },
             onDoubleClick: { tapped in
                 log.debug("[DOUBLE-CLICK] FileTableRowsView: \(tapped.nameStr) on <<\(panelSide)>>")
                 onDoubleClick(tapped)
             },
             onFileAction: { action, f in
-                log.debug(#function)
+                log.debug("FileTableRowsView.onFileAction: \(action)")
                 handleFileAction(action, f)
             },
             onDirectoryAction: { action, f in
-                log.debug(#function)
+                log.debug("FileTableRowsView.onDirectoryAction: \(action)")
                 handleDirectoryAction(action, f)
             }
         )

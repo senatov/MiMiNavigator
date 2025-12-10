@@ -75,88 +75,6 @@ final class SelectionsHistory {
         }
         save()
     }
-    // MARK: - Convenience accessors used elsewhere
-    var last: String? { entries.first(where: { $0.status != .deleted })?.path }
-    var current: String? {
-        guard let ci = currentIndex, ci >= 0, ci < entries.count else { return nil }
-        let e = entries[ci]
-        return e.status == .deleted ? nil : e.path
-    }
-
-    // MARK: -
-    var firstNonDeleted: String? {
-        log.debug(#function)
-        guard let lastIndex = entries.indices.last else { return nil }
-        // "first" in user terms = oldest non-deleted
-        for i in stride(from: lastIndex, through: 0, by: -1) {
-            let e = entries[i]
-            if e.status != .deleted { return e.path }
-        }
-        return nil
-    }
-
-    // MARK: - Navigation
-    @discardableResult
-    func firstPath() -> String? {
-        log.debug(#function)
-        guard !entries.isEmpty else { return nil }
-        // Move to oldest non-deleted
-        for i in stride(from: entries.count - 1, through: 0, by: -1) {
-            if entries[i].status != .deleted {
-                currentIndex = i
-                save()
-                return entries[i].path
-            }
-        }
-        return nil
-    }
-
-    // MARK: -
-    @discardableResult
-    func lastPath() -> String? {
-        log.debug(#function)
-        // Most recent non-deleted (head)
-        guard let e = entries.first(where: { $0.status != .deleted }) else { return nil }
-        if let idx = entries.firstIndex(of: e) { currentIndex = idx }
-        save()
-        return e.path
-    }
-
-    // MARK: -
-    @discardableResult
-    func previousPath() -> String? {
-        log.debug(#function)
-        guard !entries.isEmpty else { return nil }
-        let start = (currentIndex ?? 0)
-        var i = start + 1
-        while i < entries.count {
-            if entries[i].status != .deleted {
-                currentIndex = i
-                save()
-                return entries[i].path
-            }
-            i += 1
-        }
-        return nil
-    }
-
-    // MARK: -
-    @discardableResult
-    func nextPath() -> String? {
-        log.debug(#function)
-        guard !entries.isEmpty else { return nil }
-        let start = (currentIndex ?? 0)
-        var i = max(start - 1, 0)
-        while i >= 0 {
-            if entries[i].status != .deleted {
-                currentIndex = i
-                save()
-                return entries[i].path
-            }
-            i -= 1
-        }
-        return nil
-    }
 
     // MARK: -
     func setCurrent(to path: String) {
@@ -166,47 +84,6 @@ final class SelectionsHistory {
             currentIndex = idx
             save()
         }
-    }
-
-    // MARK: - Status management
-    func markDeleted(path: String) {
-        log.debug(#function)
-        let norm = normalize(path)
-        guard let idx = entries.firstIndex(where: { $0.path == norm }) else { return }
-        entries[idx].status = .deleted
-        entries[idx].timestamp = Date()
-        if currentIndex == idx { currentIndex = nil }
-        save()
-    }
-
-    // MARK: -
-    func markModified(path: String) {
-        log.debug(#function)
-        let norm = normalize(path)
-        guard let idx = entries.firstIndex(where: { $0.path == norm }) else { return }
-        entries[idx].status = .modified
-        entries[idx].snapshot = makeSnapshot(for: norm)
-        entries[idx].timestamp = Date()
-        save()
-    }
-
-    // MARK: -
-    func remove(path: String) {
-        log.debug(#function)
-        let norm = normalize(path)
-        if let idx = entries.firstIndex(where: { $0.path == norm }) {
-            entries.remove(at: idx)
-            if let ci = currentIndex { if idx < ci { currentIndex = ci - 1 } else if idx == ci { currentIndex = nil } }
-            save()
-        }
-    }
-
-    // MARK: -
-    func clear() {
-        log.debug(#function)
-        entries.removeAll()
-        currentIndex = nil
-        save()
     }
 
     // MARK: - Persistence

@@ -137,15 +137,6 @@ struct FilePanelView: View {
         .background(DesignTokens.panelBg)
         .controlSize(.regular)
         .contentShape(Rectangle())
-        .simultaneousGesture(
-            TapGesture().onEnded { _ in
-                // This tap works simultaneously with FileRow taps
-                // Sets focus when clicking empty space or on rows
-                log.debug("Panel tapped for focus (simultaneous): <<\(viewModel.panelSide)>>")
-                appState.focusedPanel = viewModel.panelSide
-                onPanelTap(viewModel.panelSide)
-            }
-        )
         .panelFocus(panelSide: viewModel.panelSide) {
             log.debug("Focus lost on << \(viewModel.panelSide)>>; keep selection")
             appState.showFavTreePopup = false
@@ -173,9 +164,24 @@ struct FilePanelView: View {
         log.debug("[DOUBLE-CLICK] handleDoubleClick: \(file.nameStr) isDir=\(file.isDirectory) isSymDir=\(file.isSymbolicDirectory)")
         
         if file.isDirectory || file.isSymbolicDirectory {
-            // Enter directory
-            let newPath = file.urlValue.path
-            log.info("[DOUBLE-CLICK] Entering directory: \(newPath)")
+            // Enter directory - resolve symlinks to get the real path
+            let resolvedURL = file.urlValue.resolvingSymlinksInPath()
+            let newPath = resolvedURL.path
+            log.info("[DOUBLE-CLICK] Entering directory: \(newPath) (original: \(file.urlValue.path))")
+            
+            // Verify the resolved path exists and is accessible
+            var isDir: ObjCBool = false
+            guard FileManager.default.fileExists(atPath: newPath, isDirectory: &isDir), isDir.boolValue else {
+                log.error("[DOUBLE-CLICK] Cannot enter: path doesn't exist or is not a directory: \(newPath)")
+                // Show alert to user
+                let alert = NSAlert()
+                alert.messageText = "Cannot Open Directory"
+                alert.informativeText = "The directory \"\(file.nameStr)\" cannot be opened. It may be a broken symlink or you may not have permission to access it."
+                alert.alertStyle = .warning
+                alert.addButton(withTitle: "OK")
+                alert.runModal()
+                return
+            }
             
             Task { @MainActor in
                 appState.updatePath(newPath, for: viewModel.panelSide)

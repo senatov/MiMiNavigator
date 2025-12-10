@@ -87,16 +87,6 @@ final class AppState {
     }
 
     // MARK: -
-    @MainActor
-    func selectedFile(on panelSide: PanelSide) -> CustomFile? {
-        log.debug(#function + " on: <<\(panelSide)>>")
-        switch panelSide {
-            case .left: return selectedLeftFile
-            case .right: return selectedRightFile
-        }
-    }
-
-    // MARK: -
     private func canonicalPath(_ url: URL) -> String {
         return url.standardized.resolvingSymlinksInPath().path
     }
@@ -161,53 +151,6 @@ final class AppState {
         log.debug("History[<<\(panelSide)]>> → \(path)")
         selectionsHistory.setCurrent(to: path)
         selectionsHistory.add(path)
-    }
-
-    // MARK: -
-    func goBackInHistory() {
-        if let p = selectionsHistory.previousPath() {
-            log.debug("History: prev \(p)")
-            selectPath(p)
-        } else {
-            log.debug("History: no prev path")
-        }
-    }
-
-    // MARK: -
-    func goForwardInHistory() {
-        if let p = selectionsHistory.nextPath() {
-            log.debug("History: next \(p)")
-            selectPath(p)
-        } else {
-            log.debug("History: no next path")
-        }
-    }
-
-    // MARK: -
-    private func selectPath(_ path: String) {
-        isRestoringSelections = true
-        defer { isRestoringSelections = false }
-        let target = toCanonical(from: path)
-        switch focusedPanel {
-            case .left:
-                if let f = displayedLeftFiles.first(where: { canonicalPath($0.urlValue) == target }) {
-                    selectedLeftFile = f
-                } else if let f = displayedRightFiles.first(where: { canonicalPath($0.urlValue) == target }) {
-                    focusedPanel = .right
-                    selectedRightFile = f
-                } else {
-                    log.debug("History: path not found: \(path)")
-                }
-            case .right:
-                if let f = displayedRightFiles.first(where: { canonicalPath($0.urlValue) == target }) {
-                    selectedRightFile = f
-                } else if let f = displayedLeftFiles.first(where: { canonicalPath($0.urlValue) == target }) {
-                    focusedPanel = .left
-                    selectedLeftFile = f
-                } else {
-                    log.debug("History: path not found: \(path)")
-                }
-        }
     }
 
     // MARK: - Alias for toggleFocus (deprecated, use toggleFocus instead)

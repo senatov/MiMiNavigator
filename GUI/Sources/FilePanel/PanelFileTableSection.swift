@@ -9,7 +9,7 @@
 import AppKit
 import SwiftUI
 
-// MARK: -
+// MARK: - PanelFileTableSection
 struct PanelFileTableSection: View {
     @Environment(AppState.self) var appState
     let files: [CustomFile]
@@ -27,13 +27,13 @@ struct PanelFileTableSection: View {
         static var last: TimeInterval = 0
     }
 
-    // MARK: -
+    // MARK: - Body
     var body: some View {
-        // Throttled logging - only log every 1 second max
+        // Throttled logging
         let now = ProcessInfo.processInfo.systemUptime
         if now - LogThrottle.last >= 1.0 {
             LogThrottle.last = now
-            log.debug(#function + " side= <<\(panelSide)>> files=\(files.count) sel=\(String(describing: selectedID))")
+            log.debug(#function + " side=<<\(panelSide)>> files=\(files.count) sel=\(String(describing: selectedID))")
         }
         let stableKey = files.count.hashValue ^ (selectedID?.hashValue ?? 0) ^ panelSide.hashValue
         return StableBy(stableKey) {
@@ -41,7 +41,7 @@ struct PanelFileTableSection: View {
                 panelSide: panelSide,
                 files: files,
                 selectedID: $selectedID,
-                onSelect: onSelect,
+                onSelect: handleSelection,
                 onDoubleClick: onDoubleClick
             )
             .contentShape(Rectangle())
@@ -53,51 +53,31 @@ struct PanelFileTableSection: View {
                     rowRects = value
                 }
             }
-            // React to sel changes
-            .onChange(of: selectedID, initial: false) { _, newValue in
-                log.debug(
-                    "[SELECT-FLOW] 5️⃣ PanelFileTableSection.onChange(selectedID): \(String(describing: newValue)) on <<\(panelSide)>>")
-                appState.focusedPanel = panelSide
-                if let id = newValue, let file = files.first(where: { $0.id == id }) {
-                    log.debug("[SELECT-FLOW] 5️⃣ File found: \(file.nameStr), notifying & calling onSelect")
-                    notifyWillSelect(file)
-                    onSelect(file)
-                } else {
-                    log.debug("[SELECT-FLOW] 5️⃣ Selection cleared, notifying")
-                    notifyDidClearSelection()
-                }
-                log.debug("[SELECT-FLOW] 5️⃣ DONE")
-            }
-            // Nav with arrow keys — same as before
+            // Arrow key navigation
             .onMoveCommand { direction in
                 appState.focusedPanel = panelSide
                 switch direction {
-                    case .up,
-                        .down:
+                    case .up, .down:
                         log.debug("Move command: \(direction) on side <<\(panelSide)>>")
-                        Task { @MainActor in
-                            if let id = selectedID, let file = files.first(where: { $0.id == id }) {
-                                notifyWillSelect(file)
-                                onSelect(file)
-                            } else {
-                                log.debug("Move command but no selection on <<\(panelSide)>>")
-                            }
+                        if let id = selectedID, let file = files.first(where: { $0.id == id }) {
+                            notifyWillSelect(file)
                         }
                     default:
-                        log.debug("on onMoveCommand on table, side <<\(panelSide)>>")
+                        log.debug("Unhandled move command on table, side <<\(panelSide)>>")
                 }
             }
+            // Tab-navigation: sync FocusState when panel receives focus externally
             .onChange(of: appState.focusedPanel, initial: false) { _, newSide in
-                // When panel receives focus via Tab, update FocusState
                 guard newSide == panelSide else { return }
                 isFocused = true
-                log.debug("onChange(focusedPanel) <<\(panelSide)>>, selection: \(String(describing: selectedID))")
+                log.debug("onChange(focusedPanel) <<\(panelSide)>> → isFocused=true")
             }
+            // Reverse sync: when FocusState changes, update appState
             .onChange(of: isFocused, initial: false) { _, nowFocused in
-                log.debug("onChange(isFocused) for <<\(panelSide)>>: \(nowFocused)")
-                if nowFocused {
+                log.debug("onChange(isFocused) <<\(panelSide)>>: \(nowFocused)")
+                if nowFocused && appState.focusedPanel != panelSide {
                     appState.focusedPanel = panelSide
-                    log.debug("FocusState gained on <<\(panelSide)>>, selection: \(String(describing: selectedID))")
+                    log.debug("FocusState gained on <<\(panelSide)>>")
                 }
             }
             .animation(nil, value: selectedID)
@@ -109,9 +89,29 @@ struct PanelFileTableSection: View {
         }
     }
 
+    // MARK: - Unified selection handler (single point of truth)
+    /// Called when user clicks a row. Handles both activation and selection in one place.
+    private func handleSelection(_ file: CustomFile) {
+        log.debug("[SELECT-FLOW] PanelFileTableSection.handleSelection: \(file.nameStr) on <<\(panelSide)>>")
+
+        // 1. Activate panel (even if clicking on already-active panel)
+        let wasInactive = appState.focusedPanel != panelSide
+        if wasInactive {
+            log.debug("[SELECT-FLOW] Activating inactive panel <<\(panelSide)>>")
+        }
+        appState.focusedPanel = panelSide
+
+        // 2. Notify other panels to clear their selection
+        notifyWillSelect(file)
+
+        // 3. Forward to parent's onSelect
+        onSelect(file)
+
+        log.debug("[SELECT-FLOW] handleSelection complete")
+    }
+
     // MARK: - Selection coordination helpers
     private func notifyWillSelect(_ file: CustomFile) {
-        // Let other parts know that this panel is about->select a row, so they can reset their own sels
         NotificationCenter.default.post(
             name: .panelWillSelectFile,
             object: nil,
@@ -123,21 +123,10 @@ struct PanelFileTableSection: View {
         )
     }
 
-    // MARK: -
-    private func notifyDidClearSelection() {
-        NotificationCenter.default.post(
-            name: .panelDidClearSelection,
-            object: nil,
-            userInfo: [
-                "panelSide": panelSide
-            ]
-        )
-    }
 }
 
+// MARK: - Notification Names
 extension Notification.Name {
-    // / Posted right before a panel is about->select a file so others can reset their sels
+    /// Posted right before a panel is about to select a file so others can reset their selections
     static let panelWillSelectFile = Notification.Name("PanelWillSelectFile")
-    // / Posted when a panel cleared its sel
-    static let panelDidClearSelection = Notification.Name("PanelDidClearSelection")
 }
