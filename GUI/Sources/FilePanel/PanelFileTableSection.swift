@@ -19,7 +19,6 @@ struct PanelFileTableSection: View {
     let onSelect: (CustomFile) -> Void
     let onDoubleClick: (CustomFile) -> Void
     @State private var rowRects: [CustomFile.ID: CGRect] = [:]
-    @FocusState private var isFocused: Bool
 
     // Throttle for body logs without mutating SwiftUI state
     @MainActor
@@ -52,47 +51,19 @@ struct PanelFileTableSection: View {
                         if appState.focusedPanel != panelSide {
                             log.debug("[PANEL-ACTIVATE] simultaneousGesture activating <<\(panelSide)>>")
                             appState.focusedPanel = panelSide
-                            isFocused = true
                         }
                     }
             )
-            .focusable(true)
-            .focused($isFocused)
+            // NOTE: focusable is on FileTableView - don't duplicate here
+            // Tab navigation uses onChange(appState.focusedPanel) below
             .coordinateSpace(name: "fileTableSpace")
             .onPreferenceChange(RowRectPreference.self) { value in
                 if value != rowRects {
                     rowRects = value
                 }
             }
-            // Arrow key navigation
-            .onMoveCommand { direction in
-                appState.focusedPanel = panelSide
-                switch direction {
-                    case .up, .down:
-                        log.debug("Move command: \(direction) on side <<\(panelSide)>>")
-                        if let id = selectedID, let file = files.first(where: { $0.id == id }) {
-                            notifyWillSelect(file)
-                        }
-                    default:
-                        log.debug("Unhandled move command on table, side <<\(panelSide)>>")
-                }
-            }
-            // Tab-navigation: sync FocusState when panel receives focus externally
-            .onChange(of: appState.focusedPanel, initial: false) { _, newSide in
-                guard newSide == panelSide else { return }
-                isFocused = true
-                log.debug("onChange(focusedPanel) <<\(panelSide)>> → isFocused=true")
-            }
-            // Reverse sync: when FocusState changes, update appState
-            .onChange(of: isFocused, initial: false) { _, nowFocused in
-                log.debug("onChange(isFocused) <<\(panelSide)>>: \(nowFocused)")
-                if nowFocused && appState.focusedPanel != panelSide {
-                    appState.focusedPanel = panelSide
-                    log.debug("FocusState gained on <<\(panelSide)>>")
-                }
-            }
+            // NOTE: Arrow key navigation moved to FileTableView.onMoveCommand
             .animation(nil, value: selectedID)
-            .animation(nil, value: isFocused)
             .transaction { txn in
                 txn.disablesAnimations = true
             }

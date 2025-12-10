@@ -36,7 +36,25 @@
 
 ---
 
-> ⚠️ **Development Status**: MiMiNavigator is under active development and **not ready for production use yet**. APIs, layouts, and internal structure may change without notice. Use at your own risk.
+⚠️ **Development Status**  
+MiMiNavigator is currently under active development and **not yet ready for production use**.  
+APIs, layouts, and internal structures may change without prior notice.  
+Please use at your own discretion.  
+
+---
+
+### Disclaimer  
+I am not an architecture expert and do not claim to be one.  
+If you notice mistakes or disagree with my methods, reasoning, or learning process,  
+I welcome your feedback via email or social media.  
+Much of what follows represents my first attempts in this area,  
+so I ask for your patience and indulgence.  
+
+---
+
+### Transparency  
+I openly acknowledge that I have used AI assistants  
+to help clarify the philosophies and implementations of different architectures.
 
 ## 📖 Table of Contents
 

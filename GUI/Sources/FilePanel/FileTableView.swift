@@ -21,6 +21,54 @@ struct FileTableView: View {
     @State private var cachedSortedFiles: [CustomFile] = []
     @State private var lastBodyLogTime: TimeInterval? = nil
     @State private var scrollProxy: ScrollViewProxy? = nil
+    
+    // MARK: - Keyboard Navigation
+    /// Move selection up by one item
+    private func moveSelectionUp() {
+        guard !cachedSortedFiles.isEmpty else { return }
+        let currentIndex = cachedSortedFiles.firstIndex { $0.id == selectedID } ?? 0
+        let newIndex = max(0, currentIndex - 1)
+        let newFile = cachedSortedFiles[newIndex]
+        selectedID = newFile.id
+        onSelect(newFile)
+        scrollToSelection(newFile.id, anchor: .center)
+    }
+    
+    /// Move selection down by one item
+    private func moveSelectionDown() {
+        guard !cachedSortedFiles.isEmpty else { return }
+        let currentIndex = cachedSortedFiles.firstIndex { $0.id == selectedID } ?? -1
+        let newIndex = min(cachedSortedFiles.count - 1, currentIndex + 1)
+        let newFile = cachedSortedFiles[newIndex]
+        selectedID = newFile.id
+        onSelect(newFile)
+        scrollToSelection(newFile.id, anchor: .center)
+    }
+    
+    /// Jump to first item (Home/PageUp)
+    private func jumpToFirst() {
+        guard let firstFile = cachedSortedFiles.first else { return }
+        selectedID = firstFile.id
+        onSelect(firstFile)
+        scrollToSelection(firstFile.id, anchor: .top)
+        log.debug("[NAV] Jump to FIRST on <<\(panelSide)>>")
+    }
+    
+    /// Jump to last item (End/PageDown)
+    private func jumpToLast() {
+        guard let lastFile = cachedSortedFiles.last else { return }
+        selectedID = lastFile.id
+        onSelect(lastFile)
+        scrollToSelection(lastFile.id, anchor: .bottom)
+        log.debug("[NAV] Jump to LAST on <<\(panelSide)>>")
+    }
+    
+    /// Instant scroll without animation
+    private func scrollToSelection(_ id: CustomFile.ID, anchor: UnitPoint) {
+        guard let proxy = scrollProxy else { return }
+        // No animation, no delay — instant scroll
+        proxy.scrollTo(id, anchor: anchor)
+    }
     fileprivate var px: CGFloat {
         let scale = NSScreen.main?.backingScaleFactor ?? 2.0
         return 1.0 / scale
@@ -65,34 +113,23 @@ struct FileTableView: View {
         .animation(nil, value: isFocused)
         .transaction { txn in txn.disablesAnimations = true }
         .animation(nil, value: selectedID)
-        // NOTE: focusable removed - focus is managed at PanelFileTableSection level
-        // This prevents first-click-to-focus stealing clicks from FileRow
+        .focusable(true)
         .onAppear { recomputeSortedCache() }
         .onChange(of: files) { recomputeSortedCache() }
         .onChange(of: sortKey) { recomputeSortedCache() }
         .onChange(of: sortAscending) { recomputeSortedCache() }
-        .onChange(
-            of: selectedID,
-            { oldValue, newValue in
-                log.debug(
-                    "[SELECT-FLOW] 8️⃣ FTV.onChange(selectedID): \(String(describing: oldValue)) → \(String(describing: newValue)) on <<\(panelSide)>>"
-                )
-                // Auto-scroll to selected item with slight delay for UI update
-                if let id = newValue, let proxy = scrollProxy {
-                    log.debug("[SELECT-FLOW] 8️⃣ Scheduling scroll to: \(id)")
-                    Task {
-                        try? await Task.sleep(for: .milliseconds(50))
-                        withAnimation(.easeInOut(duration: 0.2)) {
-                            // Smart anchor: avoid "jumpy" scroll for edge items
-                            let idx = cachedSortedFiles.firstIndex(where: { $0.id == id }) ?? 0
-                            let isNearEnd = idx >= cachedSortedFiles.count - 3
-                            let anchor: UnitPoint = isNearEnd ? .bottom : .center
-                            proxy.scrollTo(id, anchor: anchor)
-                            log.debug("[SELECT-FLOW] 8️⃣ Scroll executed with anchor: \(anchor)")
-                        }
-                    }
-                }
-            })
+        // Arrow key navigation - instant response, no animation
+        .onMoveCommand { direction in
+            guard isFocused else { return }
+            switch direction {
+            case .up:
+                moveSelectionUp()
+            case .down:
+                moveSelectionDown()
+            default:
+                break
+            }
+        }
     }
 
     // MARK: -
@@ -213,30 +250,38 @@ struct FileTableView: View {
             .allowsHitTesting(false)
     }
 
-    // MARK: -
+    // MARK: - Keyboard shortcuts layer
     @ViewBuilder
     private func keyboardShortcutsLayer(proxy: ScrollViewProxy) -> some View {
-        // Invisible buttons to capture PageUp/PageDown and emulate TC behavior
+        // Invisible buttons to capture PageUp/PageDown/Home/End - TC-style navigation
         ZStack {
+            // PageUp → jump to first item
             Button(action: {
                 guard isFocused else { return }
-                if let first = cachedSortedFiles.first?.id {
-                    selectedID = first
-                    withAnimation { proxy.scrollTo(first, anchor: .top) }
-                    log.debug("PageUp (kbd) → jump to top on <<\(panelSide)>>")
-                }
+                jumpToFirst()
             }) { EmptyView() }
-            .keyboardShortcut(.pageUp)
+            .keyboardShortcut(.pageUp, modifiers: [])
 
+            // PageDown → jump to last item  
             Button(action: {
                 guard isFocused else { return }
-                if let last = cachedSortedFiles.last?.id {
-                    selectedID = last
-                    withAnimation { proxy.scrollTo(last, anchor: .bottom) }
-                    log.debug("PageDown (kbd) → jump to bottom on <<\(panelSide)>>")
-                }
+                jumpToLast()
             }) { EmptyView() }
-            .keyboardShortcut(.pageDown)
+            .keyboardShortcut(.pageDown, modifiers: [])
+            
+            // Home → jump to first item
+            Button(action: {
+                guard isFocused else { return }
+                jumpToFirst()
+            }) { EmptyView() }
+            .keyboardShortcut(.home, modifiers: [])
+            
+            // End → jump to last item
+            Button(action: {
+                guard isFocused else { return }
+                jumpToLast()
+            }) { EmptyView() }
+            .keyboardShortcut(.end, modifiers: [])
         }
         .frame(width: 0, height: 0)
         .opacity(0.001)
