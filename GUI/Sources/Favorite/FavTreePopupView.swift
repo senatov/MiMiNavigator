@@ -110,6 +110,9 @@ struct FavTreePopupView: View {
             }
         }
         .contentShape(Rectangle())
+        .onTapGesture(count: 2) {
+            handleFileDoubleClick()
+        }
         .onTapGesture {
             handleFileTap()
         }
@@ -169,17 +172,31 @@ struct FavTreePopupView: View {
     }
 
     private func handleFileTap() {
+        // Одиночный клик - только разворачиваем/сворачиваем директорию
         if isDirectoryType {
             toggleExpansion()
         }
+    }
 
-        log.info("Selected favorite: \(file.nameStr)")
+    private func handleFileDoubleClick() {
+        // Двойной клик - переходим в директорию
+        guard isDirectoryType else { return }
+
+        log.info("Double-clicked favorite directory: \(file.nameStr) path: \(file.pathStr)")
 
         Task { @MainActor in
-            appState.selectedDir.selectedFSEntity = file
             let targetPanel = appState.focusedPanel
+            
+            // Update the panel path first - this is what DualDirectoryScanner uses for scanning
+            appState.updatePath(file.pathStr, for: targetPanel)
+            
+            // Also update selectedDir for UI consistency
+            appState.selectedDir.selectedFSEntity = file
+            
+            // Reset timer and refresh files with the new path
             await appState.scanner.resetRefreshTimer(for: targetPanel)
             await appState.scanner.refreshFiles(currSide: targetPanel)
+            
             isPresented = false
         }
     }
