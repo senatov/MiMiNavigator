@@ -9,13 +9,6 @@
 import AppKit
 import SwiftUI
 
-// MARK: - Equatable wrapper to avoid unnecessary recomputation on divider drags
-private struct EquatableView<Value: Hashable, Content: View>: View {
-    let value: Value
-    let content: () -> Content
-    @MainActor var body: some View { content().id(value) }
-}
-
 // MARK: - Lightweight row view to reduce type-checker complexity
 struct FileRow: View {
     let index: Int

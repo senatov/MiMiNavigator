@@ -24,7 +24,7 @@ struct BreadCrumbView: View {
     // MARK: -
     var body: some View {
         // Log removed - too verbose
-        // / Main breadcrumb container
+        // Main breadcrumb container
         return HStack(alignment: .center, spacing: 4) {
             ForEach(pathComponents.indices, id: \.self) { index in
                 breadcrumbItem(index: index)
@@ -66,7 +66,7 @@ struct BreadCrumbView: View {
         log.info(#function)
         return Button(action: { handlePathSelection(upTo: index) }) {
             Text(pathComponents[index])
-                .font(.callout)
+                .font(.callout)  // Already using Dynamic Type - OK!
                 .foregroundStyle(FilePanelStyle.blueSymlinkDirNameColor)
                 .padding(.vertical, 2)
         }

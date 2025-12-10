@@ -62,11 +62,10 @@ struct FileRowView: View {
             
             // File name
             Text(file.nameStr)
-                .font(.system(size: 13, weight: .regular, design: .default))
+                .font(.subheadline)  // Dynamic Type instead of .system(size: 13)
                 .foregroundStyle(nameColor)
                 .lineLimit(1)
                 .truncationMode(.middle)
         }
     }
 }
-

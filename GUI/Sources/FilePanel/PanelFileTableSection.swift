@@ -91,10 +91,10 @@ struct PanelFileTableSection: View {
                 // When panel receives focus via Tab, update FocusState
                 guard newSide == panelSide else { return }
                 isFocused = true
-                log.debug("focusedPanel changed to <<\(panelSide)>>, selection: \(String(describing: selectedID))")
+                log.debug("onChange(focusedPanel) <<\(panelSide)>>, selection: \(String(describing: selectedID))")
             }
             .onChange(of: isFocused, initial: false) { _, nowFocused in
-                log.debug("Panel focus state changed (FocusState) for <<\(panelSide)>>: \(nowFocused)")
+                log.debug("onChange(isFocused) for <<\(panelSide)>>: \(nowFocused)")
                 if nowFocused {
                     appState.focusedPanel = panelSide
                     log.debug("FocusState gained on <<\(panelSide)>>, selection: \(String(describing: selectedID))")
