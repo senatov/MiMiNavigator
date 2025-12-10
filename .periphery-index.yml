@@ -1,17 +1,13 @@
-# MiMiNavigator / Periphery
 project: MiMiNavigator.xcodeproj
 schemes:
   - MiMiNavigator
 
-clean_build: false #
+index_store_path: .build/index/store
 skip_build: true
 
-
 retain_public: false
-
 retain_objc_accessible: true
 retain_assign_only_properties: true
-
 strict: true
 
 report_exclude:
@@ -28,4 +24,4 @@ report_exclude:
 exclude_targets:
   - "Pods"
   - "PackageDependencies"
-  - "MiMiNavigatorTests"      
+  - "MiMiNavigatorTests"
