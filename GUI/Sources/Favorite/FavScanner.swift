@@ -219,19 +219,6 @@ class FavScanner {
             .compactMap { buildFavTreeStructure(at: $0) }
     }
 
-    // MARK: - Request access using security-scoped bookmarks (no direct startAccessing here)
-    func requestAccessToVolumesDirectory() async -> URL? {
-        log.debug(#function)
-        let volumesURL = URL(fileURLWithPath: "/Volumes")
-        // If we already have access via persistent bookmark, just return it.
-        if await BookmarkStore.shared.hasAccess(to: volumesURL) {
-            return volumesURL
-        }
-        // Otherwise ask once; shim will start security-scoped access for this session.
-        let granted = await BookmarkStore.shared.requestAccessPersisting(for: volumesURL)
-        return granted ? volumesURL : nil
-    }
-
     // MARK: -
     private func resolveVolumesURLOrReturnPartialResult(
         favorites: [CustomFile],

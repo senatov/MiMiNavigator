@@ -53,9 +53,4 @@ final class FavTreePopupController {
         // Popover will be closed via close() method
     }
 
-    func close() {
-        isPresented = false
-        popover?.performClose(nil)
-        popover = nil
-    }
 }

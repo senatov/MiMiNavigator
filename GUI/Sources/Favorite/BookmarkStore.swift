@@ -11,20 +11,20 @@ import SwiftUI
 
 // MARK: - Security-Scoped Bookmarks Helpers (Sandbox-Friendly)
 
-// / Simple bookmark store backed by UserDefaults. In production, replacew/your DB.
+// MARK: -Simple bookmark store backed by UserDefaults. In production, replacew/your DB.
 actor BookmarkStore {
     static let shared = BookmarkStore()
     private let defaults = UserDefaults.standard
     private let key = "FavoritesBookmarks.v1"
     private var activeURLs: [String: URL] = [:]  // path → URL with active security scope
 
-    // / Returns true if a bookmark exists for given URL (standardized path).
+    // MARK: -Returns true if a bookmark exists for given URL (standardized path).
     func hasAccess(to url: URL) -> Bool {
         let dict = (defaults.dictionary(forKey: key) as? [String: Data]) ?? [:]
         return dict.keys.contains(url.standardizedFileURL.path)
     }
 
-    // / Creates and saves a security-scoped bookmark for the URL.
+    // MARK: -Creates and saves a security-scoped bookmark for the URL.
     func addBookmark(for url: URL) {
         do {
             let data = try url.bookmarkData(
@@ -38,7 +38,7 @@ actor BookmarkStore {
         }
     }
 
-    // / Restores all stored bookmarks+starts security-scoped access. Call on app launch.
+    // MARK: -Restores all stored bookmarks+starts security-scoped access. Call on app launch.
     @discardableResult
     func restoreAll() async -> [URL] {
         let dict = (defaults.dictionary(forKey: key) as? [String: Data]) ?? [:]
@@ -78,7 +78,7 @@ actor BookmarkStore {
         return restored
     }
 
-    // / Stops all active security-scoped resrcs. Call on app termination.
+    // MARK: -Stops all active security-scoped resrcs. Call on app termination.
     func stopAll() {
         for (_, url) in activeURLs {
             url.stopAccessingSecurityScopedResource()
@@ -87,7 +87,7 @@ actor BookmarkStore {
         log.debug("BookmarkStore: stopped all active security scopes")
     }
 
-    // / Saves bookmark data for a path. Path is used as a key.
+    // MARK: -Saves bookmark data for a path. Path is used as a key.
     func saveBookmark(for path: String, data: Data) {
         var dict = (defaults.dictionary(forKey: key) as? [String: Data]) ?? [:]
         dict[path] = data
@@ -95,28 +95,13 @@ actor BookmarkStore {
         log.debug("BookmarkStore: saved bookmark for \(path)")
     }
 
-    // / Loads bookmark data by path.
+    // MARK: -Loads bookmark data by path.
     func loadBookmark(for path: String) -> Data? {
         let dict = (defaults.dictionary(forKey: key) as? [String: Data])
         return dict?[path]
     }
 
-    // / Returns all stored bookmarks (path → data).
-    func all() -> [String: Data] {
-        (defaults.dictionary(forKey: key) as? [String: Data]) ?? [:]
-    }
-
-    // / Removes a bookmark for the provided path.
-    func remove(path: String) {
-        var dict = (defaults.dictionary(forKey: key) as? [String: Data]) ?? [:]
-        dict.removeValue(forKey: path)
-        defaults.set(dict, forKey: key)
-        log.debug("BookmarkStore: removed bookmark for \(path)")
-    }
-
-    // / Presents an NSOpenPanel starting near the provided URL,
-    // / creates and persists a security-scoped bookmark,
-    // / and ensures access is active for the picked location.
+    // MARK: -Presents an NSOpenPanel starting near the provided URL,
     @MainActor
     @discardableResult
     func requestAccessPersisting(for url: URL, anchorWindow: NSWindow? = nil, allowsMultiple: Bool = false) async -> Bool {
@@ -182,8 +167,7 @@ actor BookmarkStore {
         return await BookmarkStore.shared.persistAccess(for: urlToSave)
     }
 
-    // / Persists a security-scoped bookmark+activates access for picked URL (no UI).
-    // / Must be called on the BookmarkStore actor.
+    // MARK: -Persists a security-scoped bookmark+activates access for picked URL (no UI).
     @discardableResult
     func persistAccess(for pickedURL: URL) async -> Bool {
         do {
@@ -213,9 +197,7 @@ actor BookmarkStore {
     }
 }
 
-// MARK: - Global Helpers
-
-// / Presents an NSOpenPanel->grant access->a volume|folder+returns a security-scoped bookmark.
+// MARK: -Presents an NSOpenPanel->grant access->a volume|folder+returns a security-scoped bookmark.
 @MainActor
 func grantAccessToVolumeAndSaveBookmark(
     startingAt url: URL = URL(fileURLWithPath: "/Volumes"),
@@ -257,91 +239,5 @@ func grantAccessToVolumeAndSaveBookmark(
     } catch {
         log.error("Failed to create bookmark: \(error.localizedDescription)")
         throw error
-    }
-}
-
-// / Resolves a stored security-scoped bookmark+runs work block while access is active.
-func withBookmarkAccess<T>(_ bookmark: Data, _ work: (URL) throws -> T) throws -> T {
-    var isStale = false
-    let url = try URL(
-        resolvingBookmarkData: bookmark,
-        options: [.withSecurityScope, .withoutUI],
-        relativeTo: nil,
-        bookmarkDataIsStale: &isStale
-    )
-    guard url.startAccessingSecurityScopedResource() else {
-        log.error("Could not start security-scoped access for \(url.path)")
-        throw NSError(domain: "FavAccess", code: 2, userInfo: [NSLocalizedDescriptionKey: "Cannot start access"])
-    }
-    defer { url.stopAccessingSecurityScopedResource() }
-    if isStale {
-        log.warning("Bookmark is stale for \(url.path) — consider re-creating it")
-    }
-    return try work(url)
-}
-
-// / Presents NSOpenPanel as a sheet attached->a specific window+returns saved bookmark data.
-@MainActor
-func presentAccessPanelAsSheet(
-    startingAt url: URL = URL(fileURLWithPath: "/Volumes"),
-    anchorWindow: NSWindow?
-) async throws -> Data {
-    // If there is already a sheet presented on this window, avoid opening another one
-    if let win = anchorWindow, win.attachedSheet != nil {
-        log.warning("Access panel is already presented on the anchor window")
-        throw NSError(domain: "FavAccess", code: 3, userInfo: [NSLocalizedDescriptionKey: "Panel already presented"])
-    }
-
-    let panel = NSOpenPanel()
-    panel.title = "Allow access to a volume"
-    panel.message = "This is necessary to access mounted system volumes and favorites."
-    panel.directoryURL = url
-    panel.canChooseFiles = false
-    panel.canChooseDirectories = true
-    panel.allowsMultipleSelection = false
-    panel.canCreateDirectories = false
-    panel.showsHiddenFiles = false
-    panel.prompt = "Allow"
-    panel.treatsFilePackagesAsDirectories = true
-
-    let pickedURL: URL = try await withCheckedThrowingContinuation { cont in
-        if let win = anchorWindow {
-            panel.beginSheetModal(for: win) { response in
-                if response == .OK, let sel = panel.urls.first {
-                    cont.resume(returning: sel)
-                } else {
-                    cont.resume(
-                        throwing: NSError(
-                            domain: "FavAccess", code: 1,
-                            userInfo: [NSLocalizedDescriptionKey: "User cancelled"])
-                    )
-                }
-            }
-        } else {
-            let resp = panel.runModal()
-            if resp == .OK, let sel = panel.urls.first {
-                cont.resume(returning: sel)
-            } else {
-                cont.resume(
-                    throwing: NSError(
-                        domain: "FavAccess", code: 1,
-                        userInfo: [NSLocalizedDescriptionKey: "User cancelled"])
-                )
-            }
-        }
-    }
-
-    // Persist bookmark via the actor
-    await BookmarkStore.shared.addBookmark(for: pickedURL)
-    log.debug("Saved security-scoped bookmark (sheet) for: \(pickedURL.path)")
-    _ = await BookmarkStore.shared.restoreAll()
-
-    // Return the stored bookmark data
-    if let data = await BookmarkStore.shared.loadBookmark(for: pickedURL.path) {
-        return data
-    } else {
-        throw NSError(
-            domain: "FavAccess", code: 4,
-            userInfo: [NSLocalizedDescriptionKey: "Bookmark not found after save"])
     }
 }
