@@ -247,20 +247,50 @@ struct BreadCrumbControlWrapper: View {
             }
             return
         }
+        
+        // Validate path exists
+        let fileManager = FileManager.default
+        guard fileManager.fileExists(atPath: trimmedPath) else {
+            log.error("Path does not exist: \(trimmedPath)")
+            withAnimation(.easeInOut(duration: Design.animationDuration)) {
+                isEditing = false
+            }
+            return
+        }
 
         withAnimation(.easeInOut(duration: Design.animationDuration)) {
             isEditing = false
         }
 
         Task {
+            log.info("Applying path update for <<\(panelSide)>>: \(trimmedPath)")
+            
             if panelSide == .left {
+                // Update path in AppState and scanner
                 appState.leftPath = trimmedPath
                 await appState.scanner.setLeftDirectory(pathStr: trimmedPath)
+                
+                // Reset timer to trigger immediate refresh
+                await appState.scanner.resetRefreshTimer(for: .left)
+                
+                // Force immediate refresh
+                await appState.scanner.refreshFiles(currSide: .left)
                 await appState.refreshLeftFiles()
+                
+                log.info("Left panel updated to: \(trimmedPath)")
             } else {
+                // Update path in AppState and scanner
                 appState.rightPath = trimmedPath
                 await appState.scanner.setRightDirectory(pathStr: trimmedPath)
+                
+                // Reset timer to trigger immediate refresh
+                await appState.scanner.resetRefreshTimer(for: .right)
+                
+                // Force immediate refresh
+                await appState.scanner.refreshFiles(currSide: .right)
                 await appState.refreshRightFiles()
+                
+                log.info("Right panel updated to: \(trimmedPath)")
             }
         }
     }

@@ -120,11 +120,15 @@ actor DualDirectoryScanner {
     @MainActor
     private func updateFileList(panelSide: PanelSide, with files: [CustomFile]) async {
         log.info(#function + " side: <<\(panelSide)>>")
-        guard let selectedEntity = appState.selectedDir.selectedFSEntity else {
-            log.warning("no sel'd FSEntity for <<\(panelSide)>>")
-            return
+        
+        // Always update file list, even if selectedEntity is nil
+        // (e.g., when user manually enters a path)
+        if let selectedEntity = appState.selectedDir.selectedFSEntity {
+            log.info("updating sel'd dir: \(selectedEntity.pathStr) w/ \(files.count) files on <<\(panelSide)>>")
+        } else {
+            log.info("updating w/ \(files.count) files on <<\(panelSide)>> (no selectedEntity)")
         }
-        log.info("updating sel'd dir: \(selectedEntity.pathStr) w/ \(files.count) files on <<\(panelSide)>>")
+        
         switch panelSide {
             case .left:
                 await fileLst.updateLeftFiles(files)
