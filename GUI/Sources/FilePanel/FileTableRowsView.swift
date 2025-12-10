@@ -8,13 +8,6 @@
 
 import SwiftUI
 
-// MARK: - EquatableView wrapper to prevent redundant row recomputation
-private struct EquatableView<Value: Hashable, Content: View>: View {
-    let value: Value
-    let content: () -> Content
-    @MainActor var body: some View { content().id(value) }
-}
-
 // / Separate view to simplify type-checking of the main FileTableView.
 // / Responsible only for rendering the LazyVStack of rows.
 struct FileTableRowsView: View {

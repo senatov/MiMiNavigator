@@ -18,22 +18,38 @@ struct DuoFilePanelView: View {
     // MARK: - Constants
     private enum Layout {
         static let dividerHitAreaWidth: CGFloat = 24
-        static let topMenuPadding: CGFloat = 8
-        static let toolbarHorizontalPadding: CGFloat = 16
-        static let toolbarVerticalPadding: CGFloat = 12
-        static let toolbarCornerRadius: CGFloat = 10
-        static let toolbarOuterPadding: CGFloat = 8
-        static let toolbarBottomPadding: CGFloat = 8
-        static let toolbarButtonSpacing: CGFloat = 12
         static let minPanelWidth: CGFloat = 80
     }
 
     // MARK: - Body
     var body: some View {
         VStack(spacing: 0) {
-            topMenuBar
-            filePanels
-            bottomToolbar
+            // Top menu bar
+            DuoPanelTopMenuBarSection()
+            
+            // File panels with geometry reader
+            GeometryReader { geometry in
+                DuoPanelFilePanelsSection(
+                    leftPanelWidth: $leftPanelWidth,
+                    containerWidth: geometry.size.width,
+                    containerHeight: geometry.size.height,
+                    fetchFiles: fetchFiles
+                )
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            
+            // Bottom toolbar
+            DuoPanelBottomToolbarSection(
+                onView: performView,
+                onEdit: performEdit,
+                onCopy: performCopy,
+                onMove: performMove,
+                onNewFolder: performNewFolder,
+                onDelete: performDelete,
+                onSettings: performSettings,
+                onConsole: performConsole,
+                onExit: performExit
+            )
         }
         .onAppear {
             appState.initialize()
@@ -46,118 +62,6 @@ struct DuoFilePanelView: View {
         .onChange(of: leftPanelWidth) { _, newValue in
             UserDefaults.standard.set(newValue, forKey: "leftPanelWidth")
         }
-    }
-}
-
-// MARK: - View Components
-extension DuoFilePanelView {
-    // MARK: -
-    private var topMenuBar: some View {
-        TopMenuBarView()
-            .frame(maxWidth: .infinity)
-            .padding(Layout.topMenuPadding)
-            .fixedSize(horizontal: false, vertical: true)
-    }
-
-    // MARK: -
-    private var filePanels: some View {
-        GeometryReader { geometry in
-            PanelsRowView(
-                leftPanelWidth: $leftPanelWidth,
-                containerWidth: geometry.size.width,
-                containerHeight: geometry.size.height,
-                fetchFiles: fetchFiles
-            )
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-
-    // MARK: -
-    private var bottomToolbar: some View {
-        HStack(spacing: Layout.toolbarButtonSpacing) {
-            makeButton(title: "F3 View", icon: "eye.circle", action: performView)
-            makeButton(title: "F4 Edit", icon: "pencil", action: performEdit)
-            makeButton(title: "F5 Copy", icon: "doc.on.doc", action: performCopy)
-            makeButton(title: "F6 Move", icon: "square.and.arrow.down.on.square", action: performMove)
-            makeButton(title: "F7 NewFolder", icon: "folder.badge.plus", action: performNewFolder)
-            makeButton(title: "F8 Delete", icon: "minus.rectangle", action: performDelete)
-            makeButton(title: "Settings", icon: "gearshape", action: performSettings)
-            makeButton(title: "Console", icon: "terminal", action: performConsole)
-            makeButton(title: "Exit", icon: "power", action: performExit)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.horizontal, Layout.toolbarHorizontalPadding)
-        .padding(.vertical, Layout.toolbarVerticalPadding)
-        .background(toolbarBackgroundView)
-        .padding(.horizontal, Layout.toolbarOuterPadding)
-        .padding(.bottom, Layout.toolbarBottomPadding)
-    }
-
-    // MARK: -
-    private var toolbarBackgroundView: some View {
-        let px: CGFloat = {
-            let scale = NSScreen.main?.backingScaleFactor ?? 2.0
-            return 1.0 / scale
-        }()
-
-        return RoundedRectangle(cornerRadius: Layout.toolbarCornerRadius, style: .continuous)
-            .fill(.ultraThinMaterial)
-            // Decorative hairline ring (crisp, gradient)
-            .overlay(
-                RoundedRectangle(cornerRadius: Layout.toolbarCornerRadius, style: .continuous)
-                    .strokeBorder(
-                        LinearGradient(
-                            colors: [
-                                Color.white.opacity(0.30),  // top highlight
-                                Color.blue.opacity(0.08),
-                                Color.black.opacity(0.12),  // bottom subtle shadow
-                            ],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        ),
-                        lineWidth: px
-                    )
-            )
-            // Soft top glow
-            .overlay(alignment: .top) {
-                LinearGradient(
-                    colors: [Color.white.opacity(0.22), Color.blue.opacity(0.08), .clear],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-                .frame(height: 20)
-            }
-            // Crisp bottom hairline
-            .overlay(alignment: .bottom) {
-                Rectangle()
-                    .fill(
-                        LinearGradient(
-                            colors: [
-                                Color.white.opacity(0.40),  // upper edge highlight
-                                Color.white.opacity(0.18),
-                                Color.black.opacity(0.20),  // lower subtle shadow
-                            ],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                    )
-                    .frame(height: px)
-                    .padding(.horizontal, 0.5)
-                    .allowsHitTesting(false)
-            }
-            .clipShape(RoundedRectangle(cornerRadius: Layout.toolbarCornerRadius, style: .continuous))
-            .contentShape(RoundedRectangle(cornerRadius: Layout.toolbarCornerRadius, style: .continuous))
-            .shadow(color: Color.black.opacity(0.10), radius: 8, x: 0, y: 2)
-            .shadow(color: Color.blue.opacity(0.06), radius: 18, x: 0, y: 10)
-    }
-
-    // MARK: -
-    private func makeButton(title: String, icon: String, action: @escaping () -> Void) -> some View {
-        DownToolbarButtonView(
-            title: title,
-            systemImage: icon,
-            action: action
-        )
     }
 }
 
@@ -241,13 +145,13 @@ extension DuoFilePanelView {
     }
 }
 
-// MARK: - Computed Properties
+// MARK: - Computed Properties (Data only, not Views)
 extension DuoFilePanelView {
-
     // MARK: -
     private var currentSelectedFile: CustomFile? {
         appState.focusedPanel == .left ? appState.selectedLeftFile : appState.selectedRightFile
     }
+    
     // MARK: -
     private var targetPanelURL: URL? {
         let targetSide: PanelSide = appState.focusedPanel == .left ? .right : .left
@@ -257,7 +161,6 @@ extension DuoFilePanelView {
 
 // MARK: - Panel Width Management
 extension DuoFilePanelView {
-
     // MARK: -
     private func initializePanelWidth() {
         guard let screen = NSScreen.main else { return }

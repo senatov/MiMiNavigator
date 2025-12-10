@@ -21,7 +21,7 @@ struct DownToolbarButtonView: View {
         // Only call to makeButton() and wrappers for SRP
         ZStack { makeButton() }
             .frame(minWidth: 120, minHeight: 20)
-            .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .contentShape(.rect(cornerRadius: 10, style: .continuous))
     }
 
     // MARK: - Builds and configures the toolbar button (macOS 26.1 liquid glass style)
@@ -29,7 +29,7 @@ struct DownToolbarButtonView: View {
         return Button(action: handlePress) {
             Label {
                 Text(title)
-                    .font(.system(size: 13, weight: .regular))
+                    .font(.subheadline)  // Dynamic Type instead of .system(size: 13)
                     .lineLimit(1)
                     .truncationMode(.tail)
             } icon: {
@@ -67,7 +67,7 @@ struct DownToolbarButtonView: View {
                 Rectangle()
                     .fill(Color.white.opacity(0.05))
                     .frame(height: 0.5)
-                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    .clipShape(.rect(cornerRadius: 10, style: .continuous))
             }
             .overlay(
                 // Focus ring for keyboard nav
