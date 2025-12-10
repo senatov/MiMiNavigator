@@ -65,7 +65,8 @@ struct FileTableView: View {
         .animation(nil, value: isFocused)
         .transaction { txn in txn.disablesAnimations = true }
         .animation(nil, value: selectedID)
-        .focusable(true)
+        // NOTE: focusable removed - focus is managed at PanelFileTableSection level
+        // This prevents first-click-to-focus stealing clicks from FileRow
         .onAppear { recomputeSortedCache() }
         .onChange(of: files) { recomputeSortedCache() }
         .onChange(of: sortKey) { recomputeSortedCache() }

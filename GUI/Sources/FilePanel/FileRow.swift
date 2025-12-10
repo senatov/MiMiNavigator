@@ -61,16 +61,24 @@ struct FileRow: View {
         .contentShape(Rectangle())
         .drawingGroup()
         .help(makeHelpTooltip())
-        .onTapGesture(count: 2) {
-            log.debug("[DOUBLE-CLICK] FileRow: index=\(index) name=\(file.nameStr) side=<<\(panelSide)>>")
-            onDoubleClick(file)
-        }
-        .onTapGesture(count: 1) {
-            log.debug("[SELECT-FLOW] 4️⃣ FileRow.onTapGesture: index=\(index) name=\(file.nameStr) side=<<\(panelSide)>>")
-            log.debug("[SELECT-FLOW] 4️⃣ Calling onSelect closure...")
-            onSelect(file)
-            log.debug("[SELECT-FLOW] 4️⃣ onSelect returned")
-        }
+        // IMPORTANT: Use simultaneousGesture instead of onTapGesture
+        // This ensures clicks work even on inactive panels (first click activates AND selects)
+        .simultaneousGesture(
+            TapGesture(count: 2)
+                .onEnded {
+                    log.debug("[DOUBLE-CLICK] FileRow: index=\(index) name=\(file.nameStr) side=<<\(panelSide)>>")
+                    onDoubleClick(file)
+                }
+        )
+        .simultaneousGesture(
+            TapGesture(count: 1)
+                .onEnded {
+                    log.debug("[SELECT-FLOW] 4️⃣ FileRow.onTapGesture: index=\(index) name=\(file.nameStr) side=<<\(panelSide)>>")
+                    log.debug("[SELECT-FLOW] 4️⃣ Calling onSelect closure...")
+                    onSelect(file)
+                    log.debug("[SELECT-FLOW] 4️⃣ onSelect returned")
+                }
+        )
         .animation(nil, value: isSelected)
         .transaction { txn in
             txn.disablesAnimations = true
