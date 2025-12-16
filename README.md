@@ -11,17 +11,18 @@
 <p align="center">
   <strong>Modern dual-panel file manager for macOS built with SwiftUI</strong>
 </p>
-
 <p align="center">
   <a href="https://github.com/senatov/MiMiNavigator">
-    <img src="https://img.shields.io/badge/Platform-macOS%2015.0+-lightgrey?logo=apple&logoColor=white" alt="Platform" />
+    <img src="https://img.shields.io/badge/Platform-macOS%2026.0+-lightgrey?logo=apple&logoColor=white" alt="Platform" />
   </a>
-  <img src="https://img.shields.io/badge/Swift-5.10-orange?logo=swift" alt="Swift 5.10" />
+  <img src="https://img.shields.io/badge/Swift-6.0-orange?logo=swift" alt="Swift 6.0" />
   <img src="https://img.shields.io/badge/Xcode-26-blue?logo=xcode" alt="Xcode 26" />
   <img src="https://img.shields.io/badge/Framework-SwiftUI-blue?logo=swift" alt="SwiftUI" />
-  <img src="https://img.shields.io/badge/Architecture-Modern%20Concurrency-green" alt="Modern Concurrency" />
+  <img src="https://img.shields.io/badge/Concurrency-Swift%206%20Strict-green" alt="Swift 6 Strict Concurrency" />
+  <img src="https://img.shields.io/badge/Version-0.7.2-informational" alt="Version 0.7.2" />
   <img src="https://img.shields.io/badge/License-MIT-lightgrey.svg" alt="License" />
   <img src="https://img.shields.io/badge/Status-Work%20in%20Progress-yellow" alt="Status: WIP" />
+  <img src="https://img.shields.io/badge/Code%20Style-SwiftLint-red" alt="SwiftLint" />
 </p>
 
 <p align="center">
