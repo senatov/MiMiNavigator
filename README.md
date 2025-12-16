@@ -1,16 +1,8 @@
-<div style="text-align: center;">
-  <img
-    src="GUI/Assets.xcassets/AppIcon.appiconset/120.png"
-    alt="MiMiNavigator Logo"
-    title="MiMiNavigator"
-    style="max-width: 60%; height: auto; border: 2px; border-radius: 12px;" />
-</div>
-
 <h1 align="center">MiMiNavigator</h1>
-
 <p align="center">
   <strong>Modern dual-panel file manager for macOS built with SwiftUI</strong>
 </p>
+
 <p align="center">
   <a href="https://github.com/senatov/MiMiNavigator">
     <img src="https://img.shields.io/badge/Platform-macOS%2026.0+-lightgrey?logo=apple&logoColor=white" alt="Platform" />
@@ -24,6 +16,15 @@
   <img src="https://img.shields.io/badge/Status-Work%20in%20Progress-yellow" alt="Status: WIP" />
   <img src="https://img.shields.io/badge/Code%20Style-SwiftLint-red" alt="SwiftLint" />
 </p>
+
+<div style="text-align: center;">
+  <img
+    src="GUI/Assets.xcassets/AppIcon.appiconset/120.png"
+    alt="MiMiNavigator Logo"
+    title="MiMiNavigator"
+    style="max-width: 60%; height: auto; border: 2px; border-radius: 12px;" />
+</div>
+
 
 <p align="center">
   <a href="#features">Features</a> •
