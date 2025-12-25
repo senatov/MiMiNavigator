@@ -20,6 +20,12 @@ import AppKit
 
     // MARK: -
     func applicationDidFinishLaunching(_ notification: Notification) {
+        log.debug("restoring security-scoped bookmarks")
+        Task {
+            let restored = await BookmarkStore.shared.restoreAll()
+            log.info("Restored \(restored.count) bookmarks")
+        }
+        
         log.debug("installing keyDown monitor for Tab/Backtab")
         keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
             guard let self, let appState = self.appState else { return event }
@@ -51,5 +57,10 @@ import AppKit
     func applicationWillTerminate(_ notification: Notification) {
         if let keyMonitor { NSEvent.removeMonitor(keyMonitor) }
         keyMonitor = nil
+        
+        // Stop all security-scoped resource access
+        Task {
+            await BookmarkStore.shared.stopAll()
+        }
     }
 }
