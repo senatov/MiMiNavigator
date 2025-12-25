@@ -34,7 +34,8 @@ struct PanelFileTableSection: View {
             LogThrottle.last = now
             log.debug(#function + " side=<<\(panelSide)>> files=\(files.count) sel=\(String(describing: selectedID))")
         }
-        let stableKey = files.count.hashValue ^ (selectedID?.hashValue ?? 0) ^ panelSide.hashValue
+        // Note: Do NOT include selectedID in stableKey - it causes scroll reset on selection change
+        let stableKey = files.count.hashValue ^ panelSide.hashValue
         return StableBy(stableKey) {
             FileTableView(
                 panelSide: panelSide,
