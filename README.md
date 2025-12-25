@@ -20,7 +20,7 @@
 
 <div style="text-align: center;">
   <img
-    src="Gui/Assets.xcassets/AppIcon.appiconset/120.png"
+    src="GUI/Assets.xcassets/AppIcon.appiconset/120.png"
     alt="MiMiNavigator Logo"
     title="MiMiNavigator"
     style="max-width: 60%; height: auto; border: 2px; border-radius: 12px;" />
