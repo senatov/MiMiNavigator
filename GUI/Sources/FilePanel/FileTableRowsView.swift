@@ -56,5 +56,6 @@ struct FileTableRowsView: View {
                 handleDirectoryAction(action, f)
             }
         )
+        .id(file.id) // Critical for ScrollViewReader.scrollTo() to work
     }
 }

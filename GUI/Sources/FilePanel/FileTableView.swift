@@ -21,6 +21,7 @@ struct FileTableView: View {
     @State private var cachedSortedFiles: [CustomFile] = []
     @State private var lastBodyLogTime: TimeInterval? = nil
     @State private var scrollProxy: ScrollViewProxy? = nil
+    @State private var isScrollingProgrammatically = false
     
     // MARK: - Keyboard Navigation
     /// Move selection up by one item
@@ -64,10 +65,21 @@ struct FileTableView: View {
     }
     
     /// Instant scroll without animation
-    private func scrollToSelection(_ id: CustomFile.ID, anchor: UnitPoint) {
-        guard let proxy = scrollProxy else { return }
-        // No animation, no delay — instant scroll
-        proxy.scrollTo(id, anchor: anchor)
+    private func scrollToSelection(_ id: CustomFile.ID?, anchor: UnitPoint = .center) {
+        guard let id = id, let proxy = scrollProxy else {
+            log.debug("[SCROLL] scrollToSelection skipped: id=\(id == nil ? "nil" : "set") proxy=\(scrollProxy == nil ? "nil" : "set") side=<<\(panelSide)>>")
+            return
+        }
+        log.debug("[SCROLL] scrollToSelection: id=\(id) anchor=\(anchor) side=<<\(panelSide)>>")
+        isScrollingProgrammatically = true
+        // Use withAnimation(nil) to ensure instant scroll without animation
+        withAnimation(nil) {
+            proxy.scrollTo(id, anchor: anchor)
+        }
+        // Reset flag after short delay
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            isScrollingProgrammatically = false
+        }
     }
     fileprivate var px: CGFloat {
         let scale = NSScreen.main?.backingScaleFactor ?? 2.0
@@ -118,6 +130,16 @@ struct FileTableView: View {
         .onChange(of: files) { recomputeSortedCache() }
         .onChange(of: sortKey) { recomputeSortedCache() }
         .onChange(of: sortAscending) { recomputeSortedCache() }
+        // Auto-scroll to keep selected item visible when selection changes (mouse click)
+        .onChange(of: selectedID) { oldValue, newValue in
+            log.debug("[SCROLL] selectedID changed: \(oldValue ?? "nil") → \(newValue ?? "nil") side=<<\(panelSide)>>")
+            if let newID = newValue {
+                // Small delay to let SwiftUI finish layout updates
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                    scrollToSelection(newID, anchor: .center)
+                }
+            }
+        }
         // Arrow key navigation - instant response, no animation
         .onMoveCommand { direction in
             guard isFocused else { return }
@@ -138,7 +160,8 @@ struct FileTableView: View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 0) {
                 headerView()
-                StableBy(cachedSortedFiles.count ^ (selectedID?.hashValue ?? 0)) {
+                // Note: Do NOT include selectedID in StableBy key - it causes scroll reset on selection change
+                StableBy(cachedSortedFiles.count) {
                     FileTableRowsView(
                         rows: sortedRows,
                         selectedID: $selectedID,
