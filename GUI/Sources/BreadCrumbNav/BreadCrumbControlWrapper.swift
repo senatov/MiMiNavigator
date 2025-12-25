@@ -73,7 +73,6 @@ struct BreadCrumbControlWrapper: View {
             .padding(.vertical, Design.Padding.vertical)
             .padding(.horizontal, Design.Padding.horizontal)
             .onTapGesture {
-                // Set focus when tapping on the wrapper (but not entering edit mode)
                 if !isEditing {
                     appState.focusedPanel = panelSide
                     log.info("Focus set to \(panelSide) panel via wrapper tap")
@@ -162,6 +161,10 @@ struct BreadCrumbControlWrapper: View {
                 .foregroundStyle(.green)
                 .symbolEffect(.pulse)
                 .imageScale(.large)
+                .symbolEffect(.scale.up, isActive: isHovering)
+                .onHover { hovering in
+                    isHovering = hovering
+                }
         }
         .buttonStyle(.plain)
         .help("Apply changes (⏎)")
@@ -180,6 +183,11 @@ struct BreadCrumbControlWrapper: View {
                 .foregroundStyle(.red)
                 .symbolEffect(.pulse)
                 .imageScale(.large)
+                .symbolEffect(.scale.up, isActive: isHovering)
+                .onHover { hovering in
+                    isHovering = hovering
+                }
+
         }
         .buttonStyle(.plain)
         .help("Cancel (⎋)")

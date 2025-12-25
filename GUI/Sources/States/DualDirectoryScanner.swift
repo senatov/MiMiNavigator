@@ -65,30 +65,75 @@ actor DualDirectoryScanner {
         }
     }
 
-    // MARK: -
+    // MARK: - Refresh files for a panel, requesting access if permission denied
     @Sendable
     func refreshFiles(currSide: PanelSide) async {
         log.info(#function + " side: <<\(currSide)>>")
+        
+        let path: String
+        switch currSide {
+        case .left:
+            path = await MainActor.run { appState.leftPath }
+        case .right:
+            path = await MainActor.run { appState.rightPath }
+        }
+        
+        let resolvedURL = URL(fileURLWithPath: path).resolvingSymlinksInPath()
+        
         do {
-            switch currSide {
-                case .left:
-                    // Get path on MainActor, then resolve symlinks
-                    let path = await MainActor.run { appState.leftPath }
-                    let resolvedURL = URL(fileURLWithPath: path).resolvingSymlinksInPath()
-                    let scanned = try FileScanner.scan(url: resolvedURL)
-                    await updateScannedFiles(scanned, for: .left)
-                    await updateFileList(panelSide: .left, with: scanned)
-
-                case .right:
-                    // Get path on MainActor, then resolve symlinks
-                    let path = await MainActor.run { appState.rightPath }
-                    let resolvedURL = URL(fileURLWithPath: path).resolvingSymlinksInPath()
-                    let scanned = try FileScanner.scan(url: resolvedURL)
-                    await updateScannedFiles(scanned, for: .right)
-                    await updateFileList(panelSide: .right, with: scanned)
+            let scanned = try FileScanner.scan(url: resolvedURL)
+            await updateScannedFiles(scanned, for: currSide)
+            await updateFileList(panelSide: currSide, with: scanned)
+        } catch let error as NSError {
+            // Check for permission denied error (Code 257 or POSIX 13)
+            if isPermissionDeniedError(error) {
+                log.warning("Permission denied for \(resolvedURL.path), requesting access...")
+                let granted = await requestAndRetryAccess(for: resolvedURL, side: currSide)
+                if !granted {
+                    log.error("User denied access to \(resolvedURL.path)")
+                }
+            } else {
+                log.error("scan failed <<\(currSide)>>: \(error.localizedDescription)")
             }
+        }
+    }
+    
+    // MARK: - Check if error is permission denied
+    private func isPermissionDeniedError(_ error: NSError) -> Bool {
+        // NSCocoaErrorDomain Code=257 (NSFileReadNoPermissionError)
+        if error.domain == NSCocoaErrorDomain && error.code == 257 {
+            return true
+        }
+        // NSPOSIXErrorDomain Code=13 (EACCES)
+        if error.domain == NSPOSIXErrorDomain && error.code == 13 {
+            return true
+        }
+        // Check underlying error
+        if let underlying = error.userInfo[NSUnderlyingErrorKey] as? NSError {
+            return isPermissionDeniedError(underlying)
+        }
+        return false
+    }
+    
+    // MARK: - Request access via dialog and retry scan
+    private func requestAndRetryAccess(for url: URL, side: PanelSide) async -> Bool {
+        // Request access on MainActor (shows NSOpenPanel)
+        let granted = await BookmarkStore.shared.requestAccessPersisting(for: url)
+        
+        guard granted else {
+            return false
+        }
+        
+        // Retry scanning after access granted
+        do {
+            let scanned = try FileScanner.scan(url: url)
+            await updateScannedFiles(scanned, for: side)
+            await updateFileList(panelSide: side, with: scanned)
+            log.info("Successfully scanned \(url.path) after access granted")
+            return true
         } catch {
-            log.error("scan failed <<\(currSide)>>: \(error.localizedDescription)")
+            log.error("Scan still failed after access granted: \(error.localizedDescription)")
+            return false
         }
     }
 

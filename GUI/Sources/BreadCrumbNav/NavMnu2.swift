@@ -10,6 +10,7 @@ import SwiftUI
 
 // MARK: -
 struct NavMnu2: View {
+    @State private var isHovering = false
     @Environment(AppState.self) var appState
 
     // MARK: --
@@ -21,7 +22,10 @@ struct NavMnu2: View {
         } label: {
             Image(systemName: "ellipsis")
                 .rotationEffect(.degrees(90))
-                .symbolEffect(.scale)
+                .symbolEffect(.scale.up, isActive: isHovering)
+                .onHover { hovering in
+                    isHovering = hovering
+                }
         }
         .menuStyle(.borderlessButton)
     }
