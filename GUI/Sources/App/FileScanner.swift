@@ -8,9 +8,9 @@
 import Foundation
 
 enum FileScanner {
-    // MARK: -
-    static func scan(url: URL) throws -> [CustomFile] {
-        log.info("scan(url:) \(url.path)")
+    // MARK: - Scan directory contents
+    static func scan(url: URL, showHiddenFiles: Bool = false) throws -> [CustomFile] {
+        log.info("scan(url:) \(url.path), showHidden: \(showHiddenFiles)")
         var regularDirCount = 0
         var symlinkDirCount = 0
         var fileCount = 0
@@ -18,10 +18,14 @@ enum FileScanner {
         let fileManager = FileManager.default
 
         let wantedKeys: [URLResourceKey] = [.isDirectoryKey, .isSymbolicLinkKey]
+        
+        // Determine options based on showHiddenFiles setting
+        let options: FileManager.DirectoryEnumerationOptions = showHiddenFiles ? [] : [.skipsHiddenFiles]
+        
         let contents = try fileManager.contentsOfDirectory(
             at: url,
             includingPropertiesForKeys: wantedKeys,
-            options: [.skipsHiddenFiles]
+            options: options
         )
         for fileURL in contents {
             let values = try? fileURL.resourceValues(forKeys: Set(wantedKeys))

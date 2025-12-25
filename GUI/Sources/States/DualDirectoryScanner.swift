@@ -70,18 +70,17 @@ actor DualDirectoryScanner {
     func refreshFiles(currSide: PanelSide) async {
         log.info(#function + " side: <<\(currSide)>>")
         
-        let path: String
-        switch currSide {
-        case .left:
-            path = await MainActor.run { appState.leftPath }
-        case .right:
-            path = await MainActor.run { appState.rightPath }
+        // Get path and showHiddenFiles setting on MainActor
+        let (path, showHidden): (String, Bool) = await MainActor.run {
+            let p = currSide == .left ? appState.leftPath : appState.rightPath
+            let h = UserPreferences.shared.snapshot.showHiddenFiles
+            return (p, h)
         }
         
         let resolvedURL = URL(fileURLWithPath: path).resolvingSymlinksInPath()
         
         do {
-            let scanned = try FileScanner.scan(url: resolvedURL)
+            let scanned = try FileScanner.scan(url: resolvedURL, showHiddenFiles: showHidden)
             await updateScannedFiles(scanned, for: currSide)
             await updateFileList(panelSide: currSide, with: scanned)
         } catch let error as NSError {
@@ -126,7 +125,8 @@ actor DualDirectoryScanner {
         
         // Retry scanning after access granted
         do {
-            let scanned = try FileScanner.scan(url: url)
+            let showHidden = await MainActor.run { UserPreferences.shared.snapshot.showHiddenFiles }
+            let scanned = try FileScanner.scan(url: url, showHiddenFiles: showHidden)
             await updateScannedFiles(scanned, for: side)
             await updateFileList(panelSide: side, with: scanned)
             log.info("Successfully scanned \(url.path) after access granted")

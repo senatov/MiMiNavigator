@@ -314,6 +314,117 @@ final class AppState {
         return sorted
     }
 
+    // MARK: - Toggle show hidden files and refresh
+    func toggleShowHiddenFiles() {
+        log.debug(#function)
+        UserPreferences.shared.snapshot.showHiddenFiles.toggle()
+        let newValue = UserPreferences.shared.snapshot.showHiddenFiles
+        log.info("showHiddenFiles toggled to: \(newValue)")
+        
+        // Trigger full refresh with new setting
+        Task {
+            await scanner.refreshFiles(currSide: .left)
+            await scanner.refreshFiles(currSide: .right)
+        }
+    }
+    
+    // MARK: - Force refresh both panels
+    func forceRefreshBothPanels() {
+        log.debug(#function)
+        Task {
+            await scanner.refreshFiles(currSide: .left)
+            await scanner.refreshFiles(currSide: .right)
+        }
+    }
+
+    // MARK: - Open selected item with default app or show info
+    func openSelectedItem() {
+        log.debug(#function)
+        
+        // Get selected file based on focused panel
+        let selectedFile: CustomFile?
+        switch focusedPanel {
+        case .left:
+            selectedFile = selectedLeftFile
+        case .right:
+            selectedFile = selectedRightFile
+        }
+        
+        guard let file = selectedFile else {
+            log.warning("No file selected")
+            return
+        }
+        
+        let url = file.urlValue
+        
+        if file.isDirectory || file.isSymbolicDirectory {
+            // Directory: show Get Info window via Finder
+            showFinderGetInfo(for: url)
+        } else {
+            // File: open with default application
+            NSWorkspace.shared.open(url)
+            log.info("Opened file: \(url.path)")
+        }
+    }
+    
+    // MARK: - Show Finder Get Info window centered on main window
+    private func showFinderGetInfo(for url: URL) {
+        log.debug(#function + ": \(url.path)")
+        
+        // Get main window position and size
+        guard let window = NSApp.mainWindow else {
+            log.warning("No main window found, opening Get Info at default position")
+            showFinderGetInfoSimple(for: url)
+            return
+        }
+        
+        let windowFrame = window.frame
+        let centerX = Int(windowFrame.midX)
+        let centerY = Int(NSScreen.main!.frame.height - windowFrame.midY) // Flip Y for AppleScript coordinates
+        
+        // Calculate Get Info window position (offset to center it)
+        let infoWidth = 260
+        let infoHeight = 400
+        let posX = centerX - infoWidth / 2
+        let posY = centerY - infoHeight / 2
+        
+        let script = """
+        tell application "Finder"
+            set infoWin to open information window of (POSIX file "\(url.path)" as alias)
+            set bounds of infoWin to {\(posX), \(posY), \(posX + infoWidth), \(posY + infoHeight)}
+            activate
+        end tell
+        """
+        
+        var error: NSDictionary?
+        if let appleScript = NSAppleScript(source: script) {
+            appleScript.executeAndReturnError(&error)
+            if let error = error {
+                log.error("AppleScript error: \(error)")
+            } else {
+                log.info("Opened Get Info for: \(url.path) at center")
+            }
+        }
+    }
+    
+    // MARK: - Fallback simple Get Info
+    private func showFinderGetInfoSimple(for url: URL) {
+        let script = """
+        tell application "Finder"
+            activate
+            open information window of (POSIX file "\(url.path)" as alias)
+        end tell
+        """
+        
+        var error: NSDictionary?
+        if let appleScript = NSAppleScript(source: script) {
+            appleScript.executeAndReturnError(&error)
+            if let error = error {
+                log.error("AppleScript error: \(error)")
+            }
+        }
+    }
+
     // MARK: -
     func revealLogFileInFinder() {
         log.debug(#function)

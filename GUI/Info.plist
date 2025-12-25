@@ -17,5 +17,9 @@
 			</array>
 		</dict>
 	</array>
+	<key>NSAppleEventsUsageDescription</key>
+	<string>MiMiNavigator needs to control Finder to show file information.</string>
+	<key>NSAppleScriptEnabled</key>
+	<true/>
 </dict>
 </plist>
