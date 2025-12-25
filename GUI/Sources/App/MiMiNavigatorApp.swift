@@ -13,6 +13,10 @@ let log = LogMan.log
 @main
 struct MiMiNavigatorApp: App {
     @State private var appState = AppState()
+    @State private var showHiddenFiles = UserPreferences.shared.snapshot.showHiddenFiles
+    @State private var isRefreshing = false
+    @State private var isHiddenToggling = false
+    @State private var isMagnifyAnimating = false
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @Environment(\.scenePhase) private var scenePhase
 
@@ -28,7 +32,10 @@ struct MiMiNavigatorApp: App {
         WindowGroup {
             DuoFilePanelView()
                 .environment(appState)
-                .onAppear { appDelegate.bind(appState) }
+                .onAppear {
+                    appDelegate.bind(appState)
+                    showHiddenFiles = UserPreferences.shared.snapshot.showHiddenFiles
+                }
                 .toolbarBackground(Material.thin, for: ToolbarPlacement.windowToolbar)
                 .toolbarBackgroundVisibility(Visibility.visible, for: ToolbarPlacement.windowToolbar)
                 .onChange(of: scenePhase) {
@@ -38,7 +45,8 @@ struct MiMiNavigatorApp: App {
                 }
                 .toolbar {
                     toolBarItemRefresh()
-                    toolBarItemMagnify()
+                    toolBarItemHidden()
+                    toolBarOpenWith()
                     toolBarItemBuildInfo()
                 }
         }
@@ -48,45 +56,113 @@ struct MiMiNavigatorApp: App {
         }
     }
 
-    // MARK: -
+    // MARK: - Refresh button with animation
     fileprivate func toolBarItemRefresh() -> ToolbarItem<(), some View> {
-        log.debug(#function)
         return ToolbarItem(placement: .automatic) {
-            Button(action: { log.debug("Refresh button clicked") }) {
+            Button(action: {
+                guard !isRefreshing else { return }
+                log.debug("Refresh button clicked")
+
+                withAnimation(.easeInOut(duration: 0.6)) {
+                    isRefreshing = true
+                }
+                appState.forceRefreshBothPanels()
+
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+                    withAnimation(.easeOut(duration: 0.2)) {
+                        isRefreshing = false
+                    }
+                }
+            }) {
                 Image(systemName: "arrow.triangle.2.circlepath")
                     .symbolRenderingMode(.hierarchical)
-                    .foregroundStyle(.blue)
+                    .foregroundStyle(isRefreshing ? .orange : .blue)
                     .font(.system(size: 13, weight: .semibold))
-                    .help("Refresh")
-                    .accessibilityLabel("Refresh")
+                    .rotationEffect(.degrees(isRefreshing ? 360 : 0))
+                    .scaleEffect(isRefreshing ? 1.2 : 1.0)
+                    .animation(.easeInOut(duration: 0.6), value: isRefreshing)
             }
             .buttonStyle(.borderless)
             .controlSize(.small)
-            .padding(.horizontal, 12)
+            .help("Refresh file lists (⌘R)")
+            .accessibilityLabel("Refresh")
+            .keyboardShortcut("r", modifiers: .command)
         }
     }
 
-    // MARK: -
-    fileprivate func toolBarItemMagnify() -> ToolbarItem<(), some View> {
-        log.debug(#function)
+    // MARK: - Hidden files toggle with animation
+    fileprivate func toolBarItemHidden() -> ToolbarItem<(), some View> {
         return ToolbarItem(placement: .automatic) {
-            Button(action: { appState.revealLogFileInFinder() }) {
-                Image(systemName: "doc.text.magnifyingglass")
+            Button(action: {
+                guard !isHiddenToggling else { return }
+                log.debug("Hidden toggle clicked")
+                
+                withAnimation(.easeInOut(duration: 0.6)) {
+                    isHiddenToggling = true
+                }
+                
+                showHiddenFiles.toggle()
+                UserPreferences.shared.snapshot.showHiddenFiles = showHiddenFiles
+                appState.forceRefreshBothPanels()
+                
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+                    withAnimation(.easeOut(duration: 0.2)) {
+                        isHiddenToggling = false
+                    }
+                }
+            }) {
+                Image(systemName: showHiddenFiles ? "eye.fill" : "eye.slash")
                     .symbolRenderingMode(.hierarchical)
-                    .foregroundStyle(.blue)
+                    .foregroundStyle(isHiddenToggling ? .orange : (showHiddenFiles ? .green : .secondary))
                     .font(.system(size: 13, weight: .semibold))
-                    .help("Reveal log file in Finder")
-                    .accessibilityLabel("Reveal log file in Finder")
+                    .rotationEffect(.degrees(isHiddenToggling ? 360 : 0))
+                    .scaleEffect(isHiddenToggling ? 1.2 : 1.0)
+                    .animation(.easeInOut(duration: 0.6), value: isHiddenToggling)
             }
             .buttonStyle(.borderless)
             .controlSize(.small)
-            .padding(.horizontal, 12)
+            .help(showHiddenFiles ? "Hide hidden files (⌘.)" : "Show hidden files (⌘.)")
+            .accessibilityLabel("Toggle hidden files")
+            .keyboardShortcut(".", modifiers: .command)
         }
     }
 
-    // MARK: -
+    // MARK: - Open With button with animation
+    fileprivate func toolBarOpenWith() -> ToolbarItem<(), some View> {
+        return ToolbarItem(placement: .automatic) {
+            Button(action: {
+                guard !isMagnifyAnimating else { return }
+                log.debug("OpenWith button clicked")
+
+                withAnimation(.easeInOut(duration: 0.6)) {
+                    isMagnifyAnimating = true
+                }
+                appState.openSelectedItem()
+
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+                    withAnimation(.easeOut(duration: 0.2)) {
+                        isMagnifyAnimating = false
+                    }
+                }
+            }) {
+                Image(systemName: "arrow.up.forward.app")
+                    .symbolRenderingMode(.hierarchical)
+                    .foregroundStyle(isMagnifyAnimating ? .orange : .blue)
+                    .font(.system(size: 13, weight: .semibold))
+                    .rotationEffect(.degrees(isMagnifyAnimating ? 360 : 0))
+                    .scaleEffect(isMagnifyAnimating ? 1.2 : 1.0)
+                    .animation(.easeInOut(duration: 0.6), value: isMagnifyAnimating)
+            }
+            .buttonStyle(.borderless)
+            .controlSize(.small)
+            .help("Open file / Get Info for directory (⌘O)")
+            .accessibilityLabel("Open with")
+            .keyboardShortcut("o", modifiers: .command)
+        }
+    }
+
+    // MARK: - Build info badge
     fileprivate func toolBarItemBuildInfo() -> ToolbarItem<(), some View> {
-        log.debug(#function)
         return ToolbarItem(placement: .status) {
             HStack(spacing: 8) {
                 Text("🐈")
@@ -117,27 +193,22 @@ struct MiMiNavigatorApp: App {
         }
     }
 
-    // MARK: -
+    // MARK: - Version string
     private func makeDevMark() -> Text {
-        log.debug(#function + " - creating dev mark")
         let versionURL = Bundle.main.url(forResource: "curr_version", withExtension: "asc")
         let content: String
         if let url = versionURL, let versionString = try? String(contentsOf: url, encoding: .utf8) {
             let trimmed = versionString.trimmingCharacters(in: .whitespacesAndNewlines)
             content = trimmed
-            log.debug("loaded version from file: '\(content)'")
         } else {
             let short = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String
             let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String
             if let s = short, let b = build {
                 content = "v\(s) (\(b))"
-                log.debug("fallback to Info.plist: '\(content)'")
             } else if let s = short {
                 content = "v\(s)"
-                log.debug("fallback to short version: '\(content)'")
             } else if let b = build {
                 content = "build \(b)"
-                log.debug("fallback to build: '\(content)'")
             } else {
                 content = "Mimi Navigator — cannot determine version"
                 log.error("failed to load version")
