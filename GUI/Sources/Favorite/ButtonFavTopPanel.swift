@@ -11,13 +11,13 @@ struct ButtonFavTopPanel: View {
     @State private var showFavTreePopup: Bool = false  // Local state for each panel
     let panelSide: PanelSide
 
-    // MARK: - -
+    // MARK: -
     init(selectedSide: PanelSide) {
         log.debug("ButtonFavTopPanel init" + " for side <<\(selectedSide)>>")
         self.panelSide = selectedSide
     }
 
-    // MARK: - -
+    // MARK: -
     var body: some View {
         log.debug(#function)
         return VStack(alignment: .leading, spacing: 4) { navigationControls }
@@ -33,8 +33,8 @@ struct ButtonFavTopPanel: View {
             menuButton()
         }
     }
-    
-    // MARK: - -
+
+    // MARK: -
     private func menuButton() -> some View {
         log.debug(#function + " - <<\(String(describing: panelSide))>>")
         return Button(action: {
@@ -124,7 +124,6 @@ struct ButtonFavTopPanel: View {
         .accessibilityLabel("Forward button")
     }
 
-
     // MARK: -
     private func forwardPopover() -> some View {
         log.debug(#function)
@@ -157,30 +156,7 @@ struct ButtonFavTopPanel: View {
     // MARK: -
     private func backPopover() -> some View {
         log.debug(#function)
-        return VStack(alignment: .leading) {
-            ForEach(appState.selectionsHistory.recentSelections, id: \.self) { path in
-                Button(action: {
-                    Task {
-                        if panelSide == .left {
-                            await appState.scanner.setLeftDirectory(pathStr: path)
-                            await appState.refreshLeftFiles()
-                        } else {
-                            await appState.scanner.setRightDirectory(pathStr: path)
-                            await appState.refreshRightFiles()
-                        }
-                        showBackPopover = false
-                    }
-                }) {
-                    Text(path)
-                        .font(.system(size: 11))
-                        .foregroundStyle(.blue)
-                        .padding(.vertical, 2)
-                }
-                Divider()
-            }
-        }
-        .padding(6)
-        .frame(maxWidth: 400, maxHeight: 300)
+        return HistoryPopoverView(isPresented: $showBackPopover, panelSide: panelSide)
     }
 
     // MARK: -
