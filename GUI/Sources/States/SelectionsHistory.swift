@@ -18,11 +18,92 @@ final class SelectionsHistory {
     private let userDefaultsKey = "SelectionsHistory.v2"
     private let maxEntries = 45
 
+    // MARK: - Navigation state
+    var canGoBack: Bool {
+        guard let idx = currentIndex else { return false }
+        return idx < entries.count - 1
+    }
+
+    var canGoForward: Bool {
+        guard let idx = currentIndex else { return false }
+        return idx > 0
+    }
+
     // MARK: - Init
     init() {
         log.info(#function + " - Initializing SelectionsHistory")
         load()
         rebuildRecentSelections()
+    }
+
+    // MARK: - Navigation methods
+    /// Go back in history (older entry), returns path or nil if can't go back
+    func goBack() -> String? {
+        log.debug(#function)
+        guard canGoBack, let idx = currentIndex else {
+            log.debug(#function + " - can't go back, currentIndex=\(String(describing: currentIndex))")
+            return nil
+        }
+        // Move to older entry (higher index)
+        var newIdx = idx + 1
+        // Skip deleted entries
+        while newIdx < entries.count && entries[newIdx].status == .deleted {
+            newIdx += 1
+        }
+        guard newIdx < entries.count else {
+            log.debug(#function + " - no valid older entry found")
+            return nil
+        }
+        currentIndex = newIdx
+        save()
+        let path = entries[newIdx].path
+        log.info(#function + " - navigated back to: \(path)")
+        return path
+    }
+
+    /// Go forward in history (newer entry), returns path or nil if can't go forward
+    func goForward() -> String? {
+        log.debug(#function)
+        guard canGoForward, let idx = currentIndex else {
+            log.debug(#function + " - can't go forward, currentIndex=\(String(describing: currentIndex))")
+            return nil
+        }
+        // Move to newer entry (lower index)
+        var newIdx = idx - 1
+        // Skip deleted entries
+        while newIdx >= 0 && entries[newIdx].status == .deleted {
+            newIdx -= 1
+        }
+        guard newIdx >= 0 else {
+            log.debug(#function + " - no valid newer entry found")
+            return nil
+        }
+        currentIndex = newIdx
+        save()
+        let path = entries[newIdx].path
+        log.info(#function + " - navigated forward to: \(path)")
+        return path
+    }
+
+    /// Get back history (older entries from current position)
+    func getBackHistory(limit: Int = 10) -> [String] {
+        guard let idx = currentIndex else { return [] }
+        return entries
+            .dropFirst(idx + 1)
+            .filter { $0.status != .deleted }
+            .prefix(limit)
+            .map { $0.path }
+    }
+
+    /// Get forward history (newer entries from current position)
+    func getForwardHistory(limit: Int = 10) -> [String] {
+        guard let idx = currentIndex, idx > 0 else { return [] }
+        return entries
+            .prefix(idx)
+            .reversed()
+            .filter { $0.status != .deleted }
+            .prefix(limit)
+            .map { $0.path }
     }
 
     // MARK: - Public API (compatibility)
@@ -85,7 +166,7 @@ final class SelectionsHistory {
             save()
         }
     }
-    
+
     // MARK: -
     func remove(_ path: String) {
         log.debug(#function)
