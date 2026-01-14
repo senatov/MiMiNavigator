@@ -10,13 +10,12 @@ import AppKit
 import SwiftUI
 
 // MARK: - PanelFocusModifier
-
 struct PanelFocusModifier: ViewModifier {
     @Environment(AppState.self) var appState
     let panelSide: PanelSide
     let onFocusLost: () -> Void
 
-    // MARK: - -
+    // MARK: -
     func body(content: Content) -> some View {
         // Log removed - called too frequently
         return

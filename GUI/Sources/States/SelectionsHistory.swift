@@ -16,7 +16,7 @@ final class SelectionsHistory {
     private var entries: [HistoryEntry] = []
     private var currentIndex: Int?
     private let userDefaultsKey = "SelectionsHistory.v2"
-    private let maxEntries = 32
+    private let maxEntries = 45
 
     // MARK: - Init
     init() {
@@ -82,6 +82,18 @@ final class SelectionsHistory {
         let norm = normalize(path)
         if let idx = entries.firstIndex(where: { $0.path == norm && $0.status != .deleted }) {
             currentIndex = idx
+            save()
+        }
+    }
+    
+    // MARK: -
+    func remove(_ path: String) {
+        log.debug(#function)
+        let norm = normalize(path)
+        // Mark as deleted instead of removing to preserve history integrity
+        if let idx = entries.firstIndex(where: { $0.path == norm }) {
+            entries[idx].status = .deleted
+            log.info(#function + " - marked as deleted: \(norm)")
             save()
         }
     }
