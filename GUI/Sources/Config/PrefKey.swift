@@ -1,16 +1,13 @@
-//
 // PrefKey.swift
 //  MiMiNavigator
 //
-//  Created by Iakov Senatov on 23.10.2025.
-//  Copyright © 2025 Senatov. All rights reserved.
+//  Created by Iakov Senatov on 23.10.2024.
+//  Copyright © 2024 Senatov. All rights reserved.
 //
 
-import AppKit
-import Combine
 import Foundation
 
-// MARK: - PrefKey
+// MARK: - Preference keys for UserDefaults
 enum PrefKey: String, CaseIterable {
     case leftPath
     case rightPath

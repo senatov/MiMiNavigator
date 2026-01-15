@@ -4,21 +4,24 @@
 
 <plist version="1.0">
 <dict>
-
-    <!-- Включаем sandbox для безопасности -->
+    <!-- App Sandbox enabled for security -->
     <key>com.apple.security.app-sandbox</key>
     <true/>
 
-    <!-- Разрешаем доступ к файлам, выбранным пользователем через NSOpenPanel -->
+    <!-- Allow access to user-selected files via NSOpenPanel -->
     <key>com.apple.security.files.user-selected.read-write</key>
     <true/>
 
-    <!-- Разрешить работу с временными файлами -->
+    <!-- Allow access to Downloads folder (used as default path) -->
     <key>com.apple.security.files.downloads.read-write</key>
-    <false/>
+    <true/>
 
-    <!-- Если используешь сетевые соединения -->
+    <!-- Network access for potential future features (FTP, cloud) -->
     <key>com.apple.security.network.client</key>
+    <true/>
+
+    <!-- Allow security-scoped bookmarks for persistent access -->
+    <key>com.apple.security.files.bookmarks.app-scope</key>
     <true/>
 
 </dict>

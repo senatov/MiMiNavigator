@@ -1,35 +1,41 @@
-//
-// DualDirScanner.swift
+// DualDirectoryScanner.swift
 //  MiMiNavigator
 //
 //  Created by Iakov Senatov on 11.12.24.
+//  Copyright © 2024 Senatov. All rights reserved.
 //
+
 import Foundation
 import SwiftUI
 
+// MARK: - Actor for concurrent directory scanning
 actor DualDirectoryScanner {
     let appState: AppState
     var fileLst = FileSingleton.shared
     private var leftTimer: DispatchSourceTimer?
     private var rightTimer: DispatchSourceTimer?
-    private let timeOutRefresh: Int = 300
+    
+    /// Refresh interval from centralized constants
+    private var refreshInterval: Int {
+        Int(AppConstants.Scanning.refreshInterval)
+    }
 
-    // MARK: -
     init(appState: AppState) {
         self.appState = appState
     }
 
-    // MARK: -
+    // MARK: - Start monitoring both panels
     func startMonitoring() {
         log.info(#function)
-        setupTimer(for: .right)
         setupTimer(for: .left)
+        setupTimer(for: .right)
+        
         if leftTimer == nil || rightTimer == nil {
-            log.error("failed to init timers")
+            log.error("Failed to initialize directory timers")
         }
     }
 
-    // MARK: -
+    // MARK: - Set directory for right panel
     func setRightDirectory(pathStr: String) {
         log.info("\(#function) path: \(pathStr)")
         Task { @MainActor in
@@ -37,7 +43,7 @@ actor DualDirectoryScanner {
         }
     }
 
-    // MARK: -
+    // MARK: - Set directory for left panel
     func setLeftDirectory(pathStr: String) {
         log.info("\(#function) path: \(pathStr)")
         Task { @MainActor in
@@ -45,32 +51,29 @@ actor DualDirectoryScanner {
         }
     }
 
-    // MARK: -
-    private func setupTimer(for currSide: PanelSide) {
-        log.info(#function)
+    // MARK: - Setup refresh timer for a panel
+    private func setupTimer(for side: PanelSide) {
         let timer = DispatchSource.makeTimerSource(queue: DispatchQueue.global())
-        timer.schedule(deadline: .now(), repeating: .seconds(timeOutRefresh))
+        timer.schedule(deadline: .now(), repeating: .seconds(refreshInterval))
         timer.setEventHandler { [weak self] in
-            guard let self = self else {
-                return
-            }
+            guard let self = self else { return }
             Task { @MainActor in
-                await self.refreshFiles(currSide: currSide)
+                await self.refreshFiles(currSide: side)
             }
         }
         timer.resume()
-        switch currSide {
-            case .left: leftTimer = timer
-            case .right: rightTimer = timer
+        
+        switch side {
+        case .left: leftTimer = timer
+        case .right: rightTimer = timer
         }
     }
 
-    // MARK: - Refresh files for a panel, requesting access if permission denied
+    // MARK: - Refresh files for a panel
     @Sendable
     func refreshFiles(currSide: PanelSide) async {
-        log.info(#function + " side: <<\(currSide)>>")
+        log.verbose("\(#function) side: <<\(currSide)>>")
         
-        // Get path and showHiddenFiles setting on MainActor
         let (path, showHidden): (String, Bool) = await MainActor.run {
             let p = currSide == .left ? appState.leftPath : appState.rightPath
             let h = UserPreferences.shared.snapshot.showHiddenFiles
@@ -84,7 +87,6 @@ actor DualDirectoryScanner {
             await updateScannedFiles(scanned, for: currSide)
             await updateFileList(panelSide: currSide, with: scanned)
         } catch let error as NSError {
-            // Check for permission denied error (Code 257 or POSIX 13)
             if isPermissionDeniedError(error) {
                 log.warning("Permission denied for \(resolvedURL.path), requesting access...")
                 let granted = await requestAndRetryAccess(for: resolvedURL, side: currSide)
@@ -92,38 +94,26 @@ actor DualDirectoryScanner {
                     log.error("User denied access to \(resolvedURL.path)")
                 }
             } else {
-                log.error("scan failed <<\(currSide)>>: \(error.localizedDescription)")
+                log.error("Scan failed for <<\(currSide)>>: \(error.localizedDescription)")
             }
         }
     }
     
     // MARK: - Check if error is permission denied
     private func isPermissionDeniedError(_ error: NSError) -> Bool {
-        // NSCocoaErrorDomain Code=257 (NSFileReadNoPermissionError)
-        if error.domain == NSCocoaErrorDomain && error.code == 257 {
-            return true
-        }
-        // NSPOSIXErrorDomain Code=13 (EACCES)
-        if error.domain == NSPOSIXErrorDomain && error.code == 13 {
-            return true
-        }
-        // Check underlying error
+        if error.domain == NSCocoaErrorDomain && error.code == 257 { return true }
+        if error.domain == NSPOSIXErrorDomain && error.code == 13 { return true }
         if let underlying = error.userInfo[NSUnderlyingErrorKey] as? NSError {
             return isPermissionDeniedError(underlying)
         }
         return false
     }
     
-    // MARK: - Request access via dialog and retry scan
+    // MARK: - Request access and retry scan
     private func requestAndRetryAccess(for url: URL, side: PanelSide) async -> Bool {
-        // Request access on MainActor (shows NSOpenPanel)
         let granted = await BookmarkStore.shared.requestAccessPersisting(for: url)
+        guard granted else { return false }
         
-        guard granted else {
-            return false
-        }
-        
-        // Retry scanning after access granted
         do {
             let showHidden = await MainActor.run { UserPreferences.shared.snapshot.showHiddenFiles }
             let scanned = try FileScanner.scan(url: url, showHiddenFiles: showHidden)
@@ -137,55 +127,36 @@ actor DualDirectoryScanner {
         }
     }
 
-    // MARK: -
+    // MARK: - Update displayed files
     @MainActor
-    private func updateScannedFiles(_ files: [CustomFile], for currSide: PanelSide) {
-        log.info(#function + " side: \(currSide)")
-        log.info("updating AppState.\(currSide) w/ \(files.count) files")
+    private func updateScannedFiles(_ files: [CustomFile], for side: PanelSide) {
         let sorted = appState.applySorting(files)
-        switch currSide {
-            case .left:
-                appState.displayedLeftFiles = sorted
-            case .right:
-                appState.displayedRightFiles = sorted
+        switch side {
+        case .left: appState.displayedLeftFiles = sorted
+        case .right: appState.displayedRightFiles = sorted
         }
     }
 
-    // MARK: -
-    func resetRefreshTimer(for currSide: PanelSide) {
-        log.info(#function + " side: <<\(currSide)>>")
-        switch currSide {
-            case .left:
-                leftTimer?.cancel()
-                leftTimer = nil
-                setupTimer(for: .left)
-
-            case .right:
-                rightTimer?.cancel()
-                rightTimer = nil
-                setupTimer(for: .right)
+    // MARK: - Reset timer for a panel
+    func resetRefreshTimer(for side: PanelSide) {
+        switch side {
+        case .left:
+            leftTimer?.cancel()
+            leftTimer = nil
+            setupTimer(for: .left)
+        case .right:
+            rightTimer?.cancel()
+            rightTimer = nil
+            setupTimer(for: .right)
         }
     }
 
-    // MARK: -
+    // MARK: - Update file list in storage
     @MainActor
     private func updateFileList(panelSide: PanelSide, with files: [CustomFile]) async {
-        log.info(#function + " side: <<\(panelSide)>>")
-        
-        // Always update file list, even if selectedEntity is nil
-        // (e.g., when user manually enters a path)
-        if let selectedEntity = appState.selectedDir.selectedFSEntity {
-            log.info("updating sel'd dir: \(selectedEntity.pathStr) w/ \(files.count) files on <<\(panelSide)>>")
-        } else {
-            log.info("updating w/ \(files.count) files on <<\(panelSide)>> (no selectedEntity)")
-        }
-        
         switch panelSide {
-            case .left:
-                await fileLst.updateLeftFiles(files)
-            case .right:
-                await fileLst.updateRightFiles(files)
+        case .left: await fileLst.updateLeftFiles(files)
+        case .right: await fileLst.updateRightFiles(files)
         }
-        log.info("finished updating <<\(panelSide)>>")
     }
 }

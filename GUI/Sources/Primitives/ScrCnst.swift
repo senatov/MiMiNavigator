@@ -1,17 +1,19 @@
-//
-// ScrCnst.swift
+// TerminalScriptConfig.swift
 //  MiMiNavigator
 //
-//  Created by Iakov Senatov on 28.09.2025.
-//  Copyright © 2025 Senatov. All rights reserved.
+//  Created by Iakov Senatov on 28.09.2024.
+//  Copyright © 2024 Senatov. All rights reserved.
 //
-// MARK: -
+
 import Foundation
 
-// MARK: -
-enum ScrCnst {
-    static let NAME = "OpenTerminal"
-    static let EXT = "scpt"
-    static let SUBDIR = "Gui/OSScript"
-    static let ERR0 = "(unknown bundle resourceURL)"
+// MARK: - Configuration for terminal AppleScript
+enum TerminalScriptConfig {
+    static let scriptName = "OpenTerminal"
+    static let scriptExtension = "scpt"
+    static let scriptSubdirectory = "Gui/OSScript"
+    static let unknownBundleURL = "(unknown bundle resourceURL)"
 }
+
+// MARK: - Legacy alias for backward compatibility
+typealias ScrCnst = TerminalScriptConfig

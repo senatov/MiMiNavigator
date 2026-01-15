@@ -1,4 +1,3 @@
-//
 // ConsoleCurrPath.swift
 //  MiMiNavigator
 //
@@ -8,39 +7,49 @@
 
 import Foundation
 
-// MARK: - non-UI helper to open Console for given dir
+// MARK: - Helper to open Terminal at specified directory
 final class ConsoleCurrPath {
+    
     @discardableResult
     static func open(in directory: String) -> Bool {
-        return openConsoleInDirectory(directory)
+        openTerminalInDirectory(directory)
     }
 }
 
-// MARK: -
+// MARK: - Open Terminal via AppleScript
 @discardableResult
-func openConsoleInDirectory(_ directoryStr: String) -> Bool {
-    log.debug(#function)
-    let S = ScrCnst.self
+private func openTerminalInDirectory(_ directoryStr: String) -> Bool {
+    let config = TerminalScriptConfig.self
 
     let dir = directoryStr.trimmingCharacters(in: .whitespacesAndNewlines)
     guard !dir.isEmpty else {
-        log.error("empty dir string")
+        log.error("Empty directory string provided")
         return false
     }
 
     var isDir: ObjCBool = false
     guard FileManager.default.fileExists(atPath: dir, isDirectory: &isDir), isDir.boolValue else {
-        log.error("dir not found: \(dir)")
+        log.error("Directory not found: \(dir)")
         return false
     }
 
     let resourceURL = Bundle.main.resourceURL
-    let expectedPathInSubdir = resourceURL?.appendingPathComponent("\(S.SUBDIR)/\(S.NAME).\(S.EXT)").path ?? S.ERR0
-    let expectedPathInRoot = resourceURL?.appendingPathComponent("\(S.NAME).\(S.EXT)").path ?? S.ERR0
+    let expectedPathInSubdir = resourceURL?
+        .appendingPathComponent("\(config.scriptSubdirectory)/\(config.scriptName).\(config.scriptExtension)")
+        .path ?? config.unknownBundleURL
+    let expectedPathInRoot = resourceURL?
+        .appendingPathComponent("\(config.scriptName).\(config.scriptExtension)")
+        .path ?? config.unknownBundleURL
 
-    let scriptURL =
-        Bundle.main.url(forResource: S.NAME, withExtension: S.EXT, subdirectory: S.SUBDIR)
-        ?? Bundle.main.url(forResource: S.NAME, withExtension: S.EXT)
+    let scriptURL = Bundle.main.url(
+        forResource: config.scriptName,
+        withExtension: config.scriptExtension,
+        subdirectory: config.scriptSubdirectory
+    ) ?? Bundle.main.url(
+        forResource: config.scriptName,
+        withExtension: config.scriptExtension
+    )
+    
     guard let scriptURL else {
         log.error("AppleScript not found:\n1) \(expectedPathInSubdir)\n2) \(expectedPathInRoot)")
         return false
@@ -50,7 +59,7 @@ func openConsoleInDirectory(_ directoryStr: String) -> Bool {
     task.executableURL = URL(fileURLWithPath: "/usr/bin/osascript")
     task.arguments = [scriptURL.path, dir]
     task.terminationHandler = { proc in
-        log.debug("osascript terminated: \(proc.terminationStatus)")
+        log.debug("osascript terminated with status: \(proc.terminationStatus)")
     }
 
     do {
@@ -58,7 +67,7 @@ func openConsoleInDirectory(_ directoryStr: String) -> Bool {
         log.debug("osascript started, pid=\(task.processIdentifier)")
         return true
     } catch {
-        log.error("osascript failed: \(String(describing: error))")
+        log.error("osascript failed: \(error.localizedDescription)")
         return false
     }
 }

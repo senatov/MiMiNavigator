@@ -1,14 +1,10 @@
-//
-// PrefsSnapshot.swift
+// PreferencesSnapshot.swift
 //  MiMiNavigator
 //
-//  Created by Iakov Senatov on 23.10.2025.
-//  Copyright © 2025 Senatov. All rights reserved.
+//  Created by Iakov Senatov on 23.10.2024.
+//  Copyright © 2024 Senatov. All rights reserved.
 //
 
-
-import AppKit
-import Combine
 import Foundation
 
 struct PreferencesSnapshot: Codable, Sendable {
@@ -22,17 +18,11 @@ struct PreferencesSnapshot: Codable, Sendable {
 
     static let `default` = PreferencesSnapshot(
         leftPath: FileManager.default
-            .urls(
-                for: .downloadsDirectory,
-                in: .userDomainMask
-            )
+            .urls(for: .downloadsDirectory, in: .userDomainMask)
             .first?
             .path ?? "/",
         rightPath: FileManager.default
-            .urls(
-                for: .documentDirectory,
-                in: .userDomainMask
-            )
+            .urls(for: .documentDirectory, in: .userDomainMask)
             .first?
             .path ?? "/",
         showHiddenFiles: false,
