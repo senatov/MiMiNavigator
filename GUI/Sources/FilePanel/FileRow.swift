@@ -3,7 +3,6 @@
 //
 //  Created by Iakov Senatov on 23.10.2024.
 //  Copyright © 2024 Senatov. All rights reserved.
-//
 
 import AppKit
 import SwiftUI
@@ -14,6 +13,9 @@ struct FileRow: View {
     let file: CustomFile
     let isSelected: Bool
     let panelSide: PanelSide
+    let sizeColumnWidth: CGFloat
+    let dateColumnWidth: CGFloat
+    let typeColumnWidth: CGFloat
     let onSelect: (CustomFile) -> Void
     let onDoubleClick: (CustomFile) -> Void
     let onFileAction: (FileAction, CustomFile) -> Void
@@ -98,10 +100,10 @@ struct FileRow: View {
 
     // MARK: - Row content with columns
     private var rowContent: some View {
-        HStack(alignment: .center, spacing: 4) {
-            // Name column
+        HStack(alignment: .center, spacing: 0) {
+            // Name column (flexible) - can shrink
             FileRowView(file: file, isSelected: isSelected, isActivePanel: isActivePanel)
-                .frame(maxWidth: .infinity, alignment: .leading)
+                .frame(maxWidth: .infinity, minWidth: 60, alignment: .leading)
             
             columnDivider
             
@@ -109,7 +111,9 @@ struct FileRow: View {
             Text(file.fileSizeFormatted)
                 .font(.system(size: 11))
                 .foregroundStyle(secondaryTextColor)
-                .frame(width: FilePanelStyle.sizeColumnWidth, alignment: .trailing)
+                .lineLimit(1)
+                .frame(width: sizeColumnWidth, alignment: .trailing)
+                .padding(.horizontal, 4)
             
             columnDivider
             
@@ -117,7 +121,9 @@ struct FileRow: View {
             Text(file.modifiedDateFormatted)
                 .font(.system(size: 11))
                 .foregroundStyle(tertiaryTextColor)
-                .frame(width: FilePanelStyle.modifiedColumnWidth, alignment: .leading)
+                .lineLimit(1)
+                .frame(width: dateColumnWidth, alignment: .leading)
+                .padding(.horizontal, 4)
             
             columnDivider
             
@@ -125,9 +131,10 @@ struct FileRow: View {
             Text(file.fileTypeDisplay)
                 .font(.system(size: 10, weight: .medium))
                 .foregroundStyle(typeTextColor)
-                .frame(width: FilePanelStyle.typeColumnWidth, alignment: .leading)
+                .frame(width: typeColumnWidth, alignment: .leading)
                 .lineLimit(1)
                 .truncationMode(.tail)
+                .padding(.horizontal, 4)
         }
         .padding(.vertical, 1)
         .padding(.horizontal, 4)
@@ -135,8 +142,8 @@ struct FileRow: View {
     
     private var columnDivider: some View {
         Rectangle()
+            .fill(Color(nsColor: .separatorColor).opacity(0.5))
             .frame(width: 1)
-            .foregroundStyle(Color(nsColor: .separatorColor).opacity(0.4))
             .padding(.vertical, 2)
     }
 

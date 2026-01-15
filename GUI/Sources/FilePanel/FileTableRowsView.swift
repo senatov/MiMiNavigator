@@ -3,7 +3,6 @@
 //
 //  Created by Iakov Senatov on 23.10.2024.
 //  Copyright © 2024 Senatov. All rights reserved.
-//
 
 import SwiftUI
 
@@ -12,6 +11,9 @@ struct FileTableRowsView: View {
     let rows: [(offset: Int, element: CustomFile)]
     @Binding var selectedID: CustomFile.ID?
     let panelSide: PanelSide
+    let sizeColumnWidth: CGFloat
+    let dateColumnWidth: CGFloat
+    let typeColumnWidth: CGFloat
     let onSelect: (CustomFile) -> Void
     let onDoubleClick: (CustomFile) -> Void
     let handleFileAction: (FileAction, CustomFile) -> Void
@@ -35,6 +37,9 @@ struct FileTableRowsView: View {
             file: file,
             isSelected: isSelected,
             panelSide: panelSide,
+            sizeColumnWidth: sizeColumnWidth,
+            dateColumnWidth: dateColumnWidth,
+            typeColumnWidth: typeColumnWidth,
             onSelect: { tapped in
                 onSelect(tapped)
             },
