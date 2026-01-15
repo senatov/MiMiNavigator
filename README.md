@@ -11,11 +11,11 @@
   <img src="https://img.shields.io/badge/Xcode-16+-blue?logo=xcode" alt="Xcode 16+" />
   <img src="https://img.shields.io/badge/Framework-SwiftUI-blue?logo=swift" alt="SwiftUI" />
   <img src="https://img.shields.io/badge/Concurrency-Swift%206%20Strict-green" alt="Swift 6 Strict Concurrency" />
-  <img src="https://img.shields.io/badge/Version-0.8.0-informational" alt="Version 0.8.0" />
+  <img src="https://img.shields.io/badge/Version-0.9.0-informational" alt="Version 0.9.0" />
   <img src="https://img.shields.io/badge/License-MIT-lightgrey.svg" alt="License" />
-  <img src="https://img.shields.io/badge/Status-Work%20in%20Progress-yellow" alt="Status: WIP" />
+  <img src="https://img.shields.io/badge/Status-Active%20Development-yellow" alt="Status: Active" />
   <img src="https://img.shields.io/badge/Code%20Style-SwiftLint-red" alt="SwiftLint" />
-  <img src="https://img.shields.io/badge/UI-macOS%20HIG-purple" alt="macOS HIG" />
+  <img src="https://img.shields.io/badge/UI-macOS%2026%20Glass-purple" alt="macOS Glass UI" />
 </p>
 
 <div style="text-align: center;">
@@ -26,9 +26,9 @@
     style="max-width: 60%; height: auto; border: 2px; border-radius: 12px;" />
 </div>
 
-
 <p align="center">
   <a href="#features">Features</a> •
+  <a href="#whats-new">What's New</a> •
   <a href="#screenshots">Screenshots</a> •
   <a href="#installation">Installation</a> •
   <a href="#architecture">Architecture</a> •
@@ -62,6 +62,7 @@ to help clarify the philosophies and implementations of different architectures.
 ## 📖 Table of Contents
 
 - [Overview](#overview)
+- [What's New in v0.9.0](#whats-new-in-v090)
 - [Why MiMiNavigator?](#why-miminavigator)
 - [Features](#features)
 - [Screenshots](#screenshots)
@@ -90,8 +91,53 @@ to help clarify the philosophies and implementations of different architectures.
 - **Clean Architecture**: Clear separation of concerns with well-defined layers and responsibilities
 - **Developer-Friendly**: Comprehensive logging, extensive documentation, and code quality tools
 - **Educational Resource**: Demonstrating modern SwiftUI patterns and best practices for macOS development
+- **Modern UI**: Implementing macOS 26 liquid-glass design language with authentic visual effects
 
 👉 **Source Code**: [Gui/Sources](https://github.com/senatov/MiMiNavigator/tree/master/Gui/Sources)
+
+## What's New in v0.9.0
+
+### 🎨 Total Commander-Style Menu System
+Complete implementation of a professional menu bar inspired by Total Commander with 8 fully structured menu categories:
+
+| Menu | Description |
+|------|-------------|
+| **Files** | Rename/Move, Pack/Unpack archives, Compare, Sync directories |
+| **Mark** | Select/Unselect groups, Select All, Invert selection |
+| **Commands** | Command Prompt, CD Tree, Branch View |
+| **Net** | FTP Connect/Disconnect, Network Neighborhood |
+| **Show** | Full/Brief View, Hidden Files toggle |
+| **Configuration** | Options, Customize Toolbar |
+| **Start** | Tab management (New, Duplicate, Close) |
+| **Help** | Index, Keyboard, About, Check for Updates |
+
+### 🪟 macOS 26 Liquid-Glass UI
+- New glass-morphic menu bar with authentic Apple design:
+  - Ultra-thin material background with gradient overlays
+  - Crisp hairline borders with highlight/shadow effects
+  - Subtle top glow and bottom separator
+  - Multi-layered shadow system for depth
+- Pixel-perfect rendering with `backingScaleFactor` awareness
+
+### 📜 Navigation History System
+- **HistoryPopoverView**: Scrollable history of visited directories
+- Per-panel navigation with quick-jump functionality
+- Delete individual history items with swipe gesture
+- Empty state with visual feedback
+- Filtering directories only (excludes files from history)
+
+### ⚡ Enhanced Operations
+- **File Copy**: F5 hotkey now copies selected file to opposite panel
+- Automatic refresh after operations
+- Conflict detection (skip if destination exists)
+- Full logging of all file operations
+
+### 🎯 Other Improvements
+- Modular menu architecture with `MenuCategory` and `MenuItem` models
+- `TopMenuBarView` with proper accessibility labels
+- Compact fonts in tree views for better information density
+- Updated app icons with new design
+- Improved preview rendering
 
 ## Why MiMiNavigator?
 
@@ -101,6 +147,7 @@ to help clarify the philosophies and implementations of different architectures.
 - **Native Integration**: Seamless integration with macOS Finder, Quick Look, and system services
 - **Real-time Updates**: Instant synchronization with file system changes
 - **Keyboard-First**: Designed for productivity with comprehensive keyboard shortcuts
+- **Total Commander Familiarity**: Menu structure familiar to TC users
 
 ### For Developers
 
@@ -108,6 +155,7 @@ to help clarify the philosophies and implementations of different architectures.
 - **SwiftUI Best Practices**: Demonstrating advanced SwiftUI techniques for complex macOS applications
 - **Clean Codebase**: Well-structured, documented code with consistent style and patterns
 - **Learning Resource**: Explore AppKit bridging, state management, and performance optimization
+- **Glass UI Implementation**: Reference implementation of macOS 26 design language
 
 ### Technical Highlights
 
@@ -119,32 +167,48 @@ to help clarify the philosophies and implementations of different architectures.
 - 🧪 **Quality tools integration** (SwiftLint, Swift-format, Periphery)
 - 🔐 **Security-scoped bookmarks** for sandbox-compliant file access
 - 🎬 **Animated toolbar buttons** with visual feedback
+- 🪟 **Liquid-glass UI** following macOS 26 design guidelines
+- 📜 **Navigation history** with per-panel tracking
 
 ## Features
 
-### ✅ Current Features (v0.8.0)
+### ✅ Current Features (v0.9.0)
 
 #### Core Functionality
 - **Dual File Panels**: Two independent file panels with synchronized navigation and operations
 - **Real-time Monitoring**: Automatic directory updates using FileManager's file system events
 - **Breadcrumb Navigation**: Interactive path navigation with click-to-navigate functionality
 - **Quick Access Sidebar**: Finder-like favorites and frequently used locations
-- **File Operations**: Context menus for common file operations (open, reveal in Finder, etc.)
+- **File Operations**: Copy files between panels (F5), context menus for common operations
 - **Custom Split View**: Adjustable panel divider with smooth dragging and hover feedback
 - **Security-Scoped Bookmarks**: Persistent file access permissions for sandboxed operation
+- **Navigation History**: Per-panel history with quick navigation popover
+
+#### Menu System (Total Commander-Style)
+- **Files Menu**: Rename/Move (F6), Pack/Unpack archives, Compare, Sync directories, Quit
+- **Mark Menu**: Select/Unselect groups, Select All, Invert Selection
+- **Commands Menu**: Command Prompt, Desktop Folder, CD Tree, Branch View
+- **Net Menu**: FTP Connect/Disconnect, Network Neighborhood
+- **Show Menu**: Full/Brief View, Hidden Files toggle
+- **Configuration Menu**: Options, Customize Toolbar
+- **Start Menu**: New Tab, Duplicate Tab, Close Tab
+- **Help Menu**: Index, Keyboard, Registration, Website, Updates, About
 
 #### Toolbar Features
 - **Refresh Button** (`⌘R`): Animated refresh of both file panels with rotation and color change
 - **Hidden Files Toggle** (`⌘.`): Show/hide hidden files with persistent preference
 - **Open With** (`⌘O`): Opens files with default app, shows Finder Get Info for directories (centered on window)
+- **Dev Build Badge**: Shows current version with visual indicator
 
 #### User Interface
+- **macOS 26 Glass Design**: Liquid-glass menu bar with authentic Apple styling
 - **Native macOS Design**: Following Apple Human Interface Guidelines (HIG)
 - **Dynamic Type Support**: Accessibility-ready with scalable fonts
 - **Context Menus**: Rich context menus for files and directories
 - **Keyboard Navigation**: Arrow keys, Enter, Tab panel switching, and command shortcuts
 - **Visual Feedback**: Hover states, selection highlighting, animated buttons
 - **Auto-scroll Selection**: Selected items always remain visible in long lists
+- **Compact Tree Fonts**: Optimized for information density
 
 #### Technical Features
 - **Thread-safe Operations**: Actor-based directory scanning for concurrent file access
@@ -153,15 +217,17 @@ to help clarify the philosophies and implementations of different architectures.
 - **Structured Logging**: Multi-channel logging (console, file) with SwiftyBeaver
 - **Persistence Ready**: UserDefaults integration for settings and bookmarks
 - **Permission Handling**: Automatic permission request dialogs for restricted directories
+- **Pixel-Perfect Rendering**: `backingScaleFactor` awareness for Retina displays
 
 ### ⏳ Planned Features
 
-#### Near Term (v0.9.0)
-- [ ] Enhanced file operations (copy, move, delete) with progress indicators
+#### Near Term (v0.10.0)
 - [ ] Multi-selection support with keyboard and mouse
 - [ ] Search and filter functionality within panels
 - [ ] File preview with Quick Look integration
 - [ ] Drag & drop between panels
+- [ ] Delete operations with confirmation dialogs
+- [ ] Move/Rename operations (F6)
 
 #### Medium Term (v1.0.0)
 - [ ] Three-panel layout option
@@ -170,10 +236,11 @@ to help clarify the philosophies and implementations of different architectures.
 - [ ] Custom themes and color schemes
 - [ ] Terminal integration (open Terminal at current path)
 - [ ] Archive support (zip, tar, etc.)
+- [ ] FTP/SFTP connectivity
 
 #### Long Term (v2.0.0)
 - [ ] Cloud storage integration (iCloud, Dropbox, etc.)
-- [ ] Network file system support (SMB, FTP, SFTP)
+- [ ] Network file system support (SMB)
 - [ ] Advanced file comparison tools
 - [ ] Batch rename functionality
 - [ ] Plugin system for extensibility
@@ -311,6 +378,7 @@ Build logs are automatically saved to `build-logs/` directory with timestamps.
 - **Switch Panels**: Press `Tab` or click on the panel you want to make active
 - **Context Menu**: Right-click on files or folders
 - **Resize Panels**: Drag the divider between panels
+- **Navigation History**: Click history button to see visited directories
 
 ### Keyboard Shortcuts
 
@@ -322,6 +390,7 @@ Build logs are automatically saved to `build-logs/` directory with timestamps.
 | `⌘R` | Refresh both panels |
 | `⌘.` | Toggle hidden files |
 | `⌘O` | Open file / Get Info for directory |
+| `F5` | Copy selected file to other panel |
 | `⌘W` | Close window |
 | `⌘Q` | Quit application |
 | `Home/PageUp` | Jump to first item |
@@ -363,6 +432,25 @@ MiMiNavigator/
 │   │   │   ├── PanelFileTableSection.swift # File table section wrapper
 │   │   │   └── PanelFocusModifier.swift  # Focus management modifier
 │   │   │
+│   │   ├── Menus/                         # Menu System (NEW)
+│   │   │   ├── TopMenuBarView.swift      # Glass-style menu bar container
+│   │   │   ├── TopMenuItemView.swift     # Individual menu item renderer
+│   │   │   ├── MenuCategory.swift        # Menu category model
+│   │   │   ├── MenuItem.swift            # Menu item model
+│   │   │   ├── MenuItemContent.swift     # Menu item content wrapper
+│   │   │   └── HelpPopup.swift           # Help popup view
+│   │   │
+│   │   ├── MenuMeta/                      # Menu Definitions (NEW)
+│   │   │   ├── TopMnuMetas.swift         # All menu categories data
+│   │   │   ├── FileContextMenu.swift     # File context menu actions
+│   │   │   ├── DirectoryContextMenu.swift # Directory context menu actions
+│   │   │   ├── FileAction.swift          # File action enum
+│   │   │   └── DirectoryAction.swift     # Directory action enum
+│   │   │
+│   │   ├── History/                       # Navigation History (NEW)
+│   │   │   ├── HistoryPopoverView.swift  # History popover component
+│   │   │   └── HistoryItemRow.swift      # Individual history item
+│   │   │
 │   │   ├── Favorite/                      # Favorites & Bookmarks
 │   │   │   ├── BookmarkStore.swift       # Security-scoped bookmark persistence
 │   │   │   ├── FavScanner.swift          # Favorites directory scanner
@@ -373,6 +461,9 @@ MiMiNavigator/
 │   │   │   ├── UserPreferences.swift     # User settings (@Observable)
 │   │   │   ├── PreferencesSnapshot.swift # Settings snapshot
 │   │   │   └── PrefKey.swift             # Preference key definitions
+│   │   │
+│   │   ├── Bubble/                        # UI Components (NEW)
+│   │   │   └── ToolTipMod.swift          # Tooltip modifier
 │   │   │
 │   │   └── ...                           # Other modules
 │   │
@@ -394,6 +485,7 @@ final class AppState {
     var selectedLeftFile: CustomFile?
     var selectedRightFile: CustomFile?
     var scanner: DualDirectoryScanner!
+    let selectionsHistory = SelectionsHistory()
 }
 ```
 
@@ -422,6 +514,39 @@ actor BookmarkStore {
         // Restores saved bookmarks on app launch
     }
 }
+```
+
+#### Modular Menu System
+```swift
+@MainActor
+let filesMenuCategory = MenuCategory(
+    title: "Files",
+    items: [
+        MenuItem(title: "Rename/Move", action: { ... }, shortcut: "F6"),
+        MenuItem(title: "Pack...", action: { ... }, shortcut: "Alt+F5"),
+        // ...
+    ])
+```
+
+#### macOS 26 Glass UI
+```swift
+RoundedRectangle(cornerRadius: MenuBarMetrics.corner, style: .continuous)
+    .fill(.ultraThinMaterial)
+    .overlay(
+        RoundedRectangle(cornerRadius: MenuBarMetrics.corner, style: .continuous)
+            .strokeBorder(
+                LinearGradient(
+                    colors: [
+                        Color.white.opacity(0.30),
+                        Color.blue.opacity(0.08),
+                        Color.black.opacity(0.12),
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                ),
+                lineWidth: px
+            )
+    )
 ```
 
 ## Development
@@ -466,6 +591,7 @@ log.error("Error messages")
 - `[SCROLL]` — Scroll position management
 - `[NAV]` — Keyboard navigation
 - `[DOUBLE-CLICK]` — File/folder opening
+- `Menu >` — Menu item activation
 
 **Log Location**: `~/Library/Logs/MiMiNavigator.log`
 
@@ -494,10 +620,12 @@ log.error("Error messages")
 - **PreferenceKeys**: Child-to-parent communication
 - **NSViewRepresentable**: AppKit bridging (NSOpenPanel, NSPathControl)
 - **View Modifiers**: Reusable styling and behavior
+- **Materials**: `.ultraThinMaterial` for glass effects
+- **Gradients**: Multi-stop gradients for depth
 
 ## Roadmap
 
-### Version 0.8.0 (Current) ✅
+### Version 0.8.0 ✅
 - [x] Dual-panel file navigation
 - [x] Breadcrumb navigation
 - [x] Real-time directory monitoring
@@ -511,14 +639,24 @@ log.error("Error messages")
 - [x] Auto-scroll to selection
 - [x] Tab panel switching
 
-### Version 0.9.0 - Enhanced Operations 🚧
+### Version 0.9.0 (Current) ✅
+- [x] Total Commander-style menu system
+- [x] macOS 26 liquid-glass UI
+- [x] Navigation history with popover
+- [x] File copy operation (F5)
+- [x] Modular menu architecture
+- [x] Compact tree fonts
+- [x] Updated app icons
+
+### Version 0.10.0 - Enhanced Operations 🚧
 **Target**: Q1 2025
 
-- [ ] Copy/Move operations with progress
 - [ ] Multi-selection support
 - [ ] Search functionality
 - [ ] Quick Look integration
 - [ ] Drag & drop between panels
+- [ ] Delete with confirmation
+- [ ] Move/Rename (F6)
 
 ### Version 1.0.0 - Production Release 🎯
 **Target**: Q2 2025
@@ -528,6 +666,7 @@ log.error("Error messages")
 - [ ] Custom themes
 - [ ] Terminal integration
 - [ ] Archive support
+- [ ] FTP/SFTP support
 - [ ] App Store submission
 
 ## License
@@ -547,6 +686,7 @@ Senior Java/Swift Developer
 - **SwiftyBeaver**: Excellent logging framework - [GitHub](https://github.com/SwiftyBeaver/SwiftyBeaver)
 - **Total Commander**: The legendary dual-panel file manager inspiration
 - **Apple HIG**: Human Interface Guidelines for macOS design
+- **Apple Figma Kit**: macOS 26 design reference
 
 ---
 
