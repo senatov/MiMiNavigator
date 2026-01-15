@@ -1,51 +1,39 @@
-//
 // FilePanelView.swift
 //  MiMiNavigator
 //
-// Restored+refactored: keeps clean components+adds custom row highlight
+//  Created by Iakov Senatov on 11.08.2024.
+//  Copyright © 2024 Senatov. All rights reserved.
 //
 
 import AppKit
 import SwiftUI
 
-// MARK: - FilePanelView
+// MARK: - File panel view for one side (left or right)
 struct FilePanelView: View {
     @Environment(AppState.self) var appState
     @State private var viewModel: FilePanelViewModel
     let containerWidth: CGFloat
     @Binding var leftPanelWidth: CGFloat
-    // / Called when user clicks anywhere inside the panel (left/right)
     let onPanelTap: (PanelSide) -> Void
 
-    // MARK: - compound Variable: Bridge binding to AppState-selected file for this panel
+    // MARK: - Binding to selected file ID
     private var selectedIDBinding: Binding<CustomFile.ID?> {
         Binding<CustomFile.ID?>(
             get: {
-                let result: CustomFile.ID?
                 switch viewModel.panelSide {
-                    case .left:
-                        result = appState.selectedLeftFile?.id
-                    case .right:
-                        result = appState.selectedRightFile?.id
+                case .left: return appState.selectedLeftFile?.id
+                case .right: return appState.selectedRightFile?.id
                 }
-                // Log removed - too verbose, floods console
-                return result
             },
             set: { newValue in
-                log.debug("[SELECT-FLOW] 7️⃣ selectedIDBinding.SET on <<\(viewModel.panelSide)>>: \(newValue ?? "nil")")
-                // We only handle clearing via binding. Non-nil sel is set via onSelect below.
                 if newValue == nil {
-                    log.debug("[SELECT-FLOW] 7️⃣ Clearing selection via binding")
                     switch viewModel.panelSide {
-                        case .left:
-                            appState.selectedLeftFile = nil
-                        case .right:
-                            appState.selectedRightFile = nil
+                    case .left: appState.selectedLeftFile = nil
+                    case .right: appState.selectedRightFile = nil
                     }
                     appState.selectedDir.selectedFSEntity = nil
                     appState.showFavTreePopup = false
                 }
-                log.debug("[SELECT-FLOW] 7️⃣ DONE")
             }
         )
     }
@@ -55,9 +43,9 @@ struct FilePanelView: View {
         selectedSide: PanelSide,
         containerWidth: CGFloat,
         leftPanelWidth: Binding<CGFloat>,
-        fetchFiles: @escaping @Sendable @concurrent (PanelSide) async -> Void,
+        fetchFiles: @escaping @Sendable (PanelSide) async -> Void,
         appState: AppState,
-        onPanelTap: @escaping (PanelSide) -> Void = { side in log.debug("onPanelTap default for \(side)") }
+        onPanelTap: @escaping (PanelSide) -> Void = { _ in }
     ) {
         self._leftPanelWidth = leftPanelWidth
         self.containerWidth = containerWidth
@@ -66,14 +54,17 @@ struct FilePanelView: View {
                 panelSide: selectedSide,
                 appState: appState,
                 fetchFiles: fetchFiles
-            ))
+            )
+        )
         self.onPanelTap = onPanelTap
     }
 
     // MARK: - View
     var body: some View {
         let currentPath = appState.pathURL(for: viewModel.panelSide)
+        
         return VStack {
+            // Breadcrumb navigation
             StableBy(currentPath?.path ?? "") {
                 PanelBreadcrumbSection(
                     panelSide: viewModel.panelSide,
@@ -83,6 +74,8 @@ struct FilePanelView: View {
                     }
                 )
             }
+            
+            // File table
             StableBy((currentPath?.path ?? "") + "|" + String(appState.focusedPanel == viewModel.panelSide)) {
                 PanelFileTableSection(
                     files: viewModel.sortedFiles,
@@ -90,7 +83,6 @@ struct FilePanelView: View {
                     panelSide: viewModel.panelSide,
                     onPanelTap: onPanelTap,
                     onSelect: { file in
-                        // central sel; will clear the other panel via ViewModel.select(_:)
                         viewModel.select(file)
                     },
                     onDoubleClick: { file in
@@ -100,35 +92,10 @@ struct FilePanelView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         }
-        .onAppear {
-            // Log once on first appearance; no throttling needed here
-            let pathStr = appState.pathURL(for: viewModel.panelSide)?.path ?? "nil"
-            log.debug("FilePanelView.onAppear side= <<\(viewModel.panelSide)>> path=\(pathStr)")
-        }
-        .onChange(of: appState.pathURL(for: viewModel.panelSide)?.path) { _, newValue in
-            log.debug("FilePanelView.path changed side= <<\(viewModel.panelSide)>> → \(newValue ?? "nil")")
-        }
         .padding(.horizontal, DesignTokens.grid)
         .padding(.vertical, DesignTokens.grid - 2)
-        .background(
-            ZStack {
-                RoundedRectangle(cornerRadius: DesignTokens.radius, style: .continuous)
-                    .fill(DesignTokens.card)
-                RoundedRectangle(cornerRadius: DesignTokens.radius, style: .continuous)
-                    .stroke(
-                        appState.focusedPanel == viewModel.panelSide
-                            ? Color.orange.opacity(0.5)
-                            : DesignTokens.separator.opacity(0.35),
-                        lineWidth: 1
-                    )
-            }
-            .drawingGroup()  // flatten vector ops for cheaper compositing during drags
-        )
-        .frame(
-            width: viewModel.panelSide == .left
-                ? (leftPanelWidth > 0 ? leftPanelWidth : containerWidth / 2)
-                : nil
-        )
+        .background(panelBackground)
+        .frame(width: calculatedWidth)
         .animation(nil, value: leftPanelWidth)
         .transaction { tx in
             tx.disablesAnimations = true
@@ -138,80 +105,84 @@ struct FilePanelView: View {
         .controlSize(.regular)
         .contentShape(Rectangle())
         .panelFocus(panelSide: viewModel.panelSide) {
-            log.debug("Focus lost on << \(viewModel.panelSide)>>; keep selection")
             appState.showFavTreePopup = false
         }
-        .onChange(of: appState.focusedPanel) { oldSide, newSide in
-            log.debug(
-                "[SELECT-FLOW] 6️⃣ FilePanelView.onChange(focusedPanel): \(oldSide) → \(newSide), this panel: <<\(viewModel.panelSide)>>"
-            )
-            guard oldSide != newSide else {
-                log.debug("[SELECT-FLOW] 6️⃣ No actual focus change, skipping")
-                return
-            }
-
-            if newSide == viewModel.panelSide {
-                log.debug("[SELECT-FLOW] 6️⃣ Focus GAINED on <<\(viewModel.panelSide)>>")
-            } else {
-                log.debug("[SELECT-FLOW] 6️⃣ Focus LOST on <<\(viewModel.panelSide)>>")
-            }
-            log.debug("[SELECT-FLOW] 6️⃣ DONE")
+    }
+    
+    // MARK: - Panel background with focus indicator
+    private var panelBackground: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: DesignTokens.radius, style: .continuous)
+                .fill(DesignTokens.card)
+            RoundedRectangle(cornerRadius: DesignTokens.radius, style: .continuous)
+                .stroke(
+                    appState.focusedPanel == viewModel.panelSide
+                        ? Color.orange.opacity(0.5)
+                        : DesignTokens.separator.opacity(0.35),
+                    lineWidth: 1
+                )
         }
+        .drawingGroup()
+    }
+    
+    // MARK: - Calculated panel width
+    private var calculatedWidth: CGFloat? {
+        viewModel.panelSide == .left
+            ? (leftPanelWidth > 0 ? leftPanelWidth : containerWidth / 2)
+            : nil
     }
 
-    // MARK: - Handle double click on file/directory
+    // MARK: - Handle double click
     private func handleDoubleClick(_ file: CustomFile) {
-        log.debug("[DOUBLE-CLICK] handleDoubleClick: \(file.nameStr) isDir=\(file.isDirectory) isSymDir=\(file.isSymbolicDirectory)")
-        
         if file.isDirectory || file.isSymbolicDirectory {
-            // Enter directory - resolve symlinks to get the real path
-            let resolvedURL = file.urlValue.resolvingSymlinksInPath()
-            let newPath = resolvedURL.path
-            log.info("[DOUBLE-CLICK] Entering directory: \(newPath) (original: \(file.urlValue.path))")
-            
-            // Verify the resolved path exists and is accessible
-            var isDir: ObjCBool = false
-            guard FileManager.default.fileExists(atPath: newPath, isDirectory: &isDir), isDir.boolValue else {
-                log.error("[DOUBLE-CLICK] Cannot enter: path doesn't exist or is not a directory: \(newPath)")
-                // Show alert to user
-                let alert = NSAlert()
-                alert.messageText = "Cannot Open Directory"
-                alert.informativeText = "The directory \"\(file.nameStr)\" cannot be opened. It may be a broken symlink or you may not have permission to access it."
-                alert.alertStyle = .warning
-                alert.addButton(withTitle: "OK")
-                alert.runModal()
-                return
-            }
-            
-            Task { @MainActor in
-                appState.updatePath(newPath, for: viewModel.panelSide)
-                if viewModel.panelSide == .left {
-                    await appState.scanner.setLeftDirectory(pathStr: newPath)
-                    await appState.scanner.refreshFiles(currSide: .left)
-                    await appState.refreshLeftFiles()
-                } else {
-                    await appState.scanner.setRightDirectory(pathStr: newPath)
-                    await appState.scanner.refreshFiles(currSide: .right)
-                    await appState.refreshRightFiles()
-                }
-            }
+            enterDirectory(file)
         } else {
-            // Open file with default application
-            let fileURL = file.urlValue
-            log.info("[DOUBLE-CLICK] Opening file: \(fileURL.path)")
-            
-            let workspace = NSWorkspace.shared
-            let configuration = NSWorkspace.OpenConfiguration()
-            
-            workspace.open(fileURL, configuration: configuration) { app, error in
-                if let error = error {
-                    log.error("[DOUBLE-CLICK] Failed to open file: \(error.localizedDescription)")
-                } else if let app = app {
-                    log.info("[DOUBLE-CLICK] File opened with: \(app.localizedName ?? "unknown app")")
-                } else {
-                    log.warning("[DOUBLE-CLICK] No default application for file type: \(fileURL.pathExtension)")
-                }
+            openFile(file)
+        }
+    }
+    
+    // MARK: - Enter directory
+    private func enterDirectory(_ file: CustomFile) {
+        let resolvedURL = file.urlValue.resolvingSymlinksInPath()
+        let newPath = resolvedURL.path
+        
+        var isDir: ObjCBool = false
+        guard FileManager.default.fileExists(atPath: newPath, isDirectory: &isDir), isDir.boolValue else {
+            showCannotOpenAlert(file)
+            return
+        }
+        
+        Task { @MainActor in
+            appState.updatePath(newPath, for: viewModel.panelSide)
+            if viewModel.panelSide == .left {
+                await appState.scanner.setLeftDirectory(pathStr: newPath)
+                await appState.scanner.refreshFiles(currSide: .left)
+                await appState.refreshLeftFiles()
+            } else {
+                await appState.scanner.setRightDirectory(pathStr: newPath)
+                await appState.scanner.refreshFiles(currSide: .right)
+                await appState.refreshRightFiles()
             }
         }
+    }
+    
+    // MARK: - Open file with default app
+    private func openFile(_ file: CustomFile) {
+        let configuration = NSWorkspace.OpenConfiguration()
+        NSWorkspace.shared.open(file.urlValue, configuration: configuration) { app, error in
+            if let error = error {
+                log.error("Failed to open file: \(error.localizedDescription)")
+            }
+        }
+    }
+    
+    // MARK: - Show alert for broken symlink
+    private func showCannotOpenAlert(_ file: CustomFile) {
+        let alert = NSAlert()
+        alert.messageText = "Cannot Open Directory"
+        alert.informativeText = "The directory \"\(file.nameStr)\" cannot be opened. It may be a broken symlink or you may not have permission."
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: "OK")
+        alert.runModal()
     }
 }

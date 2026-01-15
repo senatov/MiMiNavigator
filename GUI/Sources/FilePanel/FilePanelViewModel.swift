@@ -1,9 +1,8 @@
-//
 // FilePanelViewModel.swift
 //  MiMiNavigator
 //
-//  Created by Iakov Senatov on 11.08.2025.
-//  Copyright © 2025 Senatov. All rights reserved.
+//  Created by Iakov Senatov on 11.08.2024.
+//  Copyright © 2024 Senatov. All rights reserved.
 //
 
 import Foundation
@@ -16,38 +15,26 @@ final class FilePanelViewModel {
     private let appState: AppState
     private let fetchFiles: @Sendable @concurrent (PanelSide) async -> Void
 
-    // MARK: -
     init(
         panelSide: PanelSide,
         appState: AppState,
         fetchFiles: @escaping @Sendable @concurrent (PanelSide) async -> Void
     ) {
-        log.debug(#function)
         self.panelSide = panelSide
         self.appState = appState
         self.fetchFiles = fetchFiles
     }
 
-    // MARK: -
+    // MARK: - Get sorted files (uses AppState's unified sorting)
     var sortedFiles: [CustomFile] {
-        log.debug(#function + " for side <<\(panelSide)>>")
-        let files = appState.displayedFiles(for: panelSide)
-        let sorted = files.sorted { a, b in
-            let aIsFolder = a.isDirectory || a.isSymbolicDirectory
-            let bIsFolder = b.isDirectory || b.isSymbolicDirectory
-            if aIsFolder != bIsFolder {
-                return aIsFolder && !bIsFolder
-            }
-            return a.nameStr.localizedCaseInsensitiveCompare(b.nameStr) == .orderedAscending
-        }
-        return sorted
+        // AppState.displayedFiles already returns sorted files
+        appState.displayedFiles(for: panelSide)
     }
 
-    // MARK: -
+    // MARK: - Handle path change
     func handlePathChange(to url: URL?) {
-        log.debug(#function + " for side <<\(panelSide)>>")
         guard let url else {
-            log.warning("tried to set nil path for <<\(panelSide)>>")
+            log.warning("Attempted to set nil path for <<\(panelSide)>>")
             return
         }
         Task { @MainActor in
@@ -56,19 +43,14 @@ final class FilePanelViewModel {
         }
     }
 
-    // MARK: -
+    // MARK: - Select file
     func select(_ file: CustomFile) {
-        log.debug("[SELECT-FLOW] 2️⃣ FilePanelViewModel.select() on <<\(panelSide)>>: \(file.nameStr)")
-        log.debug("[SELECT-FLOW] 2️⃣ Calling appState.select...")
         appState.select(file, on: panelSide)
-        log.debug("[SELECT-FLOW] 2️⃣ Closing popups...")
-        self.appState.showFavTreePopup = false
-        log.debug("[SELECT-FLOW] 2️⃣ DONE")
+        appState.showFavTreePopup = false
     }
 
-    // MARK: - periphery:ignore
+    // MARK: - Clear selection on both panels
     func unselectAll() {
-        log.debug(#function + " — clearing sel on both panels")
         appState.clearSelection(on: .left)
         appState.clearSelection(on: .right)
         appState.selectedDir.selectedFSEntity = nil

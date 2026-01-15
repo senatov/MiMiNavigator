@@ -1,15 +1,14 @@
-//
 // PanelFileTableSection.swift
 //  MiMiNavigator
 //
-//  Created by Iakov Senatov on 24.08.2025.
-//  Copyright © 2025 Senatov. All rights reserved.
+//  Created by Iakov Senatov on 24.08.2024.
+//  Copyright © 2024 Senatov. All rights reserved.
 //
 
 import AppKit
 import SwiftUI
 
-// MARK: - PanelFileTableSection
+// MARK: - Panel file table section container
 struct PanelFileTableSection: View {
     @Environment(AppState.self) var appState
     let files: [CustomFile]
@@ -20,23 +19,10 @@ struct PanelFileTableSection: View {
     let onDoubleClick: (CustomFile) -> Void
     @State private var rowRects: [CustomFile.ID: CGRect] = [:]
 
-    // Throttle for body logs without mutating SwiftUI state
-    @MainActor
-    private enum LogThrottle {
-        static var last: TimeInterval = 0
-    }
-
-    // MARK: - Body
     var body: some View {
-        // Throttled logging
-        let now = ProcessInfo.processInfo.systemUptime
-        if now - LogThrottle.last >= 1.0 {
-            LogThrottle.last = now
-            log.debug(#function + " side=<<\(panelSide)>> files=\(files.count) sel=\(String(describing: selectedID))")
-        }
-        // Note: Do NOT include selectedID in stableKey - it causes scroll reset on selection change
         let stableKey = files.count.hashValue ^ panelSide.hashValue
-        return StableBy(stableKey) {
+        
+        StableBy(stableKey) {
             FileTableView(
                 panelSide: panelSide,
                 files: files,
@@ -45,25 +31,20 @@ struct PanelFileTableSection: View {
                 onDoubleClick: onDoubleClick
             )
             .contentShape(Rectangle())
-            // Use simultaneousGesture to activate panel on ANY click without blocking child clicks
             .simultaneousGesture(
                 TapGesture(count: 1)
                     .onEnded {
                         if appState.focusedPanel != panelSide {
-                            log.debug("[PANEL-ACTIVATE] simultaneousGesture activating <<\(panelSide)>>")
                             appState.focusedPanel = panelSide
                         }
                     }
             )
-            // NOTE: focusable is on FileTableView - don't duplicate here
-            // Tab navigation uses onChange(appState.focusedPanel) below
             .coordinateSpace(name: "fileTableSpace")
             .onPreferenceChange(RowRectPreference.self) { value in
                 if value != rowRects {
                     rowRects = value
                 }
             }
-            // NOTE: Arrow key navigation moved to FileTableView.onMoveCommand
             .animation(nil, value: selectedID)
             .transaction { txn in
                 txn.disablesAnimations = true
@@ -72,28 +53,17 @@ struct PanelFileTableSection: View {
         }
     }
 
-    // MARK: - Unified selection handler (single point of truth)
-    /// Called when user clicks a row. Handles both activation and selection in one place.
+    // MARK: - Selection handler
     private func handleSelection(_ file: CustomFile) {
-        log.debug("[SELECT-FLOW] PanelFileTableSection.handleSelection: \(file.nameStr) on <<\(panelSide)>>")
-
-        // 1. Activate panel (even if clicking on already-active panel)
         let wasInactive = appState.focusedPanel != panelSide
         if wasInactive {
-            log.debug("[SELECT-FLOW] Activating inactive panel <<\(panelSide)>>")
+            log.debug("[SELECT-FLOW] Activating panel <<\(panelSide)>>")
         }
         appState.focusedPanel = panelSide
-
-        // 2. Notify other panels to clear their selection
         notifyWillSelect(file)
-
-        // 3. Forward to parent's onSelect
         onSelect(file)
-
-        log.debug("[SELECT-FLOW] handleSelection complete")
     }
 
-    // MARK: - Selection coordination helpers
     private func notifyWillSelect(_ file: CustomFile) {
         NotificationCenter.default.post(
             name: .panelWillSelectFile,
@@ -105,11 +75,9 @@ struct PanelFileTableSection: View {
             ]
         )
     }
-
 }
 
 // MARK: - Notification Names
 extension Notification.Name {
-    /// Posted right before a panel is about to select a file so others can reset their selections
     static let panelWillSelectFile = Notification.Name("PanelWillSelectFile")
 }

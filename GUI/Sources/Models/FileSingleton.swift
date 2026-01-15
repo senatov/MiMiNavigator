@@ -1,46 +1,36 @@
-//
-// FileSinglton.swift
+// FileSingleton.swift
 //  MiMiNavigator
 //
 //  Created by Iakov Senatov on 07.11.24.
 //  Copyright © 2024 Senatov. All rights reserved.
 //
-import Combine
+
 import Foundation
 
-actor FileSingleton: ObservableObject, @unchecked Sendable {
+// MARK: - Thread-safe file storage actor
+actor FileSingleton {
     static let shared = FileSingleton()
-    private var _leftFiles: [CustomFile] = []  // Private storage for L-files
-    private var _rightFiles: [CustomFile] = []  // Private storage for R-files
+    
+    private var _leftFiles: [CustomFile] = []
+    private var _rightFiles: [CustomFile] = []
 
-    // MARK: - Function to notify SwiftUI observers of changes
-    @MainActor
-    private func notifyObservers() {
-        log.info(#function)
-        objectWillChange.send()
-    }
-
-    // MARK: -
-    func updateLeftFiles(_ files: [CustomFile]) async {
-        log.info(#function)
+    // MARK: - Update left panel files
+    func updateLeftFiles(_ files: [CustomFile]) {
         _leftFiles = files
-        await notifyObservers()
     }
 
-    // MARK: -
-    func updateRightFiles(_ files: [CustomFile]) async {
-        log.info(#function)
+    // MARK: - Update right panel files
+    func updateRightFiles(_ files: [CustomFile]) {
         _rightFiles = files
-        await notifyObservers()
     }
 
-    // MARK: -
-    func getLeftFiles() async -> [CustomFile] {
+    // MARK: - Get left panel files
+    func getLeftFiles() -> [CustomFile] {
         _leftFiles
     }
 
-    // MARK: -
-    func getRightFiles() async -> [CustomFile] {
+    // MARK: - Get right panel files
+    func getRightFiles() -> [CustomFile] {
         _rightFiles
     }
 }
