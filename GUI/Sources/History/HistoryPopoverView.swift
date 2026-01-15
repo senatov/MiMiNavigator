@@ -1,9 +1,8 @@
-﻿// HistoryPopoverView.swift
+// HistoryPopoverView.swift
 //  MiMiNavigator
 //
 //  Created by Iakov Senatov on 15.01.2025.
 //  Copyright © 2025 Senatov. All rights reserved.
-//
 
 import SwiftUI
 
@@ -51,7 +50,7 @@ struct HistoryPopoverView: View {
                 .frame(maxHeight: 400)
             }
         }
-        .frame(width: 500)
+        .frame(width: 280)
         .padding(.vertical, 8)
     }
     
@@ -70,12 +69,9 @@ struct HistoryPopoverView: View {
         .padding(.vertical, 40)
     }
     
-    // MARK: - Filter directories only
+    // MARK: - Directory paths (already filtered in SelectionsHistory)
     private var directoryPaths: [String] {
-        appState.selectionsHistory.recentSelections.filter { path in
-            var isDir: ObjCBool = false
-            return FileManager.default.fileExists(atPath: path, isDirectory: &isDir) && isDir.boolValue
-        }
+        appState.selectionsHistory.recentSelections
     }
     
     // MARK: - Actions
