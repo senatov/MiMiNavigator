@@ -3,11 +3,10 @@
 //
 //  Created by Iakov Senatov on 11.08.2024.
 //  Copyright © 2024 Senatov. All rights reserved.
-//
 
 import SwiftUI
 
-// MARK: - File table view with sortable columns
+// MARK: - File table view with sortable and resizable columns
 struct FileTableView: View {
     @Environment(AppState.self) var appState
     let panelSide: PanelSide
@@ -15,11 +14,44 @@ struct FileTableView: View {
     @Binding var selectedID: CustomFile.ID?
     let onSelect: (CustomFile) -> Void
     let onDoubleClick: (CustomFile) -> Void
+    
     @State private var sortKey: SortKeysEnum = .name
     @State private var sortAscending: Bool = true
     @State private var cachedSortedFiles: [CustomFile] = []
     @State private var scrollProxy: ScrollViewProxy? = nil
     @State private var isScrollingProgrammatically = false
+    
+    // MARK: - Resizable column widths (persisted per panel)
+    @State private var sizeColumnWidth: CGFloat = ColumnDefaults.size
+    @State private var dateColumnWidth: CGFloat = ColumnDefaults.date
+    @State private var typeColumnWidth: CGFloat = ColumnDefaults.type
+    
+    // MARK: - Column defaults and constraints
+    private enum ColumnDefaults {
+        static let size: CGFloat = 65
+        static let date: CGFloat = 115
+        static let type: CGFloat = 50
+    }
+    
+    private enum ColumnConstraints {
+        static let sizeMin: CGFloat = 40
+        static let sizeMax: CGFloat = 120
+        static let dateMin: CGFloat = 50
+        static let dateMax: CGFloat = 180
+        static let typeMin: CGFloat = 30
+        static let typeMax: CGFloat = 100
+    }
+    
+    // MARK: - Header style
+    private enum HeaderStyle {
+        static let font = Font.system(size: 12, weight: .semibold, design: .default)
+        static let color = Color(red: 0.1, green: 0.2, blue: 0.45)
+    }
+    
+    // MARK: - UserDefaults keys
+    private var sizeWidthKey: String { "FileTable.\(panelSide).sizeWidth" }
+    private var dateWidthKey: String { "FileTable.\(panelSide).dateWidth" }
+    private var typeWidthKey: String { "FileTable.\(panelSide).typeWidth" }
     
     private var isFocused: Bool { appState.focusedPanel == panelSide }
     
@@ -35,7 +67,10 @@ struct FileTableView: View {
     var body: some View {
         ScrollViewReader { proxy in
             mainScrollView(proxy: proxy)
-                .onAppear { scrollProxy = proxy }
+                .onAppear {
+                    scrollProxy = proxy
+                    loadColumnWidths()
+                }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(.horizontal, 6)
@@ -65,6 +100,27 @@ struct FileTableView: View {
             default: break
             }
         }
+    }
+    
+    // MARK: - Persistence
+    private func loadColumnWidths() {
+        let defaults = UserDefaults.standard
+        if let size = defaults.object(forKey: sizeWidthKey) as? CGFloat, size > 0 {
+            sizeColumnWidth = size
+        }
+        if let date = defaults.object(forKey: dateWidthKey) as? CGFloat, date > 0 {
+            dateColumnWidth = date
+        }
+        if let type = defaults.object(forKey: typeWidthKey) as? CGFloat, type > 0 {
+            typeColumnWidth = type
+        }
+    }
+    
+    private func saveColumnWidths() {
+        let defaults = UserDefaults.standard
+        defaults.set(sizeColumnWidth, forKey: sizeWidthKey)
+        defaults.set(dateColumnWidth, forKey: dateWidthKey)
+        defaults.set(typeColumnWidth, forKey: typeWidthKey)
     }
 
     // MARK: - Keyboard navigation
@@ -128,6 +184,9 @@ struct FileTableView: View {
                         rows: sortedRows,
                         selectedID: $selectedID,
                         panelSide: panelSide,
+                        sizeColumnWidth: sizeColumnWidth,
+                        dateColumnWidth: dateColumnWidth,
+                        typeColumnWidth: typeColumnWidth,
                         onSelect: onSelect,
                         onDoubleClick: onDoubleClick,
                         handleFileAction: handleFileAction,
@@ -143,26 +202,56 @@ struct FileTableView: View {
         .background(keyboardShortcutsLayer(proxy: proxy))
     }
 
-    // MARK: - Header with sortable columns
+    // MARK: - Header with sortable and resizable columns
     @ViewBuilder
     private func headerView() -> some View {
-        HStack(spacing: 6) {
+        HStack(spacing: 0) {
+            // Name column (flexible)
             getNameColSortableHeader()
-            headerColumnDivider
+            
+            // Divider before Size
+            resizableDivider(
+                width: $sizeColumnWidth,
+                min: ColumnConstraints.sizeMin,
+                max: ColumnConstraints.sizeMax
+            )
+            
+            // Size column
             getSizeColSortableHeader()
-            headerColumnDivider
+                .frame(width: sizeColumnWidth, alignment: .trailing)
+                .padding(.horizontal, 4)
+            
+            // Divider before Date
+            resizableDivider(
+                width: $dateColumnWidth,
+                min: ColumnConstraints.dateMin,
+                max: ColumnConstraints.dateMax
+            )
+            
+            // Date column
             getDateSortableHeader()
-            headerColumnDivider
+                .frame(width: dateColumnWidth, alignment: .leading)
+                .padding(.horizontal, 4)
+            
+            // Divider before Type
+            resizableDivider(
+                width: $typeColumnWidth,
+                min: ColumnConstraints.typeMin,
+                max: ColumnConstraints.typeMax
+            )
+            
+            // Type column
             getTypeColSortableHeader()
+                .frame(width: typeColumnWidth, alignment: .leading)
+                .padding(.horizontal, 4)
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, 5)
         .padding(.horizontal, 6)
         .background(
             LinearGradient(
                 colors: [
-                    Color(nsColor: .systemBlue).opacity(0.04),
-                    Color(nsColor: .systemGray).opacity(0.01),
-                    Color.black.opacity(0.15),
+                    Color(nsColor: .systemBlue).opacity(0.06),
+                    Color(nsColor: .windowBackgroundColor).opacity(0.95),
                 ],
                 startPoint: .top,
                 endPoint: .bottom
@@ -170,18 +259,41 @@ struct FileTableView: View {
         )
         .overlay(alignment: .bottom) {
             Rectangle()
-                .fill(Color.black.opacity(0.15))
+                .fill(Color.black.opacity(0.2))
                 .frame(height: max(px, 1.0))
                 .allowsHitTesting(false)
         }
     }
 
-    private var headerColumnDivider: some View {
+    // MARK: - Resizable column divider
+    private func resizableDivider(width: Binding<CGFloat>, min: CGFloat, max: CGFloat) -> some View {
         Rectangle()
-            .fill(Color.black.opacity(0.4))
-            .frame(width: px)
-            .padding(.vertical, 3)
-            .allowsHitTesting(false)
+            .fill(Color(nsColor: .separatorColor))
+            .frame(width: 1)
+            .padding(.vertical, 2)
+            .overlay {
+                Color.clear
+                    .frame(width: 12)
+                    .contentShape(Rectangle())
+            }
+            .gesture(
+                DragGesture(minimumDistance: 1)
+                    .onChanged { value in
+                        let delta = value.translation.width
+                        let newWidth = width.wrappedValue - delta
+                        width.wrappedValue = Swift.min(Swift.max(newWidth, min), max)
+                    }
+                    .onEnded { _ in
+                        saveColumnWidths()
+                    }
+            )
+            .onHover { hovering in
+                if hovering {
+                    NSCursor.resizeLeftRight.push()
+                } else {
+                    NSCursor.pop()
+                }
+            }
     }
 
     @ViewBuilder
@@ -219,11 +331,13 @@ struct FileTableView: View {
     // MARK: - Column headers
     private func getNameColSortableHeader() -> some View {
         HStack(spacing: 4) {
-            Text("Name").font(.subheadline).fontWeight(.medium)
+            Text("Name")
+                .font(HeaderStyle.font)
+                .foregroundStyle(HeaderStyle.color)
             if sortKey == .name {
                 Image(systemName: sortAscending ? "arrowtriangle.up.fill" : "arrowtriangle.down.fill")
-                    .font(.caption2)
-                    .foregroundStyle(Color.accentColor)
+                    .font(.system(size: 8))
+                    .foregroundStyle(HeaderStyle.color)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -238,14 +352,15 @@ struct FileTableView: View {
 
     private func getSizeColSortableHeader() -> some View {
         HStack(spacing: 4) {
-            Text("Size").font(.subheadline).fontWeight(.medium)
+            Text("Size")
+                .font(HeaderStyle.font)
+                .foregroundStyle(HeaderStyle.color)
             if sortKey == .size {
                 Image(systemName: sortAscending ? "arrowtriangle.up.fill" : "arrowtriangle.down.fill")
-                    .font(.caption2)
-                    .foregroundStyle(Color.accentColor)
+                    .font(.system(size: 8))
+                    .foregroundStyle(HeaderStyle.color)
             }
         }
-        .frame(width: FilePanelStyle.sizeColumnWidth, alignment: .trailing)
         .contentShape(Rectangle())
         .onTapGesture {
             appState.focusedPanel = panelSide
@@ -257,14 +372,15 @@ struct FileTableView: View {
 
     private func getDateSortableHeader() -> some View {
         HStack(spacing: 4) {
-            Text("Date").font(.subheadline).fontWeight(.medium)
+            Text("Date")
+                .font(HeaderStyle.font)
+                .foregroundStyle(HeaderStyle.color)
             if sortKey == .date {
                 Image(systemName: sortAscending ? "arrowtriangle.up.fill" : "arrowtriangle.down.fill")
-                    .font(.caption2)
-                    .foregroundStyle(Color.accentColor)
+                    .font(.system(size: 8))
+                    .foregroundStyle(HeaderStyle.color)
             }
         }
-        .frame(width: FilePanelStyle.modifiedColumnWidth, alignment: .leading)
         .contentShape(Rectangle())
         .onTapGesture {
             appState.focusedPanel = panelSide
@@ -276,14 +392,15 @@ struct FileTableView: View {
     
     private func getTypeColSortableHeader() -> some View {
         HStack(spacing: 4) {
-            Text("Type").font(.subheadline).fontWeight(.medium)
+            Text("Type")
+                .font(HeaderStyle.font)
+                .foregroundStyle(HeaderStyle.color)
             if sortKey == .type {
                 Image(systemName: sortAscending ? "arrowtriangle.up.fill" : "arrowtriangle.down.fill")
-                    .font(.caption2)
-                    .foregroundStyle(Color.accentColor)
+                    .font(.system(size: 8))
+                    .foregroundStyle(HeaderStyle.color)
             }
         }
-        .frame(width: FilePanelStyle.typeColumnWidth, alignment: .leading)
         .contentShape(Rectangle())
         .onTapGesture {
             appState.focusedPanel = panelSide
