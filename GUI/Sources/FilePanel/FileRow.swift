@@ -118,34 +118,65 @@ struct FileRow: View {
     private var tertiaryTextColor: Color {
         (isSelected && isActivePanel) ? .white.opacity(0.7) : Color(nsColor: .tertiaryLabelColor)
     }
+    
+    // MARK: - Type column color (slightly different for visual distinction)
+    private var typeTextColor: Color {
+        if isSelected && isActivePanel {
+            return .white.opacity(0.75)
+        }
+        // Use a subtle color for file types
+        if file.isDirectory || file.isSymbolicDirectory {
+            return Color(nsColor: .systemBlue).opacity(0.8)
+        }
+        return Color(nsColor: .tertiaryLabelColor)
+    }
 
-    // MARK: - Extracted row content
+    // MARK: - Extracted row content with 4 columns
     private var rowContent: some View {
-        HStack(alignment: .center, spacing: 8) {
+        HStack(alignment: .center, spacing: 6) {
             // Name column (expands)
             FileRowView(file: file, isSelected: isSelected, isActivePanel: isActivePanel)
                 .frame(maxWidth: .infinity, alignment: .leading)
+            
             // vertical separator
-            Rectangle()
-                .frame(width: 1)
-                .foregroundStyle(Color(nsColor: .separatorColor))
-                .padding(.vertical, 2)
-            // Size column (here showing type string as in original)
-            Text(file.fileObjTypEnum)
+            columnDivider
+            
+            // Size column
+            Text(file.fileSizeFormatted)
+                .font(.system(size: 11))
                 .foregroundStyle(secondaryTextColor)
-                .frame(width: FilePanelStyle.sizeColumnWidth, alignment: .leading)
+                .frame(width: FilePanelStyle.sizeColumnWidth, alignment: .trailing)
+            
             // vertical separator
-            Rectangle()
-                .frame(width: 1)
-                .foregroundStyle(Color(nsColor: .separatorColor))
-                .padding(.vertical, 2)
+            columnDivider
+            
             // Date column
             Text(file.modifiedDateFormatted)
+                .font(.system(size: 11))
                 .foregroundStyle(tertiaryTextColor)
-                .frame(width: FilePanelStyle.modifiedColumnWidth + 10, alignment: .leading)
+                .frame(width: FilePanelStyle.modifiedColumnWidth, alignment: .leading)
+            
+            // vertical separator
+            columnDivider
+            
+            // Type column (NEW)
+            Text(file.fileTypeDisplay)
+                .font(.system(size: 10, weight: .medium))
+                .foregroundStyle(typeTextColor)
+                .frame(width: FilePanelStyle.typeColumnWidth, alignment: .leading)
+                .lineLimit(1)
+                .truncationMode(.tail)
         }
         .padding(.vertical, 2)
         .padding(.horizontal, 6)
+    }
+    
+    // MARK: - Column divider
+    private var columnDivider: some View {
+        Rectangle()
+            .frame(width: 1)
+            .foregroundStyle(Color(nsColor: .separatorColor).opacity(0.5))
+            .padding(.vertical, 2)
     }
 
     // MARK: - Tooltip helper
@@ -156,9 +187,10 @@ struct FileRow: View {
         } else {
             details = "📄 File"
         }
-        let idPart = file.id
+        let pathPart = file.pathStr
         let datePart = file.modifiedDateFormatted
-        let typePart = file.fileObjTypEnum
-        return "\(details)\n🆔 \(idPart)\n📅 \(datePart)\n🧩 \(typePart)"
+        let typePart = file.fileTypeDisplay
+        let sizePart = file.fileSizeFormatted
+        return "\(details)\n📍 \(pathPart)\n📅 \(datePart)\n🧩 \(typePart)\n📦 \(sizePart)"
     }
 }

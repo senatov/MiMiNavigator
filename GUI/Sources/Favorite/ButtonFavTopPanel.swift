@@ -9,6 +9,12 @@ struct ButtonFavTopPanel: View {
     @State private var showForwardPopover: Bool = false
     @State private var showFavTreePopup: Bool = false
     let panelSide: PanelSide
+    
+    // MARK: - Constants
+    private enum PathDisplay {
+        static let maxLength = 256
+        static let menuMaxLength = 80  // Shorter for context menu items
+    }
 
     // MARK: -
     init(selectedSide: PanelSide) {
@@ -186,7 +192,7 @@ struct ButtonFavTopPanel: View {
                         await navigateToPath(path)
                     }
                 }) {
-                    Text(shortenPath(path))
+                    Text(displayPathForMenu(path))
                 }
             }
         }
@@ -206,25 +212,110 @@ struct ButtonFavTopPanel: View {
                         await navigateToPath(path)
                     }
                 }) {
-                    Text(shortenPath(path))
+                    Text(displayPathForMenu(path))
                 }
             }
         }
     }
 
-    // MARK: - Helper: shorten long paths for menu display
-    private func shortenPath(_ path: String) -> String {
-        let maxLen = 50
-        guard path.count > maxLen else { return path }
-        let url = URL(fileURLWithPath: path)
-        let components = url.pathComponents
-        if components.count <= 3 {
-            return path
+    // MARK: - Path display helpers (macOS style)
+    
+    /// Format path for menu display - replaces home with ~, truncates if > 256 chars
+    private func displayPathForMenu(_ path: String) -> String {
+        var displayPath = replaceHomeWithTilde(path)
+        
+        // If path is within limit, show full path
+        guard displayPath.count > PathDisplay.maxLength else {
+            return displayPath
         }
-        // Show: /first/.../last two components
-        let first = components[0] == "/" ? "/" : components[0]
-        let last = components.suffix(2).joined(separator: "/")
-        return "\(first)…/\(last)"
+        
+        // Truncate using macOS style: keep beginning and end, ellipsis in middle
+        return truncatePathMacOSStyle(displayPath, maxLength: PathDisplay.maxLength)
+    }
+    
+    /// Replace home directory path with ~ (standard macOS convention)
+    private func replaceHomeWithTilde(_ path: String) -> String {
+        let homePath = FileManager.default.homeDirectoryForCurrentUser.path
+        if path.hasPrefix(homePath) {
+            return "~" + path.dropFirst(homePath.count)
+        }
+        return path
+    }
+    
+    /// Truncate path macOS style: /Users/name/…/folder/file
+    /// Keeps the beginning (root + first dirs) and end (last components) visible
+    private func truncatePathMacOSStyle(_ path: String, maxLength: Int) -> String {
+        guard path.count > maxLength else { return path }
+        
+        let url = URL(fileURLWithPath: path.hasPrefix("~") 
+            ? FileManager.default.homeDirectoryForCurrentUser.path + path.dropFirst(1)
+            : path)
+        let components = url.pathComponents
+        
+        // Need at least 4 components to truncate meaningfully
+        guard components.count > 3 else {
+            // Simple truncation for short component paths
+            return simpleMiddleTruncate(path, maxLength: maxLength)
+        }
+        
+        // Strategy: keep first 2 components + … + last 2 components
+        // Adjust based on available space
+        let ellipsis = "…"
+        let separator = "/"
+        
+        // Start with root
+        var prefix = components[0] == "/" ? "/" : components[0] + separator
+        var suffix = ""
+        
+        // Add components from start
+        var startIdx = 1
+        var endIdx = components.count - 1
+        
+        // Always include at least first directory after root
+        if startIdx < components.count {
+            prefix += components[startIdx]
+            startIdx += 1
+        }
+        
+        // Always include last component (filename/folder name)
+        if endIdx >= 0 {
+            suffix = components[endIdx]
+            endIdx -= 1
+        }
+        
+        // Try to add second-to-last component if space permits
+        if endIdx >= startIdx {
+            let potentialSuffix = components[endIdx] + separator + suffix
+            if prefix.count + ellipsis.count + separator.count * 2 + potentialSuffix.count <= maxLength {
+                suffix = potentialSuffix
+                endIdx -= 1
+            }
+        }
+        
+        // Build final path
+        let result = prefix + separator + ellipsis + separator + suffix
+        
+        // If still too long, fall back to simple truncation
+        if result.count > maxLength {
+            return simpleMiddleTruncate(path, maxLength: maxLength)
+        }
+        
+        // Apply ~ replacement to the result
+        return replaceHomeWithTilde(result)
+    }
+    
+    /// Simple middle truncation: "start…end"
+    private func simpleMiddleTruncate(_ string: String, maxLength: Int) -> String {
+        guard string.count > maxLength else { return string }
+        
+        let ellipsis = "…"
+        let availableLength = maxLength - ellipsis.count
+        let halfLength = availableLength / 2
+        
+        let startIndex = string.index(string.startIndex, offsetBy: halfLength)
+        let endIndex = string.index(string.endIndex, offsetBy: -halfLength)
+        
+        return String(string[..<startIndex]) + ellipsis + String(string[endIndex...])
     }
 
     // MARK: -

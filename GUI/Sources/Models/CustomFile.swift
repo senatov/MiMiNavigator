@@ -18,6 +18,7 @@ public struct CustomFile: Identifiable, Equatable, Hashable, Codable, Sendable {
     public let isSymbolicDirectory: Bool
     public let sizeInBytes: Int64
     public let modifiedDate: Date?
+    public let fileExtension: String
     public var children: [CustomFile]?
 
     // MARK: -
@@ -30,6 +31,10 @@ public struct CustomFile: Identifiable, Equatable, Hashable, Codable, Sendable {
         self.urlValue = url
         self.pathStr = path
         self.nameStr = (name?.isEmpty == false) ? name! : url.lastPathComponent
+        
+        // Extract file extension (lowercase, without dot)
+        let ext = url.pathExtension.lowercased()
+        self.fileExtension = ext
 
         let fm = FileManager.default
 
@@ -118,18 +123,40 @@ public struct CustomFile: Identifiable, Equatable, Hashable, Codable, Sendable {
         return df.string(from: date)
     }
 
-    // MARK: -
-    public var fileObjTypEnum: String {
+    // MARK: - Size column display (shows size for files, type for dirs/links)
+    public var fileSizeFormatted: String {
         if isSymbolicLink && isDirectory {
-            return "LINK → DIR."
+            return "⤳ Folder"
         }
         if isDirectory {
-            return "DIR."
+            return "Folder"
         }
         if isSymbolicLink {
-            return "LINK → FILE"
+            return "⤳ File"
         }
         return CustomFile.formatBytes(sizeInBytes)
+    }
+    
+    // MARK: - Type column display (file extension or directory type)
+    public var fileTypeDisplay: String {
+        if isSymbolicLink && isDirectory {
+            return "Link → Dir"
+        }
+        if isDirectory {
+            return "Directory"
+        }
+        if isSymbolicLink {
+            return "Link → \(fileExtension.isEmpty ? "File" : fileExtension.uppercased())"
+        }
+        if fileExtension.isEmpty {
+            return "—"
+        }
+        return fileExtension.uppercased()
+    }
+    
+    // MARK: - Legacy property for backward compatibility
+    public var fileObjTypEnum: String {
+        return fileSizeFormatted
     }
 
     // MARK: -

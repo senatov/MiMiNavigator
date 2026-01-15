@@ -14,4 +14,5 @@ enum SortKeysEnum {
     case name
     case date
     case size
+    case type
 }
