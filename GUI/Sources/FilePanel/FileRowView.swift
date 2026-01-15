@@ -32,40 +32,54 @@ struct FileRowView: View {
             return .white
         }
         // Standard colors for non-selected or inactive panel
-        if file.isSymbolicDirectory { return FilePanelStyle.fileNameColor }
+        if file.isSymbolicDirectory { return FilePanelStyle.blueSymlinkDirNameColor }
         if file.isDirectory { return FilePanelStyle.dirNameColor }
         return .primary
     }
 
     // MARK: - Base content for a single file row (icon + name)
     private func baseContent() -> some View {
-        HStack(spacing: 6) {
-            // File icon with optional symlink badge
+        HStack(spacing: 8) {
+            // File icon with optional symlink badge - bigger and brighter
             ZStack(alignment: .bottomLeading) {
-                Image(nsImage: NSWorkspace.shared.icon(forFile: file.urlValue.path))
+                // Get system icon for the file
+                Image(nsImage: getEnhancedIcon(for: file))
                     .resizable()
-                    .interpolation(.medium)
+                    .interpolation(.high)
                     .antialiased(true)
                     .frame(width: RowDesignTokens.iconSize, height: RowDesignTokens.iconSize)
-                    .shadow(color: .black.opacity(0.08), radius: 0.5, x: 1, y: 1)
+                    .shadow(color: .black.opacity(0.15), radius: 1.2, x: 0.5, y: 1)
+                    .brightness(0.12)   // More vivid
+                    .saturation(1.35)   // Richer colors
+                    .contrast(1.08)     // Crisper edges
                 
-                if file.isSymbolicDirectory {
+                // Symlink badge
+                if file.isSymbolicLink {
                     Image(systemName: "arrowshape.turn.up.right.fill")
                         .resizable()
                         .scaledToFit()
-                        .frame(width: RowDesignTokens.iconSize / 3, height: RowDesignTokens.iconSize / 3)
+                        .frame(width: RowDesignTokens.iconSize / 2.5, height: RowDesignTokens.iconSize / 2.5)
                         .foregroundStyle(.orange)
-                        .shadow(color: .black.opacity(0.08), radius: 0.5, x: 1, y: 1)
+                        .shadow(color: .black.opacity(0.3), radius: 0.5, x: 0.5, y: 0.5)
+                        .offset(x: -2, y: 2)
                 }
             }
             .allowsHitTesting(false)
             
             // File name
             Text(file.nameStr)
-                .font(.subheadline)  // Dynamic Type instead of .system(size: 13)
+                .font(.system(size: 13, weight: .regular))
                 .foregroundStyle(nameColor)
                 .lineLimit(1)
                 .truncationMode(.middle)
         }
+    }
+    
+    // MARK: - Get enhanced icon for file
+    private func getEnhancedIcon(for file: CustomFile) -> NSImage {
+        let icon = NSWorkspace.shared.icon(forFile: file.urlValue.path)
+        // Request larger size for better quality
+        icon.size = NSSize(width: 32, height: 32)
+        return icon
     }
 }

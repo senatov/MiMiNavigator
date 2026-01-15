@@ -308,6 +308,15 @@ final class AppState {
                     let sb: Int64 = b.sizeInBytes
                     if sa != sb { return sortAscending ? (sa < sb) : (sa > sb) }
                     return a.nameStr.localizedCaseInsensitiveCompare(b.nameStr) == .orderedAscending
+                    
+                case .type:
+                    let ta = a.fileExtension
+                    let tb = b.fileExtension
+                    if ta != tb {
+                        let cmp = ta.localizedCaseInsensitiveCompare(tb)
+                        return sortAscending ? (cmp == .orderedAscending) : (cmp == .orderedDescending)
+                    }
+                    return a.nameStr.localizedCaseInsensitiveCompare(b.nameStr) == .orderedAscending
             }
         }
         log.debug("applySorting: dirs 1st, key=\(sortKey), asc=\(sortAscending), total=\(sorted.count)")

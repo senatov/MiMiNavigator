@@ -18,9 +18,10 @@ enum FilePanelStyle {
     static let yellowSelRowFill = Color(#colorLiteral(red: 0.9995340705, green: 0.9802359024, blue: 0.9185159122, alpha: 1))
     static let orangeSelRowFill = Color(#colorLiteral(red: 0.9764705896, green: 0.850980401, blue: 0.5490196347, alpha: 1))
 
-    // Layout
-    static let iconSize: CGFloat = 22
+    // Layout - compact icons with enhanced visibility
+    static let iconSize: CGFloat = 20  // Compact but vivid
     static let modifiedColumnWidth: CGFloat = 110
     static let selectedBorderWidth: CGFloat = 0.4
-    static let sizeColumnWidth: CGFloat = 120
+    static let sizeColumnWidth: CGFloat = 90  // Reduced since we have Type column now
+    static let typeColumnWidth: CGFloat = 80  // New Type column
 }
