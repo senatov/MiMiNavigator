@@ -19,7 +19,6 @@ struct FileTableView: View {
     @State private var sortAscending: Bool = true
     @State private var cachedSortedFiles: [CustomFile] = []
     @State private var scrollProxy: ScrollViewProxy? = nil
-    @State private var isScrollingProgrammatically = false
     
     // MARK: - Resizable column widths (persisted per panel)
     @State private var sizeColumnWidth: CGFloat = ColumnDefaults.size
@@ -34,9 +33,9 @@ struct FileTableView: View {
     }
     
     private enum ColumnConstraints {
-        static let sizeMin: CGFloat = 40
+        static let sizeMin: CGFloat = 30
         static let sizeMax: CGFloat = 120
-        static let dateMin: CGFloat = 50
+        static let dateMin: CGFloat = 30
         static let dateMax: CGFloat = 180
         static let typeMin: CGFloat = 30
         static let typeMax: CGFloat = 100
@@ -75,7 +74,6 @@ struct FileTableView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(.horizontal, 6)
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .overlay(focusBorder)
         .overlay(lightBorder)
         .contentShape(Rectangle())
         .animation(nil, value: isFocused)
@@ -160,12 +158,8 @@ struct FileTableView: View {
     
     private func scrollToSelection(_ id: CustomFile.ID?, anchor: UnitPoint = .center) {
         guard let id = id, let proxy = scrollProxy else { return }
-        isScrollingProgrammatically = true
         withAnimation(nil) {
             proxy.scrollTo(id, anchor: anchor)
-        }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            isScrollingProgrammatically = false
         }
     }
     
@@ -232,6 +226,13 @@ struct FileTableView: View {
             getDateSortableHeader()
                 .frame(width: dateColumnWidth, alignment: .leading)
                 .padding(.horizontal, 4)
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    appState.focusedPanel = panelSide
+                    if sortKey == .date { sortAscending.toggle() }
+                    else { sortKey = .date; sortAscending = true }
+                    appState.updateSorting(key: .date, ascending: sortAscending)
+                }
             
             // Divider before Type
             resizableDivider(
@@ -244,9 +245,16 @@ struct FileTableView: View {
             getTypeColSortableHeader()
                 .frame(width: typeColumnWidth, alignment: .leading)
                 .padding(.horizontal, 4)
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    appState.focusedPanel = panelSide
+                    if sortKey == .type { sortAscending.toggle() }
+                    else { sortKey = .type; sortAscending = true }
+                    appState.updateSorting(key: .type, ascending: sortAscending)
+                }
         }
         .padding(.vertical, 5)
-        .padding(.horizontal, 6)
+        .padding(.horizontal, 4)
         .background(
             LinearGradient(
                 colors: [
@@ -267,9 +275,11 @@ struct FileTableView: View {
 
     // MARK: - Resizable column divider
     private func resizableDivider(width: Binding<CGFloat>, min: CGFloat, max: CGFloat) -> some View {
-        Rectangle()
-            .fill(Color(nsColor: .separatorColor))
-            .frame(width: 1)
+        let scale = NSScreen.main?.backingScaleFactor ?? 2.0
+        let dividerWidth = Swift.max(1.0 / scale, 1.0)
+        return Rectangle()
+            .fill(Color(red: 0.1, green: 0.15, blue: 0.4))
+            .frame(width: dividerWidth)
             .padding(.vertical, 2)
             .overlay {
                 Color.clear
@@ -313,15 +323,6 @@ struct FileTableView: View {
         .allowsHitTesting(false)
     }
 
-    private var focusBorder: some View {
-        RoundedRectangle(cornerRadius: 12)
-            .stroke(
-                isFocused ? Color(nsColor: .systemIndigo) : Color.secondary.opacity(0.8),
-                lineWidth: isFocused ? 0.8 : 0.4
-            )
-            .allowsHitTesting(false)
-    }
-
     private var lightBorder: some View {
         RoundedRectangle(cornerRadius: 12)
             .stroke(Color.white.opacity(isFocused ? 0.10 : 0.05), lineWidth: 1)
@@ -342,6 +343,7 @@ struct FileTableView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .contentShape(Rectangle())
+        .allowsHitTesting(true)
         .onTapGesture {
             appState.focusedPanel = panelSide
             if sortKey == .name { sortAscending.toggle() }
@@ -362,6 +364,7 @@ struct FileTableView: View {
             }
         }
         .contentShape(Rectangle())
+        .allowsHitTesting(true)
         .onTapGesture {
             appState.focusedPanel = panelSide
             if sortKey == .size { sortAscending.toggle() }
@@ -381,13 +384,6 @@ struct FileTableView: View {
                     .foregroundStyle(HeaderStyle.color)
             }
         }
-        .contentShape(Rectangle())
-        .onTapGesture {
-            appState.focusedPanel = panelSide
-            if sortKey == .date { sortAscending.toggle() }
-            else { sortKey = .date; sortAscending = true }
-            appState.updateSorting(key: .date, ascending: sortAscending)
-        }
     }
     
     private func getTypeColSortableHeader() -> some View {
@@ -400,13 +396,6 @@ struct FileTableView: View {
                     .font(.system(size: 8))
                     .foregroundStyle(HeaderStyle.color)
             }
-        }
-        .contentShape(Rectangle())
-        .onTapGesture {
-            appState.focusedPanel = panelSide
-            if sortKey == .type { sortAscending.toggle() }
-            else { sortKey = .type; sortAscending = true }
-            appState.updateSorting(key: .type, ascending: sortAscending)
         }
     }
 

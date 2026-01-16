@@ -81,21 +81,22 @@ struct FileRow: View {
         .id("\(panelSide)_\(file.id)")
     }
 
-    // MARK: - Secondary text colors
-    private var secondaryTextColor: Color {
-        (isSelected && isActivePanel) ? .white.opacity(0.85) : Color(nsColor: .secondaryLabelColor)
+    // MARK: - Column colors
+    private var sizeColumnColor: Color {
+        (isSelected && isActivePanel) ? .white.opacity(0.85) : Color(red: 0.5, green: 0.3, blue: 0.1)  // Brown
     }
     
-    private var tertiaryTextColor: Color {
-        (isSelected && isActivePanel) ? .white.opacity(0.7) : Color(nsColor: .tertiaryLabelColor)
+    private var dateColumnColor: Color {
+        (isSelected && isActivePanel) ? .white.opacity(0.85) : Color(red: 0.1, green: 0.4, blue: 0.2)  // Dark green
     }
     
-    private var typeTextColor: Color {
-        if isSelected && isActivePanel { return .white.opacity(0.75) }
-        if file.isDirectory || file.isSymbolicDirectory {
-            return Color(nsColor: .systemBlue).opacity(0.8)
-        }
-        return Color(nsColor: .tertiaryLabelColor)
+    private var typeColumnColor: Color {
+        (isSelected && isActivePanel) ? .white.opacity(0.85) : Color(red: 0.4, green: 0.1, blue: 0.5)  // Dark purple
+    }
+    
+    // MARK: - SF Pro Display Thin font
+    private func columnFont(size: CGFloat) -> Font {
+        .custom("SF Pro Display", size: size).weight(.thin)
     }
 
     // MARK: - Row content with columns
@@ -107,30 +108,30 @@ struct FileRow: View {
             
             columnDivider
             
-            // Size column
+            // Size column - brown
             Text(file.fileSizeFormatted)
-                .font(.system(size: 11))
-                .foregroundStyle(secondaryTextColor)
+                .font(columnFont(size: 11))
+                .foregroundStyle(sizeColumnColor)
                 .lineLimit(1)
                 .frame(width: sizeColumnWidth, alignment: .trailing)
                 .padding(.horizontal, 4)
             
             columnDivider
             
-            // Date column
+            // Date column - dark green
             Text(file.modifiedDateFormatted)
-                .font(.system(size: 11))
-                .foregroundStyle(tertiaryTextColor)
+                .font(columnFont(size: 11))
+                .foregroundStyle(dateColumnColor)
                 .lineLimit(1)
                 .frame(width: dateColumnWidth, alignment: .leading)
                 .padding(.horizontal, 4)
             
             columnDivider
             
-            // Type column
+            // Type column - dark purple
             Text(file.fileTypeDisplay)
-                .font(.system(size: 10, weight: .medium))
-                .foregroundStyle(typeTextColor)
+                .font(columnFont(size: 10))
+                .foregroundStyle(typeColumnColor)
                 .frame(width: typeColumnWidth, alignment: .leading)
                 .lineLimit(1)
                 .truncationMode(.tail)
@@ -141,9 +142,11 @@ struct FileRow: View {
     }
     
     private var columnDivider: some View {
-        Rectangle()
-            .fill(Color(nsColor: .separatorColor).opacity(0.5))
-            .frame(width: 1)
+        let scale = NSScreen.main?.backingScaleFactor ?? 2.0
+        let width = 1.0 / scale
+        return Rectangle()
+            .fill(Color(red: 0.1, green: 0.15, blue: 0.4))
+            .frame(width: max(width, 1.0))
             .padding(.vertical, 2)
     }
 

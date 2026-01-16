@@ -31,14 +31,6 @@ struct FileRowView: View {
         if file.isDirectory { return FilePanelStyle.dirNameColor }
         return .primary
     }
-    
-    // MARK: - Font weight based on file type
-    private var nameWeight: Font.Weight {
-        if file.isDirectory || file.isSymbolicDirectory {
-            return .medium
-        }
-        return .regular
-    }
 
     // MARK: - Base content for a single file row (icon + name)
     private func baseContent() -> some View {
@@ -71,7 +63,7 @@ struct FileRowView: View {
             
             // File name - truncates in middle (macOS style)
             Text(file.nameStr)
-                .font(.system(size: 13, weight: nameWeight))
+                .font(.custom("SF Pro Display", size: 13).weight(.thin))
                 .foregroundStyle(nameColor)
                 .lineLimit(1)
                 .truncationMode(.middle)
