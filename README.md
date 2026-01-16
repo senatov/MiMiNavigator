@@ -23,6 +23,7 @@
     src="GUI/Assets.xcassets/AppIcon.appiconset/120.png"
     alt="MiMiNavigator Logo"
     title="MiMiNavigator"
+     align="center"
     style="max-width: 60%; height: auto; border: 2px; border-radius: 12px;" />
 </div>
 
@@ -39,24 +40,24 @@
 
 ---
 
-⚠️ **Development Status**  
-MiMiNavigator is currently under active development and **not yet ready for production use**.  
-APIs, layouts, and internal structures may change without prior notice.  
-Please use at your own discretion.  
+⚠️ **Development Status**
+MiMiNavigator is currently under active development and **not yet ready for production use**.
+APIs, layouts, and internal structures may change without prior notice.
+Please use at your own discretion.
 
 ---
 
-### Disclaimer  
-I am not an architecture expert and do not claim to be one.  
-If you notice mistakes or disagree with my methods, reasoning, or learning process,  
-I welcome your feedback via email or social media.  
-Much of what follows represents my first attempts in this area,  
-so I ask for your patience and indulgence.  
+### Disclaimer
+I am not an architecture expert and do not claim to be one.
+If you notice mistakes or disagree with my methods, reasoning, or learning process,
+I welcome your feedback via email or social media.
+Much of what follows represents my first attempts in this area,
+so I ask for your patience and indulgence.
 
 ---
 
-### Transparency  
-I openly acknowledge that I have used AI assistants  
+### Transparency
+I openly acknowledge that I have used AI assistants
 to help clarify the philosophies and implementations of different architectures.
 
 ## 📖 Table of Contents
@@ -274,6 +275,15 @@ See our [Roadmap](#roadmap) section for detailed planning.
   <p><em>Rich context menus and file operations interface</em></p>
 </div>
 
+  <img
+    src="Gui/Docs/Preview3.png"
+    alt="File Operations and Context Menus"
+    title="Context Menus"
+    style="max-width: 100%; height: auto; border: 1px solid #133347ff; border-radius: 12px;" />
+  <p><em>Rich context menus and file operations interface</em></p>
+</div>
+
+
 ## Requirements
 
 ### System Requirements
@@ -362,7 +372,7 @@ Build logs are automatically saved to `build-logs/` directory with timestamps.
 ### First Launch
 
 1. **Grant Permissions**: On first launch, macOS may ask for file access permissions. Grant access to directories you want to navigate.
-2. **Explore Interface**: 
+2. **Explore Interface**:
    - Left and right panels show your home directory by default
    - Use the breadcrumb navigation at the top to navigate
    - Click on folders to open them in the active panel
@@ -493,8 +503,8 @@ final class AppState {
 ```swift
 actor DualDirectoryScanner {
     func refreshFiles(currSide: PanelSide) async {
-        let showHidden = await MainActor.run { 
-            UserPreferences.shared.snapshot.showHiddenFiles 
+        let showHidden = await MainActor.run {
+            UserPreferences.shared.snapshot.showHiddenFiles
         }
         let scanned = try FileScanner.scan(url: url, showHiddenFiles: showHidden)
         // ...
@@ -509,7 +519,7 @@ actor BookmarkStore {
         // Shows NSOpenPanel, saves security-scoped bookmark
         // Persists across app launches
     }
-    
+
     func restoreAll() async -> [URL] {
         // Restores saved bookmarks on app launch
     }
@@ -675,8 +685,8 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 
 ## Author
 
-**Iakov Senatov**  
-Senior Java/Swift Developer  
+**Iakov Senatov**
+Senior Java/Swift Developer
 
 - 💼 LinkedIn: [![LinkedIn](https://img.shields.io/badge/LinkedIn-Profile-blue?style=flat&logo=linkedin)](https://www.linkedin.com/in/iakov-senatov-07060765)
 - 🐙 GitHub: [@senatov](https://github.com/senatov)
