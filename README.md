@@ -253,35 +253,34 @@ See our [Roadmap](#roadmap) section for detailed planning.
 
 ### Main Interface
 **File**: `Gui/Docs/Preview3.png`
-<div style="text-align: center;">
+<div style="text-align: center;" >
   <img
-    src="Gui/Docs/Preview3.png"
-    alt="MiMiNavigator Main Interface"
-    title="Dual Panel View"
+    src="GUI/Docs/Preview3.png"
+    alt="Preview FrontEnd"
+    title="Preview"
     style="max-width: 100%; height: auto; border: 1px solid #133347ff; border-radius: 12px;" />
-  <p><em>Dual-panel file navigation with breadcrumb navigation and favorites sidebar</em></p>
 </div>
 
 ### File Operations
 **File**: `Gui/Docs/Preview2.png`
-<div style="text-align: center;">
+<div style="text-align: center;" >
   <img
-    src="Gui/Docs/Preview2.png"
-    alt="File Operations and Context Menus"
-    title="Context Menus"
+    src="GUI/Docs/Preview2.png"
+    alt="Preview FrontEnd"
+    title="Preview"
     style="max-width: 100%; height: auto; border: 1px solid #133347ff; border-radius: 12px;" />
-  <p><em>Rich context menus and file operations interface</em></p>
 </div>
 
+
 **File**: `Gui/Docs/Preview1.png`
-<div style="text-align: center;">  
-<img
-    src="Gui/Docs/Preview1.png"
-    alt="File Operations and Context Menus"
-    title="Context Menus"
+<div style="text-align: center;" >
+  <img
+    src="GUI/Docs/Preview1.png"
+    alt="Preview FrontEnd"
+    title="Preview"
     style="max-width: 100%; height: auto; border: 1px solid #133347ff; border-radius: 12px;" />
-  <p><em>Rich context menus and file operations interface</em></p>
 </div>
+
 
 
 ## Requirements
