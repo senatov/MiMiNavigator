@@ -103,7 +103,7 @@ struct FileRow: View {
         HStack(alignment: .center, spacing: 0) {
             // Name column (flexible) - can shrink
             FileRowView(file: file, isSelected: isSelected, isActivePanel: isActivePanel)
-                .frame(maxWidth: .infinity, minWidth: 60, alignment: .leading)
+                .frame(minWidth: 60, maxWidth: .infinity, alignment: .leading)
             
             columnDivider
             
