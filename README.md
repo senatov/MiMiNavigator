@@ -252,11 +252,10 @@ See our [Roadmap](#roadmap) section for detailed planning.
 ## Screenshots
 
 ### Main Interface
-**File**: `Gui/Docs/Preview1.png`
-
+**File**: `Gui/Docs/Preview3.png`
 <div style="text-align: center;">
   <img
-    src="Gui/Docs/Preview1.png"
+    src="Gui/Docs/Preview3.png"
     alt="MiMiNavigator Main Interface"
     title="Dual Panel View"
     style="max-width: 100%; height: auto; border: 1px solid #133347ff; border-radius: 12px;" />
@@ -265,7 +264,6 @@ See our [Roadmap](#roadmap) section for detailed planning.
 
 ### File Operations
 **File**: `Gui/Docs/Preview2.png`
-
 <div style="text-align: center;">
   <img
     src="Gui/Docs/Preview2.png"
@@ -275,8 +273,10 @@ See our [Roadmap](#roadmap) section for detailed planning.
   <p><em>Rich context menus and file operations interface</em></p>
 </div>
 
-  <img
-    src="Gui/Docs/Preview3.png"
+**File**: `Gui/Docs/Preview1.png`
+<div style="text-align: center;">  
+<img
+    src="Gui/Docs/Preview1.png"
     alt="File Operations and Context Menus"
     title="Context Menus"
     style="max-width: 100%; height: auto; border: 1px solid #133347ff; border-radius: 12px;" />
@@ -287,7 +287,7 @@ See our [Roadmap](#roadmap) section for detailed planning.
 ## Requirements
 
 ### System Requirements
-- **macOS**: 15.0 (Sequoia) or later
+- **macOS**: 26.0 (Sequoia) or later
 - **Architecture**: Apple Silicon (M1/M2/M3/M4) or Intel x86_64
 
 ### Development Requirements
