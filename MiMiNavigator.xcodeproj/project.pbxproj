@@ -223,6 +223,7 @@
 				97D915672CD5621500EB5FDD /* XCRemoteSwiftPackageReference "SwiftyBeaver" */,
 				97D128732DB62CB400274684 /* XCRemoteSwiftPackageReference "FileProvider" */,
 				97B3D6362DCA54A2002F1DB7 /* XCRemoteSwiftPackageReference "swift-system" */,
+				971A28F72F1B140900094ADE /* XCLocalSwiftPackageReference "Packages/FavoritesKit" */,
 			);
 			preferredProjectObjectVersion = 90;
 			productRefGroup = 97AD1A2F2C624E020045C38D /* Products */;
@@ -632,6 +633,13 @@
 			defaultConfigurationName = Debug;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		971A28F72F1B140900094ADE /* XCLocalSwiftPackageReference "Packages/FavoritesKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/FavoritesKit;
+		};
+/* End XCLocalSwiftPackageReference section */
 
 /* Begin XCRemoteSwiftPackageReference section */
 		97B3D6362DCA54A2002F1DB7 /* XCRemoteSwiftPackageReference "swift-system" */ = {
