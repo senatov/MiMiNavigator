@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **FavoritesKit** — reusable Swift Package for Favorites navigation
+  - Dynamic library (.dylib) for modular architecture
+  - FavoritesTreeView, FavoritesScanner, FavoritesBookmarkStore
+  - Protocol-based design for easy integration
+  - Security-scoped bookmarks support
 - Two-panel file manager interface with independent navigation
 - Custom split view divider with smooth hover effects and drag behavior
 - Real-time directory monitoring via dedicated `DualDirectoryScanner` actor
@@ -29,6 +34,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Panel focus management with visual feedback
 
 ### Changed
+- **Favorites module migrated to FavoritesKit package**
+  - ButtonFavTopPanel now uses FavoritesKit
+  - Removed deprecated files: BookmarkStore, FavScanner, FavTreePopup*
+  - Added FavoritesNavigationAdapter for AppState integration
 - Refactored split view components for better performance
 - Updated UI to match macOS Sequoia design guidelines
 - Improved panel focus handling and state synchronization

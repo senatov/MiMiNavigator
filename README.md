@@ -170,6 +170,7 @@ Complete implementation of a professional menu bar inspired by Total Commander w
 - 🎬 **Animated toolbar buttons** with visual feedback
 - 🪟 **Liquid-glass UI** following macOS 26 design guidelines
 - 📜 **Navigation history** with per-panel tracking
+- 📦 **Modular architecture** with reusable Swift Packages (FavoritesKit)
 
 ## Features
 
@@ -460,10 +461,9 @@ MiMiNavigator/
 │   │   │   ├── HistoryPopoverView.swift  # History popover component
 │   │   │   └── HistoryItemRow.swift      # Individual history item
 │   │   │
-│   │   ├── Favorite/                      # Favorites & Bookmarks
-│   │   │   ├── BookmarkStore.swift       # Security-scoped bookmark persistence
-│   │   │   ├── FavScanner.swift          # Favorites directory scanner
-│   │   │   └── FavTreePopup*.swift       # Favorites popup views
+│   │   ├── Favorite/                      # Favorites Integration
+│   │   │   ├── ButtonFavTopPanel.swift   # Navigation panel with favorites button
+│   │   │   └── FavoritesNavigationAdapter.swift # Adapter for FavoritesKit
 │   │   │
 │   │   ├── Config/                        # Configuration & Preferences
 │   │   │   ├── DesignTokens.swift        # Design system tokens
@@ -478,6 +478,18 @@ MiMiNavigator/
 │   │
 │   ├── MiMiNavigator.entitlements        # App sandbox & permissions
 │   └── Info.plist                        # App configuration
+│
+├── Packages/                              # Swift Packages
+│   └── FavoritesKit/                     # Reusable Favorites module (.dylib)
+│       ├── Package.swift                 # Package manifest (type: .dynamic)
+│       └── Sources/FavoritesKit/
+│           ├── FavoritesKit.swift        # Package entry point
+│           ├── FavoritesProtocols.swift  # Public protocols
+│           ├── FavoriteItem.swift        # Favorite item model
+│           ├── FavoritesBookmarkStore.swift # Security-scoped bookmarks
+│           ├── FavoritesScanner.swift    # Directory scanner
+│           ├── FavoritesTreeView.swift   # Main popup view
+│           └── FavoritesRowView.swift    # Tree row view
 │
 ├── Scripts/                               # Build & Development Scripts
 └── .github/workflows/                     # CI/CD Pipeline
@@ -614,6 +626,7 @@ log.error("Error messages")
 | **Swift** | Programming Language | 6.2 |
 | **AppKit** | System Integration | macOS 15+ |
 | **SwiftyBeaver** | Logging Framework | 2.0+ |
+| **FavoritesKit** | Favorites module (dynamic library) | 1.0.0 |
 
 ### Swift 6.2 Features Used
 
