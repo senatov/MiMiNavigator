@@ -8,7 +8,6 @@
 // Migrated to use FavoritesKit package
 
 import AppKit
-import FavoritesKit
 import SwiftUI
 
 // MARK: - Navigation Panel with Favorites Button

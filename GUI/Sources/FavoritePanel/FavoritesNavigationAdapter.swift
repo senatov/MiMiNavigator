@@ -7,7 +7,6 @@
 //
 // Adapter to connect FavoritesKit with MiMiNavigator's AppState
 
-import FavoritesKit
 import Foundation
 
 // MARK: - Adapter connecting FavoritesKit to AppState
