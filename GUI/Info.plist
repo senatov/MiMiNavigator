@@ -17,6 +17,21 @@
 			</array>
 		</dict>
 	</array>
+	<key>UTExportedTypeDeclarations</key>
+	<array>
+		<dict>
+			<key>UTTypeIdentifier</key>
+			<string>com.senatov.miminavigator.file</string>
+			<key>UTTypeDescription</key>
+			<string>MiMiNavigator File Reference</string>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.data</string>
+			</array>
+			<key>UTTypeTagSpecification</key>
+			<dict/>
+		</dict>
+	</array>
 	<key>NSAppleEventsUsageDescription</key>
 	<string>MiMiNavigator needs to control Finder to show file information.</string>
 	<key>NSAppleScriptEnabled</key>

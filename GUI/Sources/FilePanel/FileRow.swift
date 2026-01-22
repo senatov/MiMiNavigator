@@ -6,8 +6,9 @@
 
 import AppKit
 import SwiftUI
+import UniformTypeIdentifiers
 
-// MARK: - Lightweight row view for file list
+// MARK: - Lightweight row view for file list with drag-drop support
 struct FileRow: View {
     let index: Int
     let file: CustomFile
@@ -21,6 +22,9 @@ struct FileRow: View {
     let onFileAction: (FileAction, CustomFile) -> Void
     let onDirectoryAction: (DirectoryAction, CustomFile) -> Void
     @Environment(AppState.self) var appState
+    @Environment(DragDropManager.self) var dragDropManager
+    
+    @State private var isDropTargeted: Bool = false
     
     // MARK: - Selection colors (macOS native style)
     private enum SelectionColors {
@@ -28,22 +32,38 @@ struct FileRow: View {
         static let activeBorder = Color(nsColor: .keyboardFocusIndicatorColor).opacity(0.6)
         static let inactiveFill = Color(nsColor: .unemphasizedSelectedContentBackgroundColor)
         static let inactiveBorder = Color(nsColor: .separatorColor)
+        static let dropTargetFill = Color.accentColor.opacity(0.2)
+        static let dropTargetBorder = Color.accentColor
     }
     
     private var isActivePanel: Bool {
         appState.focusedPanel == panelSide
     }
+    
+    private var isValidDropTarget: Bool {
+        file.isDirectory || file.isSymbolicDirectory
+    }
 
     var body: some View {
-        StableBy(file.id.hashValue ^ (isSelected ? 1 : 0) ^ (isActivePanel ? 2 : 0)) {
+        StableBy(file.id.hashValue ^ (isSelected ? 1 : 0) ^ (isActivePanel ? 2 : 0) ^ (isDropTargeted ? 4 : 0)) {
             ZStack(alignment: .leading) {
                 // Zebra stripes
                 let zebraColors = NSColor.alternatingContentBackgroundColors
                 Color(nsColor: zebraColors[index % zebraColors.count])
                     .allowsHitTesting(false)
 
+                // Drop target highlight (for directories)
+                if isDropTargeted && isValidDropTarget {
+                    RoundedRectangle(cornerRadius: 4, style: .continuous)
+                        .fill(SelectionColors.dropTargetFill)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 4, style: .continuous)
+                                .stroke(SelectionColors.dropTargetBorder, lineWidth: 2)
+                        )
+                        .allowsHitTesting(false)
+                }
                 // Selection highlight
-                if isSelected {
+                else if isSelected {
                     RoundedRectangle(cornerRadius: 4, style: .continuous)
                         .fill(isActivePanel ? SelectionColors.activeFill : SelectionColors.inactiveFill)
                         .overlay(
@@ -78,7 +98,36 @@ struct FileRow: View {
                 }
             }
         }
+        // MARK: - Drag support
+        .draggable(file) {
+            DragPreviewView(file: file)
+        }
+        // MARK: - Drop support (only for directories)
+        .dropDestination(for: CustomFile.self) { droppedFiles, _ in
+            handleDrop(droppedFiles)
+        } isTargeted: { targeted in
+            if isValidDropTarget {
+                withAnimation(.easeInOut(duration: 0.15)) {
+                    isDropTargeted = targeted
+                }
+                if targeted {
+                    dragDropManager.setDropTarget(file.urlValue)
+                }
+            }
+        }
         .id("\(panelSide)_\(file.id)")
+    }
+    
+    // MARK: - Handle drop on this row (directory)
+    private func handleDrop(_ droppedFiles: [CustomFile]) -> Bool {
+        guard isValidDropTarget else { return false }
+        guard !droppedFiles.isEmpty else { return false }
+        
+        let droppedPaths = Set(droppedFiles.map { $0.urlValue.path })
+        if droppedPaths.contains(file.urlValue.path) { return false }
+        
+        dragDropManager.prepareTransfer(files: droppedFiles, to: file.urlValue, from: panelSide)
+        return true
     }
 
     // MARK: - Column colors
@@ -153,5 +202,30 @@ struct FileRow: View {
     private func makeHelpTooltip() -> String {
         let icon = file.isDirectory ? "📁" : "📄"
         return "\(icon) \(file.nameStr)\n📍 \(file.pathStr)\n📅 \(file.modifiedDateFormatted)\n📦 \(file.fileSizeFormatted)"
+    }
+}
+
+// MARK: - Drag preview view
+struct DragPreviewView: View {
+    let file: CustomFile
+    
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(nsImage: NSWorkspace.shared.icon(forFile: file.urlValue.path))
+                .resizable()
+                .frame(width: 32, height: 32)
+            
+            Text(file.nameStr)
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(.primary)
+                .lineLimit(1)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(.ultraThinMaterial)
+                .shadow(color: .black.opacity(0.2), radius: 4, x: 0, y: 2)
+        )
     }
 }

@@ -5,10 +5,12 @@
 //  Copyright © 2024 Senatov. All rights reserved.
 
 import SwiftUI
+import UniformTypeIdentifiers
 
 // MARK: - File table view with sortable and resizable columns
 struct FileTableView: View {
     @Environment(AppState.self) var appState
+    @Environment(DragDropManager.self) var dragDropManager
     let panelSide: PanelSide
     let files: [CustomFile]
     @Binding var selectedID: CustomFile.ID?
@@ -19,6 +21,7 @@ struct FileTableView: View {
     @State private var sortAscending: Bool = true
     @State private var cachedSortedFiles: [CustomFile] = []
     @State private var scrollProxy: ScrollViewProxy? = nil
+    @State private var isPanelDropTargeted: Bool = false
     
     // MARK: - Resizable column widths (persisted per panel)
     @State private var sizeColumnWidth: CGFloat = ColumnDefaults.size
@@ -74,7 +77,7 @@ struct FileTableView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(.horizontal, 6)
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .overlay(lightBorder)
+        .overlay(panelBorder)
         .contentShape(Rectangle())
         .animation(nil, value: isFocused)
         .animation(nil, value: selectedID)
@@ -98,6 +101,45 @@ struct FileTableView: View {
             default: break
             }
         }
+        // MARK: - Panel-level drop destination
+        .dropDestination(for: CustomFile.self) { droppedFiles, _ in
+            handlePanelDrop(droppedFiles)
+        } isTargeted: { targeted in
+            withAnimation(.easeInOut(duration: 0.15)) {
+                isPanelDropTargeted = targeted
+            }
+            if targeted {
+                let panelPath = panelSide == .left ? appState.leftPath : appState.rightPath
+                dragDropManager.setDropTarget(URL(fileURLWithPath: panelPath))
+            }
+        }
+    }
+    
+    // MARK: - Handle drop on panel background
+    private func handlePanelDrop(_ droppedFiles: [CustomFile]) -> Bool {
+        guard !droppedFiles.isEmpty else { return false }
+        
+        let panelPath = panelSide == .left ? appState.leftPath : appState.rightPath
+        let destinationURL = URL(fileURLWithPath: panelPath)
+        
+        if let firstFile = droppedFiles.first {
+            let sourceDir = firstFile.urlValue.deletingLastPathComponent()
+            if sourceDir.path == destinationURL.path { return false }
+        }
+        
+        let sourceSide: PanelSide? = panelSide == .left ? .right : .left
+        dragDropManager.prepareTransfer(files: droppedFiles, to: destinationURL, from: sourceSide)
+        return true
+    }
+    
+    // MARK: - Panel border
+    private var panelBorder: some View {
+        RoundedRectangle(cornerRadius: 12)
+            .stroke(
+                isPanelDropTargeted ? Color.accentColor : Color.white.opacity(isFocused ? 0.10 : 0.05),
+                lineWidth: isPanelDropTargeted ? 2 : 1
+            )
+            .allowsHitTesting(false)
     }
     
     // MARK: - Persistence
@@ -321,12 +363,6 @@ struct FileTableView: View {
         .frame(width: 0, height: 0)
         .opacity(0.001)
         .allowsHitTesting(false)
-    }
-
-    private var lightBorder: some View {
-        RoundedRectangle(cornerRadius: 12)
-            .stroke(Color.white.opacity(isFocused ? 0.10 : 0.05), lineWidth: 1)
-            .allowsHitTesting(false)
     }
 
     // MARK: - Column headers

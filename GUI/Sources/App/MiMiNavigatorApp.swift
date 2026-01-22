@@ -13,6 +13,7 @@ let log = LogMan.log
 @main
 struct MiMiNavigatorApp: App {
     @State private var appState = AppState()
+    @State private var dragDropManager = DragDropManager()
     @State private var showHiddenFiles = UserPreferences.shared.snapshot.showHiddenFiles
     @State private var isRefreshing = false
     @State private var isHiddenToggling = false
@@ -32,6 +33,7 @@ struct MiMiNavigatorApp: App {
         WindowGroup {
             DuoFilePanelView()
                 .environment(appState)
+                .environment(dragDropManager)
                 .onAppear {
                     appDelegate.bind(appState)
                     showHiddenFiles = UserPreferences.shared.snapshot.showHiddenFiles
@@ -48,6 +50,19 @@ struct MiMiNavigatorApp: App {
                     toolBarItemHidden()
                     toolBarOpenWith()
                     toolBarItemBuildInfo()
+                }
+                // MARK: - File Transfer Confirmation Dialog
+                .sheet(isPresented: Binding(
+                    get: { dragDropManager.showConfirmationDialog },
+                    set: { dragDropManager.showConfirmationDialog = $0 }
+                )) {
+                    if let operation = dragDropManager.pendingOperation {
+                        FileTransferConfirmationDialog(operation: operation) { action in
+                            Task {
+                                await dragDropManager.executeTransfer(action: action, appState: appState)
+                            }
+                        }
+                    }
                 }
         }
         .windowToolbarStyle(.unifiedCompact)
