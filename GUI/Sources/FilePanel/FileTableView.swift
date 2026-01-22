@@ -438,10 +438,12 @@ struct FileTableView: View {
     // MARK: - Action handlers
     func handleFileAction(_ action: FileAction, for file: CustomFile) {
         log.debug("FileAction: \(action) → \(file.pathStr)")
+        ContextMenuCoordinator.shared.handleFileAction(action, for: file, panel: panelSide, appState: appState)
     }
 
     func handleDirectoryAction(_ action: DirectoryAction, for file: CustomFile) {
         log.debug("DirectoryAction: \(action) → \(file.pathStr)")
+        ContextMenuCoordinator.shared.handleDirectoryAction(action, for: file, panel: panelSide, appState: appState)
     }
 
     // MARK: - Sorting comparator
