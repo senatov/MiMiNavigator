@@ -84,6 +84,7 @@ struct DownToolbarButtonView: View {
         .onHover(perform: handleHover)
         .focusable(true)
         .focused($isFocused)
+        .focusEffectDisabled()
         .animation(.spring(response: 0.38, dampingFraction: 1.12), value: isHovered)
         .animation(.spring(response: 0.35, dampingFraction: 1.05), value: isPressed)
     }
