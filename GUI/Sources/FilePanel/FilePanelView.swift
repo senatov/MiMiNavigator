@@ -43,7 +43,7 @@ struct FilePanelView: View {
         selectedSide: PanelSide,
         containerWidth: CGFloat,
         leftPanelWidth: Binding<CGFloat>,
-        fetchFiles: @escaping @Sendable (PanelSide) async -> Void,
+        fetchFiles: @escaping @Sendable @concurrent (PanelSide) async -> Void,
         appState: AppState,
         onPanelTap: @escaping (PanelSide) -> Void = { _ in }
     ) {
