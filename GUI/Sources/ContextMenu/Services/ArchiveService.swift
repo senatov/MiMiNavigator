@@ -7,7 +7,7 @@
 import Foundation
 
 // MARK: - Archive Format
-enum ArchiveFormat: String, CaseIterable, Identifiable {
+enum ArchiveFormat: String, CaseIterable, Identifiable, Sendable {
     case zip = "zip"
     case tarGz = "tar.gz"
     case tarBz2 = "tar.bz2"
@@ -42,8 +42,18 @@ enum ArchiveFormat: String, CaseIterable, Identifiable {
         case .zip, .tar, .tarGz, .tarBz2:
             return true  // Built-in macOS tools
         case .sevenZip:
-            return ArchiveService.shared.is7zAvailable
+            return ArchiveFormat.check7zAvailable()
         }
+    }
+    
+    /// Static check for 7z availability (no actor isolation needed)
+    private static func check7zAvailable() -> Bool {
+        let paths = [
+            "/usr/local/bin/7z",
+            "/opt/homebrew/bin/7z",
+            "/usr/bin/7z"
+        ]
+        return paths.contains { FileManager.default.fileExists(atPath: $0) }
     }
     
     static var availableFormats: [ArchiveFormat] {
@@ -62,17 +72,7 @@ final class ArchiveService {
     
     private init() {}
     
-    // MARK: - Check 7z availability
-    var is7zAvailable: Bool {
-        // Check common locations for 7z
-        let paths = [
-            "/usr/local/bin/7z",
-            "/opt/homebrew/bin/7z",
-            "/usr/bin/7z"
-        ]
-        return paths.contains { fileManager.fileExists(atPath: $0) }
-    }
-    
+    // MARK: - Get 7z path
     private var sevenZipPath: String? {
         let paths = [
             "/opt/homebrew/bin/7z",

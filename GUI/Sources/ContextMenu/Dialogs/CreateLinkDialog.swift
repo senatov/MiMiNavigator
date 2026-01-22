@@ -278,7 +278,7 @@ private struct LinkTypeRow: View {
 // MARK: - Preview
 #Preview {
     CreateLinkDialog(
-        file: CustomFile(url: URL(fileURLWithPath: "/test/document.txt")),
+        file: CustomFile(path: "/test/document.txt"),
         destinationPath: URL(fileURLWithPath: "/Users/test"),
         onCreateLink: { _, _ in },
         onCancel: {}

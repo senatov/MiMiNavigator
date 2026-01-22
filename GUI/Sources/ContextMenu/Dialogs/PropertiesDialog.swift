@@ -209,7 +209,7 @@ struct PropertiesDialog: View {
 // MARK: - Preview
 #Preview {
     PropertiesDialog(
-        file: CustomFile(url: URL(fileURLWithPath: "/Users")),
+        file: CustomFile(path: "/Users"),
         onClose: {}
     )
     .padding()

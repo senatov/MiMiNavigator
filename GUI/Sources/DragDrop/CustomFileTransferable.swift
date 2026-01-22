@@ -16,7 +16,7 @@ extension CustomFile: Transferable {
         // Primary: File URL representation for system interop
         FileRepresentation(contentType: .fileURL) { file in
             SentTransferredFile(file.urlValue)
-        } importing: { received in
+        } importing: { @concurrent received in
             let url = received.file
             return CustomFile(path: url.path)
         }

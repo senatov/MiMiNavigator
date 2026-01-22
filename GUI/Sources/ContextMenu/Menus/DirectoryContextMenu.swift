@@ -81,7 +81,7 @@ struct DirectoryContextMenu: View {
     .frame(width: 300, height: 200)
     .contextMenu {
         DirectoryContextMenu(
-            file: CustomFile(url: URL(fileURLWithPath: "/Users")),
+            file: CustomFile(path: "/Users"),
             panelSide: .left,
             onAction: { _ in }
         )

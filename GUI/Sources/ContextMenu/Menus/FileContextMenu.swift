@@ -80,7 +80,7 @@ struct FileContextMenu: View {
     .frame(width: 300, height: 200)
     .contextMenu {
         FileContextMenu(
-            file: CustomFile(url: URL(fileURLWithPath: "/test/document.txt")),
+            file: CustomFile(path: "/test/document.txt"),
             panelSide: .left,
             onAction: { _ in }
         )

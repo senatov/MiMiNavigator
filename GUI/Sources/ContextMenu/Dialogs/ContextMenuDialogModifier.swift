@@ -9,7 +9,7 @@ import SwiftUI
 // MARK: - Context Menu Dialog Modifier
 /// Adds modal dialog support for context menu actions
 struct ContextMenuDialogModifier: ViewModifier {
-    @Environment(AppState.self) var appState
+    let appState: AppState
     @Bindable var coordinator: ContextMenuCoordinator
     
     func body(content: Content) -> some View {
@@ -259,7 +259,7 @@ struct SuccessDialog: View {
 
 // MARK: - View Extension
 extension View {
-    func contextMenuDialogs(coordinator: ContextMenuCoordinator) -> some View {
-        modifier(ContextMenuDialogModifier(coordinator: coordinator))
+    func contextMenuDialogs(coordinator: ContextMenuCoordinator, appState: AppState) -> some View {
+        modifier(ContextMenuDialogModifier(appState: appState, coordinator: coordinator))
     }
 }

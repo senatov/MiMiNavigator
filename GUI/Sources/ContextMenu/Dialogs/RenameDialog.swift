@@ -175,7 +175,7 @@ struct RenameDialog: View {
 // MARK: - Preview
 #Preview {
     RenameDialog(
-        file: CustomFile(url: URL(fileURLWithPath: "/test/document.txt")),
+        file: CustomFile(path: "/test/document.txt"),
         onRename: { _ in },
         onCancel: {}
     )

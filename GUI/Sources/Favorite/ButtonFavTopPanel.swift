@@ -141,7 +141,7 @@ struct ButtonFavTopPanel: View {
             favoritesPopover()
                 .interactiveDismissDisabled()
         }
-        .help("Navigation between favorites - \(panelSide)")
+        .help("Navigation between favorites - \(String(describing: panelSide))")
     }
 
     // MARK: - Favorites Popover (FavoritesKit)

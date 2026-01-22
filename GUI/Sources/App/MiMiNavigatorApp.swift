@@ -35,7 +35,7 @@ struct MiMiNavigatorApp: App {
             DuoFilePanelView()
                 .environment(appState)
                 .environment(dragDropManager)
-                .contextMenuDialogs(coordinator: contextMenuCoordinator)
+                .contextMenuDialogs(coordinator: contextMenuCoordinator, appState: appState)
                 .onAppear {
                     appDelegate.bind(appState)
                     showHiddenFiles = UserPreferences.shared.snapshot.showHiddenFiles
