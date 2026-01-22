@@ -25,9 +25,9 @@ struct FavTreePopup: View {
         }
         .frame(minWidth: 320, idealWidth: 420, maxWidth: 560)
         .background(.ultraThinMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: FilePanelStyle.windowCornerRadius, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
+            RoundedRectangle(cornerRadius: FilePanelStyle.windowCornerRadius, style: .continuous)
                 .stroke(Color.primary.opacity(0.08), lineWidth: 0.5)
         )
         .task { @MainActor in

@@ -44,10 +44,10 @@ struct FileRow: View {
 
                 // Selection highlight
                 if isSelected {
-                    RoundedRectangle(cornerRadius: 4, style: .continuous)
+                    RoundedRectangle(cornerRadius: FilePanelStyle.rowSelectionRadius, style: .continuous)
                         .fill(isActivePanel ? SelectionColors.activeFill : SelectionColors.inactiveFill)
                         .overlay(
-                            RoundedRectangle(cornerRadius: 4, style: .continuous)
+                            RoundedRectangle(cornerRadius: FilePanelStyle.rowSelectionRadius, style: .continuous)
                                 .stroke(isActivePanel ? SelectionColors.activeBorder : SelectionColors.inactiveBorder, lineWidth: 1)
                         )
                         .allowsHitTesting(false)
@@ -81,22 +81,22 @@ struct FileRow: View {
         .id("\(panelSide)_\(file.id)")
     }
 
-    // MARK: - Column colors
+    // MARK: - Column colors (from FilePanelStyle)
     private var sizeColumnColor: Color {
-        (isSelected && isActivePanel) ? .white.opacity(0.85) : Color(red: 0.5, green: 0.3, blue: 0.1)  // Brown
+        (isSelected && isActivePanel) ? .white : FilePanelStyle.sizeColumnColor
     }
     
     private var dateColumnColor: Color {
-        (isSelected && isActivePanel) ? .white.opacity(0.85) : Color(red: 0.1, green: 0.4, blue: 0.2)  // Dark green
+        (isSelected && isActivePanel) ? .white : FilePanelStyle.dateColumnColor
     }
     
     private var typeColumnColor: Color {
-        (isSelected && isActivePanel) ? .white.opacity(0.85) : Color(red: 0.4, green: 0.1, blue: 0.5)  // Dark purple
+        (isSelected && isActivePanel) ? .white : FilePanelStyle.typeColumnColor
     }
     
-    // MARK: - SF Pro Display Thin font
+    // MARK: - SF Pro Display Regular font
     private func columnFont(size: CGFloat) -> Font {
-        .custom("SF Pro Display", size: size).weight(.thin)
+        .custom("SF Pro Display", size: size).weight(.regular)
     }
 
     // MARK: - Row content with columns
@@ -145,7 +145,7 @@ struct FileRow: View {
         let scale = NSScreen.main?.backingScaleFactor ?? 2.0
         let width = 1.0 / scale
         return Rectangle()
-            .fill(Color(red: 0.1, green: 0.15, blue: 0.4))
+            .fill(FilePanelStyle.columnDividerColor)
             .frame(width: max(width, 1.0))
             .padding(.vertical, 2)
     }

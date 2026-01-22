@@ -20,7 +20,7 @@ struct BreadCrumbControlWrapper: View {
 
     // MARK: - Constants
     private enum Design {
-        static let cornerRadius: CGFloat = 12
+        static let cornerRadius: CGFloat = FilePanelStyle.windowCornerRadius
         static let borderWidth: CGFloat = 1.5
         static let idleBorderWidth: CGFloat = 1
         static let shadowRadius: CGFloat = 7
@@ -133,7 +133,7 @@ struct BreadCrumbControlWrapper: View {
             .textFieldStyle(.plain)
             .padding(Design.Padding.textFieldPadding)
             .background(Design.Colors.textFieldBackground)
-            .clipShape(.rect(cornerRadius: 6))
+            .clipShape(.rect(cornerRadius: FilePanelStyle.buttonCornerRadius))
             .focused($isTextFieldFocused)
             .onAppear {
                 setupEditingMode()

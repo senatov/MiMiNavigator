@@ -23,7 +23,7 @@ struct DuoPanelBottomToolbarSection: View {
     private enum Layout {
         static let toolbarHorizontalPadding: CGFloat = 16
         static let toolbarVerticalPadding: CGFloat = 12
-        static let toolbarCornerRadius: CGFloat = 10
+        static let toolbarCornerRadius: CGFloat = FilePanelStyle.containerCornerRadius
         static let toolbarOuterPadding: CGFloat = 8
         static let toolbarBottomPadding: CGFloat = 8
         static let toolbarButtonSpacing: CGFloat = 12

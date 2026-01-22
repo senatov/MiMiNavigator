@@ -63,7 +63,7 @@ struct FileRowView: View {
             
             // File name - truncates in middle (macOS style)
             Text(file.nameStr)
-                .font(.custom("SF Pro Display", size: 13).weight(.thin))
+                .font(.custom("SF Pro Display", size: 13).weight(.regular))
                 .foregroundStyle(nameColor)
                 .lineLimit(1)
                 .truncationMode(.middle)

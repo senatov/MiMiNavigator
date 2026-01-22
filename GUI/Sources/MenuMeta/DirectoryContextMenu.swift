@@ -32,12 +32,12 @@ struct DirectoryContextMenu: View {
         }
         .frame(minWidth: 220)
         .background(
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
+            RoundedRectangle(cornerRadius: FilePanelStyle.windowCornerRadius, style: .continuous)
                 .fill(Color(nsColor: .windowBackgroundColor))
                 .shadow(color: .secondary.opacity(0.25), radius: 7, x: 1, y: 1)
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 8)
+            RoundedRectangle(cornerRadius: FilePanelStyle.windowCornerRadius)
                 .stroke(Color.secondary.opacity(0.35), lineWidth: 0.6)
         )
     }

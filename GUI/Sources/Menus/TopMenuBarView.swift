@@ -88,7 +88,7 @@ struct TopMenuBarView: View {
                             .padding(.horizontal, 10)
                             .padding(.vertical, 6)
                             .frame(minHeight: 26, alignment: .center)
-                            .contentShape(RoundedRectangle(cornerRadius: 8))
+                            .contentShape(RoundedRectangle(cornerRadius: FilePanelStyle.toolbarButtonRadius))
                             .help("Open menu: '\(helpMenu.title)'")
                     }
                     .menuStyle(.borderlessButton)

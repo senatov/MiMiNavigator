@@ -41,10 +41,10 @@ struct FileTableView: View {
         static let typeMax: CGFloat = 100
     }
     
-    // MARK: - Header style
+    // MARK: - Header style (using FilePanelStyle)
     private enum HeaderStyle {
         static let font = Font.system(size: 12, weight: .semibold, design: .default)
-        static let color = Color(red: 0.1, green: 0.2, blue: 0.45)
+        static let color = FilePanelStyle.headerColor
     }
     
     // MARK: - UserDefaults keys
@@ -73,7 +73,7 @@ struct FileTableView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(.horizontal, 6)
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: FilePanelStyle.windowCornerRadius, style: .continuous))
         .overlay(lightBorder)
         .contentShape(Rectangle())
         .animation(nil, value: isFocused)
@@ -278,7 +278,7 @@ struct FileTableView: View {
         let scale = NSScreen.main?.backingScaleFactor ?? 2.0
         let dividerWidth = Swift.max(1.0 / scale, 1.0)
         return Rectangle()
-            .fill(Color(red: 0.1, green: 0.15, blue: 0.4))
+            .fill(FilePanelStyle.columnDividerColor)
             .frame(width: dividerWidth)
             .padding(.vertical, 2)
             .overlay {
@@ -324,7 +324,7 @@ struct FileTableView: View {
     }
 
     private var lightBorder: some View {
-        RoundedRectangle(cornerRadius: 12)
+        RoundedRectangle(cornerRadius: FilePanelStyle.windowCornerRadius)
             .stroke(Color.white.opacity(isFocused ? 0.10 : 0.05), lineWidth: 1)
             .allowsHitTesting(false)
     }

@@ -4,39 +4,82 @@
 //  Created by Iakov Senatov on 11.08.2024.
 //  Copyright © 2024 Senatov. All rights reserved.
 //
+// MARK: - Centralized color and layout constants for file panels
+// Colors are defined in Assets.xcassets/Colors for visual editing and Dark Mode support
 
 import SwiftUI
 
-// MARK: - Visual styling constants for file panels
-// Inspired by Total Commander aesthetics
 enum FilePanelStyle {
     
-    // MARK: - Colors
+    // MARK: - File Name Colors (from Asset Catalog)
     
-    /// Blue color for symlink directories
-    static let blueSymlinkDirNameColor = Color(red: 0.24, green: 0.29, blue: 0.87)
+    /// Vibrant blue for symlink directories
+    static let blueSymlinkDirNameColor = Color("SymlinkDirectory")
     
-    /// Purple color for regular directories
-    static let dirNameColor = Color(red: 0.18, green: 0.01, blue: 0.56)
+    /// Rich purple for regular directories
+    static let dirNameColor = Color("DirectoryName")
     
-    /// Dark blue-gray for regular files
-    static let fileNameColor = Color(red: 0.06, green: 0.18, blue: 0.25)
+    /// Higher contrast blue-gray for regular files
+    static let fileNameColor = Color("FileName")
+    
+    // MARK: - Column Colors (Size, Date, Type)
+    
+    /// Rich brown for Size column
+    static let sizeColumnColor = Color("SizeColumn")
+    
+    /// Rich green for Date column
+    static let dateColumnColor = Color("DateColumn")
+    
+    /// Rich purple for Type column
+    static let typeColumnColor = Color("TypeColumn")
+    
+    // MARK: - Header & Divider Colors
+    
+    /// Dark blue for table headers
+    static let headerColor = Color("TableHeader")
+    
+    /// Dark navy for column dividers
+    static let columnDividerColor = Color("ColumnDivider")
+    
+    // MARK: - Selection Colors
     
     /// Orange stroke for selected row
-    static let orangeSelRowStroke = Color(red: 0.94, green: 0.50, blue: 0.35)
+    static let orangeSelRowStroke = Color("SelectionOrangeStroke")
     
     /// Light blue accent
-    static let skyBlauColor = Color(red: 0.47, green: 0.84, blue: 0.98)
+    static let skyBlueColor = Color("SkyBlue")
     
-    /// Yellow fill for selected row
-    static let yellowSelRowFill = Color(red: 1.0, green: 0.98, blue: 0.92)
+    /// Yellow fill for selected row (inactive)
+    static let yellowSelRowFill = Color("SelectionYellowFill")
     
     /// Orange fill for active selection
-    static let orangeSelRowFill = Color(red: 0.98, green: 0.85, blue: 0.55)
-
-    // MARK: - Layout - Total Commander style (larger icons for clarity)
+    static let orangeSelRowFill = Color("SelectionOrangeFill")
     
-    /// Icon size - 22pt for crisp display like Total Commander
+    // MARK: - Help Popup Colors
+    
+    /// Brown text for help popup
+    static let helpPopupTextColor = Color("HelpPopupText")
+
+    // MARK: - Corner Radius (macOS HIG aligned)
+    
+    /// Standard small buttons, text fields
+    static let buttonCornerRadius: CGFloat = 6
+    
+    /// Toolbar buttons, larger interactive elements
+    static let toolbarButtonRadius: CGFloat = 8
+    
+    /// Panels, cards, table containers
+    static let containerCornerRadius: CGFloat = 10
+    
+    /// Windows, popovers, sheets
+    static let windowCornerRadius: CGFloat = 12
+    
+    /// Row selection highlight
+    static let rowSelectionRadius: CGFloat = 4
+
+    // MARK: - Layout Constants (Total Commander style)
+    
+    /// Icon size - 22pt for crisp display
     static let iconSize: CGFloat = 22
     
     /// Row height for comfortable reading

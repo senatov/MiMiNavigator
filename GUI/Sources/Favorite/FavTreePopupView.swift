@@ -127,7 +127,7 @@ struct FavTreePopupView: View {
         .padding(.vertical, 3)
         .padding(.horizontal, 6)
         .background(
-            RoundedRectangle(cornerRadius: 4, style: .continuous)
+            RoundedRectangle(cornerRadius: FilePanelStyle.rowSelectionRadius, style: .continuous)
                 .fill(isExpanded ? Color.accentColor.opacity(0.08) : .clear)
         )
         .contentShape(Rectangle())
