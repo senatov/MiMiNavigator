@@ -14,6 +14,7 @@ let log = LogMan.log
 struct MiMiNavigatorApp: App {
     @State private var appState = AppState()
     @State private var dragDropManager = DragDropManager()
+    @State private var contextMenuCoordinator = ContextMenuCoordinator.shared
     @State private var showHiddenFiles = UserPreferences.shared.snapshot.showHiddenFiles
     @State private var isRefreshing = false
     @State private var isHiddenToggling = false
@@ -34,6 +35,7 @@ struct MiMiNavigatorApp: App {
             DuoFilePanelView()
                 .environment(appState)
                 .environment(dragDropManager)
+                .contextMenuDialogs(coordinator: contextMenuCoordinator)
                 .onAppear {
                     appDelegate.bind(appState)
                     showHiddenFiles = UserPreferences.shared.snapshot.showHiddenFiles

@@ -89,11 +89,11 @@ struct FileRow: View {
         .animation(nil, value: isSelected)
         .contextMenu {
             if file.isDirectory {
-                DirectoryContextMenu(file: file) { action in
+                DirectoryContextMenu(file: file, panelSide: panelSide) { action in
                     onDirectoryAction(action, file)
                 }
             } else {
-                FileContextMenu(file: file) { action in
+                FileContextMenu(file: file, panelSide: panelSide) { action in
                     onFileAction(action, file)
                 }
             }
