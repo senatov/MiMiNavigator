@@ -11,7 +11,7 @@
   <img src="https://img.shields.io/badge/Xcode-16+-blue?logo=xcode" alt="Xcode 16+" />
   <img src="https://img.shields.io/badge/Framework-SwiftUI-blue?logo=swift" alt="SwiftUI" />
   <img src="https://img.shields.io/badge/Concurrency-Swift%206%20Strict-green" alt="Swift 6 Strict Concurrency" />
-  <img src="https://img.shields.io/badge/Version-0.9.0-informational" alt="Version 0.9.0" />
+  <img src="https://img.shields.io/badge/Version-0.9.1-informational" alt="Version 0.9.1" />
   <img src="https://img.shields.io/badge/License-MIT-lightgrey.svg" alt="License" />
   <img src="https://img.shields.io/badge/Status-Active%20Development-yellow" alt="Status: Active" />
   <img src="https://img.shields.io/badge/Code%20Style-SwiftLint-red" alt="SwiftLint" />
@@ -98,6 +98,15 @@ to help clarify the philosophies and implementations of different architectures.
 
 ## What's New in v0.9.0
 
+### 🖱️ Drag-n-Drop Support
+Full drag-and-drop functionality between panels:
+- **Drag** files and folders from any panel
+- **Drop on directories** — highlighted with blue border on hover
+- **Drop on panel** — transfers to current directory of that panel
+- **Confirmation dialog** — macOS HIG-compliant with Move/Copy/Cancel buttons
+- **ESC cancels** — Cancel is default, safe operation
+- **Visual feedback** — drop targets highlight during drag
+
 ### 🎨 Total Commander-Style Menu System
 Complete implementation of a professional menu bar inspired by Total Commander with 8 fully structured menu categories:
 
@@ -171,6 +180,7 @@ Complete implementation of a professional menu bar inspired by Total Commander w
 - 🪟 **Liquid-glass UI** following macOS 26 design guidelines
 - 📜 **Navigation history** with per-panel tracking
 - 📦 **Modular architecture** with reusable Swift Packages (FavoritesKit)
+- 🖱️ **Drag-n-Drop** with Transferable protocol and HIG confirmation dialogs
 
 ## Features
 
@@ -178,6 +188,7 @@ Complete implementation of a professional menu bar inspired by Total Commander w
 
 #### Core Functionality
 - **Dual File Panels**: Two independent file panels with synchronized navigation and operations
+- **Drag-n-Drop**: Full drag-and-drop support between panels and into directories with confirmation dialog
 - **Real-time Monitoring**: Automatic directory updates using FileManager's file system events
 - **Breadcrumb Navigation**: Interactive path navigation with click-to-navigate functionality
 - **Quick Access Sidebar**: Finder-like favorites and frequently used locations
@@ -457,9 +468,15 @@ MiMiNavigator/
 │   │   │   ├── FileAction.swift          # File action enum
 │   │   │   └── DirectoryAction.swift     # Directory action enum
 │   │   │
-│   │   ├── History/                       # Navigation History (NEW)
+│   │   ├── History/                       # Navigation History
 │   │   │   ├── HistoryPopoverView.swift  # History popover component
 │   │   │   └── HistoryItemRow.swift      # Individual history item
+│   │   │
+│   │   ├── DragDrop/                      # Drag-n-Drop System (NEW)
+│   │   │   ├── DragDropManager.swift     # Coordinator for drag-drop operations
+│   │   │   ├── FileTransferOperation.swift # Transfer operation model
+│   │   │   ├── FileTransferConfirmationDialog.swift # HIG confirmation dialog
+│   │   │   └── CustomFileTransferable.swift # Transferable protocol conformance
 │   │   │
 │   │   ├── Favorite/                      # Favorites Integration
 │   │   │   ├── ButtonFavTopPanel.swift   # Navigation panel with favorites button
@@ -673,10 +690,10 @@ log.error("Error messages")
 ### Version 0.10.0 - Enhanced Operations 🚧
 **Target**: Q1 2025
 
+- [x] Drag & drop between panels with confirmation dialog
 - [ ] Multi-selection support
 - [ ] Search functionality
 - [ ] Quick Look integration
-- [ ] Drag & drop between panels
 - [ ] Delete with confirmation
 - [ ] Move/Rename (F6)
 

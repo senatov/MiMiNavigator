@@ -11,6 +11,7 @@
 		97B3D6382DCA54B9002F1DB7 /* SystemPackage in Frameworks */ = {isa = PBXBuildFile; productRef = 97B3D6372DCA54B9002F1DB7 /* SystemPackage */; };
 		97D128762DB62DD400274684 /* FilesProvider in Frameworks */ = {isa = PBXBuildFile; productRef = 97D128752DB62DD400274684 /* FilesProvider */; };
 		97D9156C2CD5625D00EB5FDD /* SwiftyBeaver in Frameworks */ = {isa = PBXBuildFile; productRef = 97D9156B2CD5625D00EB5FDD /* SwiftyBeaver */; };
+		97ECF2AD2F224FA5005A6EFB /* FavoritesKit in Frameworks */ = {isa = PBXBuildFile; productRef = 971A28F82F1B140900094ADE /* FavoritesKit */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -83,6 +84,7 @@
 		97AD1A2B2C624E020045C38D /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			files = (
+				97ECF2AD2F224FA5005A6EFB /* FavoritesKit in Frameworks */,
 				97D9156C2CD5625D00EB5FDD /* SwiftyBeaver in Frameworks */,
 				97B3D6382DCA54B9002F1DB7 /* SystemPackage in Frameworks */,
 				97D128762DB62DD400274684 /* FilesProvider in Frameworks */,
@@ -146,6 +148,7 @@
 			packageProductDependencies = (
 				97D128752DB62DD400274684 /* FilesProvider */,
 				97B3D6372DCA54B9002F1DB7 /* SystemPackage */,
+				971A28F82F1B140900094ADE /* FavoritesKit */,
 			);
 			productName = MiMiNavigator;
 			productReference = 97AD1A2E2C624E020045C38D /* MiMiNavigator.app */;
@@ -669,6 +672,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		971A28F82F1B140900094ADE /* FavoritesKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 971A28F72F1B140900094ADE /* XCLocalSwiftPackageReference "Packages/FavoritesKit" */;
+			productName = FavoritesKit;
+		};
 		97B3D6372DCA54B9002F1DB7 /* SystemPackage */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 97B3D6362DCA54A2002F1DB7 /* XCRemoteSwiftPackageReference "swift-system" */;
