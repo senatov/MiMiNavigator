@@ -67,16 +67,13 @@ struct DuoFilePanelView: View {
 
 // MARK: - File Operations
 extension DuoFilePanelView {
-    // MARK: -
+    // MARK: - Fetch files (triggers actual directory scan)
     @MainActor
     private func fetchFiles(for side: PanelSide) async {
         log.debug(#function + " for \(side)")
-        switch side {
-            case .left:
-                appState.displayedLeftFiles = await appState.scanner.fileLst.getLeftFiles()
-            case .right:
-                appState.displayedRightFiles = await appState.scanner.fileLst.getRightFiles()
-        }
+        // Call refreshFiles which actually scans the directory
+        // and updates both the cache and displayedLeftFiles/displayedRightFiles
+        await appState.scanner.refreshFiles(currSide: side)
     }
 
     // MARK: - F3 View

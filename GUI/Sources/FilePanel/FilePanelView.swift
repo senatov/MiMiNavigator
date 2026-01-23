@@ -62,6 +62,10 @@ struct FilePanelView: View {
     // MARK: - View
     var body: some View {
         let currentPath = appState.pathURL(for: viewModel.panelSide)
+        let files = viewModel.sortedFiles
+        
+        // Generate content-aware key for file table refresh
+        let fileContentKey = makeFileContentKey(files: files, path: currentPath?.path)
         
         return VStack {
             // Breadcrumb navigation
@@ -75,10 +79,10 @@ struct FilePanelView: View {
                 )
             }
             
-            // File table
-            StableBy((currentPath?.path ?? "") + "|" + String(appState.focusedPanel == viewModel.panelSide)) {
+            // File table - key includes file content hash for proper refresh
+            StableBy(fileContentKey) {
                 PanelFileTableSection(
-                    files: viewModel.sortedFiles,
+                    files: files,
                     selectedID: selectedIDBinding,
                     panelSide: viewModel.panelSide,
                     onPanelTap: onPanelTap,
@@ -184,5 +188,23 @@ struct FilePanelView: View {
         alert.alertStyle = .warning
         alert.addButton(withTitle: "OK")
         alert.runModal()
+    }
+    
+    // MARK: - Generate content-aware key for file table refresh
+    private func makeFileContentKey(files: [CustomFile], path: String?) -> String {
+        var components: [String] = []
+        components.append(path ?? "nil")
+        components.append(String(files.count))
+        
+        // Include first few file names to detect content changes
+        for file in files.prefix(3) {
+            components.append(file.nameStr)
+        }
+        // Include last file name
+        if let last = files.last {
+            components.append(last.nameStr)
+        }
+        
+        return components.joined(separator: "|")
     }
 }

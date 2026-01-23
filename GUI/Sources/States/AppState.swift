@@ -459,11 +459,12 @@ final class AppState {
         NSWorkspace.shared.activateFileViewerSelecting([logsDir])
     }
 
-    // MARK: -
+    // MARK: - Refresh left files (rescans directory)
     func refreshLeftFiles() async {
         log.debug(#function + " at path: \(leftPath)")
-        let items = await scanner.fileLst.getLeftFiles()
-        displayedLeftFiles = applySorting(items)
+        // Actually scan the directory, not just read from cache
+        await scanner.refreshFiles(currSide: .left)
+        // displayedLeftFiles is updated by scanner.refreshFiles via updateScannedFiles
         if focusedPanel == .left, selectedLeftFile == nil {
             selectedLeftFile = displayedLeftFiles.first
             if let f = selectedLeftFile { log.debug("auto-sel'd L: \(f.nameStr)") }
@@ -471,11 +472,12 @@ final class AppState {
         log.debug("found \(displayedLeftFiles.count) L files (dirs 1st)")
     }
 
-    // MARK: -
+    // MARK: - Refresh right files (rescans directory)
     func refreshRightFiles() async {
         log.debug(#function + " at path: \(rightPath)")
-        let items = await scanner.fileLst.getRightFiles()
-        displayedRightFiles = applySorting(items)
+        // Actually scan the directory, not just read from cache
+        await scanner.refreshFiles(currSide: .right)
+        // displayedRightFiles is updated by scanner.refreshFiles via updateScannedFiles
         if focusedPanel == .right, selectedRightFile == nil {
             selectedRightFile = displayedRightFiles.first
             if let f = selectedRightFile { log.debug("auto-sel'd R: \(f.nameStr)") }

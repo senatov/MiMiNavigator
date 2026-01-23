@@ -15,9 +15,18 @@ extension CustomFile: Transferable {
     public static var transferRepresentation: some TransferRepresentation {
         // Primary: File URL representation for system interop
         FileRepresentation(contentType: .fileURL) { file in
-            SentTransferredFile(file.urlValue)
+            // Start security-scoped access before sending
+            _ = file.urlValue.startAccessingSecurityScopedResource()
+            return SentTransferredFile(file.urlValue)
         } importing: { @concurrent received in
             let url = received.file
+            // Start security-scoped access for received file
+            let accessed = url.startAccessingSecurityScopedResource()
+            defer {
+                if accessed {
+                    url.stopAccessingSecurityScopedResource()
+                }
+            }
             return CustomFile(path: url.path)
         }
         

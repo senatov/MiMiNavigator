@@ -20,9 +20,11 @@ struct PanelFileTableSection: View {
     @State private var rowRects: [CustomFile.ID: CGRect] = [:]
 
     var body: some View {
-        let stableKey = files.count.hashValue ^ panelSide.hashValue
+        // Use content-based key to ensure re-render when files change
+        // Combines: count + first file name + last file name + panel side
+        let contentKey = makeContentKey()
         
-        StableBy(stableKey) {
+        StableBy(contentKey) {
             FileTableView(
                 panelSide: panelSide,
                 files: files,
@@ -49,8 +51,27 @@ struct PanelFileTableSection: View {
             .transaction { txn in
                 txn.disablesAnimations = true
             }
-            .id("PFTS_\(panelSide)")
+            .id("PFTS_\(panelSide)_\(contentKey)")
         }
+    }
+    
+    // MARK: - Generate content-based key for StableBy
+    private func makeContentKey() -> Int {
+        var hasher = Hasher()
+        hasher.combine(panelSide)
+        hasher.combine(files.count)
+        // Include first and last file names to detect content changes
+        if let first = files.first {
+            hasher.combine(first.nameStr)
+        }
+        if let last = files.last {
+            hasher.combine(last.nameStr)
+        }
+        // Include modification time of first file to detect rename
+        if let first = files.first {
+            hasher.combine(first.pathStr)
+        }
+        return hasher.finalize()
     }
 
     // MARK: - Selection handler
