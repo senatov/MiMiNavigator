@@ -14,6 +14,8 @@ enum FileOperationError: LocalizedError {
     case permissionDenied(String)
     case operationFailed(String)
     case invalidDestination(String)
+    case conflict(source: URL, target: URL)
+    case operationCancelled
     
     var errorDescription: String? {
         switch self {
@@ -27,8 +29,18 @@ enum FileOperationError: LocalizedError {
             return "Operation failed: \(reason)"
         case .invalidDestination(let path):
             return "Invalid destination: \(path)"
+        case .conflict(_, let target):
+            return "File conflict: \(target.lastPathComponent)"
+        case .operationCancelled:
+            return "Operation cancelled"
         }
     }
+}
+
+// MARK: - Copy/Move Options
+struct FileOperationOptions {
+    var conflictResolution: ConflictResolution = .keepBoth
+    var applyToAll: Bool = false
 }
 
 // MARK: - File Operations Service
@@ -42,7 +54,70 @@ final class FileOperationsService {
     
     private init() {}
     
-    // MARK: - Copy files to destination
+    // MARK: - Check for conflict
+    func checkConflict(source: URL, destination: URL) -> FileConflictInfo? {
+        let targetURL = destination.appendingPathComponent(source.lastPathComponent)
+        if fileManager.fileExists(atPath: targetURL.path) {
+            return FileConflictInfo(source: source, target: targetURL)
+        }
+        return nil
+    }
+    
+    // MARK: - Copy single file with resolution
+    func copyFile(_ source: URL, to destination: URL, resolution: ConflictResolution) async throws -> URL {
+        let targetURL = destination.appendingPathComponent(source.lastPathComponent)
+        
+        let finalURL: URL
+        switch resolution {
+        case .skip:
+            return targetURL  // Just return existing, don't copy
+            
+        case .keepBoth:
+            finalURL = generateUniqueName(for: targetURL)
+            
+        case .replace:
+            if fileManager.fileExists(atPath: targetURL.path) {
+                try fileManager.removeItem(at: targetURL)
+            }
+            finalURL = targetURL
+            
+        case .stop:
+            throw FileOperationError.operationCancelled
+        }
+        
+        try fileManager.copyItem(at: source, to: finalURL)
+        log.info("Copied: \(source.lastPathComponent) → \(finalURL.path)")
+        return finalURL
+    }
+    
+    // MARK: - Move single file with resolution
+    func moveFile(_ source: URL, to destination: URL, resolution: ConflictResolution) async throws -> URL {
+        let targetURL = destination.appendingPathComponent(source.lastPathComponent)
+        
+        let finalURL: URL
+        switch resolution {
+        case .skip:
+            return source  // Don't move, return original
+            
+        case .keepBoth:
+            finalURL = generateUniqueName(for: targetURL)
+            
+        case .replace:
+            if fileManager.fileExists(atPath: targetURL.path) {
+                try fileManager.removeItem(at: targetURL)
+            }
+            finalURL = targetURL
+            
+        case .stop:
+            throw FileOperationError.operationCancelled
+        }
+        
+        try fileManager.moveItem(at: source, to: finalURL)
+        log.info("Moved: \(source.lastPathComponent) → \(finalURL.path)")
+        return finalURL
+    }
+    
+    // MARK: - Copy files (legacy, auto keep-both)
     func copyFiles(_ files: [URL], to destination: URL) async throws -> [URL] {
         guard fileManager.fileExists(atPath: destination.path) else {
             throw FileOperationError.invalidDestination(destination.path)
@@ -51,18 +126,14 @@ final class FileOperationsService {
         var copiedFiles: [URL] = []
         
         for file in files {
-            let destinationURL = destination.appendingPathComponent(file.lastPathComponent)
-            let finalURL = try resolveNameConflict(for: destinationURL)
-            
-            try fileManager.copyItem(at: file, to: finalURL)
+            let finalURL = try await copyFile(file, to: destination, resolution: .keepBoth)
             copiedFiles.append(finalURL)
-            log.info("Copied: \(file.lastPathComponent) → \(destination.path)")
         }
         
         return copiedFiles
     }
     
-    // MARK: - Move files to destination
+    // MARK: - Move files (legacy, auto keep-both)
     func moveFiles(_ files: [URL], to destination: URL) async throws -> [URL] {
         guard fileManager.fileExists(atPath: destination.path) else {
             throw FileOperationError.invalidDestination(destination.path)
@@ -71,12 +142,8 @@ final class FileOperationsService {
         var movedFiles: [URL] = []
         
         for file in files {
-            let destinationURL = destination.appendingPathComponent(file.lastPathComponent)
-            let finalURL = try resolveNameConflict(for: destinationURL)
-            
-            try fileManager.moveItem(at: file, to: finalURL)
+            let finalURL = try await moveFile(file, to: destination, resolution: .keepBoth)
             movedFiles.append(finalURL)
-            log.info("Moved: \(file.lastPathComponent) → \(destination.path)")
         }
         
         return movedFiles
@@ -107,7 +174,6 @@ final class FileOperationsService {
         let parentDir = file.deletingLastPathComponent()
         let newURL = parentDir.appendingPathComponent(newName)
         
-        // Check if name already exists (and it's not the same file)
         if fileManager.fileExists(atPath: newURL.path) && newURL.path != file.path {
             throw FileOperationError.fileAlreadyExists(newName)
         }
@@ -122,7 +188,7 @@ final class FileOperationsService {
     func createSymbolicLink(to source: URL, at destination: URL, linkName: String? = nil) async throws -> URL {
         let name = linkName ?? "\(source.lastPathComponent) link"
         let linkURL = destination.appendingPathComponent(name)
-        let finalURL = try resolveNameConflict(for: linkURL)
+        let finalURL = generateUniqueName(for: linkURL)
         
         try fileManager.createSymbolicLink(at: finalURL, withDestinationURL: source)
         log.info("Created symlink: \(finalURL.lastPathComponent) → \(source.path)")
@@ -140,7 +206,6 @@ final class FileOperationsService {
         let type = attributes[.type] as? FileAttributeType
         let permissions = attributes[.posixPermissions] as? Int
         
-        // For directories, calculate total size
         var totalSize = size
         var itemCount = 0
         
@@ -193,8 +258,12 @@ final class FileOperationsService {
         return (totalSize, count)
     }
     
-    // MARK: - Resolve name conflicts
-    private func resolveNameConflict(for url: URL) throws -> URL {
+    // MARK: - Generate unique name (Keep Both)
+    private func generateUniqueName(for url: URL) -> URL {
+        guard fileManager.fileExists(atPath: url.path) else {
+            return url
+        }
+        
         var finalURL = url
         var counter = 1
         
@@ -210,7 +279,8 @@ final class FileOperationsService {
             counter += 1
             
             if counter > 1000 {
-                throw FileOperationError.operationFailed("Too many name conflicts")
+                log.error("Too many name conflicts for: \(url.path)")
+                break
             }
         }
         

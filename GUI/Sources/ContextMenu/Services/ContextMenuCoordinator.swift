@@ -14,6 +14,7 @@ enum ActiveDialog: Identifiable {
     case pack(files: [CustomFile], destination: URL)
     case createLink(file: CustomFile, destination: URL)
     case properties(file: CustomFile)
+    case fileConflict(conflict: FileConflictInfo, continuation: CheckedContinuation<ConflictResolution, Never>)
     case error(title: String, message: String)
     case success(title: String, message: String)
     
@@ -24,6 +25,7 @@ enum ActiveDialog: Identifiable {
         case .pack: return "pack"
         case .createLink: return "createLink"
         case .properties: return "properties"
+        case .fileConflict: return "conflict"
         case .error: return "error"
         case .success: return "success"
         }
@@ -73,7 +75,8 @@ final class ContextMenuCoordinator {
             activeDialog = .rename(file: file)
             
         case .pack:
-            let destination = getDestinationPath(for: panel, appState: appState)
+            // Archive goes to OPPOSITE panel by default
+            let destination = getOppositeDestinationPath(for: panel, appState: appState)
             activeDialog = .pack(files: [file], destination: destination)
             
         case .createLink:
@@ -126,7 +129,8 @@ final class ContextMenuCoordinator {
             activeDialog = .rename(file: file)
             
         case .pack:
-            let destination = getDestinationPath(for: panel, appState: appState)
+            // Archive goes to OPPOSITE panel by default
+            let destination = getOppositeDestinationPath(for: panel, appState: appState)
             activeDialog = .pack(files: [file], destination: destination)
             
         case .createLink:
@@ -151,7 +155,7 @@ final class ContextMenuCoordinator {
             _ = try await fileOps.deleteFiles(urls)
             
             // Refresh panels
-            await refreshPanels(appState: appState)
+            refreshPanels(appState: appState)
             
             log.info("Deleted \(files.count) item(s)")
         } catch {
@@ -171,7 +175,7 @@ final class ContextMenuCoordinator {
             _ = try await fileOps.renameFile(file.urlValue, to: newName)
             
             // Refresh panels
-            await refreshPanels(appState: appState)
+            refreshPanels(appState: appState)
             
             log.info("Renamed: \(file.nameStr) → \(newName)")
         } catch {
@@ -197,7 +201,7 @@ final class ContextMenuCoordinator {
             )
             
             // Refresh panels
-            await refreshPanels(appState: appState)
+            refreshPanels(appState: appState)
             
             activeDialog = .success(
                 title: "Archive Created",
@@ -230,7 +234,7 @@ final class ContextMenuCoordinator {
             }
             
             // Refresh panels
-            await refreshPanels(appState: appState)
+            refreshPanels(appState: appState)
             
             log.info("Created link: \(linkName)")
         } catch {
@@ -263,15 +267,21 @@ final class ContextMenuCoordinator {
         
         let destination = getDestinationPath(for: panel, appState: appState)
         
-        let result = await clipboard.paste(to: destination)
+        // Use new paste method with conflict handling
+        let result = await clipboard.paste(to: destination, coordinator: self)
         
         switch result {
         case .success(let urls):
             log.info("Pasted \(urls.count) item(s)")
-            await refreshPanels(appState: appState)
+            refreshPanels(appState: appState)
             
         case .failure(let error):
-            activeDialog = .error(title: "Paste Failed", message: error.localizedDescription)
+            if case FileOperationError.operationCancelled = error {
+                // User cancelled, don't show error
+                log.info("Paste operation cancelled by user")
+            } else {
+                activeDialog = .error(title: "Paste Failed", message: error.localizedDescription)
+            }
         }
     }
     
@@ -322,9 +332,31 @@ final class ContextMenuCoordinator {
         return URL(fileURLWithPath: path)
     }
     
-    private func refreshPanels(appState: AppState) async {
-        await appState.refreshLeftFiles()
-        await appState.refreshRightFiles()
+    private func refreshPanels(appState: AppState) {
+        log.debug("ContextMenuCoordinator: refreshing both panels")
+        // Trigger async refresh and UI update
+        Task { @MainActor in
+            await appState.scanner.refreshFiles(currSide: .left)
+            await appState.scanner.refreshFiles(currSide: .right)
+            await appState.refreshLeftFiles()
+            await appState.refreshRightFiles()
+            log.debug("ContextMenuCoordinator: refresh completed")
+        }
+    }
+    
+    // MARK: - Show Conflict Dialog
+    func showConflictDialog(conflict: FileConflictInfo) async -> ConflictResolution {
+        await withCheckedContinuation { continuation in
+            activeDialog = .fileConflict(conflict: conflict, continuation: continuation)
+        }
+    }
+    
+    // MARK: - Resolve Conflict (called from UI)
+    func resolveConflict(_ resolution: ConflictResolution) {
+        if case .fileConflict(_, let continuation) = activeDialog {
+            activeDialog = nil
+            continuation.resume(returning: resolution)
+        }
     }
     
     // MARK: - Dismiss Dialog

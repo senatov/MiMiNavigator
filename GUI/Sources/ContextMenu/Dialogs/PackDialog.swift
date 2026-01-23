@@ -6,32 +6,30 @@
 
 import SwiftUI
 
-// MARK: - Pack Dialog
+// MARK: - Pack Dialog (HIG Style)
 struct PackDialog: View {
     let files: [CustomFile]
-    let destinationPath: URL
-    let onPack: (String, ArchiveFormat) -> Void
+    let initialDestination: URL
+    let onPack: (String, ArchiveFormat, URL) -> Void
     let onCancel: () -> Void
     
     @State private var archiveName: String
+    @State private var destinationPath: String
     @State private var selectedFormat: ArchiveFormat = .zip
     @State private var errorMessage: String?
-    @State private var isHoveringPack = false
-    @State private var isHoveringCancel = false
-    @FocusState private var isTextFieldFocused: Bool
+    @FocusState private var isNameFieldFocused: Bool
     
     init(
         files: [CustomFile],
         destinationPath: URL,
-        onPack: @escaping (String, ArchiveFormat) -> Void,
+        onPack: @escaping (String, ArchiveFormat, URL) -> Void,
         onCancel: @escaping () -> Void
     ) {
         self.files = files
-        self.destinationPath = destinationPath
+        self.initialDestination = destinationPath
         self.onPack = onPack
         self.onCancel = onCancel
         
-        // Default archive name
         let defaultName: String
         if files.count == 1 {
             defaultName = files[0].urlValue.deletingPathExtension().lastPathComponent
@@ -39,235 +37,155 @@ struct PackDialog: View {
             defaultName = "Archive"
         }
         self._archiveName = State(initialValue: defaultName)
+        self._destinationPath = State(initialValue: destinationPath.path)
     }
     
     private var isValidName: Bool {
-        !archiveName.isEmpty &&
-        !archiveName.contains("/") &&
-        !archiveName.contains(":")
+        !archiveName.isEmpty && !archiveName.contains("/") && !archiveName.contains(":")
+    }
+    
+    private var isValidDestination: Bool {
+        var isDir: ObjCBool = false
+        return FileManager.default.fileExists(atPath: destinationPath, isDirectory: &isDir) && isDir.boolValue
     }
     
     private var itemsDescription: String {
-        if files.count == 1 {
-            return files[0].nameStr
-        } else {
-            return "\(files.count) items"
-        }
+        files.count == 1 ? files[0].nameStr : "\(files.count) items"
     }
     
     var body: some View {
-        VStack(spacing: 20) {
-            // Icon
-            Image(systemName: "archivebox.fill")
-                .font(.system(size: 48))
-                .foregroundStyle(.orange)
-                .padding(.top, 8)
+        VStack(spacing: 16) {
+            // App icon
+            Image(nsImage: NSApp.applicationIconImage)
+                .resizable()
+                .frame(width: 64, height: 64)
             
             // Title
-            Text("Create Archive")
-                .font(.headline)
-                .fontWeight(.semibold)
+            Text("Create archive from \(itemsDescription)")
+                .font(.system(size: 13, weight: .semibold))
+                .multilineTextAlignment(.center)
             
-            // Items info
-            Text("Pack: \(itemsDescription)")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            
-            // Archive name field
-            VStack(alignment: .leading, spacing: 6) {
+            // Archive name
+            VStack(alignment: .leading, spacing: 4) {
                 Text("Archive name:")
-                    .font(.caption)
+                    .font(.system(size: 11))
                     .foregroundStyle(.secondary)
                 
-                TextField("Archive name", text: $archiveName)
+                TextField("Name", text: $archiveName)
                     .textFieldStyle(.plain)
-                    .font(.system(size: 14))
-                    .padding(10)
+                    .font(.system(size: 13))
+                    .padding(8)
                     .background(
-                        RoundedRectangle(cornerRadius: 8)
+                        RoundedRectangle(cornerRadius: 6)
                             .fill(Color(nsColor: .textBackgroundColor))
                     )
                     .overlay(
-                        RoundedRectangle(cornerRadius: 8)
-                            .stroke(errorMessage != nil ? Color.red : Color.gray.opacity(0.3), lineWidth: 1)
+                        RoundedRectangle(cornerRadius: 6)
+                            .stroke(!isValidName ? Color.red.opacity(0.5) : Color.gray.opacity(0.3), lineWidth: 0.5)
                     )
-                    .focused($isTextFieldFocused)
+                    .focused($isNameFieldFocused)
+            }
+            .frame(maxWidth: 320)
+            
+            // Destination path
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Save to:")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
                 
-                if let error = errorMessage {
-                    Text(error)
-                        .font(.caption)
-                        .foregroundStyle(.red)
+                HStack(spacing: 6) {
+                    TextField("Path", text: $destinationPath)
+                        .textFieldStyle(.plain)
+                        .font(.system(size: 12))
+                        .padding(8)
+                        .background(
+                            RoundedRectangle(cornerRadius: 6)
+                                .fill(Color(nsColor: .textBackgroundColor))
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 6)
+                                .stroke(!isValidDestination ? Color.red.opacity(0.5) : Color.gray.opacity(0.3), lineWidth: 0.5)
+                        )
+                    
+                    Button(action: browseForFolder) {
+                        Image(systemName: "folder")
+                            .font(.system(size: 12))
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
                 }
             }
-            .padding(.horizontal)
+            .frame(maxWidth: 320)
             
-            // Format selection
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Archive format:")
-                    .font(.caption)
+            // Format picker
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Format:")
+                    .font(.system(size: 11))
                     .foregroundStyle(.secondary)
-                    .padding(.horizontal)
                 
-                ForEach(ArchiveFormat.availableFormats) { format in
-                    FormatRow(
-                        format: format,
-                        isSelected: selectedFormat == format,
-                        onSelect: { selectedFormat = format }
-                    )
+                Picker("", selection: $selectedFormat) {
+                    ForEach(ArchiveFormat.availableFormats) { format in
+                        Text(".\(format.fileExtension) — \(format.displayName)")
+                            .tag(format)
+                    }
                 }
+                .pickerStyle(.menu)
+                .labelsHidden()
             }
+            .frame(maxWidth: 320, alignment: .leading)
             
-            // Destination info
-            HStack {
-                Image(systemName: "folder")
-                    .foregroundStyle(.secondary)
-                Text("To: \(destinationPath.path)")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-                    .truncationMode(.middle)
+            // Error message
+            if let error = errorMessage {
+                Text(error)
+                    .font(.system(size: 10))
+                    .foregroundStyle(.red)
             }
-            .padding(.horizontal)
             
             // Buttons
-            HStack(spacing: 16) {
-                // Cancel button
-                Button(action: onCancel) {
-                    HStack(spacing: 6) {
-                        Image(systemName: "xmark.circle")
-                        Text("Cancel")
-                    }
-                    .frame(minWidth: 100)
-                    .padding(.vertical, 10)
-                    .padding(.horizontal, 20)
-                    .background(
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(isHoveringCancel ? Color.gray.opacity(0.2) : Color.gray.opacity(0.1))
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 8)
-                            .stroke(Color.gray.opacity(0.3), lineWidth: 1)
-                    )
-                }
-                .buttonStyle(.plain)
-                .onHover { isHoveringCancel = $0 }
-                .keyboardShortcut(.cancelAction)
-                
-                // Pack button
-                Button(action: { onPack(archiveName, selectedFormat) }) {
-                    HStack(spacing: 6) {
-                        Image(systemName: "archivebox")
-                        Text("Pack")
-                    }
-                    .frame(minWidth: 100)
-                    .padding(.vertical, 10)
-                    .padding(.horizontal, 20)
-                    .foregroundStyle(.white)
-                    .background(
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(isValidName
-                                ? (isHoveringPack ? Color.orange.opacity(0.9) : Color.orange.opacity(0.8))
-                                : Color.gray.opacity(0.4))
-                    )
-                }
-                .buttonStyle(.plain)
-                .onHover { isHoveringPack = $0 }
-                .disabled(!isValidName)
-                .keyboardShortcut(.defaultAction)
-            }
-            .padding(.bottom, 8)
-        }
-        .padding(24)
-        .frame(minWidth: 420, maxWidth: 520)
-        .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(Color(nsColor: .windowBackgroundColor))
-                .shadow(color: .black.opacity(0.2), radius: 20, x: 0, y: 10)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(Color.gray.opacity(0.2), lineWidth: 1)
-        )
-        .onAppear {
-            isTextFieldFocused = true
-        }
-        .onChange(of: archiveName) { _, newValue in
-            validateName(newValue)
-        }
-    }
-    
-    private func validateName(_ name: String) {
-        if name.isEmpty {
-            errorMessage = "Name cannot be empty"
-        } else if name.contains("/") || name.contains(":") {
-            errorMessage = "Name cannot contain / or :"
-        } else {
-            errorMessage = nil
-        }
-    }
-}
-
-// MARK: - Format Row
-private struct FormatRow: View {
-    let format: ArchiveFormat
-    let isSelected: Bool
-    let onSelect: () -> Void
-    
-    @State private var isHovering = false
-    
-    var body: some View {
-        Button(action: onSelect) {
             HStack(spacing: 12) {
-                // Radio button
-                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                    .foregroundStyle(isSelected ? .orange : .gray)
-                    .font(.system(size: 18))
+                HIGSecondaryButton(title: "Cancel", action: onCancel)
+                    .keyboardShortcut(.cancelAction)
                 
-                // Format icon
-                Image(systemName: format.icon)
-                    .foregroundStyle(isSelected ? .orange : .secondary)
-                    .frame(width: 20)
-                
-                // Format info
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(".\(format.fileExtension)")
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(isSelected ? .primary : .secondary)
-                    
-                    Text(format.displayName)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                
-                Spacer()
+                HIGPrimaryButton(title: "Create", action: performPack)
+                    .keyboardShortcut(.defaultAction)
+                    .disabled(!isValidName || !isValidDestination)
+                    .opacity(isValidName && isValidDestination ? 1.0 : 0.5)
             }
-            .padding(.vertical, 8)
-            .padding(.horizontal, 12)
-            .background(
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(isSelected 
-                        ? Color.orange.opacity(0.1) 
-                        : (isHovering ? Color.gray.opacity(0.1) : Color.clear))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 8)
-                    .stroke(isSelected ? Color.orange.opacity(0.3) : Color.clear, lineWidth: 1)
-            )
+            .padding(.top, 4)
         }
-        .buttonStyle(.plain)
-        .onHover { isHovering = $0 }
-        .padding(.horizontal)
+        .higDialogStyle()
+        .frame(minWidth: 360)
+        .onAppear {
+            isNameFieldFocused = true
+        }
+    }
+    
+    private func performPack() {
+        onPack(archiveName, selectedFormat, URL(fileURLWithPath: destinationPath))
+    }
+    
+    private func browseForFolder() {
+        let panel = NSOpenPanel()
+        panel.canChooseFiles = false
+        panel.canChooseDirectories = true
+        panel.allowsMultipleSelection = false
+        panel.canCreateDirectories = true
+        panel.prompt = "Select"
+        
+        if panel.runModal() == .OK, let url = panel.url {
+            destinationPath = url.path
+        }
     }
 }
 
 // MARK: - Preview
 #Preview {
     PackDialog(
-        files: [],
+        files: [CustomFile(path: "/Users/test/document.txt")],
         destinationPath: URL(fileURLWithPath: "/Users/test"),
-        onPack: { _, _ in },
+        onPack: { _, _, _ in },
         onCancel: {}
     )
-    .padding()
+    .padding(40)
     .background(Color.gray.opacity(0.3))
 }

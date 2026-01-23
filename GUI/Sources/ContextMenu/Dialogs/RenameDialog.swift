@@ -6,7 +6,7 @@
 
 import SwiftUI
 
-// MARK: - Rename Dialog
+// MARK: - Rename Dialog (HIG Style)
 struct RenameDialog: View {
     let file: CustomFile
     let onRename: (String) -> Void
@@ -14,8 +14,6 @@ struct RenameDialog: View {
     
     @State private var newName: String
     @State private var errorMessage: String?
-    @State private var isHoveringRename = false
-    @State private var isHoveringCancel = false
     @FocusState private var isTextFieldFocused: Bool
     
     init(file: CustomFile, onRename: @escaping (String) -> Void, onCancel: @escaping () -> Void) {
@@ -38,36 +36,36 @@ struct RenameDialog: View {
     }
     
     var body: some View {
-        VStack(spacing: 20) {
-            // Icon
-            Image(systemName: file.isDirectory ? "folder.fill" : "doc.fill")
-                .font(.system(size: 48))
-                .foregroundStyle(file.isDirectory ? .blue : .gray)
-                .padding(.top, 8)
+        VStack(spacing: 16) {
+            // App icon
+            Image(nsImage: NSApp.applicationIconImage)
+                .resizable()
+                .frame(width: 64, height: 64)
             
             // Title
-            Text("Rename")
-                .font(.headline)
-                .fontWeight(.semibold)
+            Text("Rename \(file.isDirectory ? "folder" : "file")")
+                .font(.system(size: 13, weight: .semibold))
             
-            // Current name info
-            Text("Current name: \(file.nameStr)")
-                .font(.caption)
+            // Current location
+            Text(file.urlValue.deletingLastPathComponent().path)
+                .font(.system(size: 11))
                 .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .truncationMode(.middle)
             
             // Text field
-            VStack(alignment: .leading, spacing: 6) {
-                TextField("New name", text: $newName)
+            VStack(alignment: .leading, spacing: 4) {
+                TextField("Name", text: $newName)
                     .textFieldStyle(.plain)
-                    .font(.system(size: 14))
-                    .padding(10)
+                    .font(.system(size: 13))
+                    .padding(8)
                     .background(
-                        RoundedRectangle(cornerRadius: 8)
+                        RoundedRectangle(cornerRadius: 6)
                             .fill(Color(nsColor: .textBackgroundColor))
                     )
                     .overlay(
-                        RoundedRectangle(cornerRadius: 8)
-                            .stroke(errorMessage != nil ? Color.red : Color.gray.opacity(0.3), lineWidth: 1)
+                        RoundedRectangle(cornerRadius: 6)
+                            .stroke(errorMessage != nil ? Color.red : Color.gray.opacity(0.3), lineWidth: 0.5)
                     )
                     .focused($isTextFieldFocused)
                     .onSubmit {
@@ -76,78 +74,29 @@ struct RenameDialog: View {
                         }
                     }
                 
-                // Error message
                 if let error = errorMessage {
                     Text(error)
-                        .font(.caption)
+                        .font(.system(size: 10))
                         .foregroundStyle(.red)
                 }
             }
-            .padding(.horizontal)
+            .frame(maxWidth: 280)
             
             // Buttons
-            HStack(spacing: 16) {
-                // Cancel button
-                Button(action: onCancel) {
-                    HStack(spacing: 6) {
-                        Image(systemName: "xmark.circle")
-                        Text("Cancel")
-                    }
-                    .frame(minWidth: 100)
-                    .padding(.vertical, 10)
-                    .padding(.horizontal, 20)
-                    .background(
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(isHoveringCancel ? Color.gray.opacity(0.2) : Color.gray.opacity(0.1))
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 8)
-                            .stroke(Color.gray.opacity(0.3), lineWidth: 1)
-                    )
-                }
-                .buttonStyle(.plain)
-                .onHover { isHoveringCancel = $0 }
-                .keyboardShortcut(.cancelAction)
+            HStack(spacing: 12) {
+                HIGSecondaryButton(title: "Cancel", action: onCancel)
+                    .keyboardShortcut(.cancelAction)
                 
-                // Rename button
-                Button(action: { onRename(newName) }) {
-                    HStack(spacing: 6) {
-                        Image(systemName: "pencil.circle")
-                        Text("Rename")
-                    }
-                    .frame(minWidth: 100)
-                    .padding(.vertical, 10)
-                    .padding(.horizontal, 20)
-                    .foregroundStyle(.white)
-                    .background(
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(isValidName && hasChanges
-                                ? (isHoveringRename ? Color.blue.opacity(0.9) : Color.blue.opacity(0.8))
-                                : Color.gray.opacity(0.4))
-                    )
-                }
-                .buttonStyle(.plain)
-                .onHover { isHoveringRename = $0 }
-                .disabled(!isValidName || !hasChanges)
-                .keyboardShortcut(.defaultAction)
+                HIGPrimaryButton(title: "Rename", action: { onRename(newName) })
+                    .keyboardShortcut(.defaultAction)
+                    .disabled(!isValidName || !hasChanges)
+                    .opacity(isValidName && hasChanges ? 1.0 : 0.5)
             }
-            .padding(.bottom, 8)
+            .padding(.top, 4)
         }
-        .padding(24)
-        .frame(minWidth: 400, maxWidth: 500)
-        .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(Color(nsColor: .windowBackgroundColor))
-                .shadow(color: .black.opacity(0.2), radius: 20, x: 0, y: 10)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(Color.gray.opacity(0.2), lineWidth: 1)
-        )
+        .higDialogStyle()
         .onAppear {
             isTextFieldFocused = true
-            // Select filename without extension
-            selectFilenameWithoutExtension()
         }
         .onChange(of: newName) { _, newValue in
             validateName(newValue)
@@ -165,20 +114,15 @@ struct RenameDialog: View {
             errorMessage = nil
         }
     }
-    
-    private func selectFilenameWithoutExtension() {
-        // This would require NSTextView access for selection
-        // For SwiftUI TextField, we just focus it
-    }
 }
 
 // MARK: - Preview
 #Preview {
     RenameDialog(
-        file: CustomFile(path: "/test/document.txt"),
+        file: CustomFile(path: "/Users/test/document.txt"),
         onRename: { _ in },
         onCancel: {}
     )
-    .padding()
+    .padding(40)
     .background(Color.gray.opacity(0.3))
 }
