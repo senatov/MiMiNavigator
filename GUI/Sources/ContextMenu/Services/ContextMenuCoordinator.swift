@@ -334,12 +334,10 @@ final class ContextMenuCoordinator {
     
     private func refreshPanels(appState: AppState) {
         log.debug("ContextMenuCoordinator: refreshing both panels")
-        // Trigger async refresh and UI update
+        // Trigger async refresh - scanner.refreshFiles updates displayedLeftFiles/displayedRightFiles
         Task { @MainActor in
             await appState.scanner.refreshFiles(currSide: .left)
             await appState.scanner.refreshFiles(currSide: .right)
-            await appState.refreshLeftFiles()
-            await appState.refreshRightFiles()
             log.debug("ContextMenuCoordinator: refresh completed")
         }
     }

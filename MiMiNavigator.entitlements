@@ -1,28 +1,29 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
- "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-    <!-- App Sandbox enabled for security -->
-    <key>com.apple.security.app-sandbox</key>
-    <true/>
-
-    <!-- Allow access to user-selected files via NSOpenPanel -->
-    <key>com.apple.security.files.user-selected.read-write</key>
-    <true/>
-
-    <!-- Allow access to Downloads folder (used as default path) -->
-    <key>com.apple.security.files.downloads.read-write</key>
-    <true/>
-
-    <!-- Network access for potential future features (FTP, cloud) -->
-    <key>com.apple.security.network.client</key>
-    <true/>
-
-    <!-- Allow security-scoped bookmarks for persistent access -->
-    <key>com.apple.security.files.bookmarks.app-scope</key>
-    <true/>
-
+	<key>com.apple.security.app-sandbox</key>
+	<true/>
+	<key>com.apple.security.files.user-selected.read-write</key>
+	<true/>
+	<key>com.apple.security.files.bookmarks.app-scope</key>
+	<true/>
+	<key>com.apple.security.files.bookmarks.document-scope</key>
+	<true/>
+	<key>com.apple.security.files.downloads.read-write</key>
+	<true/>
+	<key>com.apple.security.automation.apple-events</key>
+	<true/>
+	<key>com.apple.security.temporary-exception.apple-events</key>
+	<array>
+		<string>com.apple.finder</string>
+		<string>com.apple.Terminal</string>
+	</array>
+	<key>com.apple.security.network.client</key>
+	<true/>
+	<key>com.apple.security.temporary-exception.files.absolute-path.read-write</key>
+	<array>
+		<string>/</string>
+	</array>
 </dict>
 </plist>
