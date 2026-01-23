@@ -13,21 +13,15 @@ import UniformTypeIdentifiers
 extension CustomFile: Transferable {
     
     public static var transferRepresentation: some TransferRepresentation {
-        // Primary: File URL representation for system interop
-        FileRepresentation(contentType: .fileURL) { file in
-            // Start security-scoped access before sending
-            _ = file.urlValue.startAccessingSecurityScopedResource()
-            return SentTransferredFile(file.urlValue)
-        } importing: { @concurrent received in
-            let url = received.file
-            // Start security-scoped access for received file
-            let accessed = url.startAccessingSecurityScopedResource()
-            defer {
-                if accessed {
-                    url.stopAccessingSecurityScopedResource()
-                }
-            }
-            return CustomFile(path: url.path)
+        // Primary: File representation using .item for generic files
+        FileRepresentation(exportedContentType: .item) { file in
+            // Return the file URL for dragging
+            SentTransferredFile(file.urlValue)
+        }
+        
+        // Import representation for dropping files
+        FileRepresentation(importedContentType: .item) { received in
+            CustomFile(path: received.file.path)
         }
         
         // Fallback: Codable representation for internal transfers
