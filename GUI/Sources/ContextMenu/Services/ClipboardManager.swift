@@ -57,7 +57,7 @@ final class ClipboardManager {
         
         let fileOps = FileOperationsService.shared
         var resultURLs: [URL] = []
-        var applyToAll: ConflictResolution?
+        let applyToAll: ConflictResolution? = nil  // TODO: implement "Apply to all" checkbox
         var stopped = false
         
         for file in files {

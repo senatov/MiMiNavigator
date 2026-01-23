@@ -56,15 +56,19 @@ final class FileOperationsService {
     
     // MARK: - Check for conflict
     func checkConflict(source: URL, destination: URL) -> FileConflictInfo? {
+        log.debug("[FILE-OP] checkConflict: \(source.lastPathComponent) → \(destination.path)")
         let targetURL = destination.appendingPathComponent(source.lastPathComponent)
         if fileManager.fileExists(atPath: targetURL.path) {
+            log.debug("[FILE-OP] conflict detected: \(targetURL.path) exists")
             return FileConflictInfo(source: source, target: targetURL)
         }
+        log.debug("[FILE-OP] no conflict")
         return nil
     }
     
     // MARK: - Copy single file with resolution
     func copyFile(_ source: URL, to destination: URL, resolution: ConflictResolution) async throws -> URL {
+        log.debug("[FILE-OP] copyFile: \(source.lastPathComponent) → \(destination.path) [resolution: \(resolution)]")
         let targetURL = destination.appendingPathComponent(source.lastPathComponent)
         
         let finalURL: URL

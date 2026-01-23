@@ -36,11 +36,7 @@ enum FActions {
             let end = path.suffix(half)
             return "\(start)…\(end)"
         }
-        
-        // macOS style: /first/second/…/last-two/filename
-        var result = ""
-        var remaining = maxLength - 1  // Reserve space for …
-        
+      
         // Always include root and first component
         let root = components[0] == "/" ? "/" : components[0] + "/"
         let first = components.count > 1 ? components[1] : ""
