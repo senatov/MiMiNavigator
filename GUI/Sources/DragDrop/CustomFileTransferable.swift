@@ -14,13 +14,13 @@ extension CustomFile: Transferable {
     
     public static var transferRepresentation: some TransferRepresentation {
         // Primary: File representation using .item for generic files
-        FileRepresentation(exportedContentType: .item) { file in
+        FileRepresentation(exportedContentType: .item) { @concurrent file in
             // Return the file URL for dragging
             SentTransferredFile(file.urlValue)
         }
         
         // Import representation for dropping files
-        FileRepresentation(importedContentType: .item) { received in
+        FileRepresentation(importedContentType: .item) { @concurrent received in
             CustomFile(path: received.file.path)
         }
         
