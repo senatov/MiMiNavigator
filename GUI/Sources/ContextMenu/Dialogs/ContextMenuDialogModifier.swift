@@ -25,7 +25,7 @@ struct ContextMenuDialogModifier: ViewModifier {
     private var dialogOverlay: some View {
         ZStack {
             // Dimmed background
-            Color.black.opacity(0.4)
+            Color.black.opacity(0.3)
                 .ignoresSafeArea()
                 .onTapGesture {
                     // Don't dismiss on background tap while processing
@@ -37,10 +37,10 @@ struct ContextMenuDialogModifier: ViewModifier {
             // Dialog content
             if let dialog = coordinator.activeDialog {
                 dialogContent(for: dialog)
-                    .transition(.scale.combined(with: .opacity))
+                    .transition(.scale(scale: 0.95).combined(with: .opacity))
             }
         }
-        .animation(.easeInOut(duration: 0.2), value: coordinator.activeDialog?.id)
+        .animation(.easeOut(duration: 0.15), value: coordinator.activeDialog?.id)
     }
     
     @ViewBuilder
@@ -76,13 +76,13 @@ struct ContextMenuDialogModifier: ViewModifier {
             PackDialog(
                 files: files,
                 destinationPath: destination,
-                onPack: { archiveName, format in
+                onPack: { archiveName, format, finalDestination in
                     Task {
                         await coordinator.performPack(
                             files: files,
                             archiveName: archiveName,
                             format: format,
-                            destination: destination,
+                            destination: finalDestination,
                             appState: appState
                         )
                     }
@@ -120,8 +120,18 @@ struct ContextMenuDialogModifier: ViewModifier {
                 }
             )
             
+        case .fileConflict(let conflict, _):
+            FileConflictDialog(
+                conflict: conflict,
+                onResolve: { resolution in
+                    coordinator.resolveConflict(resolution)
+                }
+            )
+            
         case .error(let title, let message):
-            ErrorDialog(
+            HIGAlertDialog(
+                icon: "xmark.circle.fill",
+                iconColor: .red,
                 title: title,
                 message: message,
                 onDismiss: {
@@ -130,7 +140,9 @@ struct ContextMenuDialogModifier: ViewModifier {
             )
             
         case .success(let title, let message):
-            SuccessDialog(
+            HIGAlertDialog(
+                icon: "checkmark.circle.fill",
+                iconColor: .green,
                 title: title,
                 message: message,
                 onDismiss: {
@@ -141,119 +153,51 @@ struct ContextMenuDialogModifier: ViewModifier {
     }
 }
 
-// MARK: - Error Dialog
-struct ErrorDialog: View {
+// MARK: - HIG Alert Dialog (for Error/Success)
+struct HIGAlertDialog: View {
+    let icon: String
+    let iconColor: Color
     let title: String
     let message: String
     let onDismiss: () -> Void
     
-    @State private var isHovering = false
-    
     var body: some View {
-        VStack(spacing: 20) {
-            Image(systemName: "xmark.circle.fill")
-                .font(.system(size: 48))
-                .foregroundStyle(.red)
-                .padding(.top, 8)
+        VStack(spacing: 16) {
+            // App icon with badge
+            ZStack(alignment: .bottomTrailing) {
+                Image(nsImage: NSApp.applicationIconImage)
+                    .resizable()
+                    .frame(width: 64, height: 64)
+                
+                Image(systemName: icon)
+                    .font(.system(size: 24))
+                    .foregroundStyle(iconColor)
+                    .background(
+                        Circle()
+                            .fill(Color(nsColor: .windowBackgroundColor))
+                            .frame(width: 28, height: 28)
+                    )
+                    .offset(x: 4, y: 4)
+            }
             
+            // Title
             Text(title)
-                .font(.headline)
-                .fontWeight(.semibold)
+                .font(.system(size: 13, weight: .semibold))
+                .multilineTextAlignment(.center)
             
+            // Message
             Text(message)
-                .font(.body)
+                .font(.system(size: 11))
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
-                .padding(.horizontal)
+                .lineLimit(4)
             
-            Button(action: onDismiss) {
-                HStack(spacing: 6) {
-                    Image(systemName: "checkmark.circle")
-                    Text("OK")
-                }
-                .frame(minWidth: 100)
-                .padding(.vertical, 10)
-                .padding(.horizontal, 20)
-                .foregroundStyle(.white)
-                .background(
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(isHovering ? Color.blue.opacity(0.9) : Color.blue.opacity(0.8))
-                )
-            }
-            .buttonStyle(.plain)
-            .onHover { isHovering = $0 }
-            .keyboardShortcut(.defaultAction)
-            .padding(.bottom, 8)
+            // Button
+            HIGPrimaryButton(title: "OK", action: onDismiss)
+                .keyboardShortcut(.defaultAction)
+                .padding(.top, 4)
         }
-        .padding(24)
-        .frame(minWidth: 350, maxWidth: 450)
-        .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(Color(nsColor: .windowBackgroundColor))
-                .shadow(color: .black.opacity(0.2), radius: 20, x: 0, y: 10)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(Color.gray.opacity(0.2), lineWidth: 1)
-        )
-    }
-}
-
-// MARK: - Success Dialog
-struct SuccessDialog: View {
-    let title: String
-    let message: String
-    let onDismiss: () -> Void
-    
-    @State private var isHovering = false
-    
-    var body: some View {
-        VStack(spacing: 20) {
-            Image(systemName: "checkmark.circle.fill")
-                .font(.system(size: 48))
-                .foregroundStyle(.green)
-                .padding(.top, 8)
-            
-            Text(title)
-                .font(.headline)
-                .fontWeight(.semibold)
-            
-            Text(message)
-                .font(.body)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal)
-            
-            Button(action: onDismiss) {
-                HStack(spacing: 6) {
-                    Image(systemName: "checkmark.circle")
-                    Text("OK")
-                }
-                .frame(minWidth: 100)
-                .padding(.vertical, 10)
-                .padding(.horizontal, 20)
-                .foregroundStyle(.white)
-                .background(
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(isHovering ? Color.green.opacity(0.9) : Color.green.opacity(0.8))
-                )
-            }
-            .buttonStyle(.plain)
-            .onHover { isHovering = $0 }
-            .keyboardShortcut(.defaultAction)
-            .padding(.bottom, 8)
-        }
-        .padding(24)
-        .frame(minWidth: 350, maxWidth: 450)
-        .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(Color(nsColor: .windowBackgroundColor))
-                .shadow(color: .black.opacity(0.2), radius: 20, x: 0, y: 10)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(Color.gray.opacity(0.2), lineWidth: 1)
-        )
+        .higDialogStyle()
     }
 }
 

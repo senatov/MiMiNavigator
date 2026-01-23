@@ -38,7 +38,7 @@ final class ClipboardManager {
         self.files = files.map { $0.urlValue }
         self.operation = .copy
         self.sourcePanel = panel
-        log.info("Clipboard: Copied \(files.count) item(s) from \(panel)")
+        log.info("Clipboard: Copied \(files.count) item(s) from \(String(describing: panel))")
     }
     
     // MARK: - Cut files to clipboard
@@ -46,12 +46,89 @@ final class ClipboardManager {
         self.files = files.map { $0.urlValue }
         self.operation = .cut
         self.sourcePanel = panel
-        log.info("Clipboard: Cut \(files.count) item(s) from \(panel)")
+        log.info("Clipboard: Cut \(files.count) item(s) from \(String(describing: panel))")
     }
     
-    // MARK: - Paste files to destination
-    /// Pastes clipboard content to destination
-    /// - Returns: Result with pasted file URLs or error
+    // MARK: - Paste files to destination with conflict handling
+    func paste(to destination: URL, coordinator: ContextMenuCoordinator) async -> Result<[URL], Error> {
+        guard hasContent else {
+            return .failure(FileOperationError.operationFailed("Clipboard is empty"))
+        }
+        
+        let fileOps = FileOperationsService.shared
+        var resultURLs: [URL] = []
+        var applyToAll: ConflictResolution?
+        var stopped = false
+        
+        for file in files {
+            if stopped { break }
+            
+            // Check for conflict
+            if let conflict = fileOps.checkConflict(source: file, destination: destination) {
+                let resolution: ConflictResolution
+                
+                if let cached = applyToAll {
+                    resolution = cached
+                } else {
+                    // Show conflict dialog and wait for user decision
+                    resolution = await coordinator.showConflictDialog(conflict: conflict)
+                    
+                    // TODO: Add "Apply to all" checkbox to dialog
+                    // For now, ask for each file
+                }
+                
+                switch resolution {
+                case .stop:
+                    stopped = true
+                    continue
+                case .skip:
+                    continue
+                case .keepBoth, .replace:
+                    do {
+                        let resultURL: URL
+                        switch operation {
+                        case .copy:
+                            resultURL = try await fileOps.copyFile(file, to: destination, resolution: resolution)
+                        case .cut:
+                            resultURL = try await fileOps.moveFile(file, to: destination, resolution: resolution)
+                        case .none:
+                            continue
+                        }
+                        resultURLs.append(resultURL)
+                    } catch {
+                        log.error("File operation failed: \(error.localizedDescription)")
+                        // Continue with next file
+                    }
+                }
+            } else {
+                // No conflict, proceed normally
+                do {
+                    let resultURL: URL
+                    switch operation {
+                    case .copy:
+                        resultURL = try await fileOps.copyFile(file, to: destination, resolution: .keepBoth)
+                    case .cut:
+                        resultURL = try await fileOps.moveFile(file, to: destination, resolution: .keepBoth)
+                    case .none:
+                        continue
+                    }
+                    resultURLs.append(resultURL)
+                } catch {
+                    log.error("File operation failed: \(error.localizedDescription)")
+                }
+            }
+        }
+        
+        // Clear clipboard after successful cut-paste
+        if operation == .cut && !resultURLs.isEmpty {
+            clear()
+        }
+        
+        log.info("Clipboard: Pasted \(resultURLs.count) item(s) to \(destination.path)")
+        return .success(resultURLs)
+    }
+    
+    // MARK: - Legacy paste (auto keep-both)
     func paste(to destination: URL) async -> Result<[URL], Error> {
         guard hasContent else {
             return .failure(FileOperationError.operationFailed("Clipboard is empty"))
@@ -65,7 +142,6 @@ final class ClipboardManager {
                 result = try await FileOperationsService.shared.copyFiles(files, to: destination)
             case .cut:
                 result = try await FileOperationsService.shared.moveFiles(files, to: destination)
-                // Clear clipboard after successful cut-paste
                 clear()
             case .none:
                 return .failure(FileOperationError.operationFailed("No operation specified"))
