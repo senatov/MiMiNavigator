@@ -11,7 +11,7 @@ import SwiftUI
 // MARK: - Actor for concurrent directory scanning
 actor DualDirectoryScanner {
     let appState: AppState
-    var fileLst = FileSingleton.shared
+    var fileCache = FileCache.shared
     private var leftTimer: DispatchSourceTimer?
     private var rightTimer: DispatchSourceTimer?
     
@@ -155,8 +155,8 @@ actor DualDirectoryScanner {
     @MainActor
     private func updateFileList(panelSide: PanelSide, with files: [CustomFile]) async {
         switch panelSide {
-        case .left: await fileLst.updateLeftFiles(files)
-        case .right: await fileLst.updateRightFiles(files)
+        case .left: await fileCache.updateLeftFiles(files)
+        case .right: await fileCache.updateRightFiles(files)
         }
     }
 }

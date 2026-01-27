@@ -1,10 +1,10 @@
+// TopMenuMetadata.swift
+// MiMiNavigator
 //
-// TopMnuMetas.swift
-//  MiMiNavigator
-//
-//  Created by Iakov Senatov on 01.06.2025.
-//  Copyright © 2025 Senatov. All rights reserved.
-//
+// Created by Iakov Senatov on 01.06.2025.
+// Refactored: 27.01.2026
+// Copyright © 2025-2026 Senatov. All rights reserved.
+// Description: Menu item metadata for top menu bar
 
 import Foundation
 

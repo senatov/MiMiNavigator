@@ -9,6 +9,7 @@ import SwiftUI
 
 // MARK: - Table Drop Handler
 /// Handles drag and drop operations on the panel background
+@MainActor
 struct TableDropHandler {
     let panelSide: PanelSide
     let appState: AppState
