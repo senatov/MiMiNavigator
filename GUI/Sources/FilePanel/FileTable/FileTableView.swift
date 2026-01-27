@@ -73,6 +73,7 @@ struct FileTableView: View {
         .animation(nil, value: isFocused)
         .animation(nil, value: selectedID)
         .focusable(true)
+        .focusEffectDisabled()
         .onChange(of: files) { recomputeSortedCache() }
         .onChange(of: sortKey) { recomputeSortedCache() }
         .onChange(of: sortAscending) { recomputeSortedCache() }
