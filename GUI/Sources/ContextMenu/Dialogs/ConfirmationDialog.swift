@@ -13,12 +13,12 @@ struct HIGDialogStyle: ViewModifier {
             .padding(20)
             .frame(minWidth: 300, maxWidth: 400)
             .background(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
                     .fill(Color(nsColor: .windowBackgroundColor))
                     .shadow(color: .black.opacity(0.15), radius: 12, x: 0, y: 4)
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
                     .stroke(Color.gray.opacity(0.2), lineWidth: 0.5)
             )
     }
