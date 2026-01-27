@@ -33,7 +33,7 @@ struct FileTransferConfirmationDialog: View {
         .padding(Layout.contentPadding)
         .frame(width: Layout.dialogWidth)
         .background(VisualEffectBlur(material: .popover, blendingMode: .behindWindow))
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
         .shadow(color: .black.opacity(0.2), radius: 20, x: 0, y: 10)
         .onExitCommand {
             handleAction(.abort)

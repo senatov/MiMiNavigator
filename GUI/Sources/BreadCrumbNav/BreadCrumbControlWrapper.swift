@@ -20,7 +20,7 @@ struct BreadCrumbControlWrapper: View {
 
     // MARK: - Constants
     private enum Design {
-        static let cornerRadius: CGFloat = 12
+        static let cornerRadius: CGFloat = 8
         static let borderWidth: CGFloat = 1.5
         static let idleBorderWidth: CGFloat = 1
         static let shadowRadius: CGFloat = 7

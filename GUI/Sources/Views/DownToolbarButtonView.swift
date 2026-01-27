@@ -21,7 +21,7 @@ struct DownToolbarButtonView: View {
         // Only call to makeButton() and wrappers for SRP
         ZStack { makeButton() }
             .frame(minWidth: 120, minHeight: 20)
-            .contentShape(.rect(cornerRadius: 10, style: .continuous))
+            .contentShape(.rect(cornerRadius: 6, style: .continuous))
     }
 
     // MARK: - Builds and configures the toolbar button (macOS 26.1 liquid glass style)
@@ -43,12 +43,12 @@ struct DownToolbarButtonView: View {
             .frame(minWidth: 120, minHeight: 28)
             .background(
                 // Hover/pressed get ultraThinMaterial, idle gets faint fill
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                RoundedRectangle(cornerRadius: 6, style: .continuous)
                     .fill((isHovered || isPressed) ? AnyShapeStyle(.ultraThinMaterial) : AnyShapeStyle(Color.white.opacity(0.02)))
             )
             .overlay(
                 // Primary stroke changes with hover/press, disabled dims
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                RoundedRectangle(cornerRadius: 6, style: .continuous)
                     .strokeBorder(
                         isPressed
                             ? FilePanelStyle.skyBlauColor.opacity(0.9)
@@ -58,7 +58,7 @@ struct DownToolbarButtonView: View {
             )
             .overlay(
                 // Inner subtle highlight for glass look
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                RoundedRectangle(cornerRadius: 6, style: .continuous)
                     .strokeBorder(Color.white.opacity(0.06), lineWidth: 0.5)
                     .blendMode(.screen)
             )
@@ -71,7 +71,7 @@ struct DownToolbarButtonView: View {
             }
             .overlay(
                 // Focus ring for keyboard nav
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                RoundedRectangle(cornerRadius: 6, style: .continuous)
                     .strokeBorder(FilePanelStyle.skyBlauColor.opacity(isFocused ? 0.9 : 0), lineWidth: isFocused ? 2 : 0)
             )
             .shadow(
