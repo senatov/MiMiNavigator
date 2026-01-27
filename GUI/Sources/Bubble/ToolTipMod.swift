@@ -38,9 +38,9 @@ struct ToolTipMod: ViewModifier {
                 .font(.footnote)
                 .padding(6)
                 .background(.ultraThinMaterial)
-                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 8)
+                    RoundedRectangle(cornerRadius: 6, style: .continuous)
                         .stroke(.white.opacity(0.15), lineWidth: 1)
                 )
                 .shadow(radius: 6, y: 2)

@@ -27,14 +27,14 @@ struct TopMenuItemView: View {
         }) {
             MenuItemContent(title: item.title, shortcut: item.shortcut)
                 .background(
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    RoundedRectangle(cornerRadius: 6, style: .continuous)
                         .fill(isPressed ? Color.blue.opacity(0.7) : (isHovered ? Color.blue.opacity(0.3) : Color.clear))
                 )
         }
         .buttonStyle(TopMenuButtonStyle())
         .animation(nil, value: isHovered)
         .animation(nil, value: isPressed)
-        .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .contentShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
         .onHover { hovering in
             isHovered = hovering
             hoverTask?.cancel()

@@ -67,7 +67,7 @@ struct FileTableView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(.horizontal, 6)
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
         .overlay(panelBorder)
         .contentShape(Rectangle())
         .animation(nil, value: isFocused)
@@ -142,7 +142,7 @@ private extension FileTableView {
     }
     
     var panelBorder: some View {
-        RoundedRectangle(cornerRadius: 10, style: .continuous)
+        RoundedRectangle(cornerRadius: 8, style: .continuous)
             .stroke(
                 isPanelDropTargeted
                     ? Color.accentColor.opacity(0.8)

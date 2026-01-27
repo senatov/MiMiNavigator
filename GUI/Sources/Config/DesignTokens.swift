@@ -18,8 +18,14 @@ enum DesignTokens {
     /// Base grid unit (8pt)
     static let grid: CGFloat = 8
     
-    /// Standard corner radius
+    /// Standard corner radius (HIG: 8pt for cards/panels)
     static let radius: CGFloat = 8
+    
+    /// Small corner radius (HIG: 4-6pt for buttons/controls)
+    static let radiusSmall: CGFloat = 6
+    
+    /// Tiny corner radius (HIG: 4pt for rows/selections)
+    static let radiusTiny: CGFloat = 4
     
     /// Horizontal spacing between elements
     static let horizontalSpacing: CGFloat = 8

@@ -19,7 +19,7 @@ struct HelpPopup: View {
             .foregroundStyle(Color(#colorLiteral(red: 0.5787474513, green: 0.3215198815, blue: 0, alpha: 1)))
             .padding(8)
             .background(FilePanelStyle.yellowSelRowFill)
-            .clipShape(.rect(cornerRadius: 8))
+            .clipShape(.rect(cornerRadius: 6))
             .frame(width: 200)
     }
 }
