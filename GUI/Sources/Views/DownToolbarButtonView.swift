@@ -67,7 +67,7 @@ struct DownToolbarButtonView: View {
                 Rectangle()
                     .fill(Color.white.opacity(0.05))
                     .frame(height: 0.5)
-                    .clipShape(.rect(cornerRadius: 10, style: .continuous))
+                    .clipShape(.rect(cornerRadius: 6, style: .continuous))
             }
             .overlay(
                 // Focus ring for keyboard nav
