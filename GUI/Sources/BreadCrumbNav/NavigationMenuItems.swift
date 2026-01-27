@@ -1,15 +1,38 @@
-// NavMnu2.swift
-//  MiMiNavigator
+// NavigationMenuItems.swift
+// MiMiNavigator
 //
-//  Created by Iakov Senatov on 10.05.2024.
-//  Copyright © 2024 Senatov. All rights reserved.
-//
+// Created by Iakov Senatov on 10.05.2024.
+// Refactored: 27.01.2026
+// Copyright © 2024-2026 Senatov. All rights reserved.
+// Description: Navigation menu components for breadcrumb panel
 
 import AppKit
 import SwiftUI
 
-// MARK: - Additional navigation menu (ellipsis button)
-struct NavMnu2: View {
+// MARK: - Favorites Button Section (left side of breadcrumb)
+struct FavoritesButtonSection: View {
+    @Environment(AppState.self) var appState
+    let panelSide: PanelSide
+
+    init(selectedSide: PanelSide) {
+        self.panelSide = selectedSide
+        log.info("FavoritesButtonSection init for side <<\(selectedSide)>>")
+    }
+
+    var body: some View {
+        log.verbose("FavoritesButtonSection.body")
+        return HStack(spacing: 4) {
+            ButtonFavTopPanel(selectedSide: panelSide)
+        }
+        .padding(.leading, 6)
+        .task { @MainActor in
+            appState.focusedPanel = panelSide
+        }
+    }
+}
+
+// MARK: - Ellipsis Menu Section (right side of breadcrumb)
+struct EllipsisMenuSection: View {
     @State private var isHovering = false
     @Environment(AppState.self) var appState
 
@@ -81,3 +104,7 @@ struct NavMnu2: View {
         appState.pathURL(for: appState.focusedPanel)
     }
 }
+
+// MARK: - Deprecated Typealiases (for backward compatibility)
+typealias NavMnu1 = FavoritesButtonSection
+typealias NavMnu2 = EllipsisMenuSection

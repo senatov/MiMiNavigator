@@ -8,8 +8,6 @@
 import AppKit
 import SwiftUI
 
-let log = LogMan.log
-
 @main
 struct MiMiNavigatorApp: App {
     @State private var appState = AppState()
@@ -24,7 +22,7 @@ struct MiMiNavigatorApp: App {
 
     // MARK: -
     init() {
-        LogMan.initializeLogging()
+        AppLogger.initialize()
         log.debug("---- Logger initialized ------")
         Task { await BookmarkStore.shared.restoreAll() }
     }

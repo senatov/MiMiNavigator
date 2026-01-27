@@ -105,7 +105,7 @@ struct BreadCrumbView: View {
             .trimmingCharacters(in: .whitespacesAndNewlines)
         let currentPath = (panelSide == .left ? appState.leftPath : appState.rightPath)
         // ⚠️ threat from recursive calls
-        guard appState.toCanonical(from: newPath) != appState.toCanonical(from: currentPath) else {
+        guard toCanonical(newPath) != toCanonical(currentPath) else {
             log.info("Path unchanged, skipping update")
             return
         }
@@ -114,6 +114,11 @@ struct BreadCrumbView: View {
         Task {
             await performDirectoryUpdate(for: panelSide, path: newPath)
         }
+    }
+    
+    // MARK: - Canonicalize path
+    private func toCanonical(_ path: String) -> String {
+        URL(fileURLWithPath: path).standardizedFileURL.path
     }
 
     // MARK: -

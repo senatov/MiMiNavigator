@@ -1,13 +1,16 @@
-//
 // CustomFile.swift
-//  MiMiNavigator
+// MiMiNavigator
 //
-//  Created by Iakov Senatov on 27.10.24.
-//  Copyright © 2024 Senatov. All rights reserved.
-//
+// Created by Iakov Senatov on 27.10.24.
+// Refactored: 27.01.2026
+// Copyright © 2024-2026 Senatov. All rights reserved.
+// Description: Core file/directory model for dual-panel file manager
 
 import Foundation
 
+// MARK: - Custom File Model
+/// Represents a file or directory in the file system.
+/// Handles symlinks, directories, and regular files with metadata.
 public struct CustomFile: Identifiable, Equatable, Hashable, Codable, Sendable {
     public let id: String
     public let nameStr: String
@@ -21,56 +24,54 @@ public struct CustomFile: Identifiable, Equatable, Hashable, Codable, Sendable {
     public let fileExtension: String
     public var children: [CustomFile]?
 
-    // MARK: -
+    // MARK: - Initializer
     public init(name: String? = nil, path: String, children: [CustomFile]? = nil) {
         #if DEBUG
-            log.info("CustomFile.init(\(path))")
+        log.verbose("CustomFile.init(\(path))")
         #endif
 
         let url = URL(fileURLWithPath: path).absoluteURL
         self.urlValue = url
         self.pathStr = path
         self.nameStr = (name?.isEmpty == false) ? name! : url.lastPathComponent
-        
-        // Extract file extension (lowercase, without dot)
-        let ext = url.pathExtension.lowercased()
-        self.fileExtension = ext
+        self.fileExtension = url.pathExtension.lowercased()
 
         let fm = FileManager.default
-
         var dir = false
         var symlink = false
         var symDir = false
         var size: Int64 = 0
-        var mdate: Date? = nil
+        var mdate: Date?
 
+        // Try to get attributes directly
         if !path.isEmpty, let attrs = try? fm.attributesOfItem(atPath: path) {
             if let type = attrs[.type] as? FileAttributeType {
                 switch type {
-                    case .typeDirectory:
-                        dir = true
-                    case .typeSymbolicLink:
-                        symlink = true
-                        if let dst = try? fm.destinationOfSymbolicLink(atPath: path) {
-                            let base = (path as NSString).deletingLastPathComponent
-                            let target =
-                                (dst as NSString).isAbsolutePath ? dst : (base as NSString).appendingPathComponent(dst)
-                            var isDirFlag = ObjCBool(false)
-                            if fm.fileExists(atPath: target, isDirectory: &isDirFlag), isDirFlag.boolValue {
-                                dir = true
-                                symDir = true
-                            }
-                        } else {
-                            let resolved = url.resolvingSymlinksInPath()
-                            if let rVals = try? resolved.resourceValues(forKeys: [.isDirectoryKey]),
-                                rVals.isDirectory == true
-                            {
-                                dir = true
-                                symDir = true
-                            }
+                case .typeDirectory:
+                    dir = true
+                case .typeSymbolicLink:
+                    symlink = true
+                    // Resolve symlink to check if it points to directory
+                    if let dst = try? fm.destinationOfSymbolicLink(atPath: path) {
+                        let base = (path as NSString).deletingLastPathComponent
+                        let target = (dst as NSString).isAbsolutePath
+                            ? dst
+                            : (base as NSString).appendingPathComponent(dst)
+                        var isDirFlag = ObjCBool(false)
+                        if fm.fileExists(atPath: target, isDirectory: &isDirFlag), isDirFlag.boolValue {
+                            dir = true
+                            symDir = true
                         }
-                    default:
-                        break
+                    } else {
+                        let resolved = url.resolvingSymlinksInPath()
+                        if let rVals = try? resolved.resourceValues(forKeys: [.isDirectoryKey]),
+                           rVals.isDirectory == true {
+                            dir = true
+                            symDir = true
+                        }
+                    }
+                default:
+                    break
                 }
             }
             if let num = attrs[.size] as? NSNumber {
@@ -79,17 +80,18 @@ public struct CustomFile: Identifiable, Equatable, Hashable, Codable, Sendable {
             if let md = attrs[.modificationDate] as? Date {
                 mdate = md
             }
-
         } else {
+            // Fallback to URL resource values
             let keys: Set<URLResourceKey> = [
-                .isDirectoryKey, .isSymbolicLinkKey, .fileSizeKey, .contentModificationDateKey,
+                .isDirectoryKey, .isSymbolicLinkKey, .fileSizeKey, .contentModificationDateKey
             ]
             if let vals = try? url.resourceValues(forKeys: keys) {
                 if vals.isDirectory == true { dir = true }
                 if vals.isSymbolicLink == true {
                     symlink = true
                     let resolved = url.resolvingSymlinksInPath()
-                    if let r2 = try? resolved.resourceValues(forKeys: [.isDirectoryKey]), r2.isDirectory == true {
+                    if let r2 = try? resolved.resourceValues(forKeys: [.isDirectoryKey]),
+                       r2.isDirectory == true {
                         dir = true
                         symDir = true
                     }
@@ -98,6 +100,7 @@ public struct CustomFile: Identifiable, Equatable, Hashable, Codable, Sendable {
                 mdate = vals.contentModificationDate
             }
         }
+
         self.isDirectory = dir
         self.isSymbolicLink = symlink
         self.isSymbolicDirectory = symDir
@@ -107,67 +110,12 @@ public struct CustomFile: Identifiable, Equatable, Hashable, Codable, Sendable {
         self.id = url.path
     }
 
-    // MARK: -
-    private static func formatBytes(_ count: Int64) -> String {
-        let f = ByteCountFormatter()
-        f.allowedUnits = .useAll
-        f.countStyle = .file
-        return f.string(fromByteCount: count)
-    }
-
-    // MARK: -
-    private static func formatDate(_ date: Date) -> String {
-        let df = DateFormatter()
-        df.dateStyle = .short
-        df.timeStyle = .short
-        return df.string(from: date)
-    }
-
-    // MARK: - Size column display (shows size for files, type for dirs/links)
-    public var fileSizeFormatted: String {
-        if isSymbolicLink && isDirectory {
-            return "⤳ Folder"
-        }
-        if isDirectory {
-            return "Folder"
-        }
-        if isSymbolicLink {
-            return "⤳ File"
-        }
-        return CustomFile.formatBytes(sizeInBytes)
+    // MARK: - Equatable & Hashable
+    public static func == (lhs: CustomFile, rhs: CustomFile) -> Bool {
+        lhs.id == rhs.id
     }
     
-    // MARK: - Type column display (file extension or directory type)
-    public var fileTypeDisplay: String {
-        if isSymbolicLink && isDirectory {
-            return "Link → Dir"
-        }
-        if isDirectory {
-            return "Directory"
-        }
-        if isSymbolicLink {
-            return "Link → \(fileExtension.isEmpty ? "File" : fileExtension.uppercased())"
-        }
-        if fileExtension.isEmpty {
-            return "—"
-        }
-        return fileExtension.uppercased()
-    }
-    
-    // MARK: - Legacy property for backward compatibility
-    public var fileObjTypEnum: String {
-        return fileSizeFormatted
-    }
-
-    // MARK: -
-    public static func == (lhs: CustomFile, rhs: CustomFile) -> Bool { lhs.id == rhs.id }
-    public func hash(into hasher: inout Hasher) { hasher.combine(id) }
-
-    // MARK: -
-    public var modifiedDateFormatted: String {
-        guard let d = modifiedDate else {
-            return "—"
-        }
-        return CustomFile.formatDate(d)
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
     }
 }

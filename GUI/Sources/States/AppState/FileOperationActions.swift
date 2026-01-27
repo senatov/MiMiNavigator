@@ -5,6 +5,7 @@
 // Copyright © 2026 Senatov. All rights reserved.
 // Description: Quick file operations (copy to opposite panel)
 
+import AppKit
 import Foundation
 
 // MARK: - File Operation Actions

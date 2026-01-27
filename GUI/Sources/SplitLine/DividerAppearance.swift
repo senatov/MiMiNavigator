@@ -11,9 +11,9 @@ import SwiftUI
 
 // MARK: - Appearance carrier
 final class DividerAppearance {
-    var normalThickness: CGFloat = 1.0
-    var activeThickness: CGFloat = 1.5
-    var normalColor: NSColor = NSColor.separatorColor
+    var normalThickness: CGFloat = 4.0
+    var activeThickness: CGFloat = 6.0
+    var normalColor: NSColor = NSColor.controlAccentColor.withAlphaComponent(0.5)
     var activeColor: NSColor = NSColor.controlAccentColor
     var hitExpansion: CGFloat = 24
     var isDragging: Bool = false

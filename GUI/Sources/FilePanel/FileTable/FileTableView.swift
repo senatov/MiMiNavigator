@@ -142,9 +142,11 @@ private extension FileTableView {
     }
     
     var panelBorder: some View {
-        RoundedRectangle(cornerRadius: 12)
+        RoundedRectangle(cornerRadius: 10, style: .continuous)
             .stroke(
-                isPanelDropTargeted ? Color.accentColor : Color.white.opacity(isFocused ? 0.10 : 0.05),
+                isPanelDropTargeted
+                    ? Color.accentColor.opacity(0.8)
+                    : (isFocused ? Color.accentColor.opacity(0.3) : Color.clear),
                 lineWidth: isPanelDropTargeted ? 2 : 1
             )
             .allowsHitTesting(false)
