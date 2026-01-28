@@ -11,7 +11,7 @@
   <img src="https://img.shields.io/badge/Xcode-16+-blue?logo=xcode" alt="Xcode 16+" />
   <img src="https://img.shields.io/badge/Framework-SwiftUI-blue?logo=swift" alt="SwiftUI" />
   <img src="https://img.shields.io/badge/Concurrency-Swift%206%20Strict-green" alt="Swift 6 Strict Concurrency" />
-  <img src="https://img.shields.io/badge/Version-0.9.1-informational" alt="Version 0.9.1" />
+  <img src="https://img.shields.io/badge/Version-0.9.1.1-informational" alt="Version 0.9.1.1" />
   <img src="https://img.shields.io/badge/License-MIT-lightgrey.svg" alt="License" />
   <img src="https://img.shields.io/badge/Status-Active%20Development-yellow" alt="Status: Active" />
   <img src="https://img.shields.io/badge/Code%20Style-SwiftLint-red" alt="SwiftLint" />
@@ -63,7 +63,7 @@ to help clarify the philosophies and implementations of different architectures.
 ## 📖 Table of Contents
 
 - [Overview](#overview)
-- [What's New in v0.9.0](#whats-new-in-v090)
+- [What's New in v0.9.1.1](#whats-new-in-v0911)
 - [Why MiMiNavigator?](#why-miminavigator)
 - [Features](#features)
 - [Screenshots](#screenshots)
@@ -96,7 +96,34 @@ to help clarify the philosophies and implementations of different architectures.
 
 👉 **Source Code**: [Gui/Sources](https://github.com/senatov/MiMiNavigator/tree/master/Gui/Sources)
 
-## What's New in v0.9.0
+## What's New in v0.9.1.1
+
+### 🎨 Finder-Style File Table
+Complete visual redesign following macOS Finder conventions:
+- **Clean selection**: Solid blue fill without borders or rounded corners
+- **Standard fonts**: System fonts (SF Pro) instead of custom styling
+- **Proper icons**: 16pt icons matching Finder's compact view
+- **Zebra stripes**: Alternating row colors using system colors
+- **Symlink display**: Shows "Alias" for symlinks (Finder terminology)
+
+### 📊 New Table Columns
+Extended file information display:
+- **Permissions**: Unix-style permissions (rwxr-xr-x) in monospaced font
+- **Owner**: File owner username
+- **All columns sortable**: Click any column header to sort
+- **Visual sort indicators**: All columns show sort chevrons, active column highlighted
+
+### 🔧 Sticky Column Headers
+- **Fixed header row**: Column headers stay visible while scrolling
+- **Clear separators**: Vertical dividers between columns
+- **Sort feedback**: Active sort column highlighted with accent color
+
+### ⚡ Performance & Code Quality
+- **Reduced logging**: Removed verbose sorting/formatting logs
+- **Type-check optimization**: Split complex SwiftUI views for faster compilation
+- **Clean architecture**: Extracted view modifiers for better maintainability
+
+## What's New in v0.9.1
 
 ### 🖱️ Drag-n-Drop Support
 Full drag-and-drop functionality between panels:
@@ -184,10 +211,13 @@ Complete implementation of a professional menu bar inspired by Total Commander w
 
 ## Features
 
-### ✅ Current Features (v0.9.0)
+### ✅ Current Features (v0.9.1.1)
 
 #### Core Functionality
 - **Dual File Panels**: Two independent file panels with synchronized navigation and operations
+- **Finder-Style Table**: Clean UI following macOS Finder conventions
+- **Extended Columns**: Name, Size, Date, Permissions, Owner, Type — all sortable
+- **Sticky Headers**: Column headers remain visible during scroll
 - **Drag-n-Drop**: Full drag-and-drop support between panels and into directories with confirmation dialog
 - **Real-time Monitoring**: Automatic directory updates using FileManager's file system events
 - **Breadcrumb Navigation**: Interactive path navigation with click-to-navigate functionality
@@ -678,7 +708,20 @@ log.error("Error messages")
 - [x] Auto-scroll to selection
 - [x] Tab panel switching
 
-### Version 0.9.0 (Current) ✅
+### Version 0.9.1.1 (Current) ✅
+- [x] Finder-style file table UI
+- [x] Permissions and Owner columns
+- [x] All columns sortable with visual indicators
+- [x] Sticky column headers
+- [x] Reduced verbose logging
+- [x] Type-check optimizations
+
+### Version 0.9.1 ✅
+- [x] Drag & drop between panels with confirmation dialog
+- [x] Drop target highlighting
+- [x] HIG-compliant confirmation dialog
+
+### Version 0.9.0 ✅
 - [x] Total Commander-style menu system
 - [x] macOS 26 liquid-glass UI
 - [x] Navigation history with popover
@@ -686,16 +729,17 @@ log.error("Error messages")
 - [x] Modular menu architecture
 - [x] Compact tree fonts
 - [x] Updated app icons
+- [x] Drag & drop between panels with confirmation dialog
 
 ### Version 0.10.0 - Enhanced Operations 🚧
 **Target**: Q1 2025
 
-- [x] Drag & drop between panels with confirmation dialog
 - [ ] Multi-selection support
 - [ ] Search functionality
 - [ ] Quick Look integration
 - [ ] Delete with confirmation
 - [ ] Move/Rename (F6)
+- [ ] Column width persistence
 
 ### Version 1.0.0 - Production Release 🎯
 **Target**: Q2 2025
