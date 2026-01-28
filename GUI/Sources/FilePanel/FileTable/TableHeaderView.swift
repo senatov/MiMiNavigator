@@ -26,65 +26,34 @@ struct TableHeaderView: View {
         HStack(spacing: 0) {
             nameHeader
             
-            ResizableDivider(
-                width: $sizeColumnWidth,
-                min: TableColumnConstraints.sizeMin,
-                max: TableColumnConstraints.sizeMax,
-                onEnd: onSave
-            )
-            
+            headerDivider
             sizeHeader
-                .frame(width: sizeColumnWidth, alignment: .trailing)
-                .padding(.horizontal, 4)
             
-            ResizableDivider(
-                width: $dateColumnWidth,
-                min: TableColumnConstraints.dateMin,
-                max: TableColumnConstraints.dateMax,
-                onEnd: onSave
-            )
-            
+            headerDivider
             dateHeader
-                .frame(width: dateColumnWidth, alignment: .leading)
-                .padding(.horizontal, 4)
             
-            ResizableDivider(
-                width: $permissionsColumnWidth,
-                min: TableColumnConstraints.permissionsMin,
-                max: TableColumnConstraints.permissionsMax,
-                onEnd: onSave
-            )
-            
+            headerDivider
             permissionsHeader
-                .frame(width: permissionsColumnWidth, alignment: .leading)
-                .padding(.horizontal, 4)
             
-            ResizableDivider(
-                width: $ownerColumnWidth,
-                min: TableColumnConstraints.ownerMin,
-                max: TableColumnConstraints.ownerMax,
-                onEnd: onSave
-            )
-            
+            headerDivider
             ownerHeader
-                .frame(width: ownerColumnWidth, alignment: .leading)
-                .padding(.horizontal, 4)
             
-            ResizableDivider(
-                width: $typeColumnWidth,
-                min: TableColumnConstraints.typeMin,
-                max: TableColumnConstraints.typeMax,
-                onEnd: onSave
-            )
-            
+            headerDivider
             typeHeader
-                .frame(width: typeColumnWidth, alignment: .leading)
-                .padding(.horizontal, 4)
         }
-        .padding(.vertical, 5)
+        .frame(height: 24)
         .padding(.horizontal, 4)
-        .background(headerBackground)
+        .background(TableHeaderStyle.backgroundColor)
         .overlay(alignment: .bottom) { bottomBorder }
+    }
+    
+    // MARK: - Header Divider
+    private var headerDivider: some View {
+        Rectangle()
+            .fill(TableHeaderStyle.separatorColor)
+            .frame(width: 1)
+            .padding(.vertical, 4)
+            .allowsHitTesting(false)
     }
     
     // MARK: - Name Column
@@ -98,6 +67,8 @@ struct TableHeaderView: View {
     // MARK: - Size Column
     private var sizeHeader: some View {
         SortableHeader(title: "Size", sortKey: .size, currentKey: sortKey, ascending: sortAscending)
+            .frame(width: sizeColumnWidth, alignment: .trailing)
+            .padding(.horizontal, 4)
             .contentShape(Rectangle())
             .onTapGesture { toggleSort(.size) }
     }
@@ -105,6 +76,8 @@ struct TableHeaderView: View {
     // MARK: - Date Column
     private var dateHeader: some View {
         SortableHeader(title: "Date", sortKey: .date, currentKey: sortKey, ascending: sortAscending)
+            .frame(width: dateColumnWidth, alignment: .leading)
+            .padding(.horizontal, 4)
             .contentShape(Rectangle())
             .onTapGesture { toggleSort(.date) }
     }
@@ -112,6 +85,8 @@ struct TableHeaderView: View {
     // MARK: - Type Column
     private var typeHeader: some View {
         SortableHeader(title: "Type", sortKey: .type, currentKey: sortKey, ascending: sortAscending)
+            .frame(width: typeColumnWidth, alignment: .leading)
+            .padding(.horizontal, 4)
             .contentShape(Rectangle())
             .onTapGesture { toggleSort(.type) }
     }
@@ -119,6 +94,8 @@ struct TableHeaderView: View {
     // MARK: - Permissions Column
     private var permissionsHeader: some View {
         SortableHeader(title: "Perms", sortKey: .permissions, currentKey: sortKey, ascending: sortAscending)
+            .frame(width: permissionsColumnWidth, alignment: .leading)
+            .padding(.horizontal, 4)
             .contentShape(Rectangle())
             .onTapGesture { toggleSort(.permissions) }
     }
@@ -126,12 +103,17 @@ struct TableHeaderView: View {
     // MARK: - Owner Column
     private var ownerHeader: some View {
         SortableHeader(title: "Owner", sortKey: .owner, currentKey: sortKey, ascending: sortAscending)
+            .frame(width: ownerColumnWidth, alignment: .leading)
+            .padding(.horizontal, 4)
             .contentShape(Rectangle())
             .onTapGesture { toggleSort(.owner) }
     }
     
     // MARK: - Actions
     private func toggleSort(_ key: SortKeysEnum) {
+        let oldKey = sortKey
+        let oldAsc = sortAscending
+        
         appState.focusedPanel = panelSide
         if sortKey == key {
             sortAscending.toggle()
@@ -140,17 +122,13 @@ struct TableHeaderView: View {
             sortAscending = true
         }
         appState.updateSorting(key: key, ascending: sortAscending)
-        log.debug("[TableHeaderView] sort changed: key=\(key) asc=\(sortAscending)")
+        log.info("[TableHeader] sort changed: panel=\(panelSide) oldKey=\(oldKey) oldAsc=\(oldAsc) → newKey=\(sortKey) newAsc=\(sortAscending)")
     }
     
-    // MARK: - Styling (Finder-style: subtle gray)
-    private var headerBackground: some View {
-        Color(nsColor: .windowBackgroundColor)
-    }
-    
+    // MARK: - Styling
     private var bottomBorder: some View {
         Rectangle()
-            .fill(Color(nsColor: .separatorColor))
+            .fill(TableHeaderStyle.separatorColor)
             .frame(height: 1)
             .allowsHitTesting(false)
     }
@@ -164,17 +142,33 @@ struct SortableHeader: View {
     let currentKey: SortKeysEnum
     let ascending: Bool
     
+    private var isActive: Bool { currentKey == sortKey }
+    
     var body: some View {
         HStack(spacing: 4) {
             Text(title)
                 .font(TableHeaderStyle.font)
-                .foregroundStyle(TableHeaderStyle.color)
+                .foregroundStyle(isActive ? TableHeaderStyle.sortIndicatorColor : TableHeaderStyle.color)
             
-            if currentKey == sortKey {
-                Image(systemName: ascending ? "arrowtriangle.up.fill" : "arrowtriangle.down.fill")
-                    .font(.system(size: 8))
-                    .foregroundStyle(TableHeaderStyle.color)
-            }
+            // Always show sort indicator, active column highlighted
+            Image(systemName: sortIcon)
+                .font(.system(size: 9, weight: .semibold))
+                .foregroundStyle(isActive ? TableHeaderStyle.sortIndicatorColor : Color.secondary.opacity(0.5))
         }
+        .padding(.vertical, 2)
+        .padding(.horizontal, 4)
+        .background(
+            isActive
+                ? TableHeaderStyle.sortIndicatorColor.opacity(0.1)
+                : Color.clear
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 4))
+    }
+    
+    private var sortIcon: String {
+        if isActive {
+            return ascending ? "chevron.up" : "chevron.down"
+        }
+        return "chevron.up.chevron.down"
     }
 }

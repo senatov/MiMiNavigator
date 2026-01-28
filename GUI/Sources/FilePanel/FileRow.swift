@@ -8,6 +8,24 @@ import AppKit
 import SwiftUI
 import UniformTypeIdentifiers
 
+// MARK: - Drop Target Modifier
+/// Extracted drop handling to simplify type checking
+struct DropTargetModifier: ViewModifier {
+    let isValidTarget: Bool
+    @Binding var isDropTargeted: Bool
+    let onDrop: ([CustomFile]) -> Bool
+    let onTargetChange: (Bool) -> Void
+
+    func body(content: Content) -> some View {
+        content
+            .dropDestination(for: CustomFile.self) { droppedFiles, _ in
+                onDrop(droppedFiles)
+            } isTargeted: { targeted in
+                onTargetChange(targeted)
+            }
+    }
+}
+
 // MARK: - Lightweight row view for file list with drag-drop support
 struct FileRow: View {
     let index: Int
@@ -25,9 +43,9 @@ struct FileRow: View {
     let onDirectoryAction: (DirectoryAction, CustomFile) -> Void
     @Environment(AppState.self) var appState
     @Environment(DragDropManager.self) var dragDropManager
-    
+
     @State private var isDropTargeted: Bool = false
-    
+
     // MARK: - Selection colors (macOS native style)
     private enum SelectionColors {
         static let activeFill = Color(nsColor: .selectedContentBackgroundColor)
@@ -35,93 +53,151 @@ struct FileRow: View {
         static let dropTargetFill = Color.accentColor.opacity(0.2)
         static let dropTargetBorder = Color.accentColor
     }
-    
+
     private var isActivePanel: Bool {
         appState.focusedPanel == panelSide
     }
-    
+
     private var isValidDropTarget: Bool {
         file.isDirectory || file.isSymbolicDirectory
     }
 
     var body: some View {
+        rowContainer
+            .id("\(panelSide)_\(file.id)")
+    }
+
+    // MARK: - Main Container
+    private var rowContainer: some View {
+        stableContent
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(height: FilePanelStyle.rowHeight)
+            .contentShape(Rectangle())
+            .help(makeHelpTooltip())
+            .simultaneousGesture(doubleTapGesture)
+            .simultaneousGesture(singleTapGesture)
+            .animation(nil, value: isSelected)
+            .contextMenu { contextMenuContent }
+            .draggable(file) { makeDragPreview() }
+            .modifier(
+                DropTargetModifier(
+                    isValidTarget: isValidDropTarget,
+                    isDropTargeted: $isDropTargeted,
+                    onDrop: handleDrop,
+                    onTargetChange: handleDropTargeting
+                ))
+    }
+
+    private var stableContent: some View {
         StableBy(file.id.hashValue ^ (isSelected ? 1 : 0) ^ (isActivePanel ? 2 : 0) ^ (isDropTargeted ? 4 : 0)) {
             ZStack(alignment: .leading) {
-                // Zebra stripes
-                let zebraColors = NSColor.alternatingContentBackgroundColors
-                Color(nsColor: zebraColors[index % zebraColors.count])
-                    .allowsHitTesting(false)
-
-                // Drop target highlight (for directories)
-                if isDropTargeted && isValidDropTarget {
-                    Rectangle()
-                        .fill(SelectionColors.dropTargetFill)
-                        .overlay(
-                            Rectangle()
-                                .stroke(SelectionColors.dropTargetBorder, lineWidth: 2)
-                        )
-                        .allowsHitTesting(false)
-                }
-                // Selection highlight - macOS native style (solid fill, no border, no rounded corners)
-                else if isSelected {
-                    Rectangle()
-                        .fill(isActivePanel ? SelectionColors.activeFill : SelectionColors.inactiveFill)
-                        .allowsHitTesting(false)
-                }
-
+                zebraBackground
+                highlightLayer
                 rowContent
             }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .frame(height: FilePanelStyle.rowHeight)
-        .contentShape(Rectangle())
-        .help(makeHelpTooltip())
-        .simultaneousGesture(
-            TapGesture(count: 2).onEnded { onDoubleClick(file) }
-        )
-        .simultaneousGesture(
-            TapGesture(count: 1).onEnded { onSelect(file) }
-        )
-        .animation(nil, value: isSelected)
-        .contextMenu {
-            if file.isDirectory {
-                DirectoryContextMenu(file: file, panelSide: panelSide) { action in
-                    onDirectoryAction(action, file)
-                }
-            } else {
-                FileContextMenu(file: file, panelSide: panelSide) { action in
-                    onFileAction(action, file)
-                }
-            }
-        }
-        // MARK: - Drag support
-        .draggable(file) {
-            DragPreviewView(file: file)
-        }
-        // MARK: - Drop support (only for directories)
-        .dropDestination(for: CustomFile.self) { droppedFiles, _ in
-            handleDrop(droppedFiles)
-        } isTargeted: { targeted in
-            if isValidDropTarget {
-                withAnimation(.easeInOut(duration: 0.15)) {
-                    isDropTargeted = targeted
-                }
-                if targeted {
-                    dragDropManager.setDropTarget(file.urlValue)
-                }
-            }
-        }
-        .id("\(panelSide)_\(file.id)")
     }
-    
+
+    private var doubleTapGesture: some Gesture {
+        TapGesture(count: 2).onEnded { handleDoubleClick() }
+    }
+
+    private var singleTapGesture: some Gesture {
+        TapGesture(count: 1).onEnded { handleSingleClick() }
+    }
+
+    // MARK: - Extracted Views
+
+    private var zebraBackground: some View {
+        let zebraColors = NSColor.alternatingContentBackgroundColors
+        return Color(nsColor: zebraColors[index % zebraColors.count])
+            .allowsHitTesting(false)
+    }
+
+    @ViewBuilder
+    private var highlightLayer: some View {
+        if isDropTargeted && isValidDropTarget {
+            Rectangle()
+                .fill(SelectionColors.dropTargetFill)
+                .overlay(
+                    Rectangle()
+                        .stroke(SelectionColors.dropTargetBorder, lineWidth: 2)
+                )
+                .allowsHitTesting(false)
+        } else if isSelected {
+            Rectangle()
+                .fill(isActivePanel ? SelectionColors.activeFill : SelectionColors.inactiveFill)
+                .allowsHitTesting(false)
+        }
+    }
+
+    @ViewBuilder
+    private var contextMenuContent: some View {
+        if file.isDirectory {
+            DirectoryContextMenu(file: file, panelSide: panelSide) { action in
+                logContextMenuAction(action, isDirectory: true)
+                onDirectoryAction(action, file)
+            }
+        } else {
+            FileContextMenu(file: file, panelSide: panelSide) { action in
+                logContextMenuAction(action, isDirectory: false)
+                onFileAction(action, file)
+            }
+        }
+    }
+
+    private func makeDragPreview() -> DragPreviewView {
+        DragPreviewView(file: file)
+    }
+
+    // MARK: - Event Handlers
+
+    private func handleSingleClick() {
+        log.debug("[FileRow] single-click on '\(file.nameStr)' panel=\(panelSide)")
+        onSelect(file)
+    }
+
+    private func handleDoubleClick() {
+        log.debug("[FileRow] double-click on '\(file.nameStr)' isDir=\(file.isDirectory)")
+        onDoubleClick(file)
+    }
+
+    private func handleDropTargeting(_ targeted: Bool) {
+        guard isValidDropTarget else { return }
+        log.verbose("[FileRow] drop target '\(file.nameStr)' targeted=\(targeted)")
+        withAnimation(.easeInOut(duration: 0.15)) {
+            isDropTargeted = targeted
+        }
+        if targeted {
+            dragDropManager.setDropTarget(file.urlValue)
+        }
+    }
+
+    private func logContextMenuAction(_ action: Any, isDirectory: Bool) {
+        let type = isDirectory ? "directory" : "file"
+        log.debug("[FileRow] \(type) context menu action=\(action) file='\(file.nameStr)'")
+    }
+
     // MARK: - Handle drop on this row (directory)
     private func handleDrop(_ droppedFiles: [CustomFile]) -> Bool {
-        guard isValidDropTarget else { return false }
-        guard !droppedFiles.isEmpty else { return false }
-        
+        log.info("[FileRow] handleDrop on '\(file.nameStr)' validTarget=\(isValidDropTarget) droppedCount=\(droppedFiles.count)")
+
+        guard isValidDropTarget else {
+            log.warning("[FileRow] handleDrop rejected: not a valid drop target")
+            return false
+        }
+        guard !droppedFiles.isEmpty else {
+            log.warning("[FileRow] handleDrop rejected: no files dropped")
+            return false
+        }
+
         let droppedPaths = Set(droppedFiles.map { $0.urlValue.path })
-        if droppedPaths.contains(file.urlValue.path) { return false }
-        
+        if droppedPaths.contains(file.urlValue.path) {
+            log.warning("[FileRow] handleDrop rejected: cannot drop onto self")
+            return false
+        }
+
+        log.info("[FileRow] handleDrop accepted: transferring \(droppedFiles.count) files to '\(file.nameStr)'")
         dragDropManager.prepareTransfer(files: droppedFiles, to: file.urlValue, from: panelSide)
         return true
     }
@@ -130,7 +206,7 @@ struct FileRow: View {
     private var secondaryTextColor: Color {
         (isSelected && isActivePanel) ? .white : Color(nsColor: .secondaryLabelColor)
     }
-    
+
     // MARK: - System font (Finder style)
     private var columnFont: Font {
         .system(size: 12)
@@ -142,7 +218,7 @@ struct FileRow: View {
             // Name column (flexible) - can shrink
             FileRowView(file: file, isSelected: isSelected, isActivePanel: isActivePanel)
                 .frame(minWidth: 60, maxWidth: .infinity, alignment: .leading)
-            
+
             // Size column
             Text(file.fileSizeFormatted)
                 .font(columnFont)
@@ -150,7 +226,7 @@ struct FileRow: View {
                 .lineLimit(1)
                 .frame(width: sizeColumnWidth, alignment: .trailing)
                 .padding(.trailing, 8)
-            
+
             // Date column
             Text(file.modifiedDateFormatted)
                 .font(columnFont)
@@ -158,7 +234,7 @@ struct FileRow: View {
                 .lineLimit(1)
                 .frame(width: dateColumnWidth, alignment: .leading)
                 .padding(.horizontal, 6)
-            
+
             // Permissions column
             Text(file.permissionsFormatted)
                 .font(.system(size: 11, design: .monospaced))
@@ -166,7 +242,7 @@ struct FileRow: View {
                 .lineLimit(1)
                 .frame(width: permissionsColumnWidth, alignment: .leading)
                 .padding(.horizontal, 6)
-            
+
             // Owner column
             Text(file.ownerFormatted)
                 .font(columnFont)
@@ -175,7 +251,7 @@ struct FileRow: View {
                 .truncationMode(.tail)
                 .frame(width: ownerColumnWidth, alignment: .leading)
                 .padding(.horizontal, 6)
-            
+
             // Type column
             Text(file.fileTypeDisplay)
                 .font(columnFont)
@@ -188,7 +264,7 @@ struct FileRow: View {
         .padding(.vertical, 2)
         .padding(.horizontal, 4)
     }
-    
+
     private func makeHelpTooltip() -> String {
         let icon = file.isDirectory ? "📁" : "📄"
         return "\(icon) \(file.nameStr)\n📍 \(file.pathStr)\n📅 \(file.modifiedDateFormatted)\n📦 \(file.fileSizeFormatted)"
@@ -198,13 +274,13 @@ struct FileRow: View {
 // MARK: - Drag preview view
 struct DragPreviewView: View {
     let file: CustomFile
-    
+
     var body: some View {
         HStack(spacing: 8) {
             Image(nsImage: NSWorkspace.shared.icon(forFile: file.urlValue.path))
                 .resizable()
                 .frame(width: 32, height: 32)
-            
+
             Text(file.nameStr)
                 .font(.system(size: 13, weight: .medium))
                 .foregroundStyle(.primary)
@@ -219,3 +295,4 @@ struct DragPreviewView: View {
         )
     }
 }
+
