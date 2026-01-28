@@ -29,33 +29,27 @@ extension CustomFile {
         return formatter.string(from: date)
     }
 
-    // MARK: - Size column display (shows size for files, type for dirs/links)
+    // MARK: - Size column display (Finder-style)
     public var fileSizeFormatted: String {
-        if isSymbolicLink && isDirectory {
-            return "⤳ Folder"
+        if isSymbolicLink {
+            return "Alias"
         }
         if isDirectory {
-            return "Folder"
-        }
-        if isSymbolicLink {
-            return "⤳ File"
+            return "—"
         }
         return CustomFile.formatBytes(sizeInBytes)
     }
     
-    // MARK: - Type column display (file extension or directory type)
+    // MARK: - Type column display (Finder-style)
     public var fileTypeDisplay: String {
-        if isSymbolicLink && isDirectory {
-            return "Link → Dir"
+        if isSymbolicLink {
+            return "Alias"
         }
         if isDirectory {
-            return "Directory"
-        }
-        if isSymbolicLink {
-            return "Link → \(fileExtension.isEmpty ? "File" : fileExtension.uppercased())"
+            return "Folder"
         }
         if fileExtension.isEmpty {
-            return "—"
+            return "Document"
         }
         return fileExtension.uppercased()
     }

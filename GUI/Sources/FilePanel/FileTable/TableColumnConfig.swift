@@ -33,10 +33,13 @@ enum TableColumnConstraints {
 }
 
 // MARK: - Header Style
-/// Visual styling for column headers (Finder-style)
+/// Visual styling for column headers (bold, clear, Finder-style)
 enum TableHeaderStyle {
-    static let font = Font.system(size: 11, weight: .regular)
-    static let color = Color(nsColor: .secondaryLabelColor)
+    static let font = Font.system(size: 12, weight: .semibold)
+    static let color = Color.primary
+    static let sortIndicatorColor = Color.accentColor
+    static let backgroundColor = Color(nsColor: .controlBackgroundColor)
+    static let separatorColor = Color(nsColor: .separatorColor)
 }
 
 // MARK: - Column Width Storage

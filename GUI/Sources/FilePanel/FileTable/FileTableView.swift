@@ -109,43 +109,47 @@ struct FileTableView: View {
 private extension FileTableView {
     
     var mainScrollView: some View {
-        ScrollView {
-            LazyVStack(alignment: .leading, spacing: 0) {
-                TableHeaderView(
-                    panelSide: panelSide,
-                    sortKey: $sortKey,
-                    sortAscending: $sortAscending,
-                    sizeColumnWidth: $sizeColumnWidth,
-                    dateColumnWidth: $dateColumnWidth,
-                    typeColumnWidth: $typeColumnWidth,
-                    permissionsColumnWidth: $permissionsColumnWidth,
-                    ownerColumnWidth: $ownerColumnWidth,
-                    onSave: saveColumnWidths
-                )
-                
-                StableBy(cachedSortedFiles.count) {
-                    FileTableRowsView(
-                        rows: sortedRows,
-                        selectedID: $selectedID,
-                        panelSide: panelSide,
-                        sizeColumnWidth: sizeColumnWidth,
-                        dateColumnWidth: dateColumnWidth,
-                        typeColumnWidth: typeColumnWidth,
-                        permissionsColumnWidth: permissionsColumnWidth,
-                        ownerColumnWidth: ownerColumnWidth,
-                        onSelect: onSelect,
-                        onDoubleClick: onDoubleClick,
-                        handleFileAction: handleFileAction,
-                        handleDirectoryAction: handleDirectoryAction
-                    )
-                    .frame(maxWidth: .infinity, alignment: .leading)
+        VStack(spacing: 0) {
+            // Sticky header - outside ScrollView
+            TableHeaderView(
+                panelSide: panelSide,
+                sortKey: $sortKey,
+                sortAscending: $sortAscending,
+                sizeColumnWidth: $sizeColumnWidth,
+                dateColumnWidth: $dateColumnWidth,
+                typeColumnWidth: $typeColumnWidth,
+                permissionsColumnWidth: $permissionsColumnWidth,
+                ownerColumnWidth: $ownerColumnWidth,
+                onSave: saveColumnWidths
+            )
+            
+            // Scrollable content
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 0) {
+                    StableBy(cachedSortedFiles.count) {
+                        FileTableRowsView(
+                            rows: sortedRows,
+                            selectedID: $selectedID,
+                            panelSide: panelSide,
+                            sizeColumnWidth: sizeColumnWidth,
+                            dateColumnWidth: dateColumnWidth,
+                            typeColumnWidth: typeColumnWidth,
+                            permissionsColumnWidth: permissionsColumnWidth,
+                            ownerColumnWidth: ownerColumnWidth,
+                            onSelect: onSelect,
+                            onDoubleClick: onDoubleClick,
+                            handleFileAction: handleFileAction,
+                            handleDirectoryAction: handleDirectoryAction
+                        )
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    }
                 }
             }
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                Color.clear.frame(height: 40)
+            }
+            .background(keyboardShortcutsLayer)
         }
-        .safeAreaInset(edge: .bottom, spacing: 0) {
-            Color.clear.frame(height: 40)
-        }
-        .background(keyboardShortcutsLayer)
     }
     
     var panelBorder: some View {
@@ -208,6 +212,6 @@ private extension FileTableView {
     
     func recomputeSortedCache() {
         cachedSortedFiles = files.sorted(by: sorter.compare)
-        log.debug("[FileTableView] sorted \(cachedSortedFiles.count) files by \(sortKey)")
+        log.debug("[FileTableView] sorted \(cachedSortedFiles.count) files by \(sortKey) asc=\(sortAscending)")
     }
 }
