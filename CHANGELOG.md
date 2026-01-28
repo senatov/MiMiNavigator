@@ -14,6 +14,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Delete operations with confirmation dialogs
 - Move/Rename operations (F6)
 
+## [0.9.1.1] - 2025-01-28
+
+### Added
+- **Finder-Style File Table** — complete visual redesign
+  - Clean selection: solid blue fill without borders or rounded corners
+  - Standard system fonts (SF Pro) instead of custom styling
+  - 16pt icons matching Finder's compact view
+  - Zebra stripes using system alternating colors
+  - "Alias" terminology for symlinks (matches Finder)
+- **New Table Columns**
+  - Permissions column: Unix-style (rwxr-xr-x) in monospaced font
+  - Owner column: file owner username display
+- **Sortable Column Headers**
+  - All columns now sortable (Name, Size, Date, Permissions, Owner, Type)
+  - Visual sort indicators on all columns (chevrons)
+  - Active sort column highlighted with accent color
+  - Sticky headers: column headers stay visible during scroll
+
+### Changed
+- Column order: Name | Size | Date | Permissions | Owner | Type
+- Date format: dd.MM.yyyy HH:mm (European style)
+- Size display: "—" for directories, "Alias" for symlinks, "0 KB" for empty files
+
+### Fixed
+- Column headers now respond to clicks for sorting (was broken)
+- Header dividers no longer intercept click events
+
+### Performance
+- Removed verbose logging from sorting and formatting functions
+- Split complex SwiftUI views for faster type-checking compilation
+- Extracted DropTargetModifier to simplify FileRow body
+
 ## [0.9.1] - 2025-01-22
 
 ### Added
@@ -112,7 +144,8 @@ Each release should include:
 
 ---
 
-[Unreleased]: https://github.com/senatov/MiMiNavigator/compare/v0.9.1...HEAD
+[Unreleased]: https://github.com/senatov/MiMiNavigator/compare/v0.9.1.1...HEAD
+[0.9.1.1]: https://github.com/senatov/MiMiNavigator/compare/v0.9.1...v0.9.1.1
 [0.9.1]: https://github.com/senatov/MiMiNavigator/compare/v0.9.0...v0.9.1
 [0.9.0]: https://github.com/senatov/MiMiNavigator/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/senatov/MiMiNavigator/compare/v0.1.0...v0.8.0
