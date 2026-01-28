@@ -33,6 +33,10 @@ struct TableFileSorter {
             return compareDate(a, b)
         case .type:
             return compareType(a, b)
+        case .permissions:
+            return comparePermissions(a, b)
+        case .owner:
+            return compareOwner(a, b)
         }
     }
     
@@ -64,6 +68,25 @@ struct TableFileSorter {
     private func compareType(_ a: CustomFile, _ b: CustomFile) -> Bool {
         let lhs = a.fileExtension
         let rhs = b.fileExtension
+        if lhs != rhs {
+            let cmp = lhs.localizedCaseInsensitiveCompare(rhs)
+            return ascending ? (cmp == .orderedAscending) : (cmp == .orderedDescending)
+        }
+        return a.nameStr.localizedCaseInsensitiveCompare(b.nameStr) == .orderedAscending
+    }
+    
+    private func comparePermissions(_ a: CustomFile, _ b: CustomFile) -> Bool {
+        let lhs = a.posixPermissions
+        let rhs = b.posixPermissions
+        if lhs != rhs {
+            return ascending ? (lhs < rhs) : (lhs > rhs)
+        }
+        return a.nameStr.localizedCaseInsensitiveCompare(b.nameStr) == .orderedAscending
+    }
+    
+    private func compareOwner(_ a: CustomFile, _ b: CustomFile) -> Bool {
+        let lhs = a.ownerName
+        let rhs = b.ownerName
         if lhs != rhs {
             let cmp = lhs.localizedCaseInsensitiveCompare(rhs)
             return ascending ? (cmp == .orderedAscending) : (cmp == .orderedDescending)

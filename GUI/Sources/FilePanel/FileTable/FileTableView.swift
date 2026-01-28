@@ -32,6 +32,8 @@ struct FileTableView: View {
     @State private var sizeColumnWidth: CGFloat = TableColumnDefaults.size
     @State private var dateColumnWidth: CGFloat = TableColumnDefaults.date
     @State private var typeColumnWidth: CGFloat = TableColumnDefaults.type
+    @State private var permissionsColumnWidth: CGFloat = TableColumnDefaults.permissions
+    @State private var ownerColumnWidth: CGFloat = TableColumnDefaults.owner
     
     // MARK: - Computed Properties
     private var isFocused: Bool { appState.focusedPanel == panelSide }
@@ -116,6 +118,8 @@ private extension FileTableView {
                     sizeColumnWidth: $sizeColumnWidth,
                     dateColumnWidth: $dateColumnWidth,
                     typeColumnWidth: $typeColumnWidth,
+                    permissionsColumnWidth: $permissionsColumnWidth,
+                    ownerColumnWidth: $ownerColumnWidth,
                     onSave: saveColumnWidths
                 )
                 
@@ -127,6 +131,8 @@ private extension FileTableView {
                         sizeColumnWidth: sizeColumnWidth,
                         dateColumnWidth: dateColumnWidth,
                         typeColumnWidth: typeColumnWidth,
+                        permissionsColumnWidth: permissionsColumnWidth,
+                        ownerColumnWidth: ownerColumnWidth,
                         onSelect: onSelect,
                         onDoubleClick: onDoubleClick,
                         handleFileAction: handleFileAction,
@@ -186,10 +192,18 @@ private extension FileTableView {
         sizeColumnWidth = widths.size
         dateColumnWidth = widths.date
         typeColumnWidth = widths.type
+        permissionsColumnWidth = widths.permissions
+        ownerColumnWidth = widths.owner
     }
     
     func saveColumnWidths() {
-        columnStorage.save(size: sizeColumnWidth, date: dateColumnWidth, type: typeColumnWidth)
+        columnStorage.save(
+            size: sizeColumnWidth,
+            date: dateColumnWidth,
+            type: typeColumnWidth,
+            permissions: permissionsColumnWidth,
+            owner: ownerColumnWidth
+        )
     }
     
     func recomputeSortedCache() {

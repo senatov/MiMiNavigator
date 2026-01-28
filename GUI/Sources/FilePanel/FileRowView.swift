@@ -23,13 +23,11 @@ struct FileRowView: View {
             .contentShape(Rectangle())
     }
 
-    // MARK: - Text color based on file type and selection state
+    // MARK: - Text color based on selection state (Finder style - all black/white)
     private var nameColor: Color {
         if isSelected && isActivePanel {
             return .white
         }
-        if file.isSymbolicDirectory { return FilePanelStyle.blueSymlinkDirNameColor }
-        if file.isDirectory { return FilePanelStyle.dirNameColor }
         return .primary
     }
 
@@ -45,26 +43,26 @@ struct FileRowView: View {
                     .aspectRatio(contentMode: .fit)
                     .frame(width: RowDesignTokens.iconSize, height: RowDesignTokens.iconSize)
                 
-                // Symlink badge overlay
+                // Symlink badge overlay (smaller for Finder-style icons)
                 if file.isSymbolicLink {
                     Image(systemName: "arrow.turn.up.right")
-                        .font(.system(size: 8, weight: .bold))
+                        .font(.system(size: 6, weight: .bold))
                         .foregroundStyle(.white)
-                        .padding(2)
+                        .padding(1.5)
                         .background(
                             Circle()
                                 .fill(Color.orange)
-                                .shadow(color: .black.opacity(0.3), radius: 1, x: 0.5, y: 0.5)
+                                .shadow(color: .black.opacity(0.2), radius: 0.5, x: 0.3, y: 0.3)
                         )
-                        .offset(x: 3, y: 3)
+                        .offset(x: 2, y: 2)
                 }
             }
             .allowsHitTesting(false)
             .layoutPriority(1)
             
-            // File name - truncates in middle (macOS style)
+            // File name - Finder style (system font, truncates in middle)
             Text(file.nameStr)
-                .font(.custom("SF Pro Display", size: 13).weight(.thin))
+                .font(.system(size: 13))
                 .foregroundStyle(nameColor)
                 .lineLimit(1)
                 .truncationMode(.middle)

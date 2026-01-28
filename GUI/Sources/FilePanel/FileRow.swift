@@ -17,6 +17,8 @@ struct FileRow: View {
     let sizeColumnWidth: CGFloat
     let dateColumnWidth: CGFloat
     let typeColumnWidth: CGFloat
+    let permissionsColumnWidth: CGFloat
+    let ownerColumnWidth: CGFloat
     let onSelect: (CustomFile) -> Void
     let onDoubleClick: (CustomFile) -> Void
     let onFileAction: (FileAction, CustomFile) -> Void
@@ -29,9 +31,7 @@ struct FileRow: View {
     // MARK: - Selection colors (macOS native style)
     private enum SelectionColors {
         static let activeFill = Color(nsColor: .selectedContentBackgroundColor)
-        static let activeBorder = Color(nsColor: .keyboardFocusIndicatorColor).opacity(0.6)
         static let inactiveFill = Color(nsColor: .unemphasizedSelectedContentBackgroundColor)
-        static let inactiveBorder = Color(nsColor: .separatorColor)
         static let dropTargetFill = Color.accentColor.opacity(0.2)
         static let dropTargetBorder = Color.accentColor
     }
@@ -54,22 +54,18 @@ struct FileRow: View {
 
                 // Drop target highlight (for directories)
                 if isDropTargeted && isValidDropTarget {
-                    RoundedRectangle(cornerRadius: 4, style: .continuous)
+                    Rectangle()
                         .fill(SelectionColors.dropTargetFill)
                         .overlay(
-                            RoundedRectangle(cornerRadius: 4, style: .continuous)
+                            Rectangle()
                                 .stroke(SelectionColors.dropTargetBorder, lineWidth: 2)
                         )
                         .allowsHitTesting(false)
                 }
-                // Selection highlight
+                // Selection highlight - macOS native style (solid fill, no border, no rounded corners)
                 else if isSelected {
-                    RoundedRectangle(cornerRadius: 4, style: .continuous)
+                    Rectangle()
                         .fill(isActivePanel ? SelectionColors.activeFill : SelectionColors.inactiveFill)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 4, style: .continuous)
-                                .stroke(isActivePanel ? SelectionColors.activeBorder : SelectionColors.inactiveBorder, lineWidth: 1)
-                        )
                         .allowsHitTesting(false)
                 }
 
@@ -130,22 +126,14 @@ struct FileRow: View {
         return true
     }
 
-    // MARK: - Column colors
-    private var sizeColumnColor: Color {
-        (isSelected && isActivePanel) ? .white.opacity(0.85) : Color(red: 0.5, green: 0.3, blue: 0.1)  // Brown
+    // MARK: - Column colors - Finder style (gray secondary text)
+    private var secondaryTextColor: Color {
+        (isSelected && isActivePanel) ? .white : Color(nsColor: .secondaryLabelColor)
     }
     
-    private var dateColumnColor: Color {
-        (isSelected && isActivePanel) ? .white.opacity(0.85) : Color(red: 0.1, green: 0.4, blue: 0.2)  // Dark green
-    }
-    
-    private var typeColumnColor: Color {
-        (isSelected && isActivePanel) ? .white.opacity(0.85) : Color(red: 0.4, green: 0.1, blue: 0.5)  // Dark purple
-    }
-    
-    // MARK: - SF Pro Display Thin font
-    private func columnFont(size: CGFloat) -> Font {
-        .custom("SF Pro Display", size: size).weight(.thin)
+    // MARK: - System font (Finder style)
+    private var columnFont: Font {
+        .system(size: 12)
     }
 
     // MARK: - Row content with columns
@@ -155,50 +143,52 @@ struct FileRow: View {
             FileRowView(file: file, isSelected: isSelected, isActivePanel: isActivePanel)
                 .frame(minWidth: 60, maxWidth: .infinity, alignment: .leading)
             
-            columnDivider
-            
-            // Size column - brown
+            // Size column
             Text(file.fileSizeFormatted)
-                .font(columnFont(size: 11))
-                .foregroundStyle(sizeColumnColor)
+                .font(columnFont)
+                .foregroundStyle(secondaryTextColor)
                 .lineLimit(1)
                 .frame(width: sizeColumnWidth, alignment: .trailing)
-                .padding(.horizontal, 4)
+                .padding(.trailing, 8)
             
-            columnDivider
-            
-            // Date column - dark green
+            // Date column
             Text(file.modifiedDateFormatted)
-                .font(columnFont(size: 11))
-                .foregroundStyle(dateColumnColor)
+                .font(columnFont)
+                .foregroundStyle(secondaryTextColor)
                 .lineLimit(1)
                 .frame(width: dateColumnWidth, alignment: .leading)
-                .padding(.horizontal, 4)
+                .padding(.horizontal, 6)
             
-            columnDivider
+            // Permissions column
+            Text(file.permissionsFormatted)
+                .font(.system(size: 11, design: .monospaced))
+                .foregroundStyle(secondaryTextColor)
+                .lineLimit(1)
+                .frame(width: permissionsColumnWidth, alignment: .leading)
+                .padding(.horizontal, 6)
             
-            // Type column - dark purple
+            // Owner column
+            Text(file.ownerFormatted)
+                .font(columnFont)
+                .foregroundStyle(secondaryTextColor)
+                .lineLimit(1)
+                .truncationMode(.tail)
+                .frame(width: ownerColumnWidth, alignment: .leading)
+                .padding(.horizontal, 6)
+            
+            // Type column
             Text(file.fileTypeDisplay)
-                .font(columnFont(size: 10))
-                .foregroundStyle(typeColumnColor)
+                .font(columnFont)
+                .foregroundStyle(secondaryTextColor)
                 .frame(width: typeColumnWidth, alignment: .leading)
                 .lineLimit(1)
                 .truncationMode(.tail)
-                .padding(.horizontal, 4)
+                .padding(.horizontal, 6)
         }
-        .padding(.vertical, 1)
+        .padding(.vertical, 2)
         .padding(.horizontal, 4)
     }
     
-    private var columnDivider: some View {
-        let scale = NSScreen.main?.backingScaleFactor ?? 2.0
-        let width = 1.0 / scale
-        return Rectangle()
-            .fill(Color(red: 0.1, green: 0.15, blue: 0.4))
-            .frame(width: max(width, 1.0))
-            .padding(.vertical, 2)
-    }
-
     private func makeHelpTooltip() -> String {
         let icon = file.isDirectory ? "📁" : "📄"
         return "\(icon) \(file.nameStr)\n📍 \(file.pathStr)\n📅 \(file.modifiedDateFormatted)\n📦 \(file.fileSizeFormatted)"

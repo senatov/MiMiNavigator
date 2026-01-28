@@ -14,6 +14,8 @@ struct FileTableRowsView: View {
     let sizeColumnWidth: CGFloat
     let dateColumnWidth: CGFloat
     let typeColumnWidth: CGFloat
+    let permissionsColumnWidth: CGFloat
+    let ownerColumnWidth: CGFloat
     let onSelect: (CustomFile) -> Void
     let onDoubleClick: (CustomFile) -> Void
     let handleFileAction: (FileAction, CustomFile) -> Void
@@ -40,6 +42,8 @@ struct FileTableRowsView: View {
             sizeColumnWidth: sizeColumnWidth,
             dateColumnWidth: dateColumnWidth,
             typeColumnWidth: typeColumnWidth,
+            permissionsColumnWidth: permissionsColumnWidth,
+            ownerColumnWidth: ownerColumnWidth,
             onSelect: { tapped in
                 onSelect(tapped)
             },

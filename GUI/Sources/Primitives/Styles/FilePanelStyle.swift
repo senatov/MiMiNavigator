@@ -8,49 +8,49 @@
 import SwiftUI
 
 // MARK: - Visual styling constants for file panels
-// Inspired by Total Commander aesthetics
+// Finder-style design (macOS HIG compliant)
 enum FilePanelStyle {
     
-    // MARK: - Colors
+    // MARK: - Colors (Finder-style: minimal color differentiation)
     
-    /// Blue color for symlink directories
-    static let blueSymlinkDirNameColor = Color(red: 0.24, green: 0.29, blue: 0.87)
+    /// Blue color for symlink directories (subtle differentiation)
+    static let blueSymlinkDirNameColor = Color(nsColor: .linkColor)
     
-    /// Purple color for regular directories
-    static let dirNameColor = Color(red: 0.18, green: 0.01, blue: 0.56)
+    /// Directory name color (same as files in Finder)
+    static let dirNameColor = Color.primary
     
-    /// Dark blue-gray for regular files
-    static let fileNameColor = Color(red: 0.06, green: 0.18, blue: 0.25)
+    /// File name color
+    static let fileNameColor = Color.primary
     
-    /// Orange stroke for selected row
-    static let orangeSelRowStroke = Color(red: 0.94, green: 0.50, blue: 0.35)
+    /// Orange stroke for focused panel
+    static let orangeSelRowStroke = Color.accentColor.opacity(0.5)
     
     /// Light blue accent
-    static let skyBlauColor = Color(red: 0.47, green: 0.84, blue: 0.98)
+    static let skyBlauColor = Color.accentColor
     
-    /// Yellow fill for selected row
-    static let yellowSelRowFill = Color(red: 1.0, green: 0.98, blue: 0.92)
+    /// Selected row fill (inactive)
+    static let yellowSelRowFill = Color(nsColor: .unemphasizedSelectedContentBackgroundColor)
     
-    /// Orange fill for active selection
-    static let orangeSelRowFill = Color(red: 0.98, green: 0.85, blue: 0.55)
+    /// Selected row fill (active)
+    static let orangeSelRowFill = Color(nsColor: .selectedContentBackgroundColor)
 
-    // MARK: - Layout - Total Commander style (larger icons for clarity)
+    // MARK: - Layout - Finder style (standard macOS sizes)
     
-    /// Icon size - 22pt for crisp display like Total Commander
-    static let iconSize: CGFloat = 22
+    /// Icon size - 16pt (Finder list view standard)
+    static let iconSize: CGFloat = 16
     
-    /// Row height for comfortable reading
-    static let rowHeight: CGFloat = 24
+    /// Row height - 22pt (Finder list view standard)
+    static let rowHeight: CGFloat = 22
     
     /// Modified date column width
-    static let modifiedColumnWidth: CGFloat = 110
+    static let modifiedColumnWidth: CGFloat = 145
     
-    /// Selected row border width
-    static let selectedBorderWidth: CGFloat = 0.4
+    /// Selected row border width (not used in Finder style)
+    static let selectedBorderWidth: CGFloat = 0
     
     /// Size column width
-    static let sizeColumnWidth: CGFloat = 85
+    static let sizeColumnWidth: CGFloat = 80
     
     /// Type column width
-    static let typeColumnWidth: CGFloat = 75
+    static let typeColumnWidth: CGFloat = 100
 }
