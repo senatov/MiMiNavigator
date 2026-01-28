@@ -18,6 +18,8 @@ struct TableHeaderView: View {
     @Binding var sizeColumnWidth: CGFloat
     @Binding var dateColumnWidth: CGFloat
     @Binding var typeColumnWidth: CGFloat
+    @Binding var permissionsColumnWidth: CGFloat
+    @Binding var ownerColumnWidth: CGFloat
     let onSave: () -> Void
     
     var body: some View {
@@ -44,6 +46,28 @@ struct TableHeaderView: View {
             
             dateHeader
                 .frame(width: dateColumnWidth, alignment: .leading)
+                .padding(.horizontal, 4)
+            
+            ResizableDivider(
+                width: $permissionsColumnWidth,
+                min: TableColumnConstraints.permissionsMin,
+                max: TableColumnConstraints.permissionsMax,
+                onEnd: onSave
+            )
+            
+            permissionsHeader
+                .frame(width: permissionsColumnWidth, alignment: .leading)
+                .padding(.horizontal, 4)
+            
+            ResizableDivider(
+                width: $ownerColumnWidth,
+                min: TableColumnConstraints.ownerMin,
+                max: TableColumnConstraints.ownerMax,
+                onEnd: onSave
+            )
+            
+            ownerHeader
+                .frame(width: ownerColumnWidth, alignment: .leading)
                 .padding(.horizontal, 4)
             
             ResizableDivider(
@@ -92,6 +116,20 @@ struct TableHeaderView: View {
             .onTapGesture { toggleSort(.type) }
     }
     
+    // MARK: - Permissions Column
+    private var permissionsHeader: some View {
+        SortableHeader(title: "Perms", sortKey: .permissions, currentKey: sortKey, ascending: sortAscending)
+            .contentShape(Rectangle())
+            .onTapGesture { toggleSort(.permissions) }
+    }
+    
+    // MARK: - Owner Column
+    private var ownerHeader: some View {
+        SortableHeader(title: "Owner", sortKey: .owner, currentKey: sortKey, ascending: sortAscending)
+            .contentShape(Rectangle())
+            .onTapGesture { toggleSort(.owner) }
+    }
+    
     // MARK: - Actions
     private func toggleSort(_ key: SortKeysEnum) {
         appState.focusedPanel = panelSide
@@ -105,23 +143,15 @@ struct TableHeaderView: View {
         log.debug("[TableHeaderView] sort changed: key=\(key) asc=\(sortAscending)")
     }
     
-    // MARK: - Styling
+    // MARK: - Styling (Finder-style: subtle gray)
     private var headerBackground: some View {
-        LinearGradient(
-            colors: [
-                Color(nsColor: .systemBlue).opacity(0.06),
-                Color(nsColor: .windowBackgroundColor).opacity(0.95)
-            ],
-            startPoint: .top,
-            endPoint: .bottom
-        )
+        Color(nsColor: .windowBackgroundColor)
     }
     
     private var bottomBorder: some View {
-        let scale = NSScreen.main?.backingScaleFactor ?? 2.0
-        return Rectangle()
-            .fill(Color.black.opacity(0.2))
-            .frame(height: max(1.0 / scale, 1.0))
+        Rectangle()
+            .fill(Color(nsColor: .separatorColor))
+            .frame(height: 1)
             .allowsHitTesting(false)
     }
 }

@@ -22,6 +22,8 @@ public struct CustomFile: Identifiable, Equatable, Hashable, Codable, Sendable {
     public let sizeInBytes: Int64
     public let modifiedDate: Date?
     public let fileExtension: String
+    public let posixPermissions: Int16
+    public let ownerName: String
     public var children: [CustomFile]?
 
     // MARK: - Initializer
@@ -42,6 +44,8 @@ public struct CustomFile: Identifiable, Equatable, Hashable, Codable, Sendable {
         var symDir = false
         var size: Int64 = 0
         var mdate: Date?
+        var permissions: Int16 = 0
+        var owner: String = ""
 
         // Try to get attributes directly
         if !path.isEmpty, let attrs = try? fm.attributesOfItem(atPath: path) {
@@ -80,6 +84,12 @@ public struct CustomFile: Identifiable, Equatable, Hashable, Codable, Sendable {
             if let md = attrs[.modificationDate] as? Date {
                 mdate = md
             }
+            if let perm = attrs[.posixPermissions] as? NSNumber {
+                permissions = perm.int16Value
+            }
+            if let ownerStr = attrs[.ownerAccountName] as? String {
+                owner = ownerStr
+            }
         } else {
             // Fallback to URL resource values
             let keys: Set<URLResourceKey> = [
@@ -106,6 +116,8 @@ public struct CustomFile: Identifiable, Equatable, Hashable, Codable, Sendable {
         self.isSymbolicDirectory = symDir
         self.sizeInBytes = size
         self.modifiedDate = mdate
+        self.posixPermissions = permissions
+        self.ownerName = owner
         self.children = dir ? (children ?? []) : nil
         self.id = url.path
     }

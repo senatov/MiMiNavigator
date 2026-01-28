@@ -15,4 +15,6 @@ enum SortKeysEnum {
     case date
     case size
     case type
+    case permissions
+    case owner
 }

@@ -40,16 +40,16 @@ enum DesignTokens {
     /// Separator color
     static let separator = Color(nsColor: .separatorColor)
     
-    // MARK: - Row-specific Tokens
+    // MARK: - Row-specific Tokens (Finder-style)
     enum Row {
-        /// Icon size - matches FilePanelStyle for consistency
+        /// Icon size - 16pt (Finder list view standard)
         static let iconSize: CGFloat = FilePanelStyle.iconSize
         
         /// Row vertical padding
         static let padding: CGFloat = 2
         
         /// Horizontal spacing between elements
-        static let spacing: CGFloat = 8
+        static let spacing: CGFloat = 6
     }
 }
 
