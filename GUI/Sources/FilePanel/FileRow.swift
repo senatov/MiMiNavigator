@@ -26,6 +26,17 @@ struct DropTargetModifier: ViewModifier {
     }
 }
 
+// MARK: - Column Separator
+/// Thin vertical blue line separator between columns (matches header dividers)
+private struct ColumnSeparator: View {
+    var body: some View {
+        Rectangle()
+            .fill(ColumnSeparatorStyle.color)
+            .frame(width: ColumnSeparatorStyle.width)
+            .padding(.vertical, 2)
+    }
+}
+
 // MARK: - Lightweight row view for file list with drag-drop support
 struct FileRow: View {
     let index: Int
@@ -212,14 +223,16 @@ struct FileRow: View {
         .system(size: 12)
     }
 
-    // MARK: - Row content with columns
+    // MARK: - Row content with columns and separators (aligned with header)
     private var rowContent: some View {
         HStack(alignment: .center, spacing: 0) {
-            // Name column (flexible) - can shrink
+            // Name column (flexible) - matches header
             FileRowView(file: file, isSelected: isSelected, isActivePanel: isActivePanel)
                 .frame(minWidth: 60, maxWidth: .infinity, alignment: .leading)
 
-            // Size column
+            ColumnSeparator()
+
+            // Size column - matches header width
             Text(file.fileSizeFormatted)
                 .font(columnFont)
                 .foregroundStyle(secondaryTextColor)
@@ -227,7 +240,9 @@ struct FileRow: View {
                 .frame(width: sizeColumnWidth, alignment: .trailing)
                 .padding(.trailing, 8)
 
-            // Date column
+            ColumnSeparator()
+
+            // Date column - matches header width
             Text(file.modifiedDateFormatted)
                 .font(columnFont)
                 .foregroundStyle(secondaryTextColor)
@@ -235,7 +250,9 @@ struct FileRow: View {
                 .frame(width: dateColumnWidth, alignment: .leading)
                 .padding(.horizontal, 6)
 
-            // Permissions column
+            ColumnSeparator()
+
+            // Permissions column - matches header width
             Text(file.permissionsFormatted)
                 .font(.system(size: 11, design: .monospaced))
                 .foregroundStyle(secondaryTextColor)
@@ -243,7 +260,9 @@ struct FileRow: View {
                 .frame(width: permissionsColumnWidth, alignment: .leading)
                 .padding(.horizontal, 6)
 
-            // Owner column
+            ColumnSeparator()
+
+            // Owner column - matches header width
             Text(file.ownerFormatted)
                 .font(columnFont)
                 .foregroundStyle(secondaryTextColor)
@@ -252,7 +271,9 @@ struct FileRow: View {
                 .frame(width: ownerColumnWidth, alignment: .leading)
                 .padding(.horizontal, 6)
 
-            // Type column
+            ColumnSeparator()
+
+            // Type column - matches header width
             Text(file.fileTypeDisplay)
                 .font(columnFont)
                 .foregroundStyle(secondaryTextColor)
@@ -295,4 +316,3 @@ struct DragPreviewView: View {
         )
     }
 }
-

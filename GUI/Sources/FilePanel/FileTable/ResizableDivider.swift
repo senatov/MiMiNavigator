@@ -14,27 +14,40 @@ struct ResizableDivider: View {
     let min: CGFloat
     let max: CGFloat
     let onEnd: () -> Void
-    
+
     @State private var isHovering = false
-    
-    private var dividerWidth: CGFloat {
-        let scale = NSScreen.main?.backingScaleFactor ?? 2.0
-        return Swift.max(1.0 / scale, 1.0)
+    @State private var isDragging = false
+    @State private var dragStartWidth: CGFloat = 0
+
+    private var currentColor: Color {
+        if isDragging {
+            return ColumnSeparatorStyle.dragColor
+        } else if isHovering {
+            return ColumnSeparatorStyle.hoverColor
+        }
+        return ColumnSeparatorStyle.color
     }
-    
+
+    private var dividerLineWidth: CGFloat {
+        (isHovering || isDragging) ? 2.0 : ColumnSeparatorStyle.width
+    }
+
     var body: some View {
         Rectangle()
-            .fill(Color(red: 0.1, green: 0.15, blue: 0.4))
-            .frame(width: dividerWidth)
+            .fill(currentColor)
+            .frame(width: dividerLineWidth)
             .padding(.vertical, 2)
             .overlay {
+                // Invisible wider hit area for easier grabbing
                 Color.clear
                     .frame(width: 12)
                     .contentShape(Rectangle())
             }
             .gesture(dragGesture)
             .onHover { hovering in
-                isHovering = hovering
+                withAnimation(.easeInOut(duration: 0.1)) {
+                    isHovering = hovering
+                }
                 if hovering {
                     NSCursor.resizeLeftRight.push()
                 } else {
@@ -42,16 +55,23 @@ struct ResizableDivider: View {
                 }
             }
     }
-    
+
     private var dragGesture: some Gesture {
         DragGesture(minimumDistance: 1)
             .onChanged { value in
-                let delta = value.translation.width
-                let newWidth = width - delta
+                if !isDragging {
+                    isDragging = true
+                    dragStartWidth = width
+                }
+                // Negative delta: drag divider RIGHT = column gets WIDER
+                let delta = -value.translation.width
+                let newWidth = dragStartWidth + delta
                 width = Swift.min(Swift.max(newWidth, min), max)
             }
             .onEnded { _ in
+                isDragging = false
                 onEnd()
+                log.debug("[ResizableDivider] drag ended, new width=\(width)")
             }
     }
 }
