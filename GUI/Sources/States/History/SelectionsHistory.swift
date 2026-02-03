@@ -149,6 +149,13 @@ final class SelectionsHistory {
         save()
     }
 
+    // MARK: - Clear all history
+    func clear() {
+        entries.removeAll()
+        currentIndex = nil
+        save()
+    }
+
     // MARK: - Persistence
     private func save() {
         rebuildRecentSelections()
