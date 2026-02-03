@@ -146,19 +146,15 @@ struct ButtonFavTopPanel: View {
 
     // MARK: - Favorites Popover (FavoritesKit)
     private func favoritesPopover() -> some View {
-        GeometryReader { proxy in
-            FavoritesTreeView(
-                items: $favorites,
-                isPresented: $showFavTreePopup,
-                panelSide: panelSide.toFavPanelSide,
-                navigationDelegate: navigationAdapter
-            )
-            .padding(6)
-            .font(.custom("Helvetica Neue", size: 11).weight(.light))
-            .foregroundStyle(FilePanelStyle.fileNameColor)
-        }
-        .frame(minWidth: 320, idealWidth: 420, maxWidth: 560)
-        .frame(minHeight: 400, idealHeight: 700, maxHeight: 900)
+        FavoritesTreeView(
+            items: $favorites,
+            isPresented: $showFavTreePopup,
+            panelSide: panelSide.toFavPanelSide,
+            navigationDelegate: navigationAdapter
+        )
+        .padding(6)
+        .font(.custom("Helvetica Neue", size: 11).weight(.light))
+        .foregroundStyle(FilePanelStyle.fileNameColor)
     }
 
     // MARK: - Load Favorites (using FavoritesKit scanner)
