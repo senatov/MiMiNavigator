@@ -14,16 +14,14 @@ struct HistoryPopoverView: View {
     @Binding var isPresented: Bool
     let panelSide: PanelSide
     
-    @State private var hoveredPath: String?
-    
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             headerSection
             Divider().padding(.horizontal, 8)
             contentSection
         }
-        .frame(width: 380)
-        .frame(minHeight: 200, maxHeight: 600)
+        .frame(width: 360)
+        .frame(minHeight: 180, maxHeight: 550)
         .background(.ultraThinMaterial)
         .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
         .overlay(
@@ -71,7 +69,7 @@ struct HistoryPopoverView: View {
                 .foregroundStyle(.secondary)
         }
         .buttonStyle(.borderless)
-        .help("Clear history")
+        .help("Clear all history")
     }
     
     // MARK: - Content
@@ -107,10 +105,8 @@ struct HistoryPopoverView: View {
         ScrollView {
             LazyVStack(spacing: 2) {
                 ForEach(directoryPaths, id: \.self) { path in
-                    HistoryItemRow(
+                    HistoryRow(
                         path: path,
-                        isHovered: hoveredPath == path,
-                        onHover: { hoveredPath = $0 ? path : nil },
                         onSelect: { navigateToPath(path) },
                         onDelete: { deleteFromHistory(path) }
                     )
@@ -155,14 +151,14 @@ struct HistoryPopoverView: View {
     }
 }
 
-// MARK: - History Item Row
+// MARK: - History Row (private)
 
-struct HistoryItemRow: View {
+private struct HistoryRow: View {
     let path: String
-    var isHovered: Bool = false
-    var onHover: ((Bool) -> Void)?
     let onSelect: () -> Void
     let onDelete: () -> Void
+    
+    @State private var isHovered = false
     
     private var displayName: String {
         URL(fileURLWithPath: path).lastPathComponent
@@ -170,29 +166,38 @@ struct HistoryItemRow: View {
     
     private var parentPath: String {
         let parent = URL(fileURLWithPath: path).deletingLastPathComponent().path
-        return parent == "/" ? "/" : parent
+        let home = FileManager.default.homeDirectoryForCurrentUser.path
+        return parent.hasPrefix(home) ? "~" + parent.dropFirst(home.count) : parent
     }
     
     private var iconName: String {
-        let pathLower = path.lowercased()
-        
-        if pathLower.hasPrefix("/volumes/") { return "externaldrive.fill" }
-        if pathLower.contains("/applications") { return "square.grid.3x3.fill" }
-        if pathLower.contains("/desktop") { return "desktopcomputer" }
-        if pathLower.contains("/documents") { return "doc.text.fill" }
-        if pathLower.contains("/downloads") { return "arrow.down.circle.fill" }
-        if pathLower.contains("/movies") { return "film.fill" }
-        if pathLower.contains("/music") { return "music.note" }
-        if pathLower.contains("/pictures") { return "photo.fill" }
-        
+        let p = path.lowercased()
+        if p.hasPrefix("/volumes/") { return "externaldrive.fill" }
+        if p.contains("/applications") { return "square.grid.3x3.fill" }
+        if p.contains("/library") { return "building.columns.fill" }
+        if p.contains("/desktop") { return "desktopcomputer" }
+        if p.contains("/documents") { return "doc.text.fill" }
+        if p.contains("/downloads") { return "arrow.down.circle.fill" }
+        if p.contains("/movies") { return "film.fill" }
+        if p.contains("/music") { return "music.note" }
+        if p.contains("/pictures") { return "photo.fill" }
         return "folder.fill"
+    }
+    
+    private var iconColor: Color {
+        let p = path.lowercased()
+        if p.hasPrefix("/volumes/") { return .purple }
+        if p.contains("/applications") { return .green }
+        if p.contains("/library") || p.contains("/system") { return .red }
+        if p.contains("/users") { return .orange }
+        return .blue.opacity(0.8)
     }
     
     var body: some View {
         HStack(spacing: 8) {
             Image(systemName: iconName)
                 .font(.system(size: 14))
-                .foregroundStyle(.blue.opacity(0.8))
+                .foregroundStyle(iconColor)
                 .frame(width: 20)
             
             VStack(alignment: .leading, spacing: 1) {
@@ -208,28 +213,25 @@ struct HistoryItemRow: View {
                     .truncationMode(.head)
             }
             
-            Spacer()
+            Spacer(minLength: 4)
             
-            if isHovered {
-                Button(action: onDelete) {
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 14))
-                        .foregroundStyle(.secondary)
-                }
-                .buttonStyle(.plain)
-                .transition(.opacity.combined(with: .scale(scale: 0.8)))
+            Button(action: onDelete) {
+                Image(systemName: "xmark.circle.fill")
+                    .font(.system(size: 14))
+                    .foregroundStyle(isHovered ? .red.opacity(0.8) : .secondary.opacity(0.5))
             }
+            .buttonStyle(.plain)
+            .opacity(isHovered ? 1 : 0.6)
         }
-        .padding(.vertical, 6)
+        .padding(.vertical, 5)
         .padding(.horizontal, 10)
         .background(
-            RoundedRectangle(cornerRadius: 6, style: .continuous)
-                .fill(isHovered ? Color.primary.opacity(0.06) : .clear)
+            RoundedRectangle(cornerRadius: 5, style: .continuous)
+                .fill(isHovered ? Color.accentColor.opacity(0.1) : .clear)
         )
         .contentShape(Rectangle())
-        .onHover { onHover?($0) }
+        .onHover { isHovered = $0 }
         .onTapGesture(perform: onSelect)
         .help(path)
-        .animation(.easeInOut(duration: 0.15), value: isHovered)
     }
 }
