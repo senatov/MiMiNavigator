@@ -16,20 +16,27 @@ struct HistoryPopoverView: View {
         VStack(alignment: .leading, spacing: 0) {
             // Header
             HStack {
+                Image(systemName: "clock.arrow.circlepath")
+                    .font(.system(size: 12))
+                    .foregroundStyle(.blue)
+                
                 Text("Navigation History")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(.secondary)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.primary)
                 
                 Spacer()
                 
-                Text("\(directoryPaths.count) items")
-                    .font(.system(size: 10))
-                    .foregroundStyle(.tertiary)
+                Text("\(directoryPaths.count)")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(Capsule().fill(Color.secondary.opacity(0.15)))
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
             
-            Divider()
+            Divider().padding(.horizontal, 8)
             
             // Scrollable list
             if directoryPaths.isEmpty {
@@ -45,13 +52,22 @@ struct HistoryPopoverView: View {
                             )
                         }
                     }
-                    .padding(.vertical, 4)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 6)
                 }
-                .frame(maxHeight: 400)
             }
         }
-        .frame(width: 280)
-        .padding(.vertical, 8)
+        .frame(minWidth: 320, idealWidth: 420, maxWidth: 560)
+        .frame(minHeight: 300, idealHeight: 600, maxHeight: 900)
+        .background(.ultraThinMaterial)
+        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .stroke(Color.primary.opacity(0.08), lineWidth: 0.5)
+        )
+        .onExitCommand {
+            isPresented = false
+        }
     }
     
     // MARK: - Empty state
