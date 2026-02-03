@@ -13,19 +13,17 @@ import UniformTypeIdentifiers
 extension CustomFile: Transferable {
     
     public static var transferRepresentation: some TransferRepresentation {
-        // Primary: File representation using .item for generic files
+        // PRIMARY: Codable representation for internal MiMiNavigator transfers
+        // This is the key fix - CodableRepresentation preserves the original file path
+        // instead of creating temporary copies in sandbox cache
+        CodableRepresentation(contentType: .mimiNavigatorFile)
+        
+        // SECONDARY: File representation for dragging TO external apps
+        // Note: This is export-only, we don't use FileRepresentation for import
+        // because it creates temp copies which breaks move operations
         FileRepresentation(exportedContentType: .item) { @concurrent file in
-            // Return the file URL for dragging
             SentTransferredFile(file.urlValue)
         }
-        
-        // Import representation for dropping files
-        FileRepresentation(importedContentType: .item) { @concurrent received in
-            CustomFile(path: received.file.path)
-        }
-        
-        // Fallback: Codable representation for internal transfers
-        CodableRepresentation(contentType: .mimiNavigatorFile)
     }
 }
 
