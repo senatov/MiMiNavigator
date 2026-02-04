@@ -92,7 +92,7 @@ final class ContextMenuCoordinator {
     
     /// Show file conflict resolution dialog
     func showConflictDialog(conflict: FileConflictInfo) async -> ConflictResolution {
-        log.debug("\(#function) source='\(conflict.source.lastPathComponent)' target='\(conflict.target.lastPathComponent)'")
+        log.debug("\(#function) source='\(conflict.sourceName)' target='\(conflict.targetName)'")
         return await withCheckedContinuation { continuation in
             activeDialog = .fileConflict(conflict: conflict, continuation: continuation)
         }
