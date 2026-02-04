@@ -2,9 +2,14 @@
 // MiMiNavigator
 //
 // Created by Iakov Senatov on 11.08.2024.
-// Refactored: 27.01.2026
+// Refactored: 04.02.2026
 // Copyright © 2024-2026 Senatov. All rights reserved.
 // Description: Main file table view with sortable, resizable columns
+//
+// Architecture:
+//   - FileTableView+Subviews.swift   → View components (scroll, border, shortcuts)
+//   - FileTableView+Actions.swift    → Action handlers
+//   - FileTableView+State.swift      → State management (columns, sorting)
 
 import SwiftUI
 import UniformTypeIdentifiers
@@ -22,25 +27,25 @@ struct FileTableView: View {
     let onDoubleClick: (CustomFile) -> Void
     
     // MARK: - Local State
-    @State private var sortKey: SortKeysEnum = .name
-    @State private var sortAscending: Bool = true
-    @State private var cachedSortedFiles: [CustomFile] = []
-    @State private var scrollProxy: ScrollViewProxy?
-    @State private var isPanelDropTargeted: Bool = false
+    @State var sortKey: SortKeysEnum = .name
+    @State var sortAscending: Bool = true
+    @State var cachedSortedFiles: [CustomFile] = []
+    @State var scrollProxy: ScrollViewProxy?
+    @State var isPanelDropTargeted: Bool = false
     
     // MARK: - Column Widths
-    @State private var sizeColumnWidth: CGFloat = TableColumnDefaults.size
-    @State private var dateColumnWidth: CGFloat = TableColumnDefaults.date
-    @State private var typeColumnWidth: CGFloat = TableColumnDefaults.type
-    @State private var permissionsColumnWidth: CGFloat = TableColumnDefaults.permissions
-    @State private var ownerColumnWidth: CGFloat = TableColumnDefaults.owner
+    @State var sizeColumnWidth: CGFloat = TableColumnDefaults.size
+    @State var dateColumnWidth: CGFloat = TableColumnDefaults.date
+    @State var typeColumnWidth: CGFloat = TableColumnDefaults.type
+    @State var permissionsColumnWidth: CGFloat = TableColumnDefaults.permissions
+    @State var ownerColumnWidth: CGFloat = TableColumnDefaults.owner
     
     // MARK: - Computed Properties
-    private var isFocused: Bool { appState.focusedPanel == panelSide }
-    private var columnStorage: ColumnWidthStorage { ColumnWidthStorage(panelSide: panelSide) }
-    private var sorter: TableFileSorter { TableFileSorter(sortKey: sortKey, ascending: sortAscending) }
+    var isFocused: Bool { appState.focusedPanel == panelSide }
+    var columnStorage: ColumnWidthStorage { ColumnWidthStorage(panelSide: panelSide) }
+    var sorter: TableFileSorter { TableFileSorter(sortKey: sortKey, ascending: sortAscending) }
     
-    private var keyboardNav: TableKeyboardNavigation {
+    var keyboardNav: TableKeyboardNavigation {
         TableKeyboardNavigation(
             files: cachedSortedFiles,
             selectedID: $selectedID,
@@ -49,11 +54,11 @@ struct FileTableView: View {
         )
     }
     
-    private var dropHandler: TableDropHandler {
+    var dropHandler: TableDropHandler {
         TableDropHandler(panelSide: panelSide, appState: appState, dragDropManager: dragDropManager)
     }
     
-    private var sortedRows: [(offset: Int, element: CustomFile)] {
+    var sortedRows: [(offset: Int, element: CustomFile)] {
         Array(cachedSortedFiles.enumerated())
     }
     
@@ -62,6 +67,7 @@ struct FileTableView: View {
         ScrollViewReader { proxy in
             mainScrollView
                 .onAppear {
+                    log.debug("\(#function) FileTableView onAppear panel=\(panelSide) files.count=\(files.count)")
                     scrollProxy = proxy
                     loadColumnWidths()
                     recomputeSortedCache()
@@ -102,116 +108,5 @@ struct FileTableView: View {
             }
             dropHandler.updateDropTarget(targeted: targeted)
         }
-    }
-}
-
-// MARK: - Subviews
-private extension FileTableView {
-    
-    var mainScrollView: some View {
-        VStack(spacing: 0) {
-            // Sticky header - outside ScrollView
-            TableHeaderView(
-                panelSide: panelSide,
-                sortKey: $sortKey,
-                sortAscending: $sortAscending,
-                sizeColumnWidth: $sizeColumnWidth,
-                dateColumnWidth: $dateColumnWidth,
-                typeColumnWidth: $typeColumnWidth,
-                permissionsColumnWidth: $permissionsColumnWidth,
-                ownerColumnWidth: $ownerColumnWidth,
-                onSave: saveColumnWidths
-            )
-            
-            // Scrollable content
-            ScrollView {
-                LazyVStack(alignment: .leading, spacing: 0) {
-                    StableBy(cachedSortedFiles.count) {
-                        FileTableRowsView(
-                            rows: sortedRows,
-                            selectedID: $selectedID,
-                            panelSide: panelSide,
-                            sizeColumnWidth: sizeColumnWidth,
-                            dateColumnWidth: dateColumnWidth,
-                            typeColumnWidth: typeColumnWidth,
-                            permissionsColumnWidth: permissionsColumnWidth,
-                            ownerColumnWidth: ownerColumnWidth,
-                            onSelect: onSelect,
-                            onDoubleClick: onDoubleClick,
-                            handleFileAction: handleFileAction,
-                            handleDirectoryAction: handleDirectoryAction
-                        )
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-                }
-            }
-            .safeAreaInset(edge: .bottom, spacing: 0) {
-                Color.clear.frame(height: 40)
-            }
-            .background(keyboardShortcutsLayer)
-        }
-    }
-    
-    var panelBorder: some View {
-        RoundedRectangle(cornerRadius: 8, style: .continuous)
-            .stroke(
-                isPanelDropTargeted
-                    ? Color.accentColor.opacity(0.8)
-                    : (isFocused ? Color.accentColor.opacity(0.3) : Color.clear),
-                lineWidth: isPanelDropTargeted ? 2 : 1
-            )
-            .allowsHitTesting(false)
-    }
-    
-    var keyboardShortcutsLayer: some View {
-        TableKeyboardShortcutsView(
-            isFocused: isFocused,
-            onPageUp: keyboardNav.jumpToFirst,
-            onPageDown: keyboardNav.jumpToLast,
-            onHome: keyboardNav.jumpToFirst,
-            onEnd: keyboardNav.jumpToLast
-        )
-    }
-}
-
-// MARK: - Actions
-private extension FileTableView {
-    
-    func handleFileAction(_ action: FileAction, for file: CustomFile) {
-        log.debug("[FileTableView] FileAction: \(action) → \(file.nameStr)")
-        ContextMenuCoordinator.shared.handleFileAction(action, for: file, panel: panelSide, appState: appState)
-    }
-    
-    func handleDirectoryAction(_ action: DirectoryAction, for file: CustomFile) {
-        log.debug("[FileTableView] DirectoryAction: \(action) → \(file.nameStr)")
-        ContextMenuCoordinator.shared.handleDirectoryAction(action, for: file, panel: panelSide, appState: appState)
-    }
-}
-
-// MARK: - State Management
-private extension FileTableView {
-    
-    func loadColumnWidths() {
-        let widths = columnStorage.load()
-        sizeColumnWidth = widths.size
-        dateColumnWidth = widths.date
-        typeColumnWidth = widths.type
-        permissionsColumnWidth = widths.permissions
-        ownerColumnWidth = widths.owner
-    }
-    
-    func saveColumnWidths() {
-        columnStorage.save(
-            size: sizeColumnWidth,
-            date: dateColumnWidth,
-            type: typeColumnWidth,
-            permissions: permissionsColumnWidth,
-            owner: ownerColumnWidth
-        )
-    }
-    
-    func recomputeSortedCache() {
-        cachedSortedFiles = files.sorted(by: sorter.compare)
-        log.debug("[FileTableView] sorted \(cachedSortedFiles.count) files by \(sortKey) asc=\(sortAscending)")
     }
 }
