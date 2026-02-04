@@ -1,70 +1,71 @@
-// FileContextMenu.swift
+// PanelBackgroundContextMenu.swift
 // MiMiNavigator
 //
-// Created by Iakov Senatov on 08.10.2025.
-// Refactored: 04.02.2026
-// Copyright © 2025-2026 Senatov. All rights reserved.
-// Description: Context menu for files - Finder-style layout with all standard actions
+// Created by Claude AI on 04.02.2026.
+// Copyright © 2026 Senatov. All rights reserved.
+// Description: Context menu for empty panel area (Finder-style)
 
 import SwiftUI
 
-/// Context menu for file items (non-directory).
-/// Matches Finder's context menu structure and functionality.
-struct FileContextMenu: View {
-    let file: CustomFile
+/// Context menu shown when right-clicking on empty area of file panel
+struct PanelBackgroundContextMenu: View {
     let panelSide: PanelSide
-    let onAction: (FileAction) -> Void
+    let currentPath: URL
+    let onAction: (PanelBackgroundAction) -> Void
     
-    @Environment(\.dismiss) private var dismiss
-    
-    init(file: CustomFile, panelSide: PanelSide, onAction: @escaping (FileAction) -> Void) {
-        self.file = file
+    init(panelSide: PanelSide, currentPath: URL, onAction: @escaping (PanelBackgroundAction) -> Void) {
         self.panelSide = panelSide
+        self.currentPath = currentPath
         self.onAction = onAction
-        log.debug("\(#function) → file='\(file.nameStr)' ext=\(file.fileExtension) panel=\(panelSide)")
+        log.debug("\(#function) → panel=\(panelSide) path='\(currentPath.path)'")
     }
     
     var body: some View {
         Group {
             // ═══════════════════════════════════════════
-            // SECTION 1: Open actions
+            // SECTION 1: Navigation
             // ═══════════════════════════════════════════
-            menuButton(.open)
-            OpenWithSubmenu(file: file)
-            menuButton(.viewLister)
+            menuButton(.goUp)
+            menuButton(.goBack)
+            menuButton(.goForward)
+            menuButton(.refresh)
             
             Divider()
             
             // ═══════════════════════════════════════════
-            // SECTION 2: Edit actions (clipboard)
+            // SECTION 2: Create
             // ═══════════════════════════════════════════
-            menuButton(.cut)
-            menuButton(.copy)
+            menuButton(.newFolder)
+            menuButton(.newFile)
+            
+            Divider()
+            
+            // ═══════════════════════════════════════════
+            // SECTION 3: Clipboard
+            // ═══════════════════════════════════════════
             menuButton(.paste)
-            menuButton(.duplicate)
             
             Divider()
             
             // ═══════════════════════════════════════════
-            // SECTION 3: Operations
+            // SECTION 4: Sort submenu
             // ═══════════════════════════════════════════
-            menuButton(.compress)
-            menuButton(.share)
+            Menu {
+                menuButton(.sortByName)
+                menuButton(.sortByDate)
+                menuButton(.sortBySize)
+                menuButton(.sortByType)
+            } label: {
+                Label("Sort By", systemImage: "arrow.up.arrow.down")
+            }
             
             Divider()
             
             // ═══════════════════════════════════════════
-            // SECTION 4: Navigation
+            // SECTION 5: Open in external apps
             // ═══════════════════════════════════════════
-            menuButton(.revealInFinder)
-            
-            Divider()
-            
-            // ═══════════════════════════════════════════
-            // SECTION 5: Rename & Delete (danger zone)
-            // ═══════════════════════════════════════════
-            menuButton(.rename)
-            menuButton(.delete)
+            menuButton(.openInFinder)
+            menuButton(.openInTerminal)
             
             Divider()
             
@@ -78,9 +79,9 @@ struct FileContextMenu: View {
     // MARK: - Menu Button Builder
     
     @ViewBuilder
-    private func menuButton(_ action: FileAction) -> some View {
+    private func menuButton(_ action: PanelBackgroundAction) -> some View {
         Button {
-            log.debug("\(#function) action=\(action.rawValue) file='\(file.nameStr)'")
+            log.debug("\(#function) action=\(action.rawValue) panel=\(panelSide) path='\(currentPath.lastPathComponent)'")
             onAction(action)
         } label: {
             Label {
@@ -102,10 +103,16 @@ struct FileContextMenu: View {
     
     // MARK: - Action State
     
-    private func isActionDisabled(_ action: FileAction) -> Bool {
+    private func isActionDisabled(_ action: PanelBackgroundAction) -> Bool {
         switch action {
         case .paste:
             return !ClipboardManager.shared.hasContent
+        case .goUp:
+            // Disable if already at root
+            return currentPath.path == "/"
+        case .goBack, .goForward:
+            // TODO: Implement history tracking
+            return true
         default:
             return false
         }
@@ -115,13 +122,13 @@ struct FileContextMenu: View {
 // MARK: - Preview
 #Preview {
     VStack {
-        Text("Right-click for file menu")
+        Text("Right-click for panel menu")
     }
     .frame(width: 300, height: 200)
     .contextMenu {
-        FileContextMenu(
-            file: CustomFile(path: "/test/document.txt"),
+        PanelBackgroundContextMenu(
             panelSide: .left,
+            currentPath: URL(fileURLWithPath: "/Users"),
             onAction: { action in
                 print("Action: \(action)")
             }

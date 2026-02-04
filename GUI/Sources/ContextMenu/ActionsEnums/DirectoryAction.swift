@@ -1,29 +1,42 @@
-//
 // DirectoryAction.swift
-//  MiMiNavigator
+// MiMiNavigator
 //
-//  Created by Iakov Senatov on 08.10.2025.
-//  Copyright © 2025 Senatov. All rights reserved.
-//
+// Created by Iakov Senatov on 08.10.2025.
+// Refactored: 04.02.2026
+// Copyright © 2025-2026 Senatov. All rights reserved.
+// Description: Context actions for directories - aligned with Finder standards
 
 import Foundation
 
 /// Represents all possible context actions available for a directory.
 enum DirectoryAction: String, CaseIterable, Identifiable {
+    // Navigation section
     case open
     case openInNewTab
     case openInFinder
     case openInTerminal
     case viewLister
+    
+    // Edit section
     case cut
     case copy
     case paste
+    case duplicate
+    
+    // Operations section
+    case compress
     case pack
     case createLink
-    case delete
+    case share
+    
+    // Danger zone
     case rename
+    case delete
+    
+    // Info section
+    case getInfo
     case properties
-
+    
     var id: String { rawValue }
 
     /// Human-readable title for each action.
@@ -33,14 +46,18 @@ enum DirectoryAction: String, CaseIterable, Identifiable {
         case .openInNewTab: return "Open in New Tab"
         case .openInFinder: return "Show in Finder"
         case .openInTerminal: return "Open in Terminal"
-        case .viewLister: return "View Contents"
+        case .viewLister: return "Quick Look"
         case .cut: return "Cut"
         case .copy: return "Copy"
         case .paste: return "Paste"
+        case .duplicate: return "Duplicate"
+        case .compress: return "Compress"
         case .pack: return "Pack..."
-        case .createLink: return "Create Link..."
-        case .delete: return "Move to Trash"
+        case .createLink: return "Make Alias"
+        case .share: return "Share..."
         case .rename: return "Rename..."
+        case .delete: return "Move to Trash"
+        case .getInfo: return "Get Info"
         case .properties: return "Properties..."
         }
     }
@@ -52,15 +69,19 @@ enum DirectoryAction: String, CaseIterable, Identifiable {
         case .openInNewTab: return "plus.square.on.square"
         case .openInFinder: return "folder.badge.gearshape"
         case .openInTerminal: return "terminal"
-        case .viewLister: return "list.bullet.rectangle"
+        case .viewLister: return "eye"
         case .cut: return "scissors"
         case .copy: return "doc.on.doc"
         case .paste: return "doc.on.clipboard"
-        case .pack: return "archivebox"
+        case .duplicate: return "plus.square.on.square"
+        case .compress: return "archivebox"
+        case .pack: return "doc.zipper"
         case .createLink: return "link"
-        case .delete: return "trash"
+        case .share: return "square.and.arrow.up"
         case .rename: return "pencil"
-        case .properties: return "info.circle"
+        case .delete: return "trash"
+        case .getInfo: return "info.circle"
+        case .properties: return "list.bullet.rectangle"
         }
     }
     
@@ -71,9 +92,10 @@ enum DirectoryAction: String, CaseIterable, Identifiable {
         case .cut: return "⌘X"
         case .copy: return "⌘C"
         case .paste: return "⌘V"
+        case .duplicate: return "⌘D"
         case .delete: return "⌘⌫"
-        case .rename: return "F2"
-        case .properties: return "⌘I"
+        case .rename: return "↵"
+        case .getInfo: return "⌘I"
         default: return nil
         }
     }
