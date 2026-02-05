@@ -1,700 +1,749 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "" : {
+
+    },
+    ".%@ — %@" : {
       "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-          }
-        },
         "en" : {
           "stringUnit" : {
-            "state" : "translated",
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
+            "state" : "new",
+            "value" : ".%1$@ — %2$@"
           }
         }
       }
     },
+    "(Default)" : {
+
+    },
+    "[ File Name ] Conflict" : {
+
+    },
+    "/" : {
+
+    },
+    "%@ — %@" : {
       "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-          }
-        },
         "en" : {
           "stringUnit" : {
-            "state" : "translated",
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
+            "state" : "new",
+            "value" : "%1$@ — %2$@"
           }
         }
       }
     },
+    "%lld" : {
+
+    },
+    "%lld items" : {
+      "comment" : "Items count",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
+            "value" : "%lld Elemente"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
+            "value" : "%lld элементов"
           }
         }
       }
     },
+    "⚠️ Will be moved to Trash" : {
+      "comment" : "Delete warning message",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
+            "value" : "⚠️ Wird in den Papierkorb verschoben"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
+            "value" : "⚠️ Будет перемещено в Корзину"
           }
         }
       }
     },
+    "🐈" : {
+
+    },
+    "A folder with this name already exists:\n%@" : {
+      "comment" : "Folder already exists error",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
+            "value" : "Ein Ordner mit diesem Namen existiert bereits:\n%@"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
+            "value" : "Папка с таким именем уже существует:\n%@"
           }
         }
       }
     },
+    "Already Exists" : {
+      "comment" : "Already exists error title",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
+            "value" : "Existiert bereits"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
+            "value" : "Уже существует"
           }
         }
       }
     },
+    "App Store..." : {
+
+    },
+    "Apply changes (⏎)" : {
+      "comment" : "Apply changes tooltip",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
+            "value" : "Änderungen übernehmen (⏎)"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
+            "value" : "Применить изменения (⏎)"
           }
         }
       }
     },
+    "Archive" : {
+      "comment" : "Default archive name",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
+            "value" : "Archiv"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
+            "value" : "Архив"
           }
         }
       }
     },
+    "Archive name:" : {
+      "comment" : "Archive name label",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
+            "value" : "Archivname:"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
+            "value" : "Имя архива:"
           }
         }
       }
     },
+    "Back button" : {
+
+    },
+    "Cancel" : {
+      "comment" : "Cancel button",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
+            "value" : "Abbrechen"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
+            "value" : "Отмена"
           }
         }
       }
     },
+    "Cancel (⎋)" : {
+      "comment" : "Cancel tooltip",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
+            "value" : "Abbrechen (⎋)"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
+            "value" : "Отмена (⎋)"
           }
         }
       }
     },
+    "Clear all history" : {
+
+    },
+    "Click: go back | Ctrl+click: show history" : {
+
+    },
+    "Click: go forward | Ctrl+click: show history" : {
+
+    },
+    "Console" : {
+      "comment" : "Console toolbar button",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
+            "value" : "Konsole"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
+            "value" : "Консоль"
           }
         }
       }
     },
+    "Copy" : {
+      "comment" : "Copy button",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
+            "value" : "Kopieren"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
+            "value" : "Копировать"
           }
         }
       }
     },
+    "Copy File?" : {
+      "comment" : "Copy confirmation dialog title",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
+            "value" : "Datei kopieren?"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
+            "value" : "Копировать файл?"
           }
         }
       }
     },
+    "Copy path" : {
+
+    },
+    "Copy Path" : {
+
+    },
+    "Create" : {
+      "comment" : "Create button",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
+            "value" : "Erstellen"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
+            "value" : "Создать"
           }
         }
       }
     },
+    "Create archive from %@" : {
+      "comment" : "Pack dialog title",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
+            "value" : "Archiv erstellen aus %@"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
+            "value" : "Создать архив из %@"
           }
         }
       }
     },
+    "Create link to \"%@\"" : {
+      "comment" : "Create link dialog title",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
+            "value" : "Link erstellen zu \"%@\""
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
+            "value" : "Создать ссылку на \"%@\""
           }
         }
       }
     },
+    "Create New Folder" : {
+      "comment" : "Create folder dialog title",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
+            "value" : "Neuen Ordner erstellen"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
+            "value" : "Создать новую папку"
           }
         }
       }
     },
+    "Current development build version" : {
+
+    },
+    "Delete" : {
+      "comment" : "Delete button",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
+            "value" : "Löschen"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
+            "value" : "Удалить"
           }
         }
       }
     },
+    "Delete?" : {
+      "comment" : "Delete confirmation dialog title",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
+            "value" : "Löschen?"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
+            "value" : "Удалить?"
           }
         }
       }
     },
+    "DEV BUILD" : {
+
+    },
+    "Do you want to move %@ to Trash?" : {
+
+    },
+    "Do you want to move or copy %@ to \"%@\"?" : {
       "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-          }
-        },
         "en" : {
           "stringUnit" : {
-            "state" : "translated",
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
+            "state" : "new",
+            "value" : "Do you want to move or copy %1$@ to \"%2$@\"?"
           }
         }
       }
     },
+    "Do you want to replace it?" : {
+      "comment" : "Replace question",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
+            "value" : "Möchten Sie sie ersetzen?"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
+            "value" : "Хотите заменить его?"
           }
         }
       }
     },
+    "Enter folder name:" : {
+      "comment" : "Enter folder name label",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
+            "value" : "Ordnernamen eingeben:"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
+            "value" : "Введите имя папки:"
           }
         }
       }
     },
+    "Enter path" : {
+      "comment" : "Path input placeholder",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
+            "value" : "Pfad eingeben"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
+            "value" : "Введите путь"
           }
         }
       }
     },
+    "Error" : {
+      "comment" : "Error title",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
+            "value" : "Fehler"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
+            "value" : "Ошибка"
           }
         }
       }
     },
+    "Exit" : {
+      "comment" : "Exit toolbar button",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
+            "value" : "Beenden"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
+            "value" : "Выход"
           }
         }
       }
     },
+    "F3 View" : {
+      "comment" : "View toolbar button",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
+            "value" : "F3 Ansicht"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
+            "value" : "F3 Просмотр"
           }
         }
       }
     },
+    "F4 Edit" : {
+      "comment" : "Edit toolbar button",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
+            "value" : "F4 Bearbeiten"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
+            "value" : "F4 Редактор"
           }
         }
       }
     },
+    "F5 Copy" : {
+      "comment" : "Copy toolbar button",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
+            "value" : "F5 Kopieren"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
+            "value" : "F5 Копия"
           }
         }
       }
     },
+    "F6 Move" : {
+      "comment" : "Move toolbar button",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
+            "value" : "F6 Verschieben"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
+            "value" : "F6 Перенос"
           }
         }
       }
     },
+    "F7 NewFolder" : {
+      "comment" : "New folder toolbar button",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
+            "value" : "F7 Neuer Ordner"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
+            "value" : "F7 Папка"
           }
         }
       }
     },
+    "F8 Delete" : {
+      "comment" : "Delete toolbar button",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
+            "value" : "F8 Löschen"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
+            "value" : "F8 Удалить"
           }
         }
       }
     },
+    "Failed to create folder." : {
+      "comment" : "Failed to create folder error",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
+            "value" : "Ordner konnte nicht erstellt werden."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
+            "value" : "Не удалось создать папку."
           }
         }
       }
     },
+    "Failed to remove existing file" : {
+      "comment" : "Failed to remove file error",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
+            "value" : "Vorhandene Datei konnte nicht entfernt werden"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
+            "value" : "Не удалось удалить существующий файл"
           }
         }
       }
     },
+    "File Already Exists" : {
+      "comment" : "File exists dialog title",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
+            "value" : "Datei existiert bereits"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
+            "value" : "Файл уже существует"
           }
         }
       }
     },
+    "Finder Alias" : {
+      "comment" : "Finder alias type",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
+            "value" : "Finder Alias"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
+            "value" : "Псевдоним Finder"
           }
         }
       }
     },
+    "Finder alias, macOS apps only" : {
+      "comment" : "Alias description",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
+            "value" : "Finder-Alias, nur macOS-Apps"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
+            "value" : "Псевдоним Finder, только macOS"
           }
         }
       }
     },
+    "Folder name" : {
+      "comment" : "Folder name placeholder",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
+            "value" : "Ordnername"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
+            "value" : "Имя папки"
           }
         }
       }
+    },
+    "Folder name cannot be empty." : {
+      "comment" : "Folder name empty error",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ordnername darf nicht leer sein."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Имя папки не может быть пустым."
+          }
+        }
+      }
+    },
+    "Folder name cannot contain : / or \\ characters." : {
+      "comment" : "Invalid characters extended error",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ordnername darf keine : / oder \\ Zeichen enthalten."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Имя папки не может содержать символы : / или \\"
+          }
+        }
+      }
+    },
+    "Format:" : {
+      "comment" : "Format label",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Format:"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Формат:"
+          }
+        }
+      }
+    },
+    "Forward button" : {
+
+    },
+    "From:" : {
+
+    },
+    "Get Info" : {
+
+    },
+    "Go to parent directory" : {
+
+    },
+    "Hide hidden files (⌘.)" : {
+
     },
     "In: %@" : {
       "comment" : "Destination location",
       "localizations" : {
         "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "In: %@"
-          }
-        },
-        "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "In: %@"
@@ -708,419 +757,477 @@
         }
       }
     },
+    "Invalid name" : {
+      "comment" : "Generic invalid name error",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
+            "value" : "Ungültiger Name"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
+            "value" : "Недопустимое имя"
           }
         }
       }
     },
+    "Invalid Name" : {
+      "comment" : "Invalid name error title",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
+            "value" : "Ungültiger Name"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
+            "value" : "Недопустимое имя"
           }
         }
       }
     },
+    "Link name:" : {
+      "comment" : "Link name label",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
+            "value" : "Linkname:"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
+            "value" : "Имя ссылки:"
           }
         }
       }
     },
+    "Location:" : {
+      "comment" : "Location label",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
+            "value" : "Speicherort:"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
+            "value" : "Расположение:"
           }
         }
       }
     },
+    "More options..." : {
+
+    },
+    "Move" : {
+      "comment" : "Move button",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
+            "value" : "Verschieben"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
+            "value" : "Переместить"
           }
         }
       }
     },
+    "Move Down" : {
+
+    },
+    "Move File?" : {
+      "comment" : "Move confirmation dialog title",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
+            "value" : "Datei verschieben?"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
+            "value" : "Переместить файл?"
           }
         }
       }
     },
+    "Move or Copy Items?" : {
+
+    },
+    "Move Up" : {
+
+    },
+    "Name" : {
+      "comment" : "Name field placeholder\nName label",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
+            "value" : "Name"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
+            "value" : "Имя"
           }
         }
       }
     },
+    "Name cannot be empty" : {
+      "comment" : "Empty name error",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
+            "value" : "Name darf nicht leer sein"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
+            "value" : "Имя не может быть пустым"
           }
         }
       }
     },
+    "Name cannot contain / or :" : {
+      "comment" : "Invalid characters error",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
+            "value" : "Name darf kein / oder : enthalten"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
+            "value" : "Имя не может содержать / или :"
           }
         }
       }
     },
+    "Navigation between favorites - %@" : {
+
+    },
+    "Navigation History" : {
+
+    },
+    "New Folder" : {
+      "comment" : "Default new folder name",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
+            "value" : "Neuer Ordner"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
+            "value" : "Новая папка"
           }
         }
       }
     },
+    "No applications found" : {
+
+    },
+    "No navigation history" : {
+
+    },
+    "OK" : {
+      "comment" : "OK button",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
+            "value" : "OK"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
+            "value" : "OK"
           }
         }
       }
     },
+    "Open file / Get Info for directory (⌘O)" : {
+
+    },
+    "Open in Finder" : {
+
+    },
+    "Open menu: '%@'" : {
+
+    },
+    "Open menu: %@" : {
+
+    },
+    "Open with" : {
+
+    },
+    "Open With" : {
+
+    },
+    "Other..." : {
+
+    },
+    "Panels / Navigation" : {
+
+    },
+    "Path" : {
+      "comment" : "Path label",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
+            "value" : "Pfad"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
+            "value" : "Путь"
           }
         }
       }
     },
+    "Refresh" : {
+
+    },
+    "Refresh file lists (⌘R)" : {
+
+    },
+    "Rename" : {
+      "comment" : "Rename button",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
+            "value" : "Umbenennen"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
+            "value" : "Переименовать"
           }
         }
       }
     },
+    "Rename file" : {
+      "comment" : "Rename file dialog title",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
+            "value" : "Datei umbenennen"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
+            "value" : "Переименовать файл"
           }
         }
       }
     },
+    "Rename folder" : {
+      "comment" : "Rename folder dialog title",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
+            "value" : "Ordner umbenennen"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
+            "value" : "Переименовать папку"
           }
         }
       }
     },
+    "Replace" : {
+      "comment" : "Replace button",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
+            "value" : "Ersetzen"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
+            "value" : "Заменить"
           }
         }
       }
     },
+    "Save to:" : {
+      "comment" : "Save to label",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
+            "value" : "Speichern unter:"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
+            "value" : "Сохранить в:"
           }
         }
       }
     },
+    "Select" : {
+      "comment" : "Select button",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
+            "value" : "Auswählen"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
+            "value" : "Выбрать"
           }
         }
       }
     },
+    "Settings" : {
+      "comment" : "Settings toolbar button",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
+            "value" : "Einstellungen"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
+            "value" : "Настройки"
           }
         }
       }
     },
+    "Show hidden files (⌘.)" : {
+
+    },
+    "Show navigation history" : {
+
+    },
+    "Sort By" : {
+
+    },
+    "Symbolic Link" : {
+      "comment" : "Symbolic link type",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
+            "value" : "Symbolischer Link"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
+            "value" : "Символическая ссылка"
           }
         }
       }
     },
+    "Target file already exists:" : {
+      "comment" : "Target exists message",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
+            "value" : "Zieldatei existiert bereits:"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
+            "value" : "Целевой файл уже существует:"
           }
         }
       }
     },
+    "To:" : {
+
+    },
+    "Toggle hidden files" : {
+
+    },
+    "Toggle Panel Focus (⌘⌥T)" : {
+
+    },
+    "Top menu bar" : {
+
+    },
+    "Type:" : {
+      "comment" : "Type label",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
+            "value" : "Typ:"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
+            "value" : "Тип:"
           }
         }
       }
     },
+    "Unix symlink, works in Terminal" : {
+      "comment" : "Symbolic link description",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
+            "value" : "Unix-Symlink, funktioniert im Terminal"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
+            "value" : "Unix-ссылка, работает в Терминале"
           }
         }
       }
+    },
+    "Up button" : {
+
+    },
+    "Visited directories will appear here" : {
+
     }
   },
   "version" : "1.0"
