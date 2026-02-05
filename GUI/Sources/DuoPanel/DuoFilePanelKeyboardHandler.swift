@@ -48,14 +48,72 @@ final class DuoFilePanelKeyboardHandler {
     // MARK: - Key Event Handling
     
     private func handleKeyEvent(_ event: NSEvent) -> NSEvent? {
+        guard let appState = appState else { return event }
+        
         let keyCode = event.keyCode
         let modifiers = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
         
         log.debug("[KEY] keyCode=\(keyCode) (0x\(String(keyCode, radix: 16))) modifiers=\(modifiers.rawValue)")
         
+        // MARK: - Multi-Selection Keys (Total Commander style)
+        
+        // Insert/Help key (or Space) - toggle mark and move next
+        if keyCode == KeyCodes.insert || keyCode == KeyCodes.help {
+            log.info("[KEY] Insert pressed → Toggle mark")
+            appState.toggleMarkAndMoveNext()
+            return nil
+        }
+        
+        // Space - toggle mark (alternative to Insert)
+        if keyCode == KeyCodes.space && modifiers.isEmpty {
+            log.info("[KEY] Space pressed → Toggle mark")
+            appState.toggleMarkAndMoveNext()
+            return nil
+        }
+        
+        // Numpad + (mark by pattern)
+        if keyCode == KeyCodes.numpadPlus && modifiers.isEmpty {
+            log.info("[KEY] Num+ pressed → Mark by pattern")
+            appState.markByPattern()
+            return nil
+        }
+        
+        // Numpad - (unmark by pattern)
+        if keyCode == KeyCodes.numpadMinus && modifiers.isEmpty {
+            log.info("[KEY] Num- pressed → Unmark by pattern")
+            appState.unmarkByPattern()
+            return nil
+        }
+        
+        // Numpad * (invert marks)
+        if keyCode == KeyCodes.numpadMultiply && modifiers.isEmpty {
+            log.info("[KEY] Num* pressed → Invert marks")
+            appState.invertMarks()
+            return nil
+        }
+        
+        // Cmd+A - mark all
+        if keyCode == KeyCodes.keyA && modifiers == .command {
+            log.info("[KEY] Cmd+A pressed → Mark all")
+            appState.markAll()
+            return nil
+        }
+        
+        // Escape - clear marks if any, otherwise let it pass
+        if keyCode == KeyCodes.escape && modifiers.isEmpty {
+            let markedCount = appState.markedCount(for: appState.focusedPanel)
+            if markedCount > 0 {
+                log.info("[KEY] Escape pressed → Clear marks")
+                appState.unmarkAll()
+                return nil
+            }
+        }
+        
+        // MARK: - Navigation and Panel Control
+        
         // Tab: Toggle focus between panels
         if keyCode == KeyCodes.tab {
-            appState?.toggleFocus()
+            appState.toggleFocus()
             return nil
         }
         
@@ -65,7 +123,8 @@ final class DuoFilePanelKeyboardHandler {
             return nil
         }
         
-        // Function keys - check for Fn modifier or no modifiers
+        // MARK: - Function Keys (F3-F8)
+        
         let hasOnlyFnOrNone = modifiers.subtracting([.function, .numericPad]).isEmpty
         
         if hasOnlyFnOrNone {
@@ -105,11 +164,28 @@ final class DuoFilePanelKeyboardHandler {
 
 // MARK: - Key Codes
 private enum KeyCodes {
+    // Navigation
     static let tab: UInt16 = 0x30
+    static let escape: UInt16 = 0x35
+    static let space: UInt16 = 0x31
+    
+    // Letters
+    static let keyA: UInt16 = 0x00
+    
+    // Function keys
     static let f3: UInt16 = 0x63
     static let f4: UInt16 = 0x76
     static let f5: UInt16 = 0x60
     static let f6: UInt16 = 0x61
     static let f7: UInt16 = 0x62
     static let f8: UInt16 = 0x64
+    
+    // Insert/Help (Total Commander style marking)
+    static let insert: UInt16 = 0x72  // Insert key (on extended keyboards)
+    static let help: UInt16 = 0x72    // Help key (same as Insert on Mac)
+    
+    // Numpad keys
+    static let numpadPlus: UInt16 = 0x45     // Numpad +
+    static let numpadMinus: UInt16 = 0x4E    // Numpad -
+    static let numpadMultiply: UInt16 = 0x43 // Numpad *
 }

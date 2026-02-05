@@ -33,8 +33,13 @@ final class AppState {
         didSet { selectionManager?.recordSelection(.right, file: selectedRightFile) }
     }
     
+    // MARK: - Multi-Selection State (Total Commander style marking)
+    var markedLeftFiles: Set<String> = []
+    var markedRightFiles: Set<String> = []
+    
     // MARK: - Sub-managers (lazy initialized)
     private(set) var selectionManager: SelectionManager?
+    private(set) var multiSelectionManager: MultiSelectionManager?
     private(set) var fileActions: FileOperationActions?
     let selectionsHistory = SelectionsHistory()
     var scanner: DualDirectoryScanner!
@@ -50,6 +55,7 @@ final class AppState {
         
         // Initialize sub-managers
         self.selectionManager = SelectionManager(appState: self, history: selectionsHistory)
+        self.multiSelectionManager = MultiSelectionManager(appState: self)
         self.fileActions = FileOperationActions(appState: self)
         self.scanner = DualDirectoryScanner(appState: self)
         
@@ -79,6 +85,50 @@ extension AppState {
     
     func selectionMove(by step: Int) {
         selectionManager?.moveSelection(by: step)
+    }
+}
+
+// MARK: - Multi-Selection Operations (Total Commander style)
+extension AppState {
+    
+    /// Toggle mark on current file and move to next (Insert key)
+    func toggleMarkAndMoveNext() {
+        multiSelectionManager?.toggleMarkAndMoveNext()
+    }
+    
+    /// Mark files by pattern (Num+)
+    func markByPattern() {
+        multiSelectionManager?.markByPattern(shouldMark: true)
+    }
+    
+    /// Unmark files by pattern (Num-)
+    func unmarkByPattern() {
+        multiSelectionManager?.markByPattern(shouldMark: false)
+    }
+    
+    /// Mark all files (Ctrl+A)
+    func markAll() {
+        multiSelectionManager?.markAll()
+    }
+    
+    /// Unmark all files
+    func unmarkAll() {
+        multiSelectionManager?.unmarkAll()
+    }
+    
+    /// Invert marks (Num*)
+    func invertMarks() {
+        multiSelectionManager?.invertMarks()
+    }
+    
+    /// Mark files with same extension as current
+    func markSameExtension() {
+        multiSelectionManager?.markSameExtension()
+    }
+    
+    /// Clear marks after successful operation
+    func clearMarksAfterOperation(on panel: PanelSide) {
+        multiSelectionManager?.clearMarksAfterOperation(on: panel)
     }
 }
 

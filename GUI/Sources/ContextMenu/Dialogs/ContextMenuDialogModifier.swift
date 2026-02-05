@@ -149,6 +149,93 @@ struct ContextMenuDialogModifier: ViewModifier {
                     coordinator.dismissDialog()
                 }
             )
+            
+        // MARK: - Batch Operation Dialogs
+            
+        case .batchCopyConfirmation(let files, let destination, let sourcePanel):
+            BatchConfirmationDialog(
+                operationType: .copy,
+                files: files,
+                destination: destination,
+                onConfirm: {
+                    coordinator.dismissDialog()
+                    BatchOperationCoordinator.shared.executeCopy(
+                        files: files,
+                        destination: destination,
+                        sourcePanel: sourcePanel,
+                        appState: appState
+                    )
+                },
+                onCancel: {
+                    coordinator.dismissDialog()
+                }
+            )
+            
+        case .batchMoveConfirmation(let files, let destination, let sourcePanel):
+            BatchConfirmationDialog(
+                operationType: .move,
+                files: files,
+                destination: destination,
+                onConfirm: {
+                    coordinator.dismissDialog()
+                    BatchOperationCoordinator.shared.executeMove(
+                        files: files,
+                        destination: destination,
+                        sourcePanel: sourcePanel,
+                        appState: appState
+                    )
+                },
+                onCancel: {
+                    coordinator.dismissDialog()
+                }
+            )
+            
+        case .batchDeleteConfirmation(let files, let sourcePanel):
+            BatchConfirmationDialog(
+                operationType: .delete,
+                files: files,
+                destination: nil,
+                onConfirm: {
+                    coordinator.dismissDialog()
+                    BatchOperationCoordinator.shared.executeDelete(
+                        files: files,
+                        sourcePanel: sourcePanel,
+                        appState: appState
+                    )
+                },
+                onCancel: {
+                    coordinator.dismissDialog()
+                }
+            )
+            
+        case .batchPackConfirmation(let files, let destination, let sourcePanel):
+            PackDialog(
+                files: files,
+                destinationPath: destination,
+                onPack: { archiveName, format, finalDestination in
+                    coordinator.dismissDialog()
+                    BatchOperationCoordinator.shared.initiatePack(
+                        appState: appState,
+                        archiveName: archiveName,
+                        format: format
+                    )
+                },
+                onCancel: {
+                    coordinator.dismissDialog()
+                }
+            )
+            
+        case .batchProgress(let state):
+            BatchProgressDialog(
+                state: state,
+                onCancel: {
+                    BatchOperationCoordinator.shared.cancelCurrentOperation()
+                },
+                onDismiss: {
+                    coordinator.dismissDialog()
+                    BatchOperationManager.shared.dismissProgressDialog()
+                }
+            )
         }
     }
 }

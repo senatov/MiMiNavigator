@@ -85,6 +85,27 @@ struct DuoFilePanelView: View {
                 UserDefaults.standard.set(newValue, forKey: "leftPanelWidth")
             }
         }
+        // Batch operation progress overlay
+        .overlay {
+            if BatchOperationManager.shared.showProgressDialog,
+               let state = BatchOperationManager.shared.currentOperation {
+                ZStack {
+                    Color.black.opacity(0.3)
+                        .ignoresSafeArea()
+                    
+                    BatchProgressDialog(
+                        state: state,
+                        onCancel: {
+                            BatchOperationCoordinator.shared.cancelCurrentOperation()
+                        },
+                        onDismiss: {
+                            BatchOperationManager.shared.dismissProgressDialog()
+                        }
+                    )
+                }
+                .animation(.easeOut(duration: 0.15), value: BatchOperationManager.shared.showProgressDialog)
+            }
+        }
     }
     
     // MARK: - Actions Helper

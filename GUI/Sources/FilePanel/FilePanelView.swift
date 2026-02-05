@@ -95,6 +95,9 @@ struct FilePanelView: View {
                 )
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            
+            // Selection status bar (Total Commander style)
+            SelectionStatusBar(panelSide: viewModel.panelSide)
         }
         .padding(.horizontal, DesignTokens.grid)
         .padding(.vertical, DesignTokens.grid - 2)

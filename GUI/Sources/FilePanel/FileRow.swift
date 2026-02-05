@@ -68,6 +68,10 @@ struct FileRow: View {
     private var isActivePanel: Bool {
         appState.focusedPanel == panelSide
     }
+    
+    private var isMarked: Bool {
+        appState.isMarked(file, on: panelSide)
+    }
 
     private var isValidDropTarget: Bool {
         file.isDirectory || file.isSymbolicDirectory
@@ -100,7 +104,7 @@ struct FileRow: View {
     }
 
     private var stableContent: some View {
-        StableBy(file.id.hashValue ^ (isSelected ? 1 : 0) ^ (isActivePanel ? 2 : 0) ^ (isDropTargeted ? 4 : 0)) {
+        StableBy(file.id.hashValue ^ (isSelected ? 1 : 0) ^ (isActivePanel ? 2 : 0) ^ (isDropTargeted ? 4 : 0) ^ (isMarked ? 8 : 0)) {
             ZStack(alignment: .leading) {
                 zebraBackground
                 highlightLayer
@@ -227,7 +231,7 @@ struct FileRow: View {
     private var rowContent: some View {
         HStack(alignment: .center, spacing: 0) {
             // Name column (flexible) - matches header
-            FileRowView(file: file, isSelected: isSelected, isActivePanel: isActivePanel)
+            FileRowView(file: file, isSelected: isSelected, isActivePanel: isActivePanel, isMarked: isMarked)
                 .frame(minWidth: 60, maxWidth: .infinity, alignment: .leading)
 
             ColumnSeparator()
