@@ -57,11 +57,8 @@ final class QuickLookService: NSObject, QLPreviewPanelDataSource, QLPreviewPanel
             log.warning("\(#function) called with empty array")
             return
         }
-        
         log.info("\(#function) previewing \(files.count) file(s): \(files.map { $0.lastPathComponent })")
-        
         previewItems = files.map { QuickLookItem(url: $0) }
-        
         guard let panel = QLPreviewPanel.shared() else {
             log.error("\(#function) Cannot get QLPreviewPanel.shared()")
             return

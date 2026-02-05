@@ -31,15 +31,15 @@ struct DuoPanelBottomToolbarSection: View {
     
     var body: some View {
         HStack(spacing: Layout.toolbarButtonSpacing) {
-            makeButton(title: "F3 View", icon: "eye.circle", action: onView)
-            makeButton(title: "F4 Edit", icon: "pencil", action: onEdit)
-            makeButton(title: "F5 Copy", icon: "doc.on.doc", action: onCopy)
-            makeButton(title: "F6 Move", icon: "square.and.arrow.down.on.square", action: onMove)
-            makeButton(title: "F7 NewFolder", icon: "folder.badge.plus", action: onNewFolder)
-            makeButton(title: "F8 Delete", icon: "minus.rectangle", action: onDelete)
-            makeButton(title: "Settings", icon: "gearshape", action: onSettings)
-            makeButton(title: "Console", icon: "terminal", action: onConsole)
-            makeButton(title: "Exit", icon: "power", action: onExit)
+            makeButton(title: L10n.Toolbar.view, icon: "eye.circle", action: onView)
+            makeButton(title: L10n.Toolbar.edit, icon: "pencil", action: onEdit)
+            makeButton(title: L10n.Toolbar.copy, icon: "doc.on.doc", action: onCopy)
+            makeButton(title: L10n.Toolbar.move, icon: "square.and.arrow.down.on.square", action: onMove)
+            makeButton(title: L10n.Toolbar.newFolder, icon: "folder.badge.plus", action: onNewFolder)
+            makeButton(title: L10n.Toolbar.delete, icon: "minus.rectangle", action: onDelete)
+            makeButton(title: L10n.Toolbar.settings, icon: "gearshape", action: onSettings)
+            makeButton(title: L10n.Toolbar.console, icon: "terminal", action: onConsole)
+            makeButton(title: L10n.Toolbar.exit, icon: "power", action: onExit)
         }
         .frame(maxWidth: .infinity)
         .padding(.horizontal, Layout.toolbarHorizontalPadding)

@@ -25,7 +25,6 @@ final class GetInfoService {
     /// This is the standard macOS behavior (⌘I in Finder)
     func showGetInfo(for fileURL: URL) {
         log.info("\(#function) file='\(fileURL.lastPathComponent)' path='\(fileURL.path)'")
-        
         // Method 1: Use NSWorkspace activation with Finder
         let script = """
             tell application "Finder"
@@ -33,12 +32,12 @@ final class GetInfoService {
                 open information window of (POSIX file "\(fileURL.path)" as alias)
             end tell
             """
-        
         executeAppleScript(script, description: "Get Info for '\(fileURL.lastPathComponent)'")
     }
     
     /// Opens Get Info for multiple files
     func showGetInfo(for fileURLs: [URL]) {
+        log.debug(#function)
         guard !fileURLs.isEmpty else {
             log.warning("\(#function) called with empty array")
             return
@@ -66,7 +65,6 @@ final class GetInfoService {
     
     private func executeAppleScript(_ source: String, description: String) {
         log.debug("\(#function) executing: \(description)")
-        
         DispatchQueue.global(qos: .userInitiated).async {
             if let script = NSAppleScript(source: source) {
                 var error: NSDictionary?

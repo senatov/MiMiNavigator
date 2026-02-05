@@ -50,7 +50,7 @@ struct PackDialog: View {
     }
     
     private var itemsDescription: String {
-        files.count == 1 ? files[0].nameStr : "\(files.count) items"
+        files.count == 1 ? files[0].nameStr : L10n.Items.count(files.count)
     }
     
     var body: some View {
@@ -61,17 +61,17 @@ struct PackDialog: View {
                 .frame(width: 64, height: 64)
             
             // Title
-            Text("Create archive from \(itemsDescription)")
+            Text(L10n.Dialog.Pack.title(itemsDescription))
                 .font(.system(size: 13, weight: .semibold))
                 .multilineTextAlignment(.center)
             
             // Archive name
             VStack(alignment: .leading, spacing: 4) {
-                Text("Archive name:")
+                Text(L10n.Dialog.Pack.archiveNameLabel)
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
                 
-                TextField("Name", text: $archiveName)
+                TextField(L10n.PathInput.nameLabel, text: $archiveName)
                     .textFieldStyle(.plain)
                     .autocorrectionDisabled()
                     .textContentType(.none)
@@ -91,12 +91,12 @@ struct PackDialog: View {
             
             // Destination path
             VStack(alignment: .leading, spacing: 4) {
-                Text("Save to:")
+                Text(L10n.Dialog.Pack.saveToLabel)
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
                 
                 HStack(spacing: 6) {
-                    TextField("Path", text: $destinationPath)
+                    TextField(L10n.PathInput.pathLabel, text: $destinationPath)
                         .textFieldStyle(.plain)
                         .autocorrectionDisabled()
                         .textContentType(.none)
@@ -123,7 +123,7 @@ struct PackDialog: View {
             
             // Format picker
             VStack(alignment: .leading, spacing: 4) {
-                Text("Format:")
+                Text(L10n.Dialog.Pack.formatLabel)
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
                 
@@ -147,10 +147,10 @@ struct PackDialog: View {
             
             // Buttons
             HStack(spacing: 12) {
-                HIGSecondaryButton(title: "Cancel", action: onCancel)
+                HIGSecondaryButton(title: L10n.Button.cancel, action: onCancel)
                     .keyboardShortcut(.cancelAction)
                 
-                HIGPrimaryButton(title: "Create", action: performPack)
+                HIGPrimaryButton(title: L10n.Button.create, action: performPack)
                     .keyboardShortcut(.defaultAction)
                     .disabled(!isValidName || !isValidDestination)
                     .opacity(isValidName && isValidDestination ? 1.0 : 0.5)
@@ -174,7 +174,7 @@ struct PackDialog: View {
         panel.canChooseDirectories = true
         panel.allowsMultipleSelection = false
         panel.canCreateDirectories = true
-        panel.prompt = "Select"
+        panel.prompt = L10n.Button.select
         
         if panel.runModal() == .OK, let url = panel.url {
             destinationPath = url.path
