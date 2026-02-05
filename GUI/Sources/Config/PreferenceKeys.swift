@@ -2,19 +2,22 @@
 // MiMiNavigator
 //
 // Created by Iakov Senatov on 23.10.2024.
-// Refactored: 27.01.2026
+// Refactored: 05.02.2026
 // Copyright © 2024-2026 Senatov. All rights reserved.
-// Description: UserDefaults keys for application preferences
+// Description: Centralized UserDefaults keys for application preferences and state persistence
 
 import Foundation
 
 // MARK: - Preference Keys
-/// Keys used for storing user preferences in UserDefaults.
+/// Centralized storage for all UserDefaults keys used in the app.
 /// Use with `UserDefaults.standard.string(forKey: PreferenceKeys.leftPath.rawValue)`
 enum PreferenceKeys: String, CaseIterable {
     // MARK: - Panel Paths
-    case leftPath
-    case rightPath
+    case leftPath = "lastLeftPath"
+    case rightPath = "lastRightPath"
+    
+    // MARK: - Focus State
+    case lastFocusedPanel
     
     // MARK: - Display Settings
     case showHiddenFiles
@@ -26,7 +29,10 @@ enum PreferenceKeys: String, CaseIterable {
     // MARK: - Selection State
     case lastSelectedLeftFilePath
     case lastSelectedRightFilePath
+    
+    // MARK: - Column Widths Helper
+    /// Generates key for column width storage
+    static func columnWidth(for column: String, panel: PanelSide) -> String {
+        "FileTable.\(panel).\(column)Width"
+    }
 }
-
-// MARK: - Deprecated Typealias (for backward compatibility)
-typealias PrefKey = PreferenceKeys

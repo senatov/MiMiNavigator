@@ -40,13 +40,4 @@ enum AppConstants {
         static let maxNameDisplayWidth = 75
     }
     
-    // MARK: - UserDefaults keys
-    enum DefaultsKeys {
-        static let leftPanelWidth = "leftPanelWidth"
-        static let lastLeftPath = "lastLeftPath"
-        static let lastRightPath = "lastRightPath"
-        static let lastFocusedPanel = "lastFocusedPanel"
-        static let lastSelectedLeftFilePath = "lastSelectedLeftFilePath"
-        static let lastSelectedRightFilePath = "lastSelectedRightFilePath"
-    }
 }

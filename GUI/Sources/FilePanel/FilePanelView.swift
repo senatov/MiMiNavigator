@@ -69,7 +69,7 @@ struct FilePanelView: View {
         
         return VStack {
             // Breadcrumb navigation
-            StableBy(currentPath?.path ?? "") {
+            StableKeyView(currentPath?.path ?? "") {
                 PanelBreadcrumbSection(
                     panelSide: viewModel.panelSide,
                     currentPath: currentPath,
@@ -80,7 +80,7 @@ struct FilePanelView: View {
             }
             
             // File table - key includes file content hash for proper refresh
-            StableBy(fileContentKey) {
+            StableKeyView(fileContentKey) {
                 PanelFileTableSection(
                     files: files,
                     selectedID: selectedIDBinding,

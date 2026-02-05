@@ -46,7 +46,6 @@ struct BreadCrumbControlWrapper: View {
 
     // MARK: - Initializer
     init(selectedSide: PanelSide) {
-        // Log removed - init happens frequently during view updates
         self.panelSide = selectedSide
     }
 
@@ -118,7 +117,6 @@ struct BreadCrumbControlWrapper: View {
 
     // MARK: - Editing View
     private var editingView: some View {
-        // Log removed - too verbose
         return HStack(spacing: 8) {
             pathTextField
             confirmButton
@@ -211,7 +209,6 @@ struct BreadCrumbControlWrapper: View {
 
     // MARK: - Display View
     private var displayView: some View {
-        // Log removed - too verbose
         return BreadCrumbPathControl(selectedSide: panelSide)
             .environment(appState)
             .frame(maxWidth: .infinity, alignment: .leading)

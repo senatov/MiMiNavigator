@@ -1,7 +1,7 @@
 // GetInfoService.swift
 // MiMiNavigator
 //
-// Created by Claude AI on 04.02.2026.
+// Created by Iakov Senatov on 04.02.2026.
 // Copyright © 2026 Senatov. All rights reserved.
 // Description: Service for "Get Info" functionality - opens Finder's native info panel
 

@@ -1,7 +1,7 @@
 // OpenWithSubmenu.swift
 // MiMiNavigator
 //
-// Created by Claude AI on 04.02.2026.
+// Created by Iakov Senatov on 04.02.2026.
 // Refactored: 04.02.2026
 // Copyright © 2026 Senatov. All rights reserved.
 // Description: Submenu for "Open With" action - shows available applications

@@ -41,11 +41,11 @@ import AppKit
             if isTabKeyCode || isTabChar {
                 if event.modifierFlags.contains(.shift) {
                     log.debug("intercepted Shift+Tab → toggle panel")
-                    appState.togglePanel()
+                    appState.toggleFocus()
                     return nil
                 } else {
                     log.debug("intercepted Tab → toggle panel")
-                    appState.togglePanel()
+                    appState.toggleFocus()
                     return nil
                 }
             }

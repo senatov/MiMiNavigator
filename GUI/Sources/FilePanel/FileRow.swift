@@ -104,7 +104,7 @@ struct FileRow: View {
     }
 
     private var stableContent: some View {
-        StableBy(file.id.hashValue ^ (isSelected ? 1 : 0) ^ (isActivePanel ? 2 : 0) ^ (isDropTargeted ? 4 : 0) ^ (isMarked ? 8 : 0)) {
+        StableKeyView(file.id.hashValue ^ (isSelected ? 1 : 0) ^ (isActivePanel ? 2 : 0) ^ (isDropTargeted ? 4 : 0) ^ (isMarked ? 8 : 0)) {
             ZStack(alignment: .leading) {
                 zebraBackground
                 highlightLayer

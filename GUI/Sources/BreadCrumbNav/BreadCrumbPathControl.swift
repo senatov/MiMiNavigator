@@ -29,19 +29,17 @@ struct BreadCrumbPathControl: View {
 
     // MARK: -
     init(selectedSide: PanelSide) {
-        // Log removed - too verbose
         self.panelSide = selectedSide
     }
 
     // MARK: -
     var body: some View {
-        // Log removed - too verbose
         return HStack(spacing: 2) {
-            NavMnu1(selectedSide: panelSide)
+            FavoritesButtonSection(selectedSide: panelSide)
             Spacer(minLength: 2)
             BreadCrumbView(selectedSide: panelSide)
                 .environment(appState)
-            NavMnu2()
+            EllipsisMenuSection()
         }
         .background(
             RoundedRectangle(cornerRadius: Design.cornerRadius)

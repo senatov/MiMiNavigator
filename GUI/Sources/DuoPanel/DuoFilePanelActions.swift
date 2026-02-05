@@ -14,55 +14,55 @@ import Foundation
 struct DuoFilePanelActions {
     let appState: AppState
     let refreshBothPanels: () async -> Void
-    
+
     // MARK: - F3 View
     func performView() {
         log.debug("performView - View button pressed")
-        
+
         guard FileActions.isVSCodeInstalled() else {
-            FileActions.promptVSCodeInstall { }
+            FileActions.promptVSCodeInstall {}
             return
         }
-        
+
         guard let file = currentSelectedFile else {
             log.debug("No file selected for View")
             return
         }
-        
+
         guard !file.isDirectory else {
             log.debug("Cannot view directory")
             return
         }
-        
+
         FileActions.view(file)
     }
 
     // MARK: - F4 Edit
     func performEdit() {
         log.debug("performEdit - Edit button pressed")
-        
+
         guard FileActions.isVSCodeInstalled() else {
-            FileActions.promptVSCodeInstall { }
+            FileActions.promptVSCodeInstall {}
             return
         }
-        
+
         guard let file = currentSelectedFile else {
             log.debug("No file selected for Edit")
             return
         }
-        
+
         guard !file.isDirectory else {
             log.debug("Cannot edit directory")
             return
         }
-        
+
         FileActions.edit(file)
     }
 
     // MARK: - F5 Copy (supports batch operations)
     func performCopy() {
         log.debug("performCopy - Copy button pressed")
-        
+
         // Use batch coordinator for multi-selection support
         BatchOperationCoordinator.shared.initiateCopy(appState: appState)
     }
@@ -70,7 +70,7 @@ struct DuoFilePanelActions {
     // MARK: - F6 Move (supports batch operations)
     func performMove() {
         log.debug("performMove - Move button pressed")
-        
+
         // Use batch coordinator for multi-selection support
         BatchOperationCoordinator.shared.initiateMove(appState: appState)
     }
@@ -78,12 +78,12 @@ struct DuoFilePanelActions {
     // MARK: - F7 New Folder
     func performNewFolder() {
         log.debug("performNewFolder - New Folder button pressed")
-        
+
         guard let currentURL = appState.pathURL(for: appState.focusedPanel) else {
             log.debug("No current directory for New Folder")
             return
         }
-        
+
         FileActions.createFolderWithDialog(at: currentURL) {
             Task {
                 await refreshBothPanels()
@@ -94,7 +94,7 @@ struct DuoFilePanelActions {
     // MARK: - F8 Delete (supports batch operations)
     func performDelete() {
         log.debug("performDelete - Delete button pressed")
-        
+
         // Use batch coordinator for multi-selection support
         BatchOperationCoordinator.shared.initiateDelete(appState: appState)
     }
@@ -109,7 +109,7 @@ struct DuoFilePanelActions {
     func performConsole() {
         log.debug("performConsole - Console button pressed")
         let path = appState.pathURL(for: appState.focusedPanel)?.path ?? "/"
-        _ = ConsoleCurrPath.open(in: path)
+        ConsoleCurrPath.open(in: path)
     }
 
     // MARK: - Exit
@@ -118,13 +118,13 @@ struct DuoFilePanelActions {
         appState.saveBeforeExit()
         NSApplication.shared.terminate(nil)
     }
-    
+
     // MARK: - Computed Properties
-    
+
     private var currentSelectedFile: CustomFile? {
         appState.focusedPanel == .left ? appState.selectedLeftFile : appState.selectedRightFile
     }
-    
+
     private var targetPanelURL: URL? {
         let targetSide: PanelSide = appState.focusedPanel == .left ? .right : .left
         return appState.pathURL(for: targetSide)

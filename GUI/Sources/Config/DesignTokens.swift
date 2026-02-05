@@ -52,11 +52,3 @@ enum DesignTokens {
         static let spacing: CGFloat = 6
     }
 }
-
-// MARK: - Deprecated Typealias (for backward compatibility)
-enum RowDesignTokens {
-    static let grid: CGFloat = DesignTokens.grid
-    static let iconSize: CGFloat = DesignTokens.Row.iconSize
-    static let rowPadding: CGFloat = DesignTokens.Row.padding
-    static let horizontalSpacing: CGFloat = DesignTokens.Row.spacing
-}

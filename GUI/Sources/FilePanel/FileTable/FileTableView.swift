@@ -87,7 +87,8 @@ struct FileTableView: View {
         .onChange(of: sortAscending) { recomputeSortedCache() }
         .onChange(of: selectedID) { _, newValue in
             if let newID = newValue {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                Task { @MainActor in
+                    try? await Task.sleep(for: .seconds(0.05))
                     keyboardNav.scrollToSelection(newID, anchor: .center)
                 }
             }

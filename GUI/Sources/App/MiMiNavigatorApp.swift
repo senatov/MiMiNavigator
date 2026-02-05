@@ -14,9 +14,6 @@ struct MiMiNavigatorApp: App {
     @State private var dragDropManager = DragDropManager()
     @State private var contextMenuCoordinator = ContextMenuCoordinator.shared
     @State private var showHiddenFiles = UserPreferences.shared.snapshot.showHiddenFiles
-    @State private var isRefreshing = false
-    @State private var isHiddenToggling = false
-    @State private var isMagnifyAnimating = false
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @Environment(\.scenePhase) private var scenePhase
 
@@ -74,105 +71,52 @@ struct MiMiNavigatorApp: App {
     // MARK: - Refresh button with animation
     fileprivate func toolBarItemRefresh() -> ToolbarItem<(), some View> {
         return ToolbarItem(placement: .automatic) {
-            Button(action: {
-                guard !isRefreshing else { return }
+            AnimatedToolbarButton(
+                systemImage: "arrow.triangle.2.circlepath",
+                help: "Refresh file lists (⌘R)",
+                shortcut: "r",
+                modifiers: .command
+            ) {
                 log.debug("Refresh button clicked")
-
-                withAnimation(.easeInOut(duration: 0.6)) {
-                    isRefreshing = true
-                }
                 appState.forceRefreshBothPanels()
-
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
-                    withAnimation(.easeOut(duration: 0.2)) {
-                        isRefreshing = false
-                    }
-                }
-            }) {
-                Image(systemName: "arrow.triangle.2.circlepath")
-                    .symbolRenderingMode(.hierarchical)
-                    .foregroundStyle(isRefreshing ? .orange : .blue)
-                    .font(.system(size: 13, weight: .semibold))
-                    .rotationEffect(.degrees(isRefreshing ? 360 : 0))
-                    .scaleEffect(isRefreshing ? 1.2 : 1.0)
-                    .animation(.easeInOut(duration: 0.6), value: isRefreshing)
             }
-            .buttonStyle(.borderless)
-            .controlSize(.small)
-            .help("Refresh file lists (⌘R)")
-            .accessibilityLabel("Refresh")
-            .keyboardShortcut("r", modifiers: .command)
         }
     }
 
     // MARK: - Hidden files toggle with animation
     fileprivate func toolBarItemHidden() -> ToolbarItem<(), some View> {
         return ToolbarItem(placement: .automatic) {
-            Button(action: {
-                guard !isHiddenToggling else { return }
+            AnimatedToolbarButton(
+                systemImage: "eye.slash",
+                activeImage: "eye.fill",
+                help: showHiddenFiles ? "Hide hidden files (⌘.)" : "Show hidden files (⌘.)",
+                shortcut: ".",
+                modifiers: .command,
+                isToggle: true,
+                isActive: $showHiddenFiles,
+                activeColor: .green,
+                inactiveColor: .secondary
+            ) {
                 log.debug("Hidden toggle clicked")
-                
-                withAnimation(.easeInOut(duration: 0.6)) {
-                    isHiddenToggling = true
-                }
-                
                 showHiddenFiles.toggle()
                 UserPreferences.shared.snapshot.showHiddenFiles = showHiddenFiles
                 appState.forceRefreshBothPanels()
-                
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
-                    withAnimation(.easeOut(duration: 0.2)) {
-                        isHiddenToggling = false
-                    }
-                }
-            }) {
-                Image(systemName: showHiddenFiles ? "eye.fill" : "eye.slash")
-                    .symbolRenderingMode(.hierarchical)
-                    .foregroundStyle(isHiddenToggling ? .orange : (showHiddenFiles ? .green : .secondary))
-                    .font(.system(size: 13, weight: .semibold))
-                    .rotationEffect(.degrees(isHiddenToggling ? 360 : 0))
-                    .scaleEffect(isHiddenToggling ? 1.2 : 1.0)
-                    .animation(.easeInOut(duration: 0.6), value: isHiddenToggling)
             }
-            .buttonStyle(.borderless)
-            .controlSize(.small)
-            .help(showHiddenFiles ? "Hide hidden files (⌘.)" : "Show hidden files (⌘.)")
-            .accessibilityLabel("Toggle hidden files")
-            .keyboardShortcut(".", modifiers: .command)
         }
     }
 
     // MARK: - Open With button with animation
     fileprivate func toolBarOpenWith() -> ToolbarItem<(), some View> {
         return ToolbarItem(placement: .automatic) {
-            Button(action: {
-                guard !isMagnifyAnimating else { return }
+            AnimatedToolbarButton(
+                systemImage: "arrow.up.forward.app",
+                help: "Open file / Get Info for directory (⌘O)",
+                shortcut: "o",
+                modifiers: .command
+            ) {
                 log.debug("OpenWith button clicked")
-
-                withAnimation(.easeInOut(duration: 0.6)) {
-                    isMagnifyAnimating = true
-                }
                 appState.openSelectedItem()
-
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
-                    withAnimation(.easeOut(duration: 0.2)) {
-                        isMagnifyAnimating = false
-                    }
-                }
-            }) {
-                Image(systemName: "arrow.up.forward.app")
-                    .symbolRenderingMode(.hierarchical)
-                    .foregroundStyle(isMagnifyAnimating ? .orange : .blue)
-                    .font(.system(size: 13, weight: .semibold))
-                    .rotationEffect(.degrees(isMagnifyAnimating ? 360 : 0))
-                    .scaleEffect(isMagnifyAnimating ? 1.2 : 1.0)
-                    .animation(.easeInOut(duration: 0.6), value: isMagnifyAnimating)
             }
-            .buttonStyle(.borderless)
-            .controlSize(.small)
-            .help("Open file / Get Info for directory (⌘O)")
-            .accessibilityLabel("Open with")
-            .keyboardShortcut("o", modifiers: .command)
         }
     }
 

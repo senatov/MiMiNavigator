@@ -17,7 +17,6 @@ struct PanelFocusModifier: ViewModifier {
 
     // MARK: -
     func body(content: Content) -> some View {
-        // Log removed - called too frequently
         return
             content
             .onChange(of: appState.focusedPanel, initial: false) { oldValue, newValue in
@@ -33,7 +32,6 @@ struct PanelFocusModifier: ViewModifier {
 extension View {
     // MARK: - Applies focus behavior for a file panel; sets focus on tap and clears selection when losing focus.
     func panelFocus(panelSide: PanelSide, onFocusLost: @escaping () -> Void) -> some View {
-        // Log removed - extension called frequently
         return modifier(PanelFocusModifier(panelSide: panelSide, onFocusLost: onFocusLost))
     }
 }

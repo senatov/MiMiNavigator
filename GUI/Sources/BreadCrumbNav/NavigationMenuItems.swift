@@ -104,7 +104,3 @@ struct EllipsisMenuSection: View {
         appState.pathURL(for: appState.focusedPanel)
     }
 }
-
-// MARK: - Deprecated Typealiases (for backward compatibility)
-typealias NavMnu1 = FavoritesButtonSection
-typealias NavMnu2 = EllipsisMenuSection

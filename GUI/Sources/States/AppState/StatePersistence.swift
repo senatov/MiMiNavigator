@@ -25,18 +25,18 @@ enum StatePersistence {
         let ud = UserDefaults.standard
         
         // Save panel paths
-        ud.set(state.leftPath, forKey: PersistenceKeys.lastLeftPath)
-        ud.set(state.rightPath, forKey: PersistenceKeys.lastRightPath)
+        ud.set(state.leftPath, forKey: PreferenceKeys.leftPath.rawValue)
+        ud.set(state.rightPath, forKey: PreferenceKeys.rightPath.rawValue)
         
         // Save focus
-        ud.set(state.focusedPanel == .left ? "left" : "right", forKey: PersistenceKeys.lastFocusedPanel)
+        ud.set(state.focusedPanel == .left ? "left" : "right", forKey: PreferenceKeys.lastFocusedPanel.rawValue)
         
         // Save selections
         if let left = state.selectedLeftFile?.urlValue {
-            ud.set(left, forKey: PersistenceKeys.lastSelectedLeftFilePath)
+            ud.set(left, forKey: PreferenceKeys.lastSelectedLeftFilePath.rawValue)
         }
         if let right = state.selectedRightFile?.urlValue {
-            ud.set(right, forKey: PersistenceKeys.lastSelectedRightFilePath)
+            ud.set(right, forKey: PreferenceKeys.lastSelectedRightFilePath.rawValue)
         }
         
         log.info("[StatePersistence] state saved")
@@ -52,8 +52,8 @@ enum StatePersistence {
         let defaultLeft = fm.urls(for: .downloadsDirectory, in: .userDomainMask).first?.path ?? ""
         let defaultRight = fm.urls(for: .documentDirectory, in: .userDomainMask).first?.path ?? ""
         
-        let leftPath = ud.string(forKey: PersistenceKeys.lastLeftPath) ?? defaultLeft
-        let rightPath = ud.string(forKey: PersistenceKeys.lastRightPath) ?? defaultRight
+        let leftPath = ud.string(forKey: PreferenceKeys.leftPath.rawValue) ?? defaultLeft
+        let rightPath = ud.string(forKey: PreferenceKeys.rightPath.rawValue) ?? defaultRight
         
         log.debug("[StatePersistence] loaded paths L=\(leftPath) R=\(rightPath)")
         
@@ -63,7 +63,7 @@ enum StatePersistence {
     /// Get initial focused panel
     static func loadInitialFocus() -> PanelSide {
         let ud = UserDefaults.standard
-        if let raw = ud.string(forKey: PersistenceKeys.lastFocusedPanel), raw == "right" {
+        if let raw = ud.string(forKey: PreferenceKeys.lastFocusedPanel.rawValue), raw == "right" {
             return .right
         }
         return .left

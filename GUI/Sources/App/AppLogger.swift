@@ -90,14 +90,3 @@ enum AppLogger {
 /// Global logger instance - use `log.info()`, `log.debug()`, etc.
 let log = AppLogger.log
 
-// MARK: - Deprecated Typealias
-/// Deprecated: Use AppLogger instead
-typealias LogMan = AppLogger
-
-// MARK: - Deprecated Method
-extension AppLogger {
-    /// Deprecated: Use AppLogger.initialize() instead
-    static func initializeLogging() {
-        initialize()
-    }
-}
