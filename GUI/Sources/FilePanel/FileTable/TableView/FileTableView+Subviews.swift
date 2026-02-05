@@ -1,7 +1,7 @@
 // FileTableView+Subviews.swift
 // MiMiNavigator
 //
-// Created by Claude AI on 04.02.2026.
+// Created by Iakov Senatov on 04.02.2026.
 // Copyright © 2024-2026 Senatov. All rights reserved.
 // Description: View components for FileTableView
 
@@ -35,7 +35,7 @@ extension FileTableView {
                 // File rows on top
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 0) {
-                        StableBy(cachedSortedFiles.count) {
+                        StableKeyView(cachedSortedFiles.count) {
                             FileTableRowsView(
                                 rows: sortedRows,
                                 selectedID: $selectedID,

@@ -1,7 +1,7 @@
 // PanelBackgroundContextMenu.swift
 // MiMiNavigator
 //
-// Created by Claude AI on 04.02.2026.
+// Created by Iakov Senatov on 04.02.2026.
 // Copyright © 2026 Senatov. All rights reserved.
 // Description: Context menu for empty panel area (Finder-style)
 

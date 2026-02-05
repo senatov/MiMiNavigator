@@ -6,7 +6,6 @@
 //  Copyright © 2025 Senatov. All rights reserved.
 //
 
-import AppKit
 import SwiftUI
 
 // MARK: - RowRectPreference

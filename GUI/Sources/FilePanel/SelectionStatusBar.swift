@@ -12,23 +12,23 @@ import SwiftUI
 struct SelectionStatusBar: View {
     @Environment(AppState.self) var appState
     let panelSide: PanelSide
-    
+
     private var markedCount: Int {
         appState.markedCount(for: panelSide)
     }
-    
+
     private var markedSize: Int64 {
         appState.markedTotalSize(for: panelSide)
     }
-    
+
     private var totalFiles: Int {
         appState.displayedFiles(for: panelSide).count
     }
-    
+
     private var formattedSize: String {
         ByteCountFormatter.string(fromByteCount: markedSize, countStyle: .file)
     }
-    
+
     var body: some View {
         HStack(spacing: 12) {
             // Marked files indicator
@@ -36,23 +36,23 @@ struct SelectionStatusBar: View {
                 HStack(spacing: 4) {
                     Image(systemName: "checkmark.circle.fill")
                         .font(.system(size: 10))
-                        .foregroundStyle(.accentColor)
-                    
+                        .foregroundStyle(Color.accentColor)
+
                     Text(L10n.Selection.markedCount(markedCount))
                         .font(.system(size: 11, weight: .medium))
-                        .foregroundStyle(.accentColor)
+                        .foregroundStyle(Color.accentColor)
                 }
-                
+
                 Text("•")
                     .foregroundStyle(.secondary)
-                
+
                 Text(L10n.Selection.markedSize(formattedSize))
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
             }
-            
+
             Spacer()
-            
+
             // Total files count
             Text("\(totalFiles) items")
                 .font(.system(size: 11))

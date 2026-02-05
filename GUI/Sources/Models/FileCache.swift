@@ -44,5 +44,3 @@ actor FileCache {
     }
 }
 
-// MARK: - Deprecated Typealias (for backward compatibility)
-typealias FileSingleton = FileCache

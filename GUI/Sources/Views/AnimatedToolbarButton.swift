@@ -18,10 +18,10 @@ struct AnimatedToolbarButton: View {
     let activeColor: Color
     let inactiveColor: Color
     let action: () -> Void
-    
+
     @State private var isAnimating = false
     @Binding var isActive: Bool
-    
+
     init(
         systemImage: String,
         activeImage: String? = nil,
@@ -45,7 +45,7 @@ struct AnimatedToolbarButton: View {
         self.inactiveColor = inactiveColor
         self.action = action
     }
-    
+
     var body: some View {
         Button(action: performAction) {
             Image(systemName: currentImage)
@@ -61,30 +61,31 @@ struct AnimatedToolbarButton: View {
         .help(help)
         .modifier(ShortcutModifier(shortcut: shortcut, modifiers: modifiers))
     }
-    
+
     private var currentImage: String {
         if isToggle, let activeImage = activeImage {
             return isActive ? activeImage : systemImage
         }
         return systemImage
     }
-    
+
     private var currentColor: Color {
         if isAnimating { return .orange }
         if isToggle { return isActive ? activeColor : inactiveColor }
         return inactiveColor
     }
-    
+
     private func performAction() {
         guard !isAnimating else { return }
-        
+
         withAnimation(.easeInOut(duration: 0.6)) {
             isAnimating = true
         }
-        
+
         action()
-        
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(0.6))
             withAnimation(.easeOut(duration: 0.2)) {
                 isAnimating = false
             }
@@ -96,7 +97,7 @@ struct AnimatedToolbarButton: View {
 private struct ShortcutModifier: ViewModifier {
     let shortcut: KeyEquivalent?
     let modifiers: EventModifiers
-    
+
     func body(content: Content) -> some View {
         if let shortcut = shortcut {
             content.keyboardShortcut(shortcut, modifiers: modifiers)

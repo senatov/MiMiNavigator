@@ -4,6 +4,9 @@
     "" : {
 
     },
+    "... and %lld more" : {
+
+    },
     ".%@ — %@" : {
       "localizations" : {
         "en" : {
@@ -33,7 +36,40 @@
         }
       }
     },
+    "%@ selected" : {
+      "comment" : "Marked files size"
+    },
     "%lld" : {
+
+    },
+    "%lld / %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld / %2$lld"
+          }
+        }
+      }
+    },
+    "%lld errors occurred" : {
+      "comment" : "Errors count"
+    },
+    "%lld files" : {
+
+    },
+    "%lld files %@ successfully" : {
+      "comment" : "Completed success",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld files %2$@ successfully"
+          }
+        }
+      }
+    },
+    "%lld folders" : {
 
     },
     "%lld items" : {
@@ -52,6 +88,15 @@
           }
         }
       }
+    },
+    "%lld marked" : {
+      "comment" : "Marked files count"
+    },
+    "•" : {
+
+    },
+    "~%@ remaining" : {
+      "comment" : "Time remaining"
     },
     "⚠️ Will be moved to Trash" : {
       "comment" : "Delete warning message",
@@ -207,6 +252,17 @@
     "Click: go forward | Ctrl+click: show history" : {
 
     },
+    "Completed: %lld success, %lld errors" : {
+      "comment" : "Completed with errors",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Completed: %1$lld success, %2$lld errors"
+          }
+        }
+      }
+    },
     "Console" : {
       "comment" : "Console toolbar button",
       "localizations" : {
@@ -224,6 +280,9 @@
         }
       }
     },
+    "copied" : {
+      "comment" : "Copied past tense"
+    },
     "Copy" : {
       "comment" : "Copy button",
       "localizations" : {
@@ -237,6 +296,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Копировать"
+          }
+        }
+      }
+    },
+    "Copy %lld files to %@?" : {
+      "comment" : "Confirm batch copy",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Copy %1$lld files to %2$@?"
           }
         }
       }
@@ -263,6 +333,9 @@
     },
     "Copy Path" : {
 
+    },
+    "Copying..." : {
+      "comment" : "Copying operation"
     },
     "Create" : {
       "comment" : "Create button",
@@ -335,6 +408,9 @@
     "Current development build version" : {
 
     },
+    "Current file:" : {
+      "comment" : "Current file label"
+    },
     "Delete" : {
       "comment" : "Delete button",
       "localizations" : {
@@ -352,6 +428,9 @@
         }
       }
     },
+    "Delete %lld files?" : {
+      "comment" : "Confirm batch delete"
+    },
     "Delete?" : {
       "comment" : "Delete confirmation dialog title",
       "localizations" : {
@@ -368,6 +447,12 @@
           }
         }
       }
+    },
+    "deleted" : {
+      "comment" : "Deleted past tense"
+    },
+    "Deleting..." : {
+      "comment" : "Deleting operation"
     },
     "DEV BUILD" : {
 
@@ -737,9 +822,6 @@
     "Go to parent directory" : {
 
     },
-    "Hide hidden files (⌘.)" : {
-
-    },
     "In: %@" : {
       "comment" : "Destination location",
       "localizations" : {
@@ -825,6 +907,9 @@
         }
       }
     },
+    "Mark by Pattern" : {
+      "comment" : "Mark by pattern dialog title"
+    },
     "More options..." : {
 
     },
@@ -841,6 +926,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Переместить"
+          }
+        }
+      }
+    },
+    "Move %lld files to %@?" : {
+      "comment" : "Confirm batch move",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Move %1$lld files to %2$@?"
           }
         }
       }
@@ -870,6 +966,12 @@
     },
     "Move Up" : {
 
+    },
+    "moved" : {
+      "comment" : "Moved past tense"
+    },
+    "Moving..." : {
+      "comment" : "Moving operation"
     },
     "Name" : {
       "comment" : "Name field placeholder\nName label",
@@ -968,9 +1070,6 @@
         }
       }
     },
-    "Open file / Get Info for directory (⌘O)" : {
-
-    },
     "Open in Finder" : {
 
     },
@@ -980,14 +1079,23 @@
     "Open menu: %@" : {
 
     },
-    "Open with" : {
-
-    },
     "Open With" : {
 
     },
+    "Operation cancelled" : {
+      "comment" : "Operation cancelled"
+    },
+    "Operation Errors" : {
+      "comment" : "Operation errors title"
+    },
     "Other..." : {
 
+    },
+    "packed" : {
+      "comment" : "Packed past tense"
+    },
+    "Packing..." : {
+      "comment" : "Packing operation"
     },
     "Panels / Navigation" : {
 
@@ -1008,12 +1116,6 @@
           }
         }
       }
-    },
-    "Refresh" : {
-
-    },
-    "Refresh file lists (⌘R)" : {
-
     },
     "Rename" : {
       "comment" : "Rename button",
@@ -1134,7 +1236,10 @@
         }
       }
     },
-    "Show hidden files (⌘.)" : {
+    "Show Errors" : {
+      "comment" : "Show errors button"
+    },
+    "Show files" : {
 
     },
     "Show navigation history" : {
@@ -1180,13 +1285,13 @@
     "To:" : {
 
     },
-    "Toggle hidden files" : {
-
-    },
     "Toggle Panel Focus (⌘⌥T)" : {
 
     },
     "Top menu bar" : {
+
+    },
+    "Total size:" : {
 
     },
     "Type:" : {
@@ -1223,8 +1328,14 @@
         }
       }
     },
+    "Unmark by Pattern" : {
+      "comment" : "Unmark by pattern dialog title"
+    },
     "Up button" : {
 
+    },
+    "Use * and ? wildcards (e.g., *.txt, photo*)" : {
+      "comment" : "Pattern hint"
     },
     "Visited directories will appear here" : {
 

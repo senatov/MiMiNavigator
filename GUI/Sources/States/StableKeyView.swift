@@ -33,6 +33,3 @@ struct StableKeyView<Key: Hashable, Content: View>: View {
         self.content = content
     }
 }
-
-// MARK: - Deprecated Typealias (for backward compatibility)
-typealias StableBy = StableKeyView

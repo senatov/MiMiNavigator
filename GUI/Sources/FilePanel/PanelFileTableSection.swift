@@ -24,7 +24,7 @@ struct PanelFileTableSection: View {
         // Combines: count + first file name + last file name + panel side
         let contentKey = makeContentKey()
         
-        StableBy(contentKey) {
+        StableKeyView(contentKey) {
             FileTableView(
                 panelSide: panelSide,
                 files: files,

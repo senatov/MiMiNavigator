@@ -28,10 +28,6 @@ public struct CustomFile: Identifiable, Equatable, Hashable, Codable, Sendable {
 
     // MARK: - Initializer
     public init(name: String? = nil, path: String, children: [CustomFile]? = nil) {
-        #if DEBUG
-        log.verbose("CustomFile.init(\(path))")
-        #endif
-
         let url = URL(fileURLWithPath: path).absoluteURL
         self.urlValue = url
         self.pathStr = path

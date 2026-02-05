@@ -2,7 +2,7 @@
 // UserPrefs.swift
 //  MiMiNavigator
 //
-//  Created by ChatGPT on 10.08.2025.
+//  Created by Iakov Senatov on 10.08.2025.
 //
 
 import AppKit
@@ -15,80 +15,80 @@ final class UserPreferences {
     static let shared = UserPreferences()
     private let defaults = UserDefaults.standard
 
-    // MARK: -
+    // MARK: - Properties
     var snapshot: PreferencesSnapshot = .default {
         didSet { save() }
     }
 
-    // MARK: -
+    // MARK: - Initializer
     private init() {
         log.info(#function)
         subscribeTermination()
     }
 
-    // MARK: -
+    // MARK: - Load from UserDefaults
     func load() {
         log.info(#function)
         var s = PreferencesSnapshot.default
-        if let value = defaults.string(forKey: PrefKey.leftPath.rawValue),
+        if let value = defaults.string(forKey: PreferenceKeys.leftPath.rawValue),
             !value.isEmpty
         {
             s.leftPath = value
         } else {
             log.warning("Missing leftPath — using default.")
         }
-        if let value = defaults.string(forKey: PrefKey.rightPath.rawValue),
+        if let value = defaults.string(forKey: PreferenceKeys.rightPath.rawValue),
             !value.isEmpty
         {
             s.rightPath = value
         } else {
             log.warning("Missing rightPath — using default.")
         }
-        if defaults.object(forKey: PrefKey.showHiddenFiles.rawValue) != nil {
-            s.showHiddenFiles = defaults.bool(forKey: PrefKey.showHiddenFiles.rawValue)
+        if defaults.object(forKey: PreferenceKeys.showHiddenFiles.rawValue) != nil {
+            s.showHiddenFiles = defaults.bool(forKey: PreferenceKeys.showHiddenFiles.rawValue)
         } else {
             log.warning("Missing showHiddenFiles — using default.")
         }
-        if defaults.object(forKey: PrefKey.favoritesMaxDepth.rawValue) != nil {
-            let val = defaults.integer(forKey: PrefKey.favoritesMaxDepth.rawValue)
+        if defaults.object(forKey: PreferenceKeys.favoritesMaxDepth.rawValue) != nil {
+            let val = defaults.integer(forKey: PreferenceKeys.favoritesMaxDepth.rawValue)
             s.favoritesMaxDepth = max(val, 0)
         } else {
             log.warning("Missing favoritesMaxDepth — using default.")
         }
-        if let arr = defaults.array(forKey: PrefKey.expandedFolders.rawValue) as? [String] {
+        if let arr = defaults.array(forKey: PreferenceKeys.expandedFolders.rawValue) as? [String] {
             s.expandedFolders = Set(arr)
         } else {
             log.warning("Missing expandedFolders — using default.")
         }
-        s.lastSelectedLeftFilePath = defaults.string(forKey: PrefKey.lastSelectedLeftFilePath.rawValue)
-        s.lastSelectedRightFilePath = defaults.string(forKey: PrefKey.lastSelectedRightFilePath.rawValue)
+        s.lastSelectedLeftFilePath = defaults.string(forKey: PreferenceKeys.lastSelectedLeftFilePath.rawValue)
+        s.lastSelectedRightFilePath = defaults.string(forKey: PreferenceKeys.lastSelectedRightFilePath.rawValue)
 
         snapshot = s
         log.info("Preferences loaded.")
     }
 
-    // MARK: -
+    // MARK: - Save to UserDefaults
     func save() {
         log.info(#function)
-        defaults.set(snapshot.leftPath, forKey: PrefKey.leftPath.rawValue)
-        defaults.set(snapshot.rightPath, forKey: PrefKey.rightPath.rawValue)
-        defaults.set(snapshot.showHiddenFiles, forKey: PrefKey.showHiddenFiles.rawValue)
-        defaults.set(snapshot.favoritesMaxDepth, forKey: PrefKey.favoritesMaxDepth.rawValue)
-        defaults.set(Array(snapshot.expandedFolders), forKey: PrefKey.expandedFolders.rawValue)
-        defaults.set(snapshot.lastSelectedLeftFilePath, forKey: PrefKey.lastSelectedLeftFilePath.rawValue)
-        defaults.set(snapshot.lastSelectedRightFilePath, forKey: PrefKey.lastSelectedRightFilePath.rawValue)
+        defaults.set(snapshot.leftPath, forKey: PreferenceKeys.leftPath.rawValue)
+        defaults.set(snapshot.rightPath, forKey: PreferenceKeys.rightPath.rawValue)
+        defaults.set(snapshot.showHiddenFiles, forKey: PreferenceKeys.showHiddenFiles.rawValue)
+        defaults.set(snapshot.favoritesMaxDepth, forKey: PreferenceKeys.favoritesMaxDepth.rawValue)
+        defaults.set(Array(snapshot.expandedFolders), forKey: PreferenceKeys.expandedFolders.rawValue)
+        defaults.set(snapshot.lastSelectedLeftFilePath, forKey: PreferenceKeys.lastSelectedLeftFilePath.rawValue)
+        defaults.set(snapshot.lastSelectedRightFilePath, forKey: PreferenceKeys.lastSelectedRightFilePath.rawValue)
 
         log.info("Preferences saved.")
     }
 
-    // MARK: -
+    // MARK: - Apply to AppState
     func apply(to appState: AppState) {
         log.info("Applying preferences to AppState.")
         appState.leftPath = snapshot.leftPath
         appState.rightPath = snapshot.rightPath
     }
 
-    // MARK: -
+    // MARK: - Capture from AppState
     func capture(from appState: AppState) {
         log.info("Capturing AppState into preferences.")
         snapshot.leftPath = appState.leftPath
@@ -97,7 +97,7 @@ final class UserPreferences {
         snapshot.lastSelectedRightFilePath = appState.selectedRightFile?.pathStr
     }
 
-    // MARK: -
+    // MARK: - Termination Handler
     private func subscribeTermination() {
         NotificationCenter.default.addObserver(
             forName: NSApplication.willTerminateNotification,

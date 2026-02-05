@@ -19,8 +19,8 @@ struct FileRowView: View {
     var body: some View {
         baseContent()
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.vertical, RowDesignTokens.grid / 2)
-            .padding(.horizontal, RowDesignTokens.grid)
+            .padding(.vertical, DesignTokens.grid / 2)
+            .padding(.horizontal, DesignTokens.grid)
             .contentShape(Rectangle())
     }
 
@@ -35,7 +35,7 @@ struct FileRowView: View {
         }
         return .primary
     }
-    
+
     // MARK: - Font weight for marked files
     private var nameWeight: Font.Weight {
         isMarked ? .semibold : .regular
@@ -51,8 +51,8 @@ struct FileRowView: View {
                     .interpolation(.high)
                     .antialiased(true)
                     .aspectRatio(contentMode: .fit)
-                    .frame(width: RowDesignTokens.iconSize, height: RowDesignTokens.iconSize)
-                
+                    .frame(width: DesignTokens.Row.iconSize, height: DesignTokens.Row.iconSize)
+
                 // Symlink badge overlay (smaller for Finder-style icons)
                 if file.isSymbolicLink {
                     Image(systemName: "arrow.turn.up.right")
@@ -69,16 +69,16 @@ struct FileRowView: View {
             }
             .allowsHitTesting(false)
             .layoutPriority(1)
-            
+
             // File name - with mark indicator
             HStack(spacing: 4) {
                 // Mark indicator (subtle checkmark for marked files)
                 if isMarked {
                     Image(systemName: "checkmark.circle.fill")
                         .font(.system(size: 10))
-                        .foregroundStyle(.accentColor)
+                        .foregroundStyle(.tint)
                 }
-                
+
                 Text(file.nameStr)
                     .font(.system(size: 13, weight: nameWeight))
                     .foregroundStyle(nameColor)
@@ -88,29 +88,29 @@ struct FileRowView: View {
             .layoutPriority(0)
         }
     }
-    
+
     // MARK: - Smart icon selection with fallback chain
     /// Priority: Special types → App icon → UTType icon → Generic file icon
     private func getSmartIcon(for file: CustomFile) -> NSImage {
         let url = file.urlValue
         let workspace = NSWorkspace.shared
         let iconSize = NSSize(width: 128, height: 128)
-        
+
         // For directories - use system folder icon
         if file.isDirectory || file.isSymbolicDirectory {
             let icon = workspace.icon(forFile: url.path)
             icon.size = iconSize
             return icon
         }
-        
+
         let pathExtension = url.pathExtension.lowercased()
-        
+
         // 0. Check for special file types that need specific handling
         if let specialIcon = getSpecialTypeIcon(for: pathExtension) {
             specialIcon.size = iconSize
             return specialIcon
         }
-        
+
         // 1. Try to get default app icon (most colorful option)
         if let appURL = workspace.urlForApplication(toOpen: url) {
             // Skip if app is a generic handler (like LibreOffice for fonts)
@@ -120,28 +120,29 @@ struct FileRowView: View {
                 return appIcon
             }
         }
-        
+
         // 2. Try by UTType - find appropriate app
         if !pathExtension.isEmpty,
-           let uttype = UTType(filenameExtension: pathExtension) {
-            
+            let uttype = UTType(filenameExtension: pathExtension)
+        {
+
             // Get system icon for this UTType (often better than app icon)
             let uttypeIcon = workspace.icon(for: uttype)
             uttypeIcon.size = iconSize
             return uttypeIcon
         }
-        
+
         // 3. Final fallback: standard file icon
         let icon = workspace.icon(forFile: url.path)
         icon.size = iconSize
         return icon
     }
-    
+
     // MARK: - Special type icons (fonts, system files, etc.)
     /// Returns appropriate icon for file types that shouldn't use app icons
     private func getSpecialTypeIcon(for ext: String) -> NSImage? {
         let workspace = NSWorkspace.shared
-        
+
         // Font files - use Font Book icon or UTType
         let fontExtensions = ["otf", "ttf", "ttc", "otc", "dfont", "woff", "woff2"]
         if fontExtensions.contains(ext) {
@@ -152,7 +153,7 @@ struct FileRowView: View {
             // Fallback to UTType.font icon
             return workspace.icon(for: .font)
         }
-        
+
         // System/config files
         let configExtensions = ["plist", "entitlements", "xcconfig"]
         if configExtensions.contains(ext) {
@@ -160,34 +161,35 @@ struct FileRowView: View {
                 return workspace.icon(for: uttype)
             }
         }
-        
+
         // Database files
         let dbExtensions = ["db", "sqlite", "sqlite3", "realm"]
         if dbExtensions.contains(ext) {
             return workspace.icon(for: .database)
         }
-        
+
         return nil
     }
-    
+
     // MARK: - Check if app is a generic handler (not the best icon source)
     /// Some apps register for many file types but their icon isn't representative
     private func isGenericHandler(appURL: URL, forExtension ext: String) -> Bool {
         let genericBundleIDs = [
             "org.libreoffice.script",
             "com.apple.TextEdit",
-            "com.apple.dt.Xcode"  // Xcode handles too many types
+            "com.apple.dt.Xcode",  // Xcode handles too many types
         ]
-        
+
         if let bundle = Bundle(url: appURL),
-           let bundleID = bundle.bundleIdentifier {
+            let bundleID = bundle.bundleIdentifier
+        {
             // Font files should not use LibreOffice or TextEdit icons
             let fontExtensions = ["otf", "ttf", "ttc", "otc", "dfont", "woff", "woff2"]
             if fontExtensions.contains(ext) && genericBundleIDs.contains(bundleID) {
                 return true
             }
         }
-        
+
         return false
     }
 }

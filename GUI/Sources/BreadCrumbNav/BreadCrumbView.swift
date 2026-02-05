@@ -17,13 +17,11 @@ struct BreadCrumbView: View {
 
     // MARK: -
     init(selectedSide: PanelSide) {
-        // Log removed - too verbose
         self.panelSide = selectedSide
     }
 
     // MARK: -
     var body: some View {
-        // Log removed - too verbose
         // Main breadcrumb container
         return HStack(alignment: .center, spacing: 4) {
             ForEach(pathComponents.indices, id: \.self) { index in
@@ -40,7 +38,6 @@ struct BreadCrumbView: View {
 
     // MARK: -
     private var pathComponents: [String] {
-        // Log removed - too verbose
         let path = (panelSide == .left ? appState.leftPath : appState.rightPath)
         return path.split(separator: "/").map(String.init).filter { !$0.isEmpty }
     }

@@ -24,7 +24,7 @@ struct FileTableRowsView: View {
     var body: some View {
         LazyVStack(spacing: 0) {
             ForEach(rows, id: \.element.id) { pair in
-                StableBy(pair.element.id) {
+                StableKeyView(pair.element.id) {
                     row(for: pair.element, index: pair.offset)
                 }
             }

@@ -26,7 +26,7 @@ extension ContextMenuCoordinator {
 
         do {
             let urls = files.map { $0.urlValue }
-            _ = try await fileOps.deleteFiles(urls)
+            try await fileOps.deleteFiles(urls)
             refreshPanels(appState: appState)
             log.info("\(#function) SUCCESS deleted \(files.count) item(s)")
         } catch {
@@ -48,7 +48,7 @@ extension ContextMenuCoordinator {
         }
 
         do {
-            _ = try await fileOps.renameFile(file.urlValue, to: newName)
+            try await fileOps.renameFile(file.urlValue, to: newName)
             refreshPanels(appState: appState)
             log.info("\(#function) SUCCESS: '\(file.nameStr)' → '\(newName)'")
         } catch {
@@ -143,7 +143,7 @@ extension ContextMenuCoordinator {
         do {
             switch linkType {
                 case .symbolic:
-                    _ = try await fileOps.createSymbolicLink(
+                    try await fileOps.createSymbolicLink(
                         to: file.urlValue,
                         at: destination,
                         linkName: linkName

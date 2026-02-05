@@ -16,7 +16,7 @@ struct AppCommands: Commands {
         CommandMenu("Panels / Navigation") {
             Button("Toggle Panel Focus (⌘⌥T)") {
                 log.debug("KB: Cmd+Opt+T → toggle panel")
-                appState.togglePanel()
+                appState.toggleFocus()
             }
             .keyboardShortcut("t", modifiers: [.command, .option])
 

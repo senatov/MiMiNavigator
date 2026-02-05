@@ -89,6 +89,3 @@ class DirectorySelection {
         self.init(side: sideFromConfig, initialPath: pathFromConfig)
     }
 }
-
-// MARK: - Deprecated Typealias (for backward compatibility)
-typealias SelectedDir = DirectorySelection

@@ -1,7 +1,7 @@
 // PanelBackgroundActionsHandler.swift
 // MiMiNavigator
 //
-// Created by Claude AI on 04.02.2026.
+// Created by Iakov Senatov on 04.02.2026.
 // Copyright © 2026 Senatov. All rights reserved.
 // Description: Handles PanelBackgroundAction dispatching from panel empty area context menu
 

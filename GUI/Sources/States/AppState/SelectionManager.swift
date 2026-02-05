@@ -148,14 +148,14 @@ final class SelectionManager {
         let ud = UserDefaults.standard
         
         // Restore focus
-        if let raw = ud.string(forKey: PersistenceKeys.lastFocusedPanel), raw == "right" {
+        if let raw = ud.string(forKey: PreferenceKeys.lastFocusedPanel.rawValue), raw == "right" {
             state.focusedPanel = .right
         } else {
             state.focusedPanel = .left
         }
         
         // Restore left selection
-        if let leftUrl = ud.url(forKey: PersistenceKeys.lastSelectedLeftFilePath) {
+        if let leftUrl = ud.url(forKey: PreferenceKeys.lastSelectedLeftFilePath.rawValue) {
             if let match = state.displayedLeftFiles.first(where: {
                 PathUtils.canonical($0.urlValue) == PathUtils.canonical(leftUrl)
             }) {
@@ -165,7 +165,7 @@ final class SelectionManager {
         }
         
         // Restore right selection
-        if let rightUrl = ud.url(forKey: PersistenceKeys.lastSelectedRightFilePath) {
+        if let rightUrl = ud.url(forKey: PreferenceKeys.lastSelectedRightFilePath.rawValue) {
             if let match = state.displayedRightFiles.first(where: {
                 PathUtils.canonical($0.urlValue) == PathUtils.canonical(rightUrl)
             }) {
