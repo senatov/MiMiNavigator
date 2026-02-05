@@ -7,7 +7,7 @@
   <a href="https://github.com/senatov/MiMiNavigator">
     <img src="https://img.shields.io/badge/Platform-macOS%2015.0+-lightgrey?logo=apple&logoColor=white" alt="Platform" />
   </a>
-  <img src="https://img.shields.io/badge/Swift-6.2-orange?logo=swift" alt="Swift 6.2" />
+  <img src="https://img.shields.io/badge/Swift-6.2-blue?logo=swift" alt="Swift 6.2" />
   <img src="https://img.shields.io/badge/Xcode-16+-blue?logo=xcode" alt="Xcode 16+" />
   <img src="https://img.shields.io/badge/Framework-SwiftUI-blue?logo=swift" alt="SwiftUI" />
   <img src="https://img.shields.io/badge/Concurrency-Swift%206%20Strict-green" alt="Swift 6 Strict Concurrency" />
@@ -81,6 +81,40 @@ to help clarify the philosophies and implementations of different architectures.
 - [License](#license)
 - [Acknowledgments](#acknowledgments)
 
+## Screenshots
+
+### Main Interface
+**File**: `Gui/Docs/Preview3.png`
+<div style="text-align: center;" >
+  <img
+    src="GUI/Docs/Preview3.png"
+    alt="Preview FrontEnd"
+    title="Preview"
+    style="max-width: 100%; height: auto; border: 1px solid #133347ff; border-radius: 12px;" />
+</div>
+
+### File Operations
+**File**: `Gui/Docs/Preview2.png`
+<div style="text-align: center;" >
+  <img
+    src="GUI/Docs/Preview2.png"
+    alt="Preview FrontEnd"
+    title="Preview"
+    style="max-width: 100%; height: auto; border: 1px solid #133347ff; border-radius: 12px;" />
+</div>
+
+
+**File**: `Gui/Docs/Preview1.png`
+<div style="text-align: center;" >
+  <img
+    src="GUI/Docs/Preview1.png"
+    alt="Preview FrontEnd"
+    title="Preview"
+    style="max-width: 100%; height: auto; border: 1px solid #133347ff; border-radius: 12px;" />
+</div>
+
+
+
 ## Overview
 
 **MiMiNavigator** is a modern dual-panel file manager for macOS, designed to explore advanced SwiftUI patterns while providing an efficient file management experience. Inspired by classic dual-panel file managers like Total Commander and Norton Commander, MiMiNavigator reimagines the concept using native macOS technologies and modern Swift concurrency.
@@ -95,6 +129,8 @@ to help clarify the philosophies and implementations of different architectures.
 - **Modern UI**: Implementing macOS 26 liquid-glass design language with authentic visual effects
 
 👉 **Source Code**: [Gui/Sources](https://github.com/senatov/MiMiNavigator/tree/master/Gui/Sources)
+
+
 
 ## What's New in v0.9.1.1
 
@@ -290,38 +326,6 @@ Complete implementation of a professional menu bar inspired by Total Commander w
 - [ ] Sync and backup features
 
 See our [Roadmap](#roadmap) section for detailed planning.
-
-## Screenshots
-
-### Main Interface
-**File**: `Gui/Docs/Preview3.png`
-<div style="text-align: center;" >
-  <img
-    src="GUI/Docs/Preview3.png"
-    alt="Preview FrontEnd"
-    title="Preview"
-    style="max-width: 100%; height: auto; border: 1px solid #133347ff; border-radius: 12px;" />
-</div>
-
-### File Operations
-**File**: `Gui/Docs/Preview2.png`
-<div style="text-align: center;" >
-  <img
-    src="GUI/Docs/Preview2.png"
-    alt="Preview FrontEnd"
-    title="Preview"
-    style="max-width: 100%; height: auto; border: 1px solid #133347ff; border-radius: 12px;" />
-</div>
-
-
-**File**: `Gui/Docs/Preview1.png`
-<div style="text-align: center;" >
-  <img
-    src="GUI/Docs/Preview1.png"
-    alt="Preview FrontEnd"
-    title="Preview"
-    style="max-width: 100%; height: auto; border: 1px solid #133347ff; border-radius: 12px;" />
-</div>
 
 
 
@@ -618,6 +622,18 @@ RoundedRectangle(cornerRadius: MenuBarMetrics.corner, style: .continuous)
 ```
 
 ## Development
+
+ 
+### Don't forget sometimes refresh the Project:
+**File**: `Gui/Docs/Preview4.png`
+<div style="text-align: center;" >
+  <img
+    src="GUI/Docs/Preview4.png"
+    alt="Preview refresh"
+    title="Preview refresh"
+    style="max-width: 100%; height: auto; border: 1px solid #133347ff; border-radius: 12px;" />
+</div>
+
 
 ### Setting Up Development Environment
 
