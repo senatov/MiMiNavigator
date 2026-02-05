@@ -77,6 +77,8 @@ struct CreateLinkDialog: View {
                 
                 TextField("Name", text: $linkName)
                     .textFieldStyle(.plain)
+                    .autocorrectionDisabled()
+                    .textContentType(.none)
                     .font(.system(size: 13))
                     .padding(8)
                     .background(

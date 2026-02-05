@@ -131,6 +131,8 @@ struct BreadCrumbControlWrapper: View {
     private var pathTextField: some View {
         TextField("Enter path", text: $editedPathStr)
             .textFieldStyle(.plain)
+            .autocorrectionDisabled()
+            .textContentType(.none)
             .padding(Design.Padding.textFieldPadding)
             .background(Design.Colors.textFieldBackground)
             .clipShape(.rect(cornerRadius: 6))

@@ -73,6 +73,8 @@ struct PackDialog: View {
                 
                 TextField("Name", text: $archiveName)
                     .textFieldStyle(.plain)
+                    .autocorrectionDisabled()
+                    .textContentType(.none)
                     .font(.system(size: 13))
                     .padding(8)
                     .background(
@@ -96,6 +98,8 @@ struct PackDialog: View {
                 HStack(spacing: 6) {
                     TextField("Path", text: $destinationPath)
                         .textFieldStyle(.plain)
+                        .autocorrectionDisabled()
+                        .textContentType(.none)
                         .font(.system(size: 12))
                         .padding(8)
                         .background(

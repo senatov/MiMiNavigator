@@ -111,6 +111,9 @@ enum FileDialogs {
         let textField = NSTextField(frame: NSRect(x: 0, y: 0, width: 350, height: 24))
         textField.stringValue = "New Folder"
         textField.placeholderString = "Folder name"
+        textField.allowsEditingTextAttributes = false
+        textField.cell?.allowsUndo = true
+        (textField.cell as? NSTextFieldCell)?.isAutomaticTextCompletionEnabled = false
         alert.accessoryView = textField
         alert.window.initialFirstResponder = textField
         
