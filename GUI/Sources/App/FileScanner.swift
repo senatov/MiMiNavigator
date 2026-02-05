@@ -16,12 +16,9 @@ enum FileScanner {
         var fileCount = 0
         var result: [CustomFile] = []
         let fileManager = FileManager.default
-
         let wantedKeys: [URLResourceKey] = [.isDirectoryKey, .isSymbolicLinkKey]
-        
         // Determine options based on showHiddenFiles setting
         let options: FileManager.DirectoryEnumerationOptions = showHiddenFiles ? [] : [.skipsHiddenFiles]
-        
         let contents = try fileManager.contentsOfDirectory(
             at: url,
             includingPropertiesForKeys: wantedKeys,

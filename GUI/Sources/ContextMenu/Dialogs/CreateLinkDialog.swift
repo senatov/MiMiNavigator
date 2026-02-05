@@ -8,15 +8,22 @@ import SwiftUI
 
 // MARK: - Link Type
 enum LinkType: String, CaseIterable, Identifiable {
-    case symbolic = "Symbolic Link"
-    case alias = "Finder Alias"
+    case symbolic
+    case alias
     
     var id: String { rawValue }
     
+    var displayName: String {
+        switch self {
+        case .symbolic: return L10n.LinkType.symbolic
+        case .alias: return L10n.LinkType.alias
+        }
+    }
+    
     var description: String {
         switch self {
-        case .symbolic: return "Unix symlink, works in Terminal"
-        case .alias: return "Finder alias, macOS apps only"
+        case .symbolic: return L10n.LinkType.symbolicDescription
+        case .alias: return L10n.LinkType.aliasDescription
         }
     }
 }
@@ -58,12 +65,12 @@ struct CreateLinkDialog: View {
                 .frame(width: 64, height: 64)
             
             // Title
-            Text("Create link to \"\(file.nameStr)\"")
+            Text(L10n.Dialog.CreateLink.title(file.nameStr))
                 .font(.system(size: 13, weight: .semibold))
                 .multilineTextAlignment(.center)
             
             // Destination info
-            Text("In: \(destinationPath.path)")
+            Text(L10n.Dialog.CreateLink.inLocation(destinationPath.path))
                 .font(.system(size: 11))
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
@@ -71,11 +78,11 @@ struct CreateLinkDialog: View {
             
             // Link name
             VStack(alignment: .leading, spacing: 4) {
-                Text("Link name:")
+                Text(L10n.Dialog.CreateLink.linkNameLabel)
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
                 
-                TextField("Name", text: $linkName)
+                TextField(L10n.PathInput.nameLabel, text: $linkName)
                     .textFieldStyle(.plain)
                     .autocorrectionDisabled()
                     .textContentType(.none)
@@ -101,13 +108,13 @@ struct CreateLinkDialog: View {
             
             // Link type picker
             VStack(alignment: .leading, spacing: 4) {
-                Text("Type:")
+                Text(L10n.Dialog.CreateLink.typeLabel)
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
                 
                 Picker("", selection: $selectedType) {
                     ForEach(LinkType.allCases) { type in
-                        Text("\(type.rawValue) — \(type.description)")
+                        Text("\(type.displayName) — \(type.description)")
                             .tag(type)
                     }
                 }
@@ -118,10 +125,10 @@ struct CreateLinkDialog: View {
             
             // Buttons
             HStack(spacing: 12) {
-                HIGSecondaryButton(title: "Cancel", action: onCancel)
+                HIGSecondaryButton(title: L10n.Button.cancel, action: onCancel)
                     .keyboardShortcut(.cancelAction)
                 
-                HIGPrimaryButton(title: "Create", action: { onCreateLink(linkName, selectedType) })
+                HIGPrimaryButton(title: L10n.Button.create, action: { onCreateLink(linkName, selectedType) })
                     .keyboardShortcut(.defaultAction)
                     .disabled(!isValidName)
                     .opacity(isValidName ? 1.0 : 0.5)
@@ -139,9 +146,9 @@ struct CreateLinkDialog: View {
     
     private func validateName(_ name: String) {
         if name.isEmpty {
-            errorMessage = "Name cannot be empty"
+            errorMessage = L10n.Error.nameEmpty
         } else if name.contains("/") || name.contains(":") {
-            errorMessage = "Name cannot contain / or :"
+            errorMessage = L10n.Error.nameInvalidChars
         } else {
             errorMessage = nil
         }

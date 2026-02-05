@@ -129,7 +129,7 @@ struct BreadCrumbControlWrapper: View {
 
     // MARK: - Path TextField
     private var pathTextField: some View {
-        TextField("Enter path", text: $editedPathStr)
+        TextField(L10n.PathInput.placeholder, text: $editedPathStr)
             .textFieldStyle(.plain)
             .autocorrectionDisabled()
             .textContentType(.none)
@@ -169,7 +169,7 @@ struct BreadCrumbControlWrapper: View {
                 }
         }
         .buttonStyle(.plain)
-        .help("Apply changes (⏎)")
+        .help(L10n.PathInput.applyChangesHelp)
     }
 
     // MARK: - Cancel Button
@@ -192,7 +192,7 @@ struct BreadCrumbControlWrapper: View {
 
         }
         .buttonStyle(.plain)
-        .help("Cancel (⎋)")
+        .help(L10n.PathInput.cancelHelp)
     }
 
     // MARK: - Setup Editing Mode
