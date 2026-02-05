@@ -13,6 +13,7 @@ struct FileRowView: View {
     let file: CustomFile
     let isSelected: Bool
     let isActivePanel: Bool
+    var isMarked: Bool = false  // Total Commander style marking
 
     // MARK: - View Body
     var body: some View {
@@ -23,12 +24,21 @@ struct FileRowView: View {
             .contentShape(Rectangle())
     }
 
-    // MARK: - Text color based on selection state (Finder style - all black/white)
+    // MARK: - Text color based on selection and mark state
+    /// macOS style: marked files shown in accent color (like Finder tags)
     private var nameColor: Color {
         if isSelected && isActivePanel {
             return .white
         }
+        if isMarked {
+            return .accentColor  // macOS style - accent color for marked
+        }
         return .primary
+    }
+    
+    // MARK: - Font weight for marked files
+    private var nameWeight: Font.Weight {
+        isMarked ? .semibold : .regular
     }
 
     // MARK: - Base content for a single file row (icon + name)
@@ -60,13 +70,22 @@ struct FileRowView: View {
             .allowsHitTesting(false)
             .layoutPriority(1)
             
-            // File name - Finder style (system font, truncates in middle)
-            Text(file.nameStr)
-                .font(.system(size: 13))
-                .foregroundStyle(nameColor)
-                .lineLimit(1)
-                .truncationMode(.middle)
-                .layoutPriority(0)
+            // File name - with mark indicator
+            HStack(spacing: 4) {
+                // Mark indicator (subtle checkmark for marked files)
+                if isMarked {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 10))
+                        .foregroundStyle(.accentColor)
+                }
+                
+                Text(file.nameStr)
+                    .font(.system(size: 13, weight: nameWeight))
+                    .foregroundStyle(nameColor)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+            }
+            .layoutPriority(0)
         }
     }
     

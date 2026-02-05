@@ -20,6 +20,13 @@ enum ActiveDialog: Identifiable {
     case error(title: String, message: String)
     case success(title: String, message: String)
     
+    // Batch operation dialogs
+    case batchCopyConfirmation(files: [CustomFile], destination: URL, sourcePanel: PanelSide)
+    case batchMoveConfirmation(files: [CustomFile], destination: URL, sourcePanel: PanelSide)
+    case batchDeleteConfirmation(files: [CustomFile], sourcePanel: PanelSide)
+    case batchPackConfirmation(files: [CustomFile], destination: URL, sourcePanel: PanelSide)
+    case batchProgress(state: BatchOperationState)
+    
     var id: String {
         switch self {
         case .deleteConfirmation: return "delete"
@@ -30,6 +37,11 @@ enum ActiveDialog: Identifiable {
         case .fileConflict: return "conflict"
         case .error: return "error"
         case .success: return "success"
+        case .batchCopyConfirmation: return "batchCopy"
+        case .batchMoveConfirmation: return "batchMove"
+        case .batchDeleteConfirmation: return "batchDelete"
+        case .batchPackConfirmation: return "batchPack"
+        case .batchProgress: return "batchProgress"
         }
     }
 }

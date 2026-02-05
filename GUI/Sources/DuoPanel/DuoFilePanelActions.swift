@@ -59,46 +59,20 @@ struct DuoFilePanelActions {
         FileActions.edit(file)
     }
 
-    // MARK: - F5 Copy
+    // MARK: - F5 Copy (supports batch operations)
     func performCopy() {
         log.debug("performCopy - Copy button pressed")
         
-        guard let source = currentSelectedFile else {
-            log.debug("No file selected for Copy")
-            return
-        }
-        
-        guard let destination = targetPanelURL else {
-            log.debug("No destination panel available")
-            return
-        }
-        
-        FileActions.copyWithConfirmation(source, to: destination) {
-            Task {
-                await refreshBothPanels()
-            }
-        }
+        // Use batch coordinator for multi-selection support
+        BatchOperationCoordinator.shared.initiateCopy(appState: appState)
     }
 
-    // MARK: - F6 Move
+    // MARK: - F6 Move (supports batch operations)
     func performMove() {
         log.debug("performMove - Move button pressed")
         
-        guard let source = currentSelectedFile else {
-            log.debug("No file selected for Move")
-            return
-        }
-        
-        guard let destination = targetPanelURL else {
-            log.debug("No destination panel available")
-            return
-        }
-        
-        FileActions.moveWithConfirmation(source, to: destination) {
-            Task {
-                await refreshBothPanels()
-            }
-        }
+        // Use batch coordinator for multi-selection support
+        BatchOperationCoordinator.shared.initiateMove(appState: appState)
     }
 
     // MARK: - F7 New Folder
@@ -117,20 +91,12 @@ struct DuoFilePanelActions {
         }
     }
 
-    // MARK: - F8 Delete
+    // MARK: - F8 Delete (supports batch operations)
     func performDelete() {
         log.debug("performDelete - Delete button pressed")
         
-        guard let file = currentSelectedFile else {
-            log.debug("No file selected for Delete")
-            return
-        }
-        
-        FileActions.deleteWithConfirmation(file) {
-            Task {
-                await refreshBothPanels()
-            }
-        }
+        // Use batch coordinator for multi-selection support
+        BatchOperationCoordinator.shared.initiateDelete(appState: appState)
     }
 
     // MARK: - Settings

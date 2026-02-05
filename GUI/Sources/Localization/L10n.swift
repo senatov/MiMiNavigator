@@ -142,4 +142,62 @@ enum L10n {
             String(localized: "\(count) items", comment: "Items count")
         }
     }
+    
+    // MARK: - Multi-Selection (Total Commander style)
+    enum Selection {
+        static let markByPattern = String(localized: "Mark by Pattern", comment: "Mark by pattern dialog title")
+        static let unmarkByPattern = String(localized: "Unmark by Pattern", comment: "Unmark by pattern dialog title")
+        static let patternHint = String(localized: "Use * and ? wildcards (e.g., *.txt, photo*)", comment: "Pattern hint")
+        static func markedCount(_ count: Int) -> String {
+            String(localized: "\(count) marked", comment: "Marked files count")
+        }
+        static func markedSize(_ size: String) -> String {
+            String(localized: "\(size) selected", comment: "Marked files size")
+        }
+    }
+    
+    // MARK: - Batch Operations
+    enum BatchOperation {
+        // Operation types
+        static let copying = String(localized: "Copying...", comment: "Copying operation")
+        static let moving = String(localized: "Moving...", comment: "Moving operation")
+        static let deleting = String(localized: "Deleting...", comment: "Deleting operation")
+        static let packing = String(localized: "Packing...", comment: "Packing operation")
+        
+        // Past tense
+        static let copied = String(localized: "copied", comment: "Copied past tense")
+        static let moved = String(localized: "moved", comment: "Moved past tense")
+        static let deleted = String(localized: "deleted", comment: "Deleted past tense")
+        static let packed = String(localized: "packed", comment: "Packed past tense")
+        
+        // Progress dialog
+        static let currentFile = String(localized: "Current file:", comment: "Current file label")
+        static let cancelled = String(localized: "Operation cancelled", comment: "Operation cancelled")
+        static let showErrors = String(localized: "Show Errors", comment: "Show errors button")
+        static let operationErrors = String(localized: "Operation Errors", comment: "Operation errors title")
+        
+        static func timeRemaining(_ time: String) -> String {
+            String(localized: "~\(time) remaining", comment: "Time remaining")
+        }
+        static func completedSuccess(_ count: Int, _ operation: String) -> String {
+            String(localized: "\(count) files \(operation) successfully", comment: "Completed success")
+        }
+        static func completedWithErrors(_ success: Int, _ errors: Int) -> String {
+            String(localized: "Completed: \(success) success, \(errors) errors", comment: "Completed with errors")
+        }
+        static func errorsCount(_ count: Int) -> String {
+            String(localized: "\(count) errors occurred", comment: "Errors count")
+        }
+        
+        // Confirmation dialogs for batch
+        static func confirmCopy(_ count: Int, _ destination: String) -> String {
+            String(localized: "Copy \(count) files to \(destination)?", comment: "Confirm batch copy")
+        }
+        static func confirmMove(_ count: Int, _ destination: String) -> String {
+            String(localized: "Move \(count) files to \(destination)?", comment: "Confirm batch move")
+        }
+        static func confirmDelete(_ count: Int) -> String {
+            String(localized: "Delete \(count) files?", comment: "Confirm batch delete")
+        }
+    }
 }

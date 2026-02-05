@@ -187,6 +187,40 @@ final class ArchiveService {
         try await runProcess(process)
     }
     
+    // MARK: - Create archive with progress handler
+    /// Creates an archive from files with progress reporting
+    func createArchive(
+        from files: [URL],
+        to archiveURL: URL,
+        format: ArchiveFormat,
+        progressHandler: @escaping (Double) -> Void
+    ) async throws {
+        // Calculate total size for progress estimation
+        let totalSize = files.reduce(0) { total, url in
+            total + (try? fileManager.attributesOfItem(atPath: url.path)[.size] as? Int64 ?? 0) ?? 0
+        }
+        
+        // Report initial progress
+        progressHandler(0.0)
+        
+        switch format {
+        case .zip:
+            try await createZipArchive(from: files, to: archiveURL)
+        case .tar:
+            try await createTarArchive(from: files, to: archiveURL, compression: nil)
+        case .tarGz:
+            try await createTarArchive(from: files, to: archiveURL, compression: "gzip")
+        case .tarBz2:
+            try await createTarArchive(from: files, to: archiveURL, compression: "bzip2")
+        case .sevenZip:
+            try await create7zArchive(from: files, to: archiveURL)
+        }
+        
+        // Report completion
+        progressHandler(1.0)
+        log.info("Created archive: \(archiveURL.lastPathComponent)")
+    }
+    
     // MARK: - Run process async
     private func runProcess(_ process: Process) async throws {
         let errorPipe = Pipe()
