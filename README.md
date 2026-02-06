@@ -763,7 +763,7 @@ log.error("Error messages")
 - [ ] Three-panel layout option
 - [ ] Tabbed interface
 - [ ] Custom themes
-- [ ] Terminal integration
+- [x] Terminal integration
 - [x] Archive support
 - [ ] FTP/SFTP support
 - [ ] App Store submission
