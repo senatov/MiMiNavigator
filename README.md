@@ -750,12 +750,12 @@ log.error("Error messages")
 ### Version 0.10.0 - Enhanced Operations 🚧
 **Target**: Q1 2025
 
-- [ ] Multi-selection support
+- [x] Multi-selection support
 - [ ] Search functionality
-- [ ] Quick Look integration
-- [ ] Delete with confirmation
-- [ ] Move/Rename (F6)
-- [ ] Column width persistence
+- [x] Quick Look integration
+- [x] Delete with confirmation
+- [x] Move/Rename (F6)
+- [x] Column width persistence
 
 ### Version 1.0.0 - Production Release 🎯
 **Target**: Q2 2025
@@ -764,7 +764,7 @@ log.error("Error messages")
 - [ ] Tabbed interface
 - [ ] Custom themes
 - [ ] Terminal integration
-- [ ] Archive support
+- [x] Archive support
 - [ ] FTP/SFTP support
 - [ ] App Store submission
 
