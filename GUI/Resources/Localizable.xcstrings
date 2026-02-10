@@ -4,6 +4,9 @@
     "" : {
 
     },
+    "—" : {
+
+    },
     "... and %lld more" : {
 
     },
@@ -17,13 +20,29 @@
         }
       }
     },
+    "'%@' is already assigned to '%@'. Replace it?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "'%1$@' is already assigned to '%2$@'. Replace it?"
+          }
+        }
+      }
+    },
     "(Default)" : {
 
     },
     "[ File Name ] Conflict" : {
 
     },
+    "*.txt; *.swift; report*" : {
+
+    },
     "/" : {
+
+    },
+    "/Users/..." : {
 
     },
     "%@ — %@" : {
@@ -72,8 +91,14 @@
         }
       }
     },
+    "%lld files scanned" : {
+      "comment" : "Files scanned count"
+    },
     "%lld folders" : {
 
+    },
+    "%lld found" : {
+      "comment" : "Found count"
     },
     "%lld items" : {
       "comment" : "Items count",
@@ -94,6 +119,9 @@
     },
     "%lld marked" : {
       "comment" : "Marked files count"
+    },
+    "%lld shortcuts" : {
+
     },
     "•" : {
 
@@ -137,6 +165,15 @@
           }
         }
       }
+    },
+    "Advanced" : {
+      "comment" : "Advanced tab"
+    },
+    "All keyboard shortcuts will be reset to factory defaults. This cannot be undone." : {
+
+    },
+    "All Shortcuts" : {
+
     },
     "Already Exists" : {
       "comment" : "Already exists error title",
@@ -212,6 +249,12 @@
     "Back button" : {
 
     },
+    "Browse for directory" : {
+
+    },
+    "bytes" : {
+
+    },
     "Cancel" : {
       "comment" : "Cancel button",
       "localizations" : {
@@ -246,6 +289,15 @@
         }
       }
     },
+    "Cancelled" : {
+      "comment" : "Search cancelled status"
+    },
+    "Cancelled: %lld found" : {
+
+    },
+    "Case sensitive" : {
+      "comment" : "Case sensitive toggle"
+    },
     "Clear all history" : {
 
     },
@@ -253,6 +305,12 @@
 
     },
     "Click: go forward | Ctrl+click: show history" : {
+
+    },
+    "Close" : {
+      "comment" : "Close button"
+    },
+    "Close (⎋)" : {
 
     },
     "Completed: %lld success, %lld errors" : {
@@ -282,6 +340,9 @@
           }
         }
       }
+    },
+    "Content search scans text files only. Binary files are skipped automatically. Archive search supports ZIP, 7z, TAR, GZ, BZ2." : {
+
     },
     "copied" : {
       "comment" : "Copied past tense"
@@ -314,6 +375,9 @@
         }
       }
     },
+    "Copy All Paths" : {
+      "comment" : "Copy all paths action"
+    },
     "Copy File?" : {
       "comment" : "Copy confirmation dialog title",
       "localizations" : {
@@ -335,7 +399,7 @@
 
     },
     "Copy Path" : {
-
+      "comment" : "Copy path action"
     },
     "Copying..." : {
       "comment" : "Copying operation"
@@ -490,6 +554,16 @@
         }
       }
     },
+    "Done: %lld found in %@ · %lld dirs · %lld files" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Done: %1$lld found in %2$@ · %3$lld dirs · %4$lld files"
+          }
+        }
+      }
+    },
     "Enter folder name:" : {
       "comment" : "Enter folder name label",
       "localizations" : {
@@ -507,6 +581,9 @@
         }
       }
     },
+    "Enter password…" : {
+      "comment" : "Password placeholder"
+    },
     "Enter path" : {
       "comment" : "Path input placeholder",
       "localizations" : {
@@ -523,6 +600,9 @@
           }
         }
       }
+    },
+    "Enter search criteria and press Search" : {
+
     },
     "Error" : {
       "comment" : "Error title",
@@ -557,6 +637,9 @@
           }
         }
       }
+    },
+    "Export Results…" : {
+      "comment" : "Export results action"
     },
     "F3 View" : {
       "comment" : "View toolbar button",
@@ -711,6 +794,27 @@
         }
       }
     },
+    "File Name Pattern Syntax" : {
+      "comment" : "Pattern help title"
+    },
+    "Filter by date" : {
+      "comment" : "Date filter toggle"
+    },
+    "Filter by size" : {
+      "comment" : "Size filter toggle"
+    },
+    "Filter…" : {
+
+    },
+    "Find Files" : {
+      "comment" : "Find files panel title"
+    },
+    "Find Files (⌥F7)" : {
+
+    },
+    "Find text:" : {
+      "comment" : "Content search label"
+    },
     "Finder Alias" : {
       "comment" : "Finder alias type",
       "localizations" : {
@@ -817,10 +921,16 @@
 
     },
     "From:" : {
-
+      "comment" : "From label"
+    },
+    "General" : {
+      "comment" : "General tab"
     },
     "Get Info" : {
 
+    },
+    "Go to File" : {
+      "comment" : "Go to file action"
     },
     "Go to parent directory" : {
 
@@ -876,6 +986,25 @@
         }
       }
     },
+    "Keyboard Shortcuts" : {
+
+    },
+    "Keyboard Shortcuts…" : {
+
+    },
+    "L%lld: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "L%1$lld: %2$@"
+          }
+        }
+      }
+    },
+    "Leave empty for filename-only search" : {
+
+    },
     "Link name:" : {
       "comment" : "Link name label",
       "localizations" : {
@@ -912,6 +1041,15 @@
     },
     "Mark by Pattern" : {
       "comment" : "Mark by pattern dialog title"
+    },
+    "Match" : {
+
+    },
+    "max bytes" : {
+
+    },
+    "min bytes" : {
+
     },
     "More options..." : {
 
@@ -1050,7 +1188,16 @@
         }
       }
     },
+    "New Search" : {
+      "comment" : "New search button"
+    },
     "No applications found" : {
+
+    },
+    "No files found" : {
+      "comment" : "No results message"
+    },
+    "No matching shortcuts" : {
 
     },
     "No navigation history" : {
@@ -1072,6 +1219,9 @@
           }
         }
       }
+    },
+    "Open" : {
+      "comment" : "Open file action"
     },
     "Open in Finder" : {
 
@@ -1103,6 +1253,9 @@
     "Panels / Navigation" : {
 
     },
+    "Password Required" : {
+      "comment" : "Password dialog title"
+    },
     "Path" : {
       "comment" : "Path label",
       "localizations" : {
@@ -1119,6 +1272,21 @@
           }
         }
       }
+    },
+    "Pattern syntax help" : {
+
+    },
+    "Paused" : {
+
+    },
+    "Press a key…" : {
+
+    },
+    "Ready" : {
+      "comment" : "Search ready status"
+    },
+    "Regex" : {
+      "comment" : "Regex toggle"
     },
     "Rename" : {
       "comment" : "Rename button",
@@ -1188,6 +1356,21 @@
         }
       }
     },
+    "Reset All Shortcuts" : {
+
+    },
+    "Reset All to Defaults" : {
+
+    },
+    "Reset to default" : {
+
+    },
+    "Reset to Defaults" : {
+
+    },
+    "Reveal in Finder" : {
+      "comment" : "Reveal in finder action"
+    },
     "Save to:" : {
       "comment" : "Save to label",
       "localizations" : {
@@ -1201,6 +1384,34 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Сохранить в:"
+          }
+        }
+      }
+    },
+    "Search" : {
+      "comment" : "Search button"
+    },
+    "Search for:" : {
+      "comment" : "File name pattern label"
+    },
+    "Search in archives" : {
+      "comment" : "Archives toggle"
+    },
+    "Search in:" : {
+      "comment" : "Search directory label"
+    },
+    "Search inside file contents…" : {
+
+    },
+    "Searching…" : {
+      "comment" : "Searching status"
+    },
+    "Searching… %lld found · %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Searching… %1$lld found · %2$@"
           }
         }
       }
@@ -1239,6 +1450,9 @@
         }
       }
     },
+    "Shortcut Conflict" : {
+
+    },
     "Show Errors" : {
       "comment" : "Show errors button"
     },
@@ -1248,8 +1462,17 @@
     "Show navigation history" : {
 
     },
+    "Size" : {
+
+    },
+    "Skip Archive" : {
+      "comment" : "Skip archive button"
+    },
     "Sort By" : {
 
+    },
+    "Subdirectories" : {
+      "comment" : "Subdirectories toggle"
     },
     "Symbolic Link" : {
       "comment" : "Symbolic link type",
@@ -1285,8 +1508,11 @@
         }
       }
     },
+    "The archive is password-protected:" : {
+      "comment" : "Archive protected message"
+    },
     "To:" : {
-
+      "comment" : "To label"
     },
     "Toggle Panel Focus (⌘⌥T)" : {
 
@@ -1339,6 +1565,9 @@
     },
     "Use * and ? wildcards (e.g., *.txt, photo*)" : {
       "comment" : "Pattern hint"
+    },
+    "Use wildcards: * (any chars) and ? (single char). Separate patterns with ;" : {
+
     },
     "Visited directories will appear here" : {
 

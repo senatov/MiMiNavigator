@@ -15,6 +15,7 @@ enum FinderIntegration {
     // MARK: - Get Info
     
     /// Show Finder Get Info window centered on main window
+    @MainActor
     static func showGetInfo(for url: URL) {
         log.debug("[FinderIntegration] showGetInfo: \(url.path)")
         

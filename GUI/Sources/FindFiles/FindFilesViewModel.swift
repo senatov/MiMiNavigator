@@ -112,7 +112,7 @@ final class FindFilesViewModel {
 
             let stream = await engine.search(
                 criteria: criteria,
-                passwordCallback: { [weak self] archiveName in
+                passwordCallback: { @Sendable [weak self] archiveName in
                     guard let self else { return .skip }
                     return await self.requestArchivePassword(archiveName: archiveName)
                 }
