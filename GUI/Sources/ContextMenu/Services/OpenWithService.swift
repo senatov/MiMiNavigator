@@ -46,7 +46,7 @@ final class OpenWithService {
     func getApplications(for fileURL: URL) -> [AppInfo] {
         log.debug("\(#function) file='\(fileURL.lastPathComponent)' ext=\(fileURL.pathExtension)")
         
-        guard let contentType = UTType(filenameExtension: fileURL.pathExtension) else {
+        guard UTType(filenameExtension: fileURL.pathExtension) != nil else {
             log.warning("\(#function) unknown UTType for ext='\(fileURL.pathExtension)', using fallback editors")
             return getAllEditors()
         }

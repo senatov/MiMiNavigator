@@ -125,7 +125,7 @@ actor FindFilesEngine {
         stats.startTime = Date()
 
         return AsyncStream { continuation in
-            let task = Task { [weak self] in
+            let task = Task { @Sendable [weak self] in
                 guard let self else {
                     continuation.finish()
                     return
@@ -140,7 +140,7 @@ actor FindFilesEngine {
             }
             self.currentTask = task
 
-            continuation.onTermination = { _ in
+            continuation.onTermination = { @Sendable _ in
                 task.cancel()
             }
         }
@@ -210,19 +210,23 @@ actor FindFilesEngine {
             options: [.skipsPackageDescendants]
         ) else { return }
 
-        for case let fileURL as URL in enumerator {
-            guard !Task.isCancelled else { return }
-
-            let resourceValues = try? fileURL.resourceValues(forKeys: Set(keys))
-            let isDir = resourceValues?.isDirectory ?? false
-
-            // Handle depth control
+        // Collect URLs synchronously to avoid makeIterator() in async context
+        var fileURLs: [(URL, URLResourceValues?)] = []
+        while let obj = enumerator.nextObject() {
+            guard let fileURL = obj as? URL else { continue }
+            let rv = try? fileURL.resourceValues(forKeys: Set(keys))
+            let isDir = rv?.isDirectory ?? false
             if isDir {
                 if !criteria.searchInSubdirectories || depth >= criteria.maxDepth {
                     enumerator.skipDescendants()
                 }
                 continue
             }
+            fileURLs.append((fileURL, rv))
+        }
+
+        for (fileURL, resourceValues) in fileURLs {
+            guard !Task.isCancelled else { return }
 
             stats.filesScanned += 1
 

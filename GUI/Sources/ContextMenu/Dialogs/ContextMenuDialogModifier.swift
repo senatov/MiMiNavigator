@@ -208,7 +208,7 @@ struct ContextMenuDialogModifier: ViewModifier {
                 }
             )
             
-        case .batchPackConfirmation(let files, let destination, let sourcePanel):
+        case .batchPackConfirmation(let files, let destination, _):
             PackDialog(
                 files: files,
                 destinationPath: destination,

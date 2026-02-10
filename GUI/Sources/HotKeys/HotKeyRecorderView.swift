@@ -65,7 +65,7 @@ struct HotKeyRecorderView: View {
 
         monitor = NSEvent.addLocalMonitorForEvents(matching: [.keyDown]) { [self] event in
             let keyCode = event.keyCode
-            let mods = HotKeyModifiers(from: event.modifierFlags)
+            let mods = HotKeyModifiers.fromNSFlags(event.modifierFlags)
 
             // Escape alone cancels recording
             if keyCode == 0x35 && mods.subtracting(.function).isEmpty {

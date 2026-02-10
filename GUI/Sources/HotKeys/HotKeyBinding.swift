@@ -13,6 +13,11 @@ import Foundation
 struct HotKeyModifiers: OptionSet, Codable, Hashable, Sendable {
     let rawValue: UInt
 
+    // MARK: - OptionSet requirement
+    init(rawValue: UInt) {
+        self.rawValue = rawValue
+    }
+
     static let command  = HotKeyModifiers(rawValue: 1 << 0)
     static let option   = HotKeyModifiers(rawValue: 1 << 1)
     static let control  = HotKeyModifiers(rawValue: 1 << 2)
@@ -22,14 +27,14 @@ struct HotKeyModifiers: OptionSet, Codable, Hashable, Sendable {
     static let none: HotKeyModifiers = []
 
     // MARK: - Conversion from NSEvent.ModifierFlags
-    init(from nsFlags: NSEvent.ModifierFlags) {
+    static func fromNSFlags(_ nsFlags: NSEvent.ModifierFlags) -> HotKeyModifiers {
         var result: HotKeyModifiers = []
         if nsFlags.contains(.command)  { result.insert(.command) }
         if nsFlags.contains(.option)   { result.insert(.option) }
         if nsFlags.contains(.control)  { result.insert(.control) }
         if nsFlags.contains(.shift)    { result.insert(.shift) }
         if nsFlags.contains(.function) { result.insert(.function) }
-        self = result
+        return result
     }
 
     // MARK: - Conversion to NSEvent.ModifierFlags

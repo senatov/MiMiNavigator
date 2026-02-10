@@ -55,7 +55,7 @@ final class HotKeyStore {
     /// Lookup action by keyCode + modifiers (used by keyboard handler)
     func action(forKeyCode keyCode: UInt16, modifiers: NSEvent.ModifierFlags) -> HotKeyAction? {
         // Build a normalized key for lookup
-        let normalizedMods = HotKeyModifiers(from: modifiers)
+        let normalizedMods = HotKeyModifiers.fromNSFlags(modifiers)
         let key = lookupKey(keyCode: keyCode, modifiers: normalizedMods)
         return reverseLookup[key]
     }
