@@ -15,6 +15,7 @@ struct DuoFilePanelView: View {
     @State private var leftPanelWidth: CGFloat = 0
     @State private var isInitialized = false
     @State private var keyboardHandler: DuoFilePanelKeyboardHandler?
+    @State private var findFilesCoordinator = FindFilesCoordinator.shared
 
     // MARK: - Constants
     private enum Layout {
@@ -106,6 +107,8 @@ struct DuoFilePanelView: View {
                 .animation(.easeOut(duration: 0.15), value: BatchOperationManager.shared.showProgressDialog)
             }
         }
+        // Non-modal Find Files panel overlay
+        .findFilesOverlay(coordinator: findFilesCoordinator)
     }
     
     // MARK: - Actions Helper
@@ -197,6 +200,11 @@ extension DuoFilePanelView {
         handler.onNewFolder = { actions.performNewFolder() }
         handler.onDelete = { actions.performDelete() }
         handler.onExit = { actions.performExit() }
+        handler.onFindFiles = {
+            FindFilesCoordinator.shared.toggle(
+                searchPath: appState.focusedPanel == .left ? appState.leftPath : appState.rightPath
+            )
+        }
         handler.register()
         keyboardHandler = handler
         log.debug("\(#function) keyboard handler registered")

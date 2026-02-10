@@ -23,6 +23,7 @@ final class DuoFilePanelKeyboardHandler {
     var onNewFolder: (() -> Void)?
     var onDelete: (() -> Void)?
     var onExit: (() -> Void)?
+    var onFindFiles: (() -> Void)?
     
     init(appState: AppState) {
         self.appState = appState
@@ -117,6 +118,13 @@ final class DuoFilePanelKeyboardHandler {
             return nil
         }
         
+        // Option+F7: Find Files (Total Commander standard)
+        if modifiers.contains(.option) && keyCode == KeyCodes.f7 {
+            log.info("[KEY] Alt+F7 pressed → Find Files")
+            onFindFiles?()
+            return nil
+        }
+
         // Option+F4: Exit
         if modifiers.contains(.option) && keyCode == KeyCodes.f4 {
             onExit?()
