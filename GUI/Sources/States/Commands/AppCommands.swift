@@ -35,6 +35,16 @@ struct AppCommands: Commands {
             }
             .keyboardShortcut("c", modifiers: [.command])
         }
+        CommandMenu("Search") {
+            Button("Find Files (⌥F7)") {
+                log.debug("KB: Find Files")
+                FindFilesCoordinator.shared.toggle(
+                    searchPath: appState.focusedPanel == .left ? appState.leftPath : appState.rightPath
+                )
+            }
+            .keyboardShortcut("f", modifiers: [.command, .shift])
+        }
+
         CommandGroup(replacing: .appTermination) {
             Button("Exit") {
                 NSApplication.shared.terminate(nil)
