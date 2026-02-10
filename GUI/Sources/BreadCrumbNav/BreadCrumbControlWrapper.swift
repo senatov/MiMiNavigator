@@ -118,36 +118,27 @@ struct BreadCrumbControlWrapper: View {
     // MARK: - Editing View
     private var editingView: some View {
         return HStack(spacing: 8) {
-            pathTextField
+            PathAutoCompleteField(
+                text: $editedPathStr,
+                isFocused: $isTextFieldFocused,
+                onSubmit: {
+                    log.info("Submitted new path: \(editedPathStr)")
+                    applyPathUpdate()
+                },
+                onCancel: {
+                    log.info("Exit command received (Escape)")
+                    withAnimation(.easeInOut(duration: Design.animationDuration)) {
+                        isEditing = false
+                    }
+                }
+            )
+            .onAppear {
+                setupEditingMode()
+            }
             confirmButton
             cancelButton
         }
         .transition(.opacity)
-    }
-
-    // MARK: - Path TextField
-    private var pathTextField: some View {
-        TextField(L10n.PathInput.placeholder, text: $editedPathStr)
-            .textFieldStyle(.plain)
-            .autocorrectionDisabled()
-            .textContentType(.none)
-            .padding(Design.Padding.textFieldPadding)
-            .background(Design.Colors.textFieldBackground)
-            .clipShape(.rect(cornerRadius: 6))
-            .focused($isTextFieldFocused)
-            .onAppear {
-                setupEditingMode()
-            }
-            .onExitCommand {
-                log.info("Exit command received (Escape)")
-                withAnimation(.easeInOut(duration: Design.animationDuration)) {
-                    isEditing = false
-                }
-            }
-            .onSubmit {
-                log.info("Submitted new path: \(editedPathStr)")
-                applyPathUpdate()
-            }
     }
 
     // MARK: - Confirm Button

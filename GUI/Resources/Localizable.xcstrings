@@ -36,6 +36,9 @@
         }
       }
     },
+    "%@ free" : {
+
+    },
     "%@ selected" : {
       "comment" : "Marked files size"
     },
