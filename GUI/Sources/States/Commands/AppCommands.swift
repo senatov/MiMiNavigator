@@ -45,6 +45,14 @@ struct AppCommands: Commands {
             .keyboardShortcut("f", modifiers: [.command, .shift])
         }
 
+        CommandMenu("Settings") {
+            Button("Keyboard Shortcuts…") {
+                log.debug("Menu: Keyboard Shortcuts")
+                HotKeySettingsCoordinator.shared.showSettings()
+            }
+            .keyboardShortcut(",", modifiers: [.command])
+        }
+
         CommandGroup(replacing: .appTermination) {
             Button("Exit") {
                 NSApplication.shared.terminate(nil)

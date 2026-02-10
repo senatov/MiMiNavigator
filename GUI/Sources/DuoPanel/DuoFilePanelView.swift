@@ -205,6 +205,12 @@ extension DuoFilePanelView {
                 searchPath: appState.focusedPanel == .left ? appState.leftPath : appState.rightPath
             )
         }
+        handler.onOpenSelected = { appState.openSelectedItem() }
+        handler.onRefreshPanels = { appState.forceRefreshBothPanels() }
+        handler.onToggleHiddenFiles = { appState.toggleShowHiddenFiles() }
+        handler.onOpenSettings = {
+            HotKeySettingsCoordinator.shared.showSettings()
+        }
         handler.register()
         keyboardHandler = handler
         log.debug("\(#function) keyboard handler registered")
