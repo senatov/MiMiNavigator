@@ -8,7 +8,7 @@
 import SwiftUI
 
 // MARK: - Selection Status Bar
-/// Shows information about marked files at the bottom of file panel
+/// Shows information about marked files and available disk space at the bottom of file panel
 struct SelectionStatusBar: View {
     @Environment(AppState.self) var appState
     let panelSide: PanelSide
@@ -29,9 +29,36 @@ struct SelectionStatusBar: View {
         ByteCountFormatter.string(fromByteCount: markedSize, countStyle: .file)
     }
 
+    private var currentPath: String {
+        panelSide == .left ? appState.leftPath : appState.rightPath
+    }
+
+    /// Available disk space for the volume containing the current panel path
+    private var availableDiskSpace: String {
+        let url = URL(fileURLWithPath: currentPath)
+        // Try the preferred key first, fall back to basic available capacity
+        if let values = try? url.resourceValues(forKeys: [
+            .volumeAvailableCapacityForImportantUsageKey,
+            .volumeAvailableCapacityKey
+        ]) {
+            if let important = values.volumeAvailableCapacityForImportantUsage, important > 0 {
+                return ByteCountFormatter.string(fromByteCount: important, countStyle: .file)
+            }
+            if let basic = values.volumeAvailableCapacity, basic > 0 {
+                return ByteCountFormatter.string(fromByteCount: Int64(basic), countStyle: .file)
+            }
+        }
+        // Last resort: FileManager attributesOfFileSystem
+        if let attrs = try? FileManager.default.attributesOfFileSystem(forPath: currentPath),
+           let freeSize = attrs[.systemFreeSize] as? Int64, freeSize > 0 {
+            return ByteCountFormatter.string(fromByteCount: freeSize, countStyle: .file)
+        }
+        return "—"
+    }
+
     var body: some View {
         HStack(spacing: 12) {
-            // Marked files indicator
+            // Left side: disk space or marked files info
             if markedCount > 0 {
                 HStack(spacing: 4) {
                     Image(systemName: "checkmark.circle.fill")
@@ -49,11 +76,22 @@ struct SelectionStatusBar: View {
                 Text(L10n.Selection.markedSize(formattedSize))
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
+            } else {
+                // Available disk space
+                HStack(spacing: 4) {
+                    Image(systemName: "internaldrive")
+                        .font(.system(size: 10))
+                        .foregroundStyle(.secondary)
+
+                    Text("\(availableDiskSpace) free")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                }
             }
 
             Spacer()
 
-            // Total files count
+            // Right side: total items count
             Text("\(totalFiles) items")
                 .font(.system(size: 11))
                 .foregroundStyle(.secondary)

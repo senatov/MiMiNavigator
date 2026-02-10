@@ -72,7 +72,7 @@ actor DualDirectoryScanner {
     // MARK: - Refresh files for a panel
     @Sendable
     func refreshFiles(currSide: PanelSide) async {
-        log.verbose("\(#function) side: <<\(currSide)>>")
+        log.verbose("⟳ \(#function) side: <<\(currSide)>>")
         
         let (path, showHidden): (String, Bool) = await MainActor.run {
             let p = currSide == .left ? appState.leftPath : appState.rightPath
@@ -80,23 +80,52 @@ actor DualDirectoryScanner {
             return (p, h)
         }
         
-        let resolvedURL = URL(fileURLWithPath: path).resolvingSymlinksInPath()
+        log.info("📍 refreshFiles: path='\(path)', showHidden=\(showHidden), side=\(currSide)")
         
-        do {
-            let scanned = try FileScanner.scan(url: resolvedURL, showHiddenFiles: showHidden)
-            await updateScannedFiles(scanned, for: currSide)
-            await updateFileList(panelSide: currSide, with: scanned)
-        } catch let error as NSError {
-            if isPermissionDeniedError(error) {
-                log.warning("Permission denied for \(resolvedURL.path), requesting access...")
-                let granted = await requestAndRetryAccess(for: resolvedURL, side: currSide)
-                if !granted {
-                    log.error("User denied access to \(resolvedURL.path)")
+        let originalURL = URL(fileURLWithPath: path)
+        let resolvedURL = originalURL.resolvingSymlinksInPath()
+        
+        log.info("🔗 originalURL: \(originalURL.path)")
+        log.info("🔗 resolvedURL: \(resolvedURL.path)")
+        if originalURL.path != resolvedURL.path {
+            log.warning("⚠️ Path changed after symlink resolution: '\(originalURL.path)' → '\(resolvedURL.path)'")
+        }
+        
+        // Try original URL first if resolved differs (symlink resolution can break /Volumes paths)
+        let urlsToTry = originalURL.path != resolvedURL.path
+            ? [originalURL, resolvedURL]
+            : [resolvedURL]
+        
+        log.info("🔄 Will try \(urlsToTry.count) URL(s): \(urlsToTry.map(\.path))")
+        
+        for (index, url) in urlsToTry.enumerated() {
+            log.info("🔄 Attempt \(index + 1)/\(urlsToTry.count): \(url.path)")
+            do {
+                let scanned = try FileScanner.scan(url: url, showHiddenFiles: showHidden)
+                log.info("✅ Scan succeeded for \(url.path): \(scanned.count) items")
+                await updateScannedFiles(scanned, for: currSide)
+                await updateFileList(panelSide: currSide, with: scanned)
+                return
+            } catch let error as NSError {
+                log.error("❌ Scan attempt \(index + 1) failed for \(url.path)")
+                log.error("   error: \(error.localizedDescription)")
+                log.error("   domain: \(error.domain), code: \(error.code)")
+                if let underlying = error.userInfo[NSUnderlyingErrorKey] as? NSError {
+                    log.error("   underlying: domain=\(underlying.domain), code=\(underlying.code)")
                 }
-            } else {
-                log.error("Scan failed for <<\(currSide)>>: \(error.localizedDescription)")
+                if isPermissionDeniedError(error) {
+                    log.warning("🔒 Permission denied for \(url.path), requesting access via BookmarkStore...")
+                    let granted = await requestAndRetryAccess(for: url, side: currSide)
+                    if granted {
+                        log.info("✅ Access granted and rescan succeeded for \(url.path)")
+                        return
+                    }
+                    log.warning("⛔ Access request failed or denied for \(url.path)")
+                }
             }
         }
+        
+        log.error("💀 ALL scan attempts failed for <<\(currSide)>> path: '\(path)'")
     }
     
     // MARK: - Check if error is permission denied
@@ -111,18 +140,20 @@ actor DualDirectoryScanner {
     
     // MARK: - Request access and retry scan
     private func requestAndRetryAccess(for url: URL, side: PanelSide) async -> Bool {
+        log.info("🔐 requestAndRetryAccess: requesting bookmark for \(url.path)")
         let granted = await BookmarkStore.shared.requestAccessPersisting(for: url)
+        log.info("🔐 BookmarkStore result: granted=\(granted) for \(url.path)")
         guard granted else { return false }
         
         do {
             let showHidden = await MainActor.run { UserPreferences.shared.snapshot.showHiddenFiles }
             let scanned = try FileScanner.scan(url: url, showHiddenFiles: showHidden)
+            log.info("✅ Rescan after access grant: \(scanned.count) items from \(url.path)")
             await updateScannedFiles(scanned, for: side)
             await updateFileList(panelSide: side, with: scanned)
-            log.info("Successfully scanned \(url.path) after access granted")
             return true
         } catch {
-            log.error("Scan still failed after access granted: \(error.localizedDescription)")
+            log.error("❌ Rescan STILL failed after access granted for \(url.path): \(error)")
             return false
         }
     }
