@@ -223,7 +223,7 @@ struct FileRow: View {
             return .white
         }
         if file.isHidden {
-            return Color(nsColor: .quaternaryLabelColor)
+            return Color(#colorLiteral(red: 0.3767382812, green: 0.3767382812, blue: 0.3767382812, alpha: 1))  // Brighter bluish gray
         }
         return Color(nsColor: .secondaryLabelColor)
     }

@@ -38,7 +38,7 @@ struct FileRowView: View {
             return .accentColor
         }
         if file.isHidden {
-            return Color(nsColor: .tertiaryLabelColor)
+            return Color(#colorLiteral(red: 0.3767382812, green: 0.3767382812, blue: 0.3767382812, alpha: 1))  // Brighter bluish gray
         }
         return .primary
     }
