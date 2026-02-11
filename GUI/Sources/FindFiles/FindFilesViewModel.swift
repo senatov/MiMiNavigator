@@ -202,17 +202,79 @@ final class FindFilesViewModel {
 
     // MARK: - Actions on Results
 
-    /// Navigate to result file in the active panel
+    /// Navigate to result file in the active panel.
+    /// For archive entries: extract the archive first, then navigate into the extracted directory.
     func goToFile(result: FindFilesResult, appState: AppState) {
-        let targetDir = result.fileURL.deletingLastPathComponent().path
         let panel = appState.focusedPanel
-        appState.updatePath(targetDir, for: panel)
-        Task {
-            await appState.scanner.refreshFiles(currSide: panel)
-            // Try to select the file
-            let files = appState.displayedFiles(for: panel)
-            if let match = files.first(where: { $0.nameStr == result.fileName }) {
-                appState.select(match, on: panel)
+
+        if result.isInsideArchive, let archivePath = result.archivePath {
+            // Archive result: extract archive and navigate to the file inside it
+            let archiveURL = URL(fileURLWithPath: archivePath)
+
+            Task { @MainActor in
+                log.info("[FindFiles] goToFile: extracting archive \(archiveURL.lastPathComponent) for result \(result.fileName)")
+
+                do {
+                    let tempDir = try await ArchiveManager.shared.openArchive(at: archiveURL)
+
+                    // Update archive state on the panel
+                    var archState = appState.archiveState(for: panel)
+                    archState.enterArchive(archiveURL: archiveURL, tempDir: tempDir)
+                    appState.setArchiveState(archState, for: panel)
+
+                    // result.fileURL is like: /path/to/archive.zip/internal/path/file.txt
+                    // Compute the actual path inside the temp dir
+                    let internalPath = result.fileURL.path
+                        .replacingOccurrences(of: archivePath, with: "")
+                        .trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+
+                    let targetFileURL = tempDir.appendingPathComponent(internalPath)
+                    let targetDir = targetFileURL.deletingLastPathComponent().path
+                    let targetFileName = targetFileURL.lastPathComponent
+
+                    appState.updatePath(targetDir, for: panel)
+
+                    if panel == .left {
+                        await appState.scanner.setLeftDirectory(pathStr: targetDir)
+                        await appState.scanner.refreshFiles(currSide: .left)
+                        await appState.refreshLeftFiles()
+                    } else {
+                        await appState.scanner.setRightDirectory(pathStr: targetDir)
+                        await appState.scanner.refreshFiles(currSide: .right)
+                        await appState.refreshRightFiles()
+                    }
+
+                    // Try to select the target file
+                    let files = appState.displayedFiles(for: panel)
+                    if let match = files.first(where: { $0.nameStr == targetFileName }) {
+                        appState.select(match, on: panel)
+                    }
+
+                    log.info("[FindFiles] goToFile: navigated to \(targetDir) and selected \(targetFileName)")
+                } catch {
+                    log.error("[FindFiles] goToFile: failed to extract archive: \(error.localizedDescription)")
+                    // Fallback: reveal the archive in panel
+                    let archiveDir = archiveURL.deletingLastPathComponent().path
+                    appState.updatePath(archiveDir, for: panel)
+                    Task {
+                        await appState.scanner.refreshFiles(currSide: panel)
+                        let files = appState.displayedFiles(for: panel)
+                        if let match = files.first(where: { $0.nameStr == archiveURL.lastPathComponent }) {
+                            appState.select(match, on: panel)
+                        }
+                    }
+                }
+            }
+        } else {
+            // Normal file result: navigate to containing directory and select
+            let targetDir = result.fileURL.deletingLastPathComponent().path
+            appState.updatePath(targetDir, for: panel)
+            Task {
+                await appState.scanner.refreshFiles(currSide: panel)
+                let files = appState.displayedFiles(for: panel)
+                if let match = files.first(where: { $0.nameStr == result.fileName }) {
+                    appState.select(match, on: panel)
+                }
             }
         }
     }

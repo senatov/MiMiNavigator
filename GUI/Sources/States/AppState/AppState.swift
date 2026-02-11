@@ -23,6 +23,11 @@ final class AppState {
     var rightPath: String
     var selectedDir: DirectorySelection = .init()
     var showFavTreePopup: Bool = false
+
+    // MARK: - Archive Navigation State (per-panel)
+    var leftArchiveState = ArchiveNavigationState()
+    var rightArchiveState = ArchiveNavigationState()
+
     var sortKey: SortKeysEnum = .name
     var sortAscending: Bool = true
 
@@ -157,6 +162,111 @@ extension AppState {
         let path = panelSide == .left ? leftPath : rightPath
         return URL(fileURLWithPath: path)
     }
+
+    func archiveState(for panel: PanelSide) -> ArchiveNavigationState {
+        switch panel {
+        case .left: return leftArchiveState
+        case .right: return rightArchiveState
+        }
+    }
+
+    func setArchiveState(_ state: ArchiveNavigationState, for panel: PanelSide) {
+        switch panel {
+        case .left: leftArchiveState = state
+        case .right: rightArchiveState = state
+        }
+    }
+}
+
+// MARK: - Archive Navigation
+extension AppState {
+
+    /// Navigate into an archive: extract to temp dir and open as directory
+    func enterArchive(at archiveURL: URL, on panel: PanelSide) async {
+        log.info("[AppState] Entering archive: \(archiveURL.lastPathComponent) panel=\(panel)")
+        do {
+            let tempDir = try await ArchiveManager.shared.openArchive(at: archiveURL)
+
+            var state = archiveState(for: panel)
+            state.enterArchive(archiveURL: archiveURL, tempDir: tempDir)
+            setArchiveState(state, for: panel)
+
+            updatePath(tempDir.path, for: panel)
+            if panel == .left {
+                await scanner.setLeftDirectory(pathStr: tempDir.path)
+                await scanner.refreshFiles(currSide: .left)
+                await refreshLeftFiles()
+            } else {
+                await scanner.setRightDirectory(pathStr: tempDir.path)
+                await scanner.refreshFiles(currSide: .right)
+                await refreshRightFiles()
+            }
+
+            log.info("[AppState] Successfully entered archive: \(archiveURL.lastPathComponent)")
+        } catch {
+            log.error("[AppState] Failed to enter archive: \(error.localizedDescription)")
+        }
+    }
+
+    /// Navigate out of an archive: close session (repack if dirty), go to archive's parent dir
+    func exitArchive(on panel: PanelSide) async {
+        let state = archiveState(for: panel)
+        guard state.isInsideArchive, let archiveURL = state.archiveURL else {
+            log.warning("[AppState] exitArchive called but not inside archive on panel=\(panel)")
+            return
+        }
+
+        let parentDir = archiveURL.deletingLastPathComponent().path
+        log.info("[AppState] Exiting archive: \(archiveURL.lastPathComponent) → \(parentDir)")
+
+        do {
+            try await ArchiveManager.shared.closeArchive(at: archiveURL, repackIfDirty: true)
+        } catch {
+            log.error("[AppState] Error closing archive: \(error.localizedDescription)")
+        }
+
+        var newState = archiveState(for: panel)
+        newState.exitArchive()
+        setArchiveState(newState, for: panel)
+
+        updatePath(parentDir, for: panel)
+        if panel == .left {
+            await scanner.setLeftDirectory(pathStr: parentDir)
+            await scanner.refreshFiles(currSide: .left)
+            await refreshLeftFiles()
+        } else {
+            await scanner.setRightDirectory(pathStr: parentDir)
+            await scanner.refreshFiles(currSide: .right)
+            await refreshRightFiles()
+        }
+    }
+
+    /// Handle ".." (parent directory) navigation — archive-aware
+    func navigateToParent(on panel: PanelSide) async {
+        let state = archiveState(for: panel)
+        let currentPath = panel == .left ? leftPath : rightPath
+
+        // If at the root of an extracted archive → exit archive entirely
+        if state.isInsideArchive && state.isAtArchiveRoot(currentPath: currentPath) {
+            await exitArchive(on: panel)
+            return
+        }
+
+        // Normal parent navigation
+        let parentURL = URL(fileURLWithPath: currentPath).deletingLastPathComponent()
+        let parentPath = parentURL.path
+
+        updatePath(parentPath, for: panel)
+        if panel == .left {
+            await scanner.setLeftDirectory(pathStr: parentPath)
+            await scanner.refreshFiles(currSide: .left)
+            await refreshLeftFiles()
+        } else {
+            await scanner.setRightDirectory(pathStr: parentPath)
+            await scanner.refreshFiles(currSide: .right)
+            await refreshRightFiles()
+        }
+    }
 }
 
 // MARK: - Sorting
@@ -284,5 +394,8 @@ extension AppState {
 
     func saveBeforeExit() {
         StatePersistence.saveBeforeExit(from: self)
+        Task {
+            await ArchiveManager.shared.cleanup()
+        }
     }
 }

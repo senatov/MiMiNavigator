@@ -62,7 +62,8 @@ struct FilePanelView: View {
     // MARK: - View
     var body: some View {
         let currentPath = appState.pathURL(for: viewModel.panelSide)
-        let files = viewModel.sortedFiles
+        let rawFiles = viewModel.sortedFiles
+        let files = prependParentEntry(to: rawFiles, currentPath: currentPath?.path)
         
         // Generate content-aware key for file table refresh
         let fileContentKey = makeFileContentKey(files: files, path: currentPath?.path)
@@ -139,8 +140,25 @@ struct FilePanelView: View {
             : nil
     }
 
-    // MARK: - Handle double click
+    // MARK: - Handle double click (archive-aware)
     private func handleDoubleClick(_ file: CustomFile) {
+        // Handle ".." parent directory entry
+        if ParentDirectoryEntry.isParentEntry(file) {
+            Task { @MainActor in
+                await appState.navigateToParent(on: viewModel.panelSide)
+            }
+            return
+        }
+
+        // Handle archive files — open as virtual directory
+        if !file.isDirectory && ArchiveExtensions.isArchive(file.fileExtension) {
+            Task { @MainActor in
+                await appState.enterArchive(at: file.urlValue, on: viewModel.panelSide)
+            }
+            return
+        }
+
+        // Handle directories (including symlink dirs)
         if file.isDirectory || file.isSymbolicDirectory {
             enterDirectory(file)
         } else {
@@ -193,6 +211,16 @@ struct FilePanelView: View {
         alert.runModal()
     }
     
+    // MARK: - Prepend ".." parent directory entry
+    private func prependParentEntry(to files: [CustomFile], currentPath: String?) -> [CustomFile] {
+        guard let path = currentPath else { return files }
+        // Don't add ".." at the filesystem root
+        let url = URL(fileURLWithPath: path)
+        if url.path == "/" { return files }
+        let parentEntry = ParentDirectoryEntry.make(for: path)
+        return [parentEntry] + files
+    }
+
     // MARK: - Generate content-aware key for file table refresh
     private func makeFileContentKey(files: [CustomFile], path: String?) -> String {
         var components: [String] = []
