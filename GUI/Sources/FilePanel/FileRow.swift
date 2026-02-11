@@ -217,9 +217,15 @@ struct FileRow: View {
         return true
     }
 
-    // MARK: - Column colors - Finder style (gray secondary text)
+    // MARK: - Column colors - Finder style (gray secondary text, dimmer for hidden)
     private var secondaryTextColor: Color {
-        (isSelected && isActivePanel) ? .white : Color(nsColor: .secondaryLabelColor)
+        if isSelected && isActivePanel {
+            return .white
+        }
+        if file.isHidden {
+            return Color(nsColor: .quaternaryLabelColor)
+        }
+        return Color(nsColor: .secondaryLabelColor)
     }
 
     // MARK: - System font (Finder style)

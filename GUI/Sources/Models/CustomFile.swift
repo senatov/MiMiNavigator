@@ -126,4 +126,11 @@ public struct CustomFile: Identifiable, Equatable, Hashable, Codable, Sendable {
     public func hash(into hasher: inout Hasher) {
         hasher.combine(id)
     }
+
+    // MARK: - Hidden file detection (Finder convention)
+    /// A file is hidden if its name starts with a dot (Unix convention)
+    /// or if macOS has marked it with the hidden flag.
+    public var isHidden: Bool {
+        nameStr.hasPrefix(".")
+    }
 }

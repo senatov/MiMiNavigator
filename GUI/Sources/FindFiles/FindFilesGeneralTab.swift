@@ -2,8 +2,9 @@
 // MiMiNavigator
 //
 // Created by Iakov Senatov on 10.02.2026.
+// Refactored: 11.02.2026 — native macOS 26 Form style
 // Copyright © 2026 Senatov. All rights reserved.
-// Description: General tab of Find Files — file name pattern, search text, directory
+// Description: General tab of Find Files — file name, search text, directory, options
 
 import SwiftUI
 
@@ -12,68 +13,55 @@ struct FindFilesGeneralTab: View {
     @Bindable var viewModel: FindFilesViewModel
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        Form {
             // MARK: - Search For (file name pattern)
-            LabeledField(label: "Search for:") {
-                HStack(spacing: 8) {
+            LabeledContent("Search for:") {
+                HStack(spacing: 6) {
                     TextField("*.txt; *.swift; report*", text: $viewModel.fileNamePattern)
                         .textFieldStyle(.roundedBorder)
-                        .font(.system(size: 13))
-                        .help("Use wildcards: * (any chars) and ? (single char). Separate patterns with ;")
+                        .help("Wildcards: * (any chars), ? (single char). Separate with ;")
 
                     Button(action: { showPatternHelp() }) {
                         Image(systemName: "questionmark.circle")
-                            .foregroundStyle(.secondary)
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.borderless)
                     .help("Pattern syntax help")
                 }
             }
 
             // MARK: - Search In (directory)
-            LabeledField(label: "Search in:") {
-                HStack(spacing: 8) {
-                    TextField("/Users/...", text: $viewModel.searchDirectory)
+            LabeledContent("Search in:") {
+                HStack(spacing: 6) {
+                    TextField("/Users/\u{2026}", text: $viewModel.searchDirectory)
                         .textFieldStyle(.roundedBorder)
-                        .font(.system(size: 13))
 
                     Button(action: { browseDirectory() }) {
                         Image(systemName: "folder")
-                            .font(.system(size: 13))
                     }
                     .buttonStyle(.bordered)
+                    .controlSize(.small)
                     .help("Browse for directory")
                 }
             }
 
             // MARK: - Find Text (content search)
-            LabeledField(label: "Find text:") {
-                TextField("Search inside file contents…", text: $viewModel.searchText)
+            LabeledContent("Find text:") {
+                TextField("Search inside file contents\u{2026}", text: $viewModel.searchText)
                     .textFieldStyle(.roundedBorder)
-                    .font(.system(size: 13))
                     .help("Leave empty for filename-only search")
             }
 
-            // MARK: - Options Row
-            HStack(spacing: 16) {
+            // MARK: - Options
+            Section {
                 Toggle("Case sensitive", isOn: $viewModel.caseSensitive)
-                    .toggleStyle(.checkbox)
-                    .font(.system(size: 12))
-
-                Toggle("Regex", isOn: $viewModel.useRegex)
-                    .toggleStyle(.checkbox)
-                    .font(.system(size: 12))
-
-                Toggle("Subdirectories", isOn: $viewModel.searchInSubdirectories)
-                    .toggleStyle(.checkbox)
-                    .font(.system(size: 12))
-
+                Toggle("Regular expressions", isOn: $viewModel.useRegex)
+                Toggle("Include subdirectories", isOn: $viewModel.searchInSubdirectories)
                 Toggle("Search in archives", isOn: $viewModel.searchInArchives)
-                    .toggleStyle(.checkbox)
-                    .font(.system(size: 12))
+            } header: {
+                Text("Options")
             }
-            .padding(.top, 4)
         }
+        .formStyle(.grouped)
     }
 
     // MARK: - Browse Directory
@@ -97,38 +85,20 @@ struct FindFilesGeneralTab: View {
         alert.messageText = "File Name Pattern Syntax"
         alert.informativeText = """
         Wildcards:
-          *      — matches any number of characters
-          ?      — matches exactly one character
+          *      \u{2014} matches any number of characters
+          ?      \u{2014} matches exactly one character
 
         Examples:
-          *.txt          — all text files
-          *.swift;*.java — Swift and Java files
-          report*        — files starting with "report"
-          photo?.jpg     — photo1.jpg, photoA.jpg, etc.
-          *.*            — all files with extension
+          *.txt          \u{2014} all text files
+          *.swift;*.java \u{2014} Swift and Java files
+          report*        \u{2014} files starting with "report"
+          photo?.jpg     \u{2014} photo1.jpg, photoA.jpg, etc.
+          *.*            \u{2014} all files with extension
 
         Separate multiple patterns with semicolon (;)
         """
         alert.alertStyle = .informational
         alert.addButton(withTitle: "OK")
         alert.runModal()
-    }
-}
-
-// MARK: - Labeled Field Helper
-/// Consistent layout for label + field pairs
-struct LabeledField<Content: View>: View {
-    let label: String
-    @ViewBuilder let content: Content
-
-    var body: some View {
-        HStack(alignment: .center, spacing: 8) {
-            Text(label)
-                .font(.system(size: 12))
-                .foregroundStyle(.secondary)
-                .frame(width: 80, alignment: .trailing)
-
-            content
-        }
     }
 }

@@ -15,7 +15,6 @@ struct DuoFilePanelView: View {
     @State private var leftPanelWidth: CGFloat = 0
     @State private var isInitialized = false
     @State private var keyboardHandler: DuoFilePanelKeyboardHandler?
-    @State private var findFilesCoordinator = FindFilesCoordinator.shared
 
     // MARK: - Constants
     private enum Layout {
@@ -107,8 +106,7 @@ struct DuoFilePanelView: View {
                 .animation(.easeOut(duration: 0.15), value: BatchOperationManager.shared.showProgressDialog)
             }
         }
-        // Non-modal Find Files panel overlay
-        .findFilesOverlay(coordinator: findFilesCoordinator)
+        // Find Files is now a standalone window (see FindFilesCoordinator)
     }
     
     // MARK: - Actions Helper
