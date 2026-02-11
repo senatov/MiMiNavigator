@@ -2,7 +2,7 @@
 // MiMiNavigator
 //
 // Created by Iakov Senatov on 10.02.2026.
-// Refactored: 11.02.2026 — native macOS 26 Form style
+// Refactored: 11.02.2026 — native macOS 26 HIG style
 // Copyright © 2026 Senatov. All rights reserved.
 // Description: General tab of Find Files — file name, search text, directory, options
 
@@ -12,44 +12,26 @@ import SwiftUI
 struct FindFilesGeneralTab: View {
     @Bindable var viewModel: FindFilesViewModel
 
+    // MARK: - Design Constants
+    private enum Design {
+        static let fieldMinWidth: CGFloat = 320
+        static let labelWidth: CGFloat = 90
+        static let spacing: CGFloat = 12
+        static let cornerRadius: CGFloat = 6
+        static let borderColor = Color(#colorLiteral(red: 0.75, green: 0.78, blue: 0.82, alpha: 0.5))
+        static let focusBorderColor = Color.accentColor.opacity(0.6)
+    }
+
     var body: some View {
         Form {
             // MARK: - Search For (file name pattern)
-            LabeledContent("Search for:") {
-                HStack(spacing: 6) {
-                    TextField("*.txt; *.swift; report*", text: $viewModel.fileNamePattern)
-                        .textFieldStyle(.roundedBorder)
-                        .help("Wildcards: * (any chars), ? (single char). Separate with ;")
-
-                    Button(action: { showPatternHelp() }) {
-                        Image(systemName: "questionmark.circle")
-                    }
-                    .buttonStyle(.borderless)
-                    .help("Pattern syntax help")
-                }
-            }
+            searchForSection
 
             // MARK: - Search In (directory)
-            LabeledContent("Search in:") {
-                HStack(spacing: 6) {
-                    TextField("/Users/\u{2026}", text: $viewModel.searchDirectory)
-                        .textFieldStyle(.roundedBorder)
-
-                    Button(action: { browseDirectory() }) {
-                        Image(systemName: "folder")
-                    }
-                    .buttonStyle(.bordered)
-                    .controlSize(.small)
-                    .help("Browse for directory")
-                }
-            }
+            searchInSection
 
             // MARK: - Find Text (content search)
-            LabeledContent("Find text:") {
-                TextField("Search inside file contents\u{2026}", text: $viewModel.searchText)
-                    .textFieldStyle(.roundedBorder)
-                    .help("Leave empty for filename-only search")
-            }
+            findTextSection
 
             // MARK: - Options
             Section {
@@ -62,6 +44,84 @@ struct FindFilesGeneralTab: View {
             }
         }
         .formStyle(.grouped)
+    }
+
+    // MARK: - Search For Section
+    private var searchForSection: some View {
+        LabeledContent("Search for:") {
+            HStack(spacing: 8) {
+                TextField("", text: $viewModel.fileNamePattern, prompt: Text("*.txt; *.swift; report*").foregroundStyle(.tertiary))
+                    .textFieldStyle(.plain)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 6)
+                    .background(
+                        RoundedRectangle(cornerRadius: Design.cornerRadius)
+                            .fill(Color(nsColor: .textBackgroundColor))
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: Design.cornerRadius)
+                            .strokeBorder(Design.borderColor, lineWidth: 1)
+                    )
+                    .frame(minWidth: Design.fieldMinWidth)
+                    .help("Wildcards: * (any chars), ? (single char). Separate with ;")
+
+                Button(action: { showPatternHelp() }) {
+                    Image(systemName: "questionmark.circle")
+                        .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+                .help("Pattern syntax help")
+            }
+        }
+    }
+
+    // MARK: - Search In Section
+    private var searchInSection: some View {
+        LabeledContent("Search in:") {
+            HStack(spacing: 8) {
+                TextField("", text: $viewModel.searchDirectory, prompt: Text("Select directory…").foregroundStyle(.tertiary))
+                    .textFieldStyle(.plain)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 6)
+                    .background(
+                        RoundedRectangle(cornerRadius: Design.cornerRadius)
+                            .fill(Color(nsColor: .textBackgroundColor))
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: Design.cornerRadius)
+                            .strokeBorder(Design.borderColor, lineWidth: 1)
+                    )
+                    .frame(minWidth: Design.fieldMinWidth)
+                    .help("Directory to search in")
+
+                Button(action: { browseDirectory() }) {
+                    Image(systemName: "folder")
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.regular)
+                .help("Browse…")
+            }
+        }
+    }
+
+    // MARK: - Find Text Section
+    private var findTextSection: some View {
+        LabeledContent("Find text:") {
+            TextField("", text: $viewModel.searchText, prompt: Text("Search inside file contents…").foregroundStyle(.tertiary))
+                .textFieldStyle(.plain)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 6)
+                .background(
+                    RoundedRectangle(cornerRadius: Design.cornerRadius)
+                        .fill(Color(nsColor: .textBackgroundColor))
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: Design.cornerRadius)
+                        .strokeBorder(Design.borderColor, lineWidth: 1)
+                )
+                .frame(minWidth: Design.fieldMinWidth)
+                .help("Leave empty for filename-only search")
+        }
     }
 
     // MARK: - Browse Directory
@@ -85,15 +145,15 @@ struct FindFilesGeneralTab: View {
         alert.messageText = "File Name Pattern Syntax"
         alert.informativeText = """
         Wildcards:
-          *      \u{2014} matches any number of characters
-          ?      \u{2014} matches exactly one character
+          *      — matches any number of characters
+          ?      — matches exactly one character
 
         Examples:
-          *.txt          \u{2014} all text files
-          *.swift;*.java \u{2014} Swift and Java files
-          report*        \u{2014} files starting with "report"
-          photo?.jpg     \u{2014} photo1.jpg, photoA.jpg, etc.
-          *.*            \u{2014} all files with extension
+          *.txt          — all text files
+          *.swift;*.java — Swift and Java files
+          report*        — files starting with "report"
+          photo?.jpg     — photo1.jpg, photoA.jpg, etc.
+          *.*            — all files with extension
 
         Separate multiple patterns with semicolon (;)
         """

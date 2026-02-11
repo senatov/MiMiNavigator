@@ -42,6 +42,8 @@ enum TableHeaderStyle {
     static let font = Font.system(size: 12, weight: .semibold)
     static let color = Color.primary
     static let sortIndicatorColor = Color.accentColor
+    /// Very light yellow background for active sort column
+    static let activeSortBackground = Color(#colorLiteral(red: 1.0, green: 0.95, blue: 0.7, alpha: 0.35))
     static let backgroundColor = Color(nsColor: .controlBackgroundColor)
     static let separatorColor = Color(nsColor: .separatorColor)
 }

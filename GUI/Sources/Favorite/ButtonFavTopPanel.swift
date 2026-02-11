@@ -19,13 +19,9 @@ struct ButtonFavTopPanel: View {
     @State private var favorites: [FavoriteItem] = []
     @State private var showHistoryPopover: Bool = false
     @State private var showFavTreePopup: Bool = false
+    @State private var navigationAdapter: FavoritesNavigationAdapter?
     
     let panelSide: PanelSide
-    
-    // MARK: - Navigation adapter for FavoritesKit
-    private var navigationAdapter: FavoritesNavigationAdapter {
-        FavoritesNavigationAdapter(appState: appState)
-    }
 
     // MARK: - Init
     init(selectedSide: PanelSide) {
@@ -37,6 +33,11 @@ struct ButtonFavTopPanel: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             navigationControls
+        }
+        .onAppear {
+            if navigationAdapter == nil {
+                navigationAdapter = FavoritesNavigationAdapter(appState: appState)
+            }
         }
     }
 
@@ -60,7 +61,7 @@ struct ButtonFavTopPanel: View {
             .opacity(appState.selectionsHistory.canGoBack ? 1.0 : 0.4)
             .onTapGesture {
                 log.debug("Back button click: navigating back")
-                navigationAdapter.navigateBack(panel: panelSide.toFavPanelSide)
+                navigationAdapter?.navigateBack(panel: panelSide.toFavPanelSide)
             }
             .gesture(
                 TapGesture(count: 1)
@@ -75,7 +76,7 @@ struct ButtonFavTopPanel: View {
     private func upButton() -> some View {
         Button(action: {
             log.debug("Up: navigating to parent directory")
-            navigationAdapter.navigateUp(panel: panelSide.toFavPanelSide)
+            navigationAdapter?.navigateUp(panel: panelSide.toFavPanelSide)
         }) {
             Image(systemName: "arrowshape.up")
                 .renderingMode(.original)
@@ -95,7 +96,7 @@ struct ButtonFavTopPanel: View {
             .opacity(appState.selectionsHistory.canGoForward ? 1.0 : 0.4)
             .onTapGesture {
                 log.debug("Forward button click: navigating forward")
-                navigationAdapter.navigateForward(panel: panelSide.toFavPanelSide)
+                navigationAdapter?.navigateForward(panel: panelSide.toFavPanelSide)
             }
             .gesture(
                 TapGesture(count: 1)

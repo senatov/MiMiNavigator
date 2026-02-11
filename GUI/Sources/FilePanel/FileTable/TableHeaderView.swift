@@ -186,7 +186,7 @@ struct SortableHeader: View {
         .padding(.horizontal, 4)
         .background(
             isActive
-                ? TableHeaderStyle.sortIndicatorColor.opacity(0.1)
+                ? TableHeaderStyle.activeSortBackground
                 : Color.clear
         )
         .clipShape(RoundedRectangle(cornerRadius: 4))
