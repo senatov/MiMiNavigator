@@ -141,6 +141,7 @@ Complete visual redesign following macOS Finder conventions:
 - **Proper icons**: 16pt icons matching Finder's compact view
 - **Zebra stripes**: Alternating row colors using system colors
 - **Symlink display**: Shows "Alias" for symlinks (Finder terminology)
+- **Hidden files**: Distinct bluish-gray color for improved readability
 
 ### 📊 New Table Columns
 Extended file information display:
@@ -179,7 +180,7 @@ Complete implementation of a professional menu bar inspired by Total Commander w
 | **Mark** | Select/Unselect groups, Select All, Invert selection |
 | **Commands** | Command Prompt, CD Tree, Branch View |
 | **Net** | FTP Connect/Disconnect, Network Neighborhood |
-| **Show** | Full/Brief View, Hidden Files toggle |
+| **Show** | Full/Brief View, Hidden Files toggle (with bluish-gray styling) |
 | **Configuration** | Options, Customize Toolbar |
 | **Start** | Tab management (New, Duplicate, Close) |
 | **Help** | Index, Keyboard, About, Check for Updates |
