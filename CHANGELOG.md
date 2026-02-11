@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Hidden Files Styling** — distinct bluish-gray color for hidden files
+  - Improved readability over previous quaternaryLabelColor
+  - Consistent styling across file name, size, date, and permissions columns
+  - Uses `#colorLiteral` for easy visual adjustment in Xcode
+
 ### Planned
 - Multi-selection support with keyboard and mouse
 - Search and filter functionality within panels
