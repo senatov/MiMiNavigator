@@ -2,88 +2,156 @@
 // MiMiNavigator
 //
 // Created by Iakov Senatov on 10.02.2026.
+// Refactored: 11.02.2026
 // Copyright © 2026 Senatov. All rights reserved.
-// Description: Coordinator for Find Files panel — manages visibility and lifecycle
+// Description: Manages Find Files as a standalone NSWindow with persistent frame
 
+import AppKit
 import SwiftUI
 
 // MARK: - Find Files Coordinator
-/// Singleton coordinator that manages the Find Files panel lifecycle.
-/// The panel is non-modal, so this coordinator simply tracks show/hide state.
+/// Manages the Find Files window lifecycle.
+/// The window is a standalone panel (not an overlay), remembers its size and position,
+/// and defaults to a reasonable size that doesn't cover the main window.
 @MainActor
 @Observable
 final class FindFilesCoordinator {
+
     static let shared = FindFilesCoordinator()
 
-    /// Whether the Find Files panel is currently visible
-    var isVisible: Bool = false
+    // MARK: - State
+    private(set) var isVisible = false
+    private var findWindow: NSWindow?
+    private let viewModel = FindFilesViewModel()
 
-    /// The ViewModel instance — persists across show/hide for result preservation
-    let viewModel = FindFilesViewModel()
+    private let frameAutosaveName = "MiMiNavigator.FindFilesWindow"
+    private let defaultWidth: CGFloat = 680
+    private let defaultHeight: CGFloat = 520
 
     private init() {}
 
-    // MARK: - Show / Hide
+    // MARK: - Toggle
 
-    /// Toggle Find Files panel visibility
-    func toggle(searchPath: String? = nil) {
+    func toggle(searchPath: String) {
         if isVisible {
-            hide()
+            close()
         } else {
-            show(searchPath: searchPath)
+            open(searchPath: searchPath)
         }
     }
 
-    /// Show the Find Files panel
-    func show(searchPath: String? = nil) {
-        if let path = searchPath {
-            viewModel.configure(searchPath: path)
+    // MARK: - Open
+
+    func open(searchPath: String) {
+        viewModel.configure(searchPath: searchPath)
+
+        if let existing = findWindow, existing.isVisible {
+            existing.makeKeyAndOrderFront(nil)
+            isVisible = true
+            return
         }
+
+        let contentView = FindFilesWindowContent(viewModel: viewModel)
+            .frame(minWidth: 520, minHeight: 400)
+
+        let hostingView = NSHostingView(rootView: contentView)
+
+        let window = NSPanel(
+            contentRect: .zero,
+            styleMask: [.titled, .closable, .resizable, .miniaturizable, .utilityWindow, .nonactivatingPanel],
+            backing: .buffered,
+            defer: false
+        )
+        window.title = "Find Files"
+        window.contentView = hostingView
+        window.isReleasedWhenClosed = false
+        window.minSize = NSSize(width: 520, height: 400)
+        window.titlebarAppearsTransparent = false
+        window.titleVisibility = .visible
+        window.toolbarStyle = .unified
+        window.animationBehavior = .utilityWindow
+        window.isMovableByWindowBackground = true
+        window.hidesOnDeactivate = false
+        window.level = .normal
+        window.tabbingMode = .disallowed
+
+        // Restore saved frame or compute default position
+        if !window.setFrameUsingName(frameAutosaveName) {
+            // No saved frame — position to the right of main window, not covering it
+            let frame = computeDefaultFrame()
+            window.setFrame(frame, display: true)
+        }
+        window.setFrameAutosaveName(frameAutosaveName)
+
+        window.delegate = FindFilesWindowDelegate.shared
+        window.makeKeyAndOrderFront(nil)
+
+        findWindow = window
         isVisible = true
-        log.debug("[FindFiles] Panel shown")
+        log.info("[FindFiles] Window opened")
     }
 
-    /// Hide the Find Files panel (does NOT cancel search — it continues in background)
-    func hide() {
-        isVisible = false
-        log.debug("[FindFiles] Panel hidden")
-    }
+    // MARK: - Close
 
-    /// Close and cancel any running search
     func close() {
-        viewModel.cancelSearch()
+        findWindow?.close()
         isVisible = false
-        log.debug("[FindFiles] Panel closed and search cancelled")
+        log.info("[FindFiles] Window closed")
     }
-}
 
-// MARK: - View Modifier for embedding FindFiles panel
-/// Attach this to the main DuoFilePanelView to overlay the non-modal Find Files panel
-struct FindFilesPanelOverlay: ViewModifier {
-    let coordinator: FindFilesCoordinator
-    @Environment(AppState.self) var appState
+    // MARK: - Notify Closed (called by delegate)
 
-    func body(content: Content) -> some View {
-        content
-            .overlay(alignment: .bottom) {
-                if coordinator.isVisible {
-                    FindFilesPanel(
-                        viewModel: coordinator.viewModel,
-                        onDismiss: { coordinator.close() }
-                    )
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
-                    .animation(.easeInOut(duration: 0.25), value: coordinator.isVisible)
-                    .padding(.horizontal, 8)
-                    .padding(.bottom, 42) // above bottom toolbar
-                    .zIndex(100)
-                }
+    func windowDidClose() {
+        isVisible = false
+    }
+
+    // MARK: - Default Frame Calculation
+
+    /// Computes initial frame: right side of main window or centered if no main window
+    private func computeDefaultFrame() -> NSRect {
+        let size = NSSize(width: defaultWidth, height: defaultHeight)
+
+        if let mainWindow = NSApp.mainWindow {
+            let mainFrame = mainWindow.frame
+            let screenFrame = mainWindow.screen?.visibleFrame ?? NSScreen.main?.visibleFrame ?? .zero
+
+            // Position to the right of main window
+            var x = mainFrame.maxX + 12
+            let y = mainFrame.midY - size.height / 2
+
+            // If it goes off-screen right, try left side
+            if x + size.width > screenFrame.maxX {
+                x = mainFrame.minX - size.width - 12
             }
+            // If still off-screen, overlap slightly at the right
+            if x < screenFrame.minX {
+                x = mainFrame.maxX - size.width * 0.3
+            }
+
+            let clampedY = max(screenFrame.minY, min(y, screenFrame.maxY - size.height))
+            return NSRect(origin: NSPoint(x: x, y: clampedY), size: size)
+        }
+
+        // No main window — center on screen
+        if let screen = NSScreen.main {
+            let screenFrame = screen.visibleFrame
+            let x = screenFrame.midX - size.width / 2
+            let y = screenFrame.midY - size.height / 2
+            return NSRect(origin: NSPoint(x: x, y: y), size: size)
+        }
+
+        return NSRect(origin: .zero, size: size)
     }
 }
 
-extension View {
-    /// Attach the Find Files non-modal panel overlay
-    func findFilesOverlay(coordinator: FindFilesCoordinator) -> some View {
-        modifier(FindFilesPanelOverlay(coordinator: coordinator))
+// MARK: - Window Delegate
+/// Handles window close notification to update coordinator state
+private final class FindFilesWindowDelegate: NSObject, NSWindowDelegate {
+    @MainActor static let shared = FindFilesWindowDelegate()
+
+    func windowWillClose(_ notification: Notification) {
+        Task { @MainActor in
+            FindFilesCoordinator.shared.windowDidClose()
+        }
     }
 }

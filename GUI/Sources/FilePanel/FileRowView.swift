@@ -24,14 +24,21 @@ struct FileRowView: View {
             .contentShape(Rectangle())
     }
 
-    // MARK: - Text color based on selection and mark state
-    /// macOS style: marked files shown in accent color (like Finder tags)
+    // MARK: - Text color based on selection, mark, and hidden state
+    /// macOS Finder style:
+    /// - Selected + active panel → white
+    /// - Marked → accent color
+    /// - Hidden → tertiary label (dimmed gray, like Finder)
+    /// - Normal → primary
     private var nameColor: Color {
         if isSelected && isActivePanel {
             return .white
         }
         if isMarked {
-            return .accentColor  // macOS style - accent color for marked
+            return .accentColor
+        }
+        if file.isHidden {
+            return Color(nsColor: .tertiaryLabelColor)
         }
         return .primary
     }
@@ -41,10 +48,16 @@ struct FileRowView: View {
         isMarked ? .semibold : .regular
     }
 
+    // MARK: - Icon opacity (Finder-style dimming for hidden files)
+    private var iconOpacity: Double {
+        if isSelected && isActivePanel { return 1.0 }
+        return file.isHidden ? 0.45 : 1.0
+    }
+
     // MARK: - Base content for a single file row (icon + name)
     private func baseContent() -> some View {
         HStack(spacing: 8) {
-            // File icon
+            // File icon (dimmed for hidden files, like Finder)
             ZStack(alignment: .bottomTrailing) {
                 Image(nsImage: getSmartIcon(for: file))
                     .resizable()
@@ -52,6 +65,7 @@ struct FileRowView: View {
                     .antialiased(true)
                     .aspectRatio(contentMode: .fit)
                     .frame(width: DesignTokens.Row.iconSize, height: DesignTokens.Row.iconSize)
+                    .opacity(iconOpacity)
 
                 // Symlink badge overlay (smaller for Finder-style icons)
                 if file.isSymbolicLink {

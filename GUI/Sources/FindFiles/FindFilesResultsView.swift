@@ -10,7 +10,7 @@ import SwiftUI
 // MARK: - Results View
 struct FindFilesResultsView: View {
     @Bindable var viewModel: FindFilesViewModel
-    let appState: AppState
+    var appState: AppState? = nil
 
     @State private var sortOrder = [KeyPathComparator(\FindFilesResult.fileName)]
     @State private var hoveredResult: FindFilesResult?
@@ -94,8 +94,9 @@ struct FindFilesResultsView: View {
         } primaryAction: { selection in
             // Double-click: go to file
             if let id = selection.first,
-               let result = viewModel.results.first(where: { $0.id == id }) {
-                viewModel.goToFile(result: result, appState: appState)
+               let result = viewModel.results.first(where: { $0.id == id }),
+               let state = appState {
+                viewModel.goToFile(result: result, appState: state)
             }
         }
         .tableStyle(.inset(alternatesRowBackgrounds: true))
@@ -122,7 +123,9 @@ struct FindFilesResultsView: View {
         if let id = selection.first,
            let result = viewModel.results.first(where: { $0.id == id }) {
             Button("Go to File") {
-                viewModel.goToFile(result: result, appState: appState)
+                if let state = appState {
+                    viewModel.goToFile(result: result, appState: state)
+                }
             }
             Button("Open") {
                 viewModel.openFile(result: result)

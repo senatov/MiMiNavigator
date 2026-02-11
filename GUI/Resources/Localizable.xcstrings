@@ -20,6 +20,9 @@
         }
       }
     },
+    "·" : {
+
+    },
     "'%@' is already assigned to '%@'. Replace it?" : {
       "localizations" : {
         "en" : {
@@ -42,7 +45,7 @@
     "/" : {
 
     },
-    "/Users/..." : {
+    "/Users/…" : {
 
     },
     "%@ — %@" : {
@@ -73,6 +76,12 @@
           }
         }
       }
+    },
+    "%lld archives" : {
+
+    },
+    "%lld dirs" : {
+
     },
     "%lld errors occurred" : {
       "comment" : "Errors count"
@@ -292,9 +301,6 @@
     "Cancelled" : {
       "comment" : "Search cancelled status"
     },
-    "Cancelled: %lld found" : {
-
-    },
     "Case sensitive" : {
       "comment" : "Case sensitive toggle"
     },
@@ -310,7 +316,7 @@
     "Close" : {
       "comment" : "Close button"
     },
-    "Close (⎋)" : {
+    "Completed" : {
 
     },
     "Completed: %lld success, %lld errors" : {
@@ -341,7 +347,7 @@
         }
       }
     },
-    "Content search scans text files only. Binary files are skipped automatically. Archive search supports ZIP, 7z, TAR, GZ, BZ2." : {
+    "Content search scans text files only. Binary files are skipped. Archive search supports ZIP, 7z, TAR, GZ, BZ2." : {
 
     },
     "copied" : {
@@ -550,16 +556,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Хотите заменить его?"
-          }
-        }
-      }
-    },
-    "Done: %lld found in %@ · %lld dirs · %lld files" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Done: %1$lld found in %2$@ · %3$lld dirs · %4$lld files"
           }
         }
       }
@@ -797,6 +793,9 @@
     "File Name Pattern Syntax" : {
       "comment" : "Pattern help title"
     },
+    "File Size" : {
+
+    },
     "Filter by date" : {
       "comment" : "Date filter toggle"
     },
@@ -920,6 +919,9 @@
     "Forward button" : {
 
     },
+    "From" : {
+
+    },
     "From:" : {
       "comment" : "From label"
     },
@@ -951,6 +953,9 @@
           }
         }
       }
+    },
+    "Include subdirectories" : {
+
     },
     "Invalid name" : {
       "comment" : "Generic invalid name error",
@@ -1045,10 +1050,13 @@
     "Match" : {
 
     },
-    "max bytes" : {
+    "max" : {
 
     },
-    "min bytes" : {
+    "min" : {
+
+    },
+    "Modification Date" : {
 
     },
     "More options..." : {
@@ -1241,6 +1249,9 @@
     "Operation Errors" : {
       "comment" : "Operation errors title"
     },
+    "Options" : {
+
+    },
     "Other..." : {
 
     },
@@ -1287,6 +1298,9 @@
     },
     "Regex" : {
       "comment" : "Regex toggle"
+    },
+    "Regular expressions" : {
+
     },
     "Rename" : {
       "comment" : "Rename button",
@@ -1391,6 +1405,9 @@
     "Search" : {
       "comment" : "Search button"
     },
+    "Search Error" : {
+
+    },
     "Search for:" : {
       "comment" : "File name pattern label"
     },
@@ -1405,16 +1422,6 @@
     },
     "Searching…" : {
       "comment" : "Searching status"
-    },
-    "Searching… %lld found · %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Searching… %1$lld found · %2$@"
-          }
-        }
-      }
     },
     "Select" : {
       "comment" : "Select button",
@@ -1471,6 +1478,9 @@
     "Sort By" : {
 
     },
+    "Stop" : {
+
+    },
     "Subdirectories" : {
       "comment" : "Subdirectories toggle"
     },
@@ -1510,6 +1520,9 @@
     },
     "The archive is password-protected:" : {
       "comment" : "Archive protected message"
+    },
+    "to" : {
+
     },
     "To:" : {
       "comment" : "To label"
@@ -1566,10 +1579,10 @@
     "Use * and ? wildcards (e.g., *.txt, photo*)" : {
       "comment" : "Pattern hint"
     },
-    "Use wildcards: * (any chars) and ? (single char). Separate patterns with ;" : {
+    "Visited directories will appear here" : {
 
     },
-    "Visited directories will appear here" : {
+    "Wildcards: * (any chars), ? (single char). Separate with ;" : {
 
     }
   },

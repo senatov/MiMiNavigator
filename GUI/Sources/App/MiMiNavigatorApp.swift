@@ -46,6 +46,7 @@ struct MiMiNavigatorApp: App {
                     toolBarItemRefresh()
                     toolBarItemHidden()
                     toolBarOpenWith()
+                    toolBarItemSearch()
                     toolBarItemBuildInfo()
                 }
                 // MARK: - File Transfer Confirmation Dialog
@@ -68,55 +69,65 @@ struct MiMiNavigatorApp: App {
         }
     }
 
-    // MARK: - Refresh button with animation
+    // MARK: - Refresh button (macOS HIG)
     fileprivate func toolBarItemRefresh() -> ToolbarItem<(), some View> {
         return ToolbarItem(placement: .automatic) {
-            AnimatedToolbarButton(
+            ToolbarButton(
                 systemImage: "arrow.triangle.2.circlepath",
-                help: "Refresh file lists (⌘R)",
-                shortcut: "r",
-                modifiers: .command
+                help: "Refresh file lists (⌘R)"
             ) {
                 log.debug("Refresh button clicked")
                 appState.forceRefreshBothPanels()
             }
+            .keyboardShortcut("r", modifiers: .command)
         }
     }
 
-    // MARK: - Hidden files toggle with animation
+    // MARK: - Hidden files toggle (macOS HIG)
     fileprivate func toolBarItemHidden() -> ToolbarItem<(), some View> {
         return ToolbarItem(placement: .automatic) {
-            AnimatedToolbarButton(
+            ToolbarToggleButton(
                 systemImage: "eye.slash",
                 activeImage: "eye.fill",
-                help: showHiddenFiles ? "Hide hidden files (⌘.)" : "Show hidden files (⌘.)",
-                shortcut: ".",
-                modifiers: .command,
-                isToggle: true,
-                isActive: $showHiddenFiles,
-                activeColor: .green,
-                inactiveColor: .secondary
+                helpActive: "Hide hidden files (⌘.)",
+                helpInactive: "Show hidden files (⌘.)",
+                isActive: $showHiddenFiles
             ) {
                 log.debug("Hidden toggle clicked")
                 showHiddenFiles.toggle()
                 UserPreferences.shared.snapshot.showHiddenFiles = showHiddenFiles
                 appState.forceRefreshBothPanels()
             }
+            .keyboardShortcut(".", modifiers: .command)
         }
     }
 
-    // MARK: - Open With button with animation
+    // MARK: - Open With button (macOS HIG)
     fileprivate func toolBarOpenWith() -> ToolbarItem<(), some View> {
         return ToolbarItem(placement: .automatic) {
-            AnimatedToolbarButton(
+            ToolbarButton(
                 systemImage: "arrow.up.forward.app",
-                help: "Open file / Get Info for directory (⌘O)",
-                shortcut: "o",
-                modifiers: .command
+                help: "Open file / Get Info for directory (⌘O)"
             ) {
                 log.debug("OpenWith button clicked")
                 appState.openSelectedItem()
             }
+            .keyboardShortcut("o", modifiers: .command)
+        }
+    }
+
+    // MARK: - Find Files button (macOS HIG — search icon)
+    fileprivate func toolBarItemSearch() -> ToolbarItem<(), some View> {
+        return ToolbarItem(placement: .automatic) {
+            ToolbarButton(
+                systemImage: "magnifyingglass",
+                help: "Find Files (⇧⌘F)"
+            ) {
+                log.debug("Search button clicked")
+                let path = appState.focusedPanel == .left ? appState.leftPath : appState.rightPath
+                FindFilesCoordinator.shared.toggle(searchPath: path)
+            }
+            .keyboardShortcut("f", modifiers: [.command, .shift])
         }
     }
 

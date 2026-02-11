@@ -95,7 +95,7 @@ struct FindFilesStats: Sendable {
 
 // MARK: - Archive Password Request
 /// Callback type for requesting archive password from the user
-typealias ArchivePasswordCallback = @Sendable (String) async -> ArchivePasswordResponse
+typealias ArchivePasswordCallback = @concurrent @Sendable (String) async -> ArchivePasswordResponse
 
 enum ArchivePasswordResponse: Sendable {
     case password(String)
@@ -124,8 +124,10 @@ actor FindFilesEngine {
         stats.isRunning = true
         stats.startTime = Date()
 
+        let criteria = criteria
+        let passwordCallback = passwordCallback
         return AsyncStream { continuation in
-            let task = Task { @Sendable [weak self] in
+            let task = Task.detached { [weak self] in
                 guard let self else {
                     continuation.finish()
                     return

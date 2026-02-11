@@ -13,7 +13,7 @@ import Foundation
 @MainActor
 struct DuoFilePanelActions {
     let appState: AppState
-    let refreshBothPanels: @Sendable () async -> Void
+    let refreshBothPanels: @concurrent @Sendable () async -> Void
 
     // MARK: - F3 View
     func performView() {
