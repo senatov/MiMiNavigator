@@ -148,14 +148,10 @@ struct BreadCrumbControlWrapper: View {
             applyPathUpdate()
         } label: {
             Image(systemName: "checkmark.circle.fill")
-                .symbolRenderingMode(.hierarchical)
-                .foregroundStyle(.green)
-                .symbolEffect(.pulse)
-                .imageScale(.large)
-                .symbolEffect(.scale.up, isActive: isHovering)
-                .onHover { hovering in
-                    isHovering = hovering
-                }
+                .symbolRenderingMode(.palette)
+                .foregroundStyle(.white, Color(#colorLiteral(red: 0.2, green: 0.78, blue: 0.35, alpha: 1.0)))
+                .font(.system(size: 18, weight: .medium))
+                .shadow(color: .black.opacity(0.15), radius: 1, x: 0, y: 1)
         }
         .buttonStyle(.plain)
         .help(L10n.PathInput.applyChangesHelp)
@@ -170,15 +166,10 @@ struct BreadCrumbControlWrapper: View {
             }
         } label: {
             Image(systemName: "xmark.circle.fill")
-                .symbolRenderingMode(.hierarchical)
-                .foregroundStyle(.red)
-                .symbolEffect(.pulse)
-                .imageScale(.large)
-                .symbolEffect(.scale.up, isActive: isHovering)
-                .onHover { hovering in
-                    isHovering = hovering
-                }
-
+                .symbolRenderingMode(.palette)
+                .foregroundStyle(.white, Color(#colorLiteral(red: 0.9, green: 0.25, blue: 0.2, alpha: 1.0)))
+                .font(.system(size: 18, weight: .medium))
+                .shadow(color: .black.opacity(0.15), radius: 1, x: 0, y: 1)
         }
         .buttonStyle(.plain)
         .help(L10n.PathInput.cancelHelp)

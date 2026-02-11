@@ -86,20 +86,24 @@ struct FindFilesWindowContent: View {
     // MARK: - Action Bar
 
     private var actionBar: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: 12) {
             // Primary: Search / Stop
             if viewModel.searchState == .searching {
                 Button("Stop", role: .destructive) {
                     viewModel.cancelSearch()
                 }
                 .buttonStyle(.bordered)
-                .controlSize(.regular)
+                .controlSize(.large)
+                .tint(.red)
             } else {
-                Button("Search") {
+                Button {
                     viewModel.startSearch()
+                } label: {
+                    Label("Search", systemImage: "magnifyingglass")
+                        .font(.system(size: 14, weight: .semibold))
                 }
-                .buttonStyle(.bordered)
-                .controlSize(.regular)
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
                 .keyboardShortcut(.return, modifiers: [])
             }
 

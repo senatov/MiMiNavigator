@@ -45,9 +45,6 @@
     "/" : {
 
     },
-    "/Users/…" : {
-
-    },
     "%@ — %@" : {
       "localizations" : {
         "en" : {
@@ -258,7 +255,7 @@
     "Back button" : {
 
     },
-    "Browse for directory" : {
+    "Browse…" : {
 
     },
     "bytes" : {
@@ -528,6 +525,9 @@
       "comment" : "Deleting operation"
     },
     "DEV BUILD" : {
+
+    },
+    "Directory to search in" : {
 
     },
     "Do you want to move %@ to Trash?" : {
@@ -1439,6 +1439,9 @@
           }
         }
       }
+    },
+    "Select directory…" : {
+
     },
     "Settings" : {
       "comment" : "Settings toolbar button",
