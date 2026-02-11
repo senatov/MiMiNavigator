@@ -68,6 +68,10 @@ struct FileRow: View {
     private var isActivePanel: Bool {
         appState.focusedPanel == panelSide
     }
+
+    private var isParentEntry: Bool {
+        ParentDirectoryEntry.isParentEntry(file)
+    }
     
     private var isMarked: Bool {
         appState.isMarked(file, on: panelSide)
@@ -84,23 +88,38 @@ struct FileRow: View {
 
     // MARK: - Main Container
     private var rowContainer: some View {
-        stableContent
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .frame(height: FilePanelStyle.rowHeight)
-            .contentShape(Rectangle())
-            .help(makeHelpTooltip())
-            .simultaneousGesture(doubleTapGesture)
-            .simultaneousGesture(singleTapGesture)
-            .animation(nil, value: isSelected)
-            .contextMenu { contextMenuContent }
-            .draggable(file) { makeDragPreview() }
-            .modifier(
-                DropTargetModifier(
-                    isValidTarget: isValidDropTarget,
-                    isDropTargeted: $isDropTargeted,
-                    onDrop: handleDrop,
-                    onTargetChange: handleDropTargeting
-                ))
+        Group {
+            if isParentEntry {
+                // ".." entry — simple, no drag-drop, no context menu
+                stableContent
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .frame(height: FilePanelStyle.rowHeight)
+                    .contentShape(Rectangle())
+                    .help("Navigate to parent directory")
+                    .simultaneousGesture(doubleTapGesture)
+                    .simultaneousGesture(singleTapGesture)
+                    .animation(nil, value: isSelected)
+            } else {
+                // Normal file row — full drag-drop + context menu
+                stableContent
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .frame(height: FilePanelStyle.rowHeight)
+                    .contentShape(Rectangle())
+                    .help(makeHelpTooltip())
+                    .simultaneousGesture(doubleTapGesture)
+                    .simultaneousGesture(singleTapGesture)
+                    .animation(nil, value: isSelected)
+                    .contextMenu { contextMenuContent }
+                    .draggable(file) { makeDragPreview() }
+                    .modifier(
+                        DropTargetModifier(
+                            isValidTarget: isValidDropTarget,
+                            isDropTargeted: $isDropTargeted,
+                            onDrop: handleDrop,
+                            onTargetChange: handleDropTargeting
+                        ))
+            }
+        }
     }
 
     private var stableContent: some View {

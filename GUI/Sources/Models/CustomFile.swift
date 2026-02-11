@@ -133,4 +133,16 @@ public struct CustomFile: Identifiable, Equatable, Hashable, Codable, Sendable {
     public var isHidden: Bool {
         nameStr.hasPrefix(".")
     }
+
+    // MARK: - Parent directory entry detection
+    /// Returns true if this is the synthetic ".." parent directory navigation entry
+    public var isParentEntry: Bool {
+        nameStr == ".."
+    }
+
+    // MARK: - Archive file detection
+    /// Returns true if this file is a recognized archive format
+    public var isArchiveFile: Bool {
+        !isDirectory && ArchiveExtensions.isArchive(fileExtension)
+    }
 }

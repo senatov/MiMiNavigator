@@ -57,13 +57,17 @@ struct FindFilesResultsView: View {
 
             TableColumn("Path") { result in
                 Text(result.isInsideArchive
-                     ? "[\(result.archivePath ?? "archive")] \(result.filePath)"
+                     ? "\u{1F4E6} [\((result.archivePath as NSString?)?.lastPathComponent ?? "archive")] \(result.filePath)"
                      : result.filePath)
                     .font(.system(size: 11))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(result.isInsideArchive
+                        ? Color(#colorLiteral(red: 0.1, green: 0.1, blue: 0.55, alpha: 1))
+                        : .secondary)
                     .lineLimit(1)
                     .truncationMode(.middle)
-                    .help(result.filePath)
+                    .help(result.isInsideArchive
+                          ? "Inside archive: \(result.archivePath ?? "?")\n\(result.filePath)"
+                          : result.filePath)
             }
             .width(min: 200, ideal: 300)
 
@@ -102,17 +106,23 @@ struct FindFilesResultsView: View {
         .tableStyle(.inset(alternatesRowBackgrounds: true))
     }
 
-    // MARK: - Name Cell
+    // MARK: - Name Cell (archive-aware coloring)
+    /// Archive results display in dark navy blue to distinguish them from normal results
     private func resultNameCell(_ result: FindFilesResult) -> some View {
         HStack(spacing: 6) {
             // Icon
             Image(systemName: result.isInsideArchive ? "doc.zipper" : fileIcon(for: result))
                 .font(.system(size: 12))
-                .foregroundStyle(result.isInsideArchive ? .orange : .secondary)
+                .foregroundStyle(result.isInsideArchive
+                    ? Color(#colorLiteral(red: 0.1, green: 0.1, blue: 0.55, alpha: 1))
+                    : .secondary)
                 .frame(width: 16)
 
             Text(result.fileName)
-                .font(.system(size: 12))
+                .font(.system(size: 12, weight: result.isInsideArchive ? .semibold : .regular))
+                .foregroundStyle(result.isInsideArchive
+                    ? Color(#colorLiteral(red: 0.1, green: 0.1, blue: 0.55, alpha: 1))
+                    : .primary)
                 .lineLimit(1)
         }
     }

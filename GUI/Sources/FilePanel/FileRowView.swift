@@ -30,12 +30,21 @@ struct FileRowView: View {
     /// - Marked → accent color
     /// - Hidden → tertiary label (dimmed gray, like Finder)
     /// - Normal → primary
+    /// Whether this row is the ".." parent directory navigation entry
+    private var isParentEntry: Bool {
+        ParentDirectoryEntry.isParentEntry(file)
+    }
+
     private var nameColor: Color {
         if isSelected && isActivePanel {
             return .white
         }
         if isMarked {
             return .accentColor
+        }
+        // Dark blue for ".." parent entry
+        if isParentEntry {
+            return Color(#colorLiteral(red: 0.2, green: 0.2, blue: 0.7, alpha: 1))
         }
         if file.isHidden {
             return Color(#colorLiteral(red: 0.3767382812, green: 0.3767382812, blue: 0.3767382812, alpha: 1))  // Brighter bluish gray
@@ -57,49 +66,65 @@ struct FileRowView: View {
     // MARK: - Base content for a single file row (icon + name)
     private func baseContent() -> some View {
         HStack(spacing: 8) {
-            // File icon (dimmed for hidden files, like Finder)
-            ZStack(alignment: .bottomTrailing) {
-                Image(nsImage: getSmartIcon(for: file))
+            if isParentEntry {
+                // Special icon for ".." parent directory entry
+                Image(systemName: "arrowshape.turn.up.left.fill")
                     .resizable()
-                    .interpolation(.high)
-                    .antialiased(true)
                     .aspectRatio(contentMode: .fit)
                     .frame(width: DesignTokens.Row.iconSize, height: DesignTokens.Row.iconSize)
-                    .opacity(iconOpacity)
+                    .foregroundStyle(isSelected && isActivePanel ? .white : Color(#colorLiteral(red: 0.2, green: 0.2, blue: 0.7, alpha: 1)))
+                    .allowsHitTesting(false)
+                    .layoutPriority(1)
 
-                // Symlink badge overlay (smaller for Finder-style icons)
-                if file.isSymbolicLink {
-                    Image(systemName: "arrow.turn.up.right")
-                        .font(.system(size: 6, weight: .bold))
-                        .foregroundStyle(.white)
-                        .padding(1.5)
-                        .background(
-                            Circle()
-                                .fill(Color.orange)
-                                .shadow(color: .black.opacity(0.2), radius: 0.5, x: 0.3, y: 0.3)
-                        )
-                        .offset(x: 2, y: 2)
-                }
-            }
-            .allowsHitTesting(false)
-            .layoutPriority(1)
-
-            // File name - with mark indicator
-            HStack(spacing: 4) {
-                // Mark indicator (subtle checkmark for marked files)
-                if isMarked {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 10))
-                        .foregroundStyle(.tint)
-                }
-
-                Text(file.nameStr)
-                    .font(.system(size: 13, weight: nameWeight))
+                Text("..")
+                    .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(nameColor)
                     .lineLimit(1)
-                    .truncationMode(.middle)
+                    .layoutPriority(0)
+            } else {
+                // Normal file icon (dimmed for hidden files, like Finder)
+                ZStack(alignment: .bottomTrailing) {
+                    Image(nsImage: getSmartIcon(for: file))
+                        .resizable()
+                        .interpolation(.high)
+                        .antialiased(true)
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: DesignTokens.Row.iconSize, height: DesignTokens.Row.iconSize)
+                        .opacity(iconOpacity)
+
+                    // Symlink badge overlay (smaller for Finder-style icons)
+                    if file.isSymbolicLink {
+                        Image(systemName: "arrow.turn.up.right")
+                            .font(.system(size: 6, weight: .bold))
+                            .foregroundStyle(.white)
+                            .padding(1.5)
+                            .background(
+                                Circle()
+                                    .fill(Color.orange)
+                                    .shadow(color: .black.opacity(0.2), radius: 0.5, x: 0.3, y: 0.3)
+                            )
+                            .offset(x: 2, y: 2)
+                    }
+                }
+                .allowsHitTesting(false)
+                .layoutPriority(1)
+
+                // File name - with mark indicator
+                HStack(spacing: 4) {
+                    if isMarked {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.system(size: 10))
+                            .foregroundStyle(.tint)
+                    }
+
+                    Text(file.nameStr)
+                        .font(.system(size: 13, weight: nameWeight))
+                        .foregroundStyle(nameColor)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                }
+                .layoutPriority(0)
             }
-            .layoutPriority(0)
         }
     }
 
