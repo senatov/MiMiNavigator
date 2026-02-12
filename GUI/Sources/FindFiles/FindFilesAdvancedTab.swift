@@ -15,39 +15,58 @@ struct FindFilesAdvancedTab: View {
     var body: some View {
         Form {
             // MARK: - Size Filter
-            Section("File Size") {
-                Toggle("Filter by size", isOn: $viewModel.useSizeFilter)
+            Section {
+                Toggle(isOn: $viewModel.useSizeFilter) {
+                    Text("Filter by size").font(.system(size: 13))
+                }
 
                 if viewModel.useSizeFilter {
                     HStack(spacing: 8) {
                         Text("From")
-                            .foregroundStyle(.secondary)
+                            .font(.system(size: 13))
+                            .foregroundStyle(.primary)
 
                         TextField("min", text: $viewModel.fileSizeMin)
                             .textFieldStyle(.roundedBorder)
                             .frame(width: 100)
 
                         Text("to")
-                            .foregroundStyle(.secondary)
+                            .font(.system(size: 13))
+                            .foregroundStyle(.primary)
 
                         TextField("max", text: $viewModel.fileSizeMax)
                             .textFieldStyle(.roundedBorder)
                             .frame(width: 100)
 
                         Text("bytes")
-                            .foregroundStyle(.tertiary)
+                            .font(.system(size: 12))
+                            .foregroundStyle(Color(#colorLiteral(red: 0.45, green: 0.47, blue: 0.52, alpha: 1)))
                     }
                 }
+            } header: {
+                Text("File Size")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(.primary)
             }
 
             // MARK: - Date Filter
-            Section("Modification Date") {
-                Toggle("Filter by date", isOn: $viewModel.useDateFilter)
+            Section {
+                Toggle(isOn: $viewModel.useDateFilter) {
+                    Text("Filter by date").font(.system(size: 13))
+                }
 
                 if viewModel.useDateFilter {
-                    DatePicker("From:", selection: $viewModel.dateFrom, displayedComponents: .date)
-                    DatePicker("To:", selection: $viewModel.dateTo, displayedComponents: .date)
+                    DatePicker(selection: $viewModel.dateFrom, displayedComponents: .date) {
+                        Text("From:").font(.system(size: 13, weight: .medium))
+                    }
+                    DatePicker(selection: $viewModel.dateTo, displayedComponents: .date) {
+                        Text("To:").font(.system(size: 13, weight: .medium))
+                    }
                 }
+            } header: {
+                Text("Modification Date")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(.primary)
             }
 
             // MARK: - Info
@@ -56,8 +75,8 @@ struct FindFilesAdvancedTab: View {
                     "Content search scans text files only. Binary files are skipped. Archive search supports ZIP, 7z, TAR, GZ, BZ2.",
                     systemImage: "info.circle"
                 )
-                .foregroundStyle(.secondary)
-                .font(.callout)
+                .foregroundStyle(Color(#colorLiteral(red: 0.35, green: 0.38, blue: 0.45, alpha: 1)))
+                .font(.system(size: 12))
             }
         }
         .formStyle(.grouped)

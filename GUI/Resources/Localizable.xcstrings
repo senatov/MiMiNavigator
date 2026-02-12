@@ -7,6 +7,9 @@
     "—" : {
 
     },
+    ".." : {
+
+    },
     "... and %lld more" : {
 
     },
@@ -1172,6 +1175,9 @@
           }
         }
       }
+    },
+    "Navigate to parent directory" : {
+
     },
     "Navigation between favorites - %@" : {
 
