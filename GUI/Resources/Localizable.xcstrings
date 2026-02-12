@@ -7,7 +7,7 @@
     "—" : {
 
     },
-    ".." : {
+    "..." : {
 
     },
     "... and %lld more" : {
@@ -40,9 +40,6 @@
 
     },
     "[ File Name ] Conflict" : {
-
-    },
-    "*.txt; *.swift; report*" : {
 
     },
     "/" : {
@@ -347,7 +344,7 @@
         }
       }
     },
-    "Content search scans text files only. Binary files are skipped. Archive search supports ZIP, 7z, TAR, GZ, BZ2." : {
+    "Content search scans text files only. Binary files are skipped. Archive search supports ZIP, 7z, TAR, GZ, BZ2, XZ, RAR, JAR and 40+ other formats." : {
 
     },
     "copied" : {
@@ -528,6 +525,9 @@
       "comment" : "Deleting operation"
     },
     "DEV BUILD" : {
+
+    },
+    "Directory path" : {
 
     },
     "Directory to search in" : {
@@ -792,6 +792,9 @@
           }
         }
       }
+    },
+    "File name pattern" : {
+
     },
     "File Name Pattern Syntax" : {
       "comment" : "Pattern help title"
@@ -1423,9 +1426,6 @@
     "Search in:" : {
       "comment" : "Search directory label"
     },
-    "Search inside file contents…" : {
-
-    },
     "Searching…" : {
       "comment" : "Searching status"
     },
@@ -1445,9 +1445,6 @@
           }
         }
       }
-    },
-    "Select directory…" : {
-
     },
     "Settings" : {
       "comment" : "Settings toolbar button",
@@ -1527,6 +1524,9 @@
         }
       }
     },
+    "Text to find inside files" : {
+
+    },
     "The archive is password-protected:" : {
       "comment" : "Archive protected message"
     },
@@ -1591,7 +1591,7 @@
     "Visited directories will appear here" : {
 
     },
-    "Wildcards: * (any chars), ? (single char). Separate with ;" : {
+    "Wildcards: * (any chars), ? (single char). Separate patterns with ;" : {
 
     }
   },

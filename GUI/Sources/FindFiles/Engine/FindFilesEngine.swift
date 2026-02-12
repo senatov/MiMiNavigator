@@ -16,7 +16,6 @@ actor FindFilesEngine {
 
     private var currentTask: Task<Void, Never>?
     private(set) var stats = FindFilesStats()
-    private let archiveSearcher = FindFilesArchiveSearcher()
 
     // MARK: - Start Search
 
@@ -33,7 +32,7 @@ actor FindFilesEngine {
         log.info("[FindEngine] Starting search: pattern='\(criteria.fileNamePattern)' dir='\(criteria.searchDirectory.lastPathComponent)' archives=\(criteria.searchInArchives)")
 
         return AsyncStream { continuation in
-            let task = Task.detached { [weak self] in
+            let task = Task.detached { @concurrent [weak self] in
                 guard let self else {
                     continuation.finish()
                     return
@@ -106,8 +105,8 @@ actor FindFilesEngine {
             return
         }
 
-        // Collect URLs synchronously to avoid makeIterator() in async context
-        var fileURLs: [(URL, URLResourceValues?)] = []
+        // Collect file metadata into Sendable struct to avoid URLResourceValues crossing await
+        var entries: [ScannedFileEntry] = []
         while let obj = enumerator.nextObject() {
             guard let fileURL = obj as? URL else { continue }
             let rv = try? fileURL.resourceValues(forKeys: Set(keys))
@@ -119,61 +118,50 @@ actor FindFilesEngine {
                 }
                 continue
             }
-            fileURLs.append((fileURL, rv))
+            entries.append(ScannedFileEntry(
+                url: fileURL,
+                fileSize: Int64(rv?.fileSize ?? 0),
+                modificationDate: rv?.contentModificationDate
+            ))
         }
 
-        log.debug("[FindEngine] Enumerated \(fileURLs.count) files in \(stats.directoriesScanned) dirs under \(url.lastPathComponent)")
+        log.debug("[FindEngine] Enumerated \(entries.count) files in \(stats.directoriesScanned) dirs under \(url.lastPathComponent)")
 
-        for (fileURL, resourceValues) in fileURLs {
+        for entry in entries {
             guard !Task.isCancelled else { return }
 
             stats.filesScanned += 1
 
             // Size filter
-            if let minSize = criteria.fileSizeMin {
-                let size = Int64(resourceValues?.fileSize ?? 0)
-                if size < minSize { continue }
-            }
-            if let maxSize = criteria.fileSizeMax {
-                let size = Int64(resourceValues?.fileSize ?? 0)
-                if size > maxSize { continue }
-            }
+            if let minSize = criteria.fileSizeMin, entry.fileSize < minSize { continue }
+            if let maxSize = criteria.fileSizeMax, entry.fileSize > maxSize { continue }
 
             // Date filter
-            if let dateFrom = criteria.dateFrom, let modDate = resourceValues?.contentModificationDate {
-                if modDate < dateFrom { continue }
-            }
-            if let dateTo = criteria.dateTo, let modDate = resourceValues?.contentModificationDate {
-                if modDate > dateTo { continue }
-            }
+            if let dateFrom = criteria.dateFrom, let modDate = entry.modificationDate, modDate < dateFrom { continue }
+            if let dateTo = criteria.dateTo, let modDate = entry.modificationDate, modDate > dateTo { continue }
 
-            let fileName = fileURL.lastPathComponent
+            let fileName = entry.url.lastPathComponent
             let nameMatches = FindFilesNameMatcher.matches(fileName: fileName, regex: nameRegex, criteria: criteria)
 
             // Archive handling
-            let ext = fileURL.pathExtension.lowercased()
+            let ext = entry.url.pathExtension.lowercased()
             if criteria.searchInArchives && ArchiveExtensions.isArchive(ext) {
                 stats.archivesScanned += 1
-                log.debug("[FindEngine] Scanning archive: \(fileURL.lastPathComponent)")
+                log.debug("[FindEngine] Scanning archive: \(entry.url.lastPathComponent)")
 
-                if criteria.isContentSearch {
-                    await archiveSearcher.searchInsideArchive(
-                        archiveURL: fileURL, criteria: criteria, nameRegex: nameRegex,
-                        contentPattern: contentPattern, continuation: continuation,
-                        passwordCallback: passwordCallback, stats: &stats
-                    )
-                } else if nameMatches {
-                    let result = FindFilesResult(fileURL: fileURL)
-                    continuation.yield(result)
-                    stats.matchesFound += 1
-                }
+                let delta = await FindFilesArchiveSearcher.searchInsideArchive(
+                    archiveURL: entry.url, criteria: criteria, nameRegex: nameRegex,
+                    contentPattern: contentPattern, continuation: continuation,
+                    passwordCallback: passwordCallback
+                )
+                stats.matchesFound += delta.matchesFound
                 continue
             }
 
             // Content search: name must match AND content must contain text
             if criteria.isContentSearch {
                 if nameMatches {
-                    let contentResults = FindFilesContentSearcher.searchFileContent(fileURL: fileURL, pattern: contentPattern!)
+                    let contentResults = FindFilesContentSearcher.searchFileContent(fileURL: entry.url, pattern: contentPattern!)
                     for result in contentResults {
                         guard !Task.isCancelled else { return }
                         continuation.yield(result)
@@ -183,7 +171,7 @@ actor FindFilesEngine {
             } else {
                 // Name-only search
                 if nameMatches {
-                    let result = FindFilesResult(fileURL: fileURL)
+                    let result = FindFilesResult(fileURL: entry.url)
                     continuation.yield(result)
                     stats.matchesFound += 1
                 }

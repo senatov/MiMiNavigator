@@ -12,10 +12,14 @@ struct PanelBackgroundContextMenu: View {
     let panelSide: PanelSide
     let currentPath: URL
     let onAction: (PanelBackgroundAction) -> Void
+    var canGoBack: Bool = false
+    var canGoForward: Bool = false
     
-    init(panelSide: PanelSide, currentPath: URL, onAction: @escaping (PanelBackgroundAction) -> Void) {
+    init(panelSide: PanelSide, currentPath: URL, canGoBack: Bool = false, canGoForward: Bool = false, onAction: @escaping (PanelBackgroundAction) -> Void) {
         self.panelSide = panelSide
         self.currentPath = currentPath
+        self.canGoBack = canGoBack
+        self.canGoForward = canGoForward
         self.onAction = onAction
         log.debug("\(#function) → panel=\(panelSide) path='\(currentPath.path)'")
     }
@@ -110,9 +114,10 @@ struct PanelBackgroundContextMenu: View {
         case .goUp:
             // Disable if already at root
             return currentPath.path == "/"
-        case .goBack, .goForward:
-            // TODO: Implement history tracking
-            return true
+        case .goBack:
+            return !canGoBack
+        case .goForward:
+            return !canGoForward
         default:
             return false
         }

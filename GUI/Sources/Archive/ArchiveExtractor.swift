@@ -13,7 +13,7 @@ enum ArchiveExtractor {
 
     // MARK: - Main Entry Point
 
-    static func extract(archiveURL: URL, format: ArchiveFormat, to destination: URL) async throws {
+    @concurrent static func extract(archiveURL: URL, format: ArchiveFormat, to destination: URL) async throws {
         log.info("[Extractor] Extracting \(archiveURL.lastPathComponent) (format: \(format.displayName)) → \(destination.path)")
 
         switch format {
@@ -30,7 +30,7 @@ enum ArchiveExtractor {
 
     // MARK: - ZIP
 
-    static func extractZip(archiveURL: URL, to destination: URL) async throws {
+    @concurrent static func extractZip(archiveURL: URL, to destination: URL) async throws {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/unzip")
         process.arguments = ["-o", archiveURL.path, "-d", destination.path]
@@ -42,7 +42,7 @@ enum ArchiveExtractor {
 
     // MARK: - TAR family
 
-    static func extractTar(archiveURL: URL, format: ArchiveFormat, to destination: URL) async throws {
+    @concurrent static func extractTar(archiveURL: URL, format: ArchiveFormat, to destination: URL) async throws {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/tar")
         var args = ["-x"]
@@ -73,7 +73,7 @@ enum ArchiveExtractor {
 
     // MARK: - 7z
 
-    static func extract7z(archiveURL: URL, to destination: URL) async throws {
+    @concurrent static func extract7z(archiveURL: URL, to destination: URL) async throws {
         let szPath = try ArchiveToolLocator.find7z()
         let process = Process()
         process.executableURL = URL(fileURLWithPath: szPath)
@@ -100,7 +100,7 @@ enum ArchiveToolLocator {
 // MARK: - Process Runner
 /// Async wrapper for running CLI processes
 enum ArchiveProcessRunner {
-    static func run(_ process: Process, errorPipe: Pipe) async throws {
+    @concurrent static func run(_ process: Process, errorPipe: Pipe) async throws {
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
             process.terminationHandler = { proc in
                 if proc.terminationStatus == 0 {

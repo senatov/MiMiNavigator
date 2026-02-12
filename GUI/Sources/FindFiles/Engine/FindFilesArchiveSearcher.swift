@@ -7,57 +7,61 @@
 
 import Foundation
 
+// MARK: - Archive Search Delta
+/// Returned from archive search to let the caller update its own stats
+struct ArchiveSearchDelta: Sendable {
+    var matchesFound: Int = 0
+}
+
 // MARK: - Archive Searcher
-/// Searches inside archive files for matching entries (by name and content)
-actor FindFilesArchiveSearcher {
+/// Stateless utility — searches inside archive files for matching entries (by name and content).
+/// Returns match count delta so the caller (FindFilesEngine actor) updates its own stats.
+enum FindFilesArchiveSearcher {
 
     // MARK: - Route to Correct Handler
 
-    func searchInsideArchive(
+    @concurrent static func searchInsideArchive(
         archiveURL: URL,
         criteria: FindFilesCriteria,
         nameRegex: NSRegularExpression?,
         contentPattern: NSRegularExpression?,
         continuation: AsyncStream<FindFilesResult>.Continuation,
-        passwordCallback: ArchivePasswordCallback?,
-        stats: inout FindFilesStats
-    ) async {
+        passwordCallback: ArchivePasswordCallback?
+    ) async -> ArchiveSearchDelta {
         let ext = archiveURL.pathExtension.lowercased()
 
         switch ext {
         case "zip":
-            await searchInsideZip(archiveURL: archiveURL, criteria: criteria, nameRegex: nameRegex,
-                                  contentPattern: contentPattern, continuation: continuation,
-                                  passwordCallback: passwordCallback, stats: &stats)
+            return await searchInsideZip(archiveURL: archiveURL, criteria: criteria, nameRegex: nameRegex,
+                                         contentPattern: contentPattern, continuation: continuation,
+                                         passwordCallback: passwordCallback)
         case "7z":
-            await searchInside7z(archiveURL: archiveURL, criteria: criteria, nameRegex: nameRegex,
-                                 contentPattern: contentPattern, continuation: continuation,
-                                 passwordCallback: passwordCallback, stats: &stats)
+            return await searchInside7z(archiveURL: archiveURL, criteria: criteria, nameRegex: nameRegex,
+                                        contentPattern: contentPattern, continuation: continuation,
+                                        passwordCallback: passwordCallback)
         case "tar", "tgz", "gz", "gzip", "bz2", "bzip2", "xz", "txz", "lzma", "tlz",
              "tbz", "tbz2", "z":
-            await searchInsideTar(archiveURL: archiveURL, criteria: criteria, nameRegex: nameRegex,
-                                  contentPattern: contentPattern, continuation: continuation, stats: &stats)
+            return await searchInsideTar(archiveURL: archiveURL, criteria: criteria, nameRegex: nameRegex,
+                                         contentPattern: contentPattern, continuation: continuation)
         case "jar", "war", "ear", "aar", "apk":
-            // Java/Android archives are ZIP-based
-            await searchInsideZip(archiveURL: archiveURL, criteria: criteria, nameRegex: nameRegex,
-                                  contentPattern: contentPattern, continuation: continuation,
-                                  passwordCallback: passwordCallback, stats: &stats)
+            return await searchInsideZip(archiveURL: archiveURL, criteria: criteria, nameRegex: nameRegex,
+                                         contentPattern: contentPattern, continuation: continuation,
+                                         passwordCallback: passwordCallback)
         default:
-            // All other formats — try 7z as universal fallback
             log.debug("[ArchiveSearcher] Using 7z fallback for \(archiveURL.lastPathComponent)")
-            await searchInside7z(archiveURL: archiveURL, criteria: criteria, nameRegex: nameRegex,
-                                 contentPattern: contentPattern, continuation: continuation,
-                                 passwordCallback: passwordCallback, stats: &stats)
+            return await searchInside7z(archiveURL: archiveURL, criteria: criteria, nameRegex: nameRegex,
+                                        contentPattern: contentPattern, continuation: continuation,
+                                        passwordCallback: passwordCallback)
         }
     }
 
     // MARK: - ZIP Search
 
-    private func searchInsideZip(
+    @concurrent private static func searchInsideZip(
         archiveURL: URL, criteria: FindFilesCriteria, nameRegex: NSRegularExpression?,
         contentPattern: NSRegularExpression?, continuation: AsyncStream<FindFilesResult>.Continuation,
-        passwordCallback: ArchivePasswordCallback?, stats: inout FindFilesStats
-    ) async {
+        passwordCallback: ArchivePasswordCallback?
+    ) async -> ArchiveSearchDelta {
         let listProcess = Process()
         listProcess.executableURL = URL(fileURLWithPath: "/usr/bin/unzip")
         listProcess.arguments = ["-l", archiveURL.path]
@@ -70,40 +74,38 @@ actor FindFilesArchiveSearcher {
             listProcess.waitUntilExit()
         } catch {
             log.error("[ArchiveSearcher] Failed to list zip: \(archiveURL.path) — \(error)")
-            return
+            return ArchiveSearchDelta()
         }
 
         if listProcess.terminationStatus != 0 {
-            // Might be password-protected
             if let callback = passwordCallback {
                 log.info("[ArchiveSearcher] ZIP may be password-protected: \(archiveURL.lastPathComponent)")
                 let response = await callback(archiveURL.lastPathComponent)
                 switch response {
                 case .password(let pwd):
-                    await searchInsideZipWithPassword(archiveURL: archiveURL, password: pwd, criteria: criteria,
-                                                     nameRegex: nameRegex, contentPattern: contentPattern,
-                                                     continuation: continuation, stats: &stats)
+                    return await searchInsideZipWithPassword(archiveURL: archiveURL, password: pwd, criteria: criteria,
+                                                            nameRegex: nameRegex, contentPattern: contentPattern,
+                                                            continuation: continuation)
                 case .skip:
                     log.info("[ArchiveSearcher] Skipped password-protected: \(archiveURL.lastPathComponent)")
-                    return
+                    return ArchiveSearchDelta()
                 }
             }
-            return
+            return ArchiveSearchDelta()
         }
 
         let data = pipe.fileHandleForReading.readDataToEndOfFile()
-        guard let listing = String(data: data, encoding: .utf8) else { return }
+        guard let listing = String(data: data, encoding: .utf8) else { return ArchiveSearchDelta() }
 
-        await processZipListing(listing, archiveURL: archiveURL, criteria: criteria,
-                                nameRegex: nameRegex, contentPattern: contentPattern,
-                                continuation: continuation, stats: &stats)
+        return await processZipListing(listing, archiveURL: archiveURL, criteria: criteria,
+                                       nameRegex: nameRegex, contentPattern: contentPattern,
+                                       continuation: continuation)
     }
 
-    private func searchInsideZipWithPassword(
+    @concurrent private static func searchInsideZipWithPassword(
         archiveURL: URL, password: String, criteria: FindFilesCriteria, nameRegex: NSRegularExpression?,
-        contentPattern: NSRegularExpression?, continuation: AsyncStream<FindFilesResult>.Continuation,
-        stats: inout FindFilesStats
-    ) async {
+        contentPattern: NSRegularExpression?, continuation: AsyncStream<FindFilesResult>.Continuation
+    ) async -> ArchiveSearchDelta {
         let listProcess = Process()
         listProcess.executableURL = URL(fileURLWithPath: "/usr/bin/unzip")
         listProcess.arguments = ["-l", "-P", password, archiveURL.path]
@@ -114,28 +116,27 @@ actor FindFilesArchiveSearcher {
         do {
             try listProcess.run()
             listProcess.waitUntilExit()
-        } catch { return }
+        } catch { return ArchiveSearchDelta() }
 
-        guard listProcess.terminationStatus == 0 else { return }
+        guard listProcess.terminationStatus == 0 else { return ArchiveSearchDelta() }
 
         let data = pipe.fileHandleForReading.readDataToEndOfFile()
-        guard let listing = String(data: data, encoding: .utf8) else { return }
+        guard let listing = String(data: data, encoding: .utf8) else { return ArchiveSearchDelta() }
 
-        await processZipListing(listing, archiveURL: archiveURL, criteria: criteria,
-                                nameRegex: nameRegex, contentPattern: contentPattern,
-                                continuation: continuation, stats: &stats)
+        return await processZipListing(listing, archiveURL: archiveURL, criteria: criteria,
+                                       nameRegex: nameRegex, contentPattern: contentPattern,
+                                       continuation: continuation)
     }
 
-    private func processZipListing(
+    @concurrent private static func processZipListing(
         _ listing: String, archiveURL: URL, criteria: FindFilesCriteria, nameRegex: NSRegularExpression?,
-        contentPattern: NSRegularExpression?, continuation: AsyncStream<FindFilesResult>.Continuation,
-        stats: inout FindFilesStats
-    ) async {
+        contentPattern: NSRegularExpression?, continuation: AsyncStream<FindFilesResult>.Continuation
+    ) async -> ArchiveSearchDelta {
+        var delta = ArchiveSearchDelta()
         let lines = listing.components(separatedBy: .newlines)
 
         for line in lines {
-            guard !Task.isCancelled else { return }
-            // Parse unzip -l output: "  12345  01-01-2024 12:00   path/to/file.txt"
+            guard !Task.isCancelled else { return delta }
             let trimmed = line.trimmingCharacters(in: .whitespaces)
             let components = trimmed.split(separator: " ", maxSplits: 3)
             guard components.count >= 4 else { continue }
@@ -145,22 +146,27 @@ actor FindFilesArchiveSearcher {
             let fileName = (entryName as NSString).lastPathComponent
             if FindFilesNameMatcher.matches(fileName: fileName, regex: nameRegex, criteria: criteria) {
                 if let contentPattern, criteria.isContentSearch {
-                    await searchZipEntryContent(archiveURL: archiveURL, entryName: entryName,
-                                                contentPattern: contentPattern, continuation: continuation, stats: &stats)
+                    let contentDelta = await searchZipEntryContent(
+                        archiveURL: archiveURL, entryName: entryName,
+                        contentPattern: contentPattern, continuation: continuation)
+                    delta.matchesFound += contentDelta.matchesFound
                 } else {
                     let virtualURL = archiveURL.appendingPathComponent(entryName)
                     let result = FindFilesResult(fileURL: virtualURL, isInsideArchive: true, archivePath: archiveURL.path)
                     continuation.yield(result)
-                    stats.matchesFound += 1
+                    delta.matchesFound += 1
                 }
             }
         }
+        return delta
     }
 
-    private func searchZipEntryContent(
+    @concurrent private static func searchZipEntryContent(
         archiveURL: URL, entryName: String, contentPattern: NSRegularExpression,
-        continuation: AsyncStream<FindFilesResult>.Continuation, stats: inout FindFilesStats
-    ) async {
+        continuation: AsyncStream<FindFilesResult>.Continuation
+    ) async -> ArchiveSearchDelta {
+        var delta = ArchiveSearchDelta()
+
         let extractProcess = Process()
         extractProcess.executableURL = URL(fileURLWithPath: "/usr/bin/unzip")
         extractProcess.arguments = ["-p", archiveURL.path, entryName]
@@ -171,16 +177,16 @@ actor FindFilesArchiveSearcher {
         do {
             try extractProcess.run()
             extractProcess.waitUntilExit()
-        } catch { return }
+        } catch { return delta }
 
-        guard extractProcess.terminationStatus == 0 else { return }
+        guard extractProcess.terminationStatus == 0 else { return delta }
 
         let data = pipe.fileHandleForReading.readDataToEndOfFile()
-        guard let content = String(data: data, encoding: .utf8) else { return }
+        guard let content = String(data: data, encoding: .utf8) else { return delta }
 
         let lines = content.components(separatedBy: .newlines)
         for (index, line) in lines.enumerated() {
-            guard !Task.isCancelled else { return }
+            guard !Task.isCancelled else { return delta }
             let range = NSRange(line.startIndex..., in: line)
             if contentPattern.firstMatch(in: line, range: range) != nil {
                 let virtualURL = archiveURL.appendingPathComponent(entryName)
@@ -188,22 +194,23 @@ actor FindFilesArchiveSearcher {
                     fileURL: virtualURL, matchContext: String(line.prefix(200)),
                     lineNumber: index + 1, isInsideArchive: true, archivePath: archiveURL.path)
                 continuation.yield(result)
-                stats.matchesFound += 1
+                delta.matchesFound += 1
             }
         }
+        return delta
     }
 
     // MARK: - 7z Search
 
-    private func searchInside7z(
+    @concurrent private static func searchInside7z(
         archiveURL: URL, criteria: FindFilesCriteria, nameRegex: NSRegularExpression?,
         contentPattern: NSRegularExpression?, continuation: AsyncStream<FindFilesResult>.Continuation,
-        passwordCallback: ArchivePasswordCallback?, stats: inout FindFilesStats
-    ) async {
+        passwordCallback: ArchivePasswordCallback?
+    ) async -> ArchiveSearchDelta {
         let szPaths = ["/opt/homebrew/bin/7z", "/usr/local/bin/7z", "/usr/bin/7z"]
         guard let szPath = szPaths.first(where: { FileManager.default.fileExists(atPath: $0) }) else {
             log.warning("[ArchiveSearcher] 7z not found — skipping \(archiveURL.lastPathComponent)")
-            return
+            return ArchiveSearchDelta()
         }
 
         let listProcess = Process()
@@ -216,7 +223,7 @@ actor FindFilesArchiveSearcher {
         do {
             try listProcess.run()
             listProcess.waitUntilExit()
-        } catch { return }
+        } catch { return ArchiveSearchDelta() }
 
         if listProcess.terminationStatus != 0 {
             if let callback = passwordCallback {
@@ -224,29 +231,29 @@ actor FindFilesArchiveSearcher {
                 let response = await callback(archiveURL.lastPathComponent)
                 switch response {
                 case .password(let pwd):
-                    await searchInside7zWithPassword(archiveURL: archiveURL, password: pwd, szPath: szPath,
-                                                    criteria: criteria, nameRegex: nameRegex,
-                                                    contentPattern: contentPattern,
-                                                    continuation: continuation, stats: &stats)
+                    return await searchInside7zWithPassword(archiveURL: archiveURL, password: pwd, szPath: szPath,
+                                                           criteria: criteria, nameRegex: nameRegex,
+                                                           contentPattern: contentPattern,
+                                                           continuation: continuation)
                 case .skip:
-                    return
+                    return ArchiveSearchDelta()
                 }
             }
-            return
+            return ArchiveSearchDelta()
         }
 
         let data = pipe.fileHandleForReading.readDataToEndOfFile()
-        guard let listing = String(data: data, encoding: .utf8) else { return }
+        guard let listing = String(data: data, encoding: .utf8) else { return ArchiveSearchDelta() }
 
-        await process7zListing(listing, archiveURL: archiveURL, criteria: criteria,
-                               nameRegex: nameRegex, continuation: continuation, stats: &stats)
+        return process7zListing(listing, archiveURL: archiveURL, criteria: criteria,
+                                nameRegex: nameRegex, continuation: continuation)
     }
 
-    private func searchInside7zWithPassword(
+    @concurrent private static func searchInside7zWithPassword(
         archiveURL: URL, password: String, szPath: String, criteria: FindFilesCriteria,
         nameRegex: NSRegularExpression?, contentPattern: NSRegularExpression?,
-        continuation: AsyncStream<FindFilesResult>.Continuation, stats: inout FindFilesStats
-    ) async {
+        continuation: AsyncStream<FindFilesResult>.Continuation
+    ) async -> ArchiveSearchDelta {
         let listProcess = Process()
         listProcess.executableURL = URL(fileURLWithPath: szPath)
         listProcess.arguments = ["l", "-p\(password)", archiveURL.path]
@@ -257,27 +264,27 @@ actor FindFilesArchiveSearcher {
         do {
             try listProcess.run()
             listProcess.waitUntilExit()
-        } catch { return }
+        } catch { return ArchiveSearchDelta() }
 
-        guard listProcess.terminationStatus == 0 else { return }
+        guard listProcess.terminationStatus == 0 else { return ArchiveSearchDelta() }
 
         let data = pipe.fileHandleForReading.readDataToEndOfFile()
-        guard let listing = String(data: data, encoding: .utf8) else { return }
+        guard let listing = String(data: data, encoding: .utf8) else { return ArchiveSearchDelta() }
 
-        await process7zListing(listing, archiveURL: archiveURL, criteria: criteria,
-                               nameRegex: nameRegex, continuation: continuation, stats: &stats)
+        return process7zListing(listing, archiveURL: archiveURL, criteria: criteria,
+                                nameRegex: nameRegex, continuation: continuation)
     }
 
-    private func process7zListing(
+    private static func process7zListing(
         _ listing: String, archiveURL: URL, criteria: FindFilesCriteria,
-        nameRegex: NSRegularExpression?, continuation: AsyncStream<FindFilesResult>.Continuation,
-        stats: inout FindFilesStats
-    ) async {
+        nameRegex: NSRegularExpression?, continuation: AsyncStream<FindFilesResult>.Continuation
+    ) -> ArchiveSearchDelta {
+        var delta = ArchiveSearchDelta()
         let lines = listing.components(separatedBy: .newlines)
         var inFileList = false
 
         for line in lines {
-            guard !Task.isCancelled else { return }
+            guard !Task.isCancelled else { return delta }
             if line.hasPrefix("---") {
                 inFileList.toggle()
                 continue
@@ -285,7 +292,6 @@ actor FindFilesArchiveSearcher {
             guard inFileList else { continue }
             let trimmed = line.trimmingCharacters(in: .whitespaces)
             guard !trimmed.isEmpty else { continue }
-            // 7z list format: "2024-01-01 12:00:00 D....    0    0  dirname"
             let components = trimmed.split(separator: " ", omittingEmptySubsequences: true)
             guard components.count >= 6 else { continue }
             let attrs = String(components[2])
@@ -297,18 +303,19 @@ actor FindFilesArchiveSearcher {
                 let virtualURL = archiveURL.appendingPathComponent(entryName)
                 let result = FindFilesResult(fileURL: virtualURL, isInsideArchive: true, archivePath: archiveURL.path)
                 continuation.yield(result)
-                stats.matchesFound += 1
+                delta.matchesFound += 1
             }
         }
+        return delta
     }
 
     // MARK: - TAR Search
 
-    func searchInsideTar(
+    @concurrent static func searchInsideTar(
         archiveURL: URL, criteria: FindFilesCriteria, nameRegex: NSRegularExpression?,
-        contentPattern: NSRegularExpression?, continuation: AsyncStream<FindFilesResult>.Continuation,
-        stats: inout FindFilesStats
-    ) async {
+        contentPattern: NSRegularExpression?, continuation: AsyncStream<FindFilesResult>.Continuation
+    ) async -> ArchiveSearchDelta {
+        var delta = ArchiveSearchDelta()
         let ext = archiveURL.pathExtension.lowercased()
         var args = ["-tf"]
         switch ext {
@@ -332,21 +339,21 @@ actor FindFilesArchiveSearcher {
             listProcess.waitUntilExit()
         } catch {
             log.error("[ArchiveSearcher] tar list failed: \(archiveURL.lastPathComponent) — \(error)")
-            return
+            return delta
         }
 
         guard listProcess.terminationStatus == 0 else {
             log.warning("[ArchiveSearcher] tar exit code \(listProcess.terminationStatus) for \(archiveURL.lastPathComponent)")
-            return
+            return delta
         }
 
         let data = pipe.fileHandleForReading.readDataToEndOfFile()
-        guard let listing = String(data: data, encoding: .utf8) else { return }
+        guard let listing = String(data: data, encoding: .utf8) else { return delta }
 
         let lines = listing.components(separatedBy: .newlines)
 
         for line in lines {
-            guard !Task.isCancelled else { return }
+            guard !Task.isCancelled else { return delta }
             let entryName = line.trimmingCharacters(in: .whitespaces)
             guard !entryName.isEmpty, !entryName.hasSuffix("/") else { continue }
             let fileName = (entryName as NSString).lastPathComponent
@@ -355,8 +362,9 @@ actor FindFilesArchiveSearcher {
                 let virtualURL = archiveURL.appendingPathComponent(entryName)
                 let result = FindFilesResult(fileURL: virtualURL, isInsideArchive: true, archivePath: archiveURL.path)
                 continuation.yield(result)
-                stats.matchesFound += 1
+                delta.matchesFound += 1
             }
         }
+        return delta
     }
 }

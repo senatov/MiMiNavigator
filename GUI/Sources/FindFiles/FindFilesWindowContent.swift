@@ -2,28 +2,19 @@
 // MiMiNavigator
 //
 // Created by Iakov Senatov on 11.02.2026.
-// Refactored: 12.02.2026 — clean HIG 26 style, no custom colors
+// Refactored: 12.02.2026 — HIG 26, Close button, input border, compact layout
 // Copyright © 2026 Senatov. All rights reserved.
 // Description: Main content view for the standalone Find Files window
 
 import SwiftUI
 
 // MARK: - Find Files Window Content
-/// Uses native macOS Form layout, standard button styles, and system materials.
 struct FindFilesWindowContent: View {
     @Bindable var viewModel: FindFilesViewModel
     @State private var selectedTab: FindFilesTab = .general
 
     var body: some View {
         VStack(spacing: 0) {
-            // MARK: - Action Bar
-            actionBar
-                .padding(.horizontal, 16)
-                .padding(.top, 12)
-                .padding(.bottom, 8)
-
-            Divider()
-
             // MARK: - Tab Picker
             Picker("", selection: $selectedTab) {
                 Text("General").tag(FindFilesTab.general)
@@ -32,30 +23,36 @@ struct FindFilesWindowContent: View {
             .pickerStyle(.segmented)
             .labelsHidden()
             .padding(.horizontal, 16)
-            .padding(.vertical, 8)
+            .padding(.top, 10)
+            .padding(.bottom, 4)
 
-            // MARK: - Tab Content (native Form inside each tab)
-            Group {
-                switch selectedTab {
-                case .general:
-                    FindFilesGeneralTab(viewModel: viewModel)
-                case .advanced:
-                    FindFilesAdvancedTab(viewModel: viewModel)
-                }
-            }
+            // MARK: - Input Area with visible border
+            inputAreaWithBorder
+                .padding(.horizontal, 10)
 
-            Divider()
+            // MARK: - Action Bar (Search / Close) — tight to input
+            actionBar
+                .padding(.horizontal, 16)
+                .padding(.top, 6)
+                .padding(.bottom, 6)
 
-            // MARK: - Results Table
+            // MARK: - Sharp separator line
+            Rectangle()
+                .fill(Color(nsColor: .separatorColor))
+                .frame(height: 1)
+
+            // MARK: - Results Table (fills all remaining space)
             FindFilesResultsView(viewModel: viewModel)
-                .frame(minHeight: 140)
+                .frame(maxHeight: .infinity)
 
-            Divider()
+            Rectangle()
+                .fill(Color(nsColor: .separatorColor))
+                .frame(height: 1)
 
             // MARK: - Status Bar
             statusBar
                 .padding(.horizontal, 16)
-                .padding(.vertical, 6)
+                .padding(.vertical, 5)
         }
         // Archive password dialog
         .sheet(isPresented: Binding(
@@ -83,6 +80,27 @@ struct FindFilesWindowContent: View {
         }
     }
 
+    // MARK: - Input Area with Border
+
+    private var inputAreaWithBorder: some View {
+        Group {
+            switch selectedTab {
+            case .general:
+                FindFilesGeneralTab(viewModel: viewModel)
+            case .advanced:
+                FindFilesAdvancedTab(viewModel: viewModel)
+            }
+        }
+        .formStyle(.grouped)
+        .scrollDisabled(true)
+        .fixedSize(horizontal: false, vertical: true)
+        .overlay(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .strokeBorder(Color(nsColor: .tertiaryLabelColor), lineWidth: 0.75)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+    }
+
     // MARK: - Action Bar
 
     private var actionBar: some View {
@@ -106,7 +124,7 @@ struct FindFilesWindowContent: View {
                 .keyboardShortcut(.return, modifiers: [])
             }
 
-            // Secondary: New Search
+            // New Search
             Button("New Search") {
                 viewModel.newSearch()
             }
@@ -128,6 +146,16 @@ struct FindFilesWindowContent: View {
                             .fill(Color.accentColor.opacity(0.12))
                     )
             }
+
+            // Close button — same size as Search
+            Button {
+                FindFilesCoordinator.shared.close()
+            } label: {
+                Label("Close", systemImage: "xmark")
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.large)
+            .keyboardShortcut(.escape, modifiers: [])
         }
     }
 
@@ -161,7 +189,6 @@ struct FindFilesWindowContent: View {
 
             Spacer()
 
-            // Statistics
             if viewModel.stats.filesScanned > 0 {
                 HStack(spacing: 6) {
                     Text("\(viewModel.stats.directoriesScanned) dirs")
