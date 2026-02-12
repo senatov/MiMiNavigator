@@ -93,6 +93,14 @@ struct FindFilesStats: Sendable {
     }
 }
 
+// MARK: - Scanned File Entry
+/// Sendable snapshot of file metadata — replaces non-Sendable URLResourceValues in async loops
+struct ScannedFileEntry: Sendable {
+    let url: URL
+    let fileSize: Int64
+    let modificationDate: Date?
+}
+
 // MARK: - Archive Password Request
 /// Callback type for requesting archive password from the user
 typealias ArchivePasswordCallback = @concurrent @Sendable (String) async -> ArchivePasswordResponse

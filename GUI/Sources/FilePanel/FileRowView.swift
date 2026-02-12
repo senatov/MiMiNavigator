@@ -52,9 +52,9 @@ struct FileRowView: View {
         return .primary
     }
 
-    // MARK: - Font weight for marked files
+    // MARK: - Font weight (always regular — marking shown via color + checkmark icon)
     private var nameWeight: Font.Weight {
-        isMarked ? .semibold : .regular
+        .regular
     }
 
     // MARK: - Icon opacity (Finder-style dimming for hidden files)
@@ -67,17 +67,17 @@ struct FileRowView: View {
     private func baseContent() -> some View {
         HStack(spacing: 8) {
             if isParentEntry {
-                // Special icon for ".." parent directory entry
+                // Special icon for "..." parent directory entry — accented, larger
                 Image(systemName: "arrowshape.turn.up.left.fill")
                     .resizable()
                     .aspectRatio(contentMode: .fit)
-                    .frame(width: DesignTokens.Row.iconSize, height: DesignTokens.Row.iconSize)
-                    .foregroundStyle(isSelected && isActivePanel ? .white : Color(#colorLiteral(red: 0.2, green: 0.2, blue: 0.7, alpha: 1)))
+                    .frame(width: DesignTokens.Row.iconSize + 2, height: DesignTokens.Row.iconSize + 2)
+                    .foregroundStyle(isSelected && isActivePanel ? .white : Color(#colorLiteral(red: 0.15, green: 0.15, blue: 0.65, alpha: 1)))
                     .allowsHitTesting(false)
                     .layoutPriority(1)
 
-                Text("..")
-                    .font(.system(size: 13, weight: .semibold))
+                Text("...")
+                    .font(.system(size: 14, weight: .bold))
                     .foregroundStyle(nameColor)
                     .lineLimit(1)
                     .layoutPriority(0)

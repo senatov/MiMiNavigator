@@ -54,6 +54,8 @@ final class FavoritesNavigationAdapter: FavoritesNavigationDelegate {
             return
         }
         Task {
+            appState.isNavigatingFromHistory = true
+            defer { appState.isNavigatingFromHistory = false }
             await navigateToPath(path, panel: panel)
         }
     }
@@ -65,6 +67,8 @@ final class FavoritesNavigationAdapter: FavoritesNavigationDelegate {
             return
         }
         Task {
+            appState.isNavigatingFromHistory = true
+            defer { appState.isNavigatingFromHistory = false }
             await navigateToPath(path, panel: panel)
         }
     }

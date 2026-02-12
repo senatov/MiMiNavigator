@@ -20,6 +20,11 @@ enum FileSortingService {
         ascending: Bool
     ) -> [CustomFile] {
         let sorted = items.sorted { a, b in
+            // "..." parent entry always stays at the very top, never sorted
+            let aIsParent = ParentDirectoryEntry.isParentEntry(a)
+            let bIsParent = ParentDirectoryEntry.isParentEntry(b)
+            if aIsParent != bIsParent { return aIsParent }
+
             // Directories always come first
             let aIsFolder = isFolderLike(a)
             let bIsFolder = isFolderLike(b)

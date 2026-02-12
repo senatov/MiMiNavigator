@@ -24,12 +24,26 @@ extension ContextMenuCoordinator {
                 navigateTo(parent, panel: panel, appState: appState)
 
             case .goBack:
-                // TODO: Implement history
-                log.info("\(#function) goBack not yet implemented")
+                guard let path = appState.selectionsHistory.goBack() else {
+                    log.debug("\(#function) goBack: no history")
+                    return
+                }
+                Task { @MainActor in
+                    appState.isNavigatingFromHistory = true
+                    defer { appState.isNavigatingFromHistory = false }
+                    navigateTo(URL(fileURLWithPath: path), panel: panel, appState: appState)
+                }
 
             case .goForward:
-                // TODO: Implement history
-                log.info("\(#function) goForward not yet implemented")
+                guard let path = appState.selectionsHistory.goForward() else {
+                    log.debug("\(#function) goForward: no history")
+                    return
+                }
+                Task { @MainActor in
+                    appState.isNavigatingFromHistory = true
+                    defer { appState.isNavigatingFromHistory = false }
+                    navigateTo(URL(fileURLWithPath: path), panel: panel, appState: appState)
+                }
 
             case .refresh:
                 refreshPanel(panel, appState: appState)

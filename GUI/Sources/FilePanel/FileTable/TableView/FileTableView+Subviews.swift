@@ -74,6 +74,8 @@ extension FileTableView {
         PanelBackgroundContextMenu(
             panelSide: panelSide,
             currentPath: currentPath,
+            canGoBack: appState.selectionsHistory.canGoBack,
+            canGoForward: appState.selectionsHistory.canGoForward,
             onAction: handlePanelBackgroundAction
         )
     }

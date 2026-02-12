@@ -31,6 +31,9 @@ final class AppState {
     var sortKey: SortKeysEnum = .name
     var sortAscending: Bool = true
 
+    /// Set to true when navigating via history (Back/Forward) to avoid re-recording
+    var isNavigatingFromHistory = false
+
     var selectedLeftFile: CustomFile? {
         didSet { selectionManager?.recordSelection(.left, file: selectedLeftFile) }
     }
@@ -303,6 +306,12 @@ extension AppState {
 
         log.debug("[AppState] updatePath \(panelSide) → \(path)")
         focusedPanel = panelSide
+
+        // Record directory change in navigation history (enables Back/Forward)
+        // Skip if navigating via history goBack/goForward to avoid corrupting the index
+        if !isNavigatingFromHistory {
+            selectionsHistory.add(path)
+        }
 
         switch panelSide {
             case .left:

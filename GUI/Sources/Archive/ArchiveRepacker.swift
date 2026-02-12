@@ -13,7 +13,7 @@ enum ArchiveRepacker {
 
     // MARK: - Main Entry Point
 
-    static func repack(session: ArchiveSession) async throws {
+    @concurrent static func repack(session: ArchiveSession) async throws {
         let archiveURL = session.archiveURL
         let tempDir = session.tempDirectory
 
@@ -60,7 +60,7 @@ enum ArchiveRepacker {
 
     // MARK: - ZIP
 
-    private static func repackZip(files: [URL], to archiveURL: URL, workDir: URL) async throws {
+    @concurrent private static func repackZip(files: [URL], to archiveURL: URL, workDir: URL) async throws {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/zip")
         process.currentDirectoryURL = workDir
@@ -75,7 +75,7 @@ enum ArchiveRepacker {
 
     // MARK: - TAR family
 
-    private static func repackTar(files: [URL], to archiveURL: URL, format: ArchiveFormat, workDir: URL) async throws {
+    @concurrent private static func repackTar(files: [URL], to archiveURL: URL, format: ArchiveFormat, workDir: URL) async throws {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/tar")
         process.currentDirectoryURL = workDir
@@ -106,7 +106,7 @@ enum ArchiveRepacker {
 
     // MARK: - 7z
 
-    private static func repack7z(files: [URL], to archiveURL: URL, workDir: URL) async throws {
+    @concurrent private static func repack7z(files: [URL], to archiveURL: URL, workDir: URL) async throws {
         let szPath = try ArchiveToolLocator.find7z()
         let process = Process()
         process.executableURL = URL(fileURLWithPath: szPath)

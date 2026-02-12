@@ -71,8 +71,9 @@ final class FindFilesCoordinator {
         window.toolbarStyle = .unified
         window.animationBehavior = .utilityWindow
         window.isMovableByWindowBackground = true
-        window.hidesOnDeactivate = false
-        window.level = .normal
+        // Follow main window: rise when app activates, stay visible when app is active
+        window.hidesOnDeactivate = true
+        window.level = .floating
         window.tabbingMode = .disallowed
 
         // Restore saved frame or compute default position
