@@ -1,0 +1,64 @@
+// DragPreviewView.swift
+// MiMiNavigator
+//
+// Extracted from FileRow.swift on 12.02.2026
+// Copyright © 2026 Senatov. All rights reserved.
+// Description: Visual drag preview for file drag-and-drop operations
+
+import AppKit
+import SwiftUI
+
+// MARK: - Drag Preview View
+/// Shows file icon + name during drag operations
+struct DragPreviewView: View {
+    let file: CustomFile
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(nsImage: NSWorkspace.shared.icon(forFile: file.urlValue.path))
+                .resizable()
+                .frame(width: 32, height: 32)
+
+            Text(file.nameStr)
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(.primary)
+                .lineLimit(1)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .fill(.ultraThinMaterial)
+                .shadow(color: .black.opacity(0.2), radius: 4, x: 0, y: 2)
+        )
+    }
+}
+
+// MARK: - Drop Target Modifier
+/// Extracted drop handling to simplify type checking
+struct DropTargetModifier: ViewModifier {
+    let isValidTarget: Bool
+    @Binding var isDropTargeted: Bool
+    let onDrop: ([CustomFile]) -> Bool
+    let onTargetChange: (Bool) -> Void
+
+    func body(content: Content) -> some View {
+        content
+            .dropDestination(for: CustomFile.self) { droppedFiles, _ in
+                onDrop(droppedFiles)
+            } isTargeted: { targeted in
+                onTargetChange(targeted)
+            }
+    }
+}
+
+// MARK: - Column Separator
+/// Thin vertical blue line separator between columns (matches header dividers)
+struct ColumnSeparator: View {
+    var body: some View {
+        Rectangle()
+            .fill(ColumnSeparatorStyle.color)
+            .frame(width: ColumnSeparatorStyle.width)
+            .padding(.vertical, 2)
+    }
+}
