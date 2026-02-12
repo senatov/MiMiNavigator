@@ -109,7 +109,8 @@ actor FindFilesEngine {
 
     private var currentTask: Task<Void, Never>?
     private(set) var stats = FindFilesStats()
-    private let archiveExtensions: Set<String> = ["zip", "7z", "tar", "gz", "bz2", "tgz", "tar.gz", "tar.bz2"]
+    /// Use centralized ArchiveExtensions from ArchiveNavigationState
+    private var archiveExtensions: Set<String> { ArchiveExtensions.all }
 
     // MARK: - Start Search
     /// Starts an async search returning results as an AsyncStream.
@@ -203,8 +204,6 @@ actor FindFilesEngine {
         guard !Task.isCancelled else { return }
         guard depth <= criteria.maxDepth else { return }
 
-        stats.directoriesScanned += 1
-
         let keys: [URLResourceKey] = [.isDirectoryKey, .isSymbolicLinkKey, .fileSizeKey, .contentModificationDateKey]
         guard let enumerator = fm.enumerator(
             at: url,
@@ -219,7 +218,8 @@ actor FindFilesEngine {
             let rv = try? fileURL.resourceValues(forKeys: Set(keys))
             let isDir = rv?.isDirectory ?? false
             if isDir {
-                if !criteria.searchInSubdirectories || depth >= criteria.maxDepth {
+                stats.directoriesScanned += 1
+                if !criteria.searchInSubdirectories {
                     enumerator.skipDescendants()
                 }
                 continue
@@ -259,6 +259,7 @@ actor FindFilesEngine {
             let ext = fileURL.pathExtension.lowercased()
             if criteria.searchInArchives && archiveExtensions.contains(ext) {
                 stats.archivesScanned += 1
+                log.debug("[FindFiles] Scanning archive: \(fileURL.lastPathComponent)")
                 if criteria.isContentSearch {
                     await searchInsideArchive(
                         archiveURL: fileURL,
@@ -409,6 +410,7 @@ actor FindFilesEngine {
         passwordCallback: ArchivePasswordCallback?
     ) async {
         let ext = archiveURL.pathExtension.lowercased()
+        let name = archiveURL.lastPathComponent.lowercased()
 
         switch ext {
         case "zip":
@@ -427,15 +429,32 @@ actor FindFilesEngine {
                 continuation: continuation,
                 passwordCallback: passwordCallback
             )
-        case "tar", "tgz", "gz", "bz2":
+        case "tar", "tgz", "gz", "gzip", "bz2", "bzip2", "xz", "txz", "lzma", "tlz",
+             "tbz", "tbz2", "z":
             await searchInsideTar(
                 archiveURL: archiveURL,
                 criteria: criteria,
                 contentPattern: contentPattern,
                 continuation: continuation
             )
+        case "jar", "war", "ear", "aar", "apk":
+            // Java/Android archives are ZIP-based
+            await searchInsideZip(
+                archiveURL: archiveURL,
+                criteria: criteria,
+                contentPattern: contentPattern,
+                continuation: continuation,
+                passwordCallback: passwordCallback
+            )
         default:
-            break
+            // All other formats — try 7z as universal fallback
+            await searchInside7z(
+                archiveURL: archiveURL,
+                criteria: criteria,
+                contentPattern: contentPattern,
+                continuation: continuation,
+                passwordCallback: passwordCallback
+            )
         }
     }
 

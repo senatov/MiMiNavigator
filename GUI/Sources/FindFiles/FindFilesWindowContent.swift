@@ -2,7 +2,7 @@
 // MiMiNavigator
 //
 // Created by Iakov Senatov on 11.02.2026.
-// Refactored: 11.02.2026 — native macOS 26 HIG layout
+// Refactored: 12.02.2026 — clean HIG 26 style, no custom colors
 // Copyright © 2026 Senatov. All rights reserved.
 // Description: Main content view for the standalone Find Files window
 
@@ -100,7 +100,6 @@ struct FindFilesWindowContent: View {
                     viewModel.startSearch()
                 } label: {
                     Label("Search", systemImage: "magnifyingglass")
-                        .font(.system(size: 14, weight: .semibold))
                 }
                 .buttonStyle(.borderedProminent)
                 .controlSize(.large)
@@ -117,11 +116,10 @@ struct FindFilesWindowContent: View {
 
             Spacer()
 
-            // Result count
+            // Result count badge
             if !viewModel.results.isEmpty {
                 Text("\(viewModel.results.count) found")
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.primary)
+                    .font(.subheadline.weight(.medium))
                     .monospacedDigit()
                     .padding(.horizontal, 8)
                     .padding(.vertical, 3)
@@ -141,26 +139,25 @@ struct FindFilesWindowContent: View {
                 switch viewModel.searchState {
                 case .idle:
                     Label("Ready", systemImage: "circle")
-                        .foregroundStyle(Color(#colorLiteral(red: 0.4, green: 0.45, blue: 0.5, alpha: 1)))
                 case .searching:
                     HStack(spacing: 6) {
                         ProgressView()
                             .controlSize(.small)
                         Text("Searching\u{2026}")
-                            .foregroundStyle(.primary)
                     }
                 case .paused:
                     Label("Paused", systemImage: "pause.circle")
                         .foregroundStyle(.orange)
                 case .completed:
                     Label("Completed", systemImage: "checkmark.circle.fill")
-                        .foregroundStyle(Color(#colorLiteral(red: 0.15, green: 0.68, blue: 0.38, alpha: 1)))
+                        .foregroundStyle(.green)
                 case .cancelled:
                     Label("Cancelled", systemImage: "xmark.circle")
                         .foregroundStyle(.orange)
                 }
             }
-            .font(.system(size: 12, weight: .medium))
+            .font(.caption)
+            .foregroundStyle(.secondary)
 
             Spacer()
 
@@ -177,8 +174,8 @@ struct FindFilesWindowContent: View {
                     Text("\u{00B7}")
                     Text(viewModel.stats.formattedElapsed)
                 }
-                .font(.system(size: 11).monospacedDigit())
-                .foregroundStyle(Color(#colorLiteral(red: 0.4, green: 0.42, blue: 0.48, alpha: 1)))
+                .font(.caption.monospacedDigit())
+                .foregroundStyle(.secondary)
             }
         }
     }
