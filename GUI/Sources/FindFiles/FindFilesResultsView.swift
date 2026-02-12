@@ -28,16 +28,16 @@ struct FindFilesResultsView: View {
 
     // MARK: - Empty State
     private var emptyState: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 10) {
             Image(systemName: viewModel.searchState == .idle ? "magnifyingglass" : "doc.text.magnifyingglass")
-                .font(.system(size: 32))
-                .foregroundStyle(.quaternary)
+                .font(.system(size: 36, weight: .light))
+                .foregroundStyle(Color(#colorLiteral(red: 0.45, green: 0.48, blue: 0.55, alpha: 1)))
 
             Text(viewModel.searchState == .idle
                  ? "Enter search criteria and press Search"
                  : "No files found")
-                .font(.system(size: 13))
-                .foregroundStyle(.secondary)
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(Color(#colorLiteral(red: 0.35, green: 0.38, blue: 0.42, alpha: 1)))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -62,7 +62,7 @@ struct FindFilesResultsView: View {
                     .font(.system(size: 11))
                     .foregroundStyle(result.isInsideArchive
                         ? Color(#colorLiteral(red: 0.1, green: 0.1, blue: 0.55, alpha: 1))
-                        : .secondary)
+                        : Color(#colorLiteral(red: 0.3, green: 0.32, blue: 0.38, alpha: 1)))
                     .lineLimit(1)
                     .truncationMode(.middle)
                     .help(result.isInsideArchive
@@ -75,13 +75,13 @@ struct FindFilesResultsView: View {
                 if let context = result.matchContext, let line = result.lineNumber {
                     Text("L\(line): \(context)")
                         .font(.system(size: 11).monospaced())
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color(#colorLiteral(red: 0.25, green: 0.28, blue: 0.35, alpha: 1)))
                         .lineLimit(1)
                         .truncationMode(.tail)
                 } else {
                     Text("—")
                         .font(.system(size: 11))
-                        .foregroundStyle(.quaternary)
+                        .foregroundStyle(Color(#colorLiteral(red: 0.6, green: 0.62, blue: 0.65, alpha: 1)))
                 }
             }
             .width(min: 100, ideal: 200)
@@ -89,7 +89,7 @@ struct FindFilesResultsView: View {
             TableColumn("Size") { result in
                 Text(formatSize(result.fileSize))
                     .font(.system(size: 11).monospacedDigit())
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color(#colorLiteral(red: 0.3, green: 0.32, blue: 0.38, alpha: 1)))
             }
             .width(50)
         }
@@ -112,10 +112,10 @@ struct FindFilesResultsView: View {
         HStack(spacing: 6) {
             // Icon
             Image(systemName: result.isInsideArchive ? "doc.zipper" : fileIcon(for: result))
-                .font(.system(size: 12))
+                .font(.system(size: 13))
                 .foregroundStyle(result.isInsideArchive
                     ? Color(#colorLiteral(red: 0.1, green: 0.1, blue: 0.55, alpha: 1))
-                    : .secondary)
+                    : Color(#colorLiteral(red: 0.35, green: 0.38, blue: 0.48, alpha: 1)))
                 .frame(width: 16)
 
             Text(result.fileName)

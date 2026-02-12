@@ -11,18 +11,34 @@ enum ArchiveFormat: String, CaseIterable, Identifiable, Sendable {
     case zip = "zip"
     case tarGz = "tar.gz"
     case tarBz2 = "tar.bz2"
+    case tarXz = "tar.xz"
+    case tarLzma = "tar.lzma"
+    case tarZst = "tar.zst"
+    case tarLz4 = "tar.lz4"
+    case tarLzo = "tar.lzo"
+    case tarLz = "tar.lz"
     case tar = "tar"
+    case compressZ = "Z"
     case sevenZip = "7z"
+    case sevenZipGeneric = "7z-generic"  // Catch-all for formats handled by 7z
 
     var id: String { rawValue }
 
     var displayName: String {
         switch self {
-            case .zip: return "ZIP Archive"
-            case .tarGz: return "TAR.GZ (gzip compressed)"
-            case .tarBz2: return "TAR.BZ2 (bzip2 compressed)"
-            case .tar: return "TAR Archive (uncompressed)"
-            case .sevenZip: return "7-Zip Archive"
+        case .zip:            return "ZIP Archive"
+        case .tarGz:          return "TAR.GZ (gzip)"
+        case .tarBz2:         return "TAR.BZ2 (bzip2)"
+        case .tarXz:          return "TAR.XZ (xz)"
+        case .tarLzma:        return "TAR.LZMA"
+        case .tarZst:         return "TAR.ZST (zstandard)"
+        case .tarLz4:         return "TAR.LZ4"
+        case .tarLzo:         return "TAR.LZO"
+        case .tarLz:          return "TAR.LZ (lzip)"
+        case .tar:            return "TAR (uncompressed)"
+        case .compressZ:      return "Unix Compress (.Z)"
+        case .sevenZip:       return "7-Zip Archive"
+        case .sevenZipGeneric:return "Archive (via 7z)"
         }
     }
 
@@ -30,19 +46,22 @@ enum ArchiveFormat: String, CaseIterable, Identifiable, Sendable {
 
     var icon: String {
         switch self {
-            case .zip: return "doc.zipper"
-            case .tarGz, .tarBz2, .tar: return "archivebox"
-            case .sevenZip: return "archivebox.fill"
+        case .zip: return "doc.zipper"
+        case .tarGz, .tarBz2, .tarXz, .tarLzma, .tarZst, .tarLz4, .tarLzo, .tarLz, .tar, .compressZ:
+            return "archivebox"
+        case .sevenZip, .sevenZipGeneric: return "archivebox.fill"
         }
     }
 
     /// Check if format is available on this system
     var isAvailable: Bool {
         switch self {
-            case .zip, .tar, .tarGz, .tarBz2:
-                return true  // Built-in macOS tools
-            case .sevenZip:
-                return ArchiveFormat.check7zAvailable()
+        case .zip, .tar, .tarGz, .tarBz2, .tarXz, .compressZ:
+            return true  // Built-in macOS tools
+        case .tarLzma, .tarZst, .tarLz4, .tarLzo, .tarLz:
+            return true  // macOS libarchive/tar handles these
+        case .sevenZip, .sevenZipGeneric:
+            return ArchiveFormat.check7zAvailable()
         }
     }
 
@@ -105,16 +124,20 @@ final class ArchiveService {
         }
 
         switch format {
-            case .zip:
-                try await createZipArchive(from: files, to: archiveURL)
-            case .tar:
-                try await createTarArchive(from: files, to: archiveURL, compression: nil)
-            case .tarGz:
-                try await createTarArchive(from: files, to: archiveURL, compression: "gzip")
-            case .tarBz2:
-                try await createTarArchive(from: files, to: archiveURL, compression: "bzip2")
-            case .sevenZip:
-                try await create7zArchive(from: files, to: archiveURL)
+        case .zip:
+            try await createZipArchive(from: files, to: archiveURL)
+        case .tar:
+            try await createTarArchive(from: files, to: archiveURL, compression: nil)
+        case .tarGz:
+            try await createTarArchive(from: files, to: archiveURL, compression: "gzip")
+        case .tarBz2:
+            try await createTarArchive(from: files, to: archiveURL, compression: "bzip2")
+        case .tarXz:
+            try await createTarArchive(from: files, to: archiveURL, compression: "xz")
+        case .tarLzma, .tarZst, .tarLz4, .tarLzo, .tarLz, .compressZ:
+            try await createTarArchive(from: files, to: archiveURL, compression: nil) // auto-detect
+        case .sevenZip, .sevenZipGeneric:
+            try await create7zArchive(from: files, to: archiveURL)
         }
 
         log.info("Created archive: \(archiveURL.lastPathComponent)")
@@ -155,9 +178,10 @@ final class ArchiveService {
         // Add compression flag
         if let comp = compression {
             switch comp {
-                case "gzip": args.append("-z")
-                case "bzip2": args.append("-j")
-                default: break
+            case "gzip": args.append("-z")
+            case "bzip2": args.append("-j")
+            case "xz": args.append("-J")
+            default: break
             }
         }
 
@@ -206,16 +230,20 @@ final class ArchiveService {
         progressHandler(0.0)
 
         switch format {
-            case .zip:
-                try await createZipArchive(from: files, to: archiveURL)
-            case .tar:
-                try await createTarArchive(from: files, to: archiveURL, compression: nil)
-            case .tarGz:
-                try await createTarArchive(from: files, to: archiveURL, compression: "gzip")
-            case .tarBz2:
-                try await createTarArchive(from: files, to: archiveURL, compression: "bzip2")
-            case .sevenZip:
-                try await create7zArchive(from: files, to: archiveURL)
+        case .zip:
+            try await createZipArchive(from: files, to: archiveURL)
+        case .tar:
+            try await createTarArchive(from: files, to: archiveURL, compression: nil)
+        case .tarGz:
+            try await createTarArchive(from: files, to: archiveURL, compression: "gzip")
+        case .tarBz2:
+            try await createTarArchive(from: files, to: archiveURL, compression: "bzip2")
+        case .tarXz:
+            try await createTarArchive(from: files, to: archiveURL, compression: "xz")
+        case .tarLzma, .tarZst, .tarLz4, .tarLzo, .tarLz, .compressZ:
+            try await createTarArchive(from: files, to: archiveURL, compression: nil)
+        case .sevenZip, .sevenZipGeneric:
+            try await create7zArchive(from: files, to: archiveURL)
         }
 
         // Report completion

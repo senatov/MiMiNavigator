@@ -190,16 +190,48 @@ actor ArchiveManager {
         let ext = url.pathExtension.lowercased()
         let name = url.lastPathComponent.lowercased()
 
+        // Compound tar extensions first
         if name.hasSuffix(".tar.gz") || ext == "tgz" { return .tarGz }
-        if name.hasSuffix(".tar.bz2") { return .tarBz2 }
+        if name.hasSuffix(".tar.bz2") || ext == "tbz" || ext == "tbz2" { return .tarBz2 }
+        if name.hasSuffix(".tar.xz") || ext == "txz" { return .tarXz }
+        if name.hasSuffix(".tar.lzma") || ext == "tlz" { return .tarLzma }
+        if name.hasSuffix(".tar.zst") { return .tarZst }
+        if name.hasSuffix(".tar.lz4") { return .tarLz4 }
+        if name.hasSuffix(".tar.lzo") { return .tarLzo }
+        if name.hasSuffix(".tar.lz") { return .tarLz }
 
         switch ext {
+        // Native macOS tools
         case "zip": return .zip
         case "tar": return .tar
-        case "gz": return .tarGz
-        case "bz2": return .tarBz2
+        case "gz", "gzip": return .tarGz
+        case "bz2", "bzip2": return .tarBz2
+        case "xz": return .tarXz
+        case "lzma": return .tarLzma
+        case "z": return .compressZ
+
+        // 7z native
         case "7z": return .sevenZip
-        default: return nil
+
+        // 7z can handle all of these
+        case "rar", "cab", "arj", "lha", "lzh",
+             "rpm", "deb", "cpio", "xar",
+             "iso", "img", "vhd", "vmdk",
+             "wim", "swm",
+             "dmg", "pkg",
+             "jar", "war", "ear", "aar", "apk",
+             "lz4", "zst", "zstd",
+             "ace", "sit", "sitx",
+             "squashfs", "cramfs",
+             "lz", "lzo":
+            return .sevenZipGeneric
+
+        default:
+            // Fallback: try 7z for any extension in ArchiveExtensions
+            if ArchiveExtensions.isArchive(ext) {
+                return .sevenZipGeneric
+            }
+            return nil
         }
     }
 
@@ -209,9 +241,9 @@ actor ArchiveManager {
         switch format {
         case .zip:
             try await extractZip(archiveURL: archiveURL, to: destination)
-        case .tar, .tarGz, .tarBz2:
+        case .tar, .tarGz, .tarBz2, .tarXz, .tarLzma, .tarZst, .tarLz4, .tarLzo, .tarLz, .compressZ:
             try await extractTar(archiveURL: archiveURL, format: format, to: destination)
-        case .sevenZip:
+        case .sevenZip, .sevenZipGeneric:
             try await extract7z(archiveURL: archiveURL, to: destination)
         }
     }
@@ -231,8 +263,14 @@ actor ArchiveManager {
         process.executableURL = URL(fileURLWithPath: "/usr/bin/tar")
         var args = ["-x"]
         switch format {
-        case .tarGz: args.append("-z")
-        case .tarBz2: args.append("-j")
+        case .tarGz:    args.append("-z")
+        case .tarBz2:   args.append("-j")
+        case .tarXz:    args.append("-J")
+        case .compressZ: args.append("-Z")
+        // For lzma, zst, lz4, lzo, lz — macOS tar auto-detects compression
+        // via libarchive; the -a flag enables auto-detection
+        case .tarLzma, .tarZst, .tarLz4, .tarLzo, .tarLz:
+            break  // auto-detect
         default: break
         }
         args.append(contentsOf: ["-f", archiveURL.path, "-C", destination.path])
@@ -240,7 +278,14 @@ actor ArchiveManager {
         process.standardOutput = Pipe()
         let errorPipe = Pipe()
         process.standardError = errorPipe
-        try await runProcess(process, errorPipe: errorPipe)
+
+        do {
+            try await runProcess(process, errorPipe: errorPipe)
+        } catch {
+            // Fallback to 7z if tar fails (e.g., for uncommon compressions)
+            log.warning("[ArchiveManager] tar failed for \(archiveURL.lastPathComponent), trying 7z fallback")
+            try await extract7z(archiveURL: archiveURL, to: destination)
+        }
     }
 
     private func extract7z(archiveURL: URL, to destination: URL) async throws {
@@ -283,9 +328,9 @@ actor ArchiveManager {
         switch session.format {
         case .zip:
             try await repackZip(files: contents, to: archiveURL, workDir: tempDir)
-        case .tar, .tarGz, .tarBz2:
+        case .tar, .tarGz, .tarBz2, .tarXz, .tarLzma, .tarZst, .tarLz4, .tarLzo, .tarLz, .compressZ:
             try await repackTar(files: contents, to: archiveURL, format: session.format, workDir: tempDir)
-        case .sevenZip:
+        case .sevenZip, .sevenZipGeneric:
             try await repack7z(files: contents, to: archiveURL, workDir: tempDir)
         }
 
@@ -321,8 +366,12 @@ actor ArchiveManager {
         process.currentDirectoryURL = workDir
         var args = ["-c"]
         switch format {
-        case .tarGz: args.append("-z")
-        case .tarBz2: args.append("-j")
+        case .tarGz:    args.append("-z")
+        case .tarBz2:   args.append("-j")
+        case .tarXz:    args.append("-J")
+        case .compressZ: args.append("-Z")
+        case .tarLzma, .tarZst, .tarLz4, .tarLzo, .tarLz:
+            break  // auto-detect on repack too
         default: break
         }
         args.append(contentsOf: ["-f", archiveURL.path])
@@ -331,7 +380,14 @@ actor ArchiveManager {
         process.standardOutput = Pipe()
         let errorPipe = Pipe()
         process.standardError = errorPipe
-        try await runProcess(process, errorPipe: errorPipe)
+
+        do {
+            try await runProcess(process, errorPipe: errorPipe)
+        } catch {
+            // Fallback to 7z for repacking
+            log.warning("[ArchiveManager] tar repack failed, trying 7z: \(error.localizedDescription)")
+            try await repack7z(files: files, to: archiveURL, workDir: workDir)
+        }
     }
 
     private func repack7z(files: [URL], to archiveURL: URL, workDir: URL) async throws {

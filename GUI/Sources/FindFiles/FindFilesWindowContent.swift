@@ -120,9 +120,15 @@ struct FindFilesWindowContent: View {
             // Result count
             if !viewModel.results.isEmpty {
                 Text("\(viewModel.results.count) found")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(.primary)
                     .monospacedDigit()
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
+                    .background(
+                        Capsule()
+                            .fill(Color.accentColor.opacity(0.12))
+                    )
             }
         }
     }
@@ -135,24 +141,26 @@ struct FindFilesWindowContent: View {
                 switch viewModel.searchState {
                 case .idle:
                     Label("Ready", systemImage: "circle")
+                        .foregroundStyle(Color(#colorLiteral(red: 0.4, green: 0.45, blue: 0.5, alpha: 1)))
                 case .searching:
                     HStack(spacing: 6) {
                         ProgressView()
                             .controlSize(.small)
                         Text("Searching\u{2026}")
+                            .foregroundStyle(.primary)
                     }
                 case .paused:
                     Label("Paused", systemImage: "pause.circle")
+                        .foregroundStyle(.orange)
                 case .completed:
                     Label("Completed", systemImage: "checkmark.circle.fill")
-                        .foregroundStyle(.green)
+                        .foregroundStyle(Color(#colorLiteral(red: 0.15, green: 0.68, blue: 0.38, alpha: 1)))
                 case .cancelled:
                     Label("Cancelled", systemImage: "xmark.circle")
                         .foregroundStyle(.orange)
                 }
             }
-            .font(.caption)
-            .foregroundStyle(.secondary)
+            .font(.system(size: 12, weight: .medium))
 
             Spacer()
 
@@ -169,8 +177,8 @@ struct FindFilesWindowContent: View {
                     Text("\u{00B7}")
                     Text(viewModel.stats.formattedElapsed)
                 }
-                .font(.caption2.monospacedDigit())
-                .foregroundStyle(.tertiary)
+                .font(.system(size: 11).monospacedDigit())
+                .foregroundStyle(Color(#colorLiteral(red: 0.4, green: 0.42, blue: 0.48, alpha: 1)))
             }
         }
     }

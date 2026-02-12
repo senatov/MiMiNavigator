@@ -55,9 +55,31 @@ struct ArchiveNavigationState: Sendable, Equatable {
 // MARK: - Archive File Extensions
 /// Centralized set of recognized archive extensions
 enum ArchiveExtensions {
+    /// All recognized single-extension archive formats.
+    /// Extraction is handled by ArchiveManager using appropriate CLI tools.
     static let all: Set<String> = [
-        "zip", "7z", "tar", "gz", "bz2", "tgz", "rar",
-        "xz", "lzma", "lz4", "zst"
+        // Standard compressed archives
+        "zip", "7z", "rar", "tar",
+        // Gzip family
+        "gz", "tgz", "gzip",
+        // Bzip2 family
+        "bz2", "bzip2", "tbz", "tbz2",
+        // XZ / LZMA family
+        "xz", "txz", "lzma", "tlz",
+        // Modern compression
+        "lz4", "zst", "zstd", "lz", "lzo",
+        // Less common but supported by 7z
+        "cab", "arj", "cpio", "rpm", "deb",
+        // macOS / iOS specific
+        "dmg", "pkg", "xar",
+        // Java / Android
+        "jar", "war", "ear", "aar", "apk",
+        // Disk images and ISOs
+        "iso", "img", "vhd", "vmdk",
+        // Other
+        "wim", "swm", "squashfs", "cramfs",
+        "z", "Z", "lha", "lzh",
+        "ace", "sit", "sitx",
     ]
 
     /// Check if a file extension is a recognized archive format
@@ -73,5 +95,23 @@ enum ArchiveExtensions {
             || lower.hasSuffix(".tar.xz")
             || lower.hasSuffix(".tar.lzma")
             || lower.hasSuffix(".tar.zst")
+            || lower.hasSuffix(".tar.lz4")
+            || lower.hasSuffix(".tar.lzo")
+            || lower.hasSuffix(".tar.lz")
     }
+
+    /// Format categories for documentation / UI display
+    static let categories: [(group: String, extensions: [String])] = [
+        ("Standard",      ["zip", "7z", "rar", "tar"]),
+        ("Gzip",          ["gz", "tgz", "tar.gz"]),
+        ("Bzip2",         ["bz2", "tbz2", "tar.bz2"]),
+        ("XZ/LZMA",       ["xz", "txz", "lzma", "tar.xz"]),
+        ("Modern",        ["zst", "lz4", "lzo", "lz"]),
+        ("Package/System",["cab", "rpm", "deb", "cpio", "xar"]),
+        ("macOS",         ["dmg", "pkg"]),
+        ("Java/Android",  ["jar", "war", "ear", "aar", "apk"]),
+        ("Disk Images",   ["iso", "img", "vhd", "vmdk"]),
+        ("Legacy",        ["arj", "lha", "lzh", "ace", "sit", "sitx", "z", "Z"]),
+        ("Filesystem",    ["wim", "squashfs", "cramfs"]),
+    ]
 }
