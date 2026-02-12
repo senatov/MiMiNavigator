@@ -1,0 +1,103 @@
+// FindFilesModels.swift
+// MiMiNavigator
+//
+// Extracted from FindFilesEngine.swift on 12.02.2026
+// Copyright © 2026 Senatov. All rights reserved.
+// Description: Data models for Find Files — result, criteria, statistics, password callback
+
+import Foundation
+
+// MARK: - Search Result
+/// Single search result representing a found file or content match
+struct FindFilesResult: Identifiable, Hashable, Sendable {
+    let id: UUID
+    let fileURL: URL
+    let fileName: String
+    let filePath: String
+    let matchContext: String?
+    let lineNumber: Int?
+    let isInsideArchive: Bool
+    let archivePath: String?
+    let fileSize: Int64
+    let modifiedDate: Date?
+
+    init(
+        fileURL: URL,
+        matchContext: String? = nil,
+        lineNumber: Int? = nil,
+        isInsideArchive: Bool = false,
+        archivePath: String? = nil
+    ) {
+        self.id = UUID()
+        self.fileURL = fileURL
+        self.fileName = fileURL.lastPathComponent
+        self.filePath = fileURL.path
+        self.matchContext = matchContext
+        self.lineNumber = lineNumber
+        self.isInsideArchive = isInsideArchive
+        self.archivePath = archivePath
+
+        let fm = FileManager.default
+        if let attrs = try? fm.attributesOfItem(atPath: fileURL.path) {
+            self.fileSize = (attrs[.size] as? NSNumber)?.int64Value ?? 0
+            self.modifiedDate = attrs[.modificationDate] as? Date
+        } else {
+            self.fileSize = 0
+            self.modifiedDate = nil
+        }
+    }
+}
+
+// MARK: - Search Criteria
+/// All parameters for a file search operation
+struct FindFilesCriteria: Sendable {
+    var searchDirectory: URL
+    var fileNamePattern: String = "*"
+    var searchText: String = ""
+    var caseSensitive: Bool = false
+    var useRegex: Bool = false
+    var searchInSubdirectories: Bool = true
+    var searchInArchives: Bool = false
+    var maxDepth: Int = 100
+    var fileSizeMin: Int64? = nil
+    var fileSizeMax: Int64? = nil
+    var dateFrom: Date? = nil
+    var dateTo: Date? = nil
+
+    /// Whether we need content search (not just filename matching)
+    var isContentSearch: Bool {
+        !searchText.isEmpty
+    }
+}
+
+// MARK: - Search Statistics
+/// Running statistics about the current search
+struct FindFilesStats: Sendable {
+    var directoriesScanned: Int = 0
+    var filesScanned: Int = 0
+    var matchesFound: Int = 0
+    var archivesScanned: Int = 0
+    var startTime: Date = Date()
+    var isRunning: Bool = false
+
+    var elapsedTime: TimeInterval {
+        Date().timeIntervalSince(startTime)
+    }
+
+    var formattedElapsed: String {
+        let secs = Int(elapsedTime)
+        if secs < 60 { return "\(secs)s" }
+        let mins = secs / 60
+        let rem = secs % 60
+        return "\(mins)m \(rem)s"
+    }
+}
+
+// MARK: - Archive Password Request
+/// Callback type for requesting archive password from the user
+typealias ArchivePasswordCallback = @concurrent @Sendable (String) async -> ArchivePasswordResponse
+
+enum ArchivePasswordResponse: Sendable {
+    case password(String)
+    case skip
+}
