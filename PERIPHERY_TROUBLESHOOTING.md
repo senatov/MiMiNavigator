@@ -1,140 +1,86 @@
-# Periphery Troubleshooting Guide
-
-## Проблема: DecodingError с shellScript
-
-### Описание ошибки
-```
+Periphery Troubleshooting Guide
+Problem: DecodingError with shellScript
+Error Description
 error: (DecodingError) typeMismatch(Swift.String, Swift.DecodingError.Context(codingPath: [CodingKeys(stringValue: "objects", intValue: nil), _DictionaryCodingKey(stringValue: "977B59492EDF6F9700F7F80F", intValue: nil), CodingKeys(stringValue: "shellScript", intValue: nil)], debugDescription: "Expected to decode String but found an array instead.", underlyingError: nil))
-```
-
-Эта ошибка возникает когда в проекте Xcode есть Build Phase Script, который использует массив строк для `shellScript` вместо одной строки. Periphery ожидает строку и не может декодировать массив.
-
-## Решения
-
-### Решение 1: Обновить Periphery (Рекомендуется)
-
-Новые версии Periphery исправили эту проблему:
-
-```bash
-# Обновить через Homebrew
+This error occurs when an Xcode project contains a Build Phase Script that uses an array of strings for shellScript instead of a single string. Periphery expects a string and cannot decode an array.
+Solutions
+Solution 1: Update Periphery (Recommended)
+Newer versions of Periphery have fixed this issue:
+# Upgrade via Homebrew
 brew upgrade peripheryapp/periphery/periphery
 
-# Проверить версию (должна быть >= 2.19.0)
+# Check version (must be >= 2.19.0)
 periphery version
 
-# Запустить снова
+# Run again
 periphery scan --config .periphery.yml
-```
-
-### Решение 2: Использовать skip_build
-
-Я уже обновил `.periphery.yml` с этими настройками:
-
-```yaml
+Solution 2: Use skip_build
+I have already updated .periphery.yml with these settings:
 clean_build: false
-skip_build: true    # Пропускает build фазу
-```
-
-Использование:
-```bash
-# Сначала сделайте clean build проекта в Xcode
+skip_build: true    # Skips the build phase
+Usage:
+# First perform a clean build of the project in Xcode
 # ⌘⇧K (Clean Build Folder) + ⌘B (Build)
 
-# Затем запустите Periphery
+# Then run Periphery
 periphery scan --config .periphery.yml
-```
-
-**Плюсы**: Быстрее работает при повторных запусках  
-**Минусы**: Нужно предварительно собрать проект
-
-### Решение 3: Использовать индексный анализ
-
-Я создал альтернативную конфигурацию `.periphery-index.yml`:
-
-```bash
-# Сначала соберите проект с индексацией
+Pros: Faster for repeated runs
+Cons: Requires building the project beforehand
+Solution 3: Use Index-Based Analysis
+I created an alternative configuration .periphery-index.yml:
+# First build the project with indexing enabled
 xcodebuild -scheme MiMiNavigator \
-  -configuration Debug \
-  -destination 'platform=macOS' \
-  -derivedDataPath .build \
-  build
+-configuration Debug \
+-destination 'platform=macOS' \
+-derivedDataPath .build \
+build
 
-# Запустите Periphery с индексной конфигурацией
+# Run Periphery with the index configuration
 periphery scan --config .periphery-index.yml
-```
-
-### Решение 4: Исправить проект Xcode (Ручное)
-
-Если хотите исправить проблему в самом проекте:
-
-1. Откройте проект в Xcode
-2. Выберите target MiMiNavigator
-3. Перейдите в Build Phases
-4. Найдите Run Script фазы (обычно SwiftLint или SwiftFormat)
-5. Если скрипт многострочный, объедините его в одну строку
-
-Или отредактируйте `project.pbxproj` вручную:
-
-```bash
-# Найдите проблемный скрипт (ID: 977B59492EDF6F9700F7F80F)
+Solution 4: Fix the Xcode Project (Manual)
+If you want to fix the issue directly in the project:
+Open the project in Xcode
+Select the MiMiNavigator target
+Go to Build Phases
+Locate the Run Script phases (usually SwiftLint or SwiftFormat)
+If the script is multiline, combine it into a single string
+Or manually edit project.pbxproj:
+# Locate the problematic script (ID: 977B59492EDF6F9700F7F80F)
 grep -A 10 "977B59492EDF6F9700F7F80F" MiMiNavigator.xcodeproj/project.pbxproj
 
-# Измените формат с массива на строку:
-# БЫЛО:
+# Change the format from array to string:
+# BEFORE:
 # shellScript = (
 #   "line1",
 #   "line2",
 # );
 
-# ДОЛЖНО БЫТЬ:
+# AFTER:
 # shellScript = "line1\nline2\n";
-```
-
-⚠️ **Внимание**: Редактирование `project.pbxproj` вручную может повредить проект. Делайте backup!
-
-## Рекомендуемый порядок действий
-
-1. **Попробуйте Решение 2** (skip_build) - самое простое:
-   ```bash
-   # В Xcode: ⌘⇧K + ⌘B
-   periphery scan --config .periphery.yml
-   ```
-
-2. Если не помогло, **обновите Periphery** (Решение 1):
-   ```bash
-   brew upgrade peripheryapp/periphery/periphery
-   periphery scan --config .periphery.yml
-   ```
-
-3. Если проблема осталась, **используйте индексный анализ** (Решение 3)
-
-## Дополнительная информация
-
-### Проверка версии Periphery
-```bash
+⚠️ Warning: Manually editing project.pbxproj can break the project. Make a backup first.
+Recommended Order of Actions
+Try Solution 2 (skip_build) – simplest option:
+# In Xcode: ⌘⇧K + ⌘B
+periphery scan --config .periphery.yml
+If that doesn’t work, update Periphery (Solution 1):
+brew upgrade peripheryapp/periphery/periphery
+periphery scan --config .periphery.yml
+If the problem persists, use index-based analysis (Solution 3).
+Additional Information
+Check Periphery Version
 periphery version
-```
-
-### Полная переустановка Periphery
-```bash
+Full Reinstallation of Periphery
 brew uninstall periphery
 brew install peripheryapp/periphery/periphery
-```
-
-### Альтернативные конфигурации
-
-У вас есть 2 конфигурации:
-- `.periphery.yml` - основная (с skip_build: true)
-- `.periphery-index.yml` - индексная (для особо сложных случаев)
-
-### Известные проблемы
-
-- Эта ошибка часто возникает со скриптами SwiftLint/SwiftFormat
-- Проблема была исправлена в Periphery 2.19.0+
-- Workaround с skip_build работает для большинства проектов
-
-## Полезные ссылки
-
-- [Periphery GitHub Issues](https://github.com/peripheryapp/periphery/issues)
-- [Known ShellScript Issue](https://github.com/peripheryapp/periphery/issues/500)
-- [Periphery Documentation](https://github.com/peripheryapp/periphery)
+Alternative Configurations
+You have two configurations:
+.periphery.yml – main (with skip_build: true)
+.periphery-index.yml – index-based (for complex cases)
+Known Issues
+This error often occurs with SwiftLint/SwiftFormat scripts
+The issue was fixed in Periphery 2.19.0+
+The skip_build workaround works for most projects
+Useful Links
+Periphery GitHub Issues
+Known ShellScript Issue
+Periphery Documentation
