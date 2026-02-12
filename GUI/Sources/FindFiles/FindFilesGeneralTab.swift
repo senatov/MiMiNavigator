@@ -2,7 +2,7 @@
 // MiMiNavigator
 //
 // Created by Iakov Senatov on 10.02.2026.
-// Refactored: 12.02.2026 — fixed Backspace in TextFields, added Enter-to-search
+// Refactored: 12.02.2026 — fixed placeholder display, Backspace, Enter-to-search, HIG 26 fonts
 // Copyright © 2026 Senatov. All rights reserved.
 // Description: General tab of Find Files — file name, search text, directory, options
 
@@ -11,12 +11,6 @@ import SwiftUI
 // MARK: - General Tab
 struct FindFilesGeneralTab: View {
     @Bindable var viewModel: FindFilesViewModel
-
-    // MARK: - Design Constants
-    private enum Design {
-        static let fieldMinWidth: CGFloat = 320
-        static let labelColor = Color.primary
-    }
 
     var body: some View {
         Form {
@@ -32,21 +26,19 @@ struct FindFilesGeneralTab: View {
             // MARK: - Options
             Section {
                 Toggle(isOn: $viewModel.caseSensitive) {
-                    Text("Case sensitive").font(.system(size: 13))
+                    Text("Case sensitive")
                 }
                 Toggle(isOn: $viewModel.useRegex) {
-                    Text("Regular expressions").font(.system(size: 13))
+                    Text("Regular expressions")
                 }
                 Toggle(isOn: $viewModel.searchInSubdirectories) {
-                    Text("Include subdirectories").font(.system(size: 13))
+                    Text("Include subdirectories")
                 }
                 Toggle(isOn: $viewModel.searchInArchives) {
-                    Text("Search in archives").font(.system(size: 13))
+                    Text("Search in archives")
                 }
             } header: {
                 Text("Options")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(.primary)
             }
         }
         .formStyle(.grouped)
@@ -56,25 +48,20 @@ struct FindFilesGeneralTab: View {
     private var searchForSection: some View {
         LabeledContent {
             HStack(spacing: 8) {
-                TextField("*.txt; *.swift; report*", text: $viewModel.fileNamePattern)
+                TextField("File name pattern", text: $viewModel.fileNamePattern)
                     .textFieldStyle(.roundedBorder)
-                    .font(.system(size: 13))
-                    .frame(minWidth: Design.fieldMinWidth)
-                    .help("Wildcards: * (any chars), ? (single char). Separate with ;")
                     .onSubmit { viewModel.startSearch() }
+                    .help("Wildcards: * (any chars), ? (single char). Separate patterns with ;")
 
                 Button(action: { showPatternHelp() }) {
                     Image(systemName: "questionmark.circle")
-                        .font(.system(size: 14))
-                        .foregroundStyle(Color(#colorLiteral(red: 0.35, green: 0.35, blue: 0.45, alpha: 1)))
+                        .foregroundStyle(.secondary)
                 }
                 .buttonStyle(.plain)
                 .help("Pattern syntax help")
             }
         } label: {
             Text("Search for:")
-                .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(Design.labelColor)
         }
     }
 
@@ -82,12 +69,10 @@ struct FindFilesGeneralTab: View {
     private var searchInSection: some View {
         LabeledContent {
             HStack(spacing: 8) {
-                TextField("Select directory…", text: $viewModel.searchDirectory)
+                TextField("Directory path", text: $viewModel.searchDirectory)
                     .textFieldStyle(.roundedBorder)
-                    .font(.system(size: 13))
-                    .frame(minWidth: Design.fieldMinWidth)
-                    .help("Directory to search in")
                     .onSubmit { viewModel.startSearch() }
+                    .help("Directory to search in")
 
                 Button(action: { browseDirectory() }) {
                     Image(systemName: "folder")
@@ -98,24 +83,18 @@ struct FindFilesGeneralTab: View {
             }
         } label: {
             Text("Search in:")
-                .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(Design.labelColor)
         }
     }
 
     // MARK: - Find Text Section
     private var findTextSection: some View {
         LabeledContent {
-            TextField("Search inside file contents…", text: $viewModel.searchText)
+            TextField("Text to find inside files", text: $viewModel.searchText)
                 .textFieldStyle(.roundedBorder)
-                .font(.system(size: 13))
-                .frame(minWidth: Design.fieldMinWidth)
-                .help("Leave empty for filename-only search")
                 .onSubmit { viewModel.startSearch() }
+                .help("Leave empty for filename-only search")
         } label: {
             Text("Find text:")
-                .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(Design.labelColor)
         }
     }
 
