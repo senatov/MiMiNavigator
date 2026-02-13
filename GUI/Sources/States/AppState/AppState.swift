@@ -82,6 +82,21 @@ extension AppState {
         selectionManager?.clearSelection(on: panelSide)
     }
 
+    /// Clear file selection on the focused panel (ESC behavior).
+    /// Keeps directory and panel focus, only removes file highlight.
+    func clearFileSelection() {
+        let panel = focusedPanel
+        log.debug("[AppState] clearFileSelection on \(panel)")
+
+        // Clear the selected file only, marks cleared separately via unmarkAll
+        switch panel {
+        case .left:
+            selectedLeftFile = nil
+        case .right:
+            selectedRightFile = nil
+        }
+    }
+
     func toggleFocus() {
         selectionManager?.toggleFocus()
     }

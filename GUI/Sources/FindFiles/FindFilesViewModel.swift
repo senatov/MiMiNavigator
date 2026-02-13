@@ -61,11 +61,38 @@ final class FindFilesViewModel {
 
     // MARK: - Initialization
 
-    /// Initialize with search directory from active panel
-    func configure(searchPath: String) {
-        if searchDirectory.isEmpty {
+    /// Initialize with search directory from active panel.
+    /// If selectedFile is an archive, search will be limited to that archive only.
+    /// - Parameters:
+    ///   - searchPath: Current directory of the active panel
+    ///   - selectedFile: Currently selected file (optional)
+    func configure(searchPath: String, selectedFile: CustomFile? = nil) {
+        // Check if selected file is an archive
+        if let file = selectedFile,
+           !file.isDirectory,
+           isArchiveFile(file) {
+            // Selected file is an archive — search only inside this archive
+            searchDirectory = file.urlValue.path
+            searchInArchives = true
+            searchInSubdirectories = true
+            log.info("[FindFiles] Configured to search in archive: \(file.nameStr)")
+        } else if searchDirectory.isEmpty {
+            // Normal case — use panel's current directory
             searchDirectory = searchPath
         }
+    }
+
+    /// Check if file is a recognized archive format
+    private func isArchiveFile(_ file: CustomFile) -> Bool {
+        let ext = file.urlValue.pathExtension.lowercased()
+        if ArchiveExtensions.isArchive(ext) {
+            return true
+        }
+        // Also check compound extensions like .tar.gz
+        if ArchiveExtensions.isCompoundArchive(file.nameStr) {
+            return true
+        }
+        return false
     }
 
     // MARK: - Start Search
@@ -75,11 +102,16 @@ final class FindFilesViewModel {
 
         log.info("[FindFiles] Starting search: name='\(fileNamePattern)' text='\(searchText)' dir='\(searchDirectory)'")
 
-        // Validate directory
-        let dirURL = URL(fileURLWithPath: searchDirectory)
+        // Validate target path
+        let targetURL = URL(fileURLWithPath: searchDirectory)
         var isDir: ObjCBool = false
-        guard FileManager.default.fileExists(atPath: dirURL.path, isDirectory: &isDir), isDir.boolValue else {
-            errorMessage = "Directory not found: \(searchDirectory)"
+        let exists = FileManager.default.fileExists(atPath: targetURL.path, isDirectory: &isDir)
+
+        // Check if it's a single archive file to search (not a directory)
+        let isArchiveTarget = exists && !isDir.boolValue && ArchiveExtensions.isArchive(targetURL.pathExtension.lowercased())
+
+        guard exists && (isDir.boolValue || isArchiveTarget) else {
+            errorMessage = "Path not found: \(searchDirectory)"
             return
         }
 
@@ -89,13 +121,14 @@ final class FindFilesViewModel {
         searchState = .searching
 
         // Build criteria
-        var criteria = FindFilesCriteria(searchDirectory: dirURL)
+        var criteria = FindFilesCriteria(searchDirectory: targetURL)
         criteria.fileNamePattern = fileNamePattern.isEmpty ? "*" : fileNamePattern
         criteria.searchText = searchText
         criteria.caseSensitive = caseSensitive
         criteria.useRegex = useRegex
         criteria.searchInSubdirectories = searchInSubdirectories
         criteria.searchInArchives = searchInArchives
+        criteria.isArchiveOnlySearch = isArchiveTarget
 
         if useSizeFilter {
             criteria.fileSizeMin = Int64(fileSizeMin)

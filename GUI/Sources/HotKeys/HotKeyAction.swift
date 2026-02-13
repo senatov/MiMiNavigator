@@ -36,6 +36,7 @@ enum HotKeyAction: String, CaseIterable, Identifiable, Codable, Sendable {
     case markAll           = "markAll"
     case unmarkAll         = "unmarkAll"
     case markSameExtension = "markSameExtension"
+    case clearSelection    = "clearSelection"
 
     // MARK: - Search
     case findFiles         = "findFiles"
@@ -69,6 +70,7 @@ enum HotKeyAction: String, CaseIterable, Identifiable, Codable, Sendable {
         case .markAll:           return "Mark All"
         case .unmarkAll:         return "Unmark All"
         case .markSameExtension: return "Mark Same Extension"
+        case .clearSelection:    return "Clear Selection"
         case .findFiles:         return "Find Files"
         case .toggleHiddenFiles: return "Toggle Hidden Files"
         case .openSettings:      return "Open Settings"
@@ -83,7 +85,7 @@ enum HotKeyAction: String, CaseIterable, Identifiable, Codable, Sendable {
             return .fileOperations
         case .togglePanelFocus, .moveUp, .moveDown, .openSelected, .parentDirectory, .refreshPanels:
             return .navigation
-        case .toggleMark, .markByPattern, .unmarkByPattern, .invertMarks, .markAll, .unmarkAll, .markSameExtension:
+        case .toggleMark, .markByPattern, .unmarkByPattern, .invertMarks, .markAll, .unmarkAll, .markSameExtension, .clearSelection:
             return .selection
         case .findFiles:
             return .search

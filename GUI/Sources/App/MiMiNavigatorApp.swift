@@ -124,8 +124,10 @@ struct MiMiNavigatorApp: App {
                 help: "Find Files (⇧⌘F)"
             ) {
                 log.debug("Search button clicked")
-                let path = appState.focusedPanel == .left ? appState.leftPath : appState.rightPath
-                FindFilesCoordinator.shared.toggle(searchPath: path)
+                let panel = appState.focusedPanel
+                let path = panel == .left ? appState.leftPath : appState.rightPath
+                let selectedFile = panel == .left ? appState.selectedLeftFile : appState.selectedRightFile
+                FindFilesCoordinator.shared.toggle(searchPath: path, selectedFile: selectedFile)
             }
             .keyboardShortcut("f", modifiers: [.command, .shift])
         }

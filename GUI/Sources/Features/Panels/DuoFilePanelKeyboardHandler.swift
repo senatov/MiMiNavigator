@@ -174,14 +174,22 @@ final class DuoFilePanelKeyboardHandler {
             return nil
 
         case .unmarkAll:
-            // Only consume if there are marks
+            // If there are marks → unmark all
+            // If no marks → clear file selection
             let markedCount = appState.markedCount(for: appState.focusedPanel)
             if markedCount > 0 {
                 log.info("[KEY] → Unmark all")
                 appState.unmarkAll()
-                return nil
+            } else {
+                log.info("[KEY] → Clear selection (ESC with no marks)")
+                appState.clearFileSelection()
             }
-            return event
+            return nil
+
+        case .clearSelection:
+            log.info("[KEY] → Clear selection")
+            appState.clearFileSelection()
+            return nil
 
         case .markSameExtension:
             log.info("[KEY] → Mark same extension")

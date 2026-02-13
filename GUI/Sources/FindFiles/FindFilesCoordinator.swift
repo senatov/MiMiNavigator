@@ -32,18 +32,18 @@ final class FindFilesCoordinator {
 
     // MARK: - Toggle
 
-    func toggle(searchPath: String) {
+    func toggle(searchPath: String, selectedFile: CustomFile? = nil) {
         if isVisible {
             close()
         } else {
-            open(searchPath: searchPath)
+            open(searchPath: searchPath, selectedFile: selectedFile)
         }
     }
 
     // MARK: - Open
 
-    func open(searchPath: String) {
-        viewModel.configure(searchPath: searchPath)
+    func open(searchPath: String, selectedFile: CustomFile? = nil) {
+        viewModel.configure(searchPath: searchPath, selectedFile: selectedFile)
 
         if let existing = findWindow, existing.isVisible {
             existing.makeKeyAndOrderFront(nil)
