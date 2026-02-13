@@ -37,13 +37,19 @@ struct FindFilesResult: Identifiable, Hashable, Sendable {
         self.isInsideArchive = isInsideArchive
         self.archivePath = archivePath
 
-        let fm = FileManager.default
-        if let attrs = try? fm.attributesOfItem(atPath: fileURL.path) {
-            self.fileSize = (attrs[.size] as? NSNumber)?.int64Value ?? 0
-            self.modifiedDate = attrs[.modificationDate] as? Date
-        } else {
+        // Skip stat() for virtual paths inside archives — the file doesn't exist on disk
+        if isInsideArchive {
             self.fileSize = 0
             self.modifiedDate = nil
+        } else {
+            let fm = FileManager.default
+            if let attrs = try? fm.attributesOfItem(atPath: fileURL.path) {
+                self.fileSize = (attrs[.size] as? NSNumber)?.int64Value ?? 0
+                self.modifiedDate = attrs[.modificationDate] as? Date
+            } else {
+                self.fileSize = 0
+                self.modifiedDate = nil
+            }
         }
     }
 }

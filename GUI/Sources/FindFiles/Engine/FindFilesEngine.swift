@@ -142,36 +142,69 @@ actor FindFilesEngine {
 
         log.debug("[FindEngine] Enumerated \(entries.count) files in \(stats.directoriesScanned) dirs under \(url.lastPathComponent)")
 
+        // Separate archives from regular files for parallel processing
+        var regularEntries: [ScannedFileEntry] = []
+        var archiveEntries: [ScannedFileEntry] = []
+
         for entry in entries {
-            guard !Task.isCancelled else { return }
-
-            stats.filesScanned += 1
-
             // Size filter
             if let minSize = criteria.fileSizeMin, entry.fileSize < minSize { continue }
             if let maxSize = criteria.fileSizeMax, entry.fileSize > maxSize { continue }
-
             // Date filter
             if let dateFrom = criteria.dateFrom, let modDate = entry.modificationDate, modDate < dateFrom { continue }
             if let dateTo = criteria.dateTo, let modDate = entry.modificationDate, modDate > dateTo { continue }
 
-            let fileName = entry.url.lastPathComponent
-            let nameMatches = FindFilesNameMatcher.matches(fileName: fileName, regex: nameRegex, criteria: criteria)
-
-            // Archive handling
             let ext = entry.url.pathExtension.lowercased()
             if criteria.searchInArchives && ArchiveExtensions.isArchive(ext) {
-                stats.archivesScanned += 1
-                log.debug("[FindEngine] Scanning archive: \(entry.url.lastPathComponent)")
-
-                let delta = await FindFilesArchiveSearcher.searchInsideArchive(
-                    archiveURL: entry.url, criteria: criteria, nameRegex: nameRegex,
-                    contentPattern: contentPattern, continuation: continuation,
-                    passwordCallback: passwordCallback
-                )
-                stats.matchesFound += delta.matchesFound
-                continue
+                archiveEntries.append(entry)
+            } else {
+                regularEntries.append(entry)
             }
+        }
+
+        // Process archives in parallel (up to 4 concurrent archive scans)
+        if !archiveEntries.isEmpty {
+            log.debug("[FindEngine] Scanning \(archiveEntries.count) archives in parallel")
+
+            await withTaskGroup(of: ArchiveSearchDelta.self) { group in
+                let maxConcurrent = 4
+                var launched = 0
+
+                for archiveEntry in archiveEntries {
+                    guard !Task.isCancelled else { break }
+
+                    // Throttle: wait for a slot if we've launched max concurrent tasks
+                    if launched >= maxConcurrent {
+                        if let delta = await group.next() {
+                            stats.matchesFound += delta.matchesFound
+                        }
+                    }
+
+                    group.addTask { @concurrent in
+                        await FindFilesArchiveSearcher.searchInsideArchive(
+                            archiveURL: archiveEntry.url, criteria: criteria,
+                            nameRegex: nameRegex, contentPattern: contentPattern,
+                            continuation: continuation, passwordCallback: passwordCallback)
+                    }
+                    launched += 1
+                    stats.archivesScanned += 1
+                }
+
+                // Collect remaining results
+                for await delta in group {
+                    stats.matchesFound += delta.matchesFound
+                }
+            }
+        }
+
+        // Process regular files sequentially
+        for entry in regularEntries {
+            guard !Task.isCancelled else { return }
+
+            stats.filesScanned += 1
+
+            let fileName = entry.url.lastPathComponent
+            let nameMatches = FindFilesNameMatcher.matches(fileName: fileName, regex: nameRegex, criteria: criteria)
 
             // Content search: name must match AND content must contain text
             if criteria.isContentSearch {
