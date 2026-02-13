@@ -76,7 +76,7 @@ MiMiNavigator is a dual-panel file manager inspired by **Total Commander** and *
 | **Drag & Drop** | Between panels and into directories, with HIG confirmation dialog |
 | **Find Files** | Advanced search: by name (wildcards), content, size, date — with archive search |
 | **Archive VFS** | Open archives as virtual directories, navigate inside, auto-repack on exit |
-| **Parent Directory** | `..` entry at top of every panel, archive-aware navigation |
+| **Parent Directory** | `...` entry pinned to top of every panel, archive-aware navigation |
 | **Navigation History** | Per-panel history with quick-jump popover |
 | **Breadcrumb Nav** | Click-to-navigate path bar |
 | **Favorites Sidebar** | Quick access to bookmarked locations (FavoritesKit package) |
@@ -158,13 +158,18 @@ MiMiNavigator/
 │   ├── App/                # Entry point, FileScanner, logging
 │   ├── States/             # AppState (@Observable), DualDirectoryScanner (actor)
 │   ├── FilePanel/          # FilePanelView, FileRow, table components
-│   ├── FindFiles/          # Search engine, results view, ViewModel
+│   ├── Archive/            # ArchiveManager (actor), Extractor, Repacker, FormatDetector
+│   ├── FindFiles/          # Search UI, ViewModel, Coordinator
+│   │   └── Engine/         # FindFilesEngine (actor), NameMatcher, ContentSearcher, ArchiveSearcher
+│   ├── ContextMenu/        # Context menus, dialogs, file operations, batch manager
+│   ├── DuoPanel/           # Dual-panel layout, PanelDividerView
+│   ├── DragDrop/           # Transferable, DragPreview, confirmation dialog
 │   ├── Menus/              # TC-style glass menu bar
-│   ├── DragDrop/           # Transferable, confirmation dialog
+│   ├── BreadCrumbNav/      # Breadcrumb path bar with navigation
+│   ├── HotKeys/            # Customizable keyboard shortcuts
 │   ├── History/            # Navigation history popover
-│   ├── Favorite/           # Favorites sidebar adapter
-│   ├── ContextMenu/        # ArchiveManager, ArchiveService
-│   ├── Primitives/         # ArchiveNavigationState, ParentDirectoryEntry
+│   ├── Favorite/           # Favorites sidebar adapter (FavoritesKit bridge)
+│   ├── Primitives/         # ParentDirectoryEntry, shared types
 │   └── Config/             # DesignTokens, UserPreferences
 ├── Packages/
 │   └── FavoritesKit/       # Reusable favorites module (.dylib)
@@ -177,14 +182,14 @@ MiMiNavigator/
 |---------|-------|
 | `@Observable` + `@MainActor` | `AppState` — global app state, panels, archive states |
 | `actor` | `DualDirectoryScanner` — thread-safe file scanning |
-| `actor` | `ArchiveManager` — archive extraction, dirty tracking, repacking |
+| `actor` | `ArchiveManager` — session lifecycle, dirty tracking, extraction, repacking |
 | `AsyncStream` | `FindFilesEngine` — streaming search results with cancellation |
 | Security-Scoped Bookmarks | Persistent file access in sandboxed mode |
 | Swift Package (dynamic) | `FavoritesKit` — extracted as reusable `.dylib` |
 
 ### Logging
 
-Uses **SwiftyBeaver** with tags: `[FindFiles]` `[ArchiveManager]` `[SELECT-FLOW]` `[NAV]` `[DOUBLE-CLICK]`
+Uses **SwiftyBeaver** with tags: `[FindEngine]` `[ArchiveSearcher]` `[Extractor]` `[Repacker]` `[FormatDetector]` `[SELECT-FLOW]` `[NAV]` `[DOUBLE-CLICK]`
 
 Log file: `~/Library/Logs/MiMiNavigator.log`
 

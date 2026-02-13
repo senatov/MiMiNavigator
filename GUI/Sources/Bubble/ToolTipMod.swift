@@ -21,7 +21,7 @@ struct ToolTipMod: ViewModifier {
             if isVisible {
                 TooltipBubble(text: text, position: position)
                     .transition(.opacity)
-                    .allowsHitTesting(false)  // ← ТОЛЬКО на пузыре!
+                    .allowsHitTesting(false)  // Only on the tooltip bubble, not on content below
             }
         }
         .animation(.easeInOut(duration: 0.12), value: isVisible)

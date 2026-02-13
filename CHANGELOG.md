@@ -8,14 +8,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- **Hidden Files Styling** — distinct bluish-gray color for hidden files
-  - Improved readability over previous quaternaryLabelColor
-  - Consistent styling across file name, size, date, and permissions columns
-  - Uses `#colorLiteral` for easy visual adjustment in Xcode
+- **Navigation History** — Back/Forward navigation fully functional
+  - Every directory change recorded in `SelectionsHistory`
+  - BreadCrumb back arrow, context menu Back/Forward, all wired up
+  - `isNavigatingFromHistory` guard prevents history corruption
+- **Find Files Close button** — large Close button with Esc shortcut
+- **Find Files window follows main app** — `NSPanel` with `.floating` level, `hidesOnDeactivate`
+- **Input area border** in Find Files — thin `separatorColor` rounded rectangle around form
+
+### Changed
+- **Major code refactoring** — split oversized classes into modular components
+  - `FindFilesEngine` (826 lines) → 5 files in `FindFiles/Engine/`
+  - `ArchiveManager` (480 lines) → 6 files in `Archive/`
+  - `PanelsRowView` (332 lines) → coordinator + `PanelDividerView`
+  - `FileRow` (347 lines) → FileRow + `DragPreviewView`
+  - No file exceeds 410 lines; 66% reduction in largest file
+- **Parent entry `...`** — renamed from `..`, bold 14pt font, larger icon, always pinned to top regardless of sort
+- **Marked file font** — `.regular` weight (was `.semibold`), marking shown via color + checkmark icon
+- **Find Files divider** — compact layout, separator right after input area instead of 50/50 split
+- **Swift 6.2 concurrency fixes**
+  - `FindFilesArchiveSearcher`: `actor` → `enum` with `static` methods + `ArchiveSearchDelta` return
+  - `@concurrent` on all async static methods in `ArchiveExtractor`, `ArchiveRepacker`, `FindFilesArchiveSearcher`
+  - `ScannedFileEntry` Sendable struct replaces non-Sendable `URLResourceValues` in async loops
+- **README Architecture** — updated to reflect new `Archive/`, `FindFiles/Engine/` directory structure
+- **All comments in English** — replaced remaining Russian comments in `ToolTipMod`, `BreadCrumbView`
+- **Logging tags updated** — `[FindEngine]` `[ArchiveSearcher]` `[Extractor]` `[Repacker]` `[FormatDetector]`
+
+### Fixed
+- **Back navigation after `...`** — `updatePath()` now records history; BreadCrumb back arrow works
+- **Context menu Back/Forward** — implemented (was TODO stub), enabled/disabled based on history state
+- **`...` sorting** — parent entry always pinned to top, never participates in sort
 
 ### Planned
-- Multi-selection support with keyboard and mouse
-- Search and filter functionality within panels
 - File preview with Quick Look integration
 - Delete operations with confirmation dialogs
 - Move/Rename operations (F6)
