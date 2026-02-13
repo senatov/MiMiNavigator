@@ -21,7 +21,7 @@ struct FileContextMenu: View {
         self.file = file
         self.panelSide = panelSide
         self.onAction = onAction
-        log.debug("\(#function) → file='\(file.nameStr)' ext=\(file.fileExtension) panel=\(panelSide)")
+
     }
     
     var body: some View {

@@ -101,8 +101,9 @@ struct FileTableView: View {
             default: break
             }
         }
-        .dropDestination(for: CustomFile.self) { droppedFiles, _ in
-            dropHandler.handlePanelDrop(droppedFiles)
+        .dropDestination(for: URL.self) { droppedURLs, _ in
+            let droppedFiles = droppedURLs.map { CustomFile(path: $0.path) }
+            return dropHandler.handlePanelDrop(droppedFiles)
         } isTargeted: { targeted in
             withAnimation(.easeInOut(duration: 0.15)) {
                 isPanelDropTargeted = targeted

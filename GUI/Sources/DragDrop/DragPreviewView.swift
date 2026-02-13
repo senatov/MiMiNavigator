@@ -44,8 +44,9 @@ struct DropTargetModifier: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .dropDestination(for: CustomFile.self) { droppedFiles, _ in
-                onDrop(droppedFiles)
+            .dropDestination(for: URL.self) { droppedURLs, _ in
+                let files = droppedURLs.map { CustomFile(path: $0.path) }
+                return onDrop(files)
             } isTargeted: { targeted in
                 onTargetChange(targeted)
             }

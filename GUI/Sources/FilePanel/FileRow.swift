@@ -81,7 +81,9 @@ struct FileRow: View {
                     .simultaneousGesture(singleTapGesture)
                     .animation(nil, value: isSelected)
                     .contextMenu { contextMenuContent }
-                    .draggable(file) { makeDragPreview() }
+                    .draggable(file) {
+                        makeDragPreview()
+                    }
                     .modifier(
                         DropTargetModifier(
                             isValidTarget: isValidDropTarget,
