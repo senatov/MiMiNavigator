@@ -66,7 +66,7 @@ struct FileRow: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .frame(height: FilePanelStyle.rowHeight)
                     .contentShape(Rectangle())
-                    .help("Navigate to parent directory")
+                    // tooltip removed — Get Info via context menu is sufficient
                     .simultaneousGesture(doubleTapGesture)
                     .simultaneousGesture(singleTapGesture)
                     .animation(nil, value: isSelected)
@@ -76,7 +76,7 @@ struct FileRow: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .frame(height: FilePanelStyle.rowHeight)
                     .contentShape(Rectangle())
-                    .help(makeHelpTooltip())
+                    // tooltip removed — Get Info via context menu is sufficient
                     .simultaneousGesture(doubleTapGesture)
                     .simultaneousGesture(singleTapGesture)
                     .animation(nil, value: isSelected)
@@ -288,9 +288,5 @@ struct FileRow: View {
         .padding(.horizontal, 4)
     }
 
-    private func makeHelpTooltip() -> String {
-        let icon = file.isDirectory ? "📁" : "📄"
-        return "\(icon) \(file.nameStr)\n📍 \(file.pathStr)\n📅 \(file.modifiedDateFormatted)\n📦 \(file.fileSizeFormatted)"
-    }
 }
 

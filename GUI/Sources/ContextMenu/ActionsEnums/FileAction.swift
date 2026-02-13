@@ -39,7 +39,6 @@ enum FileAction: String, CaseIterable, Identifiable {
     
     // Info section
     case getInfo
-    case properties
     
     var id: String { rawValue }
     
@@ -61,7 +60,6 @@ enum FileAction: String, CaseIterable, Identifiable {
         case .rename: return "Rename..."
         case .delete: return "Move to Trash"
         case .getInfo: return "Get Info"
-        case .properties: return "Properties..."
         }
     }
     
@@ -83,7 +81,6 @@ enum FileAction: String, CaseIterable, Identifiable {
         case .rename: return "pencil"
         case .delete: return "trash"
         case .getInfo: return "info.circle"
-        case .properties: return "list.bullet.rectangle"
         }
     }
     
@@ -113,7 +110,7 @@ enum FileAction: String, CaseIterable, Identifiable {
     /// Whether this action opens a dialog for input
     var opensDialog: Bool {
         switch self {
-        case .rename, .pack, .createLink, .properties: return true
+        case .rename, .pack, .createLink: return true
         default: return false
         }
     }

@@ -76,9 +76,6 @@ extension ContextMenuCoordinator {
 
             case .getInfo:
                 GetInfoService.shared.showGetInfo(for: file.urlValue)
-
-            case .properties:
-                activeDialog = .properties(file: file)
         }
     }
 

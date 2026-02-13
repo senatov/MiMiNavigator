@@ -112,14 +112,6 @@ struct ContextMenuDialogModifier: ViewModifier {
                 }
             )
             
-        case .properties(let file):
-            PropertiesDialog(
-                file: file,
-                onClose: {
-                    coordinator.dismissDialog()
-                }
-            )
-            
         case .fileConflict(let conflict, _):
             FileConflictDialog(
                 conflict: conflict,

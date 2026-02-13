@@ -15,7 +15,6 @@ enum ActiveDialog: Identifiable {
     case rename(file: CustomFile)
     case pack(files: [CustomFile], destination: URL)
     case createLink(file: CustomFile, destination: URL)
-    case properties(file: CustomFile)
     case fileConflict(conflict: FileConflictInfo, continuation: CheckedContinuation<ConflictResolution, Never>)
     case error(title: String, message: String)
     case success(title: String, message: String)
@@ -33,7 +32,6 @@ enum ActiveDialog: Identifiable {
         case .rename: return "rename"
         case .pack: return "pack"
         case .createLink: return "createLink"
-        case .properties: return "properties"
         case .fileConflict: return "conflict"
         case .error: return "error"
         case .success: return "success"
