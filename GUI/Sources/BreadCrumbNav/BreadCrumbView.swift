@@ -28,7 +28,7 @@ struct BreadCrumbView: View {
                 breadcrumbItem(index: index)
             }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)  // растянуть и прижать влево
+        .frame(maxWidth: .infinity, alignment: .leading)  // Stretch full width, pin to leading edge
         .padding(.horizontal, 0)
         .padding(.vertical, 2)
         .frame(minHeight: barHeight, alignment: .center)
