@@ -64,6 +64,10 @@ struct FindFilesCriteria: Sendable {
     var dateFrom: Date? = nil
     var dateTo: Date? = nil
 
+    /// If true, searchDirectory is a single archive file (not a directory).
+    /// Engine should search only inside that archive.
+    var isArchiveOnlySearch: Bool = false
+
     /// Whether we need content search (not just filename matching)
     var isContentSearch: Bool {
         !searchText.isEmpty

@@ -71,12 +71,27 @@ actor FindFilesEngine {
         continuation: AsyncStream<FindFilesResult>.Continuation,
         passwordCallback: ArchivePasswordCallback?
     ) async {
-        let fm = FileManager.default
         let nameRegex = FindFilesNameMatcher.buildRegex(pattern: criteria.fileNamePattern, caseSensitive: criteria.caseSensitive)
         let contentPattern = criteria.isContentSearch
             ? FindFilesContentSearcher.buildPattern(text: criteria.searchText, caseSensitive: criteria.caseSensitive, useRegex: criteria.useRegex)
             : nil
 
+        // Special case: search only inside a single archive file
+        if criteria.isArchiveOnlySearch {
+            log.info("[FindEngine] Archive-only search: \(criteria.searchDirectory.lastPathComponent)")
+            stats.archivesScanned += 1
+
+            let delta = await FindFilesArchiveSearcher.searchInsideArchive(
+                archiveURL: criteria.searchDirectory, criteria: criteria, nameRegex: nameRegex,
+                contentPattern: contentPattern, continuation: continuation,
+                passwordCallback: passwordCallback
+            )
+            stats.matchesFound += delta.matchesFound
+            return
+        }
+
+        // Normal directory search
+        let fm = FileManager.default
         await scanDirectory(
             url: criteria.searchDirectory, criteria: criteria,
             nameRegex: nameRegex, contentPattern: contentPattern,

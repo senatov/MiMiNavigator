@@ -38,8 +38,12 @@ struct AppCommands: Commands {
         CommandMenu("Search") {
             Button("Find Files (⌥F7)") {
                 log.debug("KB: Find Files")
+                let panel = appState.focusedPanel
+                let searchPath = panel == .left ? appState.leftPath : appState.rightPath
+                let selectedFile = panel == .left ? appState.selectedLeftFile : appState.selectedRightFile
                 FindFilesCoordinator.shared.toggle(
-                    searchPath: appState.focusedPanel == .left ? appState.leftPath : appState.rightPath
+                    searchPath: searchPath,
+                    selectedFile: selectedFile
                 )
             }
             .keyboardShortcut("f", modifiers: [.command, .shift])
