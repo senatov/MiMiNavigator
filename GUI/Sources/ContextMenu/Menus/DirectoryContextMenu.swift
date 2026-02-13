@@ -19,7 +19,7 @@ struct DirectoryContextMenu: View {
         self.file = file
         self.panelSide = panelSide
         self.onAction = onAction
-        log.debug("\(#function) → dir='\(file.nameStr)' panel=\(panelSide)")
+
     }
     
     var body: some View {

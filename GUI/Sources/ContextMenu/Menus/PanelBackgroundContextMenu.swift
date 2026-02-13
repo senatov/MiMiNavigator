@@ -21,7 +21,7 @@ struct PanelBackgroundContextMenu: View {
         self.canGoBack = canGoBack
         self.canGoForward = canGoForward
         self.onAction = onAction
-        log.debug("\(#function) → panel=\(panelSide) path='\(currentPath.path)'")
+
     }
     
     var body: some View {
