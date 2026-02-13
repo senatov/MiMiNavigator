@@ -22,20 +22,13 @@ final class GetInfoService {
     // MARK: - Show Get Info Panel
     
     /// Opens Finder's native Get Info window for the specified file/folder
-    /// This is the standard macOS behavior (⌘I in Finder)
+    /// Delegates to FinderIntegration for proper positioning near MiMi window
     func showGetInfo(for fileURL: URL) {
         log.info("\(#function) file='\(fileURL.lastPathComponent)' path='\(fileURL.path)'")
-        // Method 1: Use NSWorkspace activation with Finder
-        let script = """
-            tell application "Finder"
-                activate
-                open information window of (POSIX file "\(fileURL.path)" as alias)
-            end tell
-            """
-        executeAppleScript(script, description: "Get Info for '\(fileURL.lastPathComponent)'")
+        FinderIntegration.showGetInfo(for: fileURL)
     }
     
-    /// Opens Get Info for multiple files
+    /// Opens Get Info for multiple files (positioned near MiMi window)
     func showGetInfo(for fileURLs: [URL]) {
         log.debug(#function)
         guard !fileURLs.isEmpty else {
@@ -43,22 +36,17 @@ final class GetInfoService {
             return
         }
         
+        // For single file, use positioned variant
         if fileURLs.count == 1 {
             showGetInfo(for: fileURLs[0])
             return
         }
         
+        // For multiple files, open all (Finder will cascade them)
         log.info("\(#function) showing Get Info for \(fileURLs.count) items")
-        
-        let pathList = fileURLs.map { "POSIX file \"\($0.path)\" as alias" }.joined(separator: ", ")
-        let script = """
-            tell application "Finder"
-                activate
-                open information window of {\(pathList)}
-            end tell
-            """
-        
-        executeAppleScript(script, description: "Get Info for \(fileURLs.count) items")
+        for url in fileURLs {
+            FinderIntegration.showGetInfo(for: url)
+        }
     }
     
     // MARK: - Private Helpers
