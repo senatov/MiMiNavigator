@@ -151,30 +151,43 @@ final class FindFilesViewModel {
                 }
             )
 
+            // Batch results to avoid thousands of MainActor dispatches.
+            // Flush every 50 results or every 0.15s — whichever comes first.
+            var batch: [FindFilesResult] = []
+            batch.reserveCapacity(64)
+            var lastFlush = ContinuousClock.now
+            let flushInterval: Duration = .milliseconds(150)
+            let batchSize = 50
+
             for await result in stream {
                 guard !Task.isCancelled else { break }
-                await MainActor.run {
-                    self.results.append(result)
-                }
-                // Update stats periodically
-                if self.results.count % 10 == 0 {
+                batch.append(result)
+
+                let now = ContinuousClock.now
+                if batch.count >= batchSize || now - lastFlush >= flushInterval {
+                    let chunk = batch
+                    batch.removeAll(keepingCapacity: true)
+                    lastFlush = now
+
                     let currentStats = await engine.getStats()
-                    await MainActor.run {
-                        self.stats = currentStats
-                    }
+                    self.results.append(contentsOf: chunk)
+                    self.stats = currentStats
                 }
             }
 
-            let finalStats = await engine.getStats()
-            await MainActor.run {
-                self.stats = finalStats
-                if Task.isCancelled {
-                    self.searchState = .cancelled
-                } else {
-                    self.searchState = .completed
-                }
-                log.info("[FindFiles] Search finished: \(self.results.count) results, \(self.stats.formattedElapsed)")
+            // Flush remaining
+            if !batch.isEmpty {
+                self.results.append(contentsOf: batch)
             }
+
+            let finalStats = await engine.getStats()
+            self.stats = finalStats
+            if Task.isCancelled {
+                self.searchState = .cancelled
+            } else {
+                self.searchState = .completed
+            }
+            log.info("[FindFiles] Search finished: \(self.results.count) results, \(self.stats.formattedElapsed)")
         }
     }
 

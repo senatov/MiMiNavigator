@@ -26,7 +26,8 @@ struct FindFilesResult: Identifiable, Hashable, Sendable {
         matchContext: String? = nil,
         lineNumber: Int? = nil,
         isInsideArchive: Bool = false,
-        archivePath: String? = nil
+        archivePath: String? = nil,
+        knownSize: Int64? = nil
     ) {
         self.id = UUID()
         self.fileURL = fileURL
@@ -39,7 +40,7 @@ struct FindFilesResult: Identifiable, Hashable, Sendable {
 
         // Skip stat() for virtual paths inside archives — the file doesn't exist on disk
         if isInsideArchive {
-            self.fileSize = 0
+            self.fileSize = knownSize ?? 0
             self.modifiedDate = nil
         } else {
             let fm = FileManager.default
