@@ -30,6 +30,12 @@ enum PreferenceKeys: String, CaseIterable {
     case lastSelectedLeftFilePath
     case lastSelectedRightFilePath
     
+    // MARK: - Tab State
+    case leftTabs
+    case rightTabs
+    case leftActiveTabID
+    case rightActiveTabID
+    
     // MARK: - Column Widths Helper
     /// Generates key for column width storage
     static func columnWidth(for column: String, panel: PanelSide) -> String {

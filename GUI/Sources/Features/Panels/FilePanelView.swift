@@ -69,6 +69,9 @@ struct FilePanelView: View {
         let fileContentKey = makeFileContentKey(files: files, path: currentPath?.path)
         
         return VStack {
+            // Tab bar (hidden when single tab)
+            TabBarView(panelSide: viewModel.panelSide)
+            
             // Breadcrumb navigation
             StableKeyView(currentPath?.path ?? "") {
                 PanelBreadcrumbSection(

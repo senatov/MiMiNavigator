@@ -45,6 +45,10 @@ final class AppState {
     var markedLeftFiles: Set<String> = []
     var markedRightFiles: Set<String> = []
 
+    // MARK: - Tab Managers (per-panel)
+    private(set) var leftTabManager: TabManager!
+    private(set) var rightTabManager: TabManager!
+
     // MARK: - Sub-managers (lazy initialized)
     private(set) var selectionManager: SelectionManager?
     private(set) var multiSelectionManager: MultiSelectionManager?
@@ -60,6 +64,10 @@ final class AppState {
         self.leftPath = paths.left
         self.rightPath = paths.right
         self.focusedPanel = StatePersistence.loadInitialFocus()
+
+        // Initialize tab managers
+        self.leftTabManager = TabManager(panelSide: .left, initialPath: paths.left)
+        self.rightTabManager = TabManager(panelSide: .right, initialPath: paths.right)
 
         // Initialize sub-managers
         self.selectionManager = SelectionManager(appState: self, history: selectionsHistory)
@@ -186,6 +194,14 @@ extension AppState {
         return URL(fileURLWithPath: path)
     }
 
+    /// TabManager for given panel side
+    func tabManager(for panel: PanelSide) -> TabManager {
+        switch panel {
+        case .left: return leftTabManager
+        case .right: return rightTabManager
+        }
+    }
+
     func archiveState(for panel: PanelSide) -> ArchiveNavigationState {
         switch panel {
         case .left: return leftArchiveState
@@ -213,6 +229,9 @@ extension AppState {
             var state = archiveState(for: panel)
             state.enterArchive(archiveURL: archiveURL, tempDir: tempDir)
             setArchiveState(state, for: panel)
+
+            // Sync tab with archive state
+            tabManager(for: panel).updateActiveTabForArchive(extractedPath: tempDir.path, archiveURL: archiveURL)
 
             updatePath(tempDir.path, for: panel)
             if panel == .left {
@@ -327,6 +346,9 @@ extension AppState {
         log.debug("[AppState] updatePath \(panelSide) → \(path)")
         focusedPanel = panelSide
 
+        // Sync active tab path
+        tabManager(for: panelSide).updateActiveTabPath(path)
+
         // Record directory change in navigation history (enables Back/Forward)
         // Skip if navigating via history goBack/goForward to avoid corrupting the index
         if !isNavigatingFromHistory {
@@ -409,6 +431,7 @@ extension AppState {
         log.debug("[AppState] initialize")
         UserPreferences.shared.load()
         UserPreferences.shared.apply(to: self)
+        StatePersistence.restoreTabs(into: self)
 
         Task {
             await scanner.setLeftDirectory(pathStr: leftPath)

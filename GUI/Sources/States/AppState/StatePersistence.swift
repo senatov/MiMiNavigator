@@ -39,7 +39,17 @@ enum StatePersistence {
             ud.set(right, forKey: PreferenceKeys.lastSelectedRightFilePath.rawValue)
         }
         
-        log.info("[StatePersistence] state saved")
+        // Save tabs
+        if let leftTabData = state.leftTabManager.encodedTabs() {
+            ud.set(leftTabData, forKey: PreferenceKeys.leftTabs.rawValue)
+        }
+        if let rightTabData = state.rightTabManager.encodedTabs() {
+            ud.set(rightTabData, forKey: PreferenceKeys.rightTabs.rawValue)
+        }
+        ud.set(state.leftTabManager.activeTabIDString, forKey: PreferenceKeys.leftActiveTabID.rawValue)
+        ud.set(state.rightTabManager.activeTabIDString, forKey: PreferenceKeys.rightActiveTabID.rawValue)
+        
+        log.info("[StatePersistence] state saved (incl. tabs L=\(state.leftTabManager.tabs.count) R=\(state.rightTabManager.tabs.count))")
     }
     
     // MARK: - Load Initial Paths
@@ -67,5 +77,32 @@ enum StatePersistence {
             return .right
         }
         return .left
+    }
+    
+    // MARK: - Restore Tabs
+    
+    /// Restore saved tabs into TabManagers
+    static func restoreTabs(into state: AppState) {
+        let ud = UserDefaults.standard
+        
+        // Restore left panel tabs
+        if let leftData = ud.data(forKey: PreferenceKeys.leftTabs.rawValue) {
+            state.leftTabManager.restoreTabs(from: leftData)
+            if let activeID = ud.string(forKey: PreferenceKeys.leftActiveTabID.rawValue) {
+                state.leftTabManager.restoreActiveTabID(from: activeID)
+            }
+            log.debug("[StatePersistence] restored left tabs: \(state.leftTabManager.tabs.count)")
+        }
+        
+        // Restore right panel tabs
+        if let rightData = ud.data(forKey: PreferenceKeys.rightTabs.rawValue) {
+            state.rightTabManager.restoreTabs(from: rightData)
+            if let activeID = ud.string(forKey: PreferenceKeys.rightActiveTabID.rawValue) {
+                state.rightTabManager.restoreActiveTabID(from: activeID)
+            }
+            log.debug("[StatePersistence] restored right tabs: \(state.rightTabManager.tabs.count)")
+        }
+        
+        log.info("[StatePersistence] tabs restored L=\(state.leftTabManager.tabs.count) R=\(state.rightTabManager.tabs.count)")
     }
 }
