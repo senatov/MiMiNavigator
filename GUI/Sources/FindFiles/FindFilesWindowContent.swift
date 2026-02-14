@@ -94,9 +94,13 @@ struct FindFilesWindowContent: View {
         .formStyle(.grouped)
         .scrollDisabled(true)
         .fixedSize(horizontal: false, vertical: true)
+        .background(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(Color(nsColor: .controlBackgroundColor).opacity(0.5))
+        )
         .overlay(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .strokeBorder(Color(nsColor: .tertiaryLabelColor), lineWidth: 0.75)
+                .strokeBorder(Color(nsColor: .separatorColor), lineWidth: 0.75)
         )
         .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
     }

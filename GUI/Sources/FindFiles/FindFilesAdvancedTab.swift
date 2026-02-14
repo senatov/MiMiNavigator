@@ -15,7 +15,7 @@ struct FindFilesAdvancedTab: View {
     var body: some View {
         Form {
             // MARK: - Size Filter
-            Section("File Size") {
+            Section {
                 Toggle("Filter by size", isOn: $viewModel.useSizeFilter)
 
                 if viewModel.useSizeFilter {
@@ -32,16 +32,20 @@ struct FindFilesAdvancedTab: View {
                             .foregroundStyle(.secondary)
                     }
                 }
+            } header: {
+                Label("File Size", systemImage: "ruler")
             }
 
             // MARK: - Date Filter
-            Section("Modification Date") {
+            Section {
                 Toggle("Filter by date", isOn: $viewModel.useDateFilter)
 
                 if viewModel.useDateFilter {
                     DatePicker("From:", selection: $viewModel.dateFrom, displayedComponents: .date)
                     DatePicker("To:", selection: $viewModel.dateTo, displayedComponents: .date)
                 }
+            } header: {
+                Label("Modification Date", systemImage: "calendar")
             }
 
             // MARK: - Info
