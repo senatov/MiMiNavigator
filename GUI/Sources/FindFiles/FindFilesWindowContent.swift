@@ -162,47 +162,62 @@ struct FindFilesWindowContent: View {
     // MARK: - Status Bar
 
     private var statusBar: some View {
-        HStack(spacing: 10) {
-            Group {
-                switch viewModel.searchState {
-                case .idle:
-                    Label("Ready", systemImage: "circle")
-                case .searching:
-                    HStack(spacing: 6) {
-                        ProgressView()
-                            .controlSize(.small)
-                        Text("Searching\u{2026}")
-                    }
-                case .paused:
-                    Label("Paused", systemImage: "pause.circle")
-                        .foregroundStyle(.orange)
-                case .completed:
-                    Label("Completed", systemImage: "checkmark.circle.fill")
-                        .foregroundStyle(.green)
-                case .cancelled:
-                    Label("Cancelled", systemImage: "xmark.circle")
-                        .foregroundStyle(.orange)
+        VStack(spacing: 4) {
+            // Progress bar (visible during search)
+            if viewModel.searchState == .searching {
+                VStack(alignment: .leading, spacing: 2) {
+                    ProgressView()
+                        .progressViewStyle(.linear)
+                    Text(viewModel.stats.currentPath)
+                        .font(.system(size: 10))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .truncationMode(.head)
                 }
             }
-            .font(.caption)
-            .foregroundStyle(.secondary)
 
-            Spacer()
-
-            if viewModel.stats.filesScanned > 0 {
-                HStack(spacing: 6) {
-                    Text("\(viewModel.stats.directoriesScanned) dirs")
-                    Text("\u{00B7}")
-                    Text("\(viewModel.stats.filesScanned) files")
-                    if viewModel.stats.archivesScanned > 0 {
-                        Text("\u{00B7}")
-                        Text("\(viewModel.stats.archivesScanned) archives")
+            HStack(spacing: 10) {
+                Group {
+                    switch viewModel.searchState {
+                    case .idle:
+                        Label("Ready", systemImage: "circle")
+                    case .searching:
+                        HStack(spacing: 6) {
+                            ProgressView()
+                                .controlSize(.small)
+                            Text("Searching\u{2026}")
+                        }
+                    case .paused:
+                        Label("Paused", systemImage: "pause.circle")
+                            .foregroundStyle(.orange)
+                    case .completed:
+                        Label("Completed", systemImage: "checkmark.circle.fill")
+                            .foregroundStyle(.green)
+                    case .cancelled:
+                        Label("Cancelled", systemImage: "xmark.circle")
+                            .foregroundStyle(.orange)
                     }
-                    Text("\u{00B7}")
-                    Text(viewModel.stats.formattedElapsed)
                 }
-                .font(.caption.monospacedDigit())
+                .font(.caption)
                 .foregroundStyle(.secondary)
+
+                Spacer()
+
+                if viewModel.stats.filesScanned > 0 {
+                    HStack(spacing: 6) {
+                        Text("\(viewModel.stats.directoriesScanned) dirs")
+                        Text("\u{00B7}")
+                        Text("\(viewModel.stats.filesScanned) files")
+                        if viewModel.stats.archivesScanned > 0 {
+                            Text("\u{00B7}")
+                            Text("\(viewModel.stats.archivesScanned) archives")
+                        }
+                        Text("\u{00B7}")
+                        Text(viewModel.stats.formattedElapsed)
+                    }
+                    .font(.caption.monospacedDigit())
+                    .foregroundStyle(.secondary)
+                }
             }
         }
     }
