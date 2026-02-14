@@ -9,20 +9,48 @@ import AppKit
 import SwiftUI
 
 // MARK: - Drag Preview View
-/// Shows file icon + name during drag operations
+/// Shows file icon + name during drag operations, with optional multi-file badge
 struct DragPreviewView: View {
     let file: CustomFile
+    var additionalCount: Int = 0
+
+    private var totalCount: Int { additionalCount + 1 }
 
     var body: some View {
         HStack(spacing: 8) {
-            Image(nsImage: NSWorkspace.shared.icon(forFile: file.urlValue.path))
-                .resizable()
-                .frame(width: 32, height: 32)
+            ZStack(alignment: .topTrailing) {
+                Image(nsImage: NSWorkspace.shared.icon(forFile: file.urlValue.path))
+                    .resizable()
+                    .frame(width: 32, height: 32)
 
-            Text(file.nameStr)
-                .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(.primary)
-                .lineLimit(1)
+                // Badge showing total count for multi-file drag
+                if totalCount > 1 {
+                    Text("\(totalCount)")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 4)
+                        .padding(.vertical, 1)
+                        .background(
+                            Capsule()
+                                .fill(Color.accentColor)
+                        )
+                        .offset(x: 6, y: -4)
+                }
+            }
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(file.nameStr)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+
+                if totalCount > 1 {
+                    Text("and \(additionalCount) more")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+            }
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
