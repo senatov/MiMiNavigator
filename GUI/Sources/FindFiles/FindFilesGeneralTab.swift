@@ -2,7 +2,7 @@
 // MiMiNavigator
 //
 // Created by Iakov Senatov on 10.02.2026.
-// Refactored: 12.02.2026 — fixed placeholder display, Backspace, Enter-to-search, HIG 26 fonts
+// Refactored: 14.02.2026 — Word-Einstellungen visual style with colored icons and section headers
 // Copyright © 2026 Senatov. All rights reserved.
 // Description: General tab of Find Files — file name, search text, directory, options
 
@@ -13,89 +13,162 @@ struct FindFilesGeneralTab: View {
     @Bindable var viewModel: FindFilesViewModel
 
     var body: some View {
-        Form {
-            // MARK: - Search For (file name pattern)
-            searchForSection
+        VStack(spacing: 0) {
+            // MARK: - Search Fields Section
+            sectionHeader(title: "Search Criteria", icon: "magnifyingglass", color: .blue)
 
-            // MARK: - Search In (directory)
-            searchInSection
+            VStack(spacing: 12) {
+                // Search For
+                fieldRow(label: "Search for:", icon: "doc.text", iconColor: .orange) {
+                    HStack(spacing: 8) {
+                        TextField("File name pattern", text: $viewModel.fileNamePattern)
+                            .textFieldStyle(.roundedBorder)
+                            .onSubmit { viewModel.startSearch() }
+                            .help("Wildcards: * (any chars), ? (single char). Separate patterns with ;")
+                        Button(action: { showPatternHelp() }) {
+                            Image(systemName: "questionmark.circle")
+                                .foregroundStyle(.secondary)
+                        }
+                        .buttonStyle(.plain)
+                        .help("Pattern syntax help")
+                    }
+                }
 
-            // MARK: - Find Text (content search)
-            findTextSection
+                // Search In
+                fieldRow(label: "Search in:", icon: "folder.fill", iconColor: .blue) {
+                    HStack(spacing: 8) {
+                        TextField("Directory path", text: $viewModel.searchDirectory)
+                            .textFieldStyle(.roundedBorder)
+                            .onSubmit { viewModel.startSearch() }
+                        Button(action: { browseDirectory() }) {
+                            Image(systemName: "folder.badge.plus")
+                        }
+                        .buttonStyle(.bordered)
+                        .controlSize(.regular)
+                        .help("Browse…")
+                    }
+                }
 
-            // MARK: - Options
-            Section {
-                Toggle(isOn: $viewModel.caseSensitive) {
-                    Label("Case sensitive", systemImage: "textformat")
+                // Find Text
+                fieldRow(label: "Find text:", icon: "text.magnifyingglass", iconColor: .purple) {
+                    TextField("Text to find inside files", text: $viewModel.searchText)
+                        .textFieldStyle(.roundedBorder)
+                        .onSubmit { viewModel.startSearch() }
+                        .help("Leave empty for filename-only search")
                 }
-                Toggle(isOn: $viewModel.useRegex) {
-                    Label("Regular expressions", systemImage: "chevron.left.forwardslash.chevron.right")
-                }
-                Toggle(isOn: $viewModel.searchInSubdirectories) {
-                    Label("Include subdirectories", systemImage: "folder.badge.gearshape")
-                }
-                Toggle(isOn: $viewModel.searchInArchives) {
-                    Label("Search in archives", systemImage: "archivebox")
-                }
-            } header: {
-                Label("Options", systemImage: "gearshape")
             }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
+
+            sectionDivider()
+
+            // MARK: - Options Section
+            sectionHeader(title: "Options", icon: "gearshape.fill", color: .gray)
+
+            VStack(spacing: 8) {
+                optionToggle(
+                    title: "Case sensitive",
+                    icon: "textformat",
+                    iconColor: .indigo,
+                    isOn: $viewModel.caseSensitive
+                )
+                optionToggle(
+                    title: "Regular expressions",
+                    icon: "chevron.left.forwardslash.chevron.right",
+                    iconColor: .teal,
+                    isOn: $viewModel.useRegex
+                )
+                optionToggle(
+                    title: "Include subdirectories",
+                    icon: "folder.fill.badge.gearshape",
+                    iconColor: .blue,
+                    isOn: $viewModel.searchInSubdirectories
+                )
+                optionToggle(
+                    title: "Search in archives",
+                    icon: "archivebox.fill",
+                    iconColor: .brown,
+                    isOn: $viewModel.searchInArchives
+                )
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
         }
-        .formStyle(.grouped)
+        .background(Color(nsColor: .controlBackgroundColor))
     }
 
-    // MARK: - Search For Section
-    private var searchForSection: some View {
-        LabeledContent {
-            HStack(spacing: 8) {
-                TextField("File name pattern", text: $viewModel.fileNamePattern)
-                    .textFieldStyle(.roundedBorder)
-                    .onSubmit { viewModel.startSearch() }
-                    .help("Wildcards: * (any chars), ? (single char). Separate patterns with ;")
+    // MARK: - Section Header (Word-Einstellungen style)
 
-                Button(action: { showPatternHelp() }) {
-                    Image(systemName: "questionmark.circle")
-                        .foregroundStyle(.secondary)
-                }
-                .buttonStyle(.plain)
-                .help("Pattern syntax help")
+    private func sectionHeader(title: String, icon: String, color: Color) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: icon)
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(color)
+            Text(title)
+                .font(.system(size: 13, weight: .bold))
+                .foregroundStyle(.primary)
+            Spacer()
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 12)
+        .padding(.bottom, 4)
+    }
+
+    // MARK: - Section Divider
+
+    private func sectionDivider() -> some View {
+        Rectangle()
+            .fill(Color(nsColor: .separatorColor))
+            .frame(height: 1)
+            .padding(.horizontal, 12)
+    }
+
+    // MARK: - Field Row
+
+    private func fieldRow<Content: View>(
+        label: String,
+        icon: String,
+        iconColor: Color,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        HStack(alignment: .center, spacing: 10) {
+            HStack(spacing: 6) {
+                Image(systemName: icon)
+                    .font(.system(size: 13))
+                    .foregroundStyle(iconColor)
+                    .frame(width: 18, alignment: .center)
+                Text(label)
+                    .font(.system(size: 13))
+                    .foregroundStyle(.secondary)
             }
-        } label: {
-            Text("Search for:")
+            .frame(width: 120, alignment: .leading)
+
+            content()
         }
     }
 
-    // MARK: - Search In Section
-    private var searchInSection: some View {
-        LabeledContent {
-            HStack(spacing: 8) {
-                TextField("Directory path", text: $viewModel.searchDirectory)
-                    .textFieldStyle(.roundedBorder)
-                    .onSubmit { viewModel.startSearch() }
-                    .help("Directory to search in")
+    // MARK: - Option Toggle
 
-                Button(action: { browseDirectory() }) {
-                    Image(systemName: "folder")
-                }
-                .buttonStyle(.bordered)
-                .controlSize(.regular)
-                .help("Browse…")
-            }
-        } label: {
-            Text("Search in:")
+    private func optionToggle(
+        title: String,
+        icon: String,
+        iconColor: Color,
+        isOn: Binding<Bool>
+    ) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: icon)
+                .font(.system(size: 14))
+                .foregroundStyle(iconColor)
+                .frame(width: 22, alignment: .center)
+            Text(title)
+                .font(.system(size: 13))
+            Spacer()
+            Toggle("", isOn: isOn)
+                .labelsHidden()
+                .toggleStyle(.switch)
+                .controlSize(.small)
         }
-    }
-
-    // MARK: - Find Text Section
-    private var findTextSection: some View {
-        LabeledContent {
-            TextField("Text to find inside files", text: $viewModel.searchText)
-                .textFieldStyle(.roundedBorder)
-                .onSubmit { viewModel.startSearch() }
-                .help("Leave empty for filename-only search")
-        } label: {
-            Text("Find text:")
-        }
+        .padding(.vertical, 2)
     }
 
     // MARK: - Browse Directory
@@ -107,7 +180,6 @@ struct FindFilesGeneralTab: View {
         panel.directoryURL = URL(fileURLWithPath: viewModel.searchDirectory)
         panel.prompt = "Select"
         panel.message = "Choose search directory"
-
         if panel.runModal() == .OK, let url = panel.url {
             viewModel.searchDirectory = url.path
         }

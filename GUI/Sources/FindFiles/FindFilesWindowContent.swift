@@ -91,12 +91,10 @@ struct FindFilesWindowContent: View {
                 FindFilesAdvancedTab(viewModel: viewModel)
             }
         }
-        .formStyle(.grouped)
-        .scrollDisabled(true)
         .fixedSize(horizontal: false, vertical: true)
         .background(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(Color(nsColor: .controlBackgroundColor).opacity(0.5))
+                .fill(Color(nsColor: .controlBackgroundColor))
         )
         .overlay(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
