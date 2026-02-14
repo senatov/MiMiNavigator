@@ -43,46 +43,30 @@ final class BatchOperationManager {
             files: files
         )
         currentOperation = state
-        showProgressDialog = true
+        // No progress dialog — silent operation like Total Commander
         
-        defer {
-            state.complete()
-            Task { @MainActor in
-                await refreshPanelsAfterOperation(appState: appState, sourcePanel: sourcePanel)
-            }
-        }
-        
+        var hasErrors = false
         for file in files {
-            guard !state.isCancelled else { break }
-            
-            state.updateProgress(fileName: file.nameStr, fileSize: file.sizeInBytes)
-            
             do {
                 let targetURL = destination.appendingPathComponent(file.nameStr)
-                let finalURL = try await copyFileWithConflictHandling(
+                _ = try await copyFileWithConflictHandling(
                     source: file.urlValue,
                     target: targetURL,
                     state: state
                 )
-                
-                if finalURL != nil {
-                    state.fileCompleted(success: true)
-                } else {
-                    // Skipped
-                    state.fileCompleted(success: true)
-                }
             } catch {
-                state.fileCompleted(success: false, error: error.localizedDescription)
+                hasErrors = true
+                log.error("[BatchOperationManager] copy failed: \(file.nameStr) — \(error.localizedDescription)")
             }
-            
-            // Small delay for UI responsiveness
-            try? await Task.sleep(for: .milliseconds(10))
         }
         
-        // Clear marks on source panel after successful operation
-        if state.errors.isEmpty && !state.isCancelled {
+        state.complete()
+        currentOperation = nil
+        
+        if !hasErrors {
             appState.clearMarksAfterOperation(on: sourcePanel)
         }
+        await refreshPanelsAfterOperation(appState: appState, sourcePanel: sourcePanel)
     }
     
     // MARK: - Move Files
@@ -102,43 +86,29 @@ final class BatchOperationManager {
             files: files
         )
         currentOperation = state
-        showProgressDialog = true
         
-        defer {
-            state.complete()
-            Task { @MainActor in
-                await refreshPanelsAfterOperation(appState: appState, sourcePanel: sourcePanel)
-            }
-        }
-        
+        var hasErrors = false
         for file in files {
-            guard !state.isCancelled else { break }
-            
-            state.updateProgress(fileName: file.nameStr, fileSize: file.sizeInBytes)
-            
             do {
                 let targetURL = destination.appendingPathComponent(file.nameStr)
-                let finalURL = try await moveFileWithConflictHandling(
+                _ = try await moveFileWithConflictHandling(
                     source: file.urlValue,
                     target: targetURL,
                     state: state
                 )
-                
-                if finalURL != nil {
-                    state.fileCompleted(success: true)
-                } else {
-                    state.fileCompleted(success: true) // Skipped
-                }
             } catch {
-                state.fileCompleted(success: false, error: error.localizedDescription)
+                hasErrors = true
+                log.error("[BatchOperationManager] move failed: \(file.nameStr) — \(error.localizedDescription)")
             }
-            
-            try? await Task.sleep(for: .milliseconds(10))
         }
         
-        if state.errors.isEmpty && !state.isCancelled {
+        state.complete()
+        currentOperation = nil
+        
+        if !hasErrors {
             appState.clearMarksAfterOperation(on: sourcePanel)
         }
+        await refreshPanelsAfterOperation(appState: appState, sourcePanel: sourcePanel)
     }
     
     // MARK: - Delete Files
@@ -157,33 +127,24 @@ final class BatchOperationManager {
             files: files
         )
         currentOperation = state
-        showProgressDialog = true
         
-        defer {
-            state.complete()
-            Task { @MainActor in
-                await refreshPanelsAfterOperation(appState: appState, sourcePanel: sourcePanel)
-            }
-        }
-        
+        var hasErrors = false
         for file in files {
-            guard !state.isCancelled else { break }
-            
-            state.updateProgress(fileName: file.nameStr, fileSize: file.sizeInBytes)
-            
             do {
                 try fileManager.trashItem(at: file.urlValue, resultingItemURL: nil)
-                state.fileCompleted(success: true)
             } catch {
-                state.fileCompleted(success: false, error: error.localizedDescription)
+                hasErrors = true
+                log.error("[BatchOperationManager] delete failed: \(file.nameStr) — \(error.localizedDescription)")
             }
-            
-            try? await Task.sleep(for: .milliseconds(10))
         }
         
-        if state.errors.isEmpty && !state.isCancelled {
+        state.complete()
+        currentOperation = nil
+        
+        if !hasErrors {
             appState.clearMarksAfterOperation(on: sourcePanel)
         }
+        await refreshPanelsAfterOperation(appState: appState, sourcePanel: sourcePanel)
     }
     
     // MARK: - Pack Files
@@ -204,36 +165,27 @@ final class BatchOperationManager {
             files: files
         )
         currentOperation = state
-        showProgressDialog = true
         
-        defer {
-            state.complete()
-            Task { @MainActor in
-                await refreshPanelsAfterOperation(appState: appState, sourcePanel: sourcePanel)
-            }
-        }
-        
-        // For packing, we process all files as one operation
-        state.updateProgress(fileName: archiveURL.lastPathComponent, fileSize: state.totalBytes)
-        
+        var hasErrors = false
         do {
             try await ArchiveService.shared.createArchive(
                 from: files.map(\.urlValue),
                 to: archiveURL,
                 format: format,
-                progressHandler: { progress in
-                    state.processedBytes = Int64(Double(state.totalBytes) * progress)
-                }
+                progressHandler: { _ in }
             )
-            state.processedFiles = files.count
-            state.fileCompleted(success: true)
         } catch {
-            state.fileCompleted(success: false, error: error.localizedDescription)
+            hasErrors = true
+            log.error("[BatchOperationManager] pack failed: \(error.localizedDescription)")
         }
         
-        if state.errors.isEmpty && !state.isCancelled {
+        state.complete()
+        currentOperation = nil
+        
+        if !hasErrors {
             appState.clearMarksAfterOperation(on: sourcePanel)
         }
+        await refreshPanelsAfterOperation(appState: appState, sourcePanel: sourcePanel)
     }
     
     // MARK: - Cancel Current Operation
