@@ -32,7 +32,7 @@ struct SearchHistoryComboBox: NSViewRepresentable {
 
         // Blue border
         comboBox.wantsLayer = true
-        comboBox.layer?.borderColor = NSColor.systemBlue.withAlphaComponent(0.6).cgColor
+        comboBox.layer?.borderColor = NSColor.systemBlue.withAlphaComponent(0.4).cgColor
         comboBox.layer?.borderWidth = 1.0
         comboBox.layer?.cornerRadius = 4.0
 

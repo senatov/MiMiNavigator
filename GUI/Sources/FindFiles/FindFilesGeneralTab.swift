@@ -71,7 +71,7 @@ struct FindFilesGeneralTab: View {
             .padding(.vertical, 10)
             .background(
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .strokeBorder(Color.blue.opacity(0.3), lineWidth: 1)
+                    .strokeBorder(Color.blue.opacity(0.2), lineWidth: 1)
                     .padding(.horizontal, 8)
             )
 
@@ -110,7 +110,7 @@ struct FindFilesGeneralTab: View {
             .padding(.vertical, 10)
             .background(
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .strokeBorder(Color.blue.opacity(0.3), lineWidth: 1)
+                    .strokeBorder(Color.blue.opacity(0.2), lineWidth: 1)
                     .padding(.horizontal, 8)
             )
 
