@@ -138,6 +138,9 @@
     "~%@ remaining" : {
       "comment" : "Time remaining"
     },
+    "⌘W" : {
+
+    },
     "⚠️ Will be moved to Trash" : {
       "comment" : "Delete warning message",
       "localizations" : {
@@ -202,6 +205,9 @@
       }
     },
     "and %lld more" : {
+
+    },
+    "and %lld more…" : {
 
     },
     "App Store..." : {
@@ -318,6 +324,18 @@
     },
     "Close" : {
       "comment" : "Close button"
+    },
+    "Close Other Tabs" : {
+
+    },
+    "Close Tab" : {
+
+    },
+    "Close tab %@" : {
+
+    },
+    "Close Tabs to the Right" : {
+
     },
     "Completed" : {
 
@@ -569,6 +587,9 @@
         }
       }
     },
+    "Duplicate Tab" : {
+
+    },
     "Enter folder name:" : {
       "comment" : "Enter folder name label",
       "localizations" : {
@@ -813,6 +834,9 @@
     },
     "Filter by size" : {
       "comment" : "Size filter toggle"
+    },
+    "Filter history…" : {
+
     },
     "Filter…" : {
 
@@ -1217,10 +1241,16 @@
     "No files found" : {
       "comment" : "No results message"
     },
+    "No matches for \"%@\"" : {
+
+    },
     "No matching shortcuts" : {
 
     },
     "No navigation history" : {
+
+    },
+    "of %lld" : {
 
     },
     "OK" : {
@@ -1475,6 +1505,9 @@
     "Show files" : {
 
     },
+    "Show in Finder" : {
+
+    },
     "Show navigation history" : {
 
     },
@@ -1509,6 +1542,9 @@
           }
         }
       }
+    },
+    "Tab: %@" : {
+
     },
     "Target file already exists:" : {
       "comment" : "Target exists message",
