@@ -19,7 +19,7 @@ VERSION="$NOW at Host: $HOSTNAME"
 
 # ✅ Определение пути к целевому файлу
 SCRIPT_DIR="$(cd -- "$(dirname "$0")" && pwd)"
-TARGET_DIR="$HOME/Develop/MiMiNavigator/Gui"
+TARGET_DIR="$HOME/Develop/MiMiNavigator/Gui/Resources"
 TARGET_FILE="${TARGET_DIR}/curr_version.asc"
 
 # ✅ Диагностика
