@@ -9,6 +9,9 @@ import SwiftUI
 
 // MARK: - Resizable Divider
 /// Vertical divider that can be dragged to resize adjacent columns
+/// Resizable column divider for header.
+/// Uses the SAME ColumnSeparator as row dividers to guarantee identical layout,
+/// with an invisible overlay for drag gesture hit area.
 struct ResizableDivider: View {
     @Binding var width: CGFloat
     let min: CGFloat
@@ -19,40 +22,34 @@ struct ResizableDivider: View {
     @State private var isDragging = false
     @State private var dragStartWidth: CGFloat = 0
 
-    private var currentColor: Color {
-        if isDragging {
-            return ColumnSeparatorStyle.dragColor
-        } else if isHovering {
-            return ColumnSeparatorStyle.hoverColor
-        }
-        return ColumnSeparatorStyle.color
-    }
-
-    private var dividerLineWidth: CGFloat {
-        (isHovering || isDragging) ? 2.0 : ColumnSeparatorStyle.width
-    }
-
     var body: some View {
-        Rectangle()
-            .fill(currentColor)
-            .frame(width: dividerLineWidth)
-            .padding(.vertical, 2)
+        // Use exactly the same ColumnSeparator as rows — guarantees identical layout
+        ColumnSeparator()
             .overlay {
-                // Invisible wider hit area for easier grabbing
-                Color.clear
-                    .frame(width: 12)
-                    .contentShape(Rectangle())
+                // Hover/drag color feedback (does not affect layout)
+                if isHovering || isDragging {
+                    Rectangle()
+                        .fill(isDragging ? ColumnSeparatorStyle.dragColor : ColumnSeparatorStyle.hoverColor)
+                        .frame(width: 2)
+                        .allowsHitTesting(false)
+                }
             }
-            .gesture(dragGesture)
-            .onHover { hovering in
-                withAnimation(.easeInOut(duration: 0.1)) {
-                    isHovering = hovering
-                }
-                if hovering {
-                    NSCursor.resizeLeftRight.push()
-                } else {
-                    NSCursor.pop()
-                }
+            .overlay {
+                // Wide invisible hit area for dragging (does not affect layout)
+                Color.clear
+                    .frame(width: 14)
+                    .contentShape(Rectangle())
+                    .gesture(dragGesture)
+                    .onHover { hovering in
+                        withAnimation(.easeInOut(duration: 0.1)) {
+                            isHovering = hovering
+                        }
+                        if hovering {
+                            NSCursor.resizeLeftRight.push()
+                        } else {
+                            NSCursor.pop()
+                        }
+                    }
             }
     }
 
@@ -63,7 +60,6 @@ struct ResizableDivider: View {
                     isDragging = true
                     dragStartWidth = width
                 }
-                // Negative delta: drag divider RIGHT = column gets WIDER
                 let delta = -value.translation.width
                 let newWidth = dragStartWidth + delta
                 width = Swift.min(Swift.max(newWidth, min), max)
@@ -71,7 +67,7 @@ struct ResizableDivider: View {
             .onEnded { _ in
                 isDragging = false
                 onEnd()
-                log.debug("[ResizableDivider] drag ended, new width=\(width)")
+                log.debug("\(#function) [ResizableDivider] drag ended, new width=\(width)")
             }
     }
 }

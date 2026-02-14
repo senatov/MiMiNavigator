@@ -113,13 +113,3 @@ struct DropTargetModifier: ViewModifier {
     }
 }
 
-// MARK: - Column Separator
-/// Thin vertical blue line separator between columns (matches header dividers)
-struct ColumnSeparator: View {
-    var body: some View {
-        Rectangle()
-            .fill(ColumnSeparatorStyle.color)
-            .frame(width: ColumnSeparatorStyle.width)
-            .padding(.vertical, 2)
-    }
-}

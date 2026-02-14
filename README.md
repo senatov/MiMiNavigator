@@ -280,10 +280,10 @@ Log file: `~/Library/Logs/MiMiNavigator.log`
 - [x] Batch-aware file actions (Cut/Copy/Delete/Compress/Share on marked files)
 - [x] Total Commander style marking: dark red, semibold, enlarged font
 - [x] Selection status bar (marked count + total size + disk free space)
-- [x] Column width persistence
+- [x] Column width persistence 
 - [x] Hotkey customization
 - [x] Tabbed interface (multiple tabs per panel, context menu, persistence)
-- [x] Archive Open → TC-style virtual directory (not Finder/Archive Utility)
+- [x] Archive Open → TC-style virtual directory (not Finder/Archive Utility) NOT READY YET!
 
 ### In Progress 🚧
 

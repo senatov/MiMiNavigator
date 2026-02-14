@@ -69,8 +69,9 @@ final class FindFilesViewModel {
     func configure(searchPath: String, selectedFile: CustomFile? = nil) {
         // Check if selected file is an archive
         if let file = selectedFile,
-           !file.isDirectory,
-           isArchiveFile(file) {
+            !file.isDirectory,
+            isArchiveFile(file)
+        {
             // Selected file is an archive — search only inside this archive
             searchDirectory = file.urlValue.path
             searchInArchives = true
@@ -99,34 +100,27 @@ final class FindFilesViewModel {
 
     func startSearch() {
         guard searchState != .searching else { return }
-
         log.info("[FindFiles] Starting search: name='\(fileNamePattern)' text='\(searchText)' dir='\(searchDirectory)'")
-
         // Validate target path
         let targetURL = URL(fileURLWithPath: searchDirectory)
         var isDir: ObjCBool = false
         let exists = FileManager.default.fileExists(atPath: targetURL.path, isDirectory: &isDir)
-
         // Check if it's a single archive file to search (not a directory)
         let isArchiveTarget = exists && !isDir.boolValue && ArchiveExtensions.isArchive(targetURL.pathExtension.lowercased())
-
         guard exists && (isDir.boolValue || isArchiveTarget) else {
             errorMessage = "Path not found: \(searchDirectory)"
             return
         }
-
         // Save to history
         SearchHistoryManager.shared.add(fileNamePattern, for: .fileNamePattern)
         SearchHistoryManager.shared.add(searchDirectory, for: .searchDirectory)
         if !searchText.isEmpty {
             SearchHistoryManager.shared.add(searchText, for: .searchText)
         }
-
         // Clear previous results
         results.removeAll()
         errorMessage = nil
         searchState = .searching
-
         // Build criteria
         var criteria = FindFilesCriteria(searchDirectory: targetURL)
         criteria.fileNamePattern = fileNamePattern.isEmpty ? "*" : fileNamePattern
@@ -368,16 +362,18 @@ final class FindFilesViewModel {
         panel.nameFieldStringValue = "search_results.txt"
         panel.begin { response in
             guard response == .OK, let url = panel.url else { return }
-            let content = self.results.map { result in
-                var line = result.filePath
-                if let context = result.matchContext, let lineNum = result.lineNumber {
-                    line += ":\(lineNum): \(context)"
+            let content = self.results
+                .map { result in
+                    var line = result.filePath
+                    if let context = result.matchContext, let lineNum = result.lineNumber {
+                        line += ":\(lineNum): \(context)"
+                    }
+                    if result.isInsideArchive, let archive = result.archivePath {
+                        line = "[\(archive)] \(line)"
+                    }
+                    return line
                 }
-                if result.isInsideArchive, let archive = result.archivePath {
-                    line = "[\(archive)] \(line)"
-                }
-                return line
-            }.joined(separator: "\n")
+                .joined(separator: "\n")
             try? content.write(to: url, atomically: true, encoding: .utf8)
         }
     }

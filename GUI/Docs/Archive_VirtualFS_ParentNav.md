@@ -16,17 +16,17 @@ Two features implemented for MiMiNavigator:
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│  ArchiveManager (actor, singleton)                  │
-│  - openArchive() → extracts to /tmp/MiMiNav.../     │
-│  - closeArchive() → repacks if dirty                │
-│  - cleanup() → called on app exit                   │
-│  - sessionForPath() → tracks open archive sessions  │
+│  ArchiveManager (actor, singleton)                                                           │
+│  - openArchive() → extracts to /tmp/MiMiNav.../                                       │
+│  - closeArchive() → repacks if dirty                                                             │
+│  - cleanup() → called on app exit                                                               │
+│  - sessionForPath() → tracks open archive sessions                                    │
 └─────────────────────────────────────────────────────┘
          ↕
 ┌─────────────────────────────────────────────────────┐
-│  ArchiveNavigationState (per-panel struct)           │
-│  - isInsideArchive, archiveURL, archiveTempDir      │
-│  - enterArchive(), exitArchive(), isAtArchiveRoot()  │
+│  ArchiveNavigationState (per-panel struct)                                               │
+│  - isInsideArchive, archiveURL, archiveTempDir                                        │
+│  - enterArchive(), exitArchive(), isAtArchiveRoot()                                     │
 └─────────────────────────────────────────────────────┘
          ↕
 ┌─────────────────────────────────────────────────────┐

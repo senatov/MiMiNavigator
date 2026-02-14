@@ -21,13 +21,15 @@ enum FileScanner {
 
         if !exists {
             log.error("❌ scan ABORT: path does not exist: \(url.path)")
-            throw NSError(domain: NSCocoaErrorDomain, code: NSFileNoSuchFileError,
-                          userInfo: [NSLocalizedDescriptionKey: "Path does not exist: \(url.path)"])
+            throw NSError(
+                domain: NSCocoaErrorDomain, code: NSFileNoSuchFileError,
+                userInfo: [NSLocalizedDescriptionKey: "Path does not exist: \(url.path)"])
         }
         if !readable {
             log.error("🔒 scan ABORT: path not readable: \(url.path)")
-            throw NSError(domain: NSPOSIXErrorDomain, code: 13,
-                          userInfo: [NSLocalizedDescriptionKey: "Permission denied: \(url.path)"])
+            throw NSError(
+                domain: NSPOSIXErrorDomain, code: 13,
+                userInfo: [NSLocalizedDescriptionKey: "Permission denied: \(url.path)"])
         }
 
         // Diagnostic: POSIX permissions
@@ -52,9 +54,7 @@ enum FileScanner {
             log.info("🏷️ Volume path detected, forcing showHidden=true for \(url.path)")
         }
         let options: FileManager.DirectoryEnumerationOptions = effectiveShowHidden ? [] : [.skipsHiddenFiles]
-
         log.info("📋 calling contentsOfDirectory(at: \(url.path), options: \(options))")
-
         let contents: [URL]
         do {
             contents = try fileManager.contentsOfDirectory(
@@ -66,7 +66,8 @@ enum FileScanner {
             log.error("❌ contentsOfDirectory FAILED: \(error)")
             log.error("   NSError domain: \((error as NSError).domain), code: \((error as NSError).code)")
             if let underlying = (error as NSError).userInfo[NSUnderlyingErrorKey] as? NSError {
-                log.error("   underlying: domain=\(underlying.domain), code=\(underlying.code), desc=\(underlying.localizedDescription)")
+                log.error(
+                    "   underlying: domain=\(underlying.domain), code=\(underlying.code), desc=\(underlying.localizedDescription)")
             }
             throw error
         }

@@ -12,11 +12,21 @@ extension FileTableView {
     
     var mainScrollView: some View {
         VStack(spacing: 0) {
+            // Measure available width for computing Name column
+            Color.clear.frame(height: 0)
+                .background(
+                    GeometryReader { geo in
+                        Color.clear
+                            .onAppear { tableContentWidth = geo.size.width }
+                            .onChange(of: geo.size.width) { _, w in tableContentWidth = w }
+                    }
+                )
             // Sticky header - outside ScrollView
             TableHeaderView(
                 panelSide: panelSide,
                 sortKey: $sortKey,
                 sortAscending: $sortAscending,
+                nameColumnWidth: nameColumnWidth,
                 sizeColumnWidth: $sizeColumnWidth,
                 dateColumnWidth: $dateColumnWidth,
                 typeColumnWidth: $typeColumnWidth,
@@ -40,6 +50,7 @@ extension FileTableView {
                                 rows: sortedRows,
                                 selectedID: $selectedID,
                                 panelSide: panelSide,
+                                nameColumnWidth: nameColumnWidth,
                                 sizeColumnWidth: sizeColumnWidth,
                                 dateColumnWidth: dateColumnWidth,
                                 typeColumnWidth: typeColumnWidth,
