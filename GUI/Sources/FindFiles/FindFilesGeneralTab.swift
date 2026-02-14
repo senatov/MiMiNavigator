@@ -2,7 +2,7 @@
 // MiMiNavigator
 //
 // Created by Iakov Senatov on 10.02.2026.
-// Refactored: 14.02.2026 — Word-Einstellungen visual style with colored icons and section headers
+// Refactored: 14.02.2026 — ComboBox with history, blue borders, Word-Einstellungen style
 // Copyright © 2026 Senatov. All rights reserved.
 // Description: General tab of Find Files — file name, search text, directory, options
 
@@ -18,13 +18,16 @@ struct FindFilesGeneralTab: View {
             sectionHeader(title: "Search Criteria", icon: "magnifyingglass", color: .blue)
 
             VStack(spacing: 12) {
-                // Search For
+                // Search For (file name pattern)
                 fieldRow(label: "Search for:", icon: "doc.text", iconColor: .orange) {
                     HStack(spacing: 8) {
-                        TextField("File name pattern", text: $viewModel.fileNamePattern)
-                            .textFieldStyle(.roundedBorder)
-                            .onSubmit { viewModel.startSearch() }
-                            .help("Wildcards: * (any chars), ? (single char). Separate patterns with ;")
+                        SearchHistoryComboBox(
+                            text: $viewModel.fileNamePattern,
+                            historyKey: .fileNamePattern,
+                            placeholder: "File name pattern",
+                            onSubmit: { viewModel.startSearch() }
+                        )
+                        .frame(height: 24)
                         Button(action: { showPatternHelp() }) {
                             Image(systemName: "questionmark.circle")
                                 .foregroundStyle(.secondary)
@@ -34,12 +37,16 @@ struct FindFilesGeneralTab: View {
                     }
                 }
 
-                // Search In
+                // Search In (directory)
                 fieldRow(label: "Search in:", icon: "folder.fill", iconColor: .blue) {
                     HStack(spacing: 8) {
-                        TextField("Directory path", text: $viewModel.searchDirectory)
-                            .textFieldStyle(.roundedBorder)
-                            .onSubmit { viewModel.startSearch() }
+                        SearchHistoryComboBox(
+                            text: $viewModel.searchDirectory,
+                            historyKey: .searchDirectory,
+                            placeholder: "Directory path",
+                            onSubmit: { viewModel.startSearch() }
+                        )
+                        .frame(height: 24)
                         Button(action: { browseDirectory() }) {
                             Image(systemName: "folder.badge.plus")
                         }
@@ -49,16 +56,24 @@ struct FindFilesGeneralTab: View {
                     }
                 }
 
-                // Find Text
+                // Find Text (content search)
                 fieldRow(label: "Find text:", icon: "text.magnifyingglass", iconColor: .purple) {
-                    TextField("Text to find inside files", text: $viewModel.searchText)
-                        .textFieldStyle(.roundedBorder)
-                        .onSubmit { viewModel.startSearch() }
-                        .help("Leave empty for filename-only search")
+                    SearchHistoryComboBox(
+                        text: $viewModel.searchText,
+                        historyKey: .searchText,
+                        placeholder: "Text to find inside files",
+                        onSubmit: { viewModel.startSearch() }
+                    )
+                    .frame(height: 24)
                 }
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 10)
+            .background(
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .strokeBorder(Color.blue.opacity(0.3), lineWidth: 1)
+                    .padding(.horizontal, 8)
+            )
 
             sectionDivider()
 
@@ -93,6 +108,13 @@ struct FindFilesGeneralTab: View {
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 10)
+            .background(
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .strokeBorder(Color.blue.opacity(0.3), lineWidth: 1)
+                    .padding(.horizontal, 8)
+            )
+
+            Spacer().frame(height: 4)
         }
         .background(Color(nsColor: .controlBackgroundColor))
     }
@@ -121,6 +143,7 @@ struct FindFilesGeneralTab: View {
             .fill(Color(nsColor: .separatorColor))
             .frame(height: 1)
             .padding(.horizontal, 12)
+            .padding(.vertical, 4)
     }
 
     // MARK: - Field Row

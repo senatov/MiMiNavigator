@@ -115,6 +115,13 @@ final class FindFilesViewModel {
             return
         }
 
+        // Save to history
+        SearchHistoryManager.shared.add(fileNamePattern, for: .fileNamePattern)
+        SearchHistoryManager.shared.add(searchDirectory, for: .searchDirectory)
+        if !searchText.isEmpty {
+            SearchHistoryManager.shared.add(searchText, for: .searchText)
+        }
+
         // Clear previous results
         results.removeAll()
         errorMessage = nil
