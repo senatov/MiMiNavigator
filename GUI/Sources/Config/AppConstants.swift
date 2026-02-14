@@ -24,11 +24,11 @@ enum AppConstants {
     
     // MARK: - History limits
     enum History {
-        /// Maximum entries in navigation history
-        static let maxEntries = 50
+        /// Maximum entries in navigation history (0xFF)
+        static let maxEntries = 255
         
         /// Maximum entries to show in history popover
-        static let popoverLimit = 20
+        static let popoverLimit = 255
     }
     
     // MARK: - UI limits
