@@ -82,7 +82,22 @@ struct FileRow: View {
                     .simultaneousGesture(singleTapGesture)
                     .animation(nil, value: isSelected)
                     .contextMenu { contextMenuContent }
-                    .draggable(file) {
+                    .onDrag {
+                        let filesToDrag = dragFiles
+                        dragDropManager.startDrag(files: filesToDrag, from: panelSide)
+                        // Create NSItemProvider with all dragged file URLs
+                        let provider = NSItemProvider()
+                        for f in filesToDrag {
+                            provider.registerFileRepresentation(
+                                forTypeIdentifier: "public.file-url",
+                                visibility: .all
+                            ) { completion in
+                                completion(f.urlValue, true, nil)
+                                return nil
+                            }
+                        }
+                        return provider
+                    } preview: {
                         makeDragPreview()
                     }
                     .modifier(
@@ -168,8 +183,24 @@ struct FileRow: View {
         }
     }
 
+    /// Files to drag: all marked files if this file is marked, otherwise just this file
+    private var dragFiles: [CustomFile] {
+        let marked = appState.markedCustomFiles(for: panelSide)
+        // If this file is in the marked set, drag all marked files
+        if !marked.isEmpty && marked.contains(where: { $0.id == file.id }) {
+            return marked
+        }
+        // If file is not marked but marks exist, drag only this file
+        // If no marks at all, drag this file
+        return [file]
+    }
+
     private func makeDragPreview() -> DragPreviewView {
-        DragPreviewView(file: file)
+        let files = dragFiles
+        if files.count > 1 {
+            return DragPreviewView(file: file, additionalCount: files.count - 1)
+        }
+        return DragPreviewView(file: file)
     }
 
     // MARK: - Event Handlers
