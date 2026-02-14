@@ -62,6 +62,27 @@ struct MiMiNavigatorApp: App {
                         }
                     }
                 }
+                // MARK: - Batch Operation Progress Overlay
+                .overlay {
+                    if BatchOperationManager.shared.showProgressDialog,
+                       let state = BatchOperationManager.shared.currentOperation {
+                        ZStack {
+                            Color.black.opacity(0.2)
+                                .ignoresSafeArea()
+                            BatchProgressDialog(
+                                state: state,
+                                onCancel: {
+                                    BatchOperationManager.shared.cancelCurrentOperation()
+                                },
+                                onDismiss: {
+                                    BatchOperationManager.shared.dismissProgressDialog()
+                                }
+                            )
+                        }
+                        .transition(.opacity)
+                        .animation(.easeOut(duration: 0.15), value: BatchOperationManager.shared.showProgressDialog)
+                    }
+                }
         }
         .defaultSize(width: 1200, height: 700)
         .defaultPosition(.center)
