@@ -123,6 +123,9 @@
         }
       }
     },
+    "%lld items selected" : {
+
+    },
     "%lld marked" : {
       "comment" : "Marked files count"
     },
@@ -197,6 +200,9 @@
           }
         }
       }
+    },
+    "and %lld more" : {
+
     },
     "App Store..." : {
 
