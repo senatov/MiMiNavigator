@@ -31,6 +31,9 @@ extension ContextMenuCoordinator {
                 // Handled by OpenWithSubmenu directly
                 log.debug("\(#function) openWith handled by submenu")
 
+            case .openInNewTab:
+                openFileInNewTab(file, panel: panel, appState: appState)
+
             case .viewLister:
                 openQuickLook(file)
 

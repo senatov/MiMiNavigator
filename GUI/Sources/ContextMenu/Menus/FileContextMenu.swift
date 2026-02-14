@@ -31,6 +31,7 @@ struct FileContextMenu: View {
             // ═══════════════════════════════════════════
             menuButton(.open)
             OpenWithSubmenu(file: file)
+            menuButton(.openInNewTab)
             menuButton(.viewLister)
             
             Divider()

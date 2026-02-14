@@ -86,6 +86,7 @@ enum DirectoryAction: String, CaseIterable, Identifiable {
     var shortcutHint: String? {
         switch self {
         case .open: return "↵"
+        case .openInNewTab: return "⌘T"
         case .cut: return "⌘X"
         case .copy: return "⌘C"
         case .paste: return "⌘V"

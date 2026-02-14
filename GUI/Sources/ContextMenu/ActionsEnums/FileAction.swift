@@ -14,6 +14,7 @@ enum FileAction: String, CaseIterable, Identifiable {
     // Open section
     case open
     case openWith
+    case openInNewTab
     
     // Quick Look
     case viewLister
@@ -47,6 +48,7 @@ enum FileAction: String, CaseIterable, Identifiable {
         switch self {
         case .open: return "Open"
         case .openWith: return "Open With"
+        case .openInNewTab: return "Open in New Tab"
         case .viewLister: return "Quick Look"
         case .cut: return "Cut"
         case .copy: return "Copy"
@@ -68,6 +70,7 @@ enum FileAction: String, CaseIterable, Identifiable {
         switch self {
         case .open: return "arrow.up.doc"
         case .openWith: return "arrow.up.right.square"
+        case .openInNewTab: return "plus.square.on.square"
         case .viewLister: return "eye"
         case .cut: return "scissors"
         case .copy: return "doc.on.doc"
@@ -90,6 +93,7 @@ enum FileAction: String, CaseIterable, Identifiable {
         case .cut: return "⌘X"
         case .copy: return "⌘C"
         case .paste: return "⌘V"
+        case .openInNewTab: return "⌘T"
         case .duplicate: return "⌘D"
         case .delete: return "⌘⌫"
         case .rename: return "↵"
@@ -128,6 +132,7 @@ enum FileAction: String, CaseIterable, Identifiable {
         [
             .open,
             .openWith,
+            .openInNewTab,
             .viewLister,
             // divider
             .cut,
