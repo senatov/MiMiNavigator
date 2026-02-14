@@ -14,7 +14,7 @@ actor DualDirectoryScanner {
     var fileCache = FileCache.shared
     private var leftTimer: DispatchSourceTimer?
     private var rightTimer: DispatchSourceTimer?
-    
+
     /// Refresh interval from centralized constants
     private var refreshInterval: Int {
         Int(AppConstants.Scanning.refreshInterval)
@@ -29,7 +29,7 @@ actor DualDirectoryScanner {
         log.info(#function)
         setupTimer(for: .left)
         setupTimer(for: .right)
-        
+
         if leftTimer == nil || rightTimer == nil {
             log.error("Failed to initialize directory timers")
         }
@@ -62,42 +62,42 @@ actor DualDirectoryScanner {
             }
         }
         timer.resume()
-        
+
         switch side {
-        case .left: leftTimer = timer
-        case .right: rightTimer = timer
+            case .left: leftTimer = timer
+            case .right: rightTimer = timer
         }
     }
 
     // MARK: - Refresh files for a panel
     @Sendable
     func refreshFiles(currSide: PanelSide) async {
-        log.verbose("⟳ \(#function) side: <<\(currSide)>>")
-        
+        log.info("⟳ \(#function) side: <<\(currSide)>>")
         let (path, showHidden): (String, Bool) = await MainActor.run {
             let p = currSide == .left ? appState.leftPath : appState.rightPath
             let h = UserPreferences.shared.snapshot.showHiddenFiles
             return (p, h)
         }
-        
+
         log.info("📍 refreshFiles: path='\(path)', showHidden=\(showHidden), side=\(currSide)")
-        
+
         let originalURL = URL(fileURLWithPath: path)
         let resolvedURL = originalURL.resolvingSymlinksInPath()
-        
+
         log.info("🔗 originalURL: \(originalURL.path)")
         log.info("🔗 resolvedURL: \(resolvedURL.path)")
         if originalURL.path != resolvedURL.path {
             log.warning("⚠️ Path changed after symlink resolution: '\(originalURL.path)' → '\(resolvedURL.path)'")
         }
-        
+
         // Try original URL first if resolved differs (symlink resolution can break /Volumes paths)
-        let urlsToTry = originalURL.path != resolvedURL.path
+        let urlsToTry =
+            originalURL.path != resolvedURL.path
             ? [originalURL, resolvedURL]
             : [resolvedURL]
-        
+
         log.info("🔄 Will try \(urlsToTry.count) URL(s): \(urlsToTry.map(\.path))")
-        
+
         for (index, url) in urlsToTry.enumerated() {
             log.info("🔄 Attempt \(index + 1)/\(urlsToTry.count): \(url.path)")
             do {
@@ -124,10 +124,10 @@ actor DualDirectoryScanner {
                 }
             }
         }
-        
+
         log.error("💀 ALL scan attempts failed for <<\(currSide)>> path: '\(path)'")
     }
-    
+
     // MARK: - Check if error is permission denied
     private func isPermissionDeniedError(_ error: NSError) -> Bool {
         if error.domain == NSCocoaErrorDomain && error.code == 257 { return true }
@@ -137,14 +137,14 @@ actor DualDirectoryScanner {
         }
         return false
     }
-    
+
     // MARK: - Request access and retry scan
     private func requestAndRetryAccess(for url: URL, side: PanelSide) async -> Bool {
         log.info("🔐 requestAndRetryAccess: requesting bookmark for \(url.path)")
         let granted = await BookmarkStore.shared.requestAccessPersisting(for: url)
         log.info("🔐 BookmarkStore result: granted=\(granted) for \(url.path)")
         guard granted else { return false }
-        
+
         do {
             let showHidden = await MainActor.run { UserPreferences.shared.snapshot.showHiddenFiles }
             let scanned = try FileScanner.scan(url: url, showHiddenFiles: showHidden)
@@ -163,22 +163,22 @@ actor DualDirectoryScanner {
     private func updateScannedFiles(_ files: [CustomFile], for side: PanelSide) {
         let sorted = appState.applySorting(files)
         switch side {
-        case .left: appState.displayedLeftFiles = sorted
-        case .right: appState.displayedRightFiles = sorted
+            case .left: appState.displayedLeftFiles = sorted
+            case .right: appState.displayedRightFiles = sorted
         }
     }
 
     // MARK: - Reset timer for a panel
     func resetRefreshTimer(for side: PanelSide) {
         switch side {
-        case .left:
-            leftTimer?.cancel()
-            leftTimer = nil
-            setupTimer(for: .left)
-        case .right:
-            rightTimer?.cancel()
-            rightTimer = nil
-            setupTimer(for: .right)
+            case .left:
+                leftTimer?.cancel()
+                leftTimer = nil
+                setupTimer(for: .left)
+            case .right:
+                rightTimer?.cancel()
+                rightTimer = nil
+                setupTimer(for: .right)
         }
     }
 
@@ -186,8 +186,8 @@ actor DualDirectoryScanner {
     @MainActor
     private func updateFileList(panelSide: PanelSide, with files: [CustomFile]) async {
         switch panelSide {
-        case .left: await fileCache.updateLeftFiles(files)
-        case .right: await fileCache.updateRightFiles(files)
+            case .left: await fileCache.updateLeftFiles(files)
+            case .right: await fileCache.updateRightFiles(files)
         }
     }
 }

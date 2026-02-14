@@ -1,6 +1,6 @@
 # Supported Archive Formats
 
-## Date: 12.02.2026
+## Date: 29.01.2026
 
 ---
 

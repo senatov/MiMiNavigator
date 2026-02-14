@@ -14,6 +14,7 @@ struct FileRow: View {
     let file: CustomFile
     let isSelected: Bool
     let panelSide: PanelSide
+    let nameColumnWidth: CGFloat
     let sizeColumnWidth: CGFloat
     let dateColumnWidth: CGFloat
     let typeColumnWidth: CGFloat
@@ -293,9 +294,10 @@ struct FileRow: View {
     // MARK: - Row content with columns and separators (aligned with header)
     private var rowContent: some View {
         HStack(alignment: .center, spacing: 0) {
-            // Name column (flexible) - matches header
+            // Name column — fixed width computed from table width minus fixed columns
             FileRowView(file: file, isSelected: isSelected, isActivePanel: isActivePanel, isMarked: isMarked)
-                .frame(minWidth: 60, maxWidth: .infinity, alignment: .leading)
+                .frame(width: nameColumnWidth, alignment: .leading)
+                .clipped()
 
             ColumnSeparator()
 

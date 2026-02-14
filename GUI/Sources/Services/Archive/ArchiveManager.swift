@@ -24,12 +24,9 @@ struct ArchiveSession: Sendable {
 /// Actor managing archive session lifecycle: open, close, dirty tracking.
 /// Delegates extraction to ArchiveExtractor, repacking to ArchiveRepacker.
 actor ArchiveManager {
-
     static let shared = ArchiveManager()
-
     private var sessions: [String: ArchiveSession] = [:]
     private let fm = FileManager.default
-
     private let baseTempDir: URL = {
         let base = FileManager.default.temporaryDirectory
             .appendingPathComponent("MiMiNavigator_archives", isDirectory: true)
@@ -42,6 +39,7 @@ actor ArchiveManager {
     // MARK: - Open Archive
 
     func openArchive(at archiveURL: URL) async throws -> URL {
+        log.debug(#function)
         let key = archiveURL.path
 
         if let existing = sessions[key] {
@@ -57,7 +55,7 @@ actor ArchiveManager {
         let tempDir = baseTempDir.appendingPathComponent(sessionID, isDirectory: true)
         try fm.createDirectory(at: tempDir, withIntermediateDirectories: true)
 
-        log.info("[ArchiveManager] Opening \(archiveURL.lastPathComponent) → \(tempDir.path)")
+        log.debug("[ArchiveManager] Opening \(archiveURL.lastPathComponent) → \(tempDir.path)")
 
         // Snapshot original attributes
         let attrs = try fm.attributesOfItem(atPath: archiveURL.path)
@@ -75,13 +73,15 @@ actor ArchiveManager {
         )
         sessions[key] = session
 
-        log.info("[ArchiveManager] Opened successfully: \(archiveURL.lastPathComponent)")
+        log.debug("[ArchiveManager] Opened successfully: \(archiveURL.lastPathComponent)")
+        log.debug("In Temp Url:" + tempDir.path)
         return tempDir
     }
 
     // MARK: - Close Archive
 
     func closeArchive(at archiveURL: URL, repackIfDirty: Bool = true) async throws {
+        log.debug(#function)
         let key = archiveURL.path
         guard var session = sessions[key] else {
             log.warning("[ArchiveManager] No session for: \(archiveURL.lastPathComponent)")
@@ -139,13 +139,14 @@ actor ArchiveManager {
     }
 
     func archiveURL(forTempPath tempPath: String) -> URL? {
-        sessionForPath(tempPath)?.archiveURL
+        log.debug(#function + ": \(tempPath)")
+        return sessionForPath(tempPath)?.archiveURL
     }
 
     // MARK: - Cleanup
 
     func cleanup() {
-        log.info("[ArchiveManager] Cleaning up \(sessions.count) sessions")
+        log.debug(#function + ": \(sessions.count) sessions")
         for (_, session) in sessions {
             try? fm.removeItem(at: session.tempDirectory)
         }
@@ -156,15 +157,18 @@ actor ArchiveManager {
     // MARK: - Private: Dirty Check
 
     private func checkDirty(session: ArchiveSession) -> Bool {
-        guard let enumerator = fm.enumerator(
-            at: session.tempDirectory,
-            includingPropertiesForKeys: [.contentModificationDateKey],
-            options: [.skipsHiddenFiles]
-        ) else { return false }
+        guard
+            let enumerator = fm.enumerator(
+                at: session.tempDirectory,
+                includingPropertiesForKeys: [.contentModificationDateKey],
+                options: [.skipsHiddenFiles]
+            )
+        else { return false }
 
         let baselineDate: Date
         if let attrs = try? fm.attributesOfItem(atPath: session.tempDirectory.path),
-           let created = attrs[.creationDate] as? Date {
+            let created = attrs[.creationDate] as? Date
+        {
             baselineDate = created
         } else {
             return false
@@ -172,8 +176,9 @@ actor ArchiveManager {
 
         while let url = enumerator.nextObject() as? URL {
             if let vals = try? url.resourceValues(forKeys: [.contentModificationDateKey]),
-               let modDate = vals.contentModificationDate,
-               modDate > baselineDate {
+                let modDate = vals.contentModificationDate,
+                modDate > baselineDate
+            {
                 log.debug("[ArchiveManager] Dirty file detected: \(url.lastPathComponent)")
                 return true
             }
@@ -181,8 +186,6 @@ actor ArchiveManager {
         return false
     }
 }
-
-// MARK: - Errors
 
 enum ArchiveManagerError: LocalizedError, Sendable {
     case unsupportedFormat(String)
@@ -192,10 +195,10 @@ enum ArchiveManagerError: LocalizedError, Sendable {
 
     var errorDescription: String? {
         switch self {
-        case .unsupportedFormat(let ext): return "Unsupported archive format: .\(ext)"
-        case .extractionFailed(let msg): return "Archive extraction failed: \(msg)"
-        case .repackFailed(let msg):     return "Archive repacking failed: \(msg)"
-        case .toolNotFound(let msg):     return msg
+            case .unsupportedFormat(let ext): return "Unsupported archive format: .\(ext)"
+            case .extractionFailed(let msg): return "Archive extraction failed: \(msg)"
+            case .repackFailed(let msg): return "Archive repacking failed: \(msg)"
+            case .toolNotFound(let msg): return msg
         }
     }
 }

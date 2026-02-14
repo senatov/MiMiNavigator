@@ -15,6 +15,7 @@ struct TableHeaderView: View {
     let panelSide: PanelSide
     @Binding var sortKey: SortKeysEnum
     @Binding var sortAscending: Bool
+    let nameColumnWidth: CGFloat
     @Binding var sizeColumnWidth: CGFloat
     @Binding var dateColumnWidth: CGFloat
     @Binding var typeColumnWidth: CGFloat
@@ -88,6 +89,23 @@ struct TableHeaderView: View {
     private var nameHeader: some View {
         SortableHeader(title: "Name", sortKey: .name, currentKey: sortKey, ascending: sortAscending)
             .frame(minWidth: 60, maxWidth: .infinity, alignment: .leading)
+            .background(
+                GeometryReader { geo in
+                    Color.clear.onAppear {
+                        let w = geo.size.width
+                        if nameColumnWidth != w {
+                            nameColumnWidth = w
+                            log.debug("\(#function) [TableHeader] nameColumnWidth=\(w) panel=\(panelSide)")
+                        }
+                    }
+                    .onChange(of: geo.size.width) { _, newW in
+                        if nameColumnWidth != newW {
+                            nameColumnWidth = newW
+                            log.debug("\(#function) [TableHeader] nameColumnWidth changed=\(newW) panel=\(panelSide)")
+                        }
+                    }
+                }
+            )
             .contentShape(Rectangle())
             .onTapGesture { toggleSort(.name) }
     }
@@ -182,14 +200,11 @@ struct SortableHeader: View {
                 .font(.system(size: 9, weight: .semibold))
                 .foregroundStyle(isActive ? TableHeaderStyle.sortIndicatorColor : Color.secondary.opacity(0.5))
         }
-        .padding(.vertical, 2)
-        .padding(.horizontal, 4)
         .background(
             isActive
                 ? TableHeaderStyle.activeSortBackground
                 : Color.clear
         )
-        .clipShape(RoundedRectangle(cornerRadius: 4))
     }
 
     private var sortIcon: String {

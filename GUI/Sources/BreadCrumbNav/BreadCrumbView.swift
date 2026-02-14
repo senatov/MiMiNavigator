@@ -39,6 +39,7 @@ struct BreadCrumbView: View {
     // MARK: -
     private var pathComponents: [String] {
         let path = (panelSide == .left ? appState.leftPath : appState.rightPath)
+        log.info(#function)
         return path.split(separator: "/").map(String.init).filter { !$0.isEmpty }
     }
 
@@ -72,6 +73,7 @@ struct BreadCrumbView: View {
         .contextMenu {
             Button("Copy path") {
                 let fullPath = "/" + pathComponents.prefix(index + 1).joined(separator: "/")
+                log.debug("fullPath:" + fullPath)
                 NSPasteboard.general.clearContents()
                 NSPasteboard.general.setString(fullPath, forType: .string)
             }
@@ -112,7 +114,7 @@ struct BreadCrumbView: View {
             await performDirectoryUpdate(for: panelSide, path: newPath)
         }
     }
-    
+
     // MARK: - Canonicalize path
     private func toCanonical(_ path: String) -> String {
         URL(fileURLWithPath: path).standardizedFileURL.path

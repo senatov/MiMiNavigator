@@ -18,9 +18,8 @@ struct FileRowView: View {
     // MARK: - View Body
     var body: some View {
         baseContent()
-            .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.vertical, DesignTokens.grid / 2)
-            .padding(.horizontal, DesignTokens.grid)
+            .frame(maxWidth: .infinity, alignment: .leading)
             .contentShape(Rectangle())
     }
 

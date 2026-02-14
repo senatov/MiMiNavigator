@@ -98,3 +98,14 @@ struct ColumnWidthStorage {
         log.debug("[ColumnWidthStorage] saved \(panelSide): size=\(size) date=\(date) type=\(type) perm=\(permissions) owner=\(owner)")
     }
 }
+
+// MARK: - Column Separator
+/// Simple vertical separator between columns (non-resizable)
+struct ColumnSeparator: View {
+    var body: some View {
+        Rectangle()
+            .fill(ColumnSeparatorStyle.color)
+            .frame(width: ColumnSeparatorStyle.width)
+            .allowsHitTesting(false)
+    }
+}
