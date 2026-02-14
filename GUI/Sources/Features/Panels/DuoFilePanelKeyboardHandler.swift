@@ -196,6 +196,29 @@ final class DuoFilePanelKeyboardHandler {
             appState.markSameExtension()
             return nil
 
+        // ── Tabs ──
+        case .newTab:
+            log.info("[KEY] → New Tab")
+            handleNewTab(appState: appState)
+            return nil
+
+        case .closeTab:
+            log.info("[KEY] → Close Tab")
+            handleCloseTab(appState: appState)
+            return nil
+
+        case .nextTab:
+            log.info("[KEY] → Next Tab")
+            appState.tabManager(for: appState.focusedPanel).selectNextTab()
+            syncPanelToActiveTab(appState: appState)
+            return nil
+
+        case .prevTab:
+            log.info("[KEY] → Previous Tab")
+            appState.tabManager(for: appState.focusedPanel).selectPreviousTab()
+            syncPanelToActiveTab(appState: appState)
+            return nil
+
         // ── Search ──
         case .findFiles:
             log.info("[KEY] → Find Files")
@@ -217,6 +240,72 @@ final class DuoFilePanelKeyboardHandler {
             log.info("[KEY] → Exit")
             onExit?()
             return nil
+        }
+    }
+
+    // MARK: - Tab Helpers
+
+    /// Opens a new tab with the selected file/directory or current path
+    private func handleNewTab(appState: AppState) {
+        let panel = appState.focusedPanel
+        let selectedFile = panel == .left ? appState.selectedLeftFile : appState.selectedRightFile
+        let currentPath = panel == .left ? appState.leftPath : appState.rightPath
+
+        let targetPath: String
+        if let file = selectedFile {
+            if file.isDirectory || file.isSymbolicDirectory {
+                targetPath = file.urlValue.resolvingSymlinksInPath().path
+            } else if file.isArchiveFile {
+                // Archive — delegate to context menu handler for archive opening
+                log.info("[KEY] newTab on archive: '\(file.nameStr)'")
+                ContextMenuCoordinator.shared.openFileInNewTab(file, panel: panel, appState: appState)
+                return
+            } else {
+                // Regular file — open containing directory
+                targetPath = file.urlValue.deletingLastPathComponent().path
+            }
+        } else {
+            targetPath = currentPath
+        }
+
+        let mgr = appState.tabManager(for: panel)
+        mgr.addTab(path: targetPath)
+        log.info("[KEY] newTab panel=\(panel) path='\(targetPath)'")
+        syncPanelToActiveTab(appState: appState)
+    }
+
+    /// Closes the active tab on focused panel
+    private func handleCloseTab(appState: AppState) {
+        let panel = appState.focusedPanel
+        let mgr = appState.tabManager(for: panel)
+
+        guard mgr.tabs.count > 1 else {
+            log.debug("[KEY] closeTab: only one tab, ignoring")
+            return
+        }
+
+        mgr.closeActiveTab()
+        log.info("[KEY] closeTab panel=\(panel) remaining=\(mgr.tabs.count)")
+        syncPanelToActiveTab(appState: appState)
+    }
+
+    /// Syncs panel path/scanner to the currently active tab
+    private func syncPanelToActiveTab(appState: AppState) {
+        let panel = appState.focusedPanel
+        let mgr = appState.tabManager(for: panel)
+        let tab = mgr.activeTab
+
+        Task { @MainActor in
+            appState.updatePath(tab.path, for: panel)
+            if panel == .left {
+                await appState.scanner.setLeftDirectory(pathStr: tab.path)
+                await appState.scanner.refreshFiles(currSide: .left)
+                await appState.refreshLeftFiles()
+            } else {
+                await appState.scanner.setRightDirectory(pathStr: tab.path)
+                await appState.scanner.refreshFiles(currSide: .right)
+                await appState.refreshRightFiles()
+            }
         }
     }
 }

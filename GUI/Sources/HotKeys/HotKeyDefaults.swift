@@ -39,6 +39,12 @@ enum HotKeyDefaults {
         HotKeyBinding(action: .unmarkAll,        keyCode: 0x35, modifiers: .none),         // Escape (when marks exist)
         HotKeyBinding(action: .markSameExtension, keyCode: 0x00, modifiers: [.command, .shift]), // ⌘⇧A
 
+        // ── Tabs ──
+        HotKeyBinding(action: .newTab,           keyCode: 0x11, modifiers: .command),      // ⌘T
+        HotKeyBinding(action: .closeTab,         keyCode: 0x0D, modifiers: .command),      // ⌘W
+        HotKeyBinding(action: .nextTab,          keyCode: 0x1E, modifiers: [.command, .shift]), // ⌘⇧]
+        HotKeyBinding(action: .prevTab,          keyCode: 0x21, modifiers: [.command, .shift]), // ⌘⇧[
+
         // ── Search ──
         HotKeyBinding(action: .findFiles,        keyCode: 0x62, modifiers: .option),       // ⌥F7
         

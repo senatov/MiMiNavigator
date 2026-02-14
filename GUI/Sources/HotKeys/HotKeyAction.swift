@@ -38,6 +38,12 @@ enum HotKeyAction: String, CaseIterable, Identifiable, Codable, Sendable {
     case markSameExtension = "markSameExtension"
     case clearSelection    = "clearSelection"
 
+    // MARK: - Tabs
+    case newTab            = "newTab"
+    case closeTab          = "closeTab"
+    case nextTab           = "nextTab"
+    case prevTab           = "prevTab"
+
     // MARK: - Search
     case findFiles         = "findFiles"
 
@@ -71,6 +77,10 @@ enum HotKeyAction: String, CaseIterable, Identifiable, Codable, Sendable {
         case .unmarkAll:         return "Unmark All"
         case .markSameExtension: return "Mark Same Extension"
         case .clearSelection:    return "Clear Selection"
+        case .newTab:            return "New Tab"
+        case .closeTab:          return "Close Tab"
+        case .nextTab:           return "Next Tab"
+        case .prevTab:           return "Previous Tab"
         case .findFiles:         return "Find Files"
         case .toggleHiddenFiles: return "Toggle Hidden Files"
         case .openSettings:      return "Open Settings"
@@ -83,7 +93,8 @@ enum HotKeyAction: String, CaseIterable, Identifiable, Codable, Sendable {
         switch self {
         case .viewFile, .editFile, .copyFile, .moveFile, .newFolder, .deleteFile:
             return .fileOperations
-        case .togglePanelFocus, .moveUp, .moveDown, .openSelected, .parentDirectory, .refreshPanels:
+        case .togglePanelFocus, .moveUp, .moveDown, .openSelected, .parentDirectory, .refreshPanels,
+             .newTab, .closeTab, .nextTab, .prevTab:
             return .navigation
         case .toggleMark, .markByPattern, .unmarkByPattern, .invertMarks, .markAll, .unmarkAll, .markSameExtension, .clearSelection:
             return .selection
