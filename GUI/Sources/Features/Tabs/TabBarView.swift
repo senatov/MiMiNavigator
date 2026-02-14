@@ -39,11 +39,21 @@ struct TabBarView: View {
                                 tab: tab,
                                 isActive: tab.id == activeID,
                                 isOnlyTab: isOnlyTab,
+                                tabCount: tabs.count,
                                 onSelect: {
                                     handleTabSelect(tab)
                                 },
                                 onClose: {
                                     handleTabClose(tab)
+                                },
+                                onCloseOthers: {
+                                    handleCloseOthers(keeping: tab)
+                                },
+                                onCloseToRight: {
+                                    handleCloseToRight(of: tab)
+                                },
+                                onDuplicate: {
+                                    handleDuplicate(tab)
                                 }
                             )
                             .id(tab.id)
@@ -110,18 +120,50 @@ struct TabBarView: View {
 
         // If closed tab was active, navigate to the new active tab
         if wasActive {
-            let newActive = mgr.activeTab
-            Task { @MainActor in
-                appState.updatePath(newActive.path, for: panelSide)
-                if panelSide == .left {
-                    await appState.scanner.setLeftDirectory(pathStr: newActive.path)
-                    await appState.scanner.refreshFiles(currSide: .left)
-                    await appState.refreshLeftFiles()
-                } else {
-                    await appState.scanner.setRightDirectory(pathStr: newActive.path)
-                    await appState.scanner.refreshFiles(currSide: .right)
-                    await appState.refreshRightFiles()
-                }
+            syncToActiveTab()
+        }
+    }
+
+    private func handleCloseOthers(keeping tab: TabItem) {
+        let mgr = tabManager
+        log.info("[TabBarView] closeOthers panel=\(panelSide) keeping='\(tab.displayName)'")
+        mgr.closeOtherTabs(keeping: tab.id)
+        syncToActiveTab()
+    }
+
+    private func handleCloseToRight(of tab: TabItem) {
+        let mgr = tabManager
+        let activeWasRight = mgr.activeTabIndex > (mgr.tabs.firstIndex(where: { $0.id == tab.id }) ?? 0)
+        log.info("[TabBarView] closeToRight panel=\(panelSide) of='\(tab.displayName)'")
+        mgr.closeTabsToRight(of: tab.id)
+
+        if activeWasRight {
+            syncToActiveTab()
+        }
+    }
+
+    private func handleDuplicate(_ tab: TabItem) {
+        let mgr = tabManager
+        log.info("[TabBarView] duplicate panel=\(panelSide) tab='\(tab.displayName)'")
+        mgr.duplicateTab(tab.id)
+        syncToActiveTab()
+    }
+
+    // MARK: - Sync Helper
+
+    /// Navigate the panel to the current active tab's path
+    private func syncToActiveTab() {
+        let newActive = tabManager.activeTab
+        Task { @MainActor in
+            appState.updatePath(newActive.path, for: panelSide)
+            if panelSide == .left {
+                await appState.scanner.setLeftDirectory(pathStr: newActive.path)
+                await appState.scanner.refreshFiles(currSide: .left)
+                await appState.refreshLeftFiles()
+            } else {
+                await appState.scanner.setRightDirectory(pathStr: newActive.path)
+                await appState.scanner.refreshFiles(currSide: .right)
+                await appState.refreshRightFiles()
             }
         }
     }
