@@ -73,7 +73,9 @@ MiMiNavigator is a dual-panel file manager inspired by **Total Commander** and *
 |---------|-------------|
 | **Dual Panels** | Two independent file panels with synchronized operations |
 | **Finder-Style Table** | Sortable columns: Name, Size, Date, Permissions, Owner, Type |
-| **Drag & Drop** | Between panels and into directories, with HIG confirmation dialog |
+| **Multi-Selection** | Cmd+Click toggle, Shift+Click range, Insert mark+next, pattern matching, Ctrl+A |
+| **Group Operations** | Batch Cut/Copy/Compress/Share/Delete on marked files; group context menu |
+| **Multi-File Drag & Drop** | Drag all marked files together; badge preview with count; Finder-compatible |
 | **Find Files** | Advanced search: by name (wildcards), content, size, date — with archive search |
 | **Archive VFS** | Open archives as virtual directories, navigate inside, auto-repack on exit |
 | **Parent Directory** | `...` entry pinned to top of every panel, archive-aware navigation |
@@ -90,6 +92,10 @@ MiMiNavigator is a dual-panel file manager inspired by **Total Commander** and *
 | `Enter` | Open | `⌘R` | Refresh |
 | `F5` | Copy to other panel | `⌘.` | Toggle hidden files |
 | `⌘O` | Open / Get Info | `⌘W` | Close window |
+| `Cmd+Click` | Toggle file mark | `Shift+Click` | Range select |
+| `Insert` | Toggle mark + next | `Ctrl+A` | Mark all files |
+| `Num+` | Mark by pattern | `Num-` | Unmark by pattern |
+| `Num*` | Invert marks | `⌘⌫` | Delete marked/selected |
 
 ### TC-Style Menu System
 
@@ -156,21 +162,42 @@ xcodebuild -scheme MiMiNavigator -configuration Debug \
 MiMiNavigator/
 ├── Gui/Sources/
 │   ├── App/                # Entry point, FileScanner, logging
-│   ├── States/             # AppState (@Observable), DualDirectoryScanner (actor)
-│   ├── FilePanel/          # FilePanelView, FileRow, table components
-│   ├── Archive/            # ArchiveManager (actor), Extractor, Repacker, FormatDetector
+│   ├── States/
+│   │   └── AppState/       # AppState (@Observable), SelectionManager,
+│   │                       # MultiSelectionManager, MultiSelectionState,
+│   │                       # ClickModifiers, StatePersistence
+│   ├── Features/
+│   │   └── Panels/         # FilePanelView, FileRow, FileRowView,
+│   │       │               # FileTableRowsView, SelectionStatusBar
+│   │       └── FileTable/  # FileTableView (+Actions, +State, +Subviews),
+│   │                       # TableHeaderView, TableKeyboardNavigation
+│   ├── ContextMenu/
+│   │   ├── ActionsEnums/   # FileAction, DirectoryAction, MultiSelectionAction,
+│   │   │                   # PanelBackgroundAction
+│   │   ├── Menus/          # FileContextMenu, DirectoryContextMenu,
+│   │   │                   # MultiSelectionContextMenu, OpenWithSubmenu
+│   │   ├── Dialogs/        # ConfirmationDialog, RenameDialog, PackDialog,
+│   │   │                   # FileConflictDialog, BatchConfirmation/Progress
+│   │   └── Services/       # ContextMenuCoordinator, FileActionsHandler,
+│   │       │               # DirectoryActionsHandler, MultiSelectionActionsHandler,
+│   │       │               # FileOperationExecutors
+│   │       └── FileOperations/ # BatchOperationCoordinator, FileOperationsService
+│   ├── Services/
+│   │   ├── Archive/        # ArchiveManager (actor), Extractor, Repacker, FormatDetector
+│   │   ├── Scanner/        # DualDirectoryScanner (actor), FileScanner
+│   │   └── FileOperations/ # BasicFileOperations, FileDialogs, VSCodeIntegration
 │   ├── FindFiles/          # Search UI, ViewModel, Coordinator
-│   │   └── Engine/         # FindFilesEngine (actor), NameMatcher, ContentSearcher, ArchiveSearcher
-│   ├── ContextMenu/        # Context menus, dialogs, file operations, batch manager
-│   ├── DuoPanel/           # Dual-panel layout, PanelDividerView
-│   ├── DragDrop/           # Transferable, DragPreview, confirmation dialog
+│   │   └── Engine/         # FindFilesEngine (actor), NameMatcher, ContentSearcher,
+│   │                       # ArchiveSearcher, NativeZipReader
+│   ├── DragDrop/           # DragDropManager, DragPreviewView (multi-file badge),
+│   │                       # CustomFile+Transferable, FileTransferConfirmation
 │   ├── Menus/              # TC-style glass menu bar
 │   ├── BreadCrumbNav/      # Breadcrumb path bar with navigation
 │   ├── HotKeys/            # Customizable keyboard shortcuts
 │   ├── History/            # Navigation history popover
-│   ├── Favorite/           # Favorites sidebar adapter (FavoritesKit bridge)
-│   ├── Primitives/         # ParentDirectoryEntry, shared types
-│   └── Config/             # DesignTokens, UserPreferences
+│   ├── Favorites/          # Favorites sidebar adapter (FavoritesKit bridge)
+│   ├── Models/             # CustomFile, FileCache, SortKeysEnum
+│   └── Config/             # DesignTokens, UserPreferences, AppConstants
 ├── Packages/
 │   └── FavoritesKit/       # Reusable favorites module (.dylib)
 └── Gui/Docs/               # Architecture docs, screenshots
@@ -181,9 +208,13 @@ MiMiNavigator/
 | Pattern | Usage |
 |---------|-------|
 | `@Observable` + `@MainActor` | `AppState` — global app state, panels, archive states |
+| `@Observable` + `@MainActor` | `MultiSelectionManager` — Cmd/Shift click, Insert mark, pattern match |
+| `@Observable` + `@MainActor` | `ContextMenuCoordinator` — singleton handling all context menu actions |
 | `actor` | `DualDirectoryScanner` — thread-safe file scanning |
 | `actor` | `ArchiveManager` — session lifecycle, dirty tracking, extraction, repacking |
 | `AsyncStream` | `FindFilesEngine` — streaming search results with cancellation |
+| `filesForOperation()` | Unified API: returns marked files if any, single selected file otherwise |
+| `NSEvent.modifierFlags` | Detecting Cmd/Shift during SwiftUI gesture handlers |
 | Security-Scoped Bookmarks | Persistent file access in sandboxed mode |
 | Swift Package (dynamic) | `FavoritesKit` — extracted as reusable `.dylib` |
 
@@ -212,24 +243,29 @@ Log file: `~/Library/Logs/MiMiNavigator.log`
 - [x] Archive virtual filesystem (50+ formats)
 - [x] Find Files with archive search
 - [x] Parent directory navigation (`..`)
-- [x] Multi-selection, batch operations
+- [x] Multi-selection: Cmd+Click, Shift+Click, Insert, pattern matching, Ctrl+A
+- [x] Group context menu with batch operations
+- [x] Multi-file drag & drop with badge preview
+- [x] Batch-aware file actions (Cut/Copy/Delete/Compress/Share on marked files)
+- [x] Total Commander style marking: dark red, semibold, enlarged font
+- [x] Selection status bar (marked count + total size + disk free space)
 - [x] Column width persistence
 - [x] Hotkey customization
 
 ### In Progress 🚧
 
+- [ ] Batch rename for marked files
 - [ ] Terminal integration at current path
 - [ ] Custom themes and color schemes
-- [ ] Three-panel layout option
-- [ ] Tabbed interface
 
 ### Planned 🎯
 
+- [ ] Tabbed interface
+- [ ] Three-panel layout option
 - [ ] FTP/SFTP connectivity
 - [ ] Cloud storage (iCloud, Dropbox)
 - [ ] Network filesystem (SMB)
 - [ ] Advanced file comparison
-- [ ] Batch rename
 - [ ] Plugin system
 - [ ] App Store release
 
