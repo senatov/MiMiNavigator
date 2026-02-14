@@ -25,8 +25,7 @@ extension ContextMenuCoordinator {
         switch action {
             // ── Single-file actions (always use clicked directory) ──
             case .open:
-                // Handled by double-click in FilePanelView
-                log.debug("\(#function) open handled by FilePanelView")
+                openDirectoryInPlace(file, panel: panel, appState: appState)
 
             case .openInNewTab:
                 openDirectoryInNewTab(file, panel: panel, appState: appState)
@@ -85,6 +84,34 @@ extension ContextMenuCoordinator {
 
             case .delete:
                 activeDialog = .deleteConfirmation(files: batchFiles)
+        }
+    }
+
+    // MARK: - Open Directory in Place
+
+    /// Opens a directory in the current tab (same as double-click behavior)
+    func openDirectoryInPlace(_ file: CustomFile, panel: PanelSide, appState: AppState) {
+        let resolvedURL = file.urlValue.resolvingSymlinksInPath()
+        let targetPath = resolvedURL.path
+
+        var isDir: ObjCBool = false
+        guard FileManager.default.fileExists(atPath: targetPath, isDirectory: &isDir), isDir.boolValue else {
+            log.warning("[OpenDir] path not a valid directory: '\(targetPath)'")
+            return
+        }
+
+        log.info("[OpenDir] entering directory: '\(file.nameStr)' panel=\(panel)")
+        Task { @MainActor in
+            appState.updatePath(targetPath, for: panel)
+            if panel == .left {
+                await appState.scanner.setLeftDirectory(pathStr: targetPath)
+                await appState.scanner.refreshFiles(currSide: .left)
+                await appState.refreshLeftFiles()
+            } else {
+                await appState.scanner.setRightDirectory(pathStr: targetPath)
+                await appState.scanner.refreshFiles(currSide: .right)
+                await appState.refreshRightFiles()
+            }
         }
     }
 

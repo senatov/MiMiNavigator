@@ -50,6 +50,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `DirectoryActionsHandler.openFileInNewTab()` — archive-aware, handles regular files
   - `FileActionsHandler` dispatches `openInNewTab` to shared implementation
 
+- **Fix: Archive Open behavior — Total Commander style (Stage 3.5)**
+  - Context menu "Open" on archive files now opens archive as virtual directory
+    (was incorrectly delegating to Finder/Archive Utility via NSWorkspace)
+  - `FileActionsHandler.openFileOrArchive()` — archive-aware Open action
+  - Context menu "Open" on directories now navigates into directory
+    (was a no-op stub "handled by double-click")
+  - `DirectoryActionsHandler.openDirectoryInPlace()` — enters directory in current tab
+  - Double-click behavior unchanged (already correct in FilePanelView)
+
 ### Changed
 - Version bumped to 0.7.5
 
