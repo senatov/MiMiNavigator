@@ -167,7 +167,7 @@ actor FindFilesEngine {
             log.debug("[FindEngine] Scanning \(archiveEntries.count) archives in parallel")
 
             await withTaskGroup(of: ArchiveSearchDelta.self) { group in
-                let maxConcurrent = 4
+                let maxConcurrent = 8  // M3 has plenty of cores for I/O-bound archive scanning
                 var launched = 0
 
                 for archiveEntry in archiveEntries {
