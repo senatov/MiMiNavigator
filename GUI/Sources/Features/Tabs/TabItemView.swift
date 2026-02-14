@@ -15,8 +15,12 @@ struct TabItemView: View {
     let tab: TabItem
     let isActive: Bool
     let isOnlyTab: Bool
+    let tabCount: Int
     let onSelect: () -> Void
     let onClose: () -> Void
+    let onCloseOthers: () -> Void
+    let onCloseToRight: () -> Void
+    let onDuplicate: () -> Void
 
     // MARK: - State
 
@@ -59,6 +63,17 @@ struct TabItemView: View {
         }
         .onHover { hovering in
             isHovered = hovering
+        }
+        .contextMenu {
+            TabContextMenu(
+                tab: tab,
+                isOnlyTab: isOnlyTab,
+                tabCount: tabCount,
+                onClose: onClose,
+                onCloseOthers: onCloseOthers,
+                onCloseToRight: onCloseToRight,
+                onDuplicate: onDuplicate
+            )
         }
         .help(tab.path)
         .accessibilityLabel("Tab: \(tab.displayName)")

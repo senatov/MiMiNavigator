@@ -140,6 +140,70 @@ final class TabManager {
         closeTab(activeTabID)
     }
 
+    /// Close all tabs except the specified one
+    func closeOtherTabs(keeping tabID: UUID) {
+        guard tabs.contains(where: { $0.id == tabID }) else {
+            log.warning("[TabManager] closeOtherTabs: tab \(tabID) not found")
+            return
+        }
+
+        let closedCount = tabs.count - 1
+        tabs.removeAll { $0.id != tabID }
+        activeTabID = tabID
+
+        log.info("[TabManager] closeOtherTabs panel=\(panelSide) closed=\(closedCount) remaining=1")
+    }
+
+    /// Close all tabs to the right of the specified tab
+    func closeTabsToRight(of tabID: UUID) {
+        guard let index = tabs.firstIndex(where: { $0.id == tabID }) else {
+            log.warning("[TabManager] closeTabsToRight: tab \(tabID) not found")
+            return
+        }
+
+        let removeCount = tabs.count - index - 1
+        guard removeCount > 0 else {
+            log.debug("[TabManager] closeTabsToRight: no tabs to the right")
+            return
+        }
+
+        tabs.removeSubrange((index + 1)...)
+
+        // If active tab was removed, switch to the rightmost remaining
+        if !tabs.contains(where: { $0.id == activeTabID }) {
+            activeTabID = tabs.last!.id
+        }
+
+        log.info("[TabManager] closeTabsToRight panel=\(panelSide) closed=\(removeCount) remaining=\(tabs.count)")
+    }
+
+    /// Duplicate a tab (insert copy right after it)
+    @discardableResult
+    func duplicateTab(_ tabID: UUID) -> TabItem? {
+        guard let index = tabs.firstIndex(where: { $0.id == tabID }) else {
+            log.warning("[TabManager] duplicateTab: tab \(tabID) not found")
+            return nil
+        }
+
+        guard tabs.count < Limits.maxTabs else {
+            log.warning("[TabManager] duplicateTab: maxTabs (\(Limits.maxTabs)) reached")
+            return nil
+        }
+
+        let original = tabs[index]
+        let duplicate = TabItem(
+            path: original.path,
+            isArchive: original.isArchive,
+            archiveURL: original.archiveURL
+        )
+
+        tabs.insert(duplicate, at: index + 1)
+        activeTabID = duplicate.id
+
+        log.info("[TabManager] duplicateTab panel=\(panelSide) original='\(original.displayName)' total=\(tabs.count)")
+        return duplicate
+    }
+
     // MARK: - Update Active Tab Path
 
     /// Update the path of the currently active tab (directory navigation)

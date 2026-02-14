@@ -71,6 +71,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - All tab switching syncs panel path, scanner, and file list
   - User-configurable via HotKey Settings (same system as all other shortcuts)
 
+- **Tab Context Menu (Stage 5)**
+  - Right-click on tab shows context menu (Safari/Finder style)
+  - Close Tab (⌘W hint), Close Other Tabs, Close Tabs to the Right
+  - Duplicate Tab — creates copy of tab right after original
+  - Copy Path — copies tab directory path to clipboard
+  - Show in Finder — reveals tab directory in Finder
+  - Close disabled when only 1 tab remains
+  - `TabManager`: `closeOtherTabs()`, `closeTabsToRight()`, `duplicateTab()`
+  - `TabBarView`: extracted `syncToActiveTab()` helper, DRY refactor
+
 ### Changed
 - Version bumped to 0.7.5
 
@@ -79,15 +89,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Features/Tabs/TabManager.swift` — tab collection manager per panel
 - `Features/Tabs/TabBarView.swift` — scrollable tab bar for panel
 - `Features/Tabs/TabItemView.swift` — single tab button with close action
+- `Features/Tabs/TabContextMenu.swift` — right-click menu for tabs
 
 ## [Unreleased]
 
-### Planned (Tabs continuation)
-- Tab bar UI (TabBarView, TabItemView) — Stage 2
-- Tab switching + navigation integration — Stage 3
-- "Open in New Tab" from context menu + Cmd+T — Stage 4
-- HotKeys: Cmd+T, Cmd+W, Cmd+Shift+], Cmd+Shift+[ — Stage 5
-- Context menu enhancements (shortcut hints, colored icons) — Stage 6
+### Planned
+- Context menu enhancements (colored icons) — future enhancement
 
 ### Added
 - **Multi-Selection (Finder + Total Commander hybrid)**
