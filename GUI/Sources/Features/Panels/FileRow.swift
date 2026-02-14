@@ -160,8 +160,27 @@ struct FileRow: View {
     // MARK: - Event Handlers
 
     private func handleSingleClick() {
-        log.debug("[FileRow] single-click on '\(file.nameStr)' panel=\(panelSide)")
+        // Detect modifier keys from current NSEvent
+        let modifiers = Self.currentClickModifiers()
+        log.debug("[FileRow] single-click on '\(file.nameStr)' panel=\(panelSide) modifiers=\(modifiers)")
+        
+        // Always select the file (updates cursor position)
         onSelect(file)
+        
+        // Handle multi-selection via modifier keys
+        appState.handleClickWithModifiers(on: file, modifiers: modifiers)
+    }
+    
+    /// Read modifier keys from the current NSEvent
+    private static func currentClickModifiers() -> ClickModifiers {
+        guard let event = NSApp.currentEvent else { return .none }
+        let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+        if flags.contains(.command) {
+            return .command
+        } else if flags.contains(.shift) {
+            return .shift
+        }
+        return .none
     }
 
     private func handleDoubleClick() {
