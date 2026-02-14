@@ -38,3 +38,4 @@ build-logs/
 
 # Xcode user state
 *.xcuserstate
+build/

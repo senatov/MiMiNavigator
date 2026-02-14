@@ -95,7 +95,9 @@ struct FileTableView: View {
             }
         }
         .dropDestination(for: URL.self) { droppedURLs, _ in
-            let droppedFiles = droppedURLs.map { CustomFile(path: $0.path) }
+            // Prefer internal drag (preserves multi-selection), fallback to URL decode
+            let droppedFiles = DropTargetModifier.safeResolveURLs(droppedURLs, dragDropManager: dragDropManager)
+            guard !droppedFiles.isEmpty else { return false }
             return dropHandler.handlePanelDrop(droppedFiles)
         } isTargeted: { targeted in
             withAnimation(.easeInOut(duration: 0.15)) {
