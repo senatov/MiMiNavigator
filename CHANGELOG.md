@@ -5,6 +5,37 @@ All notable changes to MiMiNavigator will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.3] - 2026-02-14
+
+### Added
+- **Compact progress dialog** for file operations (copy/move/delete/pack)
+  - Shows operation title, current file name, N/M counter, native progress bar, Stop button
+  - Auto-closes on completion — no OK button needed
+  - Cancellation support via Stop button
+- **Progress bar in Find Files dialog**
+  - Linear progress bar at bottom during search
+  - Shows currently scanned directory path (truncated from head)
+  - Stats: dirs/files/archives/elapsed time
+- **ComboBox with history** for Find Files fields
+  - Search for, Search in, Find text — all NSComboBox with dropdown history
+  - Up to 32 values per field, no duplicates, newest first
+  - Persisted in UserDefaults between sessions
+  - Auto-complete, Enter-to-search support
+- **Word-Einstellungen visual style** for Find Files dialog
+  - Bold section headers with colored SF Symbol icons
+  - Colored icons per field (orange doc, blue folder, purple text search)
+  - Options with colored toggle icons (indigo, teal, blue, brown)
+  - Subtle blue borders on input fields and section containers
+
+### Fixed
+- **Drag-drop multi-file selection loss** — internal drags now read from DragDropManager directly
+- **Garbled non-ASCII filenames** in Move/Copy dialog (Cyrillic, emoji)
+- **Exclusive panel marking** — marking files on one panel clears marks on the other
+
+### Changed
+- File operations (copy/move/delete/pack) show progress dialog during operation
+- Silent auto-close after completion (no completion confirmation dialog)
+
 ## [0.9.2] - 2026-02-14
 
 ### Added
