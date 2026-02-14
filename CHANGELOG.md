@@ -59,6 +59,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `DirectoryActionsHandler.openDirectoryInPlace()` — enters directory in current tab
   - Double-click behavior unchanged (already correct in FilePanelView)
 
+- **HotKeys for Tabs (Stage 4)**
+  - `HotKeyAction`: `newTab`, `closeTab`, `nextTab`, `prevTab`
+  - Default bindings: `⌘T` (new tab), `⌘W` (close tab), `⌘⇧]` (next), `⌘⇧[` (prev)
+  - `⌘T` on directory → new tab with that directory
+  - `⌘T` on archive → new tab with extracted archive
+  - `⌘T` on file → new tab with containing directory
+  - `⌘T` with nothing selected → new tab with current path
+  - `⌘W` closes active tab (ignored if only one tab)
+  - `⌘⇧]` / `⌘⇧[` cycle through tabs with wrap-around
+  - All tab switching syncs panel path, scanner, and file list
+  - User-configurable via HotKey Settings (same system as all other shortcuts)
+
 ### Changed
 - Version bumped to 0.7.5
 
