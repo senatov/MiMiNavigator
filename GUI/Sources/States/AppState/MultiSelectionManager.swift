@@ -9,17 +9,82 @@ import Foundation
 import AppKit
 
 // MARK: - Multi Selection Manager
-/// Handles Total Commander style file marking operations
+/// Handles Total Commander style file marking + Finder-style Cmd/Shift click operations
 @MainActor
 final class MultiSelectionManager {
     
     // MARK: - Dependencies
     private weak var appState: AppState?
     
+    /// Last clicked file index for Shift+Click range selection
+    private var lastClickedIndex: [PanelSide: Int] = [:]
+    
     // MARK: - Initialization
     init(appState: AppState) {
         self.appState = appState
         log.debug("[MultiSelectionManager] initialized")
+    }
+    
+    // MARK: - Finder-style Click Handling
+    
+    /// Handle click with modifier keys (Cmd, Shift, or plain)
+    func handleClick(on file: CustomFile, modifiers: ClickModifiers) {
+        guard let state = appState else { return }
+        let panel = state.focusedPanel
+        
+        // Skip parent directory entry
+        guard file.nameStr != ".." else {
+            log.debug("[MultiSelectionManager] skip parent dir click")
+            return
+        }
+        
+        let files = state.displayedFiles(for: panel)
+        guard let clickedIndex = files.firstIndex(where: { $0.id == file.id }) else {
+            log.warning("[MultiSelectionManager] clicked file not found in list")
+            return
+        }
+        
+        switch modifiers {
+        case .command:
+            // Cmd+Click: toggle mark on single file
+            var marked = state.markedFiles(for: panel)
+            if marked.contains(file.id) {
+                marked.remove(file.id)
+                log.debug("[MultiSelectionManager] Cmd+Click unmarked: \(file.nameStr)")
+            } else {
+                marked.insert(file.id)
+                log.debug("[MultiSelectionManager] Cmd+Click marked: \(file.nameStr)")
+            }
+            state.setMarkedFiles(marked, for: panel)
+            lastClickedIndex[panel] = clickedIndex
+            
+        case .shift:
+            // Shift+Click: range select from last click to current
+            let anchor = lastClickedIndex[panel] ?? 0
+            let rangeStart = min(anchor, clickedIndex)
+            let rangeEnd = max(anchor, clickedIndex)
+            
+            var marked = state.markedFiles(for: panel)
+            for idx in rangeStart...rangeEnd {
+                let f = files[idx]
+                guard f.nameStr != ".." else { continue }
+                marked.insert(f.id)
+            }
+            state.setMarkedFiles(marked, for: panel)
+            log.debug("[MultiSelectionManager] Shift+Click range \(rangeStart)...\(rangeEnd) (\(rangeEnd - rangeStart + 1) files)")
+            // Don't update lastClickedIndex for shift — keep anchor
+            
+        case .none:
+            // Plain click: clear all marks, select single file
+            state.setMarkedFiles([], for: panel)
+            lastClickedIndex[panel] = clickedIndex
+            log.debug("[MultiSelectionManager] plain click, marks cleared")
+        }
+    }
+    
+    /// Update last clicked index when selection changes (e.g. keyboard navigation)
+    func updateLastClickedIndex(for panel: PanelSide, index: Int) {
+        lastClickedIndex[panel] = index
     }
     
     // MARK: - Toggle Mark (Insert key)

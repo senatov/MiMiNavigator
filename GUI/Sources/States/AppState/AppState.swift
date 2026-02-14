@@ -106,8 +106,13 @@ extension AppState {
     }
 }
 
-// MARK: - Multi-Selection Operations (Total Commander style)
+// MARK: - Multi-Selection Operations (Total Commander + Finder style)
 extension AppState {
+
+    /// Handle click with modifier keys (Cmd, Shift, or plain) — Finder-style multi-selection
+    func handleClickWithModifiers(on file: CustomFile, modifiers: ClickModifiers) {
+        multiSelectionManager?.handleClick(on: file, modifiers: modifiers)
+    }
 
     /// Toggle mark on current file and move to next (Insert key)
     func toggleMarkAndMoveNext() {
