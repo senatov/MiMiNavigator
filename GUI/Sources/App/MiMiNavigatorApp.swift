@@ -63,6 +63,8 @@ struct MiMiNavigatorApp: App {
                     }
                 }
         }
+        .defaultSize(width: 1200, height: 700)
+        .defaultPosition(.center)
         .windowToolbarStyle(.unifiedCompact)
         .commands {
             AppCommands(appState: appState)
