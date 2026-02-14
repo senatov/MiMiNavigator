@@ -12,11 +12,18 @@ import Foundation
 /// Extension handling DirectoryAction dispatching
 extension ContextMenuCoordinator {
 
-    /// Handles directory context menu actions
+    /// Handles directory context menu actions.
+    /// Batch-compatible actions (cut/copy/compress/pack/share/delete)
+    /// use filesForOperation() to include all marked files when present.
+    /// Single-file actions (open/openInNewTab/openInFinder/openInTerminal/viewLister/
+    /// rename/getInfo/duplicate/createLink) always operate on the clicked directory only.
     func handleDirectoryAction(_ action: DirectoryAction, for file: CustomFile, panel: PanelSide, appState: AppState) {
-        log.debug("\(#function) action=\(action.rawValue) dir='\(file.nameStr)' panel=\(panel)")
+        // For batch-compatible actions, use marked files if any, otherwise single file
+        let batchFiles = appState.filesForOperation(on: panel)
+        log.debug("\(#function) action=\(action.rawValue) dir='\(file.nameStr)' panel=\(panel) batchCount=\(batchFiles.count)")
 
         switch action {
+            // ── Single-file actions (always use clicked directory) ──
             case .open:
                 // Handled by double-click in FilePanelView
                 log.debug("\(#function) open handled by FilePanelView")
@@ -34,48 +41,51 @@ extension ContextMenuCoordinator {
             case .viewLister:
                 openQuickLook(file)
 
-            case .cut:
-                clipboard.cut(files: [file], from: panel)
-
-            case .copy:
-                clipboard.copy(files: [file], from: panel)
-
-            case .paste:
-                Task {
-                    await performPaste(to: panel, appState: appState)
-                }
-
             case .duplicate:
                 Task {
                     await performDuplicate(file: file, appState: appState)
                 }
-
-            case .compress:
-                Task {
-                    await performCompress(files: [file], appState: appState)
-                }
-
-            case .pack:
-                let destination = getOppositeDestinationPath(for: panel, appState: appState)
-                log.debug("\(#function) pack destination='\(destination.path)'")
-                activeDialog = .pack(files: [file], destination: destination)
 
             case .createLink:
                 let destination = getOppositeDestinationPath(for: panel, appState: appState)
                 log.debug("\(#function) createLink destination='\(destination.path)'")
                 activeDialog = .createLink(file: file, destination: destination)
 
-            case .share:
-                ShareService.shared.showSharePicker(for: [file.urlValue])
-
             case .rename:
                 activeDialog = .rename(file: file)
 
-            case .delete:
-                activeDialog = .deleteConfirmation(files: [file])
-
             case .getInfo:
                 GetInfoService.shared.showGetInfo(for: file.urlValue)
+
+            // ── Batch-compatible actions (use all marked files) ──
+            case .cut:
+                clipboard.cut(files: batchFiles, from: panel)
+
+            case .copy:
+                clipboard.copy(files: batchFiles, from: panel)
+
+            case .paste:
+                Task {
+                    await performPaste(to: panel, appState: appState)
+                }
+
+            case .compress:
+                Task {
+                    await performCompress(files: batchFiles, appState: appState)
+                    appState.clearMarksAfterOperation(on: panel)
+                }
+
+            case .pack:
+                let destination = getOppositeDestinationPath(for: panel, appState: appState)
+                log.debug("\(#function) pack destination='\(destination.path)'")
+                activeDialog = .pack(files: batchFiles, destination: destination)
+
+            case .share:
+                let urls = batchFiles.map { $0.urlValue }
+                ShareService.shared.showSharePicker(for: urls)
+
+            case .delete:
+                activeDialog = .deleteConfirmation(files: batchFiles)
         }
     }
 

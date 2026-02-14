@@ -12,11 +12,18 @@ import Foundation
 /// Extension handling FileAction dispatching
 extension ContextMenuCoordinator {
 
-    /// Handles file context menu actions
+    /// Handles file context menu actions.
+    /// Batch-compatible actions (cut/copy/compress/pack/share/revealInFinder/delete)
+    /// use filesForOperation() to include all marked files when present.
+    /// Single-file actions (open/openWith/viewLister/rename/getInfo/duplicate/createLink)
+    /// always operate on the clicked file only.
     func handleFileAction(_ action: FileAction, for file: CustomFile, panel: PanelSide, appState: AppState) {
-        log.debug("\(#function) action=\(action.rawValue) file='\(file.nameStr)' panel=\(panel)")
+        // For batch-compatible actions, use marked files if any, otherwise single file
+        let batchFiles = appState.filesForOperation(on: panel)
+        log.debug("\(#function) action=\(action.rawValue) file='\(file.nameStr)' panel=\(panel) batchCount=\(batchFiles.count)")
 
         switch action {
+            // ── Single-file actions (always use clicked file) ──
             case .open:
                 openFile(file)
 
@@ -27,51 +34,55 @@ extension ContextMenuCoordinator {
             case .viewLister:
                 openQuickLook(file)
 
-            case .cut:
-                clipboard.cut(files: [file], from: panel)
-
-            case .copy:
-                clipboard.copy(files: [file], from: panel)
-
-            case .paste:
-                Task {
-                    await performPaste(to: panel, appState: appState)
-                }
-
             case .duplicate:
                 Task {
                     await performDuplicate(file: file, appState: appState)
                 }
-
-            case .compress:
-                Task {
-                    await performCompress(files: [file], appState: appState)
-                }
-
-            case .pack:
-                let destination = getOppositeDestinationPath(for: panel, appState: appState)
-                log.debug("\(#function) pack destination='\(destination.path)'")
-                activeDialog = .pack(files: [file], destination: destination)
 
             case .createLink:
                 let destination = getOppositeDestinationPath(for: panel, appState: appState)
                 log.debug("\(#function) createLink destination='\(destination.path)'")
                 activeDialog = .createLink(file: file, destination: destination)
 
-            case .share:
-                ShareService.shared.showSharePicker(for: [file.urlValue])
-
-            case .revealInFinder:
-                RevealInFinderService.shared.revealInFinder(file.urlValue)
-
             case .rename:
                 activeDialog = .rename(file: file)
 
-            case .delete:
-                activeDialog = .deleteConfirmation(files: [file])
-
             case .getInfo:
                 GetInfoService.shared.showGetInfo(for: file.urlValue)
+
+            // ── Batch-compatible actions (use all marked files) ──
+            case .cut:
+                clipboard.cut(files: batchFiles, from: panel)
+
+            case .copy:
+                clipboard.copy(files: batchFiles, from: panel)
+
+            case .paste:
+                Task {
+                    await performPaste(to: panel, appState: appState)
+                }
+
+            case .compress:
+                Task {
+                    await performCompress(files: batchFiles, appState: appState)
+                    appState.clearMarksAfterOperation(on: panel)
+                }
+
+            case .pack:
+                let destination = getOppositeDestinationPath(for: panel, appState: appState)
+                log.debug("\(#function) pack destination='\(destination.path)'")
+                activeDialog = .pack(files: batchFiles, destination: destination)
+
+            case .share:
+                let urls = batchFiles.map { $0.urlValue }
+                ShareService.shared.showSharePicker(for: urls)
+
+            case .revealInFinder:
+                let urls = batchFiles.map { $0.urlValue }
+                NSWorkspace.shared.activateFileViewerSelecting(urls)
+
+            case .delete:
+                activeDialog = .deleteConfirmation(files: batchFiles)
         }
     }
 
