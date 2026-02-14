@@ -16,8 +16,8 @@ Thank you for your interest in contributing to MiMiNavigator! This document prov
 
 ### Requirements
 
-- **macOS**: 15.0 (Sequoia) or later
-- **Xcode**: 16.1 or later (with Swift 5.10 support)
+- **macOS**: 15.4+ (Apple Silicon recommended)
+- **Xcode**: Latest version with Swift 6.2 support
 - **Git**: Latest stable version
 
 ### Getting Started

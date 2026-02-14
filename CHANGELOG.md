@@ -8,6 +8,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Multi-Selection (Finder + Total Commander hybrid)**
+  - **Cmd+Click** — toggle individual file mark (Finder style)
+  - **Shift+Click** — range select from anchor to clicked file (Finder style)
+  - **Insert key** — toggle mark and move to next file (Total Commander style)
+  - **Num+/Num-** — mark/unmark files by wildcard pattern
+  - **Ctrl+A** — mark all files; **Num*** — invert marks
+  - All selection modes share the same `markedFiles` set
+- **Group Context Menu** — when files are marked, right-click shows batch menu
+  - Header with "N items selected" count
+  - Available actions: Cut, Copy, Paste, Compress, Share, Show in Finder, Move to Trash
+  - Single-file menu shown when no marks present
+- **Batch-Aware File Operations**
+  - Cut, Copy, Compress, Pack, Share, Reveal in Finder, Delete — all operate on
+    marked files when present, fall back to single file otherwise
+  - Single-file actions (Open, Rename, Get Info, Duplicate, Quick Look) always
+    operate on the clicked file only
+- **Multi-File Drag & Drop**
+  - Dragging a marked file drags all marked files together
+  - `NSItemProvider` with `registerFileRepresentation` for each URL (Finder-compatible)
+  - Drag preview shows badge with total count and "and N more" subtitle
+- **Selection Status Bar** — bottom bar shows marked count, total size, and disk free space
 - **Navigation History** — Back/Forward navigation fully functional
   - Every directory change recorded in `SelectionsHistory`
   - BreadCrumb back arrow, context menu Back/Forward, all wired up
@@ -17,6 +38,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Input area border** in Find Files — thin `separatorColor` rounded rectangle around form
 
 ### Changed
+- **Marked file style** — Total Commander visual style:
+  - Dark red text color (`#B30000`), semibold weight, 14pt font (vs 13pt normal)
+  - Dark red checkmark icon (11pt) next to file name
+  - Status bar indicators in matching dark red
 - **Major code refactoring** — split oversized classes into modular components
   - `FindFilesEngine` (826 lines) → 5 files in `FindFiles/Engine/`
   - `ArchiveManager` (480 lines) → 6 files in `Archive/`
@@ -24,7 +49,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `FileRow` (347 lines) → FileRow + `DragPreviewView`
   - No file exceeds 410 lines; 66% reduction in largest file
 - **Parent entry `...`** — renamed from `..`, bold 14pt font, larger icon, always pinned to top regardless of sort
-- **Marked file font** — `.regular` weight (was `.semibold`), marking shown via color + checkmark icon
 - **Find Files divider** — compact layout, separator right after input area instead of 50/50 split
 - **Swift 6.2 concurrency fixes**
   - `FindFilesArchiveSearcher`: `actor` → `enum` with `static` methods + `ArchiveSearchDelta` return
@@ -35,13 +59,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Logging tags updated** — `[FindEngine]` `[ArchiveSearcher]` `[Extractor]` `[Repacker]` `[FormatDetector]`
 
 ### Fixed
+- **List scroll jump on selection** — removed auto-scroll-to-center behavior; user controls scroll position
 - **Back navigation after `...`** — `updatePath()` now records history; BreadCrumb back arrow works
 - **Context menu Back/Forward** — implemented (was TODO stub), enabled/disabled based on history state
 - **`...` sorting** — parent entry always pinned to top, never participates in sort
 
+### New Files
+- `ClickModifiers.swift` — enum for click modifier detection (none/command/shift)
+- `MultiSelectionAction.swift` — batch action enum for group operations
+- `MultiSelectionContextMenu.swift` — context menu view for multiple selected items
+- `MultiSelectionActionsHandler.swift` — coordinator extension for batch action dispatch
+
 ### Planned
+- Batch rename for marked files
 - File preview with Quick Look integration
-- Delete operations with confirmation dialogs
 - Move/Rename operations (F6)
 
 ## [0.9.1.1] - 2025-01-28
