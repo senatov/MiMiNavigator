@@ -18,11 +18,22 @@ extension AppState {
         }
     }
     
-    /// Set marked files for panel
+    /// Set marked files for panel.
+    /// Marking is exclusive — marks on the opposite panel are cleared automatically.
     func setMarkedFiles(_ files: Set<String>, for panelSide: PanelSide) {
         switch panelSide {
-        case .left: markedLeftFiles = files
-        case .right: markedRightFiles = files
+        case .left:
+            markedLeftFiles = files
+            if !files.isEmpty && !markedRightFiles.isEmpty {
+                log.debug("[MultiSelection] clearing right marks (marking started on left)")
+                markedRightFiles = []
+            }
+        case .right:
+            markedRightFiles = files
+            if !files.isEmpty && !markedLeftFiles.isEmpty {
+                log.debug("[MultiSelection] clearing left marks (marking started on right)")
+                markedLeftFiles = []
+            }
         }
     }
     
