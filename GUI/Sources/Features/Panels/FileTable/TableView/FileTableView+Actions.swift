@@ -20,6 +20,11 @@ extension FileTableView {
         ContextMenuCoordinator.shared.handleDirectoryAction(action, for: file, panel: panelSide, appState: appState)
     }
     
+    func handleMultiSelectionAction(_ action: MultiSelectionAction) {
+        log.debug("\(#function) action=\(action.rawValue) panel=\(panelSide) markedCount=\(appState.markedCount(for: panelSide))")
+        ContextMenuCoordinator.shared.handleMultiSelectionAction(action, panel: panelSide, appState: appState)
+    }
+
     func handlePanelBackgroundAction(_ action: PanelBackgroundAction) {
         log.debug("\(#function) action=\(action.rawValue) panel=\(panelSide)")
         ContextMenuCoordinator.shared.handlePanelBackgroundAction(action, for: panelSide, appState: appState)

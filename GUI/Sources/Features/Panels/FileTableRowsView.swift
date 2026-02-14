@@ -20,6 +20,7 @@ struct FileTableRowsView: View {
     let onDoubleClick: (CustomFile) -> Void
     let handleFileAction: (FileAction, CustomFile) -> Void
     let handleDirectoryAction: (DirectoryAction, CustomFile) -> Void
+    let handleMultiSelectionAction: (MultiSelectionAction) -> Void
 
     var body: some View {
         LazyVStack(spacing: 0) {
@@ -55,6 +56,9 @@ struct FileTableRowsView: View {
             },
             onDirectoryAction: { action, f in
                 handleDirectoryAction(action, f)
+            },
+            onMultiSelectionAction: { action in
+                handleMultiSelectionAction(action)
             }
         )
         .id(file.id)

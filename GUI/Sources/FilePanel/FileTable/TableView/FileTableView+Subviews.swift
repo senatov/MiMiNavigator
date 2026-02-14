@@ -48,7 +48,8 @@ extension FileTableView {
                                 onSelect: onSelect,
                                 onDoubleClick: onDoubleClick,
                                 handleFileAction: handleFileAction,
-                                handleDirectoryAction: handleDirectoryAction
+                                handleDirectoryAction: handleDirectoryAction,
+                                handleMultiSelectionAction: handleMultiSelectionAction
                             )
                             .frame(maxWidth: .infinity, alignment: .leading)
                         }

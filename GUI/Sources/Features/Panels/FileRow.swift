@@ -23,6 +23,7 @@ struct FileRow: View {
     let onDoubleClick: (CustomFile) -> Void
     let onFileAction: (FileAction, CustomFile) -> Void
     let onDirectoryAction: (DirectoryAction, CustomFile) -> Void
+    let onMultiSelectionAction: (MultiSelectionAction) -> Void
     @Environment(AppState.self) var appState
     @Environment(DragDropManager.self) var dragDropManager
 
@@ -138,9 +139,23 @@ struct FileRow: View {
         }
     }
 
+    /// True when there are marked files on this panel (show group menu)
+    private var hasMarkedFiles: Bool {
+        appState.markedCount(for: panelSide) > 0
+    }
+
     @ViewBuilder
     private var contextMenuContent: some View {
-        if file.isDirectory {
+        if hasMarkedFiles {
+            // Group context menu for marked files
+            MultiSelectionContextMenu(
+                markedCount: appState.markedCount(for: panelSide),
+                panelSide: panelSide
+            ) { action in
+                log.debug("[FileRow] multi-selection action=\(action.rawValue) count=\(appState.markedCount(for: panelSide))")
+                onMultiSelectionAction(action)
+            }
+        } else if file.isDirectory {
             DirectoryContextMenu(file: file, panelSide: panelSide) { action in
                 logContextMenuAction(action, isDirectory: true)
                 onDirectoryAction(action, file)
