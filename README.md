@@ -14,7 +14,7 @@
   <img src="https://img.shields.io/badge/SwiftUI-blue?logo=swift&logoColor=white" alt="SwiftUI" />
   <img src="https://img.shields.io/badge/Concurrency-Strict-2ea44f" alt="Strict Concurrency" />
   <img src="https://img.shields.io/badge/License-MIT-lightgrey" alt="MIT" />
-  <img src="https://img.shields.io/badge/v0.10.0-Active_Development-orange" alt="Active Development" />
+  <img src="https://img.shields.io/badge/v0.7.3-Active_Development-orange" alt="Active Development" />
 </p>
 
 <p align="center">
