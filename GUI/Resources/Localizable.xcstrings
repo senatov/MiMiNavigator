@@ -551,9 +551,6 @@
     "DEV BUILD" : {
 
     },
-    "Directory path" : {
-
-    },
     "Do you want to move %@ to Trash?" : {
 
     },
@@ -817,9 +814,6 @@
         }
       }
     },
-    "File name pattern" : {
-
-    },
     "File Name Pattern Syntax" : {
       "comment" : "Pattern help title"
     },
@@ -1033,9 +1027,6 @@
           }
         }
       }
-    },
-    "Leave empty for filename-only search" : {
-
     },
     "Link name:" : {
       "comment" : "Link name label",
@@ -1545,9 +1536,6 @@
         }
       }
     },
-    "Text to find inside files" : {
-
-    },
     "The archive is password-protected:" : {
       "comment" : "Archive protected message"
     },
@@ -1610,9 +1598,6 @@
       "comment" : "Pattern hint"
     },
     "Visited directories will appear here" : {
-
-    },
-    "Wildcards: * (any chars), ? (single char). Separate patterns with ;" : {
 
     }
   },
