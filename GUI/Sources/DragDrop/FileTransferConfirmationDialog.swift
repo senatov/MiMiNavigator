@@ -72,33 +72,62 @@ struct FileTransferConfirmationDialog: View {
                 .font(.body)
                 .foregroundStyle(.primary)
                 .fixedSize(horizontal: false, vertical: true)
-            
-            VStack(alignment: .leading, spacing: 4) {
+
+            // File list (up to 5 items with "and N more")
+            fileListSection
+
+            // From / To paths
+            VStack(alignment: .leading, spacing: 3) {
                 if let firstFile = operation.sourceFiles.first {
-                    HStack(spacing: 4) {
-                        Text("From:")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        Text(firstFile.urlValue.deletingLastPathComponent().path)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-                            .truncationMode(.middle)
-                    }
+                    pathRow(label: "From:", path: firstFile.urlValue.deletingLastPathComponent().path)
                 }
-                
-                HStack(spacing: 4) {
-                    Text("To:")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    Text(operation.destinationPath.path)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                pathRow(label: "To:", path: operation.destinationPath.path)
+            }
+            .padding(.top, 4)
+        }
+    }
+
+    // MARK: - File list
+    private var fileListSection: some View {
+        let maxVisible = 5
+        let files = operation.sourceFiles
+        let visible = Array(files.prefix(maxVisible))
+        let remaining = files.count - maxVisible
+
+        return VStack(alignment: .leading, spacing: 2) {
+            ForEach(visible, id: \.id) { file in
+                HStack(spacing: 6) {
+                    Image(systemName: file.isDirectory ? "folder.fill" : "doc.fill")
+                        .font(.system(size: 11))
+                        .foregroundStyle(file.isDirectory ? .blue : .secondary)
+                        .frame(width: 14)
+                    Text(file.nameStr)
+                        .font(.system(size: 12))
                         .lineLimit(1)
                         .truncationMode(.middle)
                 }
             }
-            .padding(.top, 4)
+            if remaining > 0 {
+                Text("and \(remaining) more…")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+                    .padding(.leading, 20)
+            }
+        }
+    }
+
+    // MARK: - Path row helper
+    private func pathRow(label: String, path: String) -> some View {
+        HStack(spacing: 4) {
+            Text(label)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .frame(width: 36, alignment: .trailing)
+            Text(path)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .truncationMode(.middle)
         }
     }
     

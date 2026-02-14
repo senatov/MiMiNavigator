@@ -63,21 +63,53 @@ struct DragPreviewView: View {
 }
 
 // MARK: - Drop Target Modifier
-/// Extracted drop handling to simplify type checking
+/// Prefers DragDropManager.draggedFiles for internal drags (preserves multi-file selection).
+/// Falls back to URL decoding for external drags (e.g. from Finder).
 struct DropTargetModifier: ViewModifier {
     let isValidTarget: Bool
     @Binding var isDropTargeted: Bool
     let onDrop: ([CustomFile]) -> Bool
     let onTargetChange: (Bool) -> Void
+    @Environment(DragDropManager.self) var dragDropManager
 
     func body(content: Content) -> some View {
         content
             .dropDestination(for: URL.self) { droppedURLs, _ in
-                let files = droppedURLs.map { CustomFile(path: $0.path) }
+                // Internal drag: use draggedFiles (preserves full multi-selection)
+                let internalFiles = dragDropManager.draggedFiles
+                if !internalFiles.isEmpty {
+                    log.debug("[DropTarget] using \(internalFiles.count) internal draggedFiles")
+                    return onDrop(internalFiles)
+                }
+                // External drag (Finder etc.): decode from URLs with validation
+                let files = Self.resolveDroppedURLs(droppedURLs)
+                guard !files.isEmpty else {
+                    log.warning("[DropTarget] no valid file URLs in drop")
+                    return false
+                }
+                log.debug("[DropTarget] using \(files.count) external URLs")
                 return onDrop(files)
             } isTargeted: { targeted in
                 onTargetChange(targeted)
             }
+    }
+
+    /// Resolve dropped URLs for external drags, or use internal draggedFiles.
+    static func safeResolveURLs(_ urls: [URL], dragDropManager: DragDropManager) -> [CustomFile] {
+        let internalFiles = dragDropManager.draggedFiles
+        if !internalFiles.isEmpty { return internalFiles }
+        return resolveDroppedURLs(urls)
+    }
+
+    /// Decode file URLs from NSItemProvider (external drag fallback).
+    static func resolveDroppedURLs(_ urls: [URL]) -> [CustomFile] {
+        urls.compactMap { url -> CustomFile? in
+            guard url.isFileURL else { return nil }
+            let path = url.standardizedFileURL.path
+            guard !path.isEmpty, !path.contains("\0"),
+                  FileManager.default.fileExists(atPath: path) else { return nil }
+            return CustomFile(path: path)
+        }
     }
 }
 
