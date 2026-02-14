@@ -5,7 +5,55 @@ All notable changes to MiMiNavigator will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.5] - 2026-02-14
+
+### Added
+- **Tab Support (Stage 1 — Data Model)**
+  - `TabItem` model: path, display name (macOS FileManager.displayName), archive state
+  - macOS-standard middle truncation for tab names
+  - `TabManager` per panel: add, close, select, next/prev (wraps around)
+  - Minimum one tab guaranteed per panel (last tab cannot be closed)
+  - Max 32 tabs per panel limit
+  - New tab inserted after active tab
+  - Tab persistence via UserDefaults (save/restore between launches)
+  - Path validation on restore — stale tabs auto-removed
+  - Factory methods: `TabItem.directory()`, `TabItem.archive()`
+  - `AppState` integration: `leftTabManager`, `rightTabManager`, `tabManager(for:)`
+  - `PreferenceKeys` extended: `leftTabs`, `rightTabs`, `leftActiveTabID`, `rightActiveTabID`
+  - `StatePersistence` extended: save/restore tabs on exit/launch
+
+- **Tab Bar UI (Stage 2)**
+  - `TabBarView` — horizontal scrollable tab bar above breadcrumb in each panel
+  - `TabItemView` — individual tab with macOS-style truncated name, folder/archive icon, close button
+  - Tab bar auto-hides when single tab (clean single-tab experience)
+  - Active tab: highlighted background, accent border, orange folder icon, medium font
+  - Hover: close button appears, subtle background, separator border
+  - Close button hidden on only-remaining tab (cannot close last tab)
+  - Auto-scroll to active tab on switch
+  - Tooltip shows full path on hover
+  - Tab click syncs panel path, scanner, and file list
+  - Tab close navigates to adjacent tab automatically
+  - Directory navigation (`updatePath`) syncs active tab path
+  - Archive entry (`enterArchive`) syncs tab with archive state
+  - Integrated into `FilePanelView` above breadcrumb
+
+### Changed
+- Version bumped to 0.7.5
+
+### New Files
+- `Features/Tabs/TabItem.swift` — single tab data model
+- `Features/Tabs/TabManager.swift` — tab collection manager per panel
+- `Features/Tabs/TabBarView.swift` — scrollable tab bar for panel
+- `Features/Tabs/TabItemView.swift` — single tab button with close action
+
 ## [Unreleased]
+
+### Planned (Tabs continuation)
+- Tab bar UI (TabBarView, TabItemView) — Stage 2
+- Tab switching + navigation integration — Stage 3
+- "Open in New Tab" from context menu + Cmd+T — Stage 4
+- HotKeys: Cmd+T, Cmd+W, Cmd+Shift+], Cmd+Shift+[ — Stage 5
+- Context menu enhancements (shortcut hints, colored icons) — Stage 6
 
 ### Added
 - **Multi-Selection (Finder + Total Commander hybrid)**
@@ -205,7 +253,8 @@ Each release should include:
 
 ---
 
-[Unreleased]: https://github.com/senatov/MiMiNavigator/compare/v0.9.1.1...HEAD
+[Unreleased]: https://github.com/senatov/MiMiNavigator/compare/v0.7.5...HEAD
+[0.7.5]: https://github.com/senatov/MiMiNavigator/compare/v0.9.1.1...v0.7.5
 [0.9.1.1]: https://github.com/senatov/MiMiNavigator/compare/v0.9.1...v0.9.1.1
 [0.9.1]: https://github.com/senatov/MiMiNavigator/compare/v0.9.0...v0.9.1
 [0.9.0]: https://github.com/senatov/MiMiNavigator/compare/v0.8.0...v0.9.0
