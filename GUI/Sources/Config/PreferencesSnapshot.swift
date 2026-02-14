@@ -21,10 +21,7 @@ struct PreferencesSnapshot: Codable, Sendable {
             .urls(for: .downloadsDirectory, in: .userDomainMask)
             .first?
             .path ?? "/",
-        rightPath: FileManager.default
-            .urls(for: .documentDirectory, in: .userDomainMask)
-            .first?
-            .path ?? "/",
+        rightPath: "/Users",
         showHiddenFiles: false,
         favoritesMaxDepth: 2,
         expandedFolders: [],
