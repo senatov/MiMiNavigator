@@ -26,19 +26,19 @@ struct FindFilesGeneralTab: View {
             // MARK: - Options
             Section {
                 Toggle(isOn: $viewModel.caseSensitive) {
-                    Text("Case sensitive")
+                    Label("Case sensitive", systemImage: "textformat")
                 }
                 Toggle(isOn: $viewModel.useRegex) {
-                    Text("Regular expressions")
+                    Label("Regular expressions", systemImage: "chevron.left.forwardslash.chevron.right")
                 }
                 Toggle(isOn: $viewModel.searchInSubdirectories) {
-                    Text("Include subdirectories")
+                    Label("Include subdirectories", systemImage: "folder.badge.gearshape")
                 }
                 Toggle(isOn: $viewModel.searchInArchives) {
-                    Text("Search in archives")
+                    Label("Search in archives", systemImage: "archivebox")
                 }
             } header: {
-                Text("Options")
+                Label("Options", systemImage: "gearshape")
             }
         }
         .formStyle(.grouped)
