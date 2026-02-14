@@ -132,13 +132,29 @@ MiMiNavigator can browse archives as virtual directories. Double-click opens the
 
 ## Getting Started
 
-### Requirements
+### ⚠️ Download & Run (Pre-Built Binary)
 
-- macOS 15.0+ (Apple Silicon or Intel)
-- Xcode 16+ with Swift 6.2
+> **The app is not notarized.** macOS Gatekeeper will block it on first launch.
+> You **must** run this command after downloading:
+
+```bash
+xattr -cr ~/Downloads/MiMiNavigator.app
+```
+
+Then double-click `MiMiNavigator.app` as usual.
+
+Alternatively: right-click the app → Open → click **Open** in the dialog.
+
+**[Download latest release →](https://github.com/senatov/MiMiNavigator/releases/latest)**
+
+---
+
+### Build from Source
+
+**Requirements:**
+- macOS 15.4+ (Apple Silicon or Intel)
+- Xcode (latest) with Swift 6.2
 - Optional: `brew install swiftlint swift-format p7zip`
-
-### Build & Run
 
 ```bash
 git clone https://github.com/senatov/MiMiNavigator.git
@@ -273,7 +289,37 @@ Log file: `~/Library/Logs/MiMiNavigator.log`
 
 ## Contributing
 
-Contributions welcome! This is a learning project — if you see mistakes or have suggestions, please open an issue or PR.
+Contributions welcome! MiMiNavigator is a real-world SwiftUI project with clean architecture, strict Swift 6.2 concurrency, and plenty of room to grow.
+
+### Good First Issues
+
+Looking for a way to start? Here are areas where help is especially appreciated:
+
+| Area | Difficulty | Description |
+|------|-----------|-------------|
+| **Batch Rename** | ⭐⭐ | Rename multiple marked files with pattern (e.g. `Photo_{N}.jpg`) |
+| **File Preview** | ⭐⭐ | Quick Look panel for selected file (QLPreviewPanel integration) |
+| **Tabbed Interface** | ⭐⭐⭐ | Multiple tabs per panel, like browser tabs |
+| **Themes** | ⭐⭐ | Dark/light/custom color schemes with persistence |
+| **Localization** | ⭐ | Translate UI strings (German and Russian already done) |
+| **Unit Tests** | ⭐⭐ | Tests for MultiSelectionManager, FileOperations, ArchiveManager |
+| **FTP/SFTP** | ⭐⭐⭐ | Remote file system panel via Network framework |
+| **Performance** | ⭐⭐ | Profile and optimize for directories with 10k+ files |
+
+### How to Contribute
+
+1. Fork the repo and create a feature branch
+2. Read [CONTRIBUTING.md](CONTRIBUTING.md) for code style and commit guidelines
+3. Build and test locally (`⌘R` in Xcode)
+4. Open a PR with a clear description and screenshots for UI changes
+
+### Why Contribute?
+
+- **Learn SwiftUI** on a real dual-panel file manager (not a todo app)
+- **Swift 6.2 concurrency** — actors, async/await, `@Observable`, strict Sendable
+- **macOS-native** development — NSWorkspace, security-scoped bookmarks, Quick Look, AppleScript
+- **Clean architecture** — modular structure, no file over 400 lines, extensive logging
+- Friendly maintainer who reviews PRs quickly
 
 > I openly acknowledge using AI assistants for architecture discussions and code review. This README was crafted with care for both humans and crawlers.
 
