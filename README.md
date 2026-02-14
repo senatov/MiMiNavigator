@@ -14,7 +14,7 @@
   <img src="https://img.shields.io/badge/SwiftUI-blue?logo=swift&logoColor=white" alt="SwiftUI" />
   <img src="https://img.shields.io/badge/Concurrency-Strict-2ea44f" alt="Strict Concurrency" />
   <img src="https://img.shields.io/badge/License-MIT-lightgrey" alt="MIT" />
-  <img src="https://img.shields.io/badge/v0.7.4-Active_Development-orange" alt="Active Development" />
+  <img src="https://img.shields.io/badge/v0.9.2-Active_Development-orange" alt="Active Development" />
 </p>
 
 <p align="center">
@@ -72,6 +72,7 @@ MiMiNavigator is a dual-panel file manager inspired by **Total Commander** and *
 | Feature | Description |
 |---------|-------------|
 | **Dual Panels** | Two independent file panels with synchronized operations |
+| **Tabbed Interface** | Multiple tabs per panel (⌘T open, ⌘W close, ⌘⇧]/[ switch); tab context menu; persistence between launches |
 | **Finder-Style Table** | Sortable columns: Name, Size, Date, Permissions, Owner, Type |
 | **Multi-Selection** | Cmd+Click toggle, Shift+Click range, Insert mark+next, pattern matching, Ctrl+A |
 | **Group Operations** | Batch Cut/Copy/Compress/Share/Delete on marked files; group context menu |
@@ -91,7 +92,8 @@ MiMiNavigator is a dual-panel file manager inspired by **Total Commander** and *
 | `↑` `↓` | Navigate | `Tab` | Switch panels |
 | `Enter` | Open | `⌘R` | Refresh |
 | `F5` | Copy to other panel | `⌘.` | Toggle hidden files |
-| `⌘O` | Open / Get Info | `⌘W` | Close window |
+| `⌘O` | Open / Get Info | `⌘T` | New Tab |
+| `⌘W` | Close Tab | `⌘⇧]`/`⌘⇧[` | Next/Prev Tab |
 | `Cmd+Click` | Toggle file mark | `Shift+Click` | Range select |
 | `Insert` | Toggle mark + next | `Ctrl+A` | Mark all files |
 | `Num+` | Mark by pattern | `Num-` | Unmark by pattern |
@@ -183,6 +185,8 @@ MiMiNavigator/
 │   │                       # MultiSelectionManager, MultiSelectionState,
 │   │                       # ClickModifiers, StatePersistence
 │   ├── Features/
+│   │   ├── Tabs/           # TabItem, TabManager, TabBarView, TabItemView,
+│   │   │                   # TabContextMenu
 │   │   └── Panels/         # FilePanelView, FileRow, FileRowView,
 │   │       │               # FileTableRowsView, SelectionStatusBar
 │   │       └── FileTable/  # FileTableView (+Actions, +State, +Subviews),
@@ -225,6 +229,7 @@ MiMiNavigator/
 |---------|-------|
 | `@Observable` + `@MainActor` | `AppState` — global app state, panels, archive states |
 | `@Observable` + `@MainActor` | `MultiSelectionManager` — Cmd/Shift click, Insert mark, pattern match |
+| `@Observable` + `@MainActor` | `TabManager` — per-panel tab collection, persistence, navigation |
 | `@Observable` + `@MainActor` | `ContextMenuCoordinator` — singleton handling all context menu actions |
 | `actor` | `DualDirectoryScanner` — thread-safe file scanning |
 | `actor` | `ArchiveManager` — session lifecycle, dirty tracking, extraction, repacking |
@@ -267,6 +272,8 @@ Log file: `~/Library/Logs/MiMiNavigator.log`
 - [x] Selection status bar (marked count + total size + disk free space)
 - [x] Column width persistence
 - [x] Hotkey customization
+- [x] Tabbed interface (multiple tabs per panel, context menu, persistence)
+- [x] Archive Open → TC-style virtual directory (not Finder/Archive Utility)
 
 ### In Progress 🚧
 
@@ -275,8 +282,6 @@ Log file: `~/Library/Logs/MiMiNavigator.log`
 - [ ] Custom themes and color schemes
 
 ### Planned 🎯
-
-- [ ] Tabbed interface
 - [ ] Three-panel layout option
 - [ ] FTP/SFTP connectivity
 - [ ] Cloud storage (iCloud, Dropbox)
@@ -299,7 +304,6 @@ Looking for a way to start? Here are areas where help is especially appreciated:
 |------|-----------|-------------|
 | **Batch Rename** | ⭐⭐ | Rename multiple marked files with pattern (e.g. `Photo_{N}.jpg`) |
 | **File Preview** | ⭐⭐ | Quick Look panel for selected file (QLPreviewPanel integration) |
-| **Tabbed Interface** | ⭐⭐⭐ | Multiple tabs per panel, like browser tabs |
 | **Themes** | ⭐⭐ | Dark/light/custom color schemes with persistence |
 | **Localization** | ⭐ | Translate UI strings (German and Russian already done) |
 | **Unit Tests** | ⭐⭐ | Tests for MultiSelectionManager, FileOperations, ArchiveManager |
