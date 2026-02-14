@@ -90,6 +90,8 @@ struct FindFilesStats: Sendable {
     var archivesScanned: Int = 0
     var startTime: Date = Date()
     var isRunning: Bool = false
+    /// Currently scanned path (for progress display)
+    var currentPath: String = ""
 
     var elapsedTime: TimeInterval {
         Date().timeIntervalSince(startTime)

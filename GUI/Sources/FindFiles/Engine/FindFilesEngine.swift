@@ -128,6 +128,7 @@ actor FindFilesEngine {
             let isDir = rv?.isDirectory ?? false
             if isDir {
                 stats.directoriesScanned += 1
+                stats.currentPath = fileURL.path
                 if !criteria.searchInSubdirectories {
                     enumerator.skipDescendants()
                 }
