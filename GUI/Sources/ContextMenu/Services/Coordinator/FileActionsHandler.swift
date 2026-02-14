@@ -25,7 +25,7 @@ extension ContextMenuCoordinator {
         switch action {
             // ── Single-file actions (always use clicked file) ──
             case .open:
-                openFile(file)
+                openFileOrArchive(file, panel: panel, appState: appState)
 
             case .openWith:
                 // Handled by OpenWithSubmenu directly
@@ -91,7 +91,24 @@ extension ContextMenuCoordinator {
 
     // MARK: - Private File Helpers
 
-    /// Opens file with default application
+    /// Opens file: archive files open as virtual directory (Total Commander style),
+    /// regular files open with default application via NSWorkspace.
+    func openFileOrArchive(_ file: CustomFile, panel: PanelSide, appState: AppState) {
+        // Archive files — open as virtual directory in current tab (Total Commander behavior)
+        if file.isArchiveFile {
+            log.info("[FileActions] opening archive as virtual dir: '\(file.nameStr)'")
+            Task { @MainActor in
+                await appState.enterArchive(at: file.urlValue, on: panel)
+            }
+            return
+        }
+
+        // Regular files — open with system default application
+        log.debug("[FileActions] openFile via NSWorkspace: '\(file.nameStr)'")
+        NSWorkspace.shared.open(file.urlValue)
+    }
+
+    /// Opens file with default application (direct, no archive check)
     func openFile(_ file: CustomFile) {
         log.debug("\(#function) file='\(file.nameStr)' path='\(file.pathStr)'")
         NSWorkspace.shared.open(file.urlValue)
