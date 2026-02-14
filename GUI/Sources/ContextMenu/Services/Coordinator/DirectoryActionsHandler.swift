@@ -29,8 +29,7 @@ extension ContextMenuCoordinator {
                 log.debug("\(#function) open handled by FilePanelView")
 
             case .openInNewTab:
-                // TODO: Implement tab support
-                log.info("\(#function) openInNewTab not yet implemented for '\(file.pathStr)'")
+                openDirectoryInNewTab(file, panel: panel, appState: appState)
 
             case .openInFinder:
                 openInFinder(file)
@@ -86,6 +85,99 @@ extension ContextMenuCoordinator {
 
             case .delete:
                 activeDialog = .deleteConfirmation(files: batchFiles)
+        }
+    }
+
+    // MARK: - Open in New Tab
+
+    /// Opens a directory in a new tab on the same panel
+    func openDirectoryInNewTab(_ file: CustomFile, panel: PanelSide, appState: AppState) {
+        let resolvedURL = file.urlValue.resolvingSymlinksInPath()
+        let targetPath = resolvedURL.path
+
+        var isDir: ObjCBool = false
+        guard FileManager.default.fileExists(atPath: targetPath, isDirectory: &isDir), isDir.boolValue else {
+            log.warning("[OpenInNewTab] path not a valid directory: '\(targetPath)'")
+            return
+        }
+
+        let mgr = appState.tabManager(for: panel)
+        let newTab = mgr.addTab(path: targetPath)
+        log.info("[OpenInNewTab] directory tab added: '\(newTab.displayName)' panel=\(panel)")
+
+        // Navigate panel to the new tab's path
+        Task { @MainActor in
+            appState.updatePath(targetPath, for: panel)
+            if panel == .left {
+                await appState.scanner.setLeftDirectory(pathStr: targetPath)
+                await appState.scanner.refreshFiles(currSide: .left)
+                await appState.refreshLeftFiles()
+            } else {
+                await appState.scanner.setRightDirectory(pathStr: targetPath)
+                await appState.scanner.refreshFiles(currSide: .right)
+                await appState.refreshRightFiles()
+            }
+        }
+    }
+
+    /// Opens a file's containing directory (or archive as directory) in a new tab
+    func openFileInNewTab(_ file: CustomFile, panel: PanelSide, appState: AppState) {
+        // Archive files — open archive as virtual directory in new tab
+        if file.isArchiveFile {
+            log.info("[OpenInNewTab] opening archive in new tab: '\(file.nameStr)'")
+            let mgr = appState.tabManager(for: panel)
+
+            Task { @MainActor in
+                do {
+                    let tempDir = try await ArchiveManager.shared.openArchive(at: file.urlValue)
+                    let newTab = mgr.addTab(
+                        path: tempDir.path,
+                        isArchive: true,
+                        archiveURL: file.urlValue
+                    )
+                    log.info("[OpenInNewTab] archive tab added: '\(newTab.displayName)' panel=\(panel)")
+
+                    // Set archive navigation state
+                    var archState = appState.archiveState(for: panel)
+                    archState.enterArchive(archiveURL: file.urlValue, tempDir: tempDir)
+                    appState.setArchiveState(archState, for: panel)
+
+                    appState.updatePath(tempDir.path, for: panel)
+                    if panel == .left {
+                        await appState.scanner.setLeftDirectory(pathStr: tempDir.path)
+                        await appState.scanner.refreshFiles(currSide: .left)
+                        await appState.refreshLeftFiles()
+                    } else {
+                        await appState.scanner.setRightDirectory(pathStr: tempDir.path)
+                        await appState.scanner.refreshFiles(currSide: .right)
+                        await appState.refreshRightFiles()
+                    }
+                } catch {
+                    log.error("[OpenInNewTab] failed to open archive: \(error.localizedDescription)")
+                }
+            }
+            return
+        }
+
+        // Regular files — open containing directory in new tab
+        let containingDir = file.urlValue.deletingLastPathComponent().path
+        log.info("[OpenInNewTab] file's parent dir in new tab: '\(containingDir)' for file '\(file.nameStr)'")
+
+        let mgr = appState.tabManager(for: panel)
+        let newTab = mgr.addTab(path: containingDir)
+        log.info("[OpenInNewTab] file parent tab added: '\(newTab.displayName)' panel=\(panel)")
+
+        Task { @MainActor in
+            appState.updatePath(containingDir, for: panel)
+            if panel == .left {
+                await appState.scanner.setLeftDirectory(pathStr: containingDir)
+                await appState.scanner.refreshFiles(currSide: .left)
+                await appState.refreshLeftFiles()
+            } else {
+                await appState.scanner.setRightDirectory(pathStr: containingDir)
+                await appState.scanner.refreshFiles(currSide: .right)
+                await appState.refreshRightFiles()
+            }
         }
     }
 

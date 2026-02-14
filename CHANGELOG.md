@@ -37,6 +37,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Archive entry (`enterArchive`) syncs tab with archive state
   - Integrated into `FilePanelView` above breadcrumb
 
+- **Open in New Tab Action (Stage 3)**
+  - `FileAction.openInNewTab` added to file context menu enum
+  - `DirectoryAction.openInNewTab` — replaced TODO with full implementation
+  - Directory: opens directory in new tab on same panel
+  - Archive file: extracts and opens as virtual directory in new tab
+  - Regular file: opens containing directory in new tab
+  - Symlink directories resolved before opening
+  - Shortcut hint `⌘T` shown in both file and directory context menus
+  - `FileContextMenu` updated with "Open in New Tab" item
+  - `DirectoryActionsHandler.openDirectoryInNewTab()` — validates path, adds tab, navigates
+  - `DirectoryActionsHandler.openFileInNewTab()` — archive-aware, handles regular files
+  - `FileActionsHandler` dispatches `openInNewTab` to shared implementation
+
 ### Changed
 - Version bumped to 0.7.5
 
