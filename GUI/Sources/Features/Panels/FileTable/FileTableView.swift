@@ -85,14 +85,7 @@ struct FileTableView: View {
         .onChange(of: files) { recomputeSortedCache() }
         .onChange(of: sortKey) { recomputeSortedCache() }
         .onChange(of: sortAscending) { recomputeSortedCache() }
-        .onChange(of: selectedID) { _, newValue in
-            if let newID = newValue {
-                Task { @MainActor in
-                    try? await Task.sleep(for: .seconds(0.05))
-                    keyboardNav.scrollToSelection(newID, anchor: .center)
-                }
-            }
-        }
+        // No auto-scroll on selection change — user controls scroll position
         .onMoveCommand { direction in
             guard isFocused else { return }
             switch direction {
