@@ -88,24 +88,8 @@ struct TableHeaderView: View {
     // MARK: - Name Column
     private var nameHeader: some View {
         SortableHeader(title: "Name", sortKey: .name, currentKey: sortKey, ascending: sortAscending)
-            .frame(minWidth: 60, maxWidth: .infinity, alignment: .leading)
-            .background(
-                GeometryReader { geo in
-                    Color.clear.onAppear {
-                        let w = geo.size.width
-                        if nameColumnWidth != w {
-                            nameColumnWidth = w
-                            log.debug("\(#function) [TableHeader] nameColumnWidth=\(w) panel=\(panelSide)")
-                        }
-                    }
-                    .onChange(of: geo.size.width) { _, newW in
-                        if nameColumnWidth != newW {
-                            nameColumnWidth = newW
-                            log.debug("\(#function) [TableHeader] nameColumnWidth changed=\(newW) panel=\(panelSide)")
-                        }
-                    }
-                }
-            )
+            .frame(width: nameColumnWidth, alignment: .leading)
+            .clipped()
             .contentShape(Rectangle())
             .onTapGesture { toggleSort(.name) }
     }

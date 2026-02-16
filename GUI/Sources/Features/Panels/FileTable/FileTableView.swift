@@ -47,15 +47,17 @@ struct FileTableView: View {
     /// Name column width computed from table width minus all fixed columns.
     /// Both header and rows use this same value - guarantees alignment.
     var nameColumnWidth: CGFloat {
-        let hstackPadding: CGFloat = 8
-        let separators: CGFloat = 5 * ColumnSeparatorStyle.width
-        let sizeTotal = sizeColumnWidth + 8
-        let dateTotal = dateColumnWidth + 12
+        let hstackPadding: CGFloat = 8  // .padding(.horizontal, 4) on HStack = 4+4
+        let separators: CGFloat = 5 * ColumnSeparatorStyle.width  // 5 × 1px dividers
+        let sizeTotal = sizeColumnWidth + 8    // .padding(.trailing, 8)
+        let dateTotal = dateColumnWidth + 12   // .padding(.horizontal, 6)
         let permTotal = permissionsColumnWidth + 12
         let ownerTotal = ownerColumnWidth + 12
         let typeTotal = typeColumnWidth + 12
         let fixedTotal = sizeTotal + dateTotal + permTotal + ownerTotal + typeTotal + separators + hstackPadding
-        return max(60, tableContentWidth - fixedTotal)
+        let result = max(60, tableContentWidth - fixedTotal)
+        log.debug("\(#function) nameColumnWidth: tableW=\(tableContentWidth) fixed=\(fixedTotal) name=\(result) panel=\(panelSide)")
+        return result
     }
     var columnStorage: ColumnWidthStorage { ColumnWidthStorage(panelSide: panelSide) }
     var sorter: TableFileSorter { TableFileSorter(sortKey: sortKey, ascending: sortAscending) }
