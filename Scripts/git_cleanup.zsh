@@ -1,6 +1,6 @@
 #!/bin/zsh
 # git_cleanup.zsh — Clean up .git directory: prune, gc, compress
-# Run from: /Users/senat/Develop/MiMiNavigator/Scripts/
+# Run from:  ~/Develop/MiMiNavigator/Scripts/
 # All comments in English.
 
 set -euo pipefail
