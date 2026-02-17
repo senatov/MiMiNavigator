@@ -54,13 +54,14 @@ struct ButtonFavTopPanel: View {
 
     // MARK: - Back Button
     private func backButton() -> some View {
-        Image(systemName: "arrowshape.backward")
+        let canGoBack = appState.navigationHistory(for: panelSide).canGoBack
+        return Image(systemName: "arrowshape.backward")
             .renderingMode(.original)
             .contentShape(Rectangle())
             .shadow(color: .gray, radius: 7.0, x: 1, y: 1)
-            .opacity(appState.selectionsHistory.canGoBack ? 1.0 : 0.4)
+            .opacity(canGoBack ? 1.0 : 0.4)
             .onTapGesture {
-                log.debug("Back button click: navigating back")
+                log.debug("\(#function) navigating back")
                 navigationAdapter?.navigateBack(panel: panelSide.toFavPanelSide)
             }
             .gesture(

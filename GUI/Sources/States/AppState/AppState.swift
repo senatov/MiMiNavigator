@@ -55,6 +55,10 @@ final class AppState {
     private(set) var fileActions: FileOperationActions?
     let selectionsHistory = SelectionsHistory()
     var scanner: DualDirectoryScanner!
+    
+    // MARK: - Per-Panel Navigation History (for Back/Forward buttons)
+    private(set) var leftNavigationHistory: PanelNavigationHistory!
+    private(set) var rightNavigationHistory: PanelNavigationHistory!
 
     // MARK: - Initialization
     init() {
@@ -68,6 +72,18 @@ final class AppState {
         // Initialize tab managers
         self.leftTabManager = TabManager(panelSide: .left, initialPath: paths.left)
         self.rightTabManager = TabManager(panelSide: .right, initialPath: paths.right)
+        
+        // Initialize per-panel navigation history
+        self.leftNavigationHistory = PanelNavigationHistory(panel: .left)
+        self.rightNavigationHistory = PanelNavigationHistory(panel: .right)
+        
+        // Seed navigation history with initial paths (if history is empty)
+        if leftNavigationHistory.currentPath == nil {
+            leftNavigationHistory.navigateTo(paths.left)
+        }
+        if rightNavigationHistory.currentPath == nil {
+            rightNavigationHistory.navigateTo(paths.right)
+        }
 
         // Initialize sub-managers
         self.selectionManager = SelectionManager(appState: self, history: selectionsHistory)
@@ -380,6 +396,9 @@ extension AppState {
         // Record directory change in navigation history (enables Back/Forward)
         // Skip if navigating via history goBack/goForward to avoid corrupting the index
         if !isNavigatingFromHistory {
+            // Record in per-panel navigation history (for Back/Forward buttons)
+            navigationHistory(for: panelSide).navigateTo(path)
+            // Also record in global selections history (for recent directories)
             selectionsHistory.add(path)
         }
 
@@ -477,5 +496,21 @@ extension AppState {
         Task {
             await ArchiveManager.shared.cleanup()
         }
+    }
+    
+    // MARK: - Navigation History Helpers
+    
+    /// Get navigation history for specified panel
+    func navigationHistory(for panel: PanelSide) -> PanelNavigationHistory {
+        panel == .left ? leftNavigationHistory : rightNavigationHistory
+    }
+    
+    /// Record navigation to path (called when entering directories)
+    func recordNavigation(to path: String, panel: PanelSide) {
+        guard !isNavigatingFromHistory else {
+            log.debug("[AppState] recordNavigation skipped (navigating from history)")
+            return
+        }
+        navigationHistory(for: panel).navigateTo(path)
     }
 }
