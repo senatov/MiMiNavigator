@@ -86,6 +86,34 @@ extension AppState {
         selectionManager?.select(file, on: panelSide)
     }
 
+    /// Select a file by name on the given panel.
+    /// Searches displayedFiles and sets it as selected if found.
+    func selectFileByName(_ name: String, on panel: PanelSide) {
+        let files = displayedFiles(for: panel)
+        if let match = files.first(where: { $0.nameStr == name }) {
+            switch panel {
+            case .left:  selectedLeftFile = match
+            case .right: selectedRightFile = match
+            }
+            log.debug("[AppState] selectFileByName '\(name)' on \(panel) → found")
+        } else {
+            log.debug("[AppState] selectFileByName '\(name)' on \(panel) → not found in \(files.count) files")
+        }
+    }
+
+    /// Refresh a panel and then select a file by name.
+    /// Use after creating files/folders to highlight the new item.
+    func refreshAndSelect(name: String, on panel: PanelSide) async {
+        if panel == .left {
+            await scanner.refreshFiles(currSide: .left)
+            await refreshLeftFiles()
+        } else {
+            await scanner.refreshFiles(currSide: .right)
+            await refreshRightFiles()
+        }
+        selectFileByName(name, on: panel)
+    }
+
     func clearSelection(on panelSide: PanelSide) {
         selectionManager?.clearSelection(on: panelSide)
     }
