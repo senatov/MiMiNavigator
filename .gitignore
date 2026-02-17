@@ -39,3 +39,4 @@ build-logs/
 # Xcode user state
 *.xcuserstate
 build/
+/.claude/worktrees/focused-banzai/
