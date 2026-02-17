@@ -23,6 +23,8 @@ struct ResizableDivider: View {
     @State private var isHovering = false
     @State private var isDragging = false
     @State private var dragStartWidth: CGFloat = 0
+    /// Absolute X where drag started (global coordinates)
+    @State private var dragStartX: CGFloat = 0
 
     var body: some View {
         ColumnSeparator()
@@ -54,23 +56,27 @@ struct ResizableDivider: View {
             }
     }
 
-    // MARK: - Drag: update binding in real-time, save only on mouse-up
+    // MARK: - Drag using global coordinates to avoid feedback-loop oscillation
+    // When binding updates cause layout shift, DragGesture in local coords
+    // recalculates translation relative to the new view position → oscillation.
+    // Using .global coordinate space, translation is absolute and stable.
     private var dragGesture: some Gesture {
-        DragGesture(minimumDistance: 1)
+        DragGesture(minimumDistance: 1, coordinateSpace: .global)
             .onChanged { value in
                 if !isDragging {
                     isDragging = true
                     dragStartWidth = width
+                    dragStartX = value.startLocation.x
                 }
-                let delta = -value.translation.width
+                // Absolute delta from start position — not affected by view relayout
+                let currentX = value.location.x
+                let delta = -(currentX - dragStartX)
                 let newWidth = dragStartWidth + delta
-                let clamped = Swift.min(Swift.max(newWidth, min), max)
-                log.debug("[RD] drag tx=\(value.translation.width) delta=\(delta) start=\(dragStartWidth) new=\(newWidth) clamped=\(clamped) old=\(width)")
-                width = clamped
+                width = Swift.min(Swift.max(newWidth, min), max)
             }
             .onEnded { _ in
                 isDragging = false
-                onEnd()  // persist to UserDefaults only once
+                onEnd()
                 log.debug("[ResizableDivider] drag ended, width=\(width)")
             }
     }
