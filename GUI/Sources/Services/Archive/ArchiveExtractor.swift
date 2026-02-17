@@ -33,10 +33,17 @@ enum ArchiveExtractor {
     @concurrent static func extractZip(archiveURL: URL, to destination: URL) async throws {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/unzip")
-        process.arguments = ["-o", archiveURL.path, "-d", destination.path]
+        // -o  overwrite without prompting
+        // -q  quiet (suppress per-file output)
+        // Pipe stdin to /dev/null so unzip never blocks waiting for interactive input
+        process.arguments = ["-o", "-q", archiveURL.path, "-d", destination.path]
         process.standardOutput = Pipe()
         let errorPipe = Pipe()
         process.standardError = errorPipe
+        // Feed /dev/null as stdin — prevents "disk full? Continue (y/n)" interactive hang
+        if let devNull = FileHandle(forReadingAtPath: "/dev/null") {
+            process.standardInput = devNull
+        }
         try await ArchiveProcessRunner.run(process, errorPipe: errorPipe)
     }
 
@@ -61,6 +68,9 @@ enum ArchiveExtractor {
         process.standardOutput = Pipe()
         let errorPipe = Pipe()
         process.standardError = errorPipe
+        if let devNull = FileHandle(forReadingAtPath: "/dev/null") {
+            process.standardInput = devNull
+        }
 
         do {
             try await ArchiveProcessRunner.run(process, errorPipe: errorPipe)
@@ -81,6 +91,9 @@ enum ArchiveExtractor {
         process.standardOutput = Pipe()
         let errorPipe = Pipe()
         process.standardError = errorPipe
+        if let devNull = FileHandle(forReadingAtPath: "/dev/null") {
+            process.standardInput = devNull
+        }
         try await ArchiveProcessRunner.run(process, errorPipe: errorPipe)
     }
 }
