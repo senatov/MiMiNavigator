@@ -11,7 +11,6 @@ struct FileTableRowsView: View {
     let rows: [(offset: Int, element: CustomFile)]
     @Binding var selectedID: CustomFile.ID?
     let panelSide: PanelSide
-    let nameColumnWidth: CGFloat
     let sizeColumnWidth: CGFloat
     let dateColumnWidth: CGFloat
     let typeColumnWidth: CGFloat
@@ -41,7 +40,6 @@ struct FileTableRowsView: View {
             file: file,
             isSelected: isSelected,
             panelSide: panelSide,
-            nameColumnWidth: nameColumnWidth,
             sizeColumnWidth: sizeColumnWidth,
             dateColumnWidth: dateColumnWidth,
             typeColumnWidth: typeColumnWidth,

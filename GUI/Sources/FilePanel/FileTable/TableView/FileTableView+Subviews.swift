@@ -12,27 +12,22 @@ extension FileTableView {
     
     var mainScrollView: some View {
         VStack(spacing: 0) {
-            // Measure available width for computing Name column
-            Color.clear.frame(height: 0)
-                .background(
-                    GeometryReader { geo in
-                        Color.clear
-                            .onAppear { tableContentWidth = geo.size.width }
-                            .onChange(of: geo.size.width) { _, w in tableContentWidth = w }
-                    }
-                )
             // Sticky header - outside ScrollView
             TableHeaderView(
                 panelSide: panelSide,
                 sortKey: $sortKey,
                 sortAscending: $sortAscending,
-                nameColumnWidth: nameColumnWidth,
                 sizeColumnWidth: $sizeColumnWidth,
                 dateColumnWidth: $dateColumnWidth,
                 typeColumnWidth: $typeColumnWidth,
                 permissionsColumnWidth: $permissionsColumnWidth,
                 ownerColumnWidth: $ownerColumnWidth,
-                onSave: saveColumnWidths
+                onSave: saveColumnWidths,
+                autoFitSize: { autoFitSize() },
+                autoFitDate: { autoFitDate() },
+                autoFitPermissions: { autoFitPermissions() },
+                autoFitOwner: { autoFitOwner() },
+                autoFitType: { autoFitType() }
             )
             
             // Scrollable content with background context menu
@@ -50,7 +45,6 @@ extension FileTableView {
                                 rows: sortedRows,
                                 selectedID: $selectedID,
                                 panelSide: panelSide,
-                                nameColumnWidth: nameColumnWidth,
                                 sizeColumnWidth: sizeColumnWidth,
                                 dateColumnWidth: dateColumnWidth,
                                 typeColumnWidth: typeColumnWidth,
@@ -62,7 +56,6 @@ extension FileTableView {
                                 handleDirectoryAction: handleDirectoryAction,
                                 handleMultiSelectionAction: handleMultiSelectionAction
                             )
-                            .frame(maxWidth: .infinity, alignment: .leading)
                         }
                         
                         // Empty space at bottom to allow right-click on empty area
