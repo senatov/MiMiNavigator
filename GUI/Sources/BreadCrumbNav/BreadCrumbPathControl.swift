@@ -41,6 +41,7 @@ struct BreadCrumbPathControl: View {
                 .environment(appState)
             EllipsisMenuSection()
         }
+        .frame(height: 30)
         .background(
             RoundedRectangle(cornerRadius: Design.cornerRadius)
                 .fill(isActivePanel ? Design.activeBackgroundColor : Design.inactiveBackgroundColor)

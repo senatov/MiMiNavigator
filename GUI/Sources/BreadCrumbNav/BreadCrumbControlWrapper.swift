@@ -55,7 +55,6 @@ struct BreadCrumbControlWrapper: View {
         return
             contentView
             .padding(.horizontal, Design.Padding.horizontal)
-            .padding(.vertical, Design.Padding.horizontal)
             .onHover { hovering in
                 isHovering = hovering
             }
@@ -69,7 +68,7 @@ struct BreadCrumbControlWrapper: View {
                 x: 1,
                 y: 1
             )
-            .padding(.vertical, Design.Padding.vertical)
+            .frame(height: 34)
             .padding(.horizontal, Design.Padding.horizontal)
             .onTapGesture {
                 if !isEditing {

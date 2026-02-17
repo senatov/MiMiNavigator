@@ -54,28 +54,14 @@ struct EllipsisMenuSection: View {
         .help("More options...")
     }
 
-    // MARK: - Show Finder Get Info window
+    // MARK: - Show Finder Get Info window (positioned near MiMi window)
     private func handleGetInfo() {
         guard let url = currentDirectoryURL else {
             log.warning("No directory selected for Get Info")
             return
         }
         log.info("Opening Get Info for: \(url.path)")
-        
-        let script = """
-        tell application "Finder"
-            activate
-            open information window of (POSIX file "\(url.path)" as alias)
-        end tell
-        """
-        
-        var error: NSDictionary?
-        if let appleScript = NSAppleScript(source: script) {
-            appleScript.executeAndReturnError(&error)
-            if let error = error {
-                log.error("AppleScript error: \(error)")
-            }
-        }
+        FinderIntegration.showGetInfo(for: url)
     }
 
     // MARK: - Reveal in Finder

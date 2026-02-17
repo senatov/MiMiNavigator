@@ -32,12 +32,11 @@ struct BreadCrumbView: View {
                     breadcrumbItem(segment: displaySegments[index], index: index)
                 }
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(maxWidth: .infinity, maxHeight: barHeight, alignment: .leading)
         }
         .padding(.horizontal, 0)
-        .padding(.vertical, 2)
-        .frame(minHeight: barHeight, alignment: .center)
-        .controlSize(.large)
+        .frame(height: barHeight)
+        .controlSize(.mini)
     }
 
     // MARK: - Display segment with original index for navigation
@@ -86,11 +85,8 @@ struct BreadCrumbView: View {
         // Truncate segments by priority (longest middle segments first)
         while currentWidth > availableForText {
             // Find segment with highest truncation priority that can still be truncated
-            guard let targetIdx = segments
-                .enumerated()
-                .filter { $0.element.displayName.count > 3 } // can still truncate
-                .max(by: { $0.element.priority < $1.element.priority })?
-                .offset
+            let truncatable = segments.enumerated().filter { $0.element.displayName.count > 3 }
+            guard let targetIdx = truncatable.max(by: { $0.element.priority < $1.element.priority })?.offset
             else { break }
             
             let segment = segments[targetIdx]
