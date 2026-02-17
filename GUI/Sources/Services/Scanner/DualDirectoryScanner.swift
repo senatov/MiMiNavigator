@@ -15,6 +15,12 @@ actor DualDirectoryScanner {
     private var leftTimer: DispatchSourceTimer?
     private var rightTimer: DispatchSourceTimer?
 
+    // VNODE watchers — fire immediately when directory contents change (Archive Utility, etc.)
+    private var leftVNode: DispatchSourceFileSystemObject?
+    private var rightVNode: DispatchSourceFileSystemObject?
+    private var leftFD: Int32 = -1
+    private var rightFD: Int32 = -1
+
     /// Refresh interval from centralized constants
     private var refreshInterval: Int {
         Int(AppConstants.Scanning.refreshInterval)
@@ -33,6 +39,15 @@ actor DualDirectoryScanner {
         if leftTimer == nil || rightTimer == nil {
             log.error("Failed to initialize directory timers")
         }
+
+        // Start vnode watchers for current paths
+        Task { @MainActor in
+            let lPath = appState.leftPath
+            let rPath = appState.rightPath
+            // Back on scanner actor to setup watchers
+            await self.setupVNodeWatcher(for: .left, path: lPath)
+            await self.setupVNodeWatcher(for: .right, path: rPath)
+        }
     }
 
     // MARK: - Set directory for right panel
@@ -41,6 +56,7 @@ actor DualDirectoryScanner {
         Task { @MainActor in
             appState.rightPath = pathStr
         }
+        setupVNodeWatcher(for: .right, path: pathStr)
     }
 
     // MARK: - Set directory for left panel
@@ -48,6 +64,65 @@ actor DualDirectoryScanner {
         log.info("\(#function) path: \(pathStr)")
         Task { @MainActor in
             appState.leftPath = pathStr
+        }
+        setupVNodeWatcher(for: .left, path: pathStr)
+    }
+
+    // MARK: - VNODE directory watcher (fires immediately on FS changes)
+    /// Watches current directory of a panel using kqueue/vnode events.
+    /// Fires on any write to the directory (file created/deleted/renamed by any process).
+    private func setupVNodeWatcher(for side: PanelSide, path: String) {
+        // Cancel previous watcher
+        cancelVNodeWatcher(for: side)
+
+        let fd = open(path, O_EVTONLY)
+        guard fd >= 0 else {
+            log.warning("[VNode] Cannot open fd for '\(path)': \(String(cString: strerror(errno)))")
+            return
+        }
+
+        let source = DispatchSource.makeFileSystemObjectSource(
+            fileDescriptor: fd,
+            eventMask: [.write, .rename, .delete, .link],
+            queue: DispatchQueue.global(qos: .utility)
+        )
+
+        source.setEventHandler { [weak self] in
+            guard let self else { return }
+            log.debug("[VNode] Directory changed: '\(path)' side=\(side)")
+            Task { @MainActor in
+                await self.refreshFiles(currSide: side)
+            }
+        }
+
+        source.setCancelHandler {
+            close(fd)
+        }
+
+        source.resume()
+
+        switch side {
+        case .left:
+            leftVNode = source
+            leftFD = fd
+        case .right:
+            rightVNode = source
+            rightFD = fd
+        }
+
+        log.debug("[VNode] Watching '\(path)' side=\(side)")
+    }
+
+    private func cancelVNodeWatcher(for side: PanelSide) {
+        switch side {
+        case .left:
+            leftVNode?.cancel()
+            leftVNode = nil
+            leftFD = -1
+        case .right:
+            rightVNode?.cancel()
+            rightVNode = nil
+            rightFD = -1
         }
     }
 
@@ -180,6 +255,15 @@ actor DualDirectoryScanner {
                 rightTimer = nil
                 setupTimer(for: .right)
         }
+    }
+
+    // MARK: - Stop all watchers
+    func stopMonitoring() {
+        leftTimer?.cancel(); leftTimer = nil
+        rightTimer?.cancel(); rightTimer = nil
+        cancelVNodeWatcher(for: .left)
+        cancelVNodeWatcher(for: .right)
+        log.info("[DualDirectoryScanner] stopMonitoring: all timers and vnode watchers cancelled")
     }
 
     // MARK: - Update file list in storage
