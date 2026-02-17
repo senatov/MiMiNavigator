@@ -33,10 +33,11 @@ enum ArchiveExtractor {
     @concurrent static func extractZip(archiveURL: URL, to destination: URL) async throws {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/unzip")
-        // -o  overwrite without prompting
-        // -q  quiet (suppress per-file output)
-        // Pipe stdin to /dev/null so unzip never blocks waiting for interactive input
-        process.arguments = ["-o", "-q", archiveURL.path, "-d", destination.path]
+        // -o   overwrite without prompting
+        // -q   quiet (suppress per-file output)
+        // -DD  do NOT restore timestamps (avoids fchmod/fchown errors in /tmp on macOS sandbox)
+        //       exit=50 from unzip means "disk full / attribute warning" — files ARE extracted
+        process.arguments = ["-o", "-q", "-DD", archiveURL.path, "-d", destination.path]
         process.standardOutput = Pipe()
         let errorPipe = Pipe()
         process.standardError = errorPipe
@@ -115,9 +116,14 @@ enum ArchiveToolLocator {
 enum ArchiveProcessRunner {
 
     /// Exit codes that are considered non-fatal warnings (not real errors)
-    /// unzip: 1 = warnings (e.g. macOS __MACOSX metadata, unicode names, etc.) — extraction still succeeded
-    /// tar:   1 = some files changed during archiving (non-fatal)
-    private static let warningExitCodes: Set<Int32> = [1]
+    /// unzip exit codes:
+    ///   0  = success
+    ///   1  = warnings (macOS __MACOSX metadata, unicode names, etc.) — extraction succeeded
+    ///  50  = disk full / attribute warning (fchmod/fchown failed on temp dir) — files ARE extracted
+    ///  51+ = real errors (corrupt archive, etc.)
+    /// tar:
+    ///   1  = some files changed during archiving — non-fatal
+    private static let warningExitCodes: Set<Int32> = [1, 50]
 
     @concurrent static func run(_ process: Process, errorPipe: Pipe) async throws {
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
