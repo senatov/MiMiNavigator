@@ -29,6 +29,10 @@ import AppKit
         log.debug("installing keyDown monitor for Tab/Backtab")
         keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
             guard let self, let appState = self.appState else { return event }
+            // When a modal dialog is active, let SwiftUI handle all keys
+            if ContextMenuCoordinator.shared.activeDialog != nil {
+                return event
+            }
             let hasCommand = event.modifierFlags.contains(.command)
             let hasOption = event.modifierFlags.contains(.option)
             let hasControl = event.modifierFlags.contains(.control)

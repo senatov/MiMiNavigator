@@ -99,8 +99,8 @@ extension ContextMenuCoordinator {
     // MARK: - Pack (Archive with options)
 
     /// Pack files into archive with custom options
-    func performPack(files: [CustomFile], archiveName: String, format: ArchiveFormat, destination: URL, appState: AppState) async {
-        log.debug("\(#function) files.count=\(files.count) archiveName='\(archiveName)' format=\(format) dest='\(destination.path)'")
+    func performPack(files: [CustomFile], archiveName: String, format: ArchiveFormat, destination: URL, deleteSource: Bool = false, appState: AppState) async {
+        log.debug("\(#function) files.count=\(files.count) archiveName='\(archiveName)' format=\(format) dest='\(destination.path)' deleteSource=\(deleteSource)")
 
         isProcessing = true
         defer {
@@ -116,6 +116,15 @@ extension ContextMenuCoordinator {
                 archiveName: archiveName,
                 format: format
             )
+            
+            // Delete source files if requested
+            if deleteSource {
+                for url in urls {
+                    try FileManager.default.trashItem(at: url, resultingItemURL: nil)
+                    log.info("\(#function) trashed source: '\(url.lastPathComponent)'")
+                }
+            }
+            
             refreshPanels(appState: appState)
             log.info("\(#function) SUCCESS created '\(archiveURL.lastPathComponent)'")
             activeDialog = .success(

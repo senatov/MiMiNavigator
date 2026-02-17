@@ -57,6 +57,11 @@ final class DuoFilePanelKeyboardHandler {
     private func handleKeyEvent(_ event: NSEvent) -> NSEvent? {
         guard let appState else { return event }
 
+        // When a modal dialog is active, let SwiftUI handle Enter/Escape
+        if ContextMenuCoordinator.shared.activeDialog != nil {
+            return event
+        }
+
         let keyCode = event.keyCode
         let modifiers = event.modifierFlags
 

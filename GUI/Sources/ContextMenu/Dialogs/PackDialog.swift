@@ -10,19 +10,21 @@ import SwiftUI
 struct PackDialog: View {
     let files: [CustomFile]
     let initialDestination: URL
-    let onPack: (String, ArchiveFormat, URL) -> Void
+    /// Callback: (archiveName, format, destination, deleteSourceFiles)
+    let onPack: (String, ArchiveFormat, URL, Bool) -> Void
     let onCancel: () -> Void
     
     @State private var archiveName: String
     @State private var destinationPath: String
     @State private var selectedFormat: ArchiveFormat = .zip
+    @State private var deleteSourceFiles: Bool = false
     @State private var errorMessage: String?
     @FocusState private var isNameFieldFocused: Bool
     
     init(
         files: [CustomFile],
         destinationPath: URL,
-        onPack: @escaping (String, ArchiveFormat, URL) -> Void,
+        onPack: @escaping (String, ArchiveFormat, URL, Bool) -> Void,
         onCancel: @escaping () -> Void
     ) {
         self.files = files
@@ -138,6 +140,14 @@ struct PackDialog: View {
             }
             .frame(maxWidth: 320, alignment: .leading)
             
+            // Delete source option
+            Toggle(isOn: $deleteSourceFiles) {
+                Text("Delete source files after packing")
+                    .font(.system(size: 12))
+            }
+            .toggleStyle(.checkbox)
+            .frame(maxWidth: 320, alignment: .leading)
+            
             // Error message
             if let error = errorMessage {
                 Text(error)
@@ -165,7 +175,7 @@ struct PackDialog: View {
     }
     
     private func performPack() {
-        onPack(archiveName, selectedFormat, URL(fileURLWithPath: destinationPath))
+        onPack(archiveName, selectedFormat, URL(fileURLWithPath: destinationPath), deleteSourceFiles)
     }
     
     private func browseForFolder() {
@@ -187,7 +197,7 @@ struct PackDialog: View {
     PackDialog(
         files: [CustomFile(path: "/Users/test/document.txt")],
         destinationPath: URL(fileURLWithPath: "/Users/test"),
-        onPack: { _, _, _ in },
+        onPack: { _, _, _, _ in },
         onCancel: {}
     )
     .padding(40)
