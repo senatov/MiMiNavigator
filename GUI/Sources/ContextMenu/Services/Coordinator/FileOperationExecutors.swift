@@ -37,7 +37,7 @@ extension ContextMenuCoordinator {
 
     // MARK: - Rename
 
-    /// Rename file or directory
+    /// Rename file or directory, then select the renamed item
     func performRename(file: CustomFile, newName: String, appState: AppState) async {
         log.debug("\(#function) file='\(file.nameStr)' newName='\(newName)'")
 
@@ -49,8 +49,9 @@ extension ContextMenuCoordinator {
 
         do {
             _ = try await fileOps.renameFile(file.urlValue, to: newName)
-            refreshPanels(appState: appState)
-            log.info("\(#function) SUCCESS: '\(file.nameStr)' → '\(newName)'")
+            let panel = panelForPath(file.urlValue.deletingLastPathComponent().path, appState: appState)
+            log.info("\(#function) SUCCESS: '\(file.nameStr)' → '\(newName)' → selecting on \(panel)")
+            await appState.refreshAndSelect(name: newName, on: panel)
         } catch {
             log.error("\(#function) FAILED: \(error.localizedDescription)")
             activeDialog = .error(title: "Rename Failed", message: error.localizedDescription)
@@ -59,7 +60,7 @@ extension ContextMenuCoordinator {
 
     // MARK: - Duplicate
 
-    /// Duplicate file (Finder-style naming)
+    /// Duplicate file (Finder-style naming), then select the duplicate
     func performDuplicate(file: CustomFile, appState: AppState) async {
         log.debug("\(#function) file='\(file.nameStr)'")
 
@@ -68,8 +69,9 @@ extension ContextMenuCoordinator {
 
         do {
             let result = try await DuplicateService.shared.duplicate(file: file.urlValue)
-            refreshPanels(appState: appState)
-            log.info("\(#function) SUCCESS created '\(result.lastPathComponent)'")
+            let panel = panelForPath(file.urlValue.deletingLastPathComponent().path, appState: appState)
+            log.info("\(#function) SUCCESS created '\(result.lastPathComponent)' → selecting on \(panel)")
+            await appState.refreshAndSelect(name: result.lastPathComponent, on: panel)
         } catch {
             log.error("\(#function) FAILED: \(error.localizedDescription)")
             activeDialog = .error(title: "Duplicate Failed", message: error.localizedDescription)
@@ -98,7 +100,9 @@ extension ContextMenuCoordinator {
 
     // MARK: - Pack (Archive with options)
 
-    /// Pack files into archive with custom options
+    /// Pack files into archive with custom options.
+    /// Creates destination directory if it doesn't exist.
+    /// Selects the created archive in the appropriate panel.
     func performPack(files: [CustomFile], archiveName: String, format: ArchiveFormat, destination: URL, deleteSource: Bool = false, appState: AppState) async {
         log.debug("\(#function) files.count=\(files.count) archiveName='\(archiveName)' format=\(format) dest='\(destination.path)' deleteSource=\(deleteSource)")
 
@@ -109,6 +113,12 @@ extension ContextMenuCoordinator {
         }
 
         do {
+            // Create destination directory if it doesn't exist
+            if !FileManager.default.fileExists(atPath: destination.path) {
+                try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
+                log.info("\(#function) created destination directory: '\(destination.path)'")
+            }
+
             let urls = files.map { $0.urlValue }
             let archiveURL = try await archiveService.createArchive(
                 from: urls,
@@ -125,11 +135,30 @@ extension ContextMenuCoordinator {
                 }
             }
             
-            refreshPanels(appState: appState)
-            log.info("\(#function) SUCCESS created '\(archiveURL.lastPathComponent)'")
+            // Determine which panel shows the destination and navigate+select
+            let archiveName = archiveURL.lastPathComponent
+            let destPath = destination.path
+            let panel = panelForPath(destPath, appState: appState)
+
+            // If destination is the current directory of a panel, refresh and select
+            if PathUtils.areEqual(appState.leftPath, destPath) || PathUtils.areEqual(appState.rightPath, destPath) {
+                await appState.refreshAndSelect(name: archiveName, on: panel)
+            } else {
+                // Destination is a different directory — navigate to it, then select
+                navigateTo(destination, panel: panel, appState: appState)
+                // Small delay to let navigation + refresh complete
+                try? await Task.sleep(for: .milliseconds(300))
+                appState.selectFileByName(archiveName, on: panel)
+            }
+
+            // Also refresh the other panel (source files may have been deleted)
+            let otherPanel: PanelSide = panel == .left ? .right : .left
+            refreshPanel(otherPanel, appState: appState)
+
+            log.info("\(#function) SUCCESS created '\(archiveName)' → selected on \(panel)")
             activeDialog = .success(
                 title: "Archive Created",
-                message: "Created: \(archiveURL.lastPathComponent)"
+                message: "Created: \(archiveName)"
             )
         } catch {
             log.error("\(#function) FAILED: \(error.localizedDescription)")

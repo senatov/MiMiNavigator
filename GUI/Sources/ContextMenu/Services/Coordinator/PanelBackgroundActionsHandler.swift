@@ -102,7 +102,14 @@ extension ContextMenuCoordinator {
 
     // MARK: - Create Operations
 
-    /// Create new folder in directory
+    /// Determine which panel contains the given directory path
+    func panelForPath(_ path: String, appState: AppState) -> PanelSide {
+        if PathUtils.areEqual(appState.leftPath, path) { return .left }
+        if PathUtils.areEqual(appState.rightPath, path) { return .right }
+        return appState.focusedPanel
+    }
+
+    /// Create new folder in directory, then select it
     func performNewFolder(in directory: URL, appState: AppState) {
         log.debug("\(#function) directory='\(directory.path)'")
 
@@ -111,15 +118,19 @@ extension ContextMenuCoordinator {
 
         do {
             try FileManager.default.createDirectory(at: newFolderURL, withIntermediateDirectories: false)
-            log.info("\(#function) SUCCESS created folder '\(newFolderURL.lastPathComponent)'")
-            refreshPanels(appState: appState)
+            let createdName = newFolderURL.lastPathComponent
+            let panel = panelForPath(directory.path, appState: appState)
+            log.info("\(#function) SUCCESS created folder '\(createdName)' → selecting on \(panel)")
+            Task { @MainActor in
+                await appState.refreshAndSelect(name: createdName, on: panel)
+            }
         } catch {
             log.error("\(#function) FAILED: \(error.localizedDescription)")
             activeDialog = .error(title: "Create Folder Failed", message: error.localizedDescription)
         }
     }
 
-    /// Create new empty file in directory
+    /// Create new empty file in directory, then select it
     func performNewFile(in directory: URL, appState: AppState) {
         log.debug("\(#function) directory='\(directory.path)'")
 
@@ -128,8 +139,12 @@ extension ContextMenuCoordinator {
 
         do {
             try Data().write(to: newFileURL)
-            log.info("\(#function) SUCCESS created file '\(newFileURL.lastPathComponent)'")
-            refreshPanels(appState: appState)
+            let createdName = newFileURL.lastPathComponent
+            let panel = panelForPath(directory.path, appState: appState)
+            log.info("\(#function) SUCCESS created file '\(createdName)' → selecting on \(panel)")
+            Task { @MainActor in
+                await appState.refreshAndSelect(name: createdName, on: panel)
+            }
         } catch {
             log.error("\(#function) FAILED: \(error.localizedDescription)")
             activeDialog = .error(title: "Create File Failed", message: error.localizedDescription)
