@@ -26,6 +26,8 @@ struct ArchiveSession: Sendable {
 actor ArchiveManager {
     static let shared = ArchiveManager()
     private var sessions: [String: ArchiveSession] = [:]
+    /// Archives currently being opened (prevents double-click race condition)
+    private var openingInProgress: Set<String> = []
     private let fm = FileManager.default
     private let baseTempDir: URL = {
         let base = FileManager.default.temporaryDirectory
@@ -42,10 +44,25 @@ actor ArchiveManager {
         log.debug(#function)
         let key = archiveURL.path
 
+        // Already open — return existing session
         if let existing = sessions[key] {
             log.info("[ArchiveManager] Already open: \(archiveURL.lastPathComponent)")
             return existing.tempDirectory
         }
+
+        // Opening already in progress (double-click race) — wait and return when done
+        if openingInProgress.contains(key) {
+            log.warning("[ArchiveManager] Already opening: \(archiveURL.lastPathComponent) — ignoring duplicate request")
+            // Poll until session appears (max ~3s)
+            for _ in 0..<30 {
+                try await Task.sleep(nanoseconds: 100_000_000) // 100ms
+                if let existing = sessions[key] {
+                    return existing.tempDirectory
+                }
+            }
+            throw ArchiveManagerError.extractionFailed("Timed out waiting for duplicate open: \(archiveURL.lastPathComponent)")
+        }
+        openingInProgress.insert(key)
 
         guard let format = ArchiveFormatDetector.detect(url: archiveURL) else {
             throw ArchiveManagerError.unsupportedFormat(archiveURL.pathExtension)
@@ -63,8 +80,15 @@ actor ArchiveManager {
         let modDate = attrs[.modificationDate] as? Date
         let owner = (attrs[.ownerAccountName] as? String) ?? ""
 
-        // Delegate extraction
-        try await ArchiveExtractor.extract(archiveURL: archiveURL, format: format, to: tempDir)
+        // Delegate extraction (clear in-progress flag on exit regardless of outcome)
+        do {
+            try await ArchiveExtractor.extract(archiveURL: archiveURL, format: format, to: tempDir)
+        } catch {
+            openingInProgress.remove(key)
+            try? fm.removeItem(at: tempDir)
+            log.error("[ArchiveManager] Extraction failed for \(archiveURL.lastPathComponent): \(error.localizedDescription)")
+            throw error
+        }
 
         let session = ArchiveSession(
             archiveURL: archiveURL, tempDirectory: tempDir, format: format,
@@ -72,9 +96,9 @@ actor ArchiveManager {
             originalModificationDate: modDate, originalOwnerName: owner
         )
         sessions[key] = session
+        openingInProgress.remove(key)
 
-        log.debug("[ArchiveManager] Opened successfully: \(archiveURL.lastPathComponent)")
-        log.debug("In Temp Url:" + tempDir.path)
+        log.info("[ArchiveManager] Opened successfully: \(archiveURL.lastPathComponent) → \(tempDir.path)")
         return tempDir
     }
 

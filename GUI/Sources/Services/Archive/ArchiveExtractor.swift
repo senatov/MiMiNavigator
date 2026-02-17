@@ -100,15 +100,29 @@ enum ArchiveToolLocator {
 // MARK: - Process Runner
 /// Async wrapper for running CLI processes
 enum ArchiveProcessRunner {
+
+    /// Exit codes that are considered non-fatal warnings (not real errors)
+    /// unzip: 1 = warnings (e.g. macOS __MACOSX metadata, unicode names, etc.) — extraction still succeeded
+    /// tar:   1 = some files changed during archiving (non-fatal)
+    private static let warningExitCodes: Set<Int32> = [1]
+
     @concurrent static func run(_ process: Process, errorPipe: Pipe) async throws {
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
             process.terminationHandler = { proc in
-                if proc.terminationStatus == 0 {
+                let status = proc.terminationStatus
+                if status == 0 || Self.warningExitCodes.contains(status) {
+                    // 0 = success, 1 = warnings only — treat both as success
+                    if status != 0 {
+                        let warnData = errorPipe.fileHandleForReading.readDataToEndOfFile()
+                        let warnMsg = String(data: warnData, encoding: .utf8) ?? ""
+                        log.warning("[ProcessRunner] exit=\(status) (warnings only): \(warnMsg.prefix(200))")
+                    }
                     continuation.resume()
                 } else {
                     let errorData = errorPipe.fileHandleForReading.readDataToEndOfFile()
-                    let errorMessage = String(data: errorData, encoding: .utf8) ?? "Exit code \(proc.terminationStatus)"
-                    continuation.resume(throwing: ArchiveManagerError.extractionFailed(errorMessage))
+                    let errorMessage = String(data: errorData, encoding: .utf8) ?? "Exit code \(status)"
+                    log.error("[ProcessRunner] exit=\(status): \(errorMessage.prefix(300))")
+                    continuation.resume(throwing: ArchiveManagerError.extractionFailed("exit=\(status): \(errorMessage)"))
                 }
             }
             do {
