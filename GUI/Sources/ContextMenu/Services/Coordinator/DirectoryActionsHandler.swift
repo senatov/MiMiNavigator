@@ -68,10 +68,9 @@ extension ContextMenuCoordinator {
                 }
 
             case .compress:
-                Task {
-                    await performCompress(files: batchFiles, appState: appState)
-                    appState.clearMarksAfterOperation(on: panel)
-                }
+                let sourceDir = file.urlValue.deletingLastPathComponent()
+                log.debug("\(#function) compress → PackDialog destination='\(sourceDir.path)'")
+                activeDialog = .pack(files: batchFiles, destination: sourceDir)
 
             case .pack:
                 let destination = getOppositeDestinationPath(for: panel, appState: appState)

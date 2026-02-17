@@ -76,13 +76,14 @@ struct ContextMenuDialogModifier: ViewModifier {
             PackDialog(
                 files: files,
                 destinationPath: destination,
-                onPack: { archiveName, format, finalDestination in
+                onPack: { archiveName, format, finalDestination, deleteSource in
                     Task {
                         await coordinator.performPack(
                             files: files,
                             archiveName: archiveName,
                             format: format,
                             destination: finalDestination,
+                            deleteSource: deleteSource,
                             appState: appState
                         )
                     }
@@ -204,7 +205,7 @@ struct ContextMenuDialogModifier: ViewModifier {
             PackDialog(
                 files: files,
                 destinationPath: destination,
-                onPack: { archiveName, format, finalDestination in
+                onPack: { archiveName, format, finalDestination, deleteSource in
                     coordinator.dismissDialog()
                     BatchOperationCoordinator.shared.initiatePack(
                         appState: appState,
