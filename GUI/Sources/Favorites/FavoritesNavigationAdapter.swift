@@ -33,7 +33,7 @@ final class FavoritesNavigationAdapter: FavoritesNavigationDelegate {
     func navigateToPath(_ path: String, panel: FavPanelSide) async {
         let targetPanel: PanelSide = panel == .left ? .left : .right
         
-        log.info("FavoritesKit: Navigating to \(path) on \(panel)")
+        log.info("\(#function) path=\(path) panel=\(panel)")
         
         // Update path
         appState.updatePath(path, for: targetPanel)
@@ -48,40 +48,58 @@ final class FavoritesNavigationAdapter: FavoritesNavigationDelegate {
     }
     
     func navigateBack(panel: FavPanelSide) {
-        log.info("FavoritesKit: navigateBack() on \(panel)")
-        guard let path = appState.selectionsHistory.goBack() else {
-            log.debug("navigateBack: no history to go back to")
+        log.info("\(#function) panel=\(panel)")
+        
+        let targetPanel: PanelSide = panel == .left ? .left : .right
+        let history = appState.navigationHistory(for: targetPanel)
+        
+        guard let path = history.goBack() else {
+            log.debug("\(#function) no history to go back to")
             return
         }
+        
+        log.debug("\(#function) goBack returned path=\(path)")
+        
         Task {
             appState.isNavigatingFromHistory = true
-            defer { appState.isNavigatingFromHistory = false }
-            await navigateToPath(path, panel: panel)
+            do {
+                await navigateToPath(path, panel: panel)
+            }
+            appState.isNavigatingFromHistory = false
         }
     }
     
     func navigateForward(panel: FavPanelSide) {
-        log.info("FavoritesKit: navigateForward() on \(panel)")
-        guard let path = appState.selectionsHistory.goForward() else {
-            log.debug("navigateForward: no history to go forward to")
+        log.info("\(#function) panel=\(panel)")
+        
+        let targetPanel: PanelSide = panel == .left ? .left : .right
+        let history = appState.navigationHistory(for: targetPanel)
+        
+        guard let path = history.goForward() else {
+            log.debug("\(#function) no history to go forward to")
             return
         }
+        
+        log.debug("\(#function) goForward returned path=\(path)")
+        
         Task {
             appState.isNavigatingFromHistory = true
-            defer { appState.isNavigatingFromHistory = false }
-            await navigateToPath(path, panel: panel)
+            do {
+                await navigateToPath(path, panel: panel)
+            }
+            appState.isNavigatingFromHistory = false
         }
     }
     
     func navigateUp(panel: FavPanelSide) {
-        log.info("FavoritesKit: navigateUp() on \(panel)")
+        log.info("\(#function) panel=\(panel)")
         
         let currentPath = panel == .left ? appState.leftPath : appState.rightPath
         let parentURL = URL(fileURLWithPath: currentPath).deletingLastPathComponent()
         let parentPath = parentURL.path
         
         guard parentPath != currentPath else {
-            log.debug("navigateUp: already at root")
+            log.debug("\(#function) already at root")
             return
         }
         
@@ -91,11 +109,13 @@ final class FavoritesNavigationAdapter: FavoritesNavigationDelegate {
     }
     
     func canGoBack(panel: FavPanelSide) -> Bool {
-        appState.selectionsHistory.canGoBack
+        let targetPanel: PanelSide = panel == .left ? .left : .right
+        return appState.navigationHistory(for: targetPanel).canGoBack
     }
     
     func canGoForward(panel: FavPanelSide) -> Bool {
-        appState.selectionsHistory.canGoForward
+        let targetPanel: PanelSide = panel == .left ? .left : .right
+        return appState.navigationHistory(for: targetPanel).canGoForward
     }
     
     func currentPath(for panel: FavPanelSide) -> String {
