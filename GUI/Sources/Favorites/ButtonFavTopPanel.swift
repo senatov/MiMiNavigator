@@ -90,11 +90,12 @@ struct ButtonFavTopPanel: View {
 
     // MARK: - Forward Button
     private func forwardButton() -> some View {
-        Image(systemName: "arrowshape.right")
+        let canGoForward = appState.navigationHistory(for: panelSide).canGoForward
+        return Image(systemName: "arrowshape.right")
             .renderingMode(.original)
             .contentShape(Rectangle())
             .shadow(color: .gray, radius: 7.0, x: 1, y: 1)
-            .opacity(appState.selectionsHistory.canGoForward ? 1.0 : 0.4)
+            .opacity(canGoForward ? 1.0 : 0.4)
             .onTapGesture {
                 log.debug("Forward button click: navigating forward")
                 navigationAdapter?.navigateForward(panel: panelSide.toFavPanelSide)

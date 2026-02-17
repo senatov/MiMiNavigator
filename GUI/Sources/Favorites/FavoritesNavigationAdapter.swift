@@ -62,10 +62,10 @@ final class FavoritesNavigationAdapter: FavoritesNavigationDelegate {
         
         Task {
             appState.isNavigatingFromHistory = true
-            do {
-                await navigateToPath(path, panel: panel)
-            }
+            log.debug("\(#function) set isNavigatingFromHistory=true")
+            await navigateToPath(path, panel: panel)
             appState.isNavigatingFromHistory = false
+            log.debug("\(#function) set isNavigatingFromHistory=false")
         }
     }
     
@@ -84,10 +84,10 @@ final class FavoritesNavigationAdapter: FavoritesNavigationDelegate {
         
         Task {
             appState.isNavigatingFromHistory = true
-            do {
-                await navigateToPath(path, panel: panel)
-            }
+            log.debug("\(#function) set isNavigatingFromHistory=true")
+            await navigateToPath(path, panel: panel)
             appState.isNavigatingFromHistory = false
+            log.debug("\(#function) set isNavigatingFromHistory=false")
         }
     }
     

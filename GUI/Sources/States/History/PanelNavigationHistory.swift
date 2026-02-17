@@ -20,16 +20,20 @@ final class PanelNavigationHistory {
     private var history: [String] = []
     
     /// Current position in history (points to current path)
-    private var currentIndex: Int = -1
-    
-    // MARK: - Navigation State
-    
-    var canGoBack: Bool {
-        currentIndex > 0
+    private var currentIndex: Int = -1 {
+        didSet {
+            updateNavigationState()
+        }
     }
     
-    var canGoForward: Bool {
-        currentIndex < history.count - 1
+    // MARK: - Navigation State (stored for SwiftUI reactivity)
+    
+    private(set) var canGoBack: Bool = false
+    private(set) var canGoForward: Bool = false
+    
+    private func updateNavigationState() {
+        canGoBack = currentIndex > 0
+        canGoForward = currentIndex < history.count - 1
     }
     
     var currentPath: String? {
@@ -59,6 +63,7 @@ final class PanelNavigationHistory {
         if currentIndex < history.count - 1 {
             log.debug("\(#function) truncating forward history from index \(currentIndex + 1)")
             history = Array(history.prefix(currentIndex + 1))
+            updateNavigationState()
         }
         
         // Don't add duplicate of current path
@@ -183,6 +188,7 @@ final class PanelNavigationHistory {
         } else {
             currentIndex = idx
         }
+        updateNavigationState()
     }
     
     // MARK: - Helpers
