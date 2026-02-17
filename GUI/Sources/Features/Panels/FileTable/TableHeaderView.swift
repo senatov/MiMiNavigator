@@ -15,67 +15,75 @@ struct TableHeaderView: View {
     let panelSide: PanelSide
     @Binding var sortKey: SortKeysEnum
     @Binding var sortAscending: Bool
-    let nameColumnWidth: CGFloat
     @Binding var sizeColumnWidth: CGFloat
     @Binding var dateColumnWidth: CGFloat
     @Binding var typeColumnWidth: CGFloat
     @Binding var permissionsColumnWidth: CGFloat
     @Binding var ownerColumnWidth: CGFloat
     let onSave: () -> Void
+    // Auto-fit closures: return optimal width for each column
+    var autoFitSize: (() -> CGFloat)? = nil
+    var autoFitDate: (() -> CGFloat)? = nil
+    var autoFitPermissions: (() -> CGFloat)? = nil
+    var autoFitOwner: (() -> CGFloat)? = nil
+    var autoFitType: (() -> CGFloat)? = nil
 
     var body: some View {
         HStack(alignment: .center, spacing: 0) {
-            // Name column (flexible)
+            // Name column (flexible) — no divider before it, no fixed width
             nameHeader
+
+            // ── Each divider sits BEFORE its column ──
+            // Drag RIGHT → column SHRINKS (delta = -translation)
+            // Drag LEFT  → column GROWS
+            //
+            // Layout: Name ‖ Size ‖ Date ‖ Perms ‖ Owner ‖ Type
+            //              ↑      ↑      ↑       ↑       ↑
+            //          dividers control the column to their RIGHT
 
             ResizableDivider(
                 width: $sizeColumnWidth,
                 min: TableColumnDefaults.minWidth,
                 max: TableColumnDefaults.maxWidth,
-                onEnd: onSave
+                onEnd: onSave,
+                onAutoFit: autoFitSize
             )
-
-            // Size column
             sizeHeader
 
             ResizableDivider(
                 width: $dateColumnWidth,
                 min: TableColumnDefaults.minWidth,
                 max: TableColumnDefaults.maxWidth,
-                onEnd: onSave
+                onEnd: onSave,
+                onAutoFit: autoFitDate
             )
-
-            // Date column
             dateHeader
 
             ResizableDivider(
                 width: $permissionsColumnWidth,
                 min: TableColumnDefaults.minWidth,
                 max: TableColumnDefaults.maxWidth,
-                onEnd: onSave
+                onEnd: onSave,
+                onAutoFit: autoFitPermissions
             )
-
-            // Permissions column
             permissionsHeader
 
             ResizableDivider(
                 width: $ownerColumnWidth,
                 min: TableColumnDefaults.minWidth,
                 max: TableColumnDefaults.maxWidth,
-                onEnd: onSave
+                onEnd: onSave,
+                onAutoFit: autoFitOwner
             )
-
-            // Owner column
             ownerHeader
 
             ResizableDivider(
                 width: $typeColumnWidth,
                 min: TableColumnDefaults.minWidth,
                 max: TableColumnDefaults.maxWidth,
-                onEnd: onSave
+                onEnd: onSave,
+                onAutoFit: autoFitType
             )
-
-            // Type column
             typeHeader
         }
         .frame(height: 24)
@@ -88,7 +96,7 @@ struct TableHeaderView: View {
     // MARK: - Name Column
     private var nameHeader: some View {
         SortableHeader(title: "Name", sortKey: .name, currentKey: sortKey, ascending: sortAscending)
-            .frame(width: nameColumnWidth, alignment: .leading)
+            .frame(minWidth: 60, maxWidth: .infinity, alignment: .leading)
             .clipped()
             .contentShape(Rectangle())
             .onTapGesture { toggleSort(.name) }
