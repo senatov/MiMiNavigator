@@ -124,9 +124,40 @@ struct BreadCrumbView: View {
     }
 
     // MARK: - Path components
+    // When inside an archive, shows: ["archive.zip", "subdir", ...]
+    // instead of the real temp path like /var/folders/.../UUID/subdir
     private var pathComponents: [String] {
-        let path = (panelSide == .left ? appState.leftPath : appState.rightPath)
-        return path.split(separator: "/").map(String.init).filter { !$0.isEmpty }
+        let archiveState = panelSide == .left ? appState.leftArchiveState : appState.rightArchiveState
+        let currentPath = panelSide == .left ? appState.leftPath : appState.rightPath
+
+        if archiveState.isInsideArchive,
+           let archiveURL = archiveState.archiveURL,
+           let tempDir = archiveState.archiveTempDir
+        {
+            // Virtual path: archiveName + relative subdirs inside archive
+            let archiveName = archiveURL.lastPathComponent
+            let normalizedCurrent = URL(fileURLWithPath: currentPath).standardizedFileURL.path
+            let normalizedTemp = tempDir.standardizedFileURL.path
+
+            // Strip the temp root prefix to get relative path inside archive
+            var relative = ""
+            if normalizedCurrent.hasPrefix(normalizedTemp) {
+                relative = String(normalizedCurrent.dropFirst(normalizedTemp.count))
+                    .trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+            }
+
+            if relative.isEmpty {
+                // At archive root — show just the archive name
+                return [archiveName]
+            } else {
+                // Inside subdirectory — archive name + sub-components
+                let subComponents = relative.split(separator: "/").map(String.init)
+                return [archiveName] + subComponents
+            }
+        }
+
+        // Normal filesystem path
+        return currentPath.split(separator: "/").map(String.init).filter { !$0.isEmpty }
     }
 
     // MARK: - Breadcrumb item view
@@ -158,35 +189,81 @@ struct BreadCrumbView: View {
         .help(makeHelpTooltip(for: segment.originalIndex, fullName: segment.fullName))
         .contextMenu {
             Button("Copy path") {
-                let fullPath = "/" + pathComponents.prefix(segment.originalIndex + 1).joined(separator: "/")
+                let archiveState = panelSide == .left ? appState.leftArchiveState : appState.rightArchiveState
+                let pathToCopy: String
+                if archiveState.isInsideArchive,
+                   let tempDir = archiveState.archiveTempDir
+                {
+                    if segment.originalIndex == 0 {
+                        // Copy real archive path
+                        pathToCopy = archiveState.archiveURL?.path ?? ""
+                    } else {
+                        let subComponents = Array(pathComponents[1...segment.originalIndex])
+                        pathToCopy = tempDir.standardizedFileURL.path + "/" + subComponents.joined(separator: "/")
+                    }
+                } else {
+                    pathToCopy = "/" + pathComponents.prefix(segment.originalIndex + 1).joined(separator: "/")
+                }
                 NSPasteboard.general.clearContents()
-                NSPasteboard.general.setString(fullPath, forType: .string)
+                NSPasteboard.general.setString(pathToCopy, forType: .string)
             }
         }
     }
 
     // MARK: - Tooltip helper
     private func makeHelpTooltip(for index: Int, fullName: String) -> String {
-        let fullPath = "/" + pathComponents.prefix(index + 1).joined(separator: "/")
-        let maxLength = 60
-        let displayedPath: String
-        if fullPath.count > maxLength {
-            let prefix = fullPath.prefix(25)
-            let suffix = fullPath.suffix(30)
-            displayedPath = "\(prefix)…\(suffix)"
+        let archiveState = panelSide == .left ? appState.leftArchiveState : appState.rightArchiveState
+
+        let displayPath: String
+        if archiveState.isInsideArchive, let archiveURL = archiveState.archiveURL {
+            // Virtual path inside archive: archive.zip/subdir/...
+            let parts = pathComponents.prefix(index + 1)
+            displayPath = parts.joined(separator: "/")
+            if index == 0 {
+                return "📦 \(archiveURL.path)"
+            }
         } else {
-            displayedPath = fullPath
+            displayPath = "/" + pathComponents.prefix(index + 1).joined(separator: "/")
         }
-        // Show full name if truncated
+
+        let maxLength = 60
+        let trimmed: String
+        if displayPath.count > maxLength {
+            trimmed = "\(displayPath.prefix(25))…\(displayPath.suffix(30))"
+        } else {
+            trimmed = displayPath
+        }
         if fullName != pathComponents[index] {
-            return "📂 \(fullName)\n→ \(displayedPath)"
+            return "📂 \(fullName)\n→ \(trimmed)"
         }
-        return "📂 Open \(displayedPath)"
+        return "📂 Open \(trimmed)"
     }
 
     // MARK: - Handle Selection
     private func handlePathSelection(upTo index: Int) {
         log.info(#function + " for index \(index) on side <<\(panelSide)>>")
+        let archiveState = panelSide == .left ? appState.leftArchiveState : appState.rightArchiveState
+
+        if archiveState.isInsideArchive,
+           let tempDir = archiveState.archiveTempDir
+        {
+            if index == 0 {
+                // Clicked the archive name itself — exit the archive
+                Task { await appState.exitArchive(on: panelSide) }
+                return
+            }
+            // index > 0 means inside archive subdirectory
+            // pathComponents[0] = archiveName, [1..] = subpath components
+            let subComponents = Array(pathComponents[(1)...(index)])
+            let newPath = tempDir.standardizedFileURL.path + "/" + subComponents.joined(separator: "/")
+            let currentPath = panelSide == .left ? appState.leftPath : appState.rightPath
+            guard toCanonical(newPath) != toCanonical(currentPath) else { return }
+            appState.updatePath(newPath, for: panelSide)
+            Task { await performDirectoryUpdate(for: panelSide, path: newPath) }
+            return
+        }
+
+        // Normal filesystem navigation
         let newPath = ("/" + pathComponents.prefix(index + 1).joined(separator: "/"))
             .replacingOccurrences(of: "//", with: "/")
             .replacingOccurrences(of: "///", with: "/")
