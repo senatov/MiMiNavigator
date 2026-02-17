@@ -61,6 +61,13 @@ final class DuoFilePanelKeyboardHandler {
         if ContextMenuCoordinator.shared.activeDialog != nil {
             return event
         }
+        
+        // When text field is focused, let it handle the event
+        // (fixes Backspace/Delete not working in text fields)
+        if let responder = NSApp.keyWindow?.firstResponder,
+           responder is NSTextView || responder is NSTextField {
+            return event
+        }
 
         let keyCode = event.keyCode
         let modifiers = event.modifierFlags
