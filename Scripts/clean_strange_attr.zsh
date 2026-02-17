@@ -2,8 +2,7 @@
 # UTF-8 with BOM
 
 # === Config (do not change) ===================================================
-# This script is intended to be run from:  /Users/senat/Develop/MiMiNavigator/Script
-# It will scan and clean in:              /Users/senat/Develop/MiMiNavigator
+# It will scan and clean in:              ~/MiMiNavigator
 # Comments must be in English only.
 
 set -euo pipefail
