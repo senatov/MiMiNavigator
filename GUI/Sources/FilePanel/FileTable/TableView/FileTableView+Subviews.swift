@@ -12,56 +12,58 @@ extension FileTableView {
     
     var mainScrollView: some View {
         VStack(spacing: 0) {
-            // Sticky header - outside ScrollView
-            TableHeaderView(
-                panelSide: panelSide,
-                sortKey: $sortKey,
-                sortAscending: $sortAscending,
-                sizeColumnWidth: $sizeColumnWidth,
-                dateColumnWidth: $dateColumnWidth,
-                typeColumnWidth: $typeColumnWidth,
-                permissionsColumnWidth: $permissionsColumnWidth,
-                ownerColumnWidth: $ownerColumnWidth,
-                onSave: saveColumnWidths,
-                autoFitSize: { autoFitSize() },
-                autoFitDate: { autoFitDate() },
-                autoFitPermissions: { autoFitPermissions() },
-                autoFitOwner: { autoFitOwner() },
-                autoFitType: { autoFitType() }
-            )
-            
-            // Scrollable content — context menu on entire scroll area + empty space filler
+            // Header is inside ScrollView as pinned section header
+            // This ensures header width matches content width (accounts for scrollbar)
             ScrollView {
-                LazyVStack(alignment: .leading, spacing: 0) {
-                    StableKeyView(cachedSortedFiles.count) {
-                        FileTableRowsView(
-                            rows: sortedRows,
-                            selectedID: $selectedID,
+                LazyVStack(alignment: .leading, spacing: 0, pinnedViews: [.sectionHeaders]) {
+                    Section {
+                        StableKeyView(cachedSortedFiles.count) {
+                            FileTableRowsView(
+                                rows: sortedRows,
+                                selectedID: $selectedID,
+                                panelSide: panelSide,
+                                sizeColumnWidth: sizeColumnWidth,
+                                dateColumnWidth: dateColumnWidth,
+                                typeColumnWidth: typeColumnWidth,
+                                permissionsColumnWidth: permissionsColumnWidth,
+                                ownerColumnWidth: ownerColumnWidth,
+                                onSelect: onSelect,
+                                onDoubleClick: onDoubleClick,
+                                handleFileAction: handleFileAction,
+                                handleDirectoryAction: handleDirectoryAction,
+                                handleMultiSelectionAction: handleMultiSelectionAction
+                            )
+                        }
+                        
+                        // Empty space at bottom — clickable for background context menu
+                        Color(nsColor: .controlBackgroundColor)
+                            .opacity(0.01)
+                            .frame(minHeight: 300)
+                            .frame(maxWidth: .infinity)
+                            .contentShape(Rectangle())
+                            .contextMenu { panelBackgroundMenu }
+                            .onTapGesture {
+                                // Deselect on click in empty area
+                                selectedID = nil
+                            }
+                    } header: {
+                        TableHeaderView(
                             panelSide: panelSide,
-                            sizeColumnWidth: sizeColumnWidth,
-                            dateColumnWidth: dateColumnWidth,
-                            typeColumnWidth: typeColumnWidth,
-                            permissionsColumnWidth: permissionsColumnWidth,
-                            ownerColumnWidth: ownerColumnWidth,
-                            onSelect: onSelect,
-                            onDoubleClick: onDoubleClick,
-                            handleFileAction: handleFileAction,
-                            handleDirectoryAction: handleDirectoryAction,
-                            handleMultiSelectionAction: handleMultiSelectionAction
+                            sortKey: $sortKey,
+                            sortAscending: $sortAscending,
+                            sizeColumnWidth: $sizeColumnWidth,
+                            dateColumnWidth: $dateColumnWidth,
+                            typeColumnWidth: $typeColumnWidth,
+                            permissionsColumnWidth: $permissionsColumnWidth,
+                            ownerColumnWidth: $ownerColumnWidth,
+                            onSave: saveColumnWidths,
+                            autoFitSize: { autoFitSize() },
+                            autoFitDate: { autoFitDate() },
+                            autoFitPermissions: { autoFitPermissions() },
+                            autoFitOwner: { autoFitOwner() },
+                            autoFitType: { autoFitType() }
                         )
                     }
-                    
-                    // Empty space at bottom — clickable for background context menu
-                    Color(nsColor: .controlBackgroundColor)
-                        .opacity(0.01)
-                        .frame(minHeight: 300)
-                        .frame(maxWidth: .infinity)
-                        .contentShape(Rectangle())
-                        .contextMenu { panelBackgroundMenu }
-                        .onTapGesture {
-                            // Deselect on click in empty area
-                            selectedID = nil
-                        }
                 }
             }
             .safeAreaInset(edge: .bottom, spacing: 0) {
