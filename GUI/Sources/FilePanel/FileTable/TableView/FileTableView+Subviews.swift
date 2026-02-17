@@ -30,45 +30,44 @@ extension FileTableView {
                 autoFitType: { autoFitType() }
             )
             
-            // Scrollable content with background context menu
-            ZStack {
-                // Background layer with context menu for empty area
-                Color.clear
-                    .contentShape(Rectangle())
-                    .contextMenu { panelBackgroundMenu }
-                
-                // File rows on top
-                ScrollView {
-                    LazyVStack(alignment: .leading, spacing: 0) {
-                        StableKeyView(cachedSortedFiles.count) {
-                            FileTableRowsView(
-                                rows: sortedRows,
-                                selectedID: $selectedID,
-                                panelSide: panelSide,
-                                sizeColumnWidth: sizeColumnWidth,
-                                dateColumnWidth: dateColumnWidth,
-                                typeColumnWidth: typeColumnWidth,
-                                permissionsColumnWidth: permissionsColumnWidth,
-                                ownerColumnWidth: ownerColumnWidth,
-                                onSelect: onSelect,
-                                onDoubleClick: onDoubleClick,
-                                handleFileAction: handleFileAction,
-                                handleDirectoryAction: handleDirectoryAction,
-                                handleMultiSelectionAction: handleMultiSelectionAction
-                            )
-                        }
-                        
-                        // Empty space at bottom to allow right-click on empty area
-                        Color.clear
-                            .frame(height: max(100, 300))
-                            .contentShape(Rectangle())
-                            .contextMenu { panelBackgroundMenu }
+            // Scrollable content — context menu on entire scroll area + empty space filler
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 0) {
+                    StableKeyView(cachedSortedFiles.count) {
+                        FileTableRowsView(
+                            rows: sortedRows,
+                            selectedID: $selectedID,
+                            panelSide: panelSide,
+                            sizeColumnWidth: sizeColumnWidth,
+                            dateColumnWidth: dateColumnWidth,
+                            typeColumnWidth: typeColumnWidth,
+                            permissionsColumnWidth: permissionsColumnWidth,
+                            ownerColumnWidth: ownerColumnWidth,
+                            onSelect: onSelect,
+                            onDoubleClick: onDoubleClick,
+                            handleFileAction: handleFileAction,
+                            handleDirectoryAction: handleDirectoryAction,
+                            handleMultiSelectionAction: handleMultiSelectionAction
+                        )
                     }
-                }
-                .safeAreaInset(edge: .bottom, spacing: 0) {
-                    Color.clear.frame(height: 40)
+                    
+                    // Empty space at bottom — clickable for background context menu
+                    Color(nsColor: .controlBackgroundColor)
+                        .opacity(0.01)
+                        .frame(minHeight: 300)
+                        .frame(maxWidth: .infinity)
+                        .contentShape(Rectangle())
+                        .contextMenu { panelBackgroundMenu }
+                        .onTapGesture {
+                            // Deselect on click in empty area
+                            selectedID = nil
+                        }
                 }
             }
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                Color.clear.frame(height: 40)
+            }
+            .contextMenu { panelBackgroundMenu }
             .background(keyboardShortcutsLayer)
         }
     }
