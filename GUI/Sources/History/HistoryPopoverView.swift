@@ -194,6 +194,9 @@ struct HistoryPopoverView: View {
     // MARK: - Actions
 
     private func navigateToPath(_ path: String) {
+        // Update path through AppState to record in navigation history
+        appState.updatePath(path, for: panelSide)
+        
         Task {
             if panelSide == .left {
                 await appState.scanner.setLeftDirectory(pathStr: path)

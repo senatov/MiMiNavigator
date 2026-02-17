@@ -254,31 +254,20 @@ struct BreadCrumbControlWrapper: View {
         Task {
             log.info("Applying path update for <<\(panelSide)>>: \(trimmedPath)")
             
+            // Update path through AppState to record in navigation history
+            appState.updatePath(trimmedPath, for: panelSide)
+            
             if panelSide == .left {
-                // Update path in AppState and scanner
-                appState.leftPath = trimmedPath
                 await appState.scanner.setLeftDirectory(pathStr: trimmedPath)
-                
-                // Reset timer to trigger immediate refresh
                 await appState.scanner.resetRefreshTimer(for: .left)
-                
-                // Force immediate refresh
                 await appState.scanner.refreshFiles(currSide: .left)
                 await appState.refreshLeftFiles()
-                
                 log.info("Left panel updated to: \(trimmedPath)")
             } else {
-                // Update path in AppState and scanner
-                appState.rightPath = trimmedPath
                 await appState.scanner.setRightDirectory(pathStr: trimmedPath)
-                
-                // Reset timer to trigger immediate refresh
                 await appState.scanner.resetRefreshTimer(for: .right)
-                
-                // Force immediate refresh
                 await appState.scanner.refreshFiles(currSide: .right)
                 await appState.refreshRightFiles()
-                
                 log.info("Right panel updated to: \(trimmedPath)")
             }
         }
