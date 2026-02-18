@@ -21,7 +21,6 @@ enum HotKeyDefaults {
         HotKeyBinding(action: .moveFile,         keyCode: 0x61, modifiers: .none),         // F6
         HotKeyBinding(action: .newFolder,        keyCode: 0x62, modifiers: .none),         // F7
         HotKeyBinding(action: .deleteFile,       keyCode: 0x64, modifiers: .none),         // F8
-        HotKeyBinding(action: .deleteFile,       keyCode: 0x75, modifiers: .none),         // Fwd-Delete
 
         // ── Navigation ──
         HotKeyBinding(action: .togglePanelFocus, keyCode: 0x30, modifiers: .none),         // Tab
@@ -55,8 +54,15 @@ enum HotKeyDefaults {
         HotKeyBinding(action: .exitApp,          keyCode: 0x76, modifiers: .option),       // ⌥F4
     ]
 
-    /// Lookup dictionary for quick access
+    /// Lookup dictionary for quick access (one primary binding per action)
     static let bindingsByAction: [HotKeyAction: HotKeyBinding] = {
         Dictionary(uniqueKeysWithValues: bindings.map { ($0.action, $0) })
     }()
+
+    /// Additional keyCode aliases: extra keys that trigger the same action
+    /// without replacing the primary binding shown in Settings.
+    /// Format: (keyCode, modifiers) → action
+    static let aliases: [(keyCode: UInt16, modifiers: HotKeyModifiers, action: HotKeyAction)] = [
+        (0x75, .none, .deleteFile),   // Fwd-Delete → same as F8
+    ]
 }

@@ -140,6 +140,13 @@ final class HotKeyStore {
                 reverseLookup[key] = action
             }
         }
+
+        // Register keyCode aliases (extra keys that trigger the same action
+        // without changing the primary binding shown in Settings)
+        for alias in HotKeyDefaults.aliases {
+            let key = lookupKey(keyCode: alias.keyCode, modifiers: alias.modifiers)
+            reverseLookup[key] = alias.action
+        }
     }
 
     private func saveBindings() {
