@@ -52,16 +52,6 @@ actor ArchiveManager {
         try fm.createDirectory(at: tempDir, withIntermediateDirectories: true)
 
         let attrs = (try? fm.attributesOfItem(atPath: archiveURL.path)) ?? [:]
-        let session = ArchiveSession(
-            archiveURL:               archiveURL,
-            tempDirectory:            tempDir,
-            format:                   format,
-            isDirty:                  false,
-            originalPosixPermissions: (attrs[.posixPermissions] as? NSNumber)?.int16Value ?? 0o644,
-            originalModificationDate: attrs[.modificationDate] as? Date,
-            originalCreationDate:     attrs[.creationDate] as? Date,
-            originalOwnerName:        (attrs[.ownerAccountName] as? String) ?? ""
-        )
 
         do {
             try await ArchiveExtractor.extract(archiveURL: archiveURL, format: format, to: tempDir)
@@ -70,6 +60,22 @@ actor ArchiveManager {
             try? fm.removeItem(at: tempDir)
             throw error
         }
+
+        // Snapshot mtime of every extracted file AFTER extraction completes.
+        // scanForChanges() compares against this to detect real user edits.
+        let snapshot = snapshotMtimes(in: tempDir)
+
+        let session = ArchiveSession(
+            archiveURL:               archiveURL,
+            tempDirectory:            tempDir,
+            format:                   format,
+            isDirty:                  false,
+            originalPosixPermissions: (attrs[.posixPermissions] as? NSNumber)?.int16Value ?? 0o644,
+            originalModificationDate: attrs[.modificationDate] as? Date,
+            originalCreationDate:     attrs[.creationDate] as? Date,
+            originalOwnerName:        (attrs[.ownerAccountName] as? String) ?? "",
+            baselineSnapshot:         snapshot
+        )
 
         sessions[key] = session
         openingInProgress.remove(key)
@@ -143,19 +149,47 @@ actor ArchiveManager {
 
     // MARK: - Private
 
-    private func scanForChanges(in session: ArchiveSession) -> Bool {
-        guard
-            let enumerator = fm.enumerator(
-                at: session.tempDirectory,
-                includingPropertiesForKeys: [.contentModificationDateKey],
-                options: .skipsHiddenFiles
-            ),
-            let baseline = (try? fm.attributesOfItem(atPath: session.tempDirectory.path))?[.creationDate] as? Date
-        else { return false }
+    /// Build a relative-path → mtime snapshot of every file in tempDir.
+    private func snapshotMtimes(in tempDir: URL) -> [String: Date] {
+        var snap: [String: Date] = [:]
+        guard let enumerator = fm.enumerator(
+            at: tempDir,
+            includingPropertiesForKeys: [.contentModificationDateKey],
+            options: .skipsHiddenFiles
+        ) else { return snap }
 
+        let base = tempDir.standardizedFileURL.path
         while let url = enumerator.nextObject() as? URL {
-            if let mod = (try? url.resourceValues(forKeys: [.contentModificationDateKey]))?.contentModificationDate,
-               mod > baseline {
+            let rel = String(url.standardizedFileURL.path.dropFirst(base.count))
+            if let mtime = (try? url.resourceValues(forKeys: [.contentModificationDateKey]))?.contentModificationDate {
+                snap[rel] = mtime
+            }
+        }
+        return snap
+    }
+
+    /// Returns true only if any extracted file was modified or added after extraction.
+    /// Compares against the baseline snapshot taken right after extraction — immune to
+    /// extraction-time mtime artifacts that fooled the old creationDate approach.
+    private func scanForChanges(in session: ArchiveSession) -> Bool {
+        let snap = session.baselineSnapshot
+        guard let enumerator = fm.enumerator(
+            at: session.tempDirectory,
+            includingPropertiesForKeys: [.contentModificationDateKey],
+            options: .skipsHiddenFiles
+        ) else { return false }
+
+        let base = session.tempDirectory.standardizedFileURL.path
+        while let url = enumerator.nextObject() as? URL {
+            let rel = String(url.standardizedFileURL.path.dropFirst(base.count))
+            guard let mtime = (try? url.resourceValues(forKeys: [.contentModificationDateKey]))?.contentModificationDate
+            else { continue }
+
+            if let baseline = snap[rel] {
+                // Known file — dirty if mtime moved forward by more than 1 second
+                if mtime.timeIntervalSince(baseline) > 1 { return true }
+            } else {
+                // New file added after extraction — definitely dirty
                 return true
             }
         }

@@ -77,4 +77,8 @@ struct ArchiveSession: Sendable {
     let originalModificationDate: Date?
     let originalCreationDate: Date?
     let originalOwnerName: String
+
+    /// Snapshot of relative-path → mtime taken immediately after extraction.
+    /// Used by scanForChanges() to detect real user edits vs extraction artifacts.
+    let baselineSnapshot: [String: Date]
 }
