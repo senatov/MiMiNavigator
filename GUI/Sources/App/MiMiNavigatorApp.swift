@@ -266,17 +266,20 @@ struct MiMiNavigatorApp: App {
             reveal {f1, f2}
             activate
         end tell
-        delay 0.4
         tell application "System Events"
             tell process "Finder"
-                click menu item "cmpWithDirEqual" of menu of menu item "Services" of menu "Finder" of menu bar 1
+                click button 2 of every window
             end tell
         end tell
         delay 0.3
         tell application "System Events"
             tell process "Finder"
-                click button 2 of every window
+                click menu item "cmpWithDirEqual" of menu of menu item "Services" of menu "Finder" of menu bar 1
             end tell
+        end tell
+        delay 0.5
+        tell application "Finder"
+            close every window
         end tell
         """
         var err: NSDictionary?
