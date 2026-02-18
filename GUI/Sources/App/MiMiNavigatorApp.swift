@@ -46,6 +46,8 @@ struct MiMiNavigatorApp: App {
                     toolBarItemRefresh()
                     toolBarItemHidden()
                     toolBarOpenWith()
+                    toolBarItemSwapPanels()
+                    toolBarItemCompare()
                     toolBarItemSearch()
                     toolBarItemBuildInfo()
                 }
@@ -156,6 +158,32 @@ struct MiMiNavigatorApp: App {
         }
     }
 
+    // MARK: - Swap panels button — exchange left ↔ right directory
+    fileprivate func toolBarItemSwapPanels() -> ToolbarItem<(), some View> {
+        return ToolbarItem(placement: .automatic) {
+            ToolbarButton(
+                systemImage: "arrow.left.arrow.right",
+                help: "Swap panels — exchange left and right directories"
+            ) {
+                log.debug("Swap panels button clicked")
+                appState.swapPanels()
+            }
+        }
+    }
+
+    // MARK: - Compare button — diff files or directories via FileMerge (opendiff)
+    fileprivate func toolBarItemCompare() -> ToolbarItem<(), some View> {
+        return ToolbarItem(placement: .automatic) {
+            ToolbarButton(
+                systemImage: "doc.text.magnifyingglass",
+                help: "Compare selected items in both panels via FileMerge (opendiff)"
+            ) {
+                log.debug("Compare button clicked")
+                compareItems()
+            }
+        }
+    }
+
     // MARK: - Build info badge
     fileprivate func toolBarItemBuildInfo() -> ToolbarItem<(), some View> {
         return ToolbarItem(placement: .status) {
@@ -189,6 +217,79 @@ struct MiMiNavigatorApp: App {
     }
 
     // MARK: - Version string
+    private func compareItems() {
+        // Resolve what to compare:
+        // • Two files selected on one panel (marked) → compare those two files
+        // • One file per panel selected → compare left vs right
+        // • Otherwise → compare current panel directories
+        let focusedPanel = appState.focusedPanel
+        let markedOnFocused = appState.markedCustomFiles(for: focusedPanel)
+            .filter { !ParentDirectoryEntry.isParentEntry($0) }
+
+        let leftPath: String
+        let rightPath: String
+
+        if markedOnFocused.count == 2 {
+            // Two items marked on same panel → compare them directly
+            leftPath  = markedOnFocused[0].urlValue.path
+            rightPath = markedOnFocused[1].urlValue.path
+            log.info("[Compare] same-panel: '\(markedOnFocused[0].nameStr)' ↔ '\(markedOnFocused[1].nameStr)'")
+        } else {
+            let leftFile  = appState.selectedLeftFile
+            let rightFile = appState.selectedRightFile
+            switch (leftFile, rightFile) {
+            case (.some(let l), .some(let r)) where !l.isDirectory && !r.isDirectory:
+                leftPath  = l.urlValue.path
+                rightPath = r.urlValue.path
+                log.info("[Compare] files: '\(l.nameStr)' ↔ '\(r.nameStr)'")
+            default:
+                leftPath  = appState.leftPath
+                rightPath = appState.rightPath
+                log.info("[Compare] dirs: '\(leftPath)' ↔ '\(rightPath)'")
+            }
+        }
+
+        launchDiffTool(left: leftPath, right: rightPath)
+    }
+
+    /// Launch best available diff tool. Sandbox disabled in Debug — Process() works directly.
+    /// Priority: FileMerge (opendiff) → kdiff3 → Beyond Compare → alert
+    private func launchDiffTool(left: String, right: String) {
+        let candidates: [(appPath: String, bin: String, args: [String])] = [
+            ("/Applications/Xcode.app/Contents/Applications/FileMerge.app",
+             "/usr/bin/opendiff", [left, right]),
+            ("/Applications/kdiff3.app",
+             "/Applications/kdiff3.app/Contents/MacOS/kdiff3", [left, right]),
+            ("/Applications/Beyond Compare.app",
+             "/Applications/Beyond Compare.app/Contents/MacOS/bcomp", [left, right]),
+        ]
+
+        for (appPath, bin, args) in candidates {
+            guard FileManager.default.fileExists(atPath: appPath) else { continue }
+            let task = Process()
+            task.executableURL = URL(fileURLWithPath: bin)
+            task.arguments = args
+            do {
+                try task.run()
+                log.info("[Compare] launched \(appPath.components(separatedBy: "/").last ?? bin) ✓")
+                return
+            } catch {
+                log.error("[Compare] \(bin) failed: \(error.localizedDescription)")
+            }
+        }
+
+        Task { @MainActor in
+            let alert = NSAlert()
+            alert.messageText = "No Diff Tool Found"
+            alert.informativeText = "Install Xcode (FileMerge), kdiff3, or Beyond Compare to compare files and folders."
+            alert.alertStyle = .warning
+            alert.addButton(withTitle: "OK")
+            alert.runModal()
+        }
+        log.warning("[Compare] No diff tool available")
+    }
+
+
     private func makeDevMark() -> Text {
         let versionURL = Bundle.main.url(forResource: "curr_version", withExtension: "asc")
         let content: String

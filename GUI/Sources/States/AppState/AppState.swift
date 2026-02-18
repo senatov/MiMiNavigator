@@ -496,6 +496,30 @@ extension AppState {
             await scanner.refreshFiles(currSide: .right)
         }
     }
+
+    // MARK: - Swap panels — exchange left ↔ right paths, tabs and selection
+    func swapPanels() {
+        log.info("[AppState] swapPanels: L=\(leftPath) ↔ R=\(rightPath)")
+
+        let tmpPath = leftPath
+        leftPath = rightPath
+        rightPath = tmpPath
+
+        tabManager(for: .left).updateActiveTabPath(leftPath)
+        tabManager(for: .right).updateActiveTabPath(rightPath)
+
+        let tmpSel = selectedLeftFile
+        selectedLeftFile = selectedRightFile
+        selectedRightFile = tmpSel
+
+        Task {
+            await scanner.setLeftDirectory(pathStr: leftPath)
+            await scanner.setRightDirectory(pathStr: rightPath)
+            await refreshLeftFiles()
+            await refreshRightFiles()
+            log.debug("[AppState] swapPanels done: L=\(leftPath) R=\(rightPath)")
+        }
+    }
 }
 
 // MARK: - Lifecycle

@@ -2,17 +2,27 @@
 // MiMiNavigator
 //
 // Created by Iakov Senatov on 11.02.2026.
+// Refactored: 18.02.2026
 // Copyright © 2026 Senatov. All rights reserved.
-// Description: Standard macOS HIG toolbar button — clean, native appearance
+// Description: Toolbar button components — macOS 26 HIG, crisp SF Symbols
 
 import SwiftUI
 
-// MARK: - Standard Toolbar Button (macOS HIG)
-/// A toolbar button following macOS 26 HIG guidelines:
-/// - Uses `.bordered` or `.borderless` button style depending on context
-/// - SF Symbols with `.hierarchical` rendering
-/// - System-standard sizing and spacing
-/// - No custom animations or colors that break native look
+// MARK: - Shared icon style
+/// Renders SF Symbol at toolbar-standard size with medium weight for crispness.
+private struct ToolbarIcon: View {
+    let name: String
+    var active: Bool = false
+
+    var body: some View {
+        Image(systemName: name)
+            .symbolRenderingMode(.hierarchical)
+            .font(.system(size: 15, weight: .medium))
+            .foregroundStyle(active ? Color.accentColor : Color.primary)
+    }
+}
+
+// MARK: - Standard Toolbar Button
 struct ToolbarButton: View {
     let systemImage: String
     let help: String
@@ -20,16 +30,14 @@ struct ToolbarButton: View {
 
     var body: some View {
         Button(action: action) {
-            Image(systemName: systemImage)
-                .symbolRenderingMode(.hierarchical)
+            ToolbarIcon(name: systemImage)
         }
+        .buttonStyle(.borderless)
         .help(help)
     }
 }
 
-// MARK: - Toggle Toolbar Button (macOS HIG)
-/// A toolbar toggle button for on/off states (e.g., show/hide hidden files).
-/// Uses native SF Symbol variants for active/inactive states.
+// MARK: - Toggle Toolbar Button
 struct ToolbarToggleButton: View {
     let systemImage: String
     let activeImage: String
@@ -40,10 +48,9 @@ struct ToolbarToggleButton: View {
 
     var body: some View {
         Button(action: action) {
-            Image(systemName: isActive ? activeImage : systemImage)
-                .symbolRenderingMode(.hierarchical)
-                .foregroundStyle(isActive ? .primary : .secondary)
+            ToolbarIcon(name: isActive ? activeImage : systemImage, active: isActive)
         }
+        .buttonStyle(.borderless)
         .help(isActive ? helpActive : helpInactive)
     }
 }
