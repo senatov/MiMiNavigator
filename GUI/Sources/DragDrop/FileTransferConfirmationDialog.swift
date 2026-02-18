@@ -67,12 +67,12 @@ struct FileTransferConfirmationDialog: View {
                 Spacer()
 
                 Button("Copy") { handleAction(.copy) }
-                    .buttonStyle(.bordered)
+                    .keyboardShortcut(.defaultAction)
+                    .buttonStyle(.borderedProminent)
                     .controlSize(.large)
 
                 Button("Move") { handleAction(.move) }
-                    .keyboardShortcut(.defaultAction)
-                    .buttonStyle(.borderedProminent)
+                    .buttonStyle(.bordered)
                     .controlSize(.large)
             }
         }
