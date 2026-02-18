@@ -252,41 +252,56 @@ struct MiMiNavigatorApp: App {
         launchDiffTool(left: leftPath, right: rightPath)
     }
 
-    /// Launch best available diff tool. Sandbox disabled in Debug — Process() works directly.
-    /// Priority: FileMerge (opendiff) → kdiff3 → Beyond Compare → alert
+    /// Launch best available diff tool.
+    /// Priority: DirEqual → FileMerge (opendiff) → kdiff3 → Beyond Compare → App Store offer
     private func launchDiffTool(left: String, right: String) {
-        let candidates: [(appPath: String, bin: String, args: [String])] = [
-            ("/Applications/Xcode.app/Contents/Applications/FileMerge.app",
-             "/usr/bin/opendiff", [left, right]),
-            ("/Applications/kdiff3.app",
-             "/Applications/kdiff3.app/Contents/MacOS/kdiff3", [left, right]),
-            ("/Applications/Beyond Compare.app",
-             "/Applications/Beyond Compare.app/Contents/MacOS/bcomp", [left, right]),
-        ]
+        let leftURL  = URL(fileURLWithPath: left)
+        let rightURL = URL(fileURLWithPath: right)
+        let ws = NSWorkspace.shared
 
-        for (appPath, bin, args) in candidates {
+        // DirEqual — best for folder comparison, accepts two URLs via NSWorkspace.open
+        if let dirEqualURL = ws.urlForApplication(withBundleIdentifier: "com.naarak.DirEqual") {
+            ws.open([leftURL, rightURL], withApplicationAt: dirEqualURL,
+                    configuration: NSWorkspace.OpenConfiguration()) { _, error in
+                if let error { log.error("[Compare] DirEqual: \(error.localizedDescription)") }
+                else { log.info("[Compare] DirEqual launched ✓") }
+            }
+            return
+        }
+
+        // Fallback: Process()-based tools (sandbox off in Debug)
+        let candidates: [(appPath: String, bin: String)] = [
+            ("/Applications/Xcode.app/Contents/Applications/FileMerge.app", "/usr/bin/opendiff"),
+            ("/Applications/kdiff3.app",        "/Applications/kdiff3.app/Contents/MacOS/kdiff3"),
+            ("/Applications/Beyond Compare.app", "/Applications/Beyond Compare.app/Contents/MacOS/bcomp"),
+        ]
+        for (appPath, bin) in candidates {
             guard FileManager.default.fileExists(atPath: appPath) else { continue }
             let task = Process()
             task.executableURL = URL(fileURLWithPath: bin)
-            task.arguments = args
+            task.arguments = [left, right]
             do {
                 try task.run()
                 log.info("[Compare] launched \(appPath.components(separatedBy: "/").last ?? bin) ✓")
                 return
             } catch {
-                log.error("[Compare] \(bin) failed: \(error.localizedDescription)")
+                log.error("[Compare] \(bin): \(error.localizedDescription)")
             }
         }
 
+        // Nothing installed — offer DirEqual from App Store
         Task { @MainActor in
             let alert = NSAlert()
             alert.messageText = "No Diff Tool Found"
-            alert.informativeText = "Install Xcode (FileMerge), kdiff3, or Beyond Compare to compare files and folders."
-            alert.alertStyle = .warning
-            alert.addButton(withTitle: "OK")
-            alert.runModal()
+            alert.informativeText = "DirEqual is a free App Store tool for comparing folders.\n\nWould you like to open it in the App Store?"
+            alert.alertStyle = .informational
+            alert.addButton(withTitle: "Open App Store")
+            alert.addButton(withTitle: "Cancel")
+            if alert.runModal() == .alertFirstButtonReturn {
+                ws.open(URL(string: "macappstore://apps.apple.com/app/id1435575700")!)
+            }
         }
-        log.warning("[Compare] No diff tool available")
+        log.info("[Compare] offered DirEqual via App Store")
     }
 
 
