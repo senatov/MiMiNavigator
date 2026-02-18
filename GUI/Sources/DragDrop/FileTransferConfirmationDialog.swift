@@ -81,7 +81,6 @@ struct FileTransferConfirmationDialog: View {
         .background(Color(nsColor: .windowBackgroundColor))
         .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
         .shadow(color: .black.opacity(0.18), radius: 16, x: 0, y: 6)
-        .onExitCommand { handleAction(.abort) }
     }
 
     // MARK: - File list
