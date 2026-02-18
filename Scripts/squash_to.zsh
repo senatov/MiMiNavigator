@@ -45,7 +45,22 @@ if [[ -z "$MSG" ]]; then
     echo ""
 fi
 
-# ── Confirm ───────────────────────────────────────────────────────────────────
+# ── Warn if any commits are already pushed ───────────────────────────────────
+REMOTE=$(git remote 2>/dev/null | head -1)
+if [[ -n "$REMOTE" ]]; then
+    PUSHED=$(git log --oneline "${FULL_SHA}..HEAD" | while read line; do
+        sha=$(echo $line | cut -d' ' -f1)
+        git branch -r --contains "$sha" 2>/dev/null | grep -v HEAD | head -1
+    done | grep -c . || true)
+    if [[ $PUSHED -gt 0 ]]; then
+        echo "⚠️   WARNING: some of these commits are already pushed to remote!"
+        echo "    Squashing will require 'git push --force' afterwards."
+        echo "    Only safe if you are the sole developer on this branch."
+        echo ""
+    fi
+fi
+
+
 echo -n "❓  Squash $COUNT commit(s) into one? [y/N] "
 read CONFIRM
 if [[ "$CONFIRM" != "y" && "$CONFIRM" != "Y" ]]; then
