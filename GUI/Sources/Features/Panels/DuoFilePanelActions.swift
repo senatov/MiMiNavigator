@@ -91,7 +91,7 @@ struct DuoFilePanelActions {
         }
     }
 
-    // MARK: - Delete (Fwd-Delete / F8) — move to Trash without confirmation
+    // MARK: - Delete (Fwd-Delete / F8) — Trash for real files, removeItem inside archives
     func performDelete() {
         log.debug("performDelete — moving to Trash")
 
@@ -109,22 +109,54 @@ struct DuoFilePanelActions {
 
         guard !urls.isEmpty else { return }
 
-        log.info("performDelete: recycling \(urls.count) item(s): \(urls.map(\.lastPathComponent))")
+        // Detect if we are inside an extracted archive temp dir
+        let isInsideArchive = appState.archiveState(for: panel).isInsideArchive
 
-        NSWorkspace.shared.recycle(urls) { trashedURLs, error in
-            if let error {
-                log.error("performDelete: recycle failed — \(error.localizedDescription)")
-                return
-            }
-            log.info("performDelete: \(trashedURLs.count) item(s) moved to Trash ✓")
-
+        if isInsideArchive {
+            // Inside archive: delete from temp dir + mark session dirty
             Task { @MainActor in
-                if panel == .left {
-                    await self.appState.refreshLeftFiles()
-                } else {
-                    await self.appState.refreshRightFiles()
+                let fm = FileManager.default
+                var deletedCount = 0
+                for url in urls {
+                    do {
+                        try fm.removeItem(at: url)
+                        deletedCount += 1
+                        log.debug("performDelete: removed from archive temp: \(url.lastPathComponent)")
+                    } catch {
+                        log.error("performDelete: failed to remove \(url.lastPathComponent): \(error.localizedDescription)")
+                    }
                 }
-                self.appState.unmarkAll()
+                if deletedCount > 0 {
+                    // Mark archive dirty so it gets repacked on exit
+                    if let archiveURL = self.appState.archiveState(for: panel).archiveURL {
+                        await ArchiveManager.shared.markDirty(archivePath: archiveURL.path)
+                    }
+                    log.info("performDelete: removed \(deletedCount) item(s) from archive, marked dirty")
+                    if panel == .left {
+                        await self.appState.refreshLeftFiles()
+                    } else {
+                        await self.appState.refreshRightFiles()
+                    }
+                    self.appState.unmarkAll()
+                }
+            }
+        } else {
+            // Normal filesystem: move to Trash via NSWorkspace
+            log.info("performDelete: recycling \(urls.count) item(s): \(urls.map(\.lastPathComponent))")
+            NSWorkspace.shared.recycle(urls) { trashedURLs, error in
+                if let error {
+                    log.error("performDelete: recycle failed — \(error.localizedDescription)")
+                    return
+                }
+                log.info("performDelete: \(trashedURLs.count) item(s) moved to Trash ✓")
+                Task { @MainActor in
+                    if panel == .left {
+                        await self.appState.refreshLeftFiles()
+                    } else {
+                        await self.appState.refreshRightFiles()
+                    }
+                    self.appState.unmarkAll()
+                }
             }
         }
     }

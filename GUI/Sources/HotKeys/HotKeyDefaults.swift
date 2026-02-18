@@ -21,6 +21,7 @@ enum HotKeyDefaults {
         HotKeyBinding(action: .moveFile,         keyCode: 0x61, modifiers: .none),         // F6
         HotKeyBinding(action: .newFolder,        keyCode: 0x62, modifiers: .none),         // F7
         HotKeyBinding(action: .deleteFile,       keyCode: 0x64, modifiers: .none),         // F8
+        HotKeyBinding(action: .deleteFile,       keyCode: 0x75, modifiers: .none),         // Fwd-Delete
 
         // ── Navigation ──
         HotKeyBinding(action: .togglePanelFocus, keyCode: 0x30, modifiers: .none),         // Tab
