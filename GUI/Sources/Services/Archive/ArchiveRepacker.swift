@@ -45,11 +45,14 @@ enum ArchiveRepacker {
             try await repack7z(files: contents, to: archiveURL, workDir: tempDir)
         }
 
-        // Restore original attributes
+        // Restore original attributes (permissions + both dates)
         var attrs: [FileAttributeKey: Any] = [:]
         attrs[.posixPermissions] = NSNumber(value: session.originalPosixPermissions)
         if let modDate = session.originalModificationDate {
             attrs[.modificationDate] = modDate
+        }
+        if let creationDate = session.originalCreationDate {
+            attrs[.creationDate] = creationDate
         }
         try? FileManager.default.setAttributes(attrs, ofItemAtPath: archiveURL.path)
 
