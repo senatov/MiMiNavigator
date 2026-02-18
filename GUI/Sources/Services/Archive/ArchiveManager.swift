@@ -17,6 +17,7 @@ struct ArchiveSession: Sendable {
     var isDirty: Bool = false
     let originalPosixPermissions: Int16
     let originalModificationDate: Date?
+    let originalCreationDate: Date?      // preserved for repack
     let originalOwnerName: String
 }
 
@@ -78,6 +79,7 @@ actor ArchiveManager {
         let attrs = try fm.attributesOfItem(atPath: archiveURL.path)
         let permissions = (attrs[.posixPermissions] as? NSNumber)?.int16Value ?? 0o644
         let modDate = attrs[.modificationDate] as? Date
+        let creationDate = attrs[.creationDate] as? Date
         let owner = (attrs[.ownerAccountName] as? String) ?? ""
 
         // Delegate extraction (clear in-progress flag on exit regardless of outcome)
@@ -93,7 +95,8 @@ actor ArchiveManager {
         let session = ArchiveSession(
             archiveURL: archiveURL, tempDirectory: tempDir, format: format,
             isDirty: false, originalPosixPermissions: permissions,
-            originalModificationDate: modDate, originalOwnerName: owner
+            originalModificationDate: modDate, originalCreationDate: creationDate,
+            originalOwnerName: owner
         )
         sessions[key] = session
         openingInProgress.remove(key)
@@ -112,6 +115,13 @@ actor ArchiveManager {
             return
         }
 
+        // Always clean up temp dir and remove session — even if repack throws
+        defer {
+            try? fm.removeItem(at: session.tempDirectory)
+            sessions.removeValue(forKey: key)
+            log.info("[ArchiveManager] Closed (temp cleaned): \(archiveURL.lastPathComponent)")
+        }
+
         if repackIfDirty {
             let dirtyCheck = checkDirty(session: session)
             session.isDirty = session.isDirty || dirtyCheck
@@ -121,10 +131,6 @@ actor ArchiveManager {
             log.info("[ArchiveManager] Repacking dirty: \(archiveURL.lastPathComponent)")
             try await ArchiveRepacker.repack(session: session)
         }
-
-        try? fm.removeItem(at: session.tempDirectory)
-        sessions.removeValue(forKey: key)
-        log.info("[ArchiveManager] Closed: \(archiveURL.lastPathComponent)")
     }
 
     // MARK: - Query
