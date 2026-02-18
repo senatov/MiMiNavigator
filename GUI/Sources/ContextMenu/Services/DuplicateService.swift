@@ -28,7 +28,6 @@ final class DuplicateService {
         log.debug("\(#function) file='\(file.lastPathComponent)' path='\(file.path)'")
 
         let escapedPath = file.path.replacingOccurrences(of: "\"", with: "\\\"")
-        let parentDir = file.deletingLastPathComponent()
 
         // Finder duplicate command handles naming conventions natively
         let script = """
