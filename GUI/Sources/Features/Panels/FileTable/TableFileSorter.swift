@@ -13,11 +13,16 @@ struct TableFileSorter {
     let sortKey: SortKeysEnum
     let ascending: Bool
     
-    /// Compare two files for sorting (directories first)
+    /// Compare two files for sorting (parent entry first, then directories, then files)
     func compare(_ a: CustomFile, _ b: CustomFile) -> Bool {
+        // ".." parent entry always stays at the very top, regardless of sort key/direction
+        let aIsParent = ParentDirectoryEntry.isParentEntry(a)
+        let bIsParent = ParentDirectoryEntry.isParentEntry(b)
+        if aIsParent != bIsParent { return aIsParent }
+
         let aIsFolder = a.isDirectory || a.isSymbolicDirectory
         let bIsFolder = b.isDirectory || b.isSymbolicDirectory
-        
+
         // Directories always come first
         if aIsFolder != bIsFolder {
             return aIsFolder && !bIsFolder
