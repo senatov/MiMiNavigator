@@ -254,18 +254,111 @@ struct MiMiNavigatorApp: App {
 
     /// Launch best available diff tool.
     /// Priority: DirEqual → FileMerge (opendiff) → kdiff3 → Beyond Compare → App Store offer
+    /// Launch DirEqual via Finder Services — the only way to pass real paths without sandbox remapping.
+    /// Finder selects both folders, then Services > cmpWithDirEqual opens DirEqual with correct paths.
+    private static func launchDirEqualViaFinder(leftPath: String, rightPath: String, frame: NSRect?) {
+        // Finder reveal order: right first, left second → DirEqual gets tf1=right, tf2=left
+        // So we pass them in reversed order to get left on left, right on right
+        let script = """
+        tell application "Finder"
+            set f1 to (POSIX file \(rightPath.appleScriptQuoted)) as alias
+            set f2 to (POSIX file \(leftPath.appleScriptQuoted)) as alias
+            reveal {f1, f2}
+            activate
+        end tell
+        delay 0.4
+        tell application "System Events"
+            tell process "Finder"
+                click menu item "cmpWithDirEqual" of menu of menu item "Services" of menu "Finder" of menu bar 1
+            end tell
+        end tell
+        delay 0.3
+        tell application "System Events"
+            tell process "Finder"
+                click button 2 of every window
+            end tell
+        end tell
+        """
+        var err: NSDictionary?
+        NSAppleScript(source: script)?.executeAndReturnError(&err)
+        if let err {
+            log.error("[Compare] Finder Services: \(err["NSAppleScriptErrorMessage"] ?? err)")
+            return
+        }
+        log.info("[Compare] DirEqual launched via Finder Services ✓")
+        waitForDirEqualReady(leftPath: leftPath, rightPath: rightPath, frame: frame)
+    }
+
+    /// Polls DirEqual every 0.5s until window is ready, then clicks Compare and repositions.
+    private static func waitForDirEqualReady(leftPath: String, rightPath: String, frame: NSRect?, attempt: Int = 0) {
+        let maxAttempts = 12   // 6 seconds total
+        let interval    = 0.5
+
+        // Check if DirEqual window 1 exists and has loaded its path fields
+        let checkScript = """
+        tell application "System Events"
+            if exists process "DirEqual" then
+                if (count windows of process "DirEqual") > 0 then
+                    return value of text field 2 of group 1 of window 1 of process "DirEqual"
+                end if
+            end if
+            return ""
+        end tell
+        """
+        var checkErr: NSDictionary?
+        let result = NSAppleScript(source: checkScript)?.executeAndReturnError(&checkErr)
+        let currentTF2 = result?.stringValue ?? ""
+
+        guard !currentTF2.isEmpty else {
+            // Window not ready yet — retry
+            if attempt < maxAttempts {
+                DispatchQueue.main.asyncAfter(deadline: .now() + interval) {
+                    waitForDirEqualReady(leftPath: leftPath, rightPath: rightPath, frame: frame, attempt: attempt + 1)
+                }
+            } else {
+                log.warning("[Compare] DirEqual window never appeared after \(maxAttempts) attempts")
+            }
+            return
+        }
+
+        // Window is ready — click Compare and reposition
+        let targetFrame = frame ?? NSRect(x: 100, y: 100, width: 1200, height: 800)
+        let screenH = NSScreen.main?.frame.height ?? 1080
+        let wx = Int(targetFrame.origin.x)
+        let wy = Int(screenH - targetFrame.origin.y - targetFrame.height)
+        let ww = Int(targetFrame.width)
+        let wh = Int(targetFrame.height)
+
+        let fixScript = """
+        tell application "DirEqual" to activate
+        delay 0.15
+        tell application "System Events"
+            tell process "DirEqual"
+                click button 1 of toolbar 1 of window 1
+                delay 0.15
+                set position of window 1 to {\(wx), \(wy)}
+                set size of window 1 to {\(ww), \(wh)}
+            end tell
+        end tell
+        """
+        var fixErr: NSDictionary?
+        NSAppleScript(source: fixScript)?.executeAndReturnError(&fixErr)
+        if let fixErr {
+            log.warning("[Compare] DirEqual setup: \(fixErr["NSAppleScriptErrorMessage"] ?? fixErr)")
+        } else {
+            log.info("[Compare] DirEqual ready after \(attempt) poll(s) — compare started ✓")
+        }
+    }
+
     private func launchDiffTool(left: String, right: String) {
-        let leftURL  = URL(fileURLWithPath: left)
-        let rightURL = URL(fileURLWithPath: right)
+        let leftURL  = URL(fileURLWithPath: left).standardized
+        let rightURL = URL(fileURLWithPath: right).standardized
         let ws = NSWorkspace.shared
 
-        // DirEqual — best for folder comparison, accepts two URLs via NSWorkspace.open
-        if let dirEqualURL = ws.urlForApplication(withBundleIdentifier: "com.naarak.DirEqual") {
-            ws.open([leftURL, rightURL], withApplicationAt: dirEqualURL,
-                    configuration: NSWorkspace.OpenConfiguration()) { _, error in
-                if let error { log.error("[Compare] DirEqual: \(error.localizedDescription)") }
-                else { log.info("[Compare] DirEqual launched ✓") }
-            }
+        // DirEqual — launch via Finder Services to bypass sandbox path remapping
+        if ws.urlForApplication(withBundleIdentifier: "com.naarak.DirEqual") != nil {
+            let targetFrame = NSApp.mainWindow?.frame
+            Self.launchDirEqualViaFinder(leftPath: leftURL.path, rightPath: rightURL.path, frame: targetFrame)
             return
         }
 
