@@ -294,7 +294,7 @@ extension AppState {
         }
     }
 
-    /// Navigate out of an archive: close session (repack if dirty), go to archive's parent dir
+    /// Navigate out of an archive: optionally repack if dirty (asks user), go to archive's parent dir
     func exitArchive(on panel: PanelSide) async {
         let state = archiveState(for: panel)
         guard state.isInsideArchive, let archiveURL = state.archiveURL else {
@@ -305,8 +305,19 @@ extension AppState {
         let parentDir = archiveURL.deletingLastPathComponent().path
         log.info("[AppState] Exiting archive: \(archiveURL.lastPathComponent) → \(parentDir)")
 
+        // Check if archive was modified (dirty check via manager)
+        let session = await ArchiveManager.shared.sessionForArchive(at: archiveURL)
+        let sessionDirty = session?.isDirty ?? false
+        let fsDirty = await ArchiveManager.shared.isDirty(archiveURL: archiveURL)
+        let isDirty = sessionDirty || fsDirty
+
+        var shouldRepack = false
+        if isDirty {
+            shouldRepack = await confirmRepack(archiveName: archiveURL.lastPathComponent)
+        }
+
         do {
-            try await ArchiveManager.shared.closeArchive(at: archiveURL, repackIfDirty: true)
+            try await ArchiveManager.shared.closeArchive(at: archiveURL, repackIfDirty: shouldRepack)
         } catch {
             log.error("[AppState] Error closing archive: \(error.localizedDescription)")
         }
@@ -324,6 +335,22 @@ extension AppState {
             await scanner.setRightDirectory(pathStr: parentDir)
             await scanner.refreshFiles(currSide: .right)
             await refreshRightFiles()
+        }
+    }
+
+    /// Shows NSAlert asking user whether to repack the modified archive.
+    /// Returns true if user chose to repack.
+    @MainActor
+    private func confirmRepack(archiveName: String) async -> Bool {
+        return await withCheckedContinuation { continuation in
+            let alert = NSAlert()
+            alert.messageText = "Archive Modified"
+            alert.informativeText = "\"\(archiveName)\" has been modified.\n\nRepack the archive with your changes?"
+            alert.alertStyle = .warning
+            alert.addButton(withTitle: "Repack")          // NSAlertFirstButtonReturn
+            alert.addButton(withTitle: "Discard Changes") // NSAlertSecondButtonReturn
+            let response = alert.runModal()
+            continuation.resume(returning: response == .alertFirstButtonReturn)
         }
     }
 

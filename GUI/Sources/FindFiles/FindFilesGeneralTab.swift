@@ -198,11 +198,11 @@ struct FindFilesGeneralTab: View {
     private func browseDirectory() {
         let panel = NSOpenPanel()
         panel.canChooseDirectories = true
-        panel.canChooseFiles = false
+        panel.canChooseFiles = true       // allow selecting a single file or archive
         panel.allowsMultipleSelection = false
         panel.directoryURL = URL(fileURLWithPath: viewModel.searchDirectory)
         panel.prompt = "Select"
-        panel.message = "Choose search directory"
+        panel.message = "Choose directory, file, or archive to search in"
         if panel.runModal() == .OK, let url = panel.url {
             viewModel.searchDirectory = url.path
         }

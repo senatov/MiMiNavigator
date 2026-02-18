@@ -1,21 +1,16 @@
 // ArchiveExtractor.swift
 // MiMiNavigator
 //
-// Extracted from ArchiveManager.swift on 12.02.2026
+// Created by Iakov Senatov on 12.02.2026.
 // Copyright © 2026 Senatov. All rights reserved.
 // Description: Archive extraction — ZIP, TAR family, 7z with auto-fallback
 
 import Foundation
 
 // MARK: - Archive Extractor
-/// Handles extraction of archives to temp directories
 enum ArchiveExtractor {
 
-    // MARK: - Main Entry Point
-
     @concurrent static func extract(archiveURL: URL, format: ArchiveFormat, to destination: URL) async throws {
-        log.info("[Extractor] Extracting \(archiveURL.lastPathComponent) (format: \(format.displayName)) → \(destination.path)")
-
         switch format {
         case .zip:
             try await extractZip(archiveURL: archiveURL, to: destination)
@@ -24,33 +19,27 @@ enum ArchiveExtractor {
         case .sevenZip, .sevenZipGeneric:
             try await extract7z(archiveURL: archiveURL, to: destination)
         }
-
-        log.info("[Extractor] Extraction complete: \(archiveURL.lastPathComponent)")
+        log.info("[Extractor] Done: \(archiveURL.lastPathComponent)")
     }
 
     // MARK: - ZIP
 
-    @concurrent static func extractZip(archiveURL: URL, to destination: URL) async throws {
+    @concurrent private static func extractZip(archiveURL: URL, to destination: URL) async throws {
+        let pipe = Pipe()
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/unzip")
-        // -o   overwrite without prompting
-        // -q   quiet (suppress per-file output)
-        // -DD  do NOT restore timestamps (avoids fchmod/fchown errors in /tmp on macOS sandbox)
-        //       exit=50 from unzip means "disk full / attribute warning" — files ARE extracted
+        // -o overwrite, -q quiet, -DD skip timestamps (avoids fchmod errors in /tmp)
         process.arguments = ["-o", "-q", "-DD", archiveURL.path, "-d", destination.path]
         process.standardOutput = Pipe()
-        let errorPipe = Pipe()
-        process.standardError = errorPipe
-        // Feed /dev/null as stdin — prevents "disk full? Continue (y/n)" interactive hang
-        if let devNull = FileHandle(forReadingAtPath: "/dev/null") {
-            process.standardInput = devNull
-        }
-        try await ArchiveProcessRunner.run(process, errorPipe: errorPipe)
+        process.standardError = pipe
+        process.standardInput = FileHandle(forReadingAtPath: "/dev/null")
+        try await ArchiveProcessRunner.run(process, errorPipe: pipe)
     }
 
     // MARK: - TAR family
 
-    @concurrent static func extractTar(archiveURL: URL, format: ArchiveFormat, to destination: URL) async throws {
+    @concurrent private static func extractTar(archiveURL: URL, format: ArchiveFormat, to destination: URL) async throws {
+        let pipe = Pipe()
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/tar")
         var args = ["-x"]
@@ -59,96 +48,31 @@ enum ArchiveExtractor {
         case .tarBz2:    args.append("-j")
         case .tarXz:     args.append("-J")
         case .compressZ: args.append("-Z")
-        // lzma, zst, lz4, lzo, lz — macOS tar auto-detects via libarchive
-        case .tarLzma, .tarZst, .tarLz4, .tarLzo, .tarLz:
-            break
-        default: break
+        default:         break   // lzma/zst/lz4/lzo/lz — libarchive auto-detects
         }
-        args.append(contentsOf: ["-f", archiveURL.path, "-C", destination.path])
+        args += ["-f", archiveURL.path, "-C", destination.path]
         process.arguments = args
         process.standardOutput = Pipe()
-        let errorPipe = Pipe()
-        process.standardError = errorPipe
-        if let devNull = FileHandle(forReadingAtPath: "/dev/null") {
-            process.standardInput = devNull
-        }
-
+        process.standardError = pipe
+        process.standardInput = FileHandle(forReadingAtPath: "/dev/null")
         do {
-            try await ArchiveProcessRunner.run(process, errorPipe: errorPipe)
+            try await ArchiveProcessRunner.run(process, errorPipe: pipe)
         } catch {
-            // Fallback to 7z if tar fails
-            log.warning("[Extractor] tar failed for \(archiveURL.lastPathComponent), trying 7z fallback")
+            log.warning("[Extractor] tar failed for \(archiveURL.lastPathComponent), trying 7z")
             try await extract7z(archiveURL: archiveURL, to: destination)
         }
     }
 
     // MARK: - 7z
 
-    @concurrent static func extract7z(archiveURL: URL, to destination: URL) async throws {
-        let szPath = try ArchiveToolLocator.find7z()
+    @concurrent private static func extract7z(archiveURL: URL, to destination: URL) async throws {
+        let pipe = Pipe()
         let process = Process()
-        process.executableURL = URL(fileURLWithPath: szPath)
+        process.executableURL = URL(fileURLWithPath: try ArchiveToolLocator.find7z())
         process.arguments = ["x", archiveURL.path, "-o\(destination.path)", "-y"]
         process.standardOutput = Pipe()
-        let errorPipe = Pipe()
-        process.standardError = errorPipe
-        if let devNull = FileHandle(forReadingAtPath: "/dev/null") {
-            process.standardInput = devNull
-        }
-        try await ArchiveProcessRunner.run(process, errorPipe: errorPipe)
-    }
-}
-
-// MARK: - Tool Locator
-/// Finds CLI tools on the system
-enum ArchiveToolLocator {
-    static func find7z() throws -> String {
-        let paths = ["/opt/homebrew/bin/7z", "/usr/local/bin/7z", "/usr/bin/7z"]
-        guard let szPath = paths.first(where: { FileManager.default.fileExists(atPath: $0) }) else {
-            throw ArchiveManagerError.toolNotFound("7z not installed. Install with: brew install p7zip")
-        }
-        return szPath
-    }
-}
-
-// MARK: - Process Runner
-/// Async wrapper for running CLI processes
-enum ArchiveProcessRunner {
-
-    /// Exit codes that are considered non-fatal warnings (not real errors)
-    /// unzip exit codes:
-    ///   0  = success
-    ///   1  = warnings (macOS __MACOSX metadata, unicode names, etc.) — extraction succeeded
-    ///  50  = disk full / attribute warning (fchmod/fchown failed on temp dir) — files ARE extracted
-    ///  51+ = real errors (corrupt archive, etc.)
-    /// tar:
-    ///   1  = some files changed during archiving — non-fatal
-    private static let warningExitCodes: Set<Int32> = [1, 50]
-
-    @concurrent static func run(_ process: Process, errorPipe: Pipe) async throws {
-        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-            process.terminationHandler = { proc in
-                let status = proc.terminationStatus
-                if status == 0 || Self.warningExitCodes.contains(status) {
-                    // 0 = success, 1 = warnings only — treat both as success
-                    if status != 0 {
-                        let warnData = errorPipe.fileHandleForReading.readDataToEndOfFile()
-                        let warnMsg = String(data: warnData, encoding: .utf8) ?? ""
-                        log.warning("[ProcessRunner] exit=\(status) (warnings only): \(warnMsg.prefix(200))")
-                    }
-                    continuation.resume()
-                } else {
-                    let errorData = errorPipe.fileHandleForReading.readDataToEndOfFile()
-                    let errorMessage = String(data: errorData, encoding: .utf8) ?? "Exit code \(status)"
-                    log.error("[ProcessRunner] exit=\(status): \(errorMessage.prefix(300))")
-                    continuation.resume(throwing: ArchiveManagerError.extractionFailed("exit=\(status): \(errorMessage)"))
-                }
-            }
-            do {
-                try process.run()
-            } catch {
-                continuation.resume(throwing: error)
-            }
-        }
+        process.standardError = pipe
+        process.standardInput = FileHandle(forReadingAtPath: "/dev/null")
+        try await ArchiveProcessRunner.run(process, errorPipe: pipe)
     }
 }

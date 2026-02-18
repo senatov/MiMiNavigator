@@ -15,7 +15,6 @@ enum ArchiveFormatDetector {
     static func detect(url: URL) -> ArchiveFormat? {
         let ext = url.pathExtension.lowercased()
         let name = url.lastPathComponent.lowercased()
-        log.debug("[FormatDetector] detect: '\(name)' ext='\(ext)')")
 
         // Compound tar extensions first (order matters — check before single extension)
         if name.hasSuffix(".tar.gz") || ext == "tgz" { return .tarGz }
@@ -54,12 +53,7 @@ enum ArchiveFormatDetector {
             return .sevenZipGeneric
 
         default:
-            // Fallback: try 7z for any recognized archive extension
-            if ArchiveExtensions.isArchive(ext) {
-                log.debug("[FormatDetector] fallback to 7z for ext='\(ext)'")
-                return .sevenZipGeneric
-            }
-            log.debug("[FormatDetector] not an archive: '\(name)'")
+            if ArchiveExtensions.isArchive(ext) { return .sevenZipGeneric }
             return nil
         }
     }

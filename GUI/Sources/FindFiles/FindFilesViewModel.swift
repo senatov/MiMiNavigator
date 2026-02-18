@@ -49,6 +49,18 @@ final class FindFilesViewModel {
     var selectedResult: FindFilesResult?
     var errorMessage: String?
 
+    // MARK: - Persistence
+    /// Path where last search results are saved between dialog sessions
+    private static let savedResultsURL: URL = {
+        let dir = FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent(".mimi", isDirectory: true)
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        return dir.appendingPathComponent("search_results.json")
+    }()
+
+    /// Header info saved alongside results so Export can show query context
+    private(set) var lastSearchSummary: String = ""
+
     // MARK: - Archive Password Dialog
     var showPasswordDialog: Bool = false
     var passwordArchiveName: String = ""
@@ -77,9 +89,19 @@ final class FindFilesViewModel {
             searchInArchives = true
             searchInSubdirectories = true
             log.info("[FindFiles] Configured to search in archive: \(file.nameStr)")
+        } else if let file = selectedFile, !file.isDirectory {
+            // Selected file is a regular file — set it as search target (content search)
+            searchDirectory = file.urlValue.path
+            searchInArchives = false
+            log.info("[FindFiles] Configured to search in file: \(file.nameStr)")
         } else if searchDirectory.isEmpty {
             // Normal case — use panel's current directory
             searchDirectory = searchPath
+        }
+
+        // Load previous results if available and no active search
+        if results.isEmpty {
+            loadSavedResults()
         }
     }
 
@@ -107,7 +129,9 @@ final class FindFilesViewModel {
         let exists = FileManager.default.fileExists(atPath: targetURL.path, isDirectory: &isDir)
         // Check if it's a single archive file to search (not a directory)
         let isArchiveTarget = exists && !isDir.boolValue && ArchiveExtensions.isArchive(targetURL.pathExtension.lowercased())
-        guard exists && (isDir.boolValue || isArchiveTarget) else {
+        // Check if it's a single regular file (not archive, not directory)
+        let isSingleFileTarget = exists && !isDir.boolValue && !isArchiveTarget
+        guard exists && (isDir.boolValue || isArchiveTarget || isSingleFileTarget) else {
             errorMessage = "Path not found: \(searchDirectory)"
             return
         }
@@ -121,6 +145,15 @@ final class FindFilesViewModel {
         results.removeAll()
         errorMessage = nil
         searchState = .searching
+        // Build search summary for export header
+        var summaryParts: [String] = []
+        if !fileNamePattern.isEmpty && fileNamePattern != "*" && fileNamePattern != "*.*" {
+            summaryParts.append("Name: \(fileNamePattern)")
+        }
+        if !searchText.isEmpty { summaryParts.append("Text: \(searchText)") }
+        summaryParts.append("In: \(searchDirectory)")
+        lastSearchSummary = summaryParts.joined(separator: " | ")
+
         // Build criteria
         var criteria = FindFilesCriteria(searchDirectory: targetURL)
         criteria.fileNamePattern = fileNamePattern.isEmpty ? "*" : fileNamePattern
@@ -130,6 +163,7 @@ final class FindFilesViewModel {
         criteria.searchInSubdirectories = searchInSubdirectories
         criteria.searchInArchives = searchInArchives
         criteria.isArchiveOnlySearch = isArchiveTarget
+        criteria.isSingleFileContentSearch = isSingleFileTarget
 
         if useSizeFilter {
             criteria.fileSizeMin = Int64(fileSizeMin)
@@ -187,6 +221,7 @@ final class FindFilesViewModel {
                 self.searchState = .cancelled
             } else {
                 self.searchState = .completed
+                self.saveResults()
             }
             log.info("[FindFiles] Search finished: \(self.results.count) results, \(self.stats.formattedElapsed)")
         }
@@ -362,19 +397,67 @@ final class FindFilesViewModel {
         panel.nameFieldStringValue = "search_results.txt"
         panel.begin { response in
             guard response == .OK, let url = panel.url else { return }
-            let content = self.results
-                .map { result in
-                    var line = result.filePath
-                    if let context = result.matchContext, let lineNum = result.lineNumber {
-                        line += ":\(lineNum): \(context)"
-                    }
-                    if result.isInsideArchive, let archive = result.archivePath {
-                        line = "[\(archive)] \(line)"
-                    }
-                    return line
+
+            // Header with query info
+            let dateStr = DateFormatter.localizedString(from: Date(), dateStyle: .medium, timeStyle: .short)
+            var lines: [String] = [
+                "MiMiNavigator — Search Results",
+                "Date: \(dateStr)",
+                "Query: \(self.lastSearchSummary)",
+                "Found: \(self.results.count) file(s)",
+                String(repeating: "-", count: 60),
+                ""
+            ]
+
+            // Result lines
+            for result in self.results {
+                var line = result.filePath
+                if let context = result.matchContext, let lineNum = result.lineNumber {
+                    line += ":\(lineNum): \(context)"
                 }
-                .joined(separator: "\n")
+                if result.isInsideArchive, let archive = result.archivePath {
+                    line = "[\(archive)] \(line)"
+                }
+                lines.append(line)
+            }
+
+            let content = lines.joined(separator: "\n")
             try? content.write(to: url, atomically: true, encoding: .utf8)
         }
     }
+
+    // MARK: - Persistence
+
+    private func saveResults() {
+        guard !results.isEmpty else { return }
+        do {
+            let payload = SavedSearchPayload(summary: lastSearchSummary, results: results)
+            let data = try JSONEncoder().encode(payload)
+            try data.write(to: Self.savedResultsURL, options: .atomic)
+            log.info("[FindFiles] Saved \(results.count) results to disk")
+        } catch {
+            log.warning("[FindFiles] Failed to save results: \(error.localizedDescription)")
+        }
+    }
+
+    private func loadSavedResults() {
+        guard FileManager.default.fileExists(atPath: Self.savedResultsURL.path) else { return }
+        do {
+            let data = try Data(contentsOf: Self.savedResultsURL)
+            let payload = try JSONDecoder().decode(SavedSearchPayload.self, from: data)
+            results = payload.results
+            lastSearchSummary = payload.summary
+            searchState = .completed
+            log.info("[FindFiles] Loaded \(results.count) saved results from disk")
+        } catch {
+            log.warning("[FindFiles] Failed to load saved results: \(error.localizedDescription)")
+        }
+    }
+}
+
+// MARK: - Saved Search Payload
+/// Container for persisting search results between dialog sessions
+private struct SavedSearchPayload: Codable {
+    let summary: String
+    let results: [FindFilesResult]
 }

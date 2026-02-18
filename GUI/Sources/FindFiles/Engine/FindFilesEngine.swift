@@ -90,6 +90,26 @@ actor FindFilesEngine {
             return
         }
 
+        // Special case: single regular file — search its text content
+        if criteria.isSingleFileContentSearch {
+            log.info("[FindEngine] Single-file content search: \(criteria.searchDirectory.lastPathComponent)")
+            stats.filesScanned += 1
+            let fileURL = criteria.searchDirectory
+            if let cp = contentPattern {
+                let contentResults = FindFilesContentSearcher.searchFileContent(fileURL: fileURL, pattern: cp)
+                for result in contentResults {
+                    guard !Task.isCancelled else { return }
+                    continuation.yield(result)
+                    stats.matchesFound += 1
+                }
+            } else {
+                // No text filter — just yield the file itself
+                continuation.yield(FindFilesResult(fileURL: fileURL))
+                stats.matchesFound += 1
+            }
+            return
+        }
+
         // Normal directory search
         let fm = FileManager.default
         await scanDirectory(
