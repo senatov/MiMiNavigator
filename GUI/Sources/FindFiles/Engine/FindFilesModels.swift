@@ -9,7 +9,7 @@ import Foundation
 
 // MARK: - Search Result
 /// Single search result representing a found file or content match
-struct FindFilesResult: Identifiable, Hashable, Sendable {
+struct FindFilesResult: Identifiable, Hashable, Sendable, Codable {
     let id: UUID
     let fileURL: URL
     let fileName: String
@@ -20,6 +20,43 @@ struct FindFilesResult: Identifiable, Hashable, Sendable {
     let archivePath: String?
     let fileSize: Int64
     let modifiedDate: Date?
+
+    // MARK: - Codable support
+    enum CodingKeys: String, CodingKey {
+        case id, fileURLString, fileName, filePath
+        case matchContext, lineNumber
+        case isInsideArchive, archivePath
+        case fileSize, modifiedDate
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(id, forKey: .id)
+        try c.encode(fileURL.absoluteString, forKey: .fileURLString)
+        try c.encode(fileName, forKey: .fileName)
+        try c.encode(filePath, forKey: .filePath)
+        try c.encodeIfPresent(matchContext, forKey: .matchContext)
+        try c.encodeIfPresent(lineNumber, forKey: .lineNumber)
+        try c.encode(isInsideArchive, forKey: .isInsideArchive)
+        try c.encodeIfPresent(archivePath, forKey: .archivePath)
+        try c.encode(fileSize, forKey: .fileSize)
+        try c.encodeIfPresent(modifiedDate, forKey: .modifiedDate)
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(UUID.self, forKey: .id)
+        let urlString = try c.decode(String.self, forKey: .fileURLString)
+        fileURL = URL(string: urlString) ?? URL(fileURLWithPath: urlString)
+        fileName = try c.decode(String.self, forKey: .fileName)
+        filePath = try c.decode(String.self, forKey: .filePath)
+        matchContext = try c.decodeIfPresent(String.self, forKey: .matchContext)
+        lineNumber = try c.decodeIfPresent(Int.self, forKey: .lineNumber)
+        isInsideArchive = try c.decode(Bool.self, forKey: .isInsideArchive)
+        archivePath = try c.decodeIfPresent(String.self, forKey: .archivePath)
+        fileSize = try c.decode(Int64.self, forKey: .fileSize)
+        modifiedDate = try c.decodeIfPresent(Date.self, forKey: .modifiedDate)
+    }
 
     init(
         fileURL: URL,
@@ -74,6 +111,9 @@ struct FindFilesCriteria: Sendable {
     /// If true, searchDirectory is a single archive file (not a directory).
     /// Engine should search only inside that archive.
     var isArchiveOnlySearch: Bool = false
+
+    /// If true, searchDirectory is a single regular file — search its text content.
+    var isSingleFileContentSearch: Bool = false
 
     /// Whether we need content search (not just filename matching)
     var isContentSearch: Bool {

@@ -132,14 +132,19 @@ struct FindFilesResultsView: View {
     private func resultContextMenu(selection: Set<FindFilesResult.ID>) -> some View {
         if let id = selection.first,
            let result = viewModel.results.first(where: { $0.id == id }) {
+
+            // Go to File: navigate panel to the file; if inside archive — open archive, then navigate.
+            // The Find Files dialog stays open in both cases.
             Button("Go to File") {
                 if let state = appState {
                     viewModel.goToFile(result: result, appState: state)
                 }
             }
-            Button("Open") {
-                viewModel.openFile(result: result)
-            }
+
+            // Open: not yet implemented — disabled
+            Button("Open") {}
+                .disabled(true)
+
             Button("Reveal in Finder") {
                 viewModel.revealInFinder(result: result)
             }
@@ -160,6 +165,7 @@ struct FindFilesResultsView: View {
         }
         .disabled(viewModel.results.isEmpty)
 
+        // Export: saves list with query header (name pattern, text, directory, date)
         Button("Export Results…") {
             viewModel.exportResults()
         }

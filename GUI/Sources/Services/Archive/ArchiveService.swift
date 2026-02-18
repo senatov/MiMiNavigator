@@ -1,278 +1,99 @@
 // ArchiveService.swift
-//  MiMiNavigator
+// MiMiNavigator
 //
-//  Created by Iakov Senatov on 22.01.2026.
-//  Copyright © 2026 Senatov. All rights reserved.
+// Created by Iakov Senatov on 22.01.2026.
+// Copyright © 2026 Senatov. All rights reserved.
+// Description: High-level archive creation API — delegates packing to Repacker internals
 
 import Foundation
 
-// MARK: - Archive Format
-enum ArchiveFormat: String, CaseIterable, Identifiable, Sendable {
-    case zip = "zip"
-    case tarGz = "tar.gz"
-    case tarBz2 = "tar.bz2"
-    case tarXz = "tar.xz"
-    case tarLzma = "tar.lzma"
-    case tarZst = "tar.zst"
-    case tarLz4 = "tar.lz4"
-    case tarLzo = "tar.lzo"
-    case tarLz = "tar.lz"
-    case tar = "tar"
-    case compressZ = "Z"
-    case sevenZip = "7z"
-    case sevenZipGeneric = "7z-generic"  // Catch-all for formats handled by 7z
-
-    var id: String { rawValue }
-
-    var displayName: String {
-        switch self {
-        case .zip:            return "ZIP Archive"
-        case .tarGz:          return "TAR.GZ (gzip)"
-        case .tarBz2:         return "TAR.BZ2 (bzip2)"
-        case .tarXz:          return "TAR.XZ (xz)"
-        case .tarLzma:        return "TAR.LZMA"
-        case .tarZst:         return "TAR.ZST (zstandard)"
-        case .tarLz4:         return "TAR.LZ4"
-        case .tarLzo:         return "TAR.LZO"
-        case .tarLz:          return "TAR.LZ (lzip)"
-        case .tar:            return "TAR (uncompressed)"
-        case .compressZ:      return "Unix Compress (.Z)"
-        case .sevenZip:       return "7-Zip Archive"
-        case .sevenZipGeneric:return "Archive (via 7z)"
-        }
-    }
-
-    var fileExtension: String { rawValue }
-
-    var icon: String {
-        switch self {
-        case .zip: return "doc.zipper"
-        case .tarGz, .tarBz2, .tarXz, .tarLzma, .tarZst, .tarLz4, .tarLzo, .tarLz, .tar, .compressZ:
-            return "archivebox"
-        case .sevenZip, .sevenZipGeneric: return "archivebox.fill"
-        }
-    }
-
-    /// Check if format is available on this system
-    var isAvailable: Bool {
-        switch self {
-        case .zip, .tar, .tarGz, .tarBz2, .tarXz, .compressZ:
-            return true  // Built-in macOS tools
-        case .tarLzma, .tarZst, .tarLz4, .tarLzo, .tarLz:
-            return true  // macOS libarchive/tar handles these
-        case .sevenZip, .sevenZipGeneric:
-            return ArchiveFormat.check7zAvailable()
-        }
-    }
-
-    /// Static check for 7z availability (no actor isolation needed)
-    private static func check7zAvailable() -> Bool {
-        let paths = [
-            "/usr/local/bin/7z",
-            "/opt/homebrew/bin/7z",
-            "/usr/bin/7z",
-        ]
-        return paths.contains { FileManager.default.fileExists(atPath: $0) }
-    }
-
-    static var availableFormats: [ArchiveFormat] {
-        allCases.filter { $0.isAvailable }
-    }
-}
-
 // MARK: - Archive Service
-/// Handles archive creation and extraction
+/// Creates new archives from selected files. Delegates to CLI tools via ArchiveProcessRunner.
 @MainActor
 final class ArchiveService {
 
     static let shared = ArchiveService()
-
-    private let fileManager = FileManager.default
-
     private init() {}
 
-    // MARK: - Get 7z path
-    private var sevenZipPath: String? {
-        let paths = [
-            "/opt/homebrew/bin/7z",
-            "/usr/local/bin/7z",
-            "/usr/bin/7z",
-        ]
-        return paths.first { fileManager.fileExists(atPath: $0) }
-    }
+    // MARK: - Create Archive
 
-    // MARK: - Create archive
-    /// Creates an archive from files
-    /// - Parameters:
-    ///   - files: Files to archive
-    ///   - destination: Directory where archive will be created
-    ///   - archiveName: Name for the archive (without extension)
-    ///   - format: Archive format
-    /// - Returns: URL of created archive
+    /// Creates an archive from given files in the specified destination directory.
     func createArchive(
         from files: [URL],
         to destination: URL,
         archiveName: String,
         format: ArchiveFormat
     ) async throws -> URL {
-
+        guard !files.isEmpty else {
+            throw ArchiveManagerError.repackFailed("No files provided")
+        }
         let archiveURL = destination.appendingPathComponent("\(archiveName).\(format.fileExtension)")
-
-        // Check if archive already exists
-        if fileManager.fileExists(atPath: archiveURL.path) {
+        guard !FileManager.default.fileExists(atPath: archiveURL.path) else {
             throw FileOperationError.fileAlreadyExists(archiveURL.lastPathComponent)
         }
-
-        switch format {
-        case .zip:
-            try await createZipArchive(from: files, to: archiveURL)
-        case .tar:
-            try await createTarArchive(from: files, to: archiveURL, compression: nil)
-        case .tarGz:
-            try await createTarArchive(from: files, to: archiveURL, compression: "gzip")
-        case .tarBz2:
-            try await createTarArchive(from: files, to: archiveURL, compression: "bzip2")
-        case .tarXz:
-            try await createTarArchive(from: files, to: archiveURL, compression: "xz")
-        case .tarLzma, .tarZst, .tarLz4, .tarLzo, .tarLz, .compressZ:
-            try await createTarArchive(from: files, to: archiveURL, compression: nil) // auto-detect
-        case .sevenZip, .sevenZipGeneric:
-            try await create7zArchive(from: files, to: archiveURL)
-        }
-
-        log.info("Created archive: \(archiveURL.lastPathComponent)")
+        let workDir = files[0].deletingLastPathComponent()
+        try await pack(files: files, to: archiveURL, format: format, workDir: workDir)
+        log.info("[ArchiveService] Created: \(archiveURL.lastPathComponent)")
         return archiveURL
     }
 
-    // MARK: - ZIP using ditto (macOS native, preserves attributes)
-    private func createZipArchive(from files: [URL], to archiveURL: URL) async throws {
-        // Use ditto for single item, or create temp directory for multiple
-        if files.count == 1 {
-            let process = Process()
-            process.executableURL = URL(fileURLWithPath: "/usr/bin/ditto")
-            process.arguments = ["-c", "-k", "--sequesterRsrc", files[0].path, archiveURL.path]
-
-            try await runProcess(process)
-        } else {
-            // For multiple files, use zip command
-            let process = Process()
-            process.executableURL = URL(fileURLWithPath: "/usr/bin/zip")
-            process.currentDirectoryURL = files[0].deletingLastPathComponent()
-
-            var args = ["-r", archiveURL.path]
-            args.append(contentsOf: files.map { $0.lastPathComponent })
-            process.arguments = args
-
-            try await runProcess(process)
-        }
-    }
-
-    // MARK: - TAR archive
-    private func createTarArchive(from files: [URL], to archiveURL: URL, compression: String?) async throws {
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/tar")
-        process.currentDirectoryURL = files[0].deletingLastPathComponent()
-
-        var args = ["-c"]
-
-        // Add compression flag
-        if let comp = compression {
-            switch comp {
-            case "gzip": args.append("-z")
-            case "bzip2": args.append("-j")
-            case "xz": args.append("-J")
-            default: break
-            }
-        }
-
-        args.append("-f")
-        args.append(archiveURL.path)
-        args.append(contentsOf: files.map { $0.lastPathComponent })
-
-        process.arguments = args
-
-        try await runProcess(process)
-    }
-
-    // MARK: - 7z archive
-    private func create7zArchive(from files: [URL], to archiveURL: URL) async throws {
-        guard let szPath = sevenZipPath else {
-            throw FileOperationError.operationFailed("7-Zip not installed. Install with: brew install p7zip")
-        }
-
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: szPath)
-        process.currentDirectoryURL = files[0].deletingLastPathComponent()
-
-        var args = ["a", archiveURL.path]
-        args.append(contentsOf: files.map { $0.lastPathComponent })
-        process.arguments = args
-
-        try await runProcess(process)
-    }
-
-    // MARK: - Create archive with progress handler
-    /// Creates an archive from files with progress reporting
+    /// Creates an archive with progress reporting (progress is approximate).
     func createArchive(
         from files: [URL],
         to archiveURL: URL,
         format: ArchiveFormat,
         progressHandler: @escaping (Double) -> Void
     ) async throws {
-        // Calculate total size for progress estimation (reserved for future granular progress)
-        _ =
-            files.compactMap { url -> Int64? in
-                try? fileManager.attributesOfItem(atPath: url.path)[.size] as? Int64
-            }
-            .reduce(0, +)
-
-        // Report initial progress
+        guard !files.isEmpty else {
+            throw ArchiveManagerError.repackFailed("No files provided")
+        }
         progressHandler(0.0)
+        let workDir = files[0].deletingLastPathComponent()
+        try await pack(files: files, to: archiveURL, format: format, workDir: workDir)
+        progressHandler(1.0)
+        log.info("[ArchiveService] Created: \(archiveURL.lastPathComponent)")
+    }
+
+    // MARK: - Private
+
+    private func pack(files: [URL], to archiveURL: URL, format: ArchiveFormat, workDir: URL) async throws {
+        let names = files.map(\.lastPathComponent)
+        let errorPipe = Pipe()
+        let process = Process()
+        process.currentDirectoryURL = workDir
 
         switch format {
         case .zip:
-            try await createZipArchive(from: files, to: archiveURL)
+            process.executableURL = URL(fileURLWithPath: "/usr/bin/zip")
+            process.arguments = ["-r", archiveURL.path] + names
+
         case .tar:
-            try await createTarArchive(from: files, to: archiveURL, compression: nil)
+            process.executableURL = URL(fileURLWithPath: "/usr/bin/tar")
+            process.arguments = ["-c", "-f", archiveURL.path] + names
+
         case .tarGz:
-            try await createTarArchive(from: files, to: archiveURL, compression: "gzip")
+            process.executableURL = URL(fileURLWithPath: "/usr/bin/tar")
+            process.arguments = ["-c", "-z", "-f", archiveURL.path] + names
+
         case .tarBz2:
-            try await createTarArchive(from: files, to: archiveURL, compression: "bzip2")
+            process.executableURL = URL(fileURLWithPath: "/usr/bin/tar")
+            process.arguments = ["-c", "-j", "-f", archiveURL.path] + names
+
         case .tarXz:
-            try await createTarArchive(from: files, to: archiveURL, compression: "xz")
+            process.executableURL = URL(fileURLWithPath: "/usr/bin/tar")
+            process.arguments = ["-c", "-J", "-f", archiveURL.path] + names
+
         case .tarLzma, .tarZst, .tarLz4, .tarLzo, .tarLz, .compressZ:
-            try await createTarArchive(from: files, to: archiveURL, compression: nil)
+            process.executableURL = URL(fileURLWithPath: "/usr/bin/tar")
+            process.arguments = ["-c", "-f", archiveURL.path] + names
+
         case .sevenZip, .sevenZipGeneric:
-            try await create7zArchive(from: files, to: archiveURL)
+            process.executableURL = URL(fileURLWithPath: try ArchiveToolLocator.find7z())
+            process.arguments = ["a", archiveURL.path] + names
         }
 
-        // Report completion
-        progressHandler(1.0)
-        log.info("Created archive: \(archiveURL.lastPathComponent)")
-    }
-
-    // MARK: - Run process async
-    private func runProcess(_ process: Process) async throws {
-        log.debug(#function)
-        let errorPipe = Pipe()
+        process.standardOutput = Pipe()
         process.standardError = errorPipe
-
-        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-            process.terminationHandler = { proc in
-                if proc.terminationStatus == 0 {
-                    continuation.resume()
-                } else {
-                    let errorData = errorPipe.fileHandleForReading.readDataToEndOfFile()
-                    let errorMessage = String(data: errorData, encoding: .utf8) ?? "Unknown error"
-                    continuation.resume(throwing: FileOperationError.operationFailed(errorMessage))
-                }
-            }
-
-            do {
-                try process.run()
-            } catch {
-                continuation.resume(throwing: error)
-            }
-        }
+        try await ArchiveProcessRunner.run(process, errorPipe: errorPipe)
     }
 }
