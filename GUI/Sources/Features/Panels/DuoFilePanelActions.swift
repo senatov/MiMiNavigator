@@ -91,12 +91,42 @@ struct DuoFilePanelActions {
         }
     }
 
-    // MARK: - F8 Delete (supports batch operations)
+    // MARK: - Delete (Fwd-Delete / F8) — move to Trash without confirmation
     func performDelete() {
-        log.debug("performDelete - Delete button pressed")
+        log.debug("performDelete — moving to Trash")
 
-        // Use batch coordinator for multi-selection support
-        BatchOperationCoordinator.shared.initiateDelete(appState: appState)
+        let panel = appState.focusedPanel
+        let files = appState.filesForOperation(on: panel)
+
+        guard !files.isEmpty else {
+            log.warning("performDelete: nothing to delete")
+            return
+        }
+
+        let urls = files
+            .filter { !ParentDirectoryEntry.isParentEntry($0) }
+            .map { $0.urlValue }
+
+        guard !urls.isEmpty else { return }
+
+        log.info("performDelete: recycling \(urls.count) item(s): \(urls.map(\.lastPathComponent))")
+
+        NSWorkspace.shared.recycle(urls) { trashedURLs, error in
+            if let error {
+                log.error("performDelete: recycle failed — \(error.localizedDescription)")
+                return
+            }
+            log.info("performDelete: \(trashedURLs.count) item(s) moved to Trash ✓")
+
+            Task { @MainActor in
+                if panel == .left {
+                    await self.appState.refreshLeftFiles()
+                } else {
+                    await self.appState.refreshRightFiles()
+                }
+                self.appState.unmarkAll()
+            }
+        }
     }
 
     // MARK: - Settings
