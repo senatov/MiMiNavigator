@@ -2,11 +2,12 @@
 //  MiMiNavigator
 //
 //  Created by Iakov Senatov on 22.01.2026.
+//  Refactored: 18.02.2026 — HIGTextField, HIGDialogButtons, native focus ring
 //  Copyright © 2026 Senatov. All rights reserved.
 
 import SwiftUI
 
-// MARK: - Rename Dialog (HIG Style)
+// MARK: - Rename Dialog
 struct RenameDialog: View {
     let file: CustomFile
     let onRename: (String) -> Void
@@ -34,72 +35,42 @@ struct RenameDialog: View {
 
     var body: some View {
         VStack(spacing: 16) {
-            // App icon
-            Image(nsImage: NSApp.applicationIconImage)
-                .resizable()
-                .frame(width: 64, height: 64)
+            HIGDialogHeader(
+                file.isDirectory ? L10n.Dialog.Rename.titleFolder : L10n.Dialog.Rename.titleFile,
+                subtitle: file.urlValue.deletingLastPathComponent().path
+            )
 
-            // Title
-            Text(file.isDirectory ? L10n.Dialog.Rename.titleFolder : L10n.Dialog.Rename.titleFile)
-                .font(.system(size: 13, weight: .semibold))
-
-            // Current location
-            Text(file.urlValue.deletingLastPathComponent().path)
-                .font(.system(size: 11))
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
-                .truncationMode(.middle)
-
-            // Text field
-            VStack(alignment: .leading, spacing: 4) {
-                TextField(L10n.PathInput.nameLabel, text: $newName)
-                    .textFieldStyle(.plain)
-                    .autocorrectionDisabled()
-                    .textContentType(.none)
-                    .font(.system(size: 13))
-                    .padding(8)
-                    .background(
-                        RoundedRectangle(cornerRadius: 6)
-                            .fill(Color(nsColor: .textBackgroundColor))
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 6)
-                            .stroke(errorMessage != nil ? Color.red : Color.gray.opacity(0.3), lineWidth: 0.5)
-                    )
-                    .focused($isTextFieldFocused)
-                    .onSubmit {
-                        if isValidName && hasChanges {
-                            onRename(newName)
-                        }
-                    }
+            // Input field
+            VStack(alignment: .leading, spacing: 6) {
+                HIGTextField(
+                    label: L10n.PathInput.nameLabel,
+                    placeholder: L10n.PathInput.nameLabel,
+                    text: $newName,
+                    hasError: errorMessage != nil
+                )
+                .focused($isTextFieldFocused)
+                .onSubmit {
+                    if isValidName && hasChanges { onRename(newName) }
+                }
 
                 if let error = errorMessage {
                     Text(error)
-                        .font(.system(size: 10))
+                        .font(.system(size: 11))
                         .foregroundStyle(.red)
                 }
             }
-            .frame(maxWidth: 280)
+            .frame(maxWidth: .infinity)
 
-            // Buttons
-            HStack(spacing: 12) {
-                HIGSecondaryButton(title: L10n.Button.cancel, action: onCancel)
-                    .keyboardShortcut(.cancelAction)
-
-                HIGPrimaryButton(title: L10n.Button.rename, action: { onRename(newName) })
-                    .keyboardShortcut(.defaultAction)
-                    .disabled(!isValidName || !hasChanges)
-                    .opacity(isValidName && hasChanges ? 1.0 : 0.5)
-            }
-            .padding(.top, 4)
+            HIGDialogButtons(
+                confirmTitle: L10n.Button.rename,
+                isConfirmDisabled: !isValidName || !hasChanges,
+                onCancel: onCancel,
+                onConfirm: { onRename(newName) }
+            )
         }
         .higDialogStyle()
-        .onAppear {
-            isTextFieldFocused = true
-        }
-        .onChange(of: newName) { _, newValue in
-            validateName(newValue)
-        }
+        .onAppear { isTextFieldFocused = true }
+        .onChange(of: newName) { _, newValue in validateName(newValue) }
     }
 
     private func validateName(_ name: String) {

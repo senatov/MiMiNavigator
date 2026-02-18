@@ -1,90 +1,87 @@
-//
 // FileTransferConfirmationDialog.swift
 //  MiMiNavigator
 //
 //  Created by Iakov Senatov on 22.01.2026.
+//  Refactored: 18.02.2026 — unified HIG 26 style, matches DeleteConfirmationDialog
 //  Copyright © 2026 Senatov. All rights reserved.
-//
 
 import SwiftUI
 
-/// macOS HIG-compliant confirmation dialog for file move/copy operations
+/// macOS HIG 26 confirmation dialog for file move/copy operations.
+/// Style matches DeleteConfirmationDialog: app icon top-left, bold question, path rows, native buttons.
 struct FileTransferConfirmationDialog: View {
     let operation: FileTransferOperation
     let onAction: (FileTransferAction) -> Void
-    
+
     @Environment(\.dismiss) private var dismiss
-    
-    private enum Layout {
-        static let dialogWidth: CGFloat = 420
-        static let iconSize: CGFloat = 64
-        static let spacing: CGFloat = 16
-        static let buttonSpacing: CGFloat = 8
-        static let contentPadding: CGFloat = 20
-    }
-    
+
     var body: some View {
-        VStack(spacing: Layout.spacing) {
-            headerSection
-            messageSection
-            Spacer().frame(height: 8)
-            buttonSection
-        }
-        .padding(Layout.contentPadding)
-        .frame(width: Layout.dialogWidth)
-        .background(VisualEffectBlur(material: .popover, blendingMode: .behindWindow))
-        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-        .shadow(color: .black.opacity(0.2), radius: 20, x: 0, y: 10)
-        .onExitCommand {
-            handleAction(.abort)
-        }
-    }
-    
-    // MARK: - Header with icon
-    private var headerSection: some View {
-        HStack(spacing: 12) {
-            ZStack(alignment: .bottomTrailing) {
-                Image(systemName: "folder.fill")
-                    .font(.system(size: Layout.iconSize))
-                    .foregroundStyle(.blue)
-                    .symbolRenderingMode(.hierarchical)
-                
-                Image(systemName: "arrow.right.circle.fill")
-                    .font(.system(size: 24))
-                    .foregroundStyle(.white, .orange)
-                    .offset(x: 8, y: 4)
-            }
-            
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Move or Copy Items?")
-                    .font(.headline)
-                    .foregroundStyle(.primary)
-            }
-            
-            Spacer()
-        }
-    }
-    
-    // MARK: - Message section
-    private var messageSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Do you want to move or copy \(operation.itemsDescription) to \"\(operation.destinationName)\"?")
-                .font(.body)
-                .foregroundStyle(.primary)
-                .fixedSize(horizontal: false, vertical: true)
+        VStack(alignment: .leading, spacing: 0) {
+            // ── Header: icon + bold title ──────────────────────────────
+            HStack(alignment: .top, spacing: 14) {
+                ZStack(alignment: .bottomTrailing) {
+                    Image(systemName: "folder.fill")
+                        .font(.system(size: 52))
+                        .foregroundStyle(.blue)
+                        .symbolRenderingMode(.hierarchical)
 
-            // File list (up to 5 items with "and N more")
+                    Image(systemName: "arrow.right.circle.fill")
+                        .font(.system(size: 20))
+                        .foregroundStyle(.white, .orange)
+                        .offset(x: 6, y: 4)
+                }
+                .frame(width: 56, height: 56)
+
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Move or Copy Items?")
+                        .font(.system(size: 13, weight: .semibold))
+
+                    Text("Do you want to move or copy \(operation.itemsDescription) to \"\(operation.destinationName)\"?")
+                        .font(.system(size: 13))
+                        .foregroundStyle(.primary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .padding(.bottom, 12)
+
+            // ── File list (max 5) ──────────────────────────────────────
             fileListSection
+                .padding(.bottom, 8)
 
-            // From / To paths
+            // ── From / To paths ────────────────────────────────────────
             VStack(alignment: .leading, spacing: 3) {
                 if let firstFile = operation.sourceFiles.first {
                     pathRow(label: "From:", path: firstFile.urlValue.deletingLastPathComponent().path)
                 }
                 pathRow(label: "To:", path: operation.destinationPath.path)
             }
-            .padding(.top, 4)
+            .padding(.bottom, 20)
+
+            // ── Buttons: Cancel | Copy  Move ──────────────────────────
+            HStack(spacing: 8) {
+                Button("Cancel") { handleAction(.abort) }
+                    .keyboardShortcut(.cancelAction)
+                    .buttonStyle(.bordered)
+                    .controlSize(.large)
+
+                Spacer()
+
+                Button("Copy") { handleAction(.copy) }
+                    .buttonStyle(.bordered)
+                    .controlSize(.large)
+
+                Button("Move") { handleAction(.move) }
+                    .keyboardShortcut(.defaultAction)
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.large)
+            }
         }
+        .padding(20)
+        .frame(width: 400)
+        .background(Color(nsColor: .windowBackgroundColor))
+        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .shadow(color: .black.opacity(0.18), radius: 16, x: 0, y: 6)
+        .onExitCommand { handleAction(.abort) }
     }
 
     // MARK: - File list
@@ -94,7 +91,7 @@ struct FileTransferConfirmationDialog: View {
         let visible = Array(files.prefix(maxVisible))
         let remaining = files.count - maxVisible
 
-        return VStack(alignment: .leading, spacing: 2) {
+        return VStack(alignment: .leading, spacing: 3) {
             ForEach(visible, id: \.id) { file in
                 HStack(spacing: 6) {
                     Image(systemName: file.isDirectory ? "folder.fill" : "doc.fill")
@@ -116,9 +113,9 @@ struct FileTransferConfirmationDialog: View {
         }
     }
 
-    // MARK: - Path row helper
+    // MARK: - Path row
     private func pathRow(label: String, path: String) -> some View {
-        HStack(spacing: 4) {
+        HStack(alignment: .firstTextBaseline, spacing: 4) {
             Text(label)
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -130,52 +127,19 @@ struct FileTransferConfirmationDialog: View {
                 .truncationMode(.middle)
         }
     }
-    
-    // MARK: - Button section (macOS HIG order)
-    private var buttonSection: some View {
-        HStack(spacing: Layout.buttonSpacing) {
-            Button {
-                handleAction(.abort)
-            } label: {
-                Text("Cancel")
-                    .frame(minWidth: 80)
-            }
-            .keyboardShortcut(.cancelAction)
-            .buttonStyle(.borderedProminent)
-            .tint(.gray)
-            
-            Spacer()
-            
-            Button {
-                handleAction(.copy)
-            } label: {
-                Text("Copy")
-                    .frame(minWidth: 70)
-            }
-            .buttonStyle(.bordered)
-            
-            Button {
-                handleAction(.move)
-            } label: {
-                Text("Move")
-                    .frame(minWidth: 70)
-            }
-            .buttonStyle(.bordered)
-        }
-    }
-    
+
     private func handleAction(_ action: FileTransferAction) {
-        log.debug("FileTransferConfirmationDialog: user selected \(action)")
+        log.debug("FileTransferConfirmationDialog: \(action)")
         dismiss()
         onAction(action)
     }
 }
 
-// MARK: - Visual Effect Blur
+// MARK: - Visual Effect Blur (retained for other uses)
 struct VisualEffectBlur: NSViewRepresentable {
     let material: NSVisualEffectView.Material
     let blendingMode: NSVisualEffectView.BlendingMode
-    
+
     func makeNSView(context: Context) -> NSVisualEffectView {
         let view = NSVisualEffectView()
         view.material = material
@@ -183,7 +147,7 @@ struct VisualEffectBlur: NSViewRepresentable {
         view.state = .active
         return view
     }
-    
+
     func updateNSView(_ nsView: NSVisualEffectView, context: Context) {
         nsView.material = material
         nsView.blendingMode = blendingMode

@@ -2,6 +2,7 @@
 // MiMiNavigator
 //
 // Created by Iakov Senatov on 10.02.2026.
+// Refactored: 18.02.2026 — HIGTextField, HIGDialogButtons, native focus ring
 // Copyright © 2026 Senatov. All rights reserved.
 // Description: Dialog for requesting password for encrypted archives during search
 
@@ -17,54 +18,55 @@ struct ArchivePasswordDialog: View {
     @FocusState private var isPasswordFocused: Bool
 
     var body: some View {
-        VStack(spacing: 16) {
-            // Icon
-            Image(systemName: "lock.doc")
-                .font(.system(size: 36))
-                .foregroundStyle(.orange)
+        VStack(alignment: .leading, spacing: 16) {
+            // Header
+            VStack(spacing: 10) {
+                Image(systemName: "lock.doc")
+                    .font(.system(size: 36))
+                    .foregroundStyle(.orange)
 
-            // Title
-            Text("Password Required")
-                .font(.system(size: 14, weight: .semibold))
+                Text("Password Required")
+                    .font(.system(size: 14, weight: .semibold))
 
-            // Archive name
-            Text("The archive is password-protected:")
-                .font(.system(size: 12))
-                .foregroundStyle(.secondary)
+                VStack(spacing: 2) {
+                    Text("The archive is password-protected:")
+                        .font(.system(size: 12))
+                        .foregroundStyle(.secondary)
 
-            Text(archiveName)
-                .font(.system(size: 12, weight: .medium))
-                .lineLimit(2)
-                .truncationMode(.middle)
-                .padding(.horizontal, 8)
+                    Text(archiveName)
+                        .font(.system(size: 12, weight: .medium))
+                        .lineLimit(2)
+                        .truncationMode(.middle)
+                }
+            }
+            .frame(maxWidth: .infinity)
 
             // Password field
-            SecureField("Enter password…", text: $password)
-                .textFieldStyle(.roundedBorder)
-                .font(.system(size: 13))
-                .frame(width: 260)
-                .focused($isPasswordFocused)
-                .onSubmit {
-                    if !password.isEmpty {
-                        onSubmit()
-                    }
-                }
-
-            // Buttons
-            HStack(spacing: 12) {
-                HIGSecondaryButton(title: "Skip Archive", action: onSkip)
-
-                HIGPrimaryButton(title: "OK", action: onSubmit)
-                    .disabled(password.isEmpty)
-                    .keyboardShortcut(.defaultAction)
+            HIGTextField(
+                label: "Password",
+                placeholder: "Enter password…",
+                text: $password,
+                isSecure: true
+            )
+            .focused($isPasswordFocused)
+            .onSubmit {
+                if !password.isEmpty { onSubmit() }
             }
+
+            HIGDialogButtons(
+                cancelTitle: "Skip Archive",
+                confirmTitle: "OK",
+                isConfirmDisabled: password.isEmpty,
+                onCancel: onSkip,
+                onConfirm: onSubmit
+            )
         }
         .padding(24)
         .frame(width: 340)
         .background(Color(nsColor: .windowBackgroundColor))
-        .onAppear {
-            isPasswordFocused = true
-        }
+        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .shadow(color: .black.opacity(0.18), radius: 16, x: 0, y: 6)
+        .onAppear { isPasswordFocused = true }
     }
 }
 
