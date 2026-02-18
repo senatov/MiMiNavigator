@@ -254,41 +254,33 @@ struct MiMiNavigatorApp: App {
 
     /// Launch best available diff tool.
     /// Priority: DirEqual → FileMerge (opendiff) → kdiff3 → Beyond Compare → App Store offer
-    /// Launch DirEqual via Finder Services — the only way to pass real paths without sandbox remapping.
-    /// Finder selects both folders, then Services > cmpWithDirEqual opens DirEqual with correct paths.
+    /// Launch DirEqual via AppleScript — activate DirEqual directly, set paths via text fields.
+    /// No Finder involvement, no Finder windows, no Finder activate.
     private static func launchDirEqualViaFinder(leftPath: String, rightPath: String, frame: NSRect?) {
-        // Finder reveal order: right first, left second → DirEqual gets tf1=right, tf2=left
-        // So we pass them in reversed order to get left on left, right on right
+        log.debug("\(#function) left=\(leftPath) right=\(rightPath)")
         let script = """
-        tell application "Finder"
-            set f1 to (POSIX file \(rightPath.appleScriptQuoted)) as alias
-            set f2 to (POSIX file \(leftPath.appleScriptQuoted)) as alias
-            reveal {f1, f2}
-            activate
-        end tell
-        tell application "System Events"
-            tell process "Finder"
-                click button 2 of every window
-            end tell
-        end tell
-        delay 0.3
-        tell application "System Events"
-            tell process "Finder"
-                click menu item "cmpWithDirEqual" of menu of menu item "Services" of menu "Finder" of menu bar 1
-            end tell
-        end tell
+        tell application "DirEqual" to activate
         delay 0.5
-        tell application "Finder"
-            close every window
+        tell application "System Events"
+            tell process "DirEqual"
+                if (count windows) = 0 then
+                    tell application "System Events"
+                        keystroke "n" using {command down}
+                    end tell
+                    delay 0.5
+                end if
+                set value of text field 1 of group 1 of window 1 to \(leftPath.appleScriptQuoted)
+                set value of text field 2 of group 1 of window 1 to \(rightPath.appleScriptQuoted)
+            end tell
         end tell
         """
         var err: NSDictionary?
         NSAppleScript(source: script)?.executeAndReturnError(&err)
         if let err {
-            log.error("[Compare] Finder Services: \(err["NSAppleScriptErrorMessage"] ?? err)")
+            log.error("[Compare] DirEqual launch: \(err["NSAppleScriptErrorMessage"] ?? err)")
             return
         }
-        log.info("[Compare] DirEqual launched via Finder Services ✓")
+        log.info("[Compare] DirEqual activated, paths set — waiting for ready ✓")
         waitForDirEqualReady(leftPath: leftPath, rightPath: rightPath, frame: frame)
     }
 
@@ -358,7 +350,7 @@ struct MiMiNavigatorApp: App {
         let rightURL = URL(fileURLWithPath: right).standardized
         let ws = NSWorkspace.shared
 
-        // DirEqual — launch via Finder Services to bypass sandbox path remapping
+        // DirEqual — open two folder URLs directly via NSWorkspace (no Finder)
         if ws.urlForApplication(withBundleIdentifier: "com.naarak.DirEqual") != nil {
             let targetFrame = NSApp.mainWindow?.frame
             Self.launchDirEqualViaFinder(leftPath: leftURL.path, rightPath: rightURL.path, frame: targetFrame)
