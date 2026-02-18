@@ -13,12 +13,12 @@
     "... and %lld more" : {
 
     },
-    ".%@ — %@" : {
+    ".%@  —  %@" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : ".%1$@ — %2$@"
+            "value" : ".%1$@  —  %2$@"
           }
         }
       }
@@ -45,12 +45,12 @@
     "/" : {
 
     },
-    "%@ — %@" : {
+    "%@  —  %@" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "%1$@ — %2$@"
+            "value" : "%1$@  —  %2$@"
           }
         }
       }
@@ -552,9 +552,6 @@
       "comment" : "Deleting operation"
     },
     "DEV BUILD" : {
-
-    },
-    "Do you want to move %@ to Trash?" : {
 
     },
     "Do you want to move or copy %@ to \"%@\"?" : {
