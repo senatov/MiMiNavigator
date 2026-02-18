@@ -2,9 +2,8 @@
 // MiMiNavigator
 //
 // Created by Iakov Senatov on 10.02.2026.
-// Refactored: 14.02.2026 — ComboBox with history, blue borders, Word-Einstellungen style
+// Refactored: 18.02.2026 — clean HIG 26 layout, no inner borders, matches screenshot
 // Copyright © 2026 Senatov. All rights reserved.
-// Description: General tab of Find Files — file name, search text, directory, options
 
 import SwiftUI
 
@@ -14,13 +13,12 @@ struct FindFilesGeneralTab: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // MARK: - Search Fields Section
+            // ── Search Criteria ──────────────────────────────────────
             sectionHeader(title: "Search Criteria", icon: "magnifyingglass", color: .blue)
 
-            VStack(spacing: 12) {
-                // Search For (file name pattern)
+            VStack(spacing: 10) {
                 fieldRow(label: "Search for:", icon: "doc.text", iconColor: .orange) {
-                    HStack(spacing: 8) {
+                    HStack(spacing: 6) {
                         SearchHistoryComboBox(
                             text: $viewModel.fileNamePattern,
                             historyKey: .fileNamePattern,
@@ -28,7 +26,7 @@ struct FindFilesGeneralTab: View {
                             onSubmit: { viewModel.startSearch() }
                         )
                         .frame(height: 24)
-                        Button(action: { showPatternHelp() }) {
+                        Button(action: showPatternHelp) {
                             Image(systemName: "questionmark.circle")
                                 .foregroundStyle(.secondary)
                         }
@@ -37,9 +35,8 @@ struct FindFilesGeneralTab: View {
                     }
                 }
 
-                // Search In (directory)
                 fieldRow(label: "Search in:", icon: "folder.fill", iconColor: .blue) {
-                    HStack(spacing: 8) {
+                    HStack(spacing: 6) {
                         SearchHistoryComboBox(
                             text: $viewModel.searchDirectory,
                             historyKey: .searchDirectory,
@@ -47,7 +44,7 @@ struct FindFilesGeneralTab: View {
                             onSubmit: { viewModel.startSearch() }
                         )
                         .frame(height: 24)
-                        Button(action: { browseDirectory() }) {
+                        Button(action: browseDirectory) {
                             Image(systemName: "folder.badge.plus")
                         }
                         .buttonStyle(.bordered)
@@ -56,7 +53,6 @@ struct FindFilesGeneralTab: View {
                     }
                 }
 
-                // Find Text (content search)
                 fieldRow(label: "Find text:", icon: "text.magnifyingglass", iconColor: .purple) {
                     SearchHistoryComboBox(
                         text: $viewModel.searchText,
@@ -68,37 +64,35 @@ struct FindFilesGeneralTab: View {
                 }
             }
             .padding(.horizontal, 16)
-            .padding(.vertical, 10)
-            .background(
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .strokeBorder(Color.blue.opacity(0.2), lineWidth: 1)
-                    .padding(.horizontal, 8)
-            )
+            .padding(.bottom, 12)
 
             sectionDivider()
 
-            // MARK: - Options Section
-            sectionHeader(title: "Options", icon: "gearshape.fill", color: .gray)
+            // ── Options ──────────────────────────────────────────────
+            sectionHeader(title: "Options", icon: "gearshape", color: .secondary)
 
-            VStack(spacing: 8) {
+            VStack(spacing: 0) {
                 optionToggle(
                     title: "Case sensitive",
                     icon: "textformat",
                     iconColor: .indigo,
                     isOn: $viewModel.caseSensitive
                 )
+                optionDivider()
                 optionToggle(
                     title: "Regular expressions",
                     icon: "chevron.left.forwardslash.chevron.right",
                     iconColor: .teal,
                     isOn: $viewModel.useRegex
                 )
+                optionDivider()
                 optionToggle(
                     title: "Include subdirectories",
                     icon: "folder.fill.badge.gearshape",
                     iconColor: .blue,
                     isOn: $viewModel.searchInSubdirectories
                 )
+                optionDivider()
                 optionToggle(
                     title: "Search in archives",
                     icon: "archivebox.fill",
@@ -106,48 +100,53 @@ struct FindFilesGeneralTab: View {
                     isOn: $viewModel.searchInArchives
                 )
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 10)
             .background(
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .strokeBorder(Color.blue.opacity(0.2), lineWidth: 1)
-                    .padding(.horizontal, 8)
+                    .fill(Color(nsColor: .controlBackgroundColor))
             )
-
-            Spacer().frame(height: 4)
+            .overlay(
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .strokeBorder(Color(nsColor: .separatorColor), lineWidth: 0.5)
+            )
+            .padding(.horizontal, 16)
+            .padding(.bottom, 12)
         }
-        .background(Color(nsColor: .controlBackgroundColor))
+        .background(Color(nsColor: .windowBackgroundColor))
     }
 
-    // MARK: - Section Header (Word-Einstellungen style)
-
+    // MARK: - Section Header
     private func sectionHeader(title: String, icon: String, color: Color) -> some View {
-        HStack(spacing: 8) {
+        HStack(spacing: 6) {
             Image(systemName: icon)
-                .font(.system(size: 14, weight: .semibold))
+                .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(color)
             Text(title)
                 .font(.system(size: 13, weight: .bold))
-                .foregroundStyle(.primary)
             Spacer()
         }
         .padding(.horizontal, 16)
         .padding(.top, 12)
-        .padding(.bottom, 4)
+        .padding(.bottom, 8)
     }
 
-    // MARK: - Section Divider
-
+    // MARK: - Section Divider (between sections)
     private func sectionDivider() -> some View {
         Rectangle()
             .fill(Color(nsColor: .separatorColor))
             .frame(height: 1)
-            .padding(.horizontal, 12)
+            .padding(.horizontal, 16)
             .padding(.vertical, 4)
     }
 
-    // MARK: - Field Row
+    // MARK: - Option Row Divider (inside options block)
+    private func optionDivider() -> some View {
+        Rectangle()
+            .fill(Color(nsColor: .separatorColor).opacity(0.5))
+            .frame(height: 0.5)
+            .padding(.leading, 44)
+    }
 
+    // MARK: - Field Row (label + content)
     private func fieldRow<Content: View>(
         label: String,
         icon: String,
@@ -164,14 +163,13 @@ struct FindFilesGeneralTab: View {
                     .font(.system(size: 13))
                     .foregroundStyle(.secondary)
             }
-            .frame(width: 120, alignment: .leading)
+            .frame(width: 118, alignment: .leading)
 
             content()
         }
     }
 
-    // MARK: - Option Toggle
-
+    // MARK: - Option Toggle Row
     private func optionToggle(
         title: String,
         icon: String,
@@ -191,14 +189,15 @@ struct FindFilesGeneralTab: View {
                 .toggleStyle(.switch)
                 .controlSize(.small)
         }
-        .padding(.vertical, 2)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 9)
     }
 
-    // MARK: - Browse Directory
+    // MARK: - Browse
     private func browseDirectory() {
         let panel = NSOpenPanel()
         panel.canChooseDirectories = true
-        panel.canChooseFiles = true       // allow selecting a single file or archive
+        panel.canChooseFiles = true
         panel.allowsMultipleSelection = false
         panel.directoryURL = URL(fileURLWithPath: viewModel.searchDirectory)
         panel.prompt = "Select"
@@ -224,7 +223,7 @@ struct FindFilesGeneralTab: View {
           photo?.jpg     — photo1.jpg, photoA.jpg, etc.
           *.*            — all files with extension
 
-        Separate multiple patterns with semicolon (;)
+        Separate multiple patterns with semicolons (;)
         """
         alert.alertStyle = .informational
         alert.addButton(withTitle: "OK")
