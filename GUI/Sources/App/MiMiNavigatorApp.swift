@@ -349,38 +349,58 @@ struct MiMiNavigatorApp: App {
         log.debug("\(#function) left=\(left) right=\(right)")
         let leftURL  = URL(fileURLWithPath: left).standardized
         let rightURL = URL(fileURLWithPath: right).standardized
+        var isDir: ObjCBool = false
+        let comparingDirs = FileManager.default.fileExists(atPath: leftURL.path, isDirectory: &isDir) && isDir.boolValue
 
-        // FileMerge via opendiff — works for both files and folders, bundled with Xcode
-        let opendiff = "/usr/bin/opendiff"
-        guard FileManager.default.fileExists(atPath: opendiff) else {
+        if comparingDirs {
+            // Directories → DiffMerge (two-panel dir comparison)
+            let diffMergeBin = "/Applications/DiffMerge.app/Contents/MacOS/DiffMerge"
+            if FileManager.default.fileExists(atPath: diffMergeBin) {
+                let task = Process()
+                task.executableURL = URL(fileURLWithPath: diffMergeBin)
+                task.arguments = ["--nosplash", leftURL.path, rightURL.path]
+                do {
+                    try task.run()
+                    log.info("[Compare] launched DiffMerge (dirs) ✓")
+                    Self.waitForAppReady(processName: "DiffMerge", frame: NSApp.mainWindow?.frame)
+                    return
+                } catch {
+                    log.error("[Compare] DiffMerge: \(error.localizedDescription)")
+                }
+            }
+            // Fallback for dirs
+            Self.offerInstallDiffMerge()
+        } else {
+            // Files → FileMerge via opendiff
+            let opendiff = "/usr/bin/opendiff"
+            if FileManager.default.fileExists(atPath: opendiff) {
+                let task = Process()
+                task.executableURL = URL(fileURLWithPath: opendiff)
+                task.arguments = [leftURL.path, rightURL.path]
+                do {
+                    try task.run()
+                    log.info("[Compare] launched FileMerge (files) ✓")
+                    Self.waitForAppReady(processName: "FileMerge", frame: NSApp.mainWindow?.frame)
+                    return
+                } catch {
+                    log.error("[Compare] opendiff: \(error.localizedDescription)")
+                }
+            }
+            // Fallback for files
             Self.offerInstallXcode()
-            return
         }
-        let task = Process()
-        task.executableURL = URL(fileURLWithPath: opendiff)
-        task.arguments = [leftURL.path, rightURL.path]
-        do {
-            try task.run()
-            log.info("[Compare] launched FileMerge ✓")
-        } catch {
-            log.error("[Compare] opendiff failed: \(error.localizedDescription)")
-            return
-        }
-        // Bring FileMerge window in front of MiMiNavigator, sized to match our window
-        let targetFrame = NSApp.mainWindow?.frame
-        Self.waitForFileMergeReady(frame: targetFrame)
     }
 
-    /// Poll until FileMerge window appears, then activate and position it over MiMiNavigator.
-    private static func waitForFileMergeReady(frame: NSRect?, attempt: Int = 0) {
-        log.debug("\(#function) attempt=\(attempt)")
-        let maxAttempts = 16   // 8 seconds total
+    /// Poll until the given app's window appears, then activate and position it over MiMiNavigator.
+    private static func waitForAppReady(processName: String, frame: NSRect?, attempt: Int = 0) {
+        log.debug("\(#function) app=\(processName) attempt=\(attempt)")
+        let maxAttempts = 16
         let interval    = 0.5
 
         let checkScript = """
         tell application "System Events"
-            if exists process "FileMerge" then
-                return (count windows of process "FileMerge") as string
+            if exists process "\(processName)" then
+                return (count windows of process "\(processName)") as string
             end if
             return "0"
         end tell
@@ -391,16 +411,15 @@ struct MiMiNavigatorApp: App {
 
         guard windowCount > 0 else {
             guard attempt < maxAttempts else {
-                log.warning("[Compare] FileMerge window never appeared")
+                log.warning("[Compare] \(processName) window never appeared")
                 return
             }
             DispatchQueue.main.asyncAfter(deadline: .now() + interval) {
-                waitForFileMergeReady(frame: frame, attempt: attempt + 1)
+                waitForAppReady(processName: processName, frame: frame, attempt: attempt + 1)
             }
             return
         }
 
-        // Window ready — activate and position over MiMiNavigator
         let f = frame ?? NSRect(x: 100, y: 100, width: 1200, height: 800)
         let screenH = NSScreen.main?.frame.height ?? 1080
         let wx = Int(f.origin.x)
@@ -409,10 +428,10 @@ struct MiMiNavigatorApp: App {
         let wh = Int(f.height)
 
         let posScript = """
-        tell application "FileMerge" to activate
+        tell application "\(processName)" to activate
         delay 0.2
         tell application "System Events"
-            tell process "FileMerge"
+            tell process "\(processName)"
                 set position of window 1 to {\(wx), \(wy)}
                 set size of window 1 to {\(ww), \(wh)}
             end tell
@@ -421,9 +440,32 @@ struct MiMiNavigatorApp: App {
         var posErr: NSDictionary?
         NSAppleScript(source: posScript)?.executeAndReturnError(&posErr)
         if let posErr {
-            log.warning("[Compare] FileMerge position: \(posErr["NSAppleScriptErrorMessage"] ?? posErr)")
+            log.warning("[Compare] \(processName) position: \(posErr["NSAppleScriptErrorMessage"] ?? posErr)")
         } else {
-            log.info("[Compare] FileMerge ready after \(attempt) poll(s), positioned ✓")
+            log.info("[Compare] \(processName) ready after \(attempt) poll(s), positioned ✓")
+        }
+    }
+
+    /// Offer to install DiffMerge via brew for directory comparison.
+    @MainActor
+    private static func offerInstallDiffMerge() {
+        log.debug("\(#function)")
+        let alert = NSAlert()
+        alert.messageText = "DiffMerge Not Found"
+        alert.informativeText = "DiffMerge is a free tool for two-panel directory comparison.\n\nInstall via Homebrew:\nbrew install --cask diffmerge"
+        alert.alertStyle = .informational
+        alert.addButton(withTitle: "Install via brew")
+        alert.addButton(withTitle: "Cancel")
+        if alert.runModal() == .alertFirstButtonReturn {
+            let script = """
+            tell application "Terminal"
+                activate
+                do script "brew install --cask diffmerge"
+            end tell
+            """
+            var err: NSDictionary?
+            NSAppleScript(source: script)?.executeAndReturnError(&err)
+            log.info("[Compare] offered DiffMerge via brew")
         }
     }
 
