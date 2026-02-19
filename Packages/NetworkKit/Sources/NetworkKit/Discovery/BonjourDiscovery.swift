@@ -19,11 +19,17 @@ public final class BonjourDiscovery: NSObject, ObservableObject {
     // Resolving services (kept alive during resolution)
     private var resolvingServices: Set<NetService> = []
 
-    // Service types to discover
+    // Service types to discover — broad coverage
     private let serviceTypes = [
         "_smb._tcp.",
         "_afpovertcp._tcp.",
         "_device-info._tcp.",
+        "_rdp._tcp.",
+        "_sftp-ssh._tcp.",
+        "_ssh._tcp.",
+        "_ftp._tcp.",
+        "_http._tcp.",
+        "_nfs._tcp.",
     ]
 
     // MARK: - Start discovery

@@ -71,8 +71,21 @@ struct MiMiNavigatorApp: App {
                     get: { appState.showNetworkNeighborhood },
                     set: { appState.showNetworkNeighborhood = $0 }
                 )) {
-                    NetworkNeighborhoodView()
-                        .frame(minWidth: 360, minHeight: 400)
+                    NetworkNeighborhoodView(
+                        onNavigate: { url in
+                            // Navigate focused panel to the smb:// URL
+                            let side = appState.focusedPanel
+                            if side == .left {
+                                appState.leftPath = url.absoluteString
+                            } else {
+                                appState.rightPath = url.absoluteString
+                            }
+                            appState.showNetworkNeighborhood = false
+                        },
+                        onDismiss: {
+                            appState.showNetworkNeighborhood = false
+                        }
+                    )
                 }
                 // MARK: - Batch Operation Progress Overlay
                 .overlay {
