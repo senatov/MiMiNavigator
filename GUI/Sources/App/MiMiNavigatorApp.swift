@@ -354,9 +354,12 @@ struct MiMiNavigatorApp: App {
 
         if comparingDirs {
             // Directories → DiffMerge (two-panel dir comparison)
-            let diffMergeApp = "/Applications/DiffMerge.app"
-            let diffMergeBin = "\(diffMergeApp)/Contents/MacOS/DiffMerge"
-            if FileManager.default.fileExists(atPath: diffMergeBin) {
+            let diffMergeCandidates = [
+                "/Applications/DiffMerge.app",
+                "\(NSHomeDirectory())/Applications/DiffMerge.app",
+            ]
+            if let diffMergeApp = diffMergeCandidates.first(where: { FileManager.default.fileExists(atPath: $0) }) {
+                let diffMergeBin = "\(diffMergeApp)/Contents/MacOS/DiffMerge"
                 // Remove macOS quarantine attributes silently — required after brew install
                 Self.removeQuarantine(atPath: diffMergeApp)
                 let task = Process()
@@ -364,7 +367,7 @@ struct MiMiNavigatorApp: App {
                 task.arguments = ["--nosplash", leftURL.path, rightURL.path]
                 do {
                     try task.run()
-                    log.info("[Compare] launched DiffMerge (dirs) ✓")
+                    log.info("[Compare] launched DiffMerge from \(diffMergeApp) ✓")
                     Self.waitForAppReady(processName: "DiffMerge", frame: NSApp.mainWindow?.frame)
                     return
                 } catch {
@@ -489,7 +492,7 @@ struct MiMiNavigatorApp: App {
             let script = """
             tell application "Terminal"
                 activate
-                do script "brew install --cask diffmerge && xattr -cr /Applications/DiffMerge.app && echo 'DiffMerge ready ✓'"
+                do script "brew install --cask diffmerge && (xattr -cr /Applications/DiffMerge.app 2>/dev/null || xattr -cr ~/Applications/DiffMerge.app 2>/dev/null) && echo 'DiffMerge ready ✓'"
             end tell
             """
             var err: NSDictionary?
