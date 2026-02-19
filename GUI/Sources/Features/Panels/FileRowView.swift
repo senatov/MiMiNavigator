@@ -39,8 +39,8 @@ struct FileRowView: View {
             return .white
         }
         if isMarked {
-            // Total Commander style: dark red for marked files
-            return Color(#colorLiteral(red: 0.7, green: 0.0, blue: 0.0, alpha: 1))
+            // Total Commander style: very dark red for marked files
+            return Color(#colorLiteral(red: 0.45, green: 0.0, blue: 0.0, alpha: 1))
         }
         // Dark blue for ".." parent entry
         if isParentEntry {
@@ -52,14 +52,14 @@ struct FileRowView: View {
         return .primary
     }
 
-    // MARK: - Font weight: bold for marked files (Total Commander style)
+    // MARK: - Font weight: same for marked and normal (no bold)
     private var nameWeight: Font.Weight {
-        isMarked ? .semibold : .regular
+        .regular
     }
 
-    // MARK: - Font size: slightly larger for marked files
+    // MARK: - Font size: same for marked and normal
     private var nameFontSize: CGFloat {
-        isMarked ? 14 : 13
+        13
     }
 
     // MARK: - Icon opacity (Finder-style dimming for hidden files)
@@ -119,7 +119,7 @@ struct FileRowView: View {
                     if isMarked {
                         Image(systemName: "checkmark.circle.fill")
                             .font(.system(size: 11))
-                            .foregroundStyle(Color(#colorLiteral(red: 0.7, green: 0.0, blue: 0.0, alpha: 1)))
+                            .foregroundStyle(Color(#colorLiteral(red: 0.45, green: 0.0, blue: 0.0, alpha: 1)))
                     }
 
                     Text(file.nameStr)
