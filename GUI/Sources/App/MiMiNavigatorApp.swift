@@ -75,27 +75,17 @@ struct MiMiNavigatorApp: App {
                         onNavigate: { url in
                             appState.showNetworkNeighborhood = false
                             Task { @MainActor in
-                                // Try to find already-mounted volume first
-                                let hostName = url.host ?? ""
-                                if let mounted = SMBMounter.shared.alreadyMounted(hostName: hostName) {
-                                    // Already mounted — navigate directly
+                                // Snapshot current network mounts before opening
+                                let before = SMBMounter.shared.mountedNetworkVolumes()
+                                // Open smb:// — macOS shows mount/share-picker dialog
+                                SMBMounter.shared.openForMount(url)
+                                // Wait for a new volume to appear in /Volumes/
+                                if let newMount = await SMBMounter.shared.pollForNewMount(snapshot: before, timeout: 30) {
                                     let side = appState.focusedPanel
-                                    if side == .left { appState.leftPath = mounted.path }
-                                    else { appState.rightPath = mounted.path }
-                                } else {
-                                    // Mount via Finder (shows auth dialog if needed)
-                                    // then poll /Volumes/ for up to 15s
-                                    NSWorkspace.shared.open(url)
-                                    for _ in 0..<15 {
-                                        try? await Task.sleep(for: .seconds(1))
-                                        if let mounted = SMBMounter.shared.alreadyMounted(hostName: hostName) {
-                                            let side = appState.focusedPanel
-                                            if side == .left { appState.leftPath = mounted.path }
-                                            else { appState.rightPath = mounted.path }
-                                            return
-                                        }
-                                    }
+                                    if side == .left { appState.leftPath = newMount.path }
+                                    else { appState.rightPath = newMount.path }
                                 }
+                                // If nothing mounted within 30s — user cancelled, do nothing
                             }
                         },
                         onDismiss: {
