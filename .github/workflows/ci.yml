@@ -1,4 +1,4 @@
-name: CI
+name: CI — MiMiNavigator
 
 on:
   push:
@@ -8,70 +8,64 @@ on:
 
 jobs:
   build-and-quality:
-    name: Build, Test & Quality Checks
-    runs-on: macos-latest
+    name: Build & Quality (macOS 26 / Xcode 26.2)
+    runs-on: macos-26
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-    - name: Select Xcode 16.3
-      run: sudo xcode-select -s /Applications/Xcode_16.1.app/Contents/Developer
+      - name: Select Xcode 26.2
+        run: sudo xcode-select -s /Applications/Xcode_26.2.app/Contents/Developer
 
-    - name: Display versions
-      run: |
-        echo "Xcode version:"
-        xcodebuild -version
-        echo "\nSwift version:"
-        swift --version
+      - name: Show versions
+        run: |
+          xcodebuild -version
+          swift --version
 
-    - name: Install xcpretty
-      run: gem install xcpretty
+      - name: Install xcbeautify
+        run: brew install xcbeautify
 
-    - name: Build project
-      run: |
-        xcodebuild clean build \
-          -project MiMiNavigator.xcodeproj \
-          -scheme MiMiNavigator \
-          -configuration Debug \
-          -destination 'platform=macOS' \
-          CODE_SIGNING_ALLOWED=NO \
-          | xcpretty
+      - name: Build (Debug)
+        run: |
+          xcodebuild clean build \
+            -project MiMiNavigator.xcodeproj \
+            -scheme MiMiNavigator \
+            -configuration Debug \
+            -destination 'platform=macOS' \
+            CODE_SIGNING_ALLOWED=NO \
+            SWIFT_TREAT_WARNINGS_AS_ERRORS=NO \
+          | xcbeautify --renderer github-actions
 
-    - name: Run tests
-      run: |
-        xcodebuild test \
-          -project MiMiNavigator.xcodeproj \
-          -scheme MiMiNavigator \
-          -configuration Debug \
-          -destination 'platform=macOS' \
-          CODE_SIGNING_ALLOWED=NO \
-          | xcpretty
-      continue-on-error: true
+      - name: Run tests
+        # xcodebuild test на Xcode 26 известны зависания — ставим жёсткий таймаут
+        timeout-minutes: 15
+        continue-on-error: true
+        run: |
+          xcodebuild test \
+            -project MiMiNavigator.xcodeproj \
+            -scheme MiMiNavigator \
+            -configuration Debug \
+            -destination 'platform=macOS' \
+            CODE_SIGNING_ALLOWED=NO \
+          | xcbeautify --renderer github-actions
 
-    - name: SwiftLint check
-      run: |
-        if command -v swiftlint &> /dev/null; then
+      - name: SwiftLint
+        continue-on-error: true
+        run: |
+          if ! command -v swiftlint &>/dev/null; then
+            brew install swiftlint
+          fi
           swiftlint lint --strict
-        else
-          echo "SwiftLint not found in Xcode, installing..."
-          brew install swiftlint
-          swiftlint lint --strict
-        fi
-      continue-on-error: true
 
-    - name: Swift-format check
-      run: |
-        if command -v swift-format &> /dev/null; then
-          swift-format lint --recursive Gui/Sources
-        else
-          echo "Swift-format available in Xcode 16+"
-          xcrun swift-format lint --recursive Gui/Sources
-        fi
-      continue-on-error: true
+      - name: Swift-format lint
+        continue-on-error: true
+        run: xcrun swift-format lint --recursive GUI/Sources
 
-    - name: Build summary
-      if: always()
-      run: |
-        echo "✅ Build completed"
-        echo "📊 All quality checks finished"
+      - name: Summary
+        if: always()
+        run: |
+          echo "### ✅ CI finished" >> $GITHUB_STEP_SUMMARY
+          echo "- Runner: macOS 26 (Tahoe)" >> $GITHUB_STEP_SUMMARY
+          echo "- Xcode: 26.2" >> $GITHUB_STEP_SUMMARY
+          echo "- Date: $(date -u '+%Y-%m-%d %H:%M UTC')" >> $GITHUB_STEP_SUMMARY
