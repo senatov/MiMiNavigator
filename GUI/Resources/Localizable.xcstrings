@@ -817,6 +817,9 @@
     "File Name Pattern Syntax" : {
       "comment" : "Pattern help title"
     },
+    "Filter" : {
+
+    },
     "Filter by date" : {
       "comment" : "Date filter toggle"
     },
@@ -1316,6 +1319,9 @@
     },
     "Regex" : {
       "comment" : "Regex toggle"
+    },
+    "Remove from history" : {
+
     },
     "Rename" : {
       "comment" : "Rename button",

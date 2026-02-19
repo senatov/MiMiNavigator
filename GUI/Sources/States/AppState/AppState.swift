@@ -19,6 +19,10 @@ final class AppState {
     var displayedLeftFiles: [CustomFile] = []
     var displayedRightFiles: [CustomFile] = []
     var focusedPanel: PanelSide = .left
+
+    // MARK: - Panel file filter queries (persisted via AppStorage in SelectionStatusBar)
+    var leftFilterQuery: String = ""
+    var rightFilterQuery: String = ""
     var leftPath: String
     var rightPath: String
     var selectedDir: DirectorySelection = .init()
@@ -55,7 +59,7 @@ final class AppState {
     private(set) var fileActions: FileOperationActions?
     let selectionsHistory = SelectionsHistory()
     var scanner: DualDirectoryScanner!
-    
+
     // MARK: - Per-Panel Navigation History (for Back/Forward buttons)
     private(set) var leftNavigationHistory: PanelNavigationHistory!
     private(set) var rightNavigationHistory: PanelNavigationHistory!
@@ -72,11 +76,11 @@ final class AppState {
         // Initialize tab managers
         self.leftTabManager = TabManager(panelSide: .left, initialPath: paths.left)
         self.rightTabManager = TabManager(panelSide: .right, initialPath: paths.right)
-        
+
         // Initialize per-panel navigation history
         self.leftNavigationHistory = PanelNavigationHistory(panel: .left)
         self.rightNavigationHistory = PanelNavigationHistory(panel: .right)
-        
+
         // Seed navigation history with initial paths (if history is empty)
         if leftNavigationHistory.currentPath == nil {
             leftNavigationHistory.navigateTo(paths.left)
@@ -108,8 +112,8 @@ extension AppState {
         let files = displayedFiles(for: panel)
         if let match = files.first(where: { $0.nameStr == name }) {
             switch panel {
-            case .left:  selectedLeftFile = match
-            case .right: selectedRightFile = match
+                case .left: selectedLeftFile = match
+                case .right: selectedRightFile = match
             }
             log.debug("[AppState] selectFileByName '\(name)' on \(panel) → found")
         } else {
@@ -142,10 +146,10 @@ extension AppState {
 
         // Clear the selected file only, marks cleared separately via unmarkAll
         switch panel {
-        case .left:
-            selectedLeftFile = nil
-        case .right:
-            selectedRightFile = nil
+            case .left:
+                selectedLeftFile = nil
+            case .right:
+                selectedRightFile = nil
         }
     }
 
@@ -227,9 +231,21 @@ extension AppState {
 extension AppState {
 
     func displayedFiles(for panelSide: PanelSide) -> [CustomFile] {
+        let raw: [CustomFile]
+        let query: String
         switch panelSide {
-            case .left: return displayedLeftFiles
-            case .right: return displayedRightFiles
+            case .left:
+                raw = displayedLeftFiles
+                query = leftFilterQuery
+            case .right:
+                raw = displayedRightFiles
+                query = rightFilterQuery
+        }
+        let trimmed = query.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty else { return raw }
+        let lower = trimmed.lowercased()
+        return raw.filter { file in
+            file.nameStr.lowercased().contains(lower)
         }
     }
 
@@ -241,22 +257,22 @@ extension AppState {
     /// TabManager for given panel side
     func tabManager(for panel: PanelSide) -> TabManager {
         switch panel {
-        case .left: return leftTabManager
-        case .right: return rightTabManager
+            case .left: return leftTabManager
+            case .right: return rightTabManager
         }
     }
 
     func archiveState(for panel: PanelSide) -> ArchiveNavigationState {
         switch panel {
-        case .left: return leftArchiveState
-        case .right: return rightArchiveState
+            case .left: return leftArchiveState
+            case .right: return rightArchiveState
         }
     }
 
     func setArchiveState(_ state: ArchiveNavigationState, for panel: PanelSide) {
         switch panel {
-        case .left: leftArchiveState = state
-        case .right: rightArchiveState = state
+            case .left: leftArchiveState = state
+            case .right: rightArchiveState = state
         }
     }
 }
@@ -347,8 +363,8 @@ extension AppState {
             alert.messageText = "Archive Modified"
             alert.informativeText = "\"\(archiveName)\" has been modified.\n\nRepack the archive with your changes?"
             alert.alertStyle = .warning
-            alert.addButton(withTitle: "Repack")          // NSAlertFirstButtonReturn
-            alert.addButton(withTitle: "Discard Changes") // NSAlertSecondButtonReturn
+            alert.addButton(withTitle: "Repack")  // NSAlertFirstButtonReturn
+            alert.addButton(withTitle: "Discard Changes")  // NSAlertSecondButtonReturn
             let response = alert.runModal()
             continuation.resume(returning: response == .alertFirstButtonReturn)
         }
@@ -548,14 +564,14 @@ extension AppState {
             await ArchiveManager.shared.cleanup()
         }
     }
-    
+
     // MARK: - Navigation History Helpers
-    
+
     /// Get navigation history for specified panel
     func navigationHistory(for panel: PanelSide) -> PanelNavigationHistory {
         panel == .left ? leftNavigationHistory : rightNavigationHistory
     }
-    
+
     /// Record navigation to path (called when entering directories)
     func recordNavigation(to path: String, panel: PanelSide) {
         guard !isNavigatingFromHistory else {
