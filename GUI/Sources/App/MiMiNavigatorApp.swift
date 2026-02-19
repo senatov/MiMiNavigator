@@ -33,6 +33,7 @@ struct MiMiNavigatorApp: App {
                 .contextMenuDialogs(coordinator: contextMenuCoordinator, appState: appState)
                 .onAppear {
                     appDelegate.bind(appState)
+                    AppStateProvider.shared = appState
                     showHiddenFiles = UserPreferences.shared.snapshot.showHiddenFiles
                 }
                 .toolbarBackground(Material.thin, for: ToolbarPlacement.windowToolbar)

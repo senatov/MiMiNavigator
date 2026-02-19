@@ -2,28 +2,67 @@
 // MiMiNavigator
 //
 // Created by Iakov Senatov on 01.06.2025.
-// Refactored: 27.01.2026
+// Refactored: 19.02.2026
 // Copyright © 2025-2026 Senatov. All rights reserved.
-// Description: Menu item metadata for top menu bar
+// Description: Menu item metadata — real actions where implemented, stub popups elsewhere
 
+import AppKit
 import Foundation
 
-// MARK: - File Menu
+// MARK: - Stub popup helper
+@MainActor
+private func stub(_ title: String) -> @MainActor @Sendable () -> Void {
+    {
+        let alert = NSAlert()
+        alert.messageText = title
+        alert.informativeText = "This feature is not yet implemented."
+        alert.alertStyle = .informational
+        alert.addButton(withTitle: "OK")
+        alert.runModal()
+    }
+}
+
+// MARK: - Files Menu
 @MainActor
 let filesMenuCategory = MenuCategory(
     title: "Files",
     items: [
-        MenuItem(title: "Rename/Move", action: { log.info("Menu > Files > Rename/Move") }, shortcut: "F6"),
-        MenuItem(title: "Change Attributes...", action: { log.info("Menu > Files > Change Attributes...") }, shortcut: "Ctrl+A"),
-        MenuItem(title: "Pack...", action: { log.info("Menu > Files > Pack...") }, shortcut: "Alt+F5"),
-        MenuItem(title: "Unpack...", action: { log.info("Menu > Files > Unpack...") }, shortcut: "Alt+F9"),
-        MenuItem(title: "Test Archive(s)", action: { log.info("Menu > Files > Test Archive(s)") }, shortcut: nil),
         MenuItem(
-            title: "Compare By Content...", action: { log.info("Menu > Files > Compare By Content...") }, shortcut: "Ctrl+C"),
+            title: "Pack…",
+            action: {
+                guard let appState = AppStateProvider.shared else { stub("Pack…")(); return }
+                let panel = appState.focusedPanel
+                let files = appState.markedCustomFiles(for: panel)
+                guard !files.isEmpty else { stub("Pack…: no files marked")(); return }
+                Task { await ContextMenuCoordinator.shared.performCompress(files: files, appState: appState) }
+            },
+            shortcut: "⌥F5"
+        ),
         MenuItem(
-            title: "Synchronize Directories...", action: { log.info("Menu > Files > Synchronize Directories...") },
-            shortcut: "Ctrl+S"),
-        MenuItem(title: "Quit", action: { log.info("Menu > Files > Quit") }, shortcut: "Alt+F4"),
+            title: "Unpack…",
+            action: stub("Unpack…"),
+            shortcut: "⌥F9"
+        ),
+        MenuItem(
+            title: "Test Archive(s)",
+            action: stub("Test Archive(s)"),
+            shortcut: nil
+        ),
+        MenuItem(
+            title: "Compare By Content…",
+            action: stub("Compare By Content…"),
+            shortcut: "⌃C"
+        ),
+        MenuItem(
+            title: "Synchronize Directories…",
+            action: stub("Synchronize Directories…"),
+            shortcut: "⌃S"
+        ),
+        MenuItem(
+            title: "Quit",
+            action: { NSApplication.shared.terminate(nil) },
+            shortcut: "⌥F4"
+        ),
     ])
 
 // MARK: - Mark Menu
@@ -31,11 +70,54 @@ let filesMenuCategory = MenuCategory(
 let markMenuCategory = MenuCategory(
     title: "Mark",
     items: [
-        MenuItem(title: "Select Group...", action: { log.info("Menu > Mark > Select Group...") }, shortcut: "Num+"),
-        MenuItem(title: "Unselect Group...", action: { log.info("Menu > Mark > Unselect Group...") }, shortcut: "Num-"),
-        MenuItem(title: "Select All", action: { log.info("Menu > Mark > Select All") }, shortcut: "Ctrl+A"),
-        MenuItem(title: "Unselect All", action: { log.info("Menu > Mark > Unselect All") }, shortcut: "Ctrl+U"),
-        MenuItem(title: "Invert Selection", action: { log.info("Menu > Mark > Invert Selection") }, shortcut: nil),
+        MenuItem(
+            title: "Select Group…",
+            action: {
+                guard let appState = AppStateProvider.shared else { return }
+                appState.markByPattern(shouldMark: true)
+            },
+            shortcut: "Num+"
+        ),
+        MenuItem(
+            title: "Unselect Group…",
+            action: {
+                guard let appState = AppStateProvider.shared else { return }
+                appState.markByPattern(shouldMark: false)
+            },
+            shortcut: "Num-"
+        ),
+        MenuItem(
+            title: "Select All",
+            action: {
+                guard let appState = AppStateProvider.shared else { return }
+                appState.markAll()
+            },
+            shortcut: "⌃A"
+        ),
+        MenuItem(
+            title: "Unselect All",
+            action: {
+                guard let appState = AppStateProvider.shared else { return }
+                appState.unmarkAll()
+            },
+            shortcut: "⌃U"
+        ),
+        MenuItem(
+            title: "Invert Selection",
+            action: {
+                guard let appState = AppStateProvider.shared else { return }
+                appState.invertMarks()
+            },
+            shortcut: nil
+        ),
+        MenuItem(
+            title: "Select Same Extension",
+            action: {
+                guard let appState = AppStateProvider.shared else { return }
+                appState.markSameExtension()
+            },
+            shortcut: nil
+        ),
     ])
 
 // MARK: - Commands Menu
@@ -44,13 +126,60 @@ let commandMenuCategory = MenuCategory(
     title: "Commands",
     items: [
         MenuItem(
-            title: "Open Command Prompt...", action: { log.info("Menu > Commands > Open Command Prompt...") }, shortcut: "Ctrl+P"
+            title: "Find Files…",
+            action: {
+                guard let appState = AppStateProvider.shared else { return }
+                let panel = appState.focusedPanel
+                let path = panel == .left ? appState.leftPath : appState.rightPath
+                let file = panel == .left ? appState.selectedLeftFile : appState.selectedRightFile
+                FindFilesCoordinator.shared.toggle(searchPath: path, selectedFile: file)
+            },
+            shortcut: "⌥F7"
         ),
-        MenuItem(title: "Open Desktop Folder", action: { log.info("Menu > Commands > Open Desktop Folder") }, shortcut: nil),
-        MenuItem(title: "CD Tree...", action: { log.info("Menu > Commands > CD Tree...") }, shortcut: "Ctrl+D"),
         MenuItem(
-            title: "Branch View (With Subdirs)", action: { log.info("Menu > Commands > Branch View (With Subdirs)") },
-            shortcut: "Ctrl+B"),
+            title: "Open in Terminal",
+            action: {
+                guard let appState = AppStateProvider.shared else { return }
+                let panel = appState.focusedPanel
+                let path = panel == .left ? appState.leftPath : appState.rightPath
+                let url = URL(fileURLWithPath: path)
+                ContextMenuCoordinator.shared.openTerminal(at: url)
+            },
+            shortcut: nil
+        ),
+        MenuItem(
+            title: "Open in Finder",
+            action: {
+                guard let appState = AppStateProvider.shared else { return }
+                let panel = appState.focusedPanel
+                let path = panel == .left ? appState.leftPath : appState.rightPath
+                let file = panel == .left ? appState.selectedLeftFile : appState.selectedRightFile
+                if let f = file {
+                    ContextMenuCoordinator.shared.openInFinder(f)
+                } else {
+                    NSWorkspace.shared.open(URL(fileURLWithPath: path))
+                }
+            },
+            shortcut: nil
+        ),
+        MenuItem(
+            title: "Toggle Panel Focus",
+            action: {
+                guard let appState = AppStateProvider.shared else { return }
+                appState.toggleFocus()
+            },
+            shortcut: "⌘⌥T"
+        ),
+        MenuItem(
+            title: "CD Tree…",
+            action: stub("CD Tree…"),
+            shortcut: "⌃D"
+        ),
+        MenuItem(
+            title: "Branch View (With Subdirs)",
+            action: stub("Branch View"),
+            shortcut: "⌃B"
+        ),
     ])
 
 // MARK: - Net Menu
@@ -58,9 +187,9 @@ let commandMenuCategory = MenuCategory(
 let netMenuCategory = MenuCategory(
     title: "Net",
     items: [
-        MenuItem(title: "FTP Connect...", action: { log.info("Menu > Net > FTP Connect...") }, shortcut: "Ctrl+N"),
-        MenuItem(title: "FTP Disconnect", action: { log.info("Menu > Net > FTP Disconnect") }, shortcut: nil),
-        MenuItem(title: "Network Neighborhood", action: { log.info("Menu > Net > Network Neighborhood") }, shortcut: nil),
+        MenuItem(title: "FTP Connect…",       action: stub("FTP Connect…"),       shortcut: "⌃N"),
+        MenuItem(title: "FTP Disconnect",      action: stub("FTP Disconnect"),      shortcut: nil),
+        MenuItem(title: "Network Neighborhood",action: stub("Network Neighborhood"),shortcut: nil),
     ])
 
 // MARK: - Show Menu
@@ -68,9 +197,25 @@ let netMenuCategory = MenuCategory(
 let showMenuCategory = MenuCategory(
     title: "Show",
     items: [
-        MenuItem(title: "Full View", action: { log.info("Menu > Show > Full View") }, shortcut: nil),
-        MenuItem(title: "Brief View", action: { log.info("Menu > Show > Brief View") }, shortcut: nil),
-        MenuItem(title: "Hidden Files", action: { log.info("Menu > Show > Hidden Files") }, shortcut: "Ctrl+H"),
+        MenuItem(
+            title: "Refresh Panel",
+            action: {
+                guard let appState = AppStateProvider.shared else { return }
+                let panel = appState.focusedPanel
+                ContextMenuCoordinator.shared.refreshPanel(panel, appState: appState)
+            },
+            shortcut: "⌃R"
+        ),
+        MenuItem(
+            title: "Show/Hide Hidden Files",
+            action: {
+                UserPreferences.shared.snapshot.showHiddenFiles.toggle()
+                UserPreferences.shared.save()
+            },
+            shortcut: "⌃H"
+        ),
+        MenuItem(title: "Full View",  action: stub("Full View"),  shortcut: nil),
+        MenuItem(title: "Brief View", action: stub("Brief View"), shortcut: nil),
     ])
 
 // MARK: - Configuration Menu
@@ -78,19 +223,64 @@ let showMenuCategory = MenuCategory(
 let configMenuCategory = MenuCategory(
     title: "Configuration",
     items: [
-        MenuItem(title: "Options...", action: { log.info("Menu > Configuration > Options...") }, shortcut: "Alt+O"),
         MenuItem(
-            title: "Customize Toolbar...", action: { log.info("Menu > Configuration > Customize Toolbar...") }, shortcut: nil),
+            title: "Keyboard Shortcuts…",
+            action: { HotKeySettingsCoordinator.shared.showSettings() },
+            shortcut: "⌘,"
+        ),
+        MenuItem(title: "Options…",            action: stub("Options…"),            shortcut: "⌥O"),
+        MenuItem(title: "Customize Toolbar…",  action: stub("Customize Toolbar…"),  shortcut: nil),
     ])
 
-// MARK: - Start Menu
+// MARK: - Start (Tabs) Menu
 @MainActor
 let startMenuCategory = MenuCategory(
     title: "Start",
     items: [
-        MenuItem(title: "New Tab", action: { log.info("Menu > Start > New Tab") }, shortcut: "Ctrl+T"),
-        MenuItem(title: "Duplicate Tab", action: { log.info("Menu > Start > Duplicate Tab") }, shortcut: "Ctrl+D"),
-        MenuItem(title: "Close Tab", action: { log.info("Menu > Start > Close Tab") }, shortcut: "Ctrl+W"),
+        MenuItem(
+            title: "New Tab",
+            action: {
+                guard let appState = AppStateProvider.shared else { return }
+                let panel = appState.focusedPanel
+                let path = panel == .left ? appState.leftPath : appState.rightPath
+                _ = appState.tabManager(for: panel).addTab(path: path)
+            },
+            shortcut: "⌃T"
+        ),
+        MenuItem(
+            title: "Duplicate Tab",
+            action: {
+                guard let appState = AppStateProvider.shared else { return }
+                let panel = appState.focusedPanel
+                let mgr = appState.tabManager(for: panel)
+                if let active = mgr.activeTab { _ = mgr.duplicateTab(active.id) }
+            },
+            shortcut: "⌃D"
+        ),
+        MenuItem(
+            title: "Close Tab",
+            action: {
+                guard let appState = AppStateProvider.shared else { return }
+                appState.tabManager(for: appState.focusedPanel).closeActiveTab()
+            },
+            shortcut: "⌃W"
+        ),
+        MenuItem(
+            title: "Next Tab",
+            action: {
+                guard let appState = AppStateProvider.shared else { return }
+                appState.tabManager(for: appState.focusedPanel).selectNextTab()
+            },
+            shortcut: "⌃⇥"
+        ),
+        MenuItem(
+            title: "Previous Tab",
+            action: {
+                guard let appState = AppStateProvider.shared else { return }
+                appState.tabManager(for: appState.focusedPanel).selectPreviousTab()
+            },
+            shortcut: "⌃⇧⇥"
+        ),
     ])
 
 // MARK: - Help Menu
@@ -98,12 +288,12 @@ let startMenuCategory = MenuCategory(
 let helpMenuCategory = MenuCategory(
     title: "Help",
     items: [
-        MenuItem(title: "Index", action: { log.info("Help > Index") }, shortcut: "F1"),
-        MenuItem(title: "Keyboard", action: { log.info("Help > Keyboard") }, shortcut: nil),
-        MenuItem(title: "Registration Info", action: { log.info("Help > Registration Info") }, shortcut: nil),
-        MenuItem(title: "Visit MimiNav Website", action: { log.info("Help > Website") }, shortcut: nil),
-        MenuItem(title: "Check for Updates", action: { log.info("Help > Check for Updates") }, shortcut: nil),
-        MenuItem(title: "About MimiNav…", action: { log.info("Help > About MimiNav") }, shortcut: nil),
+        MenuItem(title: "Keyboard Shortcuts",    action: { HotKeySettingsCoordinator.shared.showSettings() }, shortcut: "F1"),
+        MenuItem(title: "Visit MimiNav Website", action: {
+            if let url = URL(string: "https://github.com/senatov/MiMiNavigator") {
+                NSWorkspace.shared.open(url)
+            }
+        }, shortcut: nil),
+        MenuItem(title: "Check for Updates…", action: stub("Check for Updates…"), shortcut: nil),
+        MenuItem(title: "About MimiNav…",     action: stub("About MimiNav…"),     shortcut: nil),
     ])
-
-// NOTE: This file only contains menu item data, not UI code.
