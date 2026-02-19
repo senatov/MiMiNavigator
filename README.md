@@ -9,11 +9,11 @@
 <h4 align="center">A modern dual-panel file manager for macOS, built with SwiftUI</h4>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/macOS-15.0+-black?logo=apple&logoColor=white" alt="macOS 15+" />
+  <img src="https://img.shields.io/badge/macOS-26.0+-black?logo=apple&logoColor=white" alt="macOS 26+" />
   <img src="https://img.shields.io/badge/Swift-6.2-F05138?logo=swift&logoColor=white" alt="Swift 6.2" />
   <img src="https://img.shields.io/badge/SwiftUI-blue?logo=swift&logoColor=white" alt="SwiftUI" />
   <img src="https://img.shields.io/badge/Concurrency-Strict-2ea44f" alt="Strict Concurrency" />
-  <img src="https://img.shields.io/badge/License-MIT-lightgrey" alt="MIT" />
+  <img src="https://img.shields.io/badge/License-AGPL--3.0-blue" alt="AGPL-3.0" />
   <img src="https://img.shields.io/badge/v0.9.3.1-Active_Development-orange" alt="Active Development" />
 </p>
 
@@ -341,7 +341,7 @@ Looking for a way to start? Here are areas where help is especially appreciated:
 
 ## License
 
-[MIT](LICENSE) — Iakov Senatov
+[AGPL-3.0](LICENSE) — Iakov Senatov
 
 <p align="center">
   <a href="https://www.linkedin.com/in/iakov-senatov-07060765"><img src="https://img.shields.io/badge/LinkedIn-Iakov_Senatov-0077B5?logo=linkedin&logoColor=white" alt="LinkedIn"></a>
