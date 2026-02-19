@@ -1,6 +1,7 @@
-# Diff Tools Setup
+# Diff Tools Setup.
 
 MiMiNavigator uses external diff tools depending on what is being compared.
+
 
 ## Files → FileMerge (opendiff)
 
