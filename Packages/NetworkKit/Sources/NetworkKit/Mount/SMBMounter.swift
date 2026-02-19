@@ -12,71 +12,62 @@ import Foundation
 public enum MountError: Error, LocalizedError {
     case invalidURL
     case mountFailed(String)
-    case alreadyMounted(URL)
+    case notMounted
 
     public var errorDescription: String? {
         switch self {
-        case .invalidURL:           return "Invalid share URL"
+        case .invalidURL:    return "Invalid share URL"
         case .mountFailed(let msg): return "Mount failed: \(msg)"
-        case .alreadyMounted(let u): return "Already mounted at \(u.path)"
+        case .notMounted:    return "Share was not mounted within timeout"
         }
     }
 }
 
-// MARK: - SMB/AFP mounter using NSWorkspace
+// MARK: - SMB/AFP mounter
 @MainActor
 public final class SMBMounter {
 
     public static let shared = SMBMounter()
     private init() {}
 
-    // MARK: - Mount a host share, returns local /Volumes/ URL
-    public func mount(host: NetworkHost) async throws -> URL {
-        guard let url = host.smbURL ?? host.afpURL else { throw MountError.invalidURL }
+    // MARK: - All currently mounted network volumes in /Volumes/
+    public func mountedNetworkVolumes() -> [URL] {
+        let keys: [URLResourceKey] = [.volumeIsLocalKey, .volumeNameKey]
+        guard let volumes = FileManager.default.mountedVolumeURLs(
+            includingResourceValuesForKeys: keys,
+            options: []
+        ) else { return [] }
 
-        // Check if already mounted
-        if let existing = alreadyMounted(hostName: host.hostName) {
-            return existing
-        }
-
-        return try await withCheckedThrowingContinuation { continuation in
-            NSWorkspace.shared.open(
-                [url],
-                withAppBundleIdentifier: nil,
-                options: [],
-                additionalEventParamDescriptor: nil,
-                launchIdentifiers: nil
-            )
-            // NSWorkspace.open for smb:// triggers Finder mount dialog.
-            // For direct mount without UI, use NetFS (non-sandboxed only).
-            // In sandbox — delegate to Finder, then find mount in /Volumes/
-            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { [weak self] in
-                guard let self else { return }
-                if let mountURL = self.alreadyMounted(hostName: host.hostName) {
-                    continuation.resume(returning: mountURL)
-                } else {
-                    // Finder opened auth dialog — return smb:// as fallback
-                    continuation.resume(returning: url)
-                }
-            }
+        return volumes.filter { url in
+            guard let vals = try? url.resourceValues(forKeys: Set(keys)),
+                  let isLocal = vals.volumeIsLocal else { return false }
+            // Network volumes are non-local, exclude Macintosh HD variants
+            return !isLocal
         }
     }
 
-    // MARK: - Check /Volumes/ for existing mount matching hostName
-    public func alreadyMounted(hostName: String) -> URL? {
-        let volumesURL = URL(fileURLWithPath: "/Volumes")
-        guard let contents = try? FileManager.default.contentsOfDirectory(
-            at: volumesURL,
-            includingPropertiesForKeys: [.volumeNameKey],
-            options: .skipsHiddenFiles
-        ) else { return nil }
+    // MARK: - Open smb:// URL — triggers macOS mount dialog in Finder
+    public func openForMount(_ url: URL) {
+        NSWorkspace.shared.open(url)
+    }
 
-        let baseName = hostName
-            .replacingOccurrences(of: ".local", with: "")
-            .lowercased()
-
-        return contents.first {
-            $0.lastPathComponent.lowercased().contains(baseName)
+    // MARK: - Poll /Volumes/ for new network mounts, returning newly appeared ones
+    // Snapshots before/after and returns diff
+    public func pollForNewMount(
+        snapshot: [URL],
+        timeout: TimeInterval = 30
+    ) async -> URL? {
+        let deadline = Date().addingTimeInterval(timeout)
+        while Date() < deadline {
+            try? await Task.sleep(for: .seconds(1))
+            let current = mountedNetworkVolumes()
+            let newVolumes = current.filter { cur in
+                !snapshot.contains { $0.path == cur.path }
+            }
+            if let first = newVolumes.first {
+                return first
+            }
         }
+        return nil
     }
 }
