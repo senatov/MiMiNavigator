@@ -140,8 +140,8 @@ struct FilePanelView: View {
         RoundedRectangle(cornerRadius: DesignTokens.radius, style: .continuous)
             .inset(by: 4)
             .stroke(
-                Color(#colorLiteral(red: 1.0, green: 0.55, blue: 0.05, alpha: focused ? 1.0 : 0.0)),
-                lineWidth: 1.5
+                Color(#colorLiteral(red: 1.0, green: 0.70, blue: 0.35, alpha: focused ? 0.55 : 0.0)),
+                lineWidth: 1.0
             )
             .animation(.easeInOut(duration: 0.18), value: focused)
     }
