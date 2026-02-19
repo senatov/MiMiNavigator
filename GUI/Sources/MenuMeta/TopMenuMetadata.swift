@@ -30,10 +30,10 @@ let filesMenuCategory = MenuCategory(
         MenuItem(
             title: "Pack…",
             action: {
-                guard let appState = AppStateProvider.shared else { stub("Pack…")(); return }
+                guard let appState = AppStateProvider.shared else { return }
                 let panel = appState.focusedPanel
-                let files = appState.markedCustomFiles(for: panel)
-                guard !files.isEmpty else { stub("Pack…: no files marked")(); return }
+                let files = appState.filesForOperation(on: panel)
+                guard !files.isEmpty else { stub("Pack…: select or mark files first")(); return }
                 Task { await ContextMenuCoordinator.shared.performCompress(files: files, appState: appState) }
             },
             shortcut: "⌥F5"
@@ -74,7 +74,7 @@ let markMenuCategory = MenuCategory(
             title: "Select Group…",
             action: {
                 guard let appState = AppStateProvider.shared else { return }
-                appState.markByPattern(shouldMark: true)
+                appState.markByPattern()
             },
             shortcut: "Num+"
         ),
@@ -82,7 +82,7 @@ let markMenuCategory = MenuCategory(
             title: "Unselect Group…",
             action: {
                 guard let appState = AppStateProvider.shared else { return }
-                appState.markByPattern(shouldMark: false)
+                appState.unmarkByPattern()
             },
             shortcut: "Num-"
         ),
@@ -189,7 +189,14 @@ let netMenuCategory = MenuCategory(
     items: [
         MenuItem(title: "FTP Connect…",       action: stub("FTP Connect…"),       shortcut: "⌃N"),
         MenuItem(title: "FTP Disconnect",      action: stub("FTP Disconnect"),      shortcut: nil),
-        MenuItem(title: "Network Neighborhood",action: stub("Network Neighborhood"),shortcut: nil),
+        MenuItem(
+            title: "Network Neighborhood",
+            action: {
+                guard let appState = AppStateProvider.shared else { return }
+                appState.showNetworkNeighborhood = true
+            },
+            shortcut: nil
+        ),
     ])
 
 // MARK: - Show Menu
@@ -253,7 +260,7 @@ let startMenuCategory = MenuCategory(
                 guard let appState = AppStateProvider.shared else { return }
                 let panel = appState.focusedPanel
                 let mgr = appState.tabManager(for: panel)
-                if let active = mgr.activeTab { _ = mgr.duplicateTab(active.id) }
+                _ = mgr.duplicateTab(mgr.activeTab.id)
             },
             shortcut: "⌃D"
         ),

@@ -113,6 +113,7 @@ struct FilePanelView: View {
             tx.animation = nil
         }
         .background(DesignTokens.panelBg)
+        .overlay(focusRingOverlay)
         .controlSize(.regular)
         .contentShape(Rectangle())
         .panelFocus(panelSide: viewModel.panelSide) {
@@ -125,13 +126,24 @@ struct FilePanelView: View {
         ZStack {
             RoundedRectangle(cornerRadius: DesignTokens.radius, style: .continuous)
                 .fill(DesignTokens.card)
+            // Base border — always visible
             RoundedRectangle(cornerRadius: DesignTokens.radius, style: .continuous)
-                .stroke(
-                    DesignTokens.separator.opacity(0.35),
-                    lineWidth: 1
-                )
+                .stroke(DesignTokens.separator.opacity(0.35), lineWidth: 1)
         }
         .drawingGroup()
+    }
+
+    // MARK: - Focus ring overlay — drawn inside bounds to avoid clipping
+    @ViewBuilder
+    private var focusRingOverlay: some View {
+        let focused = appState.focusedPanel == viewModel.panelSide
+        RoundedRectangle(cornerRadius: DesignTokens.radius, style: .continuous)
+            .inset(by: 4)
+            .stroke(
+                Color(#colorLiteral(red: 1.0, green: 0.55, blue: 0.05, alpha: focused ? 1.0 : 0.0)),
+                lineWidth: 1.5
+            )
+            .animation(.easeInOut(duration: 0.18), value: focused)
     }
     
     // MARK: - Calculated panel width

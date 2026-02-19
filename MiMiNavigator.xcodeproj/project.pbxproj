@@ -12,6 +12,7 @@
 		97D128762DB62DD400274684 /* FilesProvider in Frameworks */ = {isa = PBXBuildFile; productRef = 97D128752DB62DD400274684 /* FilesProvider */; };
 		97D9156C2CD5625D00EB5FDD /* SwiftyBeaver in Frameworks */ = {isa = PBXBuildFile; productRef = 97D9156B2CD5625D00EB5FDD /* SwiftyBeaver */; };
 		97ECF2AD2F224FA5005A6EFB /* FavoritesKit in Frameworks */ = {isa = PBXBuildFile; productRef = 971A28F82F1B140900094ADE /* FavoritesKit */; };
+		FF82030CE1584192AE6E4DEA /* NetworkKit in Frameworks */ = {isa = PBXBuildFile; productRef = 52D4533F441E4D78BD910304 /* NetworkKit */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -85,6 +86,7 @@
 			isa = PBXFrameworksBuildPhase;
 			files = (
 				97ECF2AD2F224FA5005A6EFB /* FavoritesKit in Frameworks */,
+				FF82030CE1584192AE6E4DEA /* NetworkKit in Frameworks */,
 				97D9156C2CD5625D00EB5FDD /* SwiftyBeaver in Frameworks */,
 				97B3D6382DCA54B9002F1DB7 /* SystemPackage in Frameworks */,
 				97D128762DB62DD400274684 /* FilesProvider in Frameworks */,
@@ -149,6 +151,7 @@
 				97D128752DB62DD400274684 /* FilesProvider */,
 				97B3D6372DCA54B9002F1DB7 /* SystemPackage */,
 				971A28F82F1B140900094ADE /* FavoritesKit */,
+				52D4533F441E4D78BD910304 /* NetworkKit */,
 			);
 			productName = MiMiNavigator;
 			productReference = 97AD1A2E2C624E020045C38D /* MiMiNavigator.app */;
@@ -227,6 +230,7 @@
 				97D128732DB62CB400274684 /* XCRemoteSwiftPackageReference "FileProvider" */,
 				97B3D6362DCA54A2002F1DB7 /* XCRemoteSwiftPackageReference "swift-system" */,
 				971A28F72F1B140900094ADE /* XCLocalSwiftPackageReference "Packages/FavoritesKit" */,
+				9727CDA52F477FF400C4E234 /* XCLocalSwiftPackageReference "Packages/NetworkKit" */,
 			);
 			preferredProjectObjectVersion = 90;
 			productRefGroup = 97AD1A2F2C624E020045C38D /* Products */;
@@ -664,6 +668,10 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/FavoritesKit;
 		};
+		9727CDA52F477FF400C4E234 /* XCLocalSwiftPackageReference "Packages/NetworkKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/NetworkKit;
+		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCRemoteSwiftPackageReference section */
@@ -698,6 +706,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 971A28F72F1B140900094ADE /* XCLocalSwiftPackageReference "Packages/FavoritesKit" */;
 			productName = FavoritesKit;
+		};
+		52D4533F441E4D78BD910304 /* NetworkKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 9727CDA52F477FF400C4E234 /* XCLocalSwiftPackageReference "Packages/NetworkKit" */;
+			productName = NetworkKit;
 		};
 		97B3D6372DCA54B9002F1DB7 /* SystemPackage */ = {
 			isa = XCSwiftPackageProductDependency;

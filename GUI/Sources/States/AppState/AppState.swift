@@ -27,6 +27,7 @@ final class AppState {
     var rightPath: String
     var selectedDir: DirectorySelection = .init()
     var showFavTreePopup: Bool = false
+    var showNetworkNeighborhood: Bool = false
 
     // MARK: - Archive Navigation State (per-panel)
     var leftArchiveState = ArchiveNavigationState()
@@ -154,7 +155,9 @@ extension AppState {
     }
 
     func toggleFocus() {
-        selectionManager?.toggleFocus()
+        // Direct mutation — avoids weak-ref chain through selectionManager
+        focusedPanel = focusedPanel == .left ? .right : .left
+        log.debug("[AppState] toggleFocus → \(focusedPanel)")
     }
 
     func selectionMove(by step: Int) {

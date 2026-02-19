@@ -23,7 +23,10 @@ fastlane/Preview.html
 fastlane/report.xml
 fastlane/test_output
 Package.resolved
-Packages/
+# Local SPM resolved packages cache — but track our own local packages
+.build/
+# Packages/   ← removed: Packages/ contains our local SPM packages (FavoritesKit, NetworkKit)
+
 playground.xcworkspace
 Pods/
 timeline.xctimeline
