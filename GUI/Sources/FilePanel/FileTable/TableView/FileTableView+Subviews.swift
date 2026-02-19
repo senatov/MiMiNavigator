@@ -91,7 +91,7 @@ extension FileTableView {
             .stroke(
                 isPanelDropTargeted
                     ? Color.accentColor.opacity(0.8)
-                    : (isFocused ? Color.accentColor.opacity(0.3) : Color.clear),
+                    : Color.clear,
                 lineWidth: isPanelDropTargeted ? 2 : 1
             )
             .allowsHitTesting(false)
