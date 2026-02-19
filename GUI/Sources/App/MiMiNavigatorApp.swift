@@ -73,14 +73,30 @@ struct MiMiNavigatorApp: App {
                 )) {
                     NetworkNeighborhoodView(
                         onNavigate: { url in
-                            // Navigate focused panel to the smb:// URL
-                            let side = appState.focusedPanel
-                            if side == .left {
-                                appState.leftPath = url.absoluteString
-                            } else {
-                                appState.rightPath = url.absoluteString
-                            }
                             appState.showNetworkNeighborhood = false
+                            Task { @MainActor in
+                                // Try to find already-mounted volume first
+                                let hostName = url.host ?? ""
+                                if let mounted = SMBMounter.shared.alreadyMounted(hostName: hostName) {
+                                    // Already mounted — navigate directly
+                                    let side = appState.focusedPanel
+                                    if side == .left { appState.leftPath = mounted.path }
+                                    else { appState.rightPath = mounted.path }
+                                } else {
+                                    // Mount via Finder (shows auth dialog if needed)
+                                    // then poll /Volumes/ for up to 15s
+                                    NSWorkspace.shared.open(url)
+                                    for _ in 0..<15 {
+                                        try? await Task.sleep(for: .seconds(1))
+                                        if let mounted = SMBMounter.shared.alreadyMounted(hostName: hostName) {
+                                            let side = appState.focusedPanel
+                                            if side == .left { appState.leftPath = mounted.path }
+                                            else { appState.rightPath = mounted.path }
+                                            return
+                                        }
+                                    }
+                                }
+                            }
                         },
                         onDismiss: {
                             appState.showNetworkNeighborhood = false
