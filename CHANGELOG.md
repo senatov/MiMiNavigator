@@ -5,6 +5,45 @@ All notable changes to MiMiNavigator will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] — 2026-02-19
+
+### Added
+- **Top menu — real actions wired** (was all stubs before)
+  - **Files**: Pack marked files via `ContextMenuCoordinator`, Quit via `NSApplication`
+  - **Mark**: Select All, Unselect All, Invert, Select by Pattern, Unselect by Pattern, Select Same Extension — all via `AppState`/`MultiSelectionManager`
+  - **Commands**: Find Files (`FindFilesCoordinator`), Open in Terminal, Open in Finder, Toggle Panel Focus
+  - **Show**: Refresh Panel, Show/Hide Hidden Files (`UserPreferences`)
+  - **Configuration**: Keyboard Shortcuts (`HotKeySettingsCoordinator`)
+  - **Start**: New Tab, Duplicate Tab, Close Tab, Next Tab, Previous Tab — via `TabManager`
+  - **Help**: Keyboard Shortcuts, Visit GitHub; stubs for unimplemented items show `NSAlert`
+  - `AppStateProvider` — `@MainActor` weak singleton bridge so menu closures reach live `AppState`
+
+- **Inline panel filter bar** — real-time file filtering in status bar
+  - SwiftUI `TextField` with system `controlBackgroundColor` background (HIG-compliant)
+  - Blue focus ring `1.5pt` on active, thin `0.5pt` at rest
+  - `×` clear button appears/disappears with animation
+  - `chevron.down` opens history popover — per-item `×` delete button, no duplicates
+  - Persistent history per panel (max 16 entries) via `UserDefaults`
+  - Real-time filter: every keystroke filters `CustomFile.nameStr` (case-insensitive)
+  - `PanelFilterHistory` — `@MainActor ObservableObject`, `add()` deduplicates automatically
+  - Integrated into `SelectionStatusBar` between disk space and item count labels
+
+### Changed
+- **CI workflow** — migrated from broken `macos-latest` + `Xcode_16.1` to `macos-26` + `Xcode 26.2`
+  - Switched to `xcbeautify --renderer github-actions` for annotated build output
+  - Added 15-minute timeout on `xcodebuild test` (known Xcode 26 hang issue)
+  - Added GitHub Actions Job Summary step
+
+- **UI dividers** — panel and column separator colors:
+  - Passive: pale orange `rgba(255,179,102, 0.45)`, `0.5–1pt`
+  - Hover: pale blue `rgba(115,184,255, 0.85)`, `1–2pt`
+  - Drag: red-orange `rgba(242,97,26, 0.90)`, `1–3pt`
+
+### Removed
+- Panel focus border (orange glow) — removed from `FileTableView+Subviews` and `FilePanelView`
+
+---
+
 ## [0.9.3] - 2026-02-14
 
 ### Added
