@@ -346,50 +346,101 @@ struct MiMiNavigatorApp: App {
     }
 
     private func launchDiffTool(left: String, right: String) {
+        log.debug("\(#function) left=\(left) right=\(right)")
         let leftURL  = URL(fileURLWithPath: left).standardized
         let rightURL = URL(fileURLWithPath: right).standardized
-        let ws = NSWorkspace.shared
 
-        // DirEqual — open two folder URLs directly via NSWorkspace (no Finder)
-        if ws.urlForApplication(withBundleIdentifier: "com.naarak.DirEqual") != nil {
-            let targetFrame = NSApp.mainWindow?.frame
-            Self.launchDirEqualViaFinder(leftPath: leftURL.path, rightPath: rightURL.path, frame: targetFrame)
+        // FileMerge via opendiff — works for both files and folders, bundled with Xcode
+        let opendiff = "/usr/bin/opendiff"
+        guard FileManager.default.fileExists(atPath: opendiff) else {
+            Self.offerInstallXcode()
+            return
+        }
+        let task = Process()
+        task.executableURL = URL(fileURLWithPath: opendiff)
+        task.arguments = [leftURL.path, rightURL.path]
+        do {
+            try task.run()
+            log.info("[Compare] launched FileMerge ✓")
+        } catch {
+            log.error("[Compare] opendiff failed: \(error.localizedDescription)")
+            return
+        }
+        // Bring FileMerge window in front of MiMiNavigator, sized to match our window
+        let targetFrame = NSApp.mainWindow?.frame
+        Self.waitForFileMergeReady(frame: targetFrame)
+    }
+
+    /// Poll until FileMerge window appears, then activate and position it over MiMiNavigator.
+    private static func waitForFileMergeReady(frame: NSRect?, attempt: Int = 0) {
+        log.debug("\(#function) attempt=\(attempt)")
+        let maxAttempts = 16   // 8 seconds total
+        let interval    = 0.5
+
+        let checkScript = """
+        tell application "System Events"
+            if exists process "FileMerge" then
+                return (count windows of process "FileMerge") as string
+            end if
+            return "0"
+        end tell
+        """
+        var err: NSDictionary?
+        let result = NSAppleScript(source: checkScript)?.executeAndReturnError(&err)
+        let windowCount = Int(result?.stringValue ?? "0") ?? 0
+
+        guard windowCount > 0 else {
+            guard attempt < maxAttempts else {
+                log.warning("[Compare] FileMerge window never appeared")
+                return
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + interval) {
+                waitForFileMergeReady(frame: frame, attempt: attempt + 1)
+            }
             return
         }
 
-        // Fallback: Process()-based tools (sandbox off in Debug)
-        let candidates: [(appPath: String, bin: String)] = [
-            ("/Applications/Xcode.app/Contents/Applications/FileMerge.app", "/usr/bin/opendiff"),
-            ("/Applications/kdiff3.app",        "/Applications/kdiff3.app/Contents/MacOS/kdiff3"),
-            ("/Applications/Beyond Compare.app", "/Applications/Beyond Compare.app/Contents/MacOS/bcomp"),
-        ]
-        for (appPath, bin) in candidates {
-            guard FileManager.default.fileExists(atPath: appPath) else { continue }
-            let task = Process()
-            task.executableURL = URL(fileURLWithPath: bin)
-            task.arguments = [left, right]
-            do {
-                try task.run()
-                log.info("[Compare] launched \(appPath.components(separatedBy: "/").last ?? bin) ✓")
-                return
-            } catch {
-                log.error("[Compare] \(bin): \(error.localizedDescription)")
-            }
-        }
+        // Window ready — activate and position over MiMiNavigator
+        let f = frame ?? NSRect(x: 100, y: 100, width: 1200, height: 800)
+        let screenH = NSScreen.main?.frame.height ?? 1080
+        let wx = Int(f.origin.x)
+        let wy = Int(screenH - f.origin.y - f.height)
+        let ww = Int(f.width)
+        let wh = Int(f.height)
 
-        // Nothing installed — offer DirEqual from App Store
-        Task { @MainActor in
-            let alert = NSAlert()
-            alert.messageText = "No Diff Tool Found"
-            alert.informativeText = "DirEqual is a free App Store tool for comparing folders.\n\nWould you like to open it in the App Store?"
-            alert.alertStyle = .informational
-            alert.addButton(withTitle: "Open App Store")
-            alert.addButton(withTitle: "Cancel")
-            if alert.runModal() == .alertFirstButtonReturn {
-                ws.open(URL(string: "macappstore://apps.apple.com/app/id1435575700")!)
-            }
+        let posScript = """
+        tell application "FileMerge" to activate
+        delay 0.2
+        tell application "System Events"
+            tell process "FileMerge"
+                set position of window 1 to {\(wx), \(wy)}
+                set size of window 1 to {\(ww), \(wh)}
+            end tell
+        end tell
+        """
+        var posErr: NSDictionary?
+        NSAppleScript(source: posScript)?.executeAndReturnError(&posErr)
+        if let posErr {
+            log.warning("[Compare] FileMerge position: \(posErr["NSAppleScriptErrorMessage"] ?? posErr)")
+        } else {
+            log.info("[Compare] FileMerge ready after \(attempt) poll(s), positioned ✓")
         }
-        log.info("[Compare] offered DirEqual via App Store")
+    }
+
+    /// Offer to install Xcode (which includes FileMerge) from the App Store.
+    @MainActor
+    private static func offerInstallXcode() {
+        log.debug("\(#function)")
+        let alert = NSAlert()
+        alert.messageText = "FileMerge Not Found"
+        alert.informativeText = "FileMerge is bundled with Xcode and works great for comparing files and folders.\n\nWould you like to install Xcode from the App Store?"
+        alert.alertStyle = .informational
+        alert.addButton(withTitle: "Open App Store")
+        alert.addButton(withTitle: "Cancel")
+        if alert.runModal() == .alertFirstButtonReturn {
+            NSWorkspace.shared.open(URL(string: "macappstore://apps.apple.com/app/id497799835")!)
+        }
+        log.info("[Compare] offered Xcode via App Store")
     }
 
 
