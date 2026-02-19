@@ -354,8 +354,11 @@ struct MiMiNavigatorApp: App {
 
         if comparingDirs {
             // Directories → DiffMerge (two-panel dir comparison)
-            let diffMergeBin = "/Applications/DiffMerge.app/Contents/MacOS/DiffMerge"
+            let diffMergeApp = "/Applications/DiffMerge.app"
+            let diffMergeBin = "\(diffMergeApp)/Contents/MacOS/DiffMerge"
             if FileManager.default.fileExists(atPath: diffMergeBin) {
+                // Remove macOS quarantine attributes silently — required after brew install
+                Self.removeQuarantine(atPath: diffMergeApp)
                 let task = Process()
                 task.executableURL = URL(fileURLWithPath: diffMergeBin)
                 task.arguments = ["--nosplash", leftURL.path, rightURL.path]
@@ -446,13 +449,39 @@ struct MiMiNavigatorApp: App {
         }
     }
 
+    /// Remove macOS quarantine extended attributes from an app bundle.
+    /// Required after `brew install --cask diffmerge` — otherwise macOS blocks launch.
+    private static func removeQuarantine(atPath path: String) {
+        log.debug("\(#function) path=\(path)")
+        let task = Process()
+        task.executableURL = URL(fileURLWithPath: "/usr/bin/xattr")
+        task.arguments = ["-cr", path]
+        do {
+            try task.run()
+            task.waitUntilExit()
+            log.info("[Compare] xattr -cr \(path) ✓")
+        } catch {
+            log.warning("[Compare] xattr failed: \(error.localizedDescription)")
+        }
+    }
+
     /// Offer to install DiffMerge via brew for directory comparison.
     @MainActor
     private static func offerInstallDiffMerge() {
         log.debug("\(#function)")
         let alert = NSAlert()
         alert.messageText = "DiffMerge Not Found"
-        alert.informativeText = "DiffMerge is a free tool for two-panel directory comparison.\n\nInstall via Homebrew:\nbrew install --cask diffmerge"
+        alert.informativeText = """
+            DiffMerge is a free tool for two-panel directory comparison.
+
+            Install via Homebrew:
+              brew install --cask diffmerge
+
+            Note: after installation macOS may block the app due to quarantine.
+            MiMiNavigator removes quarantine attributes automatically on first launch.
+            If you still see a warning, run manually:
+              xattr -cr /Applications/DiffMerge.app
+            """
         alert.alertStyle = .informational
         alert.addButton(withTitle: "Install via brew")
         alert.addButton(withTitle: "Cancel")
@@ -460,12 +489,12 @@ struct MiMiNavigatorApp: App {
             let script = """
             tell application "Terminal"
                 activate
-                do script "brew install --cask diffmerge"
+                do script "brew install --cask diffmerge && xattr -cr /Applications/DiffMerge.app && echo 'DiffMerge ready ✓'"
             end tell
             """
             var err: NSDictionary?
             NSAppleScript(source: script)?.executeAndReturnError(&err)
-            log.info("[Compare] offered DiffMerge via brew")
+            log.info("[Compare] offered DiffMerge install via brew")
         }
     }
 
