@@ -6,6 +6,7 @@
 //
 
 import AppKit
+import NetworkKit
 import SwiftUI
 
 @main
@@ -64,6 +65,14 @@ struct MiMiNavigatorApp: App {
                             }
                         }
                     }
+                }
+                // MARK: - Network Neighborhood Sheet
+                .sheet(isPresented: Binding(
+                    get: { appState.showNetworkNeighborhood },
+                    set: { appState.showNetworkNeighborhood = $0 }
+                )) {
+                    NetworkNeighborhoodView()
+                        .frame(minWidth: 360, minHeight: 400)
                 }
                 // MARK: - Batch Operation Progress Overlay
                 .overlay {

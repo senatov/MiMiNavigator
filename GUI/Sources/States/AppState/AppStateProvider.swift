@@ -7,8 +7,9 @@
 
 import Foundation
 
-// MARK: - Weak bridge so menu closures can call AppState without @Environment
+// MARK: - Strong bridge so menu actions (closures) reach the live AppState instance
+// Safe to hold strongly — AppState is app-lifetime singleton owned by SwiftUI @State
 @MainActor
 final class AppStateProvider {
-    static weak var shared: AppState?
+    static var shared: AppState?
 }

@@ -80,7 +80,9 @@ struct TopMenuBarView: View {
                 if let helpMenu = menuData.last {
                     Menu {
                         ForEach(helpMenu.items) { item in
-                            TopMenuItemView(item: item)
+                            Button(action: item.action) {
+                                Text(item.title)
+                            }
                         }
                     } label: {
                         Text(helpMenu.title)
@@ -119,14 +121,19 @@ struct TopMenuBarView: View {
     
         // MARK: -
     private func menuView(for menu: MenuCategory) -> some View {
-            // Explicit return for clarity
         return Menu(menu.title) {
             ForEach(menu.items) { item in
-                TopMenuItemView(item: item)
+                Button(action: item.action) {
+                    if let shortcut = item.shortcut {
+                        Text("\(item.title)  \(shortcut)")
+                    } else {
+                        Text(item.title)
+                    }
+                }
             }
         }
         .help("Open menu: \(menu.title)")
-        .menuStyle(.borderlessButton)  // ensure flat dropdown look per Figma/macOS
+        .menuStyle(.borderlessButton)
         .controlSize(.small)
         .buttonStyle(TopMenuButtonStyle())
     }
