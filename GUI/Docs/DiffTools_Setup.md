@@ -45,5 +45,35 @@ If DiffMerge was previously installed to a wrong location:
 
 ```bash
 brew reinstall --cask diffmerge
-xattr -cr /Applications/DiffMerge.app
+xattr -cr ~/Applications/DiffMerge.app
 ```
+
+### 📍 App Location
+
+`brew install --cask diffmerge` may install to `/Applications` or `~/Applications`
+depending on system configuration. MiMiNavigator checks both locations automatically.
+
+---
+
+## Automatic Configuration
+
+On first launch of DiffMerge via MiMiNavigator, preferences are written automatically to:
+
+```
+~/Library/Preferences/SourceGear DiffMerge Preferences
+```
+
+This includes:
+- **Color scheme** — highlighted background for different files (`bg=16242133`)
+- **Font** — SF Pro Display 14pt for both file and folder views
+- **Ruleset** — default file comparison rules
+- **Folder flags** — `ShowFlags=31` (show all file states)
+
+The config is only written if DiffMerge has not been configured yet (detected by absence
+of `[Folder/Color/Different]` section). If the user has already configured DiffMerge
+manually, the existing config is never overwritten.
+
+### Window Positioning
+
+DiffMerge window is positioned **dynamically over the MiMiNavigator main window**
+via AppleScript after launch. Window coordinates from the config file are ignored.
