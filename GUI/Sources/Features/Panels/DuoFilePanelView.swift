@@ -67,6 +67,7 @@ struct DuoFilePanelView: View {
                 onDelete: { actions.performDelete() },
                 onSettings: { actions.performSettings() },
                 onConsole: { actions.performConsole() },
+                onNetwork: { appState.showNetworkNeighborhood = true },
                 onExit: { actions.performExit() }
             )
         }
