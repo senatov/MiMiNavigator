@@ -28,10 +28,10 @@ struct DividerDragState {
 // MARK: - Divider Style Constants
 enum PanelDividerStyle {
     static let hitAreaWidth: CGFloat = 24
-    static let normalWidth: CGFloat = 1.2
-    static let activeWidth: CGFloat = 4.0
+    static let normalWidth: CGFloat = 1.0
+    static let activeWidth: CGFloat = 1.4
     static let normalColor = Color(nsColor: NSColor.separatorColor)
-    static let activeColor = Color.red
+    static let activeColor = Color(#colorLiteral(red: 0.2196078449, green: 0.007843137719, blue: 0.8549019694, alpha: 1)).opacity(0.90)
     static let minPanelWidth: CGFloat = 80
 }
 
@@ -103,7 +103,6 @@ struct PanelDividerView: View {
                 if moved {
                     divider.dragPreviewLeft = snapped
                 }
-
                 updateTooltip(snapped: snapped, locationY: value.location.y)
             }
             .onEnded { _ in
@@ -138,10 +137,8 @@ struct PanelDividerView: View {
         let scale = NSScreen.main?.backingScaleFactor ?? 2.0
         let halfCenter = (containerWidth / 2.0 * scale).rounded() / scale
         let halfLeft = halfCenter - PanelDividerStyle.hitAreaWidth / 2
-
         divider.lastAppliedWidth = halfLeft
         leftPanelWidth = halfLeft
-
         showTooltip(text: "50%", at: CGPoint(x: halfCenter, y: 46))
 
         Task {

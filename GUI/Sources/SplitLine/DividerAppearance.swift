@@ -13,8 +13,8 @@ import SwiftUI
 final class DividerAppearance {
     var normalThickness: CGFloat = 4.0
     var activeThickness: CGFloat = 6.0
-    var normalColor: NSColor = NSColor.controlAccentColor.withAlphaComponent(0.5)
-    var activeColor: NSColor = NSColor.controlAccentColor
+    var normalColor: NSColor = #colorLiteral(red: 1.00, green: 0.70, blue: 0.40, alpha: 0.75)
+    var activeColor: NSColor = #colorLiteral(red: 1.0, green: 0.3, blue: 0.0, alpha: 1.0)
     var hitExpansion: CGFloat = 24
     var isDragging: Bool = false
 }

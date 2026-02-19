@@ -51,14 +51,16 @@ enum TableHeaderStyle {
 // MARK: - Column Separator Style
 /// Visual styling for column separators (both header and rows)
 enum ColumnSeparatorStyle {
-    /// Light blue color for column dividers
-    static let color = Color(red: 0.4, green: 0.6, blue: 0.9).opacity(0.5)
-    /// Hover highlight color
-    static let hoverColor = Color.accentColor.opacity(0.8)
-    /// Active drag color
-    static let dragColor = Color.accentColor
-    /// Width of column separator line (1px)
-    static let width: CGFloat = 1.0
+    /// Pale orange for passive column divider
+    static let color = Color(#colorLiteral(red: 1.0, green: 0.72, blue: 0.45, alpha: 1.0)).opacity(0.40)
+    /// Pale blue on cursor hover
+    static let hoverColor = Color(#colorLiteral(red: 0.35, green: 0.65, blue: 1.0, alpha: 1.0)).opacity(0.80)
+    /// Red-orange while dragging
+    static let dragColor = Color(#colorLiteral(red: 0.95, green: 0.38, blue: 0.10, alpha: 1.0)).opacity(0.90)
+    /// Passive line width
+    static let width: CGFloat = 0.5
+    /// Active (hover/drag) line width
+    static let activeWidth: CGFloat = 1.0
 }
 
 // MARK: - Column Width Storage

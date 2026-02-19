@@ -28,12 +28,12 @@ struct ResizableDivider: View {
 
     var body: some View {
         ColumnSeparator()
-            .frame(width: ColumnSeparatorStyle.width)
+            .frame(width: ColumnSeparatorStyle.activeWidth)
             .overlay {
                 if isHovering || isDragging {
                     Rectangle()
                         .fill(isDragging ? ColumnSeparatorStyle.dragColor : ColumnSeparatorStyle.hoverColor)
-                        .frame(width: 2)
+                        .frame(width: ColumnSeparatorStyle.activeWidth)
                         .allowsHitTesting(false)
                 }
             }

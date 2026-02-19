@@ -127,9 +127,7 @@ struct FilePanelView: View {
                 .fill(DesignTokens.card)
             RoundedRectangle(cornerRadius: DesignTokens.radius, style: .continuous)
                 .stroke(
-                    appState.focusedPanel == viewModel.panelSide
-                        ? Color.orange.opacity(0.5)
-                        : DesignTokens.separator.opacity(0.35),
+                    DesignTokens.separator.opacity(0.35),
                     lineWidth: 1
                 )
         }
