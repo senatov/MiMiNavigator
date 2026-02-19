@@ -481,14 +481,10 @@ struct MiMiNavigatorApp: App {
     w=1358
     h=1059
     maximized=0
-    x=100
-    y=100
     [Window/Size/Folder]
     w=1358
     h=1059
     maximized=0
-    x=100
-    y=100
     [Revision]
     Check=1771462638
     [Folder]
