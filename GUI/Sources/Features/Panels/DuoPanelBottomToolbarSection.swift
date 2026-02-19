@@ -18,6 +18,7 @@ struct DuoPanelBottomToolbarSection: View {
     let onDelete: () -> Void
     let onSettings: () -> Void
     let onConsole: () -> Void
+    let onNetwork: () -> Void
     let onExit: () -> Void
     
     private enum Layout {
@@ -39,6 +40,7 @@ struct DuoPanelBottomToolbarSection: View {
             makeButton(title: L10n.Toolbar.delete, icon: "minus.rectangle", action: onDelete)
             makeButton(title: L10n.Toolbar.settings, icon: "gearshape", action: onSettings)
             makeButton(title: L10n.Toolbar.console, icon: "terminal", action: onConsole)
+            makeButton(title: "Network", icon: "network", action: onNetwork)
             makeButton(title: L10n.Toolbar.exit, icon: "power", action: onExit)
         }
         .frame(maxWidth: .infinity)
