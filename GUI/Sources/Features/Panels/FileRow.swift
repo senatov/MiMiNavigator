@@ -306,10 +306,9 @@ struct FileRow: View {
                     .foregroundStyle(secondaryTextColor)
                     .lineLimit(1)
                     .truncationMode(.tail)
-                    // leading padding only: trailing side is covered by next separator
+                    // padding INSIDE frame — spec.width is total cell width, same as header
+                    .padding(.horizontal, TableColumnDefaults.cellPadding)
                     .frame(width: spec.width, alignment: spec.id.alignment)
-                    .padding(.leading, TableColumnDefaults.cellPadding)
-                    .padding(.trailing, TableColumnDefaults.cellPadding)
             }
         }
         .padding(.vertical, 2)
