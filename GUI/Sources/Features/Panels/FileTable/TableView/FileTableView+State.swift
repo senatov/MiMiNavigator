@@ -2,43 +2,27 @@
 // MiMiNavigator
 //
 // Created by Iakov Senatov on 04.02.2026.
+// Refactored: 20.02.2026 — column state now owned by ColumnLayoutModel
 // Copyright © 2024-2026 Senatov. All rights reserved.
-// Description: State management for FileTableView (columns, sorting)
+// Description: State management for FileTableView (sorting, auto-fit)
 
 import SwiftUI
 
 // MARK: - State Management
 extension FileTableView {
-    
+
+    // loadColumnWidths kept for onAppear call — now a no-op (ColumnLayoutModel loads itself)
     func loadColumnWidths() {
-        log.debug("\(#function) panel=\(panelSide)")
-        let widths = columnStorage.load()
-        sizeColumnWidth = widths.size
-        dateColumnWidth = widths.date
-        typeColumnWidth = widths.type
-        permissionsColumnWidth = widths.permissions
-        ownerColumnWidth = widths.owner
+        log.debug("\(#function) panel=\(panelSide) — columns managed by ColumnLayoutModel")
     }
-    
-    func saveColumnWidths() {
-        log.debug("\(#function) panel=\(panelSide)")
-        columnStorage.save(
-            size: sizeColumnWidth,
-            date: dateColumnWidth,
-            type: typeColumnWidth,
-            permissions: permissionsColumnWidth,
-            owner: ownerColumnWidth
-        )
-    }
-    
+
     func recomputeSortedCache() {
         cachedSortedFiles = files.sorted(by: sorter.compare)
-        log.debug("\(#function) panel=\(panelSide) sorted \(cachedSortedFiles.count) files by \(sortKey) asc=\(sortAscending)")
+        log.debug("\(#function) panel=\(panelSide) sorted \(cachedSortedFiles.count) by \(sortKey) asc=\(sortAscending)")
     }
 
-    // MARK: - Auto-fit: compute optimal column width from content
+    // MARK: - Auto-fit helpers (still available for future use)
 
-    /// Measure pixel width of the longest string in column + 1 char padding
     private func autoFitWidth(texts: [String], font: NSFont) -> CGFloat {
         let attrs: [NSAttributedString.Key: Any] = [.font: font]
         let charW = ("W" as NSString).size(withAttributes: attrs).width
@@ -47,41 +31,36 @@ extension FileTableView {
             let w = (text as NSString).size(withAttributes: attrs).width
             if w > maxW { maxW = w }
         }
-        return ceil(maxW + charW)  // +1 character
+        return ceil(maxW + charW)
     }
 
     func autoFitSize() -> CGFloat {
-        autoFitWidth(
-            texts: cachedSortedFiles.map { $0.fileSizeFormatted },
-            font: NSFont.systemFont(ofSize: 12)
-        ) + 8  // account for padding(.trailing, 8)
+        autoFitWidth(texts: cachedSortedFiles.map { $0.fileSizeFormatted },
+                     font: .systemFont(ofSize: 12)) + 8
     }
 
     func autoFitDate() -> CGFloat {
-        autoFitWidth(
-            texts: cachedSortedFiles.map { $0.modifiedDateFormatted },
-            font: NSFont.systemFont(ofSize: 12)
-        ) + 12  // account for padding(.horizontal, 6)
+        autoFitWidth(texts: cachedSortedFiles.map { $0.modifiedDateFormatted },
+                     font: .systemFont(ofSize: 12)) + 12
     }
 
     func autoFitPermissions() -> CGFloat {
-        autoFitWidth(
-            texts: cachedSortedFiles.map { $0.permissionsFormatted },
-            font: NSFont.monospacedSystemFont(ofSize: 11, weight: .regular)
-        ) + 12
+        autoFitWidth(texts: cachedSortedFiles.map { $0.permissionsFormatted },
+                     font: .monospacedSystemFont(ofSize: 11, weight: .regular)) + 12
     }
 
     func autoFitOwner() -> CGFloat {
-        autoFitWidth(
-            texts: cachedSortedFiles.map { $0.ownerFormatted },
-            font: NSFont.systemFont(ofSize: 12)
-        ) + 12
+        autoFitWidth(texts: cachedSortedFiles.map { $0.ownerFormatted },
+                     font: .systemFont(ofSize: 12)) + 12
     }
 
-    func autoFitType() -> CGFloat {
-        autoFitWidth(
-            texts: cachedSortedFiles.map { $0.fileTypeDisplay },
-            font: NSFont.systemFont(ofSize: 12)
-        ) + 12
+    func autoFitKind() -> CGFloat {
+        autoFitWidth(texts: cachedSortedFiles.map { $0.kindFormatted },
+                     font: .systemFont(ofSize: 12)) + 12
+    }
+
+    func autoFitChildCount() -> CGFloat {
+        autoFitWidth(texts: cachedSortedFiles.map { $0.childCountFormatted },
+                     font: .systemFont(ofSize: 12)) + 12
     }
 }

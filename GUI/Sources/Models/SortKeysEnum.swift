@@ -16,4 +16,5 @@ enum SortKeysEnum {
     case type
     case permissions
     case owner
+    case childCount
 }

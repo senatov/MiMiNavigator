@@ -42,6 +42,8 @@ struct TableFileSorter {
             return comparePermissions(a, b)
         case .owner:
             return compareOwner(a, b)
+        case .childCount:
+            return compareChildCount(a, b)
         }
     }
     
@@ -95,6 +97,15 @@ struct TableFileSorter {
         if lhs != rhs {
             let cmp = lhs.localizedCaseInsensitiveCompare(rhs)
             return ascending ? (cmp == .orderedAscending) : (cmp == .orderedDescending)
+        }
+        return a.nameStr.localizedCaseInsensitiveCompare(b.nameStr) == .orderedAscending
+    }
+
+    private func compareChildCount(_ a: CustomFile, _ b: CustomFile) -> Bool {
+        let lhs = a.childCountValue
+        let rhs = b.childCountValue
+        if lhs != rhs {
+            return ascending ? (lhs < rhs) : (lhs > rhs)
         }
         return a.nameStr.localizedCaseInsensitiveCompare(b.nameStr) == .orderedAscending
     }
