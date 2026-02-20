@@ -335,6 +335,9 @@
     "Close" : {
       "comment" : "Close button"
     },
+    "Close (Esc)" : {
+
+    },
     "Close Other Tabs" : {
 
     },
@@ -1058,6 +1061,9 @@
         }
       }
     },
+    "Loading shares…" : {
+
+    },
     "Location:" : {
       "comment" : "Location label",
       "localizations" : {
@@ -1207,6 +1213,9 @@
     "Navigation History" : {
 
     },
+    "Network Neighborhood" : {
+
+    },
     "New Folder" : {
       "comment" : "Default new folder name",
       "localizations" : {
@@ -1227,11 +1236,17 @@
     "New Search" : {
       "comment" : "New search button"
     },
+    "No accessible shares" : {
+
+    },
     "No applications found" : {
 
     },
     "No files found" : {
       "comment" : "No results message"
+    },
+    "No hosts found" : {
+
     },
     "No matches for \"%@\"" : {
 
@@ -1324,6 +1339,9 @@
     "Press a key…" : {
 
     },
+    "Printer" : {
+
+    },
     "Ready" : {
       "comment" : "Search ready status"
     },
@@ -1401,6 +1419,9 @@
         }
       }
     },
+    "Rescan network" : {
+
+    },
     "Reset All Shortcuts" : {
 
     },
@@ -1435,6 +1456,9 @@
           }
         }
       }
+    },
+    "Scanning…" : {
+
     },
     "Search" : {
       "comment" : "Search button"
