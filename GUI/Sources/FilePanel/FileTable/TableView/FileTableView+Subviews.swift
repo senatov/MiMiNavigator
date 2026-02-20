@@ -2,6 +2,7 @@
 // MiMiNavigator
 //
 // Created by Iakov Senatov on 04.02.2026.
+// Refactored: 20.02.2026 — dynamic columns via ColumnLayoutModel
 // Copyright © 2024-2026 Senatov. All rights reserved.
 // Description: View components for FileTableView
 
@@ -9,11 +10,9 @@ import SwiftUI
 
 // MARK: - Subviews
 extension FileTableView {
-    
+
     var mainScrollView: some View {
         VStack(spacing: 0) {
-            // Header is inside ScrollView as pinned section header
-            // This ensures header width matches content width (accounts for scrollbar)
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 0, pinnedViews: [.sectionHeaders]) {
                     Section {
@@ -22,11 +21,7 @@ extension FileTableView {
                                 rows: sortedRows,
                                 selectedID: $selectedID,
                                 panelSide: panelSide,
-                                sizeColumnWidth: sizeColumnWidth,
-                                dateColumnWidth: dateColumnWidth,
-                                typeColumnWidth: typeColumnWidth,
-                                permissionsColumnWidth: permissionsColumnWidth,
-                                ownerColumnWidth: ownerColumnWidth,
+                                layout: layout,
                                 onSelect: onSelect,
                                 onDoubleClick: onDoubleClick,
                                 handleFileAction: handleFileAction,
@@ -34,34 +29,22 @@ extension FileTableView {
                                 handleMultiSelectionAction: handleMultiSelectionAction
                             )
                         }
-                        
-                        // Empty space at bottom — clickable for background context menu
+
+                        // Empty space — clickable for background context menu
                         Color(nsColor: .controlBackgroundColor)
                             .opacity(0.01)
                             .frame(minHeight: 300)
                             .frame(maxWidth: .infinity)
                             .contentShape(Rectangle())
                             .contextMenu { panelBackgroundMenu }
-                            .onTapGesture {
-                                // Deselect on click in empty area
-                                selectedID = nil
-                            }
+                            .onTapGesture { selectedID = nil }
+
                     } header: {
                         TableHeaderView(
                             panelSide: panelSide,
                             sortKey: $sortKey,
                             sortAscending: $sortAscending,
-                            sizeColumnWidth: $sizeColumnWidth,
-                            dateColumnWidth: $dateColumnWidth,
-                            typeColumnWidth: $typeColumnWidth,
-                            permissionsColumnWidth: $permissionsColumnWidth,
-                            ownerColumnWidth: $ownerColumnWidth,
-                            onSave: saveColumnWidths,
-                            autoFitSize: { autoFitSize() },
-                            autoFitDate: { autoFitDate() },
-                            autoFitPermissions: { autoFitPermissions() },
-                            autoFitOwner: { autoFitOwner() },
-                            autoFitType: { autoFitType() }
+                            layout: layout
                         )
                     }
                 }
@@ -73,7 +56,7 @@ extension FileTableView {
             .background(keyboardShortcutsLayer)
         }
     }
-    
+
     @ViewBuilder
     var panelBackgroundMenu: some View {
         let currentPath = appState.pathURL(for: panelSide) ?? URL(fileURLWithPath: "/")
@@ -85,7 +68,7 @@ extension FileTableView {
             onAction: handlePanelBackgroundAction
         )
     }
-    
+
     var panelBorder: some View {
         RoundedRectangle(cornerRadius: 8, style: .continuous)
             .stroke(
@@ -96,7 +79,7 @@ extension FileTableView {
             )
             .allowsHitTesting(false)
     }
-    
+
     var keyboardShortcutsLayer: some View {
         TableKeyboardShortcutsView(
             isFocused: isFocused,

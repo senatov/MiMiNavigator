@@ -2,7 +2,8 @@
 //  MiMiNavigator
 //
 //  Created by Iakov Senatov on 23.10.2024.
-//  Copyright © 2024 Senatov. All rights reserved.
+//  Refactored: 20.02.2026 — dynamic columns via ColumnLayoutModel
+//  Copyright © 2024-2026 Senatov. All rights reserved.
 
 import AppKit
 import SwiftUI
@@ -14,11 +15,7 @@ struct FileRow: View {
     let file: CustomFile
     let isSelected: Bool
     let panelSide: PanelSide
-    let sizeColumnWidth: CGFloat
-    let dateColumnWidth: CGFloat
-    let typeColumnWidth: CGFloat
-    let permissionsColumnWidth: CGFloat
-    let ownerColumnWidth: CGFloat
+    let layout: ColumnLayoutModel
     let onSelect: (CustomFile) -> Void
     let onDoubleClick: (CustomFile) -> Void
     let onFileAction: (FileAction, CustomFile) -> Void
@@ -290,68 +287,48 @@ struct FileRow: View {
         .system(size: 12)
     }
 
-    // MARK: - Row content with columns and separators (aligned with header)
+    // MARK: - Row content — driven by ColumnLayoutModel
     private var rowContent: some View {
         HStack(alignment: .center, spacing: 0) {
-            // Name column — flexible, same as header's .maxWidth(.infinity)
-            FileRowView(file: file, isSelected: isSelected, isActivePanel: isActivePanel, isMarked: isMarked)
-                .frame(minWidth: 60, maxWidth: .infinity, alignment: .leading)
-                .clipped()
-
-            ColumnSeparator()
-
-            // Size column - matches header width
-            Text(file.fileSizeFormatted)
-                .font(columnFont)
-                .foregroundStyle(secondaryTextColor)
-                .lineLimit(1)
-                .frame(width: sizeColumnWidth, alignment: .trailing)
-                .padding(.trailing, 8)
-
-            ColumnSeparator()
-
-            // Date column - matches header width
-            Text(file.modifiedDateFormatted)
-                .font(columnFont)
-                .foregroundStyle(secondaryTextColor)
-                .lineLimit(1)
-                .frame(width: dateColumnWidth, alignment: .leading)
-                .padding(.horizontal, 6)
-
-            ColumnSeparator()
-
-            // Permissions column - matches header width
-            Text(file.permissionsFormatted)
-                .font(.system(size: 11, design: .monospaced))
-                .foregroundStyle(secondaryTextColor)
-                .lineLimit(1)
-                .frame(width: permissionsColumnWidth, alignment: .leading)
-                .padding(.horizontal, 6)
-
-            ColumnSeparator()
-
-            // Owner column - matches header width
-            Text(file.ownerFormatted)
-                .font(columnFont)
-                .foregroundStyle(secondaryTextColor)
-                .lineLimit(1)
-                .truncationMode(.tail)
-                .frame(width: ownerColumnWidth, alignment: .leading)
-                .padding(.horizontal, 6)
-
-            ColumnSeparator()
-
-            // Type column - matches header width
-            Text(file.fileTypeDisplay)
-                .font(columnFont)
-                .foregroundStyle(secondaryTextColor)
-                .frame(width: typeColumnWidth, alignment: .leading)
-                .lineLimit(1)
-                .truncationMode(.tail)
-                .padding(.horizontal, 6)
+            ForEach(layout.visibleColumns) { spec in
+                cellContent(for: spec)
+            }
         }
         .padding(.vertical, 2)
         .padding(.horizontal, 4)
+    }
+
+    @ViewBuilder
+    private func cellContent(for spec: ColumnSpec) -> some View {
+        let col = spec.id
+        if col == .name {
+            FileRowView(file: file, isSelected: isSelected, isActivePanel: isActivePanel, isMarked: isMarked)
+                .frame(minWidth: 60, maxWidth: .infinity, alignment: .leading)
+                .clipped()
+        } else {
+            ColumnSeparator()
+            cellText(for: col)
+                .font(col == .permissions ? .system(size: 11, design: .monospaced) : columnFont)
+                .foregroundStyle(secondaryTextColor)
+                .lineLimit(1)
+                .truncationMode(.tail)
+                .frame(width: spec.width, alignment: col.alignment)
+                .padding(.horizontal, col == .size ? 0 : 6)
+                .padding(.trailing, col == .size ? 8 : 0)
+        }
+    }
+
+    @ViewBuilder
+    private func cellText(for col: ColumnID) -> some View {
+        switch col {
+        case .name:         EmptyView()
+        case .dateModified: Text(file.modifiedDateFormatted)
+        case .size:         Text(file.fileSizeFormatted)
+        case .kind:         Text(file.kindFormatted)
+        case .permissions:  Text(file.permissionsFormatted)
+        case .owner:        Text(file.ownerFormatted)
+        case .childCount:   Text(file.childCountFormatted)
+        }
     }
 
 }

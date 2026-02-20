@@ -61,6 +61,8 @@ enum FileSortingService {
                 result = comparePermissions(a, b, ascending: ascending)
             case .owner:
                 result = compareOwner(a, b, ascending: ascending)
+            case .childCount:
+                result = compareChildCount(a, b, ascending: ascending)
         }
         return result
     }
@@ -113,6 +115,15 @@ enum FileSortingService {
         if oa != ob {
             let cmp = oa.localizedCaseInsensitiveCompare(ob)
             return ascending ? (cmp == .orderedAscending) : (cmp == .orderedDescending)
+        }
+        return a.nameStr.localizedCaseInsensitiveCompare(b.nameStr) == .orderedAscending
+    }
+
+    private static func compareChildCount(_ a: CustomFile, _ b: CustomFile, ascending: Bool) -> Bool {
+        let ca = a.childCountValue
+        let cb = b.childCountValue
+        if ca != cb {
+            return ascending ? (ca < cb) : (ca > cb)
         }
         return a.nameStr.localizedCaseInsensitiveCompare(b.nameStr) == .orderedAscending
     }

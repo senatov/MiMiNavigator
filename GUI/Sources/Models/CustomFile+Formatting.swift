@@ -94,4 +94,42 @@ extension CustomFile {
     public var ownerFormatted: String {
         ownerName.isEmpty ? "—" : ownerName
     }
+
+    // MARK: - Kind column (Finder-style verbose type label)
+    public var kindFormatted: String {
+        if isSymbolicLink { return "Alias" }
+        if isDirectory    { return "Folder" }
+        if fileExtension.isEmpty { return "Document" }
+        switch fileExtension {
+        case "zip", "gz", "tar", "bz2", "xz", "7z", "rar": return "\(fileExtension.uppercased()) Archive"
+        case "png", "jpg", "jpeg", "heic", "gif", "webp", "tiff", "bmp": return "\(fileExtension.uppercased()) Image"
+        case "mp4", "mov", "avi", "mkv", "m4v": return "\(fileExtension.uppercased()) Video"
+        case "mp3", "aac", "flac", "m4a", "wav": return "\(fileExtension.uppercased()) Audio"
+        case "pdf": return "PDF Document"
+        case "swift": return "Swift Source"
+        case "py": return "Python Script"
+        case "sh", "zsh", "bash": return "Shell Script"
+        case "json": return "JSON File"
+        case "xml": return "XML File"
+        case "md": return "Markdown"
+        case "txt": return "Plain Text"
+        default: return "\(fileExtension.uppercased()) File"
+        }
+    }
+
+    // MARK: - Child count (number of items in a directory)
+    /// Always reads from disk — children array is pre-populated as [] and unreliable.
+    public var childCountFormatted: String {
+        guard isDirectory else { return "—" }
+        if let entries = try? FileManager.default.contentsOfDirectory(atPath: pathStr) {
+            return "\(entries.count)"
+        }
+        return "—"
+    }
+
+    /// Numeric child count for sorting (returns -1 for non-directories)
+    public var childCountValue: Int {
+        guard isDirectory else { return -1 }
+        return (try? FileManager.default.contentsOfDirectory(atPath: pathStr).count) ?? 0
+    }
 }

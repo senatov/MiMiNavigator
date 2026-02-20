@@ -32,18 +32,24 @@ struct FileTableView: View {
     @State var cachedSortedFiles: [CustomFile] = []
     @State var scrollProxy: ScrollViewProxy?
     @State var isPanelDropTargeted: Bool = false
-    
-    // MARK: - Column Widths
-    @State var sizeColumnWidth: CGFloat = TableColumnDefaults.size
-    @State var dateColumnWidth: CGFloat = TableColumnDefaults.date
-    @State var typeColumnWidth: CGFloat = TableColumnDefaults.type
-    @State var permissionsColumnWidth: CGFloat = TableColumnDefaults.permissions
-    @State var ownerColumnWidth: CGFloat = TableColumnDefaults.owner
+
+    // MARK: - Column Layout (replaces individual CGFloat @State for each column)
+    @State var layout: ColumnLayoutModel
+
+    // MARK: - Init
+    init(panelSide: PanelSide, files: [CustomFile], selectedID: Binding<CustomFile.ID?>,
+         onSelect: @escaping (CustomFile) -> Void, onDoubleClick: @escaping (CustomFile) -> Void) {
+        self.panelSide = panelSide
+        self.files = files
+        self._selectedID = selectedID
+        self.onSelect = onSelect
+        self.onDoubleClick = onDoubleClick
+        self._layout = State(initialValue: ColumnLayoutModel(panelSide: panelSide))
+    }
     
     // MARK: - Computed Properties
     var isFocused: Bool { appState.focusedPanel == panelSide }
-    
-    // Name column width: both header and rows use .maxWidth(.infinity) — SwiftUI handles alignment
+
     var columnStorage: ColumnWidthStorage { ColumnWidthStorage(panelSide: panelSide) }
     var sorter: TableFileSorter { TableFileSorter(sortKey: sortKey, ascending: sortAscending) }
     
