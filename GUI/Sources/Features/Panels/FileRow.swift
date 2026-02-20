@@ -294,7 +294,7 @@ struct FileRow: View {
         return HStack(alignment: .center, spacing: 0) {
             // Name — flexible
             FileRowView(file: file, isSelected: isSelected, isActivePanel: isActivePanel, isMarked: isMarked)
-                .frame(minWidth: 60, maxWidth: .infinity, alignment: .leading)
+                .frame(minWidth: 20, maxWidth: .infinity, alignment: .leading)
                 .clipped()
 
             // Fixed columns — separator before each, indices for reliable rendering
