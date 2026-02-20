@@ -54,6 +54,8 @@ enum AppLogger {
         try? FileManager.default.createDirectory(at: logsDir, withIntermediateDirectories: true)
         
         let logFile = logsDir.appendingPathComponent("MiMiNavigator.log")
+        // Wipe log on every launch — keeps disk clean
+        try? FileManager.default.removeItem(at: logFile)
         let file = FileDestination()
         file.logFileURL = logFile
         log.addDestination(file)
