@@ -47,7 +47,6 @@ struct ButtonFavTopPanel: View {
             forwardButton()
             historyButton()
             favoritesButton()
-            networkButton()
         }
     }
 
@@ -129,22 +128,6 @@ struct ButtonFavTopPanel: View {
         .shadow(color: .secondary.opacity(0.15), radius: 7.0, x: 1, y: 1)
         .buttonStyle(.plain)
         .help("Navigation between favorites — \(String(describing: panelSide))")
-    }
-
-    // MARK: - Network Button
-    private func networkButton() -> some View {
-        Button(action: {
-            log.debug("Network Neighborhood button tapped")
-            appState.showNetworkNeighborhood = true
-        }) {
-            Image(systemName: "network")
-                .symbolRenderingMode(.hierarchical)
-                .foregroundStyle(.blue)
-        }
-        .buttonStyle(.plain)
-        .shadow(color: .gray, radius: 7.0, x: 1, y: 1)
-        .help("Network Neighborhood")
-        .accessibilityLabel("Network Neighborhood button")
     }
 
     // MARK: - Open History Window
