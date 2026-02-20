@@ -37,12 +37,15 @@ enum TableColumnConstraints {
 }
 
 // MARK: - Header Style
-/// Visual styling for column headers (bold, clear, Finder-style)
+/// Visual styling for column headers
 enum TableHeaderStyle {
-    static let font = Font.system(size: 12, weight: .semibold)
-    static let color = Color.primary
+    /// SF Pro Display Thin 14 — as requested
+    static let font = Font.custom("SF Pro Display", size: 14).weight(.thin)
+    /// Dark navy blue for inactive column titles
+    static let color = Color(#colorLiteral(red: 0.08, green: 0.15, blue: 0.40, alpha: 1.0))
+    /// Blue for active sort column (stays blue)
     static let sortIndicatorColor = Color.accentColor
-    /// Very light yellow background for active sort column
+    /// Very light yellow tint for active sort column background
     static let activeSortBackground = Color(#colorLiteral(red: 1.0, green: 0.95, blue: 0.7, alpha: 0.35))
     static let backgroundColor = Color(nsColor: .controlBackgroundColor)
     static let separatorColor = Color(nsColor: .separatorColor)
@@ -51,12 +54,12 @@ enum TableHeaderStyle {
 // MARK: - Column Separator Style
 /// Visual styling for column separators (both header and rows)
 enum ColumnSeparatorStyle {
-    /// Pale orange for passive column divider
-    static let color = Color(#colorLiteral(red: 1.0, green: 0.72, blue: 0.45, alpha: 1.0)).opacity(0.40)
-    /// Pale blue on cursor hover
+    /// Dark navy blue for passive divider line (matches header text)
+    static let color = Color(#colorLiteral(red: 0.08, green: 0.15, blue: 0.40, alpha: 1.0)).opacity(0.45)
+    /// Light blue on cursor hover (stays blue)
     static let hoverColor = Color(#colorLiteral(red: 0.35, green: 0.65, blue: 1.0, alpha: 1.0)).opacity(0.80)
-    /// Red-orange while dragging
-    static let dragColor = Color(#colorLiteral(red: 0.95, green: 0.38, blue: 0.10, alpha: 1.0)).opacity(0.90)
+    /// Bright blue while dragging (stays blue)
+    static let dragColor = Color(#colorLiteral(red: 0.20, green: 0.50, blue: 1.0, alpha: 1.0)).opacity(0.90)
     /// Passive line width
     static let width: CGFloat = 0.5
     /// Active (hover/drag) line width
