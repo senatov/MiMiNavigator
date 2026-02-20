@@ -8,14 +8,8 @@
 import SwiftUI
 
 // MARK: - Column Defaults
-/// Default widths for resizable columns (Finder-style)
+/// Default constraints and padding for resizable columns
 enum TableColumnDefaults {
-    static let size: CGFloat = 70
-    static let date: CGFloat = 120
-    static let type: CGFloat = 80
-    static let permissions: CGFloat = 75
-    static let owner: CGFloat = 70
-
     // Universal min/max for all columns
     static let minWidth: CGFloat = 40
     static let maxWidth: CGFloat = 200
@@ -65,48 +59,10 @@ enum ColumnSeparatorStyle {
     static let hoverColor = Color(#colorLiteral(red: 0.35, green: 0.65, blue: 1.0, alpha: 1.0)).opacity(0.80)
     /// Bright blue while dragging (stays blue)
     static let dragColor = Color(#colorLiteral(red: 0.20, green: 0.50, blue: 1.0, alpha: 1.0)).opacity(0.90)
-    /// Passive line width
-    static let width: CGFloat = 0.5
+    /// Passive line width — 1pt ensures visibility at all display scales
+    static let width: CGFloat = 1.0
     /// Active (hover/drag) line width
-    static let activeWidth: CGFloat = 1.0
-}
-
-// MARK: - Column Width Storage
-/// Handles persistence of column widths per panel
-struct ColumnWidthStorage {
-    let panelSide: PanelSide
-
-    var sizeWidthKey: String { "FileTable.\(panelSide).sizeWidth" }
-    var dateWidthKey: String { "FileTable.\(panelSide).dateWidth" }
-    var typeWidthKey: String { "FileTable.\(panelSide).typeWidth" }
-    var permissionsWidthKey: String { "FileTable.\(panelSide).permissionsWidth" }
-    var ownerWidthKey: String { "FileTable.\(panelSide).ownerWidth" }
-
-    func load() -> (size: CGFloat, date: CGFloat, type: CGFloat, permissions: CGFloat, owner: CGFloat) {
-        let defaults = UserDefaults.standard
-        let size = (defaults.object(forKey: sizeWidthKey) as? CGFloat) ?? TableColumnDefaults.size
-        let date = (defaults.object(forKey: dateWidthKey) as? CGFloat) ?? TableColumnDefaults.date
-        let type = (defaults.object(forKey: typeWidthKey) as? CGFloat) ?? TableColumnDefaults.type
-        let permissions = (defaults.object(forKey: permissionsWidthKey) as? CGFloat) ?? TableColumnDefaults.permissions
-        let owner = (defaults.object(forKey: ownerWidthKey) as? CGFloat) ?? TableColumnDefaults.owner
-
-        log.debug("[ColumnWidthStorage] loaded \(panelSide): size=\(size) date=\(date) type=\(type) perm=\(permissions) owner=\(owner)")
-        return (size > 0 ? size : TableColumnDefaults.size,
-                date > 0 ? date : TableColumnDefaults.date,
-                type > 0 ? type : TableColumnDefaults.type,
-                permissions > 0 ? permissions : TableColumnDefaults.permissions,
-                owner > 0 ? owner : TableColumnDefaults.owner)
-    }
-
-    func save(size: CGFloat, date: CGFloat, type: CGFloat, permissions: CGFloat, owner: CGFloat) {
-        let defaults = UserDefaults.standard
-        defaults.set(size, forKey: sizeWidthKey)
-        defaults.set(date, forKey: dateWidthKey)
-        defaults.set(type, forKey: typeWidthKey)
-        defaults.set(permissions, forKey: permissionsWidthKey)
-        defaults.set(owner, forKey: ownerWidthKey)
-        log.debug("[ColumnWidthStorage] saved \(panelSide): size=\(size) date=\(date) type=\(type) perm=\(permissions) owner=\(owner)")
-    }
+    static let activeWidth: CGFloat = 2.0
 }
 
 // MARK: - Column Separator
