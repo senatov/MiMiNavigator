@@ -68,8 +68,11 @@ struct ResizableDivider: View {
     }
 
     // MARK: - Drag gesture (global coordinates — avoids SwiftUI coordinate feedback loops)
-    // Drag RIGHT (delta > 0) → column to the right of this divider widens (+delta)
-    // Drag LEFT  (delta < 0) → column narrows
+    // Layout: [Name flexible] | Divider | [col RIGHT]
+    // Divider is LEFT edge of the column it controls.
+    // Drag RIGHT → divider moves right → column NARROWS (Name gets wider)
+    // Drag LEFT  → divider moves left  → column WIDENS  (Name gets narrower)
+    // Therefore: delta is NEGATED.
     private var dragGesture: some Gesture {
         DragGesture(minimumDistance: 2, coordinateSpace: .global)
             .onChanged { value in
@@ -77,7 +80,6 @@ struct ResizableDivider: View {
                 let now = Date()
                 let travel = abs(value.translation.width) + abs(value.translation.height)
                 if travel < 4, now.timeIntervalSince(lastTapTime) < 0.35 {
-                    // Double-tap detected inside drag gesture
                     if let autoFit = onAutoFit {
                         let optimal = Swift.min(Swift.max(autoFit(), min), max)
                         width = optimal
@@ -95,8 +97,8 @@ struct ResizableDivider: View {
                     lastTapTime = now
                 }
 
-                // Positive delta = dragged right = column widens
-                let delta = value.location.x - dragStartX
+                // Negate: drag right = divider moves right = column narrows
+                let delta = -(value.location.x - dragStartX)
                 let newWidth = dragStartWidth + delta
                 width = Swift.min(Swift.max(newWidth, min), max)
             }

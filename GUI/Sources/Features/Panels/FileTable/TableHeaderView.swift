@@ -71,6 +71,7 @@ struct TableHeaderView: View {
     }
 
     // MARK: - Fixed Column Header
+    // spec.width = total cell width incl. padding — must match FileRow exactly
     private func fixedColumnHeader(for spec: ColumnSpec) -> some View {
         SortableHeader(
             title: spec.id.title,
@@ -78,8 +79,8 @@ struct TableHeaderView: View {
             currentKey: sortKey,
             ascending: sortAscending
         )
-        .frame(width: spec.width, alignment: spec.id.alignment)
         .padding(.horizontal, TableColumnDefaults.cellPadding)
+        .frame(width: spec.width, alignment: spec.id.alignment)
         .contentShape(Rectangle())
         .onTapGesture { toggleSort(spec.id) }
     }
