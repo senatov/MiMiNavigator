@@ -30,7 +30,7 @@ enum ColumnID: String, CaseIterable, Codable, Identifiable {
         case .kind:         return "Kind"
         case .permissions:  return "Permissions"
         case .owner:        return "Owner"
-        case .childCount:   return "Child Count"
+        case .childCount:   return "Count"
         }
     }
 
