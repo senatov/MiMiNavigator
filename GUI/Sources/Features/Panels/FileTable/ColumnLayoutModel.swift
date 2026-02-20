@@ -42,7 +42,7 @@ enum ColumnID: String, CaseIterable, Codable, Identifiable {
         case .kind:         return 90
         case .permissions:  return 80
         case .owner:        return 70
-        case .childCount:   return 70
+        case .childCount:   return 80
         }
     }
 
@@ -55,7 +55,9 @@ enum ColumnID: String, CaseIterable, Codable, Identifiable {
     /// Alignment of the column content
     var alignment: Alignment {
         switch self {
-        case .size, .childCount: return .trailing
+        case .size:       return .trailing
+        case .childCount: return .center
+        case .dateModified: return .center
         default: return .leading
         }
     }
