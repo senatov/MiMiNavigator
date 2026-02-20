@@ -297,18 +297,18 @@ struct FileRow: View {
                 .frame(minWidth: 60, maxWidth: .infinity, alignment: .leading)
                 .clipped()
 
-            // Fixed columns — separator before each, indices for reliable rendering
+            // Fixed columns: [col content] [ColumnSeparator = right edge]
+            // Mirrors TableHeaderView: [fixedColumnHeader] [ResizableDivider]
             ForEach(fixedCols.indices, id: \.self) { i in
                 let spec = fixedCols[i]
-                ColumnSeparator()
                 cellText(for: spec.id)
                     .font(spec.id == .permissions ? .system(size: 11, design: .monospaced) : columnFont)
                     .foregroundStyle(secondaryTextColor)
                     .lineLimit(1)
                     .truncationMode(.tail)
-                    // padding INSIDE frame — spec.width is total cell width, same as header
                     .padding(.horizontal, TableColumnDefaults.cellPadding)
                     .frame(width: spec.width, alignment: spec.id.alignment)
+                ColumnSeparator()
             }
         }
         .padding(.vertical, 2)
