@@ -50,6 +50,7 @@ struct MiMiNavigatorApp: App {
                     toolBarOpenWith()
                     toolBarItemSwapPanels()
                     toolBarItemCompare()
+                    toolBarItemNetwork()
                     toolBarItemSearch()
                     toolBarItemBuildInfo()
                 }
@@ -167,6 +168,19 @@ struct MiMiNavigatorApp: App {
                 appState.openSelectedItem()
             }
             .keyboardShortcut("o", modifiers: .command)
+        }
+    }
+
+    // MARK: - Network Neighborhood button
+    fileprivate func toolBarItemNetwork() -> ToolbarItem<(), some View> {
+        return ToolbarItem(placement: .automatic) {
+            ToolbarButton(
+                systemImage: "network",
+                help: "Network Neighborhood"
+            ) {
+                log.debug("Network Neighborhood button clicked")
+                appState.showNetworkNeighborhood = true
+            }
         }
     }
 
