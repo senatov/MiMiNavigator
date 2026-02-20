@@ -29,35 +29,31 @@ struct ResizableDivider: View {
     @State private var lastTapTime: Date = .distantPast
 
     var body: some View {
-        // ZStack: visual line behind, wide hit area in front
-        // This avoids allowsHitTesting(false) propagating into the overlay.
-        ZStack {
-            // Visual line — never receives events
-            Rectangle()
-                .fill(lineColor)
-                .frame(width: ColumnSeparatorStyle.width)
-                .allowsHitTesting(false)
-
-            // Hit area — wider than the visual line for comfortable grab
-            Color.clear
-                .frame(width: 14)
-                .contentShape(Rectangle())
-                .gesture(dragGesture)
-                .onHover { hovering in
-                    isHovering = hovering
-                    if hovering {
-                        NSCursor.resizeLeftRight.push()
-                    } else {
-                        NSCursor.pop()
-                        // Reset drag state if mouse leaves during drag
-                        // (edge case: mouse released outside window)
-                        if isDragging {
-                            isDragging = false
-                            onEnd()
+        // Layout footprint = ColumnSeparatorStyle.width (1pt) — same as ColumnSeparator in rows.
+        // Hit area is an overlay: does NOT affect layout width.
+        Rectangle()
+            .fill(lineColor)
+            .frame(width: ColumnSeparatorStyle.width)
+            .allowsHitTesting(false)
+            .overlay {
+                // 14pt transparent hit zone — overlay, zero layout impact
+                Color.clear
+                    .frame(width: 14)
+                    .contentShape(Rectangle())
+                    .gesture(dragGesture)
+                    .onHover { hovering in
+                        isHovering = hovering
+                        if hovering {
+                            NSCursor.resizeLeftRight.push()
+                        } else {
+                            NSCursor.pop()
+                            if isDragging {
+                                isDragging = false
+                                onEnd()
+                            }
                         }
                     }
-                }
-        }
+            }
     }
 
     // MARK: - Line color
@@ -67,16 +63,13 @@ struct ResizableDivider: View {
         return ColumnSeparatorStyle.color
     }
 
-    // MARK: - Drag gesture (global coordinates — avoids SwiftUI coordinate feedback loops)
-    // Layout: [Name flexible] | Divider | [col RIGHT]
-    // Divider is LEFT edge of the column it controls.
-    // Drag RIGHT → divider moves right → column NARROWS (Name gets wider)
-    // Drag LEFT  → divider moves left  → column WIDENS  (Name gets narrower)
-    // Therefore: delta is NEGATED.
+    // MARK: - Drag gesture (global coordinates)
+    // Layout: [col content] [Divider = RIGHT edge of col]
+    // Drag RIGHT (+delta) → col widens
+    // Drag LEFT  (-delta) → col narrows
     private var dragGesture: some Gesture {
         DragGesture(minimumDistance: 2, coordinateSpace: .global)
             .onChanged { value in
-                // Double-click detection: two taps within 0.35s with tiny travel
                 let now = Date()
                 let travel = abs(value.translation.width) + abs(value.translation.height)
                 if travel < 4, now.timeIntervalSince(lastTapTime) < 0.35 {
@@ -97,8 +90,8 @@ struct ResizableDivider: View {
                     lastTapTime = now
                 }
 
-                // Negate: drag right = divider moves right = column narrows
-                let delta = -(value.location.x - dragStartX)
+                // Drag RIGHT = col widens, no negation
+                let delta = value.location.x - dragStartX
                 let newWidth = dragStartWidth + delta
                 width = Swift.min(Swift.max(newWidth, min), max)
             }

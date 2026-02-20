@@ -25,12 +25,16 @@ struct TableHeaderView: View {
         let fixedCols = layout.visibleColumns.filter { $0.id != .name }
 
         return HStack(alignment: .center, spacing: 0) {
-            // Name — flexible, always first
+            // Name — flexible, always first, with resizable right edge
             nameHeader
 
-            // Fixed columns — separator before each, using indices for reliable rendering
+            // Layout per fixed col: [col content] [ResizableDivider = RIGHT edge of col]
+            // Drag divider RIGHT → col widens (+delta, no negation needed)
+            // Drag divider LEFT  → col narrows
+            // ColumnSeparator in FileRow sits at LEFT of each col — matches divider position
             ForEach(fixedCols.indices, id: \.self) { i in
                 let spec = fixedCols[i]
+                fixedColumnHeader(for: spec)
                 ResizableDivider(
                     width: Binding(
                         get: { spec.width },
@@ -40,7 +44,6 @@ struct TableHeaderView: View {
                     max: TableColumnDefaults.maxWidth,
                     onEnd: { layout.saveWidths() }
                 )
-                fixedColumnHeader(for: spec)
             }
         }
         .frame(height: 22)
