@@ -17,7 +17,7 @@ final class NetworkMountService {
 
     // MARK: - Open host in Finder (always works, handles auth UI natively)
     func openInFinder(_ host: NetworkHost) {
-        guard let url = host.finderURL else {
+        guard let url = host.mountURL else {
             log.warning("[NetworkMount] no URL for host \(host.name)")
             return
         }
