@@ -3,9 +3,9 @@
 // MiMiNavigator
 //
 // Created by Iakov Senatov on 17.01.2026.
+// Refactored: 20.02.2026 — History and Favorites open as standalone NSPanel windows
+//             via PanelDialogCoordinator (pattern mirrors FindFilesCoordinator).
 // Copyright © 2026 Senatov. All rights reserved.
-//
-// Migrated to use FavoritesKit package
 
 import AppKit
 import FavoritesKit
@@ -14,13 +14,11 @@ import SwiftUI
 // MARK: - Navigation Panel with Favorites Button
 struct ButtonFavTopPanel: View {
     @Environment(AppState.self) var appState
-    
-    // MARK: - State (using FavoritesKit types)
+
+    // MARK: - State
     @State private var favorites: [FavoriteItem] = []
-    @State private var showHistoryPopover: Bool = false
-    @State private var showFavTreePopup: Bool = false
     @State private var navigationAdapter: FavoritesNavigationAdapter?
-    
+
     let panelSide: PanelSide
 
     // MARK: - Init
@@ -68,7 +66,7 @@ struct ButtonFavTopPanel: View {
             .gesture(
                 TapGesture(count: 1)
                     .modifiers(.control)
-                    .onEnded { _ in showHistoryPopover = true }
+                    .onEnded { _ in openHistoryWindow() }
             )
             .help("Click: go back | Ctrl+click: show history")
             .accessibilityLabel("Back button")
@@ -80,8 +78,7 @@ struct ButtonFavTopPanel: View {
             log.debug("Up: navigating to parent directory")
             navigationAdapter?.navigateUp(panel: panelSide.toFavPanelSide)
         }) {
-            Image(systemName: "arrowshape.up")
-                .renderingMode(.original)
+            Image(systemName: "arrowshape.up").renderingMode(.original)
         }
         .buttonStyle(.plain)
         .shadow(color: .gray, radius: 7.0, x: 1, y: 1)
@@ -104,7 +101,7 @@ struct ButtonFavTopPanel: View {
             .gesture(
                 TapGesture(count: 1)
                     .modifiers(.control)
-                    .onEnded { _ in showHistoryPopover = true }
+                    .onEnded { _ in openHistoryWindow() }
             )
             .help("Click: go forward | Ctrl+click: show history")
             .accessibilityLabel("Forward button")
@@ -112,28 +109,18 @@ struct ButtonFavTopPanel: View {
 
     // MARK: - History Button
     private func historyButton() -> some View {
-        Button(action: { showHistoryPopover.toggle() }) {
+        Button(action: { openHistoryWindow() }) {
             Image(systemName: "clock.arrow.circlepath")
                 .foregroundStyle(.blue)
         }
         .buttonStyle(.plain)
         .shadow(color: .gray, radius: 7.0, x: 1, y: 1)
-        .popover(isPresented: $showHistoryPopover, arrowEdge: .bottom) {
-            HistoryPopoverView(isPresented: $showHistoryPopover, panelSide: panelSide)
-        }
         .help("Show navigation history")
     }
 
-    // MARK: - Favorites Button (using FavoritesKit)
+    // MARK: - Favorites Button
     private func favoritesButton() -> some View {
-        Button(action: {
-            log.debug("Navigation between favorites")
-            if favorites.isEmpty {
-                Task { await loadFavorites() }
-            }
-            appState.focusedPanel = panelSide
-            showFavTreePopup.toggle()
-        }) {
+        Button(action: { openFavoritesWindow() }) {
             Image(systemName: panelSide == .left ? "sidebar.left" : "sidebar.right")
                 .symbolRenderingMode(.hierarchical)
                 .foregroundStyle(.blue)
@@ -141,14 +128,10 @@ struct ButtonFavTopPanel: View {
         }
         .shadow(color: .secondary.opacity(0.15), radius: 7.0, x: 1, y: 1)
         .buttonStyle(.plain)
-        .popover(isPresented: $showFavTreePopup, arrowEdge: .bottom) {
-            favoritesPopover()
-                .interactiveDismissDisabled()
-        }
-        .help("Navigation between favorites - \(String(describing: panelSide))")
+        .help("Navigation between favorites — \(String(describing: panelSide))")
     }
 
-    // MARK: - Network Neighborhood Button
+    // MARK: - Network Button
     private func networkButton() -> some View {
         Button(action: {
             log.debug("Network Neighborhood button tapped")
@@ -164,33 +147,47 @@ struct ButtonFavTopPanel: View {
         .accessibilityLabel("Network Neighborhood button")
     }
 
-    // MARK: - Favorites Popover (FavoritesKit)
-    private func favoritesPopover() -> some View {
-        FavoritesTreeView(
+    // MARK: - Open History Window
+
+    private func openHistoryWindow() {
+        let content = HistoryWindowContent(panelSide: panelSide)
+            .environment(appState)
+        PanelDialogCoordinator.history.open(content: content)
+    }
+
+    // MARK: - Open Favorites Window
+
+    private func openFavoritesWindow() {
+        log.debug("Navigation between favorites")
+        if favorites.isEmpty {
+            Task { await loadFavorites() }
+        }
+        appState.focusedPanel = panelSide
+
+        // isPresented binding for FavoritesTreeView — toggles close via Esc
+        let isPresented = Binding<Bool>(
+            get: { PanelDialogCoordinator.favorites.isVisible },
+            set: { if !$0 { PanelDialogCoordinator.favorites.close() } }
+        )
+
+        let content = FavoritesTreeView(
             items: $favorites,
-            isPresented: $showFavTreePopup,
+            isPresented: isPresented,
             panelSide: panelSide.toFavPanelSide,
             navigationDelegate: navigationAdapter
         )
-        .padding(6)
-        .font(.custom("Helvetica Neue", size: 11).weight(.light))
-        .foregroundStyle(FilePanelStyle.fileNameColor)
+        PanelDialogCoordinator.favorites.open(content: content)
     }
 
-    // MARK: - Load Favorites (using FavoritesKit scanner)
+    // MARK: - Load Favorites
     @MainActor
     private func loadFavorites() async {
         log.debug(#function)
         let scanner = FavoritesScanner()
-        
-        // First load quick favorites
-        let quickFavorites = scanner.scanFavorites()
-        favorites = quickFavorites
-        
-        // Then load volumes with animation
-        let allFavorites = await scanner.scanFavoritesAndVolumes()
+        favorites = scanner.scanFavorites()
+        let all = await scanner.scanFavoritesAndVolumes()
         withAnimation(.spring(response: 0.4, dampingFraction: 0.7, blendDuration: 0.3)) {
-            favorites = allFavorites
+            favorites = all
         }
     }
 }
