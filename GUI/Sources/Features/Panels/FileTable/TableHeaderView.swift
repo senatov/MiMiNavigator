@@ -64,7 +64,7 @@ struct TableHeaderView: View {
             currentKey: sortKey,
             ascending: sortAscending
         )
-        .frame(minWidth: 60, maxWidth: .infinity, alignment: .leading)
+        .frame(minWidth: 20, maxWidth: .infinity, alignment: .leading)
         .clipped()
         .contentShape(Rectangle())
         .onTapGesture { toggleSort(.name) }
