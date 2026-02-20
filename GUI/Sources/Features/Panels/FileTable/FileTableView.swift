@@ -50,7 +50,6 @@ struct FileTableView: View {
     // MARK: - Computed Properties
     var isFocused: Bool { appState.focusedPanel == panelSide }
 
-    var columnStorage: ColumnWidthStorage { ColumnWidthStorage(panelSide: panelSide) }
     var sorter: TableFileSorter { TableFileSorter(sortKey: sortKey, ascending: sortAscending) }
     
     var keyboardNav: TableKeyboardNavigation {
@@ -77,7 +76,6 @@ struct FileTableView: View {
                 .onAppear {
                     log.debug("\(#function) FileTableView onAppear panel=\(panelSide) files.count=\(files.count)")
                     scrollProxy = proxy
-                    loadColumnWidths()
                     recomputeSortedCache()
                 }
         }

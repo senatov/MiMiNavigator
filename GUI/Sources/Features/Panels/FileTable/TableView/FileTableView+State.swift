@@ -11,11 +11,6 @@ import SwiftUI
 // MARK: - State Management
 extension FileTableView {
 
-    // loadColumnWidths kept for onAppear call — now a no-op (ColumnLayoutModel loads itself)
-    func loadColumnWidths() {
-        log.debug("\(#function) panel=\(panelSide) — columns managed by ColumnLayoutModel")
-    }
-
     func recomputeSortedCache() {
         cachedSortedFiles = files.sorted(by: sorter.compare)
         log.debug("\(#function) panel=\(panelSide) sorted \(cachedSortedFiles.count) by \(sortKey) asc=\(sortAscending)")
