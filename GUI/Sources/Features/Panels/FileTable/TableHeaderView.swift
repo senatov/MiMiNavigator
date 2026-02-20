@@ -22,12 +22,15 @@ struct TableHeaderView: View {
     @Bindable var layout: ColumnLayoutModel
 
     var body: some View {
-        HStack(alignment: .center, spacing: 0) {
-            // Name column — always first, always flexible
+        let fixedCols = layout.visibleColumns.filter { $0.id != .name }
+
+        return HStack(alignment: .center, spacing: 0) {
+            // Name — flexible, always first
             nameHeader
 
-            // Fixed columns — each preceded by a ResizableDivider
-            ForEach(layout.visibleColumns.filter { $0.id != .name }) { spec in
+            // Fixed columns — separator before each, using indices for reliable rendering
+            ForEach(fixedCols.indices, id: \.self) { i in
+                let spec = fixedCols[i]
                 ResizableDivider(
                     width: Binding(
                         get: { spec.width },
@@ -76,8 +79,7 @@ struct TableHeaderView: View {
             ascending: sortAscending
         )
         .frame(width: spec.width, alignment: spec.id.alignment)
-        .padding(.horizontal, spec.id == .size ? 0 : 4)
-        .padding(.trailing, spec.id == .size ? 6 : 0)
+        .padding(.horizontal, TableColumnDefaults.cellPadding)
         .contentShape(Rectangle())
         .onTapGesture { toggleSort(spec.id) }
     }
@@ -139,14 +141,16 @@ struct SortableHeader: View {
     var body: some View {
         HStack(spacing: 3) {
             Text(title)
-                .font(TableHeaderStyle.font)
+                .font(isActive
+                    ? TableHeaderStyle.font.weight(TableHeaderStyle.sortActiveWeight)
+                    : TableHeaderStyle.font)
                 .foregroundStyle(isActive ? TableHeaderStyle.sortIndicatorColor : TableHeaderStyle.color)
                 .lineLimit(1)
 
             if sortKey != nil {
                 Image(systemName: isActive ? (ascending ? "chevron.up" : "chevron.down") : "chevron.up.chevron.down")
-                    .font(.system(size: 8, weight: .regular))
-                    .foregroundStyle(isActive ? TableHeaderStyle.sortIndicatorColor : Color.secondary.opacity(0.4))
+                    .font(.system(size: isActive ? 11 : 10, weight: isActive ? .semibold : .regular))
+                    .foregroundStyle(isActive ? TableHeaderStyle.sortIndicatorColor : Color.black.opacity(0.75))
             }
         }
         .background(isActive ? TableHeaderStyle.activeSortBackground : Color.clear)

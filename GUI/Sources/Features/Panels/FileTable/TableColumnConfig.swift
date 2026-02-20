@@ -19,6 +19,9 @@ enum TableColumnDefaults {
     // Universal min/max for all columns
     static let minWidth: CGFloat = 40
     static let maxWidth: CGFloat = 200
+
+    /// Horizontal padding applied INSIDE each fixed column cell (header AND row must use same value)
+    static let cellPadding: CGFloat = 6
 }
 
 // MARK: - Column Constraints
@@ -43,8 +46,10 @@ enum TableHeaderStyle {
     static let font = Font.custom("SF Pro Display", size: 14).weight(.thin)
     /// Dark navy blue for inactive column titles
     static let color = Color(#colorLiteral(red: 0.08, green: 0.15, blue: 0.40, alpha: 1.0))
-    /// Blue for active sort column (stays blue)
-    static let sortIndicatorColor = Color.accentColor
+    /// Dark purple for active sort column title + chevron
+    static let sortIndicatorColor = Color(#colorLiteral(red: 0.35, green: 0.05, blue: 0.55, alpha: 1.0))
+    /// Active sort column title weight
+    static let sortActiveWeight: Font.Weight = .medium
     /// Very light yellow tint for active sort column background
     static let activeSortBackground = Color(#colorLiteral(red: 1.0, green: 0.95, blue: 0.7, alpha: 0.35))
     static let backgroundColor = Color(nsColor: .controlBackgroundColor)
