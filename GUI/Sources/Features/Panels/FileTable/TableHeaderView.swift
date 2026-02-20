@@ -6,10 +6,9 @@
 // Copyright © 2026 Senatov. All rights reserved.
 // Description: Sortable, resizable column headers. Right-click → context menu to toggle columns.
 //
-// Layout logic (Finder-style):
-//   [Name flexible ←→] | ResizableDivider | [col2 fixed] | separator | [col3 fixed] | ...
-//   ONE ResizableDivider between Name and fixed block.
-//   Drag it → Name column widens/narrows. Fixed cols stay fixed, shift as block.
+// Layout logic:
+//   [Name flexible] | divider | [col2 fixed] | divider | [col3 fixed] | ...
+//   Each ResizableDivider controls the width of the column AFTER it.
 
 import SwiftUI
 
@@ -26,16 +25,12 @@ struct TableHeaderView: View {
         let fixedCols = layout.visibleColumns.filter { $0.id != .name }
 
         return HStack(alignment: .center, spacing: 0) {
-            // Name — flexible, resizable right edge
-            nameHeader(fixedCols: fixedCols)
+            // Name — flexible, always first
+            nameHeader
 
-            // Each fixed col: [col content] [ResizableDivider = right edge of this col]
-            // Drag divider RIGHT → this col widens (+delta)
-            // Drag divider LEFT  → this col narrows
-            // All cols to the right shift accordingly (HStack auto-layout)
+            // Fixed columns — separator before each, using indices for reliable rendering
             ForEach(fixedCols.indices, id: \.self) { i in
                 let spec = fixedCols[i]
-                fixedColumnHeader(for: spec)
                 ResizableDivider(
                     width: Binding(
                         get: { spec.width },
@@ -45,6 +40,7 @@ struct TableHeaderView: View {
                     max: TableColumnDefaults.maxWidth,
                     onEnd: { layout.saveWidths() }
                 )
+                fixedColumnHeader(for: spec)
             }
         }
         .frame(height: 22)
@@ -61,26 +57,20 @@ struct TableHeaderView: View {
     }
 
     // MARK: - Name Column (flexible)
-    private func nameHeader(fixedCols: [ColumnSpec]) -> some View {
+    private var nameHeader: some View {
         SortableHeader(
             title: ColumnID.name.title,
             sortKey: ColumnID.name.sortKey,
             currentKey: sortKey,
             ascending: sortAscending
         )
+        .frame(minWidth: 60, maxWidth: .infinity, alignment: .leading)
+        .clipped()
         .contentShape(Rectangle())
         .onTapGesture { toggleSort(.name) }
-        .frame(
-            minWidth: 60,
-            idealWidth: layout.nameWidth > 0 ? layout.nameWidth : nil,
-            maxWidth: layout.nameWidth > 0 ? layout.nameWidth : .infinity,
-            alignment: .leading
-        )
-        .clipped()
     }
 
     // MARK: - Fixed Column Header
-    // spec.width = total cell width incl. padding — must match FileRow exactly
     private func fixedColumnHeader(for spec: ColumnSpec) -> some View {
         SortableHeader(
             title: spec.id.title,
@@ -88,8 +78,8 @@ struct TableHeaderView: View {
             currentKey: sortKey,
             ascending: sortAscending
         )
-        .padding(.horizontal, TableColumnDefaults.cellPadding)
         .frame(width: spec.width, alignment: spec.id.alignment)
+        .padding(.horizontal, TableColumnDefaults.cellPadding)
         .contentShape(Rectangle())
         .onTapGesture { toggleSort(spec.id) }
     }

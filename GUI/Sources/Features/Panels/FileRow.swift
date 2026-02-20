@@ -287,34 +287,29 @@ struct FileRow: View {
         .system(size: 12)
     }
 
-    // MARK: - Row content — mirrors TableHeaderView layout exactly
-    // Header: [Name] [ResizableDivider=1pt] [col] [ResizableDivider=1pt] [col] ...
-    // Row:    [Name] [ColumnSeparator=1pt]  [col] [ColumnSeparator=1pt]  [col] ...
+    // MARK: - Row content — driven by ColumnLayoutModel
     private var rowContent: some View {
         let fixedCols = layout.visibleColumns.filter { $0.id != .name }
 
         return HStack(alignment: .center, spacing: 0) {
-            // Name — same frame logic as header
+            // Name — flexible
             FileRowView(file: file, isSelected: isSelected, isActivePanel: isActivePanel, isMarked: isMarked)
-                .frame(
-                    minWidth: 60,
-                    idealWidth: layout.nameWidth > 0 ? layout.nameWidth : nil,
-                    maxWidth: layout.nameWidth > 0 ? layout.nameWidth : .infinity,
-                    alignment: .leading
-                )
+                .frame(minWidth: 60, maxWidth: .infinity, alignment: .leading)
                 .clipped()
 
-            // Each fixed col: [col] [ColumnSeparator=1pt]
+            // Fixed columns — separator before each, indices for reliable rendering
             ForEach(fixedCols.indices, id: \.self) { i in
                 let spec = fixedCols[i]
+                ColumnSeparator()
                 cellText(for: spec.id)
                     .font(spec.id == .permissions ? .system(size: 11, design: .monospaced) : columnFont)
                     .foregroundStyle(secondaryTextColor)
                     .lineLimit(1)
                     .truncationMode(.tail)
-                    .padding(.horizontal, TableColumnDefaults.cellPadding)
+                    // leading padding only: trailing side is covered by next separator
                     .frame(width: spec.width, alignment: spec.id.alignment)
-                ColumnSeparator()
+                    .padding(.leading, TableColumnDefaults.cellPadding)
+                    .padding(.trailing, TableColumnDefaults.cellPadding)
             }
         }
         .padding(.vertical, 2)

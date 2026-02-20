@@ -94,15 +94,13 @@ struct ColumnSpec: Codable, Identifiable, Equatable {
 @Observable
 final class ColumnLayoutModel {
 
-    // MARK: - Default ordered column list
+    // MARK: - Default ordered column list (Finder-style: Name, Date, Size, Kind, Perms, Owner, ChildCount)
     static let defaultOrder: [ColumnID] = [
         .name, .dateModified, .size, .kind, .permissions, .owner, .childCount
     ]
 
     // MARK: - State
     var columns: [ColumnSpec]
-    /// Width of the Name column (flexible, Finder-style). 0 = not yet set (fills remaining space).
-    var nameWidth: CGFloat = 0
 
     // MARK: - Persistence key
     private let storageKey: String
@@ -139,43 +137,25 @@ final class ColumnLayoutModel {
 
     // MARK: - Persistence
     private func save() {
-        var dict: [String: Any] = [:]
         if let data = try? JSONEncoder().encode(columns) {
-            dict["columns"] = data
+            UserDefaults.standard.set(data, forKey: storageKey)
+            log.debug("[ColumnLayout] saved \(storageKey)")
         }
-        dict["nameWidth"] = Double(nameWidth)
-        UserDefaults.standard.set(dict, forKey: storageKey)
-        log.debug("[ColumnLayout] saved \(storageKey)")
     }
 
     private func load() {
-        // Try new dict format first
-        if let dict = UserDefaults.standard.dictionary(forKey: storageKey) {
-            if let data = dict["columns"] as? Data,
-               let saved = try? JSONDecoder().decode([ColumnSpec].self, from: data) {
-                applyMerged(saved)
-            }
-            if let w = dict["nameWidth"] as? Double, w > 0 {
-                nameWidth = CGFloat(w)
-            }
-            log.debug("[ColumnLayout] loaded \(storageKey): \(columns.map { "\($0.id.rawValue):\($0.isVisible)" })")
-            return
-        }
-        // Fallback: old raw Data format
-        if let data = UserDefaults.standard.data(forKey: storageKey),
-           let saved = try? JSONDecoder().decode([ColumnSpec].self, from: data) {
-            applyMerged(saved)
-            log.debug("[ColumnLayout] loaded \(storageKey) (legacy): \(columns.map { "\($0.id.rawValue):\($0.isVisible)" })")
-        }
-    }
+        guard let data = UserDefaults.standard.data(forKey: storageKey),
+              let saved = try? JSONDecoder().decode([ColumnSpec].self, from: data)
+        else { return }
 
-    private func applyMerged(_ saved: [ColumnSpec]) {
+        // Merge saved with defaults: add new columns, keep saved order and widths
         var merged: [ColumnSpec] = saved
         for defaultCol in Self.defaultOrder {
             if !merged.contains(where: { $0.id == defaultCol }) {
                 merged.append(ColumnSpec(id: defaultCol))
             }
         }
+        // Ensure Name is always visible and first
         if let nameIdx = merged.firstIndex(where: { $0.id == .name }), nameIdx != 0 {
             let nameSpec = merged.remove(at: nameIdx)
             merged.insert(nameSpec, at: 0)
@@ -184,5 +164,6 @@ final class ColumnLayoutModel {
             merged[nameIdx].isVisible = true
         }
         columns = merged
+        log.debug("[ColumnLayout] loaded \(storageKey): \(columns.map { "\($0.id.rawValue):\($0.isVisible)" })")
     }
 }
