@@ -67,26 +67,28 @@ struct MiMiNavigatorApp: App {
                         }
                     }
                 }
-                // MARK: - Network Neighborhood Sheet
+                // MARK: - Network Neighborhood Sheet (tree-style)
                 .sheet(isPresented: Binding(
                     get: { appState.showNetworkNeighborhood },
                     set: { appState.showNetworkNeighborhood = $0 }
                 )) {
                     NetworkNeighborhoodView(
-                        onNavigate: { url in
+                        onNavigate: { shareURL in
                             appState.showNetworkNeighborhood = false
                             Task { @MainActor in
-                                // Snapshot current network mounts before opening
-                                let before = SMBMounter.shared.mountedNetworkVolumes()
-                                // Open smb:// — macOS shows mount/share-picker dialog
-                                SMBMounter.shared.openForMount(url)
-                                // Wait for a new volume to appear in /Volumes/
-                                if let newMount = await SMBMounter.shared.pollForNewMount(snapshot: before, timeout: 30) {
-                                    let side = appState.focusedPanel
-                                    if side == .left { appState.leftPath = newMount.path }
-                                    else { appState.rightPath = newMount.path }
+                                let side = appState.focusedPanel
+                                // If share URL is already a local /Volumes/ path — navigate directly
+                                if shareURL.isFileURL {
+                                    appState.updatePath(shareURL.path, for: side)
+                                    return
                                 }
-                                // If nothing mounted within 30s — user cancelled, do nothing
+                                // Network URL (smb://, afp://) — mount via macOS, then navigate
+                                let before = SMBMounter.shared.mountedNetworkVolumes()
+                                SMBMounter.shared.openForMount(shareURL)
+                                if let newMount = await SMBMounter.shared.pollForNewMount(snapshot: before, timeout: 30) {
+                                    appState.updatePath(newMount.path, for: side)
+                                }
+                                // If user cancelled mount dialog — do nothing
                             }
                         },
                         onDismiss: {
