@@ -1,17 +1,18 @@
-// HistoryPopoverView.swift
+// HistoryWindowContent.swift
 // MiMiNavigator
 //
-// Created by Iakov Senatov on 15.01.2025.
-// Refactored: 14.02.2026 — search filter, chronological order, wider layout
-// Copyright © 2025-2026 Senatov. All rights reserved.
-// Description: Navigation history popover with search filter and scrollable list
+// Created by Iakov Senatov on 20.02.2026.
+// Copyright © 2026 Senatov. All rights reserved.
+// Description: Content view for the standalone History NSPanel window.
+//              Replaces old HistoryPopoverView (popover) with a persistent window.
+//              Font: SF Pro Display Light 14 via PanelDialogCoordinator.
 
 import SwiftUI
 
-// MARK: - HistoryPopoverView
-struct HistoryPopoverView: View {
+// MARK: - HistoryWindowContent
+
+struct HistoryWindowContent: View {
     @Environment(AppState.self) var appState
-    @Binding var isPresented: Bool
     let panelSide: PanelSide
 
     @State private var searchText = ""
@@ -24,20 +25,11 @@ struct HistoryPopoverView: View {
             Divider().padding(.horizontal, 8)
             contentSection
         }
-        .frame(width: 540)
-        .frame(minHeight: 280, maxHeight: 820)
+        .frame(minWidth: 420, idealWidth: 540, maxWidth: .infinity)
+        .frame(minHeight: 300, idealHeight: 600, maxHeight: .infinity)
         .background(.ultraThinMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .stroke(Color.primary.opacity(0.08), lineWidth: 0.5)
-        )
-        .onExitCommand {
-            isPresented = false
-        }
-        .onAppear {
-            isSearchFocused = true
-        }
+        .onAppear { isSearchFocused = true }
+        .onExitCommand { PanelDialogCoordinator.history.close() }
     }
 
     // MARK: - Header
@@ -49,14 +41,12 @@ struct HistoryPopoverView: View {
                 .foregroundStyle(.blue)
 
             Text("Navigation History")
-                .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(.primary)
 
             Spacer()
 
             if !filteredPaths.isEmpty {
                 Text("\(filteredPaths.count)")
-                    .font(.system(size: 11, weight: .medium, design: .rounded))
                     .foregroundStyle(.secondary)
                     .padding(.horizontal, 6)
                     .padding(.vertical, 2)
@@ -64,7 +54,6 @@ struct HistoryPopoverView: View {
 
                 if filteredPaths.count != directoryPaths.count {
                     Text("of \(directoryPaths.count)")
-                        .font(.system(size: 10))
                         .foregroundStyle(.tertiary)
                 }
 
@@ -75,7 +64,7 @@ struct HistoryPopoverView: View {
         .padding(.vertical, 10)
     }
 
-    // MARK: - Search Filter
+    // MARK: - Search Field
 
     private var searchField: some View {
         HStack(spacing: 6) {
@@ -85,11 +74,10 @@ struct HistoryPopoverView: View {
 
             TextField("Filter history…", text: $searchText)
                 .textFieldStyle(.plain)
-                .font(.system(size: 12))
                 .focused($isSearchFocused)
 
             if !searchText.isEmpty {
-                Button(action: { searchText = "" }) {
+                Button { searchText = "" } label: {
                     Image(systemName: "xmark.circle.fill")
                         .font(.system(size: 12))
                         .foregroundStyle(.secondary)
@@ -99,10 +87,7 @@ struct HistoryPopoverView: View {
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
-        .background(
-            RoundedRectangle(cornerRadius: 6, style: .continuous)
-                .fill(Color.primary.opacity(0.04))
-        )
+        .background(RoundedRectangle(cornerRadius: 6, style: .continuous).fill(Color.primary.opacity(0.04)))
         .padding(.horizontal, 10)
         .padding(.bottom, 6)
     }
@@ -132,17 +117,9 @@ struct HistoryPopoverView: View {
 
     private var emptyStateView: some View {
         VStack(spacing: 12) {
-            Image(systemName: "clock.arrow.circlepath")
-                .font(.system(size: 36))
-                .foregroundStyle(.tertiary)
-
-            Text("No navigation history")
-                .font(.system(size: 13))
-                .foregroundStyle(.secondary)
-
-            Text("Visited directories will appear here")
-                .font(.system(size: 11))
-                .foregroundStyle(.tertiary)
+            Image(systemName: "clock.arrow.circlepath").font(.system(size: 36)).foregroundStyle(.tertiary)
+            Text("No navigation history").foregroundStyle(.secondary)
+            Text("Visited directories will appear here").font(.system(size: 11)).foregroundStyle(.tertiary)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 50)
@@ -150,13 +127,8 @@ struct HistoryPopoverView: View {
 
     private var noMatchView: some View {
         VStack(spacing: 8) {
-            Image(systemName: "magnifyingglass")
-                .font(.system(size: 24))
-                .foregroundStyle(.tertiary)
-
-            Text("No matches for \"\(searchText)\"")
-                .font(.system(size: 12))
-                .foregroundStyle(.secondary)
+            Image(systemName: "magnifyingglass").font(.system(size: 24)).foregroundStyle(.tertiary)
+            Text("No matches for \"\(searchText)\"").foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 40)
@@ -179,24 +151,20 @@ struct HistoryPopoverView: View {
         }
     }
 
-    // MARK: - Data (chronological order — newest first, no duplicates)
+    // MARK: - Data
 
-    private var directoryPaths: [String] {
-        appState.selectionsHistory.recentSelections
-    }
+    private var directoryPaths: [String] { appState.selectionsHistory.recentSelections }
 
     private var filteredPaths: [String] {
         guard !searchText.isEmpty else { return directoryPaths }
-        let query = searchText.lowercased()
-        return directoryPaths.filter { $0.lowercased().contains(query) }
+        let q = searchText.lowercased()
+        return directoryPaths.filter { $0.lowercased().contains(q) }
     }
 
     // MARK: - Actions
 
     private func navigateToPath(_ path: String) {
-        // Update path through AppState to record in navigation history
         appState.updatePath(path, for: panelSide)
-        
         Task {
             if panelSide == .left {
                 await appState.scanner.setLeftDirectory(pathStr: path)
@@ -205,19 +173,15 @@ struct HistoryPopoverView: View {
                 await appState.scanner.setRightDirectory(pathStr: path)
                 await appState.refreshRightFiles()
             }
-            isPresented = false
+            // Window stays open — user navigates freely
         }
     }
 
     private func deleteFromHistory(_ path: String) {
-        withAnimation(.easeInOut(duration: 0.2)) {
-            appState.selectionsHistory.remove(path)
-        }
+        withAnimation(.easeInOut(duration: 0.2)) { appState.selectionsHistory.remove(path) }
     }
 
     private func clearHistory() {
-        withAnimation(.easeInOut(duration: 0.2)) {
-            appState.selectionsHistory.clear()
-        }
+        withAnimation(.easeInOut(duration: 0.2)) { appState.selectionsHistory.clear() }
     }
 }

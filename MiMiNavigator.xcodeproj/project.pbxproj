@@ -702,15 +702,15 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		971A28F82F1B140900094ADE /* FavoritesKit */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 971A28F72F1B140900094ADE /* XCLocalSwiftPackageReference "Packages/FavoritesKit" */;
-			productName = FavoritesKit;
-		};
 		52D4533F441E4D78BD910304 /* NetworkKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 9727CDA52F477FF400C4E234 /* XCLocalSwiftPackageReference "Packages/NetworkKit" */;
 			productName = NetworkKit;
+		};
+		971A28F82F1B140900094ADE /* FavoritesKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 971A28F72F1B140900094ADE /* XCLocalSwiftPackageReference "Packages/FavoritesKit" */;
+			productName = FavoritesKit;
 		};
 		97B3D6372DCA54B9002F1DB7 /* SystemPackage */ = {
 			isa = XCSwiftPackageProductDependency;
