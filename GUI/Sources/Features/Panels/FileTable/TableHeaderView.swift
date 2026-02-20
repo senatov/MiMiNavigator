@@ -26,27 +26,25 @@ struct TableHeaderView: View {
         let fixedCols = layout.visibleColumns.filter { $0.id != .name }
 
         return HStack(alignment: .center, spacing: 0) {
-            // Name — flexible width, stored in layout.nameWidth
+            // Name — flexible, resizable right edge
             nameHeader(fixedCols: fixedCols)
 
-            // ONE ResizableDivider — the only draggable border (Finder-style)
-            // Dragging it changes layout.nameWidth. Fixed cols shift as a block.
-            if !fixedCols.isEmpty {
+            // Each fixed col: [col content] [ResizableDivider = right edge of this col]
+            // Drag divider RIGHT → this col widens (+delta)
+            // Drag divider LEFT  → this col narrows
+            // All cols to the right shift accordingly (HStack auto-layout)
+            ForEach(fixedCols.indices, id: \.self) { i in
+                let spec = fixedCols[i]
+                fixedColumnHeader(for: spec)
                 ResizableDivider(
                     width: Binding(
-                        get: { layout.nameWidth },
-                        set: { layout.nameWidth = $0 }
+                        get: { spec.width },
+                        set: { layout.setWidth($0, for: spec.id) }
                     ),
-                    min: 60,
-                    max: 600,
+                    min: TableColumnDefaults.minWidth,
+                    max: TableColumnDefaults.maxWidth,
                     onEnd: { layout.saveWidths() }
                 )
-            }
-
-            // Fixed columns — plain ColumnSeparator between them, no resize
-            ForEach(fixedCols.indices, id: \.self) { i in
-                if i > 0 { ColumnSeparator() }
-                fixedColumnHeader(for: fixedCols[i])
             }
         }
         .frame(height: 22)
@@ -62,7 +60,7 @@ struct TableHeaderView: View {
         .contextMenu { columnToggleMenu }
     }
 
-    // MARK: - Name Column (flexible, Finder-style)
+    // MARK: - Name Column (flexible)
     private func nameHeader(fixedCols: [ColumnSpec]) -> some View {
         SortableHeader(
             title: ColumnID.name.title,
@@ -72,7 +70,6 @@ struct TableHeaderView: View {
         )
         .contentShape(Rectangle())
         .onTapGesture { toggleSort(.name) }
-        // If nameWidth is set — use it; otherwise fill remaining space
         .frame(
             minWidth: 60,
             idealWidth: layout.nameWidth > 0 ? layout.nameWidth : nil,

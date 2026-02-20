@@ -287,12 +287,14 @@ struct FileRow: View {
         .system(size: 12)
     }
 
-    // MARK: - Row content — driven by ColumnLayoutModel (Finder-style)
+    // MARK: - Row content — mirrors TableHeaderView layout exactly
+    // Header: [Name] [ResizableDivider=1pt] [col] [ResizableDivider=1pt] [col] ...
+    // Row:    [Name] [ColumnSeparator=1pt]  [col] [ColumnSeparator=1pt]  [col] ...
     private var rowContent: some View {
         let fixedCols = layout.visibleColumns.filter { $0.id != .name }
 
         return HStack(alignment: .center, spacing: 0) {
-            // Name — mirrors header: fixed width if set, else fills space
+            // Name — same frame logic as header
             FileRowView(file: file, isSelected: isSelected, isActivePanel: isActivePanel, isMarked: isMarked)
                 .frame(
                     minWidth: 60,
@@ -302,15 +304,9 @@ struct FileRow: View {
                 )
                 .clipped()
 
-            // 1pt non-draggable separator after Name (mirrors ResizableDivider visual line)
-            if !fixedCols.isEmpty {
-                ColumnSeparator()
-            }
-
-            // Fixed columns — plain separators between them, same as header
+            // Each fixed col: [col] [ColumnSeparator=1pt]
             ForEach(fixedCols.indices, id: \.self) { i in
                 let spec = fixedCols[i]
-                if i > 0 { ColumnSeparator() }
                 cellText(for: spec.id)
                     .font(spec.id == .permissions ? .system(size: 11, design: .monospaced) : columnFont)
                     .foregroundStyle(secondaryTextColor)
@@ -318,6 +314,7 @@ struct FileRow: View {
                     .truncationMode(.tail)
                     .padding(.horizontal, TableColumnDefaults.cellPadding)
                     .frame(width: spec.width, alignment: spec.id.alignment)
+                ColumnSeparator()
             }
         }
         .padding(.vertical, 2)
