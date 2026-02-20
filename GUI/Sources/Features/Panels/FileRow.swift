@@ -289,33 +289,29 @@ struct FileRow: View {
 
     // MARK: - Row content — driven by ColumnLayoutModel
     private var rowContent: some View {
-        HStack(alignment: .center, spacing: 0) {
-            ForEach(layout.visibleColumns) { spec in
-                cellContent(for: spec)
+        let fixedCols = layout.visibleColumns.filter { $0.id != .name }
+
+        return HStack(alignment: .center, spacing: 0) {
+            // Name — flexible
+            FileRowView(file: file, isSelected: isSelected, isActivePanel: isActivePanel, isMarked: isMarked)
+                .frame(minWidth: 60, maxWidth: .infinity, alignment: .leading)
+                .clipped()
+
+            // Fixed columns — separator before each, indices for reliable rendering
+            ForEach(fixedCols.indices, id: \.self) { i in
+                let spec = fixedCols[i]
+                ColumnSeparator()
+                cellText(for: spec.id)
+                    .font(spec.id == .permissions ? .system(size: 11, design: .monospaced) : columnFont)
+                    .foregroundStyle(secondaryTextColor)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                    .frame(width: spec.width, alignment: spec.id.alignment)
+                    .padding(.horizontal, TableColumnDefaults.cellPadding)
             }
         }
         .padding(.vertical, 2)
         .padding(.horizontal, 4)
-    }
-
-    @ViewBuilder
-    private func cellContent(for spec: ColumnSpec) -> some View {
-        let col = spec.id
-        if col == .name {
-            FileRowView(file: file, isSelected: isSelected, isActivePanel: isActivePanel, isMarked: isMarked)
-                .frame(minWidth: 60, maxWidth: .infinity, alignment: .leading)
-                .clipped()
-        } else {
-            ColumnSeparator()
-            cellText(for: col)
-                .font(col == .permissions ? .system(size: 11, design: .monospaced) : columnFont)
-                .foregroundStyle(secondaryTextColor)
-                .lineLimit(1)
-                .truncationMode(.tail)
-                .frame(width: spec.width, alignment: col.alignment)
-                .padding(.horizontal, col == .size ? 0 : 6)
-                .padding(.trailing, col == .size ? 8 : 0)
-        }
     }
 
     @ViewBuilder
