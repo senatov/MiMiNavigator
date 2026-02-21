@@ -92,11 +92,16 @@ struct NetworkAuthSheet: View {
         }
     }
 
-    // MARK: - Pre-fill from Keychain if available
+    // MARK: - Pre-fill from Keychain; purge stale "No user account" ghost entries
     private func prefill() {
         if let saved = NetworkAuthService.load(for: host.hostName) {
-            username = saved.user
-            password = saved.password
+            if saved.user.isEmpty || saved.user.lowercased().contains("no user") {
+                NetworkAuthService.delete(for: host.hostName)
+                log.info("[Auth] purged stale Keychain entry for \(host.hostName)")
+            } else {
+                username = saved.user
+                password = saved.password
+            }
         }
         focusedField = username.isEmpty ? .username : .password
     }
