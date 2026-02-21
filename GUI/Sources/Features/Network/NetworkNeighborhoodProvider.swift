@@ -277,9 +277,18 @@ final class NetworkNeighborhoodProvider: NSObject, ObservableObject {
         var host = NetworkHost(name: name, hostName: hostName, port: port,
                                serviceType: svcType, nodeType: nodeType)
         if let bt = bonjourType { host.bonjourServices.insert(bt) }
-        // Fast Bonjour-only classification
+        // Fast classification: Bonjour services first, then name-based heuristics
         if let quick = NetworkDeviceFingerprinter.classifyByServices(host.bonjourServices) {
             host.deviceClass = quick
+        } else {
+            // Name-based: fritz-box / router IPs are known immediately
+            let nameLower = name.lowercased()
+            let hostLower = hostName.lowercased()
+            if nameLower.contains("fritz") || hostLower.contains("fritz") ||
+               name == "192-168-178-1" || hostName == "192.168.178.1" {
+                host.deviceClass = .router
+                host.nodeType    = .generic   // not expandable
+            }
         }
         hosts.append(host)
         hosts.sort { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
