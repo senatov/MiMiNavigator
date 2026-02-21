@@ -72,7 +72,8 @@ final class NetworkNeighborhoodProvider: NSObject, ObservableObject {
         browsers.forEach { $0.stop() }
         browsers.removeAll()
         isScanning = false
-        log.info("[Network] stopDiscovery")
+        log.info("[Network] stopDiscovery — \(hosts.count) hosts found")
+        runFingerprintPass()
     }
 
     // MARK: - Expand: load shares for host
@@ -205,24 +206,51 @@ final class NetworkNeighborhoodProvider: NSObject, ObservableObject {
     // MARK: - Internal: add or update host
     fileprivate func addResolvedHost(
         name: String, hostName: String, port: Int,
-        serviceType: NetworkServiceType?, isPrinter: Bool
+        serviceType: NetworkServiceType?, isPrinter: Bool,
+        bonjourType: String? = nil
     ) {
         let nodeType: NetworkNodeType = isPrinter ? .printer : .fileServer
         let svcType = serviceType ?? .smb
-        // Update existing entry if already added from didFind
         if let idx = hosts.firstIndex(where: { $0.name == name }) {
-            if hostName != name {
+            // Accumulate Bonjour service types for fingerprinting
+            if let bt = bonjourType { hosts[idx].bonjourServices.insert(bt) }
+            if hostName != name && hostName != "(nil)" {
                 hosts[idx] = NetworkHost(name: name, hostName: hostName, port: port,
-                                         serviceType: hosts[idx].serviceType, nodeType: hosts[idx].nodeType)
+                                         serviceType: hosts[idx].serviceType,
+                                         nodeType: hosts[idx].nodeType,
+                                         deviceClass: hosts[idx].deviceClass)
                 log.info("[Network] updated hostName for '\(name)' → \(hostName)")
             }
             return
         }
-        let host = NetworkHost(name: name, hostName: hostName, port: port,
+        var host = NetworkHost(name: name, hostName: hostName, port: port,
                                serviceType: svcType, nodeType: nodeType)
+        if let bt = bonjourType { host.bonjourServices.insert(bt) }
+        // Fast Bonjour-only classification
+        if let quick = NetworkDeviceFingerprinter.classifyByServices(host.bonjourServices) {
+            host.deviceClass = quick
+        }
         hosts.append(host)
         hosts.sort { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
-        log.info("[Network] added: '\(name)' hostName=\(hostName) port=\(port) isPrinter=\(isPrinter)")
+        log.info("[Network] added: '\(name)' hostName=\(hostName) port=\(port) isPrinter=\(isPrinter) deviceClass=\(host.deviceClass.label)")
+    }
+
+    // MARK: - Deep fingerprint after scan completes (port probe + HTTP banner)
+    private func runFingerprintPass() {
+        Task {
+            for i in hosts.indices {
+                let host = hosts[i]
+                guard host.deviceClass == .unknown || host.deviceClass == .mac else { continue }
+                let fp = await NetworkDeviceFingerprinter.probe(
+                    hostName: host.hostName,
+                    bonjourServices: host.bonjourServices
+                )
+                if let idx = self.hosts.firstIndex(where: { $0.id == host.id }) {
+                    self.hosts[idx].deviceClass = fp.deviceClass
+                    log.info("[Network] fingerprint '\(host.name)' → \(fp.deviceClass.label) ports=\(fp.openPorts.sorted())")
+                }
+            }
+        }
     }
 
     // MARK: - Retry share fetch after auth (resets sharesLoaded flag)
@@ -255,7 +283,8 @@ extension NetworkNeighborhoodProvider: NetServiceBrowserDelegate {
         Task { @MainActor in
             guard self.isScanning else { return }
             self.addResolvedHost(name: name, hostName: name, port: serviceType?.defaultPort ?? 445,
-                                 serviceType: serviceType, isPrinter: isPrinter)
+                                 serviceType: serviceType, isPrinter: isPrinter,
+                                 bonjourType: senderType)
         }
         // Also try resolve for IP address (best-effort, may not arrive)
         service.delegate = self

@@ -2,7 +2,7 @@
 // MiMiNavigator
 //
 // Created by Iakov Senatov on 19.02.2026.
-// Refactored: 20.02.2026 — nodeType + shares for tree-style Network Neighborhood
+// Refactored: 21.02.2026 — deviceClass fingerprinting, bonjourServices set
 // Copyright © 2026 Senatov. All rights reserved.
 // Description: Model representing a discovered network host (SMB/AFP/Bonjour)
 
@@ -32,48 +32,42 @@ enum NetworkServiceType: String, CaseIterable {
         case .ftp:  return 21
         }
     }
-
-    /// True if this service type provides a browsable file system
-    var isFileServer: Bool {
-        switch self {
-        case .smb, .afp, .sftp, .ftp: return true
-        }
-    }
 }
 
 // MARK: - Node type for tree display
 enum NetworkNodeType {
-    case fileServer     // expandable — has shares
-    case printer        // not expandable — no FS
-    case generic        // unknown device, not expandable
+    case fileServer
+    case printer
+    case generic
 }
 
 // MARK: - A single share/volume on a host
 struct NetworkShare: Identifiable, Hashable {
     let id: UUID
-    let name: String            // Share name e.g. "Public", "homes"
-    let url: URL                // smb://host/share or afp://host/share
+    let name: String
+    let url: URL
 
     init(name: String, url: URL) {
-        self.id = UUID()
+        self.id   = UUID()
         self.name = name
-        self.url = url
+        self.url  = url
     }
 }
 
 // MARK: - Discovered network host
 struct NetworkHost: Identifiable, Hashable {
     let id: UUID
-    let name: String                        // Bonjour display name
-    let hostName: String                    // resolved hostname or IP
+    let name: String
+    let hostName: String
     let port: Int
     let serviceType: NetworkServiceType
 
-    // MARK: - Tree state (mutable via provider)
-    var nodeType: NetworkNodeType           // determines icon and expand ability
-    var shares: [NetworkShare]             // populated on expand
-    var sharesLoaded: Bool                 // true after first fetch attempt
-    var sharesLoading: Bool                // spinner while fetching
+    var nodeType: NetworkNodeType
+    var deviceClass: NetworkDeviceClass     // hardware type after fingerprinting
+    var shares: [NetworkShare]
+    var sharesLoaded: Bool
+    var sharesLoading: Bool
+    var bonjourServices: Set<String>        // all Bonjour service types seen for this host
 
     // MARK: -
     init(
@@ -81,33 +75,36 @@ struct NetworkHost: Identifiable, Hashable {
         hostName: String,
         port: Int,
         serviceType: NetworkServiceType,
-        nodeType: NetworkNodeType = .fileServer
+        nodeType: NetworkNodeType = .fileServer,
+        deviceClass: NetworkDeviceClass = .unknown
     ) {
-        self.id = UUID()
-        self.name = name
-        self.hostName = hostName
-        self.port = port
-        self.serviceType = serviceType
-        self.nodeType = nodeType
-        self.shares = []
-        self.sharesLoaded = false
-        self.sharesLoading = false
+        self.id             = UUID()
+        self.name           = name
+        self.hostName       = hostName
+        self.port           = port
+        self.serviceType    = serviceType
+        self.nodeType       = nodeType
+        self.deviceClass    = deviceClass
+        self.shares         = []
+        self.sharesLoaded   = false
+        self.sharesLoading  = false
+        self.bonjourServices = []
     }
 
-    /// Root URL for this host: smb://hostname/ or afp://hostname/
+    // MARK: - Root URL for this host
     var mountURL: URL? {
-        var components = URLComponents()
-        components.scheme = serviceType == .afp ? "afp" : "smb"
-        components.host = hostName
-        if port != serviceType.defaultPort {
-            components.port = port
-        }
-        components.path = "/"
-        return components.url
+        var c = URLComponents()
+        c.scheme = serviceType == .afp ? "afp" : serviceType == .sftp ? "sftp" :
+                   serviceType == .ftp  ? "ftp"  : "smb"
+        c.host   = hostName
+        if port != serviceType.defaultPort { c.port = port }
+        c.path   = "/"
+        return c.url
     }
 
-    // MARK: - SF Symbol name for node icon
+    // MARK: - SF Symbol — uses deviceClass if fingerprinted, fallback to serviceType
     var systemIconName: String {
+        if deviceClass != .unknown { return deviceClass.systemIconName }
         switch nodeType {
         case .printer:    return "printer"
         case .fileServer:
@@ -119,8 +116,10 @@ struct NetworkHost: Identifiable, Hashable {
         }
     }
 
-    // MARK: - Whether this node can be expanded
     var isExpandable: Bool {
-        nodeType == .fileServer
+        deviceClass == .unknown ? (nodeType == .fileServer) : deviceClass.isExpandable
     }
+
+    // MARK: - Badge label shown next to host name
+    var deviceLabel: String { deviceClass.label }
 }

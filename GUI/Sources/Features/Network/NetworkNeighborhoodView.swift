@@ -210,13 +210,14 @@ private struct HostNodeRow: View {
                 Spacer().frame(width: 20)
             }
 
-            // Host icon
+            // Host icon — from deviceClass
             Image(systemName: host.systemIconName)
                 .font(.system(size: 16))
-                .foregroundStyle(.blue)
+                .foregroundStyle(host.deviceClass == .router ? .orange :
+                                 host.nodeType == .printer ? .secondary : .blue)
                 .frame(width: 24)
 
-            // Name + IP
+            // Name + hostname
             VStack(alignment: .leading, spacing: 1) {
                 Text(host.name)
                     .font(.callout)
@@ -231,16 +232,16 @@ private struct HostNodeRow: View {
 
             Spacer()
 
-            // Printer badge
-            if host.nodeType == .printer {
-                Text("Printer")
+            // Device class badge
+            if !host.deviceLabel.isEmpty {
+                Text(host.deviceLabel)
                     .font(.caption2)
                     .foregroundStyle(.secondary)
                     .padding(.horizontal, 6)
                     .padding(.vertical, 2)
                     .background(Color.secondary.opacity(0.12))
                     .clipShape(Capsule())
-                    .padding(.trailing, 4)
+                    .padding(.trailing, host.nodeType == .printer ? 4 : 0)
             }
         }
         .padding(.horizontal, 10)
