@@ -271,15 +271,11 @@ struct FileRow: View {
         return true
     }
 
-    // MARK: - Column colors - Finder style (gray secondary text, dimmer for hidden)
-    private var secondaryTextColor: Color {
-        if isSelected && isActivePanel {
-            return .white
-        }
-        if file.isHidden {
-            return Color(#colorLiteral(red: 0.3767382812, green: 0.3767382812, blue: 0.3767382812, alpha: 1))  // Brighter bluish gray
-        }
-        return Color(nsColor: .secondaryLabelColor)
+    // MARK: - Column colors - per-column accent when not selected, white when selected+active
+    private func cellColor(for col: ColumnID) -> Color {
+        if isSelected && isActivePanel { return .white }
+        if file.isHidden { return Color(#colorLiteral(red: 0.3767382812, green: 0.3767382812, blue: 0.3767382812, alpha: 1)) }
+        return col.columnColor
     }
 
     // MARK: - System font (Finder style)
@@ -303,7 +299,7 @@ struct FileRow: View {
                 ColumnSeparator()
                 cellText(for: spec.id)
                     .font(spec.id == .permissions ? .system(size: 11, design: .monospaced) : columnFont)
-                    .foregroundStyle(secondaryTextColor)
+                    .foregroundStyle(cellColor(for: spec.id))
                     .lineLimit(1)
                     .truncationMode(.tail)
                     // leading padding only: trailing side is covered by next separator

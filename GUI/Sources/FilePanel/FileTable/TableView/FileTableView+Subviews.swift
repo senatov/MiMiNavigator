@@ -77,6 +77,11 @@ extension FileTableView {
                     : Color.clear,
                 lineWidth: isPanelDropTargeted ? 2 : 1
             )
+            .shadow(
+                color: isFocused ? Color.accentColor.opacity(0.28) : Color.clear,
+                radius: isFocused ? 8 : 0,
+                x: 0, y: 0
+            )
             .allowsHitTesting(false)
     }
 
