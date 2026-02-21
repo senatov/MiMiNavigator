@@ -197,19 +197,27 @@ final class NetworkNeighborhoodProvider: NSObject, ObservableObject {
         return shares
     }
 
-    // MARK: - Internal: add resolved host
+    // MARK: - Internal: add or update host
     fileprivate func addResolvedHost(
         name: String, hostName: String, port: Int,
         serviceType: NetworkServiceType?, isPrinter: Bool
     ) {
-        guard !hosts.contains(where: { $0.hostName == hostName }) else { return }
         let nodeType: NetworkNodeType = isPrinter ? .printer : .fileServer
         let svcType = serviceType ?? .smb
+        // Update existing entry if already added from didFind
+        if let idx = hosts.firstIndex(where: { $0.name == name }) {
+            if hostName != name {
+                hosts[idx] = NetworkHost(name: name, hostName: hostName, port: port,
+                                         serviceType: hosts[idx].serviceType, nodeType: hosts[idx].nodeType)
+                log.info("[Network] updated hostName for '\(name)' → \(hostName)")
+            }
+            return
+        }
         let host = NetworkHost(name: name, hostName: hostName, port: port,
                                serviceType: svcType, nodeType: nodeType)
         hosts.append(host)
         hosts.sort { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
-        log.info("[Network] resolved: \(name) → \(hostName):\(port) type=\(nodeType)")
+        log.info("[Network] added: '\(name)' hostName=\(hostName) port=\(port) isPrinter=\(isPrinter)")
     }
 
     fileprivate func removeHostByName(_ name: String) {
@@ -226,8 +234,19 @@ extension NetworkNeighborhoodProvider: NetServiceBrowserDelegate {
         moreComing: Bool
     ) {
         log.info("[Network] didFind service='\(service.name)' type='\(service.type)' moreComing=\(moreComing)")
+        // Add host immediately from didFind — don't wait for resolve (resolve often hangs)
+        let name       = service.name
+        let senderType = service.type
+        let isPrinter  = NetworkNeighborhoodProvider.printerServiceTypes.contains { senderType.contains($0) }
+        let serviceType = isPrinter ? nil : NetworkServiceType.allCases.first { senderType.contains($0.rawValue) }
+        Task { @MainActor in
+            guard self.isScanning else { return }
+            self.addResolvedHost(name: name, hostName: name, port: serviceType?.defaultPort ?? 445,
+                                 serviceType: serviceType, isPrinter: isPrinter)
+        }
+        // Also try resolve for IP address (best-effort, may not arrive)
         service.delegate = self
-        service.resolve(withTimeout: 5.0)
+        service.resolve(withTimeout: 4.0)
     }
 
     nonisolated func netServiceBrowser(

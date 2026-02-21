@@ -27,7 +27,7 @@ struct NetworkNeighborhoodView: View {
         VStack(spacing: 0) {
             headerBar
             Divider()
-            if provider.hosts.isEmpty {
+            if provider.hosts.isEmpty && !provider.isScanning {
                 emptyState
             } else {
                 hostTree
@@ -86,12 +86,11 @@ struct NetworkNeighborhoodView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    // MARK: - Tree: host rows + share rows
+    // MARK: - Tree: host rows + share rows + scanning footer
     private var hostTree: some View {
         ScrollView {
             LazyVStack(spacing: 0) {
                 ForEach(provider.hosts) { host in
-                    // Host row
                     HostNodeRow(
                         host: host,
                         isExpanded: expanded.contains(host.id),
@@ -99,7 +98,6 @@ struct NetworkNeighborhoodView: View {
                     )
                     Divider().padding(.leading, 36)
 
-                    // Share rows (shown when expanded)
                     if expanded.contains(host.id) {
                         if host.sharesLoading {
                             sharesLoadingRow
@@ -107,13 +105,24 @@ struct NetworkNeighborhoodView: View {
                             noSharesRow
                         } else {
                             ForEach(host.shares) { share in
-                                ShareRow(share: share) {
-                                    onNavigate?(share.url)
-                                }
+                                ShareRow(share: share) { onNavigate?(share.url) }
                                 Divider().padding(.leading, 56)
                             }
                         }
                     }
+                }
+
+                // Scanning footer — visible while discovery is running
+                if provider.isScanning {
+                    HStack(spacing: 6) {
+                        ProgressView().scaleEffect(0.65)
+                        Text("Scanning…")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 8)
                 }
             }
         }
