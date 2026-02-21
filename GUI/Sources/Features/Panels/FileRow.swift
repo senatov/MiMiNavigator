@@ -129,6 +129,11 @@ struct FileRow: View {
     // MARK: - Extracted Views
 
     private var zebraBackground: some View {
+        if isParentEntry {
+            // ".." row — fixed light grey background regardless of zebra index
+            return Color(nsColor: .systemGray).opacity(0.13)
+                .allowsHitTesting(false)
+        }
         let zebraColors = NSColor.alternatingContentBackgroundColors
         return Color(nsColor: zebraColors[index % zebraColors.count])
             .allowsHitTesting(false)
@@ -274,6 +279,7 @@ struct FileRow: View {
     // MARK: - Column colors - per-column accent when not selected, white when selected+active
     private func cellColor(for col: ColumnID) -> Color {
         if isSelected && isActivePanel { return .white }
+        if isParentEntry { return Color(nsColor: .systemGray).opacity(0.6) }
         if file.isHidden { return Color(#colorLiteral(red: 0.3767382812, green: 0.3767382812, blue: 0.3767382812, alpha: 1)) }
         return col.columnColor
     }
