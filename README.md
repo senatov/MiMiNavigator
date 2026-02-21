@@ -18,11 +18,11 @@
 </p>
 
 <p align="center">
-  <a href="#features">Features</a> · 
-  <a href="#screenshots">Screenshots</a> · 
-  <a href="#getting-started">Getting Started</a> · 
-  <a href="#architecture">Architecture</a> · 
-  <a href="#archive-support">Archive Support</a> · 
+  <a href="#features">Features</a> ·
+  <a href="#screenshots">Screenshots</a> ·
+  <a href="#getting-started">Getting Started</a> ·
+  <a href="#architecture">Architecture</a> ·
+  <a href="#archive-support">Archive Support</a> ·
   <a href="#roadmap">Roadmap</a>
 </p>
 
@@ -42,6 +42,15 @@ MiMiNavigator is a dual-panel file manager inspired by **Total Commander** and *
 ---
 
 ## Screenshots
+
+<table>
+  <tr>
+    <td><img src="GUI/Docs/Preview2.png" alt="Main Interface" width="100%"></td>
+  </tr>
+  <tr>
+    <td align="center"><em>History</em></td>
+  </tr>
+</table>
 
 
 
@@ -262,7 +271,7 @@ Log file: `~/Library/Logs/MiMiNavigator.log`
 - [x] Batch-aware file actions (Cut/Copy/Delete/Compress/Share on marked files)
 - [x] Total Commander style marking: dark red, semibold, enlarged font
 - [x] Selection status bar (marked count + total size + disk free space)
-- [x] Column width persistence 
+- [x] Column width persistence
 - [x] Hotkey customization
 - [x] Tabbed interface (multiple tabs per panel, context menu, persistence)
 - [x] Archive Open → TC-style virtual directory (not Finder/Archive Utility) NOT READY YET!
