@@ -53,6 +53,16 @@ final class NetworkNeighborhoodProvider: NSObject, ObservableObject {
             browser.searchForServices(ofType: printerType, inDomain: "local.")
             browsers.append(browser)
         }
+
+        // Auto-stop after 12s — Bonjour browsers don't stop themselves
+        Task {
+            try? await Task.sleep(for: .seconds(12))
+            await MainActor.run {
+                guard self.isScanning else { return }
+                self.stopDiscovery()
+                log.info("[Network] auto-stopped after timeout")
+            }
+        }
     }
 
     // MARK: - Stop all browsers
@@ -127,23 +137,25 @@ final class NetworkNeighborhoodProvider: NSObject, ObservableObject {
 
     // MARK: - smbutil lookup -L host (list shares without mounting)
     private func smbUtilShares(host: NetworkHost) async -> [NetworkShare] {
-        // smbutil look -L <host> lists shares anonymously when guest access is allowed.
-        // Output lines starting with "Disk" or share names are extracted.
         return await withCheckedContinuation { continuation in
             DispatchQueue.global(qos: .userInitiated).async {
                 let process = Process()
                 process.executableURL = URL(fileURLWithPath: "/usr/bin/smbutil")
-                process.arguments = ["look", host.hostName]
+                process.arguments = ["lookup", "-L", host.hostName]
                 let pipe = Pipe()
                 process.standardOutput = pipe
-                process.standardError = Pipe()  // suppress errors
+                process.standardError = Pipe()
                 do {
                     try process.run()
-                    process.waitUntilExit()
                 } catch {
                     continuation.resume(returning: [])
                     return
                 }
+                // Hard timeout: kill after 4s to avoid hanging
+                DispatchQueue.global().asyncAfter(deadline: .now() + 4) {
+                    if process.isRunning { process.terminate() }
+                }
+                process.waitUntilExit()
                 let data = pipe.fileHandleForReading.readDataToEndOfFile()
                 let output = String(data: data, encoding: .utf8) ?? ""
                 let shares = self.parseSmbUtilOutput(output, host: host)
