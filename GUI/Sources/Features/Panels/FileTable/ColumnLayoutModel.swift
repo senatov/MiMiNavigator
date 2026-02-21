@@ -55,10 +55,9 @@ enum ColumnID: String, CaseIterable, Codable, Identifiable {
     /// Alignment of the column content
     var alignment: Alignment {
         switch self {
-        case .size:       return .trailing
-        case .childCount: return .center
-        case .dateModified: return .center
-        default: return .leading
+        case .size, .childCount: return .trailing
+        case .dateModified:      return .center
+        default:                 return .leading
         }
     }
 
@@ -69,6 +68,7 @@ enum ColumnID: String, CaseIterable, Codable, Identifiable {
         case .size:         return Color(#colorLiteral(red: 0.50, green: 0.05, blue: 0.18, alpha: 1.0)) // dark raspberry
         case .kind:         return Color(#colorLiteral(red: 0.28, green: 0.14, blue: 0.05, alpha: 1.0)) // dark brown
         case .dateModified: return Color(#colorLiteral(red: 0.05, green: 0.28, blue: 0.10, alpha: 1.0)) // dark green
+        case .childCount:   return Color(#colorLiteral(red: 0.05, green: 0.10, blue: 0.30, alpha: 1.0)) // dark navy
         default:            return Color(#colorLiteral(red: 0.20, green: 0.20, blue: 0.20, alpha: 1.0)) // dark grey
         }
     }

@@ -79,7 +79,7 @@ struct TableHeaderView: View {
             currentKey: sortKey,
             ascending: sortAscending
         )
-        .frame(width: spec.width, alignment: .center)
+        .frame(width: spec.width, alignment: spec.id.alignment)
         .padding(.horizontal, TableColumnDefaults.cellPadding)
         .contentShape(Rectangle())
         .onTapGesture { toggleSort(spec.id) }
@@ -154,7 +154,6 @@ struct SortableHeader: View {
                     .foregroundStyle(isActive ? TableHeaderStyle.sortIndicatorColor : TableHeaderStyle.color.opacity(0.6))
             }
         }
-        .frame(maxWidth: .infinity, alignment: .center)
         .background(Color.clear)
     }
 }
