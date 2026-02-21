@@ -132,63 +132,64 @@ final class NetworkNeighborhoodProvider: NSObject, ObservableObject {
         }
     }
 
-    // MARK: - smbutil lookup -L host (list shares without mounting)
+    // MARK: - smbutil view //host (lists shares using Keychain credentials)
     private func smbUtilShares(host: NetworkHost) async -> [NetworkShare] {
         return await withCheckedContinuation { continuation in
             DispatchQueue.global(qos: .userInitiated).async {
                 let process = Process()
                 process.executableURL = URL(fileURLWithPath: "/usr/bin/smbutil")
-                process.arguments = ["lookup", "-L", host.hostName]
+                process.arguments = ["view", "//\(host.hostName)"]
                 let pipe = Pipe()
                 process.standardOutput = pipe
                 process.standardError = Pipe()
-                do {
-                    try process.run()
-                } catch {
+                do { try process.run() } catch {
+                    log.warning("[Network] smbutil view failed to start for \(host.hostName): \(error)")
                     continuation.resume(returning: [])
                     return
                 }
-                // Hard timeout: kill after 4s to avoid hanging
-                DispatchQueue.global().asyncAfter(deadline: .now() + 4) {
+                DispatchQueue.global().asyncAfter(deadline: .now() + 5) {
                     if process.isRunning { process.terminate() }
                 }
                 process.waitUntilExit()
                 let data = pipe.fileHandleForReading.readDataToEndOfFile()
                 let output = String(data: data, encoding: .utf8) ?? ""
+                log.debug("[Network] smbutil view \(host.hostName) exit=\(process.terminationStatus) output=\(output.prefix(200))")
                 let shares = self.parseSmbUtilOutput(output, host: host)
                 continuation.resume(returning: shares)
             }
         }
     }
 
-    // MARK: - Parse smbutil look output
+    // MARK: - Parse smbutil view output
     nonisolated private func parseSmbUtilOutput(_ output: String, host: NetworkHost) -> [NetworkShare] {
-        // smbutil look output example:
-        //   Using IP: 192.168.1.10
-        //   Share        Type   Comments
-        //   ------       ----   --------
-        //   Public       Disk
-        //   homes        Disk
-        //   IPC$         Pipe   IPC Service
+        // smbutil view output:
+        //   Share                Type   Comments
+        //   ------               ----
+        //   senat                Disk
+        //   IPC$                 Pipe    IPC Service
+        //   kira's Public Folder Disk
         var shares: [NetworkShare] = []
         let lines = output.components(separatedBy: .newlines)
         var inTable = false
         for line in lines {
             let trimmed = line.trimmingCharacters(in: .whitespaces)
-            if trimmed.hasPrefix("----") { inTable = true; continue }
+            if trimmed.hasPrefix("------") { inTable = true; continue }
             guard inTable, !trimmed.isEmpty else { continue }
-            let parts = trimmed.components(separatedBy: .whitespaces)
-            guard let shareName = parts.first,
-                  !shareName.hasSuffix("$"),    // skip hidden IPC$ / ADMIN$
-                  parts.count >= 2,
-                  parts[1].lowercased() == "disk"
-            else { continue }
-
+            // Split on 2+ spaces to separate name from type
+            let parts = trimmed.components(separatedBy: .whitespaces).filter { !$0.isEmpty }
+            // Find "Disk" token — everything before it is the share name
+            guard let diskIdx = parts.firstIndex(where: { $0.lowercased() == "disk" }),
+                  diskIdx > 0 else { continue }
+            let shareName = parts[0..<diskIdx].joined(separator: " ")
+            guard !shareName.hasSuffix("$") else { continue }  // skip IPC$, ADMIN$
             let scheme = host.serviceType == .afp ? "afp" : "smb"
-            if let url = URL(string: "\(scheme)://\(host.hostName)/\(shareName)") {
+            // URL-encode share name for URL
+            let encoded = shareName.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? shareName
+            if let url = URL(string: "\(scheme)://\(host.hostName)/\(encoded)") {
                 shares.append(NetworkShare(name: shareName, url: url))
             }
         }
+        log.info("[Network] parseSmbUtil \(host.hostName): found \(shares.count) shares: \(shares.map(\.name))")
         return shares
     }
 
