@@ -19,6 +19,7 @@ final class NetworkNeighborhoodProvider: NSObject, ObservableObject {
     @Published private(set) var isScanning: Bool = false
 
     private var browsers: [NetServiceBrowser] = []
+    private var scanGeneration: Int = 0     // incremented on each startDiscovery; stale callbacks are ignored
 
     // MARK: - Printer service types (used to classify nodeType)
     nonisolated static let printerServiceTypes: Set<String> = [
@@ -38,27 +39,28 @@ final class NetworkNeighborhoodProvider: NSObject, ObservableObject {
         hosts.removeAll()
         browsers.removeAll()
         isScanning = true
+        scanGeneration += 1
+        let generation = scanGeneration
 
-        // File server types
-        for serviceType in NetworkServiceType.allCases {
+        // All service types: file servers + printers
+        let allTypes = NetworkServiceType.allCases.map { $0.rawValue }
+            + Array(Self.printerServiceTypes)
+
+        for type in allTypes {
             let browser = NetServiceBrowser()
+            // CRITICAL: schedule on RunLoop.main so delegate callbacks fire
+            browser.schedule(in: .main, forMode: .common)
             browser.delegate = self
-            browser.searchForServices(ofType: serviceType.rawValue, inDomain: "local.")
+            browser.searchForServices(ofType: type, inDomain: "local.")
             browsers.append(browser)
-        }
-        // Printer types
-        for printerType in Self.printerServiceTypes {
-            let browser = NetServiceBrowser()
-            browser.delegate = self
-            browser.searchForServices(ofType: printerType, inDomain: "local.")
-            browsers.append(browser)
+            log.debug("[Network] browser started for \(type)")
         }
 
-        // Auto-stop after 12s — Bonjour browsers don't stop themselves
+        // Auto-stop after 12s
         Task {
             try? await Task.sleep(for: .seconds(12))
             await MainActor.run {
-                guard self.isScanning else { return }
+                guard self.scanGeneration == generation, self.isScanning else { return }
                 self.stopDiscovery()
                 log.info("[Network] auto-stopped after timeout")
             }
@@ -223,6 +225,7 @@ extension NetworkNeighborhoodProvider: NetServiceBrowserDelegate {
         didFind service: NetService,
         moreComing: Bool
     ) {
+        log.info("[Network] didFind service='\(service.name)' type='\(service.type)' moreComing=\(moreComing)")
         service.delegate = self
         service.resolve(withTimeout: 5.0)
     }
@@ -233,11 +236,16 @@ extension NetworkNeighborhoodProvider: NetServiceBrowserDelegate {
         moreComing: Bool
     ) {
         let name = service.name
+        log.info("[Network] didRemove service='\(name)'")
         Task { @MainActor in self.removeHostByName(name) }
     }
 
     nonisolated func netServiceBrowserDidStopSearch(_ browser: NetServiceBrowser) {
-        Task { @MainActor in self.isScanning = !self.browsers.isEmpty }
+        log.debug("[Network] browserDidStopSearch")
+    }
+
+    nonisolated func netServiceBrowser(_ browser: NetServiceBrowser, didNotSearch errorDict: [String: NSNumber]) {
+        log.warning("[Network] didNotSearch error=\(errorDict)")
     }
 }
 
@@ -245,19 +253,25 @@ extension NetworkNeighborhoodProvider: NetServiceBrowserDelegate {
 extension NetworkNeighborhoodProvider: NetServiceDelegate {
 
     nonisolated func netServiceDidResolveAddress(_ sender: NetService) {
-        let name     = sender.name
-        let hostName = sender.hostName ?? sender.name
-        let port     = sender.port
+        let name       = sender.name
+        let hostName   = sender.hostName ?? "(nil)"
+        let port       = sender.port
         let senderType = sender.type
+        log.info("[Network] netServiceDidResolveAddress name='\(name)' host='\(hostName)' port=\(port) type='\(senderType)'")
 
-        // Classify: is it a printer or file server?
         let isPrinter = NetworkNeighborhoodProvider.printerServiceTypes
-            .contains(where: { senderType.contains($0.prefix(8)) })
+            .contains { senderType.contains($0) }
 
         let serviceType = isPrinter ? nil :
-            NetworkServiceType.allCases.first { senderType.contains($0.rawValue.prefix(8)) }
+            NetworkServiceType.allCases.first { senderType.contains($0.rawValue) }
+
+        log.info("[Network] classified: isPrinter=\(isPrinter) serviceType=\(String(describing: serviceType?.rawValue))")
 
         Task { @MainActor in
+            guard self.isScanning else {
+                log.debug("[Network] resolve ignored — scan already stopped")
+                return
+            }
             self.addResolvedHost(
                 name: name,
                 hostName: hostName,
@@ -269,6 +283,6 @@ extension NetworkNeighborhoodProvider: NetServiceDelegate {
     }
 
     nonisolated func netService(_ sender: NetService, didNotResolve errorDict: [String: NSNumber]) {
-        log.debug("[Network] failed to resolve: \(sender.name)")
+        log.warning("[Network] didNotResolve '\(sender.name)' error=\(errorDict)")
     }
 }

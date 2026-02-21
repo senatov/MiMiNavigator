@@ -36,16 +36,15 @@ enum TableColumnConstraints {
 // MARK: - Header Style
 /// Visual styling for column headers
 enum TableHeaderStyle {
-    /// SF Pro Display Thin 14 — as requested
-    static let font = Font.custom("SF Pro Display", size: 14).weight(.thin)
-    /// Dark navy blue for inactive column titles
-    static let color = Color(#colorLiteral(red: 0.08, green: 0.15, blue: 0.40, alpha: 1.0))
-    /// Dark purple for active sort column title + chevron
-    static let sortIndicatorColor = Color(#colorLiteral(red: 0.35, green: 0.05, blue: 0.55, alpha: 1.0))
-    /// Active sort column title weight
-    static let sortActiveWeight: Font.Weight = .medium
+    /// SF Pro Display Light 14
+    static let font = Font.custom("SF Pro Display", size: 14).weight(.light)
+    /// Standard black for inactive column titles
+    static let color = Color(nsColor: .labelColor)
+    /// Very dark purple (almost black) for active sort column title + chevron
+    static let sortIndicatorColor = Color(#colorLiteral(red: 0.1019607857, green: 0.2784313858, blue: 0.400000006, alpha: 1))
+    /// Active sort column title weight — semibold for clear contrast with light base
+    static let sortActiveWeight: Font.Weight = .light
     /// No background highlight for active sort column
-    static let activeSortBackground = Color.clear
     static let backgroundColor = Color(nsColor: .controlBackgroundColor)
     static let separatorColor = Color(nsColor: .separatorColor)
 }
@@ -58,7 +57,7 @@ enum ColumnSeparatorStyle {
     /// Light blue on cursor hover (stays blue)
     static let hoverColor = Color(#colorLiteral(red: 0.35, green: 0.65, blue: 1.0, alpha: 1.0)).opacity(0.80)
     /// Bright blue while dragging (stays blue)
-    static let dragColor = Color(#colorLiteral(red: 0.20, green: 0.50, blue: 1.0, alpha: 1.0)).opacity(0.90)
+    static let dragColor = Color(#colorLiteral(red: 0.4649794955, green: 0.6833323296, blue: 1, alpha: 1)).opacity(0.90)
     /// Passive line width — 1pt ensures visibility at all display scales
     static let width: CGFloat = 1.0
     /// Active (hover/drag) line width
