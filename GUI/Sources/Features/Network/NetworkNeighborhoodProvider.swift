@@ -132,13 +132,22 @@ final class NetworkNeighborhoodProvider: NSObject, ObservableObject {
         }
     }
 
-    // MARK: - smbutil view //host (lists shares using Keychain credentials)
+    // MARK: - smbutil view //[user:pass@]host (lists shares using Keychain credentials)
     private func smbUtilShares(host: NetworkHost) async -> [NetworkShare] {
         return await withCheckedContinuation { continuation in
             DispatchQueue.global(qos: .userInitiated).async {
+                // Build //[user:pass@]host — use Keychain creds if available
+                let target: String
+                if let creds = NetworkAuthService.load(for: host.hostName) {
+                    let enc = creds.password
+                        .addingPercentEncoding(withAllowedCharacters: .urlPasswordAllowed) ?? creds.password
+                    target = "//\(creds.user):\(enc)@\(host.hostName)"
+                } else {
+                    target = "//\(host.hostName)"
+                }
                 let process = Process()
                 process.executableURL = URL(fileURLWithPath: "/usr/bin/smbutil")
-                process.arguments = ["view", "//\(host.hostName)"]
+                process.arguments = ["view", target]
                 let pipe = Pipe()
                 process.standardOutput = pipe
                 process.standardError = Pipe()
@@ -214,6 +223,14 @@ final class NetworkNeighborhoodProvider: NSObject, ObservableObject {
         hosts.append(host)
         hosts.sort { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
         log.info("[Network] added: '\(name)' hostName=\(hostName) port=\(port) isPrinter=\(isPrinter)")
+    }
+
+    // MARK: - Retry share fetch after auth (resets sharesLoaded flag)
+    func retryFetchShares(for hostID: NetworkHost.ID) async {
+        guard let idx = hosts.firstIndex(where: { $0.id == hostID }) else { return }
+        hosts[idx].sharesLoaded = false
+        hosts[idx].shares = []
+        await fetchShares(for: hostID)
     }
 
     fileprivate func removeHostByName(_ name: String) {
