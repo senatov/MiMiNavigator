@@ -114,24 +114,39 @@ enum NetworkDeviceFingerprinter {
         return NetworkDeviceFingerprint(deviceClass: deviceClass, openPorts: openPorts, httpBanner: httpBanner)
     }
 
-    // MARK: - Classification logic
+    // MARK: - Classification logic (order matters — specific before general)
     private static func classify(hostName: String, ports: Set<Int>, banner: String?) -> NetworkDeviceClass {
-        let name = hostName.lowercased()
+        let name        = hostName.lowercased()
         let bannerLower = banner?.lowercased() ?? ""
+
+        // Router by banner or hostname
         let routerKeywords = ["fritz", "fritzbox", "router", "gateway", "speedport",
                               "easybox", "dsl-router", "technicolor", "vodafone box", "o2 box"]
         if routerKeywords.contains(where: { bannerLower.contains($0) || name.contains($0) }) { return .router }
+
+        // NAS by banner or hostname
         let nasKeywords = ["synology", "qnap", "buffalo", "wd my cloud", "netgear",
                            "readynas", "diskstation", "terramaster", "asustor"]
         if nasKeywords.contains(where: { bannerLower.contains($0) || name.contains($0) }) { return .nas }
-        let has22 = ports.contains(22); let has445 = ports.contains(445)
-        let has80 = ports.contains(80); let has548 = ports.contains(548)
-        if has548 && has445  { return .mac }
-        if has22  && has445  { return .mac }
-        if has22  && has80 && has445 { return .nas }
-        if has445 && !has22  { return .windowsPC }
-        if has22  && !has445 { return .linuxServer }
-        if has80  || ports.contains(443) { return .router }
+
+        let has22  = ports.contains(22)
+        let has80  = ports.contains(80)
+        let has443 = ports.contains(443)
+        let has445 = ports.contains(445)
+        let has548 = ports.contains(548)   // AFP — macOS only
+
+        // NAS: SSH + web UI + SMB (more specific than Mac, check first)
+        if has22 && has80 && has445 { return .nas }
+        // Mac: AFP or (SSH + SMB), no web UI
+        if has548 { return .mac }
+        if has22 && has445 { return .mac }
+        // Windows: SMB only, no SSH
+        if has445 && !has22 { return .windowsPC }
+        // Linux: SSH only, no SMB
+        if has22 && !has445 { return .linuxServer }
+        // Web-only → router or unknown appliance
+        if has80 || has443 { return .router }
+
         return .unknown
     }
 

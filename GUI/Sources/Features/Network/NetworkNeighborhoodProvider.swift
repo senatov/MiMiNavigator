@@ -296,20 +296,25 @@ final class NetworkNeighborhoodProvider: NSObject, ObservableObject {
     }
 
     // MARK: - Deep fingerprint after scan completes (port probe + HTTP banner)
+    // Runs for all non-router, non-printer hosts — Bonjour gives only partial info.
     private func runFingerprintPass() {
+        let candidates = hosts.filter {
+            $0.deviceClass != .router && $0.deviceClass != .printer
+        }
+        guard !candidates.isEmpty else { return }
+        log.info("[Fingerprint] starting pass for \(candidates.map(\.name))")
         Task {
-            for i in hosts.indices {
-                let host = hosts[i]
-                guard host.deviceClass == .unknown || host.deviceClass == .mac else { continue }
+            for host in candidates {
                 let fp = await NetworkDeviceFingerprinter.probe(
                     hostName: host.hostName,
                     bonjourServices: host.bonjourServices
                 )
                 if let idx = self.hosts.firstIndex(where: { $0.id == host.id }) {
                     self.hosts[idx].deviceClass = fp.deviceClass
-                    log.info("[Network] fingerprint '\(host.name)' → \(fp.deviceClass.label) ports=\(fp.openPorts.sorted())")
+                    log.info("[Fingerprint] '\(host.name)' → \(fp.deviceClass.label)  ports=\(fp.openPorts.sorted())")
                 }
             }
+            log.info("[Fingerprint] pass complete")
         }
     }
 
