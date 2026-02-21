@@ -102,7 +102,7 @@ struct NetworkNeighborhoodView: View {
                         if host.sharesLoading {
                             sharesLoadingRow
                         } else if host.sharesLoaded && host.shares.isEmpty {
-                            noSharesRow
+                            noSharesRow(for: host)
                         } else {
                             ForEach(host.shares) { share in
                                 ShareRow(share: share) { onNavigate?(share.url) }
@@ -132,7 +132,7 @@ struct NetworkNeighborhoodView: View {
     private var sharesLoadingRow: some View {
         HStack(spacing: 8) {
             ProgressView().scaleEffect(0.7)
-            Text("Loading shares…")
+            Text("Connecting…")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
@@ -141,14 +141,33 @@ struct NetworkNeighborhoodView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    // MARK: - No shares row
-    private var noSharesRow: some View {
-        Text("No accessible shares")
-            .font(.caption)
-            .foregroundStyle(.tertiary)
-            .padding(.leading, 40)
-            .padding(.vertical, 6)
-            .frame(maxWidth: .infinity, alignment: .leading)
+    // MARK: - No shares found — emoji + Connect button
+    private func noSharesRow(for host: NetworkHost) -> some View {
+        HStack(spacing: 8) {
+            Text("😞")
+                .font(.system(size: 14))
+            Text("No shares found")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Spacer()
+            if let url = host.mountURL {
+                Button {
+                    onNavigate?(url)
+                } label: {
+                    Text("Connect")
+                        .font(.caption)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 3)
+                        .background(Color.accentColor.opacity(0.15))
+                        .clipShape(Capsule())
+                }
+                .buttonStyle(.plain)
+                .padding(.trailing, 10)
+            }
+        }
+        .padding(.leading, 40)
+        .padding(.vertical, 6)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     // MARK: - Toggle expand/collapse

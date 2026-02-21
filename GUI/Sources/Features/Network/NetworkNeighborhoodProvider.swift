@@ -99,20 +99,15 @@ final class NetworkNeighborhoodProvider: NSObject, ObservableObject {
 
     // MARK: - Share resolution strategy
     private func resolveShares(host: NetworkHost) async -> [NetworkShare] {
-        // 1. Check /Volumes/ — already mounted shares are immediately available
+        // 1. Already-mounted volumes in /Volumes
         let mounted = mountedShares(for: host)
         if !mounted.isEmpty { return mounted }
-
-        // 2. Try smbutil lookup (works without auth for publicly listed shares)
+        // 2. smbutil anonymous listing
         if host.serviceType == .smb {
             let smbShares = await smbUtilShares(host: host)
             if !smbShares.isEmpty { return smbShares }
         }
-
-        // 3. Fallback: return single entry "Connect…" pointing to root
-        if let rootURL = host.mountURL {
-            return [NetworkShare(name: "Connect…", url: rootURL)]
-        }
+        // 3. Nothing found — return empty, UI will show emoji + Connect button
         return []
     }
 
