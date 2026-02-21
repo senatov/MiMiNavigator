@@ -11,7 +11,7 @@ import Foundation
 // MARK: - Network service type
 enum NetworkServiceType: String, CaseIterable {
     case smb  = "_smb._tcp."
-    case afp  = "_afp._tcp."
+    case afp  = "_afpovertcp._tcp."
     case sftp = "_sftp-ssh._tcp."
     case ftp  = "_ftp._tcp."
 
