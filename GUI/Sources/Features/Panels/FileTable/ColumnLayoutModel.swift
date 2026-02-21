@@ -62,6 +62,17 @@ enum ColumnID: String, CaseIterable, Codable, Identifiable {
         }
     }
 
+    /// Per-column header text color
+    var headerColor: Color {
+        switch self {
+        case .name:         return Color(#colorLiteral(red: 0.05, green: 0.10, blue: 0.30, alpha: 1.0)) // dark navy
+        case .size:         return Color(#colorLiteral(red: 0.50, green: 0.05, blue: 0.18, alpha: 1.0)) // dark raspberry
+        case .kind:         return Color(#colorLiteral(red: 0.28, green: 0.14, blue: 0.05, alpha: 1.0)) // dark brown
+        case .dateModified: return Color(#colorLiteral(red: 0.05, green: 0.28, blue: 0.10, alpha: 1.0)) // dark green
+        default:            return Color(#colorLiteral(red: 0.20, green: 0.20, blue: 0.20, alpha: 1.0)) // dark grey
+        }
+    }
+
     /// Sort key for this column (nil = not sortable)
     var sortKey: SortKeysEnum? {
         switch self {

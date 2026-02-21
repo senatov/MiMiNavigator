@@ -62,9 +62,10 @@ struct TableHeaderView: View {
             title: ColumnID.name.title,
             sortKey: ColumnID.name.sortKey,
             currentKey: sortKey,
-            ascending: sortAscending
+            ascending: sortAscending,
+            columnColor: ColumnID.name.headerColor
         )
-        .frame(minWidth: 60, maxWidth: .infinity, alignment: .leading)
+        .frame(minWidth: 60, maxWidth: .infinity, alignment: .center)
         .clipped()
         .contentShape(Rectangle())
         .onTapGesture { toggleSort(.name) }
@@ -76,9 +77,10 @@ struct TableHeaderView: View {
             title: spec.id.title,
             sortKey: spec.id.sortKey,
             currentKey: sortKey,
-            ascending: sortAscending
+            ascending: sortAscending,
+            columnColor: spec.id.headerColor
         )
-        .frame(width: spec.width, alignment: spec.id.alignment)
+        .frame(width: spec.width, alignment: .center)
         .padding(.horizontal, TableColumnDefaults.cellPadding)
         .contentShape(Rectangle())
         .onTapGesture { toggleSort(spec.id) }
@@ -132,6 +134,7 @@ struct SortableHeader: View {
     let sortKey: SortKeysEnum?
     let currentKey: SortKeysEnum
     let ascending: Bool
+    var columnColor: Color = TableHeaderStyle.color
 
     private var isActive: Bool {
         guard let sk = sortKey else { return false }
@@ -144,15 +147,16 @@ struct SortableHeader: View {
                 .font(isActive
                     ? TableHeaderStyle.font.weight(TableHeaderStyle.sortActiveWeight)
                     : TableHeaderStyle.font)
-                .foregroundStyle(isActive ? TableHeaderStyle.sortIndicatorColor : TableHeaderStyle.color)
+                .foregroundStyle(isActive ? TableHeaderStyle.sortIndicatorColor : columnColor)
                 .lineLimit(1)
 
             if sortKey != nil {
                 Image(systemName: isActive ? (ascending ? "chevron.up" : "chevron.down") : "chevron.up.chevron.down")
                     .font(.system(size: isActive ? 11 : 10, weight: isActive ? .semibold : .regular))
-                    .foregroundStyle(isActive ? TableHeaderStyle.sortIndicatorColor : Color.black.opacity(0.75))
+                    .foregroundStyle(isActive ? TableHeaderStyle.sortIndicatorColor : columnColor.opacity(0.75))
             }
         }
+        .frame(maxWidth: .infinity, alignment: .center)
         .background(isActive ? TableHeaderStyle.activeSortBackground : Color.clear)
     }
 }
