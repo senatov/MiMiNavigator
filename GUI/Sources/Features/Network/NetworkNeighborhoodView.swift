@@ -150,28 +150,44 @@ struct NetworkNeighborhoodView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    // MARK: - No shares found — emoji + auth button
+    // MARK: - No shares found row — action depends on device type
     private func noSharesRow(for host: NetworkHost) -> some View {
         HStack(spacing: 8) {
-            Text("😞")
+            Text(host.deviceClass == .router ? "🌐" : "😞")
                 .font(.system(size: 14))
-            Text("No shares found")
+            Text(host.deviceClass == .router ? "Router web interface" : "No shares found")
                 .font(.caption)
                 .foregroundStyle(.secondary)
             Spacer()
-            Button {
-                authTarget = host
-            } label: {
-                Label("Sign In", systemImage: "key.fill")
-                    .font(.caption)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 3)
+            if host.deviceClass == .router {
+                // Router: open browser to http://host
+                Button {
+                    if let url = URL(string: "http://\(host.hostName)") {
+                        NSWorkspace.shared.open(url)
+                    }
+                } label: {
+                    Label("Open Web UI", systemImage: "safari")
+                        .font(.caption)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 3)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(.orange)
+                .controlSize(.mini)
+            } else {
+                // File server: show auth sheet
+                Button { authTarget = host } label: {
+                    Label("Sign In", systemImage: "key.fill")
+                        .font(.caption)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 3)
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.mini)
             }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.mini)
-            .padding(.trailing, 10)
         }
         .padding(.leading, 40)
+        .padding(.trailing, 10)
         .padding(.vertical, 6)
         .frame(maxWidth: .infinity, alignment: .leading)
     }
