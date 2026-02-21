@@ -62,8 +62,8 @@ enum ColumnID: String, CaseIterable, Codable, Identifiable {
         }
     }
 
-    /// Per-column header text color
-    var headerColor: Color {
+    /// Per-column content text color (used in file rows)
+    var columnColor: Color {
         switch self {
         case .name:         return Color(#colorLiteral(red: 0.05, green: 0.10, blue: 0.30, alpha: 1.0)) // dark navy
         case .size:         return Color(#colorLiteral(red: 0.50, green: 0.05, blue: 0.18, alpha: 1.0)) // dark raspberry
