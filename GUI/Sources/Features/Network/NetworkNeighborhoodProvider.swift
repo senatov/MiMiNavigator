@@ -8,6 +8,7 @@
 
 import Foundation
 import Network
+import Darwin
 
 // MARK: - Discovers LAN hosts via Bonjour + enumerates shares on demand
 @MainActor
@@ -35,25 +36,52 @@ final class NetworkNeighborhoodProvider: NSObject, ObservableObject {
     // MARK: - Start discovery
     func startDiscovery() {
         guard !isScanning else { return }
-        log.info("[Network] startDiscovery — scanning Bonjour services")
+        log.info("[Network] startDiscovery — scanning Bonjour + FritzBox")
         hosts.removeAll()
         browsers.removeAll()
         isScanning = true
         scanGeneration += 1
         let generation = scanGeneration
 
-        // All service types: file servers + printers
-        let allTypes = NetworkServiceType.allCases.map { $0.rawValue }
-            + Array(Self.printerServiceTypes)
-
+        // 1. Bonjour browsers
+        let allTypes = NetworkServiceType.allCases.map { $0.rawValue } + Array(Self.printerServiceTypes)
         for type in allTypes {
             let browser = NetServiceBrowser()
-            // CRITICAL: schedule on RunLoop.main so delegate callbacks fire
             browser.schedule(in: .main, forMode: .common)
             browser.delegate = self
             browser.searchForServices(ofType: type, inDomain: "local.")
             browsers.append(browser)
-            log.debug("[Network] browser started for \(type)")
+        }
+
+        // 2. FritzBox TR-064 discovery — parallel with Bonjour
+        Task {
+            let fritzHosts = await FritzBoxDiscovery.activeHosts()
+            await MainActor.run {
+                guard self.scanGeneration == generation else { return }
+                for fh in fritzHosts {
+                    // Skip router itself, localhost, and mobile devices
+                    let nameLower = fh.name.lowercased()
+                    guard !nameLower.contains("fritz") &&
+                          !nameLower.contains("iphone") &&
+                          !nameLower.contains("ipad") &&
+                          !nameLower.contains("irobot") &&
+                          !fh.ip.isEmpty
+                    else { continue }
+                    // Skip if already discovered via Bonjour
+                    guard !self.hosts.contains(where: {
+                        $0.name.lowercased() == nameLower || $0.hostName == fh.ip
+                    }) else { continue }
+                    // Skip localhost (this Mac)
+                    guard !self.isLocalhost(ip: fh.ip) else {
+                        log.debug("[Network] skipping localhost: \(fh.name) (\(fh.ip))")
+                        continue
+                    }
+                    self.addResolvedHost(name: fh.name, hostName: fh.name,
+                                        port: 445, serviceType: .smb,
+                                        isPrinter: false, bonjourType: nil)
+                    log.info("[Network] FritzBox host: \(fh.name) (\(fh.ip))")
+                }
+            }
         }
 
         // Auto-stop after 12s
@@ -65,6 +93,29 @@ final class NetworkNeighborhoodProvider: NSObject, ObservableObject {
                 log.info("[Network] auto-stopped after timeout")
             }
         }
+    }
+
+    // MARK: - Detect if IP belongs to this Mac
+    private func isLocalhost(ip: String) -> Bool {
+        if ip == "127.0.0.1" || ip == "::1" { return true }
+        // Check all local network interfaces
+        var ifaddr: UnsafeMutablePointer<ifaddrs>? = nil
+        guard getifaddrs(&ifaddr) == 0, let first = ifaddr else { return false }
+        defer { freeifaddrs(ifaddr) }
+        var cur: UnsafeMutablePointer<ifaddrs>? = first
+        while let c = cur {
+            if let sa = c.pointee.ifa_addr, sa.pointee.sa_family == UInt8(AF_INET) {
+                var addr = sockaddr_in()
+                withUnsafeMutableBytes(of: &addr) {
+                    $0.copyMemory(from: UnsafeRawBufferPointer(UnsafeBufferPointer(start: sa, count: 1)))
+                }
+                var buf = [CChar](repeating: 0, count: Int(INET_ADDRSTRLEN))
+                inet_ntop(AF_INET, &addr.sin_addr, &buf, socklen_t(INET_ADDRSTRLEN))
+                if String(cString: buf) == ip { return true }
+            }
+            cur = c.pointee.ifa_next
+        }
+        return false
     }
 
     // MARK: - Stop all browsers
