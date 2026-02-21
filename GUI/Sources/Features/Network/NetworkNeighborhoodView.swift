@@ -22,6 +22,7 @@ struct NetworkNeighborhoodView: View {
 
     // Tracks which host nodes are expanded
     @State private var expanded: Set<NetworkHost.ID> = []
+    @State private var authTarget: NetworkHost? = nil   // host awaiting auth
 
     var body: some View {
         VStack(spacing: 0) {
@@ -39,6 +40,14 @@ struct NetworkNeighborhoodView: View {
         .onAppear { provider.startDiscovery() }
         .onDisappear { provider.stopDiscovery() }
         .onKeyPress(.escape) { onDismiss?(); return .handled }
+        .sheet(item: $authTarget) { host in
+            NetworkAuthSheet(host: host) {
+                authTarget = nil
+                Task { await provider.retryFetchShares(for: host.id) }
+            } onCancel: {
+                authTarget = nil
+            }
+        }
     }
 
     // MARK: - Header bar
@@ -141,7 +150,7 @@ struct NetworkNeighborhoodView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    // MARK: - No shares found — emoji + Connect button
+    // MARK: - No shares found — emoji + auth button
     private func noSharesRow(for host: NetworkHost) -> some View {
         HStack(spacing: 8) {
             Text("😞")
@@ -150,20 +159,17 @@ struct NetworkNeighborhoodView: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
             Spacer()
-            if let url = host.mountURL {
-                Button {
-                    onNavigate?(url)
-                } label: {
-                    Text("Connect")
-                        .font(.caption)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 3)
-                        .background(Color.accentColor.opacity(0.15))
-                        .clipShape(Capsule())
-                }
-                .buttonStyle(.plain)
-                .padding(.trailing, 10)
+            Button {
+                authTarget = host
+            } label: {
+                Label("Sign In", systemImage: "key.fill")
+                    .font(.caption)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
             }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.mini)
+            .padding(.trailing, 10)
         }
         .padding(.leading, 40)
         .padding(.vertical, 6)
