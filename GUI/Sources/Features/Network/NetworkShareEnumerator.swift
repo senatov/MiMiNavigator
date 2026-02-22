@@ -26,7 +26,24 @@ enum NetworkShareEnumerator {
         let hostnameCandidates = hostnameVariants(host)
         let credentials = keychainCredentials(for: host)
 
-        log.info("[ShareEnum] host='\(host.name)' candidates=\(hostnameCandidates) creds=\(credentials.map { "\($0.user)@\($0.server)" })")
+        log.info("[ShareEnum] host='\(host.name)' localhost=\(host.isLocalhost) candidates=\(hostnameCandidates) creds=\(credentials.map { "\($0.user)@\($0.server)" })")
+
+        // For localhost or any host: try guest/anonymous FIRST
+        // macOS shares public folders (e.g. Public Folder) without auth
+        for hostname in hostnameCandidates {
+            let result = await smbUtilShares(hostname: hostname, user: nil,
+                                             password: nil, scheme: scheme)
+            if !result.isEmpty {
+                log.info("[ShareEnum] OK guest@\(hostname) -> \(result.map(\.name))")
+                return result
+            }
+        }
+
+        // Skip credentials for localhost (should never need them)
+        guard !host.isLocalhost else {
+            log.info("[ShareEnum] localhost no guest shares found")
+            return []
+        }
 
         // Try each credential x each hostname
         for cred in credentials {
@@ -37,16 +54,6 @@ enum NetworkShareEnumerator {
                     log.info("[ShareEnum] OK \(cred.user)@\(hostname) -> \(result.map(\.name))")
                     return result
                 }
-            }
-        }
-
-        // Guest / anonymous fallback
-        for hostname in hostnameCandidates {
-            let result = await smbUtilShares(hostname: hostname, user: nil,
-                                             password: nil, scheme: scheme)
-            if !result.isEmpty {
-                log.info("[ShareEnum] OK guest@\(hostname) -> \(result.map(\.name))")
-                return result
             }
         }
 

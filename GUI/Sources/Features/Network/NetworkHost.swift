@@ -3,8 +3,9 @@
 //
 // Created by Iakov Senatov on 19.02.2026.
 // Refactored: 21.02.2026 — deviceClass fingerprinting, bonjourServices set
+// Refactored: 22.02.2026 — mobileDevice class; isLocalhost flag; fritz/router by name
 // Copyright © 2026 Senatov. All rights reserved.
-// Description: Model representing a discovered network host (SMB/AFP/Bonjour)
+// Description: Model representing a discovered network host (SMB/AFP/Bonjour/Mobile)
 
 import Foundation
 
@@ -38,6 +39,7 @@ enum NetworkServiceType: String, CaseIterable {
 enum NetworkNodeType {
     case fileServer
     case printer
+    case mobileDevice
     case generic
 }
 
@@ -54,6 +56,57 @@ struct NetworkShare: Identifiable, Hashable {
     }
 }
 
+// MARK: - Hardware device class
+enum NetworkDeviceClass {
+    case mac
+    case windowsPC
+    case linuxServer
+    case nas
+    case router
+    case printer
+    case iPhone
+    case iPad
+    case unknown
+
+    var systemIconName: String {
+        switch self {
+        case .mac:          return "desktopcomputer"
+        case .windowsPC:    return "pc"
+        case .linuxServer:  return "server.rack"
+        case .nas:          return "externaldrive.connected.to.line.below"
+        case .router:       return "wifi.router"
+        case .printer:      return "printer"
+        case .iPhone:       return "iphone"
+        case .iPad:         return "ipad"
+        case .unknown:      return "network"
+        }
+    }
+
+    var label: String {
+        switch self {
+        case .mac:          return "Mac"
+        case .windowsPC:    return "PC"
+        case .linuxServer:  return "Linux"
+        case .nas:          return "NAS"
+        case .router:       return "Router"
+        case .printer:      return "Printer"
+        case .iPhone:       return "iPhone"
+        case .iPad:         return "iPad"
+        case .unknown:      return ""
+        }
+    }
+
+    var isExpandable: Bool {
+        switch self {
+        case .printer, .router, .iPhone, .iPad: return false
+        default: return true
+        }
+    }
+
+    var isRouter: Bool { self == .router }
+    var isMobile: Bool { self == .iPhone || self == .iPad }
+}
+
 // MARK: - Discovered network host
 struct NetworkHost: Identifiable, Hashable {
     let id: UUID
@@ -63,11 +116,12 @@ struct NetworkHost: Identifiable, Hashable {
     let serviceType: NetworkServiceType
 
     var nodeType: NetworkNodeType
-    var deviceClass: NetworkDeviceClass     // hardware type after fingerprinting
+    var deviceClass: NetworkDeviceClass
     var shares: [NetworkShare]
     var sharesLoaded: Bool
     var sharesLoading: Bool
-    var bonjourServices: Set<String>        // all Bonjour service types seen for this host
+    var bonjourServices: Set<String>
+    var isLocalhost: Bool           // true = this Mac itself
 
     // MARK: -
     init(
@@ -76,7 +130,8 @@ struct NetworkHost: Identifiable, Hashable {
         port: Int,
         serviceType: NetworkServiceType,
         nodeType: NetworkNodeType = .fileServer,
-        deviceClass: NetworkDeviceClass = .unknown
+        deviceClass: NetworkDeviceClass = .unknown,
+        isLocalhost: Bool = false
     ) {
         self.id             = UUID()
         self.name           = name
@@ -89,6 +144,7 @@ struct NetworkHost: Identifiable, Hashable {
         self.sharesLoaded   = false
         self.sharesLoading  = false
         self.bonjourServices = []
+        self.isLocalhost    = isLocalhost
     }
 
     // MARK: - Root URL for this host
@@ -102,24 +158,26 @@ struct NetworkHost: Identifiable, Hashable {
         return c.url
     }
 
-    // MARK: - SF Symbol — uses deviceClass if fingerprinted, fallback to serviceType
+    // MARK: - SF Symbol
     var systemIconName: String {
         if deviceClass != .unknown { return deviceClass.systemIconName }
         switch nodeType {
-        case .printer:    return "printer"
+        case .printer:      return "printer"
+        case .mobileDevice: return "iphone"
         case .fileServer:
             switch serviceType {
             case .sftp, .ftp: return "terminal"
             default:          return "desktopcomputer"
             }
-        case .generic:    return "network"
+        case .generic: return "network"
         }
     }
 
     var isExpandable: Bool {
-        deviceClass == .unknown ? (nodeType == .fileServer) : deviceClass.isExpandable
+        if deviceClass != .unknown { return deviceClass.isExpandable }
+        return nodeType == .fileServer
     }
 
-    // MARK: - Badge label shown next to host name
+    // MARK: - Badge label
     var deviceLabel: String { deviceClass.label }
 }
