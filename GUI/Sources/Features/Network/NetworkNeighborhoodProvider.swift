@@ -279,8 +279,17 @@ extension NetworkNeighborhoodProvider: NetServiceBrowserDelegate {
 
         Task { @MainActor in
             guard self.isScanning else { return }
-            // For mobile devices, use MAC address part of name as display name
+            // Dedup mobile devices by MAC prefix (same device on multiple interfaces)
+            if isMobile, let mk = self.macKey(from: name) {
+                if self.hosts.contains(where: {
+                    self.macKey(from: $0.hostName) == mk || self.macKey(from: $0.name) == mk
+                }) {
+                    log.debug("[Bonjour] skip duplicate mobile MAC=\(mk)")
+                    return
+                }
+            }
             let displayName = isMobile ? self.mobileDisplayName(from: name) : name
+
             self.addResolvedHost(
                 name: displayName, hostName: name,
                 port: serviceType?.defaultPort ?? 0,
@@ -292,6 +301,16 @@ extension NetworkNeighborhoodProvider: NetServiceBrowserDelegate {
         }
         service.delegate = self
         service.resolve(withTimeout: 8.0)
+    }
+
+    // MARK: - Extract MAC key from Bonjour name (xx:xx:xx:xx:xx:xx@...)
+    nonisolated private func macKey(from name: String) -> String? {
+        let s = name.lowercased()
+        guard s.count >= 17 else { return nil }
+        let candidate = String(s.prefix(17))
+        let parts = candidate.components(separatedBy: ":")
+        guard parts.count == 6, parts.allSatisfy({ $0.count == 2 }) else { return nil }
+        return candidate
     }
 
     // MARK: - Parse friendly name for mobile (MAC@addr → "iPhone" / "iPad")
@@ -350,17 +369,22 @@ extension NetworkNeighborhoodProvider: NetServiceDelegate {
         }
     }
 
-    // MARK: - Resolve hostname → "iPhone" or "iPad" using hostName
+    // MARK: - Resolve hostname to friendly mobile name
+    // iPad/iPhone in hostName > short hostname > MAC suffix
     nonisolated private func refinedMobileName(hostName: String, rawName: String) -> String {
         let hn = hostName.lowercased()
-        if hn.contains("ipad") { return "iPad (\(hn.components(separatedBy: ".").first ?? hn))" }
-        if hn.contains("iphone") || hn.contains("kiras-iphone") || hn.contains("senats") {
-            return "iPhone (\(hn.components(separatedBy: ".").first ?? hn))"
+        let shortHN = hn.components(separatedBy: ".").first ?? hn
+        if hn.contains("ipad") { return "iPad (" + shortHN + ")" }
+        if hn.contains("iphone") { return "iPhone (" + shortHN + ")" }
+        let looksLikeIP = shortHN.components(separatedBy: "-").count == 4
+        if !looksLikeIP && !shortHN.isEmpty && shortHN != "(nil)" {
+            return "Apple Device (" + shortHN + ")"
         }
-        // Fallback: use first part of hostname
-        return hostName.components(separatedBy: ".").first ?? hostName
+        if let at = rawName.firstIndex(of: "@") {
+            return "Apple Device (" + String(rawName[rawName.startIndex..<at].suffix(8)) + ")"
+        }
+        return "Apple Device"
     }
-
     nonisolated func netService(_ sender: NetService, didNotResolve errorDict: [String: NSNumber]) {
         log.warning("[Bonjour] didNotResolve '\(sender.name)' \(errorDict)")
     }
