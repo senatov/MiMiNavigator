@@ -40,9 +40,12 @@ enum FileAction: String, CaseIterable, Identifiable {
     
     // Info section
     case getInfo
-    
+
+    // Favorites
+    case addToFavorites
+
     var id: String { rawValue }
-    
+
     /// Human-readable title for each action.
     var title: String {
         switch self {
@@ -62,9 +65,10 @@ enum FileAction: String, CaseIterable, Identifiable {
         case .rename: return "Rename..."
         case .delete: return "Move to Trash"
         case .getInfo: return "Get Info"
+        case .addToFavorites: return "Add to Favorites"
         }
     }
-    
+
     /// SF Symbol for each action.
     var systemImage: String {
         switch self {
@@ -84,6 +88,7 @@ enum FileAction: String, CaseIterable, Identifiable {
         case .rename: return "pencil"
         case .delete: return "trash"
         case .getInfo: return "info.circle"
+        case .addToFavorites: return "star.badge.plus"
         }
     }
     

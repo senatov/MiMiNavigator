@@ -73,11 +73,18 @@ struct FileContextMenu: View {
             // SECTION 6: Info
             // ═══════════════════════════════════════════
             menuButton(.getInfo)
+
+            Divider()
+
+            // ═══════════════════════════════════════════
+            // SECTION 7: Favorites
+            // ═══════════════════════════════════════════
+            menuButton(.addToFavorites)
         }
     }
-    
+
     // MARK: - Menu Button Builder
-    
+
     @ViewBuilder
     private func menuButton(_ action: FileAction) -> some View {
         Button {

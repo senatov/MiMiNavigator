@@ -16,6 +16,8 @@ import SwiftUI
 
 public struct FavoritesTreeView: View {
 
+    @State private var userFavoritesStore = UserFavoritesStore.shared
+
     // MARK: - Constants
     private enum Config {
         static let expandedFoldersKey = "FavoritesExpandedFolders"
@@ -48,6 +50,10 @@ public struct FavoritesTreeView: View {
         VStack(alignment: .leading, spacing: 0) {
             headerView
             Divider().padding(.horizontal, 8)
+            userFavoritesSection
+            if !userFavoritesStore.entries.isEmpty {
+                Divider().padding(.horizontal, 8)
+            }
             fileListView
         }
         .frame(minWidth: 380, idealWidth: 480, maxWidth: .infinity)
@@ -103,6 +109,47 @@ public struct FavoritesTreeView: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
+    }
+
+    // MARK: - User Favorites Section ("My Favorites")
+
+    @ViewBuilder
+    private var userFavoritesSection: some View {
+        if !userFavoritesStore.entries.isEmpty {
+            VStack(alignment: .leading, spacing: 0) {
+                // Section header
+                HStack(spacing: 4) {
+                    Image(systemName: "star.fill")
+                        .font(.system(size: 10))
+                        .foregroundStyle(.yellow)
+                    Text("My Favorites")
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                }
+                .padding(.horizontal, 16)
+                .padding(.top, 6)
+                .padding(.bottom, 2)
+
+                // Entries
+                ForEach(userFavoritesStore.entries) { entry in
+                    UserFavoriteRow(
+                        entry: entry,
+                        onNavigate: { path in
+                            Task { @MainActor in
+                                await navigationDelegate?.navigateToPath(path, panel: panelSide)
+                                isPresented = false
+                            }
+                        },
+                        onRemove: {
+                            withAnimation(.easeInOut(duration: 0.18)) {
+                                userFavoritesStore.remove(id: entry.id)
+                            }
+                        }
+                    )
+                }
+            }
+        }
     }
 
     // MARK: - File List with drag-to-reorder

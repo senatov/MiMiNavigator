@@ -65,11 +65,18 @@ struct DirectoryContextMenu: View {
             // SECTION 5: Info
             // ═══════════════════════════════════════════
             menuButton(.getInfo)
+
+            Divider()
+
+            // ═══════════════════════════════════════════
+            // SECTION 6: Favorites
+            // ═══════════════════════════════════════════
+            menuButton(.addToFavorites)
         }
     }
 
     // MARK: - Menu Button Builder
-    
+
     @ViewBuilder
     private func menuButton(_ action: DirectoryAction) -> some View {
         Button {
