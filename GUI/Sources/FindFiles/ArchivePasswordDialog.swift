@@ -63,7 +63,7 @@ struct ArchivePasswordDialog: View {
         }
         .padding(24)
         .frame(width: 360)
-        .background(.regularMaterial)
+        .background(DialogColors.base)
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 12, style: .continuous)

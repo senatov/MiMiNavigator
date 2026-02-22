@@ -30,7 +30,7 @@ struct NetworkNeighborhoodView: View {
             }
         }
         .frame(minWidth: 380, idealWidth: 420, minHeight: 280)
-        .background(.regularMaterial)
+        .background(DialogColors.base)
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         .onAppear {
             // Defer startDiscovery to next runloop tick to avoid layout recursion warning
@@ -66,6 +66,7 @@ struct NetworkNeighborhoodView: View {
             .buttonStyle(.plain).help("Close (Esc)")
         }
         .padding(.horizontal, 12).padding(.vertical, 8)
+        .background(DialogColors.stripe)
     }
 
     // MARK: - Empty state

@@ -66,7 +66,7 @@ struct BatchProgressDialog: View {
         }
         .padding(16)
         .frame(width: 320)
-        .background(.regularMaterial)
+        .background(DialogColors.base)
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
