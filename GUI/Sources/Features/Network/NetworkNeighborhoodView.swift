@@ -4,7 +4,7 @@
 // Created by Iakov Senatov on 20.02.2026.
 // Refactored: 21.02.2026 — router Web UI button inline; FritzBox/PC/NAS device badges
 // Refactored: 22.02.2026 — layout recursion fix: defer startDiscovery via Task
-// Refactored: 22.02.2026 — no Sign In for localhost/mobile; mobile icon color; localhost badge
+// Refactored: 22.02.2026 — hostDisplayName; printer Web UI; info popup; MAC vendor; silent mount
 // Copyright © 2026 Senatov. All rights reserved.
 // Description: Tree-style Network Neighborhood — Bonjour + FritzBox TR-064 discovery.
 
@@ -34,7 +34,6 @@ struct NetworkNeighborhoodView: View {
         .background(DialogColors.base)
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         .onAppear {
-            // Defer startDiscovery to next runloop tick to avoid layout recursion warning
             Task { @MainActor in provider.startDiscovery() }
         }
         .onDisappear { provider.stopDiscovery() }
@@ -91,7 +90,6 @@ struct NetworkNeighborhoodView: View {
                 ForEach(provider.hosts) { host in
                     hostRow(host)
                     Divider().padding(.leading, 36)
-
                     if expanded.contains(host.id) {
                         if host.sharesLoading {
                             sharesLoadingRow
@@ -125,10 +123,7 @@ struct NetworkNeighborhoodView: View {
             isExpanded: expanded.contains(host.id),
             onToggle: { toggle(host) },
             onOpenWebUI: {
-                let webHost = host.name.lowercased().contains("fritz") ? "fritz.box" : host.hostName
-                if let url = URL(string: "http://\(webHost)") {
-                    NSWorkspace.shared.open(url)
-                }
+                if let url = host.webUIURL { NSWorkspace.shared.open(url) }
             }
         )
     }
@@ -150,7 +145,6 @@ struct NetworkNeighborhoodView: View {
             Text(host.isLocalhost ? "No shared folders configured" : "No shares found")
                 .font(.caption).foregroundStyle(.secondary)
             Spacer()
-            // No Sign In button for: localhost (this Mac), mobile devices, routers
             if !host.isLocalhost && !host.deviceClass.isMobile && !host.deviceClass.isRouter {
                 Button { authTarget = host } label: {
                     Label("Sign In", systemImage: "key.fill")
@@ -182,6 +176,7 @@ private struct HostNodeRow: View {
     let onToggle: () -> Void
     let onOpenWebUI: () -> Void
     @State private var isHovered = false
+    @State private var showInfoPopup = false
 
     var body: some View {
         HStack(spacing: 0) {
@@ -194,49 +189,55 @@ private struct HostNodeRow: View {
             } else {
                 Spacer().frame(width: 20)
             }
-
-            // Icon
+            // Device icon
             Image(systemName: host.systemIconName)
                 .font(.system(size: 16))
-                .foregroundStyle(
-                    host.deviceClass == .router  ? Color.orange :
-                    host.deviceClass == .iPhone  ? Color.green :
-                    host.deviceClass == .iPad    ? Color.green :
-                    host.nodeType    == .printer ? Color.secondary : Color.blue
-                )
+                .foregroundStyle(iconColor)
                 .frame(width: 24)
-
-            // Name + sub-label
+            // Name + hostname sub-label
             VStack(alignment: .leading, spacing: 1) {
-                Text(host.name).font(.callout).lineLimit(1)
-                Text(host.hostName).font(.caption2).foregroundStyle(.secondary)
+                Text(host.hostDisplayName).font(.callout).lineLimit(1)
+                if !host.hostName.isEmpty && host.hostName != "(nil)" && host.hostName != host.name {
+                    Text(host.hostName).font(.caption2).foregroundStyle(.secondary).lineLimit(1)
+                }
             }
             .padding(.leading, 6)
-
             Spacer()
-
-            // Right side: badge OR router button
-            if host.deviceClass == .router {
-                Button {
-                    onOpenWebUI()
-                } label: {
-                    Label("Web UI", systemImage: "safari")
-                        .font(.caption2)
-                        .padding(.horizontal, 7).padding(.vertical, 3)
+            // Right side buttons
+            HStack(spacing: 4) {
+                // Web UI button: routers (fritz.box) + printers (:631)
+                if host.webUIURL != nil {
+                    Button { onOpenWebUI() } label: {
+                        Label("Web UI", systemImage: "safari")
+                            .font(.caption2)
+                            .padding(.horizontal, 7).padding(.vertical, 3)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(host.deviceClass == .printer ? .purple : .orange)
+                    .controlSize(.mini)
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(.orange)
-                .controlSize(.mini)
-                .padding(.trailing, 6)
-            } else if !host.deviceLabel.isEmpty {
-                Text(host.isLocalhost ? "This Mac" : host.deviceLabel)
-                    .font(.caption2)
-                    .foregroundStyle(host.isLocalhost ? Color.accentColor : Color.secondary)
-                    .padding(.horizontal, 6).padding(.vertical, 2)
-                    .background((host.isLocalhost ? Color.accentColor : Color.secondary).opacity(0.12))
-                    .clipShape(Capsule())
-                    .padding(.trailing, 6)
+                // Device badge when no Web UI button
+                if host.webUIURL == nil && !host.deviceLabel.isEmpty {
+                    Text(host.deviceLabel)
+                        .font(.caption2).foregroundStyle(.secondary)
+                        .padding(.horizontal, 6).padding(.vertical, 2)
+                        .background(Color.secondary.opacity(0.12))
+                        .clipShape(Capsule())
+                }
+                // Info button visible on hover — opens device detail popup
+                if isHovered {
+                    Button { showInfoPopup.toggle() } label: {
+                        Image(systemName: "info.circle")
+                            .font(.system(size: 13)).foregroundStyle(.blue)
+                    }
+                    .buttonStyle(.plain)
+                    .help("Device info")
+                    .popover(isPresented: $showInfoPopup, arrowEdge: .trailing) {
+                        NetworkDeviceInfoPopup(host: host)
+                    }
+                }
             }
+            .padding(.trailing, 6)
         }
         .padding(.horizontal, 10).padding(.vertical, 7)
         .background(isHovered ? Color.accentColor.opacity(0.08) : Color.clear)
@@ -245,6 +246,18 @@ private struct HostNodeRow: View {
         .onTapGesture {
             guard host.isExpandable else { return }
             withAnimation(.easeInOut(duration: 0.15)) { onToggle() }
+        }
+    }
+
+    // MARK: - Icon color by device class
+    private var iconColor: Color {
+        switch host.deviceClass {
+        case .router:        return .orange
+        case .iPhone, .iPad: return .green
+        case .printer:       return .purple
+        case .nas:           return .mint
+        case .mac:           return .blue
+        default:             return host.nodeType == .printer ? .purple : .blue
         }
     }
 }
@@ -256,16 +269,22 @@ private struct ShareRow: View {
     @State private var isHovered = false
 
     var body: some View {
-        HStack(spacing: 6) {
-            Spacer().frame(width: 36)
-            Image(systemName: "folder.connected.to.link")
-                .font(.system(size: 13)).foregroundStyle(.blue.opacity(0.8)).frame(width: 18)
-            Text(share.name).font(.callout).lineLimit(1).truncationMode(.middle)
+        HStack(spacing: 8) {
+            Image(systemName: "folder.fill.badge.person.crop")
+                .font(.system(size: 13))
+                .foregroundStyle(.blue.opacity(0.7))
+                .frame(width: 20)
+            Text(share.name)
+                .font(.callout)
+                .lineLimit(1)
             Spacer()
-            Image(systemName: "arrow.right.circle").font(.caption).foregroundStyle(.tertiary).padding(.trailing, 4)
+            Image(systemName: "arrow.right.circle")
+                .font(.system(size: 12))
+                .foregroundStyle(.secondary)
+                .opacity(isHovered ? 1 : 0)
         }
-        .padding(.horizontal, 10).padding(.vertical, 5)
-        .background(isHovered ? Color.accentColor.opacity(0.12) : Color.clear)
+        .padding(.leading, 44).padding(.trailing, 10).padding(.vertical, 5)
+        .background(isHovered ? Color.accentColor.opacity(0.07) : Color.clear)
         .contentShape(Rectangle())
         .onHover { isHovered = $0 }
         .onTapGesture { onSelect() }

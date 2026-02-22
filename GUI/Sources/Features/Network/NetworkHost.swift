@@ -180,4 +180,35 @@ struct NetworkHost: Identifiable, Hashable {
 
     // MARK: - Badge label
     var deviceLabel: String { deviceClass.label }
+
+    // MARK: - Human display name: 192-168-178-1 -> 192.168.178.1
+    var hostDisplayName: String {
+        let parts = name.components(separatedBy: "-")
+        if parts.count == 4, parts.allSatisfy({ Int($0).map { (0...255).contains($0) } ?? false }) {
+            return parts.joined(separator: ".")
+        }
+        return name
+    }
+
+    // MARK: - MAC address from Bonjour _apple-mobdev2 name (AA:BB:CC:DD:EE:FF@ip)
+    var macAddress: String? {
+        guard let atIdx = name.firstIndex(of: "@") else { return nil }
+        let candidate = String(name[name.startIndex..<atIdx])
+        let octets = candidate.components(separatedBy: ":")
+        guard octets.count == 6, octets.allSatisfy({ $0.count == 2 }) else { return nil }
+        return candidate.uppercased()
+    }
+
+    // MARK: - Web UI URL (router -> fritz.box or IP; printer -> host:631)
+    var webUIURL: URL? {
+        switch deviceClass {
+        case .router:
+            let h = name.lowercased().contains("fritz") ? "fritz.box" : hostDisplayName
+            return URL(string: "http://" + h)
+        case .printer:
+            let h = !hostName.isEmpty && hostName != "(nil)" ? hostName : hostDisplayName
+            return URL(string: "http://" + h + ":631")
+        default: return nil
+        }
+    }
 }

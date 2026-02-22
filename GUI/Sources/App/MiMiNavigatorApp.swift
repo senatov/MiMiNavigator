@@ -82,13 +82,11 @@ struct MiMiNavigatorApp: App {
                                     appState.updatePath(shareURL.path, for: side)
                                     return
                                 }
-                                // Network URL (smb://, afp://) — mount via macOS, then navigate
-                                let before = SMBMounter.shared.mountedNetworkVolumes()
-                                SMBMounter.shared.openForMount(shareURL)
-                                if let newMount = await SMBMounter.shared.pollForNewMount(snapshot: before, timeout: 30) {
-                                    appState.updatePath(newMount.path, for: side)
+                                // Network URL (smb://, afp://) — mount silently, navigate panel
+                                if let mountedURL = await SMBMounter.shared.mountShare(shareURL) {
+                                    appState.updatePath(mountedURL.path, for: side)
                                 }
-                                // If user cancelled mount dialog — do nothing
+                                // If mount failed/cancelled — do nothing
                             }
                         },
                         onDismiss: {
