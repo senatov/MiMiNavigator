@@ -74,6 +74,14 @@ enum NetworkDeviceFingerprinter {
         // Mac by hostname pattern: kira-macpro, MacBook, iMac, mac-mini
         if n.contains("macpro") || n.contains("macbook") || n.contains("imac")
             || n.contains("mac-mini") || n.contains("macmini") { return .mac }
+        // Windows PC — typical patterns
+        if n.hasPrefix("sascha") || n.hasPrefix("pc-") || n.hasSuffix("-pc") { return .windowsPC }
+        // UUID name (e.g. c51e7c78-e72c-48c8-...) — likely Smart TV / media device
+        // UUID format: 8-4-4-4-12 hex chars separated by dashes
+        let uuidParts = n.components(separatedBy: "-")
+        if uuidParts.count == 5 && uuidParts[0].count == 8 && uuidParts[1].count == 4 {
+            return .nas  // .nas = generic unknown device (shows NAS icon)
+        }
         return nil
     }
 

@@ -196,12 +196,27 @@ private struct HostNodeRow: View {
                 .frame(width: 24)
             // Name + hostname sub-label
             VStack(alignment: .leading, spacing: 1) {
-                Text(host.hostDisplayName).font(.callout).lineLimit(1)
-                if !host.hostName.isEmpty && host.hostName != "(nil)" && host.hostName != host.name {
+                HStack(spacing: 4) {
+                    Text(host.hostDisplayName)
+                        .font(.callout).lineLimit(1)
+                        .foregroundStyle(host.isOffline ? .secondary : .primary)
+                    if host.isOffline {
+                        Text("offline").font(.caption2)
+                            .foregroundStyle(.tertiary)
+                            .padding(.horizontal, 5).padding(.vertical, 1)
+                            .background(Color.secondary.opacity(0.1))
+                            .clipShape(Capsule())
+                    }
+                }
+                if !host.hostName.isEmpty && host.hostName != "(nil)" && host.hostName != host.name
+                    && !host.hostName.contains("@") {
                     Text(host.hostName).font(.caption2).foregroundStyle(.secondary).lineLimit(1)
+                } else if !host.hostIP.isEmpty {
+                    Text(host.hostIP).font(.caption2).foregroundStyle(.secondary).lineLimit(1)
                 }
             }
             .padding(.leading, 6)
+            .opacity(host.isOffline ? 0.6 : 1.0)
             Spacer()
             // Right side buttons
             HStack(spacing: 4) {

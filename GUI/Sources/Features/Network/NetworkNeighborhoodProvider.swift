@@ -81,8 +81,13 @@ final class NetworkNeighborhoodProvider: NSObject, ObservableObject {
 
     // MARK: - Merge FritzBox DHCP host list into discovered hosts
     private func mergeFritzHosts(_ fritzHosts: [FritzBoxHost]) {
-        // Build router-IP set to skip 192.168.178.1 duplicate (already have fritz-box)
+        // Skip router IPs — already found via Bonjour as fritz-box / fritz.repeater
         let routerIPs: Set<String> = ["192.168.178.1", "192.168.178.46"]
+        // Build IP→index map for fast lookup (dedup BRW vs Brother by same IP)
+        var ipToIdx = [String: Int]()
+        for (i, h) in hosts.enumerated() where !h.hostName.isEmpty && !h.hostName.contains("@") {
+            ipToIdx[h.hostName] = i
+        }
 
         for fh in fritzHosts {
             guard !fh.ip.isEmpty, !isLocalhostIP(fh.ip) else {
@@ -98,11 +103,10 @@ final class NetworkNeighborhoodProvider: NSObject, ObservableObject {
             let fhNameL = fh.name.lowercased()
             let isFritzMobile = fhNameL == "ipad" || fhNameL.hasPrefix("iphone") || fhNameL.contains("-iphone")
 
-            // Try to find matching existing host
-            if let idx = hosts.firstIndex(where: {
+            // Try to find matching existing host (by name OR by IP)
+            if let idx = ipToIdx[fh.ip] ?? hosts.firstIndex(where: {
                 let norm = normalizedName($0.name)
                 if norm == fhNorm { return true }
-                if $0.hostName == fh.ip { return true }
                 // Mobile: match any unresolved "Apple Device (...)" placeholder
                 if isFritzMobile {
                     let n = $0.name.lowercased()
@@ -115,6 +119,12 @@ final class NetworkNeighborhoodProvider: NSObject, ObservableObject {
                     hosts[idx].hostName = fh.ip
                     log.debug("[FritzBox] updated IP \(hosts[idx].name) → \(fh.ip)")
                 }
+                // Store FritzBox MAC if not already saved
+                if hosts[idx].rawMAC == nil && !fh.mac.isEmpty {
+                    hosts[idx].rawMAC = fh.mac
+                }
+                // Mark inactive hosts
+                if !fh.isActive { hosts[idx].isOffline = true }
                 // Rename placeholder → real FritzBox name
                 let existing = hosts[idx].name
                 let isPlaceholder = existing.lowercased().hasPrefix("apple device")
@@ -130,8 +140,9 @@ final class NetworkNeighborhoodProvider: NSObject, ObservableObject {
             // New host — only known to FritzBox (Windows PC, NAS, unknown device)
             addResolvedHost(name: fh.name, hostName: fh.ip,
                             port: 445, serviceType: .smb,
-                            isPrinter: false, bonjourType: nil)
-            log.info("[FritzBox] added '\(fh.name)' ip=\(fh.ip)")
+                            isPrinter: false, bonjourType: nil,
+                            fritzMAC: fh.mac, isOffline: !fh.isActive)
+            log.info("[FritzBox] added '\(fh.name)' ip=\(fh.ip) active=\(fh.isActive)")
         }
     }
 
@@ -206,7 +217,9 @@ final class NetworkNeighborhoodProvider: NSObject, ObservableObject {
         serviceType: NetworkServiceType?,
         isPrinter: Bool,
         bonjourType: String? = nil,
-        isMobile: Bool = false
+        isMobile: Bool = false,
+        fritzMAC: String? = nil,
+        isOffline: Bool = false
     ) {
         guard !isLocalhostByName(name: name, hostName: hostName) else {
             log.debug("[Network] skip localhost: \(name)")
@@ -243,14 +256,19 @@ final class NetworkNeighborhoodProvider: NSObject, ObservableObject {
         var host = NetworkHost(name: name, hostName: hostName, port: port,
                                serviceType: serviceType ?? .smb, nodeType: nodeType)
         if let bt = bonjourType { host.bonjourServices.insert(bt) }
-        // Store MAC for mobile so it survives renaming (Apple Device → Iakovs-mabila)
-        if isMobile, host.rawMAC == nil {
-            if let at = name.firstIndex(of: "@") {
-                host.rawMAC = String(name[name.startIndex..<at]).uppercased()
-            } else if let at = hostName.firstIndex(of: "@") {
-                host.rawMAC = String(hostName[hostName.startIndex..<at]).uppercased()
+        // Store MAC: from FritzBox or extracted from mobile Bonjour name
+        if host.rawMAC == nil {
+            if let fm = fritzMAC, !fm.isEmpty {
+                host.rawMAC = fm
+            } else if isMobile {
+                if let at = name.firstIndex(of: "@") {
+                    host.rawMAC = String(name[name.startIndex..<at]).uppercased()
+                } else if let at = hostName.firstIndex(of: "@") {
+                    host.rawMAC = String(hostName[hostName.startIndex..<at]).uppercased()
+                }
             }
         }
+        host.isOffline = isOffline
 
         // Classify by Bonjour services
         if host.deviceClass == .unknown,

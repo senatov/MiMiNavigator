@@ -3,8 +3,10 @@
 //
 // Created by Iakov Senatov on 21.02.2026.
 // Refactored: 22.02.2026 — fixed SOAPAction header (was missing → 404); isAvailable via SOAP
+// Refactored: 23.02.2026 — include inactive hosts (Sascha/Vuduo2 off→still shown); dedup by IP
 // Copyright © 2026 Senatov. All rights reserved.
-// Description: Discovers all LAN hosts via FritzBox TR-064 UPnP API (no auth required).
+// Description: Discovers ALL LAN hosts via FritzBox TR-064 UPnP API (no auth required).
+//              Shows both active and inactive hosts — inactive shown greyed out.
 
 import Foundation
 
@@ -12,13 +14,14 @@ import Foundation
 struct FritzBoxHost {
     let name: String
     let ip: String
+    let mac: String
     let isActive: Bool
+    let interfaceType: String   // "802.11" = WiFi, "Ethernet" = wired, "" = unknown
 }
 
 // MARK: - FritzBox TR-064 discovery
 enum FritzBoxDiscovery {
     private static let upnpURL = "http://fritz.box:49000/upnp/control/hosts"
-    private static let infoURL = "http://fritz.box/jason_boxinfo.xml"
 
     // MARK: - Check reachability via SOAP ping
     static func isAvailable() async -> Bool {
@@ -27,72 +30,101 @@ enum FritzBoxDiscovery {
 
     // MARK: - Get count of DHCP entries
     static func hostCount() async -> Int? {
-        let body = soapEnvelope(action: "GetHostNumberOfEntries", service: "Hosts:1", params: "")
-        guard let xml = await postSOAP(body: body, action: "GetHostNumberOfEntries", service: "Hosts:1")
+        let body = soapEnvelope(action: "GetHostNumberOfEntries", params: "")
+        guard let xml = await postSOAP(body: body, action: "GetHostNumberOfEntries")
         else { return nil }
         return extractInt(xml, tag: "NewHostNumberOfEntries")
     }
 
-    // MARK: - Get all active hosts with real names
-    static func activeHosts() async -> [FritzBoxHost] {
+    // MARK: - Get ALL hosts (active AND inactive)
+    // Inactive = device is off/sleeping but was registered in DHCP
+    // We show them so user sees Sascha, Vuduo2 etc. even when they're off
+    static func allHosts() async -> [FritzBoxHost] {
         guard let count = await hostCount() else {
             log.warning("[FritzBox] not reachable or no response")
             return []
         }
         log.info("[FritzBox] fetching \(count) DHCP entries")
+
         var results: [FritzBoxHost] = []
         await withTaskGroup(of: FritzBoxHost?.self) { group in
             for i in 0..<count {
                 group.addTask { await fetchHost(index: i) }
             }
             for await host in group {
-                if let h = host, h.isActive { results.append(h) }
+                if let h = host { results.append(h) }
             }
         }
-        var seen = Set<String>()
-        results = results.filter { seen.insert($0.name.lowercased()).inserted }
-        results.sort { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
-        log.info("[FritzBox] active hosts: \(results.map { "\($0.name)(\($0.ip))" })")
-        return results
+
+        // Dedup: prefer active over inactive when same name or same IP
+        var byIP   = [String: FritzBoxHost]()
+        var byName = [String: FritzBoxHost]()
+        for h in results {
+            let key = h.name.lowercased()
+            // Keep active over inactive; keep first if both same state
+            if !h.ip.isEmpty {
+                if let existing = byIP[h.ip] {
+                    if h.isActive && !existing.isActive { byIP[h.ip] = h }
+                } else {
+                    byIP[h.ip] = h
+                }
+            }
+            if let existing = byName[key] {
+                if h.isActive && !existing.isActive { byName[key] = h }
+            } else {
+                byName[key] = h
+            }
+        }
+        // Final list: unique by name
+        var final = Array(byName.values)
+        final.sort { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+
+        let summary = final.map { "\($0.name)(\($0.ip),\($0.isActive ? "on" : "off"))" }
+        log.info("[FritzBox] hosts: \(summary)")
+        return final
+    }
+
+    // MARK: - Kept for compatibility
+    static func activeHosts() async -> [FritzBoxHost] {
+        return await allHosts()
     }
 
     // MARK: - Fetch single host entry by index
     private static func fetchHost(index: Int) async -> FritzBoxHost? {
         let params = "<NewIndex>\(index)</NewIndex>"
-        let body   = soapEnvelope(action: "GetGenericHostEntry", service: "Hosts:1", params: params)
-        guard let xml = await postSOAP(body: body, action: "GetGenericHostEntry", service: "Hosts:1")
+        let body   = soapEnvelope(action: "GetGenericHostEntry", params: params)
+        guard let xml = await postSOAP(body: body, action: "GetGenericHostEntry")
         else { return nil }
-        guard let name   = extractString(xml, tag: "NewHostName"), !name.isEmpty,
-              let active = extractString(xml, tag: "NewActive")
+        guard let name = extractString(xml, tag: "NewHostName"), !name.isEmpty
         else { return nil }
-        let ip = extractString(xml, tag: "NewIPAddress") ?? ""
-        return FritzBoxHost(name: name, ip: ip, isActive: active == "1")
+        let ip     = extractString(xml, tag: "NewIPAddress") ?? ""
+        let mac    = extractString(xml, tag: "NewMACAddress") ?? ""
+        let active = extractString(xml, tag: "NewActive") == "1"
+        let itype  = extractString(xml, tag: "NewInterfaceType") ?? ""
+        return FritzBoxHost(name: name, ip: ip, mac: mac, isActive: active, interfaceType: itype)
     }
 
     // MARK: - Build SOAP envelope
-    private static func soapEnvelope(action: String, service: String, params: String) -> String {
+    private static func soapEnvelope(action: String, params: String) -> String {
         """
         <?xml version="1.0"?>
         <s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/">
           <s:Body>
-            <u:\(action) xmlns:u="urn:dslforum-org:service:\(service)">\(params)</u:\(action)>
+            <u:\(action) xmlns:u="urn:dslforum-org:service:Hosts:1">\(params)</u:\(action)>
           </s:Body>
         </s:Envelope>
         """
     }
 
-    // MARK: - POST SOAP request with mandatory SOAPAction header
-    // Without SOAPAction FritzBox returns 404 — this was the root cause of discovery failure
-    private static func postSOAP(body: String, action: String, service: String) async -> String? {
+    // MARK: - POST SOAP — SOAPAction header is mandatory (without it FritzBox returns 404)
+    private static func postSOAP(body: String, action: String) async -> String? {
         guard let url  = URL(string: upnpURL),
               let data = body.data(using: .utf8) else { return nil }
         var req = URLRequest(url: url, timeoutInterval: 5.0)
         req.httpMethod = "POST"
         req.httpBody   = data
-        req.setValue("text/xml; charset=utf-8",
-                     forHTTPHeaderField: "Content-Type")
-        req.setValue("urn:dslforum-org:service:\(service)#\(action)",
-                     forHTTPHeaderField: "SOAPAction")
+        req.setValue("text/xml; charset=utf-8", forHTTPHeaderField: "Content-Type")
+        req.setValue("urn:dslforum-org:service:Hosts:1#\(action)", forHTTPHeaderField: "SOAPAction")
         guard let (respData, resp) = try? await URLSession.shared.data(for: req),
               (resp as? HTTPURLResponse)?.statusCode == 200
         else { return nil }

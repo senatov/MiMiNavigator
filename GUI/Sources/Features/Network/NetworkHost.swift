@@ -123,6 +123,7 @@ struct NetworkHost: Identifiable, Hashable {
     var bonjourServices: Set<String>
     var isLocalhost: Bool           // true = this Mac itself
     var rawMAC: String?             // MAC address if known (for mobile devices after rename)
+    var isOffline: Bool             // true = FritzBox knows device but it's currently off/sleeping
 
     // MARK: -
     init(
@@ -147,6 +148,7 @@ struct NetworkHost: Identifiable, Hashable {
         self.bonjourServices = []
         self.isLocalhost    = isLocalhost
         self.rawMAC         = nil
+        self.isOffline      = false
     }
 
     // MARK: - Root URL for this host
@@ -190,6 +192,14 @@ struct NetworkHost: Identifiable, Hashable {
             return parts.joined(separator: ".")
         }
         return name
+    }
+
+    // MARK: - IP address (hostName when it's an IP, else empty)
+    var hostIP: String {
+        // hostName is IP if it's all digits and dots
+        let parts = hostName.components(separatedBy: ".")
+        if parts.count == 4 && parts.allSatisfy({ Int($0) != nil }) { return hostName }
+        return ""
     }
 
     // MARK: - MAC address from Bonjour _apple-mobdev2 name (AA:BB:CC:DD:EE:FF@ip)
