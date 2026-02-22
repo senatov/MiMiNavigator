@@ -3,170 +3,173 @@
 //
 // Created by Iakov Senatov on 22.02.2026.
 // Copyright © 2026 Senatov. All rights reserved.
-// Description: Enumerates SMB/AFP shares via NetFS.framework — same API Finder uses.
-//              Uses NetFSMountURLSync with nil mountPath to enumerate without mounting.
-//              Falls back to smbutil for anonymous listing.
+// Description: Enumerates SMB/AFP shares via smbutil + Keychain credentials.
+//              Tries all Keychain entries for the host, falls back to guest/anonymous.
+//              Hostname fallback chain: hostName → name.fritz.box → name.local → bare
 
 import Foundation
-import NetFS
+import Security
 
-// MARK: - Share enumeration via NetFS (Finder-compatible)
+// MARK: - Keychain credential entry
+struct KeychainCred {
+    let user: String
+    let password: String
+    let server: String
+}
+
+// MARK: - Share enumeration (smbutil + Keychain)
 enum NetworkShareEnumerator {
 
-    // MARK: - Main entry: enumerate shares for a host
-    // Strategy:
-    //   1. NetFS with Keychain credentials (tries all hostname variants)
-    //   2. NetFS anonymous / guest
-    //   3. smbutil view fallback
+    // MARK: - Main entry point
     static func shares(for host: NetworkHost) async -> [NetworkShare] {
-        let hostname = resolvedHostname(host)
-        let scheme   = host.serviceType == .afp ? "afp" : "smb"
+        let scheme = host.serviceType == .afp ? "afp" : "smb"
+        let hostnameCandidates = hostnameVariants(host)
+        let credentials = keychainCredentials(for: host)
 
-        // 1. Try with saved credentials (checks all Keychain variants)
-        if let creds = NetworkAuthService.load(for: host.hostName) {
-            let result = await enumerateViaNetFS(
-                scheme: scheme, host: hostname,
-                user: creds.user, password: creds.password
-            )
-            if !result.isEmpty {
-                log.info("[NetFS] \(hostname): \(result.count) shares via Keychain creds (user=\(creds.user))")
-                return result
-            }
-        }
+        log.info("[ShareEnum] host='\(host.name)' candidates=\(hostnameCandidates) creds=\(credentials.map { "\($0.user)@\($0.server)" })")
 
-        // Also try with base name (Finder may have stored under plain name)
-        let baseName = baseName(host)
-        if baseName != host.hostName {
-            if let creds = NetworkAuthService.load(for: baseName) {
-                let result = await enumerateViaNetFS(
-                    scheme: scheme, host: hostname,
-                    user: creds.user, password: creds.password
-                )
+        // Try each credential x each hostname
+        for cred in credentials {
+            for hostname in hostnameCandidates {
+                let result = await smbUtilShares(hostname: hostname, user: cred.user,
+                                                 password: cred.password, scheme: scheme)
                 if !result.isEmpty {
-                    log.info("[NetFS] \(hostname): \(result.count) shares via base-name creds (user=\(creds.user))")
+                    log.info("[ShareEnum] OK \(cred.user)@\(hostname) -> \(result.map(\.name))")
                     return result
                 }
             }
         }
 
-        // 2. Anonymous / guest
-        let anon = await enumerateViaNetFS(scheme: scheme, host: hostname, user: nil, password: nil)
-        if !anon.isEmpty {
-            log.info("[NetFS] \(hostname): \(anon.count) shares anonymously")
-            return anon
-        }
-
-        // 3. smbutil fallback
-        if host.serviceType != .afp {
-            let smbResult = await smbUtilShares(host: host, hostname: hostname)
-            if !smbResult.isEmpty {
-                log.info("[smbutil] \(hostname): \(smbResult.count) shares")
-                return smbResult
+        // Guest / anonymous fallback
+        for hostname in hostnameCandidates {
+            let result = await smbUtilShares(hostname: hostname, user: nil,
+                                             password: nil, scheme: scheme)
+            if !result.isEmpty {
+                log.info("[ShareEnum] OK guest@\(hostname) -> \(result.map(\.name))")
+                return result
             }
         }
 
-        log.info("[NetFS] \(hostname): no shares (auth required)")
+        log.info("[ShareEnum] no shares for '\(host.name)' - auth required")
         return []
     }
 
-    // MARK: - NetFS enumeration (no mount — enumerate only)
-    private static func enumerateViaNetFS(
-        scheme: String, host: String,
-        user: String?, password: String?
-    ) async -> [NetworkShare] {
-        await withCheckedContinuation { cont in
-            DispatchQueue.global(qos: .userInitiated).async {
-                // Build URL: smb://[user@]host/
-                var components = URLComponents()
-                components.scheme = scheme
-                components.host   = host
-                components.path   = "/"
-                if let u = user, !u.isEmpty { components.user = u }
-                guard let url = components.url as CFURL? else {
-                    cont.resume(returning: [])
-                    return
-                }
+    // MARK: - Hostname variants to try (priority order)
+    static func hostnameVariants(_ host: NetworkHost) -> [String] {
+        var candidates: [String] = []
 
-                // Open options
-                var openDict: [String: Any] = [
-                    kNetFSSoftMountKey as String: true,
-                ]
-                if let u = user, !u.isEmpty  { openDict[kNetFSUserNameKey as String] = u }
-                if let p = password, !p.isEmpty { openDict[kNetFSPasswordKey as String] = p }
-                let openOptions = Unmanaged.passRetained(openDict as CFDictionary)
-
-                var mountOptions: Unmanaged<CFDictionary>? = nil
-                var shareListRef: Unmanaged<CFArray>?       = nil
-
-                // nil mountPath = enumerate without mounting
-                let status = NetFSMountURLSync(
-                    url,
-                    nil,                    // mountPath — nil means enumerate only
-                    user as CFString?,
-                    password as CFString?,
-                    openOptions,
-                    &mountOptions,
-                    &shareListRef
-                )
-
-                openOptions.release()
-                mountOptions?.release()
-
-                log.debug("[NetFS] \(host) enumerate status=\(status)")
-
-                let rawList = shareListRef?.takeRetainedValue() as? [String] ?? []
-                let scheme2 = scheme
-                let shares: [NetworkShare] = rawList.compactMap { name in
-                    guard !name.hasSuffix("$"), name != "IPC$" else { return nil }
-                    let enc = name.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? name
-                    guard let url = URL(string: "\(scheme2)://\(host)/\(enc)") else { return nil }
-                    return NetworkShare(name: name, url: url)
-                }
-
-                cont.resume(returning: shares)
-            }
+        // 1. Bonjour-resolved hostName (most accurate)
+        let hn = host.hostName
+        if !hn.isEmpty && hn != "(nil)" && hn != host.name {
+            candidates.append(hn)
+            if hn.hasSuffix(".") { candidates.append(String(hn.dropLast())) }
         }
+
+        // Strip known suffixes to get bare name
+        let base = host.name
+            .replacingOccurrences(of: ".local.", with: "")
+            .replacingOccurrences(of: ".local", with: "")
+            .replacingOccurrences(of: ".fritz.box", with: "")
+
+        // 2. FritzBox DNS (most reliable on home networks with FritzBox)
+        candidates.append("\(base).fritz.box")
+        // 3. mDNS .local
+        candidates.append("\(base).local")
+        // 4. Bare name (NetBIOS)
+        candidates.append(base)
+
+        // Deduplicate, preserve order
+        var seen = Set<String>()
+        return candidates.filter { seen.insert($0).inserted }
     }
 
-    // MARK: - smbutil view fallback
-    private static func smbUtilShares(host: NetworkHost, hostname: String) async -> [NetworkShare] {
-        await withCheckedContinuation { cont in
+    // MARK: - Load all Keychain internet passwords for this host
+    static func keychainCredentials(for host: NetworkHost) -> [KeychainCred] {
+        let base = host.name
+            .replacingOccurrences(of: ".local.", with: "")
+            .replacingOccurrences(of: ".local", with: "")
+            .replacingOccurrences(of: ".fritz.box", with: "")
+
+        var serverVariants: [String] = [
+            base,
+            "\(base).local",
+            "\(base).local.",
+            "\(base).fritz.box",
+            "\(base)._smb._tcp.local",
+            host.hostName,
+        ]
+        serverVariants = Array(Set(serverVariants.filter { !$0.isEmpty && $0 != "(nil)" }))
+
+        var results: [KeychainCred] = []
+        var seen = Set<String>()
+
+        for server in serverVariants {
+            let query: [CFString: Any] = [
+                kSecClass:            kSecClassInternetPassword,
+                kSecAttrServer:       server,
+                kSecMatchLimit:       kSecMatchLimitAll,
+                kSecReturnAttributes: true,
+                kSecReturnData:       true,
+            ]
+            var items: AnyObject? = nil
+            let status = SecItemCopyMatching(query as CFDictionary, &items)
+            guard status == errSecSuccess,
+                  let array = items as? [[CFString: Any]]
+            else { continue }
+
+            for item in array {
+                let acct = item[kSecAttrAccount] as? String ?? ""
+                let data = item[kSecValueData] as? Data ?? Data()
+                let pass = String(data: data, encoding: .utf8) ?? ""
+                guard !acct.isEmpty && acct != "No user account" && !pass.isEmpty else { continue }
+                let key = "\(acct):\(pass)"
+                guard seen.insert(key).inserted else { continue }
+                results.append(KeychainCred(user: acct, password: pass, server: server))
+                log.debug("[Keychain] found \(acct)@\(server)")
+            }
+        }
+        return results
+    }
+
+    // MARK: - Run smbutil view
+    private static func smbUtilShares(
+        hostname: String, user: String?, password: String?, scheme: String
+    ) async -> [NetworkShare] {
+        await withCheckedContinuation { continuation in
             DispatchQueue.global(qos: .userInitiated).async {
                 let target: String
-                if let creds = NetworkAuthService.load(for: host.hostName) {
-                    let enc = creds.password
-                        .addingPercentEncoding(withAllowedCharacters: .urlPasswordAllowed) ?? creds.password
-                    target = "//\(creds.user):\(enc)@\(hostname)"
+                if let u = user, let p = password {
+                    let encPass = p.addingPercentEncoding(withAllowedCharacters: .urlPasswordAllowed) ?? p
+                    target = "//\(u):\(encPass)@\(hostname)"
                 } else {
                     target = "//\(hostname)"
                 }
-
-                let proc = Process()
-                proc.executableURL = URL(fileURLWithPath: "/usr/bin/smbutil")
-                proc.arguments     = ["view", target]
-                let out = Pipe(), err = Pipe()
-                proc.standardOutput = out
-                proc.standardError  = err
-
-                do { try proc.run() } catch {
-                    cont.resume(returning: [])
+                let process = Process()
+                process.executableURL = URL(fileURLWithPath: "/usr/bin/smbutil")
+                process.arguments = ["view", target]
+                let outPipe = Pipe()
+                let errPipe = Pipe()
+                process.standardOutput = outPipe
+                process.standardError  = errPipe
+                do { try process.run() } catch {
+                    log.warning("[smbutil] launch failed \(hostname): \(error)")
+                    continuation.resume(returning: [])
                     return
                 }
-                DispatchQueue.global().asyncAfter(deadline: .now() + 6) {
-                    if proc.isRunning { proc.terminate() }
+                DispatchQueue.global().asyncAfter(deadline: .now() + 7) {
+                    if process.isRunning { process.terminate() }
                 }
-                proc.waitUntilExit()
-
-                let data   = out.fileHandleForReading.readDataToEndOfFile()
+                process.waitUntilExit()
+                let data   = outPipe.fileHandleForReading.readDataToEndOfFile()
                 let output = String(data: data, encoding: .utf8) ?? ""
-                log.debug("[smbutil] \(hostname) exit=\(proc.terminationStatus)\n\(output.prefix(400))")
-                cont.resume(returning: parseSmbUtil(output: output, host: host, hostname: hostname))
+                log.debug("[smbutil] \(hostname) exit=\(process.terminationStatus) out=\(output.prefix(400))")
+                continuation.resume(returning: parseSmbUtil(output: output, hostname: hostname, scheme: scheme))
             }
         }
     }
 
-    // MARK: - Parse smbutil output
-    private static func parseSmbUtil(output: String, host: NetworkHost, hostname: String) -> [NetworkShare] {
+    // MARK: - Parse smbutil output, skip hidden shares ($)
+    private static func parseSmbUtil(output: String, hostname: String, scheme: String) -> [NetworkShare] {
         var shares: [NetworkShare] = []
         var inTable = false
         for line in output.components(separatedBy: .newlines) {
@@ -177,8 +180,7 @@ enum NetworkShareEnumerator {
             guard let diskIdx = parts.firstIndex(where: { $0.lowercased() == "disk" }),
                   diskIdx > 0 else { continue }
             let name = parts[0..<diskIdx].joined(separator: " ")
-            guard !name.hasSuffix("$") else { continue }
-            let scheme  = host.serviceType == .afp ? "afp" : "smb"
+            guard !name.hasSuffix("$") && name != "IPC$" else { continue }
             let encoded = name.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? name
             if let url = URL(string: "\(scheme)://\(hostname)/\(encoded)") {
                 shares.append(NetworkShare(name: name, url: url))
@@ -187,22 +189,8 @@ enum NetworkShareEnumerator {
         return shares
     }
 
-    // MARK: - Normalize hostname for SMB connection
+    // MARK: - Best single hostname for external use
     static func resolvedHostname(_ host: NetworkHost) -> String {
-        let hn = host.hostName
-        if hn == host.name || hn == "(nil)" || hn.isEmpty {
-            return host.name.hasSuffix(".local") ? host.name : "\(host.name).local"
-        }
-        // Strip trailing dot
-        return hn.hasSuffix(".") ? String(hn.dropLast()) : hn
-    }
-
-    // MARK: - Strip .local/.fritz.box to get base name
-    private static func baseName(_ host: NetworkHost) -> String {
-        var n = host.hostName.isEmpty ? host.name : host.hostName
-        for suffix in ["._smb._tcp.local", "._afp._tcp.local", ".local.", ".local", ".fritz.box"] {
-            if n.hasSuffix(suffix) { n = String(n.dropLast(suffix.count)); break }
-        }
-        return n
+        hostnameVariants(host).first ?? host.name
     }
 }
