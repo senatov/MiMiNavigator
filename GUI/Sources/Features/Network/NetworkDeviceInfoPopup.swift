@@ -2,9 +2,11 @@
 // MiMiNavigator
 //
 // Created by Iakov Senatov on 22.02.2026.
-// Refactored: 22.02.2026 — fix RTE: URLSession instead of Process; safe hostName for mobile
+// Refactored: 22.02.2026 — fix RTE: async IPP probe; fix hostName for mobile (MAC->IP)
 // Copyright 2026 Senatov. All rights reserved.
 // Description: Device info popup for any network host.
+//   - MAC vendor lookup via api.macvendors.com (free, no key)
+//   - Printer info via IPP (port 631)
 
 import AppKit
 import Foundation
@@ -12,7 +14,6 @@ import SwiftUI
 
 // MARK: - MACVendorService
 enum MACVendorService {
-    // MARK: - lookup
     static func lookup(_ mac: String) async -> String? {
         let prefix = mac.replacingOccurrences(of: ":", with: "").prefix(6).uppercased()
         guard let url = URL(string: "https://api.macvendors.com/" + prefix) else { return nil }
@@ -40,7 +41,6 @@ struct NetworkDeviceInfoPopup: View {
     @State private var entries: [DeviceInfoEntry] = []
     @State private var isLoading = true
 
-    // MARK: - body
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             popupHeader
@@ -58,7 +58,7 @@ struct NetworkDeviceInfoPopup: View {
         .task { await loadInfo() }
     }
 
-    // MARK: - popupHeader
+    // MARK: - Header
     private var popupHeader: some View {
         HStack(spacing: 8) {
             Image(systemName: host.systemIconName)
@@ -75,7 +75,7 @@ struct NetworkDeviceInfoPopup: View {
         .padding(.horizontal, 12).padding(.vertical, 10)
     }
 
-    // MARK: - infoRows
+    // MARK: - Info rows
     private var infoRows: some View {
         VStack(alignment: .leading, spacing: 0) {
             ForEach(entries) { entry in
@@ -95,78 +95,78 @@ struct NetworkDeviceInfoPopup: View {
         .padding(.vertical, 4)
     }
 
-    // MARK: - loadInfo
+    // MARK: - Load device info async (never blocks MainActor)
     private func loadInfo() async {
         var result: [DeviceInfoEntry] = []
-        let addr = resolvedAddress()
 
-        result.append(DeviceInfoEntry(label: "IP / Host", value: addr))
-        if host.name != addr && host.name != host.hostDisplayName {
-            result.append(DeviceInfoEntry(label: "Name", value: host.name))
+        // Hostname
+        let displayHN = host.hostName
+        if !displayHN.isEmpty && displayHN != "(nil)" && displayHN != host.name {
+            // Don't show raw MAC@ip — show resolved IP from hostDisplayName
+            let safeHN = (displayHN.contains("@") || (displayHN.contains(":") && !displayHN.contains(".")))
+                ? host.hostDisplayName
+                : displayHN
+            result.append(DeviceInfoEntry(label: "Hostname", value: safeHN))
         }
+
+        // IP address
+        result.append(DeviceInfoEntry(label: "IP", value: host.hostDisplayName))
+
+        // Device type
         let typeStr = host.deviceClass.label.isEmpty ? host.nodeTypeLabel : host.deviceClass.label
         result.append(DeviceInfoEntry(label: "Type", value: typeStr))
 
+        // Services (Bonjour)
         let svcShort = host.bonjourServices
-            .map { $0.replacingOccurrences(of: "._tcp.", with: "")
-                     .replacingOccurrences(of: "_", with: "") }
-            .sorted().joined(separator: ", ")
+            .map { $0.replacingOccurrences(of: "._tcp.", with: "").replacingOccurrences(of: "_", with: "") }
+            .sorted()
+            .joined(separator: ", ")
         if !svcShort.isEmpty {
             result.append(DeviceInfoEntry(label: "Services", value: svcShort))
         }
 
+        // MAC + vendor
         if let mac = host.macAddress {
             result.append(DeviceInfoEntry(label: "MAC", value: mac))
-            if let vendor = await MACVendorService.lookup(mac) {
-                result.append(DeviceInfoEntry(label: "Vendor", value: vendor))
+            if let v = await MACVendorService.lookup(mac) {
+                result.append(DeviceInfoEntry(label: "Vendor", value: v))
             }
         }
 
+        // Printer: probe IPP
         if host.deviceClass == .printer || host.nodeType == .printer {
-            let ippInfo = await probePrinterIPP(address: addr)
+            let ippInfo = await probePrinterIPP(host: host)
             result.append(contentsOf: ippInfo)
         }
 
+        // Port
         if host.port > 0 {
             result.append(DeviceInfoEntry(label: "Port", value: String(host.port)))
         }
 
+        // Shares
         if host.sharesLoaded && !host.shares.isEmpty {
-            let names = host.shares.map { $0.name }.joined(separator: ", ")
-            result.append(DeviceInfoEntry(label: "Shares", value: names))
+            result.append(DeviceInfoEntry(label: "Shares", value: host.shares.map { $0.name }.joined(separator: ", ")))
         }
 
         entries = result
         isLoading = false
     }
 
-    // MARK: - resolvedAddress
-    // Returns usable IP/hostname — skips MAC@fe80 Bonjour names
-    private func resolvedAddress() -> String {
-        let hn = host.hostName
-        // MAC-based Bonjour name: "b4:1b:b0:...@fe80::..." — not a real hostname
-        if hn.contains("@") || (hn.contains(":") && !hn.contains(".")) {
-            return host.hostDisplayName
-        }
-        if hn.isEmpty || hn == "(nil)" { return host.hostDisplayName }
-        return hn
-    }
-
-    // MARK: - probePrinterIPP
-    // Uses URLSession (async, no blocking) — replaces old Process+waitUntilExit
-    private func probePrinterIPP(address: String) async -> [DeviceInfoEntry] {
-        guard let url = URL(string: "http://\(address):631/printers") else { return [] }
-        let req = URLRequest(url: url, timeoutInterval: 4)
-        guard let (data, resp) = try? await URLSession.shared.data(for: req),
-              (resp as? HTTPURLResponse)?.statusCode == 200,
-              let html = String(data: data, encoding: .utf8)
-        else { return [] }
+    // MARK: - IPP probe via curl (async — no waitUntilExit on MainActor)
+    private func probePrinterIPP(host: NetworkHost) async -> [DeviceInfoEntry] {
+        // hostName for mobile = MAC@ip — unusable; fall back to hostDisplayName (IP)
+        let rawH = !host.hostName.isEmpty && host.hostName != "(nil)" ? host.hostName : host.hostDisplayName
+        let h = (rawH.contains("@") || (rawH.contains(":") && !rawH.contains(".")))
+            ? host.hostDisplayName : rawH
+        guard !h.isEmpty, let url = URL(string: "http://\(h):631/printers") else { return [] }
+        guard let (data, _) = try? await URLSession.shared.data(from: url) else { return [] }
+        let output = String(data: data, encoding: .utf8) ?? ""
         var result: [DeviceInfoEntry] = []
         for (label, tag) in [("Model", "printer-make-and-model"), ("Info", "printer-info")] {
-            if let r = html.range(of: tag + "</b>"),
-               let end = html[r.upperBound...].range(of: "<") {
-                let val = String(html[r.upperBound..<end.lowerBound])
-                    .trimmingCharacters(in: .whitespacesAndNewlines)
+            if let r = output.range(of: tag + "</b>"),
+               let end = output[r.upperBound...].range(of: "<") {
+                let val = String(output[r.upperBound..<end.lowerBound]).trimmingCharacters(in: .whitespaces)
                 if !val.isEmpty { result.append(DeviceInfoEntry(label: label, value: val)) }
             }
         }
@@ -186,9 +186,8 @@ struct NetworkDeviceInfoPopup: View {
     }
 }
 
-// MARK: - NetworkHost helpers
+// MARK: - NetworkNodeType label helper
 extension NetworkHost {
-    // MARK: - nodeTypeLabel
     var nodeTypeLabel: String {
         switch nodeType {
         case .printer:      return "Printer"

@@ -122,6 +122,7 @@ struct NetworkHost: Identifiable, Hashable {
     var sharesLoading: Bool
     var bonjourServices: Set<String>
     var isLocalhost: Bool           // true = this Mac itself
+    var rawMAC: String?             // MAC address if known (for mobile devices after rename)
 
     // MARK: -
     init(
@@ -145,6 +146,7 @@ struct NetworkHost: Identifiable, Hashable {
         self.sharesLoading  = false
         self.bonjourServices = []
         self.isLocalhost    = isLocalhost
+        self.rawMAC         = nil
     }
 
     // MARK: - Root URL for this host
@@ -192,6 +194,9 @@ struct NetworkHost: Identifiable, Hashable {
 
     // MARK: - MAC address from Bonjour _apple-mobdev2 name (AA:BB:CC:DD:EE:FF@ip)
     var macAddress: String? {
+        // Prefer explicitly stored MAC (after rename from Apple Device → real name)
+        if let raw = rawMAC { return raw.uppercased() }
+        // Extract from name if it still contains MAC@addr format
         guard let atIdx = name.firstIndex(of: "@") else { return nil }
         let candidate = String(name[name.startIndex..<atIdx])
         let octets = candidate.components(separatedBy: ":")
