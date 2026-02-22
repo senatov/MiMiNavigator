@@ -46,7 +46,7 @@ enum NetworkNodeType {
 // MARK: - A single share/volume on a host
 struct NetworkShare: Identifiable, Hashable {
     let id: UUID
-    let name: String
+    var name: String
     let url: URL
 
     init(name: String, url: URL) {
@@ -110,7 +110,7 @@ enum NetworkDeviceClass {
 // MARK: - Discovered network host
 struct NetworkHost: Identifiable, Hashable {
     let id: UUID
-    let name: String
+    var name: String
     var hostName: String
     var port: Int
     let serviceType: NetworkServiceType

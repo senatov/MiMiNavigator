@@ -3,6 +3,7 @@
 //
 // Created by Iakov Senatov on 21.02.2026.
 // Refactored: 22.02.2026 — iPhone/iPad detection; fritz by name; localhost = Mac
+// Refactored: 22.02.2026 — mac hostname keywords (macpro/macbook/imac); vuduo=NAS
 // Copyright © 2026 Senatov. All rights reserved.
 // Description: Determines hardware type by Bonjour services + port probe + HTTP banner.
 
@@ -69,9 +70,10 @@ enum NetworkDeviceFingerprinter {
 
         // iPhone / iPad by name
         if n.contains("ipad") || h.contains("ipad") { return .iPad }
-        if n.contains("iphone") || h.contains("iphone") { return .iPhone }
-        if n.contains("iphone") || n.contains("s iphone") { return .iPhone }
-
+        if n.contains("iphone") || h.contains("iphone") || n.contains("s-iphone") { return .iPhone }
+        // Mac by hostname pattern: kira-macpro, MacBook, iMac, mac-mini
+        if n.contains("macpro") || n.contains("macbook") || n.contains("imac")
+            || n.contains("mac-mini") || n.contains("macmini") { return .mac }
         return nil
     }
 
