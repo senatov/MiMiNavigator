@@ -2,6 +2,7 @@
 // MiMiNavigator
 //
 // Created by Iakov Senatov on 21.02.2026.
+// Refactored: 22.02.2026 — redesigned to match NetworkNeighborhoodView card style
 // Copyright © 2026 Senatov. All rights reserved.
 // Description: Modal sheet for entering SMB/FTP/SFTP credentials.
 //              Saves to Keychain on confirm, calls onAuthenticated to retry share fetch.
@@ -24,55 +25,90 @@ struct NetworkAuthSheet: View {
 
     // MARK: -
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            header
-            fields
-            buttons
+        VStack(spacing: 0) {
+            hostCard
+            Divider()
+            fieldsSection
+            Divider()
+            buttonRow
         }
-        .padding(20)
-        .frame(width: 340)
+        .frame(width: 360)
+        .background(.regularMaterial)
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         .onAppear { prefill() }
     }
 
-    // MARK: - Header
-    private var header: some View {
+    // MARK: - Host card (matches HostNodeRow style)
+    private var hostCard: some View {
         HStack(spacing: 10) {
-            Image(systemName: "lock.shield")
-                .font(.system(size: 28))
+            Image(systemName: host.systemIconName)
+                .font(.system(size: 22))
                 .foregroundStyle(.blue)
+                .frame(width: 32, height: 32)
+                .background(Color.blue.opacity(0.1))
+                .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
             VStack(alignment: .leading, spacing: 2) {
                 Text("Connect to \"\(host.name)\"")
-                    .font(.headline)
+                    .font(.subheadline.weight(.semibold))
                 Text(host.hostName)
-                    .font(.caption)
+                    .font(.caption2)
                     .foregroundStyle(.secondary)
             }
+            Spacer()
+            if !host.deviceLabel.isEmpty {
+                Text(host.deviceLabel)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 6).padding(.vertical, 2)
+                    .background(Color.secondary.opacity(0.12))
+                    .clipShape(Capsule())
+            }
         }
+        .padding(.horizontal, 14).padding(.vertical, 12)
     }
 
     // MARK: - Input fields
-    private var fields: some View {
+    private var fieldsSection: some View {
         VStack(spacing: 10) {
-            LabeledField(label: "Username") {
+            fieldRow(label: "Username", systemImage: "person") {
                 TextField("guest", text: $username)
                     .textFieldStyle(.roundedBorder)
                     .focused($focusedField, equals: .username)
                     .onSubmit { focusedField = .password }
             }
-            LabeledField(label: "Password") {
+            fieldRow(label: "Password", systemImage: "lock") {
                 SecureField("Required", text: $password)
                     .textFieldStyle(.roundedBorder)
                     .focused($focusedField, equals: .password)
                     .onSubmit { confirm() }
             }
         }
+        .padding(.horizontal, 14).padding(.vertical, 14)
+    }
+
+    // MARK: - Single labeled field row
+    @ViewBuilder
+    private func fieldRow(label: String, systemImage: String, @ViewBuilder content: () -> some View) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: systemImage)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .frame(width: 16)
+            Text(label)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .frame(width: 64, alignment: .trailing)
+            content()
+        }
     }
 
     // MARK: - Buttons
-    private var buttons: some View {
-        HStack {
+    private var buttonRow: some View {
+        HStack(spacing: 10) {
             Button("Cancel", role: .cancel) { onCancel() }
                 .keyboardShortcut(.cancelAction)
+                .buttonStyle(.plain)
+                .foregroundStyle(.secondary)
             Spacer()
             Button {
                 confirm()
@@ -83,13 +119,15 @@ struct NetworkAuthSheet: View {
                         Text("Connecting…")
                     }
                 } else {
-                    Text("Connect")
+                    Label("Sign In", systemImage: "key.fill")
                 }
             }
             .keyboardShortcut(.defaultAction)
             .disabled(username.isEmpty || isSaving)
             .buttonStyle(.borderedProminent)
+            .controlSize(.regular)
         }
+        .padding(.horizontal, 14).padding(.vertical, 10)
     }
 
     // MARK: - Pre-fill from Keychain; purge stale "No user account" ghost entries
@@ -116,23 +154,6 @@ struct NetworkAuthSheet: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
             isSaving = false
             onAuthenticated()
-        }
-    }
-}
-
-// MARK: - Simple label+field layout helper
-private struct LabeledField<Content: View>: View {
-    let label: String
-    @ViewBuilder let content: () -> Content
-
-    // MARK: -
-    var body: some View {
-        HStack {
-            Text(label)
-                .font(.callout)
-                .frame(width: 72, alignment: .trailing)
-                .foregroundStyle(.secondary)
-            content()
         }
     }
 }

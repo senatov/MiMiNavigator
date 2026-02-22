@@ -3,6 +3,8 @@
 //
 // Created by Iakov Senatov on 19.02.2026.
 // Refactored: 20.02.2026 — tree expand: fetchShares per host, nodeType detection
+// Refactored: 22.02.2026 — fix hostname normalization for smbutil; allow late resolve after scan stop;
+//                          in-place hostName update preserves id/shares/deviceClass
 // Copyright © 2026 Senatov. All rights reserved.
 // Description: Bonjour-based network host discovery + lazy share enumeration
 
@@ -20,7 +22,7 @@ final class NetworkNeighborhoodProvider: NSObject, ObservableObject {
     @Published private(set) var isScanning: Bool = false
 
     private var browsers: [NetServiceBrowser] = []
-    private var scanGeneration: Int = 0     // incremented on each startDiscovery; stale callbacks are ignored
+    private var scanGeneration: Int = 0
 
     // MARK: - Printer service types (used to classify nodeType)
     nonisolated static let printerServiceTypes: Set<String> = [
@@ -42,8 +44,6 @@ final class NetworkNeighborhoodProvider: NSObject, ObservableObject {
         isScanning = true
         scanGeneration += 1
         let generation = scanGeneration
-
-        // 1. Bonjour browsers
         let allTypes = NetworkServiceType.allCases.map { $0.rawValue } + Array(Self.printerServiceTypes)
         for type in allTypes {
             let browser = NetServiceBrowser()
@@ -52,14 +52,11 @@ final class NetworkNeighborhoodProvider: NSObject, ObservableObject {
             browser.searchForServices(ofType: type, inDomain: "local.")
             browsers.append(browser)
         }
-
-        // 2. FritzBox TR-064 discovery — parallel with Bonjour
         Task {
             let fritzHosts = await FritzBoxDiscovery.activeHosts()
             await MainActor.run {
                 guard self.scanGeneration == generation else { return }
                 for fh in fritzHosts {
-                    // Skip router itself, localhost, and mobile devices
                     let nameLower = fh.name.lowercased()
                     guard !nameLower.contains("fritz") &&
                           !nameLower.contains("iphone") &&
@@ -67,11 +64,9 @@ final class NetworkNeighborhoodProvider: NSObject, ObservableObject {
                           !nameLower.contains("irobot") &&
                           !fh.ip.isEmpty
                     else { continue }
-                    // Skip if already discovered via Bonjour
                     guard !self.hosts.contains(where: {
                         $0.name.lowercased() == nameLower || $0.hostName == fh.ip
                     }) else { continue }
-                    // Skip localhost (this Mac)
                     guard !self.isLocalhost(ip: fh.ip) else {
                         log.debug("[Network] skipping localhost: \(fh.name) (\(fh.ip))")
                         continue
@@ -83,8 +78,6 @@ final class NetworkNeighborhoodProvider: NSObject, ObservableObject {
                 }
             }
         }
-
-        // Auto-stop after 12s
         Task {
             try? await Task.sleep(for: .seconds(12))
             await MainActor.run {
@@ -98,7 +91,6 @@ final class NetworkNeighborhoodProvider: NSObject, ObservableObject {
     // MARK: - Detect if IP belongs to this Mac
     private func isLocalhost(ip: String) -> Bool {
         if ip == "127.0.0.1" || ip == "::1" { return true }
-        // Check all local network interfaces
         var ifaddr: UnsafeMutablePointer<ifaddrs>? = nil
         guard getifaddrs(&ifaddr) == 0, let first = ifaddr else { return false }
         defer { freeifaddrs(ifaddr) }
@@ -128,19 +120,14 @@ final class NetworkNeighborhoodProvider: NSObject, ObservableObject {
     }
 
     // MARK: - Expand: load shares for host
-    // Strategy: check already-mounted volumes in /Volumes first (instant),
-    // then try smb://host/ listing via NSTask smbutil (best-effort, no Finder).
     func fetchShares(for hostID: NetworkHost.ID) async {
         guard let idx = hosts.firstIndex(where: { $0.id == hostID }) else { return }
         guard hosts[idx].isExpandable else { return }
-        guard !hosts[idx].sharesLoaded else { return }  // already fetched
-
+        guard !hosts[idx].sharesLoaded else { return }
         hosts[idx].sharesLoading = true
         log.info("[Network] fetchShares for \(hosts[idx].name)")
-
         let host = hosts[idx]
         let shares = await resolveShares(host: host)
-
         if let i = hosts.firstIndex(where: { $0.id == hostID }) {
             hosts[i].shares = shares
             hosts[i].sharesLoaded = true
@@ -151,15 +138,12 @@ final class NetworkNeighborhoodProvider: NSObject, ObservableObject {
 
     // MARK: - Share resolution strategy
     private func resolveShares(host: NetworkHost) async -> [NetworkShare] {
-        // 1. Already-mounted volumes in /Volumes
         let mounted = mountedShares(for: host)
         if !mounted.isEmpty { return mounted }
-        // 2. smbutil anonymous listing
         if host.serviceType == .smb {
             let smbShares = await smbUtilShares(host: host)
             if !smbShares.isEmpty { return smbShares }
         }
-        // 3. Nothing found — return empty, UI will show emoji + Connect button
         return []
     }
 
@@ -169,12 +153,10 @@ final class NetworkNeighborhoodProvider: NSObject, ObservableObject {
             at: URL(fileURLWithPath: "/Volumes"),
             includingPropertiesForKeys: [.volumeIsLocalKey]
         ) else { return [] }
-
         return vols.compactMap { vol -> NetworkShare? in
             guard let vals = try? vol.resourceValues(forKeys: [.volumeIsLocalKey]),
                   vals.volumeIsLocal == false else { return nil }
             let volName = vol.lastPathComponent
-            // Match by hostname fragment
             let hostFragments = [host.name, host.hostName]
                 .flatMap { $0.components(separatedBy: ".") }
                 .map { $0.lowercased() }
@@ -184,18 +166,28 @@ final class NetworkNeighborhoodProvider: NSObject, ObservableObject {
         }
     }
 
+    // MARK: - Normalize hostname for smbutil: ensure .local suffix when resolve failed
+    private func smbHost(_ host: NetworkHost) -> String {
+        let hn = host.hostName
+        if hn == host.name || hn == "(nil)" || hn.isEmpty {
+            return host.name.hasSuffix(".local") ? host.name : "\(host.name).local"
+        }
+        return hn
+    }
+
     // MARK: - smbutil view //[user:pass@]host (lists shares using Keychain credentials)
     private func smbUtilShares(host: NetworkHost) async -> [NetworkShare] {
         return await withCheckedContinuation { continuation in
             DispatchQueue.global(qos: .userInitiated).async {
-                // Build //[user:pass@]host — use Keychain creds if available
+                let resolvedHost = self.smbHost(host)
+                log.info("[Network] smbutil target host: \(resolvedHost) (original hostName=\(host.hostName))")
                 let target: String
                 if let creds = NetworkAuthService.load(for: host.hostName) {
                     let enc = creds.password
                         .addingPercentEncoding(withAllowedCharacters: .urlPasswordAllowed) ?? creds.password
-                    target = "//\(creds.user):\(enc)@\(host.hostName)"
+                    target = "//\(creds.user):\(enc)@\(resolvedHost)"
                 } else {
-                    target = "//\(host.hostName)"
+                    target = "//\(resolvedHost)"
                 }
                 let process = Process()
                 process.executableURL = URL(fileURLWithPath: "/usr/bin/smbutil")
@@ -208,13 +200,13 @@ final class NetworkNeighborhoodProvider: NSObject, ObservableObject {
                     continuation.resume(returning: [])
                     return
                 }
-                DispatchQueue.global().asyncAfter(deadline: .now() + 5) {
+                DispatchQueue.global().asyncAfter(deadline: .now() + 6) {
                     if process.isRunning { process.terminate() }
                 }
                 process.waitUntilExit()
                 let data = pipe.fileHandleForReading.readDataToEndOfFile()
                 let output = String(data: data, encoding: .utf8) ?? ""
-                log.debug("[Network] smbutil view \(host.hostName) exit=\(process.terminationStatus) output=\(output.prefix(200))")
+                log.debug("[Network] smbutil view \(host.hostName) exit=\(process.terminationStatus) output=\(output.prefix(300))")
                 let shares = self.parseSmbUtilOutput(output, host: host)
                 continuation.resume(returning: shares)
             }
@@ -223,12 +215,6 @@ final class NetworkNeighborhoodProvider: NSObject, ObservableObject {
 
     // MARK: - Parse smbutil view output
     nonisolated private func parseSmbUtilOutput(_ output: String, host: NetworkHost) -> [NetworkShare] {
-        // smbutil view output:
-        //   Share                Type   Comments
-        //   ------               ----
-        //   senat                Disk
-        //   IPC$                 Pipe    IPC Service
-        //   kira's Public Folder Disk
         var shares: [NetworkShare] = []
         let lines = output.components(separatedBy: .newlines)
         var inTable = false
@@ -236,15 +222,12 @@ final class NetworkNeighborhoodProvider: NSObject, ObservableObject {
             let trimmed = line.trimmingCharacters(in: .whitespaces)
             if trimmed.hasPrefix("------") { inTable = true; continue }
             guard inTable, !trimmed.isEmpty else { continue }
-            // Split on 2+ spaces to separate name from type
             let parts = trimmed.components(separatedBy: .whitespaces).filter { !$0.isEmpty }
-            // Find "Disk" token — everything before it is the share name
             guard let diskIdx = parts.firstIndex(where: { $0.lowercased() == "disk" }),
                   diskIdx > 0 else { continue }
             let shareName = parts[0..<diskIdx].joined(separator: " ")
-            guard !shareName.hasSuffix("$") else { continue }  // skip IPC$, ADMIN$
+            guard !shareName.hasSuffix("$") else { continue }
             let scheme = host.serviceType == .afp ? "afp" : "smb"
-            // URL-encode share name for URL
             let encoded = shareName.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? shareName
             if let url = URL(string: "\(scheme)://\(host.hostName)/\(encoded)") {
                 shares.append(NetworkShare(name: shareName, url: url))
@@ -254,7 +237,7 @@ final class NetworkNeighborhoodProvider: NSObject, ObservableObject {
         return shares
     }
 
-    // MARK: - Internal: add or update host
+    // MARK: - Internal: add or update host — in-place hostName update preserves id/shares/deviceClass
     fileprivate func addResolvedHost(
         name: String, hostName: String, port: Int,
         serviceType: NetworkServiceType?, isPrinter: Bool,
@@ -263,13 +246,11 @@ final class NetworkNeighborhoodProvider: NSObject, ObservableObject {
         let nodeType: NetworkNodeType = isPrinter ? .printer : .fileServer
         let svcType = serviceType ?? .smb
         if let idx = hosts.firstIndex(where: { $0.name == name }) {
-            // Accumulate Bonjour service types for fingerprinting
             if let bt = bonjourType { hosts[idx].bonjourServices.insert(bt) }
-            if hostName != name && hostName != "(nil)" {
-                hosts[idx] = NetworkHost(name: name, hostName: hostName, port: port,
-                                         serviceType: hosts[idx].serviceType,
-                                         nodeType: hosts[idx].nodeType,
-                                         deviceClass: hosts[idx].deviceClass)
+            // In-place update — preserves id so View expanded state is not lost
+            if hostName != name && hostName != "(nil)" && !hostName.isEmpty {
+                hosts[idx].hostName = hostName
+                if port > 0 { hosts[idx].port = port }
                 log.info("[Network] updated hostName for '\(name)' → \(hostName)")
             }
             return
@@ -277,17 +258,15 @@ final class NetworkNeighborhoodProvider: NSObject, ObservableObject {
         var host = NetworkHost(name: name, hostName: hostName, port: port,
                                serviceType: svcType, nodeType: nodeType)
         if let bt = bonjourType { host.bonjourServices.insert(bt) }
-        // Fast classification: Bonjour services first, then name-based heuristics
         if let quick = NetworkDeviceFingerprinter.classifyByServices(host.bonjourServices) {
             host.deviceClass = quick
         } else {
-            // Name-based: fritz-box / router IPs are known immediately
             let nameLower = name.lowercased()
             let hostLower = hostName.lowercased()
             if nameLower.contains("fritz") || hostLower.contains("fritz") ||
                name == "192-168-178-1" || hostName == "192.168.178.1" {
                 host.deviceClass = .router
-                host.nodeType    = .generic   // not expandable
+                host.nodeType    = .generic
             }
         }
         hosts.append(host)
@@ -295,8 +274,7 @@ final class NetworkNeighborhoodProvider: NSObject, ObservableObject {
         log.info("[Network] added: '\(name)' hostName=\(hostName) port=\(port) isPrinter=\(isPrinter) deviceClass=\(host.deviceClass.label)")
     }
 
-    // MARK: - Deep fingerprint after scan completes (port probe + HTTP banner)
-    // Runs for all non-router, non-printer hosts — Bonjour gives only partial info.
+    // MARK: - Deep fingerprint after scan completes
     private func runFingerprintPass() {
         let candidates = hosts.filter {
             $0.deviceClass != .router && $0.deviceClass != .printer
@@ -340,10 +318,9 @@ extension NetworkNeighborhoodProvider: NetServiceBrowserDelegate {
         moreComing: Bool
     ) {
         log.info("[Network] didFind service='\(service.name)' type='\(service.type)' moreComing=\(moreComing)")
-        // Add host immediately from didFind — don't wait for resolve (resolve often hangs)
-        let name       = service.name
-        let senderType = service.type
-        let isPrinter  = NetworkNeighborhoodProvider.printerServiceTypes.contains { senderType.contains($0) }
+        let name        = service.name
+        let senderType  = service.type
+        let isPrinter   = NetworkNeighborhoodProvider.printerServiceTypes.contains { senderType.contains($0) }
         let serviceType = isPrinter ? nil : NetworkServiceType.allCases.first { senderType.contains($0.rawValue) }
         Task { @MainActor in
             guard self.isScanning else { return }
@@ -351,9 +328,9 @@ extension NetworkNeighborhoodProvider: NetServiceBrowserDelegate {
                                  serviceType: serviceType, isPrinter: isPrinter,
                                  bonjourType: senderType)
         }
-        // Also try resolve for IP address (best-effort, may not arrive)
+        // Resolve for actual .local hostname — delegate kept alive until resolved
         service.delegate = self
-        service.resolve(withTimeout: 4.0)
+        service.resolve(withTimeout: 8.0)
     }
 
     nonisolated func netServiceBrowser(
@@ -384,20 +361,12 @@ extension NetworkNeighborhoodProvider: NetServiceDelegate {
         let port       = sender.port
         let senderType = sender.type
         log.info("[Network] netServiceDidResolveAddress name='\(name)' host='\(hostName)' port=\(port) type='\(senderType)'")
-
-        let isPrinter = NetworkNeighborhoodProvider.printerServiceTypes
-            .contains { senderType.contains($0) }
-
+        let isPrinter = NetworkNeighborhoodProvider.printerServiceTypes.contains { senderType.contains($0) }
         let serviceType = isPrinter ? nil :
             NetworkServiceType.allCases.first { senderType.contains($0.rawValue) }
-
         log.info("[Network] classified: isPrinter=\(isPrinter) serviceType=\(String(describing: serviceType?.rawValue))")
-
         Task { @MainActor in
-            guard self.isScanning else {
-                log.debug("[Network] resolve ignored — scan already stopped")
-                return
-            }
+            // Allow late resolve even after scan stopped — updates hostName for smbutil
             self.addResolvedHost(
                 name: name,
                 hostName: hostName,
