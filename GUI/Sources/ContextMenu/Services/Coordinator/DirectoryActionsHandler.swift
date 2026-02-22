@@ -6,6 +6,7 @@
 // Description: Handles DirectoryAction dispatching from context menu
 
 import AppKit
+import FavoritesKit
 import Foundation
 
 // MARK: - Directory Actions Handler
@@ -83,6 +84,12 @@ extension ContextMenuCoordinator {
 
             case .delete:
                 activeDialog = .deleteConfirmation(files: batchFiles)
+
+            case .addToFavorites:
+                Task { @MainActor in
+                    UserFavoritesStore.shared.add(path: file.pathStr)
+                    log.info("[Favorites] directory added: \(file.pathStr)")
+                }
         }
     }
 

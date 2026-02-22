@@ -35,7 +35,10 @@ enum DirectoryAction: String, CaseIterable, Identifiable {
     
     // Info section
     case getInfo
-    
+
+    // Favorites
+    case addToFavorites
+
     var id: String { rawValue }
 
     /// Human-readable title for each action.
@@ -57,6 +60,7 @@ enum DirectoryAction: String, CaseIterable, Identifiable {
         case .rename: return "Rename..."
         case .delete: return "Move to Trash"
         case .getInfo: return "Get Info"
+        case .addToFavorites: return "Add to Favorites"
         }
     }
 
@@ -79,6 +83,7 @@ enum DirectoryAction: String, CaseIterable, Identifiable {
         case .rename: return "pencil"
         case .delete: return "trash"
         case .getInfo: return "info.circle"
+        case .addToFavorites: return "star.badge.plus"
         }
     }
     
