@@ -58,8 +58,8 @@ struct NetworkShare: Identifiable, Hashable {
 struct NetworkHost: Identifiable, Hashable {
     let id: UUID
     let name: String
-    let hostName: String
-    let port: Int
+    var hostName: String
+    var port: Int
     let serviceType: NetworkServiceType
 
     var nodeType: NetworkNodeType
