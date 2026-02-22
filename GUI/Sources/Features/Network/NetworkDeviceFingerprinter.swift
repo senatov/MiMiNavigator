@@ -2,73 +2,15 @@
 // MiMiNavigator
 //
 // Created by Iakov Senatov on 21.02.2026.
+// Refactored: 22.02.2026 — iPhone/iPad detection; fritz by name; localhost = Mac
 // Copyright © 2026 Senatov. All rights reserved.
-// Description: Determines hardware type (Mac, PC, NAS, Router, Printer, Linux)
-//              by probing open ports + HTTP banner + Bonjour service set.
+// Description: Determines hardware type by Bonjour services + port probe + HTTP banner.
 
 import Foundation
 
-// MARK: - Hardware device class
-enum NetworkDeviceClass {
-    case mac
-    case windowsPC
-    case linuxServer
-    case nas
-    case router
-    case printer
-    case unknown
-
-    var systemIconName: String {
-        switch self {
-        case .mac:          return "desktopcomputer"
-        case .windowsPC:    return "pc"
-        case .linuxServer:  return "server.rack"
-        case .nas:          return "externaldrive.connected.to.line.below"
-        case .router:       return "wifi.router"
-        case .printer:      return "printer"
-        case .unknown:      return "network"
-        }
-    }
-
-    var label: String {
-        switch self {
-        case .mac:          return "Mac"
-        case .windowsPC:    return "PC"
-        case .linuxServer:  return "Linux"
-        case .nas:          return "NAS"
-        case .router:       return "Router"
-        case .printer:      return "Printer"
-        case .unknown:      return ""
-        }
-    }
-
-    var authHint: NetworkAuthHint {
-        switch self {
-        case .mac:          return .smbOrSftp
-        case .windowsPC:    return .smbOnly
-        case .linuxServer:  return .sftpOnly
-        case .nas:          return .smbOrSftp
-        case .router:       return .webUI
-        case .printer:      return .none
-        case .unknown:      return .smbOnly
-        }
-    }
-
-    var isExpandable: Bool {
-        switch self {
-        case .printer, .router: return false
-        default:                return true
-        }
-    }
-}
-
 // MARK: - Auth strategy hint
 enum NetworkAuthHint {
-    case smbOnly
-    case sftpOnly
-    case smbOrSftp
-    case webUI
-    case none
+    case smbOnly, sftpOnly, smbOrSftp, webUI, none
 }
 
 // MARK: - Fingerprint result
@@ -77,32 +19,73 @@ struct NetworkDeviceFingerprint {
     let openPorts: Set<Int>
     let httpBanner: String?
 }
-// NetworkDeviceFingerprinter.swift (part 2 — probe logic)
-
-import Foundation
 
 // MARK: - Fingerprinter
 enum NetworkDeviceFingerprinter {
 
-    // MARK: - Bonjour-only fast classification (no network probe)
+    // MARK: - Known router/NAS keywords (hostname or HTTP banner)
+    private static let routerKeywords = [
+        "fritz", "fritzbox", "fritz-box", "router", "gateway",
+        "speedport", "easybox", "dsl-router", "technicolor",
+        "vodafone box", "o2 box", "192-168-178-1",
+    ]
+    private static let nasKeywords = [
+        "synology", "qnap", "buffalo", "wd my cloud", "netgear",
+        "readynas", "diskstation", "terramaster", "asustor", "vuduo",
+    ]
+
+    // MARK: - Fast classification by Bonjour service set (no network IO)
     static func classifyByServices(_ serviceTypes: Set<String>) -> NetworkDeviceClass? {
-        let printerTypes: Set<String> = ["_ipp._tcp.", "_ipps._tcp.", "_printer._tcp.",
-                                         "_pdl-datastream._tcp.", "_fax-ipp._tcp."]
-        if !serviceTypes.isDisjoint(with: printerTypes) { return .printer }
-        let hasSMB  = serviceTypes.contains { $0.contains("_smb._tcp.") }
-        let hasSFTP = serviceTypes.contains { $0.contains("_sftp-ssh._tcp.") }
-        let hasFTP  = serviceTypes.contains { $0.contains("_ftp._tcp.") }
+        let types = serviceTypes.map { $0.lowercased() }
+
+        // Mobile devices — _apple-mobdev2._tcp.
+        if types.contains(where: { $0.contains("mobdev") }) {
+            return .iPhone   // refined to iPad by name later
+        }
+
+        // Printers
+        let printerTypes = ["_ipp._tcp.", "_ipps._tcp.", "_printer._tcp.",
+                            "_pdl-datastream._tcp.", "_fax-ipp._tcp."]
+        if !Set(types).isDisjoint(with: printerTypes) { return .printer }
+
+        // Mac = SMB + SFTP (macOS always advertises both)
+        let hasSMB  = types.contains { $0.contains("_smb._tcp.") }
+        let hasSFTP = types.contains { $0.contains("_sftp-ssh._tcp.") }
+        let hasFTP  = types.contains { $0.contains("_ftp._tcp.") }
+
         if hasSMB && hasSFTP  { return .mac }
-        if hasSMB && !hasSFTP { return .windowsPC }
         if (hasSFTP || hasFTP) && !hasSMB { return .linuxServer }
+        // SMB-only is ambiguous — could be Mac, PC, NAS or fritz-box
         return nil
     }
 
-    // MARK: - Full probe (async, port scan + HTTP banner)
-    static func probe(hostName: String, bonjourServices: Set<String>) async -> NetworkDeviceFingerprint {
+    // MARK: - Name-based fast classification (before any probe)
+    static func classifyByName(_ name: String, hostName: String) -> NetworkDeviceClass? {
+        let n = name.lowercased()
+        let h = hostName.lowercased()
+
+        if routerKeywords.contains(where: { n.contains($0) || h.contains($0) }) { return .router }
+        if nasKeywords.contains(where: { n.contains($0) || h.contains($0) }) { return .nas }
+
+        // iPhone / iPad by name
+        if n.contains("ipad") || h.contains("ipad") { return .iPad }
+        if n.contains("iphone") || h.contains("iphone") { return .iPhone }
+        if n.contains("iphone") || n.contains("s iphone") { return .iPhone }
+
+        return nil
+    }
+
+    // MARK: - Full async probe (port scan + HTTP banner)
+    static func probe(hostName: String, bonjourServices: Set<String>, name: String = "") async -> NetworkDeviceFingerprint {
+        // Bonjour fast path
         if let quick = classifyByServices(bonjourServices) {
             return NetworkDeviceFingerprint(deviceClass: quick, openPorts: [], httpBanner: nil)
         }
+        // Name fast path
+        if let quick = classifyByName(name, hostName: hostName) {
+            return NetworkDeviceFingerprint(deviceClass: quick, openPorts: [], httpBanner: nil)
+        }
+
         let portsToCheck = [22, 80, 443, 445, 548, 21, 631]
         let openPorts = await probePortsConcurrently(host: hostName, ports: portsToCheck, timeout: 1.5)
         log.debug("[Fingerprint] \(hostName) open ports: \(openPorts.sorted())")
@@ -110,48 +93,35 @@ enum NetworkDeviceFingerprinter {
         if let banner = httpBanner {
             log.debug("[Fingerprint] \(hostName) HTTP title: \(banner)")
         }
-        let deviceClass = classify(hostName: hostName, ports: openPorts, banner: httpBanner)
+        let deviceClass = classify(name: name, hostName: hostName, ports: openPorts, banner: httpBanner)
         return NetworkDeviceFingerprint(deviceClass: deviceClass, openPorts: openPorts, httpBanner: httpBanner)
     }
 
-    // MARK: - Classification logic (order matters — specific before general)
-    private static func classify(hostName: String, ports: Set<Int>, banner: String?) -> NetworkDeviceClass {
-        let name        = hostName.lowercased()
+    // MARK: - Port-based classification
+    private static func classify(name: String, hostName: String, ports: Set<Int>, banner: String?) -> NetworkDeviceClass {
+        let n = name.lowercased()
+        let h = hostName.lowercased()
         let bannerLower = banner?.lowercased() ?? ""
 
-        // Router by banner or hostname
-        let routerKeywords = ["fritz", "fritzbox", "router", "gateway", "speedport",
-                              "easybox", "dsl-router", "technicolor", "vodafone box", "o2 box"]
-        if routerKeywords.contains(where: { bannerLower.contains($0) || name.contains($0) }) { return .router }
-
-        // NAS by banner or hostname
-        let nasKeywords = ["synology", "qnap", "buffalo", "wd my cloud", "netgear",
-                           "readynas", "diskstation", "terramaster", "asustor"]
-        if nasKeywords.contains(where: { bannerLower.contains($0) || name.contains($0) }) { return .nas }
+        if routerKeywords.contains(where: { bannerLower.contains($0) || n.contains($0) || h.contains($0) }) { return .router }
+        if nasKeywords.contains(where: { bannerLower.contains($0) || n.contains($0) || h.contains($0) }) { return .nas }
 
         let has22  = ports.contains(22)
         let has80  = ports.contains(80)
-        let has443 = ports.contains(443)
         let has445 = ports.contains(445)
-        let has548 = ports.contains(548)   // AFP — macOS only
+        let has548 = ports.contains(548)  // AFP — macOS only
 
-        // NAS: SSH + web UI + SMB (more specific than Mac, check first)
         if has22 && has80 && has445 { return .nas }
-        // Mac: AFP or (SSH + SMB), no web UI
         if has548 { return .mac }
         if has22 && has445 { return .mac }
-        // Windows: SMB only, no SSH
         if has445 && !has22 { return .windowsPC }
-        // Linux: SSH only, no SMB
         if has22 && !has445 { return .linuxServer }
-        // Web-only → router or unknown appliance
-        if has80 || has443 { return .router }
-
+        if has80 || ports.contains(443) { return .router }
         return .unknown
     }
 
     // MARK: - Concurrent port probe
-    private static func probePortsConcurrently(host: String, ports: [Int], timeout: TimeInterval) async -> Set<Int> {
+    static func probePortsConcurrently(host: String, ports: [Int], timeout: TimeInterval) async -> Set<Int> {
         await withTaskGroup(of: Int?.self) { group in
             for port in ports {
                 group.addTask { await isPortOpen(host: host, port: port, timeout: timeout) ? port : nil }
@@ -162,8 +132,8 @@ enum NetworkDeviceFingerprinter {
         }
     }
 
-    // MARK: - TCP port check via POSIX socket
-    private static func isPortOpen(host: String, port: Int, timeout: TimeInterval) async -> Bool {
+    // MARK: - TCP port check
+    static func isPortOpen(host: String, port: Int, timeout: TimeInterval) async -> Bool {
         await withCheckedContinuation { continuation in
             DispatchQueue.global(qos: .userInitiated).async {
                 let sock = socket(AF_INET, SOCK_STREAM, 0)
@@ -184,14 +154,15 @@ enum NetworkDeviceFingerprinter {
     }
 
     // MARK: - Fetch HTTP <title>
-    private static func fetchHTTPTitle(host: String) async -> String? {
+    static func fetchHTTPTitle(host: String) async -> String? {
         guard let url = URL(string: "http://\(host)") else { return nil }
         var req = URLRequest(url: url, timeoutInterval: 2.5)
         req.httpMethod = "GET"
         guard let (data, _) = try? await URLSession.shared.data(for: req),
               let html = String(data: data, encoding: .utf8) ?? String(data: data, encoding: .isoLatin1)
         else { return nil }
-        if let r = html.range(of: #"<title[^>]*>(.*?)</title>"#, options: [.regularExpression, .caseInsensitive]) {
+        if let r = html.range(of: #"<title[^>]*>(.*?)</title>"#,
+                               options: [.regularExpression, .caseInsensitive]) {
             return String(html[r])
                 .replacingOccurrences(of: #"</?title[^>]*>"#, with: "", options: .regularExpression)
                 .trimmingCharacters(in: .whitespacesAndNewlines)

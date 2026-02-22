@@ -4,6 +4,7 @@
 // Created by Iakov Senatov on 20.02.2026.
 // Refactored: 21.02.2026 — router Web UI button inline; FritzBox/PC/NAS device badges
 // Refactored: 22.02.2026 — layout recursion fix: defer startDiscovery via Task
+// Refactored: 22.02.2026 — no Sign In for localhost/mobile; mobile icon color; localhost badge
 // Copyright © 2026 Senatov. All rights reserved.
 // Description: Tree-style Network Neighborhood — Bonjour + FritzBox TR-064 discovery.
 
@@ -145,13 +146,17 @@ struct NetworkNeighborhoodView: View {
     private func noSharesRow(for host: NetworkHost) -> some View {
         HStack(spacing: 8) {
             Text("😞").font(.system(size: 14))
-            Text("No shares found").font(.caption).foregroundStyle(.secondary)
+            Text(host.isLocalhost ? "No shared folders configured" : "No shares found")
+                .font(.caption).foregroundStyle(.secondary)
             Spacer()
-            Button { authTarget = host } label: {
-                Label("Sign In", systemImage: "key.fill")
-                    .font(.caption).padding(.horizontal, 8).padding(.vertical, 3)
+            // No Sign In button for: localhost (this Mac), mobile devices, routers
+            if !host.isLocalhost && !host.deviceClass.isMobile && !host.deviceClass.isRouter {
+                Button { authTarget = host } label: {
+                    Label("Sign In", systemImage: "key.fill")
+                        .font(.caption).padding(.horizontal, 8).padding(.vertical, 3)
+                }
+                .buttonStyle(.borderedProminent).controlSize(.mini)
             }
-            .buttonStyle(.borderedProminent).controlSize(.mini)
         }
         .padding(.leading, 40).padding(.trailing, 10).padding(.vertical, 6)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -192,8 +197,12 @@ private struct HostNodeRow: View {
             // Icon
             Image(systemName: host.systemIconName)
                 .font(.system(size: 16))
-                .foregroundStyle(host.deviceClass == .router ? .orange :
-                                 host.nodeType  == .printer ? .secondary : .blue)
+                .foregroundStyle(
+                    host.deviceClass == .router  ? Color.orange :
+                    host.deviceClass == .iPhone  ? Color.green :
+                    host.deviceClass == .iPad    ? Color.green :
+                    host.nodeType    == .printer ? Color.secondary : Color.blue
+                )
                 .frame(width: 24)
 
             // Name + sub-label
@@ -219,10 +228,11 @@ private struct HostNodeRow: View {
                 .controlSize(.mini)
                 .padding(.trailing, 6)
             } else if !host.deviceLabel.isEmpty {
-                Text(host.deviceLabel)
-                    .font(.caption2).foregroundStyle(.secondary)
+                Text(host.isLocalhost ? "This Mac" : host.deviceLabel)
+                    .font(.caption2)
+                    .foregroundStyle(host.isLocalhost ? Color.accentColor : Color.secondary)
                     .padding(.horizontal, 6).padding(.vertical, 2)
-                    .background(Color.secondary.opacity(0.12))
+                    .background((host.isLocalhost ? Color.accentColor : Color.secondary).opacity(0.12))
                     .clipShape(Capsule())
                     .padding(.trailing, 6)
             }

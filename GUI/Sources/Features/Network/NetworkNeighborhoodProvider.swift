@@ -3,10 +3,10 @@
 //
 // Created by Iakov Senatov on 19.02.2026.
 // Refactored: 20.02.2026 — tree expand: fetchShares per host, nodeType detection
-// Refactored: 22.02.2026 — NetFS share enumeration (Finder-compatible); hostname normalization;
-//                          in-place hostName update; layout recursion fix
+// Refactored: 22.02.2026 — NetFS shares; hostname normalization; layout recursion fix
+// Refactored: 22.02.2026 — iPhone/iPad via _apple-mobdev2; SASCHA from FritzBox; fritz=Router
 // Copyright © 2026 Senatov. All rights reserved.
-// Description: Bonjour-based network host discovery + lazy share enumeration via NetFS
+// Description: Bonjour-based network host discovery + lazy share enumeration
 
 import Foundation
 import Network
@@ -24,29 +24,33 @@ final class NetworkNeighborhoodProvider: NSObject, ObservableObject {
     private var browsers: [NetServiceBrowser] = []
     private var scanGeneration: Int = 0
 
-    // MARK: - Printer service types
+    // MARK: - Service types that indicate a printer
     nonisolated static let printerServiceTypes: Set<String> = [
-        "_ipp._tcp.",
-        "_ipps._tcp.",
-        "_pdl-datastream._tcp.",
-        "_printer._tcp.",
-        "_fax-ipp._tcp.",
+        "_ipp._tcp.", "_ipps._tcp.", "_pdl-datastream._tcp.",
+        "_printer._tcp.", "_fax-ipp._tcp.",
     ]
+
+    // MARK: - Mobile device service type (iPhone / iPad)
+    nonisolated static let mobileServiceType = "_apple-mobdev2._tcp."
 
     override private init() { super.init() }
 
     // MARK: - Start discovery
     func startDiscovery() {
         guard !isScanning else { return }
-        log.info("[Network] startDiscovery — scanning Bonjour + FritzBox")
+        log.info("[Network] startDiscovery — Bonjour + FritzBox")
         hosts.removeAll()
         browsers.removeAll()
         isScanning = true
         scanGeneration += 1
         let generation = scanGeneration
 
-        let allTypes = NetworkServiceType.allCases.map { $0.rawValue } + Array(Self.printerServiceTypes)
-        for type in allTypes {
+        // All file-sharing + printer + mobile service types
+        let serviceTypes = NetworkServiceType.allCases.map { $0.rawValue }
+            + Array(Self.printerServiceTypes)
+            + [Self.mobileServiceType]
+
+        for type in serviceTypes {
             let browser = NetServiceBrowser()
             browser.schedule(in: .main, forMode: .common)
             browser.delegate = self
@@ -54,61 +58,61 @@ final class NetworkNeighborhoodProvider: NSObject, ObservableObject {
             browsers.append(browser)
         }
 
+        // FritzBox TR-064 — discover ALL LAN hosts (PC, Mac, NAS, etc.)
         Task {
             let fritzHosts = await FritzBoxDiscovery.activeHosts()
             await MainActor.run {
                 guard self.scanGeneration == generation else { return }
                 for fh in fritzHosts {
+                    guard !fh.ip.isEmpty else { continue }
+                    // Skip this Mac's own IPs
+                    guard !self.isLocalhostIP(fh.ip) else {
+                        log.debug("[FritzBox] skip localhost: \(fh.name) (\(fh.ip))")
+                        continue
+                    }
+                    // Skip if already added via Bonjour
                     let nameLower = fh.name.lowercased()
-                    guard !nameLower.contains("fritz") &&
-                          !nameLower.contains("iphone") &&
-                          !nameLower.contains("ipad") &&
-                          !nameLower.contains("irobot") &&
-                          !fh.ip.isEmpty
-                    else { continue }
                     guard !self.hosts.contains(where: {
                         $0.name.lowercased() == nameLower || $0.hostName == fh.ip
                     }) else { continue }
-                    guard !self.isLocalhost(ip: fh.ip) else {
-                        log.debug("[Network] skipping localhost: \(fh.name) (\(fh.ip))")
-                        continue
-                    }
+
                     self.addResolvedHost(name: fh.name, hostName: fh.name,
                                         port: 445, serviceType: .smb,
                                         isPrinter: false, bonjourType: nil)
-                    log.info("[Network] FritzBox host: \(fh.name) (\(fh.ip))")
+                    log.info("[FritzBox] added host: \(fh.name) (\(fh.ip))")
                 }
             }
         }
 
+        // Auto-stop after 12 seconds
         Task {
             try? await Task.sleep(for: .seconds(12))
             await MainActor.run {
                 guard self.scanGeneration == generation, self.isScanning else { return }
                 self.stopDiscovery()
-                log.info("[Network] auto-stopped after timeout")
+                log.info("[Network] auto-stopped after 12s timeout")
             }
         }
     }
 
     // MARK: - Detect if IP belongs to this Mac
-    private func isLocalhost(ip: String) -> Bool {
+    private func isLocalhostIP(_ ip: String) -> Bool {
         if ip == "127.0.0.1" || ip == "::1" { return true }
         var ifaddr: UnsafeMutablePointer<ifaddrs>? = nil
         guard getifaddrs(&ifaddr) == 0, let first = ifaddr else { return false }
         defer { freeifaddrs(ifaddr) }
         var cur: UnsafeMutablePointer<ifaddrs>? = first
         while let c = cur {
-            if let sa = c.pointee.ifa_addr, sa.pointee.sa_family == UInt8(AF_INET) {
-                var addr = sockaddr_in()
-                withUnsafeMutableBytes(of: &addr) {
-                    $0.copyMemory(from: UnsafeRawBufferPointer(UnsafeBufferPointer(start: sa, count: 1)))
-                }
-                var buf = [CChar](repeating: 0, count: Int(INET_ADDRSTRLEN))
-                inet_ntop(AF_INET, &addr.sin_addr, &buf, socklen_t(INET_ADDRSTRLEN))
-                if String(cString: buf) == ip { return true }
+            defer { cur = c.pointee.ifa_next }
+            guard let sa = c.pointee.ifa_addr,
+                  sa.pointee.sa_family == UInt8(AF_INET) else { continue }
+            var addr = sockaddr_in()
+            withUnsafeMutableBytes(of: &addr) {
+                $0.copyMemory(from: UnsafeRawBufferPointer(UnsafeBufferPointer(start: sa, count: 1)))
             }
-            cur = c.pointee.ifa_next
+            var buf = [CChar](repeating: 0, count: Int(INET_ADDRSTRLEN))
+            inet_ntop(AF_INET, &addr.sin_addr, &buf, socklen_t(INET_ADDRSTRLEN))
+            if String(cString: buf) == ip { return true }
         }
         return false
     }
@@ -118,91 +122,127 @@ final class NetworkNeighborhoodProvider: NSObject, ObservableObject {
         browsers.forEach { $0.stop() }
         browsers.removeAll()
         isScanning = false
-        log.info("[Network] stopDiscovery — \(hosts.count) hosts found")
+        log.info("[Network] stopDiscovery — \(hosts.count) hosts")
         runFingerprintPass()
     }
 
-    // MARK: - Expand: load shares for host via NetFS
+    // MARK: - Fetch shares for a host (lazy, triggered by expand)
     func fetchShares(for hostID: NetworkHost.ID) async {
         guard let idx = hosts.firstIndex(where: { $0.id == hostID }) else { return }
-        guard hosts[idx].isExpandable else { return }
-        guard !hosts[idx].sharesLoaded else { return }
+        guard hosts[idx].isExpandable, !hosts[idx].sharesLoaded else { return }
         hosts[idx].sharesLoading = true
-        log.info("[Network] fetchShares for \(hosts[idx].name)")
+        log.info("[Network] fetchShares for '\(hosts[idx].name)'")
         let host = hosts[idx]
         let shares = await NetworkShareEnumerator.shares(for: host)
         if let i = hosts.firstIndex(where: { $0.id == hostID }) {
-            hosts[i].shares      = shares
+            hosts[i].shares       = shares
             hosts[i].sharesLoaded  = true
             hosts[i].sharesLoading = false
         }
-        log.info("[Network] shares for \(host.name): \(shares.map(\.name))")
+        log.info("[Network] '\(host.name)' shares: \(shares.map(\.name))")
     }
 
-    // MARK: - Internal: add or update host — in-place update preserves id/shares/state
-    fileprivate func addResolvedHost(
-        name: String, hostName: String, port: Int,
-        serviceType: NetworkServiceType?, isPrinter: Bool,
-        bonjourType: String? = nil
-    ) {
-        let nodeType: NetworkNodeType = isPrinter ? .printer : .fileServer
-        let svcType = serviceType ?? .smb
-        if let idx = hosts.firstIndex(where: { $0.name == name }) {
-            if let bt = bonjourType { hosts[idx].bonjourServices.insert(bt) }
-            if hostName != name && hostName != "(nil)" && !hostName.isEmpty {
-                hosts[idx].hostName = hostName
-                if port > 0 { hosts[idx].port = port }
-                log.info("[Network] updated hostName for '\(name)' → \(hostName)")
-            }
-            return
-        }
-        var host = NetworkHost(name: name, hostName: hostName, port: port,
-                               serviceType: svcType, nodeType: nodeType)
-        if let bt = bonjourType { host.bonjourServices.insert(bt) }
-        if let quick = NetworkDeviceFingerprinter.classifyByServices(host.bonjourServices) {
-            host.deviceClass = quick
-        } else {
-            let nameLower = name.lowercased()
-            let hostLower = hostName.lowercased()
-            if nameLower.contains("fritz") || hostLower.contains("fritz") ||
-               name == "192-168-178-1" || hostName == "192.168.178.1" {
-                host.deviceClass = .router
-                host.nodeType    = .generic
-            }
-        }
-        hosts.append(host)
-        hosts.sort { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
-        log.info("[Network] added: '\(name)' hostName=\(hostName) port=\(port) isPrinter=\(isPrinter) deviceClass=\(host.deviceClass.label)")
-    }
-
-    // MARK: - Deep fingerprint after scan completes
-    private func runFingerprintPass() {
-        let candidates = hosts.filter {
-            $0.deviceClass != .router && $0.deviceClass != .printer
-        }
-        guard !candidates.isEmpty else { return }
-        log.info("[Fingerprint] starting pass for \(candidates.map(\.name))")
-        Task {
-            for host in candidates {
-                let fp = await NetworkDeviceFingerprinter.probe(
-                    hostName: host.hostName,
-                    bonjourServices: host.bonjourServices
-                )
-                if let idx = self.hosts.firstIndex(where: { $0.id == host.id }) {
-                    self.hosts[idx].deviceClass = fp.deviceClass
-                    log.info("[Fingerprint] '\(host.name)' → \(fp.deviceClass.label)  ports=\(fp.openPorts.sorted())")
-                }
-            }
-            log.info("[Fingerprint] pass complete")
-        }
-    }
-
-    // MARK: - Retry share fetch after auth (resets sharesLoaded flag)
+    // MARK: - Retry after auth
     func retryFetchShares(for hostID: NetworkHost.ID) async {
         guard let idx = hosts.firstIndex(where: { $0.id == hostID }) else { return }
         hosts[idx].sharesLoaded = false
         hosts[idx].shares = []
         await fetchShares(for: hostID)
+    }
+
+    // MARK: - Add or in-place update host (preserves id/shares/expanded state)
+    fileprivate func addResolvedHost(
+        name: String, hostName: String, port: Int,
+        serviceType: NetworkServiceType?,
+        isPrinter: Bool,
+        bonjourType: String? = nil,
+        isMobile: Bool = false
+    ) {
+        // Update existing host in-place
+        if let idx = hosts.firstIndex(where: { $0.name == name }) {
+            if let bt = bonjourType { hosts[idx].bonjourServices.insert(bt) }
+            if hostName != name && hostName != "(nil)" && !hostName.isEmpty {
+                hosts[idx].hostName = hostName
+                if port > 0 { hosts[idx].port = port }
+            }
+            // Re-classify if we got new Bonjour services
+            reclassifyIfNeeded(idx: idx)
+            return
+        }
+
+        let nodeType: NetworkNodeType = isMobile ? .mobileDevice
+                                      : isPrinter ? .printer
+                                      : .fileServer
+        let svcType = serviceType ?? .smb
+        var host = NetworkHost(name: name, hostName: hostName, port: port,
+                               serviceType: svcType, nodeType: nodeType)
+        if let bt = bonjourType { host.bonjourServices.insert(bt) }
+
+        // Check if this is localhost (this Mac)
+        host.isLocalhost = isLocalhostByName(name: name, hostName: hostName)
+        if host.isLocalhost { host.deviceClass = .mac }
+
+        // Classify by services
+        if host.deviceClass == .unknown,
+           let quick = NetworkDeviceFingerprinter.classifyByServices(host.bonjourServices) {
+            host.deviceClass = quick
+        }
+        // Classify by name (catches fritz-box, router, iPhone, iPad, NAS)
+        if host.deviceClass == .unknown || host.deviceClass == .windowsPC {
+            if let byName = NetworkDeviceFingerprinter.classifyByName(name, hostName: hostName) {
+                host.deviceClass = byName
+                if byName.isRouter { host.nodeType = .generic }
+                if byName.isMobile { host.nodeType = .mobileDevice }
+            }
+        }
+        // Mobile node type always overrides
+        if isMobile && host.deviceClass == .unknown { host.deviceClass = .iPhone }
+
+        hosts.append(host)
+        hosts.sort { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+        log.info("[Network] added '\(name)' hn=\(hostName) class=\(host.deviceClass.label) localhost=\(host.isLocalhost)")
+    }
+
+    // MARK: - Re-classify existing host when bonjourServices updated
+    private func reclassifyIfNeeded(idx: Int) {
+        let host = hosts[idx]
+        guard host.deviceClass == .unknown || host.deviceClass == .windowsPC else { return }
+        if let cls = NetworkDeviceFingerprinter.classifyByServices(host.bonjourServices) {
+            hosts[idx].deviceClass = cls
+            if cls.isRouter { hosts[idx].nodeType = .generic }
+        }
+    }
+
+    // MARK: - Is this host this Mac?
+    private func isLocalhostByName(name: String, hostName: String) -> Bool {
+        let macName = Host.current().localizedName ?? ""
+        let n = name.lowercased()
+        let hn = hostName.lowercased()
+        let mac = macName.lowercased()
+        return n == mac || n == mac.replacing(" ", with: "-") || hn == "127.0.0.1" || hn == "::1"
+    }
+
+    // MARK: - Deep fingerprint pass after scan stops
+    private func runFingerprintPass() {
+        let candidates = hosts.filter {
+            $0.deviceClass == .unknown && !$0.isLocalhost
+        }
+        guard !candidates.isEmpty else { return }
+        log.info("[Fingerprint] probing: \(candidates.map(\.name))")
+        Task {
+            for host in candidates {
+                let fp = await NetworkDeviceFingerprinter.probe(
+                    hostName: host.hostName,
+                    bonjourServices: host.bonjourServices,
+                    name: host.name
+                )
+                if let idx = self.hosts.firstIndex(where: { $0.id == host.id }) {
+                    self.hosts[idx].deviceClass = fp.deviceClass
+                    if fp.deviceClass.isRouter { self.hosts[idx].nodeType = .generic }
+                    log.info("[Fingerprint] '\(host.name)' → \(fp.deviceClass.label) ports=\(fp.openPorts.sorted())")
+                }
+            }
+        }
     }
 
     fileprivate func removeHostByName(_ name: String) {
@@ -214,41 +254,61 @@ final class NetworkNeighborhoodProvider: NSObject, ObservableObject {
 extension NetworkNeighborhoodProvider: NetServiceBrowserDelegate {
 
     nonisolated func netServiceBrowser(
-        _ browser: NetServiceBrowser,
-        didFind service: NetService,
-        moreComing: Bool
+        _ browser: NetServiceBrowser, didFind service: NetService, moreComing: Bool
     ) {
-        log.info("[Network] didFind service='\(service.name)' type='\(service.type)' moreComing=\(moreComing)")
-        let name        = service.name
-        let senderType  = service.type
-        let isPrinter   = NetworkNeighborhoodProvider.printerServiceTypes.contains { senderType.contains($0) }
-        let serviceType = isPrinter ? nil : NetworkServiceType.allCases.first { senderType.contains($0.rawValue) }
+        let name       = service.name
+        let senderType = service.type
+        log.info("[Bonjour] found '\(name)' type=\(senderType)")
+
+        let isMobile  = senderType.contains("mobdev")
+        let isPrinter = !isMobile && NetworkNeighborhoodProvider.printerServiceTypes
+            .contains { senderType.contains($0) }
+        let serviceType = (isMobile || isPrinter) ? nil
+            : NetworkServiceType.allCases.first { senderType.contains($0.rawValue) }
+
         Task { @MainActor in
             guard self.isScanning else { return }
-            self.addResolvedHost(name: name, hostName: name, port: serviceType?.defaultPort ?? 445,
-                                 serviceType: serviceType, isPrinter: isPrinter,
-                                 bonjourType: senderType)
+            // For mobile devices, use MAC address part of name as display name
+            let displayName = isMobile ? self.mobileDisplayName(from: name) : name
+            self.addResolvedHost(
+                name: displayName, hostName: name,
+                port: serviceType?.defaultPort ?? 0,
+                serviceType: serviceType,
+                isPrinter: isPrinter,
+                bonjourType: senderType,
+                isMobile: isMobile
+            )
         }
         service.delegate = self
         service.resolve(withTimeout: 8.0)
     }
 
+    // MARK: - Parse friendly name for mobile (MAC@addr → "iPhone" / "iPad")
+    nonisolated private func mobileDisplayName(from bonjourName: String) -> String {
+        // Name format: "b4:1b:b0:6d:1a:22@fe80::...supportsRP-24"
+        // We'll refine after resolve; for now use MAC prefix
+        if let at = bonjourName.firstIndex(of: "@") {
+            let mac = String(bonjourName[bonjourName.startIndex..<at])
+            return "Apple Device (\(mac.suffix(5)))"
+        }
+        return bonjourName
+    }
+
     nonisolated func netServiceBrowser(
-        _ browser: NetServiceBrowser,
-        didRemove service: NetService,
-        moreComing: Bool
+        _ browser: NetServiceBrowser, didRemove service: NetService, moreComing: Bool
     ) {
         let name = service.name
-        log.info("[Network] didRemove service='\(name)'")
         Task { @MainActor in self.removeHostByName(name) }
     }
 
     nonisolated func netServiceBrowserDidStopSearch(_ browser: NetServiceBrowser) {
-        log.debug("[Network] browserDidStopSearch")
+        log.debug("[Bonjour] browserDidStopSearch")
     }
 
-    nonisolated func netServiceBrowser(_ browser: NetServiceBrowser, didNotSearch errorDict: [String: NSNumber]) {
-        log.warning("[Network] didNotSearch error=\(errorDict)")
+    nonisolated func netServiceBrowser(
+        _ browser: NetServiceBrowser, didNotSearch errorDict: [String: NSNumber]
+    ) {
+        log.warning("[Bonjour] didNotSearch error=\(errorDict)")
     }
 }
 
@@ -260,17 +320,37 @@ extension NetworkNeighborhoodProvider: NetServiceDelegate {
         let hostName   = sender.hostName ?? "(nil)"
         let port       = sender.port
         let senderType = sender.type
-        log.info("[Network] resolved '\(name)' → \(hostName):\(port) type=\(senderType)")
-        let isPrinter   = NetworkNeighborhoodProvider.printerServiceTypes.contains { senderType.contains($0) }
-        let serviceType = isPrinter ? nil : NetworkServiceType.allCases.first { senderType.contains($0.rawValue) }
+        log.info("[Bonjour] resolved '\(name)' → \(hostName):\(port)")
+
+        let isMobile  = senderType.contains("mobdev")
+        let isPrinter = !isMobile && NetworkNeighborhoodProvider.printerServiceTypes
+            .contains { senderType.contains($0) }
+        let serviceType = (isMobile || isPrinter) ? nil
+            : NetworkServiceType.allCases.first { senderType.contains($0.rawValue) }
+
         Task { @MainActor in
-            // Allow late resolve after scan stopped — updates hostName for NetFS
-            self.addResolvedHost(name: name, hostName: hostName, port: port,
-                                 serviceType: serviceType, isPrinter: isPrinter)
+            let displayName = isMobile ? self.refinedMobileName(hostName: hostName, rawName: name) : name
+            self.addResolvedHost(
+                name: displayName, hostName: hostName,
+                port: port, serviceType: serviceType,
+                isPrinter: isPrinter,
+                isMobile: isMobile
+            )
         }
     }
 
+    // MARK: - Resolve hostname → "iPhone" or "iPad" using hostName
+    nonisolated private func refinedMobileName(hostName: String, rawName: String) -> String {
+        let hn = hostName.lowercased()
+        if hn.contains("ipad") { return "iPad (\(hn.components(separatedBy: ".").first ?? hn))" }
+        if hn.contains("iphone") || hn.contains("kiras-iphone") || hn.contains("senats") {
+            return "iPhone (\(hn.components(separatedBy: ".").first ?? hn))"
+        }
+        // Fallback: use first part of hostname
+        return hostName.components(separatedBy: ".").first ?? hostName
+    }
+
     nonisolated func netService(_ sender: NetService, didNotResolve errorDict: [String: NSNumber]) {
-        log.warning("[Network] didNotResolve '\(sender.name)' error=\(errorDict)")
+        log.warning("[Bonjour] didNotResolve '\(sender.name)' \(errorDict)")
     }
 }
