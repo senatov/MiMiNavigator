@@ -2,9 +2,9 @@
 // MiMiNavigator
 //
 // Created by Iakov Senatov on 21.02.2026.
+// Refactored: 22.02.2026 — fixed SOAPAction header (was missing → 404); isAvailable via SOAP
 // Copyright © 2026 Senatov. All rights reserved.
 // Description: Discovers all LAN hosts via FritzBox TR-064 UPnP API (no auth required).
-//              Falls back gracefully if no FritzBox present.
 
 import Foundation
 
@@ -17,23 +17,19 @@ struct FritzBoxHost {
 
 // MARK: - FritzBox TR-064 discovery
 enum FritzBoxDiscovery {
+    private static let upnpURL = "http://fritz.box:49000/upnp/control/hosts"
+    private static let infoURL = "http://fritz.box/jason_boxinfo.xml"
 
-    private static let fritzIP   = "192.168.178.1"
-    private static let upnpURL   = "http://192.168.178.1:49000/upnp/control/hosts"
-    private static let infoURL   = "http://192.168.178.1/jason_boxinfo.xml"
-
-    // MARK: - Check if FritzBox is reachable
+    // MARK: - Check reachability via SOAP ping
     static func isAvailable() async -> Bool {
-        guard let url = URL(string: infoURL) else { return false }
-        var req = URLRequest(url: url, timeoutInterval: 2.0)
-        req.httpMethod = "HEAD"
-        return (try? await URLSession.shared.data(for: req)) != nil
+        return await hostCount() != nil
     }
 
     // MARK: - Get count of DHCP entries
     static func hostCount() async -> Int? {
         let body = soapEnvelope(action: "GetHostNumberOfEntries", service: "Hosts:1", params: "")
-        guard let xml = await postSOAP(body: body) else { return nil }
+        guard let xml = await postSOAP(body: body, action: "GetHostNumberOfEntries", service: "Hosts:1")
+        else { return nil }
         return extractInt(xml, tag: "NewHostNumberOfEntries")
     }
 
@@ -45,7 +41,6 @@ enum FritzBoxDiscovery {
         }
         log.info("[FritzBox] fetching \(count) DHCP entries")
         var results: [FritzBoxHost] = []
-        // Fetch all entries concurrently in batches of 10
         await withTaskGroup(of: FritzBoxHost?.self) { group in
             for i in 0..<count {
                 group.addTask { await fetchHost(index: i) }
@@ -54,7 +49,6 @@ enum FritzBoxDiscovery {
                 if let h = host, h.isActive { results.append(h) }
             }
         }
-        // Deduplicate by name (FritzBox can have multiple IPs for same host)
         var seen = Set<String>()
         results = results.filter { seen.insert($0.name.lowercased()).inserted }
         results.sort { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
@@ -66,7 +60,8 @@ enum FritzBoxDiscovery {
     private static func fetchHost(index: Int) async -> FritzBoxHost? {
         let params = "<NewIndex>\(index)</NewIndex>"
         let body   = soapEnvelope(action: "GetGenericHostEntry", service: "Hosts:1", params: params)
-        guard let xml = await postSOAP(body: body) else { return nil }
+        guard let xml = await postSOAP(body: body, action: "GetGenericHostEntry", service: "Hosts:1")
+        else { return nil }
         guard let name   = extractString(xml, tag: "NewHostName"), !name.isEmpty,
               let active = extractString(xml, tag: "NewActive")
         else { return nil }
@@ -74,7 +69,7 @@ enum FritzBoxDiscovery {
         return FritzBoxHost(name: name, ip: ip, isActive: active == "1")
     }
 
-    // MARK: - SOAP helper
+    // MARK: - Build SOAP envelope
     private static func soapEnvelope(action: String, service: String, params: String) -> String {
         """
         <?xml version="1.0"?>
@@ -86,17 +81,25 @@ enum FritzBoxDiscovery {
         """
     }
 
-    private static func postSOAP(body: String) async -> String? {
-        guard let url = URL(string: upnpURL),
+    // MARK: - POST SOAP request with mandatory SOAPAction header
+    // Without SOAPAction FritzBox returns 404 — this was the root cause of discovery failure
+    private static func postSOAP(body: String, action: String, service: String) async -> String? {
+        guard let url  = URL(string: upnpURL),
               let data = body.data(using: .utf8) else { return nil }
-        var req = URLRequest(url: url, timeoutInterval: 3.0)
+        var req = URLRequest(url: url, timeoutInterval: 5.0)
         req.httpMethod = "POST"
-        req.httpBody = data
-        req.setValue("text/xml; charset=\"utf-8\"", forHTTPHeaderField: "Content-Type")
-        guard let (respData, _) = try? await URLSession.shared.data(for: req) else { return nil }
+        req.httpBody   = data
+        req.setValue("text/xml; charset=utf-8",
+                     forHTTPHeaderField: "Content-Type")
+        req.setValue("urn:dslforum-org:service:\(service)#\(action)",
+                     forHTTPHeaderField: "SOAPAction")
+        guard let (respData, resp) = try? await URLSession.shared.data(for: req),
+              (resp as? HTTPURLResponse)?.statusCode == 200
+        else { return nil }
         return String(data: respData, encoding: .utf8)
     }
 
+    // MARK: - XML helpers
     private static func extractString(_ xml: String, tag: String) -> String? {
         guard let r = xml.range(of: "<\(tag)>"),
               let e = xml.range(of: "</\(tag)>", range: r.upperBound..<xml.endIndex)
