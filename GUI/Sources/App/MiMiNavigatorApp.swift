@@ -36,6 +36,23 @@ struct MiMiNavigatorApp: App {
                     appDelegate.bind(appState)
                     AppStateProvider.shared = appState
                     showHiddenFiles = UserPreferences.shared.snapshot.showHiddenFiles
+                    // Wire navigate callback for Network panel
+                    NetworkNeighborhoodCoordinator.shared.onNavigate = { shareURL in
+                        Task { @MainActor in
+                            let side = appState.focusedPanel
+                            if shareURL.isFileURL {
+                                appState.updatePath(shareURL.path, for: side)
+                                return
+                            }
+                            if let mountedURL = await SMBMounter.shared.mountShare(shareURL) {
+                                appState.updatePath(mountedURL.path, for: side)
+                            }
+                        }
+                    }
+                }
+                .onReceive(NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)) { _ in
+                    // Bring Network panel to front when main window becomes key
+                    NetworkNeighborhoodCoordinator.shared.bringToFront()
                 }
                 .toolbarBackground(Material.thin, for: ToolbarPlacement.windowToolbar)
                 .toolbarBackgroundVisibility(Visibility.visible, for: ToolbarPlacement.windowToolbar)
@@ -67,33 +84,8 @@ struct MiMiNavigatorApp: App {
                         }
                     }
                 }
-                // MARK: - Network Neighborhood Sheet (tree-style)
-                .sheet(isPresented: Binding(
-                    get: { appState.showNetworkNeighborhood },
-                    set: { appState.showNetworkNeighborhood = $0 }
-                )) {
-                    NetworkNeighborhoodView(
-                        onNavigate: { shareURL in
-                            appState.showNetworkNeighborhood = false
-                            Task { @MainActor in
-                                let side = appState.focusedPanel
-                                // If share URL is already a local /Volumes/ path — navigate directly
-                                if shareURL.isFileURL {
-                                    appState.updatePath(shareURL.path, for: side)
-                                    return
-                                }
-                                // Network URL (smb://, afp://) — mount silently, navigate panel
-                                if let mountedURL = await SMBMounter.shared.mountShare(shareURL) {
-                                    appState.updatePath(mountedURL.path, for: side)
-                                }
-                                // If mount failed/cancelled — do nothing
-                            }
-                        },
-                        onDismiss: {
-                            appState.showNetworkNeighborhood = false
-                        }
-                    )
-                }
+                // MARK: - Network Neighborhood — handled via NetworkNeighborhoodCoordinator (NSPanel)
+                // No .sheet here — panel opens independently, movable, resizable, persists position
                 // MARK: - Batch Operation Progress Overlay
                 .overlay {
                     if BatchOperationManager.shared.showProgressDialog,
@@ -176,11 +168,12 @@ struct MiMiNavigatorApp: App {
         return ToolbarItem(placement: .automatic) {
             ToolbarButton(
                 systemImage: "network",
-                help: "Network Neighborhood"
+                help: "Network Neighborhood (\u{2318}N)"
             ) {
                 log.debug("Network Neighborhood button clicked")
-                appState.showNetworkNeighborhood = true
+                NetworkNeighborhoodCoordinator.shared.toggle()
             }
+            .keyboardShortcut("n", modifiers: .command)
         }
     }
 
