@@ -2,15 +2,17 @@
 // MiMiNavigator
 //
 // Created by Iakov Senatov on 20.02.2026.
-// Refactored: 21.02.2026 — router Web UI button inline; FritzBox/PC/NAS device badges
-// Refactored: 22.02.2026 — layout recursion fix: defer startDiscovery via Task
-// Refactored: 22.02.2026 — hostDisplayName; printer Web UI; info popup; MAC vendor; silent mount
+// Refactored: 23.02.2026 — NSPanel; Web UI probe (23 ports); copyable rows; no offline hosts
 // Copyright © 2026 Senatov. All rights reserved.
 // Description: Tree-style Network Neighborhood — Bonjour + FritzBox TR-064 discovery.
+//   - Movable/resizable NSPanel (via NetworkNeighborhoodCoordinator)
+//   - Web UI button for ANY device with responding HTTP port
+//   - Right-click: copy name / IP / URL to clipboard
+//   - Offline hosts hidden (FritzBox inactive entries)
 
 import SwiftUI
 
-// MARK: - Network Neighborhood Window
+// MARK: - Network Neighborhood View
 struct NetworkNeighborhoodView: View {
 
     @ObservedObject private var provider = NetworkNeighborhoodProvider.shared
@@ -20,19 +22,23 @@ struct NetworkNeighborhoodView: View {
     @State private var expanded: Set<NetworkHost.ID> = []
     @State private var authTarget: NetworkHost? = nil
 
+    // MARK: - Only online hosts
+    private var visibleHosts: [NetworkHost] {
+        provider.hosts.filter { !$0.isOffline }
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             headerBar
             Divider()
-            if provider.hosts.isEmpty && !provider.isScanning {
+            if visibleHosts.isEmpty && !provider.isScanning {
                 emptyState
             } else {
                 hostTree
             }
         }
-        .frame(minWidth: 380, idealWidth: 420, minHeight: 280)
+        .frame(minWidth: 380, idealWidth: 460, minHeight: 280)
         .background(DialogColors.base)
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         .onAppear {
             Task { @MainActor in provider.startDiscovery() }
         }
@@ -55,15 +61,14 @@ struct NetworkNeighborhoodView: View {
             if provider.isScanning {
                 ProgressView().scaleEffect(0.6)
             } else {
-                Button { provider.startDiscovery() } label: {
+                Button {
+                    provider.startDiscovery()
+                } label: {
                     Image(systemName: "arrow.clockwise").font(.caption)
                 }
-                .buttonStyle(.plain).help("Rescan")
+                .buttonStyle(.plain).help("Rescan (⌘R)")
+                .keyboardShortcut("r", modifiers: .command)
             }
-            Button { onDismiss?() } label: {
-                Image(systemName: "xmark.circle.fill").font(.system(size: 14)).foregroundStyle(.secondary)
-            }
-            .buttonStyle(.plain).help("Close (Esc)")
         }
         .padding(.horizontal, 12).padding(.vertical, 8)
         .background(DialogColors.stripe)
@@ -87,20 +92,11 @@ struct NetworkNeighborhoodView: View {
     private var hostTree: some View {
         ScrollView {
             LazyVStack(spacing: 0) {
-                ForEach(provider.hosts) { host in
+                ForEach(visibleHosts) { host in
                     hostRow(host)
                     Divider().padding(.leading, 36)
                     if expanded.contains(host.id) {
-                        if host.sharesLoading {
-                            sharesLoadingRow
-                        } else if host.sharesLoaded && host.shares.isEmpty {
-                            noSharesRow(for: host)
-                        } else {
-                            ForEach(host.shares) { share in
-                                ShareRow(share: share) { onNavigate?(share.url) }
-                                Divider().padding(.leading, 56)
-                            }
-                        }
+                        sharesSection(for: host)
                     }
                 }
                 if provider.isScanning {
@@ -111,6 +107,21 @@ struct NetworkNeighborhoodView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, 14).padding(.vertical, 8)
                 }
+            }
+        }
+    }
+
+    // MARK: - Shares section below host
+    @ViewBuilder
+    private func sharesSection(for host: NetworkHost) -> some View {
+        if host.sharesLoading {
+            sharesLoadingRow
+        } else if host.sharesLoaded && host.shares.isEmpty {
+            noSharesRow(for: host)
+        } else {
+            ForEach(host.shares) { share in
+                ShareRow(share: share) { onNavigate?(share.url) }
+                Divider().padding(.leading, 56)
             }
         }
     }
@@ -126,6 +137,87 @@ struct NetworkNeighborhoodView: View {
                 if let url = host.webUIURL { NSWorkspace.shared.open(url) }
             }
         )
+        .contextMenu {
+            hostContextMenu(host)
+        }
+    }
+
+    // MARK: - Context menu: copy name / IP / URL (for keyboard warriors and power users)
+    @ViewBuilder
+    private func hostContextMenu(_ host: NetworkHost) -> some View {
+        Button {
+            copy(host.hostDisplayName)
+        } label: {
+            Label("Copy Name: \"\(host.hostDisplayName)\"", systemImage: "doc.on.doc")
+        }
+
+        let ip = resolvedIP(host)
+        if !ip.isEmpty {
+            Button { copy(ip) } label: {
+                Label("Copy IP: \(ip)", systemImage: "number")
+            }
+        }
+
+        if let url = host.webUIURL {
+            Button { copy(url.absoluteString) } label: {
+                Label("Copy Web URL: \(url.absoluteString)", systemImage: "link")
+            }
+            Divider()
+            Button { NSWorkspace.shared.open(url) } label: {
+                Label("Open Web UI", systemImage: "safari")
+            }
+        }
+
+        if let mountURL = host.mountURL {
+            Button { copy(mountURL.absoluteString) } label: {
+                Label("Copy Mount URL", systemImage: "externaldrive")
+            }
+        }
+
+        if let mac = host.macAddress {
+            Divider()
+            Button { copy(mac) } label: {
+                Label("Copy MAC: \(mac)", systemImage: "antenna.radiowaves.left.and.right")
+            }
+        }
+
+        Divider()
+        Button {
+            let lines = buildCopyText(host)
+            copy(lines)
+        } label: {
+            Label("Copy All Info", systemImage: "doc.on.clipboard")
+        }
+    }
+
+    // MARK: - Build multi-line copy text for "Copy All Info"
+    private func buildCopyText(_ host: NetworkHost) -> String {
+        var lines = ["Name: \(host.hostDisplayName)"]
+        let ip = resolvedIP(host)
+        if !ip.isEmpty { lines.append("IP: \(ip)") }
+        if let mac = host.macAddress { lines.append("MAC: \(mac)") }
+        if !host.deviceClass.label.isEmpty { lines.append("Type: \(host.deviceClass.label)") }
+        if let url = host.webUIURL { lines.append("Web UI: \(url.absoluteString)") }
+        if let url = host.mountURL { lines.append("Mount: \(url.absoluteString)") }
+        if !host.bonjourServices.isEmpty {
+            let svcs = host.bonjourServices.sorted().joined(separator: ", ")
+            lines.append("Services: \(svcs)")
+        }
+        return lines.joined(separator: "\n")
+    }
+
+    // MARK: - Copy to clipboard
+    private func copy(_ text: String) {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(text, forType: .string)
+    }
+
+    // MARK: - Best IP for display / copy
+    private func resolvedIP(_ host: NetworkHost) -> String {
+        if !host.hostIP.isEmpty { return host.hostIP }
+        let hn = host.hostName
+        if !hn.isEmpty && hn != "(nil)" && !hn.contains("@") { return hn }
+        return ""
     }
 
     // MARK: - Loading row
@@ -138,7 +230,7 @@ struct NetworkNeighborhoodView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    // MARK: - No shares / access denied row
+    // MARK: - No shares row
     private func noSharesRow(for host: NetworkHost) -> some View {
         HStack(spacing: 8) {
             Text("😞").font(.system(size: 14))
@@ -175,84 +267,23 @@ private struct HostNodeRow: View {
     let isExpanded: Bool
     let onToggle: () -> Void
     let onOpenWebUI: () -> Void
+
     @State private var isHovered = false
     @State private var showInfoPopup = false
 
+    // Port is being probed — show spinner on Web UI area
+    private var isProbing: Bool {
+        host.probedWebURL == nil && host.staticWebUIURL == nil
+            && !host.isOffline && host.deviceClass != .iPhone && host.deviceClass != .iPad
+    }
+
     var body: some View {
         HStack(spacing: 0) {
-            // Chevron or spacer
-            if host.isExpandable {
-                Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
-                    .font(.system(size: 10, weight: .medium)).foregroundStyle(.secondary)
-                    .frame(width: 20).contentShape(Rectangle())
-                    .onTapGesture { withAnimation(.easeInOut(duration: 0.15)) { onToggle() } }
-            } else {
-                Spacer().frame(width: 20)
-            }
-            // Device icon
-            Image(systemName: host.systemIconName)
-                .font(.system(size: 16))
-                .foregroundStyle(iconColor)
-                .frame(width: 24)
-            // Name + hostname sub-label
-            VStack(alignment: .leading, spacing: 1) {
-                HStack(spacing: 4) {
-                    Text(host.hostDisplayName)
-                        .font(.callout).lineLimit(1)
-                        .foregroundStyle(host.isOffline ? .secondary : .primary)
-                    if host.isOffline {
-                        Text("offline").font(.caption2)
-                            .foregroundStyle(.tertiary)
-                            .padding(.horizontal, 5).padding(.vertical, 1)
-                            .background(Color.secondary.opacity(0.1))
-                            .clipShape(Capsule())
-                    }
-                }
-                if !host.hostName.isEmpty && host.hostName != "(nil)" && host.hostName != host.name
-                    && !host.hostName.contains("@") {
-                    Text(host.hostName).font(.caption2).foregroundStyle(.secondary).lineLimit(1)
-                } else if !host.hostIP.isEmpty {
-                    Text(host.hostIP).font(.caption2).foregroundStyle(.secondary).lineLimit(1)
-                }
-            }
-            .padding(.leading, 6)
-            .opacity(host.isOffline ? 0.6 : 1.0)
+            chevron
+            deviceIcon
+            nameStack
             Spacer()
-            // Right side buttons
-            HStack(spacing: 4) {
-                // Web UI button: routers (fritz.box) + printers (:631)
-                if host.webUIURL != nil {
-                    Button { onOpenWebUI() } label: {
-                        Label("Web UI", systemImage: "safari")
-                            .font(.caption2)
-                            .padding(.horizontal, 7).padding(.vertical, 3)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(host.deviceClass == .printer ? .purple : .orange)
-                    .controlSize(.mini)
-                }
-                // Device badge when no Web UI button
-                if host.webUIURL == nil && !host.deviceLabel.isEmpty {
-                    Text(host.deviceLabel)
-                        .font(.caption2).foregroundStyle(.secondary)
-                        .padding(.horizontal, 6).padding(.vertical, 2)
-                        .background(Color.secondary.opacity(0.12))
-                        .clipShape(Capsule())
-                }
-                // Info button visible on hover — opens device detail popup
-                if isHovered {
-                    Button { showInfoPopup.toggle() } label: {
-                        Image(systemName: "info.circle")
-                            .font(.system(size: 13)).foregroundStyle(.blue)
-                    }
-                    .buttonStyle(.plain)
-                    .help("Device info")
-                    .popover(isPresented: $showInfoPopup, arrowEdge: .trailing) {
-                        NetworkDeviceInfoPopup(host: host)
-                    }
-                }
-            }
-            .padding(.trailing, 6)
+            actionButtons
         }
         .padding(.horizontal, 10).padding(.vertical, 7)
         .background(isHovered ? Color.accentColor.opacity(0.08) : Color.clear)
@@ -264,7 +295,99 @@ private struct HostNodeRow: View {
         }
     }
 
-    // MARK: - Icon color by device class
+    // MARK: - Chevron
+    private var chevron: some View {
+        Group {
+            if host.isExpandable {
+                Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
+                    .font(.system(size: 10, weight: .medium)).foregroundStyle(.secondary)
+                    .frame(width: 20).contentShape(Rectangle())
+                    .onTapGesture { withAnimation(.easeInOut(duration: 0.15)) { onToggle() } }
+            } else {
+                Spacer().frame(width: 20)
+            }
+        }
+    }
+
+    // MARK: - Device icon
+    private var deviceIcon: some View {
+        Image(systemName: host.systemIconName)
+            .font(.system(size: 16))
+            .foregroundStyle(iconColor)
+            .frame(width: 24)
+    }
+
+    // MARK: - Name + IP sub-label
+    private var nameStack: some View {
+        VStack(alignment: .leading, spacing: 1) {
+            Text(host.hostDisplayName)
+                .font(.callout).lineLimit(1)
+            // Show IP on second line when available
+            let ip = resolvedIP
+            if !ip.isEmpty {
+                Text(ip).font(.caption2).foregroundStyle(.secondary).lineLimit(1)
+            }
+        }
+        .padding(.leading, 6)
+    }
+
+    // MARK: - Right-side action buttons
+    private var actionButtons: some View {
+        HStack(spacing: 4) {
+            // Web UI button — shown when URL known (static or probed)
+            if let url = host.webUIURL {
+                Button { onOpenWebUI() } label: {
+                    Label("Web UI", systemImage: "safari")
+                        .font(.caption2)
+                        .padding(.horizontal, 7).padding(.vertical, 3)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(webUIColor)
+                .controlSize(.mini)
+            }
+            // Device badge when no Web UI button yet
+            if host.webUIURL == nil && !host.deviceLabel.isEmpty {
+                Text(host.deviceLabel)
+                    .font(.caption2).foregroundStyle(.secondary)
+                    .padding(.horizontal, 6).padding(.vertical, 2)
+                    .background(Color.secondary.opacity(0.12))
+                    .clipShape(Capsule())
+            }
+            // Info button — hover only
+            if isHovered {
+                Button { showInfoPopup.toggle() } label: {
+                    Image(systemName: "info.circle")
+                        .font(.system(size: 13)).foregroundStyle(.blue)
+                }
+                .buttonStyle(.plain)
+                .help("Device info")
+                .popover(isPresented: $showInfoPopup, arrowEdge: .trailing) {
+                    NetworkDeviceInfoPopup(host: host)
+                }
+            }
+        }
+        .padding(.trailing, 6)
+    }
+
+    // MARK: - Resolved IP for display
+    private var resolvedIP: String {
+        if !host.hostIP.isEmpty { return host.hostIP }
+        let hn = host.hostName
+        if !hn.isEmpty && hn != "(nil)" && !hn.contains("@") && !hn.contains(":") { return hn }
+        return ""
+    }
+
+    // MARK: - Web UI button color
+    private var webUIColor: Color {
+        switch host.deviceClass {
+        case .printer: return .purple
+        case .router:  return .orange
+        case .nas:     return .teal
+        default:       return .blue
+        }
+    }
+
+    // MARK: - Icon color
     private var iconColor: Color {
         switch host.deviceClass {
         case .router:        return .orange
@@ -272,7 +395,9 @@ private struct HostNodeRow: View {
         case .printer:       return .purple
         case .nas:           return .mint
         case .mac:           return .blue
-        default:             return host.nodeType == .printer ? .purple : .blue
+        case .windowsPC:     return .indigo
+        case .linuxServer:   return .cyan
+        default:             return host.nodeType == .printer ? .purple : .secondary
         }
     }
 }
@@ -303,5 +428,19 @@ private struct ShareRow: View {
         .contentShape(Rectangle())
         .onHover { isHovered = $0 }
         .onTapGesture { onSelect() }
+        .contextMenu {
+            Button {
+                NSPasteboard.general.clearContents()
+                NSPasteboard.general.setString(share.name, forType: .string)
+            } label: {
+                Label("Copy Share Name", systemImage: "doc.on.doc")
+            }
+            Button {
+                NSPasteboard.general.clearContents()
+                NSPasteboard.general.setString(share.url.absoluteString, forType: .string)
+            } label: {
+                Label("Copy Mount URL", systemImage: "link")
+            }
+        }
     }
 }

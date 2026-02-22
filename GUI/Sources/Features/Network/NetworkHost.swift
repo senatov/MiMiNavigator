@@ -124,6 +124,7 @@ struct NetworkHost: Identifiable, Hashable {
     var isLocalhost: Bool           // true = this Mac itself
     var rawMAC: String?             // MAC address if known (for mobile devices after rename)
     var isOffline: Bool             // true = FritzBox knows device but it's currently off/sleeping
+    var probedWebURL: URL?          // first responding web UI port found by WebUIProber
 
     // MARK: -
     init(
@@ -149,6 +150,7 @@ struct NetworkHost: Identifiable, Hashable {
         self.isLocalhost    = isLocalhost
         self.rawMAC         = nil
         self.isOffline      = false
+        self.probedWebURL   = nil
     }
 
     // MARK: - Root URL for this host
@@ -214,14 +216,22 @@ struct NetworkHost: Identifiable, Hashable {
         return candidate.uppercased()
     }
 
-    // MARK: - Web UI URL (router -> fritz.box or IP; printer -> host:631)
+    // MARK: - Web UI URL
+    // Priority: probed URL (any device, async) > static known URL (router/printer)
     var webUIURL: URL? {
+        if let probed = probedWebURL { return probed }
+        return staticWebUIURL
+    }
+
+    // MARK: - Static web UI URL (known without probing)
+    var staticWebUIURL: URL? {
         switch deviceClass {
         case .router:
             let h = name.lowercased().contains("fritz") ? "fritz.box" : hostDisplayName
             return URL(string: "http://" + h)
         case .printer:
-            let h = !hostName.isEmpty && hostName != "(nil)" ? hostName : hostDisplayName
+            let h = !hostName.isEmpty && hostName != "(nil)" && !hostName.contains("@")
+                ? hostName : hostDisplayName
             return URL(string: "http://" + h + ":631")
         default: return nil
         }

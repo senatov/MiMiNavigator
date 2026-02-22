@@ -319,12 +319,15 @@ final class NetworkNeighborhoodProvider: NSObject, ObservableObject {
         return n == mac || n == mac.replacing(" ", with: "-") || hn == "127.0.0.1" || hn == "::1"
     }
 
-    // MARK: - Fingerprint pass (after scan stops, probes unknown hosts by port)
+    // MARK: - Fingerprint pass (after scan stops)
     private func runFingerprintPass() {
-        let candidates = hosts.filter { $0.deviceClass == .unknown }
-        guard !candidates.isEmpty else { return }
-        log.info("[Fingerprint] probing: \(candidates.map(\.name))")
+        let candidates = hosts.filter { $0.deviceClass == .unknown && !$0.isOffline }
+        let webCandidates = hosts.filter { $0.probedWebURL == nil && !$0.isOffline }
+        if !candidates.isEmpty {
+            log.info("[Fingerprint] probing: \(candidates.map(\.name))")
+        }
         Task {
+            // Device class fingerprinting (port scan)
             for host in candidates {
                 let fp = await NetworkDeviceFingerprinter.probe(
                     hostName: host.hostName,
@@ -335,6 +338,28 @@ final class NetworkNeighborhoodProvider: NSObject, ObservableObject {
                     self.hosts[idx].deviceClass = fp.deviceClass
                     if fp.deviceClass.isRouter { self.hosts[idx].nodeType = .generic }
                     log.info("[Fingerprint] '\(host.name)' → \(fp.deviceClass.label) ports=\(fp.openPorts.sorted())")
+                }
+            }
+            // Web UI probe for all online hosts
+            await probeWebUI(for: webCandidates)
+        }
+    }
+
+    // MARK: - Web UI probe — fires concurrently for all candidates
+    func probeWebUI(for candidates: [NetworkHost]) async {
+        guard !candidates.isEmpty else { return }
+        log.info("[WebUI] probing \(candidates.count) hosts")
+        await withTaskGroup(of: (NetworkHost.ID, URL?).self) { group in
+            for host in candidates {
+                group.addTask {
+                    let url = await WebUIProber.probe(host: host)
+                    return (host.id, url)
+                }
+            }
+            for await (id, url) in group {
+                if let url, let idx = self.hosts.firstIndex(where: { $0.id == id }) {
+                    self.hosts[idx].probedWebURL = url
+                    log.info("[WebUI] '\(self.hosts[idx].name)' → \(url)")
                 }
             }
         }
