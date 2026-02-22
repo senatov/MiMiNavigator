@@ -144,15 +144,13 @@ struct BatchConfirmationDialog: View {
         }
         .padding(20)
         .frame(width: 380)
-        .background(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(Color(nsColor: .windowBackgroundColor))
-                .shadow(color: .black.opacity(0.2), radius: 16, x: 0, y: 8)
-        )
+        .background(.regularMaterial)
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .stroke(Color.gray.opacity(0.2), lineWidth: 0.5)
+                .strokeBorder(Color(nsColor: .separatorColor).opacity(0.5), lineWidth: 0.5)
         )
+        .shadow(color: .black.opacity(0.22), radius: 20, x: 0, y: 8)
     }
     
     // MARK: - Computed Properties

@@ -9,19 +9,19 @@ import SwiftUI
 
 // MARK: - macOS HIG 26 Dialog Base Modifier
 /// Consistent panel styling for all modal dialogs.
-/// Matches system sheet appearance: white background, subtle shadow, 10pt radius.
+/// Uses .regularMaterial (glass/vibrancy) with 12pt radius — matches NetworkNeighborhoodView.
 struct HIGDialogStyle: ViewModifier {
     func body(content: Content) -> some View {
         content
             .padding(24)
-            .frame(minWidth: 320, maxWidth: 420)
-            .background(Color(nsColor: .windowBackgroundColor))
-            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .frame(minWidth: 320, maxWidth: 440)
+            .background(.regularMaterial)
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .strokeBorder(Color(nsColor: .separatorColor), lineWidth: 0.5)
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .strokeBorder(Color(nsColor: .separatorColor).opacity(0.5), lineWidth: 0.5)
             )
-            .shadow(color: .black.opacity(0.18), radius: 16, x: 0, y: 6)
+            .shadow(color: .black.opacity(0.22), radius: 20, x: 0, y: 8)
     }
 }
 

@@ -39,7 +39,7 @@ private extension FileConflictDialog {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
-        .background(Color(nsColor: .windowBackgroundColor).opacity(0.5))
+        .background(Color(nsColor: .windowBackgroundColor).opacity(0.3))
     }
     
     var contentSection: some View {
@@ -81,14 +81,14 @@ private extension FileConflictDialog {
 // MARK: - Styling
 private extension FileConflictDialog {
     var dialogBackground: some View {
-        RoundedRectangle(cornerRadius: 10, style: .continuous)
-            .fill(Color(nsColor: .windowBackgroundColor))
-            .shadow(color: .black.opacity(0.15), radius: 12, x: 0, y: 4)
+        RoundedRectangle(cornerRadius: 12, style: .continuous)
+            .fill(.regularMaterial)
+            .shadow(color: .black.opacity(0.22), radius: 20, x: 0, y: 8)
     }
     
     var dialogBorder: some View {
-        RoundedRectangle(cornerRadius: 10, style: .continuous)
-            .stroke(Color.gray.opacity(0.2), lineWidth: 0.5)
+        RoundedRectangle(cornerRadius: 12, style: .continuous)
+            .stroke(Color(nsColor: .separatorColor).opacity(0.5), lineWidth: 0.5)
     }
 }
 

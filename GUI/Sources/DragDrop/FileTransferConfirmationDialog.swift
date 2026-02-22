@@ -78,9 +78,13 @@ struct FileTransferConfirmationDialog: View {
         }
         .padding(20)
         .frame(width: 400)
-        .background(Color(nsColor: .windowBackgroundColor))
-        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-        .shadow(color: .black.opacity(0.18), radius: 16, x: 0, y: 6)
+        .background(.regularMaterial)
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .strokeBorder(Color(nsColor: .separatorColor).opacity(0.5), lineWidth: 0.5)
+        )
+        .shadow(color: .black.opacity(0.22), radius: 20, x: 0, y: 8)
     }
 
     // MARK: - File list
