@@ -3,6 +3,7 @@
 //
 // Created by Iakov Senatov on 20.02.2026.
 // Refactored: 21.02.2026 — router Web UI button inline; FritzBox/PC/NAS device badges
+// Refactored: 22.02.2026 — layout recursion fix: defer startDiscovery via Task
 // Copyright © 2026 Senatov. All rights reserved.
 // Description: Tree-style Network Neighborhood — Bonjour + FritzBox TR-064 discovery.
 
@@ -31,7 +32,10 @@ struct NetworkNeighborhoodView: View {
         .frame(minWidth: 380, idealWidth: 420, minHeight: 280)
         .background(.regularMaterial)
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .onAppear  { provider.startDiscovery() }
+        .onAppear {
+            // Defer startDiscovery to next runloop tick to avoid layout recursion warning
+            Task { @MainActor in provider.startDiscovery() }
+        }
         .onDisappear { provider.stopDiscovery() }
         .onKeyPress(.escape) { onDismiss?(); return .handled }
         .sheet(item: $authTarget) { host in
