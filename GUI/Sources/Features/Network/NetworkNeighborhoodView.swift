@@ -125,7 +125,8 @@ struct NetworkNeighborhoodView: View {
             isExpanded: expanded.contains(host.id),
             onToggle: { toggle(host) },
             onOpenWebUI: {
-                if let url = URL(string: "http://\(host.hostName)") {
+                let webHost = host.name.lowercased().contains("fritz") ? "fritz.box" : host.hostName
+                if let url = URL(string: "http://\(webHost)") {
                     NSWorkspace.shared.open(url)
                 }
             }
