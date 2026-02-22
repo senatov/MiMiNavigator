@@ -116,7 +116,7 @@ struct BatchConfirmationDialog: View {
                     .frame(maxHeight: 150)
                     .background(
                         RoundedRectangle(cornerRadius: 6)
-                            .fill(Color(nsColor: .textBackgroundColor))
+                            .fill(DialogColors.light)
                     )
                 },
                 label: {
@@ -144,7 +144,7 @@ struct BatchConfirmationDialog: View {
         }
         .padding(20)
         .frame(width: 380)
-        .background(.regularMaterial)
+        .background(DialogColors.base)
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 12, style: .continuous)

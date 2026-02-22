@@ -78,7 +78,7 @@ struct FileTransferConfirmationDialog: View {
         }
         .padding(20)
         .frame(width: 400)
-        .background(.regularMaterial)
+        .background(DialogColors.base)
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 12, style: .continuous)

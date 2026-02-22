@@ -33,7 +33,7 @@ struct NetworkAuthSheet: View {
             buttonRow
         }
         .frame(width: 360)
-        .background(.regularMaterial)
+        .background(DialogColors.base)
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         .onAppear { prefill() }
     }
@@ -65,6 +65,7 @@ struct NetworkAuthSheet: View {
             }
         }
         .padding(.horizontal, 14).padding(.vertical, 12)
+        .background(DialogColors.stripe)
     }
 
     // MARK: - Input fields
@@ -128,6 +129,7 @@ struct NetworkAuthSheet: View {
             .controlSize(.regular)
         }
         .padding(.horizontal, 14).padding(.vertical, 10)
+        .background(DialogColors.stripe)
     }
 
     // MARK: - Pre-fill from Keychain; purge stale "No user account" ghost entries

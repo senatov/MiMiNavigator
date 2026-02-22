@@ -39,7 +39,7 @@ private extension FileConflictDialog {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
-        .background(Color(nsColor: .windowBackgroundColor).opacity(0.3))
+        .background(DialogColors.stripe)
     }
     
     var contentSection: some View {
@@ -75,6 +75,7 @@ private extension FileConflictDialog {
             ConflictButton(title: "Replace", action: { onResolve(.replace) })
         }
         .padding(12)
+        .background(DialogColors.stripe)
     }
 }
 
@@ -82,7 +83,7 @@ private extension FileConflictDialog {
 private extension FileConflictDialog {
     var dialogBackground: some View {
         RoundedRectangle(cornerRadius: 12, style: .continuous)
-            .fill(.regularMaterial)
+            .fill(DialogColors.base)
             .shadow(color: .black.opacity(0.22), radius: 20, x: 0, y: 8)
     }
     

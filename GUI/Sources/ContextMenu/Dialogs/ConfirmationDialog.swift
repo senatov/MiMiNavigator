@@ -3,19 +3,31 @@
 //
 //  Created by Iakov Senatov on 22.01.2026.
 //  Refactored: 18.02.2026 — HIG 26 native buttons, proper focus ring, GitHub-style inputs
+//  Refactored: 22.02.2026 — Word-Einstellungen style: static gray palette F7/EF/E7
 //  Copyright © 2026 Senatov. All rights reserved.
 
 import SwiftUI
 
+// MARK: - macOS Word-Einstellungen style gray palette
+/// Three static gray tones matching macOS Settings / Word-Einstellungen dialogs:
+///   dialogLight  #F7F7F7 — section headers, card backgrounds
+///   dialogBase   #EFEFEF — main dialog background
+///   dialogStripe #E7E7E7 — contrast stripes, divider areas
+enum DialogColors {
+    static let light  = Color(red: 247/255, green: 247/255, blue: 247/255)
+    static let base   = Color(red: 239/255, green: 239/255, blue: 239/255)
+    static let stripe = Color(red: 231/255, green: 231/255, blue: 231/255)
+}
+
 // MARK: - macOS HIG 26 Dialog Base Modifier
 /// Consistent panel styling for all modal dialogs.
-/// Uses .regularMaterial (glass/vibrancy) with 12pt radius — matches NetworkNeighborhoodView.
+/// Uses Word-Einstellungen gray palette: base #EFEFEF background, 12pt radius.
 struct HIGDialogStyle: ViewModifier {
     func body(content: Content) -> some View {
         content
             .padding(24)
             .frame(minWidth: 320, maxWidth: 440)
-            .background(.regularMaterial)
+            .background(DialogColors.base)
             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
