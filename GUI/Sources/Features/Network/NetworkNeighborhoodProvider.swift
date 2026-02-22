@@ -150,6 +150,14 @@ final class NetworkNeighborhoodProvider: NSObject, ObservableObject {
         await fetchShares(for: hostID)
     }
 
+    // MARK: - Normalize name for dedup (strips .local .local. .fritz.box)
+    private func normalizedName(_ raw: String) -> String {
+        raw.lowercased()
+            .replacingOccurrences(of: ".local.", with: "")
+            .replacingOccurrences(of: ".local", with: "")
+            .replacingOccurrences(of: ".fritz.box", with: "")
+    }
+
     // MARK: - Add or in-place update host (preserves id/shares/expanded state)
     fileprivate func addResolvedHost(
         name: String, hostName: String, port: Int,
@@ -158,14 +166,20 @@ final class NetworkNeighborhoodProvider: NSObject, ObservableObject {
         bonjourType: String? = nil,
         isMobile: Bool = false
     ) {
-        // Update existing host in-place
-        if let idx = hosts.firstIndex(where: { $0.name == name }) {
+        // Skip This Mac - not shown in Network Neighborhood (Finder behavior)
+        if isLocalhostByName(name: name, hostName: hostName) {
+            log.debug("[Network] skip localhost: \(name)")
+            return
+        }
+        // Dedup by normalized name - merges kira-macpro + kira-macpro.local
+        let norm = normalizedName(name)
+        if let idx = hosts.firstIndex(where: { self.normalizedName($0.name) == norm }) {
             if let bt = bonjourType { hosts[idx].bonjourServices.insert(bt) }
-            if hostName != name && hostName != "(nil)" && !hostName.isEmpty {
+            if hostName != "(nil)" && !hostName.isEmpty && hostName.contains(".") {
                 hosts[idx].hostName = hostName
                 if port > 0 { hosts[idx].port = port }
+                log.debug("[Network] updated hn \(hosts[idx].name) -> \(hostName)")
             }
-            // Re-classify if we got new Bonjour services
             reclassifyIfNeeded(idx: idx)
             return
         }
@@ -178,9 +192,6 @@ final class NetworkNeighborhoodProvider: NSObject, ObservableObject {
                                serviceType: svcType, nodeType: nodeType)
         if let bt = bonjourType { host.bonjourServices.insert(bt) }
 
-        // Check if this is localhost (this Mac)
-        host.isLocalhost = isLocalhostByName(name: name, hostName: hostName)
-        if host.isLocalhost { host.deviceClass = .mac }
 
         // Classify by services
         if host.deviceClass == .unknown,
