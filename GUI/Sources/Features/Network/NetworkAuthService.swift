@@ -112,7 +112,7 @@ enum NetworkAuthService {
             }
         }
         // Build all variants
-        var keys: [String] = [
+        let keys: [String] = [
             host,                               // original as-is
             base,                               // plain name e.g. "kira-macpro"
             "\(base).local",                    // mDNS

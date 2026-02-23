@@ -51,7 +51,7 @@ enum WebUIProber {
 
     // MARK: - Probe host — returns first responding URL or nil
     // Fires all requests concurrently with a short timeout; returns first 2xx/3xx response.
-    static func probe(host: NetworkHost) async -> URL? {
+    @concurrent static func probe(host: NetworkHost) async -> URL? {
         let ip = bestAddress(host)
         guard !ip.isEmpty else { return nil }
 
@@ -65,7 +65,7 @@ enum WebUIProber {
             for port in candidatePorts {
                 let scheme = (port == 443 || port == 8443 || port == 5001) ? "https" : "http"
                 guard let url = URL(string: "\(scheme)://\(ip):\(port)") else { continue }
-                group.addTask { await responds(url: url) ? url : nil }
+                group.addTask { @concurrent in await responds(url: url) ? url : nil }
             }
             // Return first non-nil result, cancel remaining tasks
             for await result in group {
@@ -79,7 +79,7 @@ enum WebUIProber {
     }
 
     // MARK: - Quick TCP/HTTP reachability check (1.5s timeout)
-    static func responds(url: URL) async -> Bool {
+    @concurrent static func responds(url: URL) async -> Bool {
         var req = URLRequest(url: url, timeoutInterval: 1.5)
         req.httpMethod = "HEAD"
         // Ignore SSL errors for LAN devices with self-signed certs

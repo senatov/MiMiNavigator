@@ -22,12 +22,12 @@ enum FritzBoxDiscovery {
     private static let upnpURL = "http://fritz.box:49000/upnp/control/hosts"
 
     // MARK: - Check reachability via SOAP ping
-    static func isAvailable() async -> Bool {
+    @concurrent static func isAvailable() async -> Bool {
         return await hostCount() != nil
     }
 
     // MARK: - Get count of DHCP entries
-    static func hostCount() async -> Int? {
+    @concurrent static func hostCount() async -> Int? {
         let body = soapEnvelope(action: "GetHostNumberOfEntries", params: "")
         guard let xml = await postSOAP(body: body, action: "GetHostNumberOfEntries")
         else { return nil }
@@ -37,7 +37,7 @@ enum FritzBoxDiscovery {
     // MARK: - Get ALL hosts (active AND inactive)
     // Inactive = device is off/sleeping but was registered in DHCP
     // We show them so user sees Sascha, Vuduo2 etc. even when they're off
-    static func allHosts() async -> [FritzBoxHost] {
+    @concurrent static func allHosts() async -> [FritzBoxHost] {
         guard let count = await hostCount() else {
             log.warning("[FritzBox] not reachable or no response")
             return []
@@ -47,7 +47,7 @@ enum FritzBoxDiscovery {
         var results: [FritzBoxHost] = []
         await withTaskGroup(of: FritzBoxHost?.self) { group in
             for i in 0..<count {
-                group.addTask { await fetchHost(index: i) }
+                group.addTask { @concurrent in await fetchHost(index: i) }
             }
             for await host in group {
                 if let h = host { results.append(h) }
@@ -83,12 +83,12 @@ enum FritzBoxDiscovery {
     }
 
     // MARK: - Kept for compatibility
-    static func activeHosts() async -> [FritzBoxHost] {
+    @concurrent static func activeHosts() async -> [FritzBoxHost] {
         return await allHosts()
     }
 
     // MARK: - Fetch single host entry by index
-    private static func fetchHost(index: Int) async -> FritzBoxHost? {
+    @concurrent private static func fetchHost(index: Int) async -> FritzBoxHost? {
         let params = "<NewIndex>\(index)</NewIndex>"
         let body   = soapEnvelope(action: "GetGenericHostEntry", params: params)
         guard let xml = await postSOAP(body: body, action: "GetGenericHostEntry")
@@ -115,7 +115,7 @@ enum FritzBoxDiscovery {
     }
 
     // MARK: - POST SOAP — SOAPAction header is mandatory (without it FritzBox returns 404)
-    private static func postSOAP(body: String, action: String) async -> String? {
+    @concurrent private static func postSOAP(body: String, action: String) async -> String? {
         guard let url  = URL(string: upnpURL),
               let data = body.data(using: .utf8) else { return nil }
         var req = URLRequest(url: url, timeoutInterval: 5.0)

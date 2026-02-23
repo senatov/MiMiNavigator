@@ -15,9 +15,9 @@ import Citadel
 protocol RemoteFileProvider: AnyObject, Sendable {
     var isConnected: Bool { get }
     var mountPath: String { get }
-    func connect(host: String, port: Int, user: String, password: String, remotePath: String) async throws
-    func listDirectory(_ path: String) async throws -> [RemoteFileItem]
-    func disconnect() async
+    @concurrent func connect(host: String, port: Int, user: String, password: String, remotePath: String) async throws
+    @concurrent func listDirectory(_ path: String) async throws -> [RemoteFileItem]
+    @concurrent func disconnect() async
 }
 
 // MARK: - RemoteProviderError
@@ -52,7 +52,7 @@ final class SFTPFileProvider: RemoteFileProvider, @unchecked Sendable {
     private var sftpClient: SFTPClient?
 
     // MARK: - Connect
-    func connect(host: String, port: Int, user: String, password: String, remotePath: String) async throws {
+    @concurrent func connect(host: String, port: Int, user: String, password: String, remotePath: String) async throws {
         let client = try await SSHClient.connect(
             host: host,
             authenticationMethod: .passwordBased(username: user, password: password),
@@ -69,7 +69,7 @@ final class SFTPFileProvider: RemoteFileProvider, @unchecked Sendable {
     }
 
     // MARK: - List Directory
-    func listDirectory(_ path: String) async throws -> [RemoteFileItem] {
+    @concurrent func listDirectory(_ path: String) async throws -> [RemoteFileItem] {
         guard let sftp = sftpClient else { throw RemoteProviderError.notConnected }
         let dirPath = path.isEmpty ? "/" : path
         let entries = try await sftp.listDirectory(atPath: dirPath)
@@ -87,7 +87,7 @@ final class SFTPFileProvider: RemoteFileProvider, @unchecked Sendable {
     }
 
     // MARK: - Disconnect
-    func disconnect() async {
+    @concurrent func disconnect() async {
         try? await sftpClient?.close()
         sftpClient = nil
         sshClient = nil
@@ -103,16 +103,16 @@ final class SFTPFileProvider: RemoteFileProvider, @unchecked Sendable {
     private(set) var isConnected = false
     private(set) var mountPath = ""
 
-    func connect(host: String, port: Int, user: String, password: String, remotePath: String) async throws {
+    @concurrent func connect(host: String, port: Int, user: String, password: String, remotePath: String) async throws {
         log.error("[SFTP] Citadel not available — add SPM dependency first")
         throw RemoteProviderError.notImplemented
     }
 
-    func listDirectory(_ path: String) async throws -> [RemoteFileItem] {
+    @concurrent func listDirectory(_ path: String) async throws -> [RemoteFileItem] {
         throw RemoteProviderError.notImplemented
     }
 
-    func disconnect() async {
+    @concurrent func disconnect() async {
         isConnected = false
         mountPath = ""
     }
@@ -131,7 +131,7 @@ final class FTPFileProvider: RemoteFileProvider, @unchecked Sendable {
     private var ftpPassword: String = ""
 
     // MARK: - Connect
-    func connect(host: String, port: Int, user: String, password: String, remotePath: String) async throws {
+    @concurrent func connect(host: String, port: Int, user: String, password: String, remotePath: String) async throws {
         var components = URLComponents()
         components.scheme = "ftp"
         components.host = host
@@ -149,7 +149,7 @@ final class FTPFileProvider: RemoteFileProvider, @unchecked Sendable {
     }
 
     // MARK: - List Directory
-    func listDirectory(_ path: String) async throws -> [RemoteFileItem] {
+    @concurrent func listDirectory(_ path: String) async throws -> [RemoteFileItem] {
         guard let base = baseURL else { throw RemoteProviderError.notConnected }
         var components = URLComponents(url: base, resolvingAgainstBaseURL: false)
         components?.path = path.hasPrefix("/") ? path : "/\(path)"
@@ -173,7 +173,7 @@ final class FTPFileProvider: RemoteFileProvider, @unchecked Sendable {
     }
 
     // MARK: - Disconnect
-    func disconnect() async {
+    @concurrent func disconnect() async {
         isConnected = false
         baseURL = nil
         ftpUser = ""
