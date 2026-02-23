@@ -21,7 +21,7 @@ public final class CustomSplitView: NSSplitView {
     public override func viewDidMoveToWindow() {
         super.viewDidMoveToWindow()
         window?.acceptsMouseMovedEvents = true
-        print("CSV.viewDidMoveToWindow onDividerReset is nil?", onDividerReset == nil)
+        log.debug("CSV.viewDidMoveToWindow onDividerReset is nil? \(onDividerReset == nil)")
     }
 
     // MARK: -
@@ -47,16 +47,16 @@ public final class CustomSplitView: NSSplitView {
     // MARK: -
     public override func flagsChanged(with event: NSEvent) {
         let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
-        print("CSV.flagsChanged", flags, flags.contains(.option))
+        log.debug("CSV.flagsChanged flags=\(flags.rawValue) option=\(flags.contains(.option))")
         super.flagsChanged(with: event)
     }
 
     // MARK: - Capture focus so flagsChanged/drag state are visible
     public override func mouseDown(with event: NSEvent) {
-        print("CSV.mouseDown fired", event.clickCount, event.modifierFlags)
+        log.debug("CSV.mouseDown fired clicks=\(event.clickCount) flags=\(event.modifierFlags.rawValue)")
         window?.makeFirstResponder(self)
         let loc = convert(event.locationInWindow, from: nil)
-        print("CSV.hitTest", loc, dividerRect())
+        log.debug("CSV.hitTest loc=\(loc.x),\(loc.y) rect=\(dividerRect())")
         let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
         let opt = flags.contains(.option) || NSEvent.modifierFlags.contains(.option)
         let rect = dividerRect()

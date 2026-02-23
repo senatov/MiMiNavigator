@@ -135,7 +135,7 @@ struct PanelBackgroundContextMenu: View {
             panelSide: .left,
             currentPath: URL(fileURLWithPath: "/Users"),
             onAction: { action in
-                print("Action: \(action)")
+                log.debug("Action: \(action)")
             }
         )
     }

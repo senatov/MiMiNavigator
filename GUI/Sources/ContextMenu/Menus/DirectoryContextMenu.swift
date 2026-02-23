@@ -123,7 +123,7 @@ struct DirectoryContextMenu: View {
             file: CustomFile(path: "/Users"),
             panelSide: .left,
             onAction: { action in
-                print("Action: \(action)")
+                log.debug("Action: \(action)")
             }
         )
     }

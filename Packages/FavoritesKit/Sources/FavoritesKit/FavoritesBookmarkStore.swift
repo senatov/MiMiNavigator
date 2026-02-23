@@ -8,6 +8,9 @@
 
 import AppKit
 import Foundation
+import OSLog
+
+private let log = Logger(subsystem: "com.senatov.MiMiNavigator.FavoritesKit", category: "BookmarkStore")
 
 // MARK: - Security-Scoped Bookmarks Store
 /// Actor-based store for managing security-scoped bookmarks (sandbox-friendly)
@@ -36,7 +39,7 @@ public actor FavoritesBookmarkStore: BookmarkStoreProtocol {
             )
             saveBookmark(for: url.standardizedFileURL.path, data: data)
         } catch {
-            print("FavoritesBookmarkStore: failed to create bookmark for \(url.path): \(error)")
+            log.error("[BookmarkStore] failed to create bookmark for \(url.path): \(error)")
         }
     }
     
@@ -69,7 +72,7 @@ public actor FavoritesBookmarkStore: BookmarkStoreProtocol {
                     restored.append(url)
                 }
             } catch {
-                print("FavoritesBookmarkStore: failed to resolve bookmark for \(path): \(error)")
+                log.error("[BookmarkStore] failed to resolve bookmark for \(path): \(error)")
             }
         }
         return restored
@@ -145,7 +148,7 @@ public actor FavoritesBookmarkStore: BookmarkStoreProtocol {
             _ = await restoreAll()
             return true
         } catch {
-            print("FavoritesBookmarkStore: failed to persist access for \(pickedURL.path): \(error)")
+            log.error("[BookmarkStore] failed to persist access for \(pickedURL.path): \(error)")
             return false
         }
     }
