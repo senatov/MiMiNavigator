@@ -194,8 +194,7 @@ let netMenuCategory = MenuCategory(
         MenuItem(
             title: "Network Neighborhood",
             action: {
-                guard let appState = AppStateProvider.shared else { return }
-                appState.showNetworkNeighborhood = true
+                NetworkNeighborhoodCoordinator.shared.toggle()
             },
             shortcut: nil
         ),
