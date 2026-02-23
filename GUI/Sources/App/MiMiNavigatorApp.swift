@@ -27,6 +27,7 @@ struct MiMiNavigatorApp: App {
         AppLogger.initialize()
         log.debug("---- Logger initialized ------")
         Task { await BookmarkStore.shared.restoreAll() }
+        Task { await RemoteConnectionManager.shared.connectOnStartIfNeeded() }
     }
 
     // MARK: -

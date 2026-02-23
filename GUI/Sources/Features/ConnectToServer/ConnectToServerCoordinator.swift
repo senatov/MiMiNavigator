@@ -2,11 +2,11 @@
 // MiMiNavigator
 //
 // Created by Claude — 23.02.2026
+// Refactored: 23.02.2026 — wired to RemoteConnectionManager
 // Copyright © 2026 Senatov. All rights reserved.
 // Description: Manages "Connect to Server" as standalone NSPanel.
-//   - level=.floating + hidesOnDeactivate=true: rises with main window
-//   - Movable, resizable, persists position via frameAutosaveName
-//   - bringToFront() called by AppDelegate.applicationDidBecomeActive
+//   Routes connect actions to RemoteConnectionManager (SFTP/FTP/SMB/AFP).
+//   level=.floating + hidesOnDeactivate: follows main window.
 
 import AppKit
 import SwiftUI
@@ -25,7 +25,7 @@ final class ConnectToServerCoordinator {
     private let defaultWidth: CGFloat  = 640
     private let defaultHeight: CGFloat = 520
 
-    var onConnect: ((URL, String) -> Void)?   // (url, password)
+    var onConnect: ((URL, String) -> Void)?
 
     private init() {}
 
@@ -44,7 +44,7 @@ final class ConnectToServerCoordinator {
 
         let contentView = ConnectToServerView(
             onConnect: { [weak self] url, password in
-                self?.onConnect?(url, password)
+                self?.handleConnect(url: url, password: password)
             },
             onDismiss: { [weak self] in self?.close() }
         )
@@ -102,6 +102,23 @@ final class ConnectToServerCoordinator {
     func bringToFront() {
         guard isVisible else { return }
         window?.orderFront(nil)
+    }
+
+    // MARK: - Handle connect action from view
+    private func handleConnect(url: URL, password: String) {
+        onConnect?(url, password)
+        // Find matching server and connect via manager
+        let store = RemoteServerStore.shared
+        guard let server = store.servers.first(where: { $0.connectionURL == url }) else {
+            log.warning("[ConnectCoordinator] no matching server for \(url)")
+            return
+        }
+        Task {
+            await RemoteConnectionManager.shared.connect(to: server, password: password)
+            if RemoteConnectionManager.shared.isConnected {
+                close()
+            }
+        }
     }
 
     // MARK: - Default frame: left of main window (Network is right)

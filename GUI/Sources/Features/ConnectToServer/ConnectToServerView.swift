@@ -37,7 +37,7 @@ struct ConnectToServerView: View {
             }
         }
         .frame(minWidth: 560, idealWidth: 640, minHeight: 440, idealHeight: 520)
-        .background(DialogColors.base)
+        .background(DesignTokens.card)
         .onAppear { selectFirst() }
         .onKeyPress(.escape) { onDismiss?(); return .handled }
     }
@@ -50,7 +50,7 @@ struct ConnectToServerView: View {
             Spacer()
         }
         .padding(.horizontal, 12).padding(.vertical, 8)
-        .background(DialogColors.stripe)
+        .background(DesignTokens.panelBg)
     }
 
     // MARK: - Left sidebar: saved servers
