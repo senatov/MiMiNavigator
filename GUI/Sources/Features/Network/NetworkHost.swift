@@ -66,6 +66,7 @@ enum NetworkDeviceClass {
     case printer
     case iPhone
     case iPad
+    case mediaBox      // Enigma2 / OpenPLi / Kodi / HTPC — web UI only, no SMB
     case unknown
 
     var systemIconName: String {
@@ -78,6 +79,7 @@ enum NetworkDeviceClass {
         case .printer:      return "printer"
         case .iPhone:       return "iphone"
         case .iPad:         return "ipad"
+        case .mediaBox:     return "tv"
         case .unknown:      return "network"
         }
     }
@@ -92,13 +94,14 @@ enum NetworkDeviceClass {
         case .printer:      return "Printer"
         case .iPhone:       return "iPhone"
         case .iPad:         return "iPad"
+        case .mediaBox:     return "Media"
         case .unknown:      return ""
         }
     }
 
     var isExpandable: Bool {
         switch self {
-        case .printer, .router, .iPhone, .iPad: return false
+        case .printer, .router, .iPhone, .iPad, .mediaBox: return false
         default: return true
         }
     }

@@ -32,7 +32,14 @@ enum NetworkDeviceFingerprinter {
     ]
     private static let nasKeywords = [
         "synology", "qnap", "buffalo", "wd my cloud", "netgear",
-        "readynas", "diskstation", "terramaster", "asustor", "vuduo",
+        "readynas", "diskstation", "terramaster", "asustor",
+    ]
+    // Enigma2 / OpenPLi / Kodi media boxes — web UI only, no SMB shares
+    private static let mediaBoxKeywords = [
+        "vuduo", "vu+", "enigma", "openpli", "openatv", "openvix",
+        "dreambox", "dm800", "dm900", "dm7080", "gigablue", "xtrend",
+        "octagon", "edision", "formuler", "zgemma", "kodi", "libreelec",
+        "openelec", "osmc", "batocera", "coreelec",
     ]
 
     // MARK: - Fast classification by Bonjour service set (no network IO)
@@ -66,6 +73,7 @@ enum NetworkDeviceFingerprinter {
         let h = hostName.lowercased()
 
         if routerKeywords.contains(where: { n.contains($0) || h.contains($0) }) { return .router }
+        if mediaBoxKeywords.contains(where: { n.contains($0) || h.contains($0) }) { return .mediaBox }
         if nasKeywords.contains(where: { n.contains($0) || h.contains($0) }) { return .nas }
 
         // iPhone / iPad by name
@@ -114,6 +122,9 @@ enum NetworkDeviceFingerprinter {
         let bannerLower = banner?.lowercased() ?? ""
 
         if routerKeywords.contains(where: { bannerLower.contains($0) || n.contains($0) || h.contains($0) }) { return .router }
+        // Enigma2 banner: contains "e2about", "openpli", "enigmaversion" etc.
+        if mediaBoxKeywords.contains(where: { bannerLower.contains($0) || n.contains($0) || h.contains($0) })
+            || bannerLower.contains("e2about") || bannerLower.contains("enigma") { return .mediaBox }
         if nasKeywords.contains(where: { bannerLower.contains($0) || n.contains($0) || h.contains($0) }) { return .nas }
 
         let has22  = ports.contains(22)

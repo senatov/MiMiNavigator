@@ -237,7 +237,8 @@ struct NetworkNeighborhoodView: View {
             Text(host.isLocalhost ? "No shared folders configured" : "No shares found")
                 .font(.caption).foregroundStyle(.secondary)
             Spacer()
-            if !host.isLocalhost && !host.deviceClass.isMobile && !host.deviceClass.isRouter {
+            if !host.isLocalhost && !host.deviceClass.isMobile && !host.deviceClass.isRouter
+                && host.deviceClass != .mediaBox {
                 Button { authTarget = host } label: {
                     Label("Sign In", systemImage: "key.fill")
                         .font(.caption).padding(.horizontal, 8).padding(.vertical, 3)
@@ -397,6 +398,7 @@ private struct HostNodeRow: View {
         case .mac:           return .blue
         case .windowsPC:     return .indigo
         case .linuxServer:   return .cyan
+        case .mediaBox:      return .red
         default:             return host.nodeType == .printer ? .purple : .secondary
         }
     }
