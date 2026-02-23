@@ -234,13 +234,31 @@ struct NetworkHost: Identifiable, Hashable {
     var staticWebUIURL: URL? {
         switch deviceClass {
         case .router:
-            let h = name.lowercased().contains("fritz") ? "fritz.box" : hostDisplayName
-            return URL(string: "http://" + h)
+            return URL(string: "http://" + routerDomain)
         case .printer:
             let h = !hostName.isEmpty && hostName != "(nil)" && !hostName.contains("@")
                 ? hostName : hostDisplayName
             return URL(string: "http://" + h + ":631")
         default: return nil
         }
+    }
+
+    // MARK: - Router domain by vendor (matches Info.plist NSExceptionDomains)
+    private var routerDomain: String {
+        let n = name.lowercased()
+        // Fritz!Box (AVM, Germany)
+        if n.contains("fritz") { return "fritz.box" }
+        // TP-Link
+        if n.contains("tplink") || n.contains("tp-link") { return "tplinkwifi.net" }
+        // Netgear
+        if n.contains("netgear") || n.contains("readynas") { return "routerlogin.net" }
+        // D-Link
+        if n.contains("dlink") || n.contains("d-link") { return "dlinkrouter.local" }
+        // Asus
+        if n.contains("asus") || n.contains("rt-") { return "router.asus.com" }
+        // Linksys
+        if n.contains("linksys") { return "myrouter.local" }
+        // Fallback to IP address
+        return hostDisplayName
     }
 }

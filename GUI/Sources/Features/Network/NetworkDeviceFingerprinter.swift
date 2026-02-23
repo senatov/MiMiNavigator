@@ -30,9 +30,25 @@ enum NetworkDeviceFingerprinter {
 
     // MARK: - Known router/NAS keywords (hostname or HTTP banner)
     private static let routerKeywords = [
-        "fritz", "fritzbox", "fritz-box", "router", "gateway",
-        "speedport", "easybox", "dsl-router", "technicolor",
-        "vodafone box", "o2 box", "192-168-178-1",
+        // Fritz!Box (AVM, Germany)
+        "fritz", "fritzbox", "fritz-box", "192-168-178-1",
+        // TP-Link
+        "tplink", "tp-link", "archer", "deco",
+        // Netgear
+        "netgear", "nighthawk", "orbi",
+        // D-Link
+        "dlink", "d-link", "dir-",
+        // Asus
+        "asus", "rt-ac", "rt-ax", "rog rapture",
+        // Linksys
+        "linksys", "velop", "wrt",
+        // Mikrotik
+        "mikrotik", "routerboard",
+        // Huawei
+        "huawei", "honor router",
+        // Generic
+        "router", "gateway", "speedport", "easybox", "dsl-router",
+        "technicolor", "vodafone box", "o2 box",
     ]
     private static let nasKeywords = [
         "synology", "qnap", "buffalo", "wd my cloud", "netgear",
