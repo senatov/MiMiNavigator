@@ -10,11 +10,13 @@
 *.mdb
 *.xcactivitylog
 *.xcodeproj/project.xcsettings
-*.xcodeproj/project.xcworkspace/
+*.xcodeproj/project.xcworkspace/*
+!*.xcodeproj/project.xcworkspace/xcshareddata/
 *.xcodeproj/xcshareddata/xcschemes/*
 *.xcodeproj/xcuserdata/
 *.xcscmblueprint
 *.xcuserdata
+!**/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
 *.xcworkspace
 /.idea/
 Carthage/Build/**
@@ -22,7 +24,7 @@ DerivedData/
 fastlane/Preview.html
 fastlane/report.xml
 fastlane/test_output
-Package.resolved
+# Package.resolved — track it for reproducible builds (recommended for apps)
 # Local SPM resolved packages cache — but track our own local packages
 .build/
 # Packages/   ← removed: Packages/ contains our local SPM packages (FavoritesKit, NetworkKit)
