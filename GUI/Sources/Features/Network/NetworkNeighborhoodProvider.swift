@@ -167,7 +167,7 @@ final class NetworkNeighborhoodProvider: NSObject, ObservableObject {
                 var sinCopy = sin.pointee
                 var buf = [CChar](repeating: 0, count: Int(INET_ADDRSTRLEN))
                 inet_ntop(AF_INET, &sinCopy.sin_addr, &buf, socklen_t(INET_ADDRSTRLEN))
-                return String(cString: buf) == ip
+                return String(decoding: buf.prefix(while: { $0 != 0 }).map(UInt8.init), as: UTF8.self) == ip
             }
             if matches { return true }
         }
@@ -357,7 +357,7 @@ final class NetworkNeighborhoodProvider: NSObject, ObservableObject {
         log.info("[WebUI] probing \(candidates.count) hosts")
         await withTaskGroup(of: (NetworkHost.ID, URL?).self) { group in
             for host in candidates {
-                group.addTask {
+                group.addTask { @concurrent in
                     let url = await WebUIProber.probe(host: host)
                     return (host.id, url)
                 }

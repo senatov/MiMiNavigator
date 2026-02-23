@@ -111,7 +111,7 @@ enum NetworkDeviceFingerprinter {
     }
 
     // MARK: - Full async probe (port scan + HTTP banner)
-    static func probe(hostName: String, bonjourServices: Set<String>, name: String = "") async -> NetworkDeviceFingerprint {
+    @concurrent static func probe(hostName: String, bonjourServices: Set<String>, name: String = "") async -> NetworkDeviceFingerprint {
         // Bonjour fast path
         if let quick = classifyByServices(bonjourServices) {
             return NetworkDeviceFingerprint(deviceClass: quick, openPorts: [], httpBanner: nil)
@@ -159,10 +159,10 @@ enum NetworkDeviceFingerprinter {
     }
 
     // MARK: - Concurrent port probe
-    static func probePortsConcurrently(host: String, ports: [Int], timeout: TimeInterval) async -> Set<Int> {
+    @concurrent static func probePortsConcurrently(host: String, ports: [Int], timeout: TimeInterval) async -> Set<Int> {
         await withTaskGroup(of: Int?.self) { group in
             for port in ports {
-                group.addTask { await isPortOpen(host: host, port: port, timeout: timeout) ? port : nil }
+                group.addTask { @concurrent in await isPortOpen(host: host, port: port, timeout: timeout) ? port : nil }
             }
             var open = Set<Int>()
             for await result in group { if let p = result { open.insert(p) } }
@@ -171,7 +171,7 @@ enum NetworkDeviceFingerprinter {
     }
 
     // MARK: - TCP port check
-    static func isPortOpen(host: String, port: Int, timeout: TimeInterval) async -> Bool {
+    @concurrent static func isPortOpen(host: String, port: Int, timeout: TimeInterval) async -> Bool {
         // Skip obviously invalid hostnames (raw MAC addresses, empty, etc.)
         let h = host.trimmingCharacters(in: .whitespacesAndNewlines)
         if h.isEmpty || h == "(nil)" || h.contains("@") { return false }
@@ -205,7 +205,7 @@ enum NetworkDeviceFingerprinter {
     }
 
     // MARK: - Fetch HTTP <title>
-    static func fetchHTTPTitle(host: String) async -> String? {
+    @concurrent static func fetchHTTPTitle(host: String) async -> String? {
         guard let url = URL(string: "http://\(host)") else { return nil }
         var req = URLRequest(url: url, timeoutInterval: 2.5)
         req.httpMethod = "GET"

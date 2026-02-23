@@ -461,7 +461,7 @@ extension AppState {
 // MARK: - Remote Path Detection
 extension AppState {
     /// Returns true if the path belongs to an active remote connection
-    static func isRemotePath(_ path: String) -> Bool {
+    nonisolated static func isRemotePath(_ path: String) -> Bool {
         path.hasPrefix("sftp://") || path.hasPrefix("ftp://") || path.hasPrefix("/sftp:") || path.hasPrefix("/ftp:")
     }
 

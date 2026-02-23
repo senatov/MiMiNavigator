@@ -21,7 +21,7 @@ struct KeychainCred {
 enum NetworkShareEnumerator {
 
     // MARK: - Main entry point
-    static func shares(for host: NetworkHost) async -> [NetworkShare] {
+    @concurrent static func shares(for host: NetworkHost) async -> [NetworkShare] {
         let scheme = host.serviceType == .afp ? "afp" : "smb"
         let hostnameCandidates = hostnameVariants(host)
         let credentials = keychainCredentials(for: host)
@@ -139,7 +139,7 @@ enum NetworkShareEnumerator {
     }
 
     // MARK: - Run smbutil view
-    private static func smbUtilShares(
+    @concurrent private static func smbUtilShares(
         hostname: String, user: String?, password: String?, scheme: String
     ) async -> [NetworkShare] {
         await withCheckedContinuation { continuation in

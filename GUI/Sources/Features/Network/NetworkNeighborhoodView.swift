@@ -336,7 +336,7 @@ private struct HostNodeRow: View {
     private var actionButtons: some View {
         HStack(spacing: 4) {
             // Web UI button — shown when URL known (static or probed)
-            if let url = host.webUIURL {
+            if host.webUIURL != nil {
                 Button { onOpenWebUI() } label: {
                     Label("Web UI", systemImage: "safari")
                         .font(.caption2)
