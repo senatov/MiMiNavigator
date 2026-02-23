@@ -100,6 +100,12 @@ final class FindFilesCoordinator {
         log.info("[FindFiles] Window closed")
     }
 
+    // MARK: - Raise to front (called by AppDelegate.applicationDidBecomeActive)
+    func bringToFront() {
+        guard isVisible else { return }
+        findWindow?.orderFront(nil)
+    }
+
     // MARK: - Notify Closed (called by delegate)
 
     func windowDidClose() {
