@@ -5,9 +5,26 @@ All notable changes to MiMiNavigator will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] — 2026-02-23
+## [Unreleased] — 2026-02-24
 
 ### Added
+- **Citadel SFTP library** — added SPM dependency (orlandos-nl/Citadel 0.7.x) for native SFTP connectivity via NIOSSH. `SFTPFileProvider` uses `SSHClientSettings`, `SSHClient.connect(to:)`, `SFTPClient.listDirectory()` with proper `SFTPPathComponent` parsing (filename, permissions, size, modification date).
+- **Disconnect button** — replaced Browse with Disconnect in Connect to Server dialog. Disconnects active session and restores file panel to previous local path.
+- **Session context menu** — right-click on session history row: Connect / Disconnect / Delete. Delete terminates connection, removes from keychain and store.
+- **Connection reuse** — Connect button reuses existing connection if server already connected (no duplicate sessions). Sets it as active and shows remote directory.
+- **Local path restoration** — `AppState.savedLocalLeftPath`/`savedLocalRightPath` remember panel path before switching to remote; restored automatically on disconnect.
+
+### Fixed
+- **Network Neighborhood menu** — was setting unused `appState.showNetworkNeighborhood` flag; now calls `NetworkNeighborhoodCoordinator.shared.toggle()` same as toolbar button.
+- **Show/Hide Hidden Files menu** — was missing `forceRefreshBothPanels()` after toggle; panels now refresh immediately.
+- **Refresh Panels menu** — now refreshes both panels (was only focused panel); renamed to "Refresh Panels".
+- **SMB mount Unicode failures** — `mount_smbfs` failed on share names with curly quotes (‘kira’s’), combining diacriticals (öffentlicher), spaces. New `sanitizeMountName()` normalizes Unicode (NFC), strips unsafe characters, keeps only alphanumerics/hyphens/dots.
+- **Dialog centering** — Connect to Server, Network Neighborhood, Find Files dialogs now open centered over main window.
+
+### Removed
+- **Brief View menu item** — removed unimplemented stub (Norton Commander legacy, not applicable).
+
+### Changed
 - **Multi-vendor router web UI support** — MiMiNavigator can now open admin panels for TP-Link, Netgear, D-Link, Asus, Linksys, Mikrotik, and Huawei routers, not just Fritz!Box. `NetworkHost.routerDomain` maps router names to vendor-specific domains (`tplinkwifi.net`, `routerlogin.net`, `router.asus.com`, etc.). Extended `routerKeywords` with model-specific names (Archer, Nighthawk, RT-AX). HTTP exceptions in `Info.plist` now fully utilized by network discovery code.
 - **MAC vendor lookup improvements** — `MACVendorService` now uses actor-based caching for instant repeated lookups, respects API rate limits (1 req/sec), and shows error messages ("Network error", "Rate limit exceeded") instead of silently failing. Timeout reduced from 5s to 3s for better responsiveness.
 
