@@ -40,13 +40,19 @@ struct MiMiNavigatorApp: App {
                     NetworkNeighborhoodCoordinator.shared.onNavigate = { shareURL in
                         Task { @MainActor in
                             let side = appState.focusedPanel
+                            // file:// — already mounted volume, navigate directly
                             if shareURL.isFileURL {
                                 appState.updatePath(shareURL.path, for: side)
+                                NetworkNeighborhoodCoordinator.shared.close()
                                 return
                             }
+                            // smb:/afp:// — mount silently, navigate on success
+                            // SMBMounter.mountShare no longer falls back to Finder
                             if let mountedURL = await SMBMounter.shared.mountShare(shareURL) {
                                 appState.updatePath(mountedURL.path, for: side)
+                                NetworkNeighborhoodCoordinator.shared.close()
                             }
+                            // If mount failed — leave panel open so user can try Sign In
                         }
                     }
                 }

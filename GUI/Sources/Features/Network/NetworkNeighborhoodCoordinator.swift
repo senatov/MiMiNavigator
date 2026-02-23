@@ -45,8 +45,10 @@ final class NetworkNeighborhoodCoordinator {
 
         let contentView = NetworkNeighborhoodView(
             onNavigate: { [weak self] url in
+                // Close only for file:// URLs (already mounted / local path)
+                // For smb:// etc. — App.swift handles mount async, closes after success
                 self?.onNavigate?(url)
-                self?.close()
+                if url.isFileURL { self?.close() }
             },
             onDismiss: { [weak self] in self?.close() }
         )
@@ -74,6 +76,8 @@ final class NetworkNeighborhoodCoordinator {
         panel.level = .floating
         panel.tabbingMode = .disallowed
         panel.isFloatingPanel = true
+        // Stay visible across all Spaces, don't hide when other apps become active
+        panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
 
         if !panel.setFrameUsingName(frameAutosaveName) {
             panel.setFrame(computeDefaultFrame(), display: true)
