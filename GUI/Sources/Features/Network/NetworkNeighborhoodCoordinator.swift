@@ -5,10 +5,9 @@
 // Refactored: 23.02.2026 — level=.normal (was .floating); bringToFront moved to AppDelegate
 // Copyright © 2026 Senatov. All rights reserved.
 // Description: Manages Network Neighborhood as standalone NSPanel.
-//   - level=.normal: visible alongside main window, never above other apps
+//   - level=.floating + hidesOnDeactivate=true: hides when app deactivates, rises when active
 //   - Rises to front via AppDelegate.applicationDidBecomeActive (only when MiMi is active)
 //   - Movable, resizable, persists position via frameAutosaveName
-//   - hidesOnDeactivate=false: stays visible when switching between MiMi windows
 //   - close() only for file:// URLs; smb:// stays open until mount completes
 
 import AppKit
@@ -74,13 +73,10 @@ final class NetworkNeighborhoodCoordinator {
         panel.toolbarStyle = .unified
         panel.animationBehavior = .utilityWindow
         panel.isMovableByWindowBackground = true
-        panel.hidesOnDeactivate = false
-        // .normal level — visible but does NOT float over other apps
-        panel.level = .normal
+        // Follow main window: hide when app deactivates, rise when app activates
+        panel.hidesOnDeactivate = true
+        panel.level = .floating
         panel.tabbingMode = .disallowed
-        panel.isFloatingPanel = false
-        // Stay in current Space, don't steal focus from other apps
-        panel.collectionBehavior = [.managed, .participatesInCycle]
 
         if !panel.setFrameUsingName(frameAutosaveName) {
             panel.setFrame(computeDefaultFrame(), display: true)
