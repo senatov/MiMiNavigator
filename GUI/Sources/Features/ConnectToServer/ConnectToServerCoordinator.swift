@@ -24,6 +24,7 @@ final class ConnectToServerCoordinator {
     private let defaultHeight: CGFloat = 520
 
     var onConnect: ((URL, String) -> Void)?
+    var onDisconnect: (() -> Void)?
 
     private init() {}
 
@@ -43,6 +44,9 @@ final class ConnectToServerCoordinator {
         let contentView = ConnectToServerView(
             onConnect: { [weak self] url, password in
                 self?.handleConnect(url: url, password: password)
+            },
+            onDisconnect: { [weak self] in
+                self?.onDisconnect?()
             },
             onDismiss: { [weak self] in self?.close() }
         )

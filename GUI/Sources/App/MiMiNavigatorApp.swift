@@ -40,6 +40,17 @@ struct MiMiNavigatorApp: App {
                     AppStateProvider.shared = appState
                     showHiddenFiles = UserPreferences.shared.snapshot.showHiddenFiles
                     // Wire connect callback for ConnectToServer panel
+                    ConnectToServerCoordinator.shared.onDisconnect = {
+                        Task { @MainActor in
+                            // Restore whichever panel(s) are showing remote content
+                            if AppState.isRemotePath(appState.leftPath) {
+                                await appState.restoreLocalPath(for: .left)
+                            }
+                            if AppState.isRemotePath(appState.rightPath) {
+                                await appState.restoreLocalPath(for: .right)
+                            }
+                        }
+                    }
                     ConnectToServerCoordinator.shared.onConnect = { url, password in
                         Task { @MainActor in
                             let side = appState.focusedPanel
