@@ -115,6 +115,11 @@ final class RemoteConnectionManager {
         activeConnectionID = id
     }
 
+    // MARK: - Find existing connection for server
+    func connection(for server: RemoteServer) -> RemoteConnection? {
+        connections.first { $0.server.host == server.host && $0.server.port == server.port && $0.server.remoteProtocol == server.remoteProtocol }
+    }
+
     // MARK: - List directory on active connection
     func listDirectory(_ path: String) async throws -> [RemoteFileItem] {
         guard let conn = activeConnection else {

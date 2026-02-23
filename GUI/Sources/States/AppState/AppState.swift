@@ -24,6 +24,9 @@ final class AppState {
     var rightFilterQuery: String = ""
     var leftPath: String
     var rightPath: String
+    /// Saved local paths before switching to remote (for disconnect/restore)
+    var savedLocalLeftPath: String?
+    var savedLocalRightPath: String?
     var selectedDir: DirectorySelection = .init()
     var showFavTreePopup: Bool = false
     var showNetworkNeighborhood: Bool = false
@@ -477,11 +480,42 @@ extension AppState {
 
         switch panelSide {
             case .left:
+                // Save local path before switching to remote
+                if Self.isRemotePath(path) && !Self.isRemotePath(leftPath) {
+                    savedLocalLeftPath = leftPath
+                }
                 leftPath = path
                 selectedLeftFile = displayedLeftFiles.first
             case .right:
+                if Self.isRemotePath(path) && !Self.isRemotePath(rightPath) {
+                    savedLocalRightPath = rightPath
+                }
                 rightPath = path
                 selectedRightFile = displayedRightFiles.first
+        }
+    }
+
+    /// Restore panel to saved local path after remote disconnect
+    func restoreLocalPath(for panel: PanelSide) async {
+        let saved: String?
+        switch panel {
+        case .left:  saved = savedLocalLeftPath
+        case .right: saved = savedLocalRightPath
+        }
+        guard let localPath = saved else {
+            log.warning("[AppState] no saved local path for \(panel)")
+            return
+        }
+        log.info("[AppState] restoring local path \(panel): \(localPath)")
+        updatePath(localPath, for: panel)
+        if panel == .left {
+            await scanner.setLeftDirectory(pathStr: localPath)
+            await scanner.refreshFiles(currSide: .left)
+            await refreshLeftFiles()
+        } else {
+            await scanner.setRightDirectory(pathStr: localPath)
+            await scanner.refreshFiles(currSide: .right)
+            await refreshRightFiles()
         }
     }
 }

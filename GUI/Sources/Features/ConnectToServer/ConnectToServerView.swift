@@ -15,6 +15,7 @@ import SwiftUI
 struct ConnectToServerView: View {
 
     var onConnect: ((URL, String) -> Void)?   // (url, password)
+    var onDisconnect: (() -> Void)?
     var onDismiss: (() -> Void)?
 
     @State private var store = RemoteServerStore.shared
@@ -61,7 +62,10 @@ struct ConnectToServerView: View {
             RecentSessionsTableView(
                 servers: store.servers,
                 selectedID: $selectedID,
-                layout: sessionLayout
+                layout: sessionLayout,
+                onContextConnect: { server in connectServerAction(server: server) },
+                onContextDisconnect: { server in disconnectServerAction(server: server) },
+                onContextDelete: { server in deleteServerAction(server: server) }
             )
             .onChange(of: selectedID) { _, newID in
                 if let id = newID, let server = store.servers.first(where: { $0.id == id }) {
@@ -209,14 +213,19 @@ struct ConnectToServerView: View {
                 Button("Save") { saveAction() }
                     .disabled(draft.host.isEmpty)
 
-                Button("Browse") { browseAction() }
-                    .disabled(draft.host.isEmpty)
+                Button("Disconnect") { disconnectAction() }
+                    .disabled(!isDraftConnected)
             }
             .padding(.horizontal, 16).padding(.bottom, 12)
         }
     }
 
     // MARK: - Actions
+
+    // MARK: - Check if draft server has an active connection
+    private var isDraftConnected: Bool {
+        RemoteConnectionManager.shared.connection(for: draft) != nil
+    }
 
     private func connectAction() {
         saveAction()
@@ -226,24 +235,29 @@ struct ConnectToServerView: View {
             log.warning("[ConnectToServer] invalid URL for '\(draft.host)'")
             return
         }
+        let scheme = url.scheme ?? ""
+        let manager = RemoteConnectionManager.shared
+
+        // Reuse existing connection if already connected
+        if let existing = manager.connection(for: draft) {
+            log.info("[ConnectToServer] reusing existing connection to \(draft.host)")
+            manager.setActive(id: existing.id)
+            onConnect?(url, password)
+            return
+        }
+
         isConnecting = true
         log.info("[ConnectToServer] connecting to \(url)")
-        let scheme = url.scheme ?? ""
         if scheme == "smb" || scheme == "afp" {
-            // SMB/AFP — delegate to coordinator (native mount)
             onConnect?(url, password)
             isConnecting = false
         } else {
-            // SFTP/FTP — connect via RemoteConnectionManager, stay in panel
             Task {
-                let manager = RemoteConnectionManager.shared
                 await manager.connect(to: draft, password: password)
                 if manager.isConnected {
                     connectionError = ""
-                    // Signal success but do NOT close panel
                     onConnect?(url, password)
                 } else {
-                    // Re-read updated result from store
                     if let updated = store.servers.first(where: { $0.id == draft.id }) {
                         connectionError = updated.lastResult.rawValue
                     } else {
@@ -272,10 +286,46 @@ struct ConnectToServerView: View {
         selectedID = draft.id
     }
 
-    private func browseAction() {
-        // Browse = Connect (show in file panel, not Finder)
+    private func disconnectAction() {
+        let manager = RemoteConnectionManager.shared
+        if let conn = manager.connection(for: draft) {
+            log.info("[ConnectToServer] disconnecting from \(draft.host)")
+            Task {
+                await manager.disconnect(id: conn.id)
+                onDisconnect?()
+            }
+        }
+    }
+
+    private func deleteServerAction(server: RemoteServer) {
+        let manager = RemoteConnectionManager.shared
+        // Disconnect if connected
+        if let conn = manager.connection(for: server) {
+            Task { await manager.disconnect(id: conn.id) }
+        }
+        // Remove from store (and keychain)
+        RemoteServerKeychain.deletePassword(for: server)
+        store.remove(server)
+        onDisconnect?()
+        selectFirst()
+        log.info("[ConnectToServer] deleted server \(server.displayName)")
+    }
+
+    private func connectServerAction(server: RemoteServer) {
+        draft = server
+        password = RemoteServerKeychain.loadPassword(for: server)
+        selectedID = server.id
         connectAction()
-        log.info("[ConnectToServer] browse — delegating to connectAction")
+    }
+
+    private func disconnectServerAction(server: RemoteServer) {
+        let manager = RemoteConnectionManager.shared
+        if let conn = manager.connection(for: server) {
+            Task {
+                await manager.disconnect(id: conn.id)
+                onDisconnect?()
+            }
+        }
     }
 
     private func addNewServer() {

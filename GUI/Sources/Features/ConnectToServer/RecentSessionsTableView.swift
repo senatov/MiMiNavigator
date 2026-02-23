@@ -13,6 +13,9 @@ struct RecentSessionsTableView: View {
     let servers: [RemoteServer]
     @Binding var selectedID: RemoteServer.ID?
     @Bindable var layout: SessionColumnLayout
+    var onContextConnect: ((RemoteServer) -> Void)?
+    var onContextDisconnect: ((RemoteServer) -> Void)?
+    var onContextDelete: ((RemoteServer) -> Void)?
     @State private var sortKey: SessionSortKey = .date
     @State private var sortAscending: Bool = false
 
@@ -99,6 +102,13 @@ struct RecentSessionsTableView: View {
                         .background(isSelected ? Self.activeFill : Color.clear)
                         .contentShape(Rectangle())
                         .onTapGesture { selectedID = server.id }
+                        .contextMenu {
+                            Button("Connect") { onContextConnect?(server) }
+                            Button("Disconnect") { onContextDisconnect?(server) }
+                                .disabled(RemoteConnectionManager.shared.connection(for: server) == nil)
+                            Divider()
+                            Button("Delete", role: .destructive) { onContextDelete?(server) }
+                        }
                     Divider().padding(.leading, 4)
                 }
             }
