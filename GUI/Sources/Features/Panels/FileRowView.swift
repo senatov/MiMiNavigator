@@ -140,6 +140,11 @@ struct FileRowView: View {
         let workspace = NSWorkspace.shared
         let iconSize = NSSize(width: 128, height: 128)
 
+        // Remote files — use generic icons by type (no local path to query)
+        if !FileManager.default.fileExists(atPath: url.path) {
+            return remoteIcon(for: file, size: iconSize)
+        }
+
         // For directories - use system folder icon
         if file.isDirectory || file.isSymbolicDirectory {
             let icon = workspace.icon(forFile: url.path)
@@ -179,6 +184,24 @@ struct FileRowView: View {
         // 3. Final fallback: standard file icon
         let icon = workspace.icon(forFile: url.path)
         icon.size = iconSize
+        return icon
+    }
+
+    // MARK: - Remote file icon (no local path available)
+    private func remoteIcon(for file: CustomFile, size: NSSize) -> NSImage {
+        if file.isDirectory || file.isSymbolicDirectory {
+            let icon = NSWorkspace.shared.icon(for: .folder)
+            icon.size = size
+            return icon
+        }
+        let ext = file.fileExtension.lowercased()
+        if !ext.isEmpty, let uttype = UTType(filenameExtension: ext) {
+            let icon = NSWorkspace.shared.icon(for: uttype)
+            icon.size = size
+            return icon
+        }
+        let icon = NSWorkspace.shared.icon(for: .data)
+        icon.size = size
         return icon
     }
 

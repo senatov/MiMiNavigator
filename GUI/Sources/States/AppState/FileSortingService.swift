@@ -135,6 +135,8 @@ enum FileSortingService {
         }
 
         let url = f.urlValue
+        // Remote files have no local path — trust isDirectory flag only
+        guard FileManager.default.fileExists(atPath: url.path) else { return false }
         do {
             let rv = try url.resourceValues(forKeys: [.isSymbolicLinkKey])
             if rv.isSymbolicLink == true {

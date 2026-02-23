@@ -172,8 +172,9 @@ final class PanelNavigationHistory {
             return
         }
         
-        // Validate paths exist
+        // Validate paths exist (allow remote paths through)
         history = hist.filter { path in
+            if AppState.isRemotePath(path) { return true }
             var isDir: ObjCBool = false
             return FileManager.default.fileExists(atPath: path, isDirectory: &isDir) && isDir.boolValue
         }

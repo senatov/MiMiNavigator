@@ -88,11 +88,14 @@ final class SelectionsHistory {
         let norm = normalize(path)
         guard !norm.isEmpty else { return }
         
-        // Only accept directories
-        var isDir: ObjCBool = false
-        guard FileManager.default.fileExists(atPath: norm, isDirectory: &isDir), isDir.boolValue else {
-            log.debug("SelectionsHistory: skipping non-directory: \(norm)")
-            return
+        // Only accept directories (skip check for remote paths)
+        let isRemote = AppState.isRemotePath(norm)
+        if !isRemote {
+            var isDir: ObjCBool = false
+            guard FileManager.default.fileExists(atPath: norm, isDirectory: &isDir), isDir.boolValue else {
+                log.debug("SelectionsHistory: skipping non-directory: \(norm)")
+                return
+            }
         }
         
         // Check for duplicate (already exists with same normalized path)

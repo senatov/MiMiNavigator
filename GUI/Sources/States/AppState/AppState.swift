@@ -377,6 +377,34 @@ extension AppState {
         let state = archiveState(for: panel)
         let currentPath = panel == .left ? leftPath : rightPath
 
+        // Remote path — navigate up via RemoteConnectionManager
+        if Self.isRemotePath(currentPath) {
+            let manager = RemoteConnectionManager.shared
+            guard let conn = manager.activeConnection else { return }
+            let parentRemote = (conn.currentPath as NSString).deletingLastPathComponent
+            let normalizedParent = parentRemote.isEmpty ? "/" : parentRemote
+            log.info("[AppState] navigateToParent remote: \(conn.currentPath) \u2192 \(normalizedParent)")
+            do {
+                let items = try await manager.listDirectory(normalizedParent)
+                let files = items.map { CustomFile(remoteItem: $0) }
+                let sorted = applySorting(files)
+                let mountPath = conn.provider.mountPath
+                let displayPath = mountPath.hasSuffix("/") ? String(mountPath.dropLast()) : mountPath
+                updatePath(displayPath + normalizedParent, for: panel)
+                switch panel {
+                case .left:
+                    displayedLeftFiles = sorted
+                    selectedLeftFile = sorted.first
+                case .right:
+                    displayedRightFiles = sorted
+                    selectedRightFile = sorted.first
+                }
+            } catch {
+                log.error("[AppState] remote navigateToParent failed: \(error.localizedDescription)")
+            }
+            return
+        }
+
         // If at the root of an extracted archive → exit archive entirely
         if state.isInsideArchive && state.isAtArchiveRoot(currentPath: currentPath) {
             await exitArchive(on: panel)
