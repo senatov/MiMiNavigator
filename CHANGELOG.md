@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - **Multi-vendor router web UI support** — MiMiNavigator can now open admin panels for TP-Link, Netgear, D-Link, Asus, Linksys, Mikrotik, and Huawei routers, not just Fritz!Box. `NetworkHost.routerDomain` maps router names to vendor-specific domains (`tplinkwifi.net`, `routerlogin.net`, `router.asus.com`, etc.). Extended `routerKeywords` with model-specific names (Archer, Nighthawk, RT-AX). HTTP exceptions in `Info.plist` now fully utilized by network discovery code.
+- **MAC vendor lookup improvements** — `MACVendorService` now uses actor-based caching for instant repeated lookups, respects API rate limits (1 req/sec), and shows error messages ("Network error", "Rate limit exceeded") instead of silently failing. Timeout reduced from 5s to 3s for better responsiveness.
 
 ### Changed
 - **Packages/ extracted to private git submodule** — `NetworkKit`, `FavoritesKit`, `LogKit` moved to private repo `github.com/senatov/MiMiKits`, connected back as git submodule at `Packages/`. Xcode project unchanged, full debug/edit/commit workflow preserved.
