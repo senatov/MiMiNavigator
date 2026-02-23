@@ -148,28 +148,55 @@ final class FTPFileProvider: RemoteFileProvider, @unchecked Sendable {
         log.info("[FTP] connected to \(mountPath)")
     }
 
-    // MARK: - List Directory
+    // MARK: - List Directory (via curl — URLSession FTP support is broken/deprecated on macOS)
     @concurrent func listDirectory(_ path: String) async throws -> [RemoteFileItem] {
         guard let base = baseURL else { throw RemoteProviderError.notConnected }
+        let dirPath = path.hasPrefix("/") ? path : "/\(path)"
+        // Ensure trailing slash so curl lists the directory (not tries to download a file)
+        let listPath = dirPath.hasSuffix("/") ? dirPath : dirPath + "/"
+
         var components = URLComponents(url: base, resolvingAgainstBaseURL: false)
-        components?.path = path.hasPrefix("/") ? path : "/\(path)"
+        components?.path = listPath
         components?.user = ftpUser
         components?.password = ftpPassword
         guard let dirURL = components?.url else { throw RemoteProviderError.invalidURL }
 
-        var request = URLRequest(url: dirURL)
-        request.timeoutInterval = 20
-
-        let (data, response) = try await URLSession.shared.data(for: request)
-        if let http = response as? HTTPURLResponse, http.statusCode == 401 {
-            throw RemoteProviderError.authFailed
-        }
-        guard let raw = String(data: data, encoding: .utf8) else {
-            throw RemoteProviderError.listingFailed("Invalid response encoding")
-        }
+        let raw = try await curlFTPList(url: dirURL)
         let items = parseFTPListing(raw, basePath: path)
-        log.debug("[FTP] listed \(items.count) items at \(path)")
+        log.debug("[FTP] listed \(items.count) items at \(path) (raw \(raw.count) chars)")
         return items
+    }
+
+    // MARK: - curl-based FTP LIST (reliable, unlike URLSession FTP)
+    private func curlFTPList(url: URL) async throws -> String {
+        try await withCheckedThrowingContinuation { continuation in
+            DispatchQueue.global(qos: .userInitiated).async {
+                let process = Process()
+                process.executableURL = URL(fileURLWithPath: "/usr/bin/curl")
+                process.arguments = [
+                    "-s",              // silent
+                    "--max-time", "15",
+                    url.absoluteString
+                ]
+                let outPipe = Pipe()
+                let errPipe = Pipe()
+                process.standardOutput = outPipe
+                process.standardError = errPipe
+                do { try process.run() } catch {
+                    continuation.resume(throwing: RemoteProviderError.listingFailed("curl launch: \(error.localizedDescription)"))
+                    return
+                }
+                process.waitUntilExit()
+                let data = outPipe.fileHandleForReading.readDataToEndOfFile()
+                let raw = String(data: data, encoding: .utf8) ?? ""
+                if process.terminationStatus != 0 {
+                    let err = String(data: errPipe.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8) ?? ""
+                    log.warning("[FTP] curl exit=\(process.terminationStatus): \(err.prefix(200))")
+                    // Still try to parse — partial listing may be valid
+                }
+                continuation.resume(returning: raw)
+            }
+        }
     }
 
     // MARK: - Disconnect
