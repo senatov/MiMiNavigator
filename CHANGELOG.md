@@ -5,7 +5,10 @@ All notable changes to MiMiNavigator will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] — 2026-02-19
+## [Unreleased] — 2026-02-23
+
+### Changed
+- **Packages/ extracted to private git submodule** — `NetworkKit`, `FavoritesKit`, `LogKit` moved to private repo `github.com/senatov/MiMiKits`, connected back as git submodule at `Packages/`. Xcode project unchanged, full debug/edit/commit workflow preserved.
 
 ### Added
 - **Top menu — real actions wired** (was all stubs before)
