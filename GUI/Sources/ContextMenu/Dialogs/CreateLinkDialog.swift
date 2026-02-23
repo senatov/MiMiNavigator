@@ -2,7 +2,6 @@
 //  MiMiNavigator
 //
 //  Created by Iakov Senatov on 22.01.2026.
-//  Refactored: 18.02.2026 — HIGTextField, HIGPicker (.menu style), HIGDialogButtons
 //  Copyright © 2026 Senatov. All rights reserved.
 
 import SwiftUI
@@ -18,15 +17,15 @@ enum LinkType: String, CaseIterable, Identifiable, CustomStringConvertible {
 
     var displayName: String {
         switch self {
-        case .symbolic: return L10n.LinkType.symbolic
-        case .alias: return L10n.LinkType.alias
+            case .symbolic: return L10n.LinkType.symbolic
+            case .alias: return L10n.LinkType.alias
         }
     }
 
     var hint: String {
         switch self {
-        case .symbolic: return L10n.LinkType.symbolicDescription
-        case .alias: return L10n.LinkType.aliasDescription
+            case .symbolic: return L10n.LinkType.symbolicDescription
+            case .alias: return L10n.LinkType.aliasDescription
         }
     }
 }

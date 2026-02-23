@@ -168,7 +168,7 @@ final class FTPFileProvider: RemoteFileProvider, @unchecked Sendable {
     }
 
     // MARK: - curl-based FTP LIST (reliable, unlike URLSession FTP)
-    private func curlFTPList(url: URL) async throws -> String {
+    @concurrent private func curlFTPList(url: URL) async throws -> String {
         try await withCheckedThrowingContinuation { continuation in
             DispatchQueue.global(qos: .userInitiated).async {
                 let process = Process()

@@ -2,7 +2,6 @@
 //  MiMiNavigator
 //
 //  Created by Iakov Senatov on 23.10.2024.
-//  Refactored: 20.02.2026 — dynamic columns via ColumnLayoutModel
 //  Copyright © 2024-2026 Senatov. All rights reserved.
 
 import AppKit
@@ -41,7 +40,7 @@ struct FileRow: View {
     private var isParentEntry: Bool {
         ParentDirectoryEntry.isParentEntry(file)
     }
-    
+
     private var isMarked: Bool {
         appState.isMarked(file, on: panelSide)
     }
@@ -109,7 +108,9 @@ struct FileRow: View {
     }
 
     private var stableContent: some View {
-        StableKeyView(file.id.hashValue ^ (isSelected ? 1 : 0) ^ (isActivePanel ? 2 : 0) ^ (isDropTargeted ? 4 : 0) ^ (isMarked ? 8 : 0)) {
+        StableKeyView(
+            file.id.hashValue ^ (isSelected ? 1 : 0) ^ (isActivePanel ? 2 : 0) ^ (isDropTargeted ? 4 : 0) ^ (isMarked ? 8 : 0)
+        ) {
             ZStack(alignment: .leading) {
                 zebraBackground
                 highlightLayer
@@ -131,19 +132,22 @@ struct FileRow: View {
     private var zebraBackground: some View {
         if isParentEntry {
             // ".." row — fixed light grey background regardless of zebra index
-            return AnyView(Color(nsColor: .systemGray).opacity(0.13)
-                .allowsHitTesting(false))
+            return AnyView(
+                Color(nsColor: .systemGray).opacity(0.13)
+                    .allowsHitTesting(false))
         }
         if isActivePanel {
             // Active panel: warm white base with subtle zebra stripe
             let isOdd = index % 2 == 1
-            return AnyView(DesignTokens.warmWhite
-                .overlay(Color.black.opacity(isOdd ? 0.02 : 0))
-                .allowsHitTesting(false))
+            return AnyView(
+                DesignTokens.warmWhite
+                    .overlay(Color.black.opacity(isOdd ? 0.02 : 0))
+                    .allowsHitTesting(false))
         }
         let zebraColors = NSColor.alternatingContentBackgroundColors
-        return AnyView(Color(nsColor: zebraColors[index % zebraColors.count])
-            .allowsHitTesting(false))
+        return AnyView(
+            Color(nsColor: zebraColors[index % zebraColors.count])
+                .allowsHitTesting(false))
     }
 
     @ViewBuilder
@@ -218,14 +222,14 @@ struct FileRow: View {
         // Detect modifier keys from current NSEvent
         let modifiers = Self.currentClickModifiers()
         log.debug("[FileRow] single-click on '\(file.nameStr)' panel=\(panelSide) modifiers=\(modifiers)")
-        
+
         // Always select the file (updates cursor position)
         onSelect(file)
-        
+
         // Handle multi-selection via modifier keys
         appState.handleClickWithModifiers(on: file, modifiers: modifiers)
     }
-    
+
     /// Read modifier keys from the current NSEvent
     private static func currentClickModifiers() -> ClickModifiers {
         guard let event = NSApp.currentEvent else { return .none }
@@ -328,15 +332,14 @@ struct FileRow: View {
     @ViewBuilder
     private func cellText(for col: ColumnID) -> some View {
         switch col {
-        case .name:         EmptyView()
-        case .dateModified: Text(file.modifiedDateFormatted)
-        case .size:         Text(file.fileSizeFormatted)
-        case .kind:         Text(file.kindFormatted)
-        case .permissions:  Text(file.permissionsFormatted)
-        case .owner:        Text(file.ownerFormatted)
-        case .childCount:   Text(file.childCountFormatted)
+            case .name: EmptyView()
+            case .dateModified: Text(file.modifiedDateFormatted)
+            case .size: Text(file.fileSizeFormatted)
+            case .kind: Text(file.kindFormatted)
+            case .permissions: Text(file.permissionsFormatted)
+            case .owner: Text(file.ownerFormatted)
+            case .childCount: Text(file.childCountFormatted)
         }
     }
 
 }
-
