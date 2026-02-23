@@ -2,7 +2,6 @@
 // MiMiNavigator
 //
 // Created by Iakov Senatov on 10.02.2026.
-// Refactored: 12.02.2026 — split into Engine + NameMatcher + ContentSearcher + ArchiveSearcher + Models
 // Copyright © 2026 Senatov. All rights reserved.
 // Description: Coordinator actor — orchestrates async file search using modular sub-components
 

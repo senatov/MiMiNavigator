@@ -2,7 +2,6 @@
 // MiMiNavigator
 //
 // Created by Iakov Senatov on 04.02.2026.
-// Refactored: 20.02.2026 — column state now owned by ColumnLayoutModel
 // Copyright © 2024-2026 Senatov. All rights reserved.
 // Description: State management for FileTableView (sorting, auto-fit)
 

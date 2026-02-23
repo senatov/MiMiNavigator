@@ -2,7 +2,6 @@
 // MiMiNavigator
 //
 // Created by Iakov Senatov on 27.01.2026.
-// Refactored: 20.02.2026 — dynamic columns via ColumnLayoutModel, context menu show/hide
 // Copyright © 2026 Senatov. All rights reserved.
 // Description: Sortable, resizable column headers. Right-click → context menu to toggle columns.
 //

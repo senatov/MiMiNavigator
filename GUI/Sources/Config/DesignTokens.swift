@@ -2,7 +2,6 @@
 // MiMiNavigator
 //
 // Created by Iakov Senatov on 23.10.2024.
-// Refactored: 27.01.2026
 // Copyright © 2024-2026 Senatov. All rights reserved.
 // Description: Centralized design tokens for consistent UI styling
 

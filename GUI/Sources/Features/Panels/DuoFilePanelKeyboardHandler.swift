@@ -2,7 +2,6 @@
 // MiMiNavigator
 //
 // Created by Iakov Senatov on 27.01.2026.
-// Refactored: 10.02.2026
 // Copyright © 2026 Senatov. All rights reserved.
 // Description: Keyboard shortcuts handler — uses HotKeyStore for configurable bindings
 

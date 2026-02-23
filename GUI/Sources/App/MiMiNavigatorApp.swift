@@ -49,13 +49,22 @@ struct MiMiNavigatorApp: App {
                                 components.password = password
                                 connectURL = components.url ?? url
                             }
-                            log.info("[ConnectToServer] mounting \(url.scheme ?? "")://\(url.host ?? "")")
-                            if let mountedURL = await SMBMounter.shared.mountShare(connectURL) {
-                                appState.updatePath(mountedURL.path, for: side)
-                                ConnectToServerCoordinator.shared.close()
-                            } else {
-                                // For sftp/ftp — try Finder as fallback
-                                NSWorkspace.shared.open(connectURL)
+                            let scheme = url.scheme ?? ""
+                            log.info("[ConnectToServer] connecting \(scheme)://\(url.host ?? "")")
+                            if scheme == "smb" || scheme == "afp" {
+                                // SMB/AFP — mount via native macOS
+                                if let mountedURL = await SMBMounter.shared.mountShare(connectURL) {
+                                    appState.updatePath(mountedURL.path, for: side)
+                                    ConnectToServerCoordinator.shared.close()
+                                }
+                            } else if scheme == "sftp" || scheme == "ftp" {
+                                // SFTP/FTP — use RemoteConnectionManager, set remote path
+                                let manager = RemoteConnectionManager.shared
+                                if manager.isConnected, let conn = manager.activeConnection {
+                                    appState.updatePath(conn.provider.mountPath, for: side)
+                                    await appState.refreshRemoteFiles(for: side)
+                                    ConnectToServerCoordinator.shared.close()
+                                }
                             }
                         }
                     }

@@ -2,7 +2,6 @@
 // MiMiNavigator
 //
 // Created by Iakov Senatov on 07.11.24.
-// Refactored: 27.01.2026
 // Copyright © 2024-2026 Senatov. All rights reserved.
 // Description: Thread-safe cache for file lists in dual-panel view
 

@@ -2,7 +2,6 @@
 // MiMiNavigator
 //
 // Created by Iakov Senatov on 22.01.2026.
-// Refactored: 04.02.2026
 // Copyright © 2026 Senatov. All rights reserved.
 // Description: Dialog types for context menu coordinator
 

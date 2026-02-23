@@ -2,7 +2,6 @@
 // MiMiNavigator
 //
 // Created by Iakov Senatov on 21.02.2026.
-// Refactored: 22.02.2026 — multi-key Keychain search (Finder uses _smb._tcp.local suffix)
 // Copyright © 2026 Senatov. All rights reserved.
 // Description: Keychain-backed credentials store for network hosts.
 //              Saves/loads user+password per hostname using kSecClassInternetPassword.

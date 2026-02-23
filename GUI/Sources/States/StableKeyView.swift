@@ -2,7 +2,6 @@
 // MiMiNavigator
 //
 // Created by Iakov Senatov on 01.11.2024.
-// Refactored: 27.01.2026
 // Copyright © 2024-2026 Senatov. All rights reserved.
 // Description: View wrapper that provides stable identity using a hashable key
 

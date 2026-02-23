@@ -2,7 +2,6 @@
 // MiMiNavigator
 //
 // Created by Iakov Senatov on 27.10.24.
-// Refactored: 27.01.2026
 // Copyright © 2024-2026 Senatov. All rights reserved.
 // Description: Core file/directory model for dual-panel file manager
 
@@ -47,31 +46,33 @@ public struct CustomFile: Identifiable, Equatable, Hashable, Codable, Sendable {
         if !path.isEmpty, let attrs = try? fm.attributesOfItem(atPath: path) {
             if let type = attrs[.type] as? FileAttributeType {
                 switch type {
-                case .typeDirectory:
-                    dir = true
-                case .typeSymbolicLink:
-                    symlink = true
-                    // Resolve symlink to check if it points to directory
-                    if let dst = try? fm.destinationOfSymbolicLink(atPath: path) {
-                        let base = (path as NSString).deletingLastPathComponent
-                        let target = (dst as NSString).isAbsolutePath
-                            ? dst
-                            : (base as NSString).appendingPathComponent(dst)
-                        var isDirFlag = ObjCBool(false)
-                        if fm.fileExists(atPath: target, isDirectory: &isDirFlag), isDirFlag.boolValue {
-                            dir = true
-                            symDir = true
+                    case .typeDirectory:
+                        dir = true
+                    case .typeSymbolicLink:
+                        symlink = true
+                        // Resolve symlink to check if it points to directory
+                        if let dst = try? fm.destinationOfSymbolicLink(atPath: path) {
+                            let base = (path as NSString).deletingLastPathComponent
+                            let target =
+                                (dst as NSString).isAbsolutePath
+                                ? dst
+                                : (base as NSString).appendingPathComponent(dst)
+                            var isDirFlag = ObjCBool(false)
+                            if fm.fileExists(atPath: target, isDirectory: &isDirFlag), isDirFlag.boolValue {
+                                dir = true
+                                symDir = true
+                            }
+                        } else {
+                            let resolved = url.resolvingSymlinksInPath()
+                            if let rVals = try? resolved.resourceValues(forKeys: [.isDirectoryKey]),
+                                rVals.isDirectory == true
+                            {
+                                dir = true
+                                symDir = true
+                            }
                         }
-                    } else {
-                        let resolved = url.resolvingSymlinksInPath()
-                        if let rVals = try? resolved.resourceValues(forKeys: [.isDirectoryKey]),
-                           rVals.isDirectory == true {
-                            dir = true
-                            symDir = true
-                        }
-                    }
-                default:
-                    break
+                    default:
+                        break
                 }
             }
             if let num = attrs[.size] as? NSNumber {
@@ -89,7 +90,7 @@ public struct CustomFile: Identifiable, Equatable, Hashable, Codable, Sendable {
         } else {
             // Fallback to URL resource values
             let keys: Set<URLResourceKey> = [
-                .isDirectoryKey, .isSymbolicLinkKey, .fileSizeKey, .contentModificationDateKey
+                .isDirectoryKey, .isSymbolicLinkKey, .fileSizeKey, .contentModificationDateKey,
             ]
             if let vals = try? url.resourceValues(forKeys: keys) {
                 if vals.isDirectory == true { dir = true }
@@ -97,7 +98,8 @@ public struct CustomFile: Identifiable, Equatable, Hashable, Codable, Sendable {
                     symlink = true
                     let resolved = url.resolvingSymlinksInPath()
                     if let r2 = try? resolved.resourceValues(forKeys: [.isDirectoryKey]),
-                       r2.isDirectory == true {
+                        r2.isDirectory == true
+                    {
                         dir = true
                         symDir = true
                     }
@@ -122,9 +124,30 @@ public struct CustomFile: Identifiable, Equatable, Hashable, Codable, Sendable {
     public static func == (lhs: CustomFile, rhs: CustomFile) -> Bool {
         lhs.id == rhs.id
     }
-    
+
     public func hash(into hasher: inout Hasher) {
         hasher.combine(id)
+    }
+
+    // MARK: - Remote file initializer (no filesystem access)
+    /// Creates a CustomFile from remote server data without touching local FileManager.
+    /// Used by RemoteConnectionManager for SFTP/FTP directory listings.
+    init(remoteItem: RemoteFileItem) {
+        let fakePath = remoteItem.path
+        let url = URL(fileURLWithPath: fakePath)
+        self.urlValue = url
+        self.pathStr = fakePath
+        self.nameStr = remoteItem.name
+        self.fileExtension = remoteItem.isDirectory ? "" : (remoteItem.name as NSString).pathExtension.lowercased()
+        self.isDirectory = remoteItem.isDirectory
+        self.isSymbolicLink = false
+        self.isSymbolicDirectory = false
+        self.sizeInBytes = remoteItem.size
+        self.modifiedDate = remoteItem.modified
+        self.posixPermissions = 0
+        self.ownerName = ""
+        self.children = remoteItem.isDirectory ? [] : nil
+        self.id = fakePath
     }
 
     // MARK: - Hidden file detection (Finder convention)

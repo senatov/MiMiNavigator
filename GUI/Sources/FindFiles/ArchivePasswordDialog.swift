@@ -2,7 +2,6 @@
 // MiMiNavigator
 //
 // Created by Iakov Senatov on 10.02.2026.
-// Refactored: 18.02.2026 — HIGTextField, HIGDialogButtons, native focus ring
 // Copyright © 2026 Senatov. All rights reserved.
 // Description: Dialog for requesting password for encrypted archives during search
 

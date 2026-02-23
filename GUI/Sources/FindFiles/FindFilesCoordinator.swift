@@ -2,8 +2,6 @@
 // MiMiNavigator
 //
 // Created by Iakov Senatov on 10.02.2026.
-// Refactored: 11.02.2026 — initial cleanup
-// Refactored: 23.02.2026 — added bringToFront() for AppDelegate.applicationDidBecomeActive
 // Copyright © 2026 Senatov. All rights reserved.
 // Description: Manages Find Files as a standalone NSPanel with persistent frame.
 //   bringToFront() is called by AppDelegate when MiMiNavigator becomes active,

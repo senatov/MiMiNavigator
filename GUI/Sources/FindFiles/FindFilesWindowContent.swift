@@ -2,7 +2,6 @@
 // MiMiNavigator
 //
 // Created by Iakov Senatov on 11.02.2026.
-// Refactored: 12.02.2026 — HIG 26, Close button, input border, compact layout
 // Copyright © 2026 Senatov. All rights reserved.
 // Description: Main content view for the standalone Find Files window
 

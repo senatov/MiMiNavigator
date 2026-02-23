@@ -2,7 +2,6 @@
 // MiMiNavigator
 //
 // Created by Iakov Senatov on 11.02.2026.
-// Refactored: 18.02.2026
 // Copyright © 2026 Senatov. All rights reserved.
 // Description: Toolbar button components — macOS 26 HIG, crisp SF Symbols
 

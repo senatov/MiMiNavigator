@@ -2,8 +2,6 @@
 // MiMiNavigator
 //
 // Created by Iakov Senatov on 20.02.2026.
-// Refactored: 23.02.2026 — NSPanel; Web UI probe 23 ports; copyable rows; no offline hosts
-// Refactored: 23.02.2026 — mediaBox class: no chevron, no Sign In; icon color red
 // Copyright © 2026 Senatov. All rights reserved.
 // Description: Tree-style Network Neighborhood — Bonjour + FritzBox TR-064 discovery.
 //   - NSPanel via NetworkNeighborhoodCoordinator (movable, resizable, persists position)

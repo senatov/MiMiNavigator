@@ -2,7 +2,6 @@
 // MiMiNavigator
 //
 // Created by Iakov Senatov on 09.05.25.
-// Refactored: 27.01.2026
 // Copyright © 2025-2026 Senatov. All rights reserved.
 // Description: Encapsulates the selected file system entity and persistence
 

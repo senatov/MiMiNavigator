@@ -2,7 +2,6 @@
 // MiMiNavigator
 //
 // Created by Iakov Senatov on 08.10.2025.
-// Refactored: 04.02.2026
 // Copyright © 2025-2026 Senatov. All rights reserved.
 // Description: Context actions for directories - aligned with Finder standards
 

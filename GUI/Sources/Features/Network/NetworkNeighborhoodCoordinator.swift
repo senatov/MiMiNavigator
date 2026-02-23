@@ -2,7 +2,6 @@
 // MiMiNavigator
 //
 // Created by Iakov Senatov on 23.02.2026.
-// Refactored: 23.02.2026 — level=.normal (was .floating); bringToFront moved to AppDelegate
 // Copyright © 2026 Senatov. All rights reserved.
 // Description: Manages Network Neighborhood as standalone NSPanel.
 //   - level=.floating + hidesOnDeactivate=true: hides when app deactivates, rises when active
