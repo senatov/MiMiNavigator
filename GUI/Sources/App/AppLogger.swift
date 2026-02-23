@@ -3,9 +3,11 @@
 //
 // Created by Iakov Senatov on 24.06.2025.
 // Refactored: 23.02.2026 — delegated to LogKit package
+// Refactored: 23.02.2026 — added import Foundation (URL not in scope via LogKit)
 // Copyright © 2025-2026 Senatov. All rights reserved.
 // Description: App-side logging bootstrap. All configuration lives in LogKit.
-//   Every module (NetworkKit, FavoritesKit, GUI) just does `import LogKit` -> log.debug(...)
+//   Import LogKit anywhere -> use log.debug / log.info / log.error.
+//   GUI module re-exports global `log = SwiftyBeaver.self` for all source files.
 
 import Foundation
 import LogKit

@@ -2,12 +2,14 @@
 // MiMiNavigator
 //
 // Created by Iakov Senatov on 23.02.2026.
+// Refactored: 23.02.2026 — level=.normal (was .floating); bringToFront moved to AppDelegate
 // Copyright © 2026 Senatov. All rights reserved.
-// Description: Manages Network Neighborhood as standalone NSPanel (same behavior as FindFiles).
-//   - Movable, resizable, persists position/size
-//   - Does not close when main window loses focus
-//   - Rises to front when main window is clicked
-//   - Stays on screen as utility panel
+// Description: Manages Network Neighborhood as standalone NSPanel.
+//   - level=.normal: visible alongside main window, never above other apps
+//   - Rises to front via AppDelegate.applicationDidBecomeActive (only when MiMi is active)
+//   - Movable, resizable, persists position via frameAutosaveName
+//   - hidesOnDeactivate=false: stays visible when switching between MiMi windows
+//   - close() only for file:// URLs; smb:// stays open until mount completes
 
 import AppKit
 import SwiftUI

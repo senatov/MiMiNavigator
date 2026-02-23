@@ -1,10 +1,12 @@
-//
 // FavoritesBookmarkStore.swift
 // FavoritesKit
 //
 // Created by Iakov Senatov on 17.01.2026.
+// Refactored: 23.02.2026 — os.Logger replaces print(); import LogKit
 // Copyright © 2026 Senatov. All rights reserved.
-//
+// Description: Actor-based security-scoped bookmark store (sandbox-friendly).
+//   Persists access to user-selected directories across app restarts via NSUserDefaults.
+//   Stale bookmarks are refreshed automatically on restore.
 
 import AppKit
 import Foundation

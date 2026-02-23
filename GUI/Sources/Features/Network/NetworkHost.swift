@@ -4,8 +4,12 @@
 // Created by Iakov Senatov on 19.02.2026.
 // Refactored: 21.02.2026 — deviceClass fingerprinting, bonjourServices set
 // Refactored: 22.02.2026 — mobileDevice class; isLocalhost flag; fritz/router by name
+// Refactored: 23.02.2026 — probedWebURL field; mediaBox device class
 // Copyright © 2026 Senatov. All rights reserved.
-// Description: Model representing a discovered network host (SMB/AFP/Bonjour/Mobile)
+// Description: Model representing a discovered network host (SMB/AFP/Bonjour/Mobile/MediaBox).
+//   NetworkDeviceClass: mac/windowsPC/linuxServer/nas/router/printer/iPhone/iPad/mediaBox/unknown
+//   mediaBox: Enigma2/OpenPLi/Kodi — isExpandable=false, no SMB, web UI only
+//   probedWebURL: first responding HTTP port found by WebUIProber (async, post-fingerprint)
 
 import Foundation
 
