@@ -1,7 +1,6 @@
 // RemoteServerStore.swift
 // MiMiNavigator
 //
-// Created by Claude — 23.02.2026
 // Copyright © 2026 Senatov. All rights reserved.
 // Description: Persistence for saved remote server bookmarks.
 //   Servers stored as JSON in Application Support. Passwords in Keychain.

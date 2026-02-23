@@ -1,7 +1,6 @@
 // RemoteConnectionManager.swift
 // MiMiNavigator
 //
-// Created by Claude — 23.02.2026
 // Copyright © 2026 Senatov. All rights reserved.
 // Description: Singleton managing active remote connections (SFTP / FTP).
 //   Owns RemoteFileProvider instances, handles connect/disconnect lifecycle,
@@ -43,6 +42,21 @@ final class RemoteConnectionManager {
     }
 
     private init() {}
+
+    // MARK: - Auto-connect servers marked with connectOnStart
+    func connectOnStartIfNeeded() async {
+        let servers = RemoteServerStore.shared.servers.filter { $0.connectOnStart }
+        guard !servers.isEmpty else { return }
+        log.info("[RemoteManager] auto-connecting \(servers.count) server(s)")
+        for server in servers {
+            let password = RemoteServerKeychain.loadPassword(for: server)
+            guard !password.isEmpty else {
+                log.warning("[RemoteManager] skip auto-connect '\(server.displayName)' — no saved password")
+                continue
+            }
+            await connect(to: server, password: password)
+        }
+    }
 
     // MARK: - Connect
     func connect(to server: RemoteServer, password: String) async {

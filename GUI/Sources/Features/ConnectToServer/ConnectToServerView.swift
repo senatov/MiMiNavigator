@@ -1,7 +1,6 @@
 // ConnectToServerView.swift
 // MiMiNavigator
 //
-// Created by Claude — 23.02.2026
 // Copyright © 2026 Senatov. All rights reserved.
 // Description: "Connect to Server" dialog — SFTP/FTP/SMB/AFP bookmark manager.
 //   Left sidebar: saved server list with +/− buttons

@@ -1,8 +1,6 @@
 // ConnectToServerCoordinator.swift
 // MiMiNavigator
 //
-// Created by Claude — 23.02.2026
-// Refactored: 23.02.2026 — wired to RemoteConnectionManager
 // Copyright © 2026 Senatov. All rights reserved.
 // Description: Manages "Connect to Server" as standalone NSPanel.
 //   Routes connect actions to RemoteConnectionManager (SFTP/FTP/SMB/AFP).

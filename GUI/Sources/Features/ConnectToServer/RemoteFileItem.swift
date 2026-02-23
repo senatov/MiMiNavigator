@@ -1,7 +1,6 @@
 // RemoteFileItem.swift
 // MiMiNavigator
 //
-// Created by Claude — 23.02.2026
 // Copyright © 2026 Senatov. All rights reserved.
 // Description: Model representing a single file/directory entry on a remote server.
 //   Used by RemoteFileProvider (SFTP/FTP) to return directory listings.
