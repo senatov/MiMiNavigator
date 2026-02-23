@@ -71,12 +71,12 @@ struct RecentSessionsTableView: View {
     private func sessionHeaderCell(_ col: SessionColumnID) -> some View {
         HStack(spacing: 3) {
             Text(col.title)
-                .font(.system(size: 10, weight: sortKey.rawValue == col.rawValue ? .semibold : .regular))
+                .font(.system(size: 14, weight: sortKey.rawValue == col.rawValue ? .semibold : .regular, design: .default))
                 .foregroundStyle(sortKey.rawValue == col.rawValue ? .primary : .secondary)
                 .lineLimit(1)
             if sortKey.rawValue == col.rawValue {
                 Image(systemName: sortAscending ? "chevron.up" : "chevron.down")
-                    .font(.system(size: 9, weight: .semibold))
+                    .font(.system(size: 10, weight: .semibold))
                     .foregroundStyle(.primary)
             }
         }
@@ -85,50 +85,68 @@ struct RecentSessionsTableView: View {
         .onTapGesture { toggleSort(col) }
     }
 
+    // MARK: - Selection colors (matches FileRow)
+    private static let activeFill = Color(nsColor: .selectedContentBackgroundColor)
+    private static let inactiveFill = Color(nsColor: .unemphasizedSelectedContentBackgroundColor)
+
     // MARK: - Session List
     private var sessionList: some View {
-        List(sortedServers, selection: $selectedID) { server in
-            HStack(spacing: 0) {
-                // Date
-                Text(server.formattedLastConnected)
-                    .font(.system(size: 10))
-                    .foregroundStyle(Color(#colorLiteral(red: 0.05, green: 0.28, blue: 0.10, alpha: 1.0)))
-                    .frame(width: widthFor(.date), alignment: .leading)
-                    .lineLimit(2)
-                // Separator space
-                Spacer().frame(width: 4)
-                // Session
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(server.displayName)
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundStyle(Color(#colorLiteral(red: 0.05, green: 0.10, blue: 0.30, alpha: 1.0)))
-                        .lineLimit(1)
-                    Text(server.sessionSummary)
-                        .font(.system(size: 9))
-                        .foregroundStyle(Color(#colorLiteral(red: 0.28, green: 0.14, blue: 0.05, alpha: 1.0)))
-                        .lineLimit(2)
+        ScrollView {
+            LazyVStack(spacing: 0) {
+                ForEach(sortedServers) { server in
+                    let isSelected = selectedID == server.id
+                    sessionRow(server, isSelected: isSelected)
+                        .background(isSelected ? Self.activeFill : Color.clear)
+                        .contentShape(Rectangle())
+                        .onTapGesture { selectedID = server.id }
+                    Divider().padding(.leading, 4)
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                // Separator space
-                Spacer().frame(width: 4)
-                // Status
-                VStack(spacing: 2) {
-                    Image(systemName: server.lastResult.icon)
-                        .font(.system(size: 12))
-                        .foregroundStyle(colorForResult(server.lastResult))
-                    Text(server.lastResult.rawValue)
-                        .font(.system(size: 8))
-                        .foregroundStyle(Color(#colorLiteral(red: 0.20, green: 0.20, blue: 0.20, alpha: 1.0)))
-                        .lineLimit(2)
-                        .multilineTextAlignment(.center)
-                }
-                .frame(width: widthFor(.status), alignment: .center)
             }
-            .tag(server.id)
         }
-        .listStyle(.sidebar)
-        .scrollContentBackground(.hidden)
         .background(DesignTokens.warmWhite)
+    }
+
+    // MARK: - Session Row
+    private func sessionRow(_ server: RemoteServer, isSelected: Bool) -> some View {
+        let textColor: Color = isSelected ? .white : .primary
+        let secondaryTextColor: Color = isSelected ? .white.opacity(0.85) : .secondary
+
+        return HStack(spacing: 0) {
+            // Date
+            Text(server.formattedLastConnected)
+                .font(.system(size: 13, design: .default))
+                .foregroundStyle(secondaryTextColor)
+                .frame(width: widthFor(.date), alignment: .leading)
+                .lineLimit(2)
+            Spacer().frame(width: 4)
+            // Session
+            VStack(alignment: .leading, spacing: 1) {
+                Text(server.displayName)
+                    .font(.system(size: 13, weight: .medium, design: .default))
+                    .foregroundStyle(textColor)
+                    .lineLimit(1)
+                Text(server.sessionSummary)
+                    .font(.system(size: 11, design: .default))
+                    .foregroundStyle(secondaryTextColor)
+                    .lineLimit(2)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            Spacer().frame(width: 4)
+            // Status
+            VStack(spacing: 2) {
+                Image(systemName: server.lastResult.icon)
+                    .font(.system(size: 13))
+                    .foregroundStyle(isSelected ? .white : colorForResult(server.lastResult))
+                Text(server.lastResult.rawValue)
+                    .font(.system(size: 10, design: .default))
+                    .foregroundStyle(secondaryTextColor)
+                    .lineLimit(2)
+                    .multilineTextAlignment(.center)
+            }
+            .frame(width: widthFor(.status), alignment: .center)
+        }
+        .padding(.horizontal, 4)
+        .padding(.vertical, 5)
     }
 
     // MARK: - Helpers
