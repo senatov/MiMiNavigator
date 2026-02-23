@@ -12,8 +12,8 @@
 		97D128762DB62DD400274684 /* FilesProvider in Frameworks */ = {isa = PBXBuildFile; productRef = 97D128752DB62DD400274684 /* FilesProvider */; };
 		97D9156C2CD5625D00EB5FDD /* SwiftyBeaver in Frameworks */ = {isa = PBXBuildFile; productRef = 97D9156B2CD5625D00EB5FDD /* SwiftyBeaver */; };
 		97ECF2AD2F224FA5005A6EFB /* FavoritesKit in Frameworks */ = {isa = PBXBuildFile; productRef = 971A28F82F1B140900094ADE /* FavoritesKit */; };
-		FF82030CE1584192AE6E4DEA /* NetworkKit in Frameworks */ = {isa = PBXBuildFile; productRef = 52D4533F441E4D78BD910304 /* NetworkKit */; };
 		AA000003AA000003AA000003 /* LogKit in Frameworks */ = {isa = PBXBuildFile; productRef = AA000002AA000002AA000002 /* LogKit */; };
+		FF82030CE1584192AE6E4DEA /* NetworkKit in Frameworks */ = {isa = PBXBuildFile; productRef = 52D4533F441E4D78BD910304 /* NetworkKit */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -680,7 +680,7 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/LogKit;
 		};
-		/* End XCLocalSwiftPackageReference section */
+/* End XCLocalSwiftPackageReference section */
 
 /* Begin XCRemoteSwiftPackageReference section */
 		97B3D6362DCA54A2002F1DB7 /* XCRemoteSwiftPackageReference "swift-system" */ = {
@@ -755,7 +755,7 @@
 			package = AA000001AA000001AA000001 /* XCLocalSwiftPackageReference "Packages/LogKit" */;
 			productName = LogKit;
 		};
-		/* End XCSwiftPackageProductDependency section */
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 97AD1A262C624E020045C38D /* Project object */;
 }

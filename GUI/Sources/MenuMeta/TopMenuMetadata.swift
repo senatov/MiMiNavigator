@@ -187,8 +187,11 @@ let commandMenuCategory = MenuCategory(
 let netMenuCategory = MenuCategory(
     title: "Net",
     items: [
-        MenuItem(title: "FTP Connect…",       action: stub("FTP Connect…"),       shortcut: "⌃N"),
-        MenuItem(title: "FTP Disconnect",      action: stub("FTP Disconnect"),      shortcut: nil),
+        MenuItem(
+            title: "Connect to Server…",
+            action: { ConnectToServerCoordinator.shared.toggle() },
+            shortcut: "⌃N"
+        ),
         MenuItem(
             title: "Network Neighborhood",
             action: {
