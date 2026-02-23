@@ -332,6 +332,93 @@ Looking for a way to start? Here are areas where help is especially appreciated:
 
 ---
 
+
+---
+
+## Third-Party Libraries
+
+MiMiNavigator uses the following open-source libraries. We are grateful to their authors.
+
+### SwiftyBeaver -- Structured Logging
+- **Author:** Sebastian Kreutzberger and contributors
+- **License:** MIT
+- **Repository:** https://github.com/SwiftyBeaver/SwiftyBeaver
+- **Usage in project:** All application logging -- console output and persistent log file at `~/Library/Logs/MiMiNavigator.log`. Bootstrapped in `LogKit` package, re-exported as global `log` across all source files so every module can use `log.debug / log.info / log.error` without additional imports.
+
+### Citadel -- SSH / SFTP Client
+- **Author:** Joannis Orlandos (Orlandos BV) and contributors
+- **License:** MIT
+- **Repository:** https://github.com/orlandos-nl/Citadel
+- **Usage in project:** `SFTPFileProvider` -- full SFTP connectivity in the Connect to Server feature. Provides `SSHClient`, `SFTPClient`, and OpenSSH private-key parsing. Replaces what would otherwise require spawning ssh/sftp CLI processes or linking against libssh2.
+
+---
+
+## Where Open-Source Libraries Could Further Help
+
+Several areas in MiMiNavigator use custom implementations that could be simplified or replaced by existing open-source libraries.
+
+### 1. Archive handling -- ZIPFoundation
+
+**Files:** `NativeZipReader.swift` (~350 lines), ZIP branch of `FindFilesArchiveSearcher.swift`
+
+**Current approach:** Custom binary ZIP central-directory parser + `Process()` wrappers around `/usr/bin/unzip`, `/usr/bin/tar`, `7z`.
+
+**Candidate:** [ZIPFoundation](https://github.com/weichsel/ZIPFoundation) (MIT, Thomas Zoechling)
+- Pure Swift, no `Process()` spawning for ZIP/GZIP
+- Streaming extraction, password-protected archives, in-memory entries
+- Would eliminate `NativeZipReader` and its error-prone manual byte-offset arithmetic
+- TAR/7z/RAR still require CLI fallback (no pure-Swift lib covers all 50+ formats)
+
+### 2. FTP file listing -- curl
+
+**File:** `FTPFileProvider.swift` -- `parseFTPListing()` method
+
+**Current approach:** URLSession FTP + hand-written Unix-style `LIST` output parser. Fragile: breaks on IIS FTP, DOS-style listings, localized dates. URLSession FTP is deprecated by Apple.
+
+**Candidate:** `curl` via `Process()` -- already present on every Mac
+- `curl -l ftp://host/path` gives clean filename-per-line output, no parsing needed
+- `curl --ftp-ssl` adds FTPS for free
+- Handles MLSD, active/passive mode, AUTH TLS automatically
+
+### 3. Network device fingerprinting -- nmap
+
+**Files:** `NetworkDeviceFingerprinter.swift` (~200 lines), `WebUIProber.swift`
+
+**Current approach:** Custom async TCP port prober via POSIX `connect()`, checks 20+ ports per host in parallel, classifies device type by open-port combination.
+
+**Candidate:** [nmap](https://nmap.org) (GPLv2) via `Process()`
+- Already used manually during development for Vuduo2 diagnostics -- proven reliable
+- `nmap -sV --open -p <ports> <host>` returns service names in machine-parseable format
+- Would eliminate ~200 lines of custom probing logic
+- **Caveat:** requires `brew install nmap`; must remain optional with graceful fallback
+
+### 4. SSH private-key auth -- Citadel (already resolved)
+
+**Status:** Resolved -- Citadel (already a SPM dependency) provides `Insecure.RSA.PrivateKey(sshRsa:)` and `Curve25519.Signing.PrivateKey` for OpenSSH private key parsing.
+
+### 5. Glob / wildcard matching (low priority -- current code is adequate)
+
+**File:** `FindFilesNameMatcher.swift` -- ~30-line wildcard-to-regex converter. Works correctly for current feature set; worth revisiting only if `{a,b}` alternation or `**` recursive matching is needed.
+
+---
+
+## Acknowledgements
+
+**MiMiNavigator** is developed by **Iakov Senatov** -- Diplom-Ingenieur (Chemical Process Engineering), 35 years of programming experience.
+
+Sincere thanks to the open-source community:
+
+| Author | Project | Why it matters |
+|--------|---------|----------------|
+| Sebastian Kreutzberger | [SwiftyBeaver](https://github.com/SwiftyBeaver/SwiftyBeaver) | Clean, fast, zero-ceremony logging that just works |
+| Joannis Orlandos | [Citadel](https://github.com/orlandos-nl/Citadel) | Excellent SSH/SFTP library, bridges the gap SwiftNIO SSH leaves open |
+| Thomas Zoechling | [ZIPFoundation](https://github.com/weichsel/ZIPFoundation) | Model of clean Swift API design, earmarked for adoption |
+| The nmap Project | [nmap](https://nmap.org) | Gold standard in network diagnostics, invaluable during LAN discovery development |
+| Apple | SwiftNIO, SwiftUI, kqueue, NetServiceBrowser | Making macOS-native development a genuine pleasure |
+
+Special thanks to **Anthropic / Claude** for pair-programming throughout this project -- architecture decisions, refactoring, debugging, and documentation.
+
+
 ## License
 
 [AGPL-3.0](LICENSE) — Iakov Senatov
