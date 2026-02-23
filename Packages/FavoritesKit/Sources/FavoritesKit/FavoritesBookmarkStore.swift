@@ -8,9 +8,7 @@
 
 import AppKit
 import Foundation
-import OSLog
-
-private let log = Logger(subsystem: "com.senatov.MiMiNavigator.FavoritesKit", category: "BookmarkStore")
+import LogKit
 
 // MARK: - Security-Scoped Bookmarks Store
 /// Actor-based store for managing security-scoped bookmarks (sandbox-friendly)

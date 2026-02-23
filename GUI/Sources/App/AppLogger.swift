@@ -2,93 +2,35 @@
 // MiMiNavigator
 //
 // Created by Iakov Senatov on 24.06.2025.
-// Refactored: 27.01.2026
+// Refactored: 23.02.2026 — delegated to LogKit package
 // Copyright © 2025-2026 Senatov. All rights reserved.
-// Description: Application-wide logging configuration using SwiftyBeaver
+// Description: App-side logging bootstrap. All configuration lives in LogKit.
+//   Every module (NetworkKit, FavoritesKit, GUI) just does `import LogKit` -> log.debug(...)
 
-import AppKit
 import Foundation
-import SwiftyBeaver
+import LogKit
 
-// MARK: - App Logger
-/// Centralized logging configuration.
-/// Initializes console and file destinations for SwiftyBeaver.
-/// Access via `log.info()`, `log.debug()`, `log.error()`, etc.
+// MARK: - Global logger re-export for GUI module
+// All GUI source files use `log.debug(...)` without any import — picked up from here.
+// SwiftyBeaver is re-exported from LogKit via @_exported, so SwiftyBeaver.self is accessible.
+let log = SwiftyBeaver.self
+
+// MARK: - AppLogger
+/// Thin bootstrap wrapper — initializes LogKit once at app startup.
+/// All actual logger config (console, file, icons) is in LogKit/LogKit.swift.
 enum AppLogger {
-    static let log = SwiftyBeaver.self
 
-    // MARK: - Initialize logging system
+    // MARK: - Call from @main init()
     static func initialize() {
-        setupConsoleDestination()
-        setupFileDestination()
+        LogKit.initialize(
+            appSupportSubdir: "MiMiNavigator",
+            logFileName: "MiMiNavigator.log",
+            wipeOnLaunch: true
+        )
     }
-    
-    // MARK: - Setup console output
-    private static func setupConsoleDestination() {
-        let console = ConsoleDestination()
-        console.useTerminalColors = true
-        console.useNSLog = false
-        console.format = "$DHH:mm:ss$d $L $N.$F:$l $M"
-        
-        // Configure level icons
-        console.levelString.verbose = levelIcon(for: .verbose) + " VERBOSE"
-        console.levelString.debug = levelIcon(for: .debug) + " DEBUG"
-        console.levelString.info = levelIcon(for: .info) + " INFO"
-        console.levelString.warning = levelIcon(for: .warning) + " WARNING"
-        console.levelString.error = levelIcon(for: .error) + " ERROR"
-        console.levelString.critical = levelIcon(for: .critical) + " CRITICAL"
-        console.levelString.fault = levelIcon(for: .fault) + " FAULT"
-        
-        log.addDestination(console)
-    }
-    
-    // MARK: - Setup file output
-    private static func setupFileDestination() {
-        guard let containerURL = FileManager.default
-            .urls(for: .applicationSupportDirectory, in: .userDomainMask)
-            .first else {
-            return
-        }
-        
-        let logsDir = containerURL.appendingPathComponent("Logs", isDirectory: true)
-        try? FileManager.default.createDirectory(at: logsDir, withIntermediateDirectories: true)
-        
-        let logFile = logsDir.appendingPathComponent("MiMiNavigator.log")
-        // Wipe log on every launch — keeps disk clean
-        try? FileManager.default.removeItem(at: logFile)
-        let file = FileDestination()
-        file.logFileURL = logFile
-        log.addDestination(file)
-        log.info("Logging to: \(logFile.path)")
-    }
-    
-    // MARK: - Level icons
-    private static func levelIcon(for level: SwiftyBeaver.Level) -> String {
-        switch level {
-        case .verbose: return "􀐯"
-        case .debug: return "􀌚"
-        case .info: return "􀅴"
-        case .warning: return "⚠️"
-        case .error: return "❗️"
-        case .critical: return "🔥"
-        case .fault: return "💥"
-        }
-    }
-    
-    // MARK: - Get log file URL
+
+    // MARK: - Log file URL (for settings / bug reports)
     static var logFileURL: URL? {
-        guard let containerURL = FileManager.default
-            .urls(for: .applicationSupportDirectory, in: .userDomainMask)
-            .first else {
-            return nil
-        }
-        return containerURL
-            .appendingPathComponent("Logs", isDirectory: true)
-            .appendingPathComponent("MiMiNavigator.log")
+        LogKit.logFileURL()
     }
 }
-
-// MARK: - Global Logger Reference
-/// Global logger instance - use `log.info()`, `log.debug()`, etc.
-let log = AppLogger.log
-

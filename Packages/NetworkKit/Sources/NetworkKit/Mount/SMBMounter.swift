@@ -8,10 +8,7 @@
 
 import AppKit
 import Foundation
-import OSLog
-
-// MARK: - Module-level logger (os.Logger, subsystem matches main app)
-private let log = Logger(subsystem: "com.senatov.MiMiNavigator.NetworkKit", category: "SMBMounter")
+import LogKit
 
 // MARK: - Errors
 public enum MountError: Error, LocalizedError {

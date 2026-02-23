@@ -7,10 +7,8 @@
 //              Stored in UserDefaults as JSON. Observable for SwiftUI.
 
 import Foundation
-import OSLog
+import LogKit
 import Observation
-
-private let log = Logger(subsystem: "com.senatov.MiMiNavigator.FavoritesKit", category: "UserFavorites")
 
 // MARK: - UserFavoriteEntry
 /// A single user-added favorite — local path OR network share URL
