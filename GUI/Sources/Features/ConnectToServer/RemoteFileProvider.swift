@@ -53,13 +53,13 @@ final class SFTPFileProvider: RemoteFileProvider, @unchecked Sendable {
 
     // MARK: - Connect
     @concurrent func connect(host: String, port: Int, user: String, password: String, remotePath: String) async throws {
-        let client = try await SSHClient.connect(
+        let settings = SSHClientSettings(
             host: host,
             port: port,
-            authenticationMethod: .passwordBased(username: user, password: password),
-            hostKeyValidator: .acceptAnything(),
-            reconnect: .never
+            authenticationMethod: { .passwordBased(username: user, password: password) },
+            hostKeyValidator: .acceptAnything()
         )
+        let client = try await SSHClient.connect(to: settings)
         let sftp = try await client.openSFTP()
         sshClient = client
         sftpClient = sftp
@@ -73,15 +73,24 @@ final class SFTPFileProvider: RemoteFileProvider, @unchecked Sendable {
     @concurrent func listDirectory(_ path: String) async throws -> [RemoteFileItem] {
         guard let sftp = sftpClient else { throw RemoteProviderError.notConnected }
         let dirPath = path.isEmpty ? "/" : path
-        let entries = try await sftp.listDirectory(atPath: dirPath)
-        let items: [RemoteFileItem] = entries.compactMap { entry in
-            let name = entry.filename
-            guard name != "." && name != ".." else { return nil }
-            let fullPath = dirPath.hasSuffix("/") ? "\(dirPath)\(name)" : "\(dirPath)/\(name)"
-            let isDir = entry.attributes.permissions?.isDirectory ?? false
-            let size = Int64(entry.attributes.size ?? 0)
-            let mdate: Date? = entry.attributes.accessDate
-            return RemoteFileItem(name: name, path: fullPath, isDirectory: isDir, size: size, modified: mdate)
+        let nameMessages = try await sftp.listDirectory(atPath: dirPath)
+        // Each SFTPMessage.Name contains .components: [SFTPPathComponent]
+        let items: [RemoteFileItem] = nameMessages.flatMap { nameMsg in
+            nameMsg.components.compactMap { component in
+                let name = component.filename
+                guard name != "." && name != ".." else { return nil }
+                let fullPath = dirPath.hasSuffix("/") ? "\(dirPath)\(name)" : "\(dirPath)/\(name)"
+                // Check POSIX directory bit (0o040000 = S_IFDIR)
+                let isDir: Bool
+                if let perms = component.attributes.permissions {
+                    isDir = (perms & 0o170000) == 0o040000
+                } else {
+                    isDir = component.longname.hasPrefix("d")
+                }
+                let size = Int64(component.attributes.size ?? 0)
+                let mdate = component.attributes.accessModificationTime?.modificationTime
+                return RemoteFileItem(name: name, path: fullPath, isDirectory: isDir, size: size, modified: mdate)
+            }
         }
         log.debug("[SFTP] listed \(items.count) items at \(dirPath)")
         return items
