@@ -115,39 +115,19 @@ final class FindFilesCoordinator {
 
     // MARK: - Default Frame Calculation
 
-    /// Computes initial frame: right side of main window or centered if no main window
+    /// Computes initial frame: centered over main window
     private func computeDefaultFrame() -> NSRect {
         let size = NSSize(width: defaultWidth, height: defaultHeight)
-
         if let mainWindow = NSApp.mainWindow {
-            let mainFrame = mainWindow.frame
-            let screenFrame = mainWindow.screen?.visibleFrame ?? NSScreen.main?.visibleFrame ?? .zero
-
-            // Position to the right of main window
-            var x = mainFrame.maxX + 12
-            let y = mainFrame.midY - size.height / 2
-
-            // If it goes off-screen right, try left side
-            if x + size.width > screenFrame.maxX {
-                x = mainFrame.minX - size.width - 12
-            }
-            // If still off-screen, overlap slightly at the right
-            if x < screenFrame.minX {
-                x = mainFrame.maxX - size.width * 0.3
-            }
-
-            let clampedY = max(screenFrame.minY, min(y, screenFrame.maxY - size.height))
-            return NSRect(origin: NSPoint(x: x, y: clampedY), size: size)
-        }
-
-        // No main window — center on screen
-        if let screen = NSScreen.main {
-            let screenFrame = screen.visibleFrame
-            let x = screenFrame.midX - size.width / 2
-            let y = screenFrame.midY - size.height / 2
+            let mf = mainWindow.frame
+            let x = mf.midX - size.width / 2
+            let y = mf.midY - size.height / 2
             return NSRect(origin: NSPoint(x: x, y: y), size: size)
         }
-
+        if let screen = NSScreen.main {
+            let sf = screen.visibleFrame
+            return NSRect(origin: NSPoint(x: sf.midX - size.width / 2, y: sf.midY - size.height / 2), size: size)
+        }
         return NSRect(origin: .zero, size: size)
     }
 }

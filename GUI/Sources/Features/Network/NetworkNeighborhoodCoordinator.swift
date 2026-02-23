@@ -108,22 +108,18 @@ final class NetworkNeighborhoodCoordinator {
         window?.orderFront(nil)
     }
 
-    // MARK: - Default frame: right of main window
+    // MARK: - Default frame: centered over main window
     private func computeDefaultFrame() -> NSRect {
         let size = NSSize(width: defaultWidth, height: defaultHeight)
         if let main = NSApp.mainWindow {
             let mf = main.frame
-            let screen = main.screen?.visibleFrame ?? NSScreen.main?.visibleFrame ?? .zero
-            var x = mf.maxX + 12
+            let x = mf.midX - size.width / 2
             let y = mf.midY - size.height / 2
-            if x + size.width > screen.maxX { x = mf.minX - size.width - 12 }
-            if x < screen.minX { x = mf.maxX - size.width * 0.3 }
-            let cy = max(screen.minY, min(y, screen.maxY - size.height))
-            return NSRect(origin: NSPoint(x: x, y: cy), size: size)
+            return NSRect(origin: NSPoint(x: x, y: y), size: size)
         }
         if let screen = NSScreen.main {
             let sf = screen.visibleFrame
-            return NSRect(origin: NSPoint(x: sf.midX - size.width/2, y: sf.midY - size.height/2), size: size)
+            return NSRect(origin: NSPoint(x: sf.midX - size.width / 2, y: sf.midY - size.height / 2), size: size)
         }
         return NSRect(origin: .zero, size: size)
     }
