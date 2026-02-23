@@ -19,6 +19,12 @@ struct SelectionStatusBar: View {
     private var formattedSize: String { ByteCountFormatter.string(fromByteCount: markedSize, countStyle: .file) }
     private var currentPath: String { panelSide == .left ? appState.leftPath : appState.rightPath }
 
+    /// Active remote connection for this panel (nil if local path)
+    private var remoteConnection: RemoteConnection? {
+        guard AppState.isRemotePath(currentPath) else { return nil }
+        return RemoteConnectionManager.shared.activeConnection
+    }
+
     private var filterQuery: Binding<String> {
         Binding(
             get: { panelSide == .left ? appState.leftFilterQuery : appState.rightFilterQuery },
@@ -75,6 +81,24 @@ struct SelectionStatusBar: View {
                         .font(.system(size: 11))
                         .foregroundStyle(.secondary)
                 }
+            }
+
+            // Remote connection badge
+            if let conn = remoteConnection {
+                HStack(spacing: 3) {
+                    Image(systemName: conn.protocolType == .sftp ? "lock.shield" : "globe")
+                        .font(.system(size: 9))
+                    Text(conn.server.host)
+                        .font(.system(size: 10, weight: .medium))
+                }
+                .padding(.horizontal, 6)
+                .padding(.vertical, 2)
+                .background(
+                    Capsule().fill(conn.protocolType == .sftp
+                        ? Color.green.opacity(0.15)
+                        : Color.blue.opacity(0.15))
+                )
+                .foregroundStyle(conn.protocolType == .sftp ? .green : .blue)
             }
 
             // Center: filter bar

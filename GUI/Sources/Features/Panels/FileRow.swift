@@ -131,12 +131,19 @@ struct FileRow: View {
     private var zebraBackground: some View {
         if isParentEntry {
             // ".." row — fixed light grey background regardless of zebra index
-            return Color(nsColor: .systemGray).opacity(0.13)
-                .allowsHitTesting(false)
+            return AnyView(Color(nsColor: .systemGray).opacity(0.13)
+                .allowsHitTesting(false))
+        }
+        if isActivePanel {
+            // Active panel: warm white base with subtle zebra stripe
+            let isOdd = index % 2 == 1
+            return AnyView(DesignTokens.warmWhite
+                .overlay(Color.black.opacity(isOdd ? 0.02 : 0))
+                .allowsHitTesting(false))
         }
         let zebraColors = NSColor.alternatingContentBackgroundColors
-        return Color(nsColor: zebraColors[index % zebraColors.count])
-            .allowsHitTesting(false)
+        return AnyView(Color(nsColor: zebraColors[index % zebraColors.count])
+            .allowsHitTesting(false))
     }
 
     @ViewBuilder

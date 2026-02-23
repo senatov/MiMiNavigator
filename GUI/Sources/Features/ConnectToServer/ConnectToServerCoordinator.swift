@@ -46,7 +46,7 @@ final class ConnectToServerCoordinator {
             },
             onDismiss: { [weak self] in self?.close() }
         )
-        .frame(minWidth: 560, minHeight: 440)
+        .frame(minWidth: 660, minHeight: 440)
 
         let panel = NSPanel(
             contentRect: .zero,
@@ -60,7 +60,7 @@ final class ConnectToServerCoordinator {
         panel.title = "Connect to Server"
         panel.contentView = NSHostingView(rootView: contentView)
         panel.isReleasedWhenClosed = false
-        panel.minSize = NSSize(width: 560, height: 440)
+        panel.minSize = NSSize(width: 660, height: 440)
         panel.titlebarAppearsTransparent = false
         panel.titleVisibility = .visible
         panel.toolbarStyle = .unified
@@ -103,20 +103,12 @@ final class ConnectToServerCoordinator {
     }
 
     // MARK: - Handle connect action from view
+    /// View already called RemoteConnectionManager.connect() for SFTP/FTP.
+    /// This just forwards to MiMiNavigatorApp callback for panel path integration.
+    /// Panel stays open — user closes it manually.
     private func handleConnect(url: URL, password: String) {
+        log.info("[ConnectCoordinator] handleConnect \(url.scheme ?? "")://\(url.host ?? "")")
         onConnect?(url, password)
-        // Find matching server and connect via manager
-        let store = RemoteServerStore.shared
-        guard let server = store.servers.first(where: { $0.connectionURL == url }) else {
-            log.warning("[ConnectCoordinator] no matching server for \(url)")
-            return
-        }
-        Task {
-            await RemoteConnectionManager.shared.connect(to: server, password: password)
-            if RemoteConnectionManager.shared.isConnected {
-                close()
-            }
-        }
     }
 
     // MARK: - Default frame: left of main window (Network is right)

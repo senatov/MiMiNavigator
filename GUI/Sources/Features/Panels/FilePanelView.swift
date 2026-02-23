@@ -123,13 +123,15 @@ struct FilePanelView: View {
     
     // MARK: - Panel background with focus indicator
     private var panelBackground: some View {
-        ZStack {
+        let focused = appState.focusedPanel == viewModel.panelSide
+        return ZStack {
             RoundedRectangle(cornerRadius: DesignTokens.radius, style: .continuous)
-                .fill(DesignTokens.card)
+                .fill(focused ? DesignTokens.warmWhite : DesignTokens.card)
             // Base border — always visible
             RoundedRectangle(cornerRadius: DesignTokens.radius, style: .continuous)
                 .stroke(DesignTokens.separator.opacity(0.35), lineWidth: 1)
         }
+        .animation(.easeInOut(duration: 0.15), value: focused)
         .drawingGroup()
     }
 

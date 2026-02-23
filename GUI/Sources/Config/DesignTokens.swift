@@ -35,7 +35,10 @@ enum DesignTokens {
     
     /// Panel background color (control background)
     static let panelBg = Color(nsColor: .controlBackgroundColor)
-    
+
+    /// Warm white background for active panel and session table
+    static let warmWhite = Color(#colorLiteral(red: 0.9744921875, green: 0.9672388187, blue: 0.9454787124, alpha: 0.9061729754))
+
     /// Separator color
     static let separator = Color(nsColor: .separatorColor)
     
