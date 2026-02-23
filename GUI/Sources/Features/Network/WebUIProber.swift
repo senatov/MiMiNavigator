@@ -61,7 +61,7 @@ enum WebUIProber {
         }
 
         // Probe all candidate ports concurrently
-        return await withTaskGroup(of: URL?.self) { group in
+        return await withTaskGroup(of: URL?.self) { @concurrent group in
             for port in candidatePorts {
                 let scheme = (port == 443 || port == 8443 || port == 5001) ? "https" : "http"
                 guard let url = URL(string: "\(scheme)://\(ip):\(port)") else { continue }

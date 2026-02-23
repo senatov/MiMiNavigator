@@ -160,7 +160,7 @@ enum NetworkDeviceFingerprinter {
 
     // MARK: - Concurrent port probe
     @concurrent static func probePortsConcurrently(host: String, ports: [Int], timeout: TimeInterval) async -> Set<Int> {
-        await withTaskGroup(of: Int?.self) { group in
+        await withTaskGroup(of: Int?.self) { @concurrent group in
             for port in ports {
                 group.addTask { @concurrent in await isPortOpen(host: host, port: port, timeout: timeout) ? port : nil }
             }

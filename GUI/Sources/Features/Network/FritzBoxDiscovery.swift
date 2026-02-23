@@ -45,7 +45,7 @@ enum FritzBoxDiscovery {
         log.info("[FritzBox] fetching \(count) DHCP entries")
 
         var results: [FritzBoxHost] = []
-        await withTaskGroup(of: FritzBoxHost?.self) { group in
+        await withTaskGroup(of: FritzBoxHost?.self) { @concurrent group in
             for i in 0..<count {
                 group.addTask { @concurrent in await fetchHost(index: i) }
             }
