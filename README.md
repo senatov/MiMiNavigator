@@ -85,6 +85,9 @@ MiMiNavigator is a dual-panel file manager inspired by **Total Commander** and *
 | **Breadcrumb Nav** | Click-to-navigate path bar |
 | **Favorites Sidebar** | Quick access to bookmarked locations (FavoritesKit package) |
 | **Real-time Updates** | Automatic refresh on file system changes |
+| **FTP/SFTP** | Remote file browsing via curl (FTP) and Citadel/NIOSSH (SFTP) |
+| **Network Neighborhood** | SMB/AFP share discovery, mounting, and browsing across LAN |
+| **Connect to Server** | Saved server bookmarks with keychain passwords, session reuse, disconnect |
 
 ### Keyboard Shortcuts
 
@@ -286,9 +289,9 @@ Log file: `~/Library/Logs/MiMiNavigator.log`
 
 ### Planned 🎯
 - [ ] Three-panel layout option
-- [ ] FTP/SFTP connectivity
+- [x] FTP/SFTP connectivity (Citadel SFTP + curl-based FTP)
+- [x] Network filesystem (SMB/AFP mount, Network Neighborhood discovery)
 - [ ] Cloud storage (iCloud, Dropbox)
-- [ ] Network filesystem (SMB)
 - [ ] Advanced file comparison
 - [ ] Plugin system
 - [ ] App Store release
