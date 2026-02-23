@@ -1,9 +1,13 @@
+// MiMiNavigatorApp.swift
+// MiMiNavigator
 //
-//  MiMiNavigatorApp.swift
-//  MiMiNavigator
-//
-//  Created by Iakov Senatov on 06.08.24.
-//
+// Created by Iakov Senatov on 06.08.2024.
+// Refactored: 23.02.2026 — Network panel via coordinator (NSPanel, no .sheet)
+// Refactored: 23.02.2026 — removed bringToFront/didBecomeKeyNotification (moved to AppDelegate)
+// Copyright © 2024-2026 Senatov. All rights reserved.
+// Description: App entry point. Wires toolbar, panels, drag-drop, network mount callback.
+//   Network Neighborhood opens as standalone NSPanel via NetworkNeighborhoodCoordinator.
+//   SMB mount: silent via /sbin/mount_smbfs, no Finder fallback.
 
 import AppKit
 import NetworkKit

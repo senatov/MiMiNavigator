@@ -2,8 +2,9 @@
 // NetworkKit
 //
 // Created by Iakov Senatov on 19.02.2026.
-// Refactored: 22.02.2026 - mountShare via /sbin/mount_smbfs (no Finder popup)
-// Refactored: 23.02.2026 - no fallback to NSWorkspace/Finder; os.Logger instead of print
+// Refactored: 22.02.2026 — mountShare via /sbin/mount_smbfs (no Finder popup)
+// Refactored: 23.02.2026 — no NSWorkspace fallback; already-mounted check before mount_smbfs
+// Refactored: 23.02.2026 — os.Logger (log) replaces all print() calls
 // Copyright (c) 2026 Senatov. All rights reserved.
 
 import AppKit

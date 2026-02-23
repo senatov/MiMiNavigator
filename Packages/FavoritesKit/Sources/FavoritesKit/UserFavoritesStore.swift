@@ -2,9 +2,11 @@
 // FavoritesKit
 //
 // Created by Iakov Senatov on 22.02.2026.
+// Refactored: 23.02.2026 — os.Logger replaces print(); import LogKit
 // Copyright © 2026 Senatov. All rights reserved.
 // Description: Persistent store for user-added favorites (local paths + network shares).
-//              Stored in UserDefaults as JSON. Observable for SwiftUI.
+//   Stored in UserDefaults as JSON. @Observable for SwiftUI live updates.
+//   Supports local directories and network share URLs (smb://, afp://, sftp://, etc.).
 
 import Foundation
 import LogKit

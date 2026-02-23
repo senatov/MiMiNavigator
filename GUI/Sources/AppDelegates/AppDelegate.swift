@@ -1,10 +1,13 @@
-//
 // AppDelegate.swift
-//  MiMiNavigator
+// MiMiNavigator
 //
-//  Created by Iakov Senatov on 01.10.2025.
-//  Copyright © 2025 Senatov. All rights reserved.
-//
+// Created by Iakov Senatov on 01.10.2025.
+// Refactored: 23.02.2026 — applicationDidBecomeActive raises Network+FindFiles panels
+// Copyright © 2025-2026 Senatov. All rights reserved.
+// Description: NSApplicationDelegate. Handles Tab key interception, bookmark restore,
+//   and companion panel visibility (Network Neighborhood, Find Files).
+//   applicationDidBecomeActive raises companion panels only when MiMiNavigator
+//   itself gets focus — not when other apps become active.
 
 import AppKit
 

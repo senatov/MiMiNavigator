@@ -4,8 +4,10 @@
 // Created by Iakov Senatov on 23.02.2026.
 // Copyright © 2026 Senatov. All rights reserved.
 // Description: Probes a network host for a responding HTTP/HTTPS web interface.
-//   Tries standard admin/device ports + common developer app-server ports.
-//   First responding port wins — result cached in NetworkHost.probedWebPort.
+//   Tries 23 ports concurrently: device admin (80/443/8080/...) + dev servers (3000/5173/8000/...)
+//   First responding port wins — result stored in NetworkHost.probedWebURL.
+//   InsecureDelegate accepts self-signed SSL certs (common on LAN routers/NAS).
+//   Called by NetworkNeighborhoodProvider.runFingerprintPass() after device classification.
 
 import Foundation
 

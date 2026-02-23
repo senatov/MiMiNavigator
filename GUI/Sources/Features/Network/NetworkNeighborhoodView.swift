@@ -2,13 +2,15 @@
 // MiMiNavigator
 //
 // Created by Iakov Senatov on 20.02.2026.
-// Refactored: 23.02.2026 — NSPanel; Web UI probe (23 ports); copyable rows; no offline hosts
+// Refactored: 23.02.2026 — NSPanel; Web UI probe 23 ports; copyable rows; no offline hosts
+// Refactored: 23.02.2026 — mediaBox class: no chevron, no Sign In; icon color red
 // Copyright © 2026 Senatov. All rights reserved.
 // Description: Tree-style Network Neighborhood — Bonjour + FritzBox TR-064 discovery.
-//   - Movable/resizable NSPanel (via NetworkNeighborhoodCoordinator)
-//   - Web UI button for ANY device with responding HTTP port
-//   - Right-click: copy name / IP / URL to clipboard
-//   - Offline hosts hidden (FritzBox inactive entries)
+//   - NSPanel via NetworkNeighborhoodCoordinator (movable, resizable, persists position)
+//   - Web UI button for ANY device with responding HTTP port (23 ports probed)
+//   - mediaBox (Enigma2/OpenPLi/Kodi): icon=tv/red, no SMB expand, no Sign In
+//   - Right-click context menu: copy name / IP / Web URL / MAC / mount URL
+//   - Offline hosts hidden; Sign In only for expandable non-mobile non-router hosts
 
 import SwiftUI
 
