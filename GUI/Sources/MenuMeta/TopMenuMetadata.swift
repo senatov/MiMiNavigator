@@ -224,7 +224,6 @@ let showMenuCategory = MenuCategory(
             shortcut: "⌃H"
         ),
         MenuItem(title: "Full View",  action: stub("Full View"),  shortcut: nil),
-        MenuItem(title: "Brief View", action: stub("Brief View"), shortcut: nil),
     ])
 
 // MARK: - Configuration Menu
