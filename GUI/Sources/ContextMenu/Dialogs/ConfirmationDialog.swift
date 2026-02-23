@@ -2,8 +2,6 @@
 //  MiMiNavigator
 //
 //  Created by Iakov Senatov on 22.01.2026.
-//  Refactored: 18.02.2026 — HIG 26 native buttons, proper focus ring, GitHub-style inputs
-//  Refactored: 22.02.2026 — Word-Einstellungen style: static gray palette F7/EF/E7
 //  Copyright © 2026 Senatov. All rights reserved.
 
 import SwiftUI
@@ -14,9 +12,9 @@ import SwiftUI
 ///   dialogBase   #EFEFEF — main dialog background
 ///   dialogStripe #E7E7E7 — contrast stripes, divider areas
 enum DialogColors {
-    static let light  = Color(red: 247/255, green: 247/255, blue: 247/255)
-    static let base   = Color(red: 239/255, green: 239/255, blue: 239/255)
-    static let stripe = Color(red: 231/255, green: 231/255, blue: 231/255)
+    static let light = Color(red: 247 / 255, green: 247 / 255, blue: 247 / 255)
+    static let base = Color(red: 239 / 255, green: 239 / 255, blue: 239 / 255)
+    static let stripe = Color(red: 231 / 255, green: 231 / 255, blue: 231 / 255)
 }
 
 // MARK: - macOS HIG 26 Dialog Base Modifier
@@ -144,7 +142,7 @@ struct HIGDialogButtons: View {
     var body: some View {
         HStack(spacing: 10) {
             Button(cancelTitle, action: onCancel)
-                .keyboardShortcut(.cancelAction)   // Esc
+                .keyboardShortcut(.cancelAction)  // Esc
                 .buttonStyle(.bordered)
                 .controlSize(.large)
 

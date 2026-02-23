@@ -383,7 +383,7 @@ extension AppState {
             guard let conn = manager.activeConnection else { return }
             let parentRemote = (conn.currentPath as NSString).deletingLastPathComponent
             let normalizedParent = parentRemote.isEmpty ? "/" : parentRemote
-            log.info("[AppState] navigateToParent remote: \(conn.currentPath) \u2192 \(normalizedParent)")
+            log.info("[AppState] navigateToParent remote: \(conn.currentPath) -> \(normalizedParent)")
             do {
                 let items = try await manager.listDirectory(normalizedParent)
                 let files = items.map { CustomFile(remoteItem: $0) }
