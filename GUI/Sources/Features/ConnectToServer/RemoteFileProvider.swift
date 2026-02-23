@@ -55,6 +55,7 @@ final class SFTPFileProvider: RemoteFileProvider, @unchecked Sendable {
     @concurrent func connect(host: String, port: Int, user: String, password: String, remotePath: String) async throws {
         let client = try await SSHClient.connect(
             host: host,
+            port: port,
             authenticationMethod: .passwordBased(username: user, password: password),
             hostKeyValidator: .acceptAnything(),
             reconnect: .never
@@ -77,9 +78,9 @@ final class SFTPFileProvider: RemoteFileProvider, @unchecked Sendable {
             let name = entry.filename
             guard name != "." && name != ".." else { return nil }
             let fullPath = dirPath.hasSuffix("/") ? "\(dirPath)\(name)" : "\(dirPath)/\(name)"
-            let isDir  = entry.attributes.type == .directory
-            let size   = Int64(entry.attributes.size ?? 0)
-            let mdate: Date? = entry.attributes.modificationTime.map { Date(timeIntervalSince1970: TimeInterval($0)) }
+            let isDir = entry.attributes.permissions?.isDirectory ?? false
+            let size = Int64(entry.attributes.size ?? 0)
+            let mdate: Date? = entry.attributes.accessDate
             return RemoteFileItem(name: name, path: fullPath, isDirectory: isDir, size: size, modified: mdate)
         }
         log.debug("[SFTP] listed \(items.count) items at \(dirPath)")
