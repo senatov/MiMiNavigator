@@ -170,7 +170,15 @@ struct NetworkDeviceInfoPopup: View {
         }
 
         // MAC + vendor
-        if let mac = host.macAddress {
+        // Try stored MAC first, then fallback to ARP lookup by IP
+        var mac = host.macAddress
+        if mac == nil {
+            let ip = host.hostIP.isEmpty ? host.hostName : host.hostIP
+            if !ip.isEmpty && ip != "(nil)" && !ip.contains("@") {
+                mac = await arpLookup(ip: ip)
+            }
+        }
+        if let mac {
             result.append(DeviceInfoEntry(label: "MAC", value: mac))
             let vendor = await MACVendorService.shared.lookup(mac)
             result.append(DeviceInfoEntry(label: "Vendor", value: vendor))
@@ -194,6 +202,72 @@ struct NetworkDeviceInfoPopup: View {
 
         entries = result
         isLoading = false
+    }
+
+    // MARK: - ARP lookup: get MAC address from IP via system ARP cache
+    private func arpLookup(ip: String) async -> String? {
+        // Validate IP format to avoid shell injection
+        let parts = ip.components(separatedBy: ".")
+        guard parts.count == 4, parts.allSatisfy({ Int($0).map { (0...255).contains($0) } ?? false }) else {
+            // Not a plain IP — try DNS resolve first
+            return await arpLookupByHostname(ip)
+        }
+        return await runArp(ip)
+    }
+
+    private func arpLookupByHostname(_ hostname: String) async -> String? {
+        // Resolve hostname to IP, then ARP
+        guard !hostname.contains("@"), !hostname.contains(":") else { return nil }
+        // Ping once to populate ARP cache (async-safe via GCD)
+        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+            DispatchQueue.global(qos: .utility).async {
+                let pingProc = Process()
+                pingProc.executableURL = URL(fileURLWithPath: "/sbin/ping")
+                pingProc.arguments = ["-c", "1", "-t", "1", hostname]
+                pingProc.standardOutput = FileHandle.nullDevice
+                pingProc.standardError = FileHandle.nullDevice
+                try? pingProc.run()
+                pingProc.waitUntilExit()
+                continuation.resume()
+            }
+        }
+        return await runArp(hostname)
+    }
+
+    private func runArp(_ target: String) async -> String? {
+        await withCheckedContinuation { continuation in
+            DispatchQueue.global(qos: .utility).async {
+                let proc = Process()
+                proc.executableURL = URL(fileURLWithPath: "/usr/sbin/arp")
+                proc.arguments = ["-n", target]
+                let pipe = Pipe()
+                proc.standardOutput = pipe
+                proc.standardError = FileHandle.nullDevice
+                do {
+                    try proc.run()
+                    proc.waitUntilExit()
+                } catch {
+                    continuation.resume(returning: nil); return
+                }
+                guard let data = try? pipe.fileHandleForReading.readToEnd(),
+                      let output = String(data: data, encoding: .utf8) else {
+                    continuation.resume(returning: nil); return
+                }
+                // Parse: "? (192.168.x.x) at aa:bb:cc:dd:ee:ff on en0 ..."
+                let pattern = #"at\s+([0-9a-fA-F:]{17})"#
+                guard let regex = try? NSRegularExpression(pattern: pattern),
+                      let match = regex.firstMatch(in: output, range: NSRange(output.startIndex..., in: output)),
+                      let range = Range(match.range(at: 1), in: output)
+                else {
+                    continuation.resume(returning: nil); return
+                }
+                let mac = String(output[range]).uppercased()
+                if mac == "FF:FF:FF:FF:FF:FF" || mac == "00:00:00:00:00:00" {
+                    continuation.resume(returning: nil); return
+                }
+                continuation.resume(returning: mac)
+            }
+        }
     }
 
     // MARK: - IPP probe via curl (async — no waitUntilExit on MainActor)

@@ -175,7 +175,14 @@ enum NetworkDeviceFingerprinter {
 
     // MARK: - TCP port check
     static func isPortOpen(host: String, port: Int, timeout: TimeInterval) async -> Bool {
-        await withCheckedContinuation { continuation in
+        // Skip obviously invalid hostnames (raw MAC addresses, empty, etc.)
+        let h = host.trimmingCharacters(in: .whitespacesAndNewlines)
+        if h.isEmpty || h == "(nil)" || h.contains("@") { return false }
+        // MAC address format (xx:xx:xx:xx:xx:xx) is not a valid hostname
+        let octets = h.components(separatedBy: ":")
+        if octets.count == 6 && octets.allSatisfy({ $0.count == 2 }) { return false }
+
+        return await withCheckedContinuation { continuation in
             DispatchQueue.global(qos: .userInitiated).async {
                 let sock = socket(AF_INET, SOCK_STREAM, 0)
                 guard sock >= 0 else { continuation.resume(returning: false); return }
@@ -185,10 +192,16 @@ enum NetworkDeviceFingerprinter {
                 setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &tv, socklen_t(MemoryLayout<timeval>.size))
                 var hints = addrinfo(); hints.ai_family = AF_INET; hints.ai_socktype = SOCK_STREAM
                 var res: UnsafeMutablePointer<addrinfo>? = nil
-                guard getaddrinfo(host, "\(port)", &hints, &res) == 0, let addr = res else {
+                let rc = getaddrinfo(h, "\(port)", &hints, &res)
+                guard rc == 0, let addr = res else {
+                    if res != nil { freeaddrinfo(res) }
                     continuation.resume(returning: false); return
                 }
                 defer { freeaddrinfo(res) }
+                // Safety: verify ai_addr is not nil before calling connect
+                guard addr.pointee.ai_addr != nil else {
+                    continuation.resume(returning: false); return
+                }
                 continuation.resume(returning: Darwin.connect(sock, addr.pointee.ai_addr, addr.pointee.ai_addrlen) == 0)
             }
         }

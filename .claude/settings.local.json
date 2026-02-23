@@ -1,0 +1,35 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(echo:*)",
+      "Bash(xcodebuild:*)",
+      "Bash(sw_vers:*)",
+      "Bash(git check-ignore:*)",
+      "Bash(test:*)",
+      "Bash(git restore:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git log:*)",
+      "Bash(git push:*)",
+      "Bash(git submodule status:*)",
+      "Bash(git config:*)",
+      "Bash(claude --version:*)",
+      "Bash(claude whoami:*)",
+      "Bash(claude logout:*)",
+      "Bash(claude login:*)"
+    ],
+    "deny": [],
+    "ask": []
+  },
+  "enabledPlugins": {
+    "core-data-expert@core-data-agent-skill": true
+  },
+  "extraKnownMarketplaces": {
+    "core-data-agent-skill": {
+      "source": {
+        "source": "github",
+        "repo": "AvdLee/Core-Data-Agent-Skill"
+      }
+    }
+  }
+}
