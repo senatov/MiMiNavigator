@@ -173,6 +173,15 @@ struct FilePanelView: View {
             return
         }
 
+        // Handle remote directories
+        let panelPath = viewModel.panelSide == .left ? appState.leftPath : appState.rightPath
+        if AppState.isRemotePath(panelPath) {
+            if file.isDirectory {
+                enterRemoteDirectory(file)
+            }
+            return
+        }
+
         // Handle directories (including symlink dirs)
         if file.isDirectory || file.isSymbolicDirectory {
             enterDirectory(file)
@@ -181,6 +190,37 @@ struct FilePanelView: View {
         }
     }
     
+    // MARK: - Enter remote directory
+    private func enterRemoteDirectory(_ file: CustomFile) {
+        let manager = RemoteConnectionManager.shared
+        guard let conn = manager.activeConnection else { return }
+        // file.pathStr for remote items is the full remote path (e.g. "/pub")
+        let newPath = file.pathStr
+        log.info("[FilePanelView] enterRemoteDirectory: \(newPath)")
+        Task { @MainActor in
+            // Update connection's current path and re-list
+            do {
+                let items = try await manager.listDirectory(newPath)
+                let files = items.map { CustomFile(remoteItem: $0) }
+                let sorted = appState.applySorting(files)
+                let mountPath = conn.provider.mountPath
+                // Update panel path to reflect new remote location
+                let displayPath = mountPath.hasSuffix("/") ? String(mountPath.dropLast()) : mountPath
+                appState.updatePath(displayPath + newPath, for: viewModel.panelSide)
+                switch viewModel.panelSide {
+                case .left:
+                    appState.displayedLeftFiles = sorted
+                    appState.selectedLeftFile = sorted.first
+                case .right:
+                    appState.displayedRightFiles = sorted
+                    appState.selectedRightFile = sorted.first
+                }
+            } catch {
+                log.error("[FilePanelView] remote listing failed: \(error.localizedDescription)")
+            }
+        }
+    }
+
     // MARK: - Enter directory
     private func enterDirectory(_ file: CustomFile) {
         let resolvedURL = file.urlValue.resolvingSymlinksInPath()
