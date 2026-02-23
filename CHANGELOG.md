@@ -7,8 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] — 2026-02-23
 
+### Added
+- **HTTP exceptions for popular router models** — Extended `NSExceptionDomains` in `Info.plist` to support web interfaces of common routers: Fritz!Box, TP-Link, Netgear, D-Link, Asus, Linksys, Mikrotik, Huawei, plus common router IPs. Allows HTTP access to router admin panels from network browsing features.
+
 ### Changed
 - **Packages/ extracted to private git submodule** — `NetworkKit`, `FavoritesKit`, `LogKit` moved to private repo `github.com/senatov/MiMiKits`, connected back as git submodule at `Packages/`. Xcode project unchanged, full debug/edit/commit workflow preserved.
+- **Package.resolved now tracked** — Following Apple's recommendation for app projects, `Package.resolved` is now committed to ensure reproducible builds across all developers. Added exception in `.gitignore` for `xcshareddata/swiftpm/Package.resolved`.
+- **Submodule packages: added .gitignore** — Created `.gitignore` files for `LogKit` and `NetworkKit` packages to prevent tracking user-specific Xcode files (`xcuserdata/`, scheme management).
 
 ### Added
 - **Top menu — real actions wired** (was all stubs before)
