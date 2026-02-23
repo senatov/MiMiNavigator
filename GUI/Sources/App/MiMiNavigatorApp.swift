@@ -56,10 +56,7 @@ struct MiMiNavigatorApp: App {
                         }
                     }
                 }
-                .onReceive(NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)) { _ in
-                    // Bring Network panel to front when main window becomes key
-                    NetworkNeighborhoodCoordinator.shared.bringToFront()
-                }
+
                 .toolbarBackground(Material.thin, for: ToolbarPlacement.windowToolbar)
                 .toolbarBackgroundVisibility(Visibility.visible, for: ToolbarPlacement.windowToolbar)
                 .onChange(of: scenePhase) {

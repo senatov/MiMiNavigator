@@ -72,12 +72,13 @@ final class NetworkNeighborhoodCoordinator {
         panel.toolbarStyle = .unified
         panel.animationBehavior = .utilityWindow
         panel.isMovableByWindowBackground = true
-        panel.hidesOnDeactivate = false   // stays visible when clicking main window
-        panel.level = .floating
+        panel.hidesOnDeactivate = false
+        // .normal level — visible but does NOT float over other apps
+        panel.level = .normal
         panel.tabbingMode = .disallowed
-        panel.isFloatingPanel = true
-        // Stay visible across all Spaces, don't hide when other apps become active
-        panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+        panel.isFloatingPanel = false
+        // Stay in current Space, don't steal focus from other apps
+        panel.collectionBehavior = [.managed, .participatesInCycle]
 
         if !panel.setFrameUsingName(frameAutosaveName) {
             panel.setFrame(computeDefaultFrame(), display: true)
