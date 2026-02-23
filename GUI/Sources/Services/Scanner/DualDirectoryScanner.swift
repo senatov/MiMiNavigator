@@ -75,6 +75,12 @@ actor DualDirectoryScanner {
         // Cancel previous watcher
         cancelVNodeWatcher(for: side)
 
+        // Remote paths have no local fd — skip vnode watching
+        guard !AppState.isRemotePath(path) else {
+            log.debug("[VNode] Skipping remote path '\(path)' side=\(side)")
+            return
+        }
+
         let fd = open(path, O_EVTONLY)
         guard fd >= 0 else {
             log.warning("[VNode] Cannot open fd for '\(path)': \(String(cString: strerror(errno)))")
@@ -152,6 +158,13 @@ actor DualDirectoryScanner {
             let p = currSide == .left ? appState.leftPath : appState.rightPath
             let h = UserPreferences.shared.snapshot.showHiddenFiles
             return (p, h)
+        }
+
+        // Remote paths (ftp://, sftp://) — delegate to RemoteConnectionManager, skip local FileScanner
+        if AppState.isRemotePath(path) {
+            log.info("🌐 refreshFiles: remote path detected, delegating to refreshRemoteFiles side=\(currSide)")
+            await appState.refreshRemoteFiles(for: currSide)
+            return
         }
 
         log.info("📍 refreshFiles: path='\(path)', showHidden=\(showHidden), side=\(currSide)")

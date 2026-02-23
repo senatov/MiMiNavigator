@@ -44,6 +44,27 @@ enum RemoteAuthType: String, Codable, CaseIterable, Identifiable {
     var id: String { rawValue }
 }
 
+// MARK: - Connection result status
+enum ConnectionResult: String, Codable {
+    case none       = "—"
+    case success    = "OK"
+    case authFailed = "Auth Failed"
+    case timeout    = "Timeout"
+    case refused    = "Refused"
+    case error      = "Error"
+
+    var icon: String {
+        switch self {
+        case .none:       return "minus.circle"
+        case .success:    return "checkmark.circle.fill"
+        case .authFailed: return "lock.slash"
+        case .timeout:    return "clock.badge.exclamationmark"
+        case .refused:    return "xmark.circle"
+        case .error:      return "exclamationmark.triangle"
+        }
+    }
+}
+
 // MARK: - Saved remote server entry
 struct RemoteServer: Identifiable, Codable, Hashable {
     let id: UUID
@@ -56,6 +77,8 @@ struct RemoteServer: Identifiable, Codable, Hashable {
     var authType: RemoteAuthType
     var privateKeyPath: String
     var connectOnStart: Bool
+    var lastConnected: Date?
+    var lastResult: ConnectionResult
 
     // Password is NOT stored here — it lives in Keychain
     // Use RemoteServerKeychain.loadPassword(for:) / savePassword(_:for:)
@@ -70,7 +93,9 @@ struct RemoteServer: Identifiable, Codable, Hashable {
         remotePath: String = "",
         authType: RemoteAuthType = .password,
         privateKeyPath: String = "~/.ssh/id_rsa",
-        connectOnStart: Bool = false
+        connectOnStart: Bool = false,
+        lastConnected: Date? = nil,
+        lastResult: ConnectionResult = .none
     ) {
         self.id = id
         self.name = name
@@ -82,6 +107,8 @@ struct RemoteServer: Identifiable, Codable, Hashable {
         self.authType = authType
         self.privateKeyPath = privateKeyPath
         self.connectOnStart = connectOnStart
+        self.lastConnected = lastConnected
+        self.lastResult = lastResult
     }
 
     // MARK: - Build connection URL (without password — password added at connect time)
@@ -102,5 +129,21 @@ struct RemoteServer: Identifiable, Codable, Hashable {
     // MARK: - Display label for sidebar
     var displayName: String {
         name.isEmpty ? host : name
+    }
+
+    // MARK: - Summary line for Recent table
+    var sessionSummary: String {
+        let proto = remoteProtocol.rawValue
+        let portStr = port != remoteProtocol.defaultPort ? ":\(port)" : ""
+        return "\(proto) \(user.isEmpty ? "" : "\(user)@")\(host)\(portStr)"
+    }
+
+    // MARK: - Formatted last-connected date
+    var formattedLastConnected: String {
+        guard let date = lastConnected else { return "—" }
+        let fmt = DateFormatter()
+        fmt.dateStyle = .short
+        fmt.timeStyle = .short
+        return fmt.string(from: date)
     }
 }

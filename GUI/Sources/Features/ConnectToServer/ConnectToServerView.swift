@@ -23,6 +23,9 @@ struct ConnectToServerView: View {
     @State private var password: String = ""
     @State private var keepPassword: Bool = true
     @State private var isConnecting: Bool = false
+    @State private var sessionLayout = SessionColumnLayout()
+    @State private var showPassword: Bool = false
+    @State private var connectionError: String = ""
 
     var body: some View {
         VStack(spacing: 0) {
@@ -30,12 +33,12 @@ struct ConnectToServerView: View {
             Divider()
             HSplitView {
                 serverSidebar
-                    .frame(minWidth: 140, idealWidth: 170, maxWidth: 220)
+                    .frame(minWidth: 200, idealWidth: 260, maxWidth: 320)
                 formPanel
                     .frame(minWidth: 300)
             }
         }
-        .frame(minWidth: 560, idealWidth: 640, minHeight: 440, idealHeight: 520)
+        .frame(minWidth: 660, idealWidth: 760, minHeight: 440, idealHeight: 520)
         .background(DesignTokens.card)
         .onAppear { selectFirst() }
         .onKeyPress(.escape) { onDismiss?(); return .handled }
@@ -52,24 +55,14 @@ struct ConnectToServerView: View {
         .background(DesignTokens.panelBg)
     }
 
-    // MARK: - Left sidebar: saved servers
+    // MARK: - Left sidebar: recent sessions table
     private var serverSidebar: some View {
         VStack(spacing: 0) {
-            Text("Recent").font(.caption).foregroundStyle(.secondary)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 10).padding(.top, 8).padding(.bottom, 4)
-
-            List(store.servers, selection: $selectedID) { server in
-                HStack(spacing: 6) {
-                    Image(systemName: iconForProtocol(server.remoteProtocol))
-                        .foregroundStyle(colorForProtocol(server.remoteProtocol))
-                        .font(.system(size: 13))
-                    Text(server.displayName)
-                        .font(.callout).lineLimit(1)
-                }
-                .tag(server.id)
-            }
-            .listStyle(.sidebar)
+            RecentSessionsTableView(
+                servers: store.servers,
+                selectedID: $selectedID,
+                layout: sessionLayout
+            )
             .onChange(of: selectedID) { _, newID in
                 if let id = newID, let server = store.servers.first(where: { $0.id == id }) {
                     draft = server
@@ -134,10 +127,26 @@ struct ConnectToServerView: View {
                 TextField("User:", text: $draft.user)
                     .textFieldStyle(.roundedBorder)
 
-                // Password + Keep checkbox
-                HStack {
-                    SecureField("Password:", text: $password)
-                        .textFieldStyle(.roundedBorder)
+                // Password + eye toggle + Keep checkbox
+                HStack(spacing: 6) {
+                    ZStack {
+                        if showPassword {
+                            TextField("Password:", text: $password)
+                                .textFieldStyle(.roundedBorder)
+                        } else {
+                            SecureField("Password:", text: $password)
+                                .textFieldStyle(.roundedBorder)
+                        }
+                    }
+                    Button {
+                        showPassword.toggle()
+                    } label: {
+                        Image(systemName: showPassword ? "eye.fill" : "eye.slash")
+                            .foregroundStyle(.secondary)
+                            .frame(width: 20)
+                    }
+                    .buttonStyle(.plain)
+                    .help(showPassword ? "Hide password" : "Show password")
                     Toggle("Keep", isOn: $keepPassword)
                         .toggleStyle(.checkbox)
                 }
@@ -182,6 +191,13 @@ struct ConnectToServerView: View {
             // Action buttons
             HStack(spacing: 12) {
                 Spacer()
+                if !connectionError.isEmpty {
+                    Text(connectionError)
+                        .font(.system(size: 10))
+                        .foregroundStyle(.red)
+                        .lineLimit(2)
+                        .frame(maxWidth: 200, alignment: .trailing)
+                }
                 if isConnecting {
                     ProgressView().scaleEffect(0.7)
                 }
@@ -204,16 +220,38 @@ struct ConnectToServerView: View {
 
     private func connectAction() {
         saveAction()
+        connectionError = ""
         guard let url = draft.connectionURL else {
+            connectionError = "Invalid URL"
             log.warning("[ConnectToServer] invalid URL for '\(draft.host)'")
             return
         }
         isConnecting = true
         log.info("[ConnectToServer] connecting to \(url)")
-        onConnect?(url, password)
-        // Coordinator will close on success
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+        let scheme = url.scheme ?? ""
+        if scheme == "smb" || scheme == "afp" {
+            // SMB/AFP — delegate to coordinator (native mount)
+            onConnect?(url, password)
             isConnecting = false
+        } else {
+            // SFTP/FTP — connect via RemoteConnectionManager, stay in panel
+            Task {
+                let manager = RemoteConnectionManager.shared
+                await manager.connect(to: draft, password: password)
+                if manager.isConnected {
+                    connectionError = ""
+                    // Signal success but do NOT close panel
+                    onConnect?(url, password)
+                } else {
+                    // Re-read updated result from store
+                    if let updated = store.servers.first(where: { $0.id == draft.id }) {
+                        connectionError = updated.lastResult.rawValue
+                    } else {
+                        connectionError = "Connection failed"
+                    }
+                }
+                isConnecting = false
+            }
         }
     }
 
@@ -235,10 +273,9 @@ struct ConnectToServerView: View {
     }
 
     private func browseAction() {
-        // Open in Finder via URL scheme
-        guard let url = draft.connectionURL else { return }
-        NSWorkspace.shared.open(url)
-        log.info("[ConnectToServer] browse \(url)")
+        // Browse = Connect (show in file panel, not Finder)
+        connectAction()
+        log.info("[ConnectToServer] browse — delegating to connectAction")
     }
 
     private func addNewServer() {
@@ -299,4 +336,5 @@ struct ConnectToServerView: View {
         case .afp:  return .purple
         }
     }
+
 }

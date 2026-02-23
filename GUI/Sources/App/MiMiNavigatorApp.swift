@@ -55,17 +55,16 @@ struct MiMiNavigatorApp: App {
                                 // SMB/AFP — mount via native macOS
                                 if let mountedURL = await SMBMounter.shared.mountShare(connectURL) {
                                     appState.updatePath(mountedURL.path, for: side)
-                                    ConnectToServerCoordinator.shared.close()
                                 }
                             } else if scheme == "sftp" || scheme == "ftp" {
-                                // SFTP/FTP — use RemoteConnectionManager, set remote path
+                                // SFTP/FTP — RemoteConnectionManager already connected by View
                                 let manager = RemoteConnectionManager.shared
                                 if manager.isConnected, let conn = manager.activeConnection {
                                     appState.updatePath(conn.provider.mountPath, for: side)
                                     await appState.refreshRemoteFiles(for: side)
-                                    ConnectToServerCoordinator.shared.close()
                                 }
                             }
+                            // Panel stays open — user closes it manually
                         }
                     }
                     // Wire navigate callback for Network panel

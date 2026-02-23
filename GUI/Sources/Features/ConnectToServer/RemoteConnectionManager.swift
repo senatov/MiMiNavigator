@@ -79,9 +79,12 @@ final class RemoteConnectionManager {
             )
             connections.append(connection)
             activeConnectionID = connection.id
+            updateServerResult(server, result: .success)
             log.info("[RemoteManager] connected: \(connection.displayName) (\(connections.count) total)")
         } catch {
-            log.error("[RemoteManager] connect failed: \(error.localizedDescription)")
+            let result = classifyError(error)
+            updateServerResult(server, result: result)
+            log.error("[RemoteManager] connect failed: \(error.localizedDescription) → \(result.rawValue)")
         }
     }
 
@@ -148,5 +151,30 @@ final class RemoteConnectionManager {
             log.warning("[RemoteManager] \(proto.rawValue) uses native mount, not RemoteFileProvider")
             return FTPFileProvider()
         }
+    }
+
+    // MARK: - Update server's last connection result in store
+    private func updateServerResult(_ server: RemoteServer, result: ConnectionResult) {
+        var updated = server
+        updated.lastConnected = Date()
+        updated.lastResult = result
+        RemoteServerStore.shared.update(updated)
+    }
+
+    // MARK: - Classify connection error into ConnectionResult
+    private func classifyError(_ error: Error) -> ConnectionResult {
+        let msg = error.localizedDescription.lowercased()
+        if let providerErr = error as? RemoteProviderError {
+            switch providerErr {
+            case .authFailed: return .authFailed
+            case .notConnected, .notImplemented: return .error
+            case .invalidURL: return .error
+            case .listingFailed: return .error
+            }
+        }
+        if msg.contains("timeout") || msg.contains("timed out") { return .timeout }
+        if msg.contains("refused") || msg.contains("connection refused") { return .refused }
+        if msg.contains("auth") || msg.contains("password") || msg.contains("denied") { return .authFailed }
+        return .error
     }
 }

@@ -30,7 +30,7 @@ extension FileTableView {
                         }
 
                         // Empty space — clickable for background context menu
-                        Color(nsColor: .controlBackgroundColor)
+                        Color.clear
                             .opacity(0.01)
                             .frame(minHeight: 300)
                             .frame(maxWidth: .infinity)
