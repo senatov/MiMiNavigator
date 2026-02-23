@@ -218,6 +218,8 @@ let showMenuCategory = MenuCategory(
             action: {
                 UserPreferences.shared.snapshot.showHiddenFiles.toggle()
                 UserPreferences.shared.save()
+                guard let appState = AppStateProvider.shared else { return }
+                appState.forceRefreshBothPanels()
             },
             shortcut: "⌃H"
         ),
