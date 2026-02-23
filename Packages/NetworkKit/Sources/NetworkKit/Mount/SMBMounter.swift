@@ -3,10 +3,15 @@
 //
 // Created by Iakov Senatov on 19.02.2026.
 // Refactored: 22.02.2026 - mountShare via /sbin/mount_smbfs (no Finder popup)
+// Refactored: 23.02.2026 - no fallback to NSWorkspace/Finder; os.Logger instead of print
 // Copyright (c) 2026 Senatov. All rights reserved.
 
 import AppKit
 import Foundation
+import OSLog
+
+// MARK: - Module-level logger (os.Logger, subsystem matches main app)
+private let log = Logger(subsystem: "com.senatov.MiMiNavigator.NetworkKit", category: "SMBMounter")
 
 // MARK: - Errors
 public enum MountError: Error, LocalizedError {
@@ -42,24 +47,24 @@ public final class SMBMounter {
     }
 
     // MARK: - Mount share silently via /sbin/mount_smbfs
-    // -N = no password prompt. Falls back to NSWorkspace if auth needed.
+    // -N = no password prompt. Returns nil (not Finder) when auth is required.
     public func mountShare(_ shareURL: URL) async -> URL? {
         guard shareURL.scheme == "smb" || shareURL.scheme == "afp" else {
             NSWorkspace.shared.open(shareURL)
             return nil
         }
-        let before     = mountedNetworkVolumes()
-        let host       = shareURL.host ?? "network"
-        let shareName  = shareURL.lastPathComponent.isEmpty ? "share" : shareURL.lastPathComponent
+        let before    = mountedNetworkVolumes()
+        let host      = shareURL.host ?? "network"
+        let shareName = shareURL.lastPathComponent.isEmpty ? "share" : shareURL.lastPathComponent
 
         // Check if already mounted — avoid redundant mount_smbfs call
         let alreadyMounted = [
             URL(fileURLWithPath: "/Volumes/\(shareName)"),
             URL(fileURLWithPath: "/Volumes/\(host)-\(shareName)"),
-            URL(fileURLWithPath: "/Volumes/\(shareName.replacingOccurrences(of: "%20", with: " "))"),
+            URL(fileURLWithPath: "/Volumes/\(shareName.removingPercentEncoding ?? shareName)"),
         ]
         for candidate in alreadyMounted where FileManager.default.fileExists(atPath: candidate.path) {
-            print("[SMBMounter] already mounted at \(candidate)")
+            log.debug("[SMBMounter] already mounted at \(candidate.path)")
             return candidate
         }
 
@@ -73,7 +78,7 @@ public final class SMBMounter {
         let errPipe = Pipe()
         process.standardError = errPipe
         do { try process.run() } catch {
-            print("[SMBMounter] launch failed: \(error)")
+            log.error("[SMBMounter] launch failed: \(error.localizedDescription)")
             try? FileManager.default.removeItem(atPath: mountPoint)
             return await fallbackMount(shareURL: shareURL, before: before)
         }
@@ -83,39 +88,36 @@ public final class SMBMounter {
         }
         if process.isRunning { process.terminate() }
         if process.terminationStatus == 0 {
-            print("[SMBMounter] mounted \(shareURL) -> \(mountPoint)")
+            log.info("[SMBMounter] mounted \(shareURL.absoluteString) -> \(mountPoint)")
             return URL(fileURLWithPath: mountPoint)
         }
         let errStr = String(data: errPipe.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8) ?? ""
-        print("[SMBMounter] failed exit=\(process.terminationStatus): \(errStr.trimmingCharacters(in: .whitespacesAndNewlines))")
+        log.warning("[SMBMounter] exit=\(process.terminationStatus): \(errStr.trimmingCharacters(in: .whitespacesAndNewlines))")
         try? FileManager.default.removeItem(atPath: mountPoint)
         return await fallbackMount(shareURL: shareURL, before: before)
     }
 
-    // MARK: - Fallback: check if share already mounted (e.g. macOS auto-mounted)
-    // NOTE: NSWorkspace.open(smb://) is intentionally removed — it opens Finder.
-    // If silent mount failed, we return nil and let the caller show auth UI.
+    // MARK: - Fallback: check if share appeared or was already mounted
+    // NSWorkspace.open(smb://) intentionally removed — it opens Finder.
+    // Returns nil → caller shows Sign In instead.
     private func fallbackMount(shareURL: URL, before: [URL]) async -> URL? {
-        // Wait briefly — macOS may auto-mount after the process fails
         try? await Task.sleep(for: .milliseconds(800))
         let current = mountedNetworkVolumes()
-        // Check if something new appeared (e.g. macOS mounted it silently)
         if let appeared = current.first(where: { cur in !before.contains { $0.path == cur.path } }) {
-            print("[SMBMounter] auto-mounted: \(appeared)")
+            log.info("[SMBMounter] auto-mounted: \(appeared.path)")
             return appeared
         }
-        // Check if share is already mounted under /Volumes/ by its name
         let shareName = shareURL.lastPathComponent
-        let host = shareURL.host ?? ""
+        let host      = shareURL.host ?? ""
         let candidates = [
             URL(fileURLWithPath: "/Volumes/\(shareName)"),
             URL(fileURLWithPath: "/Volumes/\(host)-\(shareName)"),
         ]
         for candidate in candidates where FileManager.default.fileExists(atPath: candidate.path) {
-            print("[SMBMounter] found existing mount: \(candidate)")
+            log.info("[SMBMounter] found existing mount: \(candidate.path)")
             return candidate
         }
-        print("[SMBMounter] silent mount failed for \(shareURL) — auth required")
+        log.info("[SMBMounter] silent mount failed for \(shareURL.absoluteString) — auth required")
         return nil
     }
 

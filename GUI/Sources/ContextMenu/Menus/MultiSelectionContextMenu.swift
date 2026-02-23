@@ -103,7 +103,7 @@ struct MultiSelectionContextMenu: View {
             markedCount: 5,
             panelSide: .left,
             onAction: { action in
-                print("Multi action: \(action)")
+                log.debug("Multi action: \(action)")
             }
         )
     }

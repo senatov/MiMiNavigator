@@ -131,7 +131,7 @@ struct FileContextMenu: View {
             file: CustomFile(path: "/test/document.txt"),
             panelSide: .left,
             onAction: { action in
-                print("Action: \(action)")
+                log.debug("Action: \(action)")
             }
         )
     }

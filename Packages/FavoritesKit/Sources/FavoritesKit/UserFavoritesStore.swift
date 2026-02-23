@@ -7,7 +7,10 @@
 //              Stored in UserDefaults as JSON. Observable for SwiftUI.
 
 import Foundation
+import OSLog
 import Observation
+
+private let log = Logger(subsystem: "com.senatov.MiMiNavigator.FavoritesKit", category: "UserFavorites")
 
 // MARK: - UserFavoriteEntry
 /// A single user-added favorite — local path OR network share URL
@@ -68,7 +71,7 @@ public final class UserFavoritesStore {
     public func add(path: String, name: String? = nil) {
         guard !path.isEmpty else { return }
         guard !entries.contains(where: { $0.path == path }) else {
-            print("[UserFavorites] already exists: \(path)")
+            log.debug("[UserFavorites] already exists: \(path)")
             return
         }
         let displayName = name ?? URL(string: path)?.lastPathComponent
@@ -76,14 +79,14 @@ public final class UserFavoritesStore {
         let entry = UserFavoriteEntry(name: displayName.isEmpty ? path : displayName, path: path)
         entries.append(entry)
         save()
-        print("[UserFavorites] added '\(entry.name)' → \(path)")
+        log.info("[UserFavorites] added '\(entry.name)' → \(path)")
     }
 
     // MARK: - Remove
     public func remove(id: UUID) {
         entries.removeAll { $0.id == id }
         save()
-        print("[UserFavorites] removed id=\(id)")
+        log.debug("[UserFavorites] removed id=\(id)")
     }
 
     // MARK: - Remove by path
@@ -109,6 +112,6 @@ public final class UserFavoritesStore {
               let decoded = try? JSONDecoder().decode([UserFavoriteEntry].self, from: data)
         else { return }
         entries = decoded
-        print("[UserFavorites] loaded \(entries.count) user favorites")
+        log.info("[UserFavorites] loaded \(self.entries.count) user favorites")
     }
 }
