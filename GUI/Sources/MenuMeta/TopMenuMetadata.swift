@@ -206,11 +206,10 @@ let showMenuCategory = MenuCategory(
     title: "Show",
     items: [
         MenuItem(
-            title: "Refresh Panel",
+            title: "Refresh Panels",
             action: {
                 guard let appState = AppStateProvider.shared else { return }
-                let panel = appState.focusedPanel
-                ContextMenuCoordinator.shared.refreshPanel(panel, appState: appState)
+                appState.forceRefreshBothPanels()
             },
             shortcut: "⌃R"
         ),
