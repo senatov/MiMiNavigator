@@ -57,6 +57,14 @@ import AppKit
         }
     }
 
+    // MARK: - Raise companion panels when MiMiNavigator itself becomes active
+    // Triggered only when our app gets focus (user clicks MiMi or switches via Cmd+Tab)
+    // NOT triggered when other apps become active — so panel never floats over them
+    func applicationDidBecomeActive(_ notification: Notification) {
+        NetworkNeighborhoodCoordinator.shared.bringToFront()
+        FindFilesCoordinator.shared.bringToFront()
+    }
+
     // MARK: -
     func applicationWillTerminate(_ notification: Notification) {
         if let keyMonitor { NSEvent.removeMonitor(keyMonitor) }
