@@ -2,7 +2,6 @@
 // MiMiNavigator
 //
 // Created by Iakov Senatov on 10.02.2026.
-// Refactored: 14.02.2026 — Word-Einstellungen visual style
 // Copyright © 2026 Senatov. All rights reserved.
 // Description: Advanced tab of Find Files — size filter, date filter
 

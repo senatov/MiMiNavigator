@@ -2,7 +2,6 @@
 // MiMiNavigator
 //
 // Created by Iakov Senatov on 11.08.2024.
-// Refactored: 04.02.2026
 // Copyright © 2024-2026 Senatov. All rights reserved.
 // Description: Main file table view with sortable, resizable columns
 //

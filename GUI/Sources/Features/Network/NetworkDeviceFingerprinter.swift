@@ -2,9 +2,6 @@
 // MiMiNavigator
 //
 // Created by Iakov Senatov on 21.02.2026.
-// Refactored: 22.02.2026 — iPhone/iPad detection; fritz by name; localhost = Mac
-// Refactored: 22.02.2026 — mac hostname keywords (macpro/macbook/imac)
-// Refactored: 23.02.2026 — mediaBox class; vuduo moved from nasKeywords; Enigma2 banner detection
 // Copyright © 2026 Senatov. All rights reserved.
 // Description: Determines hardware type by Bonjour services + port probe + HTTP banner.
 //   Classification priority: Bonjour services -> name keywords -> port+banner probe

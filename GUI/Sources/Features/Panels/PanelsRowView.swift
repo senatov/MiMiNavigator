@@ -2,7 +2,6 @@
 // MiMiNavigator
 //
 // Created by Iakov Senatov on 21.10.2025.
-// Refactored: 12.02.2026 — extracted PanelDividerView
 // Copyright © 2025-2026 Senatov. All rights reserved.
 // Description: Horizontal layout of left panel + divider + right panel
 

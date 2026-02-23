@@ -2,8 +2,6 @@
 // MiMiNavigator
 //
 // Created by Iakov Senatov on 24.06.2025.
-// Refactored: 23.02.2026 — delegated to LogKit package
-// Refactored: 23.02.2026 — added import Foundation (URL not in scope via LogKit)
 // Copyright © 2025-2026 Senatov. All rights reserved.
 // Description: App-side logging bootstrap. All configuration lives in LogKit.
 //   Import LogKit anywhere -> use log.debug / log.info / log.error.

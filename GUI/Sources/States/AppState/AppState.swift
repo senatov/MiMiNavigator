@@ -2,7 +2,6 @@
 // MiMiNavigator
 //
 // Created by Iakov Senatov on 28.05.2025.
-// Refactored: 27.01.2026
 // Copyright © 2025-2026 Senatov. All rights reserved.
 // Description: Central application state - coordinates sub-managers
 
@@ -459,6 +458,41 @@ extension AppState {
     }
 }
 
+// MARK: - Remote Path Detection
+extension AppState {
+    /// Returns true if the path belongs to an active remote connection
+    static func isRemotePath(_ path: String) -> Bool {
+        path.hasPrefix("sftp://") || path.hasPrefix("ftp://") || path.hasPrefix("/sftp:") || path.hasPrefix("/ftp:")
+    }
+
+    /// Fetch remote directory listing and populate panel files
+    func refreshRemoteFiles(for panel: PanelSide) async {
+        let manager = RemoteConnectionManager.shared
+        guard let conn = manager.activeConnection else {
+            log.error("[AppState] refreshRemoteFiles — no active connection")
+            return
+        }
+        do {
+            let remotePath = conn.currentPath
+            log.info("[AppState] refreshRemoteFiles panel=\(panel) path=\(remotePath)")
+            let items = try await manager.listDirectory(remotePath)
+            let files = items.map { CustomFile(remoteItem: $0) }
+            let sorted = applySorting(files)
+            switch panel {
+            case .left:
+                displayedLeftFiles = sorted
+                if selectedLeftFile == nil { selectedLeftFile = sorted.first }
+            case .right:
+                displayedRightFiles = sorted
+                if selectedRightFile == nil { selectedRightFile = sorted.first }
+            }
+            log.debug("[AppState] remote listing: \(sorted.count) items")
+        } catch {
+            log.error("[AppState] remote listing failed: \(error.localizedDescription)")
+        }
+    }
+}
+
 // MARK: - Refresh Operations
 extension AppState {
 
@@ -471,8 +505,11 @@ extension AppState {
 
     func refreshLeftFiles() async {
         log.debug("[AppState] refreshLeftFiles path=\(leftPath)")
-        await scanner.refreshFiles(currSide: .left)
-
+        if Self.isRemotePath(leftPath) {
+            await refreshRemoteFiles(for: .left)
+        } else {
+            await scanner.refreshFiles(currSide: .left)
+        }
         if focusedPanel == .left, selectedLeftFile == nil {
             selectedLeftFile = displayedLeftFiles.first
             if let f = selectedLeftFile {
@@ -483,8 +520,11 @@ extension AppState {
 
     func refreshRightFiles() async {
         log.debug("[AppState] refreshRightFiles path=\(rightPath)")
-        await scanner.refreshFiles(currSide: .right)
-
+        if Self.isRemotePath(rightPath) {
+            await refreshRemoteFiles(for: .right)
+        } else {
+            await scanner.refreshFiles(currSide: .right)
+        }
         if focusedPanel == .right, selectedRightFile == nil {
             selectedRightFile = displayedRightFiles.first
             if let f = selectedRightFile {

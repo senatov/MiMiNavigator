@@ -2,7 +2,6 @@
 // MiMiNavigator
 //
 // Created by Iakov Senatov on 26.10.2025.
-// Refactored: 04.02.2026
 // Copyright © 2025-2026 Senatov. All rights reserved.
 // Description: Main dual-panel file manager view with fixed initial split position
 

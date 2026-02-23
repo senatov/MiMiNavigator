@@ -2,7 +2,6 @@
 // MiMiNavigator
 //
 // Created by Iakov Senatov on 10.02.2026.
-// Refactored: 18.02.2026 — clean HIG 26 layout, no inner borders, matches screenshot
 // Copyright © 2026 Senatov. All rights reserved.
 
 import SwiftUI

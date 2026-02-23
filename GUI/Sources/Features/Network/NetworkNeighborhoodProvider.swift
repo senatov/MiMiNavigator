@@ -2,7 +2,6 @@
 // MiMiNavigator
 //
 // Created by Iakov Senatov on 19.02.2026.
-// Refactored: 22.02.2026 — Stage 11: fix resolve (keep NetService alive); fritz.box dedup;
 //             BRW/iRobot classify; mobile rename via FritzBox; SASCHA=Windows via fingerprint
 // Copyright © 2026 Senatov. All rights reserved.
 // Description: Bonjour-based network host discovery + lazy share enumeration + FritzBox TR-064

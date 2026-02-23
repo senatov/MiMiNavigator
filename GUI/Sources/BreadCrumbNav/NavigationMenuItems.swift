@@ -2,7 +2,6 @@
 // MiMiNavigator
 //
 // Created by Iakov Senatov on 10.05.2024.
-// Refactored: 27.01.2026
 // Copyright © 2024-2026 Senatov. All rights reserved.
 // Description: Navigation menu components for breadcrumb panel
 

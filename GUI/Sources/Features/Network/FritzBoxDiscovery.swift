@@ -2,8 +2,6 @@
 // MiMiNavigator
 //
 // Created by Iakov Senatov on 21.02.2026.
-// Refactored: 22.02.2026 — fixed SOAPAction header (was missing → 404); isAvailable via SOAP
-// Refactored: 23.02.2026 — include inactive hosts (Sascha/Vuduo2 off→still shown); dedup by IP
 // Copyright © 2026 Senatov. All rights reserved.
 // Description: Discovers ALL LAN hosts via FritzBox TR-064 UPnP API (no auth required).
 //              Shows both active and inactive hosts — inactive shown greyed out.

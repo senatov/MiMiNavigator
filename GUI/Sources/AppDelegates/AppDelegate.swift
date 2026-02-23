@@ -2,7 +2,6 @@
 // MiMiNavigator
 //
 // Created by Iakov Senatov on 01.10.2025.
-// Refactored: 23.02.2026 — applicationDidBecomeActive raises Network+FindFiles panels
 // Copyright © 2025-2026 Senatov. All rights reserved.
 // Description: NSApplicationDelegate. Handles Tab key interception, bookmark restore,
 //   and companion panel visibility (Network Neighborhood, Find Files).

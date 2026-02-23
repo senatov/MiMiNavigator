@@ -2,7 +2,6 @@
 // MiMiNavigator
 //
 // Created by Iakov Senatov on 27.01.2026.
-// Refactored: 20.02.2026 — layout width = ColumnSeparatorStyle.width (same as ColumnSeparator)
 //                           so header and row dividers are pixel-aligned.
 // Copyright © 2026 Senatov. All rights reserved.
 // Description: Draggable divider for resizing table columns.

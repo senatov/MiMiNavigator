@@ -2,7 +2,6 @@
 // MiMiNavigator
 //
 // Created by Iakov Senatov on 01.06.2025.
-// Refactored: 19.02.2026
 // Copyright © 2025-2026 Senatov. All rights reserved.
 // Description: Menu item metadata — real actions where implemented, stub popups elsewhere
 

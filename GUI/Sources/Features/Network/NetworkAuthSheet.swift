@@ -2,7 +2,6 @@
 // MiMiNavigator
 //
 // Created by Iakov Senatov on 21.02.2026.
-// Refactored: 22.02.2026 — redesigned to match NetworkNeighborhoodView card style
 // Copyright © 2026 Senatov. All rights reserved.
 // Description: Modal sheet for entering SMB/FTP/SFTP credentials.
 //              Saves to Keychain on confirm, calls onAuthenticated to retry share fetch.

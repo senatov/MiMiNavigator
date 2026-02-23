@@ -3,7 +3,6 @@
 // MiMiNavigator
 //
 // Created by Iakov Senatov on 17.01.2026.
-// Refactored: 20.02.2026 — History and Favorites open as standalone NSPanel windows
 //             via PanelDialogCoordinator (pattern mirrors FindFilesCoordinator).
 // Copyright © 2026 Senatov. All rights reserved.
 

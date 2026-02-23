@@ -2,7 +2,6 @@
 // MiMiNavigator
 //
 // Created by Iakov Senatov on 22.02.2026.
-// Refactored: 22.02.2026 — fix RTE: async IPP probe; fix hostName for mobile (MAC->IP)
 // Copyright 2026 Senatov. All rights reserved.
 // Description: Device info popup for any network host.
 //   - MAC vendor lookup via api.macvendors.com (free, no key)

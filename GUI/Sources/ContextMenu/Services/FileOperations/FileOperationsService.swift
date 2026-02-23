@@ -2,7 +2,6 @@
 // MiMiNavigator
 //
 // Created by Iakov Senatov on 22.01.2026.
-// Refactored: 27.01.2026
 // Copyright © 2026 Senatov. All rights reserved.
 // Description: Main service for file system operations
 
