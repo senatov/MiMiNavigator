@@ -1,7 +1,6 @@
 // RemoteServer.swift
 // MiMiNavigator
 //
-// Created by Claude — 23.02.2026
 // Copyright © 2026 Senatov. All rights reserved.
 // Description: Model for saved remote server connections (SFTP / FTP / SMB / AFP).
 //   Codable for JSON persistence. Password stored in Keychain, not in JSON.
