@@ -13,17 +13,61 @@ import Foundation
 import SwiftUI
 
 // MARK: - MACVendorService
-enum MACVendorService {
-    static func lookup(_ mac: String) async -> String? {
+actor MACVendorService {
+    static let shared = MACVendorService()
+
+    private var cache: [String: String] = [:]
+    private var lastRequestTime: Date?
+    private let minRequestInterval: TimeInterval = 1.0  // api.macvendors.com rate limit
+
+    func lookup(_ mac: String) async -> String {
         let prefix = mac.replacingOccurrences(of: ":", with: "").prefix(6).uppercased()
-        guard let url = URL(string: "https://api.macvendors.com/" + prefix) else { return nil }
-        var req = URLRequest(url: url, timeoutInterval: 5)
+
+        // Check cache first
+        if let cached = cache[prefix] {
+            return cached
+        }
+
+        // Rate limiting: wait if needed
+        if let last = lastRequestTime {
+            let elapsed = Date().timeIntervalSince(last)
+            if elapsed < minRequestInterval {
+                try? await Task.sleep(nanoseconds: UInt64((minRequestInterval - elapsed) * 1_000_000_000))
+            }
+        }
+
+        // API request
+        guard let url = URL(string: "https://api.macvendors.com/" + prefix) else {
+            return "Invalid MAC"
+        }
+
+        var req = URLRequest(url: url, timeoutInterval: 3)
         req.setValue("MiMiNavigator/1.0", forHTTPHeaderField: "User-Agent")
-        guard let (data, resp) = try? await URLSession.shared.data(for: req),
-              (resp as? HTTPURLResponse)?.statusCode == 200,
-              let vendor = String(data: data, encoding: .utf8), !vendor.isEmpty
-        else { return nil }
-        return vendor
+
+        lastRequestTime = Date()
+
+        do {
+            let (data, resp) = try await URLSession.shared.data(for: req)
+            let httpResp = resp as? HTTPURLResponse
+
+            switch httpResp?.statusCode {
+            case 200:
+                if let vendor = String(data: data, encoding: .utf8), !vendor.isEmpty {
+                    cache[prefix] = vendor
+                    return vendor
+                }
+                return "Unknown"
+            case 404:
+                cache[prefix] = "Unknown vendor"
+                return "Unknown vendor"
+            case 429:
+                return "Rate limit exceeded"
+            default:
+                return "API error (\(httpResp?.statusCode ?? 0))"
+            }
+        } catch {
+            return "Network error"
+        }
     }
 }
 
@@ -128,9 +172,8 @@ struct NetworkDeviceInfoPopup: View {
         // MAC + vendor
         if let mac = host.macAddress {
             result.append(DeviceInfoEntry(label: "MAC", value: mac))
-            if let v = await MACVendorService.lookup(mac) {
-                result.append(DeviceInfoEntry(label: "Vendor", value: v))
-            }
+            let vendor = await MACVendorService.shared.lookup(mac)
+            result.append(DeviceInfoEntry(label: "Vendor", value: vendor))
         }
 
         // Printer: probe IPP
