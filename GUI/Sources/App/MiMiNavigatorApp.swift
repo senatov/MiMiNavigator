@@ -40,6 +40,26 @@ struct MiMiNavigatorApp: App {
                     appDelegate.bind(appState)
                     AppStateProvider.shared = appState
                     showHiddenFiles = UserPreferences.shared.snapshot.showHiddenFiles
+                    // Wire connect callback for ConnectToServer panel
+                    ConnectToServerCoordinator.shared.onConnect = { url, password in
+                        Task { @MainActor in
+                            let side = appState.focusedPanel
+                            // Build authenticated URL if password provided
+                            var connectURL = url
+                            if !password.isEmpty, var components = URLComponents(url: url, resolvingAgainstBaseURL: false) {
+                                components.password = password
+                                connectURL = components.url ?? url
+                            }
+                            log.info("[ConnectToServer] mounting \(url.scheme ?? "")://\(url.host ?? "")")
+                            if let mountedURL = await SMBMounter.shared.mountShare(connectURL) {
+                                appState.updatePath(mountedURL.path, for: side)
+                                ConnectToServerCoordinator.shared.close()
+                            } else {
+                                // For sftp/ftp — try Finder as fallback
+                                NSWorkspace.shared.open(connectURL)
+                            }
+                        }
+                    }
                     // Wire navigate callback for Network panel
                     NetworkNeighborhoodCoordinator.shared.onNavigate = { shareURL in
                         Task { @MainActor in
@@ -75,6 +95,7 @@ struct MiMiNavigatorApp: App {
                     toolBarItemSwapPanels()
                     toolBarItemCompare()
                     toolBarItemNetwork()
+                    toolBarItemConnectToServer()
                     toolBarItemSearch()
                     toolBarItemBuildInfo()
                 }
@@ -181,6 +202,19 @@ struct MiMiNavigatorApp: App {
                 NetworkNeighborhoodCoordinator.shared.toggle()
             }
             .keyboardShortcut("n", modifiers: .command)
+        }
+    }
+
+    // MARK: - Connect to Server button
+    fileprivate func toolBarItemConnectToServer() -> ToolbarItem<(), some View> {
+        return ToolbarItem(placement: .automatic) {
+            ToolbarButton(
+                systemImage: "server.rack",
+                help: "Connect to Server (\u{2303}N)"
+            ) {
+                log.debug("Connect to Server button clicked")
+                ConnectToServerCoordinator.shared.toggle()
+            }
         }
     }
 

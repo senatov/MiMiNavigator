@@ -65,6 +65,7 @@ import AppKit
     // NOT triggered when other apps become active — so panel never floats over them
     func applicationDidBecomeActive(_ notification: Notification) {
         NetworkNeighborhoodCoordinator.shared.bringToFront()
+        ConnectToServerCoordinator.shared.bringToFront()
         FindFilesCoordinator.shared.bringToFront()
     }
 
