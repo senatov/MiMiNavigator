@@ -84,9 +84,15 @@ final class NetworkNeighborhoodProvider: NSObject, ObservableObject {
         // Skip router IPs — already found via Bonjour as fritz-box / fritz.repeater
         let routerIPs: Set<String> = ["192.168.178.1", "192.168.178.46"]
         // Build IP→index map for fast lookup (dedup BRW vs Brother by same IP)
+        // Include both raw hostName and stripped .local suffix
         var ipToIdx = [String: Int]()
         for (i, h) in hosts.enumerated() where !h.hostName.isEmpty && !h.hostName.contains("@") {
             ipToIdx[h.hostName] = i
+            // Also index by stripped .local suffix (Bonjour: "kira-macpro.local" → FritzBox: "192.168.178.x")
+            let stripped = h.hostName
+                .replacingOccurrences(of: ".local.", with: "")
+                .replacingOccurrences(of: ".local", with: "")
+            if stripped != h.hostName { ipToIdx[stripped] = i }
         }
 
         for fh in fritzHosts {
@@ -157,13 +163,14 @@ final class NetworkNeighborhoodProvider: NSObject, ObservableObject {
             defer { cur = c.pointee.ifa_next }
             guard let sa = c.pointee.ifa_addr,
                   sa.pointee.sa_family == UInt8(AF_INET) else { continue }
-            var addr = sockaddr_in()
-            withUnsafeMutableBytes(of: &addr) {
-                $0.copyMemory(from: UnsafeRawBufferPointer(UnsafeBufferPointer(start: sa, count: 1)))
+            // Safe sockaddr → sockaddr_in cast via withMemoryRebound
+            let matches = sa.withMemoryRebound(to: sockaddr_in.self, capacity: 1) { sin in
+                var sinCopy = sin.pointee
+                var buf = [CChar](repeating: 0, count: Int(INET_ADDRSTRLEN))
+                inet_ntop(AF_INET, &sinCopy.sin_addr, &buf, socklen_t(INET_ADDRSTRLEN))
+                return String(cString: buf) == ip
             }
-            var buf = [CChar](repeating: 0, count: Int(INET_ADDRSTRLEN))
-            inet_ntop(AF_INET, &addr.sin_addr, &buf, socklen_t(INET_ADDRSTRLEN))
-            if String(cString: buf) == ip { return true }
+            if matches { return true }
         }
         return false
     }
