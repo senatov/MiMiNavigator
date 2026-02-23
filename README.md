@@ -160,7 +160,7 @@ Alternatively: right-click the app → Open → click **Open** in the dialog.
 - Optional: `brew install swiftlint swift-format p7zip`
 
 ```bash
-git clone https://github.com/senatov/MiMiNavigator.git
+git clone --recurse-submodules https://github.com/senatov/MiMiNavigator.git
 cd MiMiNavigator
 open MiMiNavigator.xcodeproj
 # ⌘R to build and run
@@ -219,8 +219,10 @@ MiMiNavigator/
 │   ├── Favorites/          # Favorites sidebar adapter (FavoritesKit bridge)
 │   ├── Models/             # CustomFile, FileCache, SortKeysEnum
 │   └── Config/             # DesignTokens, UserPreferences, AppConstants
-├── Packages/
-│   └── FavoritesKit/       # Reusable favorites module (.dylib)
+├── Packages/               # git submodule → github.com/senatov/MiMiKits (private)
+│   ├── NetworkKit/         # Network neighborhood discovery (SMB/AFP)
+│   ├── FavoritesKit/       # Reusable favorites module (.dylib)
+│   └── LogKit/             # Centralized logging module
 └── Gui/Docs/               # Architecture docs, screenshots
 ```
 
