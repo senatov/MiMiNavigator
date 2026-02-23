@@ -46,6 +46,10 @@ struct MiMiNavigatorApp: App {
                             // Build authenticated URL if password provided
                             var connectURL = url
                             if !password.isEmpty, var components = URLComponents(url: url, resolvingAgainstBaseURL: false) {
+                                // Ensure both user and password are in URL for mount_smbfs
+                                if components.user == nil || components.user?.isEmpty == true {
+                                    components.user = "guest"
+                                }
                                 components.password = password
                                 connectURL = components.url ?? url
                             }
