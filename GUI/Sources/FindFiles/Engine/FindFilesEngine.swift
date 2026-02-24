@@ -3,17 +3,20 @@
 //
 // Created by Iakov Senatov on 10.02.2026.
 // Copyright © 2026 Senatov. All rights reserved.
-// Description: Coordinator actor — orchestrates async file search using modular sub-components
+// Description: Coordinator actor — orchestrates async file search.
+//   Uses /usr/bin/find via Process for accurate, streaming results.
+//   Falls back to archive scanning via FindFilesArchiveSearcher.
+//   Uses FileHandle.bytes for non-blocking async I/O.
 
 import Foundation
 
 // MARK: - Find Files Engine
-/// Async search engine that runs in background and streams results via AsyncStream.
-/// Delegates work to: FindFilesNameMatcher, FindFilesContentSearcher, FindFilesArchiveSearcher.
-/// Supports cancellation via Swift concurrency Task cancellation.
+/// Async search engine that runs /usr/bin/find in background and streams results via AsyncStream.
+/// Supports immediate cancellation — process is killed via SIGKILL without waiting.
 actor FindFilesEngine {
 
     private var currentTask: Task<Void, Never>?
+    private var currentProcess: Process?
     private(set) var stats = FindFilesStats()
 
     // MARK: - Start Search
@@ -24,6 +27,7 @@ actor FindFilesEngine {
         passwordCallback: ArchivePasswordCallback? = nil
     ) -> AsyncStream<FindFilesResult> {
         currentTask?.cancel()
+        terminateProcess()
         stats = FindFilesStats()
         stats.isRunning = true
         stats.startTime = Date()
@@ -50,6 +54,7 @@ actor FindFilesEngine {
     func cancel() {
         currentTask?.cancel()
         currentTask = nil
+        terminateProcess()
         stats.isRunning = false
         log.info("[FindEngine] Search cancelled")
     }
@@ -59,6 +64,16 @@ actor FindFilesEngine {
     func getStats() -> FindFilesStats { stats }
 
     // MARK: - Private
+
+    /// Force-kill the find process immediately (SIGKILL, no waiting)
+    private func terminateProcess() {
+        guard let proc = currentProcess else { return }
+        if proc.isRunning {
+            // SIGKILL for immediate termination — no zombie processes
+            kill(proc.processIdentifier, SIGKILL)
+        }
+        currentProcess = nil
+    }
 
     private func markSearchComplete() {
         stats.isRunning = false
@@ -70,16 +85,15 @@ actor FindFilesEngine {
         continuation: AsyncStream<FindFilesResult>.Continuation,
         passwordCallback: ArchivePasswordCallback?
     ) async {
-        let nameRegex = FindFilesNameMatcher.buildRegex(pattern: criteria.fileNamePattern, caseSensitive: criteria.caseSensitive)
-        let contentPattern = criteria.isContentSearch
-            ? FindFilesContentSearcher.buildPattern(text: criteria.searchText, caseSensitive: criteria.caseSensitive, useRegex: criteria.useRegex)
-            : nil
 
         // Special case: search only inside a single archive file
         if criteria.isArchiveOnlySearch {
             log.info("[FindEngine] Archive-only search: \(criteria.searchDirectory.lastPathComponent)")
             stats.archivesScanned += 1
-
+            let nameRegex = FindFilesNameMatcher.buildRegex(pattern: criteria.fileNamePattern, caseSensitive: criteria.caseSensitive)
+            let contentPattern = criteria.isContentSearch
+                ? FindFilesContentSearcher.buildPattern(text: criteria.searchText, caseSensitive: criteria.caseSensitive, useRegex: criteria.useRegex)
+                : nil
             let delta = await FindFilesArchiveSearcher.searchInsideArchive(
                 archiveURL: criteria.searchDirectory, criteria: criteria, nameRegex: nameRegex,
                 contentPattern: contentPattern, continuation: continuation,
@@ -89,11 +103,13 @@ actor FindFilesEngine {
             return
         }
 
-        // Special case: single regular file — search its text content
+        // Special case: single regular file content search
         if criteria.isSingleFileContentSearch {
             log.info("[FindEngine] Single-file content search: \(criteria.searchDirectory.lastPathComponent)")
             stats.filesScanned += 1
             let fileURL = criteria.searchDirectory
+            let contentPattern = FindFilesContentSearcher.buildPattern(
+                text: criteria.searchText, caseSensitive: criteria.caseSensitive, useRegex: criteria.useRegex)
             if let cp = contentPattern {
                 let contentResults = FindFilesContentSearcher.searchFileContent(fileURL: fileURL, pattern: cp)
                 for result in contentResults {
@@ -102,153 +118,172 @@ actor FindFilesEngine {
                     stats.matchesFound += 1
                 }
             } else {
-                // No text filter — just yield the file itself
                 continuation.yield(FindFilesResult(fileURL: fileURL))
                 stats.matchesFound += 1
             }
             return
         }
 
-        // Normal directory search
-        let fm = FileManager.default
-        await scanDirectory(
-            url: criteria.searchDirectory, criteria: criteria,
-            nameRegex: nameRegex, contentPattern: contentPattern,
-            continuation: continuation, passwordCallback: passwordCallback, fm: fm
-        )
+        // Normal search — use /usr/bin/find for accurate streaming results
+        await runFindCommand(criteria: criteria, continuation: continuation, passwordCallback: passwordCallback)
     }
 
-    private func scanDirectory(
-        url: URL,
-        criteria: FindFilesCriteria,
-        nameRegex: NSRegularExpression?,
-        contentPattern: NSRegularExpression?,
-        continuation: AsyncStream<FindFilesResult>.Continuation,
-        passwordCallback: ArchivePasswordCallback?,
-        fm: FileManager
-    ) async {
-        guard !Task.isCancelled else { return }
+    // MARK: - /usr/bin/find runner
 
-        let keys: [URLResourceKey] = [.isDirectoryKey, .isSymbolicLinkKey, .fileSizeKey, .contentModificationDateKey]
-        guard let enumerator = fm.enumerator(
-            at: url,
-            includingPropertiesForKeys: keys,
-            options: [.skipsPackageDescendants]
-        ) else {
-            log.warning("[FindEngine] Cannot enumerate: \(url.path)")
+    private func runFindCommand(
+        criteria: FindFilesCriteria,
+        continuation: AsyncStream<FindFilesResult>.Continuation,
+        passwordCallback: ArchivePasswordCallback?
+    ) async {
+        let searchRoot = criteria.searchDirectory.path
+        let pattern = criteria.fileNamePattern.isEmpty ? "*" : criteria.fileNamePattern
+
+        // Build find arguments
+        var args: [String] = [searchRoot]
+
+        // Depth
+        if !criteria.searchInSubdirectories {
+            args += ["-maxdepth", "1"]
+        }
+
+        // Name matching
+        if criteria.useRegex {
+            args += ["-E", "-regex", ".*\(pattern).*"]
+        } else {
+            let nameFlag = criteria.caseSensitive ? "-name" : "-iname"
+            args += [nameFlag, pattern]
+        }
+
+        log.info("[FindEngine] Running: find \(args.joined(separator: " "))")
+
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/find")
+        process.arguments = args
+
+        let pipe = Pipe()
+        process.standardOutput = pipe
+        process.standardError = Pipe()
+
+        let contentPattern: NSRegularExpression? = criteria.isContentSearch
+            ? FindFilesContentSearcher.buildPattern(text: criteria.searchText, caseSensitive: criteria.caseSensitive, useRegex: criteria.useRegex)
+            : nil
+
+        let nameRegex: NSRegularExpression? = criteria.useRegex
+            ? nil
+            : FindFilesNameMatcher.buildRegex(pattern: pattern, caseSensitive: criteria.caseSensitive)
+
+        do {
+            try process.run()
+        } catch {
+            log.error("[FindEngine] Failed to launch find: \(error.localizedDescription)")
             return
         }
 
-        // Collect file metadata into Sendable struct to avoid URLResourceValues crossing await
-        var entries: [ScannedFileEntry] = []
-        while let obj = enumerator.nextObject() {
-            guard let fileURL = obj as? URL else { continue }
-            let rv = try? fileURL.resourceValues(forKeys: Set(keys))
-            let isDir = rv?.isDirectory ?? false
-            if isDir {
-                stats.directoriesScanned += 1
-                stats.currentPath = fileURL.path
-                if !criteria.searchInSubdirectories {
-                    enumerator.skipDescendants()
-                }
-                continue
-            }
-            entries.append(ScannedFileEntry(
-                url: fileURL,
-                fileSize: Int64(rv?.fileSize ?? 0),
-                modificationDate: rv?.contentModificationDate
-            ))
-        }
+        currentProcess = process
 
-        log.debug("[FindEngine] Enumerated \(entries.count) files in \(stats.directoriesScanned) dirs under \(url.lastPathComponent)")
+        // Async line-by-line reading using FileHandle.bytes — non-blocking, cancellation-friendly
+        let handle = pipe.fileHandleForReading
+        var lineBuffer = Data()
+        lineBuffer.reserveCapacity(1024)
 
-        // Separate archives from regular files for parallel processing
-        var regularEntries: [ScannedFileEntry] = []
-        var archiveEntries: [ScannedFileEntry] = []
+        do {
+            for try await byte in handle.bytes {
+                guard !Task.isCancelled else { break }
 
-        for entry in entries {
-            // Size filter
-            if let minSize = criteria.fileSizeMin, entry.fileSize < minSize { continue }
-            if let maxSize = criteria.fileSizeMax, entry.fileSize > maxSize { continue }
-            // Date filter
-            if let dateFrom = criteria.dateFrom, let modDate = entry.modificationDate, modDate < dateFrom { continue }
-            if let dateTo = criteria.dateTo, let modDate = entry.modificationDate, modDate > dateTo { continue }
-
-            let ext = entry.url.pathExtension.lowercased()
-            if criteria.searchInArchives && ArchiveExtensions.isArchive(ext) {
-                archiveEntries.append(entry)
-            } else {
-                regularEntries.append(entry)
-            }
-        }
-
-        // Process archives in parallel (up to 4 concurrent archive scans)
-        if !archiveEntries.isEmpty {
-            log.debug("[FindEngine] Scanning \(archiveEntries.count) archives in parallel")
-
-            await withTaskGroup(of: ArchiveSearchDelta.self) { group in
-                let maxConcurrent = 8  // M3 has plenty of cores for I/O-bound archive scanning
-                var launched = 0
-
-                for archiveEntry in archiveEntries {
-                    guard !Task.isCancelled else { break }
-
-                    // Throttle: wait for a slot if we've launched max concurrent tasks
-                    if launched >= maxConcurrent {
-                        if let delta = await group.next() {
-                            stats.matchesFound += delta.matchesFound
-                        }
-                    }
-
-                    group.addTask { @concurrent in
-                        await FindFilesArchiveSearcher.searchInsideArchive(
-                            archiveURL: archiveEntry.url, criteria: criteria,
+                if byte == UInt8(ascii: "\n") {
+                    if let line = String(data: lineBuffer, encoding: .utf8)?
+                        .trimmingCharacters(in: .whitespacesAndNewlines),
+                        !line.isEmpty
+                    {
+                        await processFoundPath(
+                            line, criteria: criteria, continuation: continuation,
                             nameRegex: nameRegex, contentPattern: contentPattern,
-                            continuation: continuation, passwordCallback: passwordCallback)
+                            passwordCallback: passwordCallback
+                        )
                     }
-                    launched += 1
-                    stats.archivesScanned += 1
+                    lineBuffer.removeAll(keepingCapacity: true)
+                } else {
+                    lineBuffer.append(byte)
                 }
-
-                // Collect remaining results
-                for await delta in group {
-                    stats.matchesFound += delta.matchesFound
-                }
+            }
+        } catch {
+            if !Task.isCancelled {
+                log.warning("[FindEngine] Stream reading error: \(error.localizedDescription)")
             }
         }
 
-        // Process regular files sequentially
-        for entry in regularEntries {
-            guard !Task.isCancelled else { return }
+        // Process remaining partial line
+        if !Task.isCancelled, !lineBuffer.isEmpty,
+            let line = String(data: lineBuffer, encoding: .utf8)?
+                .trimmingCharacters(in: .whitespacesAndNewlines),
+            !line.isEmpty
+        {
+            await processFoundPath(
+                line, criteria: criteria, continuation: continuation,
+                nameRegex: nameRegex, contentPattern: contentPattern,
+                passwordCallback: passwordCallback
+            )
+        }
 
-            stats.filesScanned += 1
+        // Cleanup process
+        if process.isRunning {
+            kill(process.processIdentifier, SIGKILL)
+        }
+        currentProcess = nil
+        log.info("[FindEngine] find process exited, matched \(stats.matchesFound)")
+    }
 
-            let fileName = entry.url.lastPathComponent
-            let nameMatches = FindFilesNameMatcher.matches(fileName: fileName, regex: nameRegex, criteria: criteria)
+    // MARK: - Process Single Found Path
 
-            // Content search: name must match AND content must contain text
-            if criteria.isContentSearch {
-                if nameMatches {
-                    let contentResults = FindFilesContentSearcher.searchFileContent(fileURL: entry.url, pattern: contentPattern!)
-                    for result in contentResults {
-                        guard !Task.isCancelled else { return }
-                        continuation.yield(result)
-                        stats.matchesFound += 1
-                    }
-                }
-            } else {
-                // Name-only search
-                if nameMatches {
-                    let result = FindFilesResult(fileURL: entry.url)
-                    continuation.yield(result)
-                    stats.matchesFound += 1
-                }
+    private func processFoundPath(
+        _ line: String,
+        criteria: FindFilesCriteria,
+        continuation: AsyncStream<FindFilesResult>.Continuation,
+        nameRegex: NSRegularExpression?,
+        contentPattern: NSRegularExpression?,
+        passwordCallback: ArchivePasswordCallback?
+    ) async {
+        let fileURL = URL(fileURLWithPath: line)
+
+        var isDir: ObjCBool = false
+        let exists = FileManager.default.fileExists(atPath: line, isDirectory: &isDir)
+        guard exists else { return }
+
+        stats.filesScanned += 1
+        stats.currentPath = fileURL.deletingLastPathComponent().path
+
+        if isDir.boolValue {
+            stats.directoriesScanned += 1
+            let result = FindFilesResult(fileURL: fileURL)
+            continuation.yield(result)
+            stats.matchesFound += 1
+            return
+        }
+
+        // Archive: optionally search inside
+        if criteria.searchInArchives && ArchiveExtensions.isArchive(fileURL.pathExtension.lowercased()) {
+            stats.archivesScanned += 1
+            let delta = await FindFilesArchiveSearcher.searchInsideArchive(
+                archiveURL: fileURL, criteria: criteria,
+                nameRegex: nameRegex, contentPattern: contentPattern,
+                continuation: continuation, passwordCallback: passwordCallback
+            )
+            stats.matchesFound += delta.matchesFound
+            return
+        }
+
+        // Content search
+        if criteria.isContentSearch, let cp = contentPattern {
+            let contentResults = FindFilesContentSearcher.searchFileContent(fileURL: fileURL, pattern: cp)
+            for res in contentResults {
+                guard !Task.isCancelled else { return }
+                continuation.yield(res)
+                stats.matchesFound += 1
             }
-
-            // Yield control periodically
-            if stats.filesScanned % 200 == 0 {
-                await Task.yield()
-            }
+        } else {
+            let result = FindFilesResult(fileURL: fileURL)
+            continuation.yield(result)
+            stats.matchesFound += 1
         }
     }
 }
