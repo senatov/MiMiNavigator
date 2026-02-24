@@ -15,14 +15,16 @@ struct PanelBackgroundContextMenu: View {
     let onAction: (PanelBackgroundAction) -> Void
     var canGoBack: Bool = false
     var canGoForward: Bool = false
+    /// True when marked files contain at least one directory
+    var hasMarkedDirectories: Bool = false
     
-    init(panelSide: PanelSide, currentPath: URL, canGoBack: Bool = false, canGoForward: Bool = false, onAction: @escaping (PanelBackgroundAction) -> Void) {
+    init(panelSide: PanelSide, currentPath: URL, canGoBack: Bool = false, canGoForward: Bool = false, hasMarkedDirectories: Bool = false, onAction: @escaping (PanelBackgroundAction) -> Void) {
         self.panelSide = panelSide
         self.currentPath = currentPath
         self.canGoBack = canGoBack
         self.canGoForward = canGoForward
+        self.hasMarkedDirectories = hasMarkedDirectories
         self.onAction = onAction
-
     }
     
     var body: some View {
@@ -75,7 +77,17 @@ struct PanelBackgroundContextMenu: View {
             Divider()
             
             // ═══════════════════════════════════════════
-            // SECTION 6: Info
+            // SECTION 6: Cross-panel
+            // ═══════════════════════════════════════════
+            menuButton(.mirrorPath)
+            if hasMarkedDirectories {
+                menuButton(.openMarkedOnOtherPanel)
+            }
+
+            Divider()
+            
+            // ═══════════════════════════════════════════
+            // SECTION 7: Info
             // ═══════════════════════════════════════════
             menuButton(.getInfo)
         }

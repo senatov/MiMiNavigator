@@ -70,6 +70,12 @@ extension ContextMenuCoordinator {
             case .openInTerminal:
                 openTerminal(at: currentPath)
 
+            case .mirrorPath:
+                mirrorPathToOtherPanel(panel, appState: appState)
+
+            case .openMarkedOnOtherPanel:
+                openFirstMarkedDirectoryOnOtherPanel(panel, appState: appState)
+
             case .getInfo:
                 GetInfoService.shared.showGetInfo(for: currentPath)
         }
@@ -150,6 +156,38 @@ extension ContextMenuCoordinator {
             log.error("\(#function) FAILED: \(error.localizedDescription)")
             activeDialog = .error(title: "Create File Failed", message: error.localizedDescription)
         }
+    }
+
+    // MARK: - Cross-Panel Operations
+
+    /// Mirror current panel's path to the opposite panel
+    func mirrorPathToOtherPanel(_ panel: PanelSide, appState: AppState) {
+        let currentPath = getDestinationPath(for: panel, appState: appState)
+        let otherPanel: PanelSide = panel == .left ? .right : .left
+        log.info("[MirrorPath] '\(currentPath.path)' → panel=\(otherPanel)")
+        navigateTo(currentPath, panel: otherPanel, appState: appState)
+    }
+
+    /// Open the first marked directory on the opposite panel
+    func openFirstMarkedDirectoryOnOtherPanel(_ panel: PanelSide, appState: AppState) {
+        let markedDirs = appState.markedCustomFiles(for: panel).filter { $0.isDirectory }
+        guard let firstDir = markedDirs.first else {
+            log.warning("[OpenMarkedOnOther] no marked directories on \(panel)")
+            return
+        }
+
+        let resolvedURL = firstDir.urlValue.resolvingSymlinksInPath()
+        let targetPath = resolvedURL.path
+
+        var isDir: ObjCBool = false
+        guard FileManager.default.fileExists(atPath: targetPath, isDirectory: &isDir), isDir.boolValue else {
+            log.warning("[OpenMarkedOnOther] not a valid directory: '\(targetPath)'")
+            return
+        }
+
+        let otherPanel: PanelSide = panel == .left ? .right : .left
+        log.info("[OpenMarkedOnOther] dir='\(firstDir.nameStr)' → panel=\(otherPanel)")
+        navigateTo(resolvedURL, panel: otherPanel, appState: appState)
     }
 
     // MARK: - Terminal

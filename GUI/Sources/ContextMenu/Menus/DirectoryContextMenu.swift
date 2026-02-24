@@ -69,7 +69,14 @@ struct DirectoryContextMenu: View {
             Divider()
 
             // ═══════════════════════════════════════════
-            // SECTION 6: Favorites
+            // SECTION 6: Cross-panel
+            // ═══════════════════════════════════════════
+            menuButton(.openOnOtherPanel)
+
+            Divider()
+
+            // ═══════════════════════════════════════════
+            // SECTION 7: Favorites
             // ═══════════════════════════════════════════
             menuButton(.addToFavorites)
         }
