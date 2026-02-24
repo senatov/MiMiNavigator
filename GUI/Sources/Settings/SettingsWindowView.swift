@@ -16,6 +16,14 @@ struct SettingsWindowView: View {
     @State private var selectedSection: SettingsSection = .general
     @Environment(\.colorScheme) private var colorScheme
 
+    private var dialogBgColor: Color {
+        let store = ColorThemeStore.shared
+        if !store.hexDialogBackground.isEmpty, let c = Color(hex: store.hexDialogBackground) {
+            return c
+        }
+        return store.activeTheme.dialogBackground
+    }
+
     // MARK: - Body
     var body: some View {
         HSplitView {
@@ -26,6 +34,7 @@ struct SettingsWindowView: View {
                 .frame(minWidth: 400)
         }
         .frame(minWidth: 600, minHeight: 440)
+        .background(dialogBgColor.ignoresSafeArea())
     }
 
     // MARK: - Sidebar
