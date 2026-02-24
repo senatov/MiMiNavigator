@@ -17,7 +17,8 @@ struct SettingsPermissionsPane: View {
     @State private var authorizedFolders: [AuthorizedFolder] = []
     @State private var hasFullDiskAccess: Bool = false
     @State private var isCheckingAccess: Bool = true
-    @State private var hoveredFolderID: UUID? = nil
+    @State private var hoveredFolderID: String? = nil
+    @State private var selectedFolderID: String? = nil
 
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
@@ -79,14 +80,14 @@ struct SettingsPermissionsPane: View {
                         Divider().frame(height: 18).padding(.horizontal, 1)
 
                         Button {
-                            removeSelectedFolder()
+                        removeSelectedFolder()
                         } label: {
-                            Image(systemName: "minus")
-                                .frame(width: 28, height: 22)
+                        Image(systemName: "minus")
+                        .frame(width: 28, height: 22)
                         }
                         .buttonStyle(.bordered)
                         .controlSize(.small)
-                        .disabled(authorizedFolders.isEmpty)
+                        .disabled(selectedFolderID == nil)
                         .help("Remove selected folder permission")
                     }
                 }
@@ -192,32 +193,38 @@ struct SettingsPermissionsPane: View {
     // MARK: - Folder Row
 
     private func folderRow(_ folder: AuthorizedFolder) -> some View {
-        HStack(spacing: 10) {
+        let isSelected = selectedFolderID == folder.id
+        return HStack(spacing: 10) {
             Image(systemName: "folder.fill")
                 .font(.system(size: 14))
-                .foregroundStyle(Color.accentColor)
+                .foregroundStyle(isSelected ? Color.white : Color.accentColor)
                 .frame(width: 20)
 
             VStack(alignment: .leading, spacing: 1) {
                 Text(folder.displayName)
                     .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(isSelected ? Color.white : Color.primary)
                 Text(folder.path)
                     .font(.system(size: 11))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(isSelected ? Color.white.opacity(0.8) : Color.secondary)
                     .lineLimit(1)
                     .truncationMode(.middle)
             }
 
             Spacer()
 
-            // Status
             Image(systemName: folder.isAccessible ? "checkmark.circle" : "xmark.circle")
                 .font(.system(size: 12))
-                .foregroundStyle(folder.isAccessible ? Color.green : Color.red)
+                .foregroundStyle(folder.isAccessible
+                    ? (isSelected ? Color.white : Color.green)
+                    : (isSelected ? Color.white : Color.red))
                 .help(folder.isAccessible ? "Accessible" : "Bookmark expired — re-authorize")
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 7)
+        .background(isSelected ? Color.accentColor : Color.clear)
+        .contentShape(Rectangle())
+        .onTapGesture { selectedFolderID = folder.id }
         .onHover { hoveredFolderID = $0 ? folder.id : nil }
     }
 
@@ -278,7 +285,6 @@ struct SettingsPermissionsPane: View {
         authorizedFolders = dict.keys.sorted().map { path in
             let accessible = FileManager.default.isReadableFile(atPath: path)
             return AuthorizedFolder(
-                id: UUID(),
                 path: path,
                 displayName: URL(fileURLWithPath: path).lastPathComponent,
                 isAccessible: accessible
@@ -295,13 +301,14 @@ struct SettingsPermissionsPane: View {
     }
 
     private func removeSelectedFolder() {
-        guard let last = authorizedFolders.last else { return }
-        // Remove from UserDefaults directly (BookmarkStore has no remove API yet)
+        guard let selID = selectedFolderID,
+              let folder = authorizedFolders.first(where: { $0.id == selID }) else { return }
         var dict = (UserDefaults.standard.dictionary(forKey: "FavoritesKit.Bookmarks.v1") as? [String: Data]) ?? [:]
-        dict.removeValue(forKey: last.path)
+        dict.removeValue(forKey: folder.path)
         UserDefaults.standard.set(dict, forKey: "FavoritesKit.Bookmarks.v1")
+        selectedFolderID = nil
         loadAuthorizedFolders()
-        log.info("[Permissions] removed folder '\(last.path)'")
+        log.info("[Permissions] removed folder '\(folder.path)'")
     }
 
     private func checkFullDiskAccess() {
@@ -327,7 +334,8 @@ struct SettingsPermissionsPane: View {
 // MARK: - AuthorizedFolder model
 
 struct AuthorizedFolder: Identifiable {
-    let id: UUID
+    /// Stable ID based on path — consistent across reloads
+    var id: String { path }
     let path: String
     let displayName: String
     let isAccessible: Bool
