@@ -6,6 +6,7 @@
 // Description: Detects archive format from file extension — maps to ArchiveFormat enum
 
 import Foundation
+import FileModelKit
 
 // MARK: - Archive Format Detector
 /// Determines the ArchiveFormat for a given file URL based on extension and compound names.

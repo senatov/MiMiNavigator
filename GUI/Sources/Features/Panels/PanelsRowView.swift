@@ -6,6 +6,7 @@
 // Description: Horizontal layout of left panel + divider + right panel
 
 import SwiftUI
+import FileModelKit
 
 // MARK: - PanelsRowView
 /// Arranges two FilePanelViews side by side with a draggable divider between them.

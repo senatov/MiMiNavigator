@@ -11,6 +11,7 @@
 //   - FileTableView+State.swift      → State management (columns, sorting)
 
 import SwiftUI
+import FileModelKit
 import UniformTypeIdentifiers
 
 // MARK: - File Table View

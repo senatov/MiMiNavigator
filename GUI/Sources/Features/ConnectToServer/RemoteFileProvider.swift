@@ -7,6 +7,7 @@
 //   FTPFileProvider  — built-in URLSession, no dependencies.
 
 import Foundation
+import FileModelKit
 #if canImport(Citadel)
 import Citadel
 #endif

@@ -6,6 +6,7 @@
 // Description: Status bar showing marked files count, disk space, and inline file filter
 
 import SwiftUI
+import FileModelKit
 
 // MARK: - Selection Status Bar
 /// Shows disk space / marked files info + inline filter at the bottom of each panel

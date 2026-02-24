@@ -6,6 +6,7 @@
 // Description: Manages tabs for a single panel — add, remove, select, persist
 
 import Foundation
+import FileModelKit
 
 // MARK: - Tab Manager
 /// Manages an ordered collection of tabs for one panel side.

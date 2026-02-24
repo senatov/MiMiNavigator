@@ -6,6 +6,7 @@
 // Description: Encapsulates the selected file system entity and persistence
 
 import Foundation
+import FileModelKit
 
 // MARK: - Directory Selection State
 /// Observable class that encapsulates the selected file system entity

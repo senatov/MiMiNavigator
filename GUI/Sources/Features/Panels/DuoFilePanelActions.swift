@@ -6,6 +6,7 @@
 // Description: File operation actions for the dual-panel view
 
 import AppKit
+import FileModelKit
 import Foundation
 
 /// File operation actions performed from DuoFilePanelView

@@ -6,6 +6,7 @@
 // Description: Dialog types for context menu coordinator
 
 import Foundation
+import FileModelKit
 
 // MARK: - Active Dialog Type
 /// Represents different dialog types that can be shown by the coordinator

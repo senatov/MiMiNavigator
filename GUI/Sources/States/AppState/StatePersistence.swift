@@ -6,6 +6,7 @@
 // Description: Save and restore app state to/from UserDefaults
 
 import Foundation
+import FileModelKit
 
 // MARK: - State Persistence
 /// Handles saving and restoring application state

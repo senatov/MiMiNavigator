@@ -5,6 +5,7 @@
 //  Copyright © 2024 Senatov. All rights reserved.
 
 import AppKit
+import FileModelKit
 import SwiftUI
 import UniformTypeIdentifiers
 

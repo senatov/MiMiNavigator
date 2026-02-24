@@ -5,6 +5,7 @@
 //  Copyright © 2026 Senatov. All rights reserved.
 
 import Foundation
+import FileModelKit
 import SwiftUI
 
 // MARK: - Clipboard Operation Type

@@ -6,6 +6,7 @@
 // Description: Manages file selection state and history for both panels
 
 import Foundation
+import FileModelKit
 
 // MARK: - Selection Manager
 /// Handles all selection-related operations for dual-panel file manager

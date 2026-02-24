@@ -6,6 +6,7 @@
 // Description: Total Commander style multi-selection management
 
 import Foundation
+import FileModelKit
 import AppKit
 
 // MARK: - Multi Selection Manager

@@ -6,6 +6,7 @@
 // Description: Coordinates batch operations between UI and BatchOperationManager
 
 import Foundation
+import FileModelKit
 
 // MARK: - Batch Operation Coordinator
 /// Handles batch operation requests from toolbar/shortcuts, shows confirmations and progress

@@ -5,6 +5,7 @@
 //  Copyright © 2026 Senatov. All rights reserved.
 
 import SwiftUI
+import FileModelKit
 
 // MARK: - macOS Word-Einstellungen style gray palette
 /// Three static gray tones matching macOS Settings / Word-Einstellungen dialogs:

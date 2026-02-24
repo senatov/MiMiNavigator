@@ -6,6 +6,7 @@
 // Description: Confirmation dialogs for file operations
 
 import AppKit
+import FileModelKit
 import Foundation
 
 enum FileDialogs {

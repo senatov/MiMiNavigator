@@ -6,6 +6,7 @@
 // Description: State tracking for batch file operations with progress
 
 import Foundation
+import FileModelKit
 
 // MARK: - Batch Operation Type
 enum BatchOperationType: String, Sendable {

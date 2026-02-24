@@ -7,6 +7,7 @@
 //
 
 import SwiftUI
+import FileModelKit
 import UniformTypeIdentifiers
 
 /// Manages drag-and-drop operations between panels

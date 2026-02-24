@@ -13,6 +13,7 @@
 //   - FileOperationExecutors.swift    → Async file operations
 
 import AppKit
+import FileModelKit
 import SwiftUI
 
 // MARK: - Context Menu Coordinator

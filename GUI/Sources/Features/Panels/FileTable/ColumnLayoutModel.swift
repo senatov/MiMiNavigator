@@ -8,6 +8,7 @@
 //              and full persistence in UserDefaults per panel side.
 
 import SwiftUI
+import FileModelKit
 
 // MARK: - Column Identity
 

@@ -6,6 +6,7 @@
 // Description: Horizontal tab bar above breadcrumb navigation — shows all tabs for one panel
 
 import SwiftUI
+import FileModelKit
 
 // MARK: - Tab Bar View
 /// Horizontal scrollable tab bar displayed above the breadcrumb in each panel.

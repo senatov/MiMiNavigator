@@ -6,6 +6,7 @@
 // Description: Confirmation dialog for batch file operations
 
 import SwiftUI
+import FileModelKit
 
 // MARK: - Batch Confirmation Dialog
 /// Shows confirmation before batch copy/move/delete operations

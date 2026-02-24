@@ -6,6 +6,7 @@
 // Description: Context menu for multiple selected files/directories
 
 import SwiftUI
+import FileModelKit
 
 // MARK: - Multi Selection Context Menu
 /// Context menu shown when multiple files are marked (selected).

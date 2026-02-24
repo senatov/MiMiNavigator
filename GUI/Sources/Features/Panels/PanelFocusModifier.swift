@@ -7,6 +7,7 @@
 //
 
 import AppKit
+import FileModelKit
 import SwiftUI
 
 // MARK: - PanelFocusModifier

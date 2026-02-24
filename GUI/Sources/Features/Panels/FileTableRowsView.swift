@@ -5,6 +5,7 @@
 //  Copyright © 2024-2026 Senatov. All rights reserved.
 
 import SwiftUI
+import FileModelKit
 
 // MARK: - Renders LazyVStack of file rows
 struct FileTableRowsView: View {

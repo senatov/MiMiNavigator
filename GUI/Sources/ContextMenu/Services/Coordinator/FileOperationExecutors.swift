@@ -6,6 +6,7 @@
 // Description: Executes file operations (delete, rename, duplicate, compress, pack, etc.)
 
 import AppKit
+import FileModelKit
 import Foundation
 
 // MARK: - File Operation Executors

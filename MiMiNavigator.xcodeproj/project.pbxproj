@@ -15,6 +15,9 @@
 		AA000003AA000003AA000003 /* LogKit in Frameworks */ = {isa = PBXBuildFile; productRef = AA000002AA000002AA000002 /* LogKit */; };
 		CC000003CC000003CC000003 /* Citadel in Frameworks */ = {isa = PBXBuildFile; productRef = CC000002CC000002CC000002 /* Citadel */; };
 		FF82030CE1584192AE6E4DEA /* NetworkKit in Frameworks */ = {isa = PBXBuildFile; productRef = 52D4533F441E4D78BD910304 /* NetworkKit */; };
+		BB000003BB000003BB000003 /* FileModelKit in Frameworks */ = {isa = PBXBuildFile; productRef = BB000002BB000002BB000002 /* FileModelKit */; };
+		DD000003DD000003DD000003 /* ArchiveKit in Frameworks */ = {isa = PBXBuildFile; productRef = DD000002DD000002DD000002 /* ArchiveKit */; };
+		EE000003EE000003EE000003 /* ScannerKit in Frameworks */ = {isa = PBXBuildFile; productRef = EE000002EE000002EE000002 /* ScannerKit */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -90,6 +93,9 @@
 				97ECF2AD2F224FA5005A6EFB /* FavoritesKit in Frameworks */,
 				FF82030CE1584192AE6E4DEA /* NetworkKit in Frameworks */,
 				AA000003AA000003AA000003 /* LogKit in Frameworks */,
+				BB000003BB000003BB000003 /* FileModelKit in Frameworks */,
+				DD000003DD000003DD000003 /* ArchiveKit in Frameworks */,
+				EE000003EE000003EE000003 /* ScannerKit in Frameworks */,
 				97D9156C2CD5625D00EB5FDD /* SwiftyBeaver in Frameworks */,
 				97B3D6382DCA54B9002F1DB7 /* SystemPackage in Frameworks */,
 				97D128762DB62DD400274684 /* FilesProvider in Frameworks */,
@@ -157,6 +163,9 @@
 				971A28F82F1B140900094ADE /* FavoritesKit */,
 				52D4533F441E4D78BD910304 /* NetworkKit */,
 				AA000002AA000002AA000002 /* LogKit */,
+				BB000002BB000002BB000002 /* FileModelKit */,
+				DD000002DD000002DD000002 /* ArchiveKit */,
+				EE000002EE000002EE000002 /* ScannerKit */,
 				CC000002CC000002CC000002 /* Citadel */,
 			);
 			productName = MiMiNavigator;
@@ -683,6 +692,18 @@
 		AA000001AA000001AA000001 /* XCLocalSwiftPackageReference "Packages/LogKit" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/LogKit;
+		};
+		BB000001BB000001BB000001 /* XCLocalSwiftPackageReference "Packages/FileModelKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/FileModelKit;
+		};
+		DD000001DD000001DD000001 /* XCLocalSwiftPackageReference "Packages/ArchiveKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/ArchiveKit;
+		};
+		EE000001EE000001EE000001 /* XCLocalSwiftPackageReference "Packages/ScannerKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/ScannerKit;
 		};
 /* End XCLocalSwiftPackageReference section */
 

@@ -8,6 +8,7 @@
 //   Thread-safe: @MainActor for UI state, provider calls via Task.
 
 import Foundation
+import FileModelKit
 
 // MARK: - Connection state for a single remote session
 struct RemoteConnection: Identifiable {

@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import FileModelKit
 
 /// Represents a pending file transfer operation
 struct FileTransferOperation: Identifiable, Equatable {

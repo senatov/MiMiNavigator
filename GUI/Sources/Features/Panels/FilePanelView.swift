@@ -6,6 +6,7 @@
 //
 
 import AppKit
+import FileModelKit
 import SwiftUI
 
 // MARK: - File panel view for one side (left or right)

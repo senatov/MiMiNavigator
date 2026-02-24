@@ -6,6 +6,7 @@
 // Description: Inline file filter — HIG-style search field + history popover with per-item delete
 
 import AppKit
+import FileModelKit
 import SwiftUI
 
 // MARK: - Main SwiftUI view

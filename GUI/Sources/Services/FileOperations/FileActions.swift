@@ -6,6 +6,7 @@
 // Description: Facade API for file operations (delegates to specialized modules)
 
 import AppKit
+import FileModelKit
 import Foundation
 
 /// Facade providing unified API for file operations

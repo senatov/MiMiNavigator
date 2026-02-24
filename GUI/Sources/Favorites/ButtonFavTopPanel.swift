@@ -7,6 +7,7 @@
 // Copyright © 2026 Senatov. All rights reserved.
 
 import AppKit
+import FileModelKit
 import FavoritesKit
 import SwiftUI
 

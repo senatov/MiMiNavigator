@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import FileModelKit
 
 // MARK: - Reusable path control component with edit mode, integrated with AppState.
 struct BreadCrumbControlWrapper: View {
