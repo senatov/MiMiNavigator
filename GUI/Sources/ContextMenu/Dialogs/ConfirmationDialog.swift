@@ -14,6 +14,7 @@ import FileModelKit
 ///   dialogStripe #E7E7E7 — contrast stripes, divider areas
 /// Dynamic dialog colors — driven by ColorThemeStore.
 /// When theme changes in Settings → Colors, all dialogs update immediately.
+@MainActor
 enum DialogColors {
     /// Section headers, card backgrounds
     static var light: Color {
