@@ -270,7 +270,7 @@ struct MiMiNavigatorApp: App {
         return ToolbarItem(placement: .automatic) {
             ToolbarButton(
                 systemImage: "doc.text.magnifyingglass",
-                help: "Compare selected items in both panels via FileMerge (opendiff)"
+                help: "Compare selected items in both panels (⌘D) — tool configured in Settings → Diff Tool"
             ) {
                 log.debug("Compare button clicked")
                 compareItems()
@@ -454,57 +454,67 @@ struct MiMiNavigatorApp: App {
         }
     }
 
+    /// Launch diff tool chosen in Settings → Diff Tool.
+    /// Uses DiffToolRegistry.shared — respects user selection, falls back by priority.
+    @MainActor
     private func launchDiffTool(left: String, right: String) {
         log.debug("\(#function) left=\(left) right=\(right)")
         let leftURL  = URL(fileURLWithPath: left).standardized
         let rightURL = URL(fileURLWithPath: right).standardized
         var isDir: ObjCBool = false
-        let comparingDirs = FileManager.default.fileExists(atPath: leftURL.path, isDirectory: &isDir) && isDir.boolValue
+        let comparingDirs = FileManager.default.fileExists(atPath: leftURL.path,
+                                                           isDirectory: &isDir) && isDir.boolValue
+        let scope: DiffToolScope = comparingDirs ? .dirsOnly : .filesOnly
+        let registry = DiffToolRegistry.shared
 
-        if comparingDirs {
-            // Directories → DiffMerge (two-panel dir comparison)
-            let diffMergeCandidates = [
-                "/Applications/DiffMerge.app",
-                "\(NSHomeDirectory())/Applications/DiffMerge.app",
-            ]
-            if let diffMergeApp = diffMergeCandidates.first(where: { FileManager.default.fileExists(atPath: $0) }) {
-                let diffMergeBin = "\(diffMergeApp)/Contents/MacOS/DiffMerge"
-                // Remove macOS quarantine attributes silently — required after brew install
-                Self.removeQuarantine(atPath: diffMergeApp)
-                // Apply saved preferences if not yet configured
-                Self.applyDiffMergeConfigIfNeeded()
-                let task = Process()
-                task.executableURL = URL(fileURLWithPath: diffMergeBin)
-                task.arguments = ["--nosplash", leftURL.path, rightURL.path]
-                do {
-                    try task.run()
-                    log.info("[Compare] launched DiffMerge from \(diffMergeApp) ✓")
-                    Self.waitForAppReady(processName: "DiffMerge", frame: NSApp.mainWindow?.frame)
-                    return
-                } catch {
-                    log.error("[Compare] DiffMerge: \(error.localizedDescription)")
-                }
-            }
-            // Fallback for dirs
-            Self.offerInstallDiffMerge()
-        } else {
-            // Files → FileMerge via opendiff
-            let opendiff = "/usr/bin/opendiff"
-            if FileManager.default.fileExists(atPath: opendiff) {
-                let task = Process()
-                task.executableURL = URL(fileURLWithPath: opendiff)
-                task.arguments = [leftURL.path, rightURL.path]
-                do {
-                    try task.run()
-                    log.info("[Compare] launched FileMerge (files) ✓")
-                    Self.waitForAppReady(processName: "FileMerge", frame: NSApp.mainWindow?.frame)
-                    return
-                } catch {
-                    log.error("[Compare] opendiff: \(error.localizedDescription)")
-                }
-            }
-            // Fallback for files
-            Self.offerInstallXcode()
+        guard let tool = registry.resolveTool(for: scope) else {
+            log.warning("[Compare] no tool available for scope=\(scope)")
+            Self.offerNoToolInstalled(comparingDirs: comparingDirs)
+            return
+        }
+
+        log.info("[Compare] using '\(tool.name)' binary=\(tool.resolvedBinary)")
+
+        // DiffMerge special handling: quarantine strip + config apply
+        if tool.id == "diffmerge" {
+            Self.removeQuarantine(atPath: tool.appPath)
+            Self.applyDiffMergeConfigIfNeeded()
+        }
+
+        let args = tool.buildArgs(left: leftURL.path, right: rightURL.path)
+        let task = Process()
+        task.executableURL = URL(fileURLWithPath: tool.resolvedBinary)
+        task.arguments = args
+        do {
+            try task.run()
+            log.info("[Compare] launched \(tool.name) ✓  args=\(args)")
+            Self.waitForAppReady(processName: tool.processName, frame: NSApp.mainWindow?.frame)
+        } catch {
+            log.error("[Compare] \(tool.name) failed: \(error.localizedDescription)")
+            Self.offerNoToolInstalled(comparingDirs: comparingDirs)
+        }
+    }
+
+    /// Show install hint when no working diff tool is found.
+    @MainActor
+    private static func offerNoToolInstalled(comparingDirs: Bool) {
+        let alert = NSAlert()
+        alert.messageText = comparingDirs ? "No Directory Diff Tool Found" : "No File Diff Tool Found"
+        alert.informativeText = """
+            No suitable diff tool is installed or enabled.
+
+            Recommended free options:
+            • DiffMerge  —  brew install --cask diffmerge
+            • Beyond Compare  —  scootersoftware.com
+            • Kaleidoscope  —  App Store
+
+            Configure tools in Settings (⌘,) → Diff Tool.
+            """
+        alert.alertStyle = .informational
+        alert.addButton(withTitle: "Open Settings")
+        alert.addButton(withTitle: "Cancel")
+        if alert.runModal() == .alertFirstButtonReturn {
+            SettingsCoordinator.shared.toggle()
         }
     }
 
