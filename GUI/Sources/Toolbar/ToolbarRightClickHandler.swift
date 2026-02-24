@@ -52,14 +52,17 @@ final class ToolbarRightClickMonitor {
 
         let y       = event.locationInWindow.y
         let windowH = window.frame.height
+        let scale   = window.backingScaleFactor  // 2.0 on Retina
 
-        // Log analysis: contentView.maxY == windowH (SwiftUI fills entire window).
-        // Toolbar is physically at the TOP of the window.
-        // Standard unifiedCompact toolbar = ~52pt; use 60pt margin.
-        let toolbarZoneBottom = windowH - 60
+        // Toolbar height in points = 52pt standard unifiedCompact.
+        // event.locationInWindow is in POINTS, window.frame is in POINTS.
+        // But log showed windowH=1318 which suggests backing coordinates.
+        // Safe fix: use 52pt * scale to match whatever coordinate space we're in.
+        let toolbarPt: CGFloat = 52
+        let toolbarZoneBottom = windowH - (toolbarPt * scale)
         let inToolbar = y >= toolbarZoneBottom
 
-        log.debug("[ToolbarRightClick] click y=\(Int(y)) windowH=\(Int(windowH)) threshold=\(Int(toolbarZoneBottom)) hit=\(inToolbar)")
+        log.debug("[ToolbarRightClick] click y=\(Int(y)) windowH=\(Int(windowH)) scale=\(scale) threshold=\(Int(toolbarZoneBottom)) hit=\(inToolbar)")
 
         guard inToolbar else { return }
 
