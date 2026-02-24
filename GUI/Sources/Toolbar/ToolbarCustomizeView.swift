@@ -235,12 +235,12 @@ private struct TCV_Palette: View {
     @Binding var dragPreview: ToolbarItemID?
     @Binding var dragPool:    ToolbarItemID?
 
+    // orderedIDs без fixed-элементов; menuBarToggle показывается отдельно внизу
     private var items: [ToolbarItemID] {
-        guard !filterText.isEmpty else { return store.orderedIDs }
+        let all = store.orderedIDs.filter { !$0.isFixed }
+        guard !filterText.isEmpty else { return all }
         let q = filterText.lowercased()
-        return store.orderedIDs.filter {
-            $0.label.lowercased().contains(q) || $0.helpText.lowercased().contains(q)
-        }
+        return all.filter { $0.label.lowercased().contains(q) || $0.helpText.lowercased().contains(q) }
     }
 
     var body: some View {
@@ -259,6 +259,8 @@ private struct TCV_Palette: View {
                             return NSItemProvider(object: item.rawValue as NSString)
                         }
                 }
+                // Fixed item — locked, always shown at end of palette
+                TCV_PaletteCell(item: .menuBarToggle, store: store)
             }
             .padding(10)
         }
@@ -272,12 +274,12 @@ private struct TCV_PaletteCell: View {
     let item:  ToolbarItemID
     let store: ToolbarStore
 
-    private var isVisible:    Bool { store.visibleIDs.contains(item) }
-    private var isLastOne:    Bool { isVisible && store.visibleItems.count == 1 }
+    private var isVisible: Bool { item.isFixed || store.visibleIDs.contains(item) }
+    private var isLastOne: Bool  { !item.isFixed && isVisible && store.visibleItems.count == 1 }
 
     var body: some View {
         Button {
-            guard !isLastOne else { return }
+            guard !item.isFixed, !isLastOne else { return }
             store.toggleVisibility(item)
         } label: {
             VStack(spacing: 4) {
@@ -297,9 +299,10 @@ private struct TCV_PaletteCell: View {
                         .symbolRenderingMode(.hierarchical)
                         .foregroundStyle(isVisible ? Color.accentColor : Color.secondary.opacity(0.45))
                         .frame(width: 44, height: 36)
-                    Image(systemName: isVisible ? "checkmark.circle.fill" : "circle")
+                    // Lock badge for fixed items; checkmark for toggleable
+                    Image(systemName: item.isFixed ? "lock.fill" : (isVisible ? "checkmark.circle.fill" : "circle"))
                         .font(.system(size: 11))
-                        .foregroundStyle(isVisible ? Color.accentColor : Color.secondary.opacity(0.4))
+                        .foregroundStyle(item.isFixed ? Color.orange : (isVisible ? Color.accentColor : Color.secondary.opacity(0.4)))
                         .offset(x: 5, y: -5)
                 }
                 Text(item.label)
@@ -312,7 +315,8 @@ private struct TCV_PaletteCell: View {
         }
         .buttonStyle(.plain)
         .opacity(isVisible ? 1.0 : 0.6)
-        .help(isLastOne ? "At least one button must be visible" : item.helpText)
+        .help(item.isFixed ? "Always in toolbar (cannot be removed)" :
+              isLastOne   ? "At least one button must be visible" : item.helpText)
         .animation(.easeInOut(duration: 0.15), value: isVisible)
     }
 }

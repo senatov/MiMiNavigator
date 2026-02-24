@@ -60,8 +60,9 @@ final class ToolbarStore {
     static let minVisibleCount = 1
 
     /// Toggle visibility of a single item.
-    /// Refuses to hide if this is the last visible button.
+    /// Refuses to hide fixed items or if this is the last visible button.
     func toggleVisibility(_ id: ToolbarItemID) {
+        guard !id.isFixed else { return }  // fixed items are always visible
         if visibleIDs.contains(id) {
             guard visibleIDs.count > ToolbarStore.minVisibleCount else {
                 log.warning("[Toolbar] cannot hide \(id.rawValue) — minimum 1 visible")

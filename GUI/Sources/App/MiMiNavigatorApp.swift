@@ -111,10 +111,7 @@ struct MiMiNavigatorApp: App {
                     }
                 }
                 .toolbar {
-                    // MARK: Dynamic toolbar — visibility driven by ToolbarStore
-                    // SwiftUI toolbar builder does not support ForEach;
-                    // each slot is guarded by if-visible so order follows ToolbarStore.orderedIDs.
-                    AppToolbarContent(app: self)
+                    AppToolbarContent(app: self)  // menuBarToggle included inside
                     toolBarItemBuildInfo()
                 }
                 // ToolbarRightClickMonitor started in AppDelegate.applicationDidFinishLaunching
@@ -277,6 +274,21 @@ struct MiMiNavigatorApp: App {
                 log.debug("Compare button clicked")
                 compareItems()
             }
+        }
+    }
+
+    // MARK: - Menu Bar toggle — fixed, always in toolbar, not removable
+    func toolBarItemMenuBarToggle() -> some ToolbarContent {
+        ToolbarItem(placement: .automatic) {
+            let isOn = ToolbarStore.shared.menuBarVisible
+            Button {
+                ToolbarStore.shared.menuBarVisible.toggle()
+            } label: {
+                Image(systemName: isOn ? "menubar.rectangle" : "menubar.rectangle")
+                    .symbolVariant(isOn ? .none : .slash)
+                    .foregroundStyle(isOn ? Color.accentColor : Color.secondary)
+            }
+            .help(isOn ? "Hide menu bar" : "Show menu bar")
         }
     }
 
