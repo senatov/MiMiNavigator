@@ -96,6 +96,7 @@ final class FindFilesCoordinator {
     // MARK: - Close
 
     func close() {
+        viewModel.cancelSearch()
         findWindow?.close()
         isVisible = false
         log.info("[FindFiles] Window closed")
@@ -139,7 +140,7 @@ private final class FindFilesWindowDelegate: NSObject, NSWindowDelegate {
 
     func windowWillClose(_ notification: Notification) {
         Task { @MainActor in
-            FindFilesCoordinator.shared.windowDidClose()
+            FindFilesCoordinator.shared.close()
         }
     }
 }

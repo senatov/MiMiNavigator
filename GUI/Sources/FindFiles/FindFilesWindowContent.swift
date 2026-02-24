@@ -12,70 +12,82 @@ struct FindFilesWindowContent: View {
     @Bindable var viewModel: FindFilesViewModel
     @State private var selectedTab: FindFilesTab = .general
 
+    private var dialogBgColor: Color {
+        let store = ColorThemeStore.shared
+        if !store.hexDialogBackground.isEmpty, let c = Color(hex: store.hexDialogBackground) {
+            return c
+        }
+        return store.activeTheme.dialogBackground
+    }
+
     var body: some View {
-        VStack(spacing: 0) {
-            // MARK: - Tab Picker
-            Picker("", selection: $selectedTab) {
-                Text("General").tag(FindFilesTab.general)
-                Text("Advanced").tag(FindFilesTab.advanced)
+        ZStack {
+            dialogBgColor.ignoresSafeArea()
+
+            VStack(spacing: 0) {
+                // MARK: - Tab Picker
+                Picker("", selection: $selectedTab) {
+                    Text("General").tag(FindFilesTab.general)
+                    Text("Advanced").tag(FindFilesTab.advanced)
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .padding(.horizontal, 16)
+                .padding(.top, 10)
+                .padding(.bottom, 4)
+
+                // MARK: - Input Area with visible border
+                inputAreaWithBorder
+                    .padding(.horizontal, 10)
+
+                // MARK: - Action Bar (Search / Close) — tight to input
+                actionBar
+                    .padding(.horizontal, 16)
+                    .padding(.top, 6)
+                    .padding(.bottom, 6)
+
+                // MARK: - Sharp separator line
+                Rectangle()
+                    .fill(Color(nsColor: .separatorColor))
+                    .frame(height: 1)
+
+                // MARK: - Results Table (fills all remaining space)
+                FindFilesResultsView(viewModel: viewModel)
+                    .frame(maxHeight: .infinity)
+
+                Rectangle()
+                    .fill(Color(nsColor: .separatorColor))
+                    .frame(height: 1)
+
+                // MARK: - Status Bar
+                statusBar
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 5)
             }
-            .pickerStyle(.segmented)
-            .labelsHidden()
-            .padding(.horizontal, 16)
-            .padding(.top, 10)
-            .padding(.bottom, 4)
-
-            // MARK: - Input Area with visible border
-            inputAreaWithBorder
-                .padding(.horizontal, 10)
-
-            // MARK: - Action Bar (Search / Close) — tight to input
-            actionBar
-                .padding(.horizontal, 16)
-                .padding(.top, 6)
-                .padding(.bottom, 6)
-
-            // MARK: - Sharp separator line
-            Rectangle()
-                .fill(Color(nsColor: .separatorColor))
-                .frame(height: 1)
-
-            // MARK: - Results Table (fills all remaining space)
-            FindFilesResultsView(viewModel: viewModel)
-                .frame(maxHeight: .infinity)
-
-            Rectangle()
-                .fill(Color(nsColor: .separatorColor))
-                .frame(height: 1)
-
-            // MARK: - Status Bar
-            statusBar
-                .padding(.horizontal, 16)
-                .padding(.vertical, 5)
-        }
-        // Archive password dialog
-        .sheet(isPresented: Binding(
-            get: { viewModel.showPasswordDialog },
-            set: { viewModel.showPasswordDialog = $0 }
-        )) {
-            ArchivePasswordDialog(
-                archiveName: viewModel.passwordArchiveName,
-                password: Binding(
-                    get: { viewModel.archivePassword },
-                    set: { viewModel.archivePassword = $0 }
-                ),
-                onSubmit: { viewModel.submitArchivePassword() },
-                onSkip: { viewModel.skipArchive() }
-            )
-        }
-        // Error alert
-        .alert("Search Error", isPresented: Binding(
-            get: { viewModel.errorMessage != nil },
-            set: { if !$0 { viewModel.errorMessage = nil } }
-        )) {
-            Button("OK") { viewModel.errorMessage = nil }
-        } message: {
-            Text(viewModel.errorMessage ?? "")
+            // Archive password dialog
+            .sheet(isPresented: Binding(
+                get: { viewModel.showPasswordDialog },
+                set: { viewModel.showPasswordDialog = $0 }
+            )) {
+                ArchivePasswordDialog(
+                    archiveName: viewModel.passwordArchiveName,
+                    password: Binding(
+                        get: { viewModel.archivePassword },
+                        set: { viewModel.archivePassword = $0 }
+                    ),
+                    onSubmit: { viewModel.submitArchivePassword() },
+                    onSkip: { viewModel.skipArchive() }
+                )
+            }
+            // Error alert
+            .alert("Search Error", isPresented: Binding(
+                get: { viewModel.errorMessage != nil },
+                set: { if !$0 { viewModel.errorMessage = nil } }
+            )) {
+                Button("OK") { viewModel.errorMessage = nil }
+            } message: {
+                Text(viewModel.errorMessage ?? "")
+            }
         }
     }
 
@@ -106,36 +118,7 @@ struct FindFilesWindowContent: View {
 
     private var actionBar: some View {
         HStack(spacing: 12) {
-            // Primary: Search / Stop
-            if viewModel.searchState == .searching {
-                Button("Stop", role: .destructive) {
-                    viewModel.cancelSearch()
-                }
-                .buttonStyle(.bordered)
-                .controlSize(.large)
-                .tint(.red)
-            } else {
-                Button {
-                    viewModel.startSearch()
-                } label: {
-                    Label("Search", systemImage: "magnifyingglass")
-                }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.large)
-                .keyboardShortcut(.return, modifiers: [])
-            }
-
-            // New Search
-            Button("New Search") {
-                viewModel.newSearch()
-            }
-            .buttonStyle(.bordered)
-            .controlSize(.regular)
-            .disabled(viewModel.searchState == .idle && viewModel.results.isEmpty)
-
-            Spacer()
-
-            // Result count badge
+            // Result count badge (left side)
             if !viewModel.results.isEmpty {
                 Text("\(viewModel.results.count) found")
                     .font(.subheadline.weight(.medium))
@@ -148,15 +131,36 @@ struct FindFilesWindowContent: View {
                     )
             }
 
-            // Close button — same size as Search
-            Button {
-                FindFilesCoordinator.shared.close()
-            } label: {
-                Label("Close", systemImage: "xmark")
+            Spacer()
+
+            // macOS canonical layout: secondary buttons left, primary button rightmost
+            // New Search (secondary)
+            Button("New Search") {
+                viewModel.newSearch()
             }
             .buttonStyle(.bordered)
             .controlSize(.large)
-            .keyboardShortcut(.escape, modifiers: [])
+            .disabled(viewModel.searchState == .idle && viewModel.results.isEmpty)
+
+            // Primary: Search / Stop (rightmost)
+            if viewModel.searchState == .searching {
+                Button("Stop", role: .destructive) {
+                    viewModel.cancelSearch()
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.large)
+                .tint(.red)
+                .keyboardShortcut(.escape, modifiers: [])
+            } else {
+                Button {
+                    viewModel.startSearch()
+                } label: {
+                    Label("Search", systemImage: "magnifyingglass")
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
+                .keyboardShortcut(.return, modifiers: [])
+            }
         }
     }
 

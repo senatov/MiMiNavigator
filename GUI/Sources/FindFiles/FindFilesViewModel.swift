@@ -99,10 +99,9 @@ final class FindFilesViewModel {
             searchDirectory = searchPath
         }
 
-        // Load previous results if available and no active search
-        if results.isEmpty {
-            loadSavedResults()
-        }
+        // Previous results are NOT loaded automatically.
+        // User must press Search to get fresh results.
+        // (loadSavedResults is available via explicit "Load Last" action if needed)
     }
 
     /// Check if file is a recognized archive format
@@ -186,23 +185,32 @@ final class FindFilesViewModel {
                 }
             )
 
-            // Batch results to avoid thousands of MainActor dispatches.
-            // Flush every 50 results or every 0.15s — whichever comes first.
+            // Adaptive batching: first results appear instantly, then batch grows
+            // for performance during large scans (thousands of files).
             var batch: [FindFilesResult] = []
             batch.reserveCapacity(64)
             var lastFlush = ContinuousClock.now
-            let flushInterval: Duration = .milliseconds(150)
-            let batchSize = 50
+            var totalYielded = 0
 
             for await result in stream {
                 guard !Task.isCancelled else { break }
                 batch.append(result)
 
                 let now = ContinuousClock.now
-                if batch.count >= batchSize || now - lastFlush >= flushInterval {
+                let elapsed = now - lastFlush
+                // Adaptive: flush immediately for first 20 results, then batch
+                let shouldFlush: Bool
+                if totalYielded < 20 {
+                    shouldFlush = true
+                } else {
+                    shouldFlush = batch.count >= 50 || elapsed >= .milliseconds(150)
+                }
+
+                if shouldFlush {
                     let chunk = batch
                     batch.removeAll(keepingCapacity: true)
                     lastFlush = now
+                    totalYielded += chunk.count
 
                     let currentStats = await engine.getStats()
                     self.results.append(contentsOf: chunk)
@@ -217,11 +225,14 @@ final class FindFilesViewModel {
 
             let finalStats = await engine.getStats()
             self.stats = finalStats
-            if Task.isCancelled {
-                self.searchState = .cancelled
-            } else {
-                self.searchState = .completed
-                self.saveResults()
+            // Only update state if not already cancelled by user action
+            if self.searchState != .cancelled {
+                if Task.isCancelled {
+                    self.searchState = .cancelled
+                } else {
+                    self.searchState = .completed
+                    self.saveResults()
+                }
             }
             log.info("[FindFiles] Search finished: \(self.results.count) results, \(self.stats.formattedElapsed)")
         }
@@ -230,13 +241,17 @@ final class FindFilesViewModel {
     // MARK: - Cancel Search
 
     func cancelSearch() {
+        guard searchState == .searching else { return }
         log.info("[FindFiles] Cancelling search")
+        // 1. Immediately update UI state — stops animation
+        searchState = .cancelled
+        // 2. Cancel the Swift task (stops iteration in startSearch)
         searchTask?.cancel()
         searchTask = nil
+        // 3. Kill the find process via engine (SIGKILL, no waiting)
         Task {
             await engine.cancel()
         }
-        searchState = .cancelled
     }
 
     // MARK: - New Search (reset)
