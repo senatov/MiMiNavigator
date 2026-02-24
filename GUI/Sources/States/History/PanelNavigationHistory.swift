@@ -6,6 +6,7 @@
 // Description: Per-panel navigation history for Back/Forward buttons
 
 import Foundation
+import FileModelKit
 
 // MARK: - Per-Panel Navigation History
 /// Manages browser-style back/forward navigation for a single panel

@@ -6,6 +6,7 @@
 // Description: Handles MultiSelectionAction dispatching for batch operations
 
 import AppKit
+import FileModelKit
 import Foundation
 
 // MARK: - Multi Selection Actions Handler

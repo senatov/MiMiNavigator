@@ -6,6 +6,7 @@
 // Description: Handles PanelBackgroundAction dispatching from panel empty area context menu
 
 import AppKit
+import FileModelKit
 import Foundation
 
 // MARK: - Panel Background Actions Handler

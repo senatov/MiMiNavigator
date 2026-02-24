@@ -6,6 +6,7 @@
 // Description: File sorting logic with directories-first behavior
 
 import Foundation
+import FileModelKit
 
 // MARK: - File Sorting Service
 /// Handles sorting of file lists with configurable sort key and direction

@@ -6,6 +6,7 @@
 // Description: Keyboard navigation logic for FileTableView
 
 import SwiftUI
+import FileModelKit
 
 // MARK: - Table Keyboard Navigation
 /// Handles keyboard-based file selection and navigation

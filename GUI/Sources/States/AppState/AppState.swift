@@ -6,6 +6,7 @@
 // Description: Central application state - coordinates sub-managers
 
 import AppKit
+import FileModelKit
 import Foundation
 
 // MARK: - App State

@@ -8,6 +8,7 @@
 //              Font: SF Pro Display Light 14 via PanelDialogCoordinator.
 
 import SwiftUI
+import FileModelKit
 
 // MARK: - HistoryWindowContent
 

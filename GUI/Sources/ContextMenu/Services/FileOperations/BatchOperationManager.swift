@@ -6,6 +6,7 @@
 // Description: Manages batch file operations with progress tracking and cancellation
 
 import Foundation
+import FileModelKit
 
 // MARK: - Batch Operation Manager
 /// Coordinates batch file operations (copy, move, delete, pack) with progress and cancellation

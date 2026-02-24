@@ -6,6 +6,7 @@
 // Description: Submenu for "Open With" action - shows available applications
 
 import SwiftUI
+import FileModelKit
 
 /// Submenu showing applications that can open the selected file
 /// Note: SwiftUI Menu content is evaluated lazily, so we pre-fetch apps

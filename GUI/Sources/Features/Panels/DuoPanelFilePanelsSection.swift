@@ -7,6 +7,7 @@
 //
 
 import SwiftUI
+import FileModelKit
 
 /// File panels container section with geometry management
 struct DuoPanelFilePanelsSection: View {

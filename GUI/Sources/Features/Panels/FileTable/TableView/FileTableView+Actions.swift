@@ -6,6 +6,7 @@
 // Description: Action handlers for FileTableView
 
 import SwiftUI
+import FileModelKit
 
 // MARK: - Actions
 extension FileTableView {

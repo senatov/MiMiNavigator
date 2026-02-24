@@ -6,6 +6,7 @@
 // Description: Path formatting utilities for display in dialogs and UI
 
 import Foundation
+import FileModelKit
 
 enum PathFormatting {
     

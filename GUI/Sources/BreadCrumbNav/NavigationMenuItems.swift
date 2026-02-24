@@ -6,6 +6,7 @@
 // Description: Navigation menu components for breadcrumb panel
 
 import AppKit
+import FileModelKit
 import SwiftUI
 
 // MARK: - Favorites Button Section (left side of breadcrumb)

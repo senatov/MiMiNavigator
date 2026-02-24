@@ -6,6 +6,7 @@
 // Description: VS Code detection, launching, and installation prompts
 
 import AppKit
+import FileModelKit
 import Foundation
 
 enum VSCodeIntegration {

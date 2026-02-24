@@ -6,6 +6,7 @@
 //
 
 import AppKit
+import FileModelKit
 import SwiftUI
 
 // MARK: - Panel file table section container

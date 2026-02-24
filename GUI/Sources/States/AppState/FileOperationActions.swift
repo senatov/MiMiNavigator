@@ -6,6 +6,7 @@
 // Description: Quick file operations (copy to opposite panel)
 
 import AppKit
+import FileModelKit
 import Foundation
 
 // MARK: - File Operation Actions

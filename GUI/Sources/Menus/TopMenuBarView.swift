@@ -7,6 +7,7 @@
 //
 
 import AppKit
+import FileModelKit
 import SwiftUI
 
 struct TopMenuBarView: View {

@@ -6,6 +6,7 @@
 //  Copyright © 2025 Senatov. All rights reserved.
 //
 import Foundation
+import FileModelKit
 
 enum FileScanner {
     // MARK: - Scan directory contents

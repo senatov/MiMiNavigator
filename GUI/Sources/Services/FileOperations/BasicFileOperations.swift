@@ -6,6 +6,7 @@
 // Description: Core file operations without UI dialogs
 
 import Foundation
+import FileModelKit
 
 enum BasicFileOperations {
 

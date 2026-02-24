@@ -8,6 +8,7 @@
 //   so the panel rises together with the main window (not above other apps).
 
 import AppKit
+import FileModelKit
 import SwiftUI
 
 // MARK: - Find Files Coordinator

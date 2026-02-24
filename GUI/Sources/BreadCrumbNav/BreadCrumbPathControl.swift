@@ -7,6 +7,7 @@
 //
 
 import AppKit
+import FileModelKit
 import SwiftUI
 
 // MARK: - A view displaying a breadcrumb-style editable path bar with panel navigation menus.

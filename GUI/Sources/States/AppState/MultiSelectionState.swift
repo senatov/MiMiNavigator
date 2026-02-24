@@ -6,6 +6,7 @@
 // Description: Multi-selection state extension for AppState (Total Commander style)
 
 import Foundation
+import FileModelKit
 
 // MARK: - Multi-Selection State Extension
 extension AppState {

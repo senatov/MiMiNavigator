@@ -6,6 +6,7 @@
 // Description: Context menu for empty panel area (Finder-style)
 
 import SwiftUI
+import FileModelKit
 
 /// Context menu shown when right-clicking on empty area of file panel
 struct PanelBackgroundContextMenu: View {

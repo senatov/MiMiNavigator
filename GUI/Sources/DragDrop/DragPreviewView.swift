@@ -6,6 +6,7 @@
 // Description: Visual drag preview for file drag-and-drop operations
 
 import AppKit
+import FileModelKit
 import SwiftUI
 
 // MARK: - Drag Preview View

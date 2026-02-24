@@ -6,6 +6,7 @@
 // Description: Local file sorting comparator for FileTableView
 
 import Foundation
+import FileModelKit
 
 // MARK: - Table File Sorter
 /// Sorting comparator for file table (directories first)

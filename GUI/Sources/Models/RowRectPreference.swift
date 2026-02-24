@@ -7,6 +7,7 @@
 //
 
 import SwiftUI
+import FileModelKit
 
 // MARK: - RowRectPreference
 struct RowRectPreference: PreferenceKey {

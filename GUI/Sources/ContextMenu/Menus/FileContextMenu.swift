@@ -6,6 +6,7 @@
 // Description: Context menu for files - Finder-style layout with all standard actions
 
 import SwiftUI
+import FileModelKit
 
 /// Context menu for file items (non-directory).
 /// Matches Finder's context menu structure and functionality.

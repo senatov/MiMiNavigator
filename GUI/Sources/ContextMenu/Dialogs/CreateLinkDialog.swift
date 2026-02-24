@@ -5,6 +5,7 @@
 //  Copyright © 2026 Senatov. All rights reserved.
 
 import SwiftUI
+import FileModelKit
 
 // MARK: - Link Type
 enum LinkType: String, CaseIterable, Identifiable, CustomStringConvertible {

@@ -10,6 +10,7 @@
 //   Each ResizableDivider controls the width of the column AFTER it.
 
 import SwiftUI
+import FileModelKit
 
 // MARK: - Table Header View
 struct TableHeaderView: View {

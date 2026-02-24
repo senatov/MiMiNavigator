@@ -6,6 +6,7 @@
 // Description: Drag and drop handling for FileTableView panel background
 
 import SwiftUI
+import FileModelKit
 
 // MARK: - Table Drop Handler
 /// Handles drag and drop operations on the panel background

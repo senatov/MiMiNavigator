@@ -6,6 +6,7 @@
 // Description: Centralized UserDefaults keys for application preferences and state persistence
 
 import Foundation
+import FileModelKit
 
 // MARK: - Preference Keys
 /// Centralized storage for all UserDefaults keys used in the app.

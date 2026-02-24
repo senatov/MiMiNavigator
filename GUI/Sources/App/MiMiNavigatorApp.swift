@@ -8,6 +8,7 @@
 //   SMB mount: silent via /sbin/mount_smbfs, no Finder fallback.
 
 import AppKit
+import FileModelKit
 import NetworkKit
 import SwiftUI
 

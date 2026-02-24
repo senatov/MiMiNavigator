@@ -9,6 +9,7 @@
 //   Uses FileHandle.bytes for non-blocking async I/O.
 
 import Foundation
+import FileModelKit
 
 // MARK: - Find Files Engine
 /// Async search engine that runs /usr/bin/find in background and streams results via AsyncStream.

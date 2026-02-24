@@ -6,6 +6,7 @@
 // Description: Handles FileAction dispatching from context menu
 
 import AppKit
+import FileModelKit
 import FavoritesKit
 import Foundation
 

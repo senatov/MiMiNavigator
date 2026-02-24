@@ -6,6 +6,7 @@
 // Description: Main dual-panel file manager view with fixed initial split position
 
 import AppKit
+import FileModelKit
 import SwiftUI
 
 struct DuoFilePanelView: View {

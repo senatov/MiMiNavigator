@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import FileModelKit
 import SwiftUI
 
 // MARK: - Actor for concurrent directory scanning

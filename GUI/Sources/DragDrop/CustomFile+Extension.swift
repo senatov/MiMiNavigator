@@ -7,6 +7,7 @@
 //
 
 import SwiftUI
+import FileModelKit
 import UniformTypeIdentifiers
 
 // MARK: - Make CustomFile draggable via Transferable protocol
