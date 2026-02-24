@@ -28,6 +28,9 @@ import AppKit
             log.info("Restored \(restored.count) bookmarks")
         }
         
+        log.debug("starting toolbar right-click monitor")
+        ToolbarRightClickMonitor.shared.start()
+
         log.debug("installing keyDown monitor for Tab/Backtab")
         keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
             guard let self, let appState = self.appState else { return event }

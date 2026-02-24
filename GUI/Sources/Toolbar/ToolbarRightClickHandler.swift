@@ -4,10 +4,9 @@
 // Created by Iakov Senatov on 24.02.2026.
 // Copyright © 2026 Senatov. All rights reserved.
 // Description: Right-click handler for the toolbar area.
-//   Strategy: NSEvent local monitor on .rightMouseDown.
-//   Checks if the click landed inside the toolbar rect of the main window.
-//   If yes → open ToolbarCustomizeCoordinator.
-//   This avoids fragile view-hierarchy traversal entirely.
+//   Uses NSEvent local monitor on .rightMouseDown.
+//   Hit-test: click is above contentView.maxY in window coordinates → toolbar zone.
+//   Started in AppDelegate.applicationDidFinishLaunching (guaranteed early init).
 
 import AppKit
 
@@ -20,62 +19,62 @@ final class ToolbarRightClickMonitor {
 
     private init() {}
 
-    // MARK: - Start / Stop
-
+    // MARK: - Start
     func start() {
-        guard monitor == nil else { return }
-
-        // Local monitor catches events in our own app windows
+        guard monitor == nil else {
+            log.debug("[ToolbarRightClick] already running — skip")
+            return
+        }
         monitor = NSEvent.addLocalMonitorForEvents(matching: .rightMouseDown) { [weak self] event in
             self?.handleRightClick(event)
-            return event  // always pass the event through
+            return event   // always pass through so system context menus still work
         }
-        log.debug("[ToolbarRightClick] local monitor started")
+        log.info("[ToolbarRightClick] monitor started ✓")
     }
 
     func stop() {
         if let m = monitor {
             NSEvent.removeMonitor(m)
             monitor = nil
-            log.debug("[ToolbarRightClick] local monitor stopped")
+            log.info("[ToolbarRightClick] monitor stopped")
         }
     }
 
     // MARK: - Hit test
-
     private func handleRightClick(_ event: NSEvent) {
-        guard
-            let window = event.window ?? NSApp.mainWindow,
-            isInToolbarArea(event: event, window: window)
-        else { return }
-
-        log.debug("[ToolbarRightClick] right-click in toolbar area → opening customize panel")
-        ToolbarCustomizeCoordinator.shared.toggle()
-    }
-
-    /// Returns true if the event location is inside the toolbar area of the window.
-    private func isInToolbarArea(event: NSEvent, window: NSWindow) -> Bool {
-        // Convert click location to window coordinates
-        let locationInWindow = event.locationInWindow
-
-        // Toolbar occupies the strip between top of content area and top of window
-        guard let contentView = window.contentView else { return false }
-
-        let contentFrameInWindow = contentView.convert(contentView.bounds, to: nil)
-        let windowHeight = window.frame.height
-
-        // Click is above the content view → it's in the toolbar or title bar
-        let isAboveContent = locationInWindow.y > contentFrameInWindow.maxY
-
-        // Click is below the top of the window (exclude pure title bar on non-unified toolbars)
-        // For unifiedCompact style the toolbar and title bar are merged — any click above content
-        // is considered a toolbar click.
-        let isInWindow = locationInWindow.y < windowHeight
-
-        let result = isAboveContent && isInWindow
-        if result {
-            log.debug("[ToolbarRightClick] hit: y=\(Int(locationInWindow.y)) contentMaxY=\(Int(contentFrameInWindow.maxY))")
+        // Find the window — prefer event.window, fall back to key window, then main window
+        guard let window = event.window
+                        ?? NSApp.keyWindow
+                        ?? NSApp.mainWindow else {
+            log.debug("[ToolbarRightClick] no window — ignored")
+            return
         }
-        return result
+
+        let loc = event.locationInWindow
+
+        guard let contentView = window.contentView else {
+            log.debug("[ToolbarRightClick] no contentView — ignored")
+            return
+        }
+
+        // contentView origin in window coords (for unifiedCompact toolbar
+        // the content view starts below the toolbar strip)
+        let contentMinY = contentView.frame.minY
+        let contentMaxY = contentView.frame.maxY
+        let windowH     = window.frame.height
+
+        log.debug("[ToolbarRightClick] click y=\(Int(loc.y)) contentMinY=\(Int(contentMinY)) contentMaxY=\(Int(contentMaxY)) windowH=\(Int(windowH))")
+
+        // Click is above the content area top edge → title bar / toolbar zone
+        // For unifiedCompact this is the only strip above content
+        let inToolbarZone = loc.y > contentMaxY && loc.y <= windowH
+
+        guard inToolbarZone else {
+            log.debug("[ToolbarRightClick] outside toolbar zone — ignored")
+            return
+        }
+
+        log.info("[ToolbarRightClick] ✓ right-click in toolbar zone → opening customize panel")
+        ToolbarCustomizeCoordinator.shared.toggle()
     }
 }

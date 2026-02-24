@@ -3,12 +3,11 @@
 //
 // Created by Iakov Senatov on 24.02.2026.
 // Copyright © 2026 Senatov. All rights reserved.
-// Description: Toolbar customization dialog — two-zone DnD layout.
-//   Zone 1 (top): live toolbar preview strip — drag to reorder visible buttons.
-//   Zone 2 (bottom): full button palette — drag to preview adds, drag away removes.
-//   Visible buttons are active; hidden buttons are dimmed/disabled in the palette.
-//   Minimum 1 button always visible. Filter narrows the palette.
-//   Style: DialogColors palette, matches HotKeySettingsView aesthetic.
+// Description: Toolbar customization dialog.
+//   Preview strip (top) — drag to reorder visible buttons.
+//   Palette grid (bottom) — click to toggle, drag to preview to add.
+//   Menu bar toggle — show/hide the Files/Mark/Commands… menu row.
+//   Filter field — narrows palette by label or help text.
 
 import AppKit
 import SwiftUI
@@ -16,45 +15,42 @@ import SwiftUI
 // MARK: - Toolbar Customize View
 struct ToolbarCustomizeView: View {
 
-    @State private var store = ToolbarStore.shared
-    @State private var filterText = ""
-    @State private var showResetConfirm = false
+    @State private var store       = ToolbarStore.shared
+    @State private var filterText  = ""
+    @State private var showReset   = false
+    @State private var dragPreview: ToolbarItemID? = nil
+    @State private var dragPool:    ToolbarItemID? = nil
 
-    /// ID currently being dragged from the palette (pool → preview drag)
-    @State private var draggingFromPool: ToolbarItemID? = nil
-    /// ID currently being dragged from the preview strip (reorder)
-    @State private var draggingFromPreview: ToolbarItemID? = nil
-
-    // MARK: - Body
     var body: some View {
         VStack(spacing: 0) {
-            headerBar
+            TCV_Header()
             Divider()
-            previewStrip
+            TCV_PreviewStrip(store: store, dragPreview: $dragPreview, dragPool: $dragPool)
             Divider()
-            menuBarToggleRow
+            TCV_MenuBarRow(store: store)
             Divider()
-            filterField
+            TCV_FilterField(text: $filterText)
                 .padding(.horizontal, 10)
-                .padding(.top, 7)
-                .padding(.bottom, 5)
+                .padding(.vertical, 7)
             Divider()
-            paletteGrid
+            TCV_Palette(store: store, filterText: filterText, dragPreview: $dragPreview, dragPool: $dragPool)
             Divider()
-            footerBar
+            TCV_Footer(store: store, showReset: $showReset)
         }
-        .frame(width: 360, height: 490)
+        .frame(width: 360, height: 500)
         .background(DialogColors.base)
-        .confirmationDialog("Reset Toolbar", isPresented: $showResetConfirm) {
+        .confirmationDialog("Reset Toolbar", isPresented: $showReset) {
             Button("Reset to Defaults", role: .destructive) { store.resetToDefaults() }
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("Toolbar order and visibility will be reset to factory defaults.")
         }
     }
+}
 
-    // MARK: - Header
-    private var headerBar: some View {
+// MARK: - Header
+private struct TCV_Header: View {
+    var body: some View {
         HStack(spacing: 8) {
             Image(systemName: "rectangle.3.group")
                 .font(.system(size: 14))
@@ -70,11 +66,15 @@ struct ToolbarCustomizeView: View {
         .padding(.vertical, 8)
         .background(DialogColors.stripe)
     }
+}
 
-    // MARK: - Zone 1: Live Preview Strip
-    /// Shows only visible buttons in their current order.
-    /// Drag within the strip = reorder. Drop from palette = add. Drag out = remove.
-    private var previewStrip: some View {
+// MARK: - Preview Strip
+private struct TCV_PreviewStrip: View {
+    let store: ToolbarStore
+    @Binding var dragPreview: ToolbarItemID?
+    @Binding var dragPool:    ToolbarItemID?
+
+    var body: some View {
         VStack(spacing: 4) {
             Text("TOOLBAR PREVIEW")
                 .font(.system(size: 9, weight: .semibold))
@@ -85,28 +85,30 @@ struct ToolbarCustomizeView: View {
 
             HStack(spacing: 6) {
                 ForEach(store.visibleItems) { item in
-                    previewButton(item)
+                    TCV_PreviewButton(item: item, isDragging: dragPreview == item)
                         .onDrag {
-                            draggingFromPreview = item
-                            draggingFromPool = nil
+                            dragPreview = item
+                            dragPool    = nil
                             return NSItemProvider(object: item.rawValue as NSString)
                         }
-                        .onDrop(of: [.text], delegate: PreviewDropDelegate(
-                            item: item,
-                            store: store,
-                            draggingFromPreview: $draggingFromPreview,
-                            draggingFromPool: $draggingFromPool
+                        .onDrop(of: [.text], delegate: PreviewReorderDelegate(
+                            targetItem:  item,
+                            store:       store,
+                            dragPreview: $dragPreview,
+                            dragPool:    $dragPool
                         ))
                 }
 
-                // Drop zone placeholder when dragging from pool
-                if draggingFromPool != nil {
+                if dragPool != nil {
                     RoundedRectangle(cornerRadius: 6)
-                        .strokeBorder(Color.accentColor.opacity(0.5), style: StrokeStyle(lineWidth: 1.5, dash: [4]))
+                        .strokeBorder(
+                            Color.accentColor.opacity(0.5),
+                            style: StrokeStyle(lineWidth: 1.5, dash: [4])
+                        )
                         .frame(width: 36, height: 36)
-                        .onDrop(of: [.text], delegate: PreviewAppendDropDelegate(
-                            store: store,
-                            draggingFromPool: $draggingFromPool
+                        .onDrop(of: [.text], delegate: PreviewAppendDelegate(
+                            store:    store,
+                            dragPool: $dragPool
                         ))
                 }
 
@@ -132,37 +134,44 @@ struct ToolbarCustomizeView: View {
             .padding(.bottom, 6)
         }
     }
+}
 
-    /// Single button in the preview strip
-    private func previewButton(_ item: ToolbarItemID) -> some View {
-        let isBeingDragged = draggingFromPreview == item
-        return VStack(spacing: 2) {
-            Image(systemName: item.systemImage)
-                .font(.system(size: 15, weight: .medium))
-                .symbolRenderingMode(.hierarchical)
-                .foregroundStyle(Color.accentColor)
-                .frame(width: 36, height: 28)
-                .background(
-                    RoundedRectangle(cornerRadius: 6)
-                        .fill(Color.accentColor.opacity(0.10))
-                )
-        }
-        .opacity(isBeingDragged ? 0.4 : 1.0)
-        .help(item.helpText)
+// MARK: - Preview Button (single icon in strip)
+private struct TCV_PreviewButton: View {
+    let item:      ToolbarItemID
+    let isDragging: Bool
+
+    var body: some View {
+        Image(systemName: item.systemImage)
+            .font(.system(size: 15, weight: .medium))
+            .symbolRenderingMode(.hierarchical)
+            .foregroundStyle(Color.accentColor)
+            .frame(width: 36, height: 28)
+            .background(
+                RoundedRectangle(cornerRadius: 6)
+                    .fill(Color.accentColor.opacity(0.10))
+            )
+            .opacity(isDragging ? 0.4 : 1.0)
+            .help(item.helpText)
     }
+}
 
-    // MARK: - Menu Bar toggle row
-    private var menuBarToggleRow: some View {
+// MARK: - Menu Bar Toggle Row
+private struct TCV_MenuBarRow: View {
+    let store: ToolbarStore
+
+    var body: some View {
         HStack(spacing: 10) {
-            Image(systemName: store.menuBarVisible ? "menubar.rectangle" : "menubar.rectangle")
+            Image(systemName: "menubar.rectangle")
                 .font(.system(size: 13))
                 .foregroundStyle(store.menuBarVisible ? Color.accentColor : Color.secondary.opacity(0.5))
                 .symbolRenderingMode(.hierarchical)
+                .frame(width: 20)
 
             VStack(alignment: .leading, spacing: 1) {
                 Text("Show Menu Bar")
                     .font(.system(size: 13, weight: .medium))
-                Text("Files, Mark, Commands, Net, Show, Configuration, Start, Help")
+                Text("Files · Mark · Commands · Net · Show · Configuration · Start · Help")
                     .font(.system(size: 10))
                     .foregroundStyle(.tertiary)
                     .lineLimit(1)
@@ -170,30 +179,35 @@ struct ToolbarCustomizeView: View {
 
             Spacer()
 
-            Toggle("", isOn: Binding(
-                get: { store.menuBarVisible },
-                set: { store.menuBarVisible = $0 }
-            ))
-                .toggleStyle(.switch)
-                .controlSize(.small)
-                .labelsHidden()
+            Toggle(
+                "",
+                isOn: Binding(get: { store.menuBarVisible },
+                              set: { store.menuBarVisible = $0 })
+            )
+            .toggleStyle(.switch)
+            .controlSize(.small)
+            .labelsHidden()
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 7)
         .background(store.menuBarVisible ? Color.accentColor.opacity(0.04) : Color.clear)
     }
+}
 
-    // MARK: - Filter field
-    private var filterField: some View {
+// MARK: - Filter Field
+private struct TCV_FilterField: View {
+    @Binding var text: String
+
+    var body: some View {
         HStack(spacing: 5) {
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 11))
                 .foregroundStyle(.tertiary)
-            TextField("Filter buttons…", text: $filterText)
+            TextField("Filter buttons…", text: $text)
                 .textFieldStyle(.plain)
                 .font(.system(size: 13))
-            if !filterText.isEmpty {
-                Button { filterText = "" } label: {
+            if !text.isEmpty {
+                Button { text = "" } label: {
                     Image(systemName: "xmark.circle.fill")
                         .font(.system(size: 11))
                         .foregroundStyle(.tertiary)
@@ -212,21 +226,35 @@ struct ToolbarCustomizeView: View {
                 .stroke(Color.gray.opacity(0.2), lineWidth: 0.5)
         )
     }
+}
 
-    // MARK: - Zone 2: Palette Grid
-    /// All buttons in their stored order. Visible = active, hidden = dimmed.
-    /// Drag from palette → preview strip adds. Click checkbox toggles.
-    private var paletteGrid: some View {
-        let items = filteredPaletteItems
-        return ScrollView {
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 72, maximum: 88), spacing: 8)], spacing: 8) {
+// MARK: - Palette Grid
+private struct TCV_Palette: View {
+    let store:       ToolbarStore
+    let filterText:  String
+    @Binding var dragPreview: ToolbarItemID?
+    @Binding var dragPool:    ToolbarItemID?
+
+    private var items: [ToolbarItemID] {
+        guard !filterText.isEmpty else { return store.orderedIDs }
+        let q = filterText.lowercased()
+        return store.orderedIDs.filter {
+            $0.label.lowercased().contains(q) || $0.helpText.lowercased().contains(q)
+        }
+    }
+
+    var body: some View {
+        ScrollView {
+            LazyVGrid(
+                columns: [GridItem(.adaptive(minimum: 72, maximum: 88), spacing: 8)],
+                spacing: 8
+            ) {
                 ForEach(items) { item in
-                    paletteCell(item)
+                    TCV_PaletteCell(item: item, store: store)
                         .onDrag {
-                            let isVisible = store.visibleIDs.contains(item)
-                            if isVisible {
-                                draggingFromPreview = nil
-                                draggingFromPool = item
+                            if store.visibleIDs.contains(item) {
+                                dragPreview = nil
+                                dragPool    = item
                             }
                             return NSItemProvider(object: item.rawValue as NSString)
                         }
@@ -237,30 +265,23 @@ struct ToolbarCustomizeView: View {
         .frame(maxHeight: .infinity)
         .background(DialogColors.base)
     }
+}
 
-    private var filteredPaletteItems: [ToolbarItemID] {
-        guard !filterText.isEmpty else { return store.orderedIDs }
-        let q = filterText.lowercased()
-        return store.orderedIDs.filter {
-            $0.label.lowercased().contains(q) ||
-            $0.helpText.lowercased().contains(q) ||
-            $0.rawValue.lowercased().contains(q)
-        }
-    }
+// MARK: - Palette Cell
+private struct TCV_PaletteCell: View {
+    let item:  ToolbarItemID
+    let store: ToolbarStore
 
-    /// Single cell in the palette grid
-    private func paletteCell(_ item: ToolbarItemID) -> some View {
-        let isVisible = store.visibleIDs.contains(item)
-        let isLastVisible = isVisible && store.visibleItems.count == 1
-        let isDimmed = !isVisible
+    private var isVisible:    Bool { store.visibleIDs.contains(item) }
+    private var isLastOne:    Bool { isVisible && store.visibleItems.count == 1 }
 
-        return Button {
-            guard !isLastVisible else { return }  // enforce minimum 1
+    var body: some View {
+        Button {
+            guard !isLastOne else { return }
             store.toggleVisibility(item)
         } label: {
             VStack(spacing: 4) {
                 ZStack(alignment: .topTrailing) {
-                    // Icon background
                     RoundedRectangle(cornerRadius: 8)
                         .fill(isVisible ? Color.accentColor.opacity(0.12) : Color.gray.opacity(0.06))
                         .frame(width: 44, height: 36)
@@ -271,20 +292,16 @@ struct ToolbarCustomizeView: View {
                                     lineWidth: 0.8
                                 )
                         )
-
                     Image(systemName: item.systemImage)
                         .font(.system(size: 16, weight: .medium))
                         .symbolRenderingMode(.hierarchical)
                         .foregroundStyle(isVisible ? Color.accentColor : Color.secondary.opacity(0.45))
                         .frame(width: 44, height: 36)
-
-                    // Visibility badge
                     Image(systemName: isVisible ? "checkmark.circle.fill" : "circle")
                         .font(.system(size: 11))
                         .foregroundStyle(isVisible ? Color.accentColor : Color.secondary.opacity(0.4))
                         .offset(x: 5, y: -5)
                 }
-
                 Text(item.label)
                     .font(.system(size: 10, weight: isVisible ? .medium : .regular))
                     .foregroundStyle(isVisible ? Color.primary : Color.secondary.opacity(0.6))
@@ -294,24 +311,25 @@ struct ToolbarCustomizeView: View {
             }
         }
         .buttonStyle(.plain)
-        .opacity(isDimmed ? 0.6 : 1.0)
-        .help(isLastVisible ? "At least one button must be visible" : item.helpText)
+        .opacity(isVisible ? 1.0 : 0.6)
+        .help(isLastOne ? "At least one button must be visible" : item.helpText)
         .animation(.easeInOut(duration: 0.15), value: isVisible)
     }
+}
 
-    // MARK: - Footer
-    private var footerBar: some View {
+// MARK: - Footer
+private struct TCV_Footer: View {
+    let store:      ToolbarStore
+    @Binding var showReset: Bool
+
+    var body: some View {
         HStack {
-            Button {
-                showResetConfirm = true
-            } label: {
+            Button { showReset = true } label: {
                 Label("Reset", systemImage: "arrow.counterclockwise")
                     .font(.system(size: 12))
             }
             .controlSize(.small)
-
             Spacer()
-
             Text("\(store.visibleItems.count) of \(store.orderedIDs.count) shown")
                 .font(.system(size: 11))
                 .foregroundStyle(.tertiary)
@@ -323,66 +341,53 @@ struct ToolbarCustomizeView: View {
 }
 
 // MARK: - Drop Delegate: reorder within preview strip
-private struct PreviewDropDelegate: DropDelegate {
-    let item: ToolbarItemID
-    let store: ToolbarStore
-    @Binding var draggingFromPreview: ToolbarItemID?
-    @Binding var draggingFromPool: ToolbarItemID?
+private struct PreviewReorderDelegate: DropDelegate {
+    let targetItem:  ToolbarItemID
+    let store:       ToolbarStore
+    @Binding var dragPreview: ToolbarItemID?
+    @Binding var dragPool:    ToolbarItemID?
+
+    func dropUpdated(info: DropInfo) -> DropProposal? { DropProposal(operation: .move) }
 
     func performDrop(info: DropInfo) -> Bool {
-        draggingFromPreview = nil
-        draggingFromPool = nil
+        dragPreview = nil
+        dragPool    = nil
         return true
     }
 
-    func dropUpdated(info: DropInfo) -> DropProposal? {
-        DropProposal(operation: .move)
-    }
-
     func dropEntered(info: DropInfo) {
-        // Reorder: move dragged preview item to this position
-        if let from = draggingFromPreview, from != item {
-            let visibles = store.visibleItems
-            guard let fromIdx = visibles.firstIndex(of: from),
-                  let toIdx   = visibles.firstIndex(of: item) else { return }
-
-            // Map visible indices back to orderedIDs indices
-            guard let fromGlobal = store.orderedIDs.firstIndex(of: visibles[fromIdx]),
-                  let toGlobal   = store.orderedIDs.firstIndex(of: visibles[toIdx]) else { return }
-
-            store.move(fromOffsets: IndexSet(integer: fromGlobal),
-                       toOffset: toGlobal < fromGlobal ? toGlobal : toGlobal + 1)
+        if let from = dragPreview, from != targetItem {
+            let vis = store.visibleItems
+            guard let fi = vis.firstIndex(of: from),
+                  let ti = vis.firstIndex(of: targetItem),
+                  let fg = store.orderedIDs.firstIndex(of: vis[fi]),
+                  let tg = store.orderedIDs.firstIndex(of: vis[ti]) else { return }
+            store.move(fromOffsets: IndexSet(integer: fg),
+                       toOffset: tg < fg ? tg : tg + 1)
         }
-
-        // Pool → preview: make visible and insert before this item
-        if let poolItem = draggingFromPool, poolItem != item {
-            if !store.visibleIDs.contains(poolItem) {
-                store.toggleVisibility(poolItem)
-            }
-            // Reorder to be before `item`
-            guard let fromGlobal = store.orderedIDs.firstIndex(of: poolItem),
-                  let toGlobal   = store.orderedIDs.firstIndex(of: item) else { return }
-            store.move(fromOffsets: IndexSet(integer: fromGlobal),
-                       toOffset: toGlobal < fromGlobal ? toGlobal : toGlobal + 1)
-            draggingFromPool = nil
+        if let pool = dragPool, pool != targetItem {
+            if !store.visibleIDs.contains(pool) { store.toggleVisibility(pool) }
+            guard let fg = store.orderedIDs.firstIndex(of: pool),
+                  let tg = store.orderedIDs.firstIndex(of: targetItem) else { return }
+            store.move(fromOffsets: IndexSet(integer: fg),
+                       toOffset: tg < fg ? tg : tg + 1)
+            dragPool = nil
         }
     }
 }
 
-// MARK: - Drop Delegate: append from pool to end of preview strip
-private struct PreviewAppendDropDelegate: DropDelegate {
-    let store: ToolbarStore
-    @Binding var draggingFromPool: ToolbarItemID?
+// MARK: - Drop Delegate: append from pool
+private struct PreviewAppendDelegate: DropDelegate {
+    let store:    ToolbarStore
+    @Binding var dragPool: ToolbarItemID?
+
+    func dropUpdated(info: DropInfo) -> DropProposal? { DropProposal(operation: .copy) }
 
     func performDrop(info: DropInfo) -> Bool {
-        if let item = draggingFromPool, !store.visibleIDs.contains(item) {
+        if let item = dragPool, !store.visibleIDs.contains(item) {
             store.toggleVisibility(item)
         }
-        draggingFromPool = nil
+        dragPool = nil
         return true
-    }
-
-    func dropUpdated(info: DropInfo) -> DropProposal? {
-        DropProposal(operation: .copy)
     }
 }
