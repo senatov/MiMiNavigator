@@ -15,6 +15,9 @@ struct FindFilesResultsView: View {
     @State private var sortOrder = [KeyPathComparator(\FindFilesResult.fileName)]
     @State private var hoveredResult: FindFilesResult?
 
+    /// Standard font for the entire Find Files dialog
+    static let dialogFont: Font = .system(size: 13, weight: .light, design: .default)
+
     var body: some View {
         VStack(spacing: 0) {
             if viewModel.results.isEmpty && viewModel.searchState != .searching {
@@ -36,7 +39,7 @@ struct FindFilesResultsView: View {
             Text(viewModel.searchState == .idle
                  ? "Enter search criteria and press Search"
                  : "No files found")
-                .font(.system(size: 13))
+                .font(Self.dialogFont)
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -50,6 +53,16 @@ struct FindFilesResultsView: View {
                 viewModel.selectedResult = viewModel.results.first { $0.id == newID }
             }
         ), sortOrder: $sortOrder) {
+            // Row number column
+            TableColumn("#") { result in
+                if let idx = viewModel.results.firstIndex(where: { $0.id == result.id }) {
+                    Text("\(idx + 1)")
+                        .font(.system(size: 13, weight: .light).monospacedDigit())
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .width(min: 30, ideal: 36, max: 50)
+
             TableColumn("Name", value: \.fileName) { result in
                 resultNameCell(result)
             }
@@ -59,7 +72,7 @@ struct FindFilesResultsView: View {
                 Text(result.isInsideArchive
                      ? "\u{1F4E6} [\((result.archivePath as NSString?)?.lastPathComponent ?? "archive")] \(result.filePath)"
                      : result.filePath)
-                    .font(.system(size: 11))
+                    .font(Self.dialogFont)
                     .foregroundStyle(result.isInsideArchive
                         ? Color(#colorLiteral(red: 0.1, green: 0.1, blue: 0.55, alpha: 1))
                         : .secondary)
@@ -74,13 +87,13 @@ struct FindFilesResultsView: View {
             TableColumn("Match") { result in
                 if let context = result.matchContext, let line = result.lineNumber {
                     Text("L\(line): \(context)")
-                        .font(.system(size: 11).monospaced())
+                        .font(.system(size: 13, weight: .light, design: .monospaced))
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                         .truncationMode(.tail)
                 } else {
                     Text("—")
-                        .font(.system(size: 11))
+                        .font(Self.dialogFont)
                         .foregroundStyle(.quaternary)
                 }
             }
@@ -88,7 +101,7 @@ struct FindFilesResultsView: View {
 
             TableColumn("Size") { result in
                 Text(formatSize(result.fileSize))
-                    .font(.system(size: 11).monospacedDigit())
+                    .font(.system(size: 13, weight: .light).monospacedDigit())
                     .foregroundStyle(.secondary)
             }
             .width(50)
@@ -112,14 +125,14 @@ struct FindFilesResultsView: View {
         HStack(spacing: 6) {
             // Icon
             Image(systemName: result.isInsideArchive ? "doc.zipper" : fileIcon(for: result))
-                .font(.system(size: 12))
+                .font(.system(size: 13))
                 .foregroundStyle(result.isInsideArchive
                     ? Color(#colorLiteral(red: 0.1, green: 0.1, blue: 0.55, alpha: 1))
                     : .secondary)
                 .frame(width: 16)
 
             Text(result.fileName)
-                .font(.system(size: 12, weight: result.isInsideArchive ? .semibold : .regular))
+                .font(.system(size: 13, weight: result.isInsideArchive ? .semibold : .light))
                 .foregroundStyle(result.isInsideArchive
                     ? Color(#colorLiteral(red: 0.1, green: 0.1, blue: 0.55, alpha: 1))
                     : .primary)

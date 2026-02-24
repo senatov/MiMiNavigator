@@ -64,7 +64,7 @@ extension ColorTheme {
         dialogBase:         Color(red: 239/255, green: 239/255, blue: 239/255),
         dialogStripe:       Color(red: 231/255, green: 231/255, blue: 231/255),
         accentColor:        Color.accentColor,
-        dialogBackground:   Color(nsColor: .controlBackgroundColor).opacity(0.92),
+        dialogBackground:   Color(red: 239/255, green: 239/255, blue: 239/255),
         panelBackgroundDark: Color(nsColor: .windowBackgroundColor),
         panelTextDark:       Color.primary,
         dirNameColorDark:    Color.primary,

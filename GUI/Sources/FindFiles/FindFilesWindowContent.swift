@@ -64,6 +64,7 @@ struct FindFilesWindowContent: View {
                     .padding(.horizontal, 16)
                     .padding(.vertical, 5)
             }
+            .font(FindFilesResultsView.dialogFont)
             // Archive password dialog
             .sheet(isPresented: Binding(
                 get: { viewModel.showPasswordDialog },

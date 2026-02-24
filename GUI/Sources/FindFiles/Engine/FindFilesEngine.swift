@@ -146,12 +146,33 @@ actor FindFilesEngine {
             args += ["-maxdepth", "1"]
         }
 
-        // Name matching
+        // Prune directories that cause I/O errors on virtual/offline volumes
+        // (cloud storage placeholders, OneDrive, .Trash, Caches).
+        // Uses -prune to skip entire subtrees — much faster than -not -path.
+        let pruneNames: [String] = [
+            "CloudStorage",
+            "Group Containers",
+            ".Trash",
+            "Caches",
+        ]
+        // Build: \( -name X -o -name Y \) -prune -o ... -print
+        var pruneArgs: [String] = ["("]
+        for (i, name) in pruneNames.enumerated() {
+            if i > 0 { pruneArgs.append("-o") }
+            pruneArgs += ["-name", name, "-type", "d"]
+        }
+        pruneArgs += [")", "-prune", "-o"]
+
+        args += pruneArgs
+
+        // Name matching (after -prune -o)
         if criteria.useRegex {
-            args += ["-E", "-regex", ".*\(pattern).*"]
+            // Note: -E flag is inserted at args[0] before the path for BSD find
+            args.insert("-E", at: 0)
+            args += ["-regex", ".*\(pattern).*", "-print"]
         } else {
             let nameFlag = criteria.caseSensitive ? "-name" : "-iname"
-            args += [nameFlag, pattern]
+            args += [nameFlag, pattern, "-print"]
         }
 
         log.info("[FindEngine] Running: find \(args.joined(separator: " "))")

@@ -65,30 +65,41 @@ struct SettingsPermissionsPane: View {
                             .stroke(Color(nsColor: .separatorColor).opacity(0.6), lineWidth: 0.5)
                     )
 
-                    // +/- buttons (QSpace style)
-                    HStack(spacing: 0) {
+                    // +/- buttons + Add Entire Disk
+                    HStack(spacing: 8) {
+                        HStack(spacing: 0) {
+                            Button {
+                                addFolder()
+                            } label: {
+                                Image(systemName: "plus")
+                                    .frame(width: 28, height: 22)
+                            }
+                            .buttonStyle(.bordered)
+                            .controlSize(.small)
+                            .help("Add folder permission")
+
+                            Divider().frame(height: 18).padding(.horizontal, 1)
+
+                            Button {
+                                removeSelectedFolder()
+                            } label: {
+                                Image(systemName: "minus")
+                                    .frame(width: 28, height: 22)
+                            }
+                            .buttonStyle(.bordered)
+                            .controlSize(.small)
+                            .disabled(selectedFolderID == nil)
+                            .help("Remove selected folder permission")
+                        }
+
                         Button {
-                            addFolder()
+                            addEntireDisk()
                         } label: {
-                            Image(systemName: "plus")
-                                .frame(width: 28, height: 22)
+                            Label("Add Entire Disk", systemImage: "internaldrive")
                         }
                         .buttonStyle(.bordered)
                         .controlSize(.small)
-                        .help("Add folder permission")
-
-                        Divider().frame(height: 18).padding(.horizontal, 1)
-
-                        Button {
-                        removeSelectedFolder()
-                        } label: {
-                        Image(systemName: "minus")
-                        .frame(width: 28, height: 22)
-                        }
-                        .buttonStyle(.bordered)
-                        .controlSize(.small)
-                        .disabled(selectedFolderID == nil)
-                        .help("Remove selected folder permission")
+                        .help("Grant access to the root volume via NSOpenPanel")
                     }
                 }
             }
@@ -294,9 +305,37 @@ struct SettingsPermissionsPane: View {
 
     private func addFolder() {
         Task { @MainActor in
-            let granted = await BookmarkStore.shared.requestAccessPersisting(for: URL(fileURLWithPath: "/"))
+            let granted = await BookmarkStore.shared.requestAccessPersisting(for: URL(fileURLWithPath: NSHomeDirectory()))
             if granted { loadAuthorizedFolders() }
             log.info("[Permissions] addFolder granted=\(granted)")
+        }
+    }
+
+    /// Open NSOpenPanel pre-navigated to the root volume so the user can select "/"
+    /// and grant a security-scoped bookmark for the entire disk.
+    private func addEntireDisk() {
+        Task { @MainActor in
+            let panel = NSOpenPanel()
+            panel.allowsMultipleSelection = false
+            panel.canChooseFiles = false
+            panel.canChooseDirectories = true
+            panel.canCreateDirectories = false
+            panel.showsHiddenFiles = true
+            panel.treatsFilePackagesAsDirectories = true
+            // Navigate to the root volume
+            panel.directoryURL = URL(fileURLWithPath: "/Volumes")
+            panel.message = "Select the root disk (e.g. \"Macintosh HD\") to grant full access"
+            panel.prompt = "Grant Access"
+
+            let response = panel.runModal()
+            guard response == .OK, let selectedURL = panel.urls.first else {
+                log.info("[Permissions] addEntireDisk: user cancelled")
+                return
+            }
+
+            let granted = await BookmarkStore.shared.persistAccess(for: selectedURL)
+            if granted { loadAuthorizedFolders() }
+            log.info("[Permissions] addEntireDisk: selected=\(selectedURL.path) granted=\(granted)")
         }
     }
 
