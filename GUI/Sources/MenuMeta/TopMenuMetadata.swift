@@ -59,6 +59,11 @@ let filesMenuCategory = MenuCategory(
             shortcut: "⌃S"
         ),
         MenuItem(
+            title: "Settings…",
+            action: { SettingsCoordinator.shared.toggle() },
+            shortcut: "⌘,"
+        ),
+        MenuItem(
             title: "Quit",
             action: { NSApplication.shared.terminate(nil) },
             hotKey: .exitApp

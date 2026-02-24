@@ -69,6 +69,7 @@ import AppKit
         NetworkNeighborhoodCoordinator.shared.bringToFront()
         ConnectToServerCoordinator.shared.bringToFront()
         FindFilesCoordinator.shared.bringToFront()
+        SettingsCoordinator.shared.bringToFront()
     }
 
     // MARK: -
