@@ -111,15 +111,15 @@ struct MiMiNavigatorApp: App {
                     }
                 }
                 .toolbar {
-                    toolBarItemRefresh()
-                    toolBarItemHidden()
-                    toolBarOpenWith()
-                    toolBarItemSwapPanels()
-                    toolBarItemCompare()
-                    toolBarItemNetwork()
-                    toolBarItemConnectToServer()
-                    toolBarItemSearch()
+                    // MARK: Dynamic toolbar — visibility driven by ToolbarStore
+                    // SwiftUI toolbar builder does not support ForEach;
+                    // each slot is guarded by if-visible so order follows ToolbarStore.orderedIDs.
+                    AppToolbarContent(app: self)
                     toolBarItemBuildInfo()
+                }
+                .onAppear {
+                    // Start global right-click monitor for toolbar area
+                    ToolbarRightClickMonitor.shared.start()
                 }
                 // MARK: - File Transfer Confirmation Dialog
                 .sheet(isPresented: Binding(
@@ -167,7 +167,7 @@ struct MiMiNavigatorApp: App {
     }
 
     // MARK: - Refresh button (macOS HIG)
-    fileprivate func toolBarItemRefresh() -> ToolbarItem<(), some View> {
+    func toolBarItemRefresh() -> ToolbarItem<(), some View> {
         return ToolbarItem(placement: .automatic) {
             ToolbarButton(
                 systemImage: "arrow.triangle.2.circlepath",
@@ -181,7 +181,7 @@ struct MiMiNavigatorApp: App {
     }
 
     // MARK: - Hidden files toggle (macOS HIG)
-    fileprivate func toolBarItemHidden() -> ToolbarItem<(), some View> {
+    func toolBarItemHidden() -> ToolbarItem<(), some View> {
         return ToolbarItem(placement: .automatic) {
             ToolbarToggleButton(
                 systemImage: "eye.slash",
@@ -200,7 +200,7 @@ struct MiMiNavigatorApp: App {
     }
 
     // MARK: - Open With button (macOS HIG)
-    fileprivate func toolBarOpenWith() -> ToolbarItem<(), some View> {
+    func toolBarOpenWith() -> ToolbarItem<(), some View> {
         return ToolbarItem(placement: .automatic) {
             ToolbarButton(
                 systemImage: "arrow.up.forward.app",
@@ -214,7 +214,7 @@ struct MiMiNavigatorApp: App {
     }
 
     // MARK: - Network Neighborhood button
-    fileprivate func toolBarItemNetwork() -> ToolbarItem<(), some View> {
+    func toolBarItemNetwork() -> ToolbarItem<(), some View> {
         return ToolbarItem(placement: .automatic) {
             ToolbarButton(
                 systemImage: "network",
@@ -228,7 +228,7 @@ struct MiMiNavigatorApp: App {
     }
 
     // MARK: - Connect to Server button
-    fileprivate func toolBarItemConnectToServer() -> ToolbarItem<(), some View> {
+    func toolBarItemConnectToServer() -> ToolbarItem<(), some View> {
         return ToolbarItem(placement: .automatic) {
             ToolbarButton(
                 systemImage: "server.rack",
@@ -241,7 +241,7 @@ struct MiMiNavigatorApp: App {
     }
 
     // MARK: - Find Files button (macOS HIG — search icon)
-    fileprivate func toolBarItemSearch() -> ToolbarItem<(), some View> {
+    func toolBarItemSearch() -> ToolbarItem<(), some View> {
         return ToolbarItem(placement: .automatic) {
             ToolbarButton(
                 systemImage: "magnifyingglass",
@@ -258,7 +258,7 @@ struct MiMiNavigatorApp: App {
     }
 
     // MARK: - Swap panels button — exchange left ↔ right directory
-    fileprivate func toolBarItemSwapPanels() -> ToolbarItem<(), some View> {
+    func toolBarItemSwapPanels() -> ToolbarItem<(), some View> {
         return ToolbarItem(placement: .automatic) {
             ToolbarButton(
                 systemImage: "arrow.left.arrow.right",
@@ -271,7 +271,7 @@ struct MiMiNavigatorApp: App {
     }
 
     // MARK: - Compare button — diff files or directories via FileMerge (opendiff)
-    fileprivate func toolBarItemCompare() -> ToolbarItem<(), some View> {
+    func toolBarItemCompare() -> ToolbarItem<(), some View> {
         return ToolbarItem(placement: .automatic) {
             ToolbarButton(
                 systemImage: "doc.text.magnifyingglass",

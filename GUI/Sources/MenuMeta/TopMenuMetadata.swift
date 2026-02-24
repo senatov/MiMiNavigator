@@ -237,7 +237,7 @@ let configMenuCategory = MenuCategory(
             hotKey: .openSettings
         ),
         MenuItem(title: "Options…",            action: stub("Options…"),            shortcut: "⌥O"),
-        MenuItem(title: "Customize Toolbar…",  action: stub("Customize Toolbar…"),  shortcut: nil),
+        MenuItem(title: "Customize Toolbar…",  action: { ToolbarCustomizeCoordinator.shared.show() },  shortcut: nil),
     ])
 
 // MARK: - Start (Tabs) Menu

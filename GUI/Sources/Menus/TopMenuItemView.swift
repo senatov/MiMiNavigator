@@ -4,6 +4,7 @@
 //
 //  Created by Iakov Senatov on 18.02.25.
 //  Copyright © 2025 Senatov. All rights reserved.
+// Description: Menu item view — reads live shortcuts from HotKeyStore (@Observable)
 //
 
 import SwiftUI
@@ -16,6 +17,18 @@ struct TopMenuItemView: View {
     @State private var showHelpText = false
     @State private var hoverTask: Task<Void, Never>? = nil
 
+    // MARK: - Live shortcut from @Observable HotKeyStore
+    /// Reading HotKeyStore.shared inside body makes SwiftUI track changes automatically.
+    private var liveShortcut: String? {
+        if let hkAction = item.hotKeyAction {
+            let binding = HotKeyStore.shared.binding(for: hkAction)
+            guard binding.keyCode != 0 else { return nil }
+            let display = binding.displayString
+            return display.isEmpty ? nil : display
+        }
+        return item.staticShortcut
+    }
+
     var body: some View {
         Button(action: {
             isPressed = true
@@ -25,7 +38,7 @@ struct TopMenuItemView: View {
             }
             item.action()
         }) {
-            MenuItemContent(title: item.title, shortcut: item.shortcut)
+            MenuItemContent(title: item.title, shortcut: liveShortcut)
                 .background(
                     RoundedRectangle(cornerRadius: 6, style: .continuous)
                         .fill(isPressed ? Color.blue.opacity(0.7) : (isHovered ? Color.blue.opacity(0.3) : Color.clear))

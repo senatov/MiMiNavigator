@@ -11,6 +11,7 @@ import SwiftUI
 struct DuoFilePanelView: View {
     // MARK: - Environment & State
     @Environment(AppState.self) var appState
+    @State private var toolbarStore = ToolbarStore.shared  // tracks menuBarVisible changes
     @State private var leftPanelWidth: CGFloat = 0
     @State private var isInitialized = false
     @State private var keyboardHandler: DuoFilePanelKeyboardHandler?
@@ -25,7 +26,9 @@ struct DuoFilePanelView: View {
     // MARK: - Body
     var body: some View {
         VStack(spacing: 0) {
-            DuoPanelTopMenuBarSection()
+            if toolbarStore.menuBarVisible {
+                DuoPanelTopMenuBarSection()
+            }
             
             GeometryReader { geometry in
                 DuoPanelFilePanelsSection(
