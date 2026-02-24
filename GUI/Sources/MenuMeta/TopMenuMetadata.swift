@@ -3,7 +3,8 @@
 //
 // Created by Iakov Senatov on 01.06.2025.
 // Copyright © 2025-2026 Senatov. All rights reserved.
-// Description: Menu item metadata — real actions where implemented, stub popups elsewhere
+// Description: Menu item metadata — real actions where implemented, stub popups elsewhere.
+//   Items with HotKeyAction use live shortcut display from HotKeyStore.
 
 import AppKit
 import Foundation
@@ -60,7 +61,7 @@ let filesMenuCategory = MenuCategory(
         MenuItem(
             title: "Quit",
             action: { NSApplication.shared.terminate(nil) },
-            shortcut: "⌥F4"
+            hotKey: .exitApp
         ),
     ])
 
@@ -75,7 +76,7 @@ let markMenuCategory = MenuCategory(
                 guard let appState = AppStateProvider.shared else { return }
                 appState.markByPattern()
             },
-            shortcut: "Num+"
+            hotKey: .markByPattern
         ),
         MenuItem(
             title: "Unselect Group…",
@@ -83,7 +84,7 @@ let markMenuCategory = MenuCategory(
                 guard let appState = AppStateProvider.shared else { return }
                 appState.unmarkByPattern()
             },
-            shortcut: "Num-"
+            hotKey: .unmarkByPattern
         ),
         MenuItem(
             title: "Select All",
@@ -91,7 +92,7 @@ let markMenuCategory = MenuCategory(
                 guard let appState = AppStateProvider.shared else { return }
                 appState.markAll()
             },
-            shortcut: "⌃A"
+            hotKey: .markAll
         ),
         MenuItem(
             title: "Unselect All",
@@ -99,7 +100,7 @@ let markMenuCategory = MenuCategory(
                 guard let appState = AppStateProvider.shared else { return }
                 appState.unmarkAll()
             },
-            shortcut: "⌃U"
+            hotKey: .unmarkAll
         ),
         MenuItem(
             title: "Invert Selection",
@@ -107,7 +108,7 @@ let markMenuCategory = MenuCategory(
                 guard let appState = AppStateProvider.shared else { return }
                 appState.invertMarks()
             },
-            shortcut: nil
+            hotKey: .invertMarks
         ),
         MenuItem(
             title: "Select Same Extension",
@@ -115,7 +116,7 @@ let markMenuCategory = MenuCategory(
                 guard let appState = AppStateProvider.shared else { return }
                 appState.markSameExtension()
             },
-            shortcut: nil
+            hotKey: .markSameExtension
         ),
     ])
 
@@ -133,7 +134,7 @@ let commandMenuCategory = MenuCategory(
                 let file = panel == .left ? appState.selectedLeftFile : appState.selectedRightFile
                 FindFilesCoordinator.shared.toggle(searchPath: path, selectedFile: file)
             },
-            shortcut: "⌥F7"
+            hotKey: .findFiles
         ),
         MenuItem(
             title: "Open in Terminal",
@@ -167,7 +168,7 @@ let commandMenuCategory = MenuCategory(
                 guard let appState = AppStateProvider.shared else { return }
                 appState.toggleFocus()
             },
-            shortcut: "⌘⌥T"
+            hotKey: .togglePanelFocus
         ),
         MenuItem(
             title: "CD Tree…",
@@ -211,7 +212,7 @@ let showMenuCategory = MenuCategory(
                 guard let appState = AppStateProvider.shared else { return }
                 appState.forceRefreshBothPanels()
             },
-            shortcut: "⌃R"
+            hotKey: .refreshPanels
         ),
         MenuItem(
             title: "Show/Hide Hidden Files",
@@ -221,7 +222,7 @@ let showMenuCategory = MenuCategory(
                 guard let appState = AppStateProvider.shared else { return }
                 appState.forceRefreshBothPanels()
             },
-            shortcut: "⌃H"
+            hotKey: .toggleHiddenFiles
         ),
     ])
 
@@ -233,7 +234,7 @@ let configMenuCategory = MenuCategory(
         MenuItem(
             title: "Keyboard Shortcuts…",
             action: { HotKeySettingsCoordinator.shared.showSettings() },
-            shortcut: "⌘,"
+            hotKey: .openSettings
         ),
         MenuItem(title: "Options…",            action: stub("Options…"),            shortcut: "⌥O"),
         MenuItem(title: "Customize Toolbar…",  action: stub("Customize Toolbar…"),  shortcut: nil),
@@ -252,7 +253,7 @@ let startMenuCategory = MenuCategory(
                 let path = panel == .left ? appState.leftPath : appState.rightPath
                 _ = appState.tabManager(for: panel).addTab(path: path)
             },
-            shortcut: "⌃T"
+            hotKey: .newTab
         ),
         MenuItem(
             title: "Duplicate Tab",
@@ -270,7 +271,7 @@ let startMenuCategory = MenuCategory(
                 guard let appState = AppStateProvider.shared else { return }
                 appState.tabManager(for: appState.focusedPanel).closeActiveTab()
             },
-            shortcut: "⌃W"
+            hotKey: .closeTab
         ),
         MenuItem(
             title: "Next Tab",
@@ -278,7 +279,7 @@ let startMenuCategory = MenuCategory(
                 guard let appState = AppStateProvider.shared else { return }
                 appState.tabManager(for: appState.focusedPanel).selectNextTab()
             },
-            shortcut: "⌃⇥"
+            hotKey: .nextTab
         ),
         MenuItem(
             title: "Previous Tab",
@@ -286,7 +287,7 @@ let startMenuCategory = MenuCategory(
                 guard let appState = AppStateProvider.shared else { return }
                 appState.tabManager(for: appState.focusedPanel).selectPreviousTab()
             },
-            shortcut: "⌃⇧⇥"
+            hotKey: .prevTab
         ),
     ])
 

@@ -40,6 +40,18 @@ final class HotKeyStore {
             ?? HotKeyBinding(action: action, keyCode: 0, modifiers: .none)
     }
 
+    /// Live shortcut display string for an action (e.g. "⌘R")
+    func shortcutString(for action: HotKeyAction) -> String {
+        let b = binding(for: action)
+        return b.keyCode == 0 ? "" : b.displayString
+    }
+
+    /// Help text for toolbar buttons: "Description (shortcut)"
+    func helpText(_ description: String, for action: HotKeyAction) -> String {
+        let sc = shortcutString(for: action)
+        return sc.isEmpty ? description : "\(description) (\(sc))"
+    }
+
     /// Get all bindings as sorted array (for UI display)
     var allBindings: [HotKeyBinding] {
         HotKeyAction.allCases.map { binding(for: $0) }
