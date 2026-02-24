@@ -157,6 +157,7 @@ struct MiMiNavigatorApp: App {
         .windowToolbarStyle(.unifiedCompact)
         .commands {
             AppCommands(appState: appState)
+            SettingsCommands()
         }
     }
 
@@ -709,5 +710,17 @@ struct MiMiNavigatorApp: App {
             }
         }
         return Text(content)
+    }
+}
+
+// MARK: - Settings keyboard shortcut (⌘,)
+struct SettingsCommands: Commands {
+    var body: some Commands {
+        CommandGroup(before: .appSettings) {
+            Button("Settings…") {
+                SettingsCoordinator.shared.toggle()
+            }
+            .keyboardShortcut(",", modifiers: .command)
+        }
     }
 }
