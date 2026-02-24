@@ -22,32 +22,30 @@ enum FinderIntegration {
         
         let escapedPath = url.path.replacingOccurrences(of: "\"", with: "\\\"")
         
-        let infoW = 340
-        let infoH = 500
-        
         // Get window position from NSApp (Cocoa) — reliable even during context menu
         var targetX = 500
         var targetY = 200
         if let window = NSApp.mainWindow ?? NSApp.windows.first(where: { $0.isVisible }) {
-            let frame = window.frame
+            let frame  = window.frame
             let screenH = NSScreen.screens.first?.frame.height ?? 1600
-            let topLeftX = Int(frame.origin.x)
-            let topLeftY = Int(screenH - frame.origin.y - frame.height)
-            targetX = topLeftX + (Int(frame.width) - infoW) / 2
-            targetY = topLeftY + (Int(frame.height) - infoH) / 2
+            // Place near top-right of main window
+            targetX = Int(frame.maxX) - 360
+            targetY = Int(screenH - frame.maxY) + 40
         }
         
         log.debug("[FinderIntegration] Get Info target=(\(targetX),\(targetY))")
         
-        // Strategy: create window offscreen → position → activate (no visible jump)
+        // Open Get Info fully expanded.
+        // Finder info windows have no per-section AppleScript API —
+        // 'set zoomed to true' is the only way to make Finder auto-expand all sections.
+        // Position first, then zoom so the window expands downward from targetY.
         let script = """
         tell application "Finder"
             close every information window
             set infoWin to open information window of (POSIX file "\(escapedPath)" as alias)
-            set zoomed of infoWin to false
             set collapsed of infoWin to false
-            set bounds of infoWin to {\(targetX), \(targetY), \(targetX + infoW), \(targetY + infoH)}
-            set current panel of infoWin to General Information panel
+            set position of infoWin to {\(targetX), \(targetY)}
+            set zoomed of infoWin to true
         end tell
         tell application "Finder" to activate
         """
