@@ -39,11 +39,11 @@ private struct SettingsGroupBox<Content: View>: View {
         .padding(14)
         .background(
             RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(Color(nsColor: .controlBackgroundColor))
+                .fill(DialogColors.light)
         )
         .overlay(
             RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .stroke(Color(nsColor: .separatorColor).opacity(0.5), lineWidth: 0.5)
+                .stroke(DialogColors.border.opacity(0.5), lineWidth: 0.5)
         )
     }
 }
@@ -856,8 +856,8 @@ struct DiffToolEditSheet: View {
 
 struct SettingsHotkeysPane: View {
     var body: some View {
-        HotKeySettingsView()
-            .frame(minHeight: 380)
+        HotKeySettingsView(embedded: true)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 

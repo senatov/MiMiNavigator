@@ -10,7 +10,11 @@ import SwiftUI
 
 // MARK: - Hot Key Settings View
 struct HotKeySettingsView: View {
+    /// When embedded in Settings, skip outer frame constraints
+    var embedded: Bool = false
+
     @State private var store = HotKeyStore.shared
+    @State private var themeStore = ColorThemeStore.shared
     @State private var conflictAlert: ConflictInfo?
     @State private var showResetConfirmation = false
     @State private var filterText = ""
@@ -30,7 +34,12 @@ struct HotKeySettingsView: View {
             Divider()
             footerBar
         }
-        .frame(minWidth: 660, minHeight: 480)
+        .frame(
+            minWidth: embedded ? 0 : 660,
+            maxWidth: .infinity,
+            minHeight: embedded ? 0 : 480,
+            maxHeight: .infinity
+        )
         .background(DialogColors.base)
         .alert("Shortcut Conflict", isPresented: Binding(
             get: { conflictAlert != nil },

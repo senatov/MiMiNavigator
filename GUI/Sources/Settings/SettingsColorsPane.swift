@@ -395,9 +395,9 @@ struct SettingsColorsPane: View {
         VStack(alignment: .leading, spacing: 0) { content() }
             .padding(14)
             .background(RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(Color(nsColor: .controlBackgroundColor)))
+                .fill(DialogColors.light))
             .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .stroke(Color(nsColor: .separatorColor).opacity(0.5), lineWidth: 0.5))
+                .stroke(DialogColors.border.opacity(0.5), lineWidth: 0.5))
     }
 
     /// Binding<Color> from hex AppStorage, falls back to preset color
@@ -433,5 +433,18 @@ extension Color {
         let g = Int(components[1] * 255)
         let b = Int(components[2] * 255)
         return String(format: "%02X%02X%02X", r, g, b)
+    }
+
+    /// Blend with another color by fraction (0.0 = self, 1.0 = other)
+    func blended(with other: Color, fraction: Double) -> Color {
+        guard let c1 = NSColor(self).usingColorSpace(.sRGB)?.cgColor.components,
+              let c2 = NSColor(other).usingColorSpace(.sRGB)?.cgColor.components,
+              c1.count >= 3, c2.count >= 3 else { return self }
+        let f = max(0, min(1, fraction))
+        return Color(
+            red:   c1[0] * (1 - f) + c2[0] * f,
+            green: c1[1] * (1 - f) + c2[1] * f,
+            blue:  c1[2] * (1 - f) + c2[2] * f
+        )
     }
 }

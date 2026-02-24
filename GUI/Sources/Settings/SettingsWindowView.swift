@@ -14,6 +14,7 @@ struct SettingsWindowView: View {
     let onDismiss: () -> Void
 
     @State private var selectedSection: SettingsSection = .general
+    @State private var themeStore = ColorThemeStore.shared
     @Environment(\.colorScheme) private var colorScheme
 
     private var dialogBgColor: Color {
@@ -84,7 +85,7 @@ struct SettingsWindowView: View {
             }
             .overlay(alignment: .top) { Divider() }
         }
-        .background(Color(nsColor: .windowBackgroundColor).opacity(0.96))
+        .background(DialogColors.base.opacity(0.96))
     }
 
     private func sidebarRow(_ section: SettingsSection) -> some View {
@@ -116,44 +117,52 @@ struct SettingsWindowView: View {
     @ViewBuilder
     private var contentPane: some View {
         ZStack {
-            Color(nsColor: .windowBackgroundColor)
-            ScrollView {
+            dialogBgColor
+
+            if selectedSection == .hotkeys {
+                // Hotkeys has its own HSplitView + ScrollView — fill the whole area
                 VStack(alignment: .leading, spacing: 0) {
-                    // Section title bar
-                    HStack {
-                        Image(systemName: selectedSection.icon)
-                            .font(.system(size: 16, weight: .medium))
-                            .foregroundStyle(Color.accentColor)
-                        Text(selectedSection.rawValue)
-                            .font(.system(size: 17, weight: .semibold))
-                        Spacer()
-                    }
-                    .padding(.horizontal, 24)
-                    .padding(.top, 20)
-                    .padding(.bottom, 16)
-
-                    Divider()
-                        .padding(.horizontal, 24)
-                        .padding(.bottom, 16)
-
-                    // Section content
-                    Group {
-                        switch selectedSection {
-                        case .general:     SettingsGeneralPane()
-                        case .colors:      SettingsColorsPane()
-                        case .panels:      SettingsPanelsPane()
-                        case .tabs:        SettingsTabsPane()
-                        case .archives:    SettingsArchivesPane()
-                        case .network:     SettingsNetworkPane()
-                        case .diffTool:    SettingsDiffToolPane()
-                        case .permissions: SettingsPermissionsPane()
-                        case .hotkeys:     SettingsHotkeysPane()
+                    sectionTitleBar
+                    Divider().padding(.horizontal, 24).padding(.bottom, 0)
+                    SettingsHotkeysPane()
+                }
+            } else {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 0) {
+                        sectionTitleBar
+                        Divider().padding(.horizontal, 24).padding(.bottom, 16)
+                        Group {
+                            switch selectedSection {
+                            case .general:     SettingsGeneralPane()
+                            case .colors:      SettingsColorsPane()
+                            case .panels:      SettingsPanelsPane()
+                            case .tabs:        SettingsTabsPane()
+                            case .archives:    SettingsArchivesPane()
+                            case .network:     SettingsNetworkPane()
+                            case .diffTool:    SettingsDiffToolPane()
+                            case .permissions: SettingsPermissionsPane()
+                            case .hotkeys:     EmptyView() // handled above
+                            }
                         }
+                        .padding(.horizontal, 24)
+                        .padding(.bottom, 24)
                     }
-                    .padding(.horizontal, 24)
-                    .padding(.bottom, 24)
                 }
             }
         }
+    }
+
+    private var sectionTitleBar: some View {
+        HStack {
+            Image(systemName: selectedSection.icon)
+                .font(.system(size: 16, weight: .medium))
+                .foregroundStyle(DialogColors.accent)
+            Text(selectedSection.rawValue)
+                .font(.system(size: 17, weight: .semibold))
+            Spacer()
+        }
+        .padding(.horizontal, 24)
+        .padding(.top, 20)
+        .padding(.bottom, 16)
     }
 }
