@@ -171,7 +171,7 @@ struct MiMiNavigatorApp: App {
         return ToolbarItem(placement: .automatic) {
             ToolbarButton(
                 systemImage: "arrow.triangle.2.circlepath",
-                help: "Refresh file lists (⌘R)"
+                help: HotKeyStore.shared.helpText("Refresh file lists", for: .refreshPanels)
             ) {
                 log.debug("Refresh button clicked")
                 appState.forceRefreshBothPanels()
@@ -186,8 +186,8 @@ struct MiMiNavigatorApp: App {
             ToolbarToggleButton(
                 systemImage: "eye.slash",
                 activeImage: "eye.fill",
-                helpActive: "Hide hidden files (⌘.)",
-                helpInactive: "Show hidden files (⌘.)",
+                helpActive: HotKeyStore.shared.helpText("Hide hidden files", for: .toggleHiddenFiles),
+                helpInactive: HotKeyStore.shared.helpText("Show hidden files", for: .toggleHiddenFiles),
                 isActive: $showHiddenFiles
             ) {
                 log.debug("Hidden toggle clicked")
