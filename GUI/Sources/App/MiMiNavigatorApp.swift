@@ -117,10 +117,7 @@ struct MiMiNavigatorApp: App {
                     AppToolbarContent(app: self)
                     toolBarItemBuildInfo()
                 }
-                .onAppear {
-                    // Start global right-click monitor for toolbar area
-                    ToolbarRightClickMonitor.shared.start()
-                }
+                // ToolbarRightClickMonitor started in AppDelegate.applicationDidFinishLaunching
                 // MARK: - File Transfer Confirmation Dialog
                 .sheet(isPresented: Binding(
                     get: { dragDropManager.showConfirmationDialog },
