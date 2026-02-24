@@ -10,10 +10,10 @@
 		976FEA882D49C8C70078EA90 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 976FEA872D49C8C70078EA90 /* README.md */; };
 		97B3D6382DCA54B9002F1DB7 /* SystemPackage in Frameworks */ = {isa = PBXBuildFile; productRef = 97B3D6372DCA54B9002F1DB7 /* SystemPackage */; };
 		97D128762DB62DD400274684 /* FilesProvider in Frameworks */ = {isa = PBXBuildFile; productRef = 97D128752DB62DD400274684 /* FilesProvider */; };
-		CC000003CC000003CC000003 /* Citadel in Frameworks */ = {isa = PBXBuildFile; productRef = CC000002CC000002CC000002 /* Citadel */; };
 		97D9156C2CD5625D00EB5FDD /* SwiftyBeaver in Frameworks */ = {isa = PBXBuildFile; productRef = 97D9156B2CD5625D00EB5FDD /* SwiftyBeaver */; };
 		97ECF2AD2F224FA5005A6EFB /* FavoritesKit in Frameworks */ = {isa = PBXBuildFile; productRef = 971A28F82F1B140900094ADE /* FavoritesKit */; };
 		AA000003AA000003AA000003 /* LogKit in Frameworks */ = {isa = PBXBuildFile; productRef = AA000002AA000002AA000002 /* LogKit */; };
+		CC000003CC000003CC000003 /* Citadel in Frameworks */ = {isa = PBXBuildFile; productRef = CC000002CC000002CC000002 /* Citadel */; };
 		FF82030CE1584192AE6E4DEA /* NetworkKit in Frameworks */ = {isa = PBXBuildFile; productRef = 52D4533F441E4D78BD910304 /* NetworkKit */; };
 /* End PBXBuildFile section */
 
