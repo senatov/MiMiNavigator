@@ -12,10 +12,49 @@ import FileModelKit
 ///   dialogLight  #F7F7F7 — section headers, card backgrounds
 ///   dialogBase   #EFEFEF — main dialog background
 ///   dialogStripe #E7E7E7 — contrast stripes, divider areas
+/// Dynamic dialog colors — driven by ColorThemeStore.
+/// When theme changes in Settings → Colors, all dialogs update immediately.
 enum DialogColors {
-    static let light = Color(red: 247 / 255, green: 247 / 255, blue: 247 / 255)
-    static let base = Color(red: 239 / 255, green: 239 / 255, blue: 239 / 255)
-    static let stripe = Color(red: 231 / 255, green: 231 / 255, blue: 231 / 255)
+    /// Section headers, card backgrounds
+    static var light: Color {
+        let s = ColorThemeStore.shared
+        if !s.hexDialogBase.isEmpty, let c = Color(hex: s.hexDialogBase) {
+            return c.opacity(1.03)  // slightly lighter than base
+        }
+        return s.activeTheme.dialogBase.blended(with: .white, fraction: 0.35)
+    }
+    /// Main dialog/panel background
+    static var base: Color {
+        let s = ColorThemeStore.shared
+        if !s.hexDialogBase.isEmpty, let c = Color(hex: s.hexDialogBase) {
+            return c
+        }
+        return s.activeTheme.dialogBase
+    }
+    /// Contrast stripes, header/footer bars
+    static var stripe: Color {
+        let s = ColorThemeStore.shared
+        if !s.hexDialogStripe.isEmpty, let c = Color(hex: s.hexDialogStripe) {
+            return c
+        }
+        return s.activeTheme.dialogStripe
+    }
+    /// Separator / border color for dialogs
+    static var border: Color {
+        let s = ColorThemeStore.shared
+        if !s.hexSeparator.isEmpty, let c = Color(hex: s.hexSeparator) {
+            return c
+        }
+        return s.activeTheme.separatorColor
+    }
+    /// Accent color for buttons and highlights
+    static var accent: Color {
+        let s = ColorThemeStore.shared
+        if !s.hexAccent.isEmpty, let c = Color(hex: s.hexAccent) {
+            return c
+        }
+        return s.activeTheme.accentColor
+    }
 }
 
 // MARK: - macOS HIG 26 Dialog Base Modifier
@@ -30,7 +69,7 @@ struct HIGDialogStyle: ViewModifier {
             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .strokeBorder(Color(nsColor: .separatorColor).opacity(0.5), lineWidth: 0.5)
+                    .strokeBorder(DialogColors.border.opacity(0.5), lineWidth: 0.5)
             )
             .shadow(color: .black.opacity(0.22), radius: 20, x: 0, y: 8)
     }
