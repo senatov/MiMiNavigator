@@ -43,13 +43,16 @@ struct SplitContainer<Left: View, Right: View>: NSViewRepresentable {
         if Self.verboseLogs { log.debug(msg()) }
     }
 
-    // MARK: - Persisted left panel width
-    @AppStorage("leftPanelWidth") fileprivate var leftPanelWidthValue: Double = 400
+    // MARK: - Persisted left panel width (sentinel -1 = "not yet configured → use 50/50")
+    @AppStorage("leftPanelWidth") fileprivate var leftPanelWidthValue: Double = -1
 
     var leftPanelWidth: CGFloat {
         get { CGFloat(leftPanelWidthValue) }
         set { leftPanelWidthValue = Double(newValue) }
     }
+
+    /// True when no persisted width exists yet (fresh install / config reset)
+    var needsInitialLayout: Bool { leftPanelWidthValue < 0 }
 
     // MARK: - NSViewRepresentable
     func makeNSView(context: Context) -> NSSplitView {
@@ -73,14 +76,21 @@ struct SplitContainer<Left: View, Right: View>: NSViewRepresentable {
         // Apply initial divider position on next runloop when bounds are valid
         DispatchQueue.main.async {
             let total = max(splitView.bounds.width, 1)
-            let clamped = clampLeftWidth(
-                self.leftPanelWidth, totalWidth: total, minPanelWidth: self.minPanelWidth, dividerThickness: splitView.dividerThickness
+            // When config is missing/reset, default to 50/50 instead of a hardcoded value
+            let desiredLeft = self.needsInitialLayout ? (total / 2.0) : self.leftPanelWidth
+            let clamped = self.clampLeftWidth(
+                desiredLeft, totalWidth: total, minPanelWidth: self.minPanelWidth, dividerThickness: splitView.dividerThickness
             )
             context.coordinator.isProgrammatic = true
             splitView.setPosition(clamped, ofDividerAt: 0)
             context.coordinator.lastSetPosition = clamped
+            // Persist the computed 50/50 so subsequent updateNSView calls don't fight it
+            if self.needsInitialLayout {
+                var mutableSelf = self
+                mutableSelf.leftPanelWidth = clamped
+            }
             context.coordinator.isProgrammatic = false
-            log.debug("SplitContainer.makeNSView → initial left=\(Int(clamped)) total=\(Int(total))")
+            log.debug("SplitContainer.makeNSView → initial left=\(Int(clamped)) total=\(Int(total)) wasDefault=\(self.needsInitialLayout)")
         }
         // Gesture recognizer not needed: Option+Left click is handled in ResettableSplitView.mouseDown(_:).
         return splitView
@@ -95,7 +105,9 @@ struct SplitContainer<Left: View, Right: View>: NSViewRepresentable {
         if let rightHost = splitView.arrangedSubviews.last as? NSHostingView<Right> {
             rightHost.rootView = rightPanel()
         }
-        // Sync divider positionw/persisted width without causing feedback loops
+        // Sync divider position w/ persisted width without causing feedback loops
+        // Skip if not yet configured (sentinel -1) — makeNSView handles initial layout
+        guard !needsInitialLayout, !context.coordinator.isProgrammatic else { return }
         let total = max(splitView.bounds.width, 1)
         let desired = clampLeftWidth(
             leftPanelWidth,
@@ -104,14 +116,12 @@ struct SplitContainer<Left: View, Right: View>: NSViewRepresentable {
             dividerThickness: splitView.dividerThickness
         )
         let current = splitView.arrangedSubviews.first?.frame.width ?? 0
-        if !context.coordinator.isProgrammatic {
-            let delta = abs(desired - current)
-            if delta >= 0.5 {
-                context.coordinator.isProgrammatic = true
-                splitView.setPosition(desired, ofDividerAt: 0)
-                context.coordinator.lastSetPosition = desired
-                context.coordinator.isProgrammatic = false
-            }
+        let delta = abs(desired - current)
+        if delta >= 0.5 {
+            context.coordinator.isProgrammatic = true
+            splitView.setPosition(desired, ofDividerAt: 0)
+            context.coordinator.lastSetPosition = desired
+            context.coordinator.isProgrammatic = false
         }
     }
 
