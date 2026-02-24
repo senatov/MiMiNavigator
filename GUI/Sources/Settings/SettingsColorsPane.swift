@@ -33,6 +33,9 @@ struct ColorTheme: Identifiable, Equatable {
     var dialogBase: Color
     var dialogStripe: Color
     var accentColor: Color
+    /// Background of floating dialog windows (Find Files, Settings, etc.)
+    /// Matches active panel background, slightly more transparent.
+    var dialogBackground: Color
 
     // Dark variants (nil = same as light)
     var panelBackgroundDark: Color?
@@ -61,6 +64,7 @@ extension ColorTheme {
         dialogBase:         Color(red: 239/255, green: 239/255, blue: 239/255),
         dialogStripe:       Color(red: 231/255, green: 231/255, blue: 231/255),
         accentColor:        Color.accentColor,
+        dialogBackground:   Color(nsColor: .controlBackgroundColor).opacity(0.92),
         panelBackgroundDark: Color(nsColor: .windowBackgroundColor),
         panelTextDark:       Color.primary,
         dirNameColorDark:    Color.primary,
@@ -83,6 +87,7 @@ extension ColorTheme {
         dialogBase:         Color(red: 250/255, green: 245/255, blue: 235/255),
         dialogStripe:       Color(red: 245/255, green: 238/255, blue: 224/255),
         accentColor:        Color(red: 210/255, green: 140/255, blue: 40/255),
+        dialogBackground:   Color(red: 252/255, green: 248/255, blue: 240/255).opacity(0.92),
         panelBackgroundDark: Color(red: 40/255, green: 35/255, blue: 28/255),
         panelTextDark:       Color(red: 240/255, green: 225/255, blue: 200/255),
         dirNameColorDark:    Color(red: 255/255, green: 200/255, blue: 120/255),
@@ -105,6 +110,7 @@ extension ColorTheme {
         dialogBase:         Color(red: 35/255,  green: 40/255,  blue: 58/255),
         dialogStripe:       Color(red: 28/255,  green: 33/255,  blue: 50/255),
         accentColor:        Color(red: 80/255,  green: 150/255, blue: 255/255),
+        dialogBackground:   Color(red: 30/255,  green: 35/255,  blue: 50/255).opacity(0.92),
         panelBackgroundDark: nil,
         panelTextDark:       nil,
         dirNameColorDark:    nil,
@@ -127,6 +133,7 @@ extension ColorTheme {
         dialogBase:         Color(red: 250/255, green: 244/255, blue: 222/255),
         dialogStripe:       Color(red: 245/255, green: 238/255, blue: 214/255),
         accentColor:        Color(red: 38/255,  green: 139/255, blue: 210/255),
+        dialogBackground:   Color(red: 253/255, green: 246/255, blue: 227/255).opacity(0.92),
         panelBackgroundDark: Color(red: 0/255,   green: 43/255,  blue: 54/255),
         panelTextDark:       Color(red: 131/255, green: 148/255, blue: 150/255),
         dirNameColorDark:    Color(red: 38/255,  green: 139/255, blue: 210/255),
@@ -162,6 +169,7 @@ final class ColorThemeStore {
     @ObservationIgnored @AppStorage("color.dialogBase")        var hexDialogBase: String = ""
     @ObservationIgnored @AppStorage("color.dialogStripe")      var hexDialogStripe: String = ""
     @ObservationIgnored @AppStorage("color.accent")            var hexAccent: String = ""
+    @ObservationIgnored @AppStorage("color.dialogBackground")  var hexDialogBackground: String = ""
 
     private(set) var activeTheme: ColorTheme = .defaultTheme
 
@@ -203,6 +211,7 @@ struct SettingsColorsPane: View {
     @AppStorage("color.selectionActive")   private var hexSelActive: String = ""
     @AppStorage("color.selectionInactive") private var hexSelInactive: String = ""
     @AppStorage("color.accent")            private var hexAccent: String = ""
+    @AppStorage("color.dialogBackground")  private var hexDialogBg: String = ""
 
     private var currentPreset: ColorTheme {
         ColorTheme.allPresets.first { $0.id == selectedPresetID } ?? .defaultTheme
@@ -282,6 +291,16 @@ struct SettingsColorsPane: View {
                     sectionHeader("Accent")
                     colorRow("Accent color", help: "Used for buttons, highlights, active borders",
                              preset: currentPreset.accentColor, hex: $hexAccent)
+                }
+            }
+
+            settingsGroupBox {
+                VStack(spacing: 0) {
+                    sectionHeader("Dialogs")
+                    colorRow("Dialog background",
+                             help: "Background of Find Files, Settings, and other floating panels. Matches active panel color at 92% opacity.",
+                             preset: currentPreset.dialogBackground,
+                             hex: $hexDialogBg)
                 }
             }
 

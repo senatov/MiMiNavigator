@@ -313,14 +313,12 @@ struct SettingsPermissionsPane: View {
 
     private func checkFullDiskAccess() {
         isCheckingAccess = true
-        Task.detached {
+        Task {
             // Probe /Library/Application Support — blocked without Full Disk Access
             let probe = "/Library/Application Support"
-            let accessible = FileManager.default.isReadableFile(atPath: probe)
-            await MainActor.run {
-                hasFullDiskAccess = accessible
-                isCheckingAccess = false
-            }
+            let accessible = await Task.detached { @concurrent in FileManager.default.isReadableFile(atPath: probe) }.value
+            hasFullDiskAccess = accessible
+            isCheckingAccess = false
         }
     }
 
