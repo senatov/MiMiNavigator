@@ -33,7 +33,7 @@ struct TabBarView: View {
         if tabs.count > 1 {
             ScrollViewReader { proxy in
                 ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 2) {
+                    HStack(spacing: 0) {
                         ForEach(tabs) { tab in
                             TabItemView(
                                 tab: tab,
@@ -59,10 +59,10 @@ struct TabBarView: View {
                             .id(tab.id)
                         }
                     }
-                    .padding(.horizontal, 4)
-                    .padding(.vertical, 2)
+                    .padding(.leading, 6)
+                    .padding(.top, 4)
                 }
-                .frame(height: 26)
+                .frame(height: 32)
                 .background(tabBarBackground)
                 .onChange(of: activeID) { _, newID in
                     withAnimation(.easeInOut(duration: 0.2)) {
@@ -77,11 +77,11 @@ struct TabBarView: View {
 
     private var tabBarBackground: some View {
         ZStack {
-            DesignTokens.panelBg.opacity(0.6)
-            // Bottom separator line
-            VStack {
+            Color(nsColor: .controlBackgroundColor).opacity(0.5)
+            // Bottom separator — the "floor" of the tab bar
+            VStack(spacing: 0) {
                 Spacer()
-                DesignTokens.separator.opacity(0.3)
+                Color(nsColor: .separatorColor).opacity(0.45)
                     .frame(height: 0.5)
             }
         }
