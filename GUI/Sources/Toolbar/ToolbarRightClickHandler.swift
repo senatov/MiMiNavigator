@@ -5,8 +5,9 @@
 // Copyright © 2026 Senatov. All rights reserved.
 // Description: Right-click handler for the toolbar area.
 //   Uses NSEvent local monitor on .rightMouseDown.
-//   Hit-test: click is above contentView.maxY in window coordinates → toolbar zone.
-//   Started in AppDelegate.applicationDidFinishLaunching (guaranteed early init).
+//   Log analysis showed: contentView covers entire window (y=0..windowH),
+//   so toolbar zone is detected as the top 60pt of the window frame.
+//   Started in AppDelegate.applicationDidFinishLaunching.
 
 import AppKit
 
@@ -19,7 +20,8 @@ final class ToolbarRightClickMonitor {
 
     private init() {}
 
-    // MARK: - Start
+    // MARK: - Start / Stop
+
     func start() {
         guard monitor == nil else {
             log.debug("[ToolbarRightClick] already running — skip")
@@ -27,7 +29,7 @@ final class ToolbarRightClickMonitor {
         }
         monitor = NSEvent.addLocalMonitorForEvents(matching: .rightMouseDown) { [weak self] event in
             self?.handleRightClick(event)
-            return event   // always pass through so system context menus still work
+            return event
         }
         log.info("[ToolbarRightClick] monitor started ✓")
     }
@@ -41,40 +43,27 @@ final class ToolbarRightClickMonitor {
     }
 
     // MARK: - Hit test
+
     private func handleRightClick(_ event: NSEvent) {
-        // Find the window — prefer event.window, fall back to key window, then main window
-        guard let window = event.window
-                        ?? NSApp.keyWindow
-                        ?? NSApp.mainWindow else {
+        guard let window = event.window ?? NSApp.keyWindow ?? NSApp.mainWindow else {
             log.debug("[ToolbarRightClick] no window — ignored")
             return
         }
 
-        let loc = event.locationInWindow
+        let y       = event.locationInWindow.y
+        let windowH = window.frame.height
 
-        guard let contentView = window.contentView else {
-            log.debug("[ToolbarRightClick] no contentView — ignored")
-            return
-        }
+        // Log analysis: contentView.maxY == windowH (SwiftUI fills entire window).
+        // Toolbar is physically at the TOP of the window.
+        // Standard unifiedCompact toolbar = ~52pt; use 60pt margin.
+        let toolbarZoneBottom = windowH - 60
+        let inToolbar = y >= toolbarZoneBottom
 
-        // contentView origin in window coords (for unifiedCompact toolbar
-        // the content view starts below the toolbar strip)
-        let contentMinY = contentView.frame.minY
-        let contentMaxY = contentView.frame.maxY
-        let windowH     = window.frame.height
+        log.debug("[ToolbarRightClick] click y=\(Int(y)) windowH=\(Int(windowH)) threshold=\(Int(toolbarZoneBottom)) hit=\(inToolbar)")
 
-        log.debug("[ToolbarRightClick] click y=\(Int(loc.y)) contentMinY=\(Int(contentMinY)) contentMaxY=\(Int(contentMaxY)) windowH=\(Int(windowH))")
+        guard inToolbar else { return }
 
-        // Click is above the content area top edge → title bar / toolbar zone
-        // For unifiedCompact this is the only strip above content
-        let inToolbarZone = loc.y > contentMaxY && loc.y <= windowH
-
-        guard inToolbarZone else {
-            log.debug("[ToolbarRightClick] outside toolbar zone — ignored")
-            return
-        }
-
-        log.info("[ToolbarRightClick] ✓ right-click in toolbar zone → opening customize panel")
+        log.info("[ToolbarRightClick] ✓ opening customize panel")
         ToolbarCustomizeCoordinator.shared.toggle()
     }
 }
