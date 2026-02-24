@@ -86,6 +86,9 @@ extension ContextMenuCoordinator {
             case .delete:
                 activeDialog = .deleteConfirmation(files: batchFiles)
 
+            case .openOnOtherPanel:
+                openDirectoryOnOtherPanel(file, panel: panel, appState: appState)
+
             case .addToFavorites:
                 Task { @MainActor in
                     UserFavoritesStore.shared.add(path: file.pathStr)
@@ -221,6 +224,35 @@ extension ContextMenuCoordinator {
     func openInFinder(_ file: CustomFile) {
         log.debug("\(#function) file='\(file.nameStr)' path='\(file.pathStr)'")
         NSWorkspace.shared.activateFileViewerSelecting([file.urlValue])
+    }
+
+    // MARK: - Open Directory on Other Panel
+
+    /// Opens a directory on the opposite panel
+    func openDirectoryOnOtherPanel(_ file: CustomFile, panel: PanelSide, appState: AppState) {
+        let resolvedURL = file.urlValue.resolvingSymlinksInPath()
+        let targetPath = resolvedURL.path
+
+        var isDir: ObjCBool = false
+        guard FileManager.default.fileExists(atPath: targetPath, isDirectory: &isDir), isDir.boolValue else {
+            log.warning("[OpenOnOther] not a valid directory: '\(targetPath)'")
+            return
+        }
+
+        let otherPanel: PanelSide = panel == .left ? .right : .left
+        log.info("[OpenOnOther] dir='\(file.nameStr)' → panel=\(otherPanel)")
+        Task { @MainActor in
+            appState.updatePath(targetPath, for: otherPanel)
+            if otherPanel == .left {
+                await appState.scanner.setLeftDirectory(pathStr: targetPath)
+                await appState.scanner.refreshFiles(currSide: .left)
+                await appState.refreshLeftFiles()
+            } else {
+                await appState.scanner.setRightDirectory(pathStr: targetPath)
+                await appState.scanner.refreshFiles(currSide: .right)
+                await appState.refreshRightFiles()
+            }
+        }
     }
 
     /// Opens Terminal at directory path

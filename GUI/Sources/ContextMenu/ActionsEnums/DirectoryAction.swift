@@ -35,6 +35,9 @@ enum DirectoryAction: String, CaseIterable, Identifiable {
     // Info section
     case getInfo
 
+    // Cross-panel
+    case openOnOtherPanel
+
     // Favorites
     case addToFavorites
 
@@ -59,6 +62,7 @@ enum DirectoryAction: String, CaseIterable, Identifiable {
         case .rename: return "Rename..."
         case .delete: return "Move to Trash"
         case .getInfo: return "Get Info"
+        case .openOnOtherPanel: return "Open on Other Panel"
         case .addToFavorites: return "Add to Favorites"
         }
     }
@@ -82,6 +86,7 @@ enum DirectoryAction: String, CaseIterable, Identifiable {
         case .rename: return "pencil"
         case .delete: return "trash"
         case .getInfo: return "info.circle"
+        case .openOnOtherPanel: return "arrow.left.arrow.right.square"
         case .addToFavorites: return "star.badge.plus"
         }
     }

@@ -59,11 +59,13 @@ extension FileTableView {
     @ViewBuilder
     var panelBackgroundMenu: some View {
         let currentPath = appState.pathURL(for: panelSide) ?? URL(fileURLWithPath: "/")
+        let hasMarkedDirs = appState.markedCustomFiles(for: panelSide).contains { $0.isDirectory }
         PanelBackgroundContextMenu(
             panelSide: panelSide,
             currentPath: currentPath,
             canGoBack: appState.selectionsHistory.canGoBack,
             canGoForward: appState.selectionsHistory.canGoForward,
+            hasMarkedDirectories: hasMarkedDirs,
             onAction: handlePanelBackgroundAction
         )
     }
