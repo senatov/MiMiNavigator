@@ -41,6 +41,12 @@ let filesMenuCategory = MenuCategory(
             shortcut: "⌥F5"
         ),
         MenuItem(
+            title: "Settings…",
+            icon: "gearshape",
+            action: { SettingsCoordinator.shared.toggle() },
+            shortcut: "⌘,"
+        ),
+        MenuItem(
             title: "Unpack…",
             icon: "archivebox.fill",
             action: stub("Unpack…"),
@@ -63,12 +69,6 @@ let filesMenuCategory = MenuCategory(
             icon: "arrow.triangle.2.circlepath",
             action: stub("Synchronize Directories…"),
             shortcut: "⌃S"
-        ),
-        MenuItem(
-            title: "Settings…",
-            icon: "gearshape",
-            action: { SettingsCoordinator.shared.toggle() },
-            shortcut: "⌘,"
         ),
         MenuItem(
             title: "Quit",
