@@ -54,7 +54,7 @@ enum ToolbarItemID: String, CaseIterable, Identifiable, Codable, Sendable {
         case .openWith:       return "arrow.up.forward.app"
         case .swapPanels:     return "arrow.left.arrow.right"
         case .compare:        return "doc.text.magnifyingglass"
-        case .network:        return "network"
+        case .network:        return "rectangle.connected.to.line.below"
         case .connectServer:  return "server.rack"
         case .findFiles:      return "magnifyingglass"
         case .menuBarToggle:  return "menubar.rectangle"
