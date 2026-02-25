@@ -16,7 +16,8 @@
       "Bash(claude --version:*)",
       "Bash(claude whoami:*)",
       "Bash(claude logout:*)",
-      "Bash(claude login:*)"
+      "Bash(claude login:*)",
+      "Bash(ls -la /Users/senat/.??*)"
     ],
     "deny": [],
     "ask": []
