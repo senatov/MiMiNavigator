@@ -79,24 +79,8 @@ struct TopMenuBarView: View {
                 }
                 Spacer(minLength: 12)
                 if let helpMenu = menuData.last {
-                    Menu {
-                        ForEach(helpMenu.items) { item in
-                            Button(action: item.action) {
-                                Text(item.title)
-                            }
-                        }
-                    } label: {
-                        Text(helpMenu.title)
-                            .font(.subheadline)  // Dynamic Type instead of .system(size: 13)
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 6)
-                            .frame(minHeight: 26, alignment: .center)
-                            .contentShape(RoundedRectangle(cornerRadius: 8))
-                            .help("Open menu: '\(helpMenu.title)'")
-                    }
-                    .menuStyle(.borderlessButton)
-                    .buttonStyle(TopMenuButtonStyle())
-                    .padding(.trailing, 1)
+                    menuView(for: helpMenu)
+                        .padding(.trailing, 1)
                 }
             }
             .padding(.horizontal, MenuBarMetrics.horizontalPadding)
@@ -122,14 +106,30 @@ struct TopMenuBarView: View {
     
         // MARK: -
     private func menuView(for menu: MenuCategory) -> some View {
-        return Menu(menu.title) {
+        return Menu {
             ForEach(menu.items) { item in
                 Button(action: item.action) {
-                    if let shortcut = item.shortcut {
-                        Text("\(item.title)  \(shortcut)")
-                    } else {
-                        Text(item.title)
+                    Label {
+                        if let shortcut = item.shortcut {
+                            Text("\(item.title)  \(shortcut)")
+                        } else {
+                            Text(item.title)
+                        }
+                    } icon: {
+                        if let icon = item.icon {
+                            Image(systemName: icon)
+                        }
                     }
+                }
+            }
+        } label: {
+            Label {
+                Text(menu.title)
+                    .font(.subheadline)
+            } icon: {
+                if let icon = menu.icon {
+                    Image(systemName: icon)
+                        .font(.system(size: 11))
                 }
             }
         }

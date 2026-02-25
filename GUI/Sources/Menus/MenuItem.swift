@@ -2,15 +2,18 @@
 //  MiMiNavigator
 //
 //  Created by Iakov Senatov on 28.05.2024.
-//  Copyright © 2024 Senatov. All rights reserved.
+//  Copyright © 2024-2026 Senatov. All rights reserved.
 // Description: Menu item model — supports live shortcut display from HotKeyStore
+//   and optional SF Symbol icon.
 
 import Foundation
 
-// MARK: - Menu item with action and optional keyboard shortcut
+// MARK: - Menu item with action, optional icon, and optional keyboard shortcut
 struct MenuItem: Identifiable, Hashable {
     let id = UUID()
     let title: String
+    /// SF Symbol name for this menu item (optional).
+    let icon: String?
     let action: @MainActor @Sendable () -> Void
     /// Optional binding to HotKeyAction — when set, shortcut text is read live from HotKeyStore.
     let hotKeyAction: HotKeyAction?
@@ -29,16 +32,18 @@ struct MenuItem: Identifiable, Hashable {
     }
 
     /// Primary initializer with HotKeyAction binding (live shortcut)
-    init(title: String, action: @MainActor @Sendable @escaping () -> Void, hotKey: HotKeyAction) {
+    init(title: String, icon: String? = nil, action: @MainActor @Sendable @escaping () -> Void, hotKey: HotKeyAction) {
         self.title = title
+        self.icon = icon
         self.action = action
         self.hotKeyAction = hotKey
         self.staticShortcut = nil
     }
 
     /// Legacy initializer with static shortcut string
-    init(title: String, action: @MainActor @Sendable @escaping () -> Void, shortcut: String?) {
+    init(title: String, icon: String? = nil, action: @MainActor @Sendable @escaping () -> Void, shortcut: String?) {
         self.title = title
+        self.icon = icon
         self.action = action
         self.hotKeyAction = nil
         self.staticShortcut = shortcut

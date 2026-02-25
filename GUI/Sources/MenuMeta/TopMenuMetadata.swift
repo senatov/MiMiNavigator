@@ -26,9 +26,11 @@ private func stub(_ title: String) -> @MainActor @Sendable () -> Void {
 @MainActor
 let filesMenuCategory = MenuCategory(
     title: "Files",
+    icon: "doc.on.doc",
     items: [
         MenuItem(
             title: "Pack…",
+            icon: "archivebox",
             action: {
                 guard let appState = AppStateProvider.shared else { return }
                 let panel = appState.focusedPanel
@@ -40,31 +42,37 @@ let filesMenuCategory = MenuCategory(
         ),
         MenuItem(
             title: "Unpack…",
+            icon: "archivebox.fill",
             action: stub("Unpack…"),
             shortcut: "⌥F9"
         ),
         MenuItem(
             title: "Test Archive(s)",
+            icon: "checkmark.shield",
             action: stub("Test Archive(s)"),
             shortcut: nil
         ),
         MenuItem(
             title: "Compare By Content…",
+            icon: "doc.text.magnifyingglass",
             action: stub("Compare By Content…"),
             shortcut: "⌃C"
         ),
         MenuItem(
             title: "Synchronize Directories…",
+            icon: "arrow.triangle.2.circlepath",
             action: stub("Synchronize Directories…"),
             shortcut: "⌃S"
         ),
         MenuItem(
             title: "Settings…",
+            icon: "gearshape",
             action: { SettingsCoordinator.shared.toggle() },
             shortcut: "⌘,"
         ),
         MenuItem(
             title: "Quit",
+            icon: "power",
             action: { NSApplication.shared.terminate(nil) },
             hotKey: .exitApp
         ),
@@ -74,9 +82,11 @@ let filesMenuCategory = MenuCategory(
 @MainActor
 let markMenuCategory = MenuCategory(
     title: "Mark",
+    icon: "checkmark.circle",
     items: [
         MenuItem(
             title: "Select Group…",
+            icon: "plus.circle",
             action: {
                 guard let appState = AppStateProvider.shared else { return }
                 appState.markByPattern()
@@ -85,6 +95,7 @@ let markMenuCategory = MenuCategory(
         ),
         MenuItem(
             title: "Unselect Group…",
+            icon: "minus.circle",
             action: {
                 guard let appState = AppStateProvider.shared else { return }
                 appState.unmarkByPattern()
@@ -93,6 +104,7 @@ let markMenuCategory = MenuCategory(
         ),
         MenuItem(
             title: "Select All",
+            icon: "checkmark.circle.fill",
             action: {
                 guard let appState = AppStateProvider.shared else { return }
                 appState.markAll()
@@ -101,6 +113,7 @@ let markMenuCategory = MenuCategory(
         ),
         MenuItem(
             title: "Unselect All",
+            icon: "circle",
             action: {
                 guard let appState = AppStateProvider.shared else { return }
                 appState.unmarkAll()
@@ -109,6 +122,7 @@ let markMenuCategory = MenuCategory(
         ),
         MenuItem(
             title: "Invert Selection",
+            icon: "arrow.triangle.swap",
             action: {
                 guard let appState = AppStateProvider.shared else { return }
                 appState.invertMarks()
@@ -117,6 +131,7 @@ let markMenuCategory = MenuCategory(
         ),
         MenuItem(
             title: "Select Same Extension",
+            icon: "doc.badge.ellipsis",
             action: {
                 guard let appState = AppStateProvider.shared else { return }
                 appState.markSameExtension()
@@ -129,9 +144,11 @@ let markMenuCategory = MenuCategory(
 @MainActor
 let commandMenuCategory = MenuCategory(
     title: "Commands",
+    icon: "terminal",
     items: [
         MenuItem(
             title: "Find Files…",
+            icon: "magnifyingglass",
             action: {
                 guard let appState = AppStateProvider.shared else { return }
                 let panel = appState.focusedPanel
@@ -143,6 +160,7 @@ let commandMenuCategory = MenuCategory(
         ),
         MenuItem(
             title: "Open in Terminal",
+            icon: "apple.terminal",
             action: {
                 guard let appState = AppStateProvider.shared else { return }
                 let panel = appState.focusedPanel
@@ -154,6 +172,7 @@ let commandMenuCategory = MenuCategory(
         ),
         MenuItem(
             title: "Open in Finder",
+            icon: "folder",
             action: {
                 guard let appState = AppStateProvider.shared else { return }
                 let panel = appState.focusedPanel
@@ -169,6 +188,7 @@ let commandMenuCategory = MenuCategory(
         ),
         MenuItem(
             title: "Toggle Panel Focus",
+            icon: "arrow.left.arrow.right",
             action: {
                 guard let appState = AppStateProvider.shared else { return }
                 appState.toggleFocus()
@@ -177,11 +197,13 @@ let commandMenuCategory = MenuCategory(
         ),
         MenuItem(
             title: "CD Tree…",
+            icon: "list.triangle",
             action: stub("CD Tree…"),
             shortcut: "⌃D"
         ),
         MenuItem(
             title: "Branch View (With Subdirs)",
+            icon: "arrow.triangle.branch",
             action: stub("Branch View"),
             shortcut: "⌃B"
         ),
@@ -191,14 +213,17 @@ let commandMenuCategory = MenuCategory(
 @MainActor
 let netMenuCategory = MenuCategory(
     title: "Net",
+    icon: "globe",
     items: [
         MenuItem(
             title: "Connect to Server…",
+            icon: "server.rack",
             action: { ConnectToServerCoordinator.shared.toggle() },
             shortcut: "⌃N"
         ),
         MenuItem(
             title: "Network Neighborhood",
+            icon: "rectangle.connected.to.line.below",
             action: {
                 NetworkNeighborhoodCoordinator.shared.toggle()
             },
@@ -210,9 +235,11 @@ let netMenuCategory = MenuCategory(
 @MainActor
 let showMenuCategory = MenuCategory(
     title: "Show",
+    icon: "eye",
     items: [
         MenuItem(
             title: "Refresh Panels",
+            icon: "arrow.triangle.2.circlepath",
             action: {
                 guard let appState = AppStateProvider.shared else { return }
                 appState.forceRefreshBothPanels()
@@ -221,6 +248,7 @@ let showMenuCategory = MenuCategory(
         ),
         MenuItem(
             title: "Show/Hide Hidden Files",
+            icon: "eye.slash",
             action: {
                 UserPreferences.shared.snapshot.showHiddenFiles.toggle()
                 UserPreferences.shared.save()
@@ -235,23 +263,37 @@ let showMenuCategory = MenuCategory(
 @MainActor
 let configMenuCategory = MenuCategory(
     title: "Configuration",
+    icon: "gearshape.2",
     items: [
         MenuItem(
             title: "Keyboard Shortcuts…",
+            icon: "keyboard",
             action: { HotKeySettingsCoordinator.shared.showSettings() },
             hotKey: .openSettings
         ),
-        MenuItem(title: "Options…",            action: stub("Options…"),            shortcut: "⌥O"),
-        MenuItem(title: "Customize Toolbar…",  action: { ToolbarCustomizeCoordinator.shared.show() },  shortcut: nil),
+        MenuItem(
+            title: "Options…",
+            icon: "slider.horizontal.3",
+            action: stub("Options…"),
+            shortcut: "⌥O"
+        ),
+        MenuItem(
+            title: "Customize Toolbar…",
+            icon: "wrench.and.screwdriver",
+            action: { ToolbarCustomizeCoordinator.shared.show() },
+            shortcut: nil
+        ),
     ])
 
 // MARK: - Start (Tabs) Menu
 @MainActor
 let startMenuCategory = MenuCategory(
     title: "Start",
+    icon: "play.circle",
     items: [
         MenuItem(
             title: "New Tab",
+            icon: "plus.square",
             action: {
                 guard let appState = AppStateProvider.shared else { return }
                 let panel = appState.focusedPanel
@@ -262,6 +304,7 @@ let startMenuCategory = MenuCategory(
         ),
         MenuItem(
             title: "Duplicate Tab",
+            icon: "plus.square.on.square",
             action: {
                 guard let appState = AppStateProvider.shared else { return }
                 let panel = appState.focusedPanel
@@ -272,6 +315,7 @@ let startMenuCategory = MenuCategory(
         ),
         MenuItem(
             title: "Close Tab",
+            icon: "xmark.square",
             action: {
                 guard let appState = AppStateProvider.shared else { return }
                 appState.tabManager(for: appState.focusedPanel).closeActiveTab()
@@ -280,6 +324,7 @@ let startMenuCategory = MenuCategory(
         ),
         MenuItem(
             title: "Next Tab",
+            icon: "arrow.right.square",
             action: {
                 guard let appState = AppStateProvider.shared else { return }
                 appState.tabManager(for: appState.focusedPanel).selectNextTab()
@@ -288,6 +333,7 @@ let startMenuCategory = MenuCategory(
         ),
         MenuItem(
             title: "Previous Tab",
+            icon: "arrow.left.square",
             action: {
                 guard let appState = AppStateProvider.shared else { return }
                 appState.tabManager(for: appState.focusedPanel).selectPreviousTab()
@@ -300,13 +346,34 @@ let startMenuCategory = MenuCategory(
 @MainActor
 let helpMenuCategory = MenuCategory(
     title: "Help",
+    icon: "questionmark.circle",
     items: [
-        MenuItem(title: "Keyboard Shortcuts",    action: { HotKeySettingsCoordinator.shared.showSettings() }, shortcut: "F1"),
-        MenuItem(title: "Visit MimiNav Website", action: {
-            if let url = URL(string: "https://github.com/senatov/MiMiNavigator") {
-                NSWorkspace.shared.open(url)
-            }
-        }, shortcut: nil),
-        MenuItem(title: "Check for Updates…", action: stub("Check for Updates…"), shortcut: nil),
-        MenuItem(title: "About MimiNav…",     action: stub("About MimiNav…"),     shortcut: nil),
+        MenuItem(
+            title: "Keyboard Shortcuts",
+            icon: "keyboard",
+            action: { HotKeySettingsCoordinator.shared.showSettings() },
+            shortcut: "F1"
+        ),
+        MenuItem(
+            title: "Visit MimiNav Website",
+            icon: "safari",
+            action: {
+                if let url = URL(string: "https://github.com/senatov/MiMiNavigator") {
+                    NSWorkspace.shared.open(url)
+                }
+            },
+            shortcut: nil
+        ),
+        MenuItem(
+            title: "Check for Updates…",
+            icon: "arrow.down.circle",
+            action: stub("Check for Updates…"),
+            shortcut: nil
+        ),
+        MenuItem(
+            title: "About MimiNav…",
+            icon: "info.circle",
+            action: stub("About MimiNav…"),
+            shortcut: nil
+        ),
     ])
