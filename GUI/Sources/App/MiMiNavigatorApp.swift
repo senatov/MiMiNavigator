@@ -213,7 +213,7 @@ struct MiMiNavigatorApp: App {
     func toolBarItemNetwork() -> ToolbarItem<(), some View> {
         return ToolbarItem(placement: .automatic) {
             ToolbarButton(
-                systemImage: "network",
+                systemImage: "rectangle.connected.to.line.below",
                 help: "Network Neighborhood (\u{2318}N)"
             ) {
                 log.debug("Network Neighborhood button clicked")
