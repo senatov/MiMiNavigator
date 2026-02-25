@@ -200,12 +200,12 @@ struct MiMiNavigatorApp: App {
         return ToolbarItem(placement: .automatic) {
             ToolbarButton(
                 systemImage: "arrow.up.forward.app",
-                help: "Open file / Get Info for directory (⌘O)"
+                help: "Open file / Get Info for directory (⇧⌘O)"
             ) {
                 log.debug("OpenWith button clicked")
                 appState.openSelectedItem()
             }
-            .keyboardShortcut("o", modifiers: .command)
+            .keyboardShortcut("o", modifiers: [.command, .shift])
         }
     }
 

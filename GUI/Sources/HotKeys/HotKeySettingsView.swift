@@ -16,6 +16,7 @@ struct HotKeySettingsView: View {
     @State private var store = HotKeyStore.shared
     @State private var themeStore = ColorThemeStore.shared
     @State private var conflictAlert: ConflictInfo?
+    @State private var systemConflict: SystemConflictInfo?
     @State private var showResetConfirmation = false
     @State private var filterText = ""
     @State private var selectedCategory: HotKeyCategory?
@@ -63,6 +64,22 @@ struct HotKeySettingsView: View {
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("All keyboard shortcuts will be reset to factory defaults. This cannot be undone.")
+        }
+        // MARK: - System Shortcut Conflict Sheet
+        .sheet(isPresented: Binding(
+            get: { systemConflict != nil },
+            set: { if !$0 { systemConflict = nil } }
+        )) {
+            if let info = systemConflict {
+                SystemConflictSheet(
+                    info: info,
+                    onSelect: { keyCode, modifiers in
+                        store.updateBinding(action: info.action, keyCode: keyCode, modifiers: modifiers)
+                        systemConflict = nil
+                    },
+                    onCancel: { systemConflict = nil }
+                )
+            }
         }
     }
 
@@ -276,13 +293,29 @@ struct HotKeySettingsView: View {
     // MARK: - Logic
 
     private func assignShortcut(action: HotKeyAction, keyCode: UInt16, modifiers: HotKeyModifiers) {
-        if let existing = store.conflictingAction(keyCode: keyCode, modifiers: modifiers, excluding: action) {
+        let result = ShortcutConflictValidator.validate(
+            keyCode: keyCode, modifiers: modifiers, forAction: action
+        )
+
+        guard result.hasConflict else {
+            store.updateBinding(action: action, keyCode: keyCode, modifiers: modifiers)
+            return
+        }
+
+        switch result.conflict {
+        case .systemReserved:
+            systemConflict = SystemConflictInfo(
+                action: action,
+                description: result.conflictDescription,
+                suggestions: result.suggested
+            )
+        case .appInternal(let existingAction):
             conflictAlert = ConflictInfo(
-                newAction: action, existingAction: existing,
+                newAction: action, existingAction: existingAction,
                 keyCode: keyCode, modifiers: modifiers
             )
-        } else {
-            store.updateBinding(action: action, keyCode: keyCode, modifiers: modifiers)
+        case .none:
+            break
         }
     }
 
