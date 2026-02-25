@@ -395,63 +395,68 @@ struct MiMiNavigatorApp: App {
     }
 
     /// Polls DirEqual every 0.5s until window is ready, then clicks Compare and repositions.
+    /// All AppleScript runs on background thread to avoid blocking UI.
     private static func waitForDirEqualReady(leftPath: String, rightPath: String, frame: NSRect?, attempt: Int = 0) {
-        let maxAttempts = 12   // 6 seconds total
+        let maxAttempts = 12
         let interval    = 0.5
 
-        // Check if DirEqual window 1 exists and has loaded its path fields
-        let checkScript = """
-        tell application "System Events"
-            if exists process "DirEqual" then
-                if (count windows of process "DirEqual") > 0 then
-                    return value of text field 2 of group 1 of window 1 of process "DirEqual"
+        Task.detached(priority: .utility) {
+            let checkScript = """
+            tell application "System Events"
+                if exists process "DirEqual" then
+                    if (count windows of process "DirEqual") > 0 then
+                        return value of text field 2 of group 1 of window 1 of process "DirEqual"
+                    end if
                 end if
-            end if
-            return ""
-        end tell
-        """
-        var checkErr: NSDictionary?
-        let result = NSAppleScript(source: checkScript)?.executeAndReturnError(&checkErr)
-        let currentTF2 = result?.stringValue ?? ""
-
-        guard !currentTF2.isEmpty else {
-            // Window not ready yet — retry
-            if attempt < maxAttempts {
-                DispatchQueue.main.asyncAfter(deadline: .now() + interval) {
-                    waitForDirEqualReady(leftPath: leftPath, rightPath: rightPath, frame: frame, attempt: attempt + 1)
-                }
-            } else {
-                log.warning("[Compare] DirEqual window never appeared after \(maxAttempts) attempts")
-            }
-            return
-        }
-
-        // Window is ready — click Compare and reposition
-        let targetFrame = frame ?? NSRect(x: 100, y: 100, width: 1200, height: 800)
-        let screenH = NSScreen.main?.frame.height ?? 1080
-        let wx = Int(targetFrame.origin.x)
-        let wy = Int(screenH - targetFrame.origin.y - targetFrame.height)
-        let ww = Int(targetFrame.width)
-        let wh = Int(targetFrame.height)
-
-        let fixScript = """
-        tell application "DirEqual" to activate
-        delay 0.15
-        tell application "System Events"
-            tell process "DirEqual"
-                click button 1 of toolbar 1 of window 1
-                delay 0.15
-                set position of window 1 to {\(wx), \(wy)}
-                set size of window 1 to {\(ww), \(wh)}
+                return ""
             end tell
-        end tell
-        """
-        var fixErr: NSDictionary?
-        NSAppleScript(source: fixScript)?.executeAndReturnError(&fixErr)
-        if let fixErr {
-            log.warning("[Compare] DirEqual setup: \(fixErr["NSAppleScriptErrorMessage"] ?? fixErr)")
-        } else {
-            log.info("[Compare] DirEqual ready after \(attempt) poll(s) — compare started ✓")
+            """
+            var checkErr: NSDictionary?
+            let result = NSAppleScript(source: checkScript)?.executeAndReturnError(&checkErr)
+            let currentTF2 = result?.stringValue ?? ""
+
+            guard !currentTF2.isEmpty else {
+                if attempt < maxAttempts {
+                    try? await Task.sleep(for: .milliseconds(Int(interval * 1000)))
+                    await MainActor.run {
+                        waitForDirEqualReady(leftPath: leftPath, rightPath: rightPath, frame: frame, attempt: attempt + 1)
+                    }
+                } else {
+                    await MainActor.run {
+                        log.warning("[Compare] DirEqual window never appeared after \(maxAttempts) attempts")
+                    }
+                }
+                return
+            }
+
+            let targetFrame = await MainActor.run { frame ?? NSRect(x: 100, y: 100, width: 1200, height: 800) }
+            let screenH = await MainActor.run { NSScreen.main?.frame.height ?? 1080 }
+            let wx = Int(targetFrame.origin.x)
+            let wy = Int(screenH - targetFrame.origin.y - targetFrame.height)
+            let ww = Int(targetFrame.width)
+            let wh = Int(targetFrame.height)
+
+            let fixScript = """
+            tell application "DirEqual" to activate
+            delay 0.15
+            tell application "System Events"
+                tell process "DirEqual"
+                    click button 1 of toolbar 1 of window 1
+                    delay 0.15
+                    set position of window 1 to {\(wx), \(wy)}
+                    set size of window 1 to {\(ww), \(wh)}
+                end tell
+            end tell
+            """
+            var fixErr: NSDictionary?
+            NSAppleScript(source: fixScript)?.executeAndReturnError(&fixErr)
+            await MainActor.run {
+                if let fixErr {
+                    log.warning("[Compare] DirEqual setup: \(fixErr["NSAppleScriptErrorMessage"] ?? fixErr)")
+                } else {
+                    log.info("[Compare] DirEqual ready after \(attempt) poll(s) — compare started ✓")
+                }
+            }
         }
     }
 
@@ -520,57 +525,65 @@ struct MiMiNavigatorApp: App {
     }
 
     /// Poll until the given app's window appears, then activate and position it over MiMiNavigator.
+    /// All AppleScript runs on a background thread to avoid blocking UI.
     private static func waitForAppReady(processName: String, frame: NSRect?, attempt: Int = 0) {
         log.debug("\(#function) app=\(processName) attempt=\(attempt)")
-        let maxAttempts = 16
+        let maxAttempts = 12
         let interval    = 0.5
 
-        let checkScript = """
-        tell application "System Events"
-            if exists process "\(processName)" then
-                return (count windows of process "\(processName)") as string
-            end if
-            return "0"
-        end tell
-        """
-        var err: NSDictionary?
-        let result = NSAppleScript(source: checkScript)?.executeAndReturnError(&err)
-        let windowCount = Int(result?.stringValue ?? "0") ?? 0
+        Task.detached(priority: .utility) {
+            let checkScript = """
+            tell application "System Events"
+                if exists process "\(processName)" then
+                    return (count windows of process "\(processName)") as string
+                end if
+                return "0"
+            end tell
+            """
+            var err: NSDictionary?
+            let result = NSAppleScript(source: checkScript)?.executeAndReturnError(&err)
+            let windowCount = Int(result?.stringValue ?? "0") ?? 0
 
-        guard windowCount > 0 else {
-            guard attempt < maxAttempts else {
-                log.warning("[Compare] \(processName) window never appeared")
+            guard windowCount > 0 else {
+                guard attempt < maxAttempts else {
+                    await MainActor.run {
+                        log.warning("[Compare] \(processName) window never appeared")
+                    }
+                    return
+                }
+                try? await Task.sleep(for: .milliseconds(Int(interval * 1000)))
+                await MainActor.run {
+                    waitForAppReady(processName: processName, frame: frame, attempt: attempt + 1)
+                }
                 return
             }
-            DispatchQueue.main.asyncAfter(deadline: .now() + interval) {
-                waitForAppReady(processName: processName, frame: frame, attempt: attempt + 1)
-            }
-            return
-        }
 
-        let f = frame ?? NSRect(x: 100, y: 100, width: 1200, height: 800)
-        let screenH = NSScreen.main?.frame.height ?? 1080
-        let wx = Int(f.origin.x)
-        let wy = Int(screenH - f.origin.y - f.height)
-        let ww = Int(f.width)
-        let wh = Int(f.height)
+            let f = await MainActor.run { frame ?? NSRect(x: 100, y: 100, width: 1200, height: 800) }
+            let screenH = await MainActor.run { NSScreen.main?.frame.height ?? 1080 }
+            let wx = Int(f.origin.x)
+            let wy = Int(screenH - f.origin.y - f.height)
+            let ww = Int(f.width)
+            let wh = Int(f.height)
 
-        let posScript = """
-        tell application "\(processName)" to activate
-        delay 0.2
-        tell application "System Events"
-            tell process "\(processName)"
-                set position of window 1 to {\(wx), \(wy)}
-                set size of window 1 to {\(ww), \(wh)}
+            let posScript = """
+            tell application "\(processName)" to activate
+            delay 0.2
+            tell application "System Events"
+                tell process "\(processName)"
+                    set position of window 1 to {\(wx), \(wy)}
+                    set size of window 1 to {\(ww), \(wh)}
+                end tell
             end tell
-        end tell
-        """
-        var posErr: NSDictionary?
-        NSAppleScript(source: posScript)?.executeAndReturnError(&posErr)
-        if let posErr {
-            log.warning("[Compare] \(processName) position: \(posErr["NSAppleScriptErrorMessage"] ?? posErr)")
-        } else {
-            log.info("[Compare] \(processName) ready after \(attempt) poll(s), positioned ✓")
+            """
+            var posErr: NSDictionary?
+            NSAppleScript(source: posScript)?.executeAndReturnError(&posErr)
+            await MainActor.run {
+                if let posErr {
+                    log.warning("[Compare] \(processName) position: \(posErr["NSAppleScriptErrorMessage"] ?? posErr)")
+                } else {
+                    log.info("[Compare] \(processName) ready after \(attempt) poll(s), positioned ✓")
+                }
+            }
         }
     }
 
