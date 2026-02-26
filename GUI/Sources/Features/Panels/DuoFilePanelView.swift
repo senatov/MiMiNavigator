@@ -155,27 +155,13 @@ extension DuoFilePanelView {
         let halfCenter = (containerWidth / 2.0 * scale).rounded() / scale
         let defaultLeftWidth = halfCenter - Layout.dividerHitAreaWidth / 2
         
-        // Check if we have a saved width
-        if let savedWidth = UserDefaults.standard.object(forKey: "leftPanelWidth") as? CGFloat,
-           savedWidth > 0 {
-            // Validate and constrain saved width to current container
-            let constrainedSaved = calculateConstrainedWidth(
-                proposed: savedWidth,
-                containerWidth: containerWidth
-            )
-            leftPanelWidth = constrainedSaved
-            log.info("\(#function) restored saved width=\(Int(constrainedSaved)) (original=\(Int(savedWidth)))")
-        } else {
-            // No saved width -> use 50/50 default
-            let constrainedDefault = calculateConstrainedWidth(
-                proposed: defaultLeftWidth,
-                containerWidth: containerWidth
-            )
-            leftPanelWidth = constrainedDefault
-            log.info("\(#function) using default 50/50 width=\(Int(constrainedDefault))")
-        }
-        
-        log.debug("\(#function) RESULT: container=\(Int(containerWidth)) scale=\(scale) halfCenter=\(Int(halfCenter)) finalLeft=\(Int(leftPanelWidth))")
+        // Always start 50/50 -- saved width often stale after window resize
+        let constrained = calculateConstrainedWidth(
+            proposed: defaultLeftWidth,
+            containerWidth: containerWidth
+        )
+        leftPanelWidth = constrained
+        log.info("\(#function) 50/50 split: container=\(Int(containerWidth)) left=\(Int(constrained))")
     }
     
     /// Calculate constrained width within valid bounds

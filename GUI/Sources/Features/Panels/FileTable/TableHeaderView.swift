@@ -149,9 +149,9 @@ struct SortableHeader: View {
                 .lineLimit(1)
 
             if sortKey != nil {
-                Image(systemName: isActive ? (ascending ? "chevron.up" : "chevron.down") : "chevron.up.chevron.down")
-                    .font(.system(size: isActive ? 11 : 10, weight: isActive ? .semibold : .regular))
-                    .foregroundStyle(isActive ? TableHeaderStyle.sortIndicatorColor : TableHeaderStyle.color.opacity(0.6))
+                Image(systemName: isActive ? (ascending ? "arrowtriangle.up.fill" : "arrowtriangle.down.fill") : "diamond.fill")
+                    .font(.system(size: isActive ? 9 : 5, weight: .bold))
+                    .foregroundStyle(isActive ? TableHeaderStyle.sortIndicatorColor : TableHeaderStyle.color.opacity(0.35))
             }
         }
         .background(Color.clear)
