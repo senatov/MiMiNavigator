@@ -4,9 +4,10 @@
 // Created by Iakov Senatov on 11.02.2026.
 // Copyright © 2026 Senatov. All rights reserved.
 // Description: Toolbar button components — macOS 26 HIG, crisp SF Symbols.
-//   Custom tooltip overlay because .help() doesn't work reliably
-//   in .windowToolbarStyle(.unifiedCompact).
+//   Uses NSWindow-based tooltip that floats above everything and never clips.
+//   Works around .help() being broken in .windowToolbarStyle(.unifiedCompact).
 
+import AppKit
 import SwiftUI
 
 // MARK: - Shared icon style
@@ -22,54 +23,132 @@ private struct ToolbarIcon: View {
     }
 }
 
-// MARK: - Fast Tooltip Modifier
-/// Shows a tooltip popup after 0.5s hover delay.
-/// Works around .help() being broken in unifiedCompact toolbar style.
+// MARK: - Floating Tooltip Window (AppKit-based, never clips)
+
+/// Singleton tooltip window — lightweight NSPanel that floats above all content.
+@MainActor
+private final class TooltipWindow {
+    static let shared = TooltipWindow()
+
+    private var panel: NSPanel?
+    private var hostingView: NSHostingView<AnyView>?
+
+    private init() {}
+
+    func show(text: String, near screenPoint: NSPoint) {
+        hide()
+
+        let label = AnyView(
+            Text(text)
+                .font(.system(size: 11))
+                .foregroundStyle(Color.primary)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 5)
+                .background(
+                    RoundedRectangle(cornerRadius: 5, style: .continuous)
+                        .fill(Color(nsColor: .windowBackgroundColor))
+                        .shadow(color: .black.opacity(0.18), radius: 4, y: 2)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 5, style: .continuous)
+                        .stroke(Color(nsColor: .separatorColor), lineWidth: 0.5)
+                )
+        )
+
+        let hosting = NSHostingView(rootView: label)
+        hosting.frame.size = hosting.fittingSize
+        self.hostingView = hosting
+
+        let p = NSPanel(
+            contentRect: NSRect(origin: .zero, size: hosting.fittingSize),
+            styleMask: [.borderless, .nonactivatingPanel],
+            backing: .buffered,
+            defer: true
+        )
+        p.isOpaque = false
+        p.backgroundColor = .clear
+        p.level = .floating
+        p.hasShadow = false
+        p.contentView = hosting
+        p.isReleasedWhenClosed = false
+        p.animationBehavior = .utilityWindow
+        p.ignoresMouseEvents = true
+
+        // Position: centered below the hover point, clamped to screen
+        let size = hosting.fittingSize
+        var origin = NSPoint(
+            x: screenPoint.x - size.width / 2,
+            y: screenPoint.y - size.height - 4
+        )
+
+        // Clamp to visible screen
+        if let screen = NSScreen.main?.visibleFrame {
+            if origin.x + size.width > screen.maxX {
+                origin.x = screen.maxX - size.width - 4
+            }
+            if origin.x < screen.minX {
+                origin.x = screen.minX + 4
+            }
+            if origin.y < screen.minY {
+                origin.y = screenPoint.y + 20  // show above instead
+            }
+        }
+
+        p.setFrameOrigin(origin)
+        p.orderFront(nil)
+        self.panel = p
+    }
+
+    func hide() {
+        panel?.orderOut(nil)
+        panel = nil
+        hostingView = nil
+    }
+}
+
+// MARK: - Fast Tooltip Modifier (NSWindow-based)
+
 private struct FastTooltip: ViewModifier {
     let text: String
     @State private var isHovering = false
-    @State private var showTooltip = false
     @State private var hoverTask: Task<Void, Never>?
 
     func body(content: Content) -> some View {
         content
+            .background(
+                GeometryReader { geo in
+                    Color.clear
+                        .preference(key: TooltipFrameKey.self, value: geo.frame(in: .global))
+                }
+            )
+            .onPreferenceChange(TooltipFrameKey.self) { _ in }
             .onHover { hovering in
                 isHovering = hovering
                 if hovering {
                     hoverTask = Task { @MainActor in
                         try? await Task.sleep(for: .milliseconds(500))
-                        if isHovering {
-                            showTooltip = true
-                        }
+                        guard isHovering else { return }
+                        // Get mouse location in screen coords
+                        let mouseScreen = NSEvent.mouseLocation
+                        // Show below mouse
+                        TooltipWindow.shared.show(
+                            text: text,
+                            near: NSPoint(x: mouseScreen.x, y: mouseScreen.y - 20)
+                        )
                     }
                 } else {
                     hoverTask?.cancel()
                     hoverTask = nil
-                    showTooltip = false
+                    TooltipWindow.shared.hide()
                 }
             }
-            .overlay(alignment: .bottom) {
-                if showTooltip {
-                    Text(text)
-                        .font(.system(size: 11))
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(
-                            RoundedRectangle(cornerRadius: 4)
-                                .fill(Color(nsColor: .windowBackgroundColor))
-                                .shadow(color: .black.opacity(0.2), radius: 3, y: 2)
-                        )
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 4)
-                                .stroke(Color.gray.opacity(0.3), lineWidth: 0.5)
-                        )
-                        .fixedSize()
-                        .offset(y: 28)
-                        .allowsHitTesting(false)
-                        .transition(.opacity.animation(.easeIn(duration: 0.12)))
-                        .zIndex(999)
-                }
-            }
+    }
+}
+
+private struct TooltipFrameKey: PreferenceKey {
+    static let defaultValue: CGRect = .zero
+    static func reduce(value: inout CGRect, nextValue: () -> CGRect) {
+        value = nextValue()
     }
 }
 
