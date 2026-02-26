@@ -90,7 +90,6 @@ struct ToolbarButton: View {
             ToolbarIcon(name: systemImage)
         }
         .buttonStyle(.borderless)
-        .help(help)
         .fastTooltip(help)
     }
 }
@@ -109,7 +108,6 @@ struct ToolbarToggleButton: View {
             ToolbarIcon(name: isActive ? activeImage : systemImage, active: isActive)
         }
         .buttonStyle(.borderless)
-        .help(isActive ? helpActive : helpInactive)
         .fastTooltip(isActive ? helpActive : helpInactive)
     }
 }
