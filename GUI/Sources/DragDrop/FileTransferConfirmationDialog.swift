@@ -60,18 +60,18 @@ struct FileTransferConfirmationDialog: View {
             HStack(spacing: 8) {
                 Button("Cancel") { handleAction(.abort) }
                     .keyboardShortcut(.cancelAction)
-                    .buttonStyle(.bordered)
+                    .buttonStyle(ThemedButtonStyle())
                     .controlSize(.large)
 
                 Spacer()
 
                 Button("Copy") { handleAction(.copy) }
                     .keyboardShortcut(.defaultAction)
-                    .buttonStyle(.borderedProminent)
+                    .buttonStyle(ThemedButtonStyle())
                     .controlSize(.large)
 
                 Button("Move") { handleAction(.move) }
-                    .buttonStyle(.bordered)
+                    .buttonStyle(ThemedButtonStyle())
                     .controlSize(.large)
             }
         }

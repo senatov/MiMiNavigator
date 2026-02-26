@@ -25,7 +25,7 @@ struct DownToolbarButtonView: View {
                 .frame(minWidth: 90)
         }
         // Native macOS bezel — rounded corners, visible border, system hover/press
-        .buttonStyle(.bordered)
+        .buttonStyle(ThemedButtonStyle())
         .controlSize(.large)
         .tint(.primary)
         .help(title)

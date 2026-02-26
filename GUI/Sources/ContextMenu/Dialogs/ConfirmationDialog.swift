@@ -184,12 +184,12 @@ struct HIGDialogButtons: View {
         HStack(spacing: 10) {
             Button(cancelTitle, action: onCancel)
                 .keyboardShortcut(.cancelAction)  // Esc
-                .buttonStyle(.bordered)
+                .buttonStyle(ThemedButtonStyle())
                 .controlSize(.large)
 
             Button(confirmTitle, action: onConfirm)
                 .keyboardShortcut(.defaultAction)  // Enter — system draws blue ring
-                .buttonStyle(isDestructive ? .borderedProminent : .borderedProminent)
+                .buttonStyle(ThemedButtonStyle())
                 .tint(isDestructive ? .red : .accentColor)
                 .controlSize(.large)
                 .disabled(isConfirmDisabled)
@@ -244,7 +244,7 @@ struct _LegacyHIGPrimaryButton: View {
 
     var body: some View {
         Button(title, action: action)
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(ThemedButtonStyle())
             .tint(isDestructive ? .red : .accentColor)
             .controlSize(.large)
     }
@@ -256,7 +256,7 @@ struct _LegacyHIGSecondaryButton: View {
 
     var body: some View {
         Button(title, action: action)
-            .buttonStyle(.bordered)
+            .buttonStyle(ThemedButtonStyle())
             .controlSize(.large)
     }
 }

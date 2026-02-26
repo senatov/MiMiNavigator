@@ -99,7 +99,7 @@ struct PackDialog: View {
                     Button(action: browseForFolder) {
                         Image(systemName: "folder")
                     }
-                    .buttonStyle(.bordered)
+                    .buttonStyle(ThemedButtonStyle())
                     .controlSize(.regular)
                 }
             }

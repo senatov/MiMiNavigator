@@ -243,7 +243,7 @@ struct NetworkNeighborhoodView: View {
                     Label("Sign In", systemImage: "key.fill")
                         .font(.caption).padding(.horizontal, 8).padding(.vertical, 3)
                 }
-                .buttonStyle(.borderedProminent).controlSize(.mini)
+                .buttonStyle(ThemedButtonStyle()).controlSize(.mini)
             }
         }
         .padding(.leading, 40).padding(.trailing, 10).padding(.vertical, 6)
@@ -342,7 +342,7 @@ private struct HostNodeRow: View {
                         .font(.caption2)
                         .padding(.horizontal, 7).padding(.vertical, 3)
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(ThemedButtonStyle())
                 .tint(webUIColor)
                 .controlSize(.mini)
             }
