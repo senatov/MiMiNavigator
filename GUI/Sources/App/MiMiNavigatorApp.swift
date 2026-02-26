@@ -227,12 +227,26 @@ struct MiMiNavigatorApp: App {
     func toolBarItemConnectToServer() -> ToolbarItem<(), some View> {
         return ToolbarItem(placement: .automatic) {
             ToolbarButton(
-                systemImage: "server.rack",
+                systemImage: "link",
                 help: "Connect to Server (\u{2303}N)"
             ) {
                 log.debug("Connect to Server button clicked")
                 ConnectToServerCoordinator.shared.toggle()
             }
+        }
+    }
+
+    // MARK: - Settings button (gearshape — universal convention)
+    func toolBarItemSettings() -> ToolbarItem<(), some View> {
+        return ToolbarItem(placement: .automatic) {
+            ToolbarButton(
+                systemImage: "gearshape",
+                help: "Settings (\u{2318},)"
+            ) {
+                log.debug("Settings button clicked")
+                SettingsCoordinator.shared.toggle()
+            }
+            .keyboardShortcut(",", modifiers: .command)
         }
     }
 
@@ -282,15 +296,18 @@ struct MiMiNavigatorApp: App {
     // MARK: - Menu Bar toggle — fixed, always in toolbar, not removable
     func toolBarItemMenuBarToggle() -> some ToolbarContent {
         ToolbarItem(placement: .automatic) {
-            let isOn = ToolbarStore.shared.menuBarVisible
-            Button {
+            ToolbarToggleButton(
+                systemImage: "menubar.rectangle",
+                activeImage: "menubar.rectangle",
+                helpActive: "Hide menu bar",
+                helpInactive: "Show menu bar",
+                isActive: Binding(
+                    get: { ToolbarStore.shared.menuBarVisible },
+                    set: { _ in }
+                )
+            ) {
                 ToolbarStore.shared.menuBarVisible.toggle()
-            } label: {
-                Image(systemName: isOn ? "menubar.rectangle" : "menubar.rectangle")
-                    .symbolVariant(isOn ? .none : .slash)
-                    .foregroundStyle(isOn ? Color.accentColor : Color.secondary)
             }
-            .help(isOn ? "Hide menu bar" : "Show menu bar")
         }
     }
 

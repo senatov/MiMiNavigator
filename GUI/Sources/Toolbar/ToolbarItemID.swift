@@ -22,6 +22,7 @@ enum ToolbarItemID: String, CaseIterable, Identifiable, Codable, Sendable {
     case network        = "network"
     case connectServer  = "connectServer"
     case findFiles      = "findFiles"
+    case settings       = "settings"
     case menuBarToggle  = "menuBarToggle"  // fixed — cannot be removed from toolbar
 
     var id: String { rawValue }
@@ -42,11 +43,16 @@ enum ToolbarItemID: String, CaseIterable, Identifiable, Codable, Sendable {
         case .network:        return "Network"
         case .connectServer:  return "Connect"
         case .findFiles:      return "Find Files"
+        case .settings:       return "Settings"
         case .menuBarToggle:  return "Menu Bar"
         }
     }
 
     /// SF Symbol name for the button icon.
+    /// Icons follow established macOS / Finder / Total Commander conventions:
+    ///   • gearshape — universally recognized "Settings" (Finder, System Prefs, every major app)
+    ///   • link — "Connect" action (Safari, Transmit, Cyberduck, Forklift)
+    ///   • menubar.rectangle — native macOS "menu bar" concept
     var systemImage: String {
         switch self {
         case .refresh:        return "arrow.triangle.2.circlepath"
@@ -55,8 +61,9 @@ enum ToolbarItemID: String, CaseIterable, Identifiable, Codable, Sendable {
         case .swapPanels:     return "arrow.left.arrow.right"
         case .compare:        return "doc.text.magnifyingglass"
         case .network:        return "rectangle.connected.to.line.below"
-        case .connectServer:  return "server.rack"
+        case .connectServer:  return "link"
         case .findFiles:      return "magnifyingglass"
+        case .settings:       return "gearshape"
         case .menuBarToggle:  return "menubar.rectangle"
         }
     }
@@ -66,13 +73,14 @@ enum ToolbarItemID: String, CaseIterable, Identifiable, Codable, Sendable {
         switch self {
         case .refresh:        return "Refresh file lists (⌘R)"
         case .hiddenFiles:    return "Show / hide hidden files (⌘.)"
-        case .openWith:       return "Open selected file or Get Info (⌘O)"
+        case .openWith:       return "Open selected file or Get Info (⇧⌘O)"
         case .swapPanels:     return "Swap left and right panel directories"
-        case .compare:        return "Compare items via FileMerge / DiffMerge"
+        case .compare:        return "Compare items via diff tool (⌘D)"
         case .network:        return "Network Neighborhood (⌘N)"
         case .connectServer:  return "Connect to Server (⌃N)"
         case .findFiles:      return "Find Files (⇧⌘F)"
-        case .menuBarToggle:  return "Toggle menu bar (Files · Mark · Commands…)"
+        case .settings:       return "Settings (⌘,)"
+        case .menuBarToggle:  return "Toggle menu bar visibility"
         }
     }
 
@@ -87,5 +95,6 @@ enum ToolbarItemID: String, CaseIterable, Identifiable, Codable, Sendable {
         .network,
         .connectServer,
         .findFiles,
+        .settings,
     ]
 }

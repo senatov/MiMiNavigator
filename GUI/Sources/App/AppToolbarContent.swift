@@ -50,6 +50,9 @@ struct AppToolbarContent: ToolbarContent {
         if store.visibleIDs.contains(.findFiles) {
             app.toolBarItemSearch()
         }
+        if store.visibleIDs.contains(.settings) {
+            app.toolBarItemSettings()
+        }
         // menuBarToggle — fixed, always present, not removable
         app.toolBarItemMenuBarToggle()
     }
