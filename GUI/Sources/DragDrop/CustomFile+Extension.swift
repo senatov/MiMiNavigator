@@ -11,7 +11,7 @@ import FileModelKit
 import UniformTypeIdentifiers
 
 // MARK: - Make CustomFile draggable via Transferable protocol
-extension CustomFile: Transferable {
+extension CustomFile: @retroactive Transferable {
 
     public static var transferRepresentation: some TransferRepresentation {
         // Export file URL only. Works for:
