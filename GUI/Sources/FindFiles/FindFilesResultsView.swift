@@ -62,7 +62,6 @@ struct FindFilesResultsView: View {
                 }
             }
             .width(min: 30, ideal: 36, max: 50)
-
             TableColumn("Name", value: \.fileName) { result in
                 resultNameCell(result)
             }

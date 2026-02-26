@@ -9,8 +9,8 @@
 //   [Name flexible] | divider | [col2 fixed] | divider | [col3 fixed] | ...
 //   Each ResizableDivider controls the width of the column AFTER it.
 
-import SwiftUI
 import FileModelKit
+import SwiftUI
 
 // MARK: - Table Header View
 struct TableHeaderView: View {
@@ -65,10 +65,10 @@ struct TableHeaderView: View {
             currentKey: sortKey,
             ascending: sortAscending
         )
-        .frame(minWidth: 60, maxWidth: .infinity, alignment: .center)
+        .frame(minWidth: 60, maxWidth: .infinity, alignment: .leading)
         .clipped()
         .contentShape(Rectangle())
-        .onTapGesture { toggleSort(.name) }
+        .highPriorityGesture(TapGesture().onEnded { toggleSort(.name) })
     }
 
     // MARK: - Fixed Column Header
@@ -82,7 +82,7 @@ struct TableHeaderView: View {
         .frame(width: spec.width, alignment: spec.id.alignment)
         .padding(.horizontal, TableColumnDefaults.cellPadding)
         .contentShape(Rectangle())
-        .onTapGesture { toggleSort(spec.id) }
+        .highPriorityGesture(TapGesture().onEnded { toggleSort(spec.id) })
     }
 
     // MARK: - Context Menu (right-click on header)
@@ -112,6 +112,7 @@ struct TableHeaderView: View {
             sortKey = key
             sortAscending = true
         }
+        log.debug("[Sort] toggleSort panel=\(panelSide) key=\(key) asc=\(sortAscending)")
         appState.updateSorting(key: key, ascending: sortAscending)
     }
 
@@ -140,18 +141,38 @@ struct SortableHeader: View {
     }
 
     var body: some View {
-        HStack(spacing: 3) {
+        HStack(spacing: 0) {
             Text(title)
-                .font(isActive
-                    ? TableHeaderStyle.font.weight(TableHeaderStyle.sortActiveWeight)
-                    : TableHeaderStyle.font)
-                .foregroundStyle(isActive ? TableHeaderStyle.sortIndicatorColor : TableHeaderStyle.color)
+                .font(
+                    .system(
+                        size: 13,
+                        weight: isActive
+                            ? TableHeaderStyle.sortActiveWeight
+                            : .regular,
+                        design: .default)
+                )
+                .foregroundStyle(
+                    isActive
+                        ? Color(nsColor: NSColor(calibratedRed: 0.1, green: 0.2, blue: 0.7, alpha: 1.0))
+                        : TableHeaderStyle.color
+                )
+                .padding(.leading, 2)
                 .lineLimit(1)
-
             if sortKey != nil {
-                Image(systemName: isActive ? (ascending ? "arrowtriangle.up.fill" : "arrowtriangle.down.fill") : "diamond.fill")
-                    .font(.system(size: isActive ? 9 : 5, weight: .bold))
-                    .foregroundStyle(isActive ? TableHeaderStyle.sortIndicatorColor : TableHeaderStyle.color.opacity(0.35))
+                Image(
+                    systemName: isActive
+                        ? (ascending ? "chevron.up" : "chevron.down")
+                        : "minus"
+                )
+                .font(.system(size: isActive ? 14 : 13, weight: .medium))
+                .foregroundStyle(
+                    isActive
+                        ? (ascending
+                            ? Color(#colorLiteral(red: 0.2196078449, green: 0.007843137719, blue: 0.8549019694, alpha: 1))
+                            : Color(#colorLiteral(red: 0.1019607857, green: 0.2784313858, blue: 0.400000006, alpha: 1)))
+                        : TableHeaderStyle.color.opacity(0.35)
+                )
+                .padding(.trailing, 2)
             }
         }
         .background(Color.clear)

@@ -7,43 +7,43 @@
 //              Supports show/hide via header context menu, drag-to-reorder (future),
 //              and full persistence in UserDefaults per panel side.
 
-import SwiftUI
 import FileModelKit
+import SwiftUI
 
 // MARK: - Column Identity
 
 enum ColumnID: String, CaseIterable, Codable, Identifiable {
-    case name        = "name"
+    case name = "name"
     case dateModified = "dateModified"
-    case size        = "size"
-    case kind        = "kind"
+    case size = "size"
+    case kind = "kind"
     case permissions = "permissions"
-    case owner       = "owner"
-    case childCount  = "childCount"
+    case owner = "owner"
+    case childCount = "childCount"
 
     var id: String { rawValue }
 
     var title: String {
         switch self {
-        case .name:         return "Name"
-        case .dateModified: return "Date Modified"
-        case .size:         return "Size"
-        case .kind:         return "Kind"
-        case .permissions:  return "Permissions"
-        case .owner:        return "Owner"
-        case .childCount:   return "Count"
+            case .name: return "Name"
+            case .dateModified: return "Date Mod."
+            case .size: return "Size"
+            case .kind: return "Kind"
+            case .permissions: return "Permiss."
+            case .owner: return "Owner"
+            case .childCount: return "Count"
         }
     }
 
     var defaultWidth: CGFloat {
         switch self {
-        case .name:         return 0    // flexible — fills remaining space
-        case .dateModified: return 130
-        case .size:         return 75
-        case .kind:         return 90
-        case .permissions:  return 80
-        case .owner:        return 70
-        case .childCount:   return 80
+            case .name: return 0  // flexible — fills remaining space
+            case .dateModified: return 130
+            case .size: return 75
+            case .kind: return 90
+            case .permissions: return 80
+            case .owner: return 70
+            case .childCount: return 80
         }
     }
 
@@ -56,34 +56,34 @@ enum ColumnID: String, CaseIterable, Codable, Identifiable {
     /// Alignment of the column content
     var alignment: Alignment {
         switch self {
-        case .size, .childCount: return .trailing
-        case .dateModified:      return .center
-        default:                 return .leading
+            case .size, .childCount: return .trailing
+            case .dateModified: return .center
+            default: return .leading
         }
     }
 
     /// Per-column content text color (used in file rows)
     var columnColor: Color {
         switch self {
-        case .name:         return Color(#colorLiteral(red: 0.05, green: 0.10, blue: 0.30, alpha: 1.0)) // dark navy
-        case .size:         return Color(#colorLiteral(red: 0.50, green: 0.05, blue: 0.18, alpha: 1.0)) // dark raspberry
-        case .kind:         return Color(#colorLiteral(red: 0.28, green: 0.14, blue: 0.05, alpha: 1.0)) // dark brown
-        case .dateModified: return Color(#colorLiteral(red: 0.05, green: 0.28, blue: 0.10, alpha: 1.0)) // dark green
-        case .childCount:   return Color(#colorLiteral(red: 0.05, green: 0.10, blue: 0.30, alpha: 1.0)) // dark navy
-        default:            return Color(#colorLiteral(red: 0.20, green: 0.20, blue: 0.20, alpha: 1.0)) // dark grey
+            case .name: return Color(#colorLiteral(red: 0.05, green: 0.10, blue: 0.30, alpha: 1.0))  // dark navy
+            case .size: return Color(#colorLiteral(red: 0.50, green: 0.05, blue: 0.18, alpha: 1.0))  // dark raspberry
+            case .kind: return Color(#colorLiteral(red: 0.28, green: 0.14, blue: 0.05, alpha: 1.0))  // dark brown
+            case .dateModified: return Color(#colorLiteral(red: 0.05, green: 0.28, blue: 0.10, alpha: 1.0))  // dark green
+            case .childCount: return Color(#colorLiteral(red: 0.05, green: 0.10, blue: 0.30, alpha: 1.0))  // dark navy
+            default: return Color(#colorLiteral(red: 0.20, green: 0.20, blue: 0.20, alpha: 1.0))  // dark grey
         }
     }
 
     /// Sort key for this column (nil = not sortable)
     var sortKey: SortKeysEnum? {
         switch self {
-        case .name:         return .name
-        case .dateModified: return .date
-        case .size:         return .size
-        case .kind:         return .type
-        case .permissions:  return .permissions
-        case .owner:        return .owner
-        case .childCount:   return .childCount
+            case .name: return .name
+            case .dateModified: return .date
+            case .size: return .size
+            case .kind: return .type
+            case .permissions: return .permissions
+            case .owner: return .owner
+            case .childCount: return .childCount
         }
     }
 }
@@ -110,7 +110,7 @@ final class ColumnLayoutModel {
 
     // MARK: - Default ordered column list (Finder-style: Name, Date, Size, Kind, Perms, Owner, ChildCount)
     static let defaultOrder: [ColumnID] = [
-        .name, .dateModified, .size, .kind, .permissions, .owner, .childCount
+        .name, .dateModified, .size, .kind, .permissions, .owner, .childCount,
     ]
 
     // MARK: - State
@@ -159,7 +159,7 @@ final class ColumnLayoutModel {
 
     private func load() {
         guard let data = UserDefaults.standard.data(forKey: storageKey),
-              let saved = try? JSONDecoder().decode([ColumnSpec].self, from: data)
+            let saved = try? JSONDecoder().decode([ColumnSpec].self, from: data)
         else { return }
 
         // Merge saved with defaults: add new columns, keep saved order and widths

@@ -16,7 +16,6 @@ extension FileTableView {
     }
 
     // MARK: - Auto-fit helpers (still available for future use)
-
     private func autoFitWidth(texts: [String], font: NSFont) -> CGFloat {
         let attrs: [NSAttributedString.Key: Any] = [.font: font]
         let charW = ("W" as NSString).size(withAttributes: attrs).width
