@@ -103,9 +103,14 @@ final class ToolbarStore {
             orderedIDs = decoded + newIDs
         }
 
-        // Load visibility
+        // Load visibility — new IDs not in saved set are added as visible by default
         if let rawVisible = UserDefaults.standard.array(forKey: visibilityKey) as? [String] {
-            visibleIDs = Set(rawVisible.compactMap { ToolbarItemID(rawValue: $0) })
+            let saved = Set(rawVisible.compactMap { ToolbarItemID(rawValue: $0) })
+            let knownSaved = Set(rawVisible)  // raw strings that were in UserDefaults
+            let brandNew = ToolbarItemID.allCases.filter {
+                !$0.isFixed && !knownSaved.contains($0.rawValue)
+            }
+            visibleIDs = saved.union(Set(brandNew))
         } else {
             visibleIDs = Set(ToolbarItemID.allCases)
         }
