@@ -171,6 +171,14 @@ final class ColorThemeStore {
     @ObservationIgnored @AppStorage("color.accent")            var hexAccent: String = ""
     @ObservationIgnored @AppStorage("color.dialogBackground")  var hexDialogBackground: String = ""
 
+    // Button appearance
+    @ObservationIgnored @AppStorage("button.borderColor")    var hexButtonBorder: String = ""
+    @ObservationIgnored @AppStorage("button.borderWidth")    var buttonBorderWidth: Double = 0.5
+    @ObservationIgnored @AppStorage("button.cornerRadius")   var buttonCornerRadius: Double = 6.0
+    @ObservationIgnored @AppStorage("button.shadowColor")    var hexButtonShadow: String = ""
+    @ObservationIgnored @AppStorage("button.shadowRadius")   var buttonShadowRadius: Double = 1.0
+    @ObservationIgnored @AppStorage("button.shadowY")        var buttonShadowY: Double = 0.5
+
     private(set) var activeTheme: ColorTheme = .defaultTheme
 
     private init() {
@@ -212,6 +220,8 @@ struct SettingsColorsPane: View {
     @AppStorage("color.selectionInactive") private var hexSelInactive: String = ""
     @AppStorage("color.accent")            private var hexAccent: String = ""
     @AppStorage("color.dialogBackground")  private var hexDialogBg: String = ""
+    @AppStorage("button.borderColor")        private var hexButtonBorder: String = ""
+    @AppStorage("button.shadowColor")        private var hexButtonShadow: String = ""
 
     private var currentPreset: ColorTheme {
         ColorTheme.allPresets.first { $0.id == selectedPresetID } ?? .defaultTheme
@@ -304,12 +314,68 @@ struct SettingsColorsPane: View {
                 }
             }
 
+            // ── Buttons ───────────────────────────────────────────
+            settingsGroupBox {
+                VStack(spacing: 0) {
+                    sectionHeader("Buttons")
+                    colorRow("Border color", help: "Border color for themed buttons",
+                             preset: Color.gray.opacity(0.35), hex: $hexButtonBorder)
+                    Divider()
+                    rowLabel("Border width:", help: "Thickness of button border line") {
+                        HStack(spacing: 10) {
+                            Slider(value: $store.buttonBorderWidth, in: 0...3, step: 0.25)
+                                .frame(width: 120)
+                            Text(String(format: "%.2f", store.buttonBorderWidth))
+                                .monospacedDigit().foregroundStyle(.secondary).frame(width: 36)
+                        }
+                    }
+                    Divider()
+                    rowLabel("Corner radius:", help: "Roundness of button corners") {
+                        HStack(spacing: 10) {
+                            Slider(value: $store.buttonCornerRadius, in: 0...16, step: 1)
+                                .frame(width: 120)
+                            Text("\(Int(store.buttonCornerRadius)) pt")
+                                .monospacedDigit().foregroundStyle(.secondary).frame(width: 36)
+                        }
+                    }
+                    Divider()
+                    colorRow("Shadow color", help: "Shadow color under buttons",
+                             preset: Color.black.opacity(0.1), hex: $hexButtonShadow)
+                    Divider()
+                    rowLabel("Shadow radius:", help: "Blur radius of button shadow") {
+                        HStack(spacing: 10) {
+                            Slider(value: $store.buttonShadowRadius, in: 0...8, step: 0.5)
+                                .frame(width: 120)
+                            Text(String(format: "%.1f", store.buttonShadowRadius))
+                                .monospacedDigit().foregroundStyle(.secondary).frame(width: 36)
+                        }
+                    }
+                    Divider()
+                    // Live preview
+                    rowLabel("Preview:", help: "How themed buttons look with current settings") {
+                        HStack(spacing: 12) {
+                            Button("Settings") {}
+                                .buttonStyle(ThemedButtonStyle())
+                            Button("Reset to Default") {}
+                                .buttonStyle(ThemedButtonStyle())
+                        }
+                    }
+                }
+            }
+
             // ── Reset ─────────────────────────────────────────
             HStack {
                 Spacer()
                 Button("Reset to Default") {
                     selectedPresetID = "default"
                     store.applyPreset(.defaultTheme)
+                    // Reset button params too
+                    store.hexButtonBorder = ""
+                    store.buttonBorderWidth = 0.5
+                    store.buttonCornerRadius = 6.0
+                    store.hexButtonShadow = ""
+                    store.buttonShadowRadius = 1.0
+                    store.buttonShadowY = 0.5
                 }
                 .buttonStyle(.bordered)
                 .tint(.red)
