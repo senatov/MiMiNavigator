@@ -124,7 +124,7 @@ struct NetworkAuthSheet: View {
             }
             .keyboardShortcut(.defaultAction)
             .disabled(username.isEmpty || isSaving)
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(ThemedButtonStyle())
             .controlSize(.regular)
         }
         .padding(.horizontal, 14).padding(.vertical, 10)

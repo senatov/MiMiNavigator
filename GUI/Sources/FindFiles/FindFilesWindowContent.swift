@@ -139,7 +139,7 @@ struct FindFilesWindowContent: View {
             Button("New Search") {
                 viewModel.newSearch()
             }
-            .buttonStyle(.bordered)
+            .buttonStyle(ThemedButtonStyle())
             .controlSize(.large)
             .disabled(viewModel.searchState == .idle && viewModel.results.isEmpty)
 
@@ -148,7 +148,7 @@ struct FindFilesWindowContent: View {
                 Button("Stop", role: .destructive) {
                     viewModel.cancelSearch()
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(ThemedButtonStyle())
                 .controlSize(.large)
                 .tint(.red)
                 .keyboardShortcut(.escape, modifiers: [])
@@ -158,7 +158,7 @@ struct FindFilesWindowContent: View {
                 } label: {
                     Label("Search", systemImage: "magnifyingglass")
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(ThemedButtonStyle())
                 .controlSize(.large)
                 .keyboardShortcut(.return, modifiers: [])
             }

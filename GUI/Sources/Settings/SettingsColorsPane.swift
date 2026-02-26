@@ -377,7 +377,7 @@ struct SettingsColorsPane: View {
                     store.buttonShadowRadius = 1.0
                     store.buttonShadowY = 0.5
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(ThemedButtonStyle())
                 .tint(.red)
             }
         }

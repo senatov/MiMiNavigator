@@ -206,7 +206,7 @@ struct ConnectToServerView: View {
                     ProgressView().scaleEffect(0.7)
                 }
                 Button("Connect") { connectAction() }
-                    .buttonStyle(.borderedProminent)
+                    .buttonStyle(ThemedButtonStyle())
                     .disabled(draft.host.isEmpty || isConnecting)
                     .keyboardShortcut(.return, modifiers: .command)
 

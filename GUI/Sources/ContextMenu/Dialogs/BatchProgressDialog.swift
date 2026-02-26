@@ -59,7 +59,7 @@ struct BatchProgressDialog: View {
                 Button("Stop") {
                     onCancel()
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(ThemedButtonStyle())
                 .controlSize(.small)
                 .keyboardShortcut(.cancelAction)
             }
