@@ -87,10 +87,6 @@ struct ToolbarButtonGroup<Content: View>: View {
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 5)
-        .background(
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(Color(nsColor: .windowBackgroundColor).opacity(0.6))
-        )
         .overlay(
             RoundedRectangle(cornerRadius: 8, style: .continuous)
                 .strokeBorder(Color(nsColor: .separatorColor), lineWidth: 0.75)
