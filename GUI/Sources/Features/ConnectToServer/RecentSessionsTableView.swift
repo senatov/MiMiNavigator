@@ -19,16 +19,20 @@ struct RecentSessionsTableView: View {
     @State private var sortKey: SessionSortKey = .date
     @State private var sortAscending: Bool = false
 
+    // MARK: - Selection colors (matches FileRow)
+    private static let activeFill = Color(nsColor: .selectedContentBackgroundColor)
+    private static let inactiveFill = Color(nsColor: .unemphasizedSelectedContentBackgroundColor)
+
     private var sortedServers: [RemoteServer] {
         servers.sorted { a, b in
             let result: Bool
             switch sortKey {
-            case .date:
-                result = (a.lastConnected ?? .distantPast) < (b.lastConnected ?? .distantPast)
-            case .session:
-                result = a.displayName.localizedCaseInsensitiveCompare(b.displayName) == .orderedAscending
-            case .status:
-                result = a.lastResult.rawValue < b.lastResult.rawValue
+                case .date:
+                    result = (a.lastConnected ?? .distantPast) < (b.lastConnected ?? .distantPast)
+                case .session:
+                    result = a.displayName.localizedCaseInsensitiveCompare(b.displayName) == .orderedAscending
+                case .status:
+                    result = a.lastResult.rawValue < b.lastResult.rawValue
             }
             return sortAscending ? result : !result
         }
@@ -87,10 +91,6 @@ struct RecentSessionsTableView: View {
         .contentShape(Rectangle())
         .onTapGesture { toggleSort(col) }
     }
-
-    // MARK: - Selection colors (matches FileRow)
-    private static let activeFill = Color(nsColor: .selectedContentBackgroundColor)
-    private static let inactiveFill = Color(nsColor: .unemphasizedSelectedContentBackgroundColor)
 
     // MARK: - Session List
     private var sessionList: some View {
@@ -184,12 +184,12 @@ struct RecentSessionsTableView: View {
 
     private func colorForResult(_ result: ConnectionResult) -> Color {
         switch result {
-        case .none:       return .secondary
-        case .success:    return .green
-        case .authFailed: return .orange
-        case .timeout:    return .yellow
-        case .refused:    return .red
-        case .error:      return .red
+            case .none: return .secondary
+            case .success: return .green
+            case .authFailed: return .orange
+            case .timeout: return .yellow
+            case .refused: return .red
+            case .error: return .red
         }
     }
 }
