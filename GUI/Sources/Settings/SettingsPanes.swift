@@ -367,6 +367,8 @@ struct SettingsTabsPane: View {
 struct SettingsArchivesPane: View {
 
     @AppStorage("settings.archives.defaultCreateFormat") private var defaultCreateFormat: String = "zip"
+    @State private var archivePassword: String = ArchivePasswordStore.shared.loadPassword() ?? ""
+    @State private var showPassword: Bool = false
     @AppStorage("settings.archives.openOnDoubleClick")   private var openOnDoubleClick: Bool = true
     @AppStorage("settings.archives.confirmOnModified")   private var confirmOnModified: Bool = true
     @AppStorage("settings.archives.autoRepack")          private var autoRepack: Bool = true
@@ -425,6 +427,57 @@ struct SettingsArchivesPane: View {
                         Toggle("Show extract progress dialog", isOn: $showExtractProgress)
                             .toggleStyle(.checkbox)
                     }
+                }
+            }
+
+            // ── Password ──────────────────────────────────────
+            SettingsGroupBox {
+                VStack(spacing: 0) {
+                    SettingsRow(label: "Archive password:", help: "Default password for encrypted archives (ZIP, 7z, RAR). Stored in macOS Keychain.") {
+                        HStack(spacing: 8) {
+                            if showPassword {
+                                TextField("Enter password…", text: $archivePassword)
+                                    .textFieldStyle(.roundedBorder)
+                                    .frame(width: 200)
+                            } else {
+                                SecureField("Enter password…", text: $archivePassword)
+                                    .textFieldStyle(.roundedBorder)
+                                    .frame(width: 200)
+                            }
+                            Button {
+                                showPassword.toggle()
+                            } label: {
+                                Image(systemName: showPassword ? "eye.slash" : "eye")
+                                    .font(.system(size: 12))
+                            }
+                            .buttonStyle(.plain)
+                            .help(showPassword ? "Hide password" : "Show password")
+
+                            Button("Save") {
+                                ArchivePasswordStore.shared.savePassword(archivePassword)
+                            }
+                            .controlSize(.small)
+                            .disabled(archivePassword.isEmpty)
+
+                            if !archivePassword.isEmpty {
+                                Button {
+                                    archivePassword = ""
+                                    ArchivePasswordStore.shared.deletePassword()
+                                } label: {
+                                    Image(systemName: "trash")
+                                        .font(.system(size: 11))
+                                        .foregroundStyle(.red)
+                                }
+                                .buttonStyle(.plain)
+                                .help("Remove saved password")
+                            }
+                        }
+                    }
+                    Text("Used automatically when opening password-protected archives. If wrong, you'll be prompted.")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.tertiary)
+                        .padding(.leading, 216)
+                        .padding(.top, 2)
                 }
             }
 
