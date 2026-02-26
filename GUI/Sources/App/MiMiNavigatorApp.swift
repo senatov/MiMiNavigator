@@ -104,8 +104,7 @@ struct MiMiNavigatorApp: App {
                     }
                 }
 
-                .toolbarBackground(Material.thin, for: ToolbarPlacement.windowToolbar)
-                .toolbarBackgroundVisibility(Visibility.visible, for: ToolbarPlacement.windowToolbar)
+                // No .toolbarBackground — our ToolbarButtonGroup provides its own framing
                 .onChange(of: scenePhase) {
                     if scenePhase == .background {
                         Task { await BookmarkStore.shared.stopAll() }
@@ -274,10 +273,6 @@ struct MiMiNavigatorApp: App {
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 5)
-            .background(
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(Color(nsColor: .windowBackgroundColor).opacity(0.6))
-            )
             .overlay(
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
                     .strokeBorder(Color(nsColor: .separatorColor), lineWidth: 0.75)
