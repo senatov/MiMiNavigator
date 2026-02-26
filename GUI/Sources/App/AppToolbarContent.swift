@@ -4,56 +4,96 @@
 // Created by Iakov Senatov on 24.02.2026.
 // Copyright © 2026 Senatov. All rights reserved.
 // Description: Dynamic toolbar content driven by ToolbarStore.
-//   SwiftUI's @ToolbarContentBuilder does not support ForEach with heterogeneous
-//   ToolbarItem types, so each slot is declared explicitly with an `if` guard.
-//   Visibility is checked against ToolbarStore.shared.visibleIDs.
-//   Ordering is determined by ToolbarStore.shared.orderedIDs — the `if` guards
-//   are evaluated in declaration order, which matches the default ordering.
-//   When the user reorders, the NSToolbar system respects the saved item order
-//   because each ToolbarItem has a stable id tied to ToolbarItemID.rawValue.
+//   All action buttons grouped in a single framed HStack for visual cohesion.
+//   Menu bar toggle is separate, also framed.
 
 import SwiftUI
 
 // MARK: - App Toolbar Content
-/// Declares all 8 customisable toolbar slots.
-/// Each slot is guarded by a visibility check so hidden items are omitted.
 struct AppToolbarContent: ToolbarContent {
 
-    /// Back-reference to the app struct so we can call its toolbar-item factory methods.
     let app: MiMiNavigatorApp
 
     private var store: ToolbarStore { ToolbarStore.shared }
 
     // MARK: - Body
     var body: some ToolbarContent {
-        if store.visibleIDs.contains(.refresh) {
-            app.toolBarItemRefresh()
+        // All action buttons in one framed group
+        ToolbarItem(placement: .automatic) {
+            ToolbarButtonGroup {
+                if store.visibleIDs.contains(.refresh) {
+                    app.makeToolbarIcon(.refresh) {
+                        app.performRefresh()
+                    }
+                }
+                if store.visibleIDs.contains(.hiddenFiles) {
+                    app.makeToolbarToggle(.hiddenFiles)
+                }
+                if store.visibleIDs.contains(.openWith) {
+                    app.makeToolbarIcon(.openWith) {
+                        app.performOpenWith()
+                    }
+                }
+                if store.visibleIDs.contains(.swapPanels) {
+                    app.makeToolbarIcon(.swapPanels) {
+                        app.performSwapPanels()
+                    }
+                }
+                if store.visibleIDs.contains(.compare) {
+                    app.makeToolbarIcon(.compare) {
+                        app.performCompare()
+                    }
+                }
+                if store.visibleIDs.contains(.network) {
+                    app.makeToolbarIcon(.network) {
+                        app.performNetwork()
+                    }
+                }
+                if store.visibleIDs.contains(.connectServer) {
+                    app.makeToolbarIcon(.connectServer) {
+                        app.performConnectServer()
+                    }
+                }
+                if store.visibleIDs.contains(.findFiles) {
+                    app.makeToolbarIcon(.findFiles) {
+                        app.performFindFiles()
+                    }
+                }
+                if store.visibleIDs.contains(.settings) {
+                    app.makeToolbarIcon(.settings) {
+                        app.performSettings()
+                    }
+                }
+            }
         }
-        if store.visibleIDs.contains(.hiddenFiles) {
-            app.toolBarItemHidden()
+
+        // Menu bar toggle — separate framed item
+        ToolbarItem(placement: .automatic) {
+            ToolbarButtonGroup {
+                app.makeToolbarToggle(.menuBarToggle)
+            }
         }
-        if store.visibleIDs.contains(.openWith) {
-            app.toolBarOpenWith()
+    }
+}
+
+// MARK: - Framed Toolbar Button Group
+/// Wraps toolbar buttons in a rounded rect with separator border — matches Breadcrumb style.
+struct ToolbarButtonGroup<Content: View>: View {
+    @ViewBuilder let content: () -> Content
+
+    var body: some View {
+        HStack(spacing: 6) {
+            content()
         }
-        if store.visibleIDs.contains(.swapPanels) {
-            app.toolBarItemSwapPanels()
-        }
-        if store.visibleIDs.contains(.compare) {
-            app.toolBarItemCompare()
-        }
-        if store.visibleIDs.contains(.network) {
-            app.toolBarItemNetwork()
-        }
-        if store.visibleIDs.contains(.connectServer) {
-            app.toolBarItemConnectToServer()
-        }
-        if store.visibleIDs.contains(.findFiles) {
-            app.toolBarItemSearch()
-        }
-        if store.visibleIDs.contains(.settings) {
-            app.toolBarItemSettings()
-        }
-        // menuBarToggle — fixed, always present, not removable
-        app.toolBarItemMenuBarToggle()
+        .padding(.horizontal, 10)
+        .padding(.vertical, 5)
+        .background(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(Color(nsColor: .windowBackgroundColor).opacity(0.6))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .strokeBorder(Color(nsColor: .separatorColor), lineWidth: 0.75)
+        )
     }
 }

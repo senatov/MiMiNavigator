@@ -162,153 +162,96 @@ struct MiMiNavigatorApp: App {
         }
     }
 
-    // MARK: - Refresh button (macOS HIG)
-    func toolBarItemRefresh() -> ToolbarItem<(), some View> {
-        return ToolbarItem(placement: .automatic) {
-            ToolbarButton(
-                systemImage: "arrow.triangle.2.circlepath",
-                help: HotKeyStore.shared.helpText("Refresh file lists", for: .refreshPanels)
-            ) {
-                log.debug("Refresh button clicked")
-                appState.forceRefreshBothPanels()
-            }
-            .keyboardShortcut("r", modifiers: .command)
-        }
+    // MARK: - ═══════════════════════════════════════
+    // MARK:   Toolbar Icon / Toggle Factories
+    // MARK: - ═══════════════════════════════════════
+
+    /// Creates a ToolbarButton for a given ToolbarItemID with action closure.
+    func makeToolbarIcon(_ id: ToolbarItemID, action: @escaping () -> Void) -> some View {
+        ToolbarButton(systemImage: id.systemImage, help: id.helpText, action: action)
     }
 
-    // MARK: - Hidden files toggle (macOS HIG)
-    func toolBarItemHidden() -> ToolbarItem<(), some View> {
-        return ToolbarItem(placement: .automatic) {
+    /// Creates a ToolbarToggleButton for specific known toggle items.
+    @ViewBuilder
+    func makeToolbarToggle(_ id: ToolbarItemID) -> some View {
+        switch id {
+        case .hiddenFiles:
             ToolbarToggleButton(
                 systemImage: "eye.slash",
                 activeImage: "eye.fill",
                 helpActive: HotKeyStore.shared.helpText("Hide hidden files", for: .toggleHiddenFiles),
                 helpInactive: HotKeyStore.shared.helpText("Show hidden files", for: .toggleHiddenFiles),
-                isActive: $showHiddenFiles
+                isActive: Binding(get: { showHiddenFiles }, set: { _ in })
             ) {
-                log.debug("Hidden toggle clicked")
-                showHiddenFiles.toggle()
-                UserPreferences.shared.snapshot.showHiddenFiles = showHiddenFiles
-                appState.forceRefreshBothPanels()
+                performToggleHidden()
             }
-            .keyboardShortcut(".", modifiers: .command)
-        }
-    }
-
-    // MARK: - Open With button (macOS HIG)
-    func toolBarOpenWith() -> ToolbarItem<(), some View> {
-        return ToolbarItem(placement: .automatic) {
-            ToolbarButton(
-                systemImage: "arrow.up.forward.app",
-                help: "Open file / Get Info for directory (⇧⌘O)"
-            ) {
-                log.debug("OpenWith button clicked")
-                appState.openSelectedItem()
-            }
-            .keyboardShortcut("o", modifiers: [.command, .shift])
-        }
-    }
-
-    // MARK: - Network Neighborhood button
-    func toolBarItemNetwork() -> ToolbarItem<(), some View> {
-        return ToolbarItem(placement: .automatic) {
-            ToolbarButton(
-                systemImage: "rectangle.connected.to.line.below",
-                help: "Network Neighborhood (\u{2318}N)"
-            ) {
-                log.debug("Network Neighborhood button clicked")
-                NetworkNeighborhoodCoordinator.shared.toggle()
-            }
-            .keyboardShortcut("n", modifiers: .command)
-        }
-    }
-
-    // MARK: - Connect to Server button
-    func toolBarItemConnectToServer() -> ToolbarItem<(), some View> {
-        return ToolbarItem(placement: .automatic) {
-            ToolbarButton(
-                systemImage: "link",
-                help: "Connect to Server (\u{2303}N)"
-            ) {
-                log.debug("Connect to Server button clicked")
-                ConnectToServerCoordinator.shared.toggle()
-            }
-        }
-    }
-
-    // MARK: - Settings button (gearshape — universal convention)
-    func toolBarItemSettings() -> ToolbarItem<(), some View> {
-        return ToolbarItem(placement: .automatic) {
-            ToolbarButton(
-                systemImage: "gearshape",
-                help: "Settings (\u{2318},)"
-            ) {
-                log.debug("Settings button clicked")
-                SettingsCoordinator.shared.toggle()
-            }
-            .keyboardShortcut(",", modifiers: .command)
-        }
-    }
-
-    // MARK: - Find Files button (macOS HIG — search icon)
-    func toolBarItemSearch() -> ToolbarItem<(), some View> {
-        return ToolbarItem(placement: .automatic) {
-            ToolbarButton(
-                systemImage: "magnifyingglass",
-                help: "Find Files (⇧⌘F)"
-            ) {
-                log.debug("Search button clicked")
-                let panel = appState.focusedPanel
-                let path = panel == .left ? appState.leftPath : appState.rightPath
-                let selectedFile = panel == .left ? appState.selectedLeftFile : appState.selectedRightFile
-                FindFilesCoordinator.shared.toggle(searchPath: path, selectedFile: selectedFile)
-            }
-            .keyboardShortcut("f", modifiers: [.command, .shift])
-        }
-    }
-
-    // MARK: - Swap panels button — exchange left ↔ right directory
-    func toolBarItemSwapPanels() -> ToolbarItem<(), some View> {
-        return ToolbarItem(placement: .automatic) {
-            ToolbarButton(
-                systemImage: "arrow.left.arrow.right",
-                help: "Swap panels — exchange left and right directories"
-            ) {
-                log.debug("Swap panels button clicked")
-                appState.swapPanels()
-            }
-        }
-    }
-
-    // MARK: - Compare button — diff files or directories via FileMerge (opendiff)
-    func toolBarItemCompare() -> ToolbarItem<(), some View> {
-        return ToolbarItem(placement: .automatic) {
-            ToolbarButton(
-                systemImage: "doc.text.magnifyingglass",
-                help: "Compare selected items in both panels (⌘D) — tool configured in Settings → Diff Tool"
-            ) {
-                log.debug("Compare button clicked")
-                compareItems()
-            }
-        }
-    }
-
-    // MARK: - Menu Bar toggle — fixed, always in toolbar, not removable
-    func toolBarItemMenuBarToggle() -> some ToolbarContent {
-        ToolbarItem(placement: .automatic) {
+        case .menuBarToggle:
             ToolbarToggleButton(
                 systemImage: "menubar.rectangle",
                 activeImage: "menubar.rectangle",
                 helpActive: "Hide menu bar",
                 helpInactive: "Show menu bar",
-                isActive: Binding(
-                    get: { ToolbarStore.shared.menuBarVisible },
-                    set: { _ in }
-                )
+                isActive: Binding(get: { ToolbarStore.shared.menuBarVisible }, set: { _ in })
             ) {
                 ToolbarStore.shared.menuBarVisible.toggle()
             }
+        default:
+            EmptyView()
         }
+    }
+
+    // MARK: - ═══════════════════════════════════════
+    // MARK:   Toolbar Actions (called from AppToolbarContent)
+    // MARK: - ═══════════════════════════════════════
+
+    func performRefresh() {
+        log.debug("Refresh button clicked")
+        appState.forceRefreshBothPanels()
+    }
+
+    func performToggleHidden() {
+        log.debug("Hidden toggle clicked")
+        showHiddenFiles.toggle()
+        UserPreferences.shared.snapshot.showHiddenFiles = showHiddenFiles
+        appState.forceRefreshBothPanels()
+    }
+
+    func performOpenWith() {
+        log.debug("OpenWith button clicked")
+        appState.openSelectedItem()
+    }
+
+    func performSwapPanels() {
+        log.debug("Swap panels button clicked")
+        appState.swapPanels()
+    }
+
+    func performCompare() {
+        log.debug("Compare button clicked")
+        compareItems()
+    }
+
+    func performNetwork() {
+        log.debug("Network Neighborhood button clicked")
+        NetworkNeighborhoodCoordinator.shared.toggle()
+    }
+
+    func performConnectServer() {
+        log.debug("Connect to Server button clicked")
+        ConnectToServerCoordinator.shared.toggle()
+    }
+
+    func performFindFiles() {
+        log.debug("Search button clicked")
+        let panel = appState.focusedPanel
+        let path = panel == .left ? appState.leftPath : appState.rightPath
+        let selectedFile = panel == .left ? appState.selectedLeftFile : appState.selectedRightFile
+        FindFilesCoordinator.shared.toggle(searchPath: path, selectedFile: selectedFile)
+    }
+
+    func performSettings() {
+        log.debug("Settings button clicked")
+        SettingsCoordinator.shared.toggle()
     }
 
     // MARK: - Build info badge
@@ -317,11 +260,8 @@ struct MiMiNavigatorApp: App {
             HStack(spacing: 8) {
                 Text("🐈")
                     .font(.caption2)
-                    .padding(8)
-                    .background(Circle().fill(Color.yellow.opacity(0.1)))
-                    .overlay(
-                        Circle().strokeBorder(Color.blue.opacity(0.8), lineWidth: 0.04)
-                    )
+                    .padding(6)
+                    .background(Circle().fill(Color.yellow.opacity(0.08)))
                 VStack(alignment: .leading, spacing: 1) {
                     Text("DEV BUILD")
                         .font(.caption2)
@@ -332,12 +272,15 @@ struct MiMiNavigatorApp: App {
                         .foregroundStyle(FilePanelStyle.dirNameColor)
                 }
             }
-            .padding(.horizontal, 22)
-            .padding(.vertical, 1)
-            .background(.yellow.opacity(0.05), in: Capsule())
+            .padding(.horizontal, 12)
+            .padding(.vertical, 5)
+            .background(
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .fill(Color(nsColor: .windowBackgroundColor).opacity(0.6))
+            )
             .overlay(
-                Capsule()
-                    .strokeBorder(.red, lineWidth: 0.8)
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .strokeBorder(Color(nsColor: .separatorColor), lineWidth: 0.75)
             )
             .help("Current development build version")
         }
