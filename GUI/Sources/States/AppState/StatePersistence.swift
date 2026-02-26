@@ -55,20 +55,40 @@ enum StatePersistence {
     
     // MARK: - Load Initial Paths
     
-    /// Get initial paths for panels (from UserDefaults or defaults)
+    /// Get initial paths for panels (from UserDefaults or defaults).
+    /// Validates that saved paths still exist and are accessible directories;
+    /// falls back to sensible defaults otherwise.
     static func loadInitialPaths() -> (left: String, right: String) {
         let fm = FileManager.default
         let ud = UserDefaults.standard
-        
-        let defaultLeft = fm.urls(for: .downloadsDirectory, in: .userDomainMask).first?.path ?? ""
-        let defaultRight = fm.urls(for: .documentDirectory, in: .userDomainMask).first?.path ?? ""
-        
-        let leftPath = ud.string(forKey: PreferenceKeys.leftPath.rawValue) ?? defaultLeft
-        let rightPath = ud.string(forKey: PreferenceKeys.rightPath.rawValue) ?? defaultRight
-        
+
+        let defaultLeft = fm.urls(for: .downloadsDirectory, in: .userDomainMask).first?.path ?? NSHomeDirectory()
+        let defaultRight = fm.urls(for: .documentDirectory, in: .userDomainMask).first?.path ?? "/Users"
+
+        let savedLeft = ud.string(forKey: PreferenceKeys.leftPath.rawValue)
+        let savedRight = ud.string(forKey: PreferenceKeys.rightPath.rawValue)
+
+        let leftPath = validDirectoryPath(savedLeft, fallback: defaultLeft)
+        let rightPath = validDirectoryPath(savedRight, fallback: defaultRight)
+
         log.debug("[StatePersistence] loaded paths L=\(leftPath) R=\(rightPath)")
-        
         return (leftPath, rightPath)
+    }
+
+    /// Returns `path` if it points to an existing, accessible directory; otherwise `fallback`.
+    private static func validDirectoryPath(_ path: String?, fallback: String) -> String {
+        guard let path, !path.isEmpty else { return fallback }
+        var isDir: ObjCBool = false
+        guard FileManager.default.fileExists(atPath: path, isDirectory: &isDir), isDir.boolValue else {
+            log.warning("[StatePersistence] saved path missing/not dir: \(path) → fallback \(fallback)")
+            return fallback
+        }
+        // Extra safety: skip DerivedData temp paths that may vanish between launches
+        if path.contains("/DerivedData/") || path.contains(".xcarchive") {
+            log.warning("[StatePersistence] saved path is ephemeral: \(path) → fallback \(fallback)")
+            return fallback
+        }
+        return path
     }
     
     /// Get initial focused panel
