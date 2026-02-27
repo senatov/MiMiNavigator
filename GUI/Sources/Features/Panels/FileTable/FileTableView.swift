@@ -38,10 +38,11 @@ struct FileTableView: View {
         nonmutating set { appState.bSortAscending = newValue }
     }
     @State var cachedSortedFiles: [CustomFile] = []
-    @State var scrollProxy: ScrollViewProxy?
     @State var isPanelDropTargeted: Bool = false
     /// Measured height of the scroll viewport — used to compute real pageStep
     @State var viewHeight: CGFloat = 400
+    /// O(1) scroll target — set by keyboard nav, consumed by ScrollView(.scrollPosition)
+    @State var scrollAnchorID: CustomFile.ID? = nil
 
     // MARK: - Column Layout (replaces individual CGFloat @State for each column)
     @State var layout: ColumnLayoutModel
@@ -71,8 +72,8 @@ struct FileTableView: View {
         TableKeyboardNavigation(
             files: cachedSortedFiles,
             selectedID: $selectedID,
+            scrollAnchorID: $scrollAnchorID,
             onSelect: onSelect,
-            scrollProxy: scrollProxy,
             pageStep: visibleRowCount
         )
     }
@@ -87,14 +88,11 @@ struct FileTableView: View {
     
     // MARK: - Body
     var body: some View {
-        ScrollViewReader { proxy in
-            mainScrollView
-                .onAppear {
-                    log.debug("\(#function) FileTableView onAppear panel=\(panelSide) files.count=\(files.count)")
-                    scrollProxy = proxy
-                    recomputeSortedCache()
-                }
-        }
+        mainScrollView
+            .onAppear {
+                log.debug("\(#function) FileTableView onAppear panel=\(panelSide) files.count=\(files.count)")
+                recomputeSortedCache()
+            }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(.horizontal, 6)
         .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
