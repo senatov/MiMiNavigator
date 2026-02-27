@@ -48,18 +48,24 @@ struct FileTableView: View {
     /// O(1) scroll target — set by keyboard nav, consumed by ScrollView(.scrollPosition)
     @State var scrollAnchorID: CustomFile.ID? = nil
 
-    // MARK: - Column Layout (replaces individual CGFloat @State for each column)
-    @State var layout: ColumnLayoutModel
+    // MARK: - Column Layout — owned by PanelFileTableSection, passed as Binding to avoid recreating on list updates
+    @Binding var layout: ColumnLayoutModel
 
     // MARK: - Init
-    init(panelSide: PanelSide, files: [CustomFile], selectedID: Binding<CustomFile.ID?>,
-         onSelect: @escaping (CustomFile) -> Void, onDoubleClick: @escaping (CustomFile) -> Void) {
+    init(
+        panelSide: PanelSide,
+        files: [CustomFile],
+        selectedID: Binding<CustomFile.ID?>,
+        layout: Binding<ColumnLayoutModel>,
+        onSelect: @escaping (CustomFile) -> Void,
+        onDoubleClick: @escaping (CustomFile) -> Void
+    ) {
         self.panelSide = panelSide
         self.files = files
         self._selectedID = selectedID
+        self._layout = layout
         self.onSelect = onSelect
         self.onDoubleClick = onDoubleClick
-        self._layout = State(initialValue: ColumnLayoutModel(panelSide: panelSide))
     }
     
     // MARK: - Computed Properties

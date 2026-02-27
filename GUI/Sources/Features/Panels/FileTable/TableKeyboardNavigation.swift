@@ -90,12 +90,14 @@ struct TableKeyboardNavigation {
     }
 
     private func selectAndScroll(at index: Int) {
+        let t0 = Date()
         let file = files[index]
         selectedID.wrappedValue = file.id
         onSelect(file)
         // O(1): SwiftUI uses index * rowHeight — no cell materialization
         scrollAnchorID.wrappedValue = file.id
-        log.debug("[TableKeyboardNavigation] idx=\(index) file=\(file.nameStr)")
+        let ms = Int(Date().timeIntervalSince(t0) * 1000)
+        log.debug("[Nav] idx=\(index) name=\(file.nameStr) selectAndScroll=\(ms)ms indexSize=\(files.count)")
     }
 }
 

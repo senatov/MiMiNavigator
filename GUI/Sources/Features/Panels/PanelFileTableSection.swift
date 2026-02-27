@@ -19,61 +19,57 @@ struct PanelFileTableSection: View {
     let onSelect: (CustomFile) -> Void
     let onDoubleClick: (CustomFile) -> Void
     @State private var rowRects: [CustomFile.ID: CGRect] = [:]
+    // Owned here so it survives files-list updates without recreating
+    @State private var columnLayout: ColumnLayoutModel
+
+    // MARK: - Init
+    init(
+        files: [CustomFile],
+        selectedID: Binding<CustomFile.ID?>,
+        panelSide: PanelSide,
+        onPanelTap: @escaping (PanelSide) -> Void,
+        onSelect: @escaping (CustomFile) -> Void,
+        onDoubleClick: @escaping (CustomFile) -> Void
+    ) {
+        self.files = files
+        self._selectedID = selectedID
+        self.panelSide = panelSide
+        self.onPanelTap = onPanelTap
+        self.onSelect = onSelect
+        self.onDoubleClick = onDoubleClick
+        self._columnLayout = State(initialValue: ColumnLayoutModel(panelSide: panelSide))
+    }
 
     var body: some View {
-        // Use content-based key to ensure re-render when files change
-        // Combines: count + first file name + last file name + panel side
-        let contentKey = makeContentKey()
-        
-        StableKeyView(contentKey) {
-            FileTableView(
-                panelSide: panelSide,
-                files: files,
-                selectedID: $selectedID,
-                onSelect: handleSelection,
-                onDoubleClick: onDoubleClick
-            )
-            .contentShape(Rectangle())
-            .simultaneousGesture(
-                TapGesture(count: 1)
-                    .onEnded {
-                        if appState.focusedPanel != panelSide {
-                            appState.focusedPanel = panelSide
-                        }
+        FileTableView(
+            panelSide: panelSide,
+            files: files,
+            selectedID: $selectedID,
+            layout: $columnLayout,
+            onSelect: handleSelection,
+            onDoubleClick: onDoubleClick
+        )
+        .contentShape(Rectangle())
+        .simultaneousGesture(
+            TapGesture(count: 1)
+                .onEnded {
+                    if appState.focusedPanel != panelSide {
+                        appState.focusedPanel = panelSide
                     }
-            )
-            .coordinateSpace(name: "fileTableSpace")
-            .onPreferenceChange(RowRectPreference.self) { value in
-                if value != rowRects {
-                    rowRects = value
                 }
+        )
+        .coordinateSpace(name: "fileTableSpace")
+        .onPreferenceChange(RowRectPreference.self) { value in
+            if value != rowRects {
+                rowRects = value
             }
-            .animation(nil, value: selectedID)
-            .transaction { txn in
-                txn.disablesAnimations = true
-            }
-            .id("PFTS_\(panelSide)_\(contentKey)")
+        }
+        .animation(nil, value: selectedID)
+        .transaction { txn in
+            txn.disablesAnimations = true
         }
     }
     
-    // MARK: - Generate content-based key for StableBy
-    private func makeContentKey() -> Int {
-        var hasher = Hasher()
-        hasher.combine(panelSide)
-        hasher.combine(files.count)
-        // Include first and last file names to detect content changes
-        if let first = files.first {
-            hasher.combine(first.nameStr)
-        }
-        if let last = files.last {
-            hasher.combine(last.nameStr)
-        }
-        // Include modification time of first file to detect rename
-        if let first = files.first {
-            hasher.combine(first.pathStr)
-        }
-        return hasher.finalize()
-    }
 
     // MARK: - Selection handler
     private func handleSelection(_ file: CustomFile) {

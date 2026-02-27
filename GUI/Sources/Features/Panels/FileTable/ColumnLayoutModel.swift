@@ -136,6 +136,7 @@ final class ColumnLayoutModel {
     init(panelSide: PanelSide) {
         self.storageKey = "ColumnLayout.\(panelSide.rawValue)"
         self.columns = Self.defaultOrder.map { ColumnSpec(id: $0) }
+        log.debug("[ColumnLayout] init(panelSide:\(panelSide)) — should happen once per panel")
         load()
     }
 
