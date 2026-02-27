@@ -152,6 +152,18 @@ struct TableHeaderView: View {
         case .childCount:
             texts = files.map { $0.childCountFormatted }
             font = .systemFont(ofSize: 12)
+        case .dateCreated:
+            texts = files.map { $0.creationDateFormatted }
+            font = .systemFont(ofSize: 12)
+        case .dateLastOpened:
+            texts = files.map { $0.lastOpenedFormatted }
+            font = .systemFont(ofSize: 12)
+        case .dateAdded:
+            texts = files.map { $0.dateAddedFormatted }
+            font = .systemFont(ofSize: 12)
+        case .group:
+            texts = files.map { $0.groupNameFormatted }
+            font = .systemFont(ofSize: 12)
         case .name:
             return
         }

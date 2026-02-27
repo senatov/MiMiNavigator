@@ -137,6 +137,7 @@ struct TopMenuBarView: View {
         .menuStyle(.borderlessButton)
         .controlSize(.small)
         .buttonStyle(TopMenuButtonStyle())
+        .focusable(false)
     }
     
         // MARK: - All top-level menu categories are defined here:

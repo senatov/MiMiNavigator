@@ -22,6 +22,9 @@ enum FileScanner {
         .fileSizeKey,
         .contentModificationDateKey,
         .fileSecurityKey,
+        .creationDateKey,
+        .contentAccessDateKey,
+        .addedToDirectoryDateKey,
     ]
 
     private static let prefetchKeySet = Set(prefetchKeys)

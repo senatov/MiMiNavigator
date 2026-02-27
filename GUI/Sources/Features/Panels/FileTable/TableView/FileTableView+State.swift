@@ -5,6 +5,7 @@
 // Copyright © 2024-2026 Senatov. All rights reserved.
 // Description: State management for FileTableView (sorting, auto-fit)
 
+import FileModelKit
 import SwiftUI
 
 // MARK: - State Management
@@ -34,9 +35,15 @@ extension FileTableView {
 
     /// Rebuilds the O(1) lookup dictionary and the rows array after list changes. Called only on list update.
     private func rebuildIndexByID() {
-        let enumerated = Array(cachedSortedFiles.enumerated())
-        cachedIndexByID = Dictionary(uniqueKeysWithValues: enumerated.map { ($0.element.id, $0.offset) })
-        cachedSortedRows = enumerated
+        var index = [CustomFile.ID: Int](minimumCapacity: cachedSortedFiles.count)
+        var rows = [(offset: Int, element: CustomFile)]()
+        rows.reserveCapacity(cachedSortedFiles.count)
+        for (offset, file) in cachedSortedFiles.enumerated() {
+            index[file.id] = offset
+            rows.append((offset: offset, element: file))
+        }
+        cachedIndexByID = index
+        cachedSortedRows = rows
     }
 
     // MARK: - Auto-fit helpers (still available for future use)

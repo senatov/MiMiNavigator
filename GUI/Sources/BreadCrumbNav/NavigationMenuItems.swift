@@ -20,14 +20,10 @@ struct FavoritesButtonSection: View {
     }
 
     var body: some View {
-        log.verbose("FavoritesButtonSection.body")
-        return HStack(spacing: 4) {
+        HStack(spacing: 4) {
             ButtonFavTopPanel(selectedSide: panelSide)
         }
         .padding(.leading, 6)
-        .task { @MainActor in
-            appState.focusedPanel = panelSide
-        }
     }
 }
 

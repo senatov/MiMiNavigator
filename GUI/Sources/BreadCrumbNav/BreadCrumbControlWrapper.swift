@@ -108,10 +108,10 @@ struct BreadCrumbControlWrapper: View {
     private var borderColor: Color {
         if isEditing {
             return .accentColor
+        } else if isHovering {
+            return Color(nsColor: .separatorColor).opacity(0.6)
         } else {
-            return Color.blue.opacity(
-                isHovering ? Design.Colors.hoverBorderOpacity : Design.Colors.idleBorderOpacity
-            )
+            return Color(nsColor: .separatorColor).opacity(0.25)
         }
     }
 
