@@ -43,7 +43,13 @@ extension FileTableView {
                         )
                     }
                 }
+                // scrollTargetLayout tells SwiftUI which items are scroll targets
+                // (used by .scrollPosition to compute offset mathematically — O(1))
+                .scrollTargetLayout()
             }
+            // O(1) programmatic scroll: SwiftUI calculates offset = index * rowHeight
+            // without materializing intervening cells — fixes 5-10s PgUp/PgDown lag
+            .scrollPosition(id: $scrollAnchorID, anchor: .center)
             .safeAreaInset(edge: .bottom, spacing: 0) {
                 Color.clear.frame(height: 40)
             }
