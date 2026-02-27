@@ -716,9 +716,8 @@ extension AppState {
             leftFiles: displayedLeftFiles,
             rightFiles: displayedRightFiles
         )
-        Task {
-            await ArchiveManager.shared.cleanup()
-        }
+        // ArchiveManager.cleanup() is synchronous — call directly, no Task needed
+        ArchiveManager.shared.cleanup()
     }
 
     // MARK: - Navigation History Helpers

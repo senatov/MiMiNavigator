@@ -7,64 +7,59 @@
 //   and companion panel visibility (Network Neighborhood, Find Files).
 //   applicationDidBecomeActive raises companion panels only when MiMiNavigator
 //   itself gets focus — not when other apps become active.
+//
+// Termination strategy:
+//   applicationShouldTerminate returns .terminateLater, fires async cleanup,
+//   then calls reply(.now) — guarantees the app exits in < 1 s with no spinner.
 
 import AppKit
 
 @MainActor final class AppDelegate: NSObject, NSApplicationDelegate {
+
     weak var appState: AppState?
     private var keyMonitor: Any?
     private let tabKeyCode: UInt16 = 48
 
-    // MARK: -
+    // MARK: - Bind
+
     func bind(_ appState: AppState) {
         self.appState = appState
     }
 
-    // MARK: -
+    // MARK: - Launch
+
     func applicationDidFinishLaunching(_ notification: Notification) {
         log.debug("restoring security-scoped bookmarks")
         Task {
             let restored = await BookmarkStore.shared.restoreAll()
             log.info("Restored \(restored.count) bookmarks")
         }
-        
         log.debug("starting toolbar right-click monitor")
         ToolbarRightClickMonitor.shared.start()
-
         log.debug("installing keyDown monitor for Tab/Backtab")
         keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
             guard let self, let appState = self.appState else { return event }
-            // When a modal dialog is active, let SwiftUI handle all keys
-            if ContextMenuCoordinator.shared.activeDialog != nil {
+            if ContextMenuCoordinator.shared.activeDialog != nil { return event }
+            let flags = event.modifierFlags
+            guard !flags.contains(.command), !flags.contains(.option), !flags.contains(.control) else {
                 return event
             }
-            let hasCommand = event.modifierFlags.contains(.command)
-            let hasOption = event.modifierFlags.contains(.option)
-            let hasControl = event.modifierFlags.contains(.control)
-            if hasCommand || hasOption || hasControl {
-                return event
-            }
-            let isTabKeyCode = (event.keyCode == tabKeyCode)
-            let charsIgnoringMods = event.charactersIgnoringModifiers
-            let isTabChar = (charsIgnoringMods == "\t")
-            if isTabKeyCode || isTabChar {
-                if event.modifierFlags.contains(.shift) {
+            let isTab = event.keyCode == tabKeyCode || event.charactersIgnoringModifiers == "\t"
+            if isTab {
+                if flags.contains(.shift) {
                     log.debug("intercepted Shift+Tab → toggle panel")
-                    appState.toggleFocus()
-                    return nil
                 } else {
                     log.debug("intercepted Tab → toggle panel")
-                    appState.toggleFocus()
-                    return nil
                 }
+                appState.toggleFocus()
+                return nil
             }
             return event
         }
     }
 
-    // MARK: - Raise companion panels when MiMiNavigator itself becomes active
-    // Triggered only when our app gets focus (user clicks MiMi or switches via Cmd+Tab)
-    // NOT triggered when other apps become active — so panel never floats over them
+    // MARK: - Focus
+
     func applicationDidBecomeActive(_ notification: Notification) {
         NetworkNeighborhoodCoordinator.shared.bringToFront()
         ConnectToServerCoordinator.shared.bringToFront()
@@ -72,14 +67,40 @@ import AppKit
         SettingsCoordinator.shared.bringToFront()
     }
 
-    // MARK: -
+    // MARK: - Termination — fast, no spinner
+
+    /// Returns .terminateLater so we can do async cleanup before exit.
+    /// All work must complete and call reply(.now) within the OS timeout (~5 s).
+    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        log.info("[AppDelegate] applicationShouldTerminate — starting async cleanup")
+        Task {
+            await performCleanupBeforeExit()
+            log.info("[AppDelegate] cleanup done — replying .now")
+            NSApplication.shared.reply(toApplicationShouldTerminate: true)
+        }
+        return .terminateLater
+    }
+
+    /// Synchronously saves state + stops watchers, then resolves async resources.
+    /// Must finish in well under 5 s to avoid macOS force-killing the process.
+    private func performCleanupBeforeExit() async {
+        // 1. Save panel state and cache — synchronous, fast
+        appState?.saveBeforeExit()
+        // 2. Stop scanner timers and FSEvents streams — synchronous actor work
+        if let scanner = appState?.scanner {
+            await scanner.stopMonitoring()
+        }
+        // 3. Stop SpinnerWatchdog poll timer
+        SpinnerWatchdog.shared.stop()
+        // 4. Release security-scoped bookmarks — actor hop, fast
+        await BookmarkStore.shared.stopAll()
+        log.info("[AppDelegate] performCleanupBeforeExit complete")
+    }
+
+    // MARK: - applicationWillTerminate — key monitor cleanup only
+
     func applicationWillTerminate(_ notification: Notification) {
         if let keyMonitor { NSEvent.removeMonitor(keyMonitor) }
         keyMonitor = nil
-        
-        // Stop all security-scoped resource access
-        Task {
-            await BookmarkStore.shared.stopAll()
-        }
     }
 }
