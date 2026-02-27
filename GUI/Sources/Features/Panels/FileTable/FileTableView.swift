@@ -38,6 +38,10 @@ struct FileTableView: View {
         nonmutating set { appState.bSortAscending = newValue }
     }
     @State var cachedSortedFiles: [CustomFile] = []
+    /// Pre-built index map: file.id → position in cachedSortedFiles. Rebuilt only when list changes.
+    @State var cachedIndexByID: [CustomFile.ID: Int] = [:]
+    /// Pre-built enumerated rows for LazyVStack. Rebuilt only when list changes, not on selection.
+    @State var cachedSortedRows: [(offset: Int, element: CustomFile)] = []
     @State var isPanelDropTargeted: Bool = false
     /// Measured height of the scroll viewport — used to compute real pageStep
     @State var viewHeight: CGFloat = 400
@@ -71,6 +75,7 @@ struct FileTableView: View {
     var keyboardNav: TableKeyboardNavigation {
         TableKeyboardNavigation(
             files: cachedSortedFiles,
+            indexByID: cachedIndexByID,
             selectedID: $selectedID,
             scrollAnchorID: $scrollAnchorID,
             onSelect: onSelect,
@@ -82,9 +87,7 @@ struct FileTableView: View {
         TableDropHandler(panelSide: panelSide, appState: appState, dragDropManager: dragDropManager)
     }
     
-    var sortedRows: [(offset: Int, element: CustomFile)] {
-        Array(cachedSortedFiles.enumerated())
-    }
+    var sortedRows: [(offset: Int, element: CustomFile)] { cachedSortedRows }
     
     // MARK: - Body
     var body: some View {
