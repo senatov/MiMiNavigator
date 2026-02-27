@@ -716,8 +716,9 @@ extension AppState {
             leftFiles: displayedLeftFiles,
             rightFiles: displayedRightFiles
         )
-        // ArchiveManager.cleanup() is synchronous — call directly, no Task needed
-        ArchiveManager.shared.cleanup()
+        // ArchiveManager is an actor — schedule cleanup fire-and-forget;
+        // AppDelegate.performCleanupBeforeExit() awaits it properly via stopMonitoring chain
+        Task { await ArchiveManager.shared.cleanup() }
     }
 
     // MARK: - Navigation History Helpers
