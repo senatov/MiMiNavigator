@@ -33,7 +33,6 @@ actor DualDirectoryScanner {
 
     // MARK: - Start monitoring both panels
     func startMonitoring() {
-        log.info(#function)
         setupTimer(for: .left)
         setupTimer(for: .right)
 
@@ -154,7 +153,6 @@ actor DualDirectoryScanner {
     // MARK: - Refresh files for a panel
     @Sendable
     func refreshFiles(currSide: PanelSide) async {
-        log.info("⟳ \(#function) side: <<\(currSide)>>")
         let (path, showHidden): (String, Bool) = await MainActor.run {
             let p = currSide == .left ? appState.leftPath : appState.rightPath
             let h = UserPreferences.shared.snapshot.showHiddenFiles
@@ -163,30 +161,20 @@ actor DualDirectoryScanner {
 
         // Remote paths (ftp://, sftp://) — delegate to RemoteConnectionManager, skip local FileScanner
         if AppState.isRemotePath(path) {
-            log.info("🌐 refreshFiles: remote path detected, delegating to refreshRemoteFiles side=\(currSide)")
             await appState.refreshRemoteFiles(for: currSide)
             return
         }
-
-        log.info("📍 refreshFiles: path='\(path)', showHidden=\(showHidden), side=\(currSide)")
-
         let originalURL = URL(fileURLWithPath: path)
         let resolvedURL = originalURL.resolvingSymlinksInPath()
-
         log.info("🔗 originalURL: \(originalURL.path)")
-        log.info("🔗 resolvedURL: \(resolvedURL.path)")
         if originalURL.path != resolvedURL.path {
             log.warning("⚠️ Path changed after symlink resolution: '\(originalURL.path)' → '\(resolvedURL.path)'")
         }
-
         // Try original URL first if resolved differs (symlink resolution can break /Volumes paths)
         let urlsToTry =
             originalURL.path != resolvedURL.path
             ? [originalURL, resolvedURL]
             : [resolvedURL]
-
-        log.info("🔄 Will try \(urlsToTry.count) URL(s): \(urlsToTry.map(\.path))")
-
         for (index, url) in urlsToTry.enumerated() {
             log.info("🔄 Attempt \(index + 1)/\(urlsToTry.count): \(url.path)")
             do {

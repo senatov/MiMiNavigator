@@ -5,8 +5,8 @@
 // Copyright © 2026 Senatov. All rights reserved.
 // Description: File sorting logic with directories-first behavior
 
-import Foundation
 import FileModelKit
+import Foundation
 
 // MARK: - File Sorting Service
 /// Handles sorting of file lists with configurable sort key and direction
@@ -15,64 +15,51 @@ enum FileSortingService {
     // MARK: - Public Methods
 
     /// Sort files with directories first, then by specified key
-    static func sort(
-        _ items: [CustomFile],
-        by key: SortKeysEnum,
-        ascending: Bool
-    ) -> [CustomFile] {
-        let sorted = items.sorted { a, b in
-            // "..." parent entry always stays at the very top, never sorted
-            let aIsParent = ParentDirectoryEntry.isParentEntry(a)
-            let bIsParent = ParentDirectoryEntry.isParentEntry(b)
-            if aIsParent != bIsParent { return aIsParent }
-
-            // Directories always come first
-            let aIsFolder = isFolderLike(a)
-            let bIsFolder = isFolderLike(b)
-
-            if aIsFolder != bIsFolder {
-                return aIsFolder && !bIsFolder
-            }
-
-            // Then sort by key
-            return compare(a, b, by: key, ascending: ascending)
+    static func sort(_ items: [CustomFile], by key: SortKeysEnum, bDirection: Bool) -> [CustomFile] {
+        func priority(_ item: CustomFile) -> Int {
+            if ParentDirectoryEntry.isParentEntry(item) { return 0 }
+            if isFolderLike(item) { return 1 }
+            return 2
         }
-        log.debug("[FileSortingService] sorted \(sorted.count) items by=\(key) asc=\(ascending)")
+        let sorted = items.sorted { a, b in
+            let pa = priority(a)
+            let pb = priority(b)
+            if pa != pb {
+                return pa < pb
+            }
+            return compare(a, b, by: key, ascending: bDirection)
+        }
+        log.debug("[FileSortingService] sorted \(sorted.count) items by=\(key) asc=\(bDirection)")
         return sorted
     }
 
     // MARK: - Private Methods
-    private static func compare(
-        _ a: CustomFile,
-        _ b: CustomFile,
-        by key: SortKeysEnum,
-        ascending: Bool
-    ) -> Bool {
-        let result: Bool
+    private static func compare(_ a: CustomFile, _ b: CustomFile, by key: SortKeysEnum, ascending: Bool) -> Bool {
         switch key {
             case .name:
-                result = compareName(a, b, ascending: ascending)
+                return compareName(a, b, ascending: ascending)
             case .date:
-                result = compareDate(a, b, ascending: ascending)
+                return compareDate(a, b, ascending: ascending)
             case .size:
-                result = compareSize(a, b, ascending: ascending)
+                return compareSize(a, b, ascending: ascending)
             case .type:
-                result = compareType(a, b, ascending: ascending)
+                return compareType(a, b, ascending: ascending)
             case .permissions:
-                result = comparePermissions(a, b, ascending: ascending)
+                return comparePermissions(a, b, ascending: ascending)
             case .owner:
-                result = compareOwner(a, b, ascending: ascending)
+                return compareOwner(a, b, ascending: ascending)
             case .childCount:
-                result = compareChildCount(a, b, ascending: ascending)
+                return compareChildCount(a, b, ascending: ascending)
         }
-        return result
     }
 
+    // MARK: -
     private static func compareName(_ a: CustomFile, _ b: CustomFile, ascending: Bool) -> Bool {
         let cmpResult = a.nameStr.localizedCaseInsensitiveCompare(b.nameStr)
         return ascending ? (cmpResult == .orderedAscending) : (cmpResult == .orderedDescending)
     }
 
+    // MARK: -
     private static func compareDate(_ a: CustomFile, _ b: CustomFile, ascending: Bool) -> Bool {
         let da = a.modifiedDate ?? Date.distantPast
         let db = b.modifiedDate ?? Date.distantPast
@@ -82,6 +69,7 @@ enum FileSortingService {
         return a.nameStr.localizedCaseInsensitiveCompare(b.nameStr) == .orderedAscending
     }
 
+    // MARK: -
     private static func compareSize(_ a: CustomFile, _ b: CustomFile, ascending: Bool) -> Bool {
         let sa = a.sizeInBytes
         let sb = b.sizeInBytes
@@ -91,6 +79,7 @@ enum FileSortingService {
         return a.nameStr.localizedCaseInsensitiveCompare(b.nameStr) == .orderedAscending
     }
 
+    // MARK: -
     private static func compareType(_ a: CustomFile, _ b: CustomFile, ascending: Bool) -> Bool {
         let ta = a.fileExtension
         let tb = b.fileExtension
@@ -101,6 +90,7 @@ enum FileSortingService {
         return a.nameStr.localizedCaseInsensitiveCompare(b.nameStr) == .orderedAscending
     }
 
+    // MARK: -
     private static func comparePermissions(_ a: CustomFile, _ b: CustomFile, ascending: Bool) -> Bool {
         let pa = a.posixPermissions
         let pb = b.posixPermissions
@@ -110,6 +100,7 @@ enum FileSortingService {
         return a.nameStr.localizedCaseInsensitiveCompare(b.nameStr) == .orderedAscending
     }
 
+    // MARK: -
     private static func compareOwner(_ a: CustomFile, _ b: CustomFile, ascending: Bool) -> Bool {
         let oa = a.ownerName
         let ob = b.ownerName
@@ -120,6 +111,7 @@ enum FileSortingService {
         return a.nameStr.localizedCaseInsensitiveCompare(b.nameStr) == .orderedAscending
     }
 
+    // MARK: -
     private static func compareChildCount(_ a: CustomFile, _ b: CustomFile, ascending: Bool) -> Bool {
         let ca = a.childCountValue
         let cb = b.childCountValue
@@ -129,12 +121,11 @@ enum FileSortingService {
         return a.nameStr.localizedCaseInsensitiveCompare(b.nameStr) == .orderedAscending
     }
 
-    /// Check if file should be treated as folder (includes symlinks to dirs)
+    // MARK: - Check if file should be treated as folder (includes symlinks to dirs)
     private static func isFolderLike(_ f: CustomFile) -> Bool {
         if f.isDirectory || f.isSymbolicDirectory {
             return true
         }
-
         let url = f.urlValue
         // Remote files have no local path — trust isDirectory flag only
         guard FileManager.default.fileExists(atPath: url.path) else { return false }

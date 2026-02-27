@@ -37,7 +37,7 @@ final class AppState {
     var rightArchiveState = ArchiveNavigationState()
 
     var sortKey: SortKeysEnum = .name
-    var sortAscending: Bool = true
+    var bSortAscending: Bool = true
 
     /// Set to true when navigating via history (Back/Forward) to avoid re-recording
     var isNavigatingFromHistory = false
@@ -396,12 +396,12 @@ extension AppState {
                 let displayPath = mountPath.hasSuffix("/") ? String(mountPath.dropLast()) : mountPath
                 updatePath(displayPath + normalizedParent, for: panel)
                 switch panel {
-                case .left:
-                    displayedLeftFiles = sorted
-                    selectedLeftFile = sorted.first
-                case .right:
-                    displayedRightFiles = sorted
-                    selectedRightFile = sorted.first
+                    case .left:
+                        displayedLeftFiles = sorted
+                        selectedLeftFile = sorted.first
+                    case .right:
+                        displayedRightFiles = sorted
+                        selectedRightFile = sorted.first
                 }
             } catch {
                 log.error("[AppState] remote navigateToParent failed: \(error.localizedDescription)")
@@ -435,21 +435,27 @@ extension AppState {
 // MARK: - Sorting
 extension AppState {
 
+    // MARK: -
     func updateSorting(key: SortKeysEnum? = nil, ascending: Bool? = nil) {
-        if let newKey = key { sortKey = newKey }
-        if let newAsc = ascending { sortAscending = newAsc }
-
-        log.debug("[AppState] updateSorting key=\(sortKey) asc=\(sortAscending) panel=\(focusedPanel)")
-
+        if let key { sortKey = key }
+        if let ascending { bSortAscending = ascending }
+        log.debug("[AppState] updateSorting key=\(sortKey) asc=\(bSortAscending) panel=\(focusedPanel)")
+        let files = focusedPanel == .left ? displayedLeftFiles : displayedRightFiles
+        let sorted = FileSortingService.sort(
+            files,
+            by: sortKey,
+            bDirection: bSortAscending
+        )
         if focusedPanel == .left {
-            displayedLeftFiles = FileSortingService.sort(displayedLeftFiles, by: sortKey, ascending: sortAscending)
+            displayedLeftFiles = sorted
         } else {
-            displayedRightFiles = FileSortingService.sort(displayedRightFiles, by: sortKey, ascending: sortAscending)
+            displayedRightFiles = sorted
         }
     }
 
+    // MARK: -
     func applySorting(_ items: [CustomFile]) -> [CustomFile] {
-        FileSortingService.sort(items, by: sortKey, ascending: sortAscending)
+        FileSortingService.sort(items, by: sortKey, bDirection: bSortAscending)
     }
 }
 
@@ -500,8 +506,8 @@ extension AppState {
     func restoreLocalPath(for panel: PanelSide) async {
         let saved: String?
         switch panel {
-        case .left:  saved = savedLocalLeftPath
-        case .right: saved = savedLocalRightPath
+            case .left: saved = savedLocalLeftPath
+            case .right: saved = savedLocalRightPath
         }
         guard let localPath = saved else {
             log.warning("[AppState] no saved local path for \(panel)")
@@ -542,12 +548,12 @@ extension AppState {
             let files = items.map { CustomFile(remoteItem: $0) }
             let sorted = applySorting(files)
             switch panel {
-            case .left:
-                displayedLeftFiles = sorted
-                if selectedLeftFile == nil { selectedLeftFile = sorted.first }
-            case .right:
-                displayedRightFiles = sorted
-                if selectedRightFile == nil { selectedRightFile = sorted.first }
+                case .left:
+                    displayedLeftFiles = sorted
+                    if selectedLeftFile == nil { selectedLeftFile = sorted.first }
+                case .right:
+                    displayedRightFiles = sorted
+                    if selectedRightFile == nil { selectedRightFile = sorted.first }
             }
             log.debug("[AppState] remote listing: \(sorted.count) items")
         } catch {

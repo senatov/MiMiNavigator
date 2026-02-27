@@ -129,7 +129,7 @@ struct TopMenuBarView: View {
             } icon: {
                 if let icon = menu.icon {
                     Image(systemName: icon)
-                        .font(.system(size: 11))
+                        .font(.system(size: 13))
                 }
             }
         }
