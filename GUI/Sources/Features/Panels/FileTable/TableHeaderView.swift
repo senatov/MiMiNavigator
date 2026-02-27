@@ -157,40 +157,68 @@ struct SortableHeader: View {
     }
 
     var body: some View {
-        HStack(spacing: 0) {
-            // Icon or text label
-            if let iconName = icon {
-                Image(systemName: iconName)
-                    .font(.system(size: 12, weight: isActive ? .semibold : .regular))
-                    .foregroundStyle(isActive ? activeColor : TableHeaderStyle.color)
-                    .padding(.leading, 2)
-                    .help(title)
+        Group {
+            if icon != nil {
+                // Icon columns: centered icon + sort arrow
+                iconHeaderContent
             } else {
-                Text(title)
-                    .font(.system(size: 13, weight: isActive ? TableHeaderStyle.sortActiveWeight : .regular))
-                    .foregroundStyle(isActive ? activeColor : TableHeaderStyle.color)
-                    .padding(.leading, 2)
-                    .lineLimit(1)
-            }
-            Spacer(minLength: 0)
-            if sortKey != nil {
-                let arrowName =
-                    isActive
-                    ? (ascending ? "chevron.up" : "chevron.down")
-                    : "chevron.up.chevron.down"
-                let arrowColor: Color = {
-                    guard isActive else { return TableHeaderStyle.color.opacity(0.35) }
-                    return ascending
-                        ? Color(#colorLiteral(red: 0.2196078449, green: 0.007843137719, blue: 0.8549019694, alpha: 1))
-                        : Color(#colorLiteral(red: 0.1019607857, green: 0.2784313858, blue: 0.400000006, alpha: 1))
-                }()
-                Image(systemName: arrowName)
-                    .font(.system(size: isActive ? 14 : 13, weight: .medium))
-                    .foregroundStyle(arrowColor)
-                    .padding(.trailing, 2)
+                // Text columns: left-aligned text + right sort arrow
+                textHeaderContent
             }
         }
         .frame(maxWidth: .infinity)
         .background(Color.clear)
+    }
+
+    // MARK: - Text header (Name, Date, Size, Kind)
+
+    private var textHeaderContent: some View {
+        HStack(spacing: 0) {
+            Text(title)
+                .font(.system(size: 13, weight: isActive ? TableHeaderStyle.sortActiveWeight : .regular))
+                .foregroundStyle(isActive ? activeColor : TableHeaderStyle.color)
+                .padding(.leading, 2)
+                .lineLimit(1)
+            Spacer(minLength: 0)
+            sortArrow
+        }
+    }
+
+    // MARK: - Icon header (Permissions, Owner, Count) — icon centered, arrow right
+
+    private var iconHeaderContent: some View {
+        HStack(spacing: 0) {
+            Spacer(minLength: 0)
+            if let iconName = icon {
+                Image(systemName: iconName)
+                    .font(.system(size: 12, weight: isActive ? .semibold : .regular))
+                    .foregroundStyle(isActive ? activeColor : TableHeaderStyle.color)
+                    .help(title)
+            }
+            Spacer(minLength: 0)
+            sortArrow
+        }
+    }
+
+    // MARK: - Sort Arrow
+
+    @ViewBuilder
+    private var sortArrow: some View {
+        if sortKey != nil {
+            let arrowName =
+                isActive
+                ? (ascending ? "chevron.up" : "chevron.down")
+                : "chevron.up.chevron.down"
+            let arrowColor: Color = {
+                guard isActive else { return TableHeaderStyle.color.opacity(0.35) }
+                return ascending
+                    ? Color(#colorLiteral(red: 0.2196078449, green: 0.007843137719, blue: 0.8549019694, alpha: 1))
+                    : Color(#colorLiteral(red: 0.1019607857, green: 0.2784313858, blue: 0.400000006, alpha: 1))
+            }()
+            Image(systemName: arrowName)
+                .font(.system(size: isActive ? 14 : 13, weight: .medium))
+                .foregroundStyle(arrowColor)
+                .padding(.trailing, 2)
+        }
     }
 }
