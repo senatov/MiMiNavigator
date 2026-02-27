@@ -86,7 +86,10 @@ final class FSEventsDirectoryWatcher: @unchecked Sendable {
         let callback: FSEventStreamCallback = { _, infoPtr, numEvents, eventPaths, eventFlags, _ in
             guard let infoPtr else { return }
             let watcher = Unmanaged<FSEventsDirectoryWatcher>.fromOpaque(infoPtr).takeUnretainedValue()
-            guard let rawPaths = eventPaths as? [String] else { return }
+            // eventPaths is UnsafeMutableRawPointer; with kFSEventStreamCreateFlagUseCFTypes
+            // it points to a CFArray of CFString — bridge via Unmanaged to avoid the bad cast.
+            let cfPaths = Unmanaged<CFArray>.fromOpaque(eventPaths).takeUnretainedValue()
+            guard let rawPaths = cfPaths as? [String] else { return }
             let flagsArray = Array(UnsafeBufferPointer(start: eventFlags, count: numEvents))
             watcher.handleEvents(paths: rawPaths, flags: flagsArray)
         }
