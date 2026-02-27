@@ -653,25 +653,63 @@ extension AppState {
 // MARK: - Lifecycle
 extension AppState {
 
+    // MARK: - SpinnerWatchdog setup
+    private func setupSpinnerWatchdog() {
+        let watchdog = SpinnerWatchdog.shared
+        watchdog.addSource(name: "BatchOperation") {
+            BatchOperationManager.shared.showProgressDialog
+        }
+        watchdog.start()
+        log.info("[AppState] SpinnerWatchdog started")
+    }
+
     func initialize() {
         log.debug("[AppState] initialize")
+        setupSpinnerWatchdog()
         UserPreferences.shared.load()
         UserPreferences.shared.apply(to: self)
         StatePersistence.restoreTabs(into: self)
 
         Task {
             await scanner.setLeftDirectory(pathStr: leftPath)
-            await refreshLeftFiles()
             await scanner.setRightDirectory(pathStr: rightPath)
+
+            // Show cached file lists immediately (avoids 4-5s blank panel on large directories)
+            if let cached = PanelStartupCache.shared.load(forLeftPath: leftPath, rightPath: rightPath) {
+                displayedLeftFiles = cached.left
+                displayedRightFiles = cached.right
+                selectedLeftFile = cached.left.first
+                selectedRightFile = cached.right.first
+                log.info("[AppState] startup cache applied — L=\(cached.left.count) R=\(cached.right.count)")
+            }
+
+            // Real scan runs in background; replaces cache data when done
+            await refreshLeftFiles()
             await refreshRightFiles()
+
             selectionManager?.restoreSelectionsAndFocus()
             await scanner.startMonitoring()
+
+            // Save fresh data for next startup
+            PanelStartupCache.shared.save(
+                leftPath: leftPath,
+                rightPath: rightPath,
+                leftFiles: displayedLeftFiles,
+                rightFiles: displayedRightFiles
+            )
             log.info("[AppState] initialization complete")
         }
     }
 
     func saveBeforeExit() {
         StatePersistence.saveBeforeExit(from: self)
+        // Cache current panel contents for instant display on next startup
+        PanelStartupCache.shared.save(
+            leftPath: leftPath,
+            rightPath: rightPath,
+            leftFiles: displayedLeftFiles,
+            rightFiles: displayedRightFiles
+        )
         Task {
             await ArchiveManager.shared.cleanup()
         }
