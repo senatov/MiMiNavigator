@@ -4,11 +4,12 @@
 // Created by Iakov Senatov on 10.02.2026.
 // Copyright © 2026 Senatov. All rights reserved.
 // Description: Results table for Find Files — displays search results with context menu.
-//   All columns support ascending/descending sort via Table's built-in header click.
+//   Columns: #, Name, Path, Date, Size, Match. All sortable except # and Match.
 
 import SwiftUI
 
 // MARK: - Results View
+
 struct FindFilesResultsView: View {
     @Bindable var viewModel: FindFilesViewModel
     var appState: AppState? = nil
@@ -18,10 +19,18 @@ struct FindFilesResultsView: View {
     /// Standard font for the entire Find Files dialog
     static let dialogFont: Font = .system(size: 13, weight: .light, design: .default)
 
-    /// Sorted snapshot of results — recomputed when results or sortOrder change
+    /// Sorted snapshot — recomputed when results or sortOrder change
     private var sortedResults: [FindFilesResult] {
         viewModel.results.sorted(using: sortOrder)
     }
+
+    // MARK: - Shared date formatter (avoid allocating per-row)
+
+    private static let dateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "dd.MM.yyyy HH:mm"
+        return f
+    }()
 
     var body: some View {
         VStack(spacing: 0) {
@@ -59,7 +68,7 @@ struct FindFilesResultsView: View {
                 viewModel.selectedResult = viewModel.results.first { $0.id == newID }
             }
         ), sortOrder: $sortOrder) {
-            // "#" — sequential row number (not sortable)
+            // # — sequential row number (not sortable)
             TableColumn("#") { result in
                 if let idx = sortedResults.firstIndex(where: { $0.id == result.id }) {
                     Text("\(idx + 1)")
@@ -69,13 +78,13 @@ struct FindFilesResultsView: View {
             }
             .width(min: 30, ideal: 36, max: 50)
 
-            // Name — sortable by fileName
+            // Name — sortable
             TableColumn("Name", value: \.fileName) { result in
                 resultNameCell(result)
             }
             .width(min: 150, ideal: 200)
 
-            // Path — sortable by filePath
+            // Path — sortable
             TableColumn("Path", value: \.filePath) { result in
                 Text(result.isInsideArchive
                      ? "\u{1F4E6} [\((result.archivePath as NSString?)?.lastPathComponent ?? "archive")] \(result.filePath)"
@@ -92,13 +101,37 @@ struct FindFilesResultsView: View {
             }
             .width(min: 200, ideal: 300)
 
-            // Size — sortable by fileSize
+            // Date — sortable by modifiedDate
+            TableColumn("Date Mod.", value: \.sortableDate) { result in
+                Text(result.modifiedDate.map { Self.dateFormatter.string(from: $0) } ?? "—")
+                    .font(.system(size: 13, weight: .light).monospacedDigit())
+                    .foregroundStyle(.secondary)
+            }
+            .width(min: 80, ideal: 120)
+
+            // Size — sortable
             TableColumn("Size", value: \.fileSize) { result in
                 Text(formatSize(result.fileSize))
                     .font(.system(size: 13, weight: .light).monospacedDigit())
                     .foregroundStyle(.secondary)
             }
-            .width(50)
+            .width(min: 50, ideal: 65)
+
+            // Match context (not sortable)
+            TableColumn("Match") { result in
+                if let context = result.matchContext, let line = result.lineNumber {
+                    Text("L\(line): \(context)")
+                        .font(.system(size: 13, weight: .light, design: .monospaced))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                } else {
+                    Text("—")
+                        .font(Self.dialogFont)
+                        .foregroundStyle(.quaternary)
+                }
+            }
+            .width(min: 80, ideal: 180)
         }
         .contextMenu(forSelectionType: FindFilesResult.ID.self) { selection in
             resultContextMenu(selection: selection)

@@ -58,6 +58,7 @@ struct TableHeaderView: View {
     private var nameHeader: some View {
         SortableHeader(
             title: ColumnID.name.title,
+            icon: ColumnID.name.icon,
             sortKey: ColumnID.name.sortKey,
             currentKey: sortKey,
             ascending: sortAscending
@@ -73,6 +74,7 @@ struct TableHeaderView: View {
     private func fixedColumnHeader(for spec: ColumnSpec) -> some View {
         SortableHeader(
             title: spec.id.title,
+            icon: spec.id.icon,
             sortKey: spec.id.sortKey,
             currentKey: sortKey,
             ascending: sortAscending
@@ -132,53 +134,59 @@ struct TableHeaderView: View {
 // MARK: - Sortable Header
 struct SortableHeader: View {
     let title: String
+    let icon: String?
     let sortKey: SortKeysEnum?
     let currentKey: SortKeysEnum
     let ascending: Bool
+
+    init(title: String, icon: String? = nil, sortKey: SortKeysEnum?, currentKey: SortKeysEnum, ascending: Bool) {
+        self.title = title
+        self.icon = icon
+        self.sortKey = sortKey
+        self.currentKey = currentKey
+        self.ascending = ascending
+    }
 
     private var isActive: Bool {
         guard let sk = sortKey else { return false }
         return currentKey == sk
     }
 
+    private var activeColor: Color {
+        Color(nsColor: NSColor(calibratedRed: 0.1, green: 0.2, blue: 0.7, alpha: 1.0))
+    }
+
     var body: some View {
         HStack(spacing: 0) {
-            Text(title)
-                .font(
-                    .system(
-                        size: 13,
-                        weight: isActive ? TableHeaderStyle.sortActiveWeight : .regular
-                    )
-                )
-                .foregroundStyle(
-                    isActive
-                        ? Color(
-                            nsColor: NSColor(
-                                calibratedRed: 0.1,
-                                green: 0.2,
-                                blue: 0.7,
-                                alpha: 1.0))
-                        : TableHeaderStyle.color
-                )
-                .padding(.leading, 2)
-                .lineLimit(1)
+            // Icon or text label
+            if let iconName = icon {
+                Image(systemName: iconName)
+                    .font(.system(size: 12, weight: isActive ? .semibold : .regular))
+                    .foregroundStyle(isActive ? activeColor : TableHeaderStyle.color)
+                    .padding(.leading, 2)
+                    .help(title)
+            } else {
+                Text(title)
+                    .font(.system(size: 13, weight: isActive ? TableHeaderStyle.sortActiveWeight : .regular))
+                    .foregroundStyle(isActive ? activeColor : TableHeaderStyle.color)
+                    .padding(.leading, 2)
+                    .lineLimit(1)
+            }
             Spacer(minLength: 0)
             if sortKey != nil {
-                let iconName =
+                let arrowName =
                     isActive
                     ? (ascending ? "chevron.up" : "chevron.down")
                     : "chevron.up.chevron.down"
-                let iconColor: Color = {
-                    guard isActive else {
-                        return TableHeaderStyle.color.opacity(0.35)
-                    }
+                let arrowColor: Color = {
+                    guard isActive else { return TableHeaderStyle.color.opacity(0.35) }
                     return ascending
                         ? Color(#colorLiteral(red: 0.2196078449, green: 0.007843137719, blue: 0.8549019694, alpha: 1))
                         : Color(#colorLiteral(red: 0.1019607857, green: 0.2784313858, blue: 0.400000006, alpha: 1))
                 }()
-                Image(systemName: iconName)
+                Image(systemName: arrowName)
                     .font(.system(size: isActive ? 14 : 13, weight: .medium))
-                    .foregroundStyle(iconColor)
+                    .foregroundStyle(arrowColor)
                     .padding(.trailing, 2)
             }
         }
