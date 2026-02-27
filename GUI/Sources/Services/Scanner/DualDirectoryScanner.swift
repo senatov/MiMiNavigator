@@ -78,17 +78,17 @@ actor DualDirectoryScanner {
 
     /// Starts FSEventsDirectoryWatcher for a panel.
     /// Remote paths are skipped — FSEvents has no meaning for ftp:// / sftp://.
-    /// showHiddenFiles must be read on MainActor before calling; use the async overload below.
+    /// async because showHiddenFiles is @MainActor-isolated (read via appState hop).
     private func startFSEvents(for side: PanelSide, path: String) {
         guard !AppState.isRemotePath(path) else {
             log.debug("[FSEvents] Remote path — skip watcher: '\(path)' side=\(side)")
             stopFSEvents(for: side)
             return
         }
-        // UserPreferences.shared is @MainActor-isolated — hop there to read, then launch watcher
+        // appState is @MainActor — read showHiddenFiles via async Task hop
         Task {
-            let showHidden = await MainActor.run { UserPreferences.shared.snapshot.showHiddenFiles }
-            await self.launchFSEventsWatcher(for: side, path: path, showHiddenFiles: showHidden)
+            let showHidden: Bool = await appState.showHiddenFilesSnapshot()
+            launchFSEventsWatcher(for: side, path: path, showHiddenFiles: showHidden)
         }
     }
 
