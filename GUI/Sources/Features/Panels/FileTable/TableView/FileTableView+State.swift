@@ -17,13 +17,22 @@ extension FileTableView {
         // is already correct — just assign without re-sorting to avoid blocking
         // MainActor for ~100ms on 26k-item directories.
         cachedSortedFiles = files
+        rebuildIndexByID()
         log.debug("\(#function) panel=\(panelSide) cached \(cachedSortedFiles.count) items")
     }
 
     /// Called only when sort parameters change — re-sort needed.
     func recomputeSortedCacheForSortChange() {
         cachedSortedFiles = files.sorted(by: sorter.compare)
+        rebuildIndexByID()
         log.debug("\(#function) panel=\(panelSide) re-sorted \(cachedSortedFiles.count) by \(sortKey) asc=\(sortAscending)")
+    }
+
+    /// Rebuilds the O(1) lookup dictionary and the rows array after list changes. Called only on list update.
+    private func rebuildIndexByID() {
+        let enumerated = Array(cachedSortedFiles.enumerated())
+        cachedIndexByID = Dictionary(uniqueKeysWithValues: enumerated.map { ($0.element.id, $0.offset) })
+        cachedSortedRows = enumerated
     }
 
     // MARK: - Auto-fit helpers (still available for future use)

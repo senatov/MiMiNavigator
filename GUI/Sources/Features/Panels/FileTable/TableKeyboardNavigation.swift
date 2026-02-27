@@ -24,24 +24,25 @@ struct TableKeyboardNavigation {
     let scrollAnchorID: Binding<CustomFile.ID?>
     let onSelect: (CustomFile) -> Void
     let pageStep: Int
-
+    // Injected from outside — built once when list changes, not on every keypress
     private let indexByID: [CustomFile.ID: Int]
 
     // MARK: - Init
 
     init(
         files: [CustomFile],
+        indexByID: [CustomFile.ID: Int],
         selectedID: Binding<CustomFile.ID?>,
         scrollAnchorID: Binding<CustomFile.ID?>,
         onSelect: @escaping (CustomFile) -> Void,
         pageStep: Int = 20
     ) {
         self.files = files
+        self.indexByID = indexByID
         self.selectedID = selectedID
         self.scrollAnchorID = scrollAnchorID
         self.onSelect = onSelect
         self.pageStep = pageStep
-        self.indexByID = Dictionary(uniqueKeysWithValues: files.enumerated().map { ($0.element.id, $0.offset) })
     }
 
     // MARK: - Navigation Actions
