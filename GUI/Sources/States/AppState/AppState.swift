@@ -676,25 +676,29 @@ extension AppState {
         UserPreferences.shared.apply(to: self)
         StatePersistence.restoreTabs(into: self)
 
+        // Step 1: show startup cache synchronously — UI is responsive before Task runs
+        if let cached = PanelStartupCache.shared.load(forLeftPath: leftPath, rightPath: rightPath) {
+            displayedLeftFiles = cached.left
+            displayedRightFiles = cached.right
+            selectedLeftFile = cached.left.first
+            selectedRightFile = cached.right.first
+            log.info("[AppState] startup cache applied — L=\(cached.left.count) R=\(cached.right.count)")
+        }
+
+        // Step 2: background scan — does NOT block MainActor
+        // Both panels scan in parallel via async let; monitoring starts immediately
+        // so FSEvents is active even before first scan completes.
         Task {
             await scanner.setLeftDirectory(pathStr: leftPath)
             await scanner.setRightDirectory(pathStr: rightPath)
+            await scanner.startMonitoring()
 
-            // Show cached file lists immediately (avoids 4-5s blank panel on large directories)
-            if let cached = PanelStartupCache.shared.load(forLeftPath: leftPath, rightPath: rightPath) {
-                displayedLeftFiles = cached.left
-                displayedRightFiles = cached.right
-                selectedLeftFile = cached.left.first
-                selectedRightFile = cached.right.first
-                log.info("[AppState] startup cache applied — L=\(cached.left.count) R=\(cached.right.count)")
-            }
-
-            // Real scan runs in background; replaces cache data when done
-            await refreshLeftFiles()
-            await refreshRightFiles()
+            // Parallel scan — neither panel waits for the other
+            async let leftScan: Void = refreshLeftFiles()
+            async let rightScan: Void = refreshRightFiles()
+            _ = await (leftScan, rightScan)
 
             selectionManager?.restoreSelectionsAndFocus()
-            await scanner.startMonitoring()
 
             // Save fresh data for next startup
             PanelStartupCache.shared.save(
