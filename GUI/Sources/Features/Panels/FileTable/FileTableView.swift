@@ -65,7 +65,8 @@ struct FileTableView: View {
             files: cachedSortedFiles,
             selectedID: $selectedID,
             onSelect: onSelect,
-            scrollProxy: scrollProxy
+            scrollProxy: scrollProxy,
+            pageStep: 20
         )
     }
     
