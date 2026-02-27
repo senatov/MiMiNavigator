@@ -242,28 +242,28 @@ struct SortableHeader: View {
         .background(Color.clear)
     }
 
-    // MARK: - Title Area
+    // MARK: - Title Area (double-click only → auto-fit, no sort)
 
     @ViewBuilder
     private var titleArea: some View {
         if let iconName = icon {
-            // Icon header — centered in remaining space
             Image(systemName: iconName)
                 .font(.system(size: 12, weight: isActive ? .semibold : .regular))
                 .foregroundStyle(isActive ? activeColor : TableHeaderStyle.color)
                 .help(title)
                 .frame(maxWidth: .infinity)
                 .contentShape(Rectangle())
-                .highPriorityGesture(TapGesture(count: 2).onEnded { onAutoFit?() })
+                .onTapGesture(count: 2) { onAutoFit?() }
+                .onTapGesture(count: 1) { /* swallow single tap — no sort here */ }
         } else {
-            // Text header — left aligned
             Text(title)
                 .font(.system(size: 13, weight: isActive ? TableHeaderStyle.sortActiveWeight : .regular))
                 .foregroundStyle(isActive ? activeColor : TableHeaderStyle.color)
                 .padding(.leading, 2)
                 .lineLimit(1)
                 .contentShape(Rectangle())
-                .highPriorityGesture(TapGesture(count: 2).onEnded { onAutoFit?() })
+                .onTapGesture(count: 2) { onAutoFit?() }
+                .onTapGesture(count: 1) { /* swallow single tap — no sort here */ }
         }
     }
 }
