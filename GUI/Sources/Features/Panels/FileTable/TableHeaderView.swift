@@ -5,14 +5,19 @@
 // Copyright © 2026 Senatov. All rights reserved.
 // Description: Sortable, resizable column headers. Right-click → context menu to toggle columns.
 //
+// Interaction model:
+//   - Click sort arrow icon → toggle sort direction
+//   - Double-click column title area → auto-fit column width to content
+//   - Drag divider between columns → resize
+//
 // Layout logic:
 //   [Name flexible] | divider | [col2 fixed] | divider | [col3 fixed] | ...
-//   Each ResizableDivider controls the width of the column AFTER it.
 
 import FileModelKit
 import SwiftUI
 
 // MARK: - Table Header View
+
 struct TableHeaderView: View {
     @Environment(AppState.self) var appState
     let panelSide: PanelSide
@@ -61,12 +66,12 @@ struct TableHeaderView: View {
             icon: ColumnID.name.icon,
             sortKey: ColumnID.name.sortKey,
             currentKey: sortKey,
-            ascending: sortAscending
+            ascending: sortAscending,
+            onSort: { toggleSort(.name) },
+            onAutoFit: nil
         )
         .frame(minWidth: 60, maxWidth: .infinity, alignment: .leading)
         .clipped()
-        .contentShape(Rectangle())
-        .highPriorityGesture(TapGesture().onEnded { toggleSort(.name) })
     }
 
     // MARK: - Fixed Column Header
@@ -77,12 +82,14 @@ struct TableHeaderView: View {
             icon: spec.id.icon,
             sortKey: spec.id.sortKey,
             currentKey: sortKey,
-            ascending: sortAscending
+            ascending: sortAscending,
+            onSort: { toggleSort(spec.id) },
+            onAutoFit: {
+                autoFitColumn(spec.id)
+            }
         )
         .frame(width: spec.width, alignment: spec.id.alignment)
         .padding(.horizontal, TableColumnDefaults.cellPadding)
-        .contentShape(Rectangle())
-        .highPriorityGesture(TapGesture().onEnded { toggleSort(spec.id) })
     }
 
     // MARK: - Context Menu (right-click on header)
@@ -118,6 +125,50 @@ struct TableHeaderView: View {
         appState.updateSorting()
     }
 
+    // MARK: - Auto-fit Column Width
+
+    private func autoFitColumn(_ col: ColumnID) {
+        let files = panelSide == .left ? appState.displayedLeftFiles : appState.displayedRightFiles
+        guard !files.isEmpty else { return }
+
+        let texts: [String]
+        let font: NSFont
+        switch col {
+        case .size:
+            texts = files.map { $0.fileSizeFormatted }
+            font = .systemFont(ofSize: 12)
+        case .dateModified:
+            texts = files.map { $0.modifiedDateFormatted }
+            font = .systemFont(ofSize: 12)
+        case .kind:
+            texts = files.map { $0.kindFormatted }
+            font = .systemFont(ofSize: 12)
+        case .permissions:
+            texts = files.map { $0.permissionsFormatted }
+            font = .monospacedSystemFont(ofSize: 11, weight: .regular)
+        case .owner:
+            texts = files.map { $0.ownerFormatted }
+            font = .systemFont(ofSize: 12)
+        case .childCount:
+            texts = files.map { $0.childCountFormatted }
+            font = .systemFont(ofSize: 12)
+        case .name:
+            return
+        }
+
+        let attrs: [NSAttributedString.Key: Any] = [.font: font]
+        var maxW: CGFloat = 0
+        for text in texts {
+            let w = (text as NSString).size(withAttributes: attrs).width
+            if w > maxW { maxW = w }
+        }
+        let optimal = ceil(maxW + 16)
+        let clamped = Swift.min(Swift.max(optimal, TableColumnDefaults.minWidth), TableColumnDefaults.maxWidth)
+        layout.setWidth(clamped, for: col)
+        layout.saveWidths()
+        log.debug("[AutoFit] col=\(col) optimal=\(Int(clamped))pt")
+    }
+
     // MARK: - Restore Defaults
 
     private func restoreDefaults() {
@@ -132,19 +183,36 @@ struct TableHeaderView: View {
 }
 
 // MARK: - Sortable Header
+
+/// Column header with separate sort arrow click target and title double-click for auto-fit.
+/// Sort arrow shows bold black highlight on hover (same affordance as ResizableDivider).
 struct SortableHeader: View {
     let title: String
     let icon: String?
     let sortKey: SortKeysEnum?
     let currentKey: SortKeysEnum
     let ascending: Bool
+    /// Called when sort arrow is clicked
+    let onSort: (() -> Void)?
+    /// Called on double-click of the title area (auto-fit column width)
+    let onAutoFit: (() -> Void)?
 
-    init(title: String, icon: String? = nil, sortKey: SortKeysEnum?, currentKey: SortKeysEnum, ascending: Bool) {
+    init(
+        title: String,
+        icon: String? = nil,
+        sortKey: SortKeysEnum?,
+        currentKey: SortKeysEnum,
+        ascending: Bool,
+        onSort: (() -> Void)? = nil,
+        onAutoFit: (() -> Void)? = nil
+    ) {
         self.title = title
         self.icon = icon
         self.sortKey = sortKey
         self.currentKey = currentKey
         self.ascending = ascending
+        self.onSort = onSort
+        self.onAutoFit = onAutoFit
     }
 
     private var isActive: Bool {
@@ -157,68 +225,96 @@ struct SortableHeader: View {
     }
 
     var body: some View {
-        Group {
-            if icon != nil {
-                // Icon columns: centered icon + sort arrow
-                iconHeaderContent
-            } else {
-                // Text columns: left-aligned text + right sort arrow
-                textHeaderContent
+        HStack(spacing: 0) {
+            // Title area — double-click for auto-fit
+            titleArea
+            Spacer(minLength: 0)
+            // Sort arrow — single click for sort, hover highlight
+            if sortKey != nil {
+                SortArrowButton(
+                    isActive: isActive,
+                    ascending: ascending,
+                    onSort: onSort
+                )
             }
         }
         .frame(maxWidth: .infinity)
         .background(Color.clear)
     }
 
-    // MARK: - Text header (Name, Date, Size, Kind)
+    // MARK: - Title Area
 
-    private var textHeaderContent: some View {
-        HStack(spacing: 0) {
+    @ViewBuilder
+    private var titleArea: some View {
+        if let iconName = icon {
+            // Icon header — centered in remaining space
+            Image(systemName: iconName)
+                .font(.system(size: 12, weight: isActive ? .semibold : .regular))
+                .foregroundStyle(isActive ? activeColor : TableHeaderStyle.color)
+                .help(title)
+                .frame(maxWidth: .infinity)
+                .contentShape(Rectangle())
+                .highPriorityGesture(TapGesture(count: 2).onEnded { onAutoFit?() })
+        } else {
+            // Text header — left aligned
             Text(title)
                 .font(.system(size: 13, weight: isActive ? TableHeaderStyle.sortActiveWeight : .regular))
                 .foregroundStyle(isActive ? activeColor : TableHeaderStyle.color)
                 .padding(.leading, 2)
                 .lineLimit(1)
-            Spacer(minLength: 0)
-            sortArrow
+                .contentShape(Rectangle())
+                .highPriorityGesture(TapGesture(count: 2).onEnded { onAutoFit?() })
         }
     }
+}
 
-    // MARK: - Icon header (Permissions, Owner, Count) — icon centered, arrow right
+// MARK: - Sort Arrow Button
 
-    private var iconHeaderContent: some View {
-        HStack(spacing: 0) {
-            Spacer(minLength: 0)
-            if let iconName = icon {
-                Image(systemName: iconName)
-                    .font(.system(size: 12, weight: isActive ? .semibold : .regular))
-                    .foregroundStyle(isActive ? activeColor : TableHeaderStyle.color)
-                    .help(title)
+/// Clickable sort indicator with hover highlight (bold black, like ResizableDivider).
+struct SortArrowButton: View {
+    let isActive: Bool
+    let ascending: Bool
+    let onSort: (() -> Void)?
+
+    @State private var isHovering = false
+
+    private var arrowName: String {
+        isActive
+            ? (ascending ? "chevron.up" : "chevron.down")
+            : "chevron.up.chevron.down"
+    }
+
+    private var arrowColor: Color {
+        if isHovering {
+            return Color.black
+        }
+        guard isActive else {
+            return TableHeaderStyle.color.opacity(0.35)
+        }
+        return ascending
+            ? Color(#colorLiteral(red: 0.2196078449, green: 0.007843137719, blue: 0.8549019694, alpha: 1))
+            : Color(#colorLiteral(red: 0.1019607857, green: 0.2784313858, blue: 0.400000006, alpha: 1))
+    }
+
+    var body: some View {
+        Image(systemName: arrowName)
+            .font(.system(size: isHovering ? 15 : (isActive ? 14 : 13), weight: isHovering ? .bold : .medium))
+            .foregroundStyle(arrowColor)
+            .shadow(color: isHovering ? Color.black.opacity(0.3) : .clear, radius: 1, x: 0, y: 0)
+            .padding(.horizontal, 3)
+            .contentShape(Rectangle().inset(by: -4))
+            .onHover { hovering in
+                withAnimation(.easeInOut(duration: 0.1)) {
+                    isHovering = hovering
+                }
+                if hovering {
+                    NSCursor.pointingHand.push()
+                } else {
+                    NSCursor.pop()
+                }
             }
-            Spacer(minLength: 0)
-            sortArrow
-        }
-    }
-
-    // MARK: - Sort Arrow
-
-    @ViewBuilder
-    private var sortArrow: some View {
-        if sortKey != nil {
-            let arrowName =
-                isActive
-                ? (ascending ? "chevron.up" : "chevron.down")
-                : "chevron.up.chevron.down"
-            let arrowColor: Color = {
-                guard isActive else { return TableHeaderStyle.color.opacity(0.35) }
-                return ascending
-                    ? Color(#colorLiteral(red: 0.2196078449, green: 0.007843137719, blue: 0.8549019694, alpha: 1))
-                    : Color(#colorLiteral(red: 0.1019607857, green: 0.2784313858, blue: 0.400000006, alpha: 1))
-            }()
-            Image(systemName: arrowName)
-                .font(.system(size: isActive ? 14 : 13, weight: .medium))
-                .foregroundStyle(arrowColor)
-                .padding(.trailing, 2)
-        }
+            .onTapGesture {
+                onSort?()
+            }
     }
 }
