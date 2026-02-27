@@ -16,16 +16,20 @@ extension FileTableView {
         // (onChange of sortKey/bSortAscending). On plain files change the order
         // is already correct — just assign without re-sorting to avoid blocking
         // MainActor for ~100ms on 26k-item directories.
+        let t0 = Date()
         cachedSortedFiles = files
         rebuildIndexByID()
-        log.debug("\(#function) panel=\(panelSide) cached \(cachedSortedFiles.count) items")
+        let ms = Int(Date().timeIntervalSince(t0) * 1000)
+        log.debug("[Cache] panel=\(panelSide) assign+rebuild \(cachedSortedFiles.count) items in \(ms)ms")
     }
 
     /// Called only when sort parameters change — re-sort needed.
     func recomputeSortedCacheForSortChange() {
+        let t0 = Date()
         cachedSortedFiles = files.sorted(by: sorter.compare)
         rebuildIndexByID()
-        log.debug("\(#function) panel=\(panelSide) re-sorted \(cachedSortedFiles.count) by \(sortKey) asc=\(sortAscending)")
+        let ms = Int(Date().timeIntervalSince(t0) * 1000)
+        log.debug("[Cache] panel=\(panelSide) sort+rebuild \(cachedSortedFiles.count) items in \(ms)ms")
     }
 
     /// Rebuilds the O(1) lookup dictionary and the rows array after list changes. Called only on list update.

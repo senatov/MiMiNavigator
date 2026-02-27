@@ -158,7 +158,8 @@ actor DualDirectoryScanner {
 
     private func setupTimer(for side: PanelSide) {
         let timer = DispatchSource.makeTimerSource(queue: DispatchQueue.global())
-        timer.schedule(deadline: .now(), repeating: .seconds(refreshInterval))
+        // Start after first interval — avoids double scan at startup (refreshFiles already called explicitly)
+        timer.schedule(deadline: .now() + .seconds(refreshInterval), repeating: .seconds(refreshInterval))
         timer.setEventHandler { [weak self] in
             guard let self else { return }
             Task { @MainActor in
@@ -254,13 +255,23 @@ actor DualDirectoryScanner {
     // MARK: - Update displayed files (full replace — used by polling timer)
     // files arrive pre-sorted from Task.detached — no sort on MainActor
 
+    private var lastUpdateTime: [PanelSide: Date] = [:]
+
     @MainActor
     private func updateScannedFiles(_ sortedFiles: [CustomFile], for side: PanelSide) {
+        let now = Date()
+        let sinceLastMs: String
+        if let prev = lastUpdateTime[side] {
+            sinceLastMs = "\(Int(now.timeIntervalSince(prev) * 1000))ms since last"
+        } else {
+            sinceLastMs = "first update"
+        }
+        lastUpdateTime[side] = now
         switch side {
             case .left: appState.displayedLeftFiles = sortedFiles
             case .right: appState.displayedRightFiles = sortedFiles
         }
-        log.debug("[Scanner] Full update \(side) panel: \(sortedFiles.count) items")
+        log.debug("[Scanner] Full update \(side): \(sortedFiles.count) items (\(sinceLastMs))")
     }
 
     // MARK: - Reset timer for a panel
