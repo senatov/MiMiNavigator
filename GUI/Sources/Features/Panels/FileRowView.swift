@@ -101,7 +101,7 @@ struct FileRowView: View {
                     // Symlink badge overlay (smaller for Finder-style icons)
                     if file.isSymbolicLink {
                         Image(systemName: "arrow.turn.up.right")
-                            .font(.system(size: 6, weight: .bold))
+                            .font(.system(size: 14, weight: .bold))
                             .foregroundStyle(.white)
                             .padding(1.5)
                             .background(

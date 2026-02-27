@@ -272,12 +272,6 @@ let configMenuCategory = MenuCategory(
             hotKey: .openSettings
         ),
         MenuItem(
-            title: "Options…",
-            icon: "slider.horizontal.3",
-            action: stub("Options…"),
-            shortcut: "⌥O"
-        ),
-        MenuItem(
             title: "Customize Toolbar…",
             icon: "wrench.and.screwdriver",
             action: { ToolbarCustomizeCoordinator.shared.show() },

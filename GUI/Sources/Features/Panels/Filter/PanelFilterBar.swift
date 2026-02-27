@@ -28,7 +28,7 @@ struct PanelFilterBar: View {
         HStack(spacing: 0) {
             // Search icon
             Image(systemName: "magnifyingglass")
-                .font(.system(size: 11, weight: .medium))
+                .font(.system(size: 12, weight: .medium))
                 .foregroundStyle(.secondary)
                 .padding(.leading, 7)
 
@@ -60,7 +60,7 @@ struct PanelFilterBar: View {
             if !history.entries.isEmpty {
                 Button { showHistory.toggle() } label: {
                     Image(systemName: "chevron.down")
-                        .font(.system(size: 9, weight: .semibold))
+                        .font(.system(size: 12, weight: .semibold))
                         .foregroundStyle(.secondary)
                         .rotationEffect(.degrees(showHistory ? 180 : 0))
                         .animation(.easeInOut(duration: 0.15), value: showHistory)
