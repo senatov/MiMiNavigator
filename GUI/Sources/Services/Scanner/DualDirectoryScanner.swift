@@ -121,29 +121,32 @@ actor DualDirectoryScanner {
     // MARK: - Apply incremental patch from FSEvents
 
     /// Merges FSEvents patch into the displayed file list without a full directory rescan.
-    /// Only the files reported as changed are re-stat()ed — O(changed) not O(total).
+    /// Mutation + sort run off MainActor; only the final assignment touches the actor.
     private func applyPatch(_ patch: FSEventsDirectoryWatcher.DirectoryPatch, for side: PanelSide) async {
-        await MainActor.run {
-            var current = side == .left ? appState.displayedLeftFiles : appState.displayedRightFiles
-            // Remove deleted entries
+        // Snapshot current list and sort params on MainActor (fast read)
+        let (current, sortKey, sortAsc): ([CustomFile], SortKeysEnum, Bool) = await MainActor.run {
+            let files = side == .left ? appState.displayedLeftFiles : appState.displayedRightFiles
+            return (files, appState.sortKey, appState.bSortAscending)
+        }
+        // Merge + sort off MainActor — O(n) for 26k is ~50ms, must not block UI
+        let sorted = await Task.detached(priority: .userInitiated) {
+            var merged = current
             if !patch.removedPaths.isEmpty {
                 let removedSet = Set(patch.removedPaths)
-                let before = current.count
-                current.removeAll { removedSet.contains($0.pathStr) }
-                log.debug("[FSEvents patch] removed \(before - current.count) item(s) from \(side)")
+                merged.removeAll { removedSet.contains($0.pathStr) }
             }
-            // Upsert added/modified entries
             for updated in patch.addedOrModified {
-                if let idx = current.firstIndex(where: { $0.pathStr == updated.pathStr }) {
-                    current[idx] = updated
+                if let idx = merged.firstIndex(where: { $0.pathStr == updated.pathStr }) {
+                    merged[idx] = updated
                 } else {
-                    current.append(updated)
+                    merged.append(updated)
                 }
             }
-            if !patch.addedOrModified.isEmpty {
-                log.debug("[FSEvents patch] upserted \(patch.addedOrModified.count) item(s) into \(side)")
-            }
-            let sorted = appState.applySorting(current)
+            return FileSortingService.sort(merged, by: sortKey, bDirection: sortAsc)
+        }.value
+        log.debug("[FSEvents patch] ∆+\(patch.addedOrModified.count) -\(patch.removedPaths.count) → \(sorted.count) items")
+        // Single cheap write on MainActor
+        await MainActor.run {
             switch side {
                 case .left: appState.displayedLeftFiles = sorted
                 case .right: appState.displayedRightFiles = sorted
@@ -173,10 +176,10 @@ actor DualDirectoryScanner {
 
     @Sendable
     func refreshFiles(currSide: PanelSide) async {
-        let (path, showHidden): (String, Bool) = await MainActor.run {
+        let (path, showHidden, sortKey, sortAsc): (String, Bool, SortKeysEnum, Bool) = await MainActor.run {
             let p = currSide == .left ? appState.leftPath : appState.rightPath
             let h = UserPreferences.shared.snapshot.showHiddenFiles
-            return (p, h)
+            return (p, h, appState.sortKey, appState.bSortAscending)
         }
         if AppState.isRemotePath(path) {
             await appState.refreshRemoteFiles(for: currSide)
@@ -194,15 +197,14 @@ actor DualDirectoryScanner {
         for (index, url) in urlsToTry.enumerated() {
             log.info("[Scan] Attempt \(index + 1)/\(urlsToTry.count): \(url.path)")
             do {
-                let capturedShowHidden = showHidden
-                let scanned =
-                    try await Task.detached(priority: .userInitiated) {
-                        try FileScanner.scan(url: url, showHiddenFiles: capturedShowHidden)
-                    }
-                    .value
-                log.info("[Scan] Succeeded for \(url.path): \(scanned.count) items")
-                await updateScannedFiles(scanned, for: currSide)
-                await updateFileList(panelSide: currSide, with: scanned)
+                // Sort off MainActor — for 26k files this takes ~100ms
+                let sorted = try await Task.detached(priority: .userInitiated) {
+                    let scanned = try FileScanner.scan(url: url, showHiddenFiles: showHidden)
+                    return FileSortingService.sort(scanned, by: sortKey, bDirection: sortAsc)
+                }.value
+                log.info("[Scan] Succeeded for \(url.path): \(sorted.count) items")
+                await updateScannedFiles(sorted, for: currSide)
+                await updateFileList(panelSide: currSide, with: sorted)
                 return
             } catch let error as NSError {
                 log.error("[Scan] Attempt \(index + 1) failed: \(error.localizedDescription)")
@@ -250,17 +252,15 @@ actor DualDirectoryScanner {
     }
 
     // MARK: - Update displayed files (full replace — used by polling timer)
+    // files arrive pre-sorted from Task.detached — no sort on MainActor
 
     @MainActor
-    private func updateScannedFiles(_ files: [CustomFile], for side: PanelSide) {
-        let sorted = appState.applySorting(files)
-        let current = side == .left ? appState.displayedLeftFiles : appState.displayedRightFiles
-        guard sorted.map(\.id) != current.map(\.id) else { return }
+    private func updateScannedFiles(_ sortedFiles: [CustomFile], for side: PanelSide) {
         switch side {
-            case .left: appState.displayedLeftFiles = sorted
-            case .right: appState.displayedRightFiles = sorted
+            case .left: appState.displayedLeftFiles = sortedFiles
+            case .right: appState.displayedRightFiles = sortedFiles
         }
-        log.debug("[Scanner] Full update \(side) panel: \(sorted.count) items")
+        log.debug("[Scanner] Full update \(side) panel: \(sortedFiles.count) items")
     }
 
     // MARK: - Reset timer for a panel
