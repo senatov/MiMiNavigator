@@ -5,6 +5,7 @@
 // Copyright © 2025-2026 Senatov. All rights reserved.
 // Description: Context menu for directories - Finder-style layout
 
+import FavoritesKit
 import SwiftUI
 import FileModelKit
 
@@ -14,12 +15,12 @@ struct DirectoryContextMenu: View {
     let file: CustomFile
     let panelSide: PanelSide
     let onAction: (DirectoryAction) -> Void
-    
+    @State private var userFavorites = UserFavoritesStore.shared
+
     init(file: CustomFile, panelSide: PanelSide, onAction: @escaping (DirectoryAction) -> Void) {
         self.file = file
         self.panelSide = panelSide
         self.onAction = onAction
-
     }
     
     var body: some View {
@@ -78,6 +79,23 @@ struct DirectoryContextMenu: View {
             // ═══════════════════════════════════════════
             // SECTION 7: Favorites
             // ═══════════════════════════════════════════
+            favoritesToggleButton
+        }
+    }
+
+    // MARK: - Add / Remove Favorites toggle
+
+    @ViewBuilder
+    private var favoritesToggleButton: some View {
+        let isInFavorites = userFavorites.contains(path: file.pathStr)
+        if isInFavorites {
+            Button(role: .destructive) {
+                userFavorites.remove(path: file.pathStr)
+                log.info("[Favorites] directory removed via context menu: \(file.pathStr)")
+            } label: {
+                Label("Remove from Favorites", systemImage: "star.slash.fill")
+            }
+        } else {
             menuButton(.addToFavorites)
         }
     }
