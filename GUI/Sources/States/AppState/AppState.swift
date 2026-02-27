@@ -677,6 +677,8 @@ extension AppState {
         StatePersistence.restoreTabs(into: self)
 
         // Step 1: show startup cache synchronously — UI is responsive before Task runs
+        // Focus always starts on left panel, first file selected
+        focusedPanel = .left
         if let cached = PanelStartupCache.shared.load(forLeftPath: leftPath, rightPath: rightPath) {
             displayedLeftFiles = cached.left
             displayedRightFiles = cached.right
@@ -699,6 +701,13 @@ extension AppState {
             _ = await (leftScan, rightScan)
 
             selectionManager?.restoreSelectionsAndFocus()
+
+            // Always ensure left panel has a selection and focus after startup
+            focusedPanel = .left
+            if selectedLeftFile == nil {
+                selectedLeftFile = displayedLeftFiles.first
+                log.debug("[AppState] startup: auto-selected first file L: \(selectedLeftFile?.nameStr ?? "none")")
+            }
 
             // Save fresh data for next startup
             PanelStartupCache.shared.save(

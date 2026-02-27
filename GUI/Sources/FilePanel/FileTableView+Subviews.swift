@@ -48,7 +48,6 @@ extension FileTableView {
                 Color.clear.frame(height: 40)
             }
             .contextMenu { panelBackgroundMenu }
-            .background(keyboardShortcutsLayer)
         }
     }
 
@@ -82,13 +81,4 @@ extension FileTableView {
             .allowsHitTesting(false)
     }
 
-    var keyboardShortcutsLayer: some View {
-        TableKeyboardShortcutsView(
-            isFocused: isFocused,
-            onPageUp: keyboardNav.pageUp,
-            onPageDown: keyboardNav.pageDown,
-            onHome: keyboardNav.jumpToFirst,
-            onEnd: keyboardNav.jumpToLast
-        )
-    }
 }
