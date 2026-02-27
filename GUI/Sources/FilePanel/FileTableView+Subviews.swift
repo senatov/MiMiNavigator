@@ -15,19 +15,17 @@ extension FileTableView {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 0, pinnedViews: [.sectionHeaders]) {
                     Section {
-                        StableKeyView(cachedSortedFiles.count) {
-                            FileTableRowsView(
-                                rows: sortedRows,
-                                selectedID: $selectedID,
-                                panelSide: panelSide,
-                                layout: layout,
-                                onSelect: onSelect,
-                                onDoubleClick: onDoubleClick,
-                                handleFileAction: handleFileAction,
-                                handleDirectoryAction: handleDirectoryAction,
-                                handleMultiSelectionAction: handleMultiSelectionAction
-                            )
-                        }
+                        FileTableRowsView(
+                            rows: sortedRows,
+                            selectedID: $selectedID,
+                            panelSide: panelSide,
+                            layout: layout,
+                            onSelect: onSelect,
+                            onDoubleClick: onDoubleClick,
+                            handleFileAction: handleFileAction,
+                            handleDirectoryAction: handleDirectoryAction,
+                            handleMultiSelectionAction: handleMultiSelectionAction
+                        )
 
                         // Empty space — clickable for background context menu
                         Color.clear
@@ -87,8 +85,8 @@ extension FileTableView {
     var keyboardShortcutsLayer: some View {
         TableKeyboardShortcutsView(
             isFocused: isFocused,
-            onPageUp: keyboardNav.jumpToFirst,
-            onPageDown: keyboardNav.jumpToLast,
+            onPageUp: keyboardNav.pageUp,
+            onPageDown: keyboardNav.pageDown,
             onHome: keyboardNav.jumpToFirst,
             onEnd: keyboardNav.jumpToLast
         )
