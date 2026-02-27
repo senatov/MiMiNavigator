@@ -1,99 +1,93 @@
-//
 // FileScanner.swift
-//  MiMiNavigator
+// MiMiNavigator
 //
-//  Created by Iakov Senatov on 26.05.2025.
-//  Copyright © 2025 Senatov. All rights reserved.
-//
-import Foundation
+// Created by Iakov Senatov on 26.05.2025.
+// Copyright © 2025-2026 Senatov. All rights reserved.
+// Description: High-performance directory scanner.
+//   Uses batch-prefetch of URLResourceValues via contentsOfDirectory(includingPropertiesForKeys:)
+//   and passes pre-fetched values directly to CustomFile.init(url:resourceValues:)
+//   to avoid per-file stat() syscalls. Runs off the main thread.
+
 import FileModelKit
+import Foundation
+
+// MARK: - File Scanner
 
 enum FileScanner {
+
+    /// All resource keys needed by CustomFile — fetched once per directory in a single syscall batch.
+    private static let prefetchKeys: [URLResourceKey] = [
+        .isDirectoryKey,
+        .isSymbolicLinkKey,
+        .fileSizeKey,
+        .contentModificationDateKey,
+        .fileSecurityKey,
+    ]
+
+    private static let prefetchKeySet = Set(prefetchKeys)
+
     // MARK: - Scan directory contents
+
+    /// Scans a directory and returns an array of CustomFile.
+    /// All file metadata is batch-prefetched — no per-file stat() calls.
+    /// Safe to call from any thread (no UI access).
     static func scan(url: URL, showHiddenFiles: Bool = false) throws -> [CustomFile] {
-        log.info("⏳ scan START: \(url.path), showHidden: \(showHiddenFiles)")
+        let startTime = CFAbsoluteTimeGetCurrent()
+        log.info("[FileScanner] scan START: \(url.path)")
 
         let fileManager = FileManager.default
 
-        // Diagnostic: check path existence and readability
-        let exists = fileManager.fileExists(atPath: url.path)
-        let readable = fileManager.isReadableFile(atPath: url.path)
-        log.info("📂 path exists: \(exists), readable: \(readable), scheme: \(url.scheme ?? "nil"), isFileURL: \(url.isFileURL)")
-
-        if !exists {
-            log.error("❌ scan ABORT: path does not exist: \(url.path)")
+        guard fileManager.fileExists(atPath: url.path) else {
+            log.error("[FileScanner] path does not exist: \(url.path)")
             throw NSError(
-                domain: NSCocoaErrorDomain, code: NSFileNoSuchFileError,
-                userInfo: [NSLocalizedDescriptionKey: "Path does not exist: \(url.path)"])
+                domain: NSCocoaErrorDomain,
+                code: NSFileNoSuchFileError,
+                userInfo: [NSLocalizedDescriptionKey: "Path does not exist: \(url.path)"]
+            )
         }
-        if !readable {
-            log.error("🔒 scan ABORT: path not readable: \(url.path)")
+
+        guard fileManager.isReadableFile(atPath: url.path) else {
+            log.error("[FileScanner] permission denied: \(url.path)")
             throw NSError(
-                domain: NSPOSIXErrorDomain, code: 13,
-                userInfo: [NSLocalizedDescriptionKey: "Permission denied: \(url.path)"])
+                domain: NSPOSIXErrorDomain,
+                code: 13,
+                userInfo: [NSLocalizedDescriptionKey: "Permission denied: \(url.path)"]
+            )
         }
 
-        // Diagnostic: POSIX permissions
-        if let attrs = try? fileManager.attributesOfItem(atPath: url.path) {
-            let posix = attrs[.posixPermissions] as? Int ?? -1
-            let owner = attrs[.ownerAccountName] as? String ?? "?"
-            let group = attrs[.groupOwnerAccountName] as? String ?? "?"
-            log.info("🔑 permissions: \(String(posix, radix: 8)), owner: \(owner), group: \(group)")
-        }
-
-        var regularDirCount = 0
-        var symlinkDirCount = 0
-        var fileCount = 0
-        var result: [CustomFile] = []
-        let wantedKeys: [URLResourceKey] = [.isDirectoryKey, .isSymbolicLinkKey]
-        // IMPORTANT: On /Volumes/* paths, macOS marks backup content with BSD UF_HIDDEN flag.
-        // contentsOfDirectory with .skipsHiddenFiles skips these → empty listings.
-        // Force showing all files for volume paths to avoid empty panels.
+        // Volume paths need hidden files visible (BSD UF_HIDDEN flag hides backup content)
         let isVolumePath = url.path.hasPrefix("/Volumes/") && url.path != "/Volumes"
         let effectiveShowHidden = showHiddenFiles || isVolumePath
-        if isVolumePath && !showHiddenFiles {
-            log.info("🏷️ Volume path detected, forcing showHidden=true for \(url.path)")
-        }
         let options: FileManager.DirectoryEnumerationOptions = effectiveShowHidden ? [] : [.skipsHiddenFiles]
-        log.info("📋 calling contentsOfDirectory(at: \(url.path), options: \(options))")
+
+        // Single syscall: enumerate directory AND prefetch all resource values
         let contents: [URL]
         do {
             contents = try fileManager.contentsOfDirectory(
                 at: url,
-                includingPropertiesForKeys: wantedKeys,
+                includingPropertiesForKeys: prefetchKeys,
                 options: options
             )
         } catch {
-            log.error("❌ contentsOfDirectory FAILED: \(error)")
-            log.error("   NSError domain: \((error as NSError).domain), code: \((error as NSError).code)")
-            if let underlying = (error as NSError).userInfo[NSUnderlyingErrorKey] as? NSError {
-                log.error(
-                    "   underlying: domain=\(underlying.domain), code=\(underlying.code), desc=\(underlying.localizedDescription)")
-            }
+            log.error("[FileScanner] contentsOfDirectory FAILED: \(error.localizedDescription)")
             throw error
         }
 
-        log.info("📦 contentsOfDirectory returned \(contents.count) items")
+        // Build CustomFile array using pre-fetched resource values (no extra stat per file)
+        var result: [CustomFile] = []
+        result.reserveCapacity(contents.count)
 
         for fileURL in contents {
-            let values = try? fileURL.resourceValues(forKeys: Set(wantedKeys))
-            let isDir = values?.isDirectory ?? false
-            let isSymlink = values?.isSymbolicLink ?? false
-
-            if isDir {
-                if isSymlink {
-                    symlinkDirCount += 1
-                } else {
-                    regularDirCount += 1
-                }
+            if let rv = try? fileURL.resourceValues(forKeys: prefetchKeySet) {
+                result.append(CustomFile(url: fileURL, resourceValues: rv))
             } else {
-                fileCount += 1
+                // Fallback: use legacy init (will stat individually)
+                result.append(CustomFile(name: fileURL.lastPathComponent, path: fileURL.path))
             }
-
-            let customFile = CustomFile(name: fileURL.lastPathComponent, path: fileURL.path)
-            result.append(customFile)
         }
-        log.info("✅ scan DONE: dirs=\(regularDirCount), symlinkDirs=\(symlinkDirCount), files=\(fileCount), total=\(result.count)")
+
+        let elapsed = CFAbsoluteTimeGetCurrent() - startTime
+        log.info("[FileScanner] scan DONE: \(result.count) items in \(String(format: "%.3f", elapsed))s")
         return result
     }
 }
