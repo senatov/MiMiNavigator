@@ -92,7 +92,9 @@ import AppKit
         }
         // 3. Stop SpinnerWatchdog poll timer
         SpinnerWatchdog.shared.stop()
-        // 4. Release security-scoped bookmarks — actor hop, fast
+        // 4. Cleanup extracted archive temp dirs — actor hop, fast
+        await ArchiveManager.shared.cleanup()
+        // 5. Release security-scoped bookmarks — actor hop, fast
         await BookmarkStore.shared.stopAll()
         log.info("[AppDelegate] performCleanupBeforeExit complete")
     }
