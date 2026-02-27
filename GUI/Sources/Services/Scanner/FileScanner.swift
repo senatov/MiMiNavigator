@@ -78,12 +78,17 @@ enum FileScanner {
         result.reserveCapacity(contents.count)
 
         for fileURL in contents {
+            var file: CustomFile
             if let rv = try? fileURL.resourceValues(forKeys: prefetchKeySet) {
-                result.append(CustomFile(url: fileURL, resourceValues: rv))
+                file = CustomFile(url: fileURL, resourceValues: rv)
             } else {
-                // Fallback: use legacy init (will stat individually)
-                result.append(CustomFile(name: fileURL.lastPathComponent, path: fileURL.path))
+                file = CustomFile(name: fileURL.lastPathComponent, path: fileURL.path)
             }
+            // Cache child count for directories (one lightweight syscall per dir)
+            if file.isDirectory {
+                file.cachedChildCount = (try? fileManager.contentsOfDirectory(atPath: fileURL.path).count) ?? 0
+            }
+            result.append(file)
         }
 
         let elapsed = CFAbsoluteTimeGetCurrent() - startTime

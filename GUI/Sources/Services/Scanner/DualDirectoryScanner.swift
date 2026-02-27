@@ -22,6 +22,10 @@ actor DualDirectoryScanner {
     private var leftFD: Int32 = -1
     private var rightFD: Int32 = -1
 
+    // VNode event throttle — avoid rescanning large dirs on rapid FS changes
+    private var lastVNodeRefresh: [PanelSide: Date] = [:]
+    private let vnodeThrottleInterval: TimeInterval = 2.0
+
     /// Refresh interval from centralized constants
     private var refreshInterval: Int {
         Int(AppConstants.Scanning.refreshInterval)
@@ -95,8 +99,14 @@ actor DualDirectoryScanner {
 
         source.setEventHandler { [weak self] in
             guard let self else { return }
-            log.debug("[VNode] Directory changed: '\(path)' side=\(side)")
-            Task { @MainActor in
+            Task {
+                // Throttle: skip if last refresh was less than 2s ago
+                let last = await self.lastVNodeRefresh[side] ?? .distantPast
+                guard Date().timeIntervalSince(last) >= await self.vnodeThrottleInterval else {
+                    return
+                }
+                await self.setVNodeTimestamp(side)
+                log.debug("[VNode] Directory changed: '\(path)' side=\(side)")
                 await self.refreshFiles(currSide: side)
             }
         }
@@ -117,6 +127,10 @@ actor DualDirectoryScanner {
         }
 
         log.debug("[VNode] Watching '\(path)' side=\(side)")
+    }
+
+    private func setVNodeTimestamp(_ side: PanelSide) {
+        lastVNodeRefresh[side] = Date()
     }
 
     private func cancelVNodeWatcher(for side: PanelSide) {
@@ -237,10 +251,16 @@ actor DualDirectoryScanner {
     @MainActor
     private func updateScannedFiles(_ files: [CustomFile], for side: PanelSide) {
         let sorted = appState.applySorting(files)
+        let current = side == .left ? appState.displayedLeftFiles : appState.displayedRightFiles
+        // Skip update if content unchanged — avoids SwiftUI diff on 26K+ item arrays
+        guard sorted.map(\.id) != current.map(\.id) else {
+            return
+        }
         switch side {
             case .left: appState.displayedLeftFiles = sorted
             case .right: appState.displayedRightFiles = sorted
         }
+        log.debug("[Scanner] Updated \(side) panel: \(sorted.count) items")
     }
 
     // MARK: - Reset timer for a panel
