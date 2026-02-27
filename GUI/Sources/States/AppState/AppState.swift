@@ -281,6 +281,12 @@ extension AppState {
             case .right: rightArchiveState = state
         }
     }
+
+    /// Bridge for nonisolated callers (e.g. DualDirectoryScanner actor) that need
+    /// the current showHiddenFiles value from @MainActor-isolated UserPreferences.
+    func showHiddenFilesSnapshot() -> Bool {
+        UserPreferences.shared.snapshot.showHiddenFiles
+    }
 }
 
 // MARK: - Archive Navigation
