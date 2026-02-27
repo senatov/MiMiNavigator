@@ -97,29 +97,5 @@ struct TableKeyboardNavigation {
     }
 }
 
-// MARK: - Keyboard Shortcuts Layer
-/// Hidden buttons providing keyboard shortcuts for table navigation
-struct TableKeyboardShortcutsView: View {
-    let isFocused: Bool
-    let onPageUp: () -> Void
-    let onPageDown: () -> Void
-    let onHome: () -> Void
-    let onEnd: () -> Void
-    
-    var body: some View {
-        ZStack {
-            shortcutButton(.pageUp, action: onPageUp)
-            shortcutButton(.pageDown, action: onPageDown)
-            shortcutButton(.home, action: onHome)
-            shortcutButton(.end, action: onEnd)
-        }
-        .frame(width: 0, height: 0)
-        .opacity(0.001)
-        .allowsHitTesting(false)
-    }
-    
-    private func shortcutButton(_ key: KeyEquivalent, action: @escaping () -> Void) -> some View {
-        Button(action: { if isFocused { action() } }) { EmptyView() }
-            .keyboardShortcut(key, modifiers: [])
-    }
-}
+// TableKeyboardShortcutsView removed — PgUp/PgDown/Home/End now handled
+// via .onKeyPress on FileTableView, which works regardless of scroll position.

@@ -109,6 +109,12 @@ struct FileTableView: View {
             default: break
             }
         }
+        // PgUp/PgDown/Home/End via onKeyPress — works regardless of scroll position
+        // .keyboardShortcut on hidden Buttons fails on unfocused ScrollView content
+        .onKeyPress(.pageUp)    { guard isFocused else { return .ignored }; keyboardNav.pageUp();       return .handled }
+        .onKeyPress(.pageDown)  { guard isFocused else { return .ignored }; keyboardNav.pageDown();     return .handled }
+        .onKeyPress(.home)      { guard isFocused else { return .ignored }; keyboardNav.jumpToFirst();  return .handled }
+        .onKeyPress(.end)       { guard isFocused else { return .ignored }; keyboardNav.jumpToLast();   return .handled }
         .dropDestination(for: URL.self) { droppedURLs, _ in
             // Prefer internal drag (preserves multi-selection), fallback to URL decode
             let droppedFiles = DropTargetModifier.safeResolveURLs(droppedURLs, dragDropManager: dragDropManager)
