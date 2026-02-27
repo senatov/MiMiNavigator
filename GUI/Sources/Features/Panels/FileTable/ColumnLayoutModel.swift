@@ -35,6 +35,19 @@ enum ColumnID: String, CaseIterable, Codable, Identifiable {
         }
     }
 
+    /// SF Symbol icon for compact column headers (nil = text-only)
+    var icon: String? {
+        switch self {
+            case .name: return nil
+            case .dateModified: return nil
+            case .size: return nil
+            case .kind: return nil
+            case .permissions: return "lock.shield"
+            case .owner: return "person"
+            case .childCount: return "number"
+        }
+    }
+
     var defaultWidth: CGFloat {
         switch self {
             case .name: return 0  // flexible — fills remaining space

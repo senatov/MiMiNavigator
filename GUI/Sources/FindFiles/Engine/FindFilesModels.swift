@@ -21,6 +21,11 @@ struct FindFilesResult: Identifiable, Hashable, Sendable, Codable {
     let fileSize: Int64
     let modifiedDate: Date?
 
+    /// Comparable date for Table sorting (nil → distant past)
+    var sortableDate: Date {
+        modifiedDate ?? Date.distantPast
+    }
+
     // MARK: - Codable support
     enum CodingKeys: String, CodingKey {
         case id, fileURLString, fileName, filePath
