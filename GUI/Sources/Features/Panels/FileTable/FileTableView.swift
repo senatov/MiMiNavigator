@@ -27,8 +27,16 @@ struct FileTableView: View {
     let onDoubleClick: (CustomFile) -> Void
     
     // MARK: - Local State
-    @State var sortKey: SortKeysEnum = .name
-    @State var sortAscending: Bool = true
+    // sortKey and sortAscending live in AppState (single source of truth).
+    // Local computed wrappers for convenience.
+    var sortKey: SortKeysEnum {
+        get { appState.sortKey }
+        nonmutating set { appState.sortKey = newValue }
+    }
+    var sortAscending: Bool {
+        get { appState.bSortAscending }
+        nonmutating set { appState.bSortAscending = newValue }
+    }
     @State var cachedSortedFiles: [CustomFile] = []
     @State var scrollProxy: ScrollViewProxy?
     @State var isPanelDropTargeted: Bool = false
@@ -89,8 +97,8 @@ struct FileTableView: View {
         .focusable(true)
         .focusEffectDisabled()
         .onChange(of: files) { recomputeSortedCache() }
-        .onChange(of: sortKey) { recomputeSortedCache() }
-        .onChange(of: sortAscending) { recomputeSortedCache() }
+        .onChange(of: appState.sortKey) { recomputeSortedCache() }
+        .onChange(of: appState.bSortAscending) { recomputeSortedCache() }
         // No auto-scroll on selection change — user controls scroll position
         .onMoveCommand { direction in
             guard isFocused else { return }

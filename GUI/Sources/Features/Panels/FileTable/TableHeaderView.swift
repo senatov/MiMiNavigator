@@ -16,16 +16,15 @@ import SwiftUI
 struct TableHeaderView: View {
     @Environment(AppState.self) var appState
     let panelSide: PanelSide
-    @Binding var sortKey: SortKeysEnum
-    @Binding var sortAscending: Bool
     @Bindable var layout: ColumnLayoutModel
+
+    private var sortKey: SortKeysEnum { appState.sortKey }
+    private var sortAscending: Bool { appState.bSortAscending }
 
     var body: some View {
         let fixedCols = layout.visibleColumns.filter { $0.id != .name }
         return HStack(alignment: .center, spacing: 0) {
-            // Name — flexible, always first
             nameHeader
-            // Fixed columns — separator before each, using indices for reliable rendering
             ForEach(fixedCols.indices, id: \.self) { i in
                 let spec = fixedCols[i]
                 ResizableDivider(
@@ -55,6 +54,7 @@ struct TableHeaderView: View {
     }
 
     // MARK: - Name Column (flexible)
+
     private var nameHeader: some View {
         SortableHeader(
             title: ColumnID.name.title,
@@ -69,6 +69,7 @@ struct TableHeaderView: View {
     }
 
     // MARK: - Fixed Column Header
+
     private func fixedColumnHeader(for spec: ColumnSpec) -> some View {
         SortableHeader(
             title: spec.id.title,
@@ -83,6 +84,7 @@ struct TableHeaderView: View {
     }
 
     // MARK: - Context Menu (right-click on header)
+
     @ViewBuilder
     private var columnToggleMenu: some View {
         ForEach(layout.columns) { spec in
@@ -100,22 +102,23 @@ struct TableHeaderView: View {
     }
 
     // MARK: - Sort Toggle
+
     private func toggleSort(_ col: ColumnID) {
         guard let key = col.sortKey else { return }
         appState.focusedPanel = panelSide
         if sortKey == key {
-            sortAscending.toggle()
+            appState.bSortAscending.toggle()
         } else {
-            sortKey = key
-            sortAscending = true
+            appState.sortKey = key
+            appState.bSortAscending = true
         }
-        log.debug("[Sort] toggleSort panel=\(panelSide) key=\(key) asc=\(sortAscending)")
-        appState.updateSorting(key: key, ascending: sortAscending)
+        log.debug("[Sort] toggleSort panel=\(panelSide) key=\(appState.sortKey) asc=\(appState.bSortAscending)")
+        appState.updateSorting()
     }
 
     // MARK: - Restore Defaults
+
     private func restoreDefaults() {
-        log.debug("#function")
         for col in ColumnID.allCases {
             if let idx = layout.columns.firstIndex(where: { $0.id == col }) {
                 layout.columns[idx].isVisible = col.defaultVisible
@@ -140,7 +143,6 @@ struct SortableHeader: View {
 
     var body: some View {
         HStack(spacing: 0) {
-
             Text(title)
                 .font(
                     .system(

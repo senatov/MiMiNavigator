@@ -166,9 +166,8 @@ actor DualDirectoryScanner {
         }
         let originalURL = URL(fileURLWithPath: path)
         let resolvedURL = originalURL.resolvingSymlinksInPath()
-        log.info("🔗 originalURL: \(originalURL.path)")
         if originalURL.path != resolvedURL.path {
-            log.warning("⚠️ Path changed after symlink resolution: '\(originalURL.path)' → '\(resolvedURL.path)'")
+            log.debug("[Scan] Symlink resolved: '\(originalURL.path)' → '\(resolvedURL.path)'")
         }
         // Try original URL first if resolved differs (symlink resolution can break /Volumes paths)
         let urlsToTry =
@@ -176,28 +175,27 @@ actor DualDirectoryScanner {
             ? [originalURL, resolvedURL]
             : [resolvedURL]
         for (index, url) in urlsToTry.enumerated() {
-            log.info("🔄 Attempt \(index + 1)/\(urlsToTry.count): \(url.path)")
+            log.info("[Scan] Attempt \(index + 1)/\(urlsToTry.count): \(url.path)")
             do {
-                let scanned = try FileScanner.scan(url: url, showHiddenFiles: showHidden)
-                log.info("✅ Scan succeeded for \(url.path): \(scanned.count) items")
+                // Run scan off main thread for large directories
+                let capturedShowHidden = showHidden
+                let scanned = try await Task.detached(priority: .userInitiated) {
+                    try FileScanner.scan(url: url, showHiddenFiles: capturedShowHidden)
+                }.value
+                log.info("[Scan] Succeeded for \(url.path): \(scanned.count) items")
                 await updateScannedFiles(scanned, for: currSide)
                 await updateFileList(panelSide: currSide, with: scanned)
                 return
             } catch let error as NSError {
-                log.error("❌ Scan attempt \(index + 1) failed for \(url.path)")
-                log.error("   error: \(error.localizedDescription)")
-                log.error("   domain: \(error.domain), code: \(error.code)")
-                if let underlying = error.userInfo[NSUnderlyingErrorKey] as? NSError {
-                    log.error("   underlying: domain=\(underlying.domain), code=\(underlying.code)")
-                }
+                log.error("[Scan] Attempt \(index + 1) failed: \(error.localizedDescription)")
                 if isPermissionDeniedError(error) {
-                    log.warning("🔒 Permission denied for \(url.path), requesting access via BookmarkStore...")
+                    log.warning("[Scan] Permission denied for \(url.path), requesting access...")
                     let granted = await requestAndRetryAccess(for: url, side: currSide)
                     if granted {
-                        log.info("✅ Access granted and rescan succeeded for \(url.path)")
+                        log.info("[Scan] Access granted, rescan succeeded for \(url.path)")
                         return
                     }
-                    log.warning("⛔ Access request failed or denied for \(url.path)")
+                    log.warning("[Scan] Access request denied for \(url.path)")
                 }
             }
         }

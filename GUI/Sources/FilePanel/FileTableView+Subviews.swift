@@ -41,8 +41,6 @@ extension FileTableView {
                     } header: {
                         TableHeaderView(
                             panelSide: panelSide,
-                            sortKey: $sortKey,
-                            sortAscending: $sortAscending,
                             layout: layout
                         )
                     }

@@ -3,7 +3,8 @@
 //
 // Created by Iakov Senatov on 10.02.2026.
 // Copyright © 2026 Senatov. All rights reserved.
-// Description: Results table for Find Files — displays search results with context menu
+// Description: Results table for Find Files — displays search results with context menu.
+//   All columns support ascending/descending sort via Table's built-in header click.
 
 import SwiftUI
 
@@ -13,10 +14,14 @@ struct FindFilesResultsView: View {
     var appState: AppState? = nil
 
     @State private var sortOrder = [KeyPathComparator(\FindFilesResult.fileName)]
-    @State private var hoveredResult: FindFilesResult?
 
     /// Standard font for the entire Find Files dialog
     static let dialogFont: Font = .system(size: 13, weight: .light, design: .default)
+
+    /// Sorted snapshot of results — recomputed when results or sortOrder change
+    private var sortedResults: [FindFilesResult] {
+        viewModel.results.sorted(using: sortOrder)
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -30,12 +35,12 @@ struct FindFilesResultsView: View {
     }
 
     // MARK: - Empty State
+
     private var emptyState: some View {
         VStack(spacing: 8) {
             Image(systemName: viewModel.searchState == .idle ? "magnifyingglass" : "doc.text.magnifyingglass")
                 .font(.system(size: 32))
                 .foregroundStyle(.tertiary)
-
             Text(viewModel.searchState == .idle
                  ? "Enter search criteria and press Search"
                  : "No files found")
@@ -46,28 +51,32 @@ struct FindFilesResultsView: View {
     }
 
     // MARK: - Results List
+
     private var resultsList: some View {
-        Table(viewModel.results, selection: Binding(
+        Table(sortedResults, selection: Binding(
             get: { viewModel.selectedResult?.id },
             set: { newID in
                 viewModel.selectedResult = viewModel.results.first { $0.id == newID }
             }
         ), sortOrder: $sortOrder) {
-            // Row number column
+            // "#" — sequential row number (not sortable)
             TableColumn("#") { result in
-                if let idx = viewModel.results.firstIndex(where: { $0.id == result.id }) {
+                if let idx = sortedResults.firstIndex(where: { $0.id == result.id }) {
                     Text("\(idx + 1)")
                         .font(.system(size: 13, weight: .light).monospacedDigit())
                         .foregroundStyle(.secondary)
                 }
             }
             .width(min: 30, ideal: 36, max: 50)
+
+            // Name — sortable by fileName
             TableColumn("Name", value: \.fileName) { result in
                 resultNameCell(result)
             }
             .width(min: 150, ideal: 200)
 
-            TableColumn("Path") { result in
+            // Path — sortable by filePath
+            TableColumn("Path", value: \.filePath) { result in
                 Text(result.isInsideArchive
                      ? "\u{1F4E6} [\((result.archivePath as NSString?)?.lastPathComponent ?? "archive")] \(result.filePath)"
                      : result.filePath)
@@ -83,22 +92,8 @@ struct FindFilesResultsView: View {
             }
             .width(min: 200, ideal: 300)
 
-            TableColumn("Match") { result in
-                if let context = result.matchContext, let line = result.lineNumber {
-                    Text("L\(line): \(context)")
-                        .font(.system(size: 13, weight: .light, design: .monospaced))
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                        .truncationMode(.tail)
-                } else {
-                    Text("—")
-                        .font(Self.dialogFont)
-                        .foregroundStyle(.quaternary)
-                }
-            }
-            .width(min: 100, ideal: 200)
-
-            TableColumn("Size") { result in
+            // Size — sortable by fileSize
+            TableColumn("Size", value: \.fileSize) { result in
                 Text(formatSize(result.fileSize))
                     .font(.system(size: 13, weight: .light).monospacedDigit())
                     .foregroundStyle(.secondary)
@@ -108,7 +103,6 @@ struct FindFilesResultsView: View {
         .contextMenu(forSelectionType: FindFilesResult.ID.self) { selection in
             resultContextMenu(selection: selection)
         } primaryAction: { selection in
-            // Double-click: go to file
             if let id = selection.first,
                let result = viewModel.results.first(where: { $0.id == id }),
                let state = appState {
@@ -118,18 +112,16 @@ struct FindFilesResultsView: View {
         .tableStyle(.inset(alternatesRowBackgrounds: true))
     }
 
-    // MARK: - Name Cell (archive-aware coloring)
-    /// Archive results display in dark navy blue to distinguish them from normal results
+    // MARK: - Name Cell
+
     private func resultNameCell(_ result: FindFilesResult) -> some View {
         HStack(spacing: 6) {
-            // Icon
             Image(systemName: result.isInsideArchive ? "doc.zipper" : fileIcon(for: result))
                 .font(.system(size: 13))
                 .foregroundStyle(result.isInsideArchive
                     ? Color(#colorLiteral(red: 0.1, green: 0.1, blue: 0.55, alpha: 1))
                     : .secondary)
                 .frame(width: 16)
-
             Text(result.fileName)
                 .font(.system(size: 13, weight: result.isInsideArchive ? .semibold : .light))
                 .foregroundStyle(result.isInsideArchive
@@ -140,44 +132,33 @@ struct FindFilesResultsView: View {
     }
 
     // MARK: - Context Menu
+
     @ViewBuilder
     private func resultContextMenu(selection: Set<FindFilesResult.ID>) -> some View {
         if let id = selection.first,
            let result = viewModel.results.first(where: { $0.id == id }) {
-
-            // Go to File: navigate panel to the file; if inside archive — open archive, then navigate.
-            // The Find Files dialog stays open in both cases.
             Button("Go to File") {
                 if let state = appState {
                     viewModel.goToFile(result: result, appState: state)
                 }
             }
-
-            // Open: not yet implemented — disabled
             Button("Open") {}
                 .disabled(true)
-
             Button("Reveal in Finder") {
                 viewModel.revealInFinder(result: result)
             }
-
             Divider()
-
             Button("Copy Path") {
                 let pasteboard = NSPasteboard.general
                 pasteboard.clearContents()
                 pasteboard.setString(result.filePath, forType: .string)
             }
         }
-
         Divider()
-
         Button("Copy All Paths") {
             viewModel.copyResultPaths()
         }
         .disabled(viewModel.results.isEmpty)
-
-        // Export: saves list with query header (name pattern, text, directory, date)
         Button("Export Results…") {
             viewModel.exportResults()
         }
