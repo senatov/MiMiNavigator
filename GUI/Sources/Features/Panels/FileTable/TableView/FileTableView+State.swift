@@ -11,8 +11,19 @@ import SwiftUI
 extension FileTableView {
 
     func recomputeSortedCache() {
+        // Files arrive pre-sorted from DualDirectoryScanner.Task.detached.
+        // Local re-sort is only needed when user changes sort column/direction
+        // (onChange of sortKey/bSortAscending). On plain files change the order
+        // is already correct — just assign without re-sorting to avoid blocking
+        // MainActor for ~100ms on 26k-item directories.
+        cachedSortedFiles = files
+        log.debug("\(#function) panel=\(panelSide) cached \(cachedSortedFiles.count) items")
+    }
+
+    /// Called only when sort parameters change — re-sort needed.
+    func recomputeSortedCacheForSortChange() {
         cachedSortedFiles = files.sorted(by: sorter.compare)
-        log.debug("\(#function) panel=\(panelSide) sorted \(cachedSortedFiles.count) by \(sortKey) asc=\(sortAscending)")
+        log.debug("\(#function) panel=\(panelSide) re-sorted \(cachedSortedFiles.count) by \(sortKey) asc=\(sortAscending)")
     }
 
     // MARK: - Auto-fit helpers (still available for future use)

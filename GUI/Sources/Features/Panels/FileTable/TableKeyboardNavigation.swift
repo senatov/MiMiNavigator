@@ -56,19 +56,29 @@ struct TableKeyboardNavigation {
 
     func pageUp() {
         guard !files.isEmpty else { return }
-        let idx = indexByID[selectedID.wrappedValue ?? ""] ?? 0
-        selectAndScroll(at: max(0, idx - pageStep), anchor: .top)
+        let idx = indexByID[selectedID.wrappedValue ?? ""] ?? firstRealIndex
+        let newIdx = max(firstRealIndex, idx - pageStep)
+        // Place new selection in center of viewport
+        selectAndScroll(at: newIdx, anchor: .center)
     }
 
     func pageDown() {
         guard !files.isEmpty else { return }
-        let idx = indexByID[selectedID.wrappedValue ?? ""] ?? 0
-        selectAndScroll(at: min(files.count - 1, idx + pageStep), anchor: .bottom)
+        let idx = indexByID[selectedID.wrappedValue ?? ""] ?? firstRealIndex
+        let newIdx = min(files.count - 1, idx + pageStep)
+        selectAndScroll(at: newIdx, anchor: .center)
     }
 
     func jumpToFirst() {
-        guard let first = files.first else { return }
-        selectAndScroll(file: first, anchor: .top)
+        // Skip ".." entry (index 0) — it is a navigation button, not a file
+        guard files.count > firstRealIndex else { return }
+        selectAndScroll(at: firstRealIndex, anchor: .top)
+    }
+
+    /// Index of first real file, skipping ".." parent entry if present.
+    private var firstRealIndex: Int {
+        if let first = files.first, ParentDirectoryEntry.isParentEntry(first) { return 1 }
+        return 0
     }
 
     func jumpToLast() {

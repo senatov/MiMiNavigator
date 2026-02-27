@@ -40,6 +40,8 @@ struct FileTableView: View {
     @State var cachedSortedFiles: [CustomFile] = []
     @State var scrollProxy: ScrollViewProxy?
     @State var isPanelDropTargeted: Bool = false
+    /// Measured height of the scroll viewport — used to compute real pageStep
+    @State var viewHeight: CGFloat = 400
 
     // MARK: - Column Layout (replaces individual CGFloat @State for each column)
     @State var layout: ColumnLayoutModel
@@ -60,13 +62,18 @@ struct FileTableView: View {
 
     var sorter: TableFileSorter { TableFileSorter(sortKey: sortKey, ascending: sortAscending) }
     
+    /// Number of fully visible rows based on measured viewport height.
+    var visibleRowCount: Int {
+        max(1, Int(viewHeight / FilePanelStyle.rowHeight))
+    }
+
     var keyboardNav: TableKeyboardNavigation {
         TableKeyboardNavigation(
             files: cachedSortedFiles,
             selectedID: $selectedID,
             onSelect: onSelect,
             scrollProxy: scrollProxy,
-            pageStep: 20
+            pageStep: visibleRowCount
         )
     }
     
@@ -97,9 +104,10 @@ struct FileTableView: View {
         .animation(nil, value: selectedID)
         .focusable(true)
         .focusEffectDisabled()
+        .onGeometryChange(for: CGFloat.self, of: { $0.size.height }) { viewHeight = $0 }
         .onChange(of: files) { recomputeSortedCache() }
-        .onChange(of: appState.sortKey) { recomputeSortedCache() }
-        .onChange(of: appState.bSortAscending) { recomputeSortedCache() }
+        .onChange(of: appState.sortKey) { recomputeSortedCacheForSortChange() }
+        .onChange(of: appState.bSortAscending) { recomputeSortedCacheForSortChange() }
         // No auto-scroll on selection change — user controls scroll position
         .onMoveCommand { direction in
             guard isFocused else { return }
