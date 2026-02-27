@@ -5,8 +5,8 @@
 //  Copyright © 2024 Senatov. All rights reserved.
 //
 
-import Foundation
 import FileModelKit
+import Foundation
 import SwiftUI
 
 // MARK: - Actor for concurrent directory scanning
@@ -102,7 +102,7 @@ actor DualDirectoryScanner {
             Task {
                 // Throttle: skip if last refresh was less than 2s ago
                 let last = await self.lastVNodeRefresh[side] ?? .distantPast
-                guard Date().timeIntervalSince(last) >= await self.vnodeThrottleInterval else {
+                guard Date().timeIntervalSince(last) >= self.vnodeThrottleInterval else {
                     return
                 }
                 await self.setVNodeTimestamp(side)
@@ -118,12 +118,12 @@ actor DualDirectoryScanner {
         source.resume()
 
         switch side {
-        case .left:
-            leftVNode = source
-            leftFD = fd
-        case .right:
-            rightVNode = source
-            rightFD = fd
+            case .left:
+                leftVNode = source
+                leftFD = fd
+            case .right:
+                rightVNode = source
+                rightFD = fd
         }
 
         log.debug("[VNode] Watching '\(path)' side=\(side)")
@@ -135,14 +135,14 @@ actor DualDirectoryScanner {
 
     private func cancelVNodeWatcher(for side: PanelSide) {
         switch side {
-        case .left:
-            leftVNode?.cancel()
-            leftVNode = nil
-            leftFD = -1
-        case .right:
-            rightVNode?.cancel()
-            rightVNode = nil
-            rightFD = -1
+            case .left:
+                leftVNode?.cancel()
+                leftVNode = nil
+                leftFD = -1
+            case .right:
+                rightVNode?.cancel()
+                rightVNode = nil
+                rightFD = -1
         }
     }
 
@@ -193,9 +193,11 @@ actor DualDirectoryScanner {
             do {
                 // Run scan off main thread for large directories
                 let capturedShowHidden = showHidden
-                let scanned = try await Task.detached(priority: .userInitiated) {
-                    try FileScanner.scan(url: url, showHiddenFiles: capturedShowHidden)
-                }.value
+                let scanned =
+                    try await Task.detached(priority: .userInitiated) {
+                        try FileScanner.scan(url: url, showHiddenFiles: capturedShowHidden)
+                    }
+                    .value
                 log.info("[Scan] Succeeded for \(url.path): \(scanned.count) items")
                 await updateScannedFiles(scanned, for: currSide)
                 await updateFileList(panelSide: currSide, with: scanned)
@@ -279,8 +281,10 @@ actor DualDirectoryScanner {
 
     // MARK: - Stop all watchers
     func stopMonitoring() {
-        leftTimer?.cancel(); leftTimer = nil
-        rightTimer?.cancel(); rightTimer = nil
+        leftTimer?.cancel()
+        leftTimer = nil
+        rightTimer?.cancel()
+        rightTimer = nil
         cancelVNodeWatcher(for: .left)
         cancelVNodeWatcher(for: .right)
         log.info("[DualDirectoryScanner] stopMonitoring: all timers and vnode watchers cancelled")
