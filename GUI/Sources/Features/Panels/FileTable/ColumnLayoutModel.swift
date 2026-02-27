@@ -20,6 +20,10 @@ enum ColumnID: String, CaseIterable, Codable, Identifiable {
     case permissions = "permissions"
     case owner = "owner"
     case childCount = "childCount"
+    case dateCreated = "dateCreated"
+    case dateLastOpened = "dateLastOpened"
+    case dateAdded = "dateAdded"
+    case group = "group"
 
     var id: String { rawValue }
 
@@ -32,6 +36,10 @@ enum ColumnID: String, CaseIterable, Codable, Identifiable {
             case .permissions: return "Permiss."
             case .owner: return "Owner"
             case .childCount: return "Count"
+            case .dateCreated: return "Created"
+            case .dateLastOpened: return "Last Open"
+            case .dateAdded: return "Added"
+            case .group: return "Group"
         }
     }
 
@@ -45,6 +53,10 @@ enum ColumnID: String, CaseIterable, Codable, Identifiable {
             case .permissions: return "lock.shield"
             case .owner: return "person"
             case .childCount: return "number"
+            case .dateCreated: return nil
+            case .dateLastOpened: return nil
+            case .dateAdded: return nil
+            case .group: return "person.2"
         }
     }
 
@@ -53,15 +65,24 @@ enum ColumnID: String, CaseIterable, Codable, Identifiable {
             case .name: return 0  // flexible — fills remaining space
             case .dateModified: return 130
             case .size: return 75
-            case .kind: return 90
+            case .kind: return 60
             case .permissions: return 80
             case .owner: return 70
             case .childCount: return 80
+            case .dateCreated: return 130
+            case .dateLastOpened: return 130
+            case .dateAdded: return 130
+            case .group: return 70
         }
     }
 
-    /// Columns that are visible by default
-    var defaultVisible: Bool { true }
+    /// Columns that are visible by default (extended columns off by default)
+    var defaultVisible: Bool {
+        switch self {
+            case .dateCreated, .dateLastOpened, .dateAdded, .group: return false
+            default: return true
+        }
+    }
 
     /// Columns that can never be hidden (Name is mandatory)
     var isRequired: Bool { self == .name }
@@ -70,7 +91,7 @@ enum ColumnID: String, CaseIterable, Codable, Identifiable {
     var alignment: Alignment {
         switch self {
             case .size, .childCount: return .trailing
-            case .dateModified: return .center
+            case .dateModified, .dateCreated, .dateLastOpened, .dateAdded: return .center
             default: return .leading
         }
     }
@@ -78,12 +99,13 @@ enum ColumnID: String, CaseIterable, Codable, Identifiable {
     /// Per-column content text color (used in file rows)
     var columnColor: Color {
         switch self {
-            case .name: return Color(#colorLiteral(red: 0.05, green: 0.10, blue: 0.30, alpha: 1.0))  // dark navy
-            case .size: return Color(#colorLiteral(red: 0.50, green: 0.05, blue: 0.18, alpha: 1.0))  // dark raspberry
-            case .kind: return Color(#colorLiteral(red: 0.28, green: 0.14, blue: 0.05, alpha: 1.0))  // dark brown
-            case .dateModified: return Color(#colorLiteral(red: 0.05, green: 0.28, blue: 0.10, alpha: 1.0))  // dark green
-            case .childCount: return Color(#colorLiteral(red: 0.05, green: 0.10, blue: 0.30, alpha: 1.0))  // dark navy
-            default: return Color(#colorLiteral(red: 0.20, green: 0.20, blue: 0.20, alpha: 1.0))  // dark grey
+            case .name:                          return Color(#colorLiteral(red: 0.05, green: 0.10, blue: 0.30, alpha: 1.0))  // dark navy
+            case .size:                          return Color(#colorLiteral(red: 0.50, green: 0.05, blue: 0.18, alpha: 1.0))  // dark raspberry
+            case .kind:                          return Color(#colorLiteral(red: 0.28, green: 0.14, blue: 0.05, alpha: 1.0))  // dark brown
+            case .dateModified, .dateCreated,
+                 .dateLastOpened, .dateAdded:    return Color(#colorLiteral(red: 0.05, green: 0.28, blue: 0.10, alpha: 1.0))  // dark green
+            case .childCount:                    return Color(#colorLiteral(red: 0.05, green: 0.10, blue: 0.30, alpha: 1.0))  // dark navy
+            default:                             return Color(#colorLiteral(red: 0.20, green: 0.20, blue: 0.20, alpha: 1.0))  // dark grey
         }
     }
 
@@ -97,6 +119,10 @@ enum ColumnID: String, CaseIterable, Codable, Identifiable {
             case .permissions: return .permissions
             case .owner: return .owner
             case .childCount: return .childCount
+            case .dateCreated: return nil
+            case .dateLastOpened: return nil
+            case .dateAdded: return nil
+            case .group: return nil
         }
     }
 }
@@ -124,6 +150,7 @@ final class ColumnLayoutModel {
     // MARK: - Default ordered column list (Finder-style: Name, Date, Size, Kind, Perms, Owner, ChildCount)
     static let defaultOrder: [ColumnID] = [
         .name, .dateModified, .size, .kind, .permissions, .owner, .childCount,
+        .dateCreated, .dateLastOpened, .dateAdded, .group,
     ]
 
     // MARK: - State
@@ -131,12 +158,22 @@ final class ColumnLayoutModel {
 
     // MARK: - Persistence key
     private let storageKey: String
+    // Guard: UserDefaults I/O must run only once per instance lifetime.
+    // PanelFileTableSection is a struct — its init() runs on every SwiftUI render pass,
+    // but @State keeps the ColumnLayoutModel class alive across renders.
+    private var didLoad = false
 
     // MARK: - Init
     init(panelSide: PanelSide) {
         self.storageKey = "ColumnLayout.\(panelSide.rawValue)"
         self.columns = Self.defaultOrder.map { ColumnSpec(id: $0) }
-        log.debug("[ColumnLayout] init(panelSide:\(panelSide)) — should happen once per panel")
+        loadOnce()
+    }
+
+    // MARK: - One-shot load guard
+    private func loadOnce() {
+        guard !didLoad else { return }
+        didLoad = true
         load()
     }
 

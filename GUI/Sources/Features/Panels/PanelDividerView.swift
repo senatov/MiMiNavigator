@@ -28,9 +28,9 @@ struct DividerDragState {
 // MARK: - Divider Style Constants
 enum PanelDividerStyle {
     static let hitAreaWidth: CGFloat = 24
-    static let normalWidth: CGFloat = 1.0
-    static let activeWidth: CGFloat = 1.4
-    static let normalColor = Color(nsColor: NSColor.separatorColor)
+    static let normalWidth: CGFloat = 2.0
+    static let activeWidth: CGFloat = 5.0
+    static let normalColor = Color(#colorLiteral(red: 0.42, green: 0.42, blue: 0.46, alpha: 0.55))
     static let activeColor = Color(#colorLiteral(red: 0.2196078449, green: 0.007843137719, blue: 0.8549019694, alpha: 1)).opacity(0.90)
     static let minPanelWidth: CGFloat = 80
 }
@@ -48,14 +48,23 @@ struct PanelDividerView: View {
         let lineColor = divider.isDragging ? PanelDividerStyle.activeColor : PanelDividerStyle.normalColor
 
         ZStack {
-            // Visible divider line
+            // 3D highlight: 1pt white strip on left edge — simulates light source from top-left
+            Rectangle()
+                .fill(Color.white.opacity(divider.isDragging ? 0.0 : 0.80))
+                .frame(width: 1, height: containerHeight)
+                .offset(x: -0.5)
+                .allowsHitTesting(false)
+            // Main divider line
             Rectangle()
                 .fill(lineColor)
                 .frame(width: lineWidth, height: containerHeight)
-                .shadow(
-                    color: Color.black.opacity(divider.isDragging ? 0.16 : 0.0),
-                    radius: divider.isDragging ? 2 : 0
-                )
+                .shadow(color: Color.black.opacity(divider.isDragging ? 0.35 : 0.38), radius: divider.isDragging ? 5 : 4, x: 1, y: 0)
+                .allowsHitTesting(false)
+            // 3D shadow: 1pt dark strip on right edge — simulates depth
+            Rectangle()
+                .fill(Color.black.opacity(divider.isDragging ? 0.0 : 0.32))
+                .frame(width: 1, height: containerHeight)
+                .offset(x: 0.5)
                 .allowsHitTesting(false)
 
             // Invisible hit area for comfortable grabbing

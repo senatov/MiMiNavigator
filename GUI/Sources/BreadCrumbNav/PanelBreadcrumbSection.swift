@@ -19,8 +19,6 @@ struct PanelBreadcrumbSection: View {
 
     // MARK: -
     var body: some View {
-        log.debug(
-            #function + " — panelSide=\(panelSide), focusedPanel=\(appState.focusedPanel), currentPath=\(currentPath?.path ?? "nil")")  // SwiftBeaver: debug level
         return BreadCrumbControlWrapper(selectedSide: panelSide)
             .environment(appState)
             .onChange(of: currentPath, initial: false) { _, newValue in

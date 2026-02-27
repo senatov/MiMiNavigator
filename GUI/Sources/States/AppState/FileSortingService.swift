@@ -121,27 +121,9 @@ enum FileSortingService {
         return a.nameStr.localizedCaseInsensitiveCompare(b.nameStr) == .orderedAscending
     }
 
-    // MARK: - Check if file should be treated as folder (includes symlinks to dirs)
+    // MARK: - Check if file should be treated as folder
+    // Uses only pre-computed flags from scan — no syscalls during sort
     private static func isFolderLike(_ f: CustomFile) -> Bool {
-        if f.isDirectory || f.isSymbolicDirectory {
-            return true
-        }
-        let url = f.urlValue
-        // Remote files have no local path — trust isDirectory flag only
-        guard FileManager.default.fileExists(atPath: url.path) else { return false }
-        do {
-            let rv = try url.resourceValues(forKeys: [.isSymbolicLinkKey])
-            if rv.isSymbolicLink == true {
-                let dst = url.resolvingSymlinksInPath()
-                if let r2 = try? dst.resourceValues(forKeys: [.isDirectoryKey]),
-                    r2.isDirectory == true
-                {
-                    return true
-                }
-            }
-        } catch {
-            log.error("[FileSortingService] isFolderLike failed: '\(f.nameStr)' - \(error.localizedDescription)")
-        }
-        return false
+        f.isDirectory || f.isSymbolicDirectory
     }
 }

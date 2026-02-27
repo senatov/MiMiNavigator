@@ -112,7 +112,8 @@ struct FileTableView: View {
         .focusable(true)
         .focusEffectDisabled()
         .onGeometryChange(for: CGFloat.self, of: { $0.size.height }) { viewHeight = $0 }
-        .onChange(of: files) { recomputeSortedCache() }
+        // Compare version Int (O(1)) instead of [CustomFile] array (O(n)) — critical for 26k+ directories
+        .onChange(of: panelSide == .left ? appState.leftFilesVersion : appState.rightFilesVersion) { recomputeSortedCache() }
         .onChange(of: appState.sortKey) { recomputeSortedCacheForSortChange() }
         .onChange(of: appState.bSortAscending) { recomputeSortedCacheForSortChange() }
         // No auto-scroll on selection change — user controls scroll position
@@ -130,6 +131,18 @@ struct FileTableView: View {
         .onKeyPress(.pageDown)  { guard isFocused else { return .ignored }; keyboardNav.pageDown();     return .handled }
         .onKeyPress(.home)      { guard isFocused else { return .ignored }; keyboardNav.jumpToFirst();  return .handled }
         .onKeyPress(.end)       { guard isFocused else { return .ignored }; keyboardNav.jumpToLast();   return .handled }
+        // ESC: clear marks only — never clear file selection.
+        // Without this, SwiftUI resets the selectedID Binding to nil.
+        .onKeyPress(.escape) {
+            guard isFocused else { return .ignored }
+            let markedCount = appState.markedCount(for: panelSide)
+            if markedCount > 0 {
+                appState.unmarkAll()
+            }
+            // Ensure a file stays selected — fall back to first if none
+            appState.ensureSelectionOnFocusedPanel()
+            return .handled
+        }
         .dropDestination(for: URL.self) { droppedURLs, _ in
             // Prefer internal drag (preserves multi-selection), fallback to URL decode
             let droppedFiles = DropTargetModifier.safeResolveURLs(droppedURLs, dragDropManager: dragDropManager)

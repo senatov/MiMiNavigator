@@ -91,10 +91,13 @@ final class UserPreferences {
     // MARK: - Capture from AppState
     func capture(from appState: AppState) {
         log.info("Capturing AppState into preferences.")
-        snapshot.leftPath = appState.leftPath
-        snapshot.rightPath = appState.rightPath
-        snapshot.lastSelectedLeftFilePath = appState.selectedLeftFile?.pathStr
-        snapshot.lastSelectedRightFilePath = appState.selectedRightFile?.pathStr
+        // Build updated snapshot in one assignment to avoid triggering didSet multiple times
+        var s = snapshot
+        s.leftPath = appState.leftPath
+        s.rightPath = appState.rightPath
+        s.lastSelectedLeftFilePath = appState.selectedLeftFile?.pathStr
+        s.lastSelectedRightFilePath = appState.selectedRightFile?.pathStr
+        snapshot = s
     }
 
     // MARK: - Termination Handler

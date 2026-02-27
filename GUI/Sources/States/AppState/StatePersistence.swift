@@ -19,9 +19,8 @@ enum StatePersistence {
     static func saveBeforeExit(from state: AppState) {
         log.debug("[StatePersistence] saveBeforeExit")
         
-        // Save user preferences
+        // Save user preferences (capture triggers save() via didSet — no explicit save needed)
         UserPreferences.shared.capture(from: state)
-        UserPreferences.shared.save()
         
         let ud = UserDefaults.standard
         

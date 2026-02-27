@@ -336,11 +336,34 @@ struct FileRow: View {
             case .name: EmptyView()
             case .dateModified: Text(file.modifiedDateFormatted)
             case .size: Text(file.fileSizeFormatted)
-            case .kind: Text(file.kindFormatted)
+            case .kind: KindCell(file: file)
             case .permissions: Text(file.permissionsFormatted)
             case .owner: Text(file.ownerFormatted)
             case .childCount: Text(file.childCountFormatted)
+            case .dateCreated: Text(file.creationDateFormatted)
+            case .dateLastOpened: Text(file.lastOpenedFormatted)
+            case .dateAdded: Text(file.dateAddedFormatted)
+            case .group: Text(file.groupNameFormatted)
         }
     }
 
+}
+
+// MARK: - Kind column cell
+/// Shows a multicolor folder SF Symbol for directories, plain text for files.
+private struct KindCell: View {
+    let file: CustomFile
+    var body: some View {
+        if file.isDirectory || file.isSymbolicDirectory {
+            Image(systemName: file.isSymbolicDirectory ? "folder.badge.questionmark" : "folder.fill")
+                .symbolRenderingMode(.multicolor)
+                .font(.system(size: 12, weight: .regular))
+        } else if file.isSymbolicLink {
+            Image(systemName: "arrow.up.right.square")
+                .symbolRenderingMode(.multicolor)
+                .font(.system(size: 12, weight: .regular))
+        } else {
+            Text(file.kindFormatted)
+        }
+    }
 }

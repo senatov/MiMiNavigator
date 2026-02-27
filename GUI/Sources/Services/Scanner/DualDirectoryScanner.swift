@@ -260,18 +260,28 @@ actor DualDirectoryScanner {
     @MainActor
     private func updateScannedFiles(_ sortedFiles: [CustomFile], for side: PanelSide) {
         let now = Date()
-        let sinceLastMs: String
-        if let prev = lastUpdateTime[side] {
-            sinceLastMs = "\(Int(now.timeIntervalSince(prev) * 1000))ms since last"
-        } else {
-            sinceLastMs = "first update"
-        }
+        let isFirstUpdate = lastUpdateTime[side] == nil
+        let sinceLastMs = isFirstUpdate ? "first update" : "\(Int(now.timeIntervalSince(lastUpdateTime[side]!) * 1000))ms since last"
         lastUpdateTime[side] = now
         switch side {
             case .left: appState.displayedLeftFiles = sortedFiles
             case .right: appState.displayedRightFiles = sortedFiles
         }
         log.debug("[Scanner] Full update \(side): \(sortedFiles.count) items (\(sinceLastMs))")
+        // On first load: if the panel has no selection yet, pick the topmost file
+        if isFirstUpdate {
+            appState.ensureSelectionOnFocusedPanel()
+            // Also seed selection on the non-focused panel — it gets ensureSelection on next focus
+            switch side {
+            case .left  where appState.selectedLeftFile == nil:
+                appState.selectedLeftFile = sortedFiles.first
+                log.debug("[Scanner] Auto-selected first left: \(sortedFiles.first?.nameStr ?? "-")")
+            case .right where appState.selectedRightFile == nil:
+                appState.selectedRightFile = sortedFiles.first
+                log.debug("[Scanner] Auto-selected first right: \(sortedFiles.first?.nameStr ?? "-")")
+            default: break
+            }
+        }
     }
 
     // MARK: - Reset timer for a panel

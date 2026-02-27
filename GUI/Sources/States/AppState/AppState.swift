@@ -16,8 +16,16 @@ import Foundation
 final class AppState {
 
     // MARK: - Observable State
-    var displayedLeftFiles: [CustomFile] = []
-    var displayedRightFiles: [CustomFile] = []
+    // Version counters: SwiftUI onChange(of:) compares these Int values — O(1) instead of O(n) array diff.
+    // Incremented atomically with every file list replacement.
+    private(set) var leftFilesVersion: Int = 0
+    private(set) var rightFilesVersion: Int = 0
+    var displayedLeftFiles: [CustomFile] = [] {
+        didSet { leftFilesVersion &+= 1 }
+    }
+    var displayedRightFiles: [CustomFile] = [] {
+        didSet { rightFilesVersion &+= 1 }
+    }
     var focusedPanel: PanelSide = .left
 
     // MARK: - Panel file filter queries (persisted via AppStorage in SelectionStatusBar)
@@ -158,9 +166,27 @@ extension AppState {
     }
 
     func toggleFocus() {
-        // Direct mutation — avoids weak-ref chain through selectionManager
         focusedPanel = focusedPanel == .left ? .right : .left
         log.debug("[AppState] toggleFocus → \(focusedPanel)")
+        ensureSelectionOnFocusedPanel()
+    }
+
+    /// If the newly focused panel has no selected file, select the topmost one.
+    func ensureSelectionOnFocusedPanel() {
+        switch focusedPanel {
+        case .left:
+            guard selectedLeftFile == nil else { return }
+            if let first = displayedLeftFiles.first {
+                selectedLeftFile = first
+                log.debug("[AppState] ensureSelection: auto-selected first left: \(first.nameStr)")
+            }
+        case .right:
+            guard selectedRightFile == nil else { return }
+            if let first = displayedRightFiles.first {
+                selectedRightFile = first
+                log.debug("[AppState] ensureSelection: auto-selected first right: \(first.nameStr)")
+            }
+        }
     }
 
     func selectionMove(by step: Int) {
@@ -226,6 +252,64 @@ extension AppState {
 
     func openSelectedItem() {
         fileActions?.openSelectedItem()
+    }
+
+    // MARK: - Activate item (Enter key or double-click) — Finder-consistent behaviour
+    /// Directories: navigate into. Archives: open as virtual dir. Apps: launch. Files: open with default app.
+    func activateItem(_ file: CustomFile, on panel: PanelSide) {
+        // ".." parent shortcut
+        if ParentDirectoryEntry.isParentEntry(file) {
+            Task { await navigateToParent(on: panel) }
+            return
+        }
+        // Archives — open as virtual directory
+        if !file.isDirectory && ArchiveExtensions.isArchive(file.fileExtension) {
+            Task { await enterArchive(at: file.urlValue, on: panel) }
+            return
+        }
+        // .app bundles — launch, never browse inside
+        let ext = file.fileExtension.lowercased()
+        if ext == "app" {
+            NSWorkspace.shared.openApplication(
+                at: file.urlValue,
+                configuration: NSWorkspace.OpenConfiguration()
+            ) { _, error in
+                if let error { log.error("[AppState] launch app failed: \(error.localizedDescription)") }
+            }
+            return
+        }
+        // Directories and symlink-dirs — navigate into
+        if file.isDirectory || file.isSymbolicDirectory {
+            let resolvedURL = file.urlValue.resolvingSymlinksInPath()
+            let newPath = resolvedURL.path
+            var isDir: ObjCBool = false
+            guard FileManager.default.fileExists(atPath: newPath, isDirectory: &isDir),
+                  isDir.boolValue else {
+                log.warning("[AppState] activateItem: broken symlink or gone: \(newPath)")
+                return
+            }
+            Task { @MainActor in
+                updatePath(newPath, for: panel)
+                if panel == .left {
+                    await scanner.setLeftDirectory(pathStr: newPath)
+                    await scanner.refreshFiles(currSide: .left)
+                    await refreshLeftFiles()
+                } else {
+                    await scanner.setRightDirectory(pathStr: newPath)
+                    await scanner.refreshFiles(currSide: .right)
+                    await refreshRightFiles()
+                }
+            }
+            return
+        }
+        // Regular file — open with default app
+        NSWorkspace.shared.open(
+            [file.urlValue],
+            withApplicationAt: NSWorkspace.shared.urlForApplication(toOpen: file.urlValue) ?? URL(fileURLWithPath: "/System/Library/CoreServices/Finder.app"),
+            configuration: NSWorkspace.OpenConfiguration()
+        ) { _, error in
+            if let error { log.error("[AppState] open file failed: \(error.localizedDescription)") }
+        }
     }
 
     func revealLogFileInFinder() {

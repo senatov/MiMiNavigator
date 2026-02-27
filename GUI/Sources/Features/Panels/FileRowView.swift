@@ -146,8 +146,15 @@ struct FileRowView: View {
             return remoteIcon(for: file, size: iconSize)
         }
 
-        // For directories - use system folder icon
-        if file.isDirectory || file.isSymbolicDirectory {
+        // Symlinks (aliases) — icon of target + Finder-style arrow overlay
+        if file.isSymbolicLink {
+            let targetURL = url.resolvingSymlinksInPath()
+            let baseIcon = workspace.icon(forFile: targetURL.path)
+            baseIcon.size = iconSize
+            return AliasIconComposer.compose(base: baseIcon, size: iconSize)
+        }
+        // For directories — use system folder icon
+        if file.isDirectory {
             let icon = workspace.icon(forFile: url.path)
             icon.size = iconSize
             return icon

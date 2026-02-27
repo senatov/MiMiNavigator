@@ -87,25 +87,14 @@ final class FileOperationActions {
     /// Open selected item with default app or show Get Info for directories
     func openSelectedItem() {
         guard let state = appState else { return }
-        
         log.debug("[FileOperationActions] openSelectedItem focus=\(state.focusedPanel)")
-        
-        let selectedFile: CustomFile? = state.focusedPanel == .left
-            ? state.selectedLeftFile
-            : state.selectedRightFile
-        
-        guard let file = selectedFile else {
+        let panel = state.focusedPanel
+        let file = panel == .left ? state.selectedLeftFile : state.selectedRightFile
+        guard let file else {
             log.warning("[FileOperationActions] no file selected")
             return
         }
-        
-        let url = file.urlValue
-        
-        if file.isDirectory || file.isSymbolicDirectory {
-            FinderIntegration.showGetInfo(for: url)
-        } else {
-            NSWorkspace.shared.open(url)
-            log.info("[FileOperationActions] opened: \(url.path)")
-        }
+        // Delegate to same logic as double-click — consistent with Finder behaviour
+        state.activateItem(file, on: panel)
     }
 }

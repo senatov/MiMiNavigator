@@ -128,25 +128,24 @@ struct FilePanelView: View {
         return ZStack {
             RoundedRectangle(cornerRadius: DesignTokens.radius, style: .continuous)
                 .fill(focused ? DesignTokens.warmWhite : DesignTokens.card)
-            // Base border — always visible
+            // Border — soft but visible, stronger on focused panel
             RoundedRectangle(cornerRadius: DesignTokens.radius, style: .continuous)
-                .stroke(DesignTokens.separator.opacity(0.35), lineWidth: 1)
+                .stroke(
+                    focused
+                        ? Color(#colorLiteral(red: 0.50, green: 0.50, blue: 0.55, alpha: 0.55))
+                        : Color(#colorLiteral(red: 0.45, green: 0.45, blue: 0.50, alpha: 0.38)),
+                    lineWidth: 1.5
+                )
         }
+        .shadow(color: Color.black.opacity(0.10), radius: 3, x: 0, y: 1)
         .animation(.easeInOut(duration: 0.15), value: focused)
         .drawingGroup()
     }
 
-    // MARK: - Focus ring overlay — drawn inside bounds to avoid clipping
+    // MARK: - Focus ring overlay — removed per design decision
     @ViewBuilder
     private var focusRingOverlay: some View {
-        let focused = appState.focusedPanel == viewModel.panelSide
-        RoundedRectangle(cornerRadius: DesignTokens.radius, style: .continuous)
-            .inset(by: 4)
-            .stroke(
-                Color(#colorLiteral(red: 1.0, green: 0.70, blue: 0.35, alpha: focused ? 0.55 : 0.0)),
-                lineWidth: 1.0
-            )
-            .animation(.easeInOut(duration: 0.18), value: focused)
+        EmptyView()
     }
     
     // MARK: - Calculated panel width
@@ -158,37 +157,14 @@ struct FilePanelView: View {
 
     // MARK: - Handle double click (archive-aware)
     private func handleDoubleClick(_ file: CustomFile) {
-        // Handle ".." parent directory entry
-        if ParentDirectoryEntry.isParentEntry(file) {
-            Task { @MainActor in
-                await appState.navigateToParent(on: viewModel.panelSide)
-            }
-            return
-        }
-
-        // Handle archive files — open as virtual directory
-        if !file.isDirectory && ArchiveExtensions.isArchive(file.fileExtension) {
-            Task { @MainActor in
-                await appState.enterArchive(at: file.urlValue, on: viewModel.panelSide)
-            }
-            return
-        }
-
-        // Handle remote directories
+        // Remote panels handled locally (no FS access for listing)
         let panelPath = viewModel.panelSide == .left ? appState.leftPath : appState.rightPath
         if AppState.isRemotePath(panelPath) {
-            if file.isDirectory {
-                enterRemoteDirectory(file)
-            }
+            if file.isDirectory { enterRemoteDirectory(file) }
             return
         }
-
-        // Handle directories (including symlink dirs)
-        if file.isDirectory || file.isSymbolicDirectory {
-            enterDirectory(file)
-        } else {
-            openFile(file)
-        }
+        // Delegate to shared activation logic (same as Enter key)
+        appState.activateItem(file, on: viewModel.panelSide)
     }
     
     // MARK: - Enter remote directory
