@@ -255,7 +255,7 @@ actor DualDirectoryScanner {
     // MARK: - Update displayed files (full replace — used by polling timer)
     // files arrive pre-sorted from Task.detached — no sort on MainActor
 
-    private var lastUpdateTime: [PanelSide: Date] = [:]
+    @MainActor private var lastUpdateTime: [PanelSide: Date] = [:]
 
     @MainActor
     private func updateScannedFiles(_ sortedFiles: [CustomFile], for side: PanelSide) {
