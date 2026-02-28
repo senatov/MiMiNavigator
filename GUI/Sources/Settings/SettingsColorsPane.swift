@@ -229,6 +229,7 @@ final class ColorThemeStore {
         hexPanelBg = ""; hexPanelText = ""; hexDirName = ""; hexFileName = ""
         hexSymlink = ""; hexSelActive = ""; hexSelInactive = ""; hexSelBorder = ""
         hexSeparator = ""; hexDialogBase = ""; hexDialogStripe = ""; hexAccent = ""
+        hexDialogBackground = ""
         loadTheme(id: theme.id)
     }
 }
