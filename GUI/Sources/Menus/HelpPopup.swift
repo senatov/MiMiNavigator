@@ -17,7 +17,7 @@ struct HelpPopup: View {
         log.info(#function)
         return Text(text)
             .font(.system(size: 12))
-            .foregroundStyle(Color(#colorLiteral(red: 0.5787474513, green: 0.3215198815, blue: 0, alpha: 1)))
+            .foregroundStyle(ColorThemeStore.shared.activeTheme.accentColor)
             .padding(8)
             .background(colorStore.activeTheme.selectionInactive)
             .clipShape(.rect(cornerRadius: 6))

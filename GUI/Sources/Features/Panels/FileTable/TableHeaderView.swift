@@ -304,8 +304,8 @@ struct SortArrowButton: View {
             return TableHeaderStyle.color.opacity(0.35)
         }
         return ascending
-            ? Color(#colorLiteral(red: 0.2196078449, green: 0.007843137719, blue: 0.8549019694, alpha: 1))
-            : Color(#colorLiteral(red: 0.1019607857, green: 0.2784313858, blue: 0.400000006, alpha: 1))
+            ? ColorThemeStore.shared.activeTheme.dividerActiveColor
+            : ColorThemeStore.shared.activeTheme.columnNameColor
     }
 
     var body: some View {

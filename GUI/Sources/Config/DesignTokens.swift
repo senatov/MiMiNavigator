@@ -37,7 +37,7 @@ enum DesignTokens {
     static let panelBg = Color(nsColor: .controlBackgroundColor)
 
     /// Warm white background for active panel and session table
-    static var warmWhite: Color { ColorThemeStore.shared.activeTheme.warmWhite }
+    @MainActor static var warmWhite: Color { ColorThemeStore.shared.activeTheme.warmWhite }
 
     /// Separator color
     static let separator = Color(nsColor: .separatorColor)

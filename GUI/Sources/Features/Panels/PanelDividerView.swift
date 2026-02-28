@@ -30,8 +30,6 @@ enum PanelDividerStyle {
     static let hitAreaWidth: CGFloat = 24
     static let normalWidth: CGFloat = 2.0
     static let activeWidth: CGFloat = 5.0
-    static var normalColor: Color { ColorThemeStore.shared.activeTheme.dividerNormalColor }
-    static var activeColor: Color { ColorThemeStore.shared.activeTheme.dividerActiveColor }
     static let minPanelWidth: CGFloat = 80
 }
 
@@ -42,10 +40,11 @@ struct PanelDividerView: View {
     @Binding var divider: DividerDragState
     let containerWidth: CGFloat
     let containerHeight: CGFloat
+    @State private var colorStore = ColorThemeStore.shared
 
     var body: some View {
         let lineWidth = divider.isDragging ? PanelDividerStyle.activeWidth : PanelDividerStyle.normalWidth
-        let lineColor = divider.isDragging ? PanelDividerStyle.activeColor : PanelDividerStyle.normalColor
+        let lineColor = divider.isDragging ? colorStore.activeTheme.dividerActiveColor : colorStore.activeTheme.dividerNormalColor
 
         ZStack {
             // 3D highlight: 1pt white strip on left edge — simulates light source from top-left

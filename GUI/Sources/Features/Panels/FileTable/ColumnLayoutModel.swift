@@ -96,10 +96,6 @@ enum ColumnID: String, CaseIterable, Codable, Identifiable {
         }
     }
 
-    /// Per-column content text color from active theme
-    var columnColor: Color {
-        columnColor(from: ColorThemeStore.shared.activeTheme)
-    }
     /// Per-column content text color from a given theme
     func columnColor(from theme: ColorTheme) -> Color {
         switch self {

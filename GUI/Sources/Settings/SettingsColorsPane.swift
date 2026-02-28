@@ -385,6 +385,22 @@ struct SettingsColorsPane: View {
     @AppStorage("color.dialogBackground")  private var hexDialogBg: String = ""
     @AppStorage("button.borderColor")        private var hexButtonBorder: String = ""
     @AppStorage("button.shadowColor")        private var hexButtonShadow: String = ""
+    // Extended color tokens
+    @AppStorage("color.hiddenFile")       private var hexHiddenFile: String = ""
+    @AppStorage("color.markedFile")       private var hexMarkedFile: String = ""
+    @AppStorage("color.parentEntry")      private var hexParentEntry: String = ""
+    @AppStorage("color.archivePath")      private var hexArchivePath: String = ""
+    @AppStorage("color.markedCount")      private var hexMarkedCount: String = ""
+    @AppStorage("color.columnName")       private var hexColumnName: String = ""
+    @AppStorage("color.columnSize")       private var hexColumnSize: String = ""
+    @AppStorage("color.columnKind")       private var hexColumnKind: String = ""
+    @AppStorage("color.columnDate")       private var hexColumnDate: String = ""
+    @AppStorage("color.dividerNormal")    private var hexDividerNormal: String = ""
+    @AppStorage("color.dividerActive")    private var hexDividerActive: String = ""
+    @AppStorage("color.panelBorderActive")   private var hexPanelBorderActive: String = ""
+    @AppStorage("color.panelBorderInactive") private var hexPanelBorderInactive: String = ""
+    @AppStorage("color.warmWhite")        private var hexWarmWhite: String = ""
+    @AppStorage("color.filterActive")     private var hexFilterActive: String = ""
 
     private var currentPreset: ColorTheme {
         ColorTheme.allPresets.first { $0.id == selectedPresetID } ?? .defaultTheme
@@ -474,6 +490,70 @@ struct SettingsColorsPane: View {
                              help: "Background of Find Files, Settings, and other floating panels. Matches active panel color at 92% opacity.",
                              preset: currentPreset.dialogBackground,
                              hex: $hexDialogBg)
+                }
+            }
+
+
+            // ── File States ──────────────────────────────────
+            settingsGroupBox {
+                VStack(spacing: 0) {
+                    sectionHeader("File States")
+                    colorRow("Hidden files", help: "Dimmed text for .dotfiles",
+                             preset: currentPreset.hiddenFileColor, hex: $hexHiddenFile)
+                    Divider()
+                    colorRow("Marked files", help: "TC-style marked file text (Insert key)",
+                             preset: currentPreset.markedFileColor, hex: $hexMarkedFile)
+                    Divider()
+                    colorRow("Parent entry", help: "Color of '..' parent directory row",
+                             preset: currentPreset.parentEntryColor, hex: $hexParentEntry)
+                    Divider()
+                    colorRow("Archive path", help: "Text color for files found inside archives",
+                             preset: currentPreset.archivePathColor, hex: $hexArchivePath)
+                    Divider()
+                    colorRow("Marked count", help: "Status bar marked files counter",
+                             preset: currentPreset.markedCountColor, hex: $hexMarkedCount)
+                }
+            }
+
+            // ── Column Colors ────────────────────────────────
+            settingsGroupBox {
+                VStack(spacing: 0) {
+                    sectionHeader("Column Colors")
+                    colorRow("Name column", help: "Text accent for Name column content",
+                             preset: currentPreset.columnNameColor, hex: $hexColumnName)
+                    Divider()
+                    colorRow("Size column", help: "Text accent for Size column content",
+                             preset: currentPreset.columnSizeColor, hex: $hexColumnSize)
+                    Divider()
+                    colorRow("Kind column", help: "Text accent for Kind column content",
+                             preset: currentPreset.columnKindColor, hex: $hexColumnKind)
+                    Divider()
+                    colorRow("Date column", help: "Text accent for all Date columns",
+                             preset: currentPreset.columnDateColor, hex: $hexColumnDate)
+                }
+            }
+
+            // ── UI Chrome ────────────────────────────────────
+            settingsGroupBox {
+                VStack(spacing: 0) {
+                    sectionHeader("UI Chrome")
+                    colorRow("Divider normal", help: "Panel divider color in passive state",
+                             preset: currentPreset.dividerNormalColor, hex: $hexDividerNormal)
+                    Divider()
+                    colorRow("Divider active", help: "Panel divider color while dragging",
+                             preset: currentPreset.dividerActiveColor, hex: $hexDividerActive)
+                    Divider()
+                    colorRow("Panel border (active)", help: "Focused panel border color",
+                             preset: currentPreset.panelBorderActive, hex: $hexPanelBorderActive)
+                    Divider()
+                    colorRow("Panel border (inactive)", help: "Unfocused panel border color",
+                             preset: currentPreset.panelBorderInactive, hex: $hexPanelBorderInactive)
+                    Divider()
+                    colorRow("Warm white", help: "Active panel zebra stripe background",
+                             preset: currentPreset.warmWhite, hex: $hexWarmWhite)
+                    Divider()
+                    colorRow("Filter highlight", help: "Filter bar border when focused",
+                             preset: currentPreset.filterActiveColor, hex: $hexFilterActive)
                 }
             }
 

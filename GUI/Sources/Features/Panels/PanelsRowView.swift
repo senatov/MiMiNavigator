@@ -45,7 +45,7 @@ struct PanelsRowView: View {
             // Preview divider (doesn't trigger layout during drag)
             if let previewX = divider.dragPreviewLeft {
                 Rectangle()
-                    .fill(PanelDividerStyle.activeColor)
+                    .fill(ColorThemeStore.shared.activeTheme.dividerActiveColor)
                     .frame(width: PanelDividerStyle.activeWidth, height: containerHeight)
                     .position(x: previewX, y: containerHeight / 2)
                     .allowsHitTesting(false)

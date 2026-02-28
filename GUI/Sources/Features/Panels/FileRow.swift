@@ -294,7 +294,7 @@ struct FileRow: View {
     private func cellColor(for col: ColumnID) -> Color {
         if isParentEntry { return Color(nsColor: .systemGray).opacity(0.6) }
         if file.isHidden { return colorStore.activeTheme.hiddenFileColor }
-        return col.columnColor
+        return col.columnColor(from: colorStore.activeTheme)
     }
 
     // MARK: - System font (Finder style)
