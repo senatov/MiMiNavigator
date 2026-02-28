@@ -69,6 +69,56 @@ actor FindFilesEngine {
 
     // MARK: - Private
 
+    // MARK: - Shared find arguments
+    /// Directory names to prune from find traversal (cloud placeholders, caches, trash)
+    private static let pruneNames = ["CloudStorage", "Group Containers", ".Trash", "Caches"]
+    /// Build prune arguments for /usr/bin/find: ( -name X -type d -o ... ) -prune -o
+    private static func buildPruneArgs() -> [String] {
+        var args: [String] = ["("]
+        for (i, name) in pruneNames.enumerated() {
+            if i > 0 { args.append("-o") }
+            args += ["-name", name, "-type", "d"]
+        }
+        args += [")", "-prune", "-o"]
+        return args
+    }
+    // MARK: - Async line-by-line reader for find process output
+    /// Reads lines from a file handle asynchronously, calling handler for each line.
+    private func readLinesAsync(
+        from handle: FileHandle,
+        handler: (String) async -> Void
+    ) async {
+        var lineBuffer = Data()
+        lineBuffer.reserveCapacity(1024)
+        do {
+            for try await byte in handle.bytes {
+                guard !Task.isCancelled else { break }
+                if byte == UInt8(ascii: "\n") {
+                    if let line = String(data: lineBuffer, encoding: .utf8)?
+                        .trimmingCharacters(in: .whitespacesAndNewlines),
+                        !line.isEmpty
+                    {
+                        await handler(line)
+                    }
+                    lineBuffer.removeAll(keepingCapacity: true)
+                } else {
+                    lineBuffer.append(byte)
+                }
+            }
+        } catch {
+            if !Task.isCancelled {
+                log.warning("[FindEngine] Stream reading error: \(error.localizedDescription)")
+            }
+        }
+        // Process remaining partial line
+        if !Task.isCancelled, !lineBuffer.isEmpty,
+            let line = String(data: lineBuffer, encoding: .utf8)?
+                .trimmingCharacters(in: .whitespacesAndNewlines),
+            !line.isEmpty
+        {
+            await handler(line)
+        }
+    }
     /// Force-kill the find process immediately (SIGKILL, no waiting)
     private func terminateProcess() {
         guard let proc = currentProcess else { return }
@@ -151,23 +201,7 @@ actor FindFilesEngine {
         }
 
         // Prune directories that cause I/O errors on virtual/offline volumes
-        // (cloud storage placeholders, OneDrive, .Trash, Caches).
-        // Uses -prune to skip entire subtrees — much faster than -not -path.
-        let pruneNames: [String] = [
-            "CloudStorage",
-            "Group Containers",
-            ".Trash",
-            "Caches",
-        ]
-        // Build: \( -name X -o -name Y \) -prune -o ... -print
-        var pruneArgs: [String] = ["("]
-        for (i, name) in pruneNames.enumerated() {
-            if i > 0 { pruneArgs.append("-o") }
-            pruneArgs += ["-name", name, "-type", "d"]
-        }
-        pruneArgs += [")", "-prune", "-o"]
-
-        args += pruneArgs
+        args += Self.buildPruneArgs()
 
         // Name matching (after -prune -o)
         if criteria.useRegex {
@@ -205,51 +239,14 @@ actor FindFilesEngine {
         }
 
         currentProcess = process
-
-        // Async line-by-line reading using FileHandle.bytes — non-blocking, cancellation-friendly
-        let handle = pipe.fileHandleForReading
-        var lineBuffer = Data()
-        lineBuffer.reserveCapacity(1024)
-
-        do {
-            for try await byte in handle.bytes {
-                guard !Task.isCancelled else { break }
-
-                if byte == UInt8(ascii: "\n") {
-                    if let line = String(data: lineBuffer, encoding: .utf8)?
-                        .trimmingCharacters(in: .whitespacesAndNewlines),
-                        !line.isEmpty
-                    {
-                        await processFoundPath(
-                            line, criteria: criteria, continuation: continuation,
-                            nameRegex: nameRegex, contentPattern: contentPattern,
-                            passwordCallback: passwordCallback
-                        )
-                    }
-                    lineBuffer.removeAll(keepingCapacity: true)
-                } else {
-                    lineBuffer.append(byte)
-                }
-            }
-        } catch {
-            if !Task.isCancelled {
-                log.warning("[FindEngine] Stream reading error: \(error.localizedDescription)")
-            }
-        }
-
-        // Process remaining partial line
-        if !Task.isCancelled, !lineBuffer.isEmpty,
-            let line = String(data: lineBuffer, encoding: .utf8)?
-                .trimmingCharacters(in: .whitespacesAndNewlines),
-            !line.isEmpty
-        {
+        // Async line-by-line reading — non-blocking, cancellation-friendly
+        await readLinesAsync(from: pipe.fileHandleForReading) { line in
             await processFoundPath(
                 line, criteria: criteria, continuation: continuation,
                 nameRegex: nameRegex, contentPattern: contentPattern,
                 passwordCallback: passwordCallback
             )
         }
-
         // Cleanup process
         if process.isRunning {
             kill(process.processIdentifier, SIGKILL)
@@ -339,14 +336,7 @@ actor FindFilesEngine {
             args += ["-maxdepth", "1"]
         }
         // Same prune rules as main search
-        let pruneNames = ["CloudStorage", "Group Containers", ".Trash", "Caches"]
-        var pruneArgs: [String] = ["("]
-        for (i, name) in pruneNames.enumerated() {
-            if i > 0 { pruneArgs.append("-o") }
-            pruneArgs += ["-name", name, "-type", "d"]
-        }
-        pruneArgs += [")", "-prune", "-o"]
-        args += pruneArgs
+        args += Self.buildPruneArgs()
         // Match archive extensions: ( -iname '*.zip' -o -iname '*.jar' -o ... ) -print
         let archiveExts = Array(ArchiveExtensions.all)
         var extArgs: [String] = ["("]
@@ -370,48 +360,9 @@ actor FindFilesEngine {
             return
         }
         currentProcess = process
-        let handle = pipe.fileHandleForReading
-        var lineBuffer = Data()
-        lineBuffer.reserveCapacity(1024)
-        do {
-            for try await byte in handle.bytes {
-                guard !Task.isCancelled else { break }
-                if byte == UInt8(ascii: "\n") {
-                    if let line = String(data: lineBuffer, encoding: .utf8)?
-                        .trimmingCharacters(in: .whitespacesAndNewlines),
-                        !line.isEmpty
-                    {
-                        let archiveURL = URL(fileURLWithPath: line)
-                        guard !scannedArchivePaths.contains(archiveURL.path) else {
-                            lineBuffer.removeAll(keepingCapacity: true)
-                            continue
-                        }
-                        stats.archivesScanned += 1
-                        let delta = await FindFilesArchiveSearcher.searchInsideArchive(
-                            archiveURL: archiveURL, criteria: criteria,
-                            nameRegex: nameRegex, contentPattern: contentPattern,
-                            continuation: continuation, passwordCallback: passwordCallback
-                        )
-                        stats.matchesFound += delta.matchesFound
-                    }
-                    lineBuffer.removeAll(keepingCapacity: true)
-                } else {
-                    lineBuffer.append(byte)
-                }
-            }
-        } catch {
-            if !Task.isCancelled {
-                log.warning("[FindEngine] Archive stream error: \(error.localizedDescription)")
-            }
-        }
-        // Handle last partial line
-        if !Task.isCancelled, !lineBuffer.isEmpty,
-            let line = String(data: lineBuffer, encoding: .utf8)?
-                .trimmingCharacters(in: .whitespacesAndNewlines),
-            !line.isEmpty,
-            !scannedArchivePaths.contains(line)
-        {
+        await readLinesAsync(from: pipe.fileHandleForReading) { line in
             let archiveURL = URL(fileURLWithPath: line)
+            guard !scannedArchivePaths.contains(archiveURL.path) else { return }
             stats.archivesScanned += 1
             let delta = await FindFilesArchiveSearcher.searchInsideArchive(
                 archiveURL: archiveURL, criteria: criteria,
