@@ -13,6 +13,7 @@ import FileModelKit
 struct SelectionStatusBar: View {
     @Environment(AppState.self) var appState
     let panelSide: PanelSide
+    @State private var colorStore = ColorThemeStore.shared
 
     private var markedCount: Int { appState.markedCount(for: panelSide) }
     private var markedSize: Int64 { appState.markedTotalSize(for: panelSide) }
@@ -64,10 +65,10 @@ struct SelectionStatusBar: View {
                 HStack(spacing: 4) {
                     Image(systemName: "checkmark.circle.fill")
                         .font(.system(size: 10))
-                        .foregroundStyle(Color(#colorLiteral(red: 0.7, green: 0.0, blue: 0.0, alpha: 1)))
+                        .foregroundStyle(colorStore.activeTheme.markedCountColor)
                     Text(L10n.Selection.markedCount(markedCount))
                         .font(.system(size: 11, weight: .medium))
-                        .foregroundStyle(Color(#colorLiteral(red: 0.7, green: 0.0, blue: 0.0, alpha: 1)))
+                        .foregroundStyle(colorStore.activeTheme.markedCountColor)
                 }
                 Text("•").foregroundStyle(.secondary)
                 Text(L10n.Selection.markedSize(formattedSize))

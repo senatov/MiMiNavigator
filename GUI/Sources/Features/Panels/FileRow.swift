@@ -293,7 +293,7 @@ struct FileRow: View {
     // MARK: - Column colors - per-column accent when not selected, white when selected+active
     private func cellColor(for col: ColumnID) -> Color {
         if isParentEntry { return Color(nsColor: .systemGray).opacity(0.6) }
-        if file.isHidden { return Color(#colorLiteral(red: 0.3767382812, green: 0.3767382812, blue: 0.3767382812, alpha: 1)) }
+        if file.isHidden { return colorStore.activeTheme.hiddenFileColor }
         return col.columnColor
     }
 

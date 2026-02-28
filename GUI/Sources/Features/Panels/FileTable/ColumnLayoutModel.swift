@@ -96,16 +96,20 @@ enum ColumnID: String, CaseIterable, Codable, Identifiable {
         }
     }
 
-    /// Per-column content text color (used in file rows)
+    /// Per-column content text color from active theme
     var columnColor: Color {
+        columnColor(from: ColorThemeStore.shared.activeTheme)
+    }
+    /// Per-column content text color from a given theme
+    func columnColor(from theme: ColorTheme) -> Color {
         switch self {
-            case .name:                          return Color(#colorLiteral(red: 0.05, green: 0.10, blue: 0.30, alpha: 1.0))  // dark navy
-            case .size:                          return Color(#colorLiteral(red: 0.50, green: 0.05, blue: 0.18, alpha: 1.0))  // dark raspberry
-            case .kind:                          return Color(#colorLiteral(red: 0.28, green: 0.14, blue: 0.05, alpha: 1.0))  // dark brown
+            case .name:                          return theme.columnNameColor
+            case .size:                          return theme.columnSizeColor
+            case .kind:                          return theme.columnKindColor
             case .dateModified, .dateCreated,
-                 .dateLastOpened, .dateAdded:    return Color(#colorLiteral(red: 0.05, green: 0.28, blue: 0.10, alpha: 1.0))  // dark green
-            case .childCount:                    return Color(#colorLiteral(red: 0.05, green: 0.10, blue: 0.30, alpha: 1.0))  // dark navy
-            default:                             return Color(#colorLiteral(red: 0.20, green: 0.20, blue: 0.20, alpha: 1.0))  // dark grey
+                 .dateLastOpened, .dateAdded:    return theme.columnDateColor
+            case .childCount:                    return theme.columnNameColor
+            default:                             return theme.panelText
         }
     }
 

@@ -7,6 +7,7 @@
 // Description: Search inside archives — native ZIP reader for ZIP/JAR/WAR/APK,
 //              CLI fallback for TAR/7z. Supports name matching + content search.
 
+import FileModelKit
 import Foundation
 
 // MARK: - Archive Search Delta
@@ -23,6 +24,36 @@ struct ArchiveSearchDelta: Sendable {
 /// TAR and 7z formats use optimized CLI calls as fallback.
 enum FindFilesArchiveSearcher {
 
+    /// Maximum recursion depth for nested archives (archive inside archive)
+    static let maxRecursionDepth = 5
+
+    /// Temporary directories created during recursive archive extraction.
+    /// Must be cleaned up after search completes.
+    private static let tempDirsLock = NSLock()
+    private static var tempDirs: [URL] = []
+
+    // MARK: - Temp Directory Management
+
+    static func registerTempDir(_ url: URL) {
+        tempDirsLock.lock()
+        tempDirs.append(url)
+        tempDirsLock.unlock()
+    }
+
+    static func cleanupAllTempDirs() {
+        tempDirsLock.lock()
+        let dirs = tempDirs
+        tempDirs.removeAll()
+        tempDirsLock.unlock()
+        let fm = FileManager.default
+        for dir in dirs {
+            try? fm.removeItem(at: dir)
+        }
+        if !dirs.isEmpty {
+            log.info("[ArchiveSearcher] Cleaned up \(dirs.count) temp directories")
+        }
+    }
+
     // MARK: - Route to Correct Handler
 
     @concurrent static func searchInsideArchive(
@@ -31,8 +62,13 @@ enum FindFilesArchiveSearcher {
         nameRegex: NSRegularExpression?,
         contentPattern: NSRegularExpression?,
         continuation: AsyncStream<FindFilesResult>.Continuation,
-        passwordCallback: ArchivePasswordCallback?
+        passwordCallback: ArchivePasswordCallback?,
+        recursionDepth: Int = 0
     ) async -> ArchiveSearchDelta {
+        guard recursionDepth < maxRecursionDepth else {
+            log.warning("[ArchiveSearcher] Max recursion depth (\(maxRecursionDepth)) reached for \(archiveURL.lastPathComponent)")
+            return ArchiveSearchDelta()
+        }
         let ext = archiveURL.pathExtension.lowercased()
         let startTime = ContinuousClock.now
 
@@ -43,7 +79,7 @@ enum FindFilesArchiveSearcher {
             delta = await searchInsideZipNative(
                 archiveURL: archiveURL, criteria: criteria, nameRegex: nameRegex,
                 contentPattern: contentPattern, continuation: continuation,
-                passwordCallback: passwordCallback
+                passwordCallback: passwordCallback, recursionDepth: recursionDepth
             )
         } else {
             // TAR family — CLI fallback
@@ -52,14 +88,15 @@ enum FindFilesArchiveSearcher {
                 "tbz", "tbz2", "z":
                 delta = await searchInsideTar(
                     archiveURL: archiveURL, criteria: criteria, nameRegex: nameRegex,
-                    contentPattern: contentPattern, continuation: continuation
+                    contentPattern: contentPattern, continuation: continuation,
+                    recursionDepth: recursionDepth
                 )
 
             case "7z":
                 delta = await searchInside7z(
                     archiveURL: archiveURL, criteria: criteria, nameRegex: nameRegex,
                     contentPattern: contentPattern, continuation: continuation,
-                    passwordCallback: passwordCallback
+                    passwordCallback: passwordCallback, recursionDepth: recursionDepth
                 )
 
             default:
@@ -67,7 +104,7 @@ enum FindFilesArchiveSearcher {
                 let zipDelta = await searchInsideZipNative(
                     archiveURL: archiveURL, criteria: criteria, nameRegex: nameRegex,
                     contentPattern: contentPattern, continuation: continuation,
-                    passwordCallback: nil
+                    passwordCallback: nil, recursionDepth: recursionDepth
                 )
                 if zipDelta.matchesFound > 0 {
                     delta = zipDelta
@@ -76,7 +113,7 @@ enum FindFilesArchiveSearcher {
                     delta = await searchInside7z(
                         archiveURL: archiveURL, criteria: criteria, nameRegex: nameRegex,
                         contentPattern: contentPattern, continuation: continuation,
-                        passwordCallback: passwordCallback
+                        passwordCallback: passwordCallback, recursionDepth: recursionDepth
                     )
                 }
             }
@@ -95,7 +132,8 @@ enum FindFilesArchiveSearcher {
         nameRegex: NSRegularExpression?,
         contentPattern: NSRegularExpression?,
         continuation: AsyncStream<FindFilesResult>.Continuation,
-        passwordCallback: ArchivePasswordCallback?
+        passwordCallback: ArchivePasswordCallback?,
+        recursionDepth: Int = 0
     ) async -> ArchiveSearchDelta {
         var delta = ArchiveSearchDelta()
         let archivePath = archiveURL.path
@@ -203,6 +241,28 @@ enum FindFilesArchiveSearcher {
                 )
                 continuation.yield(result)
                 delta.matchesFound += 1
+            }
+            // Recursive: if this entry is itself an archive, extract and search inside
+            let entryExt = (entry.fileName as NSString).pathExtension.lowercased()
+            if !entry.isDirectory && ArchiveExtensions.isArchive(entryExt) && recursionDepth < maxRecursionDepth {
+                do {
+                    let entryData = try NativeZipReader.extractEntryData(at: archivePath, entry: entry)
+                    let tempDir = FileManager.default.temporaryDirectory
+                        .appendingPathComponent("MiMiNav_nested_\(UUID().uuidString)", isDirectory: true)
+                    try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+                    registerTempDir(tempDir)
+                    let nestedArchiveURL = tempDir.appendingPathComponent(entry.baseName)
+                    try entryData.write(to: nestedArchiveURL)
+                    let nestedDelta = await searchInsideArchive(
+                        archiveURL: nestedArchiveURL, criteria: criteria,
+                        nameRegex: nameRegex, contentPattern: contentPattern,
+                        continuation: continuation, passwordCallback: passwordCallback,
+                        recursionDepth: recursionDepth + 1
+                    )
+                    delta.matchesFound += nestedDelta.matchesFound
+                } catch {
+                    log.debug("[ArchiveSearcher] Cannot recurse into \(entry.baseName): \(error.localizedDescription)")
+                }
             }
         }
 
@@ -354,7 +414,8 @@ enum FindFilesArchiveSearcher {
         nameRegex: NSRegularExpression?,
         contentPattern: NSRegularExpression?,
         continuation: AsyncStream<FindFilesResult>.Continuation,
-        passwordCallback: ArchivePasswordCallback?
+        passwordCallback: ArchivePasswordCallback?,
+        recursionDepth: Int = 0
     ) async -> ArchiveSearchDelta {
         let szPaths = ["/opt/homebrew/bin/7z", "/usr/local/bin/7z", "/usr/bin/7z"]
         guard let szPath = szPaths.first(where: { FileManager.default.fileExists(atPath: $0) }) else {
@@ -395,16 +456,20 @@ enum FindFilesArchiveSearcher {
         let data = pipe.fileHandleForReading.readDataToEndOfFile()
         guard let listing = String(data: data, encoding: .utf8) else { return ArchiveSearchDelta() }
 
-        return process7zListing(
+        return await process7zListing(
             listing, archiveURL: archiveURL, criteria: criteria,
-            nameRegex: nameRegex, continuation: continuation
+            nameRegex: nameRegex, continuation: continuation,
+            contentPattern: contentPattern, passwordCallback: passwordCallback,
+            recursionDepth: recursionDepth
         )
     }
 
     @concurrent private static func searchInside7zWithPassword(
         archiveURL: URL, password: String, szPath: String, criteria: FindFilesCriteria,
         nameRegex: NSRegularExpression?, contentPattern: NSRegularExpression?,
-        continuation: AsyncStream<FindFilesResult>.Continuation
+        continuation: AsyncStream<FindFilesResult>.Continuation,
+        passwordCallback: ArchivePasswordCallback? = nil,
+        recursionDepth: Int = 0
     ) async -> ArchiveSearchDelta {
         let listProcess = Process()
         listProcess.executableURL = URL(fileURLWithPath: szPath)
@@ -423,20 +488,23 @@ enum FindFilesArchiveSearcher {
         let data = pipe.fileHandleForReading.readDataToEndOfFile()
         guard let listing = String(data: data, encoding: .utf8) else { return ArchiveSearchDelta() }
 
-        return process7zListing(
+        return await process7zListing(
             listing, archiveURL: archiveURL, criteria: criteria,
-            nameRegex: nameRegex, continuation: continuation
+            nameRegex: nameRegex, continuation: continuation,
+            contentPattern: contentPattern, passwordCallback: passwordCallback,
+            recursionDepth: recursionDepth
         )
     }
 
     private static func process7zListing(
         _ listing: String, archiveURL: URL, criteria: FindFilesCriteria,
-        nameRegex: NSRegularExpression?, continuation: AsyncStream<FindFilesResult>.Continuation
-    ) -> ArchiveSearchDelta {
+        nameRegex: NSRegularExpression?, continuation: AsyncStream<FindFilesResult>.Continuation,
+        contentPattern: NSRegularExpression?, passwordCallback: ArchivePasswordCallback?,
+        recursionDepth: Int
+    ) async -> ArchiveSearchDelta {
         var delta = ArchiveSearchDelta()
         let lines = listing.components(separatedBy: .newlines)
         var inFileList = false
-
         for line in lines {
             guard !Task.isCancelled else { return delta }
             if line.hasPrefix("---") {
@@ -452,15 +520,79 @@ enum FindFilesArchiveSearcher {
             guard !attrs.hasPrefix("D") else { continue }
             let entryName = components[5...].joined(separator: " ")
             let fileName = (entryName as NSString).lastPathComponent
-
             if FindFilesNameMatcher.matches(fileName: fileName, regex: nameRegex, criteria: criteria) {
                 let virtualURL = archiveURL.appendingPathComponent(entryName)
                 let result = FindFilesResult(fileURL: virtualURL, isInsideArchive: true, archivePath: archiveURL.path)
                 continuation.yield(result)
                 delta.matchesFound += 1
             }
+            // Recursive: nested archive inside 7z
+            let entryExt = (fileName as NSString).pathExtension.lowercased()
+            if ArchiveExtensions.isArchive(entryExt) && recursionDepth < maxRecursionDepth {
+                let nestedDelta = await extractAndRecurse(
+                    archiveURL: archiveURL, entryName: entryName, criteria: criteria,
+                    nameRegex: nameRegex, contentPattern: contentPattern,
+                    continuation: continuation, passwordCallback: passwordCallback,
+                    recursionDepth: recursionDepth
+                )
+                delta.matchesFound += nestedDelta.matchesFound
+            }
         }
         return delta
+    }
+
+    // MARK: - Extract nested archive and recurse
+    /// Extracts a single entry from an archive to a temp dir and recursively searches inside it.
+    @concurrent private static func extractAndRecurse(
+        archiveURL: URL,
+        entryName: String,
+        criteria: FindFilesCriteria,
+        nameRegex: NSRegularExpression?,
+        contentPattern: NSRegularExpression?,
+        continuation: AsyncStream<FindFilesResult>.Continuation,
+        passwordCallback: ArchivePasswordCallback?,
+        recursionDepth: Int
+    ) async -> ArchiveSearchDelta {
+        let tempDir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("MiMiNav_nested_\(UUID().uuidString)", isDirectory: true)
+        do {
+            try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+            registerTempDir(tempDir)
+            // Try extracting with 7z first (handles most formats)
+            let szPaths = ["/opt/homebrew/bin/7z", "/usr/local/bin/7z", "/usr/bin/7z"]
+            if let szPath = szPaths.first(where: { FileManager.default.fileExists(atPath: $0) }) {
+                let process = Process()
+                process.executableURL = URL(fileURLWithPath: szPath)
+                process.arguments = ["e", "-o\(tempDir.path)", "-y", archiveURL.path, entryName]
+                process.standardOutput = Pipe()
+                process.standardError = Pipe()
+                try process.run()
+                process.waitUntilExit()
+                guard process.terminationStatus == 0 else { return ArchiveSearchDelta() }
+            } else {
+                // Fallback: try unzip
+                let process = Process()
+                process.executableURL = URL(fileURLWithPath: "/usr/bin/unzip")
+                process.arguments = ["-o", archiveURL.path, entryName, "-d", tempDir.path]
+                process.standardOutput = Pipe()
+                process.standardError = Pipe()
+                try process.run()
+                process.waitUntilExit()
+                guard process.terminationStatus == 0 else { return ArchiveSearchDelta() }
+            }
+            let fileName = (entryName as NSString).lastPathComponent
+            let extractedURL = tempDir.appendingPathComponent(fileName)
+            guard FileManager.default.fileExists(atPath: extractedURL.path) else { return ArchiveSearchDelta() }
+            return await searchInsideArchive(
+                archiveURL: extractedURL, criteria: criteria,
+                nameRegex: nameRegex, contentPattern: contentPattern,
+                continuation: continuation, passwordCallback: passwordCallback,
+                recursionDepth: recursionDepth + 1
+            )
+        } catch {
+            log.debug("[ArchiveSearcher] extractAndRecurse failed for \(entryName): \(error.localizedDescription)")
+            return ArchiveSearchDelta()
+        }
     }
 
     // MARK: - TAR Search (CLI)
@@ -470,7 +602,8 @@ enum FindFilesArchiveSearcher {
         criteria: FindFilesCriteria,
         nameRegex: NSRegularExpression?,
         contentPattern: NSRegularExpression?,
-        continuation: AsyncStream<FindFilesResult>.Continuation
+        continuation: AsyncStream<FindFilesResult>.Continuation,
+        recursionDepth: Int = 0
     ) async -> ArchiveSearchDelta {
         var delta = ArchiveSearchDelta()
         let ext = archiveURL.pathExtension.lowercased()

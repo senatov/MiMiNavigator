@@ -83,7 +83,7 @@ struct PanelFilterBar: View {
             RoundedRectangle(cornerRadius: 6, style: .continuous)
                 .stroke(
                     isFocused
-                        ? Color(#colorLiteral(red: 0.25, green: 0.55, blue: 1.0, alpha: 1.0)).opacity(0.8)
+                        ? ColorThemeStore.shared.activeTheme.filterActiveColor
                         : Color(nsColor: .separatorColor).opacity(0.6),
                     lineWidth: isFocused ? 1.5 : 0.5
                 )
