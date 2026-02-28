@@ -23,14 +23,15 @@ struct FileRow: View {
     let onMultiSelectionAction: (MultiSelectionAction) -> Void
     @Environment(AppState.self) var appState
     @Environment(DragDropManager.self) var dragDropManager
+    @State private var colorStore = ColorThemeStore.shared
 
     @State private var isDropTargeted: Bool = false
 
-    // MARK: - Selection colors (macOS native style)
+    // MARK: - Selection colors — live from ColorThemeStore
     private enum SelectionColors {
-        static let activeFill = Color(nsColor: .selectedContentBackgroundColor)
-        static let inactiveFill = Color(nsColor: .unemphasizedSelectedContentBackgroundColor)
-        static let dropTargetFill = Color.accentColor.opacity(0.2)
+        static var activeFill: Color   { ColorThemeStore.shared.activeTheme.selectionActive }
+        static var inactiveFill: Color { ColorThemeStore.shared.activeTheme.selectionInactive }
+        static let dropTargetFill  = Color.accentColor.opacity(0.2)
         static let dropTargetBorder = Color.accentColor
     }
 
@@ -154,16 +155,19 @@ struct FileRow: View {
     @ViewBuilder
     private var highlightLayer: some View {
         if isDropTargeted && isValidDropTarget {
-            Rectangle()
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
                 .fill(SelectionColors.dropTargetFill)
                 .overlay(
-                    Rectangle()
+                    RoundedRectangle(cornerRadius: 6, style: .continuous)
                         .stroke(SelectionColors.dropTargetBorder, lineWidth: 2)
                 )
+                .padding(.horizontal, 4)
                 .allowsHitTesting(false)
         } else if isSelected {
-            Rectangle()
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
                 .fill(isActivePanel ? SelectionColors.activeFill : SelectionColors.inactiveFill)
+                .padding(.horizontal, 4)
+                .padding(.vertical, 1)
                 .allowsHitTesting(false)
         }
     }
@@ -290,7 +294,6 @@ struct FileRow: View {
 
     // MARK: - Column colors - per-column accent when not selected, white when selected+active
     private func cellColor(for col: ColumnID) -> Color {
-        if isSelected && isActivePanel { return .white }
         if isParentEntry { return Color(nsColor: .systemGray).opacity(0.6) }
         if file.isHidden { return Color(#colorLiteral(red: 0.3767382812, green: 0.3767382812, blue: 0.3767382812, alpha: 1)) }
         return col.columnColor

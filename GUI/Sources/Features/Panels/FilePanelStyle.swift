@@ -28,11 +28,11 @@ enum FilePanelStyle {
     /// Light blue accent
     static let skyBlauColor = Color.accentColor
 
-    /// Selected row fill (inactive)
-    static let yellowSelRowFill = Color(nsColor: .unemphasizedSelectedContentBackgroundColor)
+    /// Selected row fill (active) — reads from ColorThemeStore
+    static var orangeSelRowFill: Color { ColorThemeStore.shared.activeTheme.selectionActive }
 
-    /// Selected row fill (active)
-    static let orangeSelRowFill = Color(nsColor: .selectedContentBackgroundColor)
+    /// Selected row fill (inactive) — reads from ColorThemeStore
+    static var yellowSelRowFill: Color { ColorThemeStore.shared.activeTheme.selectionInactive }
 
     // MARK: - Layout - Finder style (standard macOS sizes)
 
