@@ -12,13 +12,14 @@ import SwiftUI
 
 struct HelpPopup: View {
     let text: String
+    @State private var colorStore = ColorThemeStore.shared
     var body: some View {
         log.info(#function)
         return Text(text)
             .font(.system(size: 12))
             .foregroundStyle(Color(#colorLiteral(red: 0.5787474513, green: 0.3215198815, blue: 0, alpha: 1)))
             .padding(8)
-            .background(FilePanelStyle.yellowSelRowFill)
+            .background(colorStore.activeTheme.selectionInactive)
             .clipShape(.rect(cornerRadius: 6))
             .frame(width: 200)
     }

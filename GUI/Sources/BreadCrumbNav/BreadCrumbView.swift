@@ -14,6 +14,7 @@ import SwiftUI
 struct BreadCrumbView: View {
     @Environment(AppState.self) var appState
     let panelSide: PanelSide
+    @State private var colorStore = ColorThemeStore.shared
     private let barHeight: CGFloat = 30
     private let separatorWidth: CGFloat = 20  // approximate width of separator + padding
     private let minSegmentWidth: CGFloat = 24 // minimum width for truncated segment "…"
@@ -182,7 +183,7 @@ struct BreadCrumbView: View {
         Button(action: { handlePathSelection(upTo: segment.originalIndex) }) {
             Text(segment.text)
                 .font(.callout)
-                .foregroundStyle(FilePanelStyle.blueSymlinkDirNameColor)
+                .foregroundStyle(colorStore.activeTheme.symlinkColor)
                 .padding(.vertical, 2)
                 .lineLimit(1)
         }
