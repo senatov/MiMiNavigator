@@ -2,8 +2,10 @@
 // MiMiNavigator
 //
 // Created by Iakov Senatov on 11.08.2024.
-// Copyright © 2024 Senatov. All rights reserved.
-// Description: Visual styling constants for file panels (macOS HIG compliant)
+// Copyright © 2024-2026 Senatov. All rights reserved.
+// Description: Static layout and fallback color constants for file panels.
+//   Selection colors in FileRow and text colors in FileRowView are served
+//   live from ColorThemeStore — constants here act as compile-time fallbacks only.
 
 import SwiftUI
 
@@ -28,11 +30,11 @@ enum FilePanelStyle {
     /// Light blue accent
     static let skyBlauColor = Color.accentColor
 
-    /// Selected row fill (active) — reads from ColorThemeStore
-    static var orangeSelRowFill: Color { ColorThemeStore.shared.activeTheme.selectionActive }
+    /// Selected row fill (active) — fallback constant; live value comes from ColorThemeStore in FileRow
+    static let orangeSelRowFill = Color(nsColor: .selectedContentBackgroundColor)
 
-    /// Selected row fill (inactive) — reads from ColorThemeStore
-    static var yellowSelRowFill: Color { ColorThemeStore.shared.activeTheme.selectionInactive }
+    /// Selected row fill (inactive) — fallback constant; live value comes from ColorThemeStore in FileRow
+    static let yellowSelRowFill = Color(nsColor: .unemphasizedSelectedContentBackgroundColor)
 
     // MARK: - Layout - Finder style (standard macOS sizes)
 
