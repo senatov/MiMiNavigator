@@ -38,11 +38,11 @@ final class ResettableSplitView: NSSplitView {
     override func drawDivider(in rect: NSRect) {
         let color: NSColor
         if isDragging {
-            color = #colorLiteral(red: 0.95, green: 0.38, blue: 0.10, alpha: 0.90)
+            color = NSColor(ColorThemeStore.shared.activeTheme.dividerActiveColor)
         } else if isHovered {
-            color = #colorLiteral(red: 0.45, green: 0.72, blue: 1.00, alpha: 0.85)
+            color = NSColor(ColorThemeStore.shared.activeTheme.filterActiveColor)
         } else {
-            color = #colorLiteral(red: 1.00, green: 0.70, blue: 0.40, alpha: 0.45)
+            color = NSColor(ColorThemeStore.shared.activeTheme.dividerNormalColor)
         }
         color.setFill()
         rect.fill()

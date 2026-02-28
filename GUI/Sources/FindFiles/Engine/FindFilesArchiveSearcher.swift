@@ -30,7 +30,7 @@ enum FindFilesArchiveSearcher {
     /// Temporary directories created during recursive archive extraction.
     /// Must be cleaned up after search completes.
     private static let tempDirsLock = NSLock()
-    private static var tempDirs: [URL] = []
+    private nonisolated(unsafe) static var tempDirs: [URL] = []
 
     // MARK: - Temp Directory Management
 

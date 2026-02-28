@@ -41,7 +41,7 @@ enum TableHeaderStyle {
     /// Standard black for inactive column titles
     static let color = Color(nsColor: .labelColor)
     /// Very dark purple (almost black) for active sort column title + chevron
-    static let sortIndicatorColor = Color(#colorLiteral(red: 0.1019607857, green: 0.2784313858, blue: 0.400000006, alpha: 1))
+    @MainActor static var sortIndicatorColor: Color { ColorThemeStore.shared.activeTheme.dividerActiveColor }
     /// Active sort column title weight — semibold for clear contrast with light base
     static let sortActiveWeight: Font.Weight = .light
     /// No background highlight for active sort column
@@ -53,11 +53,11 @@ enum TableHeaderStyle {
 /// Visual styling for column separators (both header and rows)
 enum ColumnSeparatorStyle {
     /// Dark navy blue for passive divider line (matches header text)
-    static let color = Color(#colorLiteral(red: 0.08, green: 0.15, blue: 0.40, alpha: 1.0)).opacity(0.45)
+    @MainActor static var color: Color { ColorThemeStore.shared.activeTheme.dividerNormalColor }
     /// Light blue on cursor hover (stays blue)
-    static let hoverColor = Color(#colorLiteral(red: 0.35, green: 0.65, blue: 1.0, alpha: 1.0)).opacity(0.80)
+    @MainActor static var hoverColor: Color { ColorThemeStore.shared.activeTheme.filterActiveColor }
     /// Bright blue while dragging (stays blue)
-    static let dragColor = Color(#colorLiteral(red: 0.4649794955, green: 0.6833323296, blue: 1, alpha: 1)).opacity(0.90)
+    @MainActor static var dragColor: Color { ColorThemeStore.shared.activeTheme.dividerActiveColor }
     /// Passive line width — 1pt ensures visibility at all display scales
     static let width: CGFloat = 1.0
     /// Active (hover/drag) line width

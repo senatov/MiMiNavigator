@@ -10,6 +10,7 @@ import AppKit
 import SwiftUI
 
 // MARK: - Appearance carrier
+@MainActor
 final class DividerAppearance {
     var normalThickness: CGFloat = 4.0
     var activeThickness: CGFloat = 6.0
