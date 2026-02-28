@@ -30,8 +30,8 @@ enum PanelDividerStyle {
     static let hitAreaWidth: CGFloat = 24
     static let normalWidth: CGFloat = 2.0
     static let activeWidth: CGFloat = 5.0
-    static let normalColor = Color(#colorLiteral(red: 0.42, green: 0.42, blue: 0.46, alpha: 0.55))
-    static let activeColor = Color(#colorLiteral(red: 0.2196078449, green: 0.007843137719, blue: 0.8549019694, alpha: 1)).opacity(0.90)
+    static var normalColor: Color { ColorThemeStore.shared.activeTheme.dividerNormalColor }
+    static var activeColor: Color { ColorThemeStore.shared.activeTheme.dividerActiveColor }
     static let minPanelWidth: CGFloat = 80
 }
 

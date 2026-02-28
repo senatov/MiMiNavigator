@@ -12,6 +12,7 @@ import SwiftUI
 // MARK: - File panel view for one side (left or right)
 struct FilePanelView: View {
     @Environment(AppState.self) var appState
+    @State private var colorStore = ColorThemeStore.shared
     @State private var viewModel: FilePanelViewModel
     let containerWidth: CGFloat
     @Binding var leftPanelWidth: CGFloat
@@ -132,8 +133,8 @@ struct FilePanelView: View {
             RoundedRectangle(cornerRadius: DesignTokens.radius, style: .continuous)
                 .stroke(
                     focused
-                        ? Color(#colorLiteral(red: 0.50, green: 0.50, blue: 0.55, alpha: 0.55))
-                        : Color(#colorLiteral(red: 0.45, green: 0.45, blue: 0.50, alpha: 0.38)),
+                        ? colorStore.activeTheme.panelBorderActive
+                        : colorStore.activeTheme.panelBorderInactive,
                     lineWidth: 1.5
                 )
         }

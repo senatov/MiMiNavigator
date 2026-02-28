@@ -13,6 +13,7 @@ import SwiftUI
 struct FindFilesResultsView: View {
     @Bindable var viewModel: FindFilesViewModel
     var appState: AppState? = nil
+    @State private var colorStore = ColorThemeStore.shared
 
     @State private var sortOrder = [KeyPathComparator(\FindFilesResult.fileName)]
 
@@ -91,7 +92,7 @@ struct FindFilesResultsView: View {
                      : result.filePath)
                     .font(Self.dialogFont)
                     .foregroundStyle(result.isInsideArchive
-                        ? Color(#colorLiteral(red: 0.1, green: 0.1, blue: 0.55, alpha: 1))
+                        ? colorStore.activeTheme.archivePathColor
                         : .secondary)
                     .lineLimit(1)
                     .truncationMode(.middle)
@@ -152,13 +153,13 @@ struct FindFilesResultsView: View {
             Image(systemName: result.isInsideArchive ? "doc.zipper" : fileIcon(for: result))
                 .font(.system(size: 13))
                 .foregroundStyle(result.isInsideArchive
-                    ? Color(#colorLiteral(red: 0.1, green: 0.1, blue: 0.55, alpha: 1))
+                    ? colorStore.activeTheme.archivePathColor
                     : .secondary)
                 .frame(width: 16)
             Text(result.fileName)
                 .font(.system(size: 13, weight: result.isInsideArchive ? .semibold : .light))
                 .foregroundStyle(result.isInsideArchive
-                    ? Color(#colorLiteral(red: 0.1, green: 0.1, blue: 0.55, alpha: 1))
+                    ? colorStore.activeTheme.archivePathColor
                     : .primary)
                 .lineLimit(1)
         }

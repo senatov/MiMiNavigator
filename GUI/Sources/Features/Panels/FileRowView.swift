@@ -38,13 +38,13 @@ struct FileRowView: View {
 
     private var nameColor: Color {
         if isMarked {
-            return Color(#colorLiteral(red: 0.45, green: 0.0, blue: 0.0, alpha: 1))
+            return colorStore.activeTheme.markedFileColor
         }
         if isParentEntry {
-            return Color(#colorLiteral(red: 0.2, green: 0.2, blue: 0.7, alpha: 1))
+            return colorStore.activeTheme.parentEntryColor
         }
         if file.isHidden {
-            return Color(#colorLiteral(red: 0.38, green: 0.38, blue: 0.38, alpha: 1))
+            return colorStore.activeTheme.hiddenFileColor
         }
         if file.isSymbolicLink {
             return colorStore.activeTheme.symlinkColor
@@ -79,7 +79,7 @@ struct FileRowView: View {
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .frame(width: DesignTokens.Row.iconSize + 2, height: DesignTokens.Row.iconSize + 2)
-                    .foregroundStyle(Color(#colorLiteral(red: 0.15, green: 0.15, blue: 0.65, alpha: 1)))
+                    .foregroundStyle(colorStore.activeTheme.parentEntryColor)
                     .allowsHitTesting(false)
                     .layoutPriority(1)
 
@@ -109,7 +109,7 @@ struct FileRowView: View {
                     if isMarked {
                         Image(systemName: "checkmark.circle.fill")
                             .font(.system(size: 11))
-                            .foregroundStyle(Color(#colorLiteral(red: 0.45, green: 0.0, blue: 0.0, alpha: 1)))
+                            .foregroundStyle(colorStore.activeTheme.markedFileColor)
                     }
 
                     Text(file.nameStr)

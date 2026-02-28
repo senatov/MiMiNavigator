@@ -37,6 +37,33 @@ struct ColorTheme: Identifiable, Equatable {
     /// Matches active panel background, slightly more transparent.
     var dialogBackground: Color
 
+    // Special file states
+    var hiddenFileColor: Color
+    var markedFileColor: Color
+    var parentEntryColor: Color
+    var archivePathColor: Color
+    var markedCountColor: Color
+
+    // Column accent colors
+    var columnNameColor: Color
+    var columnSizeColor: Color
+    var columnKindColor: Color
+    var columnDateColor: Color
+
+    // Panel divider
+    var dividerNormalColor: Color
+    var dividerActiveColor: Color
+
+    // Panel border
+    var panelBorderActive: Color
+    var panelBorderInactive: Color
+
+    // Zebra stripe base for active panel
+    var warmWhite: Color
+
+    // Filter bar active highlight
+    var filterActiveColor: Color
+
     // Dark variants (nil = same as light)
     var panelBackgroundDark: Color?
     var panelTextDark: Color?
@@ -65,6 +92,21 @@ extension ColorTheme {
         dialogStripe:       Color(red: 231/255, green: 231/255, blue: 231/255),
         accentColor:        Color.accentColor,
         dialogBackground:   Color(red: 239/255, green: 239/255, blue: 239/255),
+        hiddenFileColor:     Color(red: 0.38, green: 0.38, blue: 0.38),
+        markedFileColor:     Color(red: 0.45, green: 0.0, blue: 0.0),
+        parentEntryColor:    Color(red: 0.2, green: 0.2, blue: 0.7),
+        archivePathColor:    Color(red: 0.1, green: 0.1, blue: 0.55),
+        markedCountColor:    Color(red: 0.7, green: 0.0, blue: 0.0),
+        columnNameColor:     Color(red: 0.05, green: 0.10, blue: 0.30),
+        columnSizeColor:     Color(red: 0.50, green: 0.05, blue: 0.18),
+        columnKindColor:     Color(red: 0.28, green: 0.14, blue: 0.05),
+        columnDateColor:     Color(red: 0.05, green: 0.28, blue: 0.10),
+        dividerNormalColor:  Color(red: 0.42, green: 0.42, blue: 0.46, opacity: 0.55),
+        dividerActiveColor:  Color(red: 0.22, green: 0.01, blue: 0.85, opacity: 0.90),
+        panelBorderActive:   Color(red: 0.50, green: 0.50, blue: 0.55, opacity: 0.55),
+        panelBorderInactive: Color(red: 0.45, green: 0.45, blue: 0.50, opacity: 0.38),
+        warmWhite:           Color(red: 0.97, green: 0.97, blue: 0.95, opacity: 0.91),
+        filterActiveColor:   Color(red: 0.25, green: 0.55, blue: 1.0, opacity: 0.8),
         panelBackgroundDark: Color(nsColor: .windowBackgroundColor),
         panelTextDark:       Color.primary,
         dirNameColorDark:    Color.primary,
@@ -88,6 +130,21 @@ extension ColorTheme {
         dialogStripe:       Color(red: 245/255, green: 238/255, blue: 224/255),
         accentColor:        Color(red: 210/255, green: 140/255, blue: 40/255),
         dialogBackground:   Color(red: 252/255, green: 248/255, blue: 240/255).opacity(0.92),
+        hiddenFileColor:     Color(red: 0.55, green: 0.48, blue: 0.38),
+        markedFileColor:     Color(red: 0.60, green: 0.15, blue: 0.0),
+        parentEntryColor:    Color(red: 0.50, green: 0.35, blue: 0.10),
+        archivePathColor:    Color(red: 0.40, green: 0.25, blue: 0.05),
+        markedCountColor:    Color(red: 0.70, green: 0.20, blue: 0.0),
+        columnNameColor:     Color(red: 0.35, green: 0.25, blue: 0.10),
+        columnSizeColor:     Color(red: 0.55, green: 0.25, blue: 0.10),
+        columnKindColor:     Color(red: 0.40, green: 0.28, blue: 0.12),
+        columnDateColor:     Color(red: 0.30, green: 0.38, blue: 0.12),
+        dividerNormalColor:  Color(red: 0.60, green: 0.55, blue: 0.45, opacity: 0.55),
+        dividerActiveColor:  Color(red: 0.82, green: 0.55, blue: 0.15, opacity: 0.90),
+        panelBorderActive:   Color(red: 0.70, green: 0.55, blue: 0.30, opacity: 0.55),
+        panelBorderInactive: Color(red: 0.60, green: 0.55, blue: 0.45, opacity: 0.38),
+        warmWhite:           Color(red: 0.99, green: 0.97, blue: 0.92, opacity: 0.91),
+        filterActiveColor:   Color(red: 0.75, green: 0.50, blue: 0.10, opacity: 0.8),
         panelBackgroundDark: Color(red: 40/255, green: 35/255, blue: 28/255),
         panelTextDark:       Color(red: 240/255, green: 225/255, blue: 200/255),
         dirNameColorDark:    Color(red: 255/255, green: 200/255, blue: 120/255),
@@ -111,6 +168,21 @@ extension ColorTheme {
         dialogStripe:       Color(red: 28/255,  green: 33/255,  blue: 50/255),
         accentColor:        Color(red: 80/255,  green: 150/255, blue: 255/255),
         dialogBackground:   Color(red: 30/255,  green: 35/255,  blue: 50/255).opacity(0.92),
+        hiddenFileColor:     Color(red: 0.45, green: 0.48, blue: 0.55),
+        markedFileColor:     Color(red: 1.0, green: 0.45, blue: 0.35),
+        parentEntryColor:    Color(red: 0.55, green: 0.70, blue: 1.0),
+        archivePathColor:    Color(red: 0.50, green: 0.65, blue: 1.0),
+        markedCountColor:    Color(red: 1.0, green: 0.40, blue: 0.35),
+        columnNameColor:     Color(red: 0.50, green: 0.65, blue: 0.90),
+        columnSizeColor:     Color(red: 0.85, green: 0.50, blue: 0.60),
+        columnKindColor:     Color(red: 0.70, green: 0.60, blue: 0.50),
+        columnDateColor:     Color(red: 0.45, green: 0.75, blue: 0.55),
+        dividerNormalColor:  Color(red: 0.35, green: 0.40, blue: 0.55, opacity: 0.60),
+        dividerActiveColor:  Color(red: 0.40, green: 0.60, blue: 1.0, opacity: 0.90),
+        panelBorderActive:   Color(red: 0.35, green: 0.50, blue: 0.80, opacity: 0.60),
+        panelBorderInactive: Color(red: 0.30, green: 0.35, blue: 0.50, opacity: 0.40),
+        warmWhite:           Color(red: 0.16, green: 0.18, blue: 0.26, opacity: 0.50),
+        filterActiveColor:   Color(red: 0.40, green: 0.65, blue: 1.0, opacity: 0.8),
         panelBackgroundDark: nil,
         panelTextDark:       nil,
         dirNameColorDark:    nil,
@@ -134,6 +206,21 @@ extension ColorTheme {
         dialogStripe:       Color(red: 245/255, green: 238/255, blue: 214/255),
         accentColor:        Color(red: 38/255,  green: 139/255, blue: 210/255),
         dialogBackground:   Color(red: 253/255, green: 246/255, blue: 227/255).opacity(0.92),
+        hiddenFileColor:     Color(red: 0.58, green: 0.63, blue: 0.63),
+        markedFileColor:     Color(red: 0.86, green: 0.20, blue: 0.18),
+        parentEntryColor:    Color(red: 0.15, green: 0.55, blue: 0.82),
+        archivePathColor:    Color(red: 0.15, green: 0.55, blue: 0.82),
+        markedCountColor:    Color(red: 0.86, green: 0.20, blue: 0.18),
+        columnNameColor:     Color(red: 0.15, green: 0.55, blue: 0.82),
+        columnSizeColor:     Color(red: 0.52, green: 0.60, blue: 0.0),
+        columnKindColor:     Color(red: 0.71, green: 0.54, blue: 0.0),
+        columnDateColor:     Color(red: 0.16, green: 0.63, blue: 0.60),
+        dividerNormalColor:  Color(red: 0.58, green: 0.63, blue: 0.63, opacity: 0.50),
+        dividerActiveColor:  Color(red: 0.15, green: 0.55, blue: 0.82, opacity: 0.90),
+        panelBorderActive:   Color(red: 0.15, green: 0.55, blue: 0.82, opacity: 0.50),
+        panelBorderInactive: Color(red: 0.58, green: 0.63, blue: 0.63, opacity: 0.35),
+        warmWhite:           Color(red: 0.99, green: 0.96, blue: 0.89, opacity: 0.50),
+        filterActiveColor:   Color(red: 0.15, green: 0.55, blue: 0.82, opacity: 0.8),
         panelBackgroundDark: Color(red: 0/255,   green: 43/255,  blue: 54/255),
         panelTextDark:       Color(red: 131/255, green: 148/255, blue: 150/255),
         dirNameColorDark:    Color(red: 38/255,  green: 139/255, blue: 210/255),
@@ -170,6 +257,23 @@ final class ColorThemeStore {
     @ObservationIgnored @AppStorage("color.dialogStripe")      var hexDialogStripe: String = ""
     @ObservationIgnored @AppStorage("color.accent")            var hexAccent: String = ""
     @ObservationIgnored @AppStorage("color.dialogBackground")  var hexDialogBackground: String = ""
+
+    // New extended color tokens
+    @ObservationIgnored @AppStorage("color.hiddenFile")       var hexHiddenFile: String = ""
+    @ObservationIgnored @AppStorage("color.markedFile")       var hexMarkedFile: String = ""
+    @ObservationIgnored @AppStorage("color.parentEntry")      var hexParentEntry: String = ""
+    @ObservationIgnored @AppStorage("color.archivePath")      var hexArchivePath: String = ""
+    @ObservationIgnored @AppStorage("color.markedCount")      var hexMarkedCount: String = ""
+    @ObservationIgnored @AppStorage("color.columnName")       var hexColumnName: String = ""
+    @ObservationIgnored @AppStorage("color.columnSize")       var hexColumnSize: String = ""
+    @ObservationIgnored @AppStorage("color.columnKind")       var hexColumnKind: String = ""
+    @ObservationIgnored @AppStorage("color.columnDate")       var hexColumnDate: String = ""
+    @ObservationIgnored @AppStorage("color.dividerNormal")    var hexDividerNormal: String = ""
+    @ObservationIgnored @AppStorage("color.dividerActive")    var hexDividerActive: String = ""
+    @ObservationIgnored @AppStorage("color.panelBorderActive")   var hexPanelBorderActive: String = ""
+    @ObservationIgnored @AppStorage("color.panelBorderInactive") var hexPanelBorderInactive: String = ""
+    @ObservationIgnored @AppStorage("color.warmWhite")        var hexWarmWhite: String = ""
+    @ObservationIgnored @AppStorage("color.filterActive")     var hexFilterActive: String = ""
 
     // Button appearance
     @ObservationIgnored @AppStorage("button.borderColor")    var hexButtonBorder: String = ""
@@ -208,13 +312,33 @@ final class ColorThemeStore {
         if let c = Color(hex: hexDialogStripe) { theme.dialogStripe = c }
         if let c = Color(hex: hexAccent)     { theme.accentColor = c }
         if let c = Color(hex: hexDialogBackground) { theme.dialogBackground = c }
+        // Extended tokens
+        if let c = Color(hex: hexHiddenFile)       { theme.hiddenFileColor = c }
+        if let c = Color(hex: hexMarkedFile)       { theme.markedFileColor = c }
+        if let c = Color(hex: hexParentEntry)      { theme.parentEntryColor = c }
+        if let c = Color(hex: hexArchivePath)      { theme.archivePathColor = c }
+        if let c = Color(hex: hexMarkedCount)      { theme.markedCountColor = c }
+        if let c = Color(hex: hexColumnName)       { theme.columnNameColor = c }
+        if let c = Color(hex: hexColumnSize)       { theme.columnSizeColor = c }
+        if let c = Color(hex: hexColumnKind)       { theme.columnKindColor = c }
+        if let c = Color(hex: hexColumnDate)       { theme.columnDateColor = c }
+        if let c = Color(hex: hexDividerNormal)    { theme.dividerNormalColor = c }
+        if let c = Color(hex: hexDividerActive)    { theme.dividerActiveColor = c }
+        if let c = Color(hex: hexPanelBorderActive)   { theme.panelBorderActive = c }
+        if let c = Color(hex: hexPanelBorderInactive) { theme.panelBorderInactive = c }
+        if let c = Color(hex: hexWarmWhite)        { theme.warmWhite = c }
+        if let c = Color(hex: hexFilterActive)     { theme.filterActiveColor = c }
         return theme
     }
     // MARK: - Count active overrides
     private func countOverrides() -> Int {
         [hexPanelBg, hexPanelText, hexDirName, hexFileName, hexSymlink,
          hexSelActive, hexSelInactive, hexSelBorder, hexSeparator,
-         hexDialogBase, hexDialogStripe, hexAccent, hexDialogBackground]
+         hexDialogBase, hexDialogStripe, hexAccent, hexDialogBackground,
+         hexHiddenFile, hexMarkedFile, hexParentEntry, hexArchivePath, hexMarkedCount,
+         hexColumnName, hexColumnSize, hexColumnKind, hexColumnDate,
+         hexDividerNormal, hexDividerActive, hexPanelBorderActive, hexPanelBorderInactive,
+         hexWarmWhite, hexFilterActive]
             .filter { !$0.isEmpty }.count
     }
 
@@ -225,11 +349,18 @@ final class ColorThemeStore {
     }
     // MARK: - Apply preset
     func applyPreset(_ theme: ColorTheme) {
-        // Reset all custom overrides
+        // Reset all custom overrides — original 13 tokens
         hexPanelBg = ""; hexPanelText = ""; hexDirName = ""; hexFileName = ""
         hexSymlink = ""; hexSelActive = ""; hexSelInactive = ""; hexSelBorder = ""
         hexSeparator = ""; hexDialogBase = ""; hexDialogStripe = ""; hexAccent = ""
         hexDialogBackground = ""
+        // Extended 15 tokens
+        hexHiddenFile = ""; hexMarkedFile = ""; hexParentEntry = ""
+        hexArchivePath = ""; hexMarkedCount = ""
+        hexColumnName = ""; hexColumnSize = ""; hexColumnKind = ""; hexColumnDate = ""
+        hexDividerNormal = ""; hexDividerActive = ""
+        hexPanelBorderActive = ""; hexPanelBorderInactive = ""
+        hexWarmWhite = ""; hexFilterActive = ""
         loadTheme(id: theme.id)
     }
 }
