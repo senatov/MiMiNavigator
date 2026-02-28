@@ -5,6 +5,29 @@ All notable changes to MiMiNavigator will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.4] — 2026-02-28
+
+### Added
+- **Live color theming** — all file row colors (file name, directory name, symlink, selection active/inactive) now read from `ColorThemeStore` and update instantly when changed in Settings → Colors, no restart required
+- **Symlink icon visual identity** — symlink folders now rendered with deep blue tint overlay + large yellow arrow badge in bottom-left corner, clearly distinguishable from regular directories at a glance
+- **Color presets in Settings** — Default, Warm, Midnight, Solarized themes selectable from dropdown; live preview swatches shown inline
+- **Per-token color overrides** — each color token (panel background, file name, dir name, symlink, selection, accent, dialog background) independently overridable via color well in Settings → Colors
+
+### Changed
+- **Selection highlight style** — replaced full-width flat rectangle with rounded pill (`cornerRadius 6`, horizontal padding 4pt, vertical 1pt); color sourced live from `ColorThemeStore.selectionActive / selectionInactive`
+- **Panel divider** — passive state: 2pt solid grey `alpha 0.55` with white highlight (left edge) and dark shadow (right edge) for 3D raised effect; active/drag state: 5pt orange
+- **Panel borders** — 1.5pt soft grey with subtle drop shadow; focused panel slightly brighter than unfocused
+- **File selection behavior** — ESC clears marks only, never clears file selection; switching panels auto-selects first file if panel had no prior selection
+- **`#colorLiteral` enforced** — all hardcoded color literals in `AliasIconComposer`, `FileRow`, `FileRowView`, `FilePanelStyle` converted to `#colorLiteral` form per project coding standards
+- **`FilePanelStyle`** — `orangeSelRowFill` / `yellowSelRowFill` are now compile-time fallbacks only; live values come from `ColorThemeStore` via `FileRow`
+
+### Fixed
+- **Alias/symlink badge** — removed orange SwiftUI overlay (was rendering over icon regardless of compositing); badge now composited directly by `AliasIconComposer` using `NSWorkspace` + manual tint/arrow pass
+- **`FilePanelStyle` `@MainActor` error** — removed computed vars that referenced `ColorThemeStore.shared` from nonisolated enum context; restored `static let` constants
+- **`ColorThemeStore` live update** — `FileRow` and `FileRowView` now hold `@State private var colorStore = ColorThemeStore.shared`; SwiftUI re-renders rows on theme change via `@Observable`
+
+---
+
 ## [Unreleased] — 2026-02-24
 
 ### Added
@@ -390,7 +413,9 @@ Each release should include:
 
 ---
 
-[Unreleased]: https://github.com/senatov/MiMiNavigator/compare/v0.9.2...HEAD
+[Unreleased]: https://github.com/senatov/MiMiNavigator/compare/v0.9.4...HEAD
+[0.9.4]: https://github.com/senatov/MiMiNavigator/compare/v0.9.3.2...v0.9.4
+[0.9.3.2]: https://github.com/senatov/MiMiNavigator/compare/v0.9.3...v0.9.3.2
 [0.9.2]: https://github.com/senatov/MiMiNavigator/compare/v0.9.1.1...v0.9.2
 [0.9.1.1]: https://github.com/senatov/MiMiNavigator/compare/v0.9.1...v0.9.1.1
 [0.9.1]: https://github.com/senatov/MiMiNavigator/compare/v0.9.0...v0.9.1
