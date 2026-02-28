@@ -15,6 +15,7 @@ struct FileRowView: View {
     let isSelected: Bool
     let isActivePanel: Bool
     var isMarked: Bool = false  // Total Commander style marking
+    @State private var colorStore = ColorThemeStore.shared
 
     // MARK: - View Body
     var body: some View {
@@ -36,21 +37,22 @@ struct FileRowView: View {
     }
 
     private var nameColor: Color {
-        if isSelected && isActivePanel {
-            return .white
-        }
         if isMarked {
-            // Total Commander style: very dark red for marked files
             return Color(#colorLiteral(red: 0.45, green: 0.0, blue: 0.0, alpha: 1))
         }
-        // Dark blue for ".." parent entry
         if isParentEntry {
             return Color(#colorLiteral(red: 0.2, green: 0.2, blue: 0.7, alpha: 1))
         }
         if file.isHidden {
-            return Color(#colorLiteral(red: 0.3767382812, green: 0.3767382812, blue: 0.3767382812, alpha: 1))  // Brighter bluish gray
+            return Color(#colorLiteral(red: 0.38, green: 0.38, blue: 0.38, alpha: 1))
         }
-        return .primary
+        if file.isSymbolicLink {
+            return colorStore.activeTheme.symlinkColor
+        }
+        if file.isDirectory {
+            return colorStore.activeTheme.dirNameColor
+        }
+        return colorStore.activeTheme.fileNameColor
     }
 
     // MARK: - Font weight: same for marked and normal (no bold)
@@ -65,7 +67,6 @@ struct FileRowView: View {
 
     // MARK: - Icon opacity (Finder-style dimming for hidden files)
     private var iconOpacity: Double {
-        if isSelected && isActivePanel { return 1.0 }
         return file.isHidden ? 0.45 : 1.0
     }
 
@@ -78,7 +79,7 @@ struct FileRowView: View {
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .frame(width: DesignTokens.Row.iconSize + 2, height: DesignTokens.Row.iconSize + 2)
-                    .foregroundStyle(isSelected && isActivePanel ? .white : Color(#colorLiteral(red: 0.15, green: 0.15, blue: 0.65, alpha: 1)))
+                    .foregroundStyle(Color(#colorLiteral(red: 0.15, green: 0.15, blue: 0.65, alpha: 1)))
                     .allowsHitTesting(false)
                     .layoutPriority(1)
 
@@ -98,19 +99,7 @@ struct FileRowView: View {
                         .frame(width: DesignTokens.Row.iconSize, height: DesignTokens.Row.iconSize)
                         .opacity(iconOpacity)
 
-                    // Symlink badge overlay (smaller for Finder-style icons)
-                    if file.isSymbolicLink {
-                        Image(systemName: "arrow.turn.up.right")
-                            .font(.system(size: 14, weight: .bold))
-                            .foregroundStyle(.white)
-                            .padding(1.5)
-                            .background(
-                                Circle()
-                                    .fill(Color.orange)
-                                    .shadow(color: .black.opacity(0.2), radius: 0.5, x: 0.3, y: 0.3)
-                            )
-                            .offset(x: 2, y: 2)
-                    }
+                    // Alias badge is composited directly into the icon by AliasIconComposer — no overlay needed
                 }
                 .allowsHitTesting(false)
                 .layoutPriority(1)
@@ -146,12 +135,9 @@ struct FileRowView: View {
             return remoteIcon(for: file, size: iconSize)
         }
 
-        // Symlinks (aliases) — icon of target + Finder-style arrow overlay
+        // Symlinks (aliases) — NSWorkspace adds the Finder arrow badge automatically
         if file.isSymbolicLink {
-            let targetURL = url.resolvingSymlinksInPath()
-            let baseIcon = workspace.icon(forFile: targetURL.path)
-            baseIcon.size = iconSize
-            return AliasIconComposer.compose(base: baseIcon, size: iconSize)
+            return AliasIconComposer.compose(symlinkURL: url, size: iconSize)
         }
         // For directories — use system folder icon
         if file.isDirectory {
