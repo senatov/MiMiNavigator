@@ -19,6 +19,8 @@ actor FindFilesEngine {
     private var currentTask: Task<Void, Never>?
     private var currentProcess: Process?
     private(set) var stats = FindFilesStats()
+    /// Archives already scanned during the main find pass (avoid double-scanning)
+    private var scannedArchivePaths = Set<String>()
 
     // MARK: - Start Search
 
@@ -32,6 +34,7 @@ actor FindFilesEngine {
         stats = FindFilesStats()
         stats.isRunning = true
         stats.startTime = Date()
+        scannedArchivePaths.removeAll()
 
         log.info("[FindEngine] Starting search: pattern='\(criteria.fileNamePattern)' dir='\(criteria.searchDirectory.lastPathComponent)' archives=\(criteria.searchInArchives)")
 
@@ -253,6 +256,14 @@ actor FindFilesEngine {
         }
         currentProcess = nil
         log.info("[FindEngine] find process exited, matched \(stats.matchesFound)")
+        // Second pass: search inside archive files if enabled
+        if criteria.searchInArchives && !Task.isCancelled {
+            await scanArchivesInDirectory(
+                criteria: criteria, continuation: continuation,
+                nameRegex: nameRegex, contentPattern: contentPattern,
+                passwordCallback: passwordCallback
+            )
+        }
     }
 
     // MARK: - Process Single Found Path
@@ -284,6 +295,7 @@ actor FindFilesEngine {
 
         // Archive: optionally search inside
         if criteria.searchInArchives && ArchiveExtensions.isArchive(fileURL.pathExtension.lowercased()) {
+            scannedArchivePaths.insert(fileURL.path)
             stats.archivesScanned += 1
             let delta = await FindFilesArchiveSearcher.searchInsideArchive(
                 archiveURL: fileURL, criteria: criteria,
@@ -307,5 +319,111 @@ actor FindFilesEngine {
             continuation.yield(result)
             stats.matchesFound += 1
         }
+    }
+
+    // MARK: - Scan archives in directory (second pass)
+    /// Runs a separate `find` to locate all archive files, then searches inside each.
+    /// This is needed because the main `find -iname *.java` won't match archive files
+    /// like .zip/.jar — so we need a dedicated pass to find archives and look inside them.
+    private func scanArchivesInDirectory(
+        criteria: FindFilesCriteria,
+        continuation: AsyncStream<FindFilesResult>.Continuation,
+        nameRegex: NSRegularExpression?,
+        contentPattern: NSRegularExpression?,
+        passwordCallback: ArchivePasswordCallback?
+    ) async {
+        let searchRoot = criteria.searchDirectory.path
+        // Build find command to locate all archive files
+        var args: [String] = [searchRoot]
+        if !criteria.searchInSubdirectories {
+            args += ["-maxdepth", "1"]
+        }
+        // Same prune rules as main search
+        let pruneNames = ["CloudStorage", "Group Containers", ".Trash", "Caches"]
+        var pruneArgs: [String] = ["("]
+        for (i, name) in pruneNames.enumerated() {
+            if i > 0 { pruneArgs.append("-o") }
+            pruneArgs += ["-name", name, "-type", "d"]
+        }
+        pruneArgs += [")", "-prune", "-o"]
+        args += pruneArgs
+        // Match archive extensions: ( -iname '*.zip' -o -iname '*.jar' -o ... ) -print
+        let archiveExts = Array(ArchiveExtensions.all)
+        var extArgs: [String] = ["("]
+        for (i, ext) in archiveExts.enumerated() {
+            if i > 0 { extArgs.append("-o") }
+            extArgs += ["-iname", "*.\(ext)"]
+        }
+        extArgs += [")", "-type", "f", "-print"]
+        args += extArgs
+        log.info("[FindEngine] Archive pass: find \(searchRoot) ... (\(archiveExts.count) extensions)")
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/find")
+        process.arguments = args
+        let pipe = Pipe()
+        process.standardOutput = pipe
+        process.standardError = Pipe()
+        do {
+            try process.run()
+        } catch {
+            log.error("[FindEngine] Archive find failed to launch: \(error.localizedDescription)")
+            return
+        }
+        currentProcess = process
+        let handle = pipe.fileHandleForReading
+        var lineBuffer = Data()
+        lineBuffer.reserveCapacity(1024)
+        do {
+            for try await byte in handle.bytes {
+                guard !Task.isCancelled else { break }
+                if byte == UInt8(ascii: "\n") {
+                    if let line = String(data: lineBuffer, encoding: .utf8)?
+                        .trimmingCharacters(in: .whitespacesAndNewlines),
+                        !line.isEmpty
+                    {
+                        let archiveURL = URL(fileURLWithPath: line)
+                        guard !scannedArchivePaths.contains(archiveURL.path) else {
+                            lineBuffer.removeAll(keepingCapacity: true)
+                            continue
+                        }
+                        stats.archivesScanned += 1
+                        let delta = await FindFilesArchiveSearcher.searchInsideArchive(
+                            archiveURL: archiveURL, criteria: criteria,
+                            nameRegex: nameRegex, contentPattern: contentPattern,
+                            continuation: continuation, passwordCallback: passwordCallback
+                        )
+                        stats.matchesFound += delta.matchesFound
+                    }
+                    lineBuffer.removeAll(keepingCapacity: true)
+                } else {
+                    lineBuffer.append(byte)
+                }
+            }
+        } catch {
+            if !Task.isCancelled {
+                log.warning("[FindEngine] Archive stream error: \(error.localizedDescription)")
+            }
+        }
+        // Handle last partial line
+        if !Task.isCancelled, !lineBuffer.isEmpty,
+            let line = String(data: lineBuffer, encoding: .utf8)?
+                .trimmingCharacters(in: .whitespacesAndNewlines),
+            !line.isEmpty,
+            !scannedArchivePaths.contains(line)
+        {
+            let archiveURL = URL(fileURLWithPath: line)
+            stats.archivesScanned += 1
+            let delta = await FindFilesArchiveSearcher.searchInsideArchive(
+                archiveURL: archiveURL, criteria: criteria,
+                nameRegex: nameRegex, contentPattern: contentPattern,
+                continuation: continuation, passwordCallback: passwordCallback
+            )
+            stats.matchesFound += delta.matchesFound
+        }
+        if process.isRunning {
+            kill(process.processIdentifier, SIGKILL)
+        }
+        currentProcess = nil
+        log.info("[FindEngine] Archive pass complete: \(stats.archivesScanned) archives, \(stats.matchesFound) total matches")
     }
 }
