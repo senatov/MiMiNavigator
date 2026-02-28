@@ -28,12 +28,10 @@ struct FileRow: View {
     @State private var isDropTargeted: Bool = false
 
     // MARK: - Selection colors — live from ColorThemeStore
-    private enum SelectionColors {
-        static var activeFill: Color   { ColorThemeStore.shared.activeTheme.selectionActive }
-        static var inactiveFill: Color { ColorThemeStore.shared.activeTheme.selectionInactive }
-        static let dropTargetFill  = Color.accentColor.opacity(0.2)
-        static let dropTargetBorder = Color.accentColor
-    }
+    private var selectionActiveFill: Color   { colorStore.activeTheme.selectionActive }
+    private var selectionInactiveFill: Color { colorStore.activeTheme.selectionInactive }
+    private static let dropTargetFill  = Color.accentColor.opacity(0.2)
+    private static let dropTargetBorder = Color.accentColor
 
     private var isActivePanel: Bool {
         appState.focusedPanel == panelSide
@@ -156,16 +154,16 @@ struct FileRow: View {
     private var highlightLayer: some View {
         if isDropTargeted && isValidDropTarget {
             RoundedRectangle(cornerRadius: 6, style: .continuous)
-                .fill(SelectionColors.dropTargetFill)
+                .fill(Self.dropTargetFill)
                 .overlay(
                     RoundedRectangle(cornerRadius: 6, style: .continuous)
-                        .stroke(SelectionColors.dropTargetBorder, lineWidth: 2)
+                        .stroke(Self.dropTargetBorder, lineWidth: 2)
                 )
                 .padding(.horizontal, 4)
                 .allowsHitTesting(false)
         } else if isSelected {
             RoundedRectangle(cornerRadius: 6, style: .continuous)
-                .fill(isActivePanel ? SelectionColors.activeFill : SelectionColors.inactiveFill)
+                .fill(isActivePanel ? selectionActiveFill : selectionInactiveFill)
                 .padding(.horizontal, 4)
                 .padding(.vertical, 1)
                 .allowsHitTesting(false)

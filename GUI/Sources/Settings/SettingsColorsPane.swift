@@ -188,11 +188,42 @@ final class ColorThemeStore {
     func loadTheme(id: String) {
         let base = ColorTheme.allPresets.first { $0.id == id } ?? .defaultTheme
         savedThemeID = base.id
-        // Apply custom overrides on top of preset
-        activeTheme = base
-        log.info("[ColorTheme] loaded '\(base.name)'")
+        // Apply custom hex overrides on top of preset
+        activeTheme = applyOverrides(to: base)
+        log.info("[ColorTheme] loaded '\(base.name)' with \(countOverrides()) custom override(s)")
+    }
+    // MARK: - Apply hex overrides to base theme
+    private func applyOverrides(to base: ColorTheme) -> ColorTheme {
+        var theme = base
+        if let c = Color(hex: hexPanelBg)    { theme.panelBackground = c }
+        if let c = Color(hex: hexPanelText)  { theme.panelText = c }
+        if let c = Color(hex: hexDirName)    { theme.dirNameColor = c }
+        if let c = Color(hex: hexFileName)   { theme.fileNameColor = c }
+        if let c = Color(hex: hexSymlink)    { theme.symlinkColor = c }
+        if let c = Color(hex: hexSelActive)  { theme.selectionActive = c }
+        if let c = Color(hex: hexSelInactive) { theme.selectionInactive = c }
+        if let c = Color(hex: hexSelBorder)  { theme.selectionBorder = c }
+        if let c = Color(hex: hexSeparator)  { theme.separatorColor = c }
+        if let c = Color(hex: hexDialogBase) { theme.dialogBase = c }
+        if let c = Color(hex: hexDialogStripe) { theme.dialogStripe = c }
+        if let c = Color(hex: hexAccent)     { theme.accentColor = c }
+        if let c = Color(hex: hexDialogBackground) { theme.dialogBackground = c }
+        return theme
+    }
+    // MARK: - Count active overrides
+    private func countOverrides() -> Int {
+        [hexPanelBg, hexPanelText, hexDirName, hexFileName, hexSymlink,
+         hexSelActive, hexSelInactive, hexSelBorder, hexSeparator,
+         hexDialogBase, hexDialogStripe, hexAccent, hexDialogBackground]
+            .filter { !$0.isEmpty }.count
     }
 
+    // MARK: - Reload overrides on top of current preset
+    func reloadOverrides() {
+        let base = ColorTheme.allPresets.first { $0.id == savedThemeID } ?? .defaultTheme
+        activeTheme = applyOverrides(to: base)
+    }
+    // MARK: - Apply preset
     func applyPreset(_ theme: ColorTheme) {
         // Reset all custom overrides
         hexPanelBg = ""; hexPanelText = ""; hexDirName = ""; hexFileName = ""
@@ -431,6 +462,7 @@ struct SettingsColorsPane: View {
                 if !hex.wrappedValue.isEmpty {
                     Button {
                         hex.wrappedValue = ""
+                        store.reloadOverrides()
                     } label: {
                         Image(systemName: "arrow.uturn.backward")
                             .font(.system(size: 10))
@@ -474,6 +506,7 @@ struct SettingsColorsPane: View {
             },
             set: { newColor in
                 hex.wrappedValue = newColor.toHex() ?? ""
+                store.reloadOverrides()
             }
         )
     }
