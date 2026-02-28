@@ -68,6 +68,41 @@ private struct StubPane: View {
 // MARK:   General
 // MARK: - ════════════════════════════════════════════
 
+// MARK: - Supported App Languages
+enum AppLanguage: String, CaseIterable, Identifiable {
+    case system = "system"
+    case en     = "en"
+    case de     = "de"
+    case ru     = "ru"
+    var id: String { rawValue }
+    var displayName: String {
+        switch self {
+        case .system: return "System Default"
+        case .en:     return "English"
+        case .de:     return "Deutsch"
+        case .ru:     return "Русский"
+        }
+    }
+    /// Apply language override to UserDefaults (takes effect on next launch)
+    static func apply(_ language: AppLanguage) {
+        if language == .system {
+            UserDefaults.standard.removeObject(forKey: "AppleLanguages")
+        } else {
+            UserDefaults.standard.set([language.rawValue], forKey: "AppleLanguages")
+        }
+        log.info("[Settings] Language set to '\(language.displayName)' — restart required")
+    }
+    /// Read current setting from UserDefaults
+    static func current() -> AppLanguage {
+        guard let langs = UserDefaults.standard.array(forKey: "AppleLanguages") as? [String],
+              let first = langs.first,
+              let lang = AppLanguage(rawValue: first) else {
+            return .system
+        }
+        return lang
+    }
+}
+// MARK: - SettingsGeneralPane
 struct SettingsGeneralPane: View {
 
     @AppStorage("settings.appearance")       private var appearance: String = "system"
@@ -76,6 +111,8 @@ struct SettingsGeneralPane: View {
     @AppStorage("settings.showHiddenFiles")  private var showHiddenFiles: Bool = false
     @AppStorage("settings.showExtensions")   private var showExtensions: Bool = true
     @AppStorage("settings.startupPath")      private var startupPath: String = "home"
+    @State private var selectedLanguage: AppLanguage = AppLanguage.current()
+    @State private var showRestartHint: Bool = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
@@ -92,6 +129,32 @@ struct SettingsGeneralPane: View {
                         .pickerStyle(.segmented)
                         .labelsHidden()
                         .frame(maxWidth: 260)
+                    }
+                }
+            }
+
+            // ── Language ──
+            SettingsGroupBox {
+                VStack(spacing: 0) {
+                    SettingsRow(label: "Language:", help: "UI language for menus, labels and dialogs") {
+                        HStack(spacing: 12) {
+                            Picker("", selection: $selectedLanguage) {
+                                ForEach(AppLanguage.allCases) { lang in
+                                    Text(lang.displayName).tag(lang)
+                                }
+                            }
+                            .labelsHidden()
+                            .frame(width: 180)
+                            .onChange(of: selectedLanguage) { _, newLang in
+                                AppLanguage.apply(newLang)
+                                showRestartHint = newLang != .system
+                            }
+                            if showRestartHint {
+                                Label("Restart app to apply", systemImage: "arrow.clockwise")
+                                    .font(.system(size: 11))
+                                    .foregroundStyle(.orange)
+                            }
+                        }
                     }
                 }
             }
