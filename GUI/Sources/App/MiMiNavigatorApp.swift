@@ -268,7 +268,7 @@ struct MiMiNavigatorApp: App {
                         .foregroundStyle(.secondary)
                     makeDevMark()
                         .font(.caption2)
-                        .foregroundStyle(FilePanelStyle.dirNameColor)
+                        .foregroundStyle(ColorThemeStore.shared.activeTheme.dirNameColor)
                 }
             }
             .padding(.horizontal, 12)
