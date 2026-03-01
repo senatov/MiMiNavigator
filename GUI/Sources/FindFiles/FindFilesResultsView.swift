@@ -19,8 +19,13 @@ struct FindFilesResultsView: View {
     @State private var cachedSorted: [FindFilesResult] = []
     @State private var lastResultCount: Int = 0
 
-    /// Standard font for the entire Find Files dialog
-    static let dialogFont: Font = .system(size: 13, weight: .light, design: .default)
+    /// Standard font matching FileRow (.system(size: 12))
+    static let dialogFont: Font = .system(size: 12)
+    private var columnFont: Font { .system(size: 12) }
+    /// Monospaced digit variant for numeric columns
+    private var monoFont: Font { .system(size: 12).monospacedDigit() }
+    /// Active color theme shortcut
+    private var theme: ColorTheme { colorStore.activeTheme }
 
     // MARK: - Shared date formatter (avoid allocating per-row)
 
@@ -58,7 +63,7 @@ struct FindFilesResultsView: View {
             Text(viewModel.searchState == .idle
                  ? "Enter search criteria and press Search"
                  : "No files found")
-                .font(Self.dialogFont)
+                .font(columnFont)
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -77,7 +82,7 @@ struct FindFilesResultsView: View {
             TableColumn("#") { result in
                 if let idx = cachedSorted.firstIndex(where: { $0.id == result.id }) {
                     Text("\(idx + 1)")
-                        .font(.system(size: 13, weight: .light).monospacedDigit())
+                        .font(monoFont)
                         .foregroundStyle(.secondary)
                 }
             }
@@ -94,10 +99,10 @@ struct FindFilesResultsView: View {
                 Text(result.isInsideArchive
                      ? "\u{1F4E6} [\((result.archivePath as NSString?)?.lastPathComponent ?? "archive")] \(result.filePath)"
                      : result.filePath)
-                    .font(Self.dialogFont)
+                    .font(columnFont)
                     .foregroundStyle(result.isInsideArchive
-                        ? colorStore.activeTheme.archivePathColor
-                        : .secondary)
+                        ? theme.archivePathColor
+                        : theme.columnDateColor)
                     .lineLimit(1)
                     .truncationMode(.middle)
                     .help(result.isInsideArchive
@@ -109,16 +114,16 @@ struct FindFilesResultsView: View {
             // Date — sortable by modifiedDate
             TableColumn("Date Mod.", value: \.sortableDate) { result in
                 Text(result.modifiedDate.map { Self.dateFormatter.string(from: $0) } ?? "—")
-                    .font(.system(size: 13, weight: .light).monospacedDigit())
-                    .foregroundStyle(.secondary)
+                    .font(monoFont)
+                    .foregroundStyle(theme.columnDateColor)
             }
             .width(min: 80, ideal: 120)
 
             // Size — sortable
             TableColumn("Size", value: \.fileSize) { result in
                 Text(formatSize(result.fileSize))
-                    .font(.system(size: 13, weight: .light).monospacedDigit())
-                    .foregroundStyle(.secondary)
+                    .font(monoFont)
+                    .foregroundStyle(theme.columnSizeColor)
             }
             .width(min: 50, ideal: 65)
 
@@ -126,13 +131,13 @@ struct FindFilesResultsView: View {
             TableColumn("Match") { result in
                 if let context = result.matchContext, let line = result.lineNumber {
                     Text("L\(line): \(context)")
-                        .font(.system(size: 13, weight: .light, design: .monospaced))
-                        .foregroundStyle(.secondary)
+                        .font(.system(size: 12, design: .monospaced))
+                        .foregroundStyle(theme.columnNameColor)
                         .lineLimit(1)
                         .truncationMode(.tail)
                 } else {
                     Text("—")
-                        .font(Self.dialogFont)
+                        .font(columnFont)
                         .foregroundStyle(.quaternary)
                 }
             }
@@ -155,16 +160,16 @@ struct FindFilesResultsView: View {
     private func resultNameCell(_ result: FindFilesResult) -> some View {
         HStack(spacing: 6) {
             Image(systemName: result.isInsideArchive ? "doc.zipper" : fileIcon(for: result))
-                .font(.system(size: 13))
+                .font(.system(size: 12))
                 .foregroundStyle(result.isInsideArchive
-                    ? colorStore.activeTheme.archivePathColor
-                    : .secondary)
+                    ? theme.archivePathColor
+                    : theme.columnKindColor)
                 .frame(width: 16)
             Text(result.fileName)
-                .font(.system(size: 13, weight: result.isInsideArchive ? .semibold : .light))
+                .font(.system(size: 12, weight: result.isInsideArchive ? .semibold : .regular))
                 .foregroundStyle(result.isInsideArchive
-                    ? colorStore.activeTheme.archivePathColor
-                    : .primary)
+                    ? theme.archivePathColor
+                    : theme.columnNameColor)
                 .lineLimit(1)
         }
     }
