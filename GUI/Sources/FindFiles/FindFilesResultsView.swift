@@ -16,14 +16,11 @@ struct FindFilesResultsView: View {
     @State private var colorStore = ColorThemeStore.shared
 
     @State private var sortOrder = [KeyPathComparator(\FindFilesResult.fileName)]
+    @State private var cachedSorted: [FindFilesResult] = []
+    @State private var lastResultCount: Int = 0
 
     /// Standard font for the entire Find Files dialog
     static let dialogFont: Font = .system(size: 13, weight: .light, design: .default)
-
-    /// Sorted snapshot — recomputed when results or sortOrder change
-    private var sortedResults: [FindFilesResult] {
-        viewModel.results.sorted(using: sortOrder)
-    }
 
     // MARK: - Shared date formatter (avoid allocating per-row)
 
@@ -42,6 +39,13 @@ struct FindFilesResultsView: View {
             }
         }
         .frame(minHeight: 150, idealHeight: 250)
+        .onChange(of: viewModel.results.count) {
+            cachedSorted = viewModel.results.sorted(using: sortOrder)
+            lastResultCount = viewModel.results.count
+        }
+        .onChange(of: sortOrder) {
+            cachedSorted = viewModel.results.sorted(using: sortOrder)
+        }
     }
 
     // MARK: - Empty State
@@ -63,7 +67,7 @@ struct FindFilesResultsView: View {
     // MARK: - Results List
 
     private var resultsList: some View {
-        Table(sortedResults, selection: Binding(
+        Table(cachedSorted, selection: Binding(
             get: { viewModel.selectedResult?.id },
             set: { newID in
                 viewModel.selectedResult = viewModel.results.first { $0.id == newID }
@@ -71,7 +75,7 @@ struct FindFilesResultsView: View {
         ), sortOrder: $sortOrder) {
             // # — sequential row number (not sortable)
             TableColumn("#") { result in
-                if let idx = sortedResults.firstIndex(where: { $0.id == result.id }) {
+                if let idx = cachedSorted.firstIndex(where: { $0.id == result.id }) {
                     Text("\(idx + 1)")
                         .font(.system(size: 13, weight: .light).monospacedDigit())
                         .foregroundStyle(.secondary)

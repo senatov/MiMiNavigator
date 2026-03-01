@@ -284,7 +284,9 @@ actor FindFilesEngine {
 
         if isDir.boolValue {
             stats.directoriesScanned += 1
-            let result = FindFilesResult(fileURL: fileURL)
+            let dirAttrs = try? FileManager.default.attributesOfItem(atPath: line)
+            let dirDate = dirAttrs?[.modificationDate] as? Date
+            let result = FindFilesResult(fileURL: fileURL, knownSize: 0, knownDate: dirDate)
             continuation.yield(result)
             stats.matchesFound += 1
             return
@@ -303,16 +305,29 @@ actor FindFilesEngine {
             return
         }
 
+        // Read file attributes here (off-MainActor) to avoid stat() on MainActor later
+        let attrs = try? FileManager.default.attributesOfItem(atPath: line)
+        let knownSize = (attrs?[.size] as? NSNumber)?.int64Value ?? 0
+        let knownDate = attrs?[.modificationDate] as? Date
+
         // Content search
         if criteria.isContentSearch, let cp = contentPattern {
             let contentResults = FindFilesContentSearcher.searchFileContent(fileURL: fileURL, pattern: cp)
             for res in contentResults {
                 guard !Task.isCancelled else { return }
-                continuation.yield(res)
+                // Content results already have the URL; re-wrap with pre-read attributes
+                let enriched = FindFilesResult(
+                    fileURL: res.fileURL,
+                    matchContext: res.matchContext,
+                    lineNumber: res.lineNumber,
+                    knownSize: knownSize,
+                    knownDate: knownDate
+                )
+                continuation.yield(enriched)
                 stats.matchesFound += 1
             }
         } else {
-            let result = FindFilesResult(fileURL: fileURL)
+            let result = FindFilesResult(fileURL: fileURL, knownSize: knownSize, knownDate: knownDate)
             continuation.yield(result)
             stats.matchesFound += 1
         }
