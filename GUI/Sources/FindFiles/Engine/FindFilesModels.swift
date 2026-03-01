@@ -69,7 +69,8 @@ struct FindFilesResult: Identifiable, Hashable, Sendable, Codable {
         lineNumber: Int? = nil,
         isInsideArchive: Bool = false,
         archivePath: String? = nil,
-        knownSize: Int64? = nil
+        knownSize: Int64? = nil,
+        knownDate: Date? = nil
     ) {
         self.id = UUID()
         self.fileURL = fileURL
@@ -80,9 +81,13 @@ struct FindFilesResult: Identifiable, Hashable, Sendable, Codable {
         self.isInsideArchive = isInsideArchive
         self.archivePath = archivePath
 
-        // Skip stat() for virtual paths inside archives — the file doesn't exist on disk
-        if isInsideArchive {
-            self.fileSize = knownSize ?? 0
+        // If caller already read file attributes (off MainActor), use them directly.
+        // Otherwise fall back to stat() — only for archive entries or callers that don't pre-read.
+        if let size = knownSize {
+            self.fileSize = size
+            self.modifiedDate = knownDate
+        } else if isInsideArchive {
+            self.fileSize = 0
             self.modifiedDate = nil
         } else {
             let fm = FileManager.default

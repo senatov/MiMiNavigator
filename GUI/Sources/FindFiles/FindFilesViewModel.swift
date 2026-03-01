@@ -174,8 +174,12 @@ final class FindFilesViewModel {
             criteria.dateTo = dateTo
         }
 
-        // Start async search
-        searchTask = Task { [weak self] in
+        // Start async search — detached task to keep for-await loop OFF MainActor.
+        // Results accumulate in FindFilesResultBuffer actor and flush to MainActor in batches.
+        let engine = self.engine
+        let buffer = FindFilesResultBuffer()
+
+        searchTask = Task.detached { [weak self] in
             guard let self else { return }
 
             let stream = await engine.search(
@@ -186,56 +190,40 @@ final class FindFilesViewModel {
                 }
             )
 
-            // Adaptive batching: first results appear instantly, then batch grows
-            // for performance during large scans (thousands of files).
-            var batch: [FindFilesResult] = []
-            batch.reserveCapacity(64)
-            var lastFlush = ContinuousClock.now
-            var totalYielded = 0
-
             for await result in stream {
                 guard !Task.isCancelled else { break }
-                batch.append(result)
-
-                let now = ContinuousClock.now
-                let elapsed = now - lastFlush
-                // Adaptive: flush immediately for first 20 results, then batch
-                let shouldFlush: Bool
-                if totalYielded < 20 {
-                    shouldFlush = true
-                } else {
-                    shouldFlush = batch.count >= 50 || elapsed >= .milliseconds(150)
-                }
-
-                if shouldFlush {
-                    let chunk = batch
-                    batch.removeAll(keepingCapacity: true)
-                    lastFlush = now
-                    totalYielded += chunk.count
-
+                await buffer.append(result)
+                if await buffer.shouldFlush() {
+                    let chunk = await buffer.drainPending()
                     let currentStats = await engine.getStats()
-                    self.results.append(contentsOf: chunk)
-                    self.stats = currentStats
+                    await MainActor.run { [weak self] in
+                        guard let self else { return }
+                        self.results.append(contentsOf: chunk)
+                        self.stats = currentStats
+                    }
                 }
             }
 
-            // Flush remaining
-            if !batch.isEmpty {
-                self.results.append(contentsOf: batch)
-            }
-
+            // Final flush — drain any remaining results
+            let remaining = await buffer.drainPending()
             let finalStats = await engine.getStats()
-            self.stats = finalStats
-            // Only update state if not already cancelled by user action
-            if self.searchState != .cancelled {
-                if Task.isCancelled {
-                    self.searchState = .cancelled
-                } else {
-                    self.searchState = .completed
-                    self.saveResults()
+            await MainActor.run { [weak self] in
+                guard let self else { return }
+                if !remaining.isEmpty {
+                    self.results.append(contentsOf: remaining)
                 }
+                self.stats = finalStats
+                // Only update state if not already cancelled by user action
+                if self.searchState != .cancelled {
+                    if Task.isCancelled {
+                        self.searchState = .cancelled
+                    } else {
+                        self.searchState = .completed
+                        self.saveResults()
+                    }
+                }
+                log.info("[FindFiles] Search finished: \(self.results.count) results, \(self.stats.formattedElapsed)")
             }
-            log.info("[FindFiles] Search finished: \(self.results.count) results, \(self.stats.formattedElapsed)")
         }
     }
 
