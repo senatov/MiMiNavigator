@@ -25,6 +25,8 @@ final class FindFilesCoordinator {
     private(set) var isVisible = false
     private var findWindow: NSWindow?
     private let viewModel = FindFilesViewModel()
+    /// Reference to AppState for "Show in Panel" feature
+    var appState: AppState?
 
     private let frameAutosaveName = "MiMiNavigator.FindFilesWindow"
     private let defaultWidth: CGFloat = 680
@@ -34,7 +36,8 @@ final class FindFilesCoordinator {
 
     // MARK: - Toggle
 
-    func toggle(searchPath: String, selectedFile: CustomFile? = nil) {
+    func toggle(searchPath: String, selectedFile: CustomFile? = nil, appState: AppState? = nil) {
+        if let appState { self.appState = appState }
         if isVisible {
             close()
         } else {
@@ -53,7 +56,7 @@ final class FindFilesCoordinator {
             return
         }
 
-        let contentView = FindFilesWindowContent(viewModel: viewModel)
+        let contentView = FindFilesWindowContent(viewModel: viewModel, appState: appState)
             .frame(minWidth: 520, minHeight: 400)
 
         let hostingView = NSHostingView(rootView: contentView)

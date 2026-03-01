@@ -430,6 +430,34 @@ final class FindFilesViewModel {
         }
     }
 
+    // MARK: - Show in Panel
+
+    /// Convert search results to CustomFile list and inject into the focused panel.
+    /// Regular files become fully navigable. Archive entries keep their archive path for extract.
+    func showInPanel(appState: AppState) {
+        guard !results.isEmpty else { return }
+        let panel = appState.focusedPanel
+        var customFiles: [CustomFile] = []
+        for result in results {
+            if result.isInsideArchive {
+                // Archive entries: use the archive path as the file path
+                // (activateItem will trigger extract via ArchiveManager)
+                if let archivePath = result.archivePath {
+                    let cf = CustomFile(name: result.fileName, path: archivePath)
+                    if !customFiles.contains(where: { $0.id == cf.id }) {
+                        customFiles.append(cf)
+                    }
+                }
+            } else {
+                let cf = CustomFile(name: result.fileName, path: result.filePath)
+                customFiles.append(cf)
+            }
+        }
+        let virtualPath = "\u{1F50D} Search Results"
+        appState.showSearchResults(customFiles, virtualPath: virtualPath, on: panel)
+        log.info("[FindFiles] showInPanel: \(customFiles.count) files injected into \(panel)")
+    }
+
     // MARK: - Persistence
 
     private func saveResults() {
