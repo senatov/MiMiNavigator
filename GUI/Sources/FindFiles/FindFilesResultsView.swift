@@ -18,6 +18,8 @@ struct FindFilesResultsView: View {
     @State private var sortOrder = [KeyPathComparator(\FindFilesResult.fileName)]
     @State private var cachedSorted: [FindFilesResult] = []
     @State private var lastResultCount: Int = 0
+    /// Auto-scroll: tracks whether user has manually selected a row (stops auto-scroll)
+    @State private var userHasSelected: Bool = false
 
     /// Standard font matching FileRow (.system(size: 12))
     static let dialogFont: Font = .system(size: 12)
@@ -47,9 +49,20 @@ struct FindFilesResultsView: View {
         .onChange(of: viewModel.results.count) {
             cachedSorted = viewModel.results.sorted(using: sortOrder)
             lastResultCount = viewModel.results.count
+            // Auto-scroll: select last result to keep table scrolled to bottom during search
+            if viewModel.searchState == .searching && !userHasSelected,
+               let last = cachedSorted.last {
+                viewModel.selectedResult = last
+            }
         }
         .onChange(of: sortOrder) {
             cachedSorted = viewModel.results.sorted(using: sortOrder)
+        }
+        .onChange(of: viewModel.searchState) {
+            // Reset auto-scroll flag when a new search starts
+            if viewModel.searchState == .searching {
+                userHasSelected = false
+            }
         }
     }
 
@@ -76,6 +89,10 @@ struct FindFilesResultsView: View {
             get: { viewModel.selectedResult?.id },
             set: { newID in
                 viewModel.selectedResult = viewModel.results.first { $0.id == newID }
+                // User clicked a row manually — stop auto-scroll
+                if viewModel.searchState == .searching {
+                    userHasSelected = true
+                }
             }
         ), sortOrder: $sortOrder) {
             // # — sequential row number (not sortable)

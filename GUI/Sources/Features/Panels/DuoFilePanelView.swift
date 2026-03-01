@@ -187,13 +187,14 @@ extension DuoFilePanelView {
         handler.onNewFolder = { actions.performNewFolder() }
         handler.onDelete = { actions.performDelete() }
         handler.onExit = { actions.performExit() }
-        handler.onFindFiles = {
+        handler.onFindFiles = { [appState] in
             let panel = appState.focusedPanel
             let searchPath = panel == .left ? appState.leftPath : appState.rightPath
             let selectedFile = panel == .left ? appState.selectedLeftFile : appState.selectedRightFile
             FindFilesCoordinator.shared.toggle(
                 searchPath: searchPath,
-                selectedFile: selectedFile
+                selectedFile: selectedFile,
+                appState: appState
             )
         }
         handler.onOpenSelected = { appState.openSelectedItem() }

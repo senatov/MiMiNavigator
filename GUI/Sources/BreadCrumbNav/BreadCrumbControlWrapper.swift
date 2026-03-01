@@ -191,7 +191,18 @@ struct BreadCrumbControlWrapper: View {
 
     // MARK: - Display View
     private var displayView: some View {
-        return BreadCrumbPathControl(selectedSide: panelSide)
+        Group {
+            if appState.isShowingSearchResults(on: panelSide) {
+                searchResultsBreadcrumb
+            } else {
+                normalBreadcrumb
+            }
+        }
+        .transition(.opacity.combined(with: .scale))
+    }
+    // MARK: - Normal Breadcrumb
+    private var normalBreadcrumb: some View {
+        BreadCrumbPathControl(selectedSide: panelSide)
             .environment(appState)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(Color.clear)
@@ -200,11 +211,36 @@ struct BreadCrumbControlWrapper: View {
             .simultaneousGesture(
                 TapGesture(count: 2)
                     .onEnded {
-                        // Double-click enters editing mode
                         enterEditingMode()
                     }
             )
-            .transition(.opacity.combined(with: .scale))
+    }
+    // MARK: - Search Results Breadcrumb
+    private var searchResultsBreadcrumb: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "magnifyingglass")
+                .foregroundStyle(.orange)
+                .font(.system(size: 13, weight: .medium))
+            Text("Search Results")
+                .font(.system(size: Design.fontSize, weight: .medium))
+                .foregroundStyle(.primary)
+            Text("\(appState.displayedFiles(for: panelSide).count) files")
+                .font(.system(size: 11))
+                .foregroundStyle(.secondary)
+                .monospacedDigit()
+            Spacer()
+            Button {
+                appState.clearSearchResults(on: panelSide)
+            } label: {
+                Label("Clear", systemImage: "xmark.circle.fill")
+                    .font(.system(size: 12))
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(.secondary)
+            .help("Clear search results and return to previous directory")
+        }
+        .padding(.horizontal, 8)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     // MARK: - Enter Editing Mode

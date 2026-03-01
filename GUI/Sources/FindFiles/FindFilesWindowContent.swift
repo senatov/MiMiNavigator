@@ -10,6 +10,7 @@ import SwiftUI
 // MARK: - Find Files Window Content
 struct FindFilesWindowContent: View {
     @Bindable var viewModel: FindFilesViewModel
+    var appState: AppState?
     @State private var selectedTab: FindFilesTab = .general
 
     private var dialogBgColor: Color {
@@ -36,9 +37,14 @@ struct FindFilesWindowContent: View {
                 .padding(.top, 10)
                 .padding(.bottom, 4)
 
-                // MARK: - Input Area with visible border
-                inputAreaWithBorder
-                    .padding(.horizontal, 10)
+                // MARK: - Input Area with visible border + spinner overlay
+                ZStack {
+                    inputAreaWithBorder
+                    if viewModel.searchState == .searching {
+                        searchSpinnerOverlay
+                    }
+                }
+                .padding(.horizontal, 10)
 
                 // MARK: - Action Bar (Search / Close) — tight to input
                 actionBar
@@ -52,7 +58,7 @@ struct FindFilesWindowContent: View {
                     .frame(height: 1)
 
                 // MARK: - Results Table (fills all remaining space)
-                FindFilesResultsView(viewModel: viewModel)
+                FindFilesResultsView(viewModel: viewModel, appState: appState)
                     .frame(maxHeight: .infinity)
 
                 Rectangle()
@@ -134,6 +140,19 @@ struct FindFilesWindowContent: View {
 
             Spacer()
 
+            // Show in Panel — inject results into focused panel
+            if let appState, !viewModel.results.isEmpty {
+                Button {
+                    viewModel.showInPanel(appState: appState)
+                    FindFilesCoordinator.shared.close()
+                } label: {
+                    Label("Show in Panel", systemImage: "sidebar.squares.left")
+                }
+                .buttonStyle(ThemedButtonStyle())
+                .controlSize(.large)
+                .help("Display search results in the focused panel")
+            }
+
             // macOS canonical layout: secondary buttons left, primary button rightmost
             // New Search (secondary)
             Button("New Search") {
@@ -168,64 +187,75 @@ struct FindFilesWindowContent: View {
     // MARK: - Status Bar
 
     private var statusBar: some View {
-        VStack(spacing: 4) {
-            // Progress bar (visible during search)
-            if viewModel.searchState == .searching {
-                VStack(alignment: .leading, spacing: 2) {
-                    ProgressView()
-                        .progressViewStyle(.linear)
-                    Text(viewModel.stats.currentPath)
-                        .font(.system(size: 10))
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                        .truncationMode(.head)
+        HStack(spacing: 10) {
+            Group {
+                switch viewModel.searchState {
+                case .idle:
+                    Label("Ready", systemImage: "circle")
+                case .searching:
+                    Label("Searching\u{2026}", systemImage: "magnifyingglass")
+                        .foregroundStyle(.orange)
+                case .paused:
+                    Label("Paused", systemImage: "pause.circle")
+                        .foregroundStyle(.orange)
+                case .completed:
+                    Label("Completed", systemImage: "checkmark.circle.fill")
+                        .foregroundStyle(.green)
+                case .cancelled:
+                    Label("Cancelled", systemImage: "xmark.circle")
+                        .foregroundStyle(.orange)
                 }
             }
+            .font(.caption)
+            .foregroundStyle(.secondary)
 
-            HStack(spacing: 10) {
-                Group {
-                    switch viewModel.searchState {
-                    case .idle:
-                        Label("Ready", systemImage: "circle")
-                    case .searching:
-                        HStack(spacing: 6) {
-                            ProgressView()
-                                .controlSize(.small)
-                            Text("Searching\u{2026}")
-                        }
-                    case .paused:
-                        Label("Paused", systemImage: "pause.circle")
-                            .foregroundStyle(.orange)
-                    case .completed:
-                        Label("Completed", systemImage: "checkmark.circle.fill")
-                            .foregroundStyle(.green)
-                    case .cancelled:
-                        Label("Cancelled", systemImage: "xmark.circle")
-                            .foregroundStyle(.orange)
+            if viewModel.searchState == .searching {
+                Text(viewModel.stats.currentPath)
+                    .font(.system(size: 10))
+                    .foregroundStyle(.tertiary)
+                    .lineLimit(1)
+                    .truncationMode(.head)
+                    .frame(maxWidth: 200)
+            }
+
+            Spacer()
+
+            if viewModel.stats.filesScanned > 0 {
+                HStack(spacing: 6) {
+                    Text("\(viewModel.stats.directoriesScanned) dirs")
+                    Text("\u{00B7}")
+                    Text("\(viewModel.stats.filesScanned) files")
+                    if viewModel.stats.archivesScanned > 0 {
+                        Text("\u{00B7}")
+                        Text("\(viewModel.stats.archivesScanned) archives")
                     }
+                    Text("\u{00B7}")
+                    Text(viewModel.stats.formattedElapsed)
                 }
-                .font(.caption)
+                .font(.caption.monospacedDigit())
                 .foregroundStyle(.secondary)
-
-                Spacer()
-
-                if viewModel.stats.filesScanned > 0 {
-                    HStack(spacing: 6) {
-                        Text("\(viewModel.stats.directoriesScanned) dirs")
-                        Text("\u{00B7}")
-                        Text("\(viewModel.stats.filesScanned) files")
-                        if viewModel.stats.archivesScanned > 0 {
-                            Text("\u{00B7}")
-                            Text("\(viewModel.stats.archivesScanned) archives")
-                        }
-                        Text("\u{00B7}")
-                        Text(viewModel.stats.formattedElapsed)
-                    }
-                    .font(.caption.monospacedDigit())
-                    .foregroundStyle(.secondary)
-                }
             }
         }
+    }
+
+    // MARK: - Search Spinner Overlay
+    /// Large non-blocking spinner centered over the input area during search.
+    /// Uses allowsHitTesting(false) so all inputs remain fully interactive.
+    private var searchSpinnerOverlay: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(.ultraThinMaterial.opacity(0.5))
+            VStack(spacing: 8) {
+                ProgressView()
+                    .controlSize(.large)
+                    .scaleEffect(1.5)
+                Text("\(viewModel.results.count) found")
+                    .font(.caption.monospacedDigit())
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .allowsHitTesting(false)
+        .transition(.opacity.animation(.easeInOut(duration: 0.2)))
     }
 }
 

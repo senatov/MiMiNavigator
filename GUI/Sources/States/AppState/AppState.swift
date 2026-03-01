@@ -44,6 +44,12 @@ final class AppState {
     var leftArchiveState = ArchiveNavigationState()
     var rightArchiveState = ArchiveNavigationState()
 
+    // MARK: - Search Results State (per-panel)
+    /// Non-nil when a panel is showing virtual search results instead of a real directory.
+    /// The path bar shows this virtual path and a Clear button.
+    var leftSearchResultsPath: String?
+    var rightSearchResultsPath: String?
+
     var sortKey: SortKeysEnum = .name
     var bSortAscending: Bool = true
 
@@ -832,5 +838,64 @@ extension AppState {
             return
         }
         navigationHistory(for: panel).navigateTo(path)
+    }
+}
+
+// MARK: - Search Results in Panel
+extension AppState {
+
+    /// Whether the given panel is showing virtual search results
+    func isShowingSearchResults(on panel: PanelSide) -> Bool {
+        switch panel {
+            case .left: return leftSearchResultsPath != nil
+            case .right: return rightSearchResultsPath != nil
+        }
+    }
+
+    /// Inject search results into the focused panel as a virtual file list.
+    /// The panel shows the results with a virtual path; normal navigation clears the state.
+    func showSearchResults(_ files: [CustomFile], virtualPath: String, on panel: PanelSide) {
+        let sorted = applySorting(files)
+        log.info("[AppState] showSearchResults: \(sorted.count) files on \(panel) path='\(virtualPath)'")
+        switch panel {
+            case .left:
+                leftSearchResultsPath = virtualPath
+                displayedLeftFiles = sorted
+                leftPath = virtualPath
+                selectedLeftFile = sorted.first
+            case .right:
+                rightSearchResultsPath = virtualPath
+                displayedRightFiles = sorted
+                rightPath = virtualPath
+                selectedRightFile = sorted.first
+        }
+        focusedPanel = panel
+    }
+
+    /// Clear virtual search results and restore the previous real directory.
+    func clearSearchResults(on panel: PanelSide) {
+        guard isShowingSearchResults(on: panel) else { return }
+        log.info("[AppState] clearSearchResults on \(panel)")
+        // Restore the path from navigation history or fallback to home
+        let history = navigationHistory(for: panel)
+        let previousPath = history.currentPath ?? NSHomeDirectory()
+        switch panel {
+            case .left:
+                leftSearchResultsPath = nil
+            case .right:
+                rightSearchResultsPath = nil
+        }
+        updatePath(previousPath, for: panel)
+        Task {
+            if panel == .left {
+                await scanner.setLeftDirectory(pathStr: previousPath)
+                await scanner.refreshFiles(currSide: .left)
+                await refreshLeftFiles()
+            } else {
+                await scanner.setRightDirectory(pathStr: previousPath)
+                await scanner.refreshFiles(currSide: .right)
+                await refreshRightFiles()
+            }
+        }
     }
 }

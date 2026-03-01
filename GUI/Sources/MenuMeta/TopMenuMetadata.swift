@@ -154,7 +154,7 @@ let commandMenuCategory = MenuCategory(
                 let panel = appState.focusedPanel
                 let path = panel == .left ? appState.leftPath : appState.rightPath
                 let file = panel == .left ? appState.selectedLeftFile : appState.selectedRightFile
-                FindFilesCoordinator.shared.toggle(searchPath: path, selectedFile: file)
+                FindFilesCoordinator.shared.toggle(searchPath: path, selectedFile: file, appState: appState)
             },
             hotKey: .findFiles
         ),
