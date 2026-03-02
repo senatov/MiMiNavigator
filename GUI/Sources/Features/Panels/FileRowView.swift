@@ -5,7 +5,6 @@
 //  Copyright © 2024 Senatov. All rights reserved.
 
 import AppKit
-import ArchiveKit
 import FileModelKit
 import SwiftUI
 import UniformTypeIdentifiers
@@ -149,11 +148,9 @@ struct FileRowView: View {
 
         let pathExtension = url.pathExtension.lowercased()
 
-        // Encrypted archive detection (ZIP: fast 8-byte read, 7z/RAR: cached shell check)
-        if file.isArchiveFile {
-            if let encrypted = ArchiveEncryptionDetector.isEncrypted(url: url), encrypted {
-                return Self.encryptedArchiveIcon(size: iconSize)
-            }
+        // Encrypted archive detection (ZIP: fast 8-byte read, cached)
+        if file.isArchiveFile && EncryptedArchiveCheck.isEncrypted(url: url) {
+            return Self.encryptedArchiveIcon(size: iconSize)
         }
 
         // Extensionless files — detect type by magic bytes (16-byte read, cached)
