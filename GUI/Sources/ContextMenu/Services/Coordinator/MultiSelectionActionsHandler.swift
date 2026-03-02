@@ -33,6 +33,13 @@ extension ContextMenuCoordinator {
             clipboard.copy(files: files, from: panel)
             log.info("[MultiSelectionActionsHandler] copied \(files.count) files")
 
+        case .copyAsPathname:
+            let paths = files.map { $0.urlValue.path }
+            let pasteboard = NSPasteboard.general
+            pasteboard.clearContents()
+            pasteboard.setString(paths.joined(separator: "\n"), forType: .string)
+            log.info("[MultiSelectionActionsHandler] copied \(paths.count) pathname(s) to clipboard")
+
         case .paste:
             Task {
                 await performPaste(to: panel, appState: appState)

@@ -13,6 +13,7 @@ enum MultiSelectionAction: String, CaseIterable, Identifiable {
     // Clipboard
     case cut
     case copy
+    case copyAsPathname
     case paste
 
     // Operations
@@ -32,6 +33,7 @@ enum MultiSelectionAction: String, CaseIterable, Identifiable {
         switch self {
         case .cut: return "Cut"
         case .copy: return "Copy"
+        case .copyAsPathname: return "Copy as Pathname"
         case .paste: return "Paste"
         case .compress: return "Compress"
         case .share: return "Share..."
@@ -45,6 +47,7 @@ enum MultiSelectionAction: String, CaseIterable, Identifiable {
         switch self {
         case .cut: return "scissors"
         case .copy: return "doc.on.doc"
+        case .copyAsPathname: return "doc.on.doc.fill"
         case .paste: return "doc.on.clipboard"
         case .compress: return "archivebox"
         case .share: return "square.and.arrow.up"
@@ -58,6 +61,7 @@ enum MultiSelectionAction: String, CaseIterable, Identifiable {
         switch self {
         case .cut: return "⌘X"
         case .copy: return "⌘C"
+        case .copyAsPathname: return "⌥⌘C"
         case .paste: return "⌘V"
         case .delete: return "⌘⌫"
         default: return nil

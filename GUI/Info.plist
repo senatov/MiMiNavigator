@@ -31,6 +31,18 @@
 			<key>UTTypeTagSpecification</key>
 			<dict/>
 		</dict>
+		<dict>
+			<key>UTTypeIdentifier</key>
+			<string>com.senatov.miminavigator.column-id</string>
+			<key>UTTypeDescription</key>
+			<string>MiMiNavigator Column ID</string>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.data</string>
+			</array>
+			<key>UTTypeTagSpecification</key>
+			<dict/>
+		</dict>
 	</array>
 	<key>NSAppTransportSecurity</key>
 	<dict>

@@ -30,6 +30,7 @@ struct MultiSelectionContextMenu: View {
             // ═══════════════════════════════════════════
             menuButton(.cut)
             menuButton(.copy)
+            menuButton(.copyAsPathname)
             menuButton(.paste)
 
             Divider()
