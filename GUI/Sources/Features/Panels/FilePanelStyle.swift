@@ -38,11 +38,17 @@ enum FilePanelStyle {
 
     // MARK: - Layout - Finder style (standard macOS sizes)
 
-    /// Icon size - 16pt (Finder list view standard)
-    static let iconSize: CGFloat = 16
+    /// Base icon size - 16pt (Finder list view standard)
+    private static let baseIconSize: CGFloat = 16
 
-    /// Row height - 22pt (Finder list view standard)
-    static let rowHeight: CGFloat = 22
+    /// Base row height - 22pt (Finder list view standard)
+    private static let baseRowHeight: CGFloat = 22
+
+    /// Icon size - scaled by InterfaceScaleStore
+    @MainActor static var iconSize: CGFloat { InterfaceScaleStore.shared.scaled(baseIconSize) }
+
+    /// Row height - scaled by InterfaceScaleStore
+    @MainActor static var rowHeight: CGFloat { InterfaceScaleStore.shared.scaled(baseRowHeight) }
 
     /// Modified date column width
     static let modifiedColumnWidth: CGFloat = 145
