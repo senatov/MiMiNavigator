@@ -5,6 +5,7 @@
 //  Copyright © 2024 Senatov. All rights reserved.
 
 import AppKit
+import ArchiveKit
 import FileModelKit
 import SwiftUI
 import UniformTypeIdentifiers
@@ -124,7 +125,7 @@ struct FileRowView: View {
     }
 
     // MARK: - Smart icon selection with fallback chain
-    /// Priority: Special types → App icon → UTType icon → Generic file icon
+    /// Priority: Encrypted archive → Special types → Magic bytes (no ext) → App icon → UTType icon → Generic
     private func getSmartIcon(for file: CustomFile) -> NSImage {
         let url = file.urlValue
         let workspace = NSWorkspace.shared
@@ -147,6 +148,21 @@ struct FileRowView: View {
         }
 
         let pathExtension = url.pathExtension.lowercased()
+
+        // Encrypted archive detection (ZIP: fast 8-byte read, 7z/RAR: cached shell check)
+        if file.isArchiveFile {
+            if let encrypted = ArchiveEncryptionDetector.isEncrypted(url: url), encrypted {
+                return Self.encryptedArchiveIcon(size: iconSize)
+            }
+        }
+
+        // Extensionless files — detect type by magic bytes (16-byte read, cached)
+        if pathExtension.isEmpty {
+            let detected = FileMagicDetector.detect(url: url)
+            if detected != .unknown {
+                return Self.sfSymbolIcon(detected.sfSymbol, size: iconSize)
+            }
+        }
 
         // 0. Check for special file types that need specific handling
         if let specialIcon = getSpecialTypeIcon(for: pathExtension) {
@@ -232,6 +248,35 @@ struct FileRowView: View {
         return nil
     }
 
+    // MARK: - Encrypted Archive Icon
+    /// Generates an NSImage from SF Symbol "lock.doc" for encrypted archives
+    private static func encryptedArchiveIcon(size: NSSize) -> NSImage {
+        let symbolName = "lock.doc.fill"
+        let config = NSImage.SymbolConfiguration(pointSize: size.height * 0.7, weight: .medium)
+            .applying(.init(paletteColors: [.systemOrange, .systemGray]))
+        if let img = NSImage(systemSymbolName: symbolName, accessibilityDescription: "Encrypted archive") {
+            let configured = img.withSymbolConfiguration(config) ?? img
+            configured.size = size
+            return configured
+        }
+        // Fallback: plain lock icon
+        let fallback = NSImage(systemSymbolName: "lock.fill", accessibilityDescription: "Encrypted") ?? NSImage()
+        fallback.size = size
+        return fallback
+    }
+    // MARK: - SF Symbol to NSImage
+    /// Renders an SF Symbol name as an NSImage at given size
+    private static func sfSymbolIcon(_ symbolName: String, size: NSSize) -> NSImage {
+        let config = NSImage.SymbolConfiguration(pointSize: size.height * 0.6, weight: .regular)
+        if let img = NSImage(systemSymbolName: symbolName, accessibilityDescription: nil) {
+            let configured = img.withSymbolConfiguration(config) ?? img
+            configured.size = size
+            return configured
+        }
+        let fallback = NSImage(systemSymbolName: "doc.questionmark", accessibilityDescription: nil) ?? NSImage()
+        fallback.size = size
+        return fallback
+    }
     // MARK: - Check if app is a generic handler (not the best icon source)
     /// Some apps register for many file types but their icon isn't representative
     private func isGenericHandler(appURL: URL, forExtension ext: String) -> Bool {
