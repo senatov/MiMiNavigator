@@ -213,6 +213,11 @@ struct FindFilesResultsView: View {
                 pasteboard.clearContents()
                 pasteboard.setString(result.filePath, forType: .string)
             }
+            Button("Copy as Pathname") {
+                let pasteboard = NSPasteboard.general
+                pasteboard.clearContents()
+                pasteboard.setString(result.fileURL.path, forType: .string)
+            }
         }
         Divider()
         Button("Copy All Paths") {

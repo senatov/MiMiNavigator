@@ -64,6 +64,13 @@ extension ContextMenuCoordinator {
             case .copy:
                 clipboard.copy(files: batchFiles, from: panel)
 
+            case .copyAsPathname:
+                let paths = batchFiles.map { $0.urlValue.path }
+                let pasteboard = NSPasteboard.general
+                pasteboard.clearContents()
+                pasteboard.setString(paths.joined(separator: "\n"), forType: .string)
+                log.info("[DirectoryActions] copied \(paths.count) pathname(s) to clipboard")
+
             case .paste:
                 Task {
                     await performPaste(to: panel, appState: appState)

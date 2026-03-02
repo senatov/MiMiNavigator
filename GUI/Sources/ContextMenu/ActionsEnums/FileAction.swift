@@ -21,6 +21,7 @@ enum FileAction: String, CaseIterable, Identifiable {
     // Edit section
     case cut
     case copy
+    case copyAsPathname
     case paste
     case duplicate
     
@@ -54,6 +55,7 @@ enum FileAction: String, CaseIterable, Identifiable {
         case .viewLister: return "Quick Look"
         case .cut: return "Cut"
         case .copy: return "Copy"
+        case .copyAsPathname: return "Copy as Pathname"
         case .paste: return "Paste"
         case .duplicate: return "Duplicate"
         case .compress: return "Compress"
@@ -77,6 +79,7 @@ enum FileAction: String, CaseIterable, Identifiable {
         case .viewLister: return "eye"
         case .cut: return "scissors"
         case .copy: return "doc.on.doc"
+        case .copyAsPathname: return "doc.on.doc.fill"
         case .paste: return "doc.on.clipboard"
         case .duplicate: return "plus.square.on.square"
         case .compress: return "archivebox"
@@ -96,6 +99,7 @@ enum FileAction: String, CaseIterable, Identifiable {
         switch self {
         case .cut: return "⌘X"
         case .copy: return "⌘C"
+        case .copyAsPathname: return "⌥⌘C"
         case .paste: return "⌘V"
         case .openInNewTab: return "⌘T"
         case .duplicate: return "⌘D"

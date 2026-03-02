@@ -41,6 +41,7 @@ struct DirectoryContextMenu: View {
             // ═══════════════════════════════════════════
             menuButton(.cut)
             menuButton(.copy)
+            menuButton(.copyAsPathname)
             menuButton(.paste)
             menuButton(.duplicate)
             
