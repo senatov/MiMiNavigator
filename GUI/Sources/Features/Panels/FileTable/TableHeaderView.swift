@@ -3,12 +3,13 @@
 //
 // Created by Iakov Senatov on 27.01.2026.
 // Copyright © 2026 Senatov. All rights reserved.
-// Description: Sortable, resizable column headers. Right-click → context menu to toggle columns.
+// Description: Sortable, resizable, draggable column headers. Right-click → context menu to toggle columns.
 //
 // Interaction model:
 //   - Click sort arrow icon → toggle sort direction
 //   - Double-click column title area → auto-fit column width to content
 //   - Drag divider between columns → resize
+//   - Drag column header → reorder (Name always pinned at index 0)
 //
 // Layout logic:
 //   [Name flexible] | divider | [col2 fixed] | divider | [col3 fixed] | ...
@@ -22,6 +23,9 @@ struct TableHeaderView: View {
     @Environment(AppState.self) var appState
     let panelSide: PanelSide
     @Bindable var layout: ColumnLayoutModel
+
+    /// Column ID currently being dragged (for drop highlight)
+    @State private var dragOverTargetID: ColumnID? = nil
 
     private var sortKey: SortKeysEnum { appState.sortKey }
     private var sortAscending: Bool { appState.bSortAscending }
@@ -41,7 +45,7 @@ struct TableHeaderView: View {
                     max: TableColumnDefaults.maxWidth,
                     onEnd: { layout.saveWidths() }
                 )
-                fixedColumnHeader(for: spec)
+                draggableColumnHeader(for: spec)
             }
         }
         .frame(height: 22)
@@ -74,9 +78,9 @@ struct TableHeaderView: View {
         .clipped()
     }
 
-    // MARK: - Fixed Column Header
+    // MARK: - Draggable Column Header
 
-    private func fixedColumnHeader(for spec: ColumnSpec) -> some View {
+    private func draggableColumnHeader(for spec: ColumnSpec) -> some View {
         SortableHeader(
             title: spec.id.title,
             icon: spec.id.icon,
@@ -90,6 +94,33 @@ struct TableHeaderView: View {
         )
         .frame(width: spec.width, alignment: spec.id.alignment)
         .padding(.horizontal, TableColumnDefaults.cellPadding)
+        .background(
+            dragOverTargetID == spec.id
+                ? Color.accentColor.opacity(0.15)
+                : Color.clear
+        )
+        .overlay(alignment: .leading) {
+            if dragOverTargetID == spec.id {
+                Rectangle()
+                    .fill(Color.accentColor)
+                    .frame(width: 2)
+            }
+        }
+        .draggable(spec.id) {
+            Text(spec.id.title)
+                .font(.system(size: 11, weight: .medium))
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 4))
+        }
+        .dropDestination(for: ColumnID.self) { droppedItems, _ in
+            guard let sourceID = droppedItems.first else { return false }
+            layout.moveColumn(sourceID, before: spec.id)
+            dragOverTargetID = nil
+            return true
+        } isTargeted: { targeted in
+            dragOverTargetID = targeted ? spec.id : nil
+        }
     }
 
     // MARK: - Context Menu (right-click on header)

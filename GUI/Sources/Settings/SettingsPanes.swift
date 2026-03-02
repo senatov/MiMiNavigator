@@ -113,6 +113,7 @@ struct SettingsGeneralPane: View {
     @AppStorage("settings.startupPath")      private var startupPath: String = "home"
     @State private var selectedLanguage: AppLanguage = AppLanguage.current()
     @State private var showRestartHint: Bool = false
+    @State private var scaleStore = InterfaceScaleStore.shared
 
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
@@ -154,6 +155,48 @@ struct SettingsGeneralPane: View {
                                     .font(.system(size: 11))
                                     .foregroundStyle(.orange)
                             }
+                        }
+                    }
+                }
+            }
+
+            // ── Interface Scale ──
+            SettingsGroupBox {
+                VStack(spacing: 0) {
+                    SettingsRow(label: "Interface scale:", help: "Scale all UI elements — fonts, icons, row heights") {
+                        HStack(spacing: 12) {
+                            Image(systemName: "eye")
+                                .font(.system(size: 13))
+                                .foregroundStyle(.secondary)
+                            Text("Default interface scale")
+                                .font(.system(size: 13))
+                            Spacer()
+                            Toggle("", isOn: Binding(
+                                get: { scaleStore.scaleFactor != InterfaceScaleStore.defaultScale },
+                                set: { enabled in
+                                    if !enabled { scaleStore.resetToDefault() }
+                                }
+                            ))
+                            .labelsHidden()
+                            .toggleStyle(.switch)
+                        }
+                    }
+                    Divider()
+                    SettingsRow(label: "", help: "Drag to adjust UI scale from 80% to 200%") {
+                        HStack(spacing: 10) {
+                            Slider(
+                                value: Binding(
+                                    get: { scaleStore.scaleFactor },
+                                    set: { scaleStore.scaleFactor = $0 }
+                                ),
+                                in: InterfaceScaleStore.minScale...InterfaceScaleStore.maxScale,
+                                step: InterfaceScaleStore.step
+                            )
+                            .frame(width: 200)
+                            Text("\(scaleStore.percentDisplay)%")
+                                .monospacedDigit()
+                                .foregroundStyle(scaleStore.scaleFactor != InterfaceScaleStore.defaultScale ? Color.accentColor : .secondary)
+                                .frame(width: 44, alignment: .trailing)
                         }
                     }
                 }

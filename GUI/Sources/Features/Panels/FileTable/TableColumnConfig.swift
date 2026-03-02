@@ -36,8 +36,8 @@ enum TableColumnConstraints {
 // MARK: - Header Style
 /// Visual styling for column headers
 enum TableHeaderStyle {
-    /// SF Pro Display Light 14
-    static let font = Font.custom("SF Pro Display", size: 14).weight(.light)
+    /// SF Pro Display Light 14 — scaled by InterfaceScaleStore
+    @MainActor static var font: Font { Font.custom("SF Pro Display", size: InterfaceScaleStore.shared.scaledFontSize(14)).weight(.light) }
     /// Standard black for inactive column titles
     static let color = Color(nsColor: .labelColor)
     /// Very dark purple (almost black) for active sort column title + chevron
