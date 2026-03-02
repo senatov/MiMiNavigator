@@ -4,15 +4,22 @@
 // Created by Iakov Senatov on 20.02.2026.
 // Copyright © 2026 Senatov. All rights reserved.
 // Description: Column identity, visibility, order and width model for FileTableView.
-//              Supports show/hide via header context menu, drag-to-reorder (future),
+//              Supports show/hide via header context menu, drag-to-reorder columns,
 //              and full persistence in UserDefaults per panel side.
+//              Name column is always pinned at index 0 and cannot be moved.
 
 import FileModelKit
 import SwiftUI
+import UniformTypeIdentifiers
+
+// MARK: - Column Drag UTType
+extension UTType {
+    /// Custom UTType for column header drag-and-drop reorder
+    static let mimiColumnID = UTType(exportedAs: "com.senatov.miminavigator.column-id")
+}
 
 // MARK: - Column Identity
-
-enum ColumnID: String, CaseIterable, Codable, Identifiable {
+enum ColumnID: String, CaseIterable, Codable, Identifiable, Transferable {
     case name = "name"
     case dateModified = "dateModified"
     case size = "size"
@@ -26,6 +33,11 @@ enum ColumnID: String, CaseIterable, Codable, Identifiable {
     case group = "group"
 
     var id: String { rawValue }
+
+    // MARK: - Transferable
+    static var transferRepresentation: some TransferRepresentation {
+        CodableRepresentation(contentType: .mimiColumnID)
+    }
 
     var title: String {
         switch self {
@@ -199,6 +211,43 @@ final class ColumnLayoutModel {
     }
 
     func saveWidths() { save() }
+
+    // MARK: - Move column (drag-and-drop reorder)
+    /// Returns true if the column can be dragged (Name is pinned at index 0)
+    func canMove(_ id: ColumnID) -> Bool {
+        id != .name
+    }
+
+    /// Move a column from one position to another within the visible column list.
+    /// Name column is always pinned at index 0 and cannot be source or destination of moves.
+    func moveColumn(_ sourceID: ColumnID, before targetID: ColumnID) {
+        guard sourceID != .name, targetID != .name else { return }
+        guard sourceID != targetID else { return }
+        guard let srcIdx = columns.firstIndex(where: { $0.id == sourceID }),
+              columns.firstIndex(where: { $0.id == targetID }) != nil
+        else { return }
+        let spec = columns.remove(at: srcIdx)
+        // Recalculate destination index after removal
+        let insertIdx: Int
+        if let newDstIdx = columns.firstIndex(where: { $0.id == targetID }) {
+            insertIdx = newDstIdx
+        } else {
+            insertIdx = columns.endIndex
+        }
+        columns.insert(spec, at: insertIdx)
+        save()
+        log.debug("[ColumnLayout] moved \(sourceID.rawValue) before \(targetID.rawValue)")
+    }
+
+    /// Move a column to the end of the list (drop after last column)
+    func moveColumnToEnd(_ sourceID: ColumnID) {
+        guard sourceID != .name else { return }
+        guard let srcIdx = columns.firstIndex(where: { $0.id == sourceID }) else { return }
+        let spec = columns.remove(at: srcIdx)
+        columns.append(spec)
+        save()
+        log.debug("[ColumnLayout] moved \(sourceID.rawValue) to end")
+    }
 
     // MARK: - Persistence
     private func save() {
