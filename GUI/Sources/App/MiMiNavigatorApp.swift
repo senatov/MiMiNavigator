@@ -257,13 +257,36 @@ struct MiMiNavigatorApp: App {
     fileprivate func toolBarItemBuildInfo() -> ToolbarItem<(), some View> {
         return ToolbarItem(placement: .status) {
             HStack(spacing: 8) {
+                // Cat icon — embossed circle with orange border
                 Text("🐈")
-                    .font(.caption2)
-                    .padding(6)
-                    .background(Circle().fill(Color.yellow.opacity(0.08)))
+                    .font(.system(size: 14))
+                    .padding(7)
+                    .background(
+                        Circle()
+                            .fill(
+                                LinearGradient(
+                                    colors: [Color.white.opacity(0.95), Color(white: 0.88)],
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                )
+                            )
+                            .shadow(color: Color.black.opacity(0.15), radius: 1, x: 0, y: 1)
+                    )
+                    .overlay(
+                        Circle()
+                            .strokeBorder(
+                                LinearGradient(
+                                    colors: [Color.orange.opacity(0.8), Color.orange.opacity(0.5)],
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                ),
+                                lineWidth: 1.5
+                            )
+                    )
                 VStack(alignment: .leading, spacing: 1) {
                     Text("DEV BUILD")
                         .font(.caption2)
+                        .fontWeight(.medium)
                         .textCase(.uppercase)
                         .foregroundStyle(.secondary)
                     makeDevMark()
@@ -272,10 +295,24 @@ struct MiMiNavigatorApp: App {
                 }
             }
             .padding(.horizontal, 12)
-            .padding(.vertical, 5)
+            .padding(.vertical, 6)
+            .background(
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .fill(
+                        LinearGradient(
+                            colors: [Color.white.opacity(0.6), Color(white: 0.94)],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+                    .shadow(color: Color.black.opacity(0.08), radius: 1, x: 0, y: 1)
+            )
             .overlay(
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .strokeBorder(Color(nsColor: .separatorColor), lineWidth: 0.75)
+                    .strokeBorder(
+                        Color(red: 0.15, green: 0.25, blue: 0.5).opacity(0.6),
+                        lineWidth: 1
+                    )
             )
             .help("Current development build version")
         }
