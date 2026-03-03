@@ -67,15 +67,7 @@ final class DragDropManager {
             destinationPath: destination,
             sourcePanelSide: sourcePanelSide
         )
-
-        // Delay showing the dialog by one runloop tick so the drag session
-        // can fully complete before SwiftUI tries to present a sheet.
-        // Without this delay the MainActor is still inside the drop delegate
-        // callback and the sheet animation deadlocks, freezing the app.
-        Task { @MainActor in
-            try? await Task.sleep(nanoseconds: 50_000_000) // 50 ms
-            showConfirmationDialog = true
-        }
+        showConfirmationDialog = true
     }
 
     // MARK: - Execute the transfer with chosen action

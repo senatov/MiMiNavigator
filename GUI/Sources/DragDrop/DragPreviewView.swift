@@ -79,7 +79,7 @@ struct DropTargetModifier: ViewModifier {
                 // Internal drag: use draggedFiles (preserves full multi-selection)
                 let internalFiles = dragDropManager.draggedFiles
                 if !internalFiles.isEmpty {
-                    log.debug("[DropTarget] using \(internalFiles.count) internal draggedFiles")
+                    log.debug("[DropTarget] drop received, using \(internalFiles.count) internal draggedFiles")
                     return onDrop(internalFiles)
                 }
                 // External drag (Finder etc.): decode from URLs with validation
@@ -88,7 +88,7 @@ struct DropTargetModifier: ViewModifier {
                     log.warning("[DropTarget] no valid file URLs in drop")
                     return false
                 }
-                log.debug("[DropTarget] using \(files.count) external URLs")
+                log.debug("[DropTarget] drop received, using \(files.count) external URLs")
                 return onDrop(files)
             } isTargeted: { targeted in
                 onTargetChange(targeted)

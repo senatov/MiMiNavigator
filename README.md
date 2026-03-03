@@ -290,7 +290,7 @@ MiMiNavigator/
 
 Uses **SwiftyBeaver** with tags: `[FindEngine]` `[ArchiveSearcher]` `[Extractor]` `[Repacker]` `[FormatDetector]` `[SELECT-FLOW]` `[NAV]` `[DOUBLE-CLICK]`
 
-Log file: `~/Library/Logs/MiMiNavigator.log`
+Log file: `~/Library/Application Support/MiMiNavigator/Logs/MiMiNavigator.log`
 
 ---
 
