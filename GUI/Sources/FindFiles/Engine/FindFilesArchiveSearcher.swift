@@ -660,6 +660,11 @@ enum FindFilesArchiveSearcher {
 
     // MARK: - TAR Search (CLI)
 
+    /// Check if extension is a compound archive (compression + tar)
+    private static func isCompoundTarArchive(_ ext: String) -> Bool {
+        ["tgz", "gz", "gzip", "bz2", "bzip2", "tbz", "tbz2", "xz", "txz", "lzma", "tlz", "z"].contains(ext)
+    }
+
     @concurrent static func searchInsideTar(
         archiveURL: URL,
         criteria: FindFilesCriteria,
@@ -668,22 +673,166 @@ enum FindFilesArchiveSearcher {
         continuation: AsyncStream<FindFilesResult>.Continuation,
         recursionDepth: Int = 0
     ) async -> ArchiveSearchDelta {
-        var delta = ArchiveSearchDelta()
         let ext = archiveURL.pathExtension.lowercased()
-        // Use -tvf for verbose output with size and date
-        var args = ["-tvf"]
+        log.info("[TAR] Starting search in \(archiveURL.lastPathComponent) (ext=\(ext))")
+
+        // For compound archives (tgz, tbz2, txz etc.) — extract to temp first, then list pure .tar
+        // This is more reliable than piped decompression which can hang
+        if isCompoundTarArchive(ext) {
+            log.info("[TAR] Compound archive detected, extracting to temp...")
+            return await searchInsideCompoundTar(
+                archiveURL: archiveURL, criteria: criteria, nameRegex: nameRegex,
+                contentPattern: contentPattern, continuation: continuation,
+                recursionDepth: recursionDepth
+            )
+        }
+
+        // Pure .tar — list directly
+        return await listPureTar(
+            archiveURL: archiveURL, originalArchiveURL: archiveURL,
+            criteria: criteria, nameRegex: nameRegex, continuation: continuation
+        )
+    }
+
+    /// Extract compound archive (tgz/tbz2/txz) to temp, then search the inner .tar
+    @concurrent private static func searchInsideCompoundTar(
+        archiveURL: URL,
+        criteria: FindFilesCriteria,
+        nameRegex: NSRegularExpression?,
+        contentPattern: NSRegularExpression?,
+        continuation: AsyncStream<FindFilesResult>.Continuation,
+        recursionDepth: Int
+    ) async -> ArchiveSearchDelta {
+        let tempDir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("MiMiNav_tar_\(UUID().uuidString)", isDirectory: true)
+
+        do {
+            try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+            registerTempDir(tempDir)
+            log.info("[TAR] Created temp dir: \(tempDir.path)")
+        } catch {
+            log.error("[TAR] Failed to create temp dir: \(error)")
+            return ArchiveSearchDelta()
+        }
+
+        // Extract archive to temp directory using tar -xf
+        let ext = archiveURL.pathExtension.lowercased()
+        var extractArgs = ["-xf", archiveURL.path, "-C", tempDir.path]
         switch ext {
-        case "gz", "gzip", "tgz": args.insert("-z", at: 0)
-        case "bz2", "bzip2", "tbz", "tbz2": args.insert("-j", at: 0)
-        case "xz", "txz": args.insert("-J", at: 0)
-        case "z": args.insert("-Z", at: 0)
+        case "gz", "gzip", "tgz": extractArgs.insert("-z", at: 0)
+        case "bz2", "bzip2", "tbz", "tbz2": extractArgs.insert("-j", at: 0)
+        case "xz", "txz": extractArgs.insert("-J", at: 0)
+        case "z": extractArgs.insert("-Z", at: 0)
         default: break
         }
-        args.append(archiveURL.path)
+
+        log.info("[TAR] Extracting with: tar \(extractArgs.joined(separator: " "))")
+
+        let extractProcess = Process()
+        extractProcess.executableURL = URL(fileURLWithPath: "/usr/bin/tar")
+        extractProcess.arguments = extractArgs
+        extractProcess.standardOutput = Pipe()
+        extractProcess.standardError = Pipe()
+        extractProcess.standardInput = FileHandle.nullDevice
+
+        do {
+            try extractProcess.run()
+        } catch {
+            log.error("[TAR] Extract launch failed: \(error)")
+            return ArchiveSearchDelta()
+        }
+
+        // Wait with timeout
+        let completed = await waitForProcess(extractProcess, timeout: tarTimeout)
+        guard completed else {
+            log.warning("[TAR] Extract timeout for \(archiveURL.lastPathComponent)")
+            return ArchiveSearchDelta()
+        }
+
+        guard extractProcess.terminationStatus == 0 else {
+            log.warning("[TAR] Extract failed (exit \(extractProcess.terminationStatus)): \(archiveURL.lastPathComponent)")
+            return ArchiveSearchDelta()
+        }
+
+        log.info("[TAR] Extraction complete, scanning temp dir...")
+
+        // Now scan extracted files directly from filesystem
+        return await scanExtractedTarContents(
+            tempDir: tempDir, originalArchiveURL: archiveURL,
+            criteria: criteria, nameRegex: nameRegex, continuation: continuation
+        )
+    }
+
+    /// Scan extracted tar contents from filesystem (fast, no parsing needed)
+    @concurrent private static func scanExtractedTarContents(
+        tempDir: URL,
+        originalArchiveURL: URL,
+        criteria: FindFilesCriteria,
+        nameRegex: NSRegularExpression?,
+        continuation: AsyncStream<FindFilesResult>.Continuation
+    ) async -> ArchiveSearchDelta {
+        var delta = ArchiveSearchDelta()
+        let fm = FileManager.default
+
+        // Collect all file URLs first (enumerator is not async-safe)
+        var fileURLs: [URL] = []
+        if let enumerator = fm.enumerator(
+            at: tempDir,
+            includingPropertiesForKeys: [.isRegularFileKey, .fileSizeKey, .contentModificationDateKey],
+            options: [.skipsHiddenFiles]
+        ) {
+            while let fileURL = enumerator.nextObject() as? URL {
+                fileURLs.append(fileURL)
+            }
+        } else {
+            log.error("[TAR] Failed to enumerate temp dir")
+            return delta
+        }
+
+        var fileCount = 0
+        for fileURL in fileURLs {
+            guard !Task.isCancelled else { return delta }
+
+            let resourceValues = try? fileURL.resourceValues(forKeys: [.isRegularFileKey, .fileSizeKey, .contentModificationDateKey])
+            guard resourceValues?.isRegularFile == true else { continue }
+
+            fileCount += 1
+            let fileName = fileURL.lastPathComponent
+
+            // Get relative path from temp dir
+            let relativePath = fileURL.path.replacingOccurrences(of: tempDir.path + "/", with: "")
+
+            if FindFilesNameMatcher.matches(fileName: fileName, regex: nameRegex, criteria: criteria) {
+                let virtualURL = originalArchiveURL.appendingPathComponent(relativePath)
+                let result = FindFilesResult(
+                    fileURL: virtualURL,
+                    isInsideArchive: true,
+                    archivePath: originalArchiveURL.path,
+                    knownSize: Int64(resourceValues?.fileSize ?? 0),
+                    knownDate: resourceValues?.contentModificationDate
+                )
+                continuation.yield(result)
+                delta.matchesFound += 1
+            }
+        }
+
+        log.info("[TAR] Scanned \(fileCount) files, found \(delta.matchesFound) matches")
+        return delta
+    }
+
+    /// List pure .tar file (no compression) using tar -tvf
+    @concurrent private static func listPureTar(
+        archiveURL: URL,
+        originalArchiveURL: URL,
+        criteria: FindFilesCriteria,
+        nameRegex: NSRegularExpression?,
+        continuation: AsyncStream<FindFilesResult>.Continuation
+    ) async -> ArchiveSearchDelta {
+        var delta = ArchiveSearchDelta()
 
         let listProcess = Process()
         listProcess.executableURL = URL(fileURLWithPath: "/usr/bin/tar")
-        listProcess.arguments = args
+        listProcess.arguments = ["-tvf", archiveURL.path]
         let pipe = Pipe()
         listProcess.standardOutput = pipe
         listProcess.standardError = Pipe()
@@ -692,31 +841,18 @@ enum FindFilesArchiveSearcher {
         do {
             try listProcess.run()
         } catch {
-            log.error("[ArchiveSearcher] tar launch failed: \(archiveURL.lastPathComponent) — \(error)")
+            log.error("[TAR] List launch failed: \(error)")
             return delta
         }
 
-        // Wait with timeout to prevent hanging on corrupted archives
-        let completed = await withCheckedContinuation { cont in
-            DispatchQueue.global().async {
-                let deadline = DispatchTime.now() + tarTimeout
-                while listProcess.isRunning {
-                    if DispatchTime.now() >= deadline {
-                        log.warning("[ArchiveSearcher] tar timeout: \(archiveURL.lastPathComponent)")
-                        kill(listProcess.processIdentifier, SIGKILL)
-                        cont.resume(returning: false)
-                        return
-                    }
-                    Thread.sleep(forTimeInterval: 0.1)
-                }
-                cont.resume(returning: true)
-            }
+        let completed = await waitForProcess(listProcess, timeout: tarTimeout)
+        guard completed else {
+            log.warning("[TAR] List timeout for \(archiveURL.lastPathComponent)")
+            return delta
         }
 
-        guard completed else { return delta }
-
         guard listProcess.terminationStatus == 0 else {
-            log.warning("[ArchiveSearcher] tar exit \(listProcess.terminationStatus): \(archiveURL.lastPathComponent)")
+            log.warning("[TAR] List failed (exit \(listProcess.terminationStatus))")
             return delta
         }
 
@@ -724,23 +860,17 @@ enum FindFilesArchiveSearcher {
         guard let listing = String(data: data, encoding: .utf8) else { return delta }
 
         let lines = listing.components(separatedBy: .newlines)
-
         for line in lines {
             guard !Task.isCancelled else { return delta }
-            // Parse verbose tar output: -rw-r--r--  0 user staff  1234 Feb 15 10:30 2025 path/to/file.txt
-            // or: -rw-r--r--  user/staff  1234 2025-02-15 10:30 path/to/file.txt (GNU tar)
-            let parsed = parseTarVerboseLine(line)
-            guard let entry = parsed else { continue }
-            guard !entry.isDirectory else { continue }
+            guard let entry = parseTarVerboseLine(line), !entry.isDirectory else { continue }
 
             let fileName = (entry.name as NSString).lastPathComponent
-
             if FindFilesNameMatcher.matches(fileName: fileName, regex: nameRegex, criteria: criteria) {
-                let virtualURL = archiveURL.appendingPathComponent(entry.name)
+                let virtualURL = originalArchiveURL.appendingPathComponent(entry.name)
                 let result = FindFilesResult(
                     fileURL: virtualURL,
                     isInsideArchive: true,
-                    archivePath: archiveURL.path,
+                    archivePath: originalArchiveURL.path,
                     knownSize: entry.size,
                     knownDate: entry.modificationDate
                 )
@@ -749,6 +879,24 @@ enum FindFilesArchiveSearcher {
             }
         }
         return delta
+    }
+
+    /// Wait for process with timeout, returns true if completed normally
+    private static func waitForProcess(_ process: Process, timeout: TimeInterval) async -> Bool {
+        await withCheckedContinuation { cont in
+            DispatchQueue.global().async {
+                let deadline = DispatchTime.now() + timeout
+                while process.isRunning {
+                    if DispatchTime.now() >= deadline {
+                        kill(process.processIdentifier, SIGKILL)
+                        cont.resume(returning: false)
+                        return
+                    }
+                    Thread.sleep(forTimeInterval: 0.1)
+                }
+                cont.resume(returning: true)
+            }
+        }
     }
 
     // MARK: - Parse TAR Verbose Line
