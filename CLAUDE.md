@@ -1,36 +1,99 @@
-# Anytype iOS App
+# MiMiNavigator — Claude AI Guidelines
 
-## Overview
-Anytype is a privacy-focused, local-first workspace application for iOS. Built with Swift and SwiftUI, it provides users with a secure environment for creating and organizing their digital content. The app uses a custom middleware for data synchronization and storage.
+## Project Overview
+MiMiNavigator is a dual-panel file manager for macOS, built with Swift 6.2 and SwiftUI. Inspired by Total Commander and Norton Commander.
 
-## ⚠️ CRITICAL RULES - NEVER VIOLATE
-1. **NEVER commit/stage without explicit user request** - Wait for user to explicitly ask
-2. **NEVER add AI signatures in code** - No AI attribution comments or markers in source files
-3. **NEVER run destructive git operations** without explicit approval (`--amend`, `reset --hard`, `push --force`, `clean -fd`)
-4. **Always present action plan** before implementing multi-step changes and await approval
+## ⚠️ CRITICAL RULES — NEVER VIOLATE
+1. **NEVER commit/push without explicit user request** — Wait for user to explicitly ask
+2. **NEVER add AI signatures in code** — No AI attribution comments or markers
+3. **Always run `Scripts/git_cleanup.zsh`** before any git commit
+4. **Use zsh only** — Never bash or default shell for MiMiNavigator work
+5. **Commit Packages/** submodule changes separately (cd into Packages dir first)
+6. **Git commit messages**: very short, slangy, some typos, mix in German words occasionally
 
-
-## 🎯 Core Guidelines
+## 🎯 Development Guidelines
 
 ### Code Quality
-- **Never use hardcoded strings in UI** - Use `Loc.yourKey` constants
-- **Never push directly to develop/main** - Always use feature branches
-- **Remove unused code after refactoring** - Delete unreferenced properties, functions, files
+- **No file over 400 lines** — extract to new files
+- **English comments only** — no Russian/German in code
+- **`#colorLiteral` for colors** — never hardcoded RGB strings
+- **Logging tags**: `[COMPONENT]` format (e.g. `[FindEngine]`, `[ArchiveManager]`)
 
+### Build & Run
+- **Builds only on user's Mac** via osascript (Control your Mac), never on remote
+- Reading, writing, analysis on remote is OK
+- `⌘R` in Xcode or `Scripts/build_debug.zsh`
 
-### Code Change Principles
-- **Read before edit** - Always read the full file/context before making changes
-- **Minimize diffs** - Prefer the smallest change that solves the problem
-- **Investigate before diagnosing** - Understand the actual issue, don't guess
-- **No speculative fallbacks** - Don't add error handling for scenarios that can't happen
+### Architecture Patterns
+| Pattern | Usage |
+|---------|-------|
+| `@Observable` + `@MainActor` | `AppState`, `MultiSelectionManager`, `TabManager` |
+| `actor` | `DualDirectoryScanner`, `ArchiveManager`, `FindFilesEngine` |
+| `AsyncStream` | `FindFilesEngine` streaming results |
+| Swift Package (dynamic) | `FavoritesKit`, `LogKit`, `NetworkKit` |
 
+### Xcode Project
+- Edit `MiMiNavigator.xcodeproj/project.pbxproj` automatically when adding/removing files
+- Never ask user to do manual Xcode changes
 
-## ⚠️ Common Mistakes
+### Git Workflow
+- Never git push automatically — only commit
+- Iakov pushes manually himself
+- Commit message style: `"fix symlink shit"`, `"tabs kaputt, wieder gefixt"`, `"archiv repack done"`
 
-**Autonomous Committing (2025-01-28)**: Committed without explicit user request. NEVER commit unless user explicitly asks.
+## 📁 Key Directories
 
-**Over-Engineering (pattern)**: Adding "defensive" code, extra abstractions, or configurability that wasn't requested. Three similar lines > premature abstraction. Only validate at system boundaries.
+```
+Gui/Sources/
+├── App/                # Entry point, logging
+├── States/AppState/    # Global state, selection, persistence  
+├── Features/
+│   ├── Panels/         # File panels, table, rows
+│   ├── Tabs/           # Tab system
+│   ├── Network/        # SMB/AFP discovery
+│   └── ConnectToServer/# SFTP/FTP connectivity
+├── ContextMenu/        # Actions, dialogs, services
+├── Services/
+│   ├── Archive/        # VFS, extract, repack
+│   └── Scanner/        # Directory scanning
+├── FindFiles/          # Search UI and engine
+├── HotKeys/            # Keyboard shortcuts
+└── Settings/           # Preferences UI
 
-**Guessing Before Reading (pattern)**: Making assumptions about code behavior without reading it first. Always read the file before suggesting changes.
+Packages/               # git submodule → github.com/senatov/MiMiKits
+├── ArchiveKit/
+├── FavoritesKit/
+├── FileModelKit/
+├── LogKit/
+├── NetworkKit/
+└── ScannerKit/
+```
 
-**Remember**: This file is a quick reference. For detailed guidance, read the relevant skill or specialized guide.
+## 🔧 Common Tasks
+
+### Add new file to project
+1. Create file in appropriate directory
+2. Edit `project.pbxproj` to add file reference and build phase
+
+### Run before commit
+```bash
+cd /Users/senat/Develop/MiMiNavigator
+zsh Scripts/git_cleanup.zsh
+```
+
+### Log locations
+- Console: SwiftyBeaver to stdout
+- File: `~/Library/Logs/MiMiNavigator.log`
+
+## ⚠️ Common Mistakes to Avoid
+
+- **Over-Engineering**: Adding "defensive" code not requested. Three similar lines > premature abstraction
+- **Guessing Before Reading**: Always read the file before suggesting changes
+- **Wrong shell**: Must use zsh, not bash
+- **Forgetting Packages/**: Submodule changes need separate commit
+
+## Dependencies
+
+- **SwiftyBeaver** — logging
+- **Citadel** — SSH/SFTP (orlandos-nl/Citadel)
+- **p7zip** — archive formats (`brew install p7zip`)

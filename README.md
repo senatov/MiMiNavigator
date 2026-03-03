@@ -194,49 +194,79 @@ xcodebuild -scheme MiMiNavigator -configuration Debug \
 ```
 MiMiNavigator/
 ├── Gui/Sources/
-│   ├── App/                # Entry point, FileScanner, logging
+│   ├── App/                # Entry point, AppLogger, toolbar
+│   ├── AppDelegates/       # NSApplicationDelegate
 │   ├── States/
-│   │   └── AppState/       # AppState (@Observable), SelectionManager,
-│   │                       # MultiSelectionManager, MultiSelectionState,
-│   │                       # ClickModifiers, StatePersistence
+│   │   ├── AppState/       # AppState (@Observable), SelectionManager,
+│   │   │                   # MultiSelectionManager, StatePersistence,
+│   │   │                   # FileListSnapshot, FileSortingService
+│   │   ├── Commands/       # AppCommands (menu bindings)
+│   │   └── History/        # PanelNavigationHistory, SelectionsHistory,
+│   │                       # HistoryEntry, FileSnapshot
 │   ├── Features/
 │   │   ├── Tabs/           # TabItem, TabManager, TabBarView, TabItemView,
 │   │   │                   # TabContextMenu
-│   │   └── Panels/         # FilePanelView, FileRow, FileRowView,
-│   │       │               # FileTableRowsView, SelectionStatusBar
-│   │       └── FileTable/  # FileTableView (+Actions, +State, +Subviews),
-│   │                       # TableHeaderView, TableKeyboardNavigation
+│   │   ├── Panels/         # FilePanelView, FileRow, FileRowView,
+│   │   │   │               # FileTableRowsView, SelectionStatusBar,
+│   │   │   │               # AliasIconComposer, PanelDividerView
+│   │   │   ├── FileTable/  # FileTableView (+Actions, +State),
+│   │   │   │               # TableHeaderView, TableKeyboardNavigation,
+│   │   │   │               # ColumnLayoutModel, ResizableDivider
+│   │   │   └── Filter/     # PanelFilterBar, PanelFilterHistory
+│   │   ├── Network/        # NetworkNeighborhoodView, NetworkHost,
+│   │   │                   # NetworkMountService, NetworkDeviceFingerprinter,
+│   │   │                   # FritzBoxDiscovery, WebUIProber
+│   │   └── ConnectToServer/# ConnectToServerView, RemoteFileProvider,
+│   │                       # RemoteConnectionManager, RemoteServerStore
 │   ├── ContextMenu/
 │   │   ├── ActionsEnums/   # FileAction, DirectoryAction, MultiSelectionAction,
 │   │   │                   # PanelBackgroundAction
 │   │   ├── Menus/          # FileContextMenu, DirectoryContextMenu,
 │   │   │                   # MultiSelectionContextMenu, OpenWithSubmenu
 │   │   ├── Dialogs/        # ConfirmationDialog, RenameDialog, PackDialog,
-│   │   │                   # FileConflictDialog, BatchConfirmation/Progress
-│   │   └── Services/       # ContextMenuCoordinator, FileActionsHandler,
-│   │       │               # DirectoryActionsHandler, MultiSelectionActionsHandler,
-│   │       │               # FileOperationExecutors
-│   │       └── FileOperations/ # BatchOperationCoordinator, FileOperationsService
+│   │   │   │               # BatchConfirmation/Progress, CreateLinkDialog
+│   │   │   └── FileConflict/  # FileConflictDialog, ConflictResolution
+│   │   └── Services/       # ContextMenuCoordinator, ClipboardManager,
+│   │       │               # CompressService, QuickLookService
+│   │       ├── Coordinator/   # FileActionsHandler, DirectoryActionsHandler,
+│   │       │                  # MultiSelectionActionsHandler, ActiveDialog
+│   │       └── FileOperations/ # BatchOperationCoordinator, FileOperationsService,
+│   │                          # DirectorySizeCalculator, UniqueNameGenerator
 │   ├── Services/
-│   │   ├── Archive/        # ArchiveManager (actor), Extractor, Repacker, FormatDetector
-│   │   ├── Scanner/        # DualDirectoryScanner (actor), FileScanner
-│   │   └── FileOperations/ # BasicFileOperations, FileDialogs, VSCodeIntegration
-│   ├── FindFiles/          # Search UI, ViewModel, Coordinator
-│   │   └── Engine/         # FindFilesEngine (actor), NameMatcher, ContentSearcher,
-│   │                       # ArchiveSearcher, NativeZipReader
-│   ├── DragDrop/           # DragDropManager, DragPreviewView (multi-file badge),
-│   │                       # CustomFile+Transferable, FileTransferConfirmation
-│   ├── Menus/              # TC-style glass menu bar
-│   ├── BreadCrumbNav/      # Breadcrumb path bar with navigation
-│   ├── HotKeys/            # Customizable keyboard shortcuts
-│   ├── History/            # Navigation history popover
-│   ├── Favorites/          # Favorites sidebar adapter (FavoritesKit bridge)
-│   ├── Models/             # CustomFile, FileCache, SortKeysEnum
-│   └── Config/             # DesignTokens, UserPreferences, AppConstants
+│   │   ├── Archive/        # ArchiveManager (actor), ArchiveExtractor,
+│   │   │                   # ArchiveRepacker, ArchiveFormatDetector,
+│   │   │                   # ArchiveNavigationState, ArchivePasswordStore
+│   │   ├── Scanner/        # DualDirectoryScanner (actor), FileScanner,
+│   │   │                   # FSEventsDirectoryWatcher
+│   │   ├── FileOperations/ # BasicFileOperations, FileDialogs, VSCodeIntegration
+│   │   └── Diagnostics/    # SpinnerWatchdog
+│   ├── FindFiles/          # FindFilesViewModel, FindFilesCoordinator,
+│   │   │                   # FindFilesWindowContent, SearchHistoryManager
+│   │   └── Engine/         # FindFilesEngine (actor), FindFilesNameMatcher,
+│   │                       # FindFilesContentSearcher, FindFilesArchiveSearcher,
+│   │                       # NativeZipReader, FindFilesResultBuffer
+│   ├── DragDrop/           # DragDropManager, DragPreviewView,
+│   │                       # FileTransferConfirmationDialog
+│   ├── Menus/              # TC-style glass menu bar, MenuCategory, MenuItem
+│   ├── BreadCrumbNav/      # BreadCrumbView, PathAutoCompleteField
+│   ├── HotKeys/            # HotKeyStore, HotKeySettingsView, HotKeyRecorderView,
+│   │                       # ShortcutConflictValidator
+│   ├── History/            # HistoryRow, HistoryWindowContent
+│   ├── Favorites/          # FavoritesNavigationAdapter, BookmarkStore
+│   ├── Settings/           # SettingsWindowView, SettingsColorsPane,
+│   │                       # DiffToolRegistry, SettingsPermissionsPane
+│   ├── SplitLine/          # OrangeSplitView, SplitContainer, DividerAppearance
+│   ├── Toolbar/            # ToolbarStore, ToolbarCustomizeView
+│   ├── Config/             # DesignTokens, UserPreferences, AppConstants,
+│   │                       # InterfaceScaleStore, PreferenceKeys
+│   └── Localization/       # L10n.swift
 ├── Packages/               # git submodule → github.com/senatov/MiMiKits (private)
-│   ├── NetworkKit/         # Network neighborhood discovery (SMB/AFP)
+│   ├── ArchiveKit/         # Archive format support module
 │   ├── FavoritesKit/       # Reusable favorites module (.dylib)
-│   └── LogKit/             # Centralized logging module
+│   ├── FileModelKit/       # CustomFile model and utilities
+│   ├── LogKit/             # Centralized logging (SwiftyBeaver)
+│   ├── NetworkKit/         # Network neighborhood discovery (SMB/AFP)
+│   └── ScannerKit/         # File scanning utilities
 └── Gui/Docs/               # Architecture docs, screenshots
 ```
 
