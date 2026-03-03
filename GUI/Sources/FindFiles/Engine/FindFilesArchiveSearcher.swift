@@ -414,7 +414,10 @@ enum FindFilesArchiveSearcher {
         return delta
     }
 
-    // MARK: - 7z Search (CLI)
+    // MARK: - CLI Timeouts
+
+    /// Timeout for tar listing operation (seconds) — longer for large archives
+    private static let tarTimeout: TimeInterval = 30.0
 
     /// Timeout for 7z listing operation (seconds)
     private static let sevenZipTimeout: TimeInterval = 2.0
@@ -684,14 +687,33 @@ enum FindFilesArchiveSearcher {
         let pipe = Pipe()
         listProcess.standardOutput = pipe
         listProcess.standardError = Pipe()
+        listProcess.standardInput = FileHandle.nullDevice
 
         do {
             try listProcess.run()
-            listProcess.waitUntilExit()
         } catch {
-            log.error("[ArchiveSearcher] tar list failed: \(archiveURL.lastPathComponent) — \(error)")
+            log.error("[ArchiveSearcher] tar launch failed: \(archiveURL.lastPathComponent) — \(error)")
             return delta
         }
+
+        // Wait with timeout to prevent hanging on corrupted archives
+        let completed = await withCheckedContinuation { cont in
+            DispatchQueue.global().async {
+                let deadline = DispatchTime.now() + tarTimeout
+                while listProcess.isRunning {
+                    if DispatchTime.now() >= deadline {
+                        log.warning("[ArchiveSearcher] tar timeout: \(archiveURL.lastPathComponent)")
+                        kill(listProcess.processIdentifier, SIGKILL)
+                        cont.resume(returning: false)
+                        return
+                    }
+                    Thread.sleep(forTimeInterval: 0.1)
+                }
+                cont.resume(returning: true)
+            }
+        }
+
+        guard completed else { return delta }
 
         guard listProcess.terminationStatus == 0 else {
             log.warning("[ArchiveSearcher] tar exit \(listProcess.terminationStatus): \(archiveURL.lastPathComponent)")
