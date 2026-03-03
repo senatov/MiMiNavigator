@@ -799,6 +799,7 @@ extension AppState {
         UserPreferences.shared.load()
         UserPreferences.shared.apply(to: self)
         StatePersistence.restoreTabs(into: self)
+        StatePersistence.restoreSorting(into: self)
 
         // Step 1: show startup cache synchronously — UI is responsive before Task runs
         // Focus always starts on left panel, first file selected

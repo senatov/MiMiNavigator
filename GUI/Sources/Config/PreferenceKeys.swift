@@ -36,6 +36,10 @@ enum PreferenceKeys: String, CaseIterable {
     case leftActiveTabID
     case rightActiveTabID
     
+    // MARK: - Sorting State
+    case sortKey
+    case sortAscending
+    
     // MARK: - Column Widths Helper
     /// Generates key for column width storage
     static func columnWidth(for column: String, panel: PanelSide) -> String {
