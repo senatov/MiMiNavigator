@@ -28,6 +28,11 @@ extension ContextMenuCoordinator {
         do {
             let urls = files.map { $0.urlValue }
             _ = try await fileOps.deleteFiles(urls)
+            // Mark archives dirty when deleting files from archive search results
+            for file in files where file.isFromArchiveSearch {
+                await ArchiveManager.shared.markDirtyByTempPath(file.pathStr)
+                log.info("\(#function) marked archive dirty after deleting: \(file.nameStr)")
+            }
             refreshPanels(appState: appState)
             log.info("\(#function) SUCCESS deleted \(files.count) item(s)")
         } catch {
@@ -50,6 +55,11 @@ extension ContextMenuCoordinator {
 
         do {
             _ = try await fileOps.renameFile(file.urlValue, to: newName)
+            // Mark archive dirty if renaming file from archive search results
+            if file.isFromArchiveSearch {
+                await ArchiveManager.shared.markDirtyByTempPath(file.pathStr)
+                log.info("\(#function) marked archive dirty after renaming: \(file.nameStr)")
+            }
             let panel = panelForPath(file.urlValue.deletingLastPathComponent().path, appState: appState)
             log.info("\(#function) SUCCESS: '\(file.nameStr)' → '\(newName)' → selecting on \(panel)")
             await appState.refreshAndSelect(name: newName, on: panel)

@@ -17,6 +17,9 @@ struct ArchiveSearchDelta: Sendable {
     var matchesFound: Int = 0
 }
 
+/// Callback for progress updates during archive search
+typealias ArchiveProgressCallback = @concurrent @Sendable (String) async -> Void
+
 // MARK: - Archive Searcher
 
 /// Searches inside archive files for matching entries (by name and optionally content).
@@ -63,6 +66,7 @@ enum FindFilesArchiveSearcher {
         contentPattern: NSRegularExpression?,
         continuation: AsyncStream<FindFilesResult>.Continuation,
         passwordCallback: ArchivePasswordCallback?,
+        progressCallback: ArchiveProgressCallback? = nil,
         recursionDepth: Int = 0
     ) async -> ArchiveSearchDelta {
         guard recursionDepth < maxRecursionDepth else {
@@ -79,7 +83,8 @@ enum FindFilesArchiveSearcher {
             delta = await searchInsideZipNative(
                 archiveURL: archiveURL, criteria: criteria, nameRegex: nameRegex,
                 contentPattern: contentPattern, continuation: continuation,
-                passwordCallback: passwordCallback, recursionDepth: recursionDepth
+                passwordCallback: passwordCallback, progressCallback: progressCallback,
+                recursionDepth: recursionDepth
             )
         } else {
             // TAR family — CLI fallback
@@ -133,6 +138,7 @@ enum FindFilesArchiveSearcher {
         contentPattern: NSRegularExpression?,
         continuation: AsyncStream<FindFilesResult>.Continuation,
         passwordCallback: ArchivePasswordCallback?,
+        progressCallback: ArchiveProgressCallback? = nil,
         recursionDepth: Int = 0
     ) async -> ArchiveSearchDelta {
         var delta = ArchiveSearchDelta()
@@ -149,21 +155,15 @@ enum FindFilesArchiveSearcher {
                 log.debug("[ArchiveSearcher] Not a ZIP: \(archiveURL.lastPathComponent)")
                 return delta
             case .passwordProtected:
-                if let callback = passwordCallback {
-                    log.info("[ArchiveSearcher] Password-protected ZIP: \(archiveURL.lastPathComponent)")
-                    let response = await callback(archiveURL.lastPathComponent)
-                    switch response {
-                    case .password:
-                        // Native reader can't handle encrypted ZIPs — fallback to CLI
-                        return await searchInsideZipCLI(
-                            archiveURL: archiveURL, criteria: criteria, nameRegex: nameRegex,
-                            contentPattern: contentPattern, continuation: continuation,
-                            passwordCallback: passwordCallback
-                        )
-                    case .skip:
-                        return delta
-                    }
-                }
+                // Add password-protected archive to results with lock icon, then continue
+                log.info("[ArchiveSearcher] Password-protected ZIP: \(archiveURL.lastPathComponent)")
+                let result = FindFilesResult(
+                    fileURL: archiveURL,
+                    matchContext: "🔒 Password protected",
+                    isPasswordProtected: true
+                )
+                continuation.yield(result)
+                delta.matchesFound += 1
                 return delta
             default:
                 log.error("[ArchiveSearcher] ZIP read error: \(archiveURL.lastPathComponent) — \(error)")
@@ -179,6 +179,11 @@ enum FindFilesArchiveSearcher {
         // Step 2: Filter by name pattern
         for entry in entries {
             guard !Task.isCancelled else { return delta }
+
+            // Report progress: archive name + current entry
+            if let progressCallback {
+                await progressCallback("📦 \(archiveURL.lastPathComponent) → \(entry.fileName)")
+            }
 
             let baseName = entry.baseName
             guard FindFilesNameMatcher.matches(fileName: baseName, regex: nameRegex, criteria: criteria) else {
@@ -408,6 +413,9 @@ enum FindFilesArchiveSearcher {
 
     // MARK: - 7z Search (CLI)
 
+    /// Timeout for 7z listing operation (seconds)
+    private static let sevenZipTimeout: TimeInterval = 2.0
+
     @concurrent private static func searchInside7z(
         archiveURL: URL,
         criteria: FindFilesCriteria,
@@ -425,32 +433,50 @@ enum FindFilesArchiveSearcher {
 
         let listProcess = Process()
         listProcess.executableURL = URL(fileURLWithPath: szPath)
-        listProcess.arguments = ["l", archiveURL.path]
+        // -p flag with empty password prevents 7z from waiting for stdin
+        listProcess.arguments = ["l", "-p", archiveURL.path]
         let pipe = Pipe()
         listProcess.standardOutput = pipe
         listProcess.standardError = Pipe()
+        // Close stdin to prevent 7z from waiting for password input
+        listProcess.standardInput = FileHandle.nullDevice
 
         do {
             try listProcess.run()
-            listProcess.waitUntilExit()
-        } catch { return ArchiveSearchDelta() }
-
-        if listProcess.terminationStatus != 0 {
-            if let callback = passwordCallback {
-                log.info("[ArchiveSearcher] 7z may need password: \(archiveURL.lastPathComponent)")
-                let response = await callback(archiveURL.lastPathComponent)
-                switch response {
-                case .password(let pwd):
-                    return await searchInside7zWithPassword(
-                        archiveURL: archiveURL, password: pwd, szPath: szPath,
-                        criteria: criteria, nameRegex: nameRegex,
-                        contentPattern: contentPattern, continuation: continuation
-                    )
-                case .skip:
-                    return ArchiveSearchDelta()
-                }
-            }
+        } catch {
+            log.error("[ArchiveSearcher] 7z launch failed: \(archiveURL.lastPathComponent) — \(error)")
             return ArchiveSearchDelta()
+        }
+
+        // Wait with timeout to prevent hanging on password-protected archives
+        let completed = await withCheckedContinuation { cont in
+            DispatchQueue.global().async {
+                let deadline = DispatchTime.now() + sevenZipTimeout
+                while listProcess.isRunning {
+                    if DispatchTime.now() >= deadline {
+                        // Timeout — kill the process
+                        kill(listProcess.processIdentifier, SIGKILL)
+                        cont.resume(returning: false)
+                        return
+                    }
+                    Thread.sleep(forTimeInterval: 0.1)
+                }
+                cont.resume(returning: true)
+            }
+        }
+
+        if !completed || listProcess.terminationStatus != 0 {
+            // 7z failed or timed out — likely password-protected
+            log.info("[ArchiveSearcher] Password-protected 7z (timeout or error): \(archiveURL.lastPathComponent)")
+            var delta = ArchiveSearchDelta()
+            let result = FindFilesResult(
+                fileURL: archiveURL,
+                matchContext: "🔒 Password protected",
+                isPasswordProtected: true
+            )
+            continuation.yield(result)
+            delta.matchesFound += 1
+            return delta
         }
 
         let data = pipe.fileHandleForReading.readDataToEndOfFile()

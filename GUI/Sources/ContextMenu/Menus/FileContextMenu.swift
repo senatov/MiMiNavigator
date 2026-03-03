@@ -33,7 +33,19 @@ struct FileContextMenu: View {
             OpenWithSubmenu(file: file)
             menuButton(.openInNewTab)
             menuButton(.viewLister)
-            
+
+            // Archive source indicator (when file comes from archive search)
+            if file.isFromArchiveSearch, let archPath = file.archiveSourcePath {
+                Label {
+                    Text("In: \((archPath as NSString).lastPathComponent)")
+                        .foregroundStyle(.secondary)
+                } icon: {
+                    Image(systemName: "archivebox")
+                        .foregroundStyle(.orange)
+                }
+                .font(.caption)
+            }
+
             Divider()
             
             // ═══════════════════════════════════════════

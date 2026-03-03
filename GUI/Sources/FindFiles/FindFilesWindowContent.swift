@@ -143,8 +143,13 @@ struct FindFilesWindowContent: View {
             // Show in Panel — inject results into focused panel
             if let appState, !viewModel.results.isEmpty {
                 Button {
+                    // showInPanel extracts archives async; close dialog after injection completes
+                    viewModel.cancelSearch()
                     viewModel.showInPanel(appState: appState)
-                    FindFilesCoordinator.shared.close()
+                    // Close on next run loop tick — gives showInPanel's Task time to start
+                    DispatchQueue.main.async {
+                        FindFilesCoordinator.shared.close()
+                    }
                 } label: {
                     Label("Show in Panel", systemImage: "sidebar.squares.left")
                 }
@@ -185,55 +190,72 @@ struct FindFilesWindowContent: View {
     }
 
     // MARK: - Status Bar
-
+    /// HIG-compliant status bar: system colors, readable font, live path display during search
     private var statusBar: some View {
-        HStack(spacing: 10) {
-            Group {
-                switch viewModel.searchState {
-                case .idle:
-                    Label("Ready", systemImage: "circle")
-                case .searching:
-                    Label("Searching\u{2026}", systemImage: "magnifyingglass")
-                        .foregroundStyle(.orange)
-                case .paused:
-                    Label("Paused", systemImage: "pause.circle")
-                        .foregroundStyle(.orange)
-                case .completed:
-                    Label("Completed", systemImage: "checkmark.circle.fill")
-                        .foregroundStyle(.green)
-                case .cancelled:
-                    Label("Cancelled", systemImage: "xmark.circle")
-                        .foregroundStyle(.orange)
+        VStack(alignment: .leading, spacing: 3) {
+            // Top row: state indicator + statistics
+            HStack(spacing: 10) {
+                // State indicator with system-appropriate styling
+                HStack(spacing: 4) {
+                    switch viewModel.searchState {
+                    case .idle:
+                        Image(systemName: "circle")
+                            .foregroundStyle(.secondary)
+                        Text("Ready")
+                            .foregroundStyle(.secondary)
+                    case .searching:
+                        ProgressView()
+                            .controlSize(.small)
+                        Text("Searching\u{2026}")
+                            .foregroundStyle(.primary)
+                    case .paused:
+                        Image(systemName: "pause.circle.fill")
+                            .foregroundStyle(.yellow)
+                        Text("Paused")
+                            .foregroundStyle(.primary)
+                    case .completed:
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundStyle(.green)
+                        Text("Completed")
+                            .foregroundStyle(.primary)
+                    case .cancelled:
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundStyle(.secondary)
+                        Text("Cancelled")
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .font(.callout)
+
+                Spacer()
+
+                // Statistics (right side)
+                if viewModel.stats.filesScanned > 0 {
+                    HStack(spacing: 6) {
+                        Text("\(viewModel.stats.directoriesScanned) dirs")
+                        Text("\u{00B7}")
+                        Text("\(viewModel.stats.filesScanned) files")
+                        if viewModel.stats.archivesScanned > 0 {
+                            Text("\u{00B7}")
+                            Text("\(viewModel.stats.archivesScanned) archives")
+                        }
+                        Text("\u{00B7}")
+                        Text(viewModel.stats.formattedElapsed)
+                    }
+                    .font(.callout.monospacedDigit())
+                    .foregroundStyle(.secondary)
                 }
             }
-            .font(.caption)
-            .foregroundStyle(.secondary)
 
-            if viewModel.searchState == .searching {
+            // Bottom row: current path (visible during search)
+            if viewModel.searchState == .searching, !viewModel.stats.currentPath.isEmpty {
                 Text(viewModel.stats.currentPath)
-                    .font(.system(size: 10))
+                    .font(.system(size: 11, weight: .regular, design: .monospaced))
                     .foregroundStyle(.tertiary)
                     .lineLimit(1)
-                    .truncationMode(.head)
-                    .frame(maxWidth: 200)
-            }
-
-            Spacer()
-
-            if viewModel.stats.filesScanned > 0 {
-                HStack(spacing: 6) {
-                    Text("\(viewModel.stats.directoriesScanned) dirs")
-                    Text("\u{00B7}")
-                    Text("\(viewModel.stats.filesScanned) files")
-                    if viewModel.stats.archivesScanned > 0 {
-                        Text("\u{00B7}")
-                        Text("\(viewModel.stats.archivesScanned) archives")
-                    }
-                    Text("\u{00B7}")
-                    Text(viewModel.stats.formattedElapsed)
-                }
-                .font(.caption.monospacedDigit())
-                .foregroundStyle(.secondary)
+                    .truncationMode(.middle)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .animation(.easeInOut(duration: 0.1), value: viewModel.stats.currentPath)
             }
         }
     }
