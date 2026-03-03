@@ -15,10 +15,9 @@ extension FileTableView {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 0, pinnedViews: [.sectionHeaders]) {
                     Section {
-                        VirtualizedFileList(
+                        FileTableRowsView(
                             rows: sortedRows,
                             selectedID: $selectedID,
-                            scrollAnchorID: $scrollAnchorID,
                             panelSide: panelSide,
                             layout: layout,
                             onSelect: onSelect,
