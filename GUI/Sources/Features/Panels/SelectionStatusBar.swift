@@ -20,6 +20,12 @@ struct SelectionStatusBar: View {
     private var totalFiles: Int { appState.displayedFiles(for: panelSide).count }
     private var formattedSize: String { ByteCountFormatter.string(fromByteCount: markedSize, countStyle: .file) }
     private var currentPath: String { panelSide == .left ? appState.leftPath : appState.rightPath }
+    
+    /// 1-based index of selected file in the list (0 if none selected)
+    /// Uses cached index from AppState (updated by FileTableView) — O(1)
+    private var selectedIndex: Int {
+        appState.selectedIndex(for: panelSide)
+    }
 
     /// Active remote connection for this panel (nil if local path)
     private var remoteConnection: RemoteConnection? {
@@ -109,10 +115,16 @@ struct SelectionStatusBar: View {
 
             Spacer()
 
-            // Right: total items
-            Text("\(totalFiles) items")
-                .font(.system(size: 11))
-                .foregroundStyle(.secondary)
+            // Right: position / total items
+            if selectedIndex > 0 {
+                Text("\(selectedIndex) / \(totalFiles)")
+                    .font(.system(size: 11, design: .monospaced))
+                    .foregroundStyle(.secondary)
+            } else {
+                Text("\(totalFiles) items")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+            }
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 4)
