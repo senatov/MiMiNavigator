@@ -409,7 +409,7 @@ extension AppState {
             log.info("[AppState] Successfully entered archive: \(archiveURL.lastPathComponent)")
         } catch {
             log.error("[AppState] Failed to enter archive: \(error.localizedDescription)")
-            await showArchiveErrorAlert(archiveName: archiveURL.lastPathComponent, error: error)
+            await showArchiveErrorAlert(archiveName: archiveURL.lastPathComponent, archiveURL: archiveURL, error: error)
         }
     }
 
@@ -459,20 +459,26 @@ extension AppState {
 
     /// Shows NSAlert when archive open fails (encrypted, corrupted, etc.)
     @MainActor
-    private func showArchiveErrorAlert(archiveName: String, error: Error) async {
+    private func showArchiveErrorAlert(archiveName: String, archiveURL: URL, error: Error) async {
         let desc = error.localizedDescription
         let isEncrypted = desc.lowercased().contains("password") || desc.lowercased().contains("encrypted")
         let alert = NSAlert()
         alert.alertStyle = .critical
         if isEncrypted {
             alert.messageText = "Encrypted Archive"
-            alert.informativeText = "\"\(archiveName)\" is password-protected.\n\nPassword-protected archives cannot be opened yet."
+            alert.informativeText = "\"\(archiveName)\" is password-protected and cannot be browsed inline.\n\nOpen with a system application instead?"
+            alert.addButton(withTitle: "Open with App")
+            alert.addButton(withTitle: "Cancel")
+            let response = alert.runModal()
+            if response == .alertFirstButtonReturn {
+                NSWorkspace.shared.open(archiveURL)
+            }
         } else {
             alert.messageText = "Cannot Open Archive"
             alert.informativeText = "\"\(archiveName)\" could not be opened.\n\n\(desc)"
+            alert.addButton(withTitle: "OK")
+            alert.runModal()
         }
-        alert.addButton(withTitle: "OK")
-        alert.runModal()
     }
 
     /// Shows NSAlert asking user whether to repack the modified archive.
