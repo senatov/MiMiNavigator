@@ -16,7 +16,6 @@ struct FavoritesButtonSection: View {
 
     init(selectedSide: PanelSide) {
         self.panelSide = selectedSide
-        log.info("FavoritesButtonSection init for side <<\(selectedSide)>>")
     }
 
     var body: some View {

@@ -278,6 +278,6 @@ final class ColumnLayoutModel {
             merged[nameIdx].isVisible = true
         }
         columns = merged
-        log.debug("[ColumnLayout] loaded \(storageKey): \(columns.map { "\($0.id.rawValue):\($0.isVisible)" })")
+        // Load logging removed — was triggering on every SwiftUI rebuild before singleton fix
     }
 }

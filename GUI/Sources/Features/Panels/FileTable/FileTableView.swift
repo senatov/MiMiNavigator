@@ -51,22 +51,22 @@ struct FileTableView: View {
     /// Throttle for PgUp/PgDown — prevents overwhelming with rapid keypresses
     private let pageNavThrottle = KeypressThrottle(interval: 0.08)  // 80ms between page navigations
 
-    // MARK: - Column Layout — owned by PanelFileTableSection, passed as Binding to avoid recreating on list updates
-    @Binding var layout: ColumnLayoutModel
+    // MARK: - Column Layout — singleton from ColumnLayoutStore, no Binding needed
+    let layout: ColumnLayoutModel
 
     // MARK: - Init
     init(
         panelSide: PanelSide,
         files: [CustomFile],
         selectedID: Binding<CustomFile.ID?>,
-        layout: Binding<ColumnLayoutModel>,
+        layout: ColumnLayoutModel,
         onSelect: @escaping (CustomFile) -> Void,
         onDoubleClick: @escaping (CustomFile) -> Void
     ) {
         self.panelSide = panelSide
         self.files = files
         self._selectedID = selectedID
-        self._layout = layout
+        self.layout = layout
         self.onSelect = onSelect
         self.onDoubleClick = onDoubleClick
     }
