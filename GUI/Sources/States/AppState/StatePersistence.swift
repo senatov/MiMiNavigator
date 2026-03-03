@@ -49,7 +49,11 @@ enum StatePersistence {
         ud.set(state.leftTabManager.activeTabIDString, forKey: PreferenceKeys.leftActiveTabID.rawValue)
         ud.set(state.rightTabManager.activeTabIDString, forKey: PreferenceKeys.rightActiveTabID.rawValue)
         
-        log.info("[StatePersistence] state saved (incl. tabs L=\(state.leftTabManager.tabs.count) R=\(state.rightTabManager.tabs.count))")
+        // Save sorting state
+        ud.set(state.sortKey.rawValue, forKey: PreferenceKeys.sortKey.rawValue)
+        ud.set(state.bSortAscending, forKey: PreferenceKeys.sortAscending.rawValue)
+        
+        log.info("[StatePersistence] state saved (incl. tabs L=\(state.leftTabManager.tabs.count) R=\(state.rightTabManager.tabs.count), sort=\(state.sortKey.rawValue) asc=\(state.bSortAscending))")
     }
     
     // MARK: - Load Initial Paths
@@ -124,5 +128,24 @@ enum StatePersistence {
         }
         
         log.info("[StatePersistence] tabs restored L=\(state.leftTabManager.tabs.count) R=\(state.rightTabManager.tabs.count)")
+    }
+    
+    // MARK: - Restore Sorting
+    
+    /// Restore saved sorting state
+    static func restoreSorting(into state: AppState) {
+        let ud = UserDefaults.standard
+        
+        if let sortKeyRaw = ud.string(forKey: PreferenceKeys.sortKey.rawValue),
+           let sortKey = SortKeysEnum(rawValue: sortKeyRaw) {
+            state.sortKey = sortKey
+        }
+        
+        // bSortAscending defaults to true if not set
+        if ud.object(forKey: PreferenceKeys.sortAscending.rawValue) != nil {
+            state.bSortAscending = ud.bool(forKey: PreferenceKeys.sortAscending.rawValue)
+        }
+        
+        log.debug("[StatePersistence] sorting restored: key=\(state.sortKey.rawValue) asc=\(state.bSortAscending)")
     }
 }
