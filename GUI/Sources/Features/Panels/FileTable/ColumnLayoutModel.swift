@@ -167,6 +167,9 @@ final class ColumnLayoutModel {
 
     // MARK: - State
     var columns: [ColumnSpec]
+    
+    /// Version counter for efficient change detection in NSTableView
+    private(set) var layoutVersion: Int = 0
 
     // MARK: - Persistence key
     private let storageKey: String
@@ -207,6 +210,7 @@ final class ColumnLayoutModel {
     func setWidth(_ width: CGFloat, for id: ColumnID) {
         if let idx = columns.firstIndex(where: { $0.id == id }) {
             columns[idx].width = max(TableColumnDefaults.minWidth, min(width, TableColumnDefaults.maxWidth))
+            layoutVersion += 1
         }
     }
 
