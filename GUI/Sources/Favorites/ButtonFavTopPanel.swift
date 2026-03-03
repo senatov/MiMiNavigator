@@ -110,17 +110,10 @@ struct ButtonFavTopPanel: View {
     private func historyButton() -> some View {
         Button(action: { openHistoryWindow() }) {
             Image(systemName: "clock.arrow.circlepath")
-                .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(
-                    LinearGradient(
-                        colors: [Color(red: 0.2, green: 0.5, blue: 0.95), Color(red: 0.1, green: 0.35, blue: 0.75)],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                )
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(Color(red: 0.15, green: 0.45, blue: 0.9))
         }
         .buttonStyle(.plain)
-        .shadow(color: Color.blue.opacity(0.35), radius: 2, x: 0.5, y: 1)
         .help("Show navigation history")
     }
 
@@ -128,19 +121,11 @@ struct ButtonFavTopPanel: View {
     private func favoritesButton() -> some View {
         Button(action: { openFavoritesWindow() }) {
             Image(systemName: panelSide == .left ? "sidebar.left" : "sidebar.right")
-                .font(.system(size: 13, weight: .medium))
-                .symbolRenderingMode(.hierarchical)
-                .foregroundStyle(
-                    LinearGradient(
-                        colors: [Color(red: 0.95, green: 0.55, blue: 0.1), Color(red: 0.85, green: 0.35, blue: 0.05)],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                )
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(Color(red: 0.9, green: 0.45, blue: 0.05))
                 .scaleEffect(CGSize(width: 0.9, height: 1.3), anchor: .leading)
         }
         .buttonStyle(.plain)
-        .shadow(color: Color.orange.opacity(0.4), radius: 2, x: 0.5, y: 1)
         .help("Navigation between favorites — \(String(describing: panelSide))")
     }
 
