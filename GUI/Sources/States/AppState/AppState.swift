@@ -69,6 +69,23 @@ final class AppState {
     // MARK: - Multi-Selection State (Total Commander style marking)
     var markedLeftFiles: Set<String> = []
     var markedRightFiles: Set<String> = []
+    
+    // MARK: - Per-Panel Selected Index (for status bar display, updated by FileTableView)
+    /// 1-based index of selected file in left panel (0 = none)
+    var leftSelectedIndex: Int = 0
+    /// 1-based index of selected file in right panel (0 = none)
+    var rightSelectedIndex: Int = 0
+    
+    /// Get selected index for panel
+    func selectedIndex(for panel: PanelSide) -> Int {
+        panel == .left ? leftSelectedIndex : rightSelectedIndex
+    }
+    
+    /// Set selected index for panel (called from FileTableView when selection changes)
+    func setSelectedIndex(_ index: Int, for panel: PanelSide) {
+        if panel == .left { leftSelectedIndex = index }
+        else { rightSelectedIndex = index }
+    }
 
     // MARK: - Tab Managers (per-panel)
     private(set) var leftTabManager: TabManager!

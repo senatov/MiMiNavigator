@@ -47,6 +47,9 @@ struct FileTableView: View {
     @State var viewHeight: CGFloat = 400
     /// O(1) scroll target — set by keyboard nav, consumed by ScrollView(.scrollPosition)
     @State var scrollAnchorID: CustomFile.ID? = nil
+    
+    /// Throttle for PgUp/PgDown — prevents overwhelming with rapid keypresses
+    private let pageNavThrottle = KeypressThrottle(interval: 0.08)  // 80ms between page navigations
 
     // MARK: - Column Layout — owned by PanelFileTableSection, passed as Binding to avoid recreating on list updates
     @Binding var layout: ColumnLayoutModel
@@ -95,6 +98,8 @@ struct FileTableView: View {
     
     var sortedRows: [(offset: Int, element: CustomFile)] { cachedSortedRows }
     
+
+    
     // MARK: - Body
     var body: some View {
         mainScrollView
@@ -116,6 +121,14 @@ struct FileTableView: View {
         .onChange(of: panelSide == .left ? appState.leftFilesVersion : appState.rightFilesVersion) { recomputeSortedCache() }
         .onChange(of: appState.sortKey) { recomputeSortedCacheForSortChange() }
         .onChange(of: appState.bSortAscending) { recomputeSortedCacheForSortChange() }
+        // Update selectedIndex in AppState when selection changes — O(1) lookup via cachedIndexByID
+        .onChange(of: selectedID) { _, newID in
+            if let id = newID, let idx = cachedIndexByID[id] {
+                appState.setSelectedIndex(idx + 1, for: panelSide)  // 1-based
+            } else {
+                appState.setSelectedIndex(0, for: panelSide)
+            }
+        }
         // No auto-scroll on selection change — user controls scroll position
         .onMoveCommand { direction in
             guard isFocused else { return }
@@ -127,8 +140,17 @@ struct FileTableView: View {
         }
         // PgUp/PgDown/Home/End via onKeyPress — works regardless of scroll position
         // .keyboardShortcut on hidden Buttons fails on unfocused ScrollView content
-        .onKeyPress(.pageUp)    { guard isFocused else { return .ignored }; keyboardNav.pageUp();       return .handled }
-        .onKeyPress(.pageDown)  { guard isFocused else { return .ignored }; keyboardNav.pageDown();     return .handled }
+        // Throttled to prevent UI freeze on rapid keypresses in large directories
+        .onKeyPress(.pageUp) {
+            guard isFocused else { return .ignored }
+            if pageNavThrottle.allow() { keyboardNav.pageUp() }
+            return .handled
+        }
+        .onKeyPress(.pageDown) {
+            guard isFocused else { return .ignored }
+            if pageNavThrottle.allow() { keyboardNav.pageDown() }
+            return .handled
+        }
         .onKeyPress(.home)      { guard isFocused else { return .ignored }; keyboardNav.jumpToFirst();  return .handled }
         .onKeyPress(.end)       { guard isFocused else { return .ignored }; keyboardNav.jumpToLast();   return .handled }
         // ESC: clear marks only — never clear file selection.
