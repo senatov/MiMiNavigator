@@ -543,15 +543,38 @@ enum FindFilesArchiveSearcher {
             guard inFileList else { continue }
             let trimmed = line.trimmingCharacters(in: .whitespaces)
             guard !trimmed.isEmpty else { continue }
+
+            // Parse 7z listing line:
+            // Format: 2025-02-15 10:30:00 ....A  1234  512  path/to/file.txt
+            //         date(0)   time(1)  attr(2) size(3) compressed(4) name(5+)
             let components = trimmed.split(separator: " ", omittingEmptySubsequences: true)
             guard components.count >= 6 else { continue }
+
             let attrs = String(components[2])
+            // Skip directories (attrs starts with D)
             guard !attrs.hasPrefix("D") else { continue }
+
+            // Parse date and time
+            let dateStr = String(components[0])  // 2025-02-15
+            let timeStr = String(components[1])  // 10:30:00
+            let entryDate = parse7zDateTime("\(dateStr) \(timeStr)")
+
+            // Parse size
+            let entrySize = Int64(components[3]) ?? 0
+
+            // Entry name is everything from component 5 onwards
             let entryName = components[5...].joined(separator: " ")
             let fileName = (entryName as NSString).lastPathComponent
+
             if FindFilesNameMatcher.matches(fileName: fileName, regex: nameRegex, criteria: criteria) {
                 let virtualURL = archiveURL.appendingPathComponent(entryName)
-                let result = FindFilesResult(fileURL: virtualURL, isInsideArchive: true, archivePath: archiveURL.path)
+                let result = FindFilesResult(
+                    fileURL: virtualURL,
+                    isInsideArchive: true,
+                    archivePath: archiveURL.path,
+                    knownSize: entrySize,
+                    knownDate: entryDate
+                )
                 continuation.yield(result)
                 delta.matchesFound += 1
             }
@@ -568,6 +591,14 @@ enum FindFilesArchiveSearcher {
             }
         }
         return delta
+    }
+
+    /// Parse 7z date-time format: "2025-02-15 10:30:00"
+    private static func parse7zDateTime(_ dateString: String) -> Date? {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+        return formatter.date(from: dateString)
     }
 
     // MARK: - Extract nested archive and recurse
@@ -636,7 +667,8 @@ enum FindFilesArchiveSearcher {
     ) async -> ArchiveSearchDelta {
         var delta = ArchiveSearchDelta()
         let ext = archiveURL.pathExtension.lowercased()
-        var args = ["-tf"]
+        // Use -tvf for verbose output with size and date
+        var args = ["-tvf"]
         switch ext {
         case "gz", "gzip", "tgz": args.insert("-z", at: 0)
         case "bz2", "bzip2", "tbz", "tbz2": args.insert("-j", at: 0)
@@ -673,17 +705,156 @@ enum FindFilesArchiveSearcher {
 
         for line in lines {
             guard !Task.isCancelled else { return delta }
-            let entryName = line.trimmingCharacters(in: .whitespaces)
-            guard !entryName.isEmpty, !entryName.hasSuffix("/") else { continue }
-            let fileName = (entryName as NSString).lastPathComponent
+            // Parse verbose tar output: -rw-r--r--  0 user staff  1234 Feb 15 10:30 2025 path/to/file.txt
+            // or: -rw-r--r--  user/staff  1234 2025-02-15 10:30 path/to/file.txt (GNU tar)
+            let parsed = parseTarVerboseLine(line)
+            guard let entry = parsed else { continue }
+            guard !entry.isDirectory else { continue }
+
+            let fileName = (entry.name as NSString).lastPathComponent
 
             if FindFilesNameMatcher.matches(fileName: fileName, regex: nameRegex, criteria: criteria) {
-                let virtualURL = archiveURL.appendingPathComponent(entryName)
-                let result = FindFilesResult(fileURL: virtualURL, isInsideArchive: true, archivePath: archiveURL.path)
+                let virtualURL = archiveURL.appendingPathComponent(entry.name)
+                let result = FindFilesResult(
+                    fileURL: virtualURL,
+                    isInsideArchive: true,
+                    archivePath: archiveURL.path,
+                    knownSize: entry.size,
+                    knownDate: entry.modificationDate
+                )
                 continuation.yield(result)
                 delta.matchesFound += 1
             }
         }
         return delta
+    }
+
+    // MARK: - Parse TAR Verbose Line
+
+    /// Parsed entry from tar -tv output
+    private struct TarEntry {
+        let name: String
+        let size: Int64
+        let modificationDate: Date?
+        let isDirectory: Bool
+    }
+
+    /// Parse a single line from `tar -tvf` output.
+    /// BSD tar format: -rw-r--r--  0 user staff    1234 Feb 15 10:30 2025 path/to/file
+    /// GNU tar format: -rw-r--r-- user/staff    1234 2025-02-15 10:30 path/to/file
+    private static func parseTarVerboseLine(_ line: String) -> TarEntry? {
+        let trimmed = line.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty else { return nil }
+
+        // First character: d=directory, -=file, l=symlink, etc.
+        let firstChar = trimmed.first ?? "-"
+        let isDirectory = firstChar == "d"
+
+        // Try BSD tar format first (macOS default)
+        // Example: -rw-r--r--  0 senat staff     1234 Feb 15 10:30 2025 path/to/file.txt
+        //          drwxr-xr-x  0 senat staff        0 Feb 15 10:30 2025 folder/
+        if let entry = parseBSDTarLine(trimmed, isDirectory: isDirectory) {
+            return entry
+        }
+
+        // Try GNU tar format
+        // Example: -rw-r--r-- senat/staff     1234 2025-02-15 10:30 path/to/file.txt
+        if let entry = parseGNUTarLine(trimmed, isDirectory: isDirectory) {
+            return entry
+        }
+
+        return nil
+    }
+
+    /// Parse BSD tar -tv line (macOS)
+    /// Format: -rw-r--r--  0 user staff    1234 Feb 15 10:30 2025 path/to/file
+    private static func parseBSDTarLine(_ line: String, isDirectory: Bool) -> TarEntry? {
+        // BSD tar uses: perms link user group size month day time year name
+        // We need: size, month day time year, and everything after year as name
+
+        // Split by whitespace, keeping track of positions
+        let components = line.split(separator: " ", omittingEmptySubsequences: true)
+
+        // Need at least: perms(0) link(1) user(2) group(3) size(4) month(5) day(6) time(7) year(8) name(9+)
+        guard components.count >= 9 else { return nil }
+
+        // Check if this looks like BSD format: component[5] should be month name
+        let monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+        let possibleMonth = String(components[5])
+        guard monthNames.contains(possibleMonth) else { return nil }
+
+        // Parse size (component 4)
+        guard let size = Int64(components[4]) else { return nil }
+
+        // Parse date: month(5) day(6) time(7) year(8)
+        let month = possibleMonth
+        let day = String(components[6])
+        let time = String(components[7])
+        let year = String(components[8])
+        let dateString = "\(month) \(day) \(time) \(year)"
+        let date = parseTarDate(dateString)
+
+        // Name is everything after year — find position in original line
+        // Join remaining components (handles spaces in filenames)
+        let name: String
+        if components.count > 9 {
+            name = components[9...].joined(separator: " ")
+        } else {
+            // Only 9 components — name is last one
+            return nil
+        }
+
+        guard !name.isEmpty else { return nil }
+
+        return TarEntry(name: name, size: size, modificationDate: date, isDirectory: isDirectory)
+    }
+
+    /// Parse GNU tar -tv line
+    /// Format: -rw-r--r-- user/group    1234 2025-02-15 10:30 path/to/file
+    private static func parseGNUTarLine(_ line: String, isDirectory: Bool) -> TarEntry? {
+        let components = line.split(separator: " ", omittingEmptySubsequences: true)
+
+        // Need at least: perms(0) user/group(1) size(2) date(3) time(4) name(5+)
+        guard components.count >= 5 else { return nil }
+
+        // Check if component[1] contains "/" (user/group format)
+        let userGroup = String(components[1])
+        guard userGroup.contains("/") else { return nil }
+
+        // Parse size (component 2)
+        guard let size = Int64(components[2]) else { return nil }
+
+        // Parse date: YYYY-MM-DD HH:MM
+        let dateStr = String(components[3])
+        let timeStr = String(components[4])
+        let date = parseISODate("\(dateStr) \(timeStr)")
+
+        // Name is everything from component 5 onwards
+        guard components.count > 5 else { return nil }
+        let name = components[5...].joined(separator: " ")
+        guard !name.isEmpty else { return nil }
+
+        return TarEntry(name: name, size: size, modificationDate: date, isDirectory: isDirectory)
+    }
+
+    /// Parse BSD tar date format: "Feb 15 10:30 2025"
+    private static func parseTarDate(_ dateString: String) -> Date? {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "MMM d HH:mm yyyy"
+        if let date = formatter.date(from: dateString) {
+            return date
+        }
+        // Try with 2-digit day
+        formatter.dateFormat = "MMM dd HH:mm yyyy"
+        return formatter.date(from: dateString)
+    }
+
+    /// Parse ISO date format: "2025-02-15 10:30"
+    private static func parseISODate(_ dateString: String) -> Date? {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "yyyy-MM-dd HH:mm"
+        return formatter.date(from: dateString)
     }
 }
