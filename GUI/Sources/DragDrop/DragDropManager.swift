@@ -175,8 +175,14 @@ final class DragDropManager {
         return newURL
     }
 
-    // MARK: - Refresh affected panels
+    // MARK: - Refresh affected panels and clear marks
     private func refreshPanels(appState: AppState, operation: FileTransferOperation) async {
+        // Clear marks after successful operation
+        if let sourceSide = operation.sourcePanelSide {
+            appState.unmarkAll(on: sourceSide)
+            log.debug("DragDropManager: cleared marks on \(sourceSide) after operation")
+        }
+        
         let leftPath = URL(fileURLWithPath: appState.leftPath).standardizedFileURL
         let rightPath = URL(fileURLWithPath: appState.rightPath).standardizedFileURL
         let destPath = operation.destinationPath.standardizedFileURL

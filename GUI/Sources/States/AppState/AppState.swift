@@ -250,6 +250,12 @@ extension AppState {
     func clearMarksAfterOperation(on panel: PanelSide) {
         multiSelectionManager?.clearMarksAfterOperation(on: panel)
     }
+
+    /// Clear marks on specific panel
+    func unmarkAll(on panel: PanelSide) {
+        setMarkedFiles([], for: panel)
+        log.debug("[AppState] cleared all marks on \(panel)")
+    }
 }
 
 // MARK: - File Operations
