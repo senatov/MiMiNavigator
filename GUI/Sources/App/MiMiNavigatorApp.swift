@@ -20,6 +20,11 @@ struct MiMiNavigatorApp: App {
     @State private var showHiddenFiles = UserPreferences.shared.snapshot.showHiddenFiles
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @Environment(\.scenePhase) private var scenePhase
+    
+    /// App version from CFBundleShortVersionString (e.g. "0.9.4")
+    static var appVersion: String {
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.0"
+    }
 
     // MARK: -
     init() {
@@ -36,6 +41,7 @@ struct MiMiNavigatorApp: App {
                 .environment(appState)
                 .environment(dragDropManager)
                 .contextMenuDialogs(coordinator: contextMenuCoordinator, appState: appState)
+                .navigationTitle("MiMiNavigator V \(Self.appVersion)")
                 .onAppear {
                     appDelegate.bind(appState)
                     AppStateProvider.shared = appState
