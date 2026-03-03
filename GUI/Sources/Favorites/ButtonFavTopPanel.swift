@@ -110,10 +110,11 @@ struct ButtonFavTopPanel: View {
     private func historyButton() -> some View {
         Button(action: { openHistoryWindow() }) {
             Image(systemName: "clock.arrow.circlepath")
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(Color(red: 0.15, green: 0.45, blue: 0.9))
+                .font(.system(size: 13, weight: .medium))
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(.secondary)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(ToolbarIconButtonStyle())
         .help("Show navigation history")
     }
 
@@ -121,11 +122,11 @@ struct ButtonFavTopPanel: View {
     private func favoritesButton() -> some View {
         Button(action: { openFavoritesWindow() }) {
             Image(systemName: panelSide == .left ? "sidebar.left" : "sidebar.right")
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(Color(red: 0.9, green: 0.45, blue: 0.05))
-                .scaleEffect(CGSize(width: 0.9, height: 1.3), anchor: .leading)
+                .font(.system(size: 13, weight: .medium))
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(.secondary)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(ToolbarIconButtonStyle())
         .help("Navigation between favorites — \(String(describing: panelSide))")
     }
 
