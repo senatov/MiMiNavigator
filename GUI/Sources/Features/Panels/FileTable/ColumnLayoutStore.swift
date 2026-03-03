@@ -7,6 +7,7 @@
 //              Prevents recreating ColumnLayoutModel on every SwiftUI view rebuild.
 
 import SwiftUI
+import FileModelKit
 
 // MARK: - Column Layout Store (Singleton)
 /// Holds ColumnLayoutModel instances for left and right panels.
