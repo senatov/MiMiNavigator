@@ -67,6 +67,11 @@ actor FindFilesEngine {
 
     func getStats() -> FindFilesStats { stats }
 
+    /// Update current path from archive searcher callback
+    func updateCurrentPath(_ path: String) {
+        stats.currentPath = path
+    }
+
     // MARK: - Private
 
     // MARK: - Shared find arguments
@@ -144,6 +149,7 @@ actor FindFilesEngine {
         if criteria.isArchiveOnlySearch {
             log.info("[FindEngine] Archive-only search: \(criteria.searchDirectory.lastPathComponent)")
             stats.archivesScanned += 1
+            stats.currentPath = "📦 " + criteria.searchDirectory.lastPathComponent
             let nameRegex = FindFilesNameMatcher.buildRegex(pattern: criteria.fileNamePattern, caseSensitive: criteria.caseSensitive)
             let contentPattern = criteria.isContentSearch
                 ? FindFilesContentSearcher.buildPattern(text: criteria.searchText, caseSensitive: criteria.caseSensitive, useRegex: criteria.useRegex)
@@ -151,7 +157,10 @@ actor FindFilesEngine {
             let delta = await FindFilesArchiveSearcher.searchInsideArchive(
                 archiveURL: criteria.searchDirectory, criteria: criteria, nameRegex: nameRegex,
                 contentPattern: contentPattern, continuation: continuation,
-                passwordCallback: passwordCallback
+                passwordCallback: passwordCallback,
+                progressCallback: { @concurrent [weak self] path in
+                    await self?.updateCurrentPath(path)
+                }
             )
             stats.matchesFound += delta.matchesFound
             return
@@ -161,6 +170,7 @@ actor FindFilesEngine {
         if criteria.isSingleFileContentSearch {
             log.info("[FindEngine] Single-file content search: \(criteria.searchDirectory.lastPathComponent)")
             stats.filesScanned += 1
+            stats.currentPath = "🔍 " + criteria.searchDirectory.lastPathComponent
             let fileURL = criteria.searchDirectory
             let contentPattern = FindFilesContentSearcher.buildPattern(
                 text: criteria.searchText, caseSensitive: criteria.caseSensitive, useRegex: criteria.useRegex)
@@ -280,7 +290,8 @@ actor FindFilesEngine {
         guard exists else { return }
 
         stats.filesScanned += 1
-        stats.currentPath = fileURL.deletingLastPathComponent().path
+        // Show the actual file/directory being scanned, not just the parent
+        stats.currentPath = fileURL.path
 
         if isDir.boolValue {
             stats.directoriesScanned += 1
@@ -296,10 +307,15 @@ actor FindFilesEngine {
         if criteria.searchInArchives && ArchiveExtensions.isArchive(fileURL.pathExtension.lowercased()) {
             scannedArchivePaths.insert(fileURL.path)
             stats.archivesScanned += 1
+            // Show archive name in progress
+            stats.currentPath = "📦 " + fileURL.lastPathComponent
             let delta = await FindFilesArchiveSearcher.searchInsideArchive(
                 archiveURL: fileURL, criteria: criteria,
                 nameRegex: nameRegex, contentPattern: contentPattern,
-                continuation: continuation, passwordCallback: passwordCallback
+                continuation: continuation, passwordCallback: passwordCallback,
+                progressCallback: { @concurrent [weak self] path in
+                    await self?.updateCurrentPath(path)
+                }
             )
             stats.matchesFound += delta.matchesFound
             return
@@ -312,6 +328,8 @@ actor FindFilesEngine {
 
         // Content search
         if criteria.isContentSearch, let cp = contentPattern {
+            // Show file being searched for content
+            stats.currentPath = "🔍 " + fileURL.lastPathComponent
             let contentResults = FindFilesContentSearcher.searchFileContent(fileURL: fileURL, pattern: cp)
             for res in contentResults {
                 guard !Task.isCancelled else { return }
@@ -379,10 +397,15 @@ actor FindFilesEngine {
             let archiveURL = URL(fileURLWithPath: line)
             guard !scannedArchivePaths.contains(archiveURL.path) else { return }
             stats.archivesScanned += 1
+            // Show archive name in progress
+            stats.currentPath = "📦 " + archiveURL.lastPathComponent
             let delta = await FindFilesArchiveSearcher.searchInsideArchive(
                 archiveURL: archiveURL, criteria: criteria,
                 nameRegex: nameRegex, contentPattern: contentPattern,
-                continuation: continuation, passwordCallback: passwordCallback
+                continuation: continuation, passwordCallback: passwordCallback,
+                progressCallback: { @concurrent [weak self] path in
+                    await self?.updateCurrentPath(path)
+                }
             )
             stats.matchesFound += delta.matchesFound
         }

@@ -20,6 +20,8 @@ struct FindFilesResult: Identifiable, Hashable, Sendable, Codable {
     let archivePath: String?
     let fileSize: Int64
     let modifiedDate: Date?
+    /// True if this is a password-protected archive that was skipped
+    let isPasswordProtected: Bool
 
     /// Comparable date for Table sorting (nil → distant past)
     var sortableDate: Date {
@@ -32,6 +34,7 @@ struct FindFilesResult: Identifiable, Hashable, Sendable, Codable {
         case matchContext, lineNumber
         case isInsideArchive, archivePath
         case fileSize, modifiedDate
+        case isPasswordProtected
     }
 
     func encode(to encoder: Encoder) throws {
@@ -46,6 +49,7 @@ struct FindFilesResult: Identifiable, Hashable, Sendable, Codable {
         try c.encodeIfPresent(archivePath, forKey: .archivePath)
         try c.encode(fileSize, forKey: .fileSize)
         try c.encodeIfPresent(modifiedDate, forKey: .modifiedDate)
+        try c.encode(isPasswordProtected, forKey: .isPasswordProtected)
     }
 
     init(from decoder: Decoder) throws {
@@ -61,6 +65,7 @@ struct FindFilesResult: Identifiable, Hashable, Sendable, Codable {
         archivePath = try c.decodeIfPresent(String.self, forKey: .archivePath)
         fileSize = try c.decode(Int64.self, forKey: .fileSize)
         modifiedDate = try c.decodeIfPresent(Date.self, forKey: .modifiedDate)
+        isPasswordProtected = try c.decodeIfPresent(Bool.self, forKey: .isPasswordProtected) ?? false
     }
 
     init(
@@ -70,7 +75,8 @@ struct FindFilesResult: Identifiable, Hashable, Sendable, Codable {
         isInsideArchive: Bool = false,
         archivePath: String? = nil,
         knownSize: Int64? = nil,
-        knownDate: Date? = nil
+        knownDate: Date? = nil,
+        isPasswordProtected: Bool = false
     ) {
         self.id = UUID()
         self.fileURL = fileURL
@@ -80,6 +86,7 @@ struct FindFilesResult: Identifiable, Hashable, Sendable, Codable {
         self.lineNumber = lineNumber
         self.isInsideArchive = isInsideArchive
         self.archivePath = archivePath
+        self.isPasswordProtected = isPasswordProtected
 
         // If caller already read file attributes (off MainActor), use them directly.
         // Otherwise fall back to stat() — only for archive entries or callers that don't pre-read.

@@ -49,6 +49,9 @@ final class AppState {
     /// The path bar shows this virtual path and a Clear button.
     var leftSearchResultsPath: String?
     var rightSearchResultsPath: String?
+    /// Archive paths opened for search results (per panel).
+    /// Used by clearSearchResults to check dirty state and offer repack.
+    var searchResultArchives: [PanelSide: Set<String>] = [:]
 
     var sortKey: SortKeysEnum = .name
     var bSortAscending: Bool = true
@@ -898,17 +901,49 @@ extension AppState {
     }
 
     /// Clear virtual search results and restore the previous real directory.
+    /// For archive-backed results, checks if any archives were modified and offers repack.
     func clearSearchResults(on panel: PanelSide) {
         guard isShowingSearchResults(on: panel) else { return }
         log.info("[AppState] clearSearchResults on \(panel)")
-        // Restore the path from navigation history or fallback to home
+        let archivePaths = searchResultArchives[panel] ?? []
+        if !archivePaths.isEmpty {
+            Task { @MainActor in
+                for archivePath in archivePaths {
+                    let archiveURL = URL(fileURLWithPath: archivePath)
+                    let isDirty = await ArchiveManager.shared.isDirty(archiveURL: archiveURL)
+                    if isDirty {
+                        let shouldRepack = await confirmRepackSearchResult(
+                            archiveName: archiveURL.lastPathComponent
+                        )
+                        do {
+                            try await ArchiveManager.shared.closeArchive(
+                                at: archiveURL, repackIfDirty: shouldRepack
+                            )
+                        } catch {
+                            log.error("[AppState] repack failed: \(error.localizedDescription)")
+                        }
+                    } else {
+                        try? await ArchiveManager.shared.closeArchive(
+                            at: archiveURL, repackIfDirty: false
+                        )
+                    }
+                }
+                self.searchResultArchives[panel] = nil
+                self.finishClearSearchResults(on: panel)
+            }
+        } else {
+            searchResultArchives[panel] = nil
+            finishClearSearchResults(on: panel)
+        }
+    }
+
+    /// Finishes clearing search results after archive cleanup.
+    private func finishClearSearchResults(on panel: PanelSide) {
         let history = navigationHistory(for: panel)
         let previousPath = history.currentPath ?? NSHomeDirectory()
         switch panel {
-            case .left:
-                leftSearchResultsPath = nil
-            case .right:
-                rightSearchResultsPath = nil
+            case .left: leftSearchResultsPath = nil
+            case .right: rightSearchResultsPath = nil
         }
         updatePath(previousPath, for: panel)
         Task {
@@ -921,6 +956,21 @@ extension AppState {
                 await scanner.refreshFiles(currSide: .right)
                 await refreshRightFiles()
             }
+        }
+    }
+
+    /// Asks user whether to repack a modified archive from search results.
+    @MainActor
+    private func confirmRepackSearchResult(archiveName: String) async -> Bool {
+        return await withCheckedContinuation { continuation in
+            let alert = NSAlert()
+            alert.messageText = "Archive Modified"
+            alert.informativeText = "\"\(archiveName)\" was modified while viewing search results.\n\nRepack the archive with your changes?"
+            alert.alertStyle = .warning
+            alert.addButton(withTitle: "Repack")
+            alert.addButton(withTitle: "Discard Changes")
+            let response = alert.runModal()
+            continuation.resume(returning: response == .alertFirstButtonReturn)
         }
     }
 }

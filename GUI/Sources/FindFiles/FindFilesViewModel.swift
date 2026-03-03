@@ -71,6 +71,7 @@ final class FindFilesViewModel {
     // MARK: - Engine
     private let engine = FindFilesEngine()
     private var searchTask: Task<Void, Never>?
+    private var statsUpdateTask: Task<Void, Never>?
 
     // MARK: - Initialization
 
@@ -179,6 +180,9 @@ final class FindFilesViewModel {
         let engine = self.engine
         let buffer = FindFilesResultBuffer()
 
+        // Start high-frequency stats polling for live currentPath display
+        startStatsPolling()
+
         searchTask = Task.detached { [weak self] in
             guard let self else { return }
 
@@ -213,6 +217,8 @@ final class FindFilesViewModel {
                     self.results.append(contentsOf: remaining)
                 }
                 self.stats = finalStats
+                // Stop stats polling
+                self.stopStatsPolling()
                 // Only update state if not already cancelled by user action
                 if self.searchState != .cancelled {
                     if Task.isCancelled {
@@ -234,18 +240,41 @@ final class FindFilesViewModel {
         log.info("[FindFiles] Cancelling search")
         // 1. Immediately update UI state — stops animation
         searchState = .cancelled
-        // 2. Cancel the Swift task (stops iteration in startSearch)
+        // 2. Stop stats polling
+        stopStatsPolling()
+        // 3. Cancel the Swift task (stops iteration in startSearch)
         searchTask?.cancel()
         searchTask = nil
-        // 3. Kill the find process via engine (SIGKILL, no waiting)
+        // 4. Kill the find process via engine (SIGKILL, no waiting)
         Task {
             await engine.cancel()
         }
     }
 
+    // MARK: - Stats Polling
+    /// High-frequency polling for live currentPath updates in status bar
+    private func startStatsPolling() {
+        stopStatsPolling()
+        let engine = self.engine
+        statsUpdateTask = Task { @MainActor [weak self] in
+            while !Task.isCancelled {
+                guard let self, self.searchState == .searching else { break }
+                let currentStats = await engine.getStats()
+                self.stats = currentStats
+                try? await Task.sleep(for: .milliseconds(150))
+            }
+        }
+    }
+
+    private func stopStatsPolling() {
+        statsUpdateTask?.cancel()
+        statsUpdateTask = nil
+    }
+
     // MARK: - New Search (reset)
 
     func newSearch() {
+        stopStatsPolling()
         cancelSearch()
         results.removeAll()
         searchState = .idle
@@ -433,29 +462,62 @@ final class FindFilesViewModel {
     // MARK: - Show in Panel
 
     /// Convert search results to CustomFile list and inject into the focused panel.
-    /// Regular files become fully navigable. Archive entries keep their archive path for extract.
+    /// Regular files become fully navigable.
+    /// Archive entries are extracted via ArchiveManager so individual files appear
+    /// in the panel with full edit/delete support (dirty tracking → repack on close).
     func showInPanel(appState: AppState) {
         guard !results.isEmpty else { return }
         let panel = appState.focusedPanel
-        var customFiles: [CustomFile] = []
-        for result in results {
-            if result.isInsideArchive {
-                // Archive entries: use the archive path as the file path
-                // (activateItem will trigger extract via ArchiveManager)
-                if let archivePath = result.archivePath {
-                    let cf = CustomFile(name: result.fileName, path: archivePath)
-                    if !customFiles.contains(where: { $0.id == cf.id }) {
-                        customFiles.append(cf)
+        let capturedResults = results
+        Task { @MainActor in
+            var customFiles: [CustomFile] = []
+            var openedArchives: Set<String> = []
+            for result in capturedResults {
+                if result.isInsideArchive, let archivePath = result.archivePath {
+                    let archiveURL = URL(fileURLWithPath: archivePath)
+                    do {
+                        let tempDir = try await ArchiveManager.shared.openArchive(at: archiveURL)
+                        openedArchives.insert(archivePath)
+                        // Compute internal path: result.filePath relative to archivePath
+                        let internalPath: String
+                        if result.filePath.hasPrefix(archivePath) {
+                            internalPath = String(result.filePath.dropFirst(archivePath.count))
+                                .trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+                        } else {
+                            internalPath = result.fileName
+                        }
+                        let extractedURL = tempDir.appendingPathComponent(internalPath)
+                        if FileManager.default.fileExists(atPath: extractedURL.path) {
+                            let cf = CustomFile(
+                                extractedPath: extractedURL.path,
+                                archiveSourcePath: archivePath,
+                                archiveInternalPath: internalPath
+                            )
+                            customFiles.append(cf)
+                        } else {
+                            log.warning("[FindFiles] showInPanel: extracted file not found: \(extractedURL.path)")
+                            let cf = CustomFile(name: result.fileName, path: archivePath)
+                            if !customFiles.contains(where: { $0.id == cf.id }) {
+                                customFiles.append(cf)
+                            }
+                        }
+                    } catch {
+                        log.error("[FindFiles] showInPanel: archive extract failed: \(error.localizedDescription)")
+                        let cf = CustomFile(name: result.fileName, path: archivePath)
+                        if !customFiles.contains(where: { $0.id == cf.id }) {
+                            customFiles.append(cf)
+                        }
                     }
+                } else {
+                    let cf = CustomFile(name: result.fileName, path: result.filePath)
+                    customFiles.append(cf)
                 }
-            } else {
-                let cf = CustomFile(name: result.fileName, path: result.filePath)
-                customFiles.append(cf)
             }
+            appState.searchResultArchives[panel] = openedArchives
+            let virtualPath = "\u{1F50D} Search Results"
+            appState.showSearchResults(customFiles, virtualPath: virtualPath, on: panel)
+            log.info("[FindFiles] showInPanel: \(customFiles.count) files (\(openedArchives.count) archives)")
         }
-        let virtualPath = "\u{1F50D} Search Results"
-        appState.showSearchResults(customFiles, virtualPath: virtualPath, on: panel)
-        log.info("[FindFiles] showInPanel: \(customFiles.count) files injected into \(panel)")
     }
 
     // MARK: - Persistence

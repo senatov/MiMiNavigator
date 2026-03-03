@@ -97,10 +97,12 @@ struct FindFilesResultsView: View {
         ), sortOrder: $sortOrder) {
             // # — sequential row number (not sortable)
             TableColumn("#") { result in
-                if let idx = cachedSorted.firstIndex(where: { $0.id == result.id }) {
-                    Text("\(idx + 1)")
-                        .font(monoFont)
-                        .foregroundStyle(.secondary)
+                rowCell(result) {
+                    if let idx = cachedSorted.firstIndex(where: { $0.id == result.id }) {
+                        Text("\(idx + 1)")
+                            .font(monoFont)
+                            .foregroundStyle(result.isPasswordProtected ? .red : .secondary)
+                    }
                 }
             }
             .width(min: 30, ideal: 36, max: 50)
@@ -113,49 +115,74 @@ struct FindFilesResultsView: View {
 
             // Path — sortable
             TableColumn("Path", value: \.filePath) { result in
-                Text(result.isInsideArchive
-                     ? "\u{1F4E6} [\((result.archivePath as NSString?)?.lastPathComponent ?? "archive")] \(result.filePath)"
-                     : result.filePath)
-                    .font(columnFont)
-                    .foregroundStyle(result.isInsideArchive
-                        ? theme.archivePathColor
-                        : theme.columnDateColor)
-                    .lineLimit(1)
-                    .truncationMode(.middle)
-                    .help(result.isInsideArchive
-                          ? "Inside archive: \(result.archivePath ?? "?")\n\(result.filePath)"
-                          : result.filePath)
+                rowCell(result) {
+                    Text(result.isInsideArchive
+                         ? "\u{1F4E6} [\((result.archivePath as NSString?)?.lastPathComponent ?? "archive")] \(result.filePath)"
+                         : result.filePath)
+                        .font(columnFont)
+                        .foregroundStyle(result.isPasswordProtected
+                            ? .red
+                            : (result.isInsideArchive ? theme.archivePathColor : theme.columnDateColor))
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                        .help(result.isPasswordProtected
+                              ? "🔒 Password protected archive"
+                              : (result.isInsideArchive
+                                 ? "Inside archive: \(result.archivePath ?? "?")\n\(result.filePath)"
+                                 : result.filePath))
+                }
             }
             .width(min: 200, ideal: 300)
 
             // Date — sortable by modifiedDate
             TableColumn("Date Mod.", value: \.sortableDate) { result in
-                Text(result.modifiedDate.map { Self.dateFormatter.string(from: $0) } ?? "—")
-                    .font(monoFont)
-                    .foregroundStyle(theme.columnDateColor)
+                rowCell(result) {
+                    Text(result.modifiedDate.map { Self.dateFormatter.string(from: $0) } ?? "—")
+                        .font(monoFont)
+                        .foregroundStyle(result.isPasswordProtected ? .red : theme.columnDateColor)
+                }
             }
             .width(min: 80, ideal: 120)
 
             // Size — sortable
             TableColumn("Size", value: \.fileSize) { result in
-                Text(formatSize(result.fileSize))
-                    .font(monoFont)
-                    .foregroundStyle(theme.columnSizeColor)
+                rowCell(result) {
+                    Text(formatSize(result.fileSize))
+                        .font(monoFont)
+                        .foregroundStyle(result.isPasswordProtected ? .red : theme.columnSizeColor)
+                }
             }
             .width(min: 50, ideal: 65)
 
             // Match context (not sortable)
             TableColumn("Match") { result in
-                if let context = result.matchContext, let line = result.lineNumber {
-                    Text("L\(line): \(context)")
-                        .font(.system(size: 12, design: .monospaced))
-                        .foregroundStyle(theme.columnNameColor)
-                        .lineLimit(1)
-                        .truncationMode(.tail)
-                } else {
-                    Text("—")
-                        .font(columnFont)
-                        .foregroundStyle(.quaternary)
+                rowCell(result) {
+                    if result.isPasswordProtected {
+                        // Password-protected archive — show lock + message
+                        HStack(spacing: 4) {
+                            Image(systemName: "lock.fill")
+                                .foregroundStyle(.red)
+                            Text("Password protected")
+                                .foregroundStyle(.red)
+                        }
+                        .font(.system(size: 12, weight: .semibold))
+                    } else if let context = result.matchContext, let line = result.lineNumber {
+                        Text("L\(line): \(context)")
+                            .font(.system(size: 12, design: .monospaced))
+                            .foregroundStyle(theme.columnNameColor)
+                            .lineLimit(1)
+                            .truncationMode(.tail)
+                    } else if let context = result.matchContext {
+                        // Context without line number
+                        Text(context)
+                            .font(.system(size: 12))
+                            .foregroundStyle(theme.columnNameColor)
+                            .lineLimit(1)
+                    } else {
+                        Text("—")
+                            .font(columnFont)
+                            .foregroundStyle(.quaternary)
+                    }
                 }
             }
             .width(min: 80, ideal: 180)
@@ -172,22 +199,46 @@ struct FindFilesResultsView: View {
         .tableStyle(.inset(alternatesRowBackgrounds: true))
     }
 
+    // MARK: - Row Background Helper
+
+    /// Wraps cell content with red background for password-protected archives
+    @ViewBuilder
+    private func rowCell<Content: View>(_ result: FindFilesResult, @ViewBuilder content: () -> Content) -> some View {
+        if result.isPasswordProtected {
+            content()
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+                .background(Color.red.opacity(0.18))
+        } else {
+            content()
+        }
+    }
+
     // MARK: - Name Cell
 
     private func resultNameCell(_ result: FindFilesResult) -> some View {
-        HStack(spacing: 6) {
-            Image(systemName: result.isInsideArchive ? "doc.zipper" : fileIcon(for: result))
-                .font(.system(size: 12))
-                .foregroundStyle(result.isInsideArchive
-                    ? theme.archivePathColor
-                    : theme.columnKindColor)
-                .frame(width: 16)
-            Text(result.fileName)
-                .font(.system(size: 12, weight: result.isInsideArchive ? .semibold : .regular))
-                .foregroundStyle(result.isInsideArchive
-                    ? theme.archivePathColor
-                    : theme.columnNameColor)
-                .lineLimit(1)
+        rowCell(result) {
+            HStack(spacing: 6) {
+                // Password-protected archives get a red lock icon
+                if result.isPasswordProtected {
+                    Image(systemName: "lock.fill")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundStyle(.red)
+                        .frame(width: 16)
+                } else {
+                    Image(systemName: result.isInsideArchive ? "doc.zipper" : fileIcon(for: result))
+                        .font(.system(size: 12))
+                        .foregroundStyle(result.isInsideArchive
+                            ? theme.archivePathColor
+                            : theme.columnKindColor)
+                        .frame(width: 16)
+                }
+                Text(result.fileName)
+                    .font(.system(size: 12, weight: result.isInsideArchive || result.isPasswordProtected ? .semibold : .regular))
+                    .foregroundStyle(result.isPasswordProtected
+                        ? .red
+                        : (result.isInsideArchive ? theme.archivePathColor : theme.columnNameColor))
+                    .lineLimit(1)
+            }
         }
     }
 
