@@ -19,8 +19,10 @@ struct PanelFileTableSection: View {
     let onSelect: (CustomFile) -> Void
     let onDoubleClick: (CustomFile) -> Void
     @State private var rowRects: [CustomFile.ID: CGRect] = [:]
-    // Owned here so it survives files-list updates without recreating
-    @State private var columnLayout: ColumnLayoutModel
+    // Use singleton ColumnLayoutStore — avoids recreating ColumnLayoutModel on every SwiftUI rebuild
+    private var columnLayout: ColumnLayoutModel {
+        ColumnLayoutStore.shared.layout(for: panelSide)
+    }
 
     // MARK: - Init
     init(
@@ -37,7 +39,6 @@ struct PanelFileTableSection: View {
         self.onPanelTap = onPanelTap
         self.onSelect = onSelect
         self.onDoubleClick = onDoubleClick
-        self._columnLayout = State(initialValue: ColumnLayoutModel(panelSide: panelSide))
     }
 
     var body: some View {
@@ -45,7 +46,7 @@ struct PanelFileTableSection: View {
             panelSide: panelSide,
             files: files,
             selectedID: $selectedID,
-            layout: $columnLayout,
+            layout: columnLayout,
             onSelect: handleSelection,
             onDoubleClick: onDoubleClick
         )

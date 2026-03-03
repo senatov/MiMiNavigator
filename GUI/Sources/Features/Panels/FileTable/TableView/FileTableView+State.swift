@@ -35,15 +35,22 @@ extension FileTableView {
 
     /// Rebuilds the O(1) lookup dictionary and the rows array after list changes. Called only on list update.
     private func rebuildIndexByID() {
-        var index = [CustomFile.ID: Int](minimumCapacity: cachedSortedFiles.count)
-        var rows = [(offset: Int, element: CustomFile)]()
-        rows.reserveCapacity(cachedSortedFiles.count)
-        for (offset, file) in cachedSortedFiles.enumerated() {
-            index[file.id] = offset
-            rows.append((offset: offset, element: file))
+        // Reuse existing capacity to reduce allocations on repeated rebuilds
+        cachedIndexByID.removeAll(keepingCapacity: true)
+        cachedSortedRows.removeAll(keepingCapacity: true)
+        
+        // Reserve if growing significantly
+        if cachedIndexByID.capacity < cachedSortedFiles.count {
+            cachedIndexByID.reserveCapacity(cachedSortedFiles.count)
         }
-        cachedIndexByID = index
-        cachedSortedRows = rows
+        if cachedSortedRows.capacity < cachedSortedFiles.count {
+            cachedSortedRows.reserveCapacity(cachedSortedFiles.count)
+        }
+        
+        for (offset, file) in cachedSortedFiles.enumerated() {
+            cachedIndexByID[file.id] = offset
+            cachedSortedRows.append((offset: offset, element: file))
+        }
     }
 
     // MARK: - Auto-fit helpers (still available for future use)

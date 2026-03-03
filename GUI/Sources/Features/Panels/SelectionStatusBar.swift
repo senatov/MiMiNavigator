@@ -115,9 +115,9 @@ struct SelectionStatusBar: View {
 
             Spacer()
 
-            // Right: position / total items
+            // Right: position / total items (no thousand separators for clarity)
             if selectedIndex > 0 {
-                Text("\(selectedIndex) / \(totalFiles)")
+                Text("\(selectedIndex)/\(totalFiles)")
                     .font(.system(size: 11, design: .monospaced))
                     .foregroundStyle(.secondary)
             } else {
