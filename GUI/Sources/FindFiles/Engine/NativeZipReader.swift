@@ -20,6 +20,7 @@ struct ZipDirectoryEntry: Sendable {
     let compressionMethod: UInt16
     let localHeaderOffset: UInt32
     let isDirectory: Bool
+    let modificationDate: Date?
 
     /// Last path component (e.g., "Foo.java" from "com/example/Foo.java")
     var baseName: String {
@@ -201,6 +202,8 @@ enum NativeZipReader {
             else { break }
 
             let method = readUInt16(cdData, offset + 10)
+            let dosTime = readUInt16(cdData, offset + 12)
+            let dosDate = readUInt16(cdData, offset + 14)
             let compSize = readUInt32(cdData, offset + 20)
             let uncompSize = readUInt32(cdData, offset + 24)
             let nameLen = Int(readUInt16(cdData, offset + 28))
@@ -217,6 +220,9 @@ enum NativeZipReader {
 
             let isDir = fileName.hasSuffix("/")
 
+            // Parse MS-DOS date/time to Date
+            let modDate = decodeDosDateTime(date: dosDate, time: dosTime)
+
             if !isDir {
                 entries.append(ZipDirectoryEntry(
                     fileName: fileName,
@@ -224,7 +230,8 @@ enum NativeZipReader {
                     uncompressedSize: uncompSize,
                     compressionMethod: method,
                     localHeaderOffset: localOffset,
-                    isDirectory: false
+                    isDirectory: false,
+                    modificationDate: modDate
                 ))
             }
 
@@ -232,6 +239,31 @@ enum NativeZipReader {
         }
 
         return entries
+    }
+
+    // MARK: - Private: MS-DOS Date/Time Decoder
+
+    /// Decode MS-DOS date and time format to Date
+    /// Date: bits 0-4 = day, 5-8 = month, 9-15 = year (from 1980)
+    /// Time: bits 0-4 = seconds/2, 5-10 = minute, 11-15 = hour
+    private static func decodeDosDateTime(date: UInt16, time: UInt16) -> Date? {
+        let day = Int(date & 0x1F)
+        let month = Int((date >> 5) & 0x0F)
+        let year = Int((date >> 9) & 0x7F) + 1980
+
+        let seconds = Int(time & 0x1F) * 2
+        let minute = Int((time >> 5) & 0x3F)
+        let hour = Int((time >> 11) & 0x1F)
+
+        var components = DateComponents()
+        components.year = year
+        components.month = month
+        components.day = day
+        components.hour = hour
+        components.minute = minute
+        components.second = seconds
+
+        return Calendar(identifier: .gregorian).date(from: components)
     }
 
     // MARK: - Private: ZIP64 Support

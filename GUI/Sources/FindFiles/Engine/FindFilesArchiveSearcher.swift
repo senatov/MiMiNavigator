@@ -213,7 +213,9 @@ enum FindFilesArchiveSearcher {
                                 matchContext: String(line.prefix(200)),
                                 lineNumber: index + 1,
                                 isInsideArchive: true,
-                                archivePath: archiveURL.path
+                                archivePath: archiveURL.path,
+                                knownSize: Int64(entry.uncompressedSize),
+                                knownDate: entry.modificationDate
                             )
                             continuation.yield(result)
                             delta.matchesFound += 1
@@ -236,13 +238,14 @@ enum FindFilesArchiveSearcher {
                     continue
                 }
             } else {
-                // Name-only match — yield immediately with real size from ZIP central directory
+                // Name-only match — yield immediately with real size and date from ZIP central directory
                 let virtualURL = archiveURL.appendingPathComponent(entry.fileName)
                 let result = FindFilesResult(
                     fileURL: virtualURL,
                     isInsideArchive: true,
                     archivePath: archiveURL.path,
-                    knownSize: Int64(entry.uncompressedSize)
+                    knownSize: Int64(entry.uncompressedSize),
+                    knownDate: entry.modificationDate
                 )
                 continuation.yield(result)
                 delta.matchesFound += 1
