@@ -586,18 +586,21 @@ extension AppState {
     func updateSorting(key: SortKeysEnum? = nil, ascending: Bool? = nil) {
         if let key { sortKey = key }
         if let ascending { bSortAscending = ascending }
-        log.debug("[AppState] updateSorting key=\(sortKey) asc=\(bSortAscending) panel=\(focusedPanel)")
-        let files = focusedPanel == .left ? displayedLeftFiles : displayedRightFiles
-        let sorted = FileSortingService.sort(
-            files,
+        log.debug("[AppState] updateSorting key=\(sortKey) asc=\(bSortAscending) — sorting BOTH panels")
+        
+        // Sort BOTH panels to keep them in sync
+        let leftSorted = FileSortingService.sort(
+            displayedLeftFiles,
             by: sortKey,
             bDirection: bSortAscending
         )
-        if focusedPanel == .left {
-            displayedLeftFiles = sorted
-        } else {
-            displayedRightFiles = sorted
-        }
+        let rightSorted = FileSortingService.sort(
+            displayedRightFiles,
+            by: sortKey,
+            bDirection: bSortAscending
+        )
+        displayedLeftFiles = leftSorted
+        displayedRightFiles = rightSorted
     }
 
     // MARK: -

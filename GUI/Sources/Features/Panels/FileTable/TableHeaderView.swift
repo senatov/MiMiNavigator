@@ -23,12 +23,22 @@ struct TableHeaderView: View {
     @Environment(AppState.self) var appState
     let panelSide: PanelSide
     @Bindable var layout: ColumnLayoutModel
+    var isFocused: Bool = false
 
     /// Column ID currently being dragged (for drop highlight)
     @State private var dragOverTargetID: ColumnID? = nil
 
     private var sortKey: SortKeysEnum { appState.sortKey }
     private var sortAscending: Bool { appState.bSortAscending }
+    
+    /// Header background color - warmWhite when focused
+    private var headerBackgroundColor: Color {
+        if isFocused {
+            return ColorThemeStore.shared.activeTheme.warmWhite
+        } else {
+            return TableHeaderStyle.backgroundColor
+        }
+    }
 
     var body: some View {
         let fixedCols = layout.visibleColumns.filter { $0.id != .name }
@@ -50,8 +60,8 @@ struct TableHeaderView: View {
         }
         .frame(height: 22)
         .padding(.vertical, 1)
-        .padding(.horizontal, 4)
-        .background(TableHeaderStyle.backgroundColor)
+        // No horizontal padding - must match NSTableView body exactly
+        .background(headerBackgroundColor)
         .overlay(alignment: .bottom) {
             Rectangle()
                 .fill(TableHeaderStyle.separatorColor)
@@ -93,7 +103,7 @@ struct TableHeaderView: View {
             }
         )
         .frame(width: spec.width, alignment: spec.id.alignment)
-        .padding(.horizontal, TableColumnDefaults.cellPadding)
+        // No padding - width must match NSTableView column exactly
         .background(
             dragOverTargetID == spec.id
                 ? Color.accentColor.opacity(0.15)
@@ -313,7 +323,8 @@ struct SortableHeader: View {
 
 // MARK: - Sort Arrow Button
 
-/// Clickable sort indicator with hover highlight (bold black, like ResizableDivider).
+/// Clickable sort indicator — macOS HIG style (Finder-like triangle).
+/// Shows small triangle when sorted, subtle indicator when not.
 struct SortArrowButton: View {
     let isActive: Bool
     let ascending: Bool
@@ -321,30 +332,32 @@ struct SortArrowButton: View {
 
     @State private var isHovering = false
 
+    // macOS HIG: simple triangle indicator
     private var arrowName: String {
-        isActive
-            ? (ascending ? "chevron.up" : "chevron.down")
-            : "chevron.up.chevron.down"
+        if isActive {
+            return ascending ? "chevron.up" : "chevron.down"
+        } else {
+            // Subtle indicator when not sorted by this column
+            return "chevron.up.chevron.down"
+        }
     }
 
     private var arrowColor: Color {
         if isHovering {
-            return Color.black
+            return Color.primary
         }
         guard isActive else {
-            return TableHeaderStyle.color.opacity(0.35)
+            return Color.secondary.opacity(0.5)
         }
-        return ascending
-            ? ColorThemeStore.shared.activeTheme.dividerActiveColor
-            : ColorThemeStore.shared.activeTheme.columnNameColor
+        return Color.accentColor
     }
 
     var body: some View {
         Image(systemName: arrowName)
-            .font(.system(size: isHovering ? 15 : (isActive ? 14 : 13), weight: isHovering ? .bold : .medium))
+            .font(.system(size: isActive ? 12 : 11, weight: isActive ? .bold : .medium))
             .foregroundStyle(arrowColor)
-            .shadow(color: isHovering ? Color.black.opacity(0.3) : .clear, radius: 1, x: 0, y: 0)
-            .padding(.horizontal, 3)
+            .padding(.horizontal, 4)
+            .padding(.vertical, 2)
             .contentShape(Rectangle().inset(by: -4))
             .onHover { hovering in
                 withAnimation(.easeInOut(duration: 0.1)) {

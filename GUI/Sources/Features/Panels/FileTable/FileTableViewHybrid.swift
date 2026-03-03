@@ -29,12 +29,22 @@ struct FileTableViewHybrid: View {
     
     private var isFocused: Bool { appState.focusedPanel == panelSide }
     
+    /// Background color for entire panel
+    private var panelBackgroundColor: Color {
+        isFocused ? colorStore.activeTheme.warmWhite : Color(nsColor: .controlBackgroundColor)
+    }
+    
     var body: some View {
         VStack(spacing: 0) {
-            // SwiftUI header (keeps existing column resize, sort, reorder)
-            TableHeaderView(panelSide: panelSide, layout: layout)
+            // SwiftUI header (existing, working)
+            TableHeaderView(panelSide: panelSide, layout: layout, isFocused: isFocused)
             
-            // NSTableView body (high performance)
+            // Separator line
+            Rectangle()
+                .fill(Color(nsColor: .separatorColor))
+                .frame(height: 1)
+            
+            // NSTableView body (no header, synced with SwiftUI header)
             NSFileTableView(
                 panelSide: panelSide,
                 files: files,
@@ -46,10 +56,7 @@ struct FileTableViewHybrid: View {
                 colorStore: colorStore,
                 isFocused: isFocused,
                 onSelect: handleSelect,
-                onDoubleClick: onDoubleClick,
-                onFileAction: handleFileAction,
-                onDirectoryAction: handleDirectoryAction,
-                onMultiSelectionAction: handleMultiSelectionAction
+                onDoubleClick: onDoubleClick
             )
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -152,20 +159,4 @@ struct FileTableViewHybrid: View {
         onSelect(file)
     }
     
-    // MARK: - Action Handlers (delegated to ContextMenuCoordinator)
-    
-    private func handleFileAction(_ action: FileAction, _ file: CustomFile) {
-        log.debug("[FileTableViewHybrid] file action=\(action) file=\(file.nameStr)")
-        ContextMenuCoordinator.shared.handleFileAction(action, for: file, panel: panelSide, appState: appState)
-    }
-    
-    private func handleDirectoryAction(_ action: DirectoryAction, _ file: CustomFile) {
-        log.debug("[FileTableViewHybrid] directory action=\(action) file=\(file.nameStr)")
-        ContextMenuCoordinator.shared.handleDirectoryAction(action, for: file, panel: panelSide, appState: appState)
-    }
-    
-    private func handleMultiSelectionAction(_ action: MultiSelectionAction) {
-        log.debug("[FileTableViewHybrid] multi-selection action=\(action)")
-        ContextMenuCoordinator.shared.handleMultiSelectionAction(action, panel: panelSide, appState: appState)
-    }
 }
