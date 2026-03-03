@@ -20,30 +20,26 @@ struct FileTableRowsView: View {
     let handleMultiSelectionAction: (MultiSelectionAction) -> Void
 
     var body: some View {
+        let currentSelectedID = selectedID  // Capture once to avoid repeated Binding access
         LazyVStack(spacing: 0) {
             ForEach(rows, id: \.element.id) { pair in
-                StableKeyView(pair.element.id) {
-                    row(for: pair.element, index: pair.offset)
-                }
+                // Only recompute isSelected for this specific row
+                let isSelected = currentSelectedID == pair.element.id
+                FileRow(
+                    index: pair.offset,
+                    file: pair.element,
+                    isSelected: isSelected,
+                    panelSide: panelSide,
+                    layout: layout,
+                    onSelect: { tapped in onSelect(tapped) },
+                    onDoubleClick: { tapped in onDoubleClick(tapped) },
+                    onFileAction: { action, f in handleFileAction(action, f) },
+                    onDirectoryAction: { action, f in handleDirectoryAction(action, f) },
+                    onMultiSelectionAction: { action in handleMultiSelectionAction(action) }
+                )
+                .id(pair.element.id)
             }
         }
-    }
-
-    @ViewBuilder
-    private func row(for file: CustomFile, index: Int) -> some View {
-        let isSelected = selectedID == file.id
-        FileRow(
-            index: index,
-            file: file,
-            isSelected: isSelected,
-            panelSide: panelSide,
-            layout: layout,
-            onSelect: { tapped in onSelect(tapped) },
-            onDoubleClick: { tapped in onDoubleClick(tapped) },
-            onFileAction: { action, f in handleFileAction(action, f) },
-            onDirectoryAction: { action, f in handleDirectoryAction(action, f) },
-            onMultiSelectionAction: { action in handleMultiSelectionAction(action) }
-        )
-        .id(file.id)
+        .transaction { $0.disablesAnimations = true }  // Disable animations for large lists
     }
 }
