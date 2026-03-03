@@ -9,6 +9,11 @@ import AppKit
 import FileModelKit
 import SwiftUI
 
+// MARK: - Feature flag: use NSTableView for large directories
+/// When true, uses high-performance NSTableView instead of SwiftUI LazyVStack.
+/// NSTableView handles 100k+ files without lag.
+private let useNSTableView = true
+
 // MARK: - Panel file table section container
 struct PanelFileTableSection: View {
     @Environment(AppState.self) var appState
@@ -42,14 +47,30 @@ struct PanelFileTableSection: View {
     }
 
     var body: some View {
-        FileTableView(
-            panelSide: panelSide,
-            files: files,
-            selectedID: $selectedID,
-            layout: columnLayout,
-            onSelect: handleSelection,
-            onDoubleClick: onDoubleClick
-        )
+        Group {
+            if useNSTableView {
+                // High-performance NSTableView for large directories
+                FileTableViewHybrid(
+                    panelSide: panelSide,
+                    files: files,
+                    filesVersion: panelSide == .left ? appState.leftFilesVersion : appState.rightFilesVersion,
+                    selectedID: $selectedID,
+                    layout: columnLayout,
+                    onSelect: handleSelection,
+                    onDoubleClick: onDoubleClick
+                )
+            } else {
+                // Original SwiftUI implementation
+                FileTableView(
+                    panelSide: panelSide,
+                    files: files,
+                    selectedID: $selectedID,
+                    layout: columnLayout,
+                    onSelect: handleSelection,
+                    onDoubleClick: onDoubleClick
+                )
+            }
+        }
         .contentShape(Rectangle())
         .simultaneousGesture(
             TapGesture(count: 1)
