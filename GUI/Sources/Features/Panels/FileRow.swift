@@ -81,16 +81,11 @@ struct FileRow: View {
                     .onDrag {
                         let filesToDrag = dragFiles
                         dragDropManager.startDrag(files: filesToDrag, from: panelSide)
-                        // Create NSItemProvider with all dragged file URLs
+                        // Use lightweight URL provider — actual file data is in DragDropManager.draggedFiles
+                        // Avoid registerFileRepresentation which causes huge delays on large files
                         let provider = NSItemProvider()
-                        for f in filesToDrag {
-                            provider.registerFileRepresentation(
-                                forTypeIdentifier: "public.file-url",
-                                visibility: .all
-                            ) { completion in
-                                completion(f.urlValue, true, nil)
-                                return nil
-                            }
+                        if let first = filesToDrag.first {
+                            provider.registerObject(first.urlValue as NSURL, visibility: .all)
                         }
                         return provider
                     } preview: {
