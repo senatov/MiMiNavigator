@@ -58,9 +58,9 @@ struct TableHeaderView: View {
                 draggableColumnHeader(for: spec)
             }
         }
+        .padding(.horizontal, 4)
         .frame(height: 22)
         .padding(.vertical, 1)
-        // No horizontal padding - must match NSTableView body exactly
         .background(headerBackgroundColor)
         .overlay(alignment: .bottom) {
             Rectangle()
