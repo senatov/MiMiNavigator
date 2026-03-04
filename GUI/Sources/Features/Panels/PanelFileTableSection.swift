@@ -3,7 +3,6 @@
 //
 //  Created by Iakov Senatov on 24.08.2024.
 //  Copyright © 2024 Senatov. All rights reserved.
-//
 
 import AppKit
 import FileModelKit
@@ -15,15 +14,19 @@ import SwiftUI
 private let useNSTableView = false  // Back to SwiftUI
 
 // MARK: - Panel file table section container
+
 struct PanelFileTableSection: View {
     @Environment(AppState.self) var appState
+
     let files: [CustomFile]
     @Binding var selectedID: CustomFile.ID?
     let panelSide: PanelSide
     let onPanelTap: (PanelSide) -> Void
     let onSelect: (CustomFile) -> Void
     let onDoubleClick: (CustomFile) -> Void
+
     @State private var rowRects: [CustomFile.ID: CGRect] = [:]
+
     // Use singleton ColumnLayoutStore — avoids recreating ColumnLayoutModel on every SwiftUI rebuild
     private var columnLayout: ColumnLayoutModel {
         ColumnLayoutStore.shared.layout(for: panelSide)
@@ -80,26 +83,17 @@ struct PanelFileTableSection: View {
                     }
                 }
         )
-        .coordinateSpace(name: "fileTableSpace")
-        .onPreferenceChange(RowRectPreference.self) { value in
-            if value != rowRects {
-                rowRects = value
-            }
-        }
         .animation(nil, value: selectedID)
         .transaction { txn in
             txn.disablesAnimations = true
         }
     }
-    
 
     // MARK: - Selection handler
     private func handleSelection(_ file: CustomFile) {
-        let wasInactive = appState.focusedPanel != panelSide
-        if wasInactive {
-            log.debug("[SELECT-FLOW] Activating panel <<\(panelSide)>>")
+        if appState.focusedPanel != panelSide {
+            appState.focusedPanel = panelSide
         }
-        appState.focusedPanel = panelSide
         notifyWillSelect(file)
         onSelect(file)
     }
@@ -118,6 +112,7 @@ struct PanelFileTableSection: View {
 }
 
 // MARK: - Notification Names
+
 extension Notification.Name {
     static let panelWillSelectFile = Notification.Name("PanelWillSelectFile")
 }

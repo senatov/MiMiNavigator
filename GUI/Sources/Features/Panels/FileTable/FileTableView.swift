@@ -15,6 +15,7 @@ import FileModelKit
 import UniformTypeIdentifiers
 
 // MARK: - File Table View
+
 /// Displays file list with sortable columns, keyboard navigation, and drag-drop support
 struct FileTableView: View {
     @Environment(AppState.self) var appState
@@ -50,7 +51,7 @@ struct FileTableView: View {
     
     /// Throttle for PgUp/PgDown — prevents overwhelming with rapid keypresses
     private let pageNavThrottle = KeypressThrottle(interval: 0.08)  // 80ms between page navigations
-
+    
     // MARK: - Column Layout — singleton from ColumnLayoutStore, no Binding needed
     let layout: ColumnLayoutModel
 
@@ -73,7 +74,6 @@ struct FileTableView: View {
     
     // MARK: - Computed Properties
     var isFocused: Bool { appState.focusedPanel == panelSide }
-
     var sorter: TableFileSorter { TableFileSorter(sortKey: sortKey, ascending: sortAscending) }
     
     /// Number of fully visible rows based on measured viewport height.
@@ -97,9 +97,7 @@ struct FileTableView: View {
     }
     
     var sortedRows: [(offset: Int, element: CustomFile)] { cachedSortedRows }
-    
-
-    
+        
     // MARK: - Body
     var body: some View {
         mainScrollView

@@ -4,142 +4,110 @@
 // Created by Iakov Senatov on 20.02.2026.
 // Copyright © 2026 Senatov. All rights reserved.
 // Description: Column identity, visibility, order and width model for FileTableView.
-//              Supports show/hide via header context menu, drag-to-reorder columns,
-//              and full persistence in UserDefaults per panel side.
-//              Name column is always pinned at index 0 and cannot be moved.
+//              Singleton store holds layouts for both panels — loaded ONCE at startup.
 
 import FileModelKit
 import SwiftUI
 import UniformTypeIdentifiers
 
 // MARK: - Column Drag UTType
+
 extension UTType {
     /// Custom UTType for column header drag-and-drop reorder
     static let mimiColumnID = UTType(exportedAs: "com.senatov.miminavigator.column-id")
 }
 
 // MARK: - Column Identity
+
 enum ColumnID: String, CaseIterable, Codable, Identifiable, Transferable {
-    case name = "name"
-    case dateModified = "dateModified"
-    case size = "size"
-    case kind = "kind"
-    case permissions = "permissions"
-    case owner = "owner"
-    case childCount = "childCount"
-    case dateCreated = "dateCreated"
-    case dateLastOpened = "dateLastOpened"
-    case dateAdded = "dateAdded"
-    case group = "group"
+    case name, dateModified, size, kind, permissions, owner, childCount
+    case dateCreated, dateLastOpened, dateAdded, group
 
     var id: String { rawValue }
 
-    // MARK: - Transferable
     static var transferRepresentation: some TransferRepresentation {
         CodableRepresentation(contentType: .mimiColumnID)
     }
 
     var title: String {
         switch self {
-            case .name: return "Name"
-            case .dateModified: return "Date Mod."
-            case .size: return "Size"
-            case .kind: return "Kind"
-            case .permissions: return "Permiss."
-            case .owner: return "Owner"
-            case .childCount: return "Count"
-            case .dateCreated: return "Created"
-            case .dateLastOpened: return "Last Open"
-            case .dateAdded: return "Added"
-            case .group: return "Group"
+        case .name: "Name"
+        case .dateModified: "Date Mod."
+        case .size: "Size"
+        case .kind: "Kind"
+        case .permissions: "Permiss."
+        case .owner: "Owner"
+        case .childCount: "Count"
+        case .dateCreated: "Created"
+        case .dateLastOpened: "Last Open"
+        case .dateAdded: "Added"
+        case .group: "Group"
         }
     }
 
-    /// SF Symbol icon for compact column headers (nil = text-only)
     var icon: String? {
         switch self {
-            case .name: return nil
-            case .dateModified: return nil
-            case .size: return nil
-            case .kind: return nil
-            case .permissions: return "lock.shield"
-            case .owner: return "person"
-            case .childCount: return "number"
-            case .dateCreated: return nil
-            case .dateLastOpened: return nil
-            case .dateAdded: return nil
-            case .group: return "person.2"
+        case .permissions: "lock.shield"
+        case .owner: "person"
+        case .childCount: "number"
+        case .group: "person.2"
+        default: nil
         }
     }
 
     var defaultWidth: CGFloat {
         switch self {
-            case .name: return 0  // flexible — fills remaining space
-            case .dateModified: return 130
-            case .size: return 75
-            case .kind: return 60
-            case .permissions: return 80
-            case .owner: return 70
-            case .childCount: return 80
-            case .dateCreated: return 130
-            case .dateLastOpened: return 130
-            case .dateAdded: return 130
-            case .group: return 70
+        case .name: 0  // flexible
+        case .dateModified, .dateCreated, .dateLastOpened, .dateAdded: 130
+        case .size: 75
+        case .kind: 60
+        case .permissions, .childCount: 80
+        case .owner, .group: 70
         }
     }
 
-    /// Columns that are visible by default (extended columns off by default)
     var defaultVisible: Bool {
         switch self {
-            case .dateCreated, .dateLastOpened, .dateAdded, .group: return false
-            default: return true
+        case .dateCreated, .dateLastOpened, .dateAdded, .group: false
+        default: true
         }
     }
 
-    /// Columns that can never be hidden (Name is mandatory)
     var isRequired: Bool { self == .name }
 
-    /// Alignment of the column content
     var alignment: Alignment {
         switch self {
-            case .size, .childCount: return .trailing
-            case .dateModified, .dateCreated, .dateLastOpened, .dateAdded: return .center
-            default: return .leading
+        case .size, .childCount: .trailing
+        case .dateModified, .dateCreated, .dateLastOpened, .dateAdded: .center
+        default: .leading
         }
     }
 
-    /// Per-column content text color from a given theme
     func columnColor(from theme: ColorTheme) -> Color {
         switch self {
-            case .name:                          return theme.columnNameColor
-            case .size:                          return theme.columnSizeColor
-            case .kind:                          return theme.columnKindColor
-            case .dateModified, .dateCreated,
-                 .dateLastOpened, .dateAdded:    return theme.columnDateColor
-            case .childCount:                    return theme.columnNameColor
-            default:                             return theme.panelText
+        case .name, .childCount: theme.columnNameColor
+        case .size: theme.columnSizeColor
+        case .kind: theme.columnKindColor
+        case .dateModified, .dateCreated, .dateLastOpened, .dateAdded: theme.columnDateColor
+        default: theme.panelText
         }
     }
 
-    /// Sort key for this column (nil = not sortable)
     var sortKey: SortKeysEnum? {
         switch self {
-            case .name: return .name
-            case .dateModified: return .date
-            case .size: return .size
-            case .kind: return .type
-            case .permissions: return .permissions
-            case .owner: return .owner
-            case .childCount: return .childCount
-            case .dateCreated: return nil
-            case .dateLastOpened: return nil
-            case .dateAdded: return nil
-            case .group: return nil
+        case .name: .name
+        case .dateModified: .date
+        case .size: .size
+        case .kind: .type
+        case .permissions: .permissions
+        case .owner: .owner
+        case .childCount: .childCount
+        default: nil
         }
     }
 }
 
-// MARK: - Column Spec (one entry in the ordered list)
+// MARK: - Column Spec
 
 struct ColumnSpec: Codable, Identifiable, Equatable {
     var id: ColumnID
@@ -153,60 +121,60 @@ struct ColumnSpec: Codable, Identifiable, Equatable {
     }
 }
 
+// MARK: - Column Layout Store (Singleton)
+
+@MainActor
+@Observable
+final class ColumnLayoutStore {
+    static let shared = ColumnLayoutStore()
+    
+    private(set) var left: ColumnLayoutModel
+    private(set) var right: ColumnLayoutModel
+    
+    private init() {
+        self.left = ColumnLayoutModel(panelSide: .left)
+        self.right = ColumnLayoutModel(panelSide: .right)
+        log.info("[ColumnLayoutStore] initialized — layouts loaded once")
+    }
+    
+    func layout(for side: PanelSide) -> ColumnLayoutModel {
+        side == .left ? left : right
+    }
+}
+
 // MARK: - Column Layout Model
 
 @MainActor
 @Observable
 final class ColumnLayoutModel {
-
-    // MARK: - Default ordered column list (Finder-style: Name, Date, Size, Kind, Perms, Owner, ChildCount)
     static let defaultOrder: [ColumnID] = [
         .name, .dateModified, .size, .kind, .permissions, .owner, .childCount,
-        .dateCreated, .dateLastOpened, .dateAdded, .group,
+        .dateCreated, .dateLastOpened, .dateAdded, .group
     ]
 
-    // MARK: - State
     var columns: [ColumnSpec]
     
     /// Version counter for efficient change detection in NSTableView
     private(set) var layoutVersion: Int = 0
 
-    // MARK: - Persistence key
     private let storageKey: String
-    // Guard: UserDefaults I/O must run only once per instance lifetime.
-    // PanelFileTableSection is a struct — its init() runs on every SwiftUI render pass,
-    // but @State keeps the ColumnLayoutModel class alive across renders.
-    private var didLoad = false
 
-    // MARK: - Init
     init(panelSide: PanelSide) {
         self.storageKey = "ColumnLayout.\(panelSide.rawValue)"
         self.columns = Self.defaultOrder.map { ColumnSpec(id: $0) }
-        loadOnce()
-    }
-
-    // MARK: - One-shot load guard
-    private func loadOnce() {
-        guard !didLoad else { return }
-        didLoad = true
         load()
     }
 
-    // MARK: - Visible columns in order
     var visibleColumns: [ColumnSpec] {
         columns.filter { $0.isVisible }
     }
 
-    // MARK: - Toggle visibility
     func toggle(_ id: ColumnID) {
-        guard !id.isRequired else { return }
-        if let idx = columns.firstIndex(where: { $0.id == id }) {
-            columns[idx].isVisible.toggle()
-            save()
-        }
+        guard !id.isRequired, let idx = columns.firstIndex(where: { $0.id == id }) else { return }
+        columns[idx].isVisible.toggle()
+        save()
     }
 
-    // MARK: - Update width
     func setWidth(_ width: CGFloat, for id: ColumnID) {
         if let idx = columns.firstIndex(where: { $0.id == id }) {
             columns[idx].width = max(TableColumnDefaults.minWidth, min(width, TableColumnDefaults.maxWidth))
@@ -216,72 +184,43 @@ final class ColumnLayoutModel {
 
     func saveWidths() { save() }
 
-    // MARK: - Move column (drag-and-drop reorder)
-    /// Returns true if the column can be dragged (Name is pinned at index 0)
-    func canMove(_ id: ColumnID) -> Bool {
-        id != .name
-    }
+    func canMove(_ id: ColumnID) -> Bool { id != .name }
 
-    /// Move a column from one position to another within the visible column list.
-    /// Name column is always pinned at index 0 and cannot be source or destination of moves.
     func moveColumn(_ sourceID: ColumnID, before targetID: ColumnID) {
-        guard sourceID != .name, targetID != .name else { return }
-        guard sourceID != targetID else { return }
+        guard sourceID != .name, targetID != .name, sourceID != targetID else { return }
         guard let srcIdx = columns.firstIndex(where: { $0.id == sourceID }),
-              columns.firstIndex(where: { $0.id == targetID }) != nil
-        else { return }
+              columns.firstIndex(where: { $0.id == targetID }) != nil else { return }
         let spec = columns.remove(at: srcIdx)
-        // Recalculate destination index after removal
-        let insertIdx: Int
-        if let newDstIdx = columns.firstIndex(where: { $0.id == targetID }) {
-            insertIdx = newDstIdx
-        } else {
-            insertIdx = columns.endIndex
-        }
+        let insertIdx = columns.firstIndex(where: { $0.id == targetID }) ?? columns.endIndex
         columns.insert(spec, at: insertIdx)
         save()
-        log.debug("[ColumnLayout] moved \(sourceID.rawValue) before \(targetID.rawValue)")
     }
 
-    /// Move a column to the end of the list (drop after last column)
     func moveColumnToEnd(_ sourceID: ColumnID) {
-        guard sourceID != .name else { return }
-        guard let srcIdx = columns.firstIndex(where: { $0.id == sourceID }) else { return }
+        guard sourceID != .name, let srcIdx = columns.firstIndex(where: { $0.id == sourceID }) else { return }
         let spec = columns.remove(at: srcIdx)
         columns.append(spec)
         save()
-        log.debug("[ColumnLayout] moved \(sourceID.rawValue) to end")
     }
 
-    // MARK: - Persistence
     private func save() {
-        if let data = try? JSONEncoder().encode(columns) {
-            UserDefaults.standard.set(data, forKey: storageKey)
-            log.debug("[ColumnLayout] saved \(storageKey)")
-        }
+        guard let data = try? JSONEncoder().encode(columns) else { return }
+        UserDefaults.standard.set(data, forKey: storageKey)
     }
 
     private func load() {
         guard let data = UserDefaults.standard.data(forKey: storageKey),
-            let saved = try? JSONDecoder().decode([ColumnSpec].self, from: data)
-        else { return }
-
-        // Merge saved with defaults: add new columns, keep saved order and widths
-        var merged: [ColumnSpec] = saved
-        for defaultCol in Self.defaultOrder {
-            if !merged.contains(where: { $0.id == defaultCol }) {
-                merged.append(ColumnSpec(id: defaultCol))
-            }
+              let saved = try? JSONDecoder().decode([ColumnSpec].self, from: data) else { return }
+        var merged = saved
+        for col in Self.defaultOrder where !merged.contains(where: { $0.id == col }) {
+            merged.append(ColumnSpec(id: col))
         }
-        // Ensure Name is always visible and first
-        if let nameIdx = merged.firstIndex(where: { $0.id == .name }), nameIdx != 0 {
-            let nameSpec = merged.remove(at: nameIdx)
-            merged.insert(nameSpec, at: 0)
+        // Name always first and visible
+        if let idx = merged.firstIndex(where: { $0.id == .name }), idx != 0 {
+            let spec = merged.remove(at: idx)
+            merged.insert(spec, at: 0)
         }
-        if let nameIdx = merged.firstIndex(where: { $0.id == .name }) {
-            merged[nameIdx].isVisible = true
-        }
+        merged[0].isVisible = true
         columns = merged
-        // Load logging removed — was triggering on every SwiftUI rebuild before singleton fix
     }
 }
