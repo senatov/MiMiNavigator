@@ -18,8 +18,8 @@ struct BreadCrumbPathControl: View {
     // MARK: - Design Constants
     private enum Design {
         static let cornerRadius: CGFloat = 8
-        static let activeBackgroundColor = Color.yellow.opacity(0.07)
-        static let inactiveBackgroundColor = Color.clear
+        static let activeBackgroundColor = DesignTokens.warmWhite
+        static let inactiveBackgroundColor = DesignTokens.card
         static let borderOpacity: CGFloat = 0.15
     }
 
