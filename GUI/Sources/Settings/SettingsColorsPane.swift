@@ -27,6 +27,7 @@ struct ColorTheme: Identifiable, Equatable {
     var selectionActive: Color
     var selectionInactive: Color
     var selectionBorder: Color
+    var selectionLineWidth: CGFloat
 
     // UI chrome
     var separatorColor: Color
@@ -84,9 +85,10 @@ extension ColorTheme {
         dirNameColor:       Color.primary,
         fileNameColor:      Color.primary,
         symlinkColor:       Color(nsColor: .linkColor),
-        selectionActive:    Color(red: 220/255, green: 235/255, blue: 255/255),
+        selectionActive:    Color(red: 255/255, green: 255/255, blue: 220/255),
         selectionInactive:  Color(nsColor: .unemphasizedSelectedContentBackgroundColor),
-        selectionBorder:    Color(red: 20/255, green: 40/255, blue: 120/255),
+        selectionBorder:    Color(red: 0/255, green: 100/255, blue: 225/255),
+        selectionLineWidth: 2.0,
         separatorColor:     Color(nsColor: .separatorColor),
         dialogBase:         Color(red: 239/255, green: 239/255, blue: 239/255),
         dialogStripe:       Color(red: 231/255, green: 231/255, blue: 231/255),
@@ -125,6 +127,7 @@ extension ColorTheme {
         selectionActive:    Color(red: 255/255, green: 200/255, blue: 100/255),
         selectionInactive:  Color(red: 250/255, green: 235/255, blue: 200/255),
         selectionBorder:    Color(red: 210/255, green: 150/255, blue: 60/255).opacity(0.5),
+        selectionLineWidth: 2.0,
         separatorColor:     Color(red: 200/255, green: 185/255, blue: 160/255),
         dialogBase:         Color(red: 250/255, green: 245/255, blue: 235/255),
         dialogStripe:       Color(red: 245/255, green: 238/255, blue: 224/255),
@@ -163,6 +166,7 @@ extension ColorTheme {
         selectionActive:    Color(red: 50/255,  green: 80/255,  blue: 130/255),
         selectionInactive:  Color(red: 40/255,  green: 50/255,  blue: 75/255),
         selectionBorder:    Color(red: 80/255,  green: 130/255, blue: 220/255).opacity(0.6),
+        selectionLineWidth: 2.0,
         separatorColor:     Color(red: 55/255,  green: 65/255,  blue: 90/255),
         dialogBase:         Color(red: 35/255,  green: 40/255,  blue: 58/255),
         dialogStripe:       Color(red: 28/255,  green: 33/255,  blue: 50/255),
@@ -201,6 +205,7 @@ extension ColorTheme {
         selectionActive:    Color(red: 238/255, green: 232/255, blue: 213/255),
         selectionInactive:  Color(red: 147/255, green: 161/255, blue: 161/255).opacity(0.2),
         selectionBorder:    Color(red: 38/255,  green: 139/255, blue: 210/255).opacity(0.4),
+        selectionLineWidth: 2.0,
         separatorColor:     Color(red: 147/255, green: 161/255, blue: 161/255).opacity(0.5),
         dialogBase:         Color(red: 250/255, green: 244/255, blue: 222/255),
         dialogStripe:       Color(red: 245/255, green: 238/255, blue: 214/255),
@@ -252,6 +257,7 @@ final class ColorThemeStore {
     @ObservationIgnored @AppStorage("color.selectionActive")   var hexSelActive: String = ""
     @ObservationIgnored @AppStorage("color.selectionInactive") var hexSelInactive: String = ""
     @ObservationIgnored @AppStorage("color.selectionBorder")   var hexSelBorder: String = ""
+    @ObservationIgnored @AppStorage("selection.lineWidth")     var storedLineWidth: Double = 2.0
     @ObservationIgnored @AppStorage("color.separator")         var hexSeparator: String = ""
     @ObservationIgnored @AppStorage("color.dialogBase")        var hexDialogBase: String = ""
     @ObservationIgnored @AppStorage("color.dialogStripe")      var hexDialogStripe: String = ""
@@ -307,6 +313,7 @@ final class ColorThemeStore {
         if let c = Color(hex: hexSelActive)  { theme.selectionActive = c }
         if let c = Color(hex: hexSelInactive) { theme.selectionInactive = c }
         if let c = Color(hex: hexSelBorder)  { theme.selectionBorder = c }
+        theme.selectionLineWidth = CGFloat(storedLineWidth)
         if let c = Color(hex: hexSeparator)  { theme.separatorColor = c }
         if let c = Color(hex: hexDialogBase) { theme.dialogBase = c }
         if let c = Color(hex: hexDialogStripe) { theme.dialogStripe = c }
@@ -381,6 +388,8 @@ struct SettingsColorsPane: View {
     @AppStorage("color.symlink")           private var hexSymlink: String = ""
     @AppStorage("color.selectionActive")   private var hexSelActive: String = ""
     @AppStorage("color.selectionInactive") private var hexSelInactive: String = ""
+    @AppStorage("color.selectionBorder")   private var hexSelBorder: String = ""
+    @AppStorage("selection.lineWidth")     private var selLineWidth: Double = 2.0
     @AppStorage("color.accent")            private var hexAccent: String = ""
     @AppStorage("color.dialogBackground")  private var hexDialogBg: String = ""
     @AppStorage("button.borderColor")        private var hexButtonBorder: String = ""
@@ -472,6 +481,19 @@ struct SettingsColorsPane: View {
                     Divider()
                     colorRow("Inactive selection", help: "Selected row when panel is unfocused",
                              preset: currentPreset.selectionInactive,  hex: $hexSelInactive)
+                    Divider()
+                    colorRow("Selection border",  help: "Top and bottom lines of selected row",
+                             preset: currentPreset.selectionBorder,    hex: $hexSelBorder)
+                    Divider()
+                    HStack {
+                        Text("Line width:")
+                            .frame(width: 150, alignment: .trailing)
+                        Slider(value: $selLineWidth,
+                         in: 0.5...4.0, step: 0.5)
+                        Text(String(format: "%.1f", selLineWidth))
+                            .frame(width: 30)
+                    }
+                    .padding(.vertical, 4)
                 }
             }
 

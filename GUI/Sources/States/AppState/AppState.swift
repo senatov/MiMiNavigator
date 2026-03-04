@@ -507,6 +507,7 @@ extension AppState {
             
             if response == .alertFirstButtonReturn {
                 let password = passwordField.stringValue
+                log.debug("[Password dialog] entered password len=\(password.count)")
                 if !password.isEmpty {
                     await enterArchive(at: archiveURL, on: panel, password: password)
                 }

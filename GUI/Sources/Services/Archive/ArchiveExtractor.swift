@@ -10,26 +10,31 @@ import Foundation
 // MARK: - Archive Extractor
 enum ArchiveExtractor {
 
-    @concurrent static func extract(archiveURL: URL, format: ArchiveFormat, to destination: URL) async throws {
+    @concurrent static func extract(archiveURL: URL, format: ArchiveFormat, to destination: URL, password: String? = nil) async throws {
         switch format {
         case .zip:
-            try await extractZip(archiveURL: archiveURL, to: destination)
+            try await extractZip(archiveURL: archiveURL, to: destination, password: password)
         case .tar, .tarGz, .tarBz2, .tarXz, .tarLzma, .tarZst, .tarLz4, .tarLzo, .tarLz, .compressZ:
-            try await extractTar(archiveURL: archiveURL, format: format, to: destination)
+            try await extractTar(archiveURL: archiveURL, format: format, to: destination, password: password)
         case .sevenZip, .sevenZipGeneric:
-            try await extract7z(archiveURL: archiveURL, to: destination)
+            try await extract7z(archiveURL: archiveURL, to: destination, password: password)
         }
         log.info("[Extractor] Done: \(archiveURL.lastPathComponent)")
     }
 
     // MARK: - ZIP
 
-    @concurrent private static func extractZip(archiveURL: URL, to destination: URL) async throws {
+    @concurrent private static func extractZip(archiveURL: URL, to destination: URL, password: String? = nil) async throws {
         let pipe = Pipe()
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/unzip")
         // -o overwrite, -q quiet, -DD skip timestamps (avoids fchmod errors in /tmp)
-        process.arguments = ["-o", "-q", "-DD", archiveURL.path, "-d", destination.path]
+        var args = ["-o", "-q", "-DD"]
+        if let pwd = password, !pwd.isEmpty {
+            args += ["-P", pwd]
+        }
+        args += [archiveURL.path, "-d", destination.path]
+        process.arguments = args
         process.standardOutput = Pipe()
         process.standardError = pipe
         process.standardInput = FileHandle(forReadingAtPath: "/dev/null")
@@ -38,7 +43,7 @@ enum ArchiveExtractor {
 
     // MARK: - TAR family
 
-    @concurrent private static func extractTar(archiveURL: URL, format: ArchiveFormat, to destination: URL) async throws {
+    @concurrent private static func extractTar(archiveURL: URL, format: ArchiveFormat, to destination: URL, password: String? = nil) async throws {
         let pipe = Pipe()
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/tar")
@@ -59,17 +64,21 @@ enum ArchiveExtractor {
             try await ArchiveProcessRunner.run(process, errorPipe: pipe)
         } catch {
             log.warning("[Extractor] tar failed for \(archiveURL.lastPathComponent), trying 7z")
-            try await extract7z(archiveURL: archiveURL, to: destination)
+            try await extract7z(archiveURL: archiveURL, to: destination, password: password)
         }
     }
 
     // MARK: - 7z
 
-    @concurrent private static func extract7z(archiveURL: URL, to destination: URL) async throws {
+    @concurrent private static func extract7z(archiveURL: URL, to destination: URL, password: String? = nil) async throws {
         let pipe = Pipe()
         let process = Process()
         process.executableURL = URL(fileURLWithPath: try ArchiveToolLocator.find7z())
-        process.arguments = ["x", archiveURL.path, "-o\(destination.path)", "-y"]
+        var args = ["x", archiveURL.path, "-o\(destination.path)", "-y"]
+        if let pwd = password, !pwd.isEmpty {
+            args.append("-p\(pwd)")
+        }
+        process.arguments = args
         process.standardOutput = Pipe()
         process.standardError = pipe
         process.standardInput = FileHandle(forReadingAtPath: "/dev/null")

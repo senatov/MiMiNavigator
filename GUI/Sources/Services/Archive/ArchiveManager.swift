@@ -55,8 +55,9 @@ actor ArchiveManager {
         let attrs = (try? fm.attributesOfItem(atPath: archiveURL.path)) ?? [:]
 
         do {
-            try await ArchiveExtractor.extract(archiveURL: archiveURL, format: format, to: tempDir)
+            try await ArchiveExtractor.extract(archiveURL: archiveURL, format: format, to: tempDir, password: password)
         } catch {
+            log.error("[ArchiveManager] openArchive: Extraction failed: \(error)")
             openingInProgress.remove(key) 
             try? fm.removeItem(at: tempDir)
             throw error
