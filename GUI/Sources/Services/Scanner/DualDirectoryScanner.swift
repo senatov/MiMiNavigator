@@ -160,10 +160,6 @@ actor DualDirectoryScanner {
         }
         
         // Only log if something actually changed
-        let hasChanges = totalChanges > 0 || !childUpdates.isEmpty
-        if hasChanges {
-            let mode = useIncremental ? "incremental" : (totalChanges > 0 ? "full-sort" : "childCount-only")
-        }
         
         await MainActor.run {
             switch side {

@@ -13,6 +13,7 @@ struct BatchProgressDialog: View {
     @Environment(AppState.self) var appState
     let state: BatchOperationState
     let onCancel: () -> Void
+    
     let onDismiss: () -> Void
 
     var body: some View {
