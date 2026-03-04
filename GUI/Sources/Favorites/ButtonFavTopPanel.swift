@@ -27,7 +27,7 @@ struct ButtonFavTopPanel: View {
     }
 
     private var iconColor: Color {
-        isActivePanel ? .primary : .secondary
+        isActivePanel ? Color.secondary : Color.secondary.opacity(0.5)
     }
 
     // MARK: - Init
