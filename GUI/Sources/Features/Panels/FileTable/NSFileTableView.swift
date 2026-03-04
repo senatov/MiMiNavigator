@@ -43,7 +43,8 @@ struct NSFileTableView: NSViewRepresentable {
         tableView.allowsColumnResizing = false
         tableView.allowsColumnSelection = false
         tableView.columnAutoresizingStyle = .noColumnAutoresizing
-        tableView.gridStyleMask = []  // No grid lines - dividers handled by SwiftUI header
+        tableView.gridStyleMask = .solidVerticalGridLineMask
+        tableView.gridColor = NSColor.separatorColor.withAlphaComponent(0.4)
         tableView.focusRingType = .none
         tableView.headerView = nil  // SwiftUI header
         
@@ -138,16 +139,31 @@ struct NSFileTableView: NSViewRepresentable {
             return
         }
         
-        // Calculate total width
-        // SwiftUI header has: Name + (divider + column) for each fixed column
-        // Divider width = 1pt (from ResizableDivider)
+        // SwiftUI header layout:
+        // [Name flexible] | div(1pt) | [col1 width] | div(1pt) | [col2 width] | ...
+        // 
+        // Total width = Name + n*dividers + sum(fixed widths)
+        // Where n = number of fixed columns (each has a divider before it)
+        //
+        // NSTableView intercellSpacing.width = 0, grid lines drawn inside columns.
+        // To match: we need Name = scrollWidth - sum(fixed) - n*dividers
+        //           But NSTableView doesn't have dividers, so we add 1pt to each
+        //           fixed column to account for the SwiftUI divider before it.
+        
         let scrollWidth = tableView.enclosingScrollView?.contentSize.width ?? tableView.bounds.width
-        let fixedColumnsCount = visibleSpecs.filter { $0.id != .name }.count
-        let fixedColumnsWidth = visibleSpecs.filter { $0.id != .name }.reduce(0) { $0 + $1.width }
-        let dividersWidth = CGFloat(fixedColumnsCount) * 1.0  // 1pt per divider
+        let fixedSpecs = visibleSpecs.filter { $0.id != .name }
+        let fixedColumnsWidth = fixedSpecs.reduce(0) { $0 + $1.width }
+        let dividersCount = fixedSpecs.count  // one divider before each fixed column
+        let dividersWidth = CGFloat(dividersCount) * 1.0
+        
+        // Name takes remaining space after fixed columns and dividers
         let nameWidth = max(100, scrollWidth - fixedColumnsWidth - dividersWidth)
         
-        // Sync widths - add divider width to each fixed column except the last
+        // Sync widths:
+        // - Name column: nameWidth
+        // - First fixed column: spec.width + 1pt (for the divider before it)
+        // - Other fixed columns: spec.width + 1pt (for divider before)
+        // - Last column: spec.width (no divider after)
         for (i, spec) in visibleSpecs.enumerated() {
             guard i < tableView.tableColumns.count else { break }
             let col = tableView.tableColumns[i]
@@ -156,9 +172,8 @@ struct NSFileTableView: NSViewRepresentable {
             if spec.id == .name {
                 targetWidth = nameWidth
             } else {
-                // Fixed column width + 1pt for divider (except last column)
-                let isLast = (i == visibleSpecs.count - 1)
-                targetWidth = spec.width + (isLast ? 0 : 1)
+                // Add 1pt for the SwiftUI divider that appears before this column
+                targetWidth = spec.width + 1.0
             }
             
             if abs(col.width - targetWidth) > 0.5 {
