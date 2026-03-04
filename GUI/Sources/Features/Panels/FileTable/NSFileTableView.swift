@@ -97,7 +97,11 @@ struct NSFileTableView: NSViewRepresentable {
             coord.lastSelectedID = selectedID
             if let id = selectedID, let idx = coord.indexByID[id] {
                 tableView.selectRowIndexes(IndexSet(integer: idx), byExtendingSelection: false)
-                tableView.scrollRowToVisible(idx)
+                NSAnimationContext.runAnimationGroup({ context in
+                    context.duration = 0.15
+                    context.allowsImplicitAnimation = true
+                    tableView.scrollRowToVisible(idx)
+                })
             } else {
                 tableView.deselectAll(nil)
             }
