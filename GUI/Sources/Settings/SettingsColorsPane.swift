@@ -84,7 +84,7 @@ extension ColorTheme {
         dirNameColor:       Color.primary,
         fileNameColor:      Color.primary,
         symlinkColor:       Color(nsColor: .linkColor),
-        selectionActive:    Color(nsColor: .selectedContentBackgroundColor),
+        selectionActive:    Color(red: 180/255, green: 220/255, blue: 255/255),
         selectionInactive:  Color(nsColor: .unemphasizedSelectedContentBackgroundColor),
         selectionBorder:    Color.accentColor.opacity(0.5),
         separatorColor:     Color(nsColor: .separatorColor),
