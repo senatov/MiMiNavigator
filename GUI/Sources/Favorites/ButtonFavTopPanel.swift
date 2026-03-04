@@ -21,6 +21,15 @@ struct ButtonFavTopPanel: View {
 
     let panelSide: PanelSide
 
+    // Active panel check for icon contrast
+    private var isActivePanel: Bool {
+        appState.focusedPanel == panelSide
+    }
+
+    private var iconColor: Color {
+        isActivePanel ? .primary : .secondary
+    }
+
     // MARK: - Init
     init(selectedSide: PanelSide) {
         log.debug("ButtonFavTopPanel init for side <<\(selectedSide)>>")
@@ -54,7 +63,8 @@ struct ButtonFavTopPanel: View {
     private func backButton() -> some View {
         let canGoBack = appState.navigationHistory(for: panelSide).canGoBack
         return Image(systemName: "arrowshape.backward")
-            .renderingMode(.original)
+            .symbolRenderingMode(.hierarchical)
+            .foregroundStyle(iconColor)
             .contentShape(Rectangle())
             .shadow(color: .gray, radius: 7.0, x: 1, y: 1)
             .opacity(canGoBack ? 1.0 : 0.4)
@@ -77,7 +87,8 @@ struct ButtonFavTopPanel: View {
             log.debug("Up: navigating to parent directory")
             navigationAdapter?.navigateUp(panel: panelSide.toFavPanelSide)
         }) {
-            Image(systemName: "arrowshape.up").renderingMode(.original)
+            Image(systemName: "arrowshape.up").symbolRenderingMode(.hierarchical)
+            .foregroundStyle(iconColor)
         }
         .buttonStyle(.plain)
         .shadow(color: .gray, radius: 7.0, x: 1, y: 1)
@@ -89,7 +100,8 @@ struct ButtonFavTopPanel: View {
     private func forwardButton() -> some View {
         let canGoForward = appState.navigationHistory(for: panelSide).canGoForward
         return Image(systemName: "arrowshape.right")
-            .renderingMode(.original)
+            .symbolRenderingMode(.hierarchical)
+            .foregroundStyle(iconColor)
             .contentShape(Rectangle())
             .shadow(color: .gray, radius: 7.0, x: 1, y: 1)
             .opacity(canGoForward ? 1.0 : 0.4)
@@ -112,7 +124,7 @@ struct ButtonFavTopPanel: View {
             Image(systemName: "clock.arrow.circlepath")
                 .font(.system(size: 13, weight: .medium))
                 .symbolRenderingMode(.hierarchical)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(iconColor)
         }
         .buttonStyle(ToolbarIconButtonStyle())
         .help("Show navigation history")
@@ -124,7 +136,7 @@ struct ButtonFavTopPanel: View {
             Image(systemName: panelSide == .left ? "sidebar.left" : "sidebar.right")
                 .font(.system(size: 13, weight: .medium))
                 .symbolRenderingMode(.hierarchical)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(iconColor)
         }
         .buttonStyle(ToolbarIconButtonStyle())
         .help("Navigation between favorites — \(String(describing: panelSide))")

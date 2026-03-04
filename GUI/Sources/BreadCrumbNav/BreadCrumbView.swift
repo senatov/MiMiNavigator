@@ -39,7 +39,6 @@ struct BreadCrumbView: View {
         .padding(.horizontal, 0)
         .frame(height: barHeight)
         .controlSize(.mini)
-        .background(colorStore.activeTheme.panelBackground)
     }
 
     // MARK: - Display segment with original index for navigation
