@@ -631,7 +631,13 @@ class FileTableRowView: NSTableRowView {
         let theme = colorStore?.activeTheme ?? ColorTheme.defaultTheme
         let color = isFocused ? NSColor(theme.selectionActive) : NSColor(theme.selectionInactive)
         color.setFill()
-        NSBezierPath(roundedRect: bounds.insetBy(dx: 4, dy: 1), xRadius: 6, yRadius: 6).fill()
+        let borderColor = isFocused ? NSColor(theme.selectionBorder) : NSColor(theme.selectionInactive).withAlphaComponent(0.3)
+        let rect = bounds.insetBy(dx: 4, dy: 1)
+        let path = NSBezierPath(roundedRect: rect, xRadius: 6, yRadius: 6)
+        path.fill()
+        borderColor.setStroke()
+        path.lineWidth = 1.5
+        path.stroke()
     }
     
     override var isEmphasized: Bool {
