@@ -86,7 +86,7 @@ extension ColorTheme {
         symlinkColor:       Color(nsColor: .linkColor),
         selectionActive:    Color(red: 220/255, green: 235/255, blue: 255/255),
         selectionInactive:  Color(nsColor: .unemphasizedSelectedContentBackgroundColor),
-        selectionBorder:    Color(red: 60/255, green: 100/255, blue: 180/255),
+        selectionBorder:    Color(red: 20/255, green: 40/255, blue: 120/255),
         separatorColor:     Color(nsColor: .separatorColor),
         dialogBase:         Color(red: 239/255, green: 239/255, blue: 239/255),
         dialogStripe:       Color(red: 231/255, green: 231/255, blue: 231/255),
