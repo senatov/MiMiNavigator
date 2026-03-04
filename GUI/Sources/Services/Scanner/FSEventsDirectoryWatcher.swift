@@ -84,7 +84,6 @@ final class FSEventsDirectoryWatcher: @unchecked Sendable {
             let cfPaths = Unmanaged<CFArray>.fromOpaque(eventPaths).takeUnretainedValue()
             guard let rawPaths = cfPaths as? [String] else { return }
             let flagsArray = Array(UnsafeBufferPointer(start: eventFlags, count: numEvents))
-            log.debug("[FSEvents callback] watcher.watchedPath=(watcher.watchedPath) numEvents=(numEvents)")
             watcher.scheduleHandleEvents(paths: rawPaths, flags: flagsArray)
         }
         guard let s = FSEventStreamCreate(
