@@ -69,22 +69,21 @@ final class AppState {
     // MARK: - Multi-Selection State (Total Commander style marking)
     var markedLeftFiles: Set<String> = []
     var markedRightFiles: Set<String> = []
-    
+
     // MARK: - Per-Panel Selected Index (for status bar display, updated by FileTableView)
     /// 1-based index of selected file in left panel (0 = none)
     var leftSelectedIndex: Int = 0
     /// 1-based index of selected file in right panel (0 = none)
     var rightSelectedIndex: Int = 0
-    
+
     /// Get selected index for panel
     func selectedIndex(for panel: PanelSide) -> Int {
         panel == .left ? leftSelectedIndex : rightSelectedIndex
     }
-    
+
     /// Set selected index for panel (called from FileTableView when selection changes)
     func setSelectedIndex(_ index: Int, for panel: PanelSide) {
-        if panel == .left { leftSelectedIndex = index }
-        else { rightSelectedIndex = index }
+        if panel == .left { leftSelectedIndex = index } else { rightSelectedIndex = index }
     }
 
     // MARK: - Tab Managers (per-panel)
@@ -198,18 +197,18 @@ extension AppState {
     /// If the newly focused panel has no selected file, select the topmost one.
     func ensureSelectionOnFocusedPanel() {
         switch focusedPanel {
-        case .left:
-            guard selectedLeftFile == nil else { return }
-            if let first = displayedLeftFiles.first {
-                selectedLeftFile = first
-                log.debug("[AppState] ensureSelection: auto-selected first left: \(first.nameStr)")
-            }
-        case .right:
-            guard selectedRightFile == nil else { return }
-            if let first = displayedRightFiles.first {
-                selectedRightFile = first
-                log.debug("[AppState] ensureSelection: auto-selected first right: \(first.nameStr)")
-            }
+            case .left:
+                guard selectedLeftFile == nil else { return }
+                if let first = displayedLeftFiles.first {
+                    selectedLeftFile = first
+                    log.debug("[AppState] ensureSelection: auto-selected first left: \(first.nameStr)")
+                }
+            case .right:
+                guard selectedRightFile == nil else { return }
+                if let first = displayedRightFiles.first {
+                    selectedRightFile = first
+                    log.debug("[AppState] ensureSelection: auto-selected first right: \(first.nameStr)")
+                }
         }
     }
 
@@ -221,8 +220,8 @@ extension AppState {
         selectionManager?.moveToEdge(top: top)
     }
 
-    }
 }
+
 // MARK: - Multi-Selection Operations (Total Commander + Finder style)
 extension AppState {
 
@@ -319,7 +318,8 @@ extension AppState {
             let newPath = resolvedURL.path
             var isDir: ObjCBool = false
             guard FileManager.default.fileExists(atPath: newPath, isDirectory: &isDir),
-                  isDir.boolValue else {
+                isDir.boolValue
+            else {
                 log.warning("[AppState] activateItem: broken symlink or gone: \(newPath)")
                 return
             }
@@ -338,7 +338,8 @@ extension AppState {
         // Regular file — open with default app
         NSWorkspace.shared.open(
             [file.urlValue],
-            withApplicationAt: NSWorkspace.shared.urlForApplication(toOpen: file.urlValue) ?? URL(fileURLWithPath: "/System/Library/CoreServices/Finder.app"),
+            withApplicationAt: NSWorkspace.shared.urlForApplication(toOpen: file.urlValue)
+                ?? URL(fileURLWithPath: "/System/Library/CoreServices/Finder.app"),
             configuration: NSWorkspace.OpenConfiguration()
         ) { _, error in
             if let error { log.error("[AppState] open file failed: \(error.localizedDescription)") }
@@ -489,7 +490,8 @@ extension AppState {
         alert.alertStyle = .critical
         if isEncrypted {
             alert.messageText = "Encrypted Archive"
-            alert.informativeText = "\"\(archiveName)\" is password-protected and cannot be browsed inline.\n\nOpen with a system application instead?"
+            alert.informativeText =
+                "\"\(archiveName)\" is password-protected and cannot be browsed inline.\n\nOpen with a system application instead?"
             alert.addButton(withTitle: "Open with App")
             alert.addButton(withTitle: "Cancel")
             let response = alert.runModal()
@@ -582,7 +584,7 @@ extension AppState {
         if let key { sortKey = key }
         if let ascending { bSortAscending = ascending }
         log.debug("[AppState] updateSorting key=\(sortKey) asc=\(bSortAscending) — sorting BOTH panels")
-        
+
         // Sort BOTH panels to keep them in sync
         let leftSorted = FileSortingService.sort(
             displayedLeftFiles,
@@ -983,7 +985,8 @@ extension AppState {
         return await withCheckedContinuation { continuation in
             let alert = NSAlert()
             alert.messageText = "Archive Modified"
-            alert.informativeText = "\"\(archiveName)\" was modified while viewing search results.\n\nRepack the archive with your changes?"
+            alert.informativeText =
+                "\"\(archiveName)\" was modified while viewing search results.\n\nRepack the archive with your changes?"
             alert.alertStyle = .warning
             alert.addButton(withTitle: "Repack")
             alert.addButton(withTitle: "Discard Changes")
