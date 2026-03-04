@@ -10,6 +10,7 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 // MARK: - Lightweight row view for file list with drag-drop support
+
 struct FileRow: View {
     let index: Int
     let file: CustomFile
@@ -21,15 +22,17 @@ struct FileRow: View {
     let onFileAction: (FileAction, CustomFile) -> Void
     let onDirectoryAction: (DirectoryAction, CustomFile) -> Void
     let onMultiSelectionAction: (MultiSelectionAction) -> Void
+
     @Environment(AppState.self) var appState
     @Environment(DragDropManager.self) var dragDropManager
-    @State private var colorStore = ColorThemeStore.shared
 
+    @State private var colorStore = ColorThemeStore.shared
     @State private var isDropTargeted: Bool = false
 
     // MARK: - Selection colors — live from ColorThemeStore
     private var selectionActiveFill: Color   { colorStore.activeTheme.selectionActive }
     private var selectionInactiveFill: Color { colorStore.activeTheme.selectionInactive }
+
     private static let dropTargetFill  = Color.accentColor.opacity(0.2)
     private static let dropTargetBorder = Color.accentColor
 
@@ -123,7 +126,6 @@ struct FileRow: View {
     }
 
     // MARK: - Extracted Views
-
     private var zebraBackground: some View {
         if isParentEntry {
             // ".." row — fixed light grey background regardless of zebra index
@@ -215,12 +217,10 @@ struct FileRow: View {
     }
 
     // MARK: - Event Handlers
-
     private func handleSingleClick() {
         // Detect modifier keys from current NSEvent
         let modifiers = Self.currentClickModifiers()
         log.debug("[FileRow] single-click on '\(file.nameStr)' panel=\(panelSide) modifiers=\(modifiers)")
-
         // Always select the file (updates cursor position)
         onSelect(file)
 
@@ -264,7 +264,6 @@ struct FileRow: View {
     // MARK: - Handle drop on this row (directory)
     private func handleDrop(_ droppedFiles: [CustomFile]) -> Bool {
         log.info("[FileRow] handleDrop on '\(file.nameStr)' validTarget=\(isValidDropTarget) droppedCount=\(droppedFiles.count)")
-
         guard isValidDropTarget else {
             log.warning("[FileRow] handleDrop rejected: not a valid drop target")
             return false
@@ -273,13 +272,11 @@ struct FileRow: View {
             log.warning("[FileRow] handleDrop rejected: no files dropped")
             return false
         }
-
         let droppedPaths = Set(droppedFiles.map { $0.urlValue.path })
         if droppedPaths.contains(file.urlValue.path) {
             log.warning("[FileRow] handleDrop rejected: cannot drop onto self")
             return false
         }
-
         log.info("[FileRow] handleDrop accepted: transferring \(droppedFiles.count) files to '\(file.nameStr)'")
         dragDropManager.prepareTransfer(files: droppedFiles, to: file.urlValue, from: panelSide)
         return true
@@ -298,16 +295,18 @@ struct FileRow: View {
     }
 
     // MARK: - Row content — driven by ColumnLayoutModel
+    /// Column widths and separators must EXACTLY match TableHeaderView layout:
+    ///   [Name flexible] | sep(1pt) | [col2 spec.width] | sep(1pt) | [col3 spec.width] | ...
+    /// NO extra padding inside fixed columns — width IS the total width.
     private var rowContent: some View {
         let fixedCols = layout.visibleColumns.filter { $0.id != .name }
-
         return HStack(alignment: .center, spacing: 0) {
-            // Name — flexible
+            // Name — flexible (matches header nameHeader)
             FileRowView(file: file, isSelected: isSelected, isActivePanel: isActivePanel, isMarked: isMarked)
                 .frame(minWidth: 60, maxWidth: .infinity, alignment: .leading)
                 .clipped()
 
-            // Fixed columns — separator before each, indices for reliable rendering
+            // Fixed columns — separator before each, width EXACT (no internal padding)
             ForEach(fixedCols.indices, id: \.self) { i in
                 let spec = fixedCols[i]
                 ColumnSeparator()
@@ -316,10 +315,7 @@ struct FileRow: View {
                     .foregroundStyle(cellColor(for: spec.id))
                     .lineLimit(1)
                     .truncationMode(.tail)
-                    // leading padding only: trailing side is covered by next separator
                     .frame(width: spec.width, alignment: spec.id.alignment)
-                    .padding(.leading, TableColumnDefaults.cellPadding)
-                    .padding(.trailing, TableColumnDefaults.cellPadding)
             }
         }
         .padding(.vertical, 2)
@@ -342,7 +338,6 @@ struct FileRow: View {
             case .group: Text(file.groupNameFormatted)
         }
     }
-
 }
 
 // MARK: - Kind column cell
