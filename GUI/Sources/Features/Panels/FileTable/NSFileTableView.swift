@@ -636,7 +636,7 @@ class FileTableRowView: NSTableRowView {
         let path = NSBezierPath(roundedRect: rect, xRadius: 6, yRadius: 6)
         path.fill()
         borderColor.setStroke()
-        path.lineWidth = 1.5
+        path.lineWidth = 1.0
         path.stroke()
     }
     
