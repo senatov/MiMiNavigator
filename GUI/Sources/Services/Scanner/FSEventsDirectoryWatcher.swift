@@ -138,7 +138,7 @@ final class FSEventsDirectoryWatcher: @unchecked Sendable {
         var directChildren: [String] = []
         var childCountUpdates: [String: Int] = [:]
         
-        log.debug("[FSEvents] raw paths: (paths)  watched=(watched)")
+        log.debug("[FSEvents] raw paths: \(paths)  watched=\(watched)")
         for p in paths {
             let url = URL(fileURLWithPath: p)
             let parent = url.deletingLastPathComponent().path
