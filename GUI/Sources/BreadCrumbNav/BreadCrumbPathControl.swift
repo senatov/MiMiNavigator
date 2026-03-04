@@ -16,7 +16,7 @@ struct BreadCrumbPathControl: View {
     let panelSide: PanelSide
 
     // MARK: - Design Constants
-    private enum Design {
+    @MainActor private enum Design {
         static let cornerRadius: CGFloat = 8
         static var activeBackgroundColor: Color { DesignTokens.warmWhite }
         static var inactiveBackgroundColor: Color { DesignTokens.card }
