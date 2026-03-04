@@ -18,7 +18,6 @@ extension FileTableView {
         // Quick check: skip if files array is identical (same reference or content)
         let newHash = files.count ^ (files.first?.id.hashValue ?? 0) ^ (files.last?.id.hashValue ?? 0)
         if Self.lastFilesHash[panelSide] == newHash && cachedSortedFiles.count == files.count {
-            log.debug("[Cache] panel=\(panelSide) skip rebuild — no changes detected")
             return
         }
         Self.lastFilesHash[panelSide] = newHash
