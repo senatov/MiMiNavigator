@@ -28,6 +28,7 @@ actor ArchiveManager {
     // MARK: - Open
 
     func openArchive(at archiveURL: URL, password: String? = nil) async throws -> URL {
+        log.debug("[ArchiveManager] openArchive: (archiveURL.lastPathComponent) hasPassword=(password != nil) pwdLen=(password?.count ?? 0)")
         let key = archiveURL.path
 
         if let existing = sessions[key] {
@@ -54,7 +55,7 @@ actor ArchiveManager {
         let attrs = (try? fm.attributesOfItem(atPath: archiveURL.path)) ?? [:]
 
         do {
-            try await ArchiveExtractor.extract(archiveURL: archiveURL, format: format, to: tempDir, password: password)
+            try await ArchiveExtractor.extract(archiveURL: archiveURL, format: format, to: tempDir)
         } catch {
             openingInProgress.remove(key)
             try? fm.removeItem(at: tempDir)
@@ -66,15 +67,15 @@ actor ArchiveManager {
         let snapshot = snapshotMtimes(in: tempDir)
 
         let session = ArchiveSession(
-            archiveURL:               archiveURL,
-            tempDirectory:            tempDir,
-            format:                   format,
-            isDirty:                  false,
+            archiveURL: archiveURL,
+            tempDirectory: tempDir,
+            format: format,
+            isDirty: false,
             originalPosixPermissions: (attrs[.posixPermissions] as? NSNumber)?.int16Value ?? 0o644,
             originalModificationDate: attrs[.modificationDate] as? Date,
-            originalCreationDate:     attrs[.creationDate] as? Date,
-            originalOwnerName:        (attrs[.ownerAccountName] as? String) ?? "",
-            baselineSnapshot:         snapshot
+            originalCreationDate: attrs[.creationDate] as? Date,
+            originalOwnerName: (attrs[.ownerAccountName] as? String) ?? "",
+            baselineSnapshot: snapshot
         )
 
         sessions[key] = session
@@ -152,11 +153,13 @@ actor ArchiveManager {
     /// Build a relative-path → mtime snapshot of every file in tempDir.
     private func snapshotMtimes(in tempDir: URL) -> [String: Date] {
         var snap: [String: Date] = [:]
-        guard let enumerator = fm.enumerator(
-            at: tempDir,
-            includingPropertiesForKeys: [.contentModificationDateKey],
-            options: .skipsHiddenFiles
-        ) else { return snap }
+        guard
+            let enumerator = fm.enumerator(
+                at: tempDir,
+                includingPropertiesForKeys: [.contentModificationDateKey],
+                options: .skipsHiddenFiles
+            )
+        else { return snap }
 
         let base = tempDir.standardizedFileURL.path
         while let url = enumerator.nextObject() as? URL {
@@ -173,11 +176,13 @@ actor ArchiveManager {
     /// extraction-time mtime artifacts that fooled the old creationDate approach.
     private func scanForChanges(in session: ArchiveSession) -> Bool {
         let snap = session.baselineSnapshot
-        guard let enumerator = fm.enumerator(
-            at: session.tempDirectory,
-            includingPropertiesForKeys: [.contentModificationDateKey],
-            options: .skipsHiddenFiles
-        ) else { return false }
+        guard
+            let enumerator = fm.enumerator(
+                at: session.tempDirectory,
+                includingPropertiesForKeys: [.contentModificationDateKey],
+                options: .skipsHiddenFiles
+            )
+        else { return false }
 
         let base = session.tempDirectory.standardizedFileURL.path
         while let url = enumerator.nextObject() as? URL {
