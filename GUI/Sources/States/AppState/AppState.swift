@@ -412,7 +412,7 @@ extension AppState {
 
     /// Navigate into an archive: extract to temp dir and open as directory
     func enterArchive(at archiveURL: URL, on panel: PanelSide, password: String? = nil) async {
-        log.info("[AppState] Entering archive: \(archiveURL.lastPathComponent) panel=\(panel)")
+        log.info("[AppState] Entering archive: (archiveURL.lastPathComponent) panel=(panel) hasPassword=(password != nil)")
         do {
             let tempDir = try await ArchiveManager.shared.openArchive(at: archiveURL, password: password)
 
