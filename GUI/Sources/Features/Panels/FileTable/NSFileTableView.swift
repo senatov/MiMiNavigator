@@ -494,9 +494,10 @@ struct NSFileTableView: NSViewRepresentable {
             panel.canChooseDirectories = false
             panel.allowsMultipleSelection = false
             panel.directoryURL = URL(fileURLWithPath: "/Applications")
-            panel.message = "Choose application to open '\(file.nameStr)'"
+            panel.message = "Choose application to open the file"
             if panel.runModal() == .OK, let appURL = panel.url {
-                NSWorkspace.shared.open([file.urlValue], withApplicationAt: appURL, configuration: .init())
+                let config = NSWorkspace.OpenConfiguration()
+                NSWorkspace.shared.open([file.urlValue], withApplicationAt: appURL, configuration: config)
             }
         }
         
@@ -512,21 +513,25 @@ struct NSFileTableView: NSViewRepresentable {
         
         @objc private func menuOpenInTerminal() {
             guard let file = clickedFile else { return }
-            let script = "tell application \"Terminal\" to do script \"cd '\(file.pathStr.replacingOccurrences(of: "'", with: "'\\''")}'\""
+            let escapedPath = file.pathStr.replacingOccurrences(of: "'", with: "'\\''")
+            let script = "tell application \"Terminal\" to do script \"cd '\(escapedPath)'\""
+            var error: NSDictionary?
             if let appleScript = NSAppleScript(source: script) {
-                appleScript.executeAndReturnError(nil)
+                appleScript.executeAndReturnError(&error)
             }
-            NSWorkspace.shared.launchApplication("Terminal")
+            if let terminalURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.apple.Terminal") {
+                NSWorkspace.shared.openApplication(at: terminalURL, configuration: NSWorkspace.OpenConfiguration())
+            }
         }
         
         @objc private func menuCut() {
             guard let file = clickedFile else { return }
-            ClipboardManager.shared.cut(files: [file])
+            ClipboardManager.shared.cut(files: [file], from: parent.panelSide)
         }
         
         @objc private func menuCopy() {
             guard let file = clickedFile else { return }
-            ClipboardManager.shared.copy(files: [file])
+            ClipboardManager.shared.copy(files: [file], from: parent.panelSide)
         }
         
         @objc private func menuCopyPath() {
