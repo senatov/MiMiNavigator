@@ -44,8 +44,7 @@ struct NSFileTableView: NSViewRepresentable {
         tableView.allowsColumnResizing = false
         tableView.allowsColumnSelection = false
         tableView.columnAutoresizingStyle = .noColumnAutoresizing
-        tableView.gridStyleMask = .solidVerticalGridLineMask
-        tableView.gridColor = NSColor.separatorColor.withAlphaComponent(0.4)
+        tableView.gridStyleMask = []  // Grid lines disabled - header dividers are sufficient
         tableView.focusRingType = .none
         tableView.headerView = nil  // SwiftUI header
         
@@ -160,22 +159,11 @@ struct NSFileTableView: NSViewRepresentable {
         // Name takes remaining space after fixed columns and dividers
         let nameWidth = max(100, scrollWidth - fixedColumnsWidth - dividersWidth)
         
-        // Sync widths:
-        // - Name column: nameWidth
-        // - First fixed column: spec.width + 1pt (for the divider before it)
-        // - Other fixed columns: spec.width + 1pt (for divider before)
-        // - Last column: spec.width (no divider after)
+        // Sync widths - use exact spec.width for fixed columns
         for (i, spec) in visibleSpecs.enumerated() {
             guard i < tableView.tableColumns.count else { break }
             let col = tableView.tableColumns[i]
-            
-            let targetWidth: CGFloat
-            if spec.id == .name {
-                targetWidth = nameWidth
-            } else {
-                // Add 1pt for the SwiftUI divider that appears before this column
-                targetWidth = spec.width + 1.0
-            }
+            let targetWidth = spec.id == .name ? nameWidth : spec.width
             
             if abs(col.width - targetWidth) > 0.5 {
                 col.width = targetWidth
