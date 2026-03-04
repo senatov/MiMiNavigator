@@ -26,6 +26,10 @@ enum HotKeyDefaults {
         HotKeyBinding(action: .togglePanelFocus, keyCode: 0x30, modifiers: .none),         // Tab
         HotKeyBinding(action: .moveUp,           keyCode: 0x7E, modifiers: .none),         // ↑
         HotKeyBinding(action: .moveDown,         keyCode: 0x7D, modifiers: .none),         // ↓
+        HotKeyBinding(action: .pageUp,           keyCode: 0x74, modifiers: .none),         // PageUp
+        HotKeyBinding(action: .pageDown,         keyCode: 0x79, modifiers: .none),         // PageDown
+        HotKeyBinding(action: .moveToTop,        keyCode: 0x73, modifiers: .none),         // Home
+        HotKeyBinding(action: .moveToBottom,     keyCode: 0x77, modifiers: .none),         // End
         HotKeyBinding(action: .openSelected,     keyCode: 0x24, modifiers: .none),         // Return
         HotKeyBinding(action: .parentDirectory,  keyCode: 0x33, modifiers: .none),         // Backspace
         HotKeyBinding(action: .refreshPanels,    keyCode: 0x0F, modifiers: .command),      // ⌘R
