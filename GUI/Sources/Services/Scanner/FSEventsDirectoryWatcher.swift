@@ -140,7 +140,8 @@ final class FSEventsDirectoryWatcher: @unchecked Sendable {
         
         log.debug("[FSEvents] raw paths: \(paths)  watched=\(watched)")
         for p in paths {
-            let url = URL(fileURLWithPath: p)
+            let cleanPath = p.hasSuffix("/") ? String(p.dropLast()) : p
+            let url = URL(fileURLWithPath: cleanPath)
             let parent = url.deletingLastPathComponent().path
             
             if parent == watched {
@@ -170,7 +171,8 @@ final class FSEventsDirectoryWatcher: @unchecked Sendable {
         var removed: [String] = []
         
         for p in directChildren {
-            let url = URL(fileURLWithPath: p)
+            let cleanPath = p.hasSuffix("/") ? String(p.dropLast()) : p
+            let url = URL(fileURLWithPath: cleanPath)
             if fm.fileExists(atPath: p) {
                 if !hidden && url.lastPathComponent.hasPrefix(".") { continue }
                 let keys: Set<URLResourceKey> = [
