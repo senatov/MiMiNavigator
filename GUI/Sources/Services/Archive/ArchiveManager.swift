@@ -27,7 +27,7 @@ actor ArchiveManager {
 
     // MARK: - Open
 
-    func openArchive(at archiveURL: URL) async throws -> URL {
+    func openArchive(at archiveURL: URL, password: String? = nil) async throws -> URL {
         let key = archiveURL.path
 
         if let existing = sessions[key] {
@@ -54,7 +54,7 @@ actor ArchiveManager {
         let attrs = (try? fm.attributesOfItem(atPath: archiveURL.path)) ?? [:]
 
         do {
-            try await ArchiveExtractor.extract(archiveURL: archiveURL, format: format, to: tempDir)
+            try await ArchiveExtractor.extract(archiveURL: archiveURL, format: format, to: tempDir, password: password)
         } catch {
             openingInProgress.remove(key)
             try? fm.removeItem(at: tempDir)

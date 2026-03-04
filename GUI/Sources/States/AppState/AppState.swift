@@ -411,10 +411,10 @@ extension AppState {
 extension AppState {
 
     /// Navigate into an archive: extract to temp dir and open as directory
-    func enterArchive(at archiveURL: URL, on panel: PanelSide) async {
+    func enterArchive(at archiveURL: URL, on panel: PanelSide, password: String? = nil) async {
         log.info("[AppState] Entering archive: \(archiveURL.lastPathComponent) panel=\(panel)")
         do {
-            let tempDir = try await ArchiveManager.shared.openArchive(at: archiveURL)
+            let tempDir = try await ArchiveManager.shared.openArchive(at: archiveURL, password: password)
 
             var state = archiveState(for: panel)
             state.enterArchive(archiveURL: archiveURL, tempDir: tempDir)
@@ -435,7 +435,7 @@ extension AppState {
             log.info("[AppState] Successfully entered archive: \(archiveURL.lastPathComponent)")
         } catch {
             log.error("[AppState] Failed to enter archive: \(error.localizedDescription)")
-            await showArchiveErrorAlert(archiveName: archiveURL.lastPathComponent, archiveURL: archiveURL, error: error)
+            await showArchiveErrorAlert(archiveName: archiveURL.lastPathComponent, archiveURL: archiveURL, error: error, panel: panel)
         }
     }
 
@@ -483,19 +483,34 @@ extension AppState {
 
     /// Shows NSAlert when archive open fails (encrypted, corrupted, etc.)
     @MainActor
-    private func showArchiveErrorAlert(archiveName: String, archiveURL: URL, error: Error) async {
+    private func showArchiveErrorAlert(archiveName: String, archiveURL: URL, error: Error, panel: PanelSide) async {
         let desc = error.localizedDescription
         let isEncrypted = desc.lowercased().contains("password") || desc.lowercased().contains("encrypted")
+        
         let alert = NSAlert()
-        alert.alertStyle = .critical
+        alert.alertStyle = isEncrypted ? .warning : .critical
+        
         if isEncrypted {
-            alert.messageText = "Encrypted Archive"
-            alert.informativeText =
-                "\"\(archiveName)\" is password-protected and cannot be browsed inline.\n\nOpen with a system application instead?"
+            alert.messageText = "Password Required"
+            alert.informativeText = "\"\(archiveName)\" is password-protected.\nEnter password to open:"
+            
+            let passwordField = NSSecureTextField(frame: NSRect(x: 0, y: 0, width: 260, height: 24))
+            passwordField.placeholderString = "Enter password"
+            alert.accessoryView = passwordField
+            
+            alert.addButton(withTitle: "Open")
             alert.addButton(withTitle: "Open with App")
             alert.addButton(withTitle: "Cancel")
+            
+            alert.window.initialFirstResponder = passwordField
             let response = alert.runModal()
+            
             if response == .alertFirstButtonReturn {
+                let password = passwordField.stringValue
+                if !password.isEmpty {
+                    await enterArchive(at: archiveURL, on: panel, password: password)
+                }
+            } else if response == .alertSecondButtonReturn {
                 NSWorkspace.shared.open(archiveURL)
             }
         } else {
