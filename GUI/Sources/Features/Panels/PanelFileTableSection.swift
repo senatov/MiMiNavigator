@@ -3,7 +3,6 @@
 //
 //  Created by Iakov Senatov on 24.08.2024.
 //  Copyright © 2024 Senatov. All rights reserved.
-//
 
 import AppKit
 import FileModelKit
@@ -18,26 +17,10 @@ struct PanelFileTableSection: View {
     let onPanelTap: (PanelSide) -> Void
     let onSelect: (CustomFile) -> Void
     let onDoubleClick: (CustomFile) -> Void
-    @State private var rowRects: [CustomFile.ID: CGRect] = [:]
-    // Owned here so it survives files-list updates without recreating
-    @State private var columnLayout: ColumnLayoutModel
 
-    // MARK: - Init
-    init(
-        files: [CustomFile],
-        selectedID: Binding<CustomFile.ID?>,
-        panelSide: PanelSide,
-        onPanelTap: @escaping (PanelSide) -> Void,
-        onSelect: @escaping (CustomFile) -> Void,
-        onDoubleClick: @escaping (CustomFile) -> Void
-    ) {
-        self.files = files
-        self._selectedID = selectedID
-        self.panelSide = panelSide
-        self.onPanelTap = onPanelTap
-        self.onSelect = onSelect
-        self.onDoubleClick = onDoubleClick
-        self._columnLayout = State(initialValue: ColumnLayoutModel(panelSide: panelSide))
+    // Use singleton store — no more @State recreation on every render
+    private var layout: ColumnLayoutModel {
+        ColumnLayoutStore.shared.layout(for: panelSide)
     }
 
     var body: some View {
@@ -45,7 +28,7 @@ struct PanelFileTableSection: View {
             panelSide: panelSide,
             files: files,
             selectedID: $selectedID,
-            layout: $columnLayout,
+            layout: layout,
             onSelect: handleSelection,
             onDoubleClick: onDoubleClick
         )
@@ -58,26 +41,17 @@ struct PanelFileTableSection: View {
                     }
                 }
         )
-        .coordinateSpace(name: "fileTableSpace")
-        .onPreferenceChange(RowRectPreference.self) { value in
-            if value != rowRects {
-                rowRects = value
-            }
-        }
         .animation(nil, value: selectedID)
         .transaction { txn in
             txn.disablesAnimations = true
         }
     }
-    
 
     // MARK: - Selection handler
     private func handleSelection(_ file: CustomFile) {
-        let wasInactive = appState.focusedPanel != panelSide
-        if wasInactive {
-            log.debug("[SELECT-FLOW] Activating panel <<\(panelSide)>>")
+        if appState.focusedPanel != panelSide {
+            appState.focusedPanel = panelSide
         }
-        appState.focusedPanel = panelSide
         notifyWillSelect(file)
         onSelect(file)
     }
