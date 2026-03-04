@@ -75,6 +75,16 @@ enum ColumnID: String, CaseIterable, Codable, Identifiable, Transferable {
 
     var isRequired: Bool { self == .name }
 
+    // Minimum width based on header text + icon + sort arrow + padding
+    var minHeaderWidth: CGFloat {
+        let font = NSFont.systemFont(ofSize: 12, weight: .medium)
+        let textWidth = (title as NSString).size(withAttributes: [.font: font]).width
+        let iconWidth: CGFloat = icon != nil ? 18 : 0
+        let sortArrowWidth: CGFloat = 16
+        let padding: CGFloat = 20
+        return ceil(textWidth + iconWidth + sortArrowWidth + padding)
+    }
+
     var alignment: Alignment {
         switch self {
         case .size, .childCount: .trailing
@@ -177,7 +187,7 @@ final class ColumnLayoutModel {
 
     func setWidth(_ width: CGFloat, for id: ColumnID) {
         if let idx = columns.firstIndex(where: { $0.id == id }) {
-            columns[idx].width = max(TableColumnDefaults.minWidth, min(width, TableColumnDefaults.maxWidth))
+            columns[idx].width = max(id.minHeaderWidth, min(width, TableColumnDefaults.maxWidth))
             layoutVersion += 1
         }
     }

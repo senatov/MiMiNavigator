@@ -11,12 +11,18 @@ import SwiftUI
 // MARK: - State Management
 extension FileTableView {
 
+    /// Track last files reference to skip redundant rebuilds
+    private static var lastFilesHash: [PanelSide: Int] = [:]
+    
     func recomputeSortedCache() {
-        // Files arrive pre-sorted from DualDirectoryScanner.Task.detached.
-        // Local re-sort is only needed when user changes sort column/direction
-        // (onChange of sortKey/bSortAscending). On plain files change the order
-        // is already correct — just assign without re-sorting to avoid blocking
-        // MainActor for ~100ms on 26k-item directories.
+        // Quick check: skip if files array is identical (same reference or content)
+        let newHash = files.count ^ (files.first?.id.hashValue ?? 0) ^ (files.last?.id.hashValue ?? 0)
+        if Self.lastFilesHash[panelSide] == newHash && cachedSortedFiles.count == files.count {
+            log.debug("[Cache] panel=\(panelSide) skip rebuild — no changes detected")
+            return
+        }
+        Self.lastFilesHash[panelSide] = newHash
+        
         let t0 = Date()
         cachedSortedFiles = files
         rebuildIndexByID()

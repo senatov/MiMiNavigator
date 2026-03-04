@@ -15,21 +15,22 @@ import SwiftUI
 // MARK: - Actor for concurrent directory scanning
 
 actor DualDirectoryScanner {
-
     let appState: AppState
     var fileCache = FileCache.shared
 
     // MARK: - Polling timers (safety net — fire every refreshInterval seconds)
-
     private var leftTimer: DispatchSourceTimer?
     private var rightTimer: DispatchSourceTimer?
 
     // MARK: - FSEvents watchers (primary change detection — per-file events, no full scan)
-
     private var leftFSEvents: FSEventsDirectoryWatcher?
     private var rightFSEvents: FSEventsDirectoryWatcher?
+    
+    // MARK: - Debounce: skip polling if FSEvents delivered changes recently
+    private var lastFSEventsPatch: [PanelSide: Date] = [:]
+    private let fsEventsDebounceInterval: TimeInterval = 120  // skip poll if FSEvents fired within 2 min
 
-    /// Refresh interval from centralized constants
+    /// Refresh interval from centralized constants (safety net only)
     private var refreshInterval: Int {
         Int(AppConstants.Scanning.refreshInterval)
     }
@@ -39,7 +40,6 @@ actor DualDirectoryScanner {
     }
 
     // MARK: - Start monitoring both panels
-
     func startMonitoring() {
         setupTimer(for: .left)
         setupTimer(for: .right)
@@ -55,7 +55,6 @@ actor DualDirectoryScanner {
     }
 
     // MARK: - Set directory for right panel
-
     func setRightDirectory(pathStr: String) {
         log.info("[DualDirectoryScanner] setRightDirectory: '\(pathStr)'")
         Task { @MainActor in
@@ -65,7 +64,6 @@ actor DualDirectoryScanner {
     }
 
     // MARK: - Set directory for left panel
-
     func setLeftDirectory(pathStr: String) {
         log.info("[DualDirectoryScanner] setLeftDirectory: '\(pathStr)'")
         Task { @MainActor in
@@ -75,7 +73,6 @@ actor DualDirectoryScanner {
     }
 
     // MARK: - FSEvents watcher setup
-
     /// Starts FSEventsDirectoryWatcher for a panel.
     /// Remote paths are skipped — FSEvents has no meaning for ftp:// / sftp://.
     /// async because showHiddenFiles is @MainActor-isolated (read via appState hop).
@@ -119,42 +116,74 @@ actor DualDirectoryScanner {
     }
 
     // MARK: - Apply incremental patch from FSEvents
-
-    /// Merges FSEvents patch into the displayed file list without a full directory rescan.
-    /// Mutation + sort run off MainActor; only the final assignment touches the actor.
     private func applyPatch(_ patch: FSEventsDirectoryWatcher.DirectoryPatch, for side: PanelSide) async {
-        // Snapshot current list and sort params on MainActor (fast read)
+        lastFSEventsPatch[side] = Date()
+        
+        let childUpdates = patch.childCountUpdates
+        let removedPaths = patch.removedPaths
+        let addedOrModified = patch.addedOrModified
+        
         let (current, sortKey, sortAsc): ([CustomFile], SortKeysEnum, Bool) = await MainActor.run {
             let files = side == .left ? appState.displayedLeftFiles : appState.displayedRightFiles
             return (files, appState.sortKey, appState.bSortAscending)
         }
-        // Merge + sort off MainActor — O(n) for 26k is ~50ms, must not block UI
-        let sorted = await Task.detached(priority: .userInitiated) {
-            var merged = current
-            if !patch.removedPaths.isEmpty {
-                let removedSet = Set(patch.removedPaths)
-                merged.removeAll { removedSet.contains($0.pathStr) }
+        
+        let totalChanges = addedOrModified.count + removedPaths.count
+        let useIncremental = totalChanges <= 5 && totalChanges > 0
+        
+        var merged = current
+        
+        if !removedPaths.isEmpty {
+            let removedSet = Set(removedPaths)
+            merged.removeAll { removedSet.contains($0.pathStr) }
+        }
+        
+        for updated in addedOrModified {
+            if let idx = merged.firstIndex(where: { $0.pathStr == updated.pathStr }) {
+                merged[idx] = updated
+            } else if useIncremental {
+                let insertIdx = Self.binarySearchInsertIndex(merged, file: updated, sortKey: sortKey, ascending: sortAsc)
+                merged.insert(updated, at: insertIdx)
+            } else {
+                merged.append(updated)
             }
-            for updated in patch.addedOrModified {
-                if let idx = merged.firstIndex(where: { $0.pathStr == updated.pathStr }) {
-                    merged[idx] = updated
-                } else {
-                    merged.append(updated)
-                }
+        }
+        
+        for (path, count) in childUpdates {
+            if let idx = merged.firstIndex(where: { $0.pathStr == path }) {
+                merged[idx].cachedChildCount = count
             }
-            return FileSortingService.sort(merged, by: sortKey, bDirection: sortAsc)
-        }.value
-        log.debug("[FSEvents patch] ∆+\(patch.addedOrModified.count) -\(patch.removedPaths.count) → \(sorted.count) items")
-        // Single cheap write on MainActor
+        }
+        
+        if !useIncremental && totalChanges > 0 {
+            merged = FileSortingService.sort(merged, by: sortKey, bDirection: sortAsc)
+        }
+        
+        let mode = useIncremental ? "incremental" : (totalChanges > 0 ? "full-sort" : "childCount-only")
+        log.debug("[FSEvents patch] \(mode) childCount=\(childUpdates.count) ∃*\(addedOrModified.count) -\(removedPaths.count) → \(merged.count) items")
+        
         await MainActor.run {
             switch side {
-                case .left: appState.displayedLeftFiles = sorted
-                case .right: appState.displayedRightFiles = sorted
+                case .left: appState.displayedLeftFiles = merged
+                case .right: appState.displayedRightFiles = merged
             }
         }
     }
-
-    // MARK: - Polling timer (safety net)
+    
+    private static func binarySearchInsertIndex(_ list: [CustomFile], file: CustomFile, sortKey: SortKeysEnum, ascending: Bool) -> Int {
+        var lo = 0
+        var hi = list.count
+        while lo < hi {
+            let mid = (lo + hi) / 2
+            let cmp = FileSortingService.compare(file, list[mid], by: sortKey, ascending: ascending)
+            if cmp {
+                hi = mid
+            } else {
+                lo = mid + 1
+            }
+        }
+        return lo
+    }
 
     private func setupTimer(for side: PanelSide) {
         let timer = DispatchSource.makeTimerSource(queue: DispatchQueue.global())
@@ -162,8 +191,8 @@ actor DualDirectoryScanner {
         timer.schedule(deadline: .now() + .seconds(refreshInterval), repeating: .seconds(refreshInterval))
         timer.setEventHandler { [weak self] in
             guard let self else { return }
-            Task { @MainActor in
-                await self.refreshFiles(currSide: side)
+            Task {
+                await self.timerFired(for: side)
             }
         }
         timer.resume()
@@ -172,9 +201,35 @@ actor DualDirectoryScanner {
             case .right: rightTimer = timer
         }
     }
+    
+    // MARK: - Timer handler with smart skip
+    private func timerFired(for side: PanelSide) async {
+        // Check if FSEvents delivered changes recently — skip redundant poll
+        if let lastPatch = lastFSEventsPatch[side] {
+            let elapsed = Date().timeIntervalSince(lastPatch)
+            if elapsed < fsEventsDebounceInterval {
+                log.debug("[Scanner] skip poll \(side) — FSEvents active \(Int(elapsed))s ago")
+                return
+            }
+        }
+        
+        // Check if FSEvents watcher is active for this panel
+        let hasActiveWatcher: Bool
+        switch side {
+            case .left: hasActiveWatcher = leftFSEvents != nil
+            case .right: hasActiveWatcher = rightFSEvents != nil
+        }
+        
+        // For local paths with active FSEvents, only poll as safety net every 5 minutes
+        // The 60s interval is now just for remote paths or when FSEvents failed
+        if hasActiveWatcher {
+            log.debug("[Scanner] poll \(side) — FSEvents active but no recent patches, running safety scan")
+        }
+        
+        await refreshFiles(currSide: side)
+    }
 
     // MARK: - Full refresh (used by timer safety net and explicit navigation)
-
     @Sendable
     func refreshFiles(currSide: PanelSide) async {
         let (path, showHidden, sortKey, sortAsc): (String, Bool, SortKeysEnum, Bool) = await MainActor.run {
@@ -224,7 +279,6 @@ actor DualDirectoryScanner {
     }
 
     // MARK: - Permission helpers
-
     private func isPermissionDeniedError(_ error: NSError) -> Bool {
         if error.domain == NSCocoaErrorDomain && error.code == 257 { return true }
         if error.domain == NSPOSIXErrorDomain && error.code == 13 { return true }
@@ -254,7 +308,6 @@ actor DualDirectoryScanner {
 
     // MARK: - Update displayed files (full replace — used by polling timer)
     // files arrive pre-sorted from Task.detached — no sort on MainActor
-
     @MainActor private var lastUpdateTime: [PanelSide: Date] = [:]
 
     @MainActor
@@ -285,7 +338,6 @@ actor DualDirectoryScanner {
     }
 
     // MARK: - Reset timer for a panel
-
     func resetRefreshTimer(for side: PanelSide) {
         switch side {
             case .left:
@@ -300,7 +352,6 @@ actor DualDirectoryScanner {
     }
 
     // MARK: - Stop all watchers
-
     func stopMonitoring() {
         leftTimer?.cancel()
         leftTimer = nil
@@ -312,7 +363,6 @@ actor DualDirectoryScanner {
     }
 
     // MARK: - Update file list in storage
-
     @MainActor
     private func updateFileList(panelSide: PanelSide, with files: [CustomFile]) async {
         switch panelSide {

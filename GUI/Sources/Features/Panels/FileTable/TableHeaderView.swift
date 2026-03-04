@@ -51,7 +51,7 @@ struct TableHeaderView: View {
                         get: { spec.width },
                         set: { layout.setWidth($0, for: spec.id) }
                     ),
-                    min: TableColumnDefaults.minWidth,
+                    min: spec.id.minHeaderWidth,
                     max: TableColumnDefaults.maxWidth,
                     onEnd: { layout.saveWidths() }
                 )
@@ -102,8 +102,8 @@ struct TableHeaderView: View {
                 autoFitColumn(spec.id)
             }
         )
+                .padding(.horizontal, TableColumnDefaults.cellPadding)
         .frame(width: spec.width, alignment: spec.id.alignment)
-        // No padding - width must match NSTableView column exactly
         .background(
             dragOverTargetID == spec.id
                 ? Color.accentColor.opacity(0.15)
@@ -216,7 +216,7 @@ struct TableHeaderView: View {
             if w > maxW { maxW = w }
         }
         let optimal = ceil(maxW + 16)
-        let clamped = Swift.min(Swift.max(optimal, TableColumnDefaults.minWidth), TableColumnDefaults.maxWidth)
+        let clamped = Swift.min(Swift.max(optimal, col.minHeaderWidth), TableColumnDefaults.maxWidth)
         layout.setWidth(clamped, for: col)
         layout.saveWidths()
         log.debug("[AutoFit] col=\(col) optimal=\(Int(clamped))pt")

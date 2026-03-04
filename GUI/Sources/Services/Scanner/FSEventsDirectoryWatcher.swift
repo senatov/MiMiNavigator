@@ -25,6 +25,8 @@ final class FSEventsDirectoryWatcher: @unchecked Sendable {
     // MARK: - Types
 
     struct DirectoryPatch: Sendable {
+        // Paths with updated childCount (subdirectory changes)
+        let childCountUpdates: [String: Int]
         let addedOrModified: [CustomFile]
         let removedPaths: [String]
         let watchedPath: String
@@ -126,22 +128,47 @@ final class FSEventsDirectoryWatcher: @unchecked Sendable {
 
     // MARK: - Event handling (runs on callbackQueue — NOT MainActor)
 
+
+    // MARK: - Event handling (runs on callbackQueue — NOT MainActor)
     private func handleEvents(paths: [String], flags: [FSEventStreamEventFlags]) {
         let watched = watchedPath
-        // Keep only direct children of the watched directory
-        let affectedPaths = paths.filter { p in
-            URL(fileURLWithPath: p).deletingLastPathComponent().path == watched
-        }
-        guard !affectedPaths.isEmpty else {
-            // Subdirectory event — irrelevant for panel display, skip silently
-            return
-        }
-        log.info("[FSEvents] \(affectedPaths.count) item(s) changed in '\(watched)'")
-        var added: [CustomFile] = []
-        var removed: [String] = []
         let fm = FileManager.default
         let hidden = showHiddenFiles
-        for p in affectedPaths {
+        
+        var directChildren: [String] = []
+        var childCountUpdates: [String: Int] = [:]
+        
+        for p in paths {
+            let url = URL(fileURLWithPath: p)
+            let parent = url.deletingLastPathComponent().path
+            
+            if parent == watched {
+                // Direct child — add to patch
+                directChildren.append(p)
+            } else {
+                // Subdirectory event — find which first-level subdir changed
+                let relPath = String(p.dropFirst(watched.count + 1))
+                if let firstSlash = relPath.firstIndex(of: "/") {
+                    let subdirName = String(relPath[..<firstSlash])
+                    let subdirPath = (watched as NSString).appendingPathComponent(subdirName)
+                    
+                    // Only update if not already queued
+                    if childCountUpdates[subdirPath] == nil {
+                        if let count = try? fm.contentsOfDirectory(atPath: subdirPath).count {
+                            childCountUpdates[subdirPath] = count
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Skip if nothing changed at top level and no childCount updates
+        guard !directChildren.isEmpty || !childCountUpdates.isEmpty else { return }
+        
+        var added: [CustomFile] = []
+        var removed: [String] = []
+        
+        for p in directChildren {
             let url = URL(fileURLWithPath: p)
             if fm.fileExists(atPath: p) {
                 if !hidden && url.lastPathComponent.hasPrefix(".") { continue }
@@ -162,8 +189,20 @@ final class FSEventsDirectoryWatcher: @unchecked Sendable {
                 removed.append(p)
             }
         }
-        let patch = DirectoryPatch(addedOrModified: added, removedPaths: removed, watchedPath: watched)
-        log.debug("[FSEvents] patch — added: \(added.count) removed: \(removed.count)")
+        
+        if !directChildren.isEmpty {
+            log.info("[FSEvents] \(directChildren.count) item(s) changed in '\(watched)'")
+        }
+        if !childCountUpdates.isEmpty {
+            log.debug("[FSEvents] childCount updates: \(childCountUpdates.count) subdirs")
+        }
+        
+        let patch = DirectoryPatch(
+            childCountUpdates: childCountUpdates,
+            addedOrModified: added,
+            removedPaths: removed,
+            watchedPath: watched
+        )
         onPatch(patch)
     }
 

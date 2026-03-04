@@ -90,7 +90,7 @@ enum FileAction: String, CaseIterable, Identifiable {
         case .rename: return "pencil"
         case .delete: return "trash"
         case .getInfo: return "info.circle"
-        case .addToFavorites: return "star.badge.plus"
+        case .addToFavorites: return "star.fill"
         }
     }
     

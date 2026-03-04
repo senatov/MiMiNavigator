@@ -90,7 +90,7 @@ enum DirectoryAction: String, CaseIterable, Identifiable {
         case .delete: return "trash"
         case .getInfo: return "info.circle"
         case .openOnOtherPanel: return "arrow.left.arrow.right.square"
-        case .addToFavorites: return "star.badge.plus"
+        case .addToFavorites: return "star.fill"
         }
     }
     
