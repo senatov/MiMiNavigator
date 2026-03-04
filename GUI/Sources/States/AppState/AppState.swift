@@ -216,8 +216,13 @@ extension AppState {
     func selectionMove(by step: Int) {
         selectionManager?.moveSelection(by: step)
     }
-}
 
+    func selectionMoveToEdge(top: Bool) {
+        selectionManager?.moveToEdge(top: top)
+    }
+
+    }
+}
 // MARK: - Multi-Selection Operations (Total Commander + Finder style)
 extension AppState {
 

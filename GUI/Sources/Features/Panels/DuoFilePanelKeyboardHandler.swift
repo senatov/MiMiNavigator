@@ -142,6 +142,18 @@ final class DuoFilePanelKeyboardHandler {
         case .moveDown:
             appState.selectionMove(by: 1)
             return nil
+        case .pageUp:
+            appState.selectionMove(by: -20)
+            return nil
+        case .pageDown:
+            appState.selectionMove(by: 20)
+            return nil
+        case .moveToTop:
+            appState.selectionMoveToEdge(top: true)
+            return nil
+        case .moveToBottom:
+            appState.selectionMoveToEdge(top: false)
+            return nil
 
         case .openSelected:
             log.info("[KEY] → Open Selected")

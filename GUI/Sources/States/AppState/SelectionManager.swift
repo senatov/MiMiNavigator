@@ -128,6 +128,20 @@ final class SelectionManager {
         
         log.debug("[SelectionManager] moved to idx=\(nextIdx) file=\(next.nameStr)")
     }
+
+    /// Move to first or last item in list
+    func moveToEdge(top: Bool) {
+        guard let state = appState else { return }
+        let items = state.displayedFiles(for: state.focusedPanel)
+        guard !items.isEmpty else { return }
+        let target = top ? items.first! : items.last!
+        if state.focusedPanel == .left {
+            state.selectedLeftFile = target
+        } else {
+            state.selectedRightFile = target
+        }
+        log.debug("[SelectionManager] moveToEdge top=\(top) file=\(target.nameStr)")
+    
     
     /// Toggle focus between panels
     func toggleFocus() {
