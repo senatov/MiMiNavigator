@@ -159,8 +159,11 @@ actor DualDirectoryScanner {
             merged = FileSortingService.sort(merged, by: sortKey, bDirection: sortAsc)
         }
         
-        let mode = useIncremental ? "incremental" : (totalChanges > 0 ? "full-sort" : "childCount-only")
-        log.debug("[FSEvents patch] \(mode) childCount=\(childUpdates.count) ∃*\(addedOrModified.count) -\(removedPaths.count) → \(merged.count) items")
+        // Only log if something actually changed
+        let hasChanges = totalChanges > 0 || !childUpdates.isEmpty
+        if hasChanges {
+            let mode = useIncremental ? "incremental" : (totalChanges > 0 ? "full-sort" : "childCount-only")
+        }
         
         await MainActor.run {
             switch side {

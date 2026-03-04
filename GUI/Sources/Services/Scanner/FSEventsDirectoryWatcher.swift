@@ -194,7 +194,6 @@ final class FSEventsDirectoryWatcher: @unchecked Sendable {
             log.info("[FSEvents] \(directChildren.count) item(s) changed in '\(watched)'")
         }
         if !childCountUpdates.isEmpty {
-            log.debug("[FSEvents] childCount updates: \(childCountUpdates.count) subdirs")
         }
         
         let patch = DirectoryPatch(
