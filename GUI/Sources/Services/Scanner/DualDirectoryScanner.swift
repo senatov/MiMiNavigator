@@ -28,7 +28,7 @@ actor DualDirectoryScanner {
     
     // MARK: - Debounce: skip polling if FSEvents delivered changes recently
     private var lastFSEventsPatch: [PanelSide: Date] = [:]
-    private let fsEventsDebounceInterval: TimeInterval = 120  // skip poll if FSEvents fired within 2 min
+    private let fsEventsDebounceInterval: TimeInterval = 3  // skip poll if FSEvents fired within 2 min
 
     /// Refresh interval from centralized constants (safety net only)
     private var refreshInterval: Int {
