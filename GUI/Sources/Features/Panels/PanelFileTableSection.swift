@@ -12,7 +12,7 @@ import SwiftUI
 // MARK: - Feature flag: use NSTableView for large directories
 /// When true, uses high-performance NSTableView instead of SwiftUI LazyVStack.
 /// NSTableView handles 100k+ files without lag.
-private let useNSTableView = true
+private let useNSTableView = false  // Back to SwiftUI
 
 // MARK: - Panel file table section container
 struct PanelFileTableSection: View {
