@@ -167,11 +167,23 @@ Alternatively: right-click the app → Open → click **Open** in the dialog.
 ---
 
 ### Build from Source
-
 **Requirements:**
-- macOS 15.4+ (Apple Silicon or Intel)
+- macOS 26+ (Apple Silicon)
 - Xcode (latest) with Swift 6.2
 - Optional: `brew install swiftlint swift-format p7zip`
+
+**Production Build:**
+``` 
+~/Develop/MiMiNavigator [master*]  xcodebuild -project MiMiNavigator.xcodeproj -scheme MiMiNavigator -configuration Release -derivedDataPath /tmp/mimi_build build CODE_SIGNING_ALLOWED=YES
+```
+Then get copy the App from
+```
+/private/tmp/mimi_build/Build/Products/Release
+```
+
+
+
+
 
 ```bash
 git clone --recurse-submodules https://github.com/senatov/MiMiNavigator.git
