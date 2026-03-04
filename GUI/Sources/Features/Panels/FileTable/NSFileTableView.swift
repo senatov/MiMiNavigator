@@ -6,6 +6,7 @@
 import AppKit
 import SwiftUI
 import FileModelKit
+import FavoritesKit
 
 // MARK: - NSViewRepresentable
 struct NSFileTableView: NSViewRepresentable {
@@ -370,9 +371,11 @@ struct NSFileTableView: NSViewRepresentable {
             let clickedRow = tv.clickedRow
             
             guard clickedRow >= 0 && clickedRow < files.count else {
-                // Click on empty area
-                menu.addItem(NSMenuItem(title: "Refresh", action: #selector(menuRefresh), keyEquivalent: "r"))
-                menu.items.last?.target = self
+                // Click on empty area - panel background menu
+                addMenuItem(menu, title: "New Folder", action: #selector(menuNewFolder), key: "N")
+                addMenuItem(menu, title: "Refresh", action: #selector(menuRefresh), key: "r")
+                menu.addItem(NSMenuItem.separator())
+                addMenuItem(menu, title: "Paste", action: #selector(menuPaste), key: "v")
                 return
             }
             
@@ -383,69 +386,203 @@ struct NSFileTableView: NSViewRepresentable {
                 tv.selectRowIndexes(IndexSet(integer: clickedRow), byExtendingSelection: false)
             }
             
-            // Open
-            menu.addItem(NSMenuItem(title: "Open", action: #selector(menuOpen), keyEquivalent: ""))
-            menu.addItem(NSMenuItem(title: "Open With...", action: #selector(menuOpenWith), keyEquivalent: ""))
-            menu.addItem(NSMenuItem.separator())
-            
-            // Reveal
-            menu.addItem(NSMenuItem(title: "Reveal in Finder", action: #selector(menuRevealInFinder), keyEquivalent: ""))
-            menu.addItem(NSMenuItem.separator())
-            
-            // Copy/Move/Rename
-            menu.addItem(NSMenuItem(title: "Copy", action: #selector(menuCopy), keyEquivalent: "c"))
-            menu.addItem(NSMenuItem(title: "Move", action: #selector(menuMove), keyEquivalent: ""))
-            menu.addItem(NSMenuItem(title: "Rename", action: #selector(menuRename), keyEquivalent: ""))
-            menu.addItem(NSMenuItem.separator())
-            
-            // Trash
-            menu.addItem(NSMenuItem(title: "Move to Trash", action: #selector(menuTrash), keyEquivalent: ""))
-            menu.addItem(NSMenuItem.separator())
-            
-            // Get Info
-            menu.addItem(NSMenuItem(title: "Get Info", action: #selector(menuGetInfo), keyEquivalent: "i"))
-            
-            for item in menu.items {
-                item.target = self
-                item.representedObject = file
+            if file.isDirectory {
+                buildDirectoryMenu(menu, file: file)
+            } else {
+                buildFileMenu(menu, file: file)
             }
         }
         
+        private func buildFileMenu(_ menu: NSMenu, file: CustomFile) {
+            // SECTION 1: Open
+            addMenuItem(menu, title: "Open", action: #selector(menuOpen), key: "", icon: "arrow.up.doc")
+            addMenuItem(menu, title: "Open With...", action: #selector(menuOpenWith), key: "", icon: "arrow.up.right.square")
+            addMenuItem(menu, title: "Quick Look", action: #selector(menuQuickLook), key: " ", icon: "eye")
+            menu.addItem(NSMenuItem.separator())
+            
+            // SECTION 2: Edit
+            addMenuItem(menu, title: "Cut", action: #selector(menuCut), key: "x", icon: "scissors")
+            addMenuItem(menu, title: "Copy", action: #selector(menuCopy), key: "c", icon: "doc.on.doc")
+            addMenuItem(menu, title: "Copy as Pathname", action: #selector(menuCopyPath), key: "", icon: "doc.on.doc.fill")
+            addMenuItem(menu, title: "Paste", action: #selector(menuPaste), key: "v", icon: "doc.on.clipboard")
+            addMenuItem(menu, title: "Duplicate", action: #selector(menuDuplicate), key: "d", icon: "plus.square.on.square")
+            menu.addItem(NSMenuItem.separator())
+            
+            // SECTION 3: Operations
+            addMenuItem(menu, title: "Compress", action: #selector(menuCompress), key: "", icon: "archivebox")
+            addMenuItem(menu, title: "Share...", action: #selector(menuShare), key: "", icon: "square.and.arrow.up")
+            menu.addItem(NSMenuItem.separator())
+            
+            // SECTION 4: Navigation
+            addMenuItem(menu, title: "Show in Finder", action: #selector(menuRevealInFinder), key: "", icon: "folder")
+            menu.addItem(NSMenuItem.separator())
+            
+            // SECTION 5: Rename & Delete
+            addMenuItem(menu, title: "Rename...", action: #selector(menuRename), key: "", icon: "pencil")
+            addMenuItem(menu, title: "Move to Trash", action: #selector(menuTrash), key: "", icon: "trash")
+            menu.addItem(NSMenuItem.separator())
+            
+            // SECTION 6: Info
+            addMenuItem(menu, title: "Get Info", action: #selector(menuGetInfo), key: "i", icon: "info.circle")
+            menu.addItem(NSMenuItem.separator())
+            
+            // SECTION 7: Favorites
+            addMenuItem(menu, title: "Add to Favorites", action: #selector(menuAddToFavorites), key: "", icon: "star")
+        }
+        
+        private func buildDirectoryMenu(_ menu: NSMenu, file: CustomFile) {
+            // SECTION 1: Navigation
+            addMenuItem(menu, title: "Open", action: #selector(menuOpen), key: "", icon: "folder")
+            addMenuItem(menu, title: "Open in New Tab", action: #selector(menuOpenInNewTab), key: "t", icon: "plus.square.on.square")
+            addMenuItem(menu, title: "Open in Finder", action: #selector(menuRevealInFinder), key: "", icon: "folder.badge.gear")
+            addMenuItem(menu, title: "Open in Terminal", action: #selector(menuOpenInTerminal), key: "", icon: "terminal")
+            menu.addItem(NSMenuItem.separator())
+            
+            // SECTION 2: Edit
+            addMenuItem(menu, title: "Cut", action: #selector(menuCut), key: "x", icon: "scissors")
+            addMenuItem(menu, title: "Copy", action: #selector(menuCopy), key: "c", icon: "doc.on.doc")
+            addMenuItem(menu, title: "Copy as Pathname", action: #selector(menuCopyPath), key: "", icon: "doc.on.doc.fill")
+            addMenuItem(menu, title: "Paste", action: #selector(menuPaste), key: "v", icon: "doc.on.clipboard")
+            addMenuItem(menu, title: "Duplicate", action: #selector(menuDuplicate), key: "d", icon: "plus.square.on.square")
+            menu.addItem(NSMenuItem.separator())
+            
+            // SECTION 3: Operations
+            addMenuItem(menu, title: "Compress", action: #selector(menuCompress), key: "", icon: "archivebox")
+            addMenuItem(menu, title: "Share...", action: #selector(menuShare), key: "", icon: "square.and.arrow.up")
+            menu.addItem(NSMenuItem.separator())
+            
+            // SECTION 4: Rename & Delete
+            addMenuItem(menu, title: "Rename...", action: #selector(menuRename), key: "", icon: "pencil")
+            addMenuItem(menu, title: "Move to Trash", action: #selector(menuTrash), key: "", icon: "trash")
+            menu.addItem(NSMenuItem.separator())
+            
+            // SECTION 5: Info
+            addMenuItem(menu, title: "Get Info", action: #selector(menuGetInfo), key: "i", icon: "info.circle")
+            menu.addItem(NSMenuItem.separator())
+            
+            // SECTION 6: Cross-panel
+            addMenuItem(menu, title: "Open on Other Panel", action: #selector(menuOpenOnOtherPanel), key: "", icon: "rectangle.split.2x1")
+            menu.addItem(NSMenuItem.separator())
+            
+            // SECTION 7: Favorites
+            addMenuItem(menu, title: "Add to Favorites", action: #selector(menuAddToFavorites), key: "", icon: "star")
+        }
+        
+        private func addMenuItem(_ menu: NSMenu, title: String, action: Selector, key: String, icon: String? = nil) {
+            let item = NSMenuItem(title: title, action: action, keyEquivalent: key)
+            item.target = self
+            if let iconName = icon, let img = NSImage(systemSymbolName: iconName, accessibilityDescription: nil) {
+                item.image = img
+            }
+            menu.addItem(item)
+        }
+        
+        private var clickedFile: CustomFile? {
+            guard let tv = tableView, tv.clickedRow >= 0, tv.clickedRow < files.count else { return nil }
+            return files[tv.clickedRow]
+        }
+        
         @objc private func menuOpen() {
-            guard let tv = tableView, tv.clickedRow >= 0, tv.clickedRow < files.count else { return }
-            parent.onDoubleClick(files[tv.clickedRow])
+            guard let file = clickedFile else { return }
+            parent.onDoubleClick(file)
         }
         
         @objc private func menuOpenWith() {
-            guard let tv = tableView, tv.clickedRow >= 0, tv.clickedRow < files.count else { return }
-            let file = files[tv.clickedRow]
-            // Open "Open With" dialog
+            guard let file = clickedFile else { return }
+            let panel = NSOpenPanel()
+            panel.canChooseFiles = true
+            panel.canChooseDirectories = false
+            panel.allowsMultipleSelection = false
+            panel.directoryURL = URL(fileURLWithPath: "/Applications")
+            panel.message = "Choose application to open '\(file.nameStr)'"
+            if panel.runModal() == .OK, let appURL = panel.url {
+                NSWorkspace.shared.open([file.urlValue], withApplicationAt: appURL, configuration: .init())
+            }
+        }
+        
+        @objc private func menuQuickLook() {
+            guard let file = clickedFile else { return }
+            // Trigger Quick Look via QLPreviewPanel
             NSWorkspace.shared.activateFileViewerSelecting([file.urlValue])
         }
         
-        @objc private func menuRevealInFinder() {
-            guard let tv = tableView, tv.clickedRow >= 0, tv.clickedRow < files.count else { return }
-            NSWorkspace.shared.selectFile(files[tv.clickedRow].urlValue.path, inFileViewerRootedAtPath: "")
+        @objc private func menuOpenInNewTab() {
+            // TODO: implement open in new tab
+        }
+        
+        @objc private func menuOpenInTerminal() {
+            guard let file = clickedFile else { return }
+            let script = "tell application \"Terminal\" to do script \"cd '\(file.pathStr.replacingOccurrences(of: "'", with: "'\\''")}'\""
+            if let appleScript = NSAppleScript(source: script) {
+                appleScript.executeAndReturnError(nil)
+            }
+            NSWorkspace.shared.launchApplication("Terminal")
+        }
+        
+        @objc private func menuCut() {
+            guard let file = clickedFile else { return }
+            ClipboardManager.shared.cut(files: [file])
         }
         
         @objc private func menuCopy() {
-            guard let tv = tableView, tv.clickedRow >= 0, tv.clickedRow < files.count else { return }
-            let pb = NSPasteboard.general
-            pb.clearContents()
-            pb.writeObjects([files[tv.clickedRow].urlValue as NSURL])
+            guard let file = clickedFile else { return }
+            ClipboardManager.shared.copy(files: [file])
         }
         
-        @objc private func menuMove() {
-            // TODO: implement move dialog
+        @objc private func menuCopyPath() {
+            guard let file = clickedFile else { return }
+            let pb = NSPasteboard.general
+            pb.clearContents()
+            pb.setString(file.pathStr, forType: .string)
+        }
+        
+        @objc private func menuPaste() {
+            // TODO: implement paste via ClipboardManager
+        }
+        
+        @objc private func menuDuplicate() {
+            guard let file = clickedFile else { return }
+            let fm = FileManager.default
+            let dir = file.urlValue.deletingLastPathComponent()
+            let baseName = file.urlValue.deletingPathExtension().lastPathComponent
+            let ext = file.urlValue.pathExtension
+            var counter = 2
+            var newURL = dir.appendingPathComponent(ext.isEmpty ? "\(baseName) copy" : "\(baseName) copy.\(ext)")
+            while fm.fileExists(atPath: newURL.path) {
+                newURL = dir.appendingPathComponent(ext.isEmpty ? "\(baseName) copy \(counter)" : "\(baseName) copy \(counter).\(ext)")
+                counter += 1
+            }
+            try? fm.copyItem(at: file.urlValue, to: newURL)
+        }
+        
+        @objc private func menuCompress() {
+            guard let file = clickedFile else { return }
+            let process = Process()
+            process.executableURL = URL(fileURLWithPath: "/usr/bin/zip")
+            process.currentDirectoryURL = file.urlValue.deletingLastPathComponent()
+            process.arguments = ["-r", "\(file.nameStr).zip", file.nameStr]
+            try? process.run()
+        }
+        
+        @objc private func menuShare() {
+            guard let file = clickedFile else { return }
+            let picker = NSSharingServicePicker(items: [file.urlValue])
+            if let view = tableView {
+                picker.show(relativeTo: .zero, of: view, preferredEdge: .minY)
+            }
+        }
+        
+        @objc private func menuRevealInFinder() {
+            guard let file = clickedFile else { return }
+            NSWorkspace.shared.selectFile(file.urlValue.path, inFileViewerRootedAtPath: "")
         }
         
         @objc private func menuRename() {
-            // TODO: implement rename
+            // TODO: implement inline rename
         }
         
         @objc private func menuTrash() {
-            guard let tv = tableView, tv.clickedRow >= 0, tv.clickedRow < files.count else { return }
-            let file = files[tv.clickedRow]
+            guard let file = clickedFile else { return }
             do {
                 try FileManager.default.trashItem(at: file.urlValue, resultingItemURL: nil)
             } catch {
@@ -454,13 +591,25 @@ struct NSFileTableView: NSViewRepresentable {
         }
         
         @objc private func menuGetInfo() {
-            guard let tv = tableView, tv.clickedRow >= 0, tv.clickedRow < files.count else { return }
-            let file = files[tv.clickedRow]
+            guard let file = clickedFile else { return }
             NSWorkspace.shared.activateFileViewerSelecting([file.urlValue])
         }
         
+        @objc private func menuOpenOnOtherPanel() {
+            // TODO: implement via AppState
+        }
+        
+        @objc private func menuAddToFavorites() {
+            guard let file = clickedFile else { return }
+            UserFavoritesStore.shared.add(path: file.pathStr)
+        }
+        
+        @objc private func menuNewFolder() {
+            // TODO: implement new folder dialog
+        }
+        
         @objc private func menuRefresh() {
-            // TODO: trigger refresh
+            // TODO: trigger refresh via AppState
         }
     }
 }
