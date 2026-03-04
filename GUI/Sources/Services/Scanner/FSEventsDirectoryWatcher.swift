@@ -138,9 +138,11 @@ final class FSEventsDirectoryWatcher: @unchecked Sendable {
         var directChildren: [String] = []
         var childCountUpdates: [String: Int] = [:]
         
-        log.debug("[FSEvents] raw paths: \(paths)  watched=\(watched)")
         for p in paths {
             let cleanPath = p.hasSuffix("/") ? String(p.dropLast()) : p
+            
+            // Skip if this is the watched directory itself
+            if cleanPath == watched { continue }
             let url = URL(fileURLWithPath: cleanPath)
             let parent = url.deletingLastPathComponent().path
             
@@ -172,6 +174,9 @@ final class FSEventsDirectoryWatcher: @unchecked Sendable {
         
         for p in directChildren {
             let cleanPath = p.hasSuffix("/") ? String(p.dropLast()) : p
+            
+            // Skip if this is the watched directory itself
+            if cleanPath == watched { continue }
             let url = URL(fileURLWithPath: cleanPath)
             if fm.fileExists(atPath: p) {
                 if !hidden && url.lastPathComponent.hasPrefix(".") { continue }
