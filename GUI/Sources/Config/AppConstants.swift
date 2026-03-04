@@ -19,7 +19,7 @@ enum AppConstants {
         static let maxDepth = 2
         
         /// Refresh interval for directory monitoring (seconds)
-        static let refreshInterval: TimeInterval = 300
+        static let refreshInterval: TimeInterval = 3
     }
     
     // MARK: - History limits
