@@ -34,7 +34,7 @@ enum FileSortingService {
     }
 
     // MARK: - Private Methods
-    private static func compare(_ a: CustomFile, _ b: CustomFile, by key: SortKeysEnum, ascending: Bool) -> Bool {
+    static func compare(_ a: CustomFile, _ b: CustomFile, by key: SortKeysEnum, ascending: Bool) -> Bool {
         switch key {
             case .name:
                 return compareName(a, b, ascending: ascending)
@@ -54,13 +54,13 @@ enum FileSortingService {
     }
 
     // MARK: -
-    private static func compareName(_ a: CustomFile, _ b: CustomFile, ascending: Bool) -> Bool {
+    static func compareName(_ a: CustomFile, _ b: CustomFile, ascending: Bool) -> Bool {
         let cmpResult = a.nameStr.localizedCaseInsensitiveCompare(b.nameStr)
         return ascending ? (cmpResult == .orderedAscending) : (cmpResult == .orderedDescending)
     }
 
     // MARK: -
-    private static func compareDate(_ a: CustomFile, _ b: CustomFile, ascending: Bool) -> Bool {
+    static func compareDate(_ a: CustomFile, _ b: CustomFile, ascending: Bool) -> Bool {
         let da = a.modifiedDate ?? Date.distantPast
         let db = b.modifiedDate ?? Date.distantPast
         if da != db {
@@ -70,7 +70,7 @@ enum FileSortingService {
     }
 
     // MARK: -
-    private static func compareSize(_ a: CustomFile, _ b: CustomFile, ascending: Bool) -> Bool {
+    static func compareSize(_ a: CustomFile, _ b: CustomFile, ascending: Bool) -> Bool {
         let sa = a.sizeInBytes
         let sb = b.sizeInBytes
         if sa != sb {
@@ -80,7 +80,7 @@ enum FileSortingService {
     }
 
     // MARK: -
-    private static func compareType(_ a: CustomFile, _ b: CustomFile, ascending: Bool) -> Bool {
+    static func compareType(_ a: CustomFile, _ b: CustomFile, ascending: Bool) -> Bool {
         let ta = a.fileExtension
         let tb = b.fileExtension
         if ta != tb {
@@ -91,7 +91,7 @@ enum FileSortingService {
     }
 
     // MARK: -
-    private static func comparePermissions(_ a: CustomFile, _ b: CustomFile, ascending: Bool) -> Bool {
+    static func comparePermissions(_ a: CustomFile, _ b: CustomFile, ascending: Bool) -> Bool {
         let pa = a.posixPermissions
         let pb = b.posixPermissions
         if pa != pb {
@@ -101,7 +101,7 @@ enum FileSortingService {
     }
 
     // MARK: -
-    private static func compareOwner(_ a: CustomFile, _ b: CustomFile, ascending: Bool) -> Bool {
+    static func compareOwner(_ a: CustomFile, _ b: CustomFile, ascending: Bool) -> Bool {
         let oa = a.ownerName
         let ob = b.ownerName
         if oa != ob {
@@ -112,7 +112,7 @@ enum FileSortingService {
     }
 
     // MARK: -
-    private static func compareChildCount(_ a: CustomFile, _ b: CustomFile, ascending: Bool) -> Bool {
+    static func compareChildCount(_ a: CustomFile, _ b: CustomFile, ascending: Bool) -> Bool {
         let ca = a.childCountValue
         let cb = b.childCountValue
         if ca != cb {

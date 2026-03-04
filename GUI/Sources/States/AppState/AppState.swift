@@ -163,10 +163,8 @@ extension AppState {
     /// Use after creating files/folders to highlight the new item.
     func refreshAndSelect(name: String, on panel: PanelSide) async {
         if panel == .left {
-            await scanner.refreshFiles(currSide: .left)
             await refreshLeftFiles()
         } else {
-            await scanner.refreshFiles(currSide: .right)
             await refreshRightFiles()
         }
         selectFileByName(name, on: panel)
@@ -324,11 +322,9 @@ extension AppState {
                 updatePath(newPath, for: panel)
                 if panel == .left {
                     await scanner.setLeftDirectory(pathStr: newPath)
-                    await scanner.refreshFiles(currSide: .left)
                     await refreshLeftFiles()
                 } else {
                     await scanner.setRightDirectory(pathStr: newPath)
-                    await scanner.refreshFiles(currSide: .right)
                     await refreshRightFiles()
                 }
             }
@@ -424,11 +420,9 @@ extension AppState {
             updatePath(tempDir.path, for: panel)
             if panel == .left {
                 await scanner.setLeftDirectory(pathStr: tempDir.path)
-                await scanner.refreshFiles(currSide: .left)
                 await refreshLeftFiles()
             } else {
                 await scanner.setRightDirectory(pathStr: tempDir.path)
-                await scanner.refreshFiles(currSide: .right)
                 await refreshRightFiles()
             }
 
@@ -474,11 +468,9 @@ extension AppState {
         updatePath(parentDir, for: panel)
         if panel == .left {
             await scanner.setLeftDirectory(pathStr: parentDir)
-            await scanner.refreshFiles(currSide: .left)
             await refreshLeftFiles()
         } else {
             await scanner.setRightDirectory(pathStr: parentDir)
-            await scanner.refreshFiles(currSide: .right)
             await refreshRightFiles()
         }
     }
@@ -569,11 +561,9 @@ extension AppState {
         updatePath(parentPath, for: panel)
         if panel == .left {
             await scanner.setLeftDirectory(pathStr: parentPath)
-            await scanner.refreshFiles(currSide: .left)
             await refreshLeftFiles()
         } else {
             await scanner.setRightDirectory(pathStr: parentPath)
-            await scanner.refreshFiles(currSide: .right)
             await refreshRightFiles()
         }
     }
@@ -667,11 +657,9 @@ extension AppState {
         updatePath(localPath, for: panel)
         if panel == .left {
             await scanner.setLeftDirectory(pathStr: localPath)
-            await scanner.refreshFiles(currSide: .left)
             await refreshLeftFiles()
         } else {
             await scanner.setRightDirectory(pathStr: localPath)
-            await scanner.refreshFiles(currSide: .right)
             await refreshRightFiles()
         }
     }
@@ -976,11 +964,9 @@ extension AppState {
         Task {
             if panel == .left {
                 await scanner.setLeftDirectory(pathStr: previousPath)
-                await scanner.refreshFiles(currSide: .left)
                 await refreshLeftFiles()
             } else {
                 await scanner.setRightDirectory(pathStr: previousPath)
-                await scanner.refreshFiles(currSide: .right)
                 await refreshRightFiles()
             }
         }
