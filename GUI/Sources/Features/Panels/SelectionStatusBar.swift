@@ -131,6 +131,11 @@ struct SelectionStatusBar: View {
         .padding(.vertical, 4)
         .frame(height: 28)
         .background(Color(nsColor: .windowBackgroundColor).opacity(0.8))
+        .overlay(alignment: .top) {
+            Rectangle()
+                .fill(Color(nsColor: .separatorColor))
+                .frame(height: 1)
+        }
         .animation(.easeInOut(duration: 0.15), value: markedCount)
     }
 }
