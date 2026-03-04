@@ -43,8 +43,7 @@ struct NSFileTableView: NSViewRepresentable {
         tableView.allowsColumnResizing = false
         tableView.allowsColumnSelection = false
         tableView.columnAutoresizingStyle = .noColumnAutoresizing
-        tableView.gridStyleMask = .solidVerticalGridLineMask
-        tableView.gridColor = NSColor.separatorColor.withAlphaComponent(0.4)
+        tableView.gridStyleMask = []  // No grid lines - dividers handled by SwiftUI header
         tableView.focusRingType = .none
         tableView.headerView = nil  // SwiftUI header
         
@@ -59,6 +58,11 @@ struct NSFileTableView: NSViewRepresentable {
         tableView.registerForDraggedTypes([.fileURL])
         tableView.setDraggingSourceOperationMask(.copy, forLocal: false)
         tableView.setDraggingSourceOperationMask(.move, forLocal: true)
+        
+        // Context menu
+        let menu = NSMenu()
+        menu.delegate = context.coordinator
+        tableView.menu = menu
         
         scrollView.documentView = tableView
         
@@ -135,15 +139,28 @@ struct NSFileTableView: NSViewRepresentable {
         }
         
         // Calculate total width
+        // SwiftUI header has: Name + (divider + column) for each fixed column
+        // Divider width = 1pt (from ResizableDivider)
         let scrollWidth = tableView.enclosingScrollView?.contentSize.width ?? tableView.bounds.width
-        let fixedWidth = visibleSpecs.filter { $0.id != .name }.reduce(0) { $0 + $1.width }
-        let nameWidth = max(100, scrollWidth - fixedWidth)
+        let fixedColumnsCount = visibleSpecs.filter { $0.id != .name }.count
+        let fixedColumnsWidth = visibleSpecs.filter { $0.id != .name }.reduce(0) { $0 + $1.width }
+        let dividersWidth = CGFloat(fixedColumnsCount) * 1.0  // 1pt per divider
+        let nameWidth = max(100, scrollWidth - fixedColumnsWidth - dividersWidth)
         
-        // Sync widths
+        // Sync widths - add divider width to each fixed column except the last
         for (i, spec) in visibleSpecs.enumerated() {
             guard i < tableView.tableColumns.count else { break }
             let col = tableView.tableColumns[i]
-            let targetWidth = spec.id == .name ? nameWidth : spec.width
+            
+            let targetWidth: CGFloat
+            if spec.id == .name {
+                targetWidth = nameWidth
+            } else {
+                // Fixed column width + 1pt for divider (except last column)
+                let isLast = (i == visibleSpecs.count - 1)
+                targetWidth = spec.width + (isLast ? 0 : 1)
+            }
+            
             if abs(col.width - targetWidth) > 0.5 {
                 col.width = targetWidth
             }
@@ -162,7 +179,7 @@ struct NSFileTableView: NSViewRepresentable {
     
     // MARK: - Coordinator
     @MainActor
-    class Coordinator: NSObject, NSTableViewDelegate, NSTableViewDataSource {
+    class Coordinator: NSObject, NSTableViewDelegate, NSTableViewDataSource, NSMenuDelegate {
         var parent: NSFileTableView
         weak var tableView: NSTableView?
         weak var scrollView: NSScrollView?
@@ -328,6 +345,108 @@ struct NSFileTableView: NSViewRepresentable {
         }
         
         func tableView(_ tableView: NSTableView, acceptDrop info: NSDraggingInfo, row: Int, dropOperation: NSTableView.DropOperation) -> Bool { false }
+        
+        // MARK: - NSMenuDelegate
+        
+        func menuNeedsUpdate(_ menu: NSMenu) {
+            menu.removeAllItems()
+            
+            guard let tv = tableView else { return }
+            let clickedRow = tv.clickedRow
+            
+            guard clickedRow >= 0 && clickedRow < files.count else {
+                // Click on empty area
+                menu.addItem(NSMenuItem(title: "Refresh", action: #selector(menuRefresh), keyEquivalent: "r"))
+                menu.items.last?.target = self
+                return
+            }
+            
+            let file = files[clickedRow]
+            
+            // Select row if not selected
+            if !tv.selectedRowIndexes.contains(clickedRow) {
+                tv.selectRowIndexes(IndexSet(integer: clickedRow), byExtendingSelection: false)
+            }
+            
+            // Open
+            menu.addItem(NSMenuItem(title: "Open", action: #selector(menuOpen), keyEquivalent: ""))
+            menu.addItem(NSMenuItem(title: "Open With...", action: #selector(menuOpenWith), keyEquivalent: ""))
+            menu.addItem(NSMenuItem.separator())
+            
+            // Reveal
+            menu.addItem(NSMenuItem(title: "Reveal in Finder", action: #selector(menuRevealInFinder), keyEquivalent: ""))
+            menu.addItem(NSMenuItem.separator())
+            
+            // Copy/Move/Rename
+            menu.addItem(NSMenuItem(title: "Copy", action: #selector(menuCopy), keyEquivalent: "c"))
+            menu.addItem(NSMenuItem(title: "Move", action: #selector(menuMove), keyEquivalent: ""))
+            menu.addItem(NSMenuItem(title: "Rename", action: #selector(menuRename), keyEquivalent: ""))
+            menu.addItem(NSMenuItem.separator())
+            
+            // Trash
+            menu.addItem(NSMenuItem(title: "Move to Trash", action: #selector(menuTrash), keyEquivalent: ""))
+            menu.addItem(NSMenuItem.separator())
+            
+            // Get Info
+            menu.addItem(NSMenuItem(title: "Get Info", action: #selector(menuGetInfo), keyEquivalent: "i"))
+            
+            for item in menu.items {
+                item.target = self
+                item.representedObject = file
+            }
+        }
+        
+        @objc private func menuOpen() {
+            guard let tv = tableView, tv.clickedRow >= 0, tv.clickedRow < files.count else { return }
+            parent.onDoubleClick(files[tv.clickedRow])
+        }
+        
+        @objc private func menuOpenWith() {
+            guard let tv = tableView, tv.clickedRow >= 0, tv.clickedRow < files.count else { return }
+            let file = files[tv.clickedRow]
+            // Open "Open With" dialog
+            NSWorkspace.shared.activateFileViewerSelecting([file.urlValue])
+        }
+        
+        @objc private func menuRevealInFinder() {
+            guard let tv = tableView, tv.clickedRow >= 0, tv.clickedRow < files.count else { return }
+            NSWorkspace.shared.selectFile(files[tv.clickedRow].urlValue.path, inFileViewerRootedAtPath: "")
+        }
+        
+        @objc private func menuCopy() {
+            guard let tv = tableView, tv.clickedRow >= 0, tv.clickedRow < files.count else { return }
+            let pb = NSPasteboard.general
+            pb.clearContents()
+            pb.writeObjects([files[tv.clickedRow].urlValue as NSURL])
+        }
+        
+        @objc private func menuMove() {
+            // TODO: implement move dialog
+        }
+        
+        @objc private func menuRename() {
+            // TODO: implement rename
+        }
+        
+        @objc private func menuTrash() {
+            guard let tv = tableView, tv.clickedRow >= 0, tv.clickedRow < files.count else { return }
+            let file = files[tv.clickedRow]
+            do {
+                try FileManager.default.trashItem(at: file.urlValue, resultingItemURL: nil)
+            } catch {
+                log.error("[NSFileTableView] trash failed: \(error)")
+            }
+        }
+        
+        @objc private func menuGetInfo() {
+            guard let tv = tableView, tv.clickedRow >= 0, tv.clickedRow < files.count else { return }
+            let file = files[tv.clickedRow]
+            NSWorkspace.shared.activateFileViewerSelecting([file.urlValue])
+        }
+        
+        @objc private func menuRefresh() {
+            // TODO: trigger refresh
+        }
     }
 }
 
