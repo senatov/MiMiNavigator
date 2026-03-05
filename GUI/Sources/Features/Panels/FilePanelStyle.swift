@@ -41,8 +41,36 @@ enum FilePanelStyle {
     /// Base icon size - 16pt (Finder list view standard)
     private static let baseIconSize: CGFloat = 16
 
-    /// Base row height - 22pt (Finder list view standard)
-    private static let baseRowHeight: CGFloat = 22
+    // MARK: - Row Density
+    /// Supported row density presets
+    enum RowDensity: String, CaseIterable {
+        case compact  = "compact"   // 18 pt
+        case normal   = "normal"    // 22 pt  (Finder default)
+        case relaxed  = "relaxed"   // 28 pt
+        case spacious = "spacious"  // 34 pt
+
+        var baseHeight: CGFloat {
+            switch self {
+            case .compact:  return 18
+            case .normal:   return 22
+            case .relaxed:  return 28
+            case .spacious: return 34
+            }
+        }
+        var label: String {
+            switch self {
+            case .compact:  return "Compact (18 pt)"
+            case .normal:   return "Normal (22 pt)"
+            case .relaxed:  return "Relaxed (28 pt)"
+            case .spacious: return "Spacious (34 pt)"
+            }
+        }
+    }
+    /// Base row height resolved from UserDefaults density setting
+    private static var baseRowHeight: CGFloat {
+        let raw = UserDefaults.standard.string(forKey: "settings.panels.rowDensity") ?? "normal"
+        return (RowDensity(rawValue: raw) ?? .normal).baseHeight
+    }
 
     /// Icon size - scaled by InterfaceScaleStore
     @MainActor static var iconSize: CGFloat { InterfaceScaleStore.shared.scaled(baseIconSize) }

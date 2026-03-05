@@ -284,10 +284,29 @@ struct SettingsPanelsPane: View {
     @AppStorage("settings.panels.dateFormat")        private var dateFormat: String = "short"
     @AppStorage("settings.panels.showSizeInKB")      private var showSizeInKB: Bool = false
     @AppStorage("settings.panels.openOnSingleClick") private var openOnSingleClick: Bool = false
+    @AppStorage("settings.panels.rowDensity")        private var rowDensity: String = "normal"
 
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
 
+            // ── Row density ──────────────────────────────────
+            SettingsGroupBox {
+                VStack(spacing: 0) {
+                    SettingsRow(label: "Row height:", help: "Height of each row in the file list. Compact = dense list, Spacious = more breathing room.") {
+                        Picker("", selection: $rowDensity) {
+                            ForEach(FilePanelStyle.RowDensity.allCases, id: \.rawValue) { d in
+                                Text(d.label).tag(d.rawValue)
+                            }
+                        }
+                        .labelsHidden()
+                        .frame(width: 200)
+                        .onChange(of: rowDensity) { _, _ in
+                            // FilePanelStyle.rowHeight reads UserDefaults directly — no extra action needed
+                            // Panels will pick up new height on next layout pass
+                        }
+                    }
+                }
+            }
             // ── Files display ───────────────────────────────
             SettingsGroupBox {
                 VStack(spacing: 0) {
