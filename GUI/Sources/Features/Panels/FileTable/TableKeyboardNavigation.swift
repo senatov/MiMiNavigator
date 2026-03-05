@@ -18,6 +18,7 @@ import FileModelKit
 
 /// Handles keyboard-based file selection and navigation.
 /// Uses an O(1) index lookup via a pre-built dictionary for large directories.
+@MainActor
 struct TableKeyboardNavigation {
     let files: [CustomFile]
     let selectedID: Binding<CustomFile.ID?>
