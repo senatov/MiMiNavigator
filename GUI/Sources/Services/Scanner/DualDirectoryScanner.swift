@@ -360,6 +360,8 @@ actor DualDirectoryScanner {
         let newHash = hasher.finalize()
         if !isFirstUpdate && lastContentHashOnMain[side] == newHash {
             log.debug("[Scanner] skip update \(side): \(sortedFiles.count) items unchanged (\(sinceLastMs))")
+            // Re-seed FSEvents debounce so we don't keep polling every 3s after 120s expiry
+            await resetFSEventsDebounce(for: side)
             return
         }
         lastContentHashOnMain[side] = newHash
@@ -384,6 +386,11 @@ actor DualDirectoryScanner {
             default: break
             }
         }
+    }
+
+    // MARK: - Re-seed FSEvents debounce (called when content unchanged after safety scan)
+    func resetFSEventsDebounce(for side: PanelSide) {
+        lastFSEventsPatch[side] = Date()
     }
 
     // MARK: - Reset timer for a panel
