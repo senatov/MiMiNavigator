@@ -10,6 +10,7 @@
 //   - FileTableView+Actions.swift    → Action handlers
 //   - FileTableView+State.swift      → State management (columns, sorting)
 
+import Combine
 import SwiftUI
 import FileModelKit
 import UniformTypeIdentifiers
@@ -162,6 +163,13 @@ struct FileTableView: View {
             // Ensure a file stays selected — fall back to first if none
             appState.ensureSelectionOnFocusedPanel()
             return .handled
+        }
+        // Jump-to-first / jump-to-last from status bar buttons
+        .onReceive(NotificationCenter.default.publisher(for: .jumpToFirst).filter { ($0.object as? PanelSide) == panelSide }) { _ in
+            keyboardNav.jumpToFirst()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .jumpToLast).filter { ($0.object as? PanelSide) == panelSide }) { _ in
+            keyboardNav.jumpToLast()
         }
         .dropDestination(for: URL.self) { droppedURLs, _ in
             // Prefer internal drag (preserves multi-selection), fallback to URL decode
