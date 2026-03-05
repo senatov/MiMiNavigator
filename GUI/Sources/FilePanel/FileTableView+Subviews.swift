@@ -79,12 +79,19 @@ extension FileTableView {
     // MARK: - Scroll Edge Button (jump to first / last)
     private func scrollEdgeButton(icon: String, help: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            Image(systemName: icon)
-                .font(.system(size: 9, weight: .semibold))
-                .foregroundStyle(.secondary)
-                .frame(maxWidth: .infinity)
-                .frame(height: 14)
-                .contentShape(Rectangle())
+            HStack(spacing: 3) {
+                Image(systemName: icon)
+                    .font(.system(size: 8, weight: .bold))
+                Image(systemName: icon)
+                    .font(.system(size: 8, weight: .bold))
+                Image(systemName: icon)
+                    .font(.system(size: 8, weight: .bold))
+            }
+            .foregroundStyle(Color.accentColor.opacity(0.6))
+            .frame(maxWidth: .infinity)
+            .frame(height: 12)
+            .background(Color(nsColor: .separatorColor).opacity(0.15))
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .help(help)
