@@ -12,48 +12,51 @@ extension FileTableView {
 
     var mainScrollView: some View {
         VStack(spacing: 0) {
-            ScrollView {
-                LazyVStack(alignment: .leading, spacing: 0, pinnedViews: [.sectionHeaders]) {
-                    Section {
-                        FileTableRowsView(
-                            rows: sortedRows,
-                            selectedID: $selectedID,
-                            panelSide: panelSide,
-                            layout: layout,
-                            onSelect: onSelect,
-                            onDoubleClick: onDoubleClick,
-                            handleFileAction: handleFileAction,
-                            handleDirectoryAction: handleDirectoryAction,
-                            handleMultiSelectionAction: handleMultiSelectionAction
-                        )
+            ScrollViewReader { proxy in
+                ScrollView {
+                    LazyVStack(alignment: .leading, spacing: 0, pinnedViews: [.sectionHeaders]) {
+                        Section {
+                            FileTableRowsView(
+                                rows: sortedRows,
+                                selectedID: $selectedID,
+                                panelSide: panelSide,
+                                layout: layout,
+                                onSelect: onSelect,
+                                onDoubleClick: onDoubleClick,
+                                handleFileAction: handleFileAction,
+                                handleDirectoryAction: handleDirectoryAction,
+                                handleMultiSelectionAction: handleMultiSelectionAction
+                            )
 
-                        // Empty space — clickable for background context menu
-                        Color.clear
-                            .opacity(0.01)
-                            .frame(minHeight: 300)
-                            .frame(maxWidth: .infinity)
-                            .contentShape(Rectangle())
-                            .contextMenu { panelBackgroundMenu }
-                            .onTapGesture { selectedID = nil }
+                            // Empty space — clickable for background context menu
+                            Color.clear
+                                .opacity(0.01)
+                                .frame(minHeight: 300)
+                                .frame(maxWidth: .infinity)
+                                .contentShape(Rectangle())
+                                .contextMenu { panelBackgroundMenu }
+                                .onTapGesture { selectedID = nil }
 
-                    } header: {
-                        TableHeaderView(
-                            panelSide: panelSide,
-                            layout: layout
-                        )
+                        } header: {
+                            TableHeaderView(
+                                panelSide: panelSide,
+                                layout: layout
+                            )
+                        }
                     }
                 }
-                // scrollTargetLayout tells SwiftUI which items are scroll targets
-                // (used by .scrollPosition to compute offset mathematically — O(1))
-                .scrollTargetLayout()
+                .safeAreaInset(edge: .bottom, spacing: 0) {
+                    Color.clear.frame(height: 40)
+                }
+                .contextMenu { panelBackgroundMenu }
+                // Scroll to anchor when keyboard nav changes it
+                .onChange(of: scrollAnchorID) { _, newID in
+                    guard let id = newID else { return }
+                    withAnimation(.easeOut(duration: 0.05)) {
+                        proxy.scrollTo(id, anchor: .center)
+                    }
+                }
             }
-            // O(1) programmatic scroll: SwiftUI calculates offset = index * rowHeight
-            // without materializing intervening cells — fixes 5-10s PgUp/PgDown lag
-            .scrollPosition(id: $scrollAnchorID, anchor: .center)
-            .safeAreaInset(edge: .bottom, spacing: 0) {
-                Color.clear.frame(height: 40)
-            }
-            .contextMenu { panelBackgroundMenu }
         }
     }
 
