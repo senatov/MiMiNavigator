@@ -10,6 +10,7 @@
 // The old ScrollViewProxy.scrollTo(id:) approach was O(n) on LazyVStack:
 // SwiftUI had to materialize all cells up to the target to determine its position.
 
+import AppKit
 import SwiftUI
 import FileModelKit
 
@@ -94,10 +95,49 @@ struct TableKeyboardNavigation {
         let file = files[index]
         selectedID.wrappedValue = file.id
         onSelect(file)
-        // O(1): SwiftUI uses index * rowHeight — no cell materialization
-        scrollAnchorID.wrappedValue = file.id
+
+        // Try direct NSScrollView scroll first — O(1), no cell materialization.
+        // Falls back to scrollAnchorID (SwiftUI scrollTo) for small lists.
+        if !scrollViaAppKit(toIndex: index) {
+            scrollAnchorID.wrappedValue = file.id
+        }
         let ms = Int(Date().timeIntervalSince(t0) * 1000)
         log.debug("[Nav] idx=\(index) name=\(file.nameStr) selectAndScroll=\(ms)ms indexSize=\(files.count)")
+    }
+
+    /// Directly scroll the NSScrollView underlying SwiftUI ScrollView.
+    /// Computes target offset as index * rowHeight — O(1), works for 26K+ items.
+    /// Returns false if NSScrollView not found (fallback to SwiftUI scrollTo).
+    private func scrollViaAppKit(toIndex index: Int) -> Bool {
+        guard let window = NSApp.keyWindow else { return false }
+        // Find the NSClipView that hosts our LazyVStack
+        guard let scrollView = Self.findScrollView(in: window.contentView) else { return false }
+        let rowH = FilePanelStyle.rowHeight
+        // +1 accounts for "..." parent entry row and header
+        let headerEstimate: CGFloat = 30
+        let targetY = CGFloat(index) * rowH + headerEstimate
+        let clipHeight = scrollView.contentView.bounds.height
+        // Center the target row in the visible area
+        let scrollY = max(0, targetY - clipHeight / 2)
+        let maxY = max(0, scrollView.documentView!.frame.height - clipHeight)
+        let clampedY = min(scrollY, maxY)
+        scrollView.contentView.scroll(to: NSPoint(x: 0, y: clampedY))
+        scrollView.reflectScrolledClipView(scrollView.contentView)
+        return true
+    }
+
+    /// Walk the view hierarchy to find the first NSScrollView (SwiftUI's backing scroll)
+    private static func findScrollView(in view: NSView?) -> NSScrollView? {
+        guard let view else { return nil }
+        if let sv = view as? NSScrollView,
+           sv.documentView != nil,
+           sv.documentView!.frame.height > 1000 { // Our file list, not a small popup
+            return sv
+        }
+        for sub in view.subviews {
+            if let found = findScrollView(in: sub) { return found }
+        }
+        return nil
     }
 }
 
