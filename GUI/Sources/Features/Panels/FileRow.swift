@@ -316,7 +316,11 @@ struct FileRow: View {
                 let spec = fixedCols[i]
                 ColumnSeparator()
                 cellText(for: spec.id)
-                    .font(spec.id == .permissions ? .system(size: 11, design: .monospaced) : columnFont)
+                    .font(spec.id == .permissions
+                           ? .system(size: 11, design: .monospaced)
+                           : (spec.id == .size || spec.id == .childCount
+                              ? columnFont.monospacedDigit()
+                              : columnFont))
                     .foregroundStyle(cellColor(for: spec.id))
                     .lineLimit(1)
                     .truncationMode(.tail)

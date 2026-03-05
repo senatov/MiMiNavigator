@@ -49,13 +49,10 @@ enum FileScanner {
             )
         }
 
-        guard fileManager.isReadableFile(atPath: url.path) else {
-            log.error("[FileScanner] permission denied: \(url.path)")
-            throw NSError(
-                domain: NSPOSIXErrorDomain,
-                code: 13,
-                userInfo: [NSLocalizedDescriptionKey: "Permission denied: \(url.path)"]
-            )
+        if !fileManager.isReadableFile(atPath: url.path) {
+            log.warning("[FileScanner] path not readable, will attempt contentsOfDirectory: \(url.path)")
+            // Don't throw — a parent security-scoped bookmark may still grant access.
+            // If contentsOfDirectory fails, DualDirectoryScanner handles the fallback.
         }
 
         // Volume paths need hidden files visible (BSD UF_HIDDEN flag hides backup content)
