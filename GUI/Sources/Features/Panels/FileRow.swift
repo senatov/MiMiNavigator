@@ -345,29 +345,52 @@ struct FileRow: View {
 }
 
 // MARK: - Kind column cell
-// MARK: - Kind column cell
-/// Shows short kind (extension) with full UTType description in tooltip
+/// HIG-26: folder outline weight .light, archive = icon+abbrev, alias = arrow
 private struct KindCell: View {
     let file: CustomFile
 
     var body: some View {
         if file.isDirectory || file.isSymbolicDirectory {
-            Image(systemName: file.isSymbolicDirectory ? "folder.badge.questionmark" : "folder.fill")
-                .symbolRenderingMode(.multicolor)
-                .font(.system(size: 12, weight: .regular))
+            Image(systemName: file.isSymbolicDirectory ? "folder.badge.questionmark" : "folder")
+                .symbolRenderingMode(.hierarchical)
+                .font(.system(size: 12, weight: .light))
                 .help(file.isSymbolicDirectory ? "Symbolic Link to Folder" : "Folder")
         } else if file.isSymbolicLink {
             Image(systemName: "arrow.up.right.square")
-                .symbolRenderingMode(.multicolor)
-                .font(.system(size: 12, weight: .regular))
+                .symbolRenderingMode(.hierarchical)
+                .font(.system(size: 12, weight: .light))
                 .help("Symbolic Link")
+        } else if file.isArchiveFile {
+            HStack(spacing: 3) {
+                Image(systemName: "archivebox")
+                    .symbolRenderingMode(.hierarchical)
+                    .font(.system(size: 10, weight: .light))
+                    .foregroundStyle(.secondary)
+                Text(archiveAbbrev)
+                    .font(.system(size: 11, weight: .regular, design: .monospaced))
+            }
+            .help(fullKindDescription)
         } else {
             Text(shortKind)
                 .help(fullKindDescription)
         }
     }
 
-    /// Short kind: extension truncated at _ or -
+    private var archiveAbbrev: String {
+        let name = file.nameStr.lowercased()
+        if name.hasSuffix(".tar.gz")   { return "TGZ"  }
+        if name.hasSuffix(".tar.bz2")  { return "TBZ2" }
+        if name.hasSuffix(".tar.xz")   { return "TXZ"  }
+        if name.hasSuffix(".tar.lzma") { return "TLZ"  }
+        if name.hasSuffix(".tar.zst")  { return "TZS"  }
+        if name.hasSuffix(".tar.lz4")  { return "TL4"  }
+        if name.hasSuffix(".tar.lzo")  { return "TLO"  }
+        if name.hasSuffix(".tar.lz")   { return "TLZ"  }
+        let ext = file.fileExtension.uppercased()
+        if ext.count > 5 { return String(ext.prefix(4)) + "…" }
+        return ext.isEmpty ? "ARC" : ext
+    }
+
     private var shortKind: String {
         let ext = file.fileExtension.uppercased()
         if ext.isEmpty { return "Doc" }
@@ -378,13 +401,10 @@ private struct KindCell: View {
         return ext
     }
 
-    /// Full description from UTType (on-demand, no cache needed)
     private var fullKindDescription: String {
         let ext = file.fileExtension.lowercased()
         guard !ext.isEmpty else { return "Document" }
-        if let uttype = UTType(filenameExtension: ext),
-            let desc = uttype.localizedDescription
-        {
+        if let uttype = UTType(filenameExtension: ext), let desc = uttype.localizedDescription {
             return desc
         }
         return ext.uppercased()
