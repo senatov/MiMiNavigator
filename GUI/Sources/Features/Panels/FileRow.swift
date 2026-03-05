@@ -163,7 +163,8 @@ struct FileRow: View {
                 .fill(isActivePanel ? selectionActiveFill : selectionInactiveFill)
                 .overlay(
                     RoundedRectangle(cornerRadius: 6, style: .continuous)
-                        .stroke(Color(red: 0.18, green: 0.44, blue: 0.85).opacity(isActivePanel ? 0.75 : 0.35), lineWidth: 1)
+                        .inset(by: 0.5)
+                        .strokeBorder(Color(red: 0.18, green: 0.44, blue: 0.85).opacity(isActivePanel ? 0.75 : 0.35), lineWidth: 1)
                 )
                 .padding(.horizontal, 3)
                 .padding(.vertical, 0)
@@ -362,10 +363,9 @@ private struct KindCell: View {
                 .help("Symbolic Link")
         } else if file.isArchiveFile {
             HStack(spacing: 3) {
-                Image(systemName: "archivebox")
-                    .symbolRenderingMode(.hierarchical)
-                    .font(.system(size: 10, weight: .light))
-                    .foregroundStyle(.secondary)
+                Image(systemName: archiveSymbol)
+                    .symbolRenderingMode(.multicolor)
+                    .font(.system(size: 12, weight: .regular))
                 Text(archiveAbbrev)
                     .font(.system(size: 11, weight: .regular, design: .monospaced))
             }
@@ -389,6 +389,30 @@ private struct KindCell: View {
         let ext = file.fileExtension.uppercased()
         if ext.count > 5 { return String(ext.prefix(4)) + "…" }
         return ext.isEmpty ? "ARC" : ext
+    }
+
+    /// SF Symbol for archive icon — colored by format family
+    private var archiveSymbol: String {
+        let ext = file.fileExtension.lowercased()
+        let name = file.nameStr.lowercased()
+        // disk images
+        if ext == "dmg" || ext == "img" || ext == "iso" { return "internaldrive" }
+        // java / android
+        if ["jar","war","ear","aar","apk"].contains(ext) { return "archivebox.fill" }
+        // modern compression (zst, lz4, xz, lzma)
+        if ["zst","zstd","lz4","xz","lzma","txz","tlz"].contains(ext)
+            || name.hasSuffix(".tar.xz") || name.hasSuffix(".tar.lzma")
+            || name.hasSuffix(".tar.zst") || name.hasSuffix(".tar.lz4") { return "shippingbox" }
+        // bzip2 family
+        if ["bz2","bzip2","tbz","tbz2"].contains(ext)
+            || name.hasSuffix(".tar.bz2") { return "shippingbox.fill" }
+        // gzip / tar.gz
+        if ["gz","tgz","gzip","tar"].contains(ext)
+            || name.hasSuffix(".tar.gz") { return "cylinder" }
+        // 7z
+        if ext == "7z" { return "doc.zipper" }
+        // zip (default)
+        return "zipper.page"
     }
 
     private var shortKind: String {

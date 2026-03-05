@@ -248,16 +248,16 @@ struct FileRowView: View {
     // MARK: - Encrypted Archive Icon
     /// Generates an NSImage from SF Symbol "lock.doc" for encrypted archives
     private static func encryptedArchiveIcon(size: NSSize) -> NSImage {
-        let symbolName = "lock.doc.fill"
+        let symbolName = "key.2.on.ring"
         let config = NSImage.SymbolConfiguration(pointSize: size.height * 0.7, weight: .medium)
-            .applying(.init(paletteColors: [.systemOrange, .systemGray]))
+            .applying(.init(paletteColors: [.systemYellow, .systemOrange, .systemGray]))
         if let img = NSImage(systemSymbolName: symbolName, accessibilityDescription: "Encrypted archive") {
             let configured = img.withSymbolConfiguration(config) ?? img
             configured.size = size
             return configured
         }
-        // Fallback: plain lock icon
-        let fallback = NSImage(systemSymbolName: "lock.fill", accessibilityDescription: "Encrypted") ?? NSImage()
+        // Fallback: key icon
+        let fallback = NSImage(systemSymbolName: "key.fill", accessibilityDescription: "Encrypted") ?? NSImage()
         fallback.size = size
         return fallback
     }
