@@ -28,7 +28,10 @@ actor DualDirectoryScanner {
     
     // MARK: - Debounce: skip polling if FSEvents delivered changes recently
     private var lastFSEventsPatch: [PanelSide: Date] = [:]
-    private let fsEventsDebounceInterval: TimeInterval = 3  // skip poll if FSEvents fired within 2 min
+    private let fsEventsDebounceInterval: TimeInterval = 120  // skip poll if FSEvents fired within 2 min
+
+    // MARK: - Guard against overlapping scans (critical for 26K+ dirs)
+    private var scanInProgress: [PanelSide: Bool] = [.left: false, .right: false]
 
     /// Refresh interval from centralized constants (safety net only)
     private var refreshInterval: Int {
@@ -231,6 +234,14 @@ actor DualDirectoryScanner {
     // MARK: - Full refresh (used by timer safety net and explicit navigation)
     @Sendable
     func refreshFiles(currSide: PanelSide) async {
+        // Guard: skip if a scan is already running for this panel
+        guard scanInProgress[currSide] != true else {
+            log.debug("[Scanner] skip refresh \(currSide) — scan already in progress")
+            return
+        }
+        scanInProgress[currSide] = true
+        defer { scanInProgress[currSide] = false }
+
         let (path, showHidden, sortKey, sortAsc): (String, Bool, SortKeysEnum, Bool) = await MainActor.run {
             let p = currSide == .left ? appState.leftPath : appState.rightPath
             let h = UserPreferences.shared.snapshot.showHiddenFiles
@@ -331,12 +342,25 @@ actor DualDirectoryScanner {
     // MARK: - Update displayed files (full replace — used by polling timer)
     // files arrive pre-sorted from Task.detached — no sort on MainActor
     @MainActor private var lastUpdateTime: [PanelSide: Date] = [:]
+    @MainActor private var lastContentHashOnMain: [PanelSide: Int] = [:]
 
     @MainActor
     private func updateScannedFiles(_ sortedFiles: [CustomFile], for side: PanelSide) {
         let now = Date()
         let isFirstUpdate = lastUpdateTime[side] == nil
         let sinceLastMs = isFirstUpdate ? "first update" : "\(Int(now.timeIntervalSince(lastUpdateTime[side]!) * 1000))ms since last"
+
+        // Content hash: skip UI update if file list is identical (critical for 26K+ dirs)
+        var hasher = Hasher()
+        hasher.combine(sortedFiles.count)
+        for f in sortedFiles { hasher.combine(f.id) }
+        let newHash = hasher.finalize()
+        if !isFirstUpdate && lastContentHashOnMain[side] == newHash {
+            log.debug("[Scanner] skip update \(side): \(sortedFiles.count) items unchanged (\(sinceLastMs))")
+            return
+        }
+        lastContentHashOnMain[side] = newHash
+
         lastUpdateTime[side] = now
         switch side {
             case .left: appState.displayedLeftFiles = sortedFiles
