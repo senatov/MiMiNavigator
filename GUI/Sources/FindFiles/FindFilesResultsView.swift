@@ -13,7 +13,7 @@ import SwiftUI
 struct FindFilesResultsView: View {
     @Bindable var viewModel: FindFilesViewModel
     var appState: AppState? = nil
-    @State private var colorStore = ColorThemeStore.shared
+    private let colorStore = ColorThemeStore.shared
 
     @State private var sortOrder = [KeyPathComparator(\FindFilesResult.fileName)]
     @State private var cachedSorted: [FindFilesResult] = []
@@ -21,11 +21,11 @@ struct FindFilesResultsView: View {
     /// Auto-scroll: tracks whether user has manually selected a row (stops auto-scroll)
     @State private var userHasSelected: Bool = false
 
-    /// Standard font matching FileRow (.system(size: 12))
-    static let dialogFont: Font = .system(size: 12)
-    private var columnFont: Font { .system(size: 12) }
-    /// Monospaced digit variant for numeric columns
-    private var monoFont: Font { .system(size: 12).monospacedDigit() }
+    // Fonts matching FileRow
+    private static let rowFont: Font = .system(size: 12)
+
+
+    private static let Self.monoFont: Font = .system(size: 12).monospacedDigit()
     /// Active color theme shortcut
     private var theme: ColorTheme { colorStore.activeTheme }
 
@@ -47,7 +47,7 @@ struct FindFilesResultsView: View {
         }
         .frame(minHeight: 150, idealHeight: 250)
         .onChange(of: viewModel.results.count) {
-            cachedSorted = viewModel.results.sorted(using: sortOrder)
+            rebuildSort()
             lastResultCount = viewModel.results.count
             // Auto-scroll: select last result to keep table scrolled to bottom during search
             if viewModel.searchState == .searching && !userHasSelected,
@@ -55,15 +55,18 @@ struct FindFilesResultsView: View {
                 viewModel.selectedResult = last
             }
         }
-        .onChange(of: sortOrder) {
-            cachedSorted = viewModel.results.sorted(using: sortOrder)
-        }
+        .onChange(of: sortOrder) { rebuildSort() }
         .onChange(of: viewModel.searchState) {
             // Reset auto-scroll flag when a new search starts
             if viewModel.searchState == .searching {
                 userHasSelected = false
             }
         }
+    }
+
+    // MARK: - Sort
+    private func rebuildSort() {
+        cachedSorted = viewModel.results.sorted(using: sortOrder)
     }
 
     // MARK: - Empty State
@@ -76,7 +79,7 @@ struct FindFilesResultsView: View {
             Text(viewModel.searchState == .idle
                  ? "Enter search criteria and press Search"
                  : "No files found")
-                .font(columnFont)
+                .font(Self.rowFont)
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -89,6 +92,9 @@ struct FindFilesResultsView: View {
             get: { viewModel.selectedResult?.id },
             set: { newID in
                 viewModel.selectedResult = viewModel.results.first { $0.id == newID }
+                if let name = viewModel.selectedResult?.fileName {
+                    log.debug("[FindFilesResults] selected '\(name)'")
+                }
                 // User clicked a row manually — stop auto-scroll
                 if viewModel.searchState == .searching {
                     userHasSelected = true
@@ -100,7 +106,7 @@ struct FindFilesResultsView: View {
                 rowCell(result) {
                     if let idx = cachedSorted.firstIndex(where: { $0.id == result.id }) {
                         Text("\(idx + 1)")
-                            .font(monoFont)
+                            .font(Self.monoFont)
                             .foregroundStyle(result.isPasswordProtected ? .red : .secondary)
                     }
                 }
@@ -119,7 +125,7 @@ struct FindFilesResultsView: View {
                     Text(result.isInsideArchive
                          ? "\u{1F4E6} [\((result.archivePath as NSString?)?.lastPathComponent ?? "archive")] \(result.filePath)"
                          : result.filePath)
-                        .font(columnFont)
+                        .font(Self.rowFont)
                         .foregroundStyle(result.isPasswordProtected
                             ? .red
                             : (result.isInsideArchive ? theme.archivePathColor : theme.columnDateColor))
@@ -138,7 +144,7 @@ struct FindFilesResultsView: View {
             TableColumn("Date Mod.", value: \.sortableDate) { result in
                 rowCell(result) {
                     Text(result.modifiedDate.map { Self.dateFormatter.string(from: $0) } ?? "—")
-                        .font(monoFont)
+                        .font(Self.monoFont)
                         .foregroundStyle(result.isPasswordProtected ? .red : theme.columnDateColor)
                 }
             }
@@ -147,8 +153,8 @@ struct FindFilesResultsView: View {
             // Size — sortable
             TableColumn("Size", value: \.fileSize) { result in
                 rowCell(result) {
-                    Text(formatSize(result.fileSize))
-                        .font(monoFont)
+                    Text(Self.formatSize(result.fileSize))
+                        .font(Self.monoFont)
                         .foregroundStyle(result.isPasswordProtected ? .red : theme.columnSizeColor)
                 }
             }
@@ -160,77 +166,14 @@ struct FindFilesResultsView: View {
                     if result.isPasswordProtected {
                         // Password-protected archive — show lock + message
                         HStack(spacing: 4) {
-                            Image(systemName: "lock.fill")
-                                .foregroundStyle(.red)
-                            Text("Password protected")
-                                .foregroundStyle(.red)
-                        }
-                        .font(.system(size: 12, weight: .semibold))
-                    } else if let context = result.matchContext, let line = result.lineNumber {
-                        Text("L\(line): \(context)")
-                            .font(.system(size: 12, design: .monospaced))
-                            .foregroundStyle(theme.columnNameColor)
-                            .lineLimit(1)
-                            .truncationMode(.tail)
-                    } else if let context = result.matchContext {
-                        // Context without line number
-                        Text(context)
-                            .font(.system(size: 12))
-                            .foregroundStyle(theme.columnNameColor)
-                            .lineLimit(1)
-                    } else {
-                        Text("—")
-                            .font(columnFont)
-                            .foregroundStyle(.quaternary)
-                    }
-                }
-            }
-            .width(min: 80, ideal: 180)
-        }
-        .contextMenu(forSelectionType: FindFilesResult.ID.self) { selection in
-            resultContextMenu(selection: selection)
-        } primaryAction: { selection in
-            if let id = selection.first,
-               let result = viewModel.results.first(where: { $0.id == id }),
-               let state = appState {
-                viewModel.goToFile(result: result, appState: state)
-            }
-        }
-        .tableStyle(.inset(alternatesRowBackgrounds: true))
-    }
-
-    // MARK: - Row Background Helper
-
-    /// Wraps cell content with red background for password-protected archives
-    @ViewBuilder
-    private func rowCell<Content: View>(_ result: FindFilesResult, @ViewBuilder content: () -> Content) -> some View {
-        if result.isPasswordProtected {
-            content()
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-                .background(Color.red.opacity(0.18))
-        } else {
-            content()
-        }
-    }
-
-    // MARK: - Name Cell
-
-    private func resultNameCell(_ result: FindFilesResult) -> some View {
-        rowCell(result) {
-            HStack(spacing: 6) {
-                // Password-protected archives get a red lock icon
-                if result.isPasswordProtected {
-                    Image(systemName: "lock.fill")
-                        .font(.system(size: 12, weight: .bold))
-                        .foregroundStyle(.red)
-                        .frame(width: 16)
+                            Image(nsImage: FileRowView.getSmartIcon(for: result.fileURL))
+                        .resizable().interpolation(.high)
+                        .frame(width: 16, height: 16)
                 } else {
-                    Image(systemName: result.isInsideArchive ? "doc.zipper" : fileIcon(for: result))
-                        .font(.system(size: 12))
-                        .foregroundStyle(result.isInsideArchive
-                            ? theme.archivePathColor
-                            : theme.columnKindColor)
-                        .frame(width: 16)
+                    Image(nsImage: FileRowView.getSmartIcon(for: result.fileURL))
+                        .resizable().interpolation(.high)
+                        .frame(width: 16, height: 16)
+                        .opacity(result.isInsideArchive ? 0.7 : 1.0)
                 }
                 Text(result.fileName)
                     .font(.system(size: 12, weight: result.isInsideArchive || result.isPasswordProtected ? .semibold : .regular))
@@ -283,31 +226,9 @@ struct FindFilesResultsView: View {
 
     // MARK: - Helpers
 
-    private func fileIcon(for result: FindFilesResult) -> String {
-        let ext = result.fileURL.pathExtension.lowercased()
-        switch ext {
-        case "swift", "java", "py", "js", "ts", "c", "cpp", "h", "rs", "go":
-            return "chevron.left.forwardslash.chevron.right"
-        case "txt", "md", "rtf", "log":
-            return "doc.text"
-        case "pdf":
-            return "doc.richtext"
-        case "png", "jpg", "jpeg", "gif", "svg", "webp", "heic":
-            return "photo"
-        case "mp3", "wav", "aac", "flac", "m4a":
-            return "music.note"
-        case "mp4", "mov", "avi", "mkv":
-            return "film"
-        case "zip", "7z", "tar", "gz", "bz2", "rar":
-            return "doc.zipper"
-        case "app", "dmg", "pkg":
-            return "app.badge.checkmark"
-        default:
-            return "doc"
-        }
-    }
+    // fileIcon() removed
 
-    private func formatSize(_ bytes: Int64) -> String {
+    private static let sizeFormatter: ByteCountFormatter = { let f = ByteCountFormatter(); f.countStyle = .file; return f }()    private static func formatSize(_ bytes: Int64) -> String {
         if bytes == 0 { return "—" }
         let formatter = ByteCountFormatter()
         formatter.countStyle = .file

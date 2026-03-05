@@ -2,7 +2,7 @@
 //  MiMiNavigator
 //
 //  Created by Iakov Senatov on 11.08.2024.
-//  Copyright © 2024 Senatov. All rights reserved.
+//  Copyright © 2024-2026 Senatov. All rights reserved.
 
 import AppKit
 import FileModelKit
@@ -15,7 +15,7 @@ struct FileRowView: View {
     let isSelected: Bool
     let isActivePanel: Bool
     var isMarked: Bool = false  // Total Commander style marking
-    @State private var colorStore = ColorThemeStore.shared
+    private let colorStore = ColorThemeStore.shared
 
     // MARK: - View Body
     var body: some View {
@@ -113,7 +113,7 @@ struct FileRowView: View {
                     }
 
                     Text(file.nameStr)
-                        .font(.system(size: nameFontSize, weight: nameWeight))
+                        .font(.system(size: Self.nameFontSize, weight: Self.nameWeight))
                         .foregroundStyle(nameColor)
                         .lineLimit(1)
                         .truncationMode(.middle)
@@ -125,7 +125,7 @@ struct FileRowView: View {
 
     // MARK: - Smart icon selection with fallback chain
     /// Priority: Encrypted archive → Special types → Magic bytes (no ext) → App icon → UTType icon → Generic
-    private func getSmartIcon(for file: CustomFile) -> NSImage {
+    static func getSmartIcon(for file: CustomFile) -> NSImage {
         let url = file.urlValue
         let workspace = NSWorkspace.shared
         let iconSize = NSSize(width: 128, height: 128)
@@ -189,13 +189,14 @@ struct FileRowView: View {
         }
 
         // 3. Final fallback: standard file icon
+        log.debug("[FileRowView] icon fallback for '\(url.lastPathComponent)' ext='\(url.pathExtension)'")
         let icon = workspace.icon(forFile: url.path)
         icon.size = iconSize
         return icon
     }
 
     // MARK: - Remote file icon (no local path available)
-    private func remoteIcon(for file: CustomFile, size: NSSize) -> NSImage {
+    private static func remoteIcon(for file: CustomFile, size: NSSize) -> NSImage {
         if file.isDirectory || file.isSymbolicDirectory {
             let icon = NSWorkspace.shared.icon(for: .folder)
             icon.size = size
@@ -214,7 +215,7 @@ struct FileRowView: View {
 
     // MARK: - Special type icons (fonts, system files, etc.)
     /// Returns appropriate icon for file types that shouldn't use app icons
-    private func getSpecialTypeIcon(for ext: String) -> NSImage? {
+    private static func getSpecialTypeIcon(for ext: String) -> NSImage? {
         let workspace = NSWorkspace.shared
 
         // Font files - use Font Book icon or UTType
@@ -261,7 +262,55 @@ struct FileRowView: View {
         fallback.size = size
         return fallback
     }
-    // MARK: - SF Symbol to NSImage
+    // MARK: - URL-based icon (for FindFilesResultsView and other non-CustomFile callers)
+    static func getSmartIcon(for url: URL, size: NSSize = NSSize(width: 128, height: 128)) -> NSImage {
+        let workspace = NSWorkspace.shared
+        guard FileManager.default.fileExists(atPath: url.path) else {
+            // Remote / archive-internal — use UTType icon
+            let ext = url.pathExtension.lowercased()
+            if !ext.isEmpty, let uttype = UTType(filenameExtension: ext) {
+                let icon = workspace.icon(for: uttype)
+                icon.size = size
+                return icon
+            }
+            let icon = workspace.icon(for: .data)
+            icon.size = size
+            return icon
+        }
+        // Symlink
+        if (try? url.resourceValues(forKeys: [.isSymbolicLinkKey]))?.isSymbolicLink == true {
+            return AliasIconComposer.compose(symlinkURL: url, size: size)
+        }
+        // Directory
+        var isDir: ObjCBool = false
+        if FileManager.default.fileExists(atPath: url.path, isDirectory: &isDir), isDir.boolValue {
+            let icon = workspace.icon(forFile: url.path)
+            icon.size = size
+            return icon
+        }
+        let ext = url.pathExtension.lowercased()
+        let archiveExts: Set<String> = ["zip","7z","rar","tar","gz","tgz","bz2","tbz2","xz","txz","dmg","pkg","jar","apk"]
+        if archiveExts.contains(ext) && EncryptedArchiveCheck.isEncrypted(url: url) {
+            return encryptedArchiveIcon(size: size)
+        }
+        if let special = getSpecialTypeIcon(for: ext) { special.size = size; return special }
+        if let appURL = workspace.urlForApplication(toOpen: url),
+           !isGenericHandler(appURL: appURL, forExtension: ext) {
+            let icon = workspace.icon(forFile: appURL.path)
+            icon.size = size
+            return icon
+        }
+        if !ext.isEmpty, let uttype = UTType(filenameExtension: ext) {
+            let icon = workspace.icon(for: uttype)
+            icon.size = size
+            return icon
+        }
+        let icon = workspace.icon(forFile: url.path)
+        icon.size = size
+        return icon
+    }
+
+        // MARK: - SF Symbol to NSImage
     /// Renders an SF Symbol name as an NSImage at given size
     private static func sfSymbolIcon(_ symbolName: String, size: NSSize) -> NSImage {
         let config = NSImage.SymbolConfiguration(pointSize: size.height * 0.6, weight: .regular)
@@ -276,7 +325,7 @@ struct FileRowView: View {
     }
     // MARK: - Check if app is a generic handler (not the best icon source)
     /// Some apps register for many file types but their icon isn't representative
-    private func isGenericHandler(appURL: URL, forExtension ext: String) -> Bool {
+    private static func isGenericHandler(appURL: URL, forExtension ext: String) -> Bool {
         let genericBundleIDs = [
             "org.libreoffice.script",
             "com.apple.TextEdit",
