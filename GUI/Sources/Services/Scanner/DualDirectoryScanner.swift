@@ -361,7 +361,7 @@ actor DualDirectoryScanner {
         if !isFirstUpdate && lastContentHashOnMain[side] == newHash {
             log.debug("[Scanner] skip update \(side): \(sortedFiles.count) items unchanged (\(sinceLastMs))")
             // Re-seed FSEvents debounce so we don't keep polling every 3s after 120s expiry
-            await resetFSEventsDebounce(for: side)
+            Task { await self.resetFSEventsDebounce(for: side) }
             return
         }
         lastContentHashOnMain[side] = newHash
