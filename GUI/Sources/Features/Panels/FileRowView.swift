@@ -56,12 +56,12 @@ struct FileRowView: View {
     }
 
     // MARK: - Font weight: same for marked and normal (no bold)
-    private var nameWeight: Font.Weight {
+    private static var nameWeight: Font.Weight {
         .regular
     }
 
     // MARK: - Font size: same for marked and normal
-    private var nameFontSize: CGFloat {
+    private static var nameFontSize: CGFloat {
         13
     }
 
@@ -91,7 +91,7 @@ struct FileRowView: View {
             } else {
                 // Normal file icon (dimmed for hidden files, like Finder)
                 ZStack(alignment: .bottomTrailing) {
-                    Image(nsImage: getSmartIcon(for: file))
+                    Image(nsImage: Self.getSmartIcon(for: file))
                         .resizable()
                         .interpolation(.high)
                         .antialiased(true)
