@@ -135,25 +135,11 @@ final class DuoFilePanelKeyboardHandler {
             appState.toggleFocus()
             return nil
 
-        case .moveUp:
-            appState.selectionMove(by: -1)
-            return nil
-
-        case .moveDown:
-            appState.selectionMove(by: 1)
-            return nil
-        case .pageUp:
-            appState.selectionMove(by: -20)
-            return nil
-        case .pageDown:
-            appState.selectionMove(by: 20)
-            return nil
-        case .moveToTop:
-            appState.selectionMoveToEdge(top: true)
-            return nil
-        case .moveToBottom:
-            appState.selectionMoveToEdge(top: false)
-            return nil
+        // Arrow keys + PgUp/PgDown/Home/End — let FileTableView handle via
+        // .onMoveCommand / .onKeyPress so scrollAnchorID is updated
+        // and ScrollView follows the cursor
+        case .moveUp, .moveDown, .pageUp, .pageDown, .moveToTop, .moveToBottom:
+            return event
 
         case .openSelected:
             log.info("[KEY] → Open Selected")
