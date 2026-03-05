@@ -165,8 +165,8 @@ struct FileRow: View {
                     RoundedRectangle(cornerRadius: 6, style: .continuous)
                         .stroke(Color(red: 0.18, green: 0.44, blue: 0.85).opacity(isActivePanel ? 0.75 : 0.35), lineWidth: 1)
                 )
-                .padding(.horizontal, 4)
-                .padding(.vertical, 1)
+                .padding(.horizontal, 3)
+                .padding(.vertical, 0)
                 .allowsHitTesting(false)
         }
     }
@@ -308,7 +308,6 @@ struct FileRow: View {
             // Name — flexible (matches header nameHeader)
             FileRowView(file: file, isSelected: isSelected, isActivePanel: isActivePanel, isMarked: isMarked)
                 .frame(minWidth: 60, maxWidth: .infinity, alignment: .leading)
-                .clipped()
 
             // Fixed columns — separator before each, width EXACT (no internal padding)
             ForEach(fixedCols.indices, id: \.self) { i in
