@@ -161,6 +161,10 @@ struct FileRow: View {
         } else if isSelected {
             RoundedRectangle(cornerRadius: 6, style: .continuous)
                 .fill(isActivePanel ? selectionActiveFill : selectionInactiveFill)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 6, style: .continuous)
+                        .stroke(Color(red: 0.18, green: 0.44, blue: 0.85).opacity(isActivePanel ? 0.75 : 0.35), lineWidth: 1)
+                )
                 .padding(.horizontal, 4)
                 .padding(.vertical, 1)
                 .allowsHitTesting(false)
