@@ -109,9 +109,16 @@ struct SelectionStatusBar: View {
                 .foregroundStyle(conn.protocolType == .sftp ? .green : .blue)
             }
 
-            // Center: filter bar
+            // Center: filter bar + jump buttons
             PanelFilterBar(query: filterQuery, panelSide: panelSide)
                 .frame(minWidth: 140, maxWidth: 220)
+
+            jumpEdgeButton(label: "Up", icon: "chevron.up.2", help: "Jump to first file") {
+                NotificationCenter.default.post(name: .jumpToFirst, object: panelSide)
+            }
+            jumpEdgeButton(label: "Dn", icon: "chevron.down.2", help: "Jump to last file") {
+                NotificationCenter.default.post(name: .jumpToLast, object: panelSide)
+            }
 
             Spacer()
 
@@ -138,6 +145,37 @@ struct SelectionStatusBar: View {
         }
         .animation(.easeInOut(duration: 0.15), value: markedCount)
     }
+
+    // MARK: - Jump Edge Button
+    private func jumpEdgeButton(label: String, icon: String, help: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 2) {
+                Image(systemName: icon)
+                    .font(.system(size: 8, weight: .bold))
+                Text(label)
+                    .font(.system(size: 10, weight: .medium))
+            }
+            .foregroundStyle(.secondary)
+            .padding(.horizontal, 5)
+            .padding(.vertical, 2)
+            .background(
+                RoundedRectangle(cornerRadius: 4, style: .continuous)
+                    .fill(Color(nsColor: .controlBackgroundColor))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 4, style: .continuous)
+                    .stroke(Color(nsColor: .separatorColor).opacity(0.5), lineWidth: 0.5)
+            )
+        }
+        .buttonStyle(.plain)
+        .help(help)
+    }
+}
+
+// MARK: - Jump Notifications
+extension Notification.Name {
+    static let jumpToFirst = Notification.Name("MiMi.jumpToFirst")
+    static let jumpToLast = Notification.Name("MiMi.jumpToLast")
 }
 
 // MARK: - Preview
