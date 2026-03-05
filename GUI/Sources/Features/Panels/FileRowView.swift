@@ -250,7 +250,7 @@ struct FileRowView: View {
     private static func encryptedArchiveIcon(size: NSSize) -> NSImage {
         let symbolName = "key.2.on.ring"
         let config = NSImage.SymbolConfiguration(pointSize: size.height * 0.7, weight: .medium)
-            .applying(.init(paletteColors: [.systemYellow, .systemOrange, .systemGray]))
+            .applying(.init(paletteColors: [.systemBrown, .systemOrange, .darkGray]))
         if let img = NSImage(systemSymbolName: symbolName, accessibilityDescription: "Encrypted archive") {
             let configured = img.withSymbolConfiguration(config) ?? img
             configured.size = size

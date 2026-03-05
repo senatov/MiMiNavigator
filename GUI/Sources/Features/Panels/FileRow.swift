@@ -55,6 +55,7 @@ struct FileRow: View {
     var body: some View {
         rowContainer
             .id("\(panelSide)_\(file.id)")
+            .zIndex(isSelected ? 1 : 0)  // selected row renders above neighbours — border fully visible
     }
 
     // MARK: - Main Container
