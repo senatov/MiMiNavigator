@@ -288,21 +288,44 @@ actor DualDirectoryScanner {
     }
 
     private func requestAndRetryAccess(for url: URL, side: PanelSide) async -> Bool {
-        log.info("🔐 requestAndRetryAccess: requesting bookmark for \(url.path)")
-        let granted = await BookmarkStore.shared.requestAccessPersisting(for: url)
-        log.info("🔐 BookmarkStore result: granted=\(granted) for \(url.path)")
-        guard granted else { return false }
+        log.info("🔐 requestAndRetryAccess: checking existing bookmarks for \(url.path)")
+
+        // 1. Try restoring all bookmarks first — maybe a parent bookmark covers this path
+        let restored = await BookmarkStore.shared.restoreAll()
+        if !restored.isEmpty {
+            log.info("🔐 Re-restored \(restored.count) bookmarks, retrying scan")
+            do {
+                let showHidden = await MainActor.run { UserPreferences.shared.snapshot.showHiddenFiles }
+                let scanned = try FileScanner.scan(url: url, showHiddenFiles: showHidden)
+                log.info("✅ Rescan after bookmark restore: \(scanned.count) items from \(url.path)")
+                await updateScannedFiles(scanned, for: side)
+                await updateFileList(panelSide: side, with: scanned)
+                return true
+            } catch {
+                log.warning("🔐 Rescan still failed after bookmark restore: \(error.localizedDescription)")
+            }
+        }
+
+        // 2. No bookmark covers this path — fallback to Home instead of showing NSOpenPanel
+        log.warning("🔐 No bookmark for \(url.path) — falling back to Home directory")
+        let homeURL = URL(fileURLWithPath: NSHomeDirectory())
+        await MainActor.run {
+            switch side {
+            case .left:  appState.leftPath = homeURL.path
+            case .right: appState.rightPath = homeURL.path
+            }
+        }
         do {
             let showHidden = await MainActor.run { UserPreferences.shared.snapshot.showHiddenFiles }
-            let scanned = try FileScanner.scan(url: url, showHiddenFiles: showHidden)
-            log.info("✅ Rescan after access grant: \(scanned.count) items from \(url.path)")
-            await updateScannedFiles(scanned, for: side)
-            await updateFileList(panelSide: side, with: scanned)
-            return true
+            let scanned = try FileScanner.scan(url: homeURL, showHiddenFiles: showHidden)
+            let sorted = FileSortingService.sort(scanned, by: await MainActor.run { appState.sortKey }, bDirection: await MainActor.run { appState.bSortAscending })
+            await updateScannedFiles(sorted, for: side)
+            await updateFileList(panelSide: side, with: sorted)
+            log.info("✅ Fallback to Home succeeded: \(sorted.count) items")
         } catch {
-            log.error("❌ Rescan STILL failed after access granted for \(url.path): \(error)")
-            return false
+            log.error("❌ Even Home dir scan failed: \(error)")
         }
+        return false
     }
 
     // MARK: - Update displayed files (full replace — used by polling timer)

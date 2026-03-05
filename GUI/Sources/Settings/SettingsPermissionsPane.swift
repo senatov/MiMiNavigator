@@ -305,9 +305,27 @@ struct SettingsPermissionsPane: View {
 
     private func addFolder() {
         Task { @MainActor in
-            let granted = await BookmarkStore.shared.requestAccessPersisting(for: URL(fileURLWithPath: NSHomeDirectory()))
-            if granted { loadAuthorizedFolders() }
-            log.info("[Permissions] addFolder granted=\(granted)")
+            let panel = NSOpenPanel()
+            panel.allowsMultipleSelection = true
+            panel.canChooseFiles = false
+            panel.canChooseDirectories = true
+            panel.canCreateDirectories = false
+            panel.showsHiddenFiles = true
+            panel.treatsFilePackagesAsDirectories = true
+            panel.directoryURL = URL(fileURLWithPath: "/")
+            panel.message = "Select folders to grant MiMiNavigator access"
+            panel.prompt = "Grant Access"
+
+            let response = panel.runModal()
+            guard response == .OK, !panel.urls.isEmpty else {
+                log.info("[Permissions] addFolder: user cancelled")
+                return
+            }
+            for url in panel.urls {
+                let granted = await BookmarkStore.shared.persistAccess(for: url)
+                log.info("[Permissions] addFolder: \(url.path) granted=\(granted)")
+            }
+            loadAuthorizedFolders()
         }
     }
 
