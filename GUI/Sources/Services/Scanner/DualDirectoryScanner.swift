@@ -104,7 +104,10 @@ actor DualDirectoryScanner {
             case .left: leftFSEvents = watcher
             case .right: rightFSEvents = watcher
         }
+        // Mark FSEvents as "active" so polling debounce kicks in for static dirs
+        lastFSEventsPatch[side] = Date()
         log.info("[FSEvents] started for \(side) panel: '\(path)'")
+
     }
 
     private func stopFSEvents(for side: PanelSide) {
