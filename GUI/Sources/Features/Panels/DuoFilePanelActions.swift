@@ -143,18 +143,24 @@ struct DuoFilePanelActions {
             }
         } else {
             // Normal filesystem: move to Trash via NSWorkspace
+            // Run recycle off MainActor — it can take 10-15s in large directories
             log.info("performDelete: recycling \(urls.count) item(s): \(urls.map(\.lastPathComponent))")
-            NSWorkspace.shared.recycle(urls) { trashedURLs, error in
+            Task.detached(priority: .userInitiated) {
+                let (trashedURLs, error) = await withCheckedContinuation { cont in
+                    NSWorkspace.shared.recycle(urls) { trashed, err in
+                        cont.resume(returning: (trashed, err))
+                    }
+                }
                 if let error {
                     log.error("performDelete: recycle failed — \(error.localizedDescription)")
                     return
                 }
                 log.info("performDelete: \(trashedURLs.count) item(s) moved to Trash ✓")
-                Task { @MainActor in
+                await MainActor.run {
                     if panel == .left {
-                        await self.appState.refreshLeftFiles()
+                        Task { await self.appState.refreshLeftFiles() }
                     } else {
-                        await self.appState.refreshRightFiles()
+                        Task { await self.appState.refreshRightFiles() }
                     }
                     self.appState.unmarkAll()
                 }
