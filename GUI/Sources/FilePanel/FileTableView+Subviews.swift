@@ -13,6 +13,14 @@ extension FileTableView {
     var mainScrollView: some View {
         VStack(spacing: 0) {
             ScrollViewReader { proxy in
+                // ▲ Jump to First button
+                scrollEdgeButton(
+                    icon: "chevron.up.2",
+                    help: "Jump to first file (Home)"
+                ) {
+                    keyboardNav.jumpToFirst()
+                }
+
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 0, pinnedViews: [.sectionHeaders]) {
                         Section {
@@ -56,8 +64,30 @@ extension FileTableView {
                         proxy.scrollTo(id, anchor: .center)
                     }
                 }
+
+                // ▼ Jump to Last button
+                scrollEdgeButton(
+                    icon: "chevron.down.2",
+                    help: "Jump to last file (End)"
+                ) {
+                    keyboardNav.jumpToLast()
+                }
             }
         }
+    }
+
+    // MARK: - Scroll Edge Button (jump to first / last)
+    private func scrollEdgeButton(icon: String, help: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: icon)
+                .font(.system(size: 9, weight: .semibold))
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity)
+                .frame(height: 14)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .help(help)
     }
 
     @ViewBuilder
