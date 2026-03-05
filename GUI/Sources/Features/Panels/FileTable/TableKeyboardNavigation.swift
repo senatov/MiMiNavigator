@@ -97,9 +97,10 @@ struct TableKeyboardNavigation {
         selectedID.wrappedValue = file.id
         onSelect(file)
 
-        // Try direct NSScrollView scroll first — O(1), no cell materialization.
-        // Falls back to scrollAnchorID (SwiftUI scrollTo) for small lists.
-        if !scrollViaAppKit(toIndex: index) {
+        // Direct NSScrollView scroll — O(1), no cell materialization.
+        // For small lists (<500) fall back to SwiftUI scrollTo.
+        // For large lists NEVER use scrollTo — it materializes all cells and freezes.
+        if !scrollViaAppKit(toIndex: index) && files.count < 500 {
             scrollAnchorID.wrappedValue = file.id
         }
         let ms = Int(Date().timeIntervalSince(t0) * 1000)
@@ -110,9 +111,14 @@ struct TableKeyboardNavigation {
     /// Computes target offset as index * rowHeight — O(1), works for 26K+ items.
     /// Returns false if NSScrollView not found (fallback to SwiftUI scrollTo).
     private func scrollViaAppKit(toIndex index: Int) -> Bool {
-        guard let window = NSApp.keyWindow else { return false }
-        // Find the NSClipView that hosts our LazyVStack
-        guard let scrollView = Self.findScrollView(in: window.contentView) else { return false }
+        guard let window = NSApp.keyWindow else {
+            log.debug("[Nav] scrollViaAppKit: no keyWindow")
+            return false
+        }
+        guard let scrollView = Self.findScrollView(in: window.contentView) else {
+            log.debug("[Nav] scrollViaAppKit: NSScrollView not found")
+            return false
+        }
         let rowH = FilePanelStyle.rowHeight
         // +1 accounts for "..." parent entry row and header
         let headerEstimate: CGFloat = 30
