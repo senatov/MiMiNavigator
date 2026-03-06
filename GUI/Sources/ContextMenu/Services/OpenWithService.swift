@@ -41,7 +41,11 @@ final class OpenWithService {
     private let lruAppURLsKey  = "openWithAppURLs"   // bundleID → app path, for "Other..." picks
     private let lruMaxCount = 5
 
+    // MARK: - Apps cache (per absolute file path)
+    nonisolated(unsafe) private static var appsCache = NSCache<NSString, NSArray>()
+
     private init() {
+        OpenWithService.appsCache.countLimit = 64
         log.debug("\(#function) OpenWithService initialized")
     }
 
@@ -76,6 +80,11 @@ final class OpenWithService {
 
     /// Returns list of applications that can open the given file
     func getApplications(for fileURL: URL) -> [AppInfo] {
+        let cacheKey = fileURL.path as NSString
+        if let cached = OpenWithService.appsCache.object(forKey: cacheKey) as? [AppInfo] {
+            log.debug("\(#function) cache hit for '\(fileURL.lastPathComponent)' (\(cached.count) apps)")
+            return cached
+        }
         log.debug("\(#function) file='\(fileURL.lastPathComponent)' ext=\(fileURL.pathExtension)")
 
         guard UTType(filenameExtension: fileURL.pathExtension) != nil else {
@@ -130,6 +139,7 @@ final class OpenWithService {
         log.info(
             "\(#function) found \(apps.count) apps for ext='\(fileURL.pathExtension)' default='\(defaultApp?.lastPathComponent ?? "none")'"
         )
+        OpenWithService.appsCache.setObject(apps as NSArray, forKey: cacheKey)
         return apps
     }
 

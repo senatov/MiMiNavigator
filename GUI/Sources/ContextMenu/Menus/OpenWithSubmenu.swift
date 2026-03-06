@@ -12,20 +12,17 @@ import FileModelKit
 /// Apps are pre-loaded at init time via State(initialValue:) — avoids body re-evaluation
 struct OpenWithSubmenu: View {
     let file: CustomFile
-    @State private var apps: [AppInfo]
+    @State private var apps: [AppInfo] = []
+    @State private var isLoading = true
 
-    // MARK: - Init
-    init(file: CustomFile) {
-        self.file = file
-        let loaded = OpenWithService.shared.getApplications(for: file.urlValue)
-        _apps = State(initialValue: loaded)
-        log.debug("OpenWithSubmenu.init → loaded \(loaded.count) apps for '\(file.nameStr)'")
-    }
 
     var body: some View {
         Menu {
             
-            if apps.isEmpty {
+            if isLoading {
+                Text("Loading...")
+                    .foregroundStyle(.secondary)
+            } else if apps.isEmpty {
                 Text("No applications found")
                     .foregroundStyle(.secondary)
             } else {
@@ -66,6 +63,15 @@ struct OpenWithSubmenu: View {
             }
         } label: {
             Label("Open With", systemImage: "arrow.up.right.square")
+        }
+        // MARK: - Load apps lazily — never in init, avoids LS freeze causing submenu flicker
+        .task(id: file.pathStr) {
+            let loaded = await Task.detached(priority: .userInitiated) {
+                OpenWithService.shared.getApplications(for: file.urlValue)
+            }.value
+            apps = loaded
+            isLoading = false
+            log.debug("OpenWithSubmenu.task → loaded \(loaded.count) apps for '\(file.nameStr)'")
         }
     }
     
