@@ -14,6 +14,7 @@ struct FilePanelView: View {
     @Environment(AppState.self) var appState
     @State private var colorStore = ColorThemeStore.shared
     @State private var viewModel: FilePanelViewModel
+    @State private var viewModeStore = PanelViewModeStore.shared
     let containerWidth: CGFloat
     @Binding var leftPanelWidth: CGFloat
     let onPanelTap: (PanelSide) -> Void
@@ -85,22 +86,38 @@ struct FilePanelView: View {
                 )
             }
             
-            // File table - key includes file content hash for proper refresh
-            StableKeyView(fileContentKey) {
-                PanelFileTableSection(
+            // View mode picker row (list / thumbnail)
+            viewModePicker
+
+            // File table or thumbnail grid
+            let currentMode = viewModeStore.mode(for: viewModel.panelSide)
+            if currentMode == .thumbnail {
+                ThumbnailGridView(
                     files: files,
                     selectedID: selectedIDBinding,
                     panelSide: viewModel.panelSide,
-                    onPanelTap: onPanelTap,
-                    onSelect: { file in
-                        viewModel.select(file)
-                    },
-                    onDoubleClick: { file in
-                        handleDoubleClick(file)
-                    }
+                    cellSize: viewModeStore.thumbSize(for: viewModel.panelSide),
+                    onSelect: { file in viewModel.select(file) },
+                    onDoubleClick: { file in handleDoubleClick(file) }
                 )
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                StableKeyView(fileContentKey) {
+                    PanelFileTableSection(
+                        files: files,
+                        selectedID: selectedIDBinding,
+                        panelSide: viewModel.panelSide,
+                        onPanelTap: onPanelTap,
+                        onSelect: { file in
+                            viewModel.select(file)
+                        },
+                        onDoubleClick: { file in
+                            handleDoubleClick(file)
+                        }
+                    )
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             
             // Selection status bar (Total Commander style)
             SelectionStatusBar(panelSide: viewModel.panelSide)
@@ -123,6 +140,29 @@ struct FilePanelView: View {
         }
     }
     
+    // MARK: - View mode picker bar (list ⇄ thumbnail)
+    private var viewModePicker: some View {
+        let side = viewModel.panelSide
+        let mode = viewModeStore.mode(for: side)
+        return HStack(spacing: 0) {
+            Spacer(minLength: 0)
+            Picker("", selection: Binding(
+                get: { viewModeStore.mode(for: side) },
+                set: { viewModeStore.setMode($0, for: side) }
+            )) {
+                Image(systemName: "list.bullet").tag(PanelViewMode.list)
+                    .help("List")
+                Image(systemName: "square.grid.2x2").tag(PanelViewMode.thumbnail)
+                    .help("Thumbnail")
+            }
+            .pickerStyle(.segmented)
+            .frame(width: 64)
+            .padding(.vertical, 2)
+            .padding(.trailing, 4)
+            .opacity(mode == .thumbnail ? 1 : 0.75)
+        }
+    }
+
     // MARK: - Panel background with focus indicator
     private var panelBackground: some View {
         let focused = appState.focusedPanel == viewModel.panelSide
