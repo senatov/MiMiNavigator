@@ -18,6 +18,7 @@ enum FileSortingService {
     static func sort(_ items: [CustomFile], by key: SortKeysEnum, bDirection: Bool) -> [CustomFile] {
         func priority(_ item: CustomFile) -> Int {
             if ParentDirectoryEntry.isParentEntry(item) { return 0 }
+            if item.isAppBundle { return 2 }   // .app bundles sort with files, not folders
             if isFolderLike(item) { return 1 }
             return 2
         }
@@ -71,8 +72,8 @@ enum FileSortingService {
 
     // MARK: -
     static func compareSize(_ a: CustomFile, _ b: CustomFile, ascending: Bool) -> Bool {
-        let sa = a.sizeInBytes
-        let sb = b.sizeInBytes
+        let sa = a.isAppBundle ? (a.cachedAppSize ?? 0) : a.sizeInBytes
+        let sb = b.isAppBundle ? (b.cachedAppSize ?? 0) : b.sizeInBytes
         if sa != sb {
             return ascending ? (sa < sb) : (sa > sb)
         }
