@@ -330,6 +330,8 @@ extension AppState {
             }
             Task { @MainActor in
                 updatePath(newPath, for: panel)
+                // Reset selection so refreshFiles auto-selects first real file in new dir
+                if panel == .left { selectedLeftFile = nil } else { selectedRightFile = nil }
                 if panel == .left {
                     await scanner.setLeftDirectory(pathStr: newPath)
                     await refreshLeftFiles()
@@ -745,10 +747,10 @@ extension AppState {
         } else {
             await scanner.refreshFiles(currSide: .left)
         }
-        if focusedPanel == .left, selectedLeftFile == nil {
+        if selectedLeftFile == nil {
             selectedLeftFile = firstRealFile(displayedLeftFiles)
             if let f = selectedLeftFile {
-                log.debug("[AppState] auto-selected L: \(f.nameStr)")
+                log.debug("[AppState] auto-selected first real file L: \(f.nameStr)")
             }
         }
     }
@@ -760,10 +762,10 @@ extension AppState {
         } else {
             await scanner.refreshFiles(currSide: .right)
         }
-        if focusedPanel == .right, selectedRightFile == nil {
+        if selectedRightFile == nil {
             selectedRightFile = firstRealFile(displayedRightFiles)
             if let f = selectedRightFile {
-                log.debug("[AppState] auto-selected R: \(f.nameStr)")
+                log.debug("[AppState] auto-selected first real file R: \(f.nameStr)")
             }
         }
     }
