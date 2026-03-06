@@ -61,7 +61,8 @@ enum ColumnID: String, CaseIterable, Codable, Identifiable, Transferable {
         case .dateModified, .dateCreated, .dateLastOpened, .dateAdded: 130
         case .size: 75
         case .kind: 60
-        case .permissions, .childCount: 80
+        case .permissions: 64
+        case .childCount: 36
         case .owner, .group: 70
         }
     }
@@ -83,6 +84,18 @@ enum ColumnID: String, CaseIterable, Codable, Identifiable, Transferable {
         let sortArrowWidth: CGFloat = 16
         let padding: CGFloat = 20
         return ceil(textWidth + iconWidth + sortArrowWidth + padding)
+    }
+
+    // Minimum width when resizing by drag — smaller than minHeaderWidth to allow narrowing
+    var minDragWidth: CGFloat {
+        switch self {
+        case .childCount: return 28
+        case .permissions: return 40
+        case .size: return 30
+        case .kind: return 36
+        case .owner, .group: return 36
+        default: return minHeaderWidth
+        }
     }
 
     var alignment: Alignment {
@@ -187,7 +200,7 @@ final class ColumnLayoutModel {
 
     func setWidth(_ width: CGFloat, for id: ColumnID) {
         if let idx = columns.firstIndex(where: { $0.id == id }) {
-            columns[idx].width = max(id.minHeaderWidth, min(width, TableColumnDefaults.maxWidth))
+            columns[idx].width = max(id.minDragWidth, min(width, TableColumnDefaults.maxWidth))
             layoutVersion += 1
         }
     }
@@ -231,6 +244,7 @@ final class ColumnLayoutModel {
             merged.insert(spec, at: 0)
         }
         merged[0].isVisible = true
+        for j in merged.indices { let dw = merged[j].id.defaultWidth; if dw > 0 && (merged[j].width > dw * 2 || merged[j].width < merged[j].id.minDragWidth) { merged[j].width = dw } }
         columns = merged
     }
 }
