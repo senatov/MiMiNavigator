@@ -254,10 +254,21 @@ final class TabManager {
                 return
             }
 
-            // Validate paths — keep only tabs with accessible directories
-            let validTabs = decoded.filter { tab in
+            // Validate paths — keep only tabs with accessible directories.
+            // Resolve container symlinks (e.g. ~/Library/Containers/.../Data/Downloads → ~/Downloads)
+            let validTabs: [TabItem] = decoded.compactMap { tab in
+                let realPath = (try? URL(fileURLWithPath: tab.path).resolvingSymlinksInPath().path) ?? tab.path
                 var isDir: ObjCBool = false
-                return FileManager.default.fileExists(atPath: tab.path, isDirectory: &isDir) && isDir.boolValue
+                guard FileManager.default.fileExists(atPath: realPath, isDirectory: &isDir), isDir.boolValue else {
+                    return nil
+                }
+                if realPath != tab.path {
+                    log.debug("[TabManager] symlink resolved: \(tab.path) → \(realPath)")
+                    var updated = tab
+                    updated.path = realPath
+                    return updated
+                }
+                return tab
             }
 
             guard !validTabs.isEmpty else {
