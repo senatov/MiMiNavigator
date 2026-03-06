@@ -25,23 +25,18 @@ enum FileAction: String, CaseIterable, Identifiable {
     case copyAsPathname
     case paste
     case duplicate
-    
     // Operations section
     case compress
     case pack
     case createLink
     case share
-    
     // Navigation
     case revealInFinder
-    
     // Danger zone
     case rename
     case delete
-    
     // Info section
     case getInfo
-
     // Favorites
     case addToFavorites
 

@@ -86,9 +86,6 @@ struct FilePanelView: View {
                 )
             }
             
-            // View mode picker row (list / thumbnail)
-            viewModePicker
-
             // File table or thumbnail grid
             let currentMode = viewModeStore.mode(for: viewModel.panelSide)
             if currentMode == .thumbnail {
@@ -140,28 +137,7 @@ struct FilePanelView: View {
         }
     }
     
-    // MARK: - View mode picker bar (list ⇄ thumbnail)
-    private var viewModePicker: some View {
-        let side = viewModel.panelSide
-        let mode = viewModeStore.mode(for: side)
-        return HStack(spacing: 0) {
-            Spacer(minLength: 0)
-            Picker("", selection: Binding(
-                get: { viewModeStore.mode(for: side) },
-                set: { viewModeStore.setMode($0, for: side) }
-            )) {
-                Image(systemName: "list.bullet").tag(PanelViewMode.list)
-                    .help("List")
-                Image(systemName: "square.grid.2x2").tag(PanelViewMode.thumbnail)
-                    .help("Thumbnail")
-            }
-            .pickerStyle(.segmented)
-            .frame(width: 64)
-            .padding(.vertical, 2)
-            .padding(.trailing, 4)
-            .opacity(mode == .thumbnail ? 1 : 0.75)
-        }
-    }
+    // MARK: - View mode picker bar — removed (list/grid moved to toolbar, slider to status bar)
 
     // MARK: - Panel background with focus indicator
     private var panelBackground: some View {

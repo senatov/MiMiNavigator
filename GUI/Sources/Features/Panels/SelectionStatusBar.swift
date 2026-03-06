@@ -14,6 +14,7 @@ struct SelectionStatusBar: View {
     @Environment(AppState.self) var appState
     let panelSide: PanelSide
     @State private var colorStore = ColorThemeStore.shared
+    @State private var viewModeStore = PanelViewModeStore.shared
 
     private var markedCount: Int { appState.markedCount(for: panelSide) }
     private var markedSize: Int64 { appState.markedTotalSize(for: panelSide) }
@@ -122,6 +123,33 @@ struct SelectionStatusBar: View {
 
             Spacer()
 
+            // Thumbnail size slider — shown only in thumbnail mode, left of item count
+            if viewModeStore.mode(for: panelSide) == .thumbnail {
+                HStack(spacing: 4) {
+                    Image(systemName: "square.grid.2x2")
+                        .font(.system(size: 9))
+                        .foregroundStyle(.secondary)
+                    Slider(
+                        value: Binding(
+                            get: { viewModeStore.thumbSize(for: panelSide) },
+                            set: { viewModeStore.setThumbSize($0, for: panelSide) }
+                        ),
+                        in: 80...300,
+                        step: 10
+                    )
+                    .frame(width: 90)
+                    .controlSize(.mini)
+                    Image(systemName: "square.grid.2x2.fill")
+                        .font(.system(size: 12))
+                        .foregroundStyle(.secondary)
+                    Text("\(Int(viewModeStore.thumbSize(for: panelSide))) pt")
+                        .font(.system(size: 10))
+                        .foregroundStyle(.secondary)
+                        .frame(width: 36, alignment: .leading)
+                }
+                .transition(.opacity.combined(with: .move(edge: .trailing)))
+            }
+
             // Right: position / total items (no thousand separators for clarity)
             if selectedIndex > 0 {
                 Text("\(selectedIndex) / \(totalFiles)")
@@ -143,6 +171,7 @@ struct SelectionStatusBar: View {
                 .fill(Color(nsColor: .separatorColor))
                 .frame(height: 1)
         }
+        .animation(.easeInOut(duration: 0.15), value: viewModeStore.mode(for: panelSide))
         .animation(.easeInOut(duration: 0.15), value: markedCount)
     }
 

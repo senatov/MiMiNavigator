@@ -1440,6 +1440,9 @@
         }
       }
     },
+    "List view" : {
+
+    },
     "Location:" : {
       "comment" : "Location label",
       "localizations" : {
@@ -2171,6 +2174,9 @@
     },
     "The archive is password-protected:" : {
       "comment" : "Archive protected message"
+    },
+    "Thumbnail view" : {
+
     },
     "to" : {
 

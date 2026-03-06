@@ -25,7 +25,7 @@ extension FileTableView {
         let t0 = Date()
         cachedSortedFiles = files
         rebuildIndexByID()
-        let ms = Int(Date().timeIntervalSince(t0) * 1000)
+        _ = Int(Date().timeIntervalSince(t0) * 1000)
     }
 
     /// Called only when sort parameters change — re-sort needed.
@@ -33,7 +33,7 @@ extension FileTableView {
         let t0 = Date()
         cachedSortedFiles = files.sorted(by: sorter.compare)
         rebuildIndexByID()
-        let ms = Int(Date().timeIntervalSince(t0) * 1000)
+        _ = Int(Date().timeIntervalSince(t0) * 1000)
     }
 
     /// Rebuilds the O(1) lookup dictionary and the rows array after list changes. Called only on list update.

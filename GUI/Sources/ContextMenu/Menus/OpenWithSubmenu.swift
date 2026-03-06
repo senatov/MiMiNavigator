@@ -9,19 +9,21 @@ import SwiftUI
 import FileModelKit
 
 /// Submenu showing applications that can open the selected file
-/// Note: SwiftUI Menu content is evaluated lazily, so we pre-fetch apps
+/// Apps are pre-loaded at init time via State(initialValue:) — avoids body re-evaluation
 struct OpenWithSubmenu: View {
     let file: CustomFile
-    
+    @State private var apps: [AppInfo]
+
+    // MARK: - Init
     init(file: CustomFile) {
         self.file = file
-        log.debug("\(#function) → file='\(file.nameStr)' ext=\(file.fileExtension)")
+        let loaded = OpenWithService.shared.getApplications(for: file.urlValue)
+        _apps = State(initialValue: loaded)
+        log.debug("OpenWithSubmenu.init → loaded \(loaded.count) apps for '\(file.nameStr)'")
     }
-    
+
     var body: some View {
         Menu {
-            // Fetch apps synchronously for immediate display
-            let apps = OpenWithService.shared.getApplications(for: file.urlValue)
             
             if apps.isEmpty {
                 Text("No applications found")
