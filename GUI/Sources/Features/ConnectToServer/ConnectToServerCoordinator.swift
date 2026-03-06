@@ -4,7 +4,7 @@
 // Copyright © 2026 Senatov. All rights reserved.
 // Description: Manages "Connect to Server" as standalone NSPanel.
 //   Routes connect actions to RemoteConnectionManager (SFTP/FTP/SMB/AFP).
-//   level=.floating + hidesOnDeactivate: follows main window.
+//   hidesOnDeactivate=false: stays visible when app loses focus.
 
 import AppKit
 import SwiftUI
@@ -71,7 +71,7 @@ final class ConnectToServerCoordinator {
         panel.animationBehavior = .utilityWindow
         panel.isMovableByWindowBackground = true
         // Follow main window: hide when app deactivates, rise when app activates
-        panel.hidesOnDeactivate = true
+        panel.hidesOnDeactivate = false
         panel.level = .floating
         panel.tabbingMode = .disallowed
 
