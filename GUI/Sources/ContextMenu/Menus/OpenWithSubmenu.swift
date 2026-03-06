@@ -66,9 +66,7 @@ struct OpenWithSubmenu: View {
         }
         // MARK: - Load apps lazily — never in init, avoids LS freeze causing submenu flicker
         .task(id: file.pathStr) {
-            let loaded = await Task.detached(priority: .userInitiated) {
-                OpenWithService.shared.getApplications(for: file.urlValue)
-            }.value
+            let loaded = OpenWithService.shared.getApplications(for: file.urlValue)
             apps = loaded
             isLoading = false
             log.debug("OpenWithSubmenu.task → loaded \(loaded.count) apps for '\(file.nameStr)'")
