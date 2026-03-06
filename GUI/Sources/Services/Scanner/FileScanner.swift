@@ -11,7 +11,7 @@
 import FileModelKit
 import Foundation
 
-// MARK: - File Scanner
+// MARK: - File Scanner
 
 enum FileScanner {
 
@@ -88,11 +88,33 @@ enum FileScanner {
             if file.isDirectory {
                 file.cachedChildCount = (try? fileManager.contentsOfDirectory(atPath: fileURL.path).count) ?? 0
             }
+            // Cache recursive size for .app bundles (du-style, runs once at scan time)
+            if file.isAppBundle {
+                file.cachedAppSize = Self.recursiveSize(url: fileURL, fileManager: fileManager)
+            }
             result.append(file)
         }
 
         let elapsed = CFAbsoluteTimeGetCurrent() - startTime
         log.info("[FileScanner] scan DONE: \(result.count) items in \(String(format: "%.3f", elapsed))s")
         return result
+    }
+
+    // MARK: - Recursive byte size of a directory (used for .app bundles)
+    private static func recursiveSize(url: URL, fileManager: FileManager) -> Int64 {
+        guard let enumerator = fileManager.enumerator(
+            at: url,
+            includingPropertiesForKeys: [.fileSizeKey, .isDirectoryKey],
+            options: [.skipsHiddenFiles]
+        ) else { return 0 }
+        var total: Int64 = 0
+        for case let fileURL as URL in enumerator {
+            if let rv = try? fileURL.resourceValues(forKeys: [.fileSizeKey, .isDirectoryKey]),
+               rv.isDirectory != true,
+               let sz = rv.fileSize {
+                total += Int64(sz)
+            }
+        }
+        return total
     }
 }
