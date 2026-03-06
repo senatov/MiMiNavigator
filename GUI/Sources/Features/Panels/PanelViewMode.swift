@@ -40,7 +40,7 @@ final class PanelViewModeStore {
     var rightMode: PanelViewMode {
         didSet { UserDefaults.standard.set(rightMode.rawValue, forKey: Keys.rightMode) }
     }
-    /// Thumbnail cell size 80…300 pt
+    /// Thumbnail cell size 16…900 pt
     var leftThumbSize: CGFloat {
         didSet { UserDefaults.standard.set(Double(leftThumbSize), forKey: Keys.leftThumbSize) }
     }
@@ -79,7 +79,7 @@ final class PanelViewModeStore {
     }
 
     func setThumbSize(_ size: CGFloat, for side: PanelSide) {
-        let clamped = min(300, max(80, size))
+        let clamped = min(900, max(16, size))
         if side == .left { leftThumbSize = clamped } else { rightThumbSize = clamped }
     }
 }

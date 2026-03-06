@@ -134,7 +134,7 @@ struct SelectionStatusBar: View {
                             get: { viewModeStore.thumbSize(for: panelSide) },
                             set: { viewModeStore.setThumbSize($0, for: panelSide) }
                         ),
-                        in: 80...300,
+                        in: 16...900,
                         step: 10
                     )
                     .frame(width: 90)
