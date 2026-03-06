@@ -318,7 +318,7 @@ struct FileRow: View {
                 cellText(for: spec.id)
                     .font(spec.id == .permissions
                            ? .system(size: 11, design: .monospaced)
-                           : (spec.id == .size || spec.id == .childCount
+                           : (spec.id == .size || spec.id == .childCount || [.dateModified, .dateCreated, .dateLastOpened, .dateAdded].contains(spec.id)
                               ? columnFont.monospacedDigit()
                               : columnFont))
                     .foregroundStyle(cellColor(for: spec.id))
