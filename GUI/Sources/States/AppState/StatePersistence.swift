@@ -79,19 +79,30 @@ enum StatePersistence {
     }
 
     /// Returns `path` if it points to an existing, accessible directory; otherwise `fallback`.
+    /// Container-symlinks like ~/Library/Containers/…/Data/Downloads are resolved to real paths.
     private static func validDirectoryPath(_ path: String?, fallback: String) -> String {
         guard let path, !path.isEmpty else { return fallback }
+        // Resolve container symlinks to their real paths so sandbox doesn't produce
+        // '/Library/Containers/.../Data/Downloads' paths that fail on next launch.
+        let resolved: String
+        if let real = try? URL(fileURLWithPath: path).resolvingSymlinksInPath().path,
+           real != path {
+            log.debug("[StatePersistence] container symlink resolved: \(path) → \(real)")
+            resolved = real
+        } else {
+            resolved = path
+        }
         var isDir: ObjCBool = false
-        guard FileManager.default.fileExists(atPath: path, isDirectory: &isDir), isDir.boolValue else {
-            log.warning("[StatePersistence] saved path missing/not dir: \(path) → fallback \(fallback)")
+        guard FileManager.default.fileExists(atPath: resolved, isDirectory: &isDir), isDir.boolValue else {
+            log.warning("[StatePersistence] saved path missing/not dir: \(resolved) → fallback \(fallback)")
             return fallback
         }
         // Extra safety: skip DerivedData temp paths that may vanish between launches
-        if path.contains("/DerivedData/") || path.contains(".xcarchive") {
-            log.warning("[StatePersistence] saved path is ephemeral: \(path) → fallback \(fallback)")
+        if resolved.contains("/DerivedData/") || resolved.contains(".xcarchive") {
+            log.warning("[StatePersistence] saved path is ephemeral: \(resolved) → fallback \(fallback)")
             return fallback
         }
-        return path
+        return resolved
     }
     
     /// Get initial focused panel
