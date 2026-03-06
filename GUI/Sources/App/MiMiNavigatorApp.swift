@@ -30,7 +30,10 @@ struct MiMiNavigatorApp: App {
     init() {
         AppLogger.initialize()
         log.debug("---- Logger initialized ------")
-        Task { await BookmarkStore.shared.restoreAll() }
+        Task {
+            let restored = await BookmarkStore.shared.restoreAll()
+            log.info("[App.init] BookmarkStore.restoreAll → \(restored.count) URL(s) active")
+        }
         Task { await RemoteConnectionManager.shared.connectOnStartIfNeeded() }
     }
 

@@ -19,9 +19,33 @@ struct SettingsPermissionsPane: View {
     @State private var isCheckingAccess: Bool = true
     @State private var hoveredFolderID: String? = nil
     @State private var selectedFolderID: String? = nil
+    @State private var showRestartBanner: Bool = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
+
+            // ── Restart Banner (shown after adding folders) ────
+            if showRestartBanner {
+                HStack(spacing: 8) {
+                    Image(systemName: "arrow.clockwise.circle.fill")
+                        .foregroundStyle(.orange)
+                    Text("Restart MiMiNavigator to activate the new folder permissions.")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(.primary)
+                    Spacer()
+                    Button("Restart Now") {
+                        NSApplication.shared.relaunch()
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                    .tint(.orange)
+                }
+                .padding(10)
+                .background(Color.orange.opacity(0.10))
+                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .stroke(Color.orange.opacity(0.3), lineWidth: 0.5))
+            }
 
             // ── Authorized Folders ─────────────────────────────
             paneGroupBox {
@@ -326,6 +350,7 @@ struct SettingsPermissionsPane: View {
                 log.info("[Permissions] addFolder: \(url.path) granted=\(granted)")
             }
             loadAuthorizedFolders()
+            showRestartBanner = true
         }
     }
 
@@ -352,7 +377,10 @@ struct SettingsPermissionsPane: View {
             }
 
             let granted = await BookmarkStore.shared.persistAccess(for: selectedURL)
-            if granted { loadAuthorizedFolders() }
+            if granted {
+                loadAuthorizedFolders()
+                showRestartBanner = true
+            }
             log.info("[Permissions] addEntireDisk: selected=\(selectedURL.path) granted=\(granted)")
         }
     }
