@@ -26,7 +26,6 @@ extension FileTableView {
         cachedSortedFiles = files
         rebuildIndexByID()
         let ms = Int(Date().timeIntervalSince(t0) * 1000)
-        log.debug("[Cache] panel=\(panelSide) assign+rebuild \(cachedSortedFiles.count) items in \(ms)ms")
     }
 
     /// Called only when sort parameters change — re-sort needed.
@@ -35,7 +34,6 @@ extension FileTableView {
         cachedSortedFiles = files.sorted(by: sorter.compare)
         rebuildIndexByID()
         let ms = Int(Date().timeIntervalSince(t0) * 1000)
-        log.debug("[Cache] panel=\(panelSide) sort+rebuild \(cachedSortedFiles.count) items in \(ms)ms")
     }
 
     /// Rebuilds the O(1) lookup dictionary and the rows array after list changes. Called only on list update.

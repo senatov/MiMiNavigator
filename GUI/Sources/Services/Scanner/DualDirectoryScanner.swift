@@ -213,7 +213,6 @@ actor DualDirectoryScanner {
         if let lastPatch = lastFSEventsPatch[side] {
             let elapsed = Date().timeIntervalSince(lastPatch)
             if elapsed < fsEventsDebounceInterval {
-                log.debug("[Scanner] skip poll \(side) — FSEvents active \(Int(elapsed))s ago")
                 return
             }
         }
@@ -228,7 +227,6 @@ actor DualDirectoryScanner {
         // For local paths with active FSEvents, only poll as safety net every 5 minutes
         // The 60s interval is now just for remote paths or when FSEvents failed
         if hasActiveWatcher {
-            log.debug("[Scanner] poll \(side) — FSEvents active but no recent patches, running safety scan")
         }
         
         await refreshFiles(currSide: side)
@@ -239,7 +237,6 @@ actor DualDirectoryScanner {
     func refreshFiles(currSide: PanelSide) async {
         // Guard: skip if a scan is already running for this panel
         guard scanInProgress[currSide] != true else {
-            log.debug("[Scanner] skip refresh \(currSide) — scan already in progress")
             return
         }
         scanInProgress[currSide] = true
@@ -359,7 +356,6 @@ actor DualDirectoryScanner {
         for f in sortedFiles { hasher.combine(f.id) }
         let newHash = hasher.finalize()
         if !isFirstUpdate && lastContentHashOnMain[side] == newHash {
-            log.debug("[Scanner] skip update \(side): \(sortedFiles.count) items unchanged (\(sinceLastMs))")
             // Re-seed FSEvents debounce so we don't keep polling every 3s after 120s expiry
             Task { await self.resetFSEventsDebounce(for: side) }
             return
@@ -371,7 +367,7 @@ actor DualDirectoryScanner {
             case .left: appState.displayedLeftFiles = sortedFiles
             case .right: appState.displayedRightFiles = sortedFiles
         }
-        log.debug("[Scanner] Full update \(side): \(sortedFiles.count) items (\(sinceLastMs))")
+        log.info("[Scanner] ✅ \(side) → \(sortedFiles.count) items (\(sinceLastMs))")
         // On first load: if the panel has no selection yet, pick the topmost file
         if isFirstUpdate {
             appState.ensureSelectionOnFocusedPanel()
