@@ -14,7 +14,7 @@
   <img src="https://img.shields.io/badge/SwiftUI-blue?logo=swift&logoColor=white" alt="SwiftUI" />
   <img src="https://img.shields.io/badge/Concurrency-Strict-2ea44f" alt="Strict Concurrency" />
   <img src="https://img.shields.io/badge/License-AGPL--3.0-blue" alt="AGPL-3.0" />
-  <img src="https://img.shields.io/badge/v0.9.4-Active_Development-orange" alt="Active Development" />
+  <img src="https://img.shields.io/badge/v0.9.5-Active_Development-orange" alt="Active Development" />
 </p>
 
 <p align="center">
@@ -42,6 +42,15 @@ MiMiNavigator is a dual-panel file manager inspired by **Total Commander** and *
 ---
 
 ## Screenshots
+
+<table>
+  <tr>
+    <td><img src="GUI/Docs/Preview0.png" alt="Main Interface" width="100%"></td>
+  </tr>
+  <tr>
+    <td align="center"><em>Preview</em></td>
+  </tr>
+</table>
 
 
 <table>
@@ -85,10 +94,12 @@ MiMiNavigator is a dual-panel file manager inspired by **Total Commander** and *
 |---------|-------------|
 | **Dual Panels** | Two independent file panels with synchronized operations |
 | **Tabbed Interface** | Multiple tabs per panel (⌘T open, ⌘W close, ⌘⇧]/[ switch); tab context menu; persistence between launches |
+| **List & Thumbnail Views** | Toggle per panel via toolbar; thumbnail size 16–900 pt via inline status-bar slider |
 | **Finder-Style Table** | Sortable columns: Name, Size, Date, Permissions, Owner, Type |
 | **Multi-Selection** | Cmd+Click toggle, Shift+Click range, Insert mark+next, pattern matching, Ctrl+A |
 | **Group Operations** | Batch Cut/Copy/Compress/Share/Delete on marked files; group context menu |
-| **Multi-File Drag & Drop** | Drag all marked files together; badge preview with count; Finder-compatible |
+| **Multi-File Drag & Drop** | Drag all marked files together; badge preview with count; Finder-compatible; works in both list and thumbnail views |
+| **Open With** | Per-extension LRU (max 5) — recently used apps float to top; "Other..." picks persisted and restored |
 | **Find Files** | Advanced search: by name (wildcards), content, size, date — with archive search |
 | **Archive VFS** | Open archives as virtual directories, navigate inside, auto-repack on exit |
 | **Parent Directory** | `...` entry pinned to top of every panel, archive-aware navigation |
@@ -173,7 +184,7 @@ Alternatively: right-click the app → Open → click **Open** in the dialog.
 - Optional: `brew install swiftlint swift-format p7zip`
 
 **Production Build:**
-``` 
+```
 ~/Develop/MiMiNavigator [master*]  xcodebuild -project MiMiNavigator.xcodeproj -scheme MiMiNavigator -configuration Release -derivedDataPath /tmp/mimi_build build CODE_SIGNING_ALLOWED=YES
 ```
 Then get copy the App from
@@ -325,10 +336,12 @@ Log file: `~/Library/Application Support/MiMiNavigator/Logs/MiMiNavigator.log`
 - [x] Parent directory navigation (`..`)
 - [x] Multi-selection: Cmd+Click, Shift+Click, Insert, pattern matching, Ctrl+A
 - [x] Group context menu with batch operations
-- [x] Multi-file drag & drop with badge preview
+- [x] Multi-file drag & drop with badge preview (list and thumbnail modes)
 - [x] Batch-aware file actions (Cut/Copy/Delete/Compress/Share on marked files)
 - [x] Total Commander style marking: dark red, semibold, enlarged font
-- [x] Selection status bar (marked count + total size + disk free space)
+- [x] Selection status bar (marked count + total size + disk free space + inline slider)
+- [x] Thumbnail grid view per panel (16–900 pt, QL thumbnails, context menu, drag-drop)
+- [x] Open With LRU per file extension (max 5, "Other..." picks persisted)
 - [x] Column width persistence
 - [x] Hotkey customization
 - [x] Tabbed interface (multiple tabs per panel, context menu, persistence)

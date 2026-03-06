@@ -5,7 +5,36 @@ All notable changes to MiMiNavigator will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.9.4] — 2026-02-28
+## [Unreleased] — 2026-03-06
+
+### Added
+- **Thumbnail View** — new grid-based view mode per panel
+  - Toggle list ↔ thumbnail via segmented control (moved to main toolbar, right side)
+  - `QLThumbnailGenerator` for images, video frames, PDF pages; SF Symbol fallback for all other types
+  - Cell size range **16–900 pt** adjustable via inline slider in status bar
+  - Slider appears/disappears with animation only when panel is in thumbnail mode
+  - Thumbnail size persisted per panel (left/right) via `UserDefaults`
+  - Context menu (R-Menu) fully supported: `FileContextMenu` / `DirectoryContextMenu` per cell
+  - Drag-and-drop from thumbnail cells: respects marked files (same logic as list mode)
+  - Drag preview: thumbnail image or SF Symbol + item count badge for multi-file drags
+  - File name: single-line, `truncationMode(.middle)` — macOS-standard no wrapping
+- **View-mode toolbar buttons** — list/grid `Picker` added to `AppToolbarContent` as separate `ToolbarItem(.primaryAction)` in own framed `ToolbarButtonGroup`; switches focused panel's view mode
+- **Thumbnail size slider in status bar** — replaces bottom-toolbar slider; sits left of item count, width 90 pt
+
+### Changed
+- **`OpenWithSubmenu`** — apps pre-loaded via `_apps = State(initialValue:)` in `init` (was computed inside `body` → caused menu flicker on every hover)
+- **`OpenWithService` LRU** — recently-used apps stored per file extension (`openWithLRU` dict in `UserDefaults`), max 5 entries, newest-first; `recordLRU(bundleID:ext:appURL:)` persists app URL for "Other..." picks (`openWithAppURLs` key); `getApplications` restores LRU apps missing from Launch Services list (e.g. GIMP picked via "Other..."); `showOpenWithPicker` calls `recordLRU` after user selection
+- **`ToolbarButtonGroup`** — padding `10/4`, spacing `6`, `strokeBorder` `0.5pt`; all `ToolbarItem`s on `.primaryAction` (right side of toolbar)
+- **`ViewModeToolbarItem`** — receives `appState` as explicit parameter (not `@Environment`) to avoid macOS toolbar crash: `No Observable object of type AppState found`
+- **Thumbnail cell size clamp** — `setThumbSize` now clamps to `16…900` (was `80…300`)
+
+### Fixed
+- **`OpenWithSubmenu` flicker** — `.task` did not fire inside `.contextMenu` on macOS; replaced with `State(initialValue:)` pre-load in `init`
+- **`AppToolbarContent` crash** — `@Environment(AppState.self)` inside `ToolbarContent` is unreliable on macOS (toolbar renders outside SwiftUI view tree); fixed by passing `appState` as explicit init parameter
+- **Unused variable warnings** — `let ms = ...` in `FileTableView+State` replaced with `_ = ...`
+- **Spurious `try?` warnings** — removed from `TabManager` and `StatePersistence` (`resolvingSymlinksInPath()` is non-throwing)
+
+
 
 ### Added
 - **Live color theming** — all file row colors (file name, directory name, symlink, selection active/inactive) now read from `ColorThemeStore` and update instantly when changed in Settings → Colors, no restart required
