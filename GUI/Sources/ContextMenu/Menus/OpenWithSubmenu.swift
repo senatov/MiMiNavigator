@@ -12,23 +12,26 @@ import FileModelKit
 /// Apps are pre-loaded at init time via State(initialValue:) — avoids body re-evaluation
 struct OpenWithSubmenu: View {
     let file: CustomFile
-    @State private var apps: [AppInfo] = []
-    @State private var isLoading = true
+    @State private var apps: [AppInfo]
 
+    // MARK: - Init
+    // Apps loaded synchronously from cache (instant) or LS (first time only).
+    // NSCache in OpenWithService guarantees subsequent opens are O(1).
+    init(file: CustomFile) {
+        self.file = file
+        _apps = State(initialValue: OpenWithService.shared.getApplications(for: file.urlValue))
+    }
 
+    // MARK: - Body
     var body: some View {
         Menu {
-            
-            if isLoading {
-                Text("Loading...")
-                    .foregroundStyle(.secondary)
-            } else if apps.isEmpty {
+            if apps.isEmpty {
                 Text("No applications found")
                     .foregroundStyle(.secondary)
             } else {
                 ForEach(apps) { app in
                     Button {
-                        log.debug("\(#function) selected app='\(app.name)' bundle=\(app.bundleIdentifier) file='\(file.nameStr)'")
+                        log.debug("\(#function) app='\(app.name)' file='\(file.nameStr)'")
                         OpenWithService.shared.openFile(file.urlValue, with: app)
                     } label: {
                         Label {
@@ -44,19 +47,13 @@ struct OpenWithSubmenu: View {
                         }
                     }
                 }
-                
                 Divider()
             }
-            
-            // "Other..." button to show system app picker
             Button("Other...") {
                 log.debug("\(#function) 'Other...' clicked for file='\(file.nameStr)'")
                 OpenWithService.shared.showOpenWithPicker(for: file.urlValue)
             }
-            
             Divider()
-            
-            // "App Store..." to search for apps
             Button("App Store...") {
                 log.debug("\(#function) 'App Store...' clicked for ext=\(file.fileExtension)")
                 searchAppStore(for: file)
@@ -64,19 +61,13 @@ struct OpenWithSubmenu: View {
         } label: {
             Label("Open With", systemImage: "arrow.up.right.square")
         }
-        // MARK: - Load apps lazily — never in init, avoids LS freeze causing submenu flicker
-        .task(id: file.pathStr) {
-            let loaded = OpenWithService.shared.getApplications(for: file.urlValue)
-            apps = loaded
-            isLoading = false
-            log.debug("OpenWithSubmenu.task → loaded \(loaded.count) apps for '\(file.nameStr)'")
-        }
     }
-    
+
+    // MARK: - Private
     private func searchAppStore(for file: CustomFile) {
         let ext = file.urlValue.pathExtension
         let searchQuery = ext.isEmpty ? "file opener" : "\(ext) file"
-        log.debug("\(#function) searching App Store for query='\(searchQuery)'")
+        log.debug("\(#function) query='\(searchQuery)'")
         if let encoded = searchQuery.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
            let url = URL(string: "macappstore://search.itunes.apple.com/WebObjects/MZSearch.woa/wa/search?q=\(encoded)") {
             NSWorkspace.shared.open(url)
