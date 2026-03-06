@@ -89,7 +89,8 @@ struct FileTableView: View {
             selectedID: $selectedID,
             scrollAnchorID: $scrollAnchorID,
             onSelect: onSelect,
-            pageStep: visibleRowCount
+            pageStep: visibleRowCount,
+            panelSide: panelSide
         )
     }
     

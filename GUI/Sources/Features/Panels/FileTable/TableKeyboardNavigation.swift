@@ -26,6 +26,7 @@ struct TableKeyboardNavigation {
     let scrollAnchorID: Binding<CustomFile.ID?>
     let onSelect: (CustomFile) -> Void
     let pageStep: Int
+    let panelSide: PanelSide
     // Injected from outside — built once when list changes, not on every keypress
     private let indexByID: [CustomFile.ID: Int]
 
@@ -37,7 +38,8 @@ struct TableKeyboardNavigation {
         selectedID: Binding<CustomFile.ID?>,
         scrollAnchorID: Binding<CustomFile.ID?>,
         onSelect: @escaping (CustomFile) -> Void,
-        pageStep: Int = 20
+        pageStep: Int = 20,
+        panelSide: PanelSide
     ) {
         self.files = files
         self.indexByID = indexByID
@@ -45,6 +47,7 @@ struct TableKeyboardNavigation {
         self.scrollAnchorID = scrollAnchorID
         self.onSelect = onSelect
         self.pageStep = pageStep
+        self.panelSide = panelSide
     }
 
     // MARK: - Navigation Actions
@@ -115,16 +118,14 @@ struct TableKeyboardNavigation {
             log.debug("[Nav] scrollViaAppKit: no keyWindow")
             return false
         }
-        guard let scrollView = Self.findScrollView(in: window.contentView) else {
-            log.debug("[Nav] scrollViaAppKit: NSScrollView not found")
+        guard let scrollView = Self.findScrollView(in: window.contentView, panelSide: panelSide, windowWidth: window.frame.width) else {
+            log.debug("[Nav] scrollViaAppKit: NSScrollView not found for \(panelSide)")
             return false
         }
         let rowH = FilePanelStyle.rowHeight
-        // +1 accounts for "..." parent entry row and header
         let headerEstimate: CGFloat = 30
         let targetY = CGFloat(index) * rowH + headerEstimate
         let clipHeight = scrollView.contentView.bounds.height
-        // Center the target row in the visible area
         let scrollY = max(0, targetY - clipHeight / 2)
         let maxY = max(0, scrollView.documentView!.frame.height - clipHeight)
         let clampedY = min(scrollY, maxY)
@@ -133,16 +134,26 @@ struct TableKeyboardNavigation {
         return true
     }
 
-    /// Walk the view hierarchy to find the first NSScrollView (SwiftUI's backing scroll)
-    private static func findScrollView(in view: NSView?) -> NSScrollView? {
+    /// Walk the view hierarchy to find the NSScrollView belonging to the correct panel.
+    /// Panels are side-by-side: left panel ScrollView has frame.minX < windowWidth/2,
+    /// right panel ScrollView has frame.minX > windowWidth/2.
+    private static func findScrollView(in view: NSView?, panelSide: PanelSide, windowWidth: CGFloat) -> NSScrollView? {
         guard let view else { return nil }
         if let sv = view as? NSScrollView,
            sv.documentView != nil,
-           sv.documentView!.frame.height > 1000 { // Our file list, not a small popup
-            return sv
+           sv.documentView!.frame.height > 1000 {
+            // Determine which panel this ScrollView belongs to by its X position in window coords
+            let frameInWindow = sv.convert(sv.bounds, to: nil)
+            let midX = frameInWindow.midX
+            let isLeft = midX < windowWidth / 2
+            if (panelSide == .left && isLeft) || (panelSide == .right && !isLeft) {
+                return sv
+            }
         }
         for sub in view.subviews {
-            if let found = findScrollView(in: sub) { return found }
+            if let found = findScrollView(in: sub, panelSide: panelSide, windowWidth: windowWidth) {
+                return found
+            }
         }
         return nil
     }
