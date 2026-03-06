@@ -137,7 +137,6 @@ final class AppState {
         self.fileActions = FileOperationActions(appState: self)
         self.scanner = DualDirectoryScanner(appState: self)
 
-        log.debug("[AppState] paths: L=\(leftPath) R=\(rightPath) focus=\(focusedPanel)")
     }
 }
 
@@ -182,7 +181,6 @@ extension AppState {
     /// Keeps directory and panel focus, only removes file highlight.
     func clearFileSelection() {
         let panel = focusedPanel
-        log.debug("[AppState] clearFileSelection on \(panel)")
 
         // Clear the selected file only, marks cleared separately via unmarkAll
         switch panel {
@@ -195,7 +193,6 @@ extension AppState {
 
     func toggleFocus() {
         focusedPanel = focusedPanel == .left ? .right : .left
-        log.debug("[AppState] toggleFocus → \(focusedPanel)")
         ensureSelectionOnFocusedPanel()
     }
 
@@ -206,13 +203,11 @@ extension AppState {
                 guard selectedLeftFile == nil else { return }
                 if let first = displayedLeftFiles.first(where: { !$0.isParentEntry }) {
                     selectedLeftFile = first
-                    log.debug("[AppState] ensureSelection: auto-selected first left: \(first.nameStr)")
                 }
             case .right:
                 guard selectedRightFile == nil else { return }
                 if let first = displayedRightFiles.first(where: { !$0.isParentEntry }) {
                     selectedRightFile = first
-                    log.debug("[AppState] ensureSelection: auto-selected first right: \(first.nameStr)")
                 }
         }
     }
@@ -606,7 +601,6 @@ extension AppState {
     func updateSorting(key: SortKeysEnum? = nil, ascending: Bool? = nil) {
         if let key { sortKey = key }
         if let ascending { bSortAscending = ascending }
-        log.debug("[AppState] updateSorting key=\(sortKey) asc=\(bSortAscending) — sorting BOTH panels")
 
         // Sort BOTH panels to keep them in sync
         let leftSorted = FileSortingService.sort(
@@ -636,7 +630,6 @@ extension AppState {
         let currentPath = panelSide == .left ? leftPath : rightPath
 
         guard !PathUtils.areEqual(currentPath, path) else {
-            log.debug("[AppState] path unchanged: \(path)")
             return
         }
 
@@ -723,7 +716,6 @@ extension AppState {
                     displayedRightFiles = sorted
                     if selectedRightFile == nil { selectedRightFile = firstRealFile(sorted) }
             }
-            log.debug("[AppState] remote listing: \(sorted.count) items")
         } catch {
             log.error("[AppState] remote listing failed: \(error.localizedDescription)")
         }
@@ -735,13 +727,11 @@ extension AppState {
 
     @Sendable
     func refreshFiles() async {
-        log.debug("[AppState] refreshFiles (both)")
         await refreshLeftFiles()
         await refreshRightFiles()
     }
 
     func refreshLeftFiles() async {
-        log.debug("[AppState] refreshLeftFiles path=\(leftPath)")
         if Self.isRemotePath(leftPath) {
             await refreshRemoteFiles(for: .left)
         } else {
@@ -750,13 +740,12 @@ extension AppState {
         if selectedLeftFile == nil {
             selectedLeftFile = firstRealFile(displayedLeftFiles)
             if let f = selectedLeftFile {
-                log.debug("[AppState] auto-selected first real file L: \(f.nameStr)")
+                log.debug("[AppState] 👆 \(f.nameStr) selected (left)")
             }
         }
     }
 
     func refreshRightFiles() async {
-        log.debug("[AppState] refreshRightFiles path=\(rightPath)")
         if Self.isRemotePath(rightPath) {
             await refreshRemoteFiles(for: .right)
         } else {
@@ -765,7 +754,7 @@ extension AppState {
         if selectedRightFile == nil {
             selectedRightFile = firstRealFile(displayedRightFiles)
             if let f = selectedRightFile {
-                log.debug("[AppState] auto-selected first real file R: \(f.nameStr)")
+                log.debug("[AppState] 👆 \(f.nameStr) selected (right)")
             }
         }
     }
@@ -786,7 +775,6 @@ extension AppState {
     }
 
     func forceRefreshBothPanels() {
-        log.debug("[AppState] forceRefreshBothPanels")
         Task {
             await scanner.refreshFiles(currSide: .left)
             await scanner.refreshFiles(currSide: .right)
@@ -907,7 +895,6 @@ extension AppState {
     /// Record navigation to path (called when entering directories)
     func recordNavigation(to path: String, panel: PanelSide) {
         guard !isNavigatingFromHistory else {
-            log.debug("[AppState] recordNavigation skipped (navigating from history)")
             return
         }
         navigationHistory(for: panel).navigateTo(path)
