@@ -30,6 +30,9 @@ struct FileContextMenu: View {
             // SECTION 1: Open actions
             // ═══════════════════════════════════════════
             menuButton(.open)
+            if file.isAppBundle {
+                menuButton(.browseContents)
+            }
             OpenWithSubmenu(file: file)
             menuButton(.openInNewTab)
             menuButton(.viewLister)

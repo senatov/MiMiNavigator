@@ -14,6 +14,7 @@ enum FileAction: String, CaseIterable, Identifiable {
     case open
     case openWith
     case openInNewTab
+    case browseContents   // .app: navigate into bundle as directory
     
     // Quick Look
     case viewLister
@@ -52,6 +53,7 @@ enum FileAction: String, CaseIterable, Identifiable {
         case .open: return "Open"
         case .openWith: return "Open With"
         case .openInNewTab: return "Open in New Tab"
+        case .browseContents: return "Browse Contents"
         case .viewLister: return "Quick Look"
         case .cut: return "Cut"
         case .copy: return "Copy"
@@ -76,6 +78,7 @@ enum FileAction: String, CaseIterable, Identifiable {
         case .open: return "arrow.up.doc"
         case .openWith: return "arrow.up.right.square"
         case .openInNewTab: return "plus.square.on.square"
+        case .browseContents: return "folder.badge.gearshape"
         case .viewLister: return "eye"
         case .cut: return "scissors"
         case .copy: return "doc.on.doc"
@@ -139,6 +142,7 @@ enum FileAction: String, CaseIterable, Identifiable {
     static var contextMenuActions: [FileAction] {
         [
             .open,
+            .browseContents,
             .openWith,
             .openInNewTab,
             .viewLister,

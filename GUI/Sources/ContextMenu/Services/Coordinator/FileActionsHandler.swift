@@ -28,6 +28,20 @@ extension ContextMenuCoordinator {
             // ── Single-file actions (always use clicked file) ──
             case .open:
                 openFileOrArchive(file, panel: panel, appState: appState)
+            case .browseContents:
+                // Navigate into .app bundle as plain directory (Total Commander style)
+                Task { @MainActor in
+                    appState.selectedLeftFile = nil
+                    appState.selectedRightFile = nil
+                    appState.updatePath(file.pathStr, for: panel)
+                    if panel == .left {
+                        await appState.scanner.setLeftDirectory(pathStr: file.pathStr)
+                        await appState.refreshLeftFiles()
+                    } else {
+                        await appState.scanner.setRightDirectory(pathStr: file.pathStr)
+                        await appState.refreshRightFiles()
+                    }
+                }
 
             case .openWith:
                 // Handled by OpenWithSubmenu directly
