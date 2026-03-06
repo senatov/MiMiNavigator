@@ -178,14 +178,14 @@ struct SelectionStatusBar: View {
     // MARK: - Jump Edge Button
     private func jumpEdgeButton(label: String, icon: String, help: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            HStack(spacing: 2) {
+            HStack(spacing: 3) {
                 Image(systemName: icon)
-                    .font(.system(size: 8, weight: .bold))
+                    .font(.system(size: 9, weight: .bold))
                 Text(label)
-                    .font(.system(size: 10, weight: .medium))
+                    .font(.system(size: 10, weight: .semibold))
             }
-            .foregroundStyle(.secondary)
-            .padding(.horizontal, 5)
+            .foregroundStyle(Color(nsColor: .labelColor).opacity(0.75))
+            .padding(.horizontal, 6)
             .padding(.vertical, 2)
             .background(
                 RoundedRectangle(cornerRadius: 4, style: .continuous)
@@ -193,7 +193,7 @@ struct SelectionStatusBar: View {
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 4, style: .continuous)
-                    .stroke(Color(nsColor: .separatorColor).opacity(0.5), lineWidth: 0.5)
+                    .stroke(Color(nsColor: .separatorColor).opacity(0.8), lineWidth: 0.8)
             )
         }
         .buttonStyle(.plain)
