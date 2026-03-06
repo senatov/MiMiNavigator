@@ -59,6 +59,11 @@ final class AppState {
     /// Set to true when navigating via history (Back/Forward) to avoid re-recording
     var isNavigatingFromHistory = false
 
+    // MARK: - First real file helper (skips virtual ".." parent entry)
+    private func firstRealFile(_ files: [CustomFile]) -> CustomFile? {
+        files.first { !$0.isParentEntry }
+    }
+
     var selectedLeftFile: CustomFile? {
         didSet { selectionManager?.recordSelection(.left, file: selectedLeftFile) }
     }
@@ -199,13 +204,13 @@ extension AppState {
         switch focusedPanel {
             case .left:
                 guard selectedLeftFile == nil else { return }
-                if let first = displayedLeftFiles.first {
+                if let first = displayedLeftFiles.first(where: { !$0.isParentEntry }) {
                     selectedLeftFile = first
                     log.debug("[AppState] ensureSelection: auto-selected first left: \(first.nameStr)")
                 }
             case .right:
                 guard selectedRightFile == nil else { return }
-                if let first = displayedRightFiles.first {
+                if let first = displayedRightFiles.first(where: { !$0.isParentEntry }) {
                     selectedRightFile = first
                     log.debug("[AppState] ensureSelection: auto-selected first right: \(first.nameStr)")
                 }
@@ -560,10 +565,10 @@ extension AppState {
                 switch panel {
                     case .left:
                         displayedLeftFiles = sorted
-                        selectedLeftFile = sorted.first
+                        selectedLeftFile = firstRealFile(sorted)
                     case .right:
                         displayedRightFiles = sorted
-                        selectedRightFile = sorted.first
+                        selectedRightFile = firstRealFile(sorted)
                 }
             } catch {
                 log.error("[AppState] remote navigateToParent failed: \(error.localizedDescription)")
@@ -655,13 +660,13 @@ extension AppState {
                     savedLocalLeftPath = leftPath
                 }
                 leftPath = path
-                selectedLeftFile = displayedLeftFiles.first
+                selectedLeftFile = firstRealFile(displayedLeftFiles)
             case .right:
                 if Self.isRemotePath(path) && !Self.isRemotePath(rightPath) {
                     savedLocalRightPath = rightPath
                 }
                 rightPath = path
-                selectedRightFile = displayedRightFiles.first
+                selectedRightFile = firstRealFile(displayedRightFiles)
         }
     }
 
@@ -711,10 +716,10 @@ extension AppState {
             switch panel {
                 case .left:
                     displayedLeftFiles = sorted
-                    if selectedLeftFile == nil { selectedLeftFile = sorted.first }
+                    if selectedLeftFile == nil { selectedLeftFile = firstRealFile(sorted) }
                 case .right:
                     displayedRightFiles = sorted
-                    if selectedRightFile == nil { selectedRightFile = sorted.first }
+                    if selectedRightFile == nil { selectedRightFile = firstRealFile(sorted) }
             }
             log.debug("[AppState] remote listing: \(sorted.count) items")
         } catch {
@@ -741,7 +746,7 @@ extension AppState {
             await scanner.refreshFiles(currSide: .left)
         }
         if focusedPanel == .left, selectedLeftFile == nil {
-            selectedLeftFile = displayedLeftFiles.first
+            selectedLeftFile = firstRealFile(displayedLeftFiles)
             if let f = selectedLeftFile {
                 log.debug("[AppState] auto-selected L: \(f.nameStr)")
             }
@@ -756,7 +761,7 @@ extension AppState {
             await scanner.refreshFiles(currSide: .right)
         }
         if focusedPanel == .right, selectedRightFile == nil {
-            selectedRightFile = displayedRightFiles.first
+            selectedRightFile = firstRealFile(displayedRightFiles)
             if let f = selectedRightFile {
                 log.debug("[AppState] auto-selected R: \(f.nameStr)")
             }
@@ -838,8 +843,8 @@ extension AppState {
         if let cached = PanelStartupCache.shared.load(forLeftPath: leftPath, rightPath: rightPath) {
             displayedLeftFiles = cached.left
             displayedRightFiles = cached.right
-            selectedLeftFile = cached.left.first
-            selectedRightFile = cached.right.first
+            selectedLeftFile = firstRealFile(cached.left)
+            selectedRightFile = firstRealFile(cached.right)
             log.info("[AppState] startup cache applied — L=\(cached.left.count) R=\(cached.right.count)")
         }
 
@@ -861,7 +866,7 @@ extension AppState {
             // Always ensure left panel has a selection and focus after startup
             focusedPanel = .left
             if selectedLeftFile == nil {
-                selectedLeftFile = displayedLeftFiles.first
+                selectedLeftFile = firstRealFile(displayedLeftFiles)
                 log.debug("[AppState] startup: auto-selected first file L: \(selectedLeftFile?.nameStr ?? "none")")
             }
 
@@ -928,12 +933,12 @@ extension AppState {
                 leftSearchResultsPath = virtualPath
                 displayedLeftFiles = sorted
                 leftPath = virtualPath
-                selectedLeftFile = sorted.first
+                selectedLeftFile = firstRealFile(sorted)
             case .right:
                 rightSearchResultsPath = virtualPath
                 displayedRightFiles = sorted
                 rightPath = virtualPath
-                selectedRightFile = sorted.first
+                selectedRightFile = firstRealFile(sorted)
         }
         focusedPanel = panel
     }

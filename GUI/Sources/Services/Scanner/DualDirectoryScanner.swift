@@ -378,7 +378,7 @@ actor DualDirectoryScanner {
             // Also seed selection on the non-focused panel — it gets ensureSelection on next focus
             switch side {
             case .left  where appState.selectedLeftFile == nil:
-                appState.selectedLeftFile = sortedFiles.first
+                appState.selectedLeftFile = sortedFiles.first(where: { !$0.isParentEntry })
                 log.debug("[Scanner] Auto-selected first left: \(sortedFiles.first?.nameStr ?? "-")")
             case .right where appState.selectedRightFile == nil:
                 appState.selectedRightFile = sortedFiles.first
