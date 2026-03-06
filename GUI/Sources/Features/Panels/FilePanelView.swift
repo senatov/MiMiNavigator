@@ -188,10 +188,10 @@ struct FilePanelView: View {
                 switch viewModel.panelSide {
                 case .left:
                     appState.displayedLeftFiles = sorted
-                    appState.selectedLeftFile = sorted.first
+                    appState.selectedLeftFile = sorted.first(where: { !$0.isParentEntry })
                 case .right:
                     appState.displayedRightFiles = sorted
-                    appState.selectedRightFile = sorted.first
+                    appState.selectedRightFile = sorted.first(where: { !$0.isParentEntry })
                 }
             } catch {
                 log.error("[FilePanelView] remote listing failed: \(error.localizedDescription)")
