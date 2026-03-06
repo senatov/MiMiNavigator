@@ -51,7 +51,7 @@ struct TableHeaderView: View {
                         get: { spec.width },
                         set: { layout.setWidth($0, for: spec.id) }
                     ),
-                    min: spec.id.minHeaderWidth,
+                    min: spec.id.minDragWidth,
                     max: TableColumnDefaults.maxWidth,
                     onEnd: { layout.saveWidths() }
                 )
