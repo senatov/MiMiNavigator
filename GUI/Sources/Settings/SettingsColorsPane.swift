@@ -51,6 +51,10 @@ struct ColorTheme: Identifiable, Equatable {
     var columnKindColor: Color
     var columnDateColor: Color
 
+    var columnPermissionsColor: Color
+    var columnOwnerColor: Color
+    var columnGroupColor: Color
+    var columnChildCountColor: Color
     // Panel divider
     var dividerNormalColor: Color
     var dividerActiveColor: Color
@@ -103,6 +107,10 @@ extension ColorTheme {
         columnSizeColor:     Color(red: 0.50, green: 0.05, blue: 0.18),
         columnKindColor:     Color(red: 0.28, green: 0.14, blue: 0.05),
         columnDateColor:     Color(red: 0.05, green: 0.28, blue: 0.10),
+        columnPermissionsColor: Color(red: 0.22, green: 0.22, blue: 0.40),
+        columnOwnerColor:       Color(red: 0.20, green: 0.30, blue: 0.20),
+        columnGroupColor:       Color(red: 0.28, green: 0.20, blue: 0.30),
+        columnChildCountColor:  Color(red: 0.30, green: 0.20, blue: 0.10),
         dividerNormalColor:  Color(red: 0.42, green: 0.42, blue: 0.46, opacity: 0.55),
         dividerActiveColor:  Color(red: 0.22, green: 0.01, blue: 0.85, opacity: 0.90),
         panelBorderActive:   Color(red: 0.50, green: 0.50, blue: 0.55, opacity: 0.55),
@@ -142,6 +150,10 @@ extension ColorTheme {
         columnSizeColor:     Color(red: 0.55, green: 0.25, blue: 0.10),
         columnKindColor:     Color(red: 0.40, green: 0.28, blue: 0.12),
         columnDateColor:     Color(red: 0.30, green: 0.38, blue: 0.12),
+        columnPermissionsColor: Color(red: 0.48, green: 0.38, blue: 0.20),
+        columnOwnerColor:       Color(red: 0.40, green: 0.42, blue: 0.20),
+        columnGroupColor:       Color(red: 0.45, green: 0.30, blue: 0.25),
+        columnChildCountColor:  Color(red: 0.50, green: 0.30, blue: 0.15),
         dividerNormalColor:  Color(red: 0.60, green: 0.55, blue: 0.45, opacity: 0.55),
         dividerActiveColor:  Color(red: 0.82, green: 0.55, blue: 0.15, opacity: 0.90),
         panelBorderActive:   Color(red: 0.70, green: 0.55, blue: 0.30, opacity: 0.55),
@@ -181,6 +193,10 @@ extension ColorTheme {
         columnSizeColor:     Color(red: 0.85, green: 0.50, blue: 0.60),
         columnKindColor:     Color(red: 0.70, green: 0.60, blue: 0.50),
         columnDateColor:     Color(red: 0.45, green: 0.75, blue: 0.55),
+        columnPermissionsColor: Color(red: 0.65, green: 0.60, blue: 0.85),
+        columnOwnerColor:       Color(red: 0.50, green: 0.80, blue: 0.65),
+        columnGroupColor:       Color(red: 0.70, green: 0.55, blue: 0.80),
+        columnChildCountColor:  Color(red: 0.75, green: 0.70, blue: 0.50),
         dividerNormalColor:  Color(red: 0.35, green: 0.40, blue: 0.55, opacity: 0.60),
         dividerActiveColor:  Color(red: 0.40, green: 0.60, blue: 1.0, opacity: 0.90),
         panelBorderActive:   Color(red: 0.35, green: 0.50, blue: 0.80, opacity: 0.60),
@@ -220,6 +236,10 @@ extension ColorTheme {
         columnSizeColor:     Color(red: 0.52, green: 0.60, blue: 0.0),
         columnKindColor:     Color(red: 0.71, green: 0.54, blue: 0.0),
         columnDateColor:     Color(red: 0.16, green: 0.63, blue: 0.60),
+        columnPermissionsColor: Color(red: 0.60, green: 0.20, blue: 0.00),
+        columnOwnerColor:       Color(red: 0.52, green: 0.60, blue: 0.00),
+        columnGroupColor:       Color(red: 0.71, green: 0.54, blue: 0.00),
+        columnChildCountColor:  Color(red: 0.42, green: 0.16, blue: 0.51),
         dividerNormalColor:  Color(red: 0.58, green: 0.63, blue: 0.63, opacity: 0.50),
         dividerActiveColor:  Color(red: 0.15, green: 0.55, blue: 0.82, opacity: 0.90),
         panelBorderActive:   Color(red: 0.15, green: 0.55, blue: 0.82, opacity: 0.50),
@@ -274,6 +294,10 @@ final class ColorThemeStore {
     @ObservationIgnored @AppStorage("color.columnSize")       var hexColumnSize: String = ""
     @ObservationIgnored @AppStorage("color.columnKind")       var hexColumnKind: String = ""
     @ObservationIgnored @AppStorage("color.columnDate")       var hexColumnDate: String = ""
+    @ObservationIgnored @AppStorage("color.columnPermissions") var hexColumnPermissions: String = ""
+    @ObservationIgnored @AppStorage("color.columnOwner")       var hexColumnOwner: String = ""
+    @ObservationIgnored @AppStorage("color.columnGroup")       var hexColumnGroup: String = ""
+    @ObservationIgnored @AppStorage("color.columnChildCount")  var hexColumnChildCount: String = ""
     @ObservationIgnored @AppStorage("color.dividerNormal")    var hexDividerNormal: String = ""
     @ObservationIgnored @AppStorage("color.dividerActive")    var hexDividerActive: String = ""
     @ObservationIgnored @AppStorage("color.panelBorderActive")   var hexPanelBorderActive: String = ""
@@ -329,6 +353,10 @@ final class ColorThemeStore {
         if let c = Color(hex: hexColumnSize)       { theme.columnSizeColor = c }
         if let c = Color(hex: hexColumnKind)       { theme.columnKindColor = c }
         if let c = Color(hex: hexColumnDate)       { theme.columnDateColor = c }
+        if let c = Color(hex: hexColumnPermissions) { theme.columnPermissionsColor = c }
+        if let c = Color(hex: hexColumnOwner)       { theme.columnOwnerColor = c }
+        if let c = Color(hex: hexColumnGroup)       { theme.columnGroupColor = c }
+        if let c = Color(hex: hexColumnChildCount)  { theme.columnChildCountColor = c }
         if let c = Color(hex: hexDividerNormal)    { theme.dividerNormalColor = c }
         if let c = Color(hex: hexDividerActive)    { theme.dividerActiveColor = c }
         if let c = Color(hex: hexPanelBorderActive)   { theme.panelBorderActive = c }
@@ -344,6 +372,7 @@ final class ColorThemeStore {
          hexDialogBase, hexDialogStripe, hexAccent, hexDialogBackground,
          hexHiddenFile, hexMarkedFile, hexParentEntry, hexArchivePath, hexMarkedCount,
          hexColumnName, hexColumnSize, hexColumnKind, hexColumnDate,
+         hexColumnPermissions, hexColumnOwner, hexColumnGroup, hexColumnChildCount,
          hexDividerNormal, hexDividerActive, hexPanelBorderActive, hexPanelBorderInactive,
          hexWarmWhite, hexFilterActive]
             .filter { !$0.isEmpty }.count
@@ -365,6 +394,7 @@ final class ColorThemeStore {
         hexHiddenFile = ""; hexMarkedFile = ""; hexParentEntry = ""
         hexArchivePath = ""; hexMarkedCount = ""
         hexColumnName = ""; hexColumnSize = ""; hexColumnKind = ""; hexColumnDate = ""
+        hexColumnPermissions = ""; hexColumnOwner = ""; hexColumnGroup = ""; hexColumnChildCount = ""
         hexDividerNormal = ""; hexDividerActive = ""
         hexPanelBorderActive = ""; hexPanelBorderInactive = ""
         hexWarmWhite = ""; hexFilterActive = ""
@@ -404,6 +434,10 @@ struct SettingsColorsPane: View {
     @AppStorage("color.columnSize")       private var hexColumnSize: String = ""
     @AppStorage("color.columnKind")       private var hexColumnKind: String = ""
     @AppStorage("color.columnDate")       private var hexColumnDate: String = ""
+    @AppStorage("color.columnPermissions") private var hexColumnPermissions: String = ""
+    @AppStorage("color.columnOwner")       private var hexColumnOwner: String = ""
+    @AppStorage("color.columnGroup")       private var hexColumnGroup: String = ""
+    @AppStorage("color.columnChildCount")  private var hexColumnChildCount: String = ""
     @AppStorage("color.dividerNormal")    private var hexDividerNormal: String = ""
     @AppStorage("color.dividerActive")    private var hexDividerActive: String = ""
     @AppStorage("color.panelBorderActive")   private var hexPanelBorderActive: String = ""
@@ -552,6 +586,18 @@ struct SettingsColorsPane: View {
                     Divider()
                     colorRow("Date column", help: "Text accent for all Date columns",
                              preset: currentPreset.columnDateColor, hex: $hexColumnDate)
+                    Divider()
+                    colorRow("Permissions column", help: "Text accent for Permissions column",
+                               preset: currentPreset.columnPermissionsColor, hex: $hexColumnPermissions)
+                    Divider()
+                    colorRow("Owner column", help: "Text accent for Owner column",
+                               preset: currentPreset.columnOwnerColor, hex: $hexColumnOwner)
+                    Divider()
+                    colorRow("Group column", help: "Text accent for Group column",
+                               preset: currentPreset.columnGroupColor, hex: $hexColumnGroup)
+                    Divider()
+                    colorRow("# Count column", help: "Text accent for child count column",
+                               preset: currentPreset.columnChildCountColor, hex: $hexColumnChildCount)
                 }
             }
 
