@@ -73,9 +73,10 @@ final class FSEventsDirectoryWatcher: @unchecked Sendable {
         // NOTE: NO kFSEventStreamCreateFlagFileEvents — that flag causes recursive subtree
         // events which floods the queue on directories with active subdirs (e.g. Anki media).
         // Dir-level events are sufficient: one event fires when anything in the dir changes.
+        // kFSEventStreamCreateFlagNoDefer removed: it bypasses kernel-side batching
+        // and causes 3x duplicate callbacks per event. latency=0.5s + throttle=0.3s suffice.
         let flags = UInt32(
             kFSEventStreamCreateFlagUseCFTypes
-            | kFSEventStreamCreateFlagNoDefer
             | kFSEventStreamCreateFlagWatchRoot
         )
         let callback: FSEventStreamCallback = { _, infoPtr, numEvents, eventPaths, eventFlags, _ in
