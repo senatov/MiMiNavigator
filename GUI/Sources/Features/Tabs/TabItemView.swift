@@ -98,7 +98,7 @@ struct TabItemView: View {
 
             // Tab name
             Text(tab.truncatedDisplayName(maxLength: 16))
-                .font(.system(size: 11, weight: isActive ? .medium : .regular))
+                .font(.system(size: 13, weight: isActive ? .medium : .regular, design: .default))
                 .lineLimit(1)
                 .foregroundStyle(isActive ? Color.primary : Color.secondary)
 
