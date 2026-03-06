@@ -77,7 +77,7 @@ final class FindFilesCoordinator {
         window.animationBehavior = .utilityWindow
         window.isMovableByWindowBackground = true
         // Follow main window: rise when app activates, stay visible when app is active
-        window.hidesOnDeactivate = true
+        window.hidesOnDeactivate = false
         window.level = .floating
         window.tabbingMode = .disallowed
 
