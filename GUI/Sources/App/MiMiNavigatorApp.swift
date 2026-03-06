@@ -30,10 +30,8 @@ struct MiMiNavigatorApp: App {
     init() {
         AppLogger.initialize()
         log.debug("---- Logger initialized ------")
-        Task {
-            let restored = await BookmarkStore.shared.restoreAll()
-            log.info("[App.init] BookmarkStore.restoreAll → \(restored.count) URL(s) active")
-        }
+        // BookmarkStore.restoreAll() is called in AppDelegate.applicationDidFinishLaunching
+        // to ensure NSApplication is fully initialized before sandbox token requests.
         Task { await RemoteConnectionManager.shared.connectOnStartIfNeeded() }
     }
 
