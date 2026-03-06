@@ -18,46 +18,47 @@ struct DuoFilePanelActions {
 
     // MARK: - F3 View
     func performView() {
-        log.debug("performView - View button pressed")
-
-        guard FileActions.isVSCodeInstalled() else {
-            FileActions.promptVSCodeInstall {}
+        log.debug("performView — F3 pressed")
+        guard let file = currentSelectedFile, !file.isDirectory else {
+            log.debug("performView: no file selected or is directory")
             return
         }
-
-        guard let file = currentSelectedFile else {
-            log.debug("No file selected for View")
-            return
-        }
-
-        guard !file.isDirectory else {
-            log.debug("Cannot view directory")
-            return
-        }
-
-        FileActions.view(file)
+        openWithDefaultOrPicker(file: file, preferEdit: false)
     }
 
     // MARK: - F4 Edit
     func performEdit() {
-        log.debug("performEdit - Edit button pressed")
-
-        guard FileActions.isVSCodeInstalled() else {
-            FileActions.promptVSCodeInstall {}
+        log.debug("performEdit — F4 pressed")
+        guard let file = currentSelectedFile, !file.isDirectory else {
+            log.debug("performEdit: no file selected or is directory")
             return
         }
+        openWithDefaultOrPicker(file: file, preferEdit: true)
+    }
 
-        guard let file = currentSelectedFile else {
-            log.debug("No file selected for Edit")
+    // MARK: - Open with default app; if none — show Open With picker
+    @MainActor
+    private func openWithDefaultOrPicker(file: CustomFile, preferEdit: Bool) {
+        let url = file.urlValue
+        // Try default application from Launch Services
+        if let defaultApp = NSWorkspace.shared.urlForApplication(toOpen: url) {
+            log.info("Opening '\(file.nameStr)' with default app: \(defaultApp.lastPathComponent)")
+            let config = NSWorkspace.OpenConfiguration()
+            config.activates = true
+            NSWorkspace.shared.open([url], withApplicationAt: defaultApp, configuration: config) { _, error in
+                if let error {
+                    log.error("openWithDefault failed: \(error.localizedDescription)")
+                }
+            }
+            // Record in LRU
+            if let bundleID = Bundle(url: defaultApp)?.bundleIdentifier {
+                OpenWithService.shared.recordUsage(bundleID: bundleID, ext: url.pathExtension, appURL: defaultApp)
+            }
             return
         }
-
-        guard !file.isDirectory else {
-            log.debug("Cannot edit directory")
-            return
-        }
-
-        FileActions.edit(file)
+        // No default app — show OpenWith picker (same as "Other..." in context menu)
+        log.info("No default app for '\(file.nameStr)' — showing Open With picker")
+        OpenWithService.shared.showOpenWithPicker(for: url)
     }
 
     // MARK: - F5 Copy (supports batch operations)
@@ -168,10 +169,10 @@ struct DuoFilePanelActions {
         }
     }
 
-    // MARK: - Settings
+    // MARK: - F9 Settings
     func performSettings() {
-        log.debug("performSettings - Settings button pressed")
-        // TODO: Implement settings panel
+        log.debug("performSettings — opening Settings window")
+        SettingsCoordinator.shared.toggle()
     }
 
     // MARK: - Console
