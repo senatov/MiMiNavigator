@@ -108,11 +108,14 @@ enum ColumnID: String, CaseIterable, Codable, Identifiable, Transferable {
 
     func columnColor(from theme: ColorTheme) -> Color {
         switch self {
-        case .name, .childCount: theme.columnNameColor
-        case .size: theme.columnSizeColor
-        case .kind: theme.columnKindColor
+        case .name:          theme.columnNameColor
+        case .size:          theme.columnSizeColor
+        case .kind:          theme.columnKindColor
         case .dateModified, .dateCreated, .dateLastOpened, .dateAdded: theme.columnDateColor
-        default: theme.panelText
+        case .permissions:   theme.columnPermissionsColor
+        case .owner:         theme.columnOwnerColor
+        case .group:         theme.columnGroupColor
+        case .childCount:    theme.columnChildCountColor
         }
     }
 
