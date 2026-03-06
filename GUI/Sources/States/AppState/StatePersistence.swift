@@ -85,7 +85,7 @@ enum StatePersistence {
         // Resolve container symlinks to their real paths so sandbox doesn't produce
         // '/Library/Containers/.../Data/Downloads' paths that fail on next launch.
         let resolved: String
-        if let real = try? URL(fileURLWithPath: path).resolvingSymlinksInPath().path,
+        if let real = URL(fileURLWithPath: path).resolvingSymlinksInPath().path as String?,
            real != path {
             log.debug("[StatePersistence] container symlink resolved: \(path) → \(real)")
             resolved = real

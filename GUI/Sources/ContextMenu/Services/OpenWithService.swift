@@ -36,8 +36,40 @@ final class OpenWithService {
     static let shared = OpenWithService()
     private let workspace = NSWorkspace.shared
 
+    // MARK: - LRU recent apps (max 5, per-extension key)
+    private let lruDefaultsKey = "openWithLRU"
+    private let lruAppURLsKey  = "openWithAppURLs"   // bundleID → app path, for "Other..." picks
+    private let lruMaxCount = 5
+
     private init() {
         log.debug("\(#function) OpenWithService initialized")
+    }
+
+    // MARK: - LRU helpers
+
+    /// Returns bundle IDs of recently-used apps for a given file extension, newest first
+    private func lruBundles(for ext: String) -> [String] {
+        let dict = UserDefaults.standard.dictionary(forKey: lruDefaultsKey) as? [String: [String]] ?? [:]
+        return dict[ext.lowercased()] ?? []
+    }
+
+    /// Records that `bundleID` was used to open a file with `ext`
+    private func recordLRU(bundleID: String, ext: String, appURL: URL? = nil) {
+        let key = ext.lowercased()
+        var dict = UserDefaults.standard.dictionary(forKey: lruDefaultsKey) as? [String: [String]] ?? [:]
+        var list = dict[key] ?? []
+        list.removeAll { $0 == bundleID }   // deduplicate
+        list.insert(bundleID, at: 0)        // newest first
+        if list.count > lruMaxCount { list = Array(list.prefix(lruMaxCount)) }
+        dict[key] = list
+        UserDefaults.standard.set(dict, forKey: lruDefaultsKey)
+        // Persist app URL so "Other..." picks can be restored in the list
+        if let appURL {
+            var urls = UserDefaults.standard.dictionary(forKey: lruAppURLsKey) as? [String: String] ?? [:]
+            urls[bundleID] = appURL.path
+            UserDefaults.standard.set(urls, forKey: lruAppURLsKey)
+        }
+        log.debug("\(#function) LRU updated ext='\(key)' list=\(list)")
     }
 
     // MARK: - Get Applications for File
@@ -71,11 +103,27 @@ final class OpenWithService {
             log.warning("\(#function) LSCopyApplicationURLsForURL returned nil")
         }
 
-        // Sort: default app first, then alphabetically
-        apps.sort { lhs, rhs in
-            if lhs.isDefault != rhs.isDefault {
-                return lhs.isDefault
+        // Sort: default app first, then LRU recency, then alphabetically
+        let recentBundles = lruBundles(for: fileURL.pathExtension)
+
+        // Add LRU-picked apps that are missing from the LS list (e.g. picked via "Other...")
+        let knownBundles = Set(apps.map(\.bundleIdentifier))
+        let savedURLs = UserDefaults.standard.dictionary(forKey: lruAppURLsKey) as? [String: String] ?? [:]
+        for bundleID in recentBundles where !knownBundles.contains(bundleID) {
+            if let path = savedURLs[bundleID] {
+                let url = URL(fileURLWithPath: path)
+                if let info = makeAppInfo(from: url, isDefault: url == defaultApp) {
+                    apps.append(info)
+                    log.debug("\(#function) restored LRU app '\(info.name)' from saved path")
+                }
             }
+        }
+
+        apps.sort { lhs, rhs in
+            if lhs.isDefault != rhs.isDefault { return lhs.isDefault }
+            let lhsIdx = recentBundles.firstIndex(of: lhs.bundleIdentifier) ?? Int.max
+            let rhsIdx = recentBundles.firstIndex(of: rhs.bundleIdentifier) ?? Int.max
+            if lhsIdx != rhsIdx { return lhsIdx < rhsIdx }
             return lhs.name.localizedCaseInsensitiveCompare(rhs.name) == .orderedAscending
         }
 
@@ -90,6 +138,7 @@ final class OpenWithService {
     /// Opens file with specified application
     func openFile(_ fileURL: URL, with app: AppInfo) {
         log.info("\(#function) file='\(fileURL.lastPathComponent)' app='\(app.name)' bundle=\(app.bundleIdentifier)")
+        recordLRU(bundleID: app.bundleIdentifier, ext: fileURL.pathExtension)
 
         let config = NSWorkspace.OpenConfiguration()
         config.activates = true
@@ -124,9 +173,13 @@ final class OpenWithService {
         panel.message = "Choose an application to open '\(fileURL.lastPathComponent)'"
         panel.prompt = "Open"
 
-        panel.begin { response in
+        panel.begin { [weak self] response in
             if response == .OK, let appURL = panel.url {
                 log.info("\(#function) user selected app='\(appURL.lastPathComponent)'")
+                // Record in LRU with app URL so it appears in the list next time
+                if let bundleID = Bundle(url: appURL)?.bundleIdentifier {
+                    self?.recordLRU(bundleID: bundleID, ext: fileURL.pathExtension, appURL: appURL)
+                }
                 let config = NSWorkspace.OpenConfiguration()
                 config.activates = true
                 NSWorkspace.shared.open([fileURL], withApplicationAt: appURL, configuration: config)

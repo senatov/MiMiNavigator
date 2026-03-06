@@ -13,62 +13,50 @@ import SwiftUI
 struct AppToolbarContent: ToolbarContent {
 
     let app: MiMiNavigatorApp
+    let appState: AppState
 
     private var store: ToolbarStore { ToolbarStore.shared }
 
     // MARK: - Body
     var body: some ToolbarContent {
-        // All action buttons in one framed group
-        ToolbarItem(placement: .automatic) {
+        // View mode toggle — right side
+        ToolbarItem(placement: .primaryAction) {
+            ViewModeToolbarItem(appState: appState)
+        }
+        // All action buttons — right side, own framed group
+        ToolbarItem(placement: .primaryAction) {
             ToolbarButtonGroup {
                 if store.visibleIDs.contains(.refresh) {
-                    app.makeToolbarIcon(.refresh) {
-                        app.performRefresh()
-                    }
+                    app.makeToolbarIcon(.refresh) { app.performRefresh() }
                 }
                 if store.visibleIDs.contains(.hiddenFiles) {
                     app.makeToolbarToggle(.hiddenFiles)
                 }
                 if store.visibleIDs.contains(.openWith) {
-                    app.makeToolbarIcon(.openWith) {
-                        app.performOpenWith()
-                    }
+                    app.makeToolbarIcon(.openWith) { app.performOpenWith() }
                 }
                 if store.visibleIDs.contains(.swapPanels) {
-                    app.makeToolbarIcon(.swapPanels) {
-                        app.performSwapPanels()
-                    }
+                    app.makeToolbarIcon(.swapPanels) { app.performSwapPanels() }
                 }
                 if store.visibleIDs.contains(.compare) {
-                    app.makeToolbarIcon(.compare) {
-                        app.performCompare()
-                    }
+                    app.makeToolbarIcon(.compare) { app.performCompare() }
                 }
                 if store.visibleIDs.contains(.network) {
-                    app.makeToolbarIcon(.network) {
-                        app.performNetwork()
-                    }
+                    app.makeToolbarIcon(.network) { app.performNetwork() }
                 }
                 if store.visibleIDs.contains(.connectServer) {
-                    app.makeToolbarIcon(.connectServer) {
-                        app.performConnectServer()
-                    }
+                    app.makeToolbarIcon(.connectServer) { app.performConnectServer() }
                 }
                 if store.visibleIDs.contains(.findFiles) {
-                    app.makeToolbarIcon(.findFiles) {
-                        app.performFindFiles()
-                    }
+                    app.makeToolbarIcon(.findFiles) { app.performFindFiles() }
                 }
                 if store.visibleIDs.contains(.settings) {
-                    app.makeToolbarIcon(.settings) {
-                        app.performSettings()
-                    }
+                    app.makeToolbarIcon(.settings) { app.performSettings() }
                 }
             }
         }
-
-        // Menu bar toggle — separate framed item
-        ToolbarItem(placement: .automatic) {
+        // Menu bar toggle — rightmost
+        ToolbarItem(placement: .primaryAction) {
             ToolbarButtonGroup {
                 app.makeToolbarToggle(.menuBarToggle)
             }
@@ -86,10 +74,36 @@ struct ToolbarButtonGroup<Content: View>: View {
             content()
         }
         .padding(.horizontal, 10)
-        .padding(.vertical, 5)
-        .overlay(
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .strokeBorder(Color(nsColor: .separatorColor), lineWidth: 0.75)
+        .padding(.vertical, 4)
+        .background(
+            RoundedRectangle(cornerRadius: 7, style: .continuous)
+                .strokeBorder(Color(nsColor: .separatorColor).opacity(0.7), lineWidth: 0.5)
         )
+    }
+}
+
+// MARK: - View Mode Toolbar Item
+/// appState passed explicitly — @Environment is unreliable inside ToolbarContent on macOS
+private struct ViewModeToolbarItem: View {
+    let appState: AppState
+    @State private var viewModeStore = PanelViewModeStore.shared
+
+    var body: some View {
+        ToolbarButtonGroup {
+            let side = appState.focusedPanel
+            Picker("", selection: Binding(
+                get: { viewModeStore.mode(for: side) },
+                set: { viewModeStore.setMode($0, for: side) }
+            )) {
+                Image(systemName: "list.bullet")
+                    .tag(PanelViewMode.list)
+                    .help("List view")
+                Image(systemName: "square.grid.2x2")
+                    .tag(PanelViewMode.thumbnail)
+                    .help("Thumbnail view")
+            }
+            .pickerStyle(.segmented)
+            .frame(width: 64)
+        }
     }
 }

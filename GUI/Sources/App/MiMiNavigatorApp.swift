@@ -118,7 +118,7 @@ struct MiMiNavigatorApp: App {
                     }
                 }
                 .toolbar {
-                    AppToolbarContent(app: self)  // menuBarToggle included inside
+                    AppToolbarContent(app: self, appState: appState)  // menuBarToggle included inside
                     toolBarItemBuildInfo()
                 }
                 // ToolbarRightClickMonitor started in AppDelegate.applicationDidFinishLaunching
