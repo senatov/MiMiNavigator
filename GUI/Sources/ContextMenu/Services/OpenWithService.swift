@@ -135,7 +135,12 @@ final class OpenWithService {
 
     // MARK: - Open File With Application
 
-    /// Opens file with specified application
+    /// Public alias for recordLRU — called from F3/F4 after opening with default app
+    func recordUsage(bundleID: String, ext: String, appURL: URL) {
+        recordLRU(bundleID: bundleID, ext: ext, appURL: appURL)
+    }
+
+    /// Opens file with the chosen AppInfo and records it in LRU
     func openFile(_ fileURL: URL, with app: AppInfo) {
         log.info("\(#function) file='\(fileURL.lastPathComponent)' app='\(app.name)' bundle=\(app.bundleIdentifier)")
         recordLRU(bundleID: app.bundleIdentifier, ext: fileURL.pathExtension)

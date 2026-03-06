@@ -31,7 +31,7 @@ enum L10n {
         static let move = String(localized: "F6 Move", comment: "Move toolbar button")
         static let newFolder = String(localized: "F7 NewFolder", comment: "New folder toolbar button")
         static let delete = String(localized: "F8 Delete", comment: "Delete toolbar button")
-        static let settings = String(localized: "Settings", comment: "Settings toolbar button")
+        static let settings = String(localized: "F9 Settings", comment: "Settings toolbar button")
         static let console = String(localized: "Console", comment: "Console toolbar button")
         static let exit = String(localized: "Exit", comment: "Exit toolbar button")
     }
