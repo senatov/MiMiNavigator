@@ -1060,6 +1060,9 @@
         }
       }
     },
+    "F9 Settings" : {
+      "comment" : "Settings toolbar button"
+    },
     "Failed to create folder." : {
       "comment" : "Failed to create folder error",
       "localizations" : {

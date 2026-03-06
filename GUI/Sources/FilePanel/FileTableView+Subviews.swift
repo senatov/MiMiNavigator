@@ -15,6 +15,7 @@ extension FileTableView {
             ScrollViewReader { proxy in
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 0, pinnedViews: [.sectionHeaders]) {
+
                         Section {
                             FileTableRowsView(
                                 rows: sortedRows,
