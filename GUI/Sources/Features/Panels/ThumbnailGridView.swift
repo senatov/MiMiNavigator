@@ -19,6 +19,7 @@ import SwiftUI
 struct ThumbnailGridView: View {
 
     @Environment(AppState.self) var appState
+    @Environment(DragDropManager.self) var dragDropManager
 
     let files: [CustomFile]
     @Binding var selectedID: CustomFile.ID?
@@ -40,13 +41,28 @@ struct ThumbnailGridView: View {
                         file: file,
                         cellSize: cellSize,
                         isSelected: selectedID == file.id,
+                        panelSide: panelSide,
+                        dragFiles: dragFilesFor(file),
                         onSelect: { onSelect(file) },
-                        onDoubleClick: { onDoubleClick(file) }
+                        onDoubleClick: { onDoubleClick(file) },
+                        onFileAction: { action in
+                            ContextMenuCoordinator.shared.handleFileAction(action, for: file, panel: panelSide, appState: appState)
+                        },
+                        onDirectoryAction: { action in
+                            ContextMenuCoordinator.shared.handleDirectoryAction(action, for: file, panel: panelSide, appState: appState)
+                        }
                     )
                 }
             }
             .padding(10)
         }
+    }
+
+    // MARK: - Drag helpers
+    private func dragFilesFor(_ file: CustomFile) -> [CustomFile] {
+        let marked = appState.markedCustomFiles(for: panelSide)
+        if !marked.isEmpty && marked.contains(where: { $0.id == file.id }) { return marked }
+        return [file]
     }
 }
 
@@ -57,11 +73,17 @@ private struct ThumbnailCellView: View {
     let file: CustomFile
     let cellSize: CGFloat
     let isSelected: Bool
+    let panelSide: PanelSide
+    let dragFiles: [CustomFile]
     let onSelect: () -> Void
     let onDoubleClick: () -> Void
+    let onFileAction: (FileAction) -> Void
+    let onDirectoryAction: (DirectoryAction) -> Void
 
     @State private var thumbnail: NSImage? = nil
     @State private var isHovered = false
+
+    @Environment(AppState.self) private var appState
 
     private var imageSize: CGFloat { cellSize - 12 }
 
@@ -91,7 +113,6 @@ private struct ThumbnailCellView: View {
                         .frame(width: imageSize, height: imageSize)
                 }
 
-                // Selection ring
                 if isSelected {
                     RoundedRectangle(cornerRadius: 6, style: .continuous)
                         .strokeBorder(Color.accentColor, lineWidth: 2)
@@ -99,14 +120,13 @@ private struct ThumbnailCellView: View {
                 }
             }
 
-            // Name
+            // Name — single line, macOS-style middle truncation
             Text(file.nameStr)
                 .font(.system(size: 10))
                 .foregroundStyle(isSelected ? Color.accentColor : Color.primary)
-                .lineLimit(2)
-                .multilineTextAlignment(.center)
+                .lineLimit(1)
+                .truncationMode(.middle)
                 .frame(width: cellSize - 4)
-                .fixedSize(horizontal: false, vertical: true)
 
             // Size
             if !file.isDirectory {
@@ -120,7 +140,57 @@ private struct ThumbnailCellView: View {
         .onHover { isHovered = $0 }
         .onTapGesture(count: 2) { onDoubleClick() }
         .onTapGesture(count: 1) { onSelect() }
+        // MARK: Context menu
+        .contextMenu { contextMenuContent }
+        // MARK: Drag
+        .onDrag {
+            let provider = NSItemProvider()
+            if let first = dragFiles.first {
+                provider.registerObject(first.urlValue as NSURL, visibility: .all)
+            }
+            return provider
+        } preview: {
+            dragPreview
+        }
         .task(id: file.pathStr) { await loadThumbnail() }
+    }
+
+    // MARK: - Context menu content
+    @ViewBuilder
+    private var contextMenuContent: some View {
+        if file.isDirectory {
+            DirectoryContextMenu(file: file, panelSide: panelSide) { action in
+                onDirectoryAction(action)
+            }
+        } else {
+            FileContextMenu(file: file, panelSide: panelSide) { action in
+                onFileAction(action)
+            }
+        }
+    }
+
+    // MARK: - Drag preview
+    private var dragPreview: some View {
+        VStack(spacing: 2) {
+            if let img = thumbnail {
+                Image(nsImage: img)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: 48, height: 48)
+                    .clipShape(RoundedRectangle(cornerRadius: 6))
+            } else {
+                Image(systemName: file.isDirectory ? "folder.fill" : "doc")
+                    .font(.system(size: 32))
+                    .foregroundStyle(file.isDirectory ? .yellow : .secondary)
+            }
+            if dragFiles.count > 1 {
+                Text("\(dragFiles.count) items")
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding(8)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
     }
 
     // MARK: - Fallback SF Symbol icon
