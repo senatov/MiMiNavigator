@@ -30,6 +30,9 @@ final class FSEventsDirectoryWatcher: @unchecked Sendable {
         let addedOrModified: [CustomFile]
         let removedPaths: [String]
         let watchedPath: String
+        /// True when the watched directory itself was reported changed (dir-level event).
+        /// Signals that a full rescan is needed because we cannot determine removals incrementally.
+        let needsFullRescan: Bool
     }
 
     // MARK: - State
@@ -121,6 +124,7 @@ final class FSEventsDirectoryWatcher: @unchecked Sendable {
     /// Coalesces rapid bursts: cancels previous work item, schedules new one after throttleDelay.
     private func scheduleHandleEvents(paths: [String], flags: [FSEventStreamEventFlags]) {
         pendingWork?.cancel()
+        log.debug("[FSEvents] scheduleHandleEvents: \(paths.count) paths for '\(watchedPath)': \(paths)")
         let work = DispatchWorkItem { [weak self] in
             self?.handleEvents(paths: paths, flags: flags)
         }
@@ -129,36 +133,32 @@ final class FSEventsDirectoryWatcher: @unchecked Sendable {
     }
 
     // MARK: - Event handling (runs on callbackQueue — NOT MainActor)
-
-
-    // MARK: - Event handling (runs on callbackQueue — NOT MainActor)
     private func handleEvents(paths: [String], flags: [FSEventStreamEventFlags]) {
         let watched = watchedPath
         let fm = FileManager.default
         let hidden = showHiddenFiles
-        
         var directChildren: [String] = []
         var childCountUpdates: [String: Int] = [:]
         
+        var watchedDirChanged = false
         for p in paths {
             let cleanPath = p.hasSuffix("/") ? String(p.dropLast()) : p
-            
-            // Skip if this is the watched directory itself
-            if cleanPath == watched { continue }
+            // Dir-level FSEvents (no kFSEventStreamCreateFlagFileEvents) returns
+            // the watched directory path itself when any direct child changes.
+            // Enumerate all current children to detect adds/removes.
+            if cleanPath == watched {
+                watchedDirChanged = true
+                continue
+            }
             let url = URL(fileURLWithPath: cleanPath)
             let parent = url.deletingLastPathComponent().path
-            
             if parent == watched {
-                // Direct child — add to patch
                 directChildren.append(p)
             } else {
-                // Subdirectory event — find which first-level subdir changed
                 let relPath = String(p.dropFirst(watched.count + 1))
                 if let firstSlash = relPath.firstIndex(of: "/") {
                     let subdirName = String(relPath[..<firstSlash])
                     let subdirPath = (watched as NSString).appendingPathComponent(subdirName)
-                    
-                    // Only update if not already queued
                     if childCountUpdates[subdirPath] == nil {
                         if let count = try? fm.contentsOfDirectory(atPath: subdirPath).count {
                             childCountUpdates[subdirPath] = count
@@ -167,8 +167,22 @@ final class FSEventsDirectoryWatcher: @unchecked Sendable {
                 }
             }
         }
-        
-        // Skip if nothing changed at top level and no childCount updates
+        // When dir-level event fires for watched dir itself, trigger full rescan.
+        // Dir-level FSEvents cannot tell us which files were added/removed —
+        // only that "something changed" in the directory.
+        log.debug("[FSEvents] handleEvents: watchedDirChanged=\(watchedDirChanged) directChildren=\(directChildren.count) childCountUpdates=\(childCountUpdates.count)")
+        if watchedDirChanged && directChildren.isEmpty {
+            log.info("[FSEvents] watched dir event → full rescan for '\(watched)'")
+            let patch = DirectoryPatch(
+                childCountUpdates: childCountUpdates,
+                addedOrModified: [],
+                removedPaths: [],
+                watchedPath: watched,
+                needsFullRescan: true
+            )
+            onPatch(patch)
+            return
+        }
         guard !directChildren.isEmpty || !childCountUpdates.isEmpty else { return }
         
         var added: [CustomFile] = []
@@ -229,7 +243,8 @@ final class FSEventsDirectoryWatcher: @unchecked Sendable {
             childCountUpdates: childCountUpdates,
             addedOrModified: added,
             removedPaths: removed,
-            watchedPath: watched
+            watchedPath: watched,
+            needsFullRescan: false
         )
         onPatch(patch)
     }
