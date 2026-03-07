@@ -3,14 +3,15 @@
 //
 // Created by Iakov Senatov on 10.02.2026.
 // Copyright © 2026 Senatov. All rights reserved.
-// Description: Text field with directory autocomplete — dropdown popup + inline ghost completion.
+// Description: Text field with directory autocomplete — NSPanel-based dropdown + inline ghost completion.
 
+import AppKit
 import SwiftUI
 
 // MARK: - Path Auto Complete Field
 /// Text field with directory path autocomplete.
-/// Features: dropdown suggestion popup (overlay, not inline VStack), inline ghost text completion,
-/// Tab to accept ghost/selected suggestion, arrow keys to navigate, Escape to dismiss.
+/// Features: NSPanel-based floating dropdown (escapes parent clipping), inline ghost text,
+/// Tab/RightArrow to accept, arrow keys to navigate, Escape to dismiss.
 struct PathAutoCompleteField: View {
     @Binding var text: String
     @FocusState.Binding var isFocused: Bool
@@ -20,32 +21,19 @@ struct PathAutoCompleteField: View {
     @State private var suggestions: [String] = []
     @State private var showSuggestions = false
     @State private var selectedIndex: Int = 0
-    /// Ghost completion text shown inline after the cursor (gray, not yet applied)
     @State private var ghostSuffix: String = ""
-    /// Guard to prevent onChange firing from our own programmatic text mutations
     @State private var suppressOnChange = false
+    @State private var popupController = AutoCompletePopupController()
 
-    private let maxSuggestions = 15
+    private let maxSuggestions = 12
 
     // MARK: - Body
     var body: some View {
-        textFieldLayer
-            .overlay(alignment: .topLeading) {
-                if showSuggestions, !suggestions.isEmpty {
-                    suggestionsOverlay
-                        .offset(y: 32)
-                }
-            }
-    }
-
-    // MARK: - Text Field Layer
-    private var textFieldLayer: some View {
         ZStack(alignment: .leading) {
-            // Ghost text overlay — shows inline completion hint
             if !ghostSuffix.isEmpty {
                 Text(text + ghostSuffix)
                     .font(.system(size: 13, design: .monospaced))
-                    .foregroundStyle(Color.gray.opacity(0.5))
+                    .foregroundStyle(Color.gray.opacity(0.45))
                     .lineLimit(1)
                     .padding(.leading, 7)
                     .allowsHitTesting(false)
@@ -64,14 +52,12 @@ struct PathAutoCompleteField: View {
                     updateSuggestions(for: newValue)
                 }
                 .onSubmit {
-                    showSuggestions = false
-                    ghostSuffix = ""
+                    dismissPopup()
                     onSubmit()
                 }
                 .onExitCommand {
                     if showSuggestions {
-                        showSuggestions = false
-                        ghostSuffix = ""
+                        dismissPopup()
                     } else {
                         onCancel()
                     }
@@ -80,6 +66,7 @@ struct PathAutoCompleteField: View {
                     if showSuggestions, !suggestions.isEmpty {
                         selectedIndex = min(selectedIndex + 1, suggestions.count - 1)
                         updateGhostFromSelection()
+                        popupController.selectRow(selectedIndex)
                     }
                     return .handled
                 }
@@ -87,6 +74,7 @@ struct PathAutoCompleteField: View {
                     if showSuggestions, !suggestions.isEmpty {
                         selectedIndex = max(selectedIndex - 1, 0)
                         updateGhostFromSelection()
+                        popupController.selectRow(selectedIndex)
                     }
                     return .handled
                 }
@@ -95,13 +83,20 @@ struct PathAutoCompleteField: View {
                     return .handled
                 }
                 .onKeyPress(.rightArrow) {
-                    // Right arrow at end of text accepts ghost completion (like Fish shell)
                     if !ghostSuffix.isEmpty {
                         acceptCompletion()
                         return .handled
                     }
                     return .ignored
                 }
+                .background(GeometryReader { geo in
+                    Color.clear.onAppear {
+                        popupController.anchorFrame = geo.frame(in: .global)
+                    }
+                    .onChange(of: geo.frame(in: .global)) { _, newFrame in
+                        popupController.anchorFrame = newFrame
+                    }
+                })
                 .onAppear {
                     DispatchQueue.main.async {
                         if let editor = NSApp.keyWindow?.firstResponder as? NSTextView {
@@ -109,90 +104,22 @@ struct PathAutoCompleteField: View {
                         }
                     }
                 }
-        }
-    }
-
-    // MARK: - Suggestions Overlay
-    private var suggestionsOverlay: some View {
-        ScrollViewReader { proxy in
-            ScrollView {
-                LazyVStack(alignment: .leading, spacing: 0) {
-                    ForEach(Array(suggestions.enumerated()), id: \.offset) { index, name in
-                        suggestionRow(name: name, index: index)
-                            .id(index)
-                    }
+                .onDisappear {
+                    popupController.hide()
                 }
-            }
-            .frame(maxHeight: 250)
-            .background(Color(nsColor: .controlBackgroundColor))
-            .clipShape(.rect(cornerRadius: 6))
-            .overlay(
-                RoundedRectangle(cornerRadius: 6)
-                    .strokeBorder(Color(nsColor: .separatorColor), lineWidth: 1)
-            )
-            .shadow(color: .black.opacity(0.2), radius: 8, y: 4)
-            .onChange(of: selectedIndex) { _, newIndex in
-                proxy.scrollTo(newIndex, anchor: .center)
-            }
         }
-    }
-
-    // MARK: - Single Suggestion Row
-    private func suggestionRow(name: String, index: Int) -> some View {
-        let isDir = isDirEntry(name)
-        return HStack(spacing: 6) {
-            Image(systemName: isDir ? "folder.fill" : "doc")
-                .font(.system(size: 12))
-                .foregroundStyle(isDir ? Color.accentColor : .secondary)
-                .frame(width: 16)
-            Text(highlightedName(name))
-                .font(.system(size: 13))
-                .lineLimit(1)
-                .truncationMode(.middle)
-            Spacer()
-            if isDir {
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 9, weight: .semibold))
-                    .foregroundStyle(.tertiary)
-            }
-        }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 4)
-        .background(index == selectedIndex ? Color.accentColor.opacity(0.2) : Color.clear)
-        .contentShape(Rectangle())
-        .onTapGesture {
-            applySuggestion(name)
-        }
-        .onHover { hovering in
-            if hovering {
-                selectedIndex = index
-                updateGhostFromSelection()
-            }
-        }
-    }
-
-    // MARK: - Highlighted Name (bold the matching prefix)
-    private func highlightedName(_ name: String) -> AttributedString {
-        let prefix = currentPrefix()
-        var attr = AttributedString(name)
-        if !prefix.isEmpty,
-           let range = attr.range(of: prefix, options: [.caseInsensitive, .anchored])
-        {
-            attr[range].font = .system(size: 13, weight: .bold)
-        }
-        return attr
     }
 
     // MARK: - Update Suggestions
     private func updateSuggestions(for path: String) {
         guard !path.isEmpty, path.hasPrefix("/") else {
-            hideSuggestions()
+            dismissPopup()
             return
         }
         let (dirURL, prefix) = splitPathAndPrefix(path)
         let fm = FileManager.default
         guard fm.fileExists(atPath: dirURL.path) else {
-            hideSuggestions()
+            dismissPopup()
             return
         }
         do {
@@ -207,7 +134,6 @@ struct PathAutoCompleteField: View {
                     prefix.isEmpty || name.lowercased().hasPrefix(prefix.lowercased())
                 }
                 .sorted { lhs, rhs in
-                    // Directories first, then alphabetical
                     let lDir = isDirAtURL(dirURL.appendingPathComponent(lhs))
                     let rDir = isDirAtURL(dirURL.appendingPathComponent(rhs))
                     if lDir != rDir { return lDir }
@@ -220,13 +146,26 @@ struct PathAutoCompleteField: View {
             selectedIndex = 0
             showSuggestions = !matches.isEmpty
             updateGhostFromSelection()
+            if showSuggestions {
+                let items = matches.map { name -> AutoCompleteItem in
+                    let isDir = isDirAtURL(dirURL.appendingPathComponent(name))
+                    return AutoCompleteItem(name: name, isDirectory: isDir, matchPrefix: prefix)
+                }
+                popupController.show(items: items, selectedIndex: 0) { idx in
+                    if idx >= 0, idx < suggestions.count {
+                        applySuggestion(suggestions[idx])
+                    }
+                }
+            } else {
+                popupController.hide()
+            }
         } catch {
             log.verbose("[PathAutoComplete] scan failed: \(error.localizedDescription)")
-            hideSuggestions()
+            dismissPopup()
         }
     }
 
-    // MARK: - Accept Completion (Tab / Right Arrow)
+    // MARK: - Accept Completion
     private func acceptCompletion() {
         if !ghostSuffix.isEmpty {
             suppressOnChange = true
@@ -250,43 +189,37 @@ struct PathAutoCompleteField: View {
             text = fullPath + "/"
         } else {
             text = fullPath
-            showSuggestions = false
         }
         ghostSuffix = ""
         suppressOnChange = false
         updateSuggestions(for: text)
     }
 
-    // MARK: - Update Ghost From Selection
+    // MARK: - Dismiss
+    private func dismissPopup() {
+        showSuggestions = false
+        suggestions = []
+        ghostSuffix = ""
+        popupController.hide()
+    }
+
+    // MARK: - Ghost
     private func updateGhostFromSelection() {
         guard showSuggestions, !suggestions.isEmpty,
               selectedIndex >= 0, selectedIndex < suggestions.count
-        else {
-            ghostSuffix = ""
-            return
-        }
+        else { ghostSuffix = ""; return }
         let selected = suggestions[selectedIndex]
         let prefix = currentPrefix()
         if prefix.isEmpty {
             ghostSuffix = selected
         } else if selected.lowercased().hasPrefix(prefix.lowercased()) {
-            // Preserve original casing from filesystem
             ghostSuffix = String(selected.dropFirst(prefix.count))
         } else {
             ghostSuffix = ""
         }
     }
 
-    // MARK: - Hide Suggestions
-    private func hideSuggestions() {
-        showSuggestions = false
-        suggestions = []
-        ghostSuffix = ""
-    }
-
     // MARK: - Helpers
-
-    /// Split typed text into directory URL and partial name prefix
     private func splitPathAndPrefix(_ path: String) -> (URL, String) {
         if path.hasSuffix("/") {
             return (URL(fileURLWithPath: path), "")
@@ -296,20 +229,180 @@ struct PathAutoCompleteField: View {
         }
     }
 
-    /// Current partial name being typed (after last "/")
-    private func currentPrefix() -> String {
-        splitPathAndPrefix(text).1
-    }
+    private func currentPrefix() -> String { splitPathAndPrefix(text).1 }
 
-    /// Check if path is a directory
     private func isDirAtURL(_ url: URL) -> Bool {
         var isDir: ObjCBool = false
         return FileManager.default.fileExists(atPath: url.path, isDirectory: &isDir) && isDir.boolValue
     }
+}
 
-    /// Check if suggestion entry is a directory (relative to current base)
-    private func isDirEntry(_ name: String) -> Bool {
-        let (dirURL, _) = splitPathAndPrefix(text)
-        return isDirAtURL(dirURL.appendingPathComponent(name))
+// MARK: - Auto Complete Item
+struct AutoCompleteItem {
+    let name: String
+    let isDirectory: Bool
+    let matchPrefix: String
+}
+
+// MARK: - Auto Complete Popup Controller
+/// Manages a floating NSPanel that displays autocomplete suggestions below the text field.
+/// NSPanel escapes SwiftUI layout clipping — dropdown is never cut off by parent frames.
+@MainActor
+final class AutoCompletePopupController: @unchecked Sendable {
+    private var panel: NSPanel?
+    private var tableView: NSTableView?
+    private(set) var items: [AutoCompleteItem] = []
+    var onSelect: ((Int) -> Void)?
+    var anchorFrame: CGRect = .zero
+
+    private let rowHeight: CGFloat = 24
+    private let maxVisibleRows = 8
+
+    // MARK: - Show
+    func show(items: [AutoCompleteItem], selectedIndex: Int, onSelect: @escaping (Int) -> Void) {
+        self.items = items
+        self.onSelect = onSelect
+        guard !items.isEmpty else { hide(); return }
+        let visibleRows = min(items.count, maxVisibleRows)
+        let panelHeight = CGFloat(visibleRows) * rowHeight + 8
+        let panelWidth = max(anchorFrame.width, 300)
+        if panel == nil { createPanel() }
+        guard let panel, let window = NSApp.keyWindow else { return }
+        let anchorInWindow = anchorFrame
+        let screenOrigin = window.convertPoint(toScreen: NSPoint(
+            x: anchorInWindow.minX,
+            y: anchorInWindow.maxY
+        ))
+        let panelFrame = NSRect(
+            x: screenOrigin.x,
+            y: screenOrigin.y - panelHeight - 2,
+            width: panelWidth,
+            height: panelHeight
+        )
+        panel.setFrame(panelFrame, display: true)
+        tableView?.reloadData()
+        selectRow(selectedIndex)
+        if !panel.isVisible {
+            window.addChildWindow(panel, ordered: .above)
+            panel.orderFront(nil)
+        }
+    }
+
+    // MARK: - Hide
+    func hide() {
+        panel?.parent?.removeChildWindow(panel!)
+        panel?.orderOut(nil)
+        items = []
+    }
+
+    // MARK: - Select Row
+    func selectRow(_ index: Int) {
+        guard let tv = tableView, index >= 0, index < items.count else { return }
+        tv.selectRowIndexes(IndexSet(integer: index), byExtendingSelection: false)
+        tv.scrollRowToVisible(index)
+    }
+
+    // MARK: - Create Panel
+    private func createPanel() {
+        let p = NSPanel(
+            contentRect: NSRect(x: 0, y: 0, width: 300, height: 200),
+            styleMask: [.nonactivatingPanel],
+            backing: .buffered,
+            defer: true
+        )
+        p.isFloatingPanel = true
+        p.hidesOnDeactivate = true
+        p.hasShadow = true
+        p.backgroundColor = .controlBackgroundColor
+        p.isOpaque = false
+        p.level = .floating
+        let scrollView = NSScrollView()
+        scrollView.hasVerticalScroller = true
+        scrollView.autohidesScrollers = true
+        scrollView.drawsBackground = false
+        let tv = NSTableView()
+        tv.headerView = nil
+        tv.rowHeight = rowHeight
+        tv.backgroundColor = .clear
+        tv.selectionHighlightStyle = .regular
+        tv.intercellSpacing = NSSize(width: 0, height: 0)
+        tv.target = self
+        tv.doubleAction = #selector(tableDoubleClick)
+        let col = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("name"))
+        col.isEditable = false
+        tv.addTableColumn(col)
+        let delegate = AutoCompleteTableDelegate(controller: self)
+        tv.dataSource = delegate
+        tv.delegate = delegate
+        objc_setAssociatedObject(tv, "delegate", delegate, .OBJC_ASSOCIATION_RETAIN)
+        scrollView.documentView = tv
+        p.contentView = scrollView
+        self.panel = p
+        self.tableView = tv
+    }
+
+    @objc private func tableDoubleClick() {
+        guard let tv = tableView else { return }
+        let row = tv.clickedRow
+        if row >= 0, row < items.count {
+            onSelect?(row)
+        }
+    }
+}
+
+// MARK: - Auto Complete Table Delegate
+final class AutoCompleteTableDelegate: NSObject, NSTableViewDataSource, NSTableViewDelegate {
+    private unowned let controller: AutoCompletePopupController
+
+    init(controller: AutoCompletePopupController) {
+        self.controller = controller
+    }
+
+    func numberOfRows(in tableView: NSTableView) -> Int {
+        controller.items.count
+    }
+
+    func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
+        guard row < controller.items.count else { return nil }
+        let item = controller.items[row]
+        let cellID = NSUserInterfaceItemIdentifier("AutoCompleteCell")
+        var cell = tableView.makeView(withIdentifier: cellID, owner: nil) as? NSTableCellView
+        if cell == nil {
+            cell = NSTableCellView()
+            cell!.identifier = cellID
+            let iv = NSImageView()
+            iv.translatesAutoresizingMaskIntoConstraints = false
+            iv.imageScaling = .scaleProportionallyUpOrDown
+            cell!.addSubview(iv)
+            cell!.imageView = iv
+            let tf = NSTextField(labelWithString: "")
+            tf.translatesAutoresizingMaskIntoConstraints = false
+            tf.lineBreakMode = .byTruncatingTail
+            tf.font = NSFont.monospacedSystemFont(ofSize: 13, weight: .regular)
+            cell!.addSubview(tf)
+            cell!.textField = tf
+            NSLayoutConstraint.activate([
+                iv.leadingAnchor.constraint(equalTo: cell!.leadingAnchor, constant: 6),
+                iv.centerYAnchor.constraint(equalTo: cell!.centerYAnchor),
+                iv.widthAnchor.constraint(equalToConstant: 16),
+                iv.heightAnchor.constraint(equalToConstant: 16),
+                tf.leadingAnchor.constraint(equalTo: iv.trailingAnchor, constant: 6),
+                tf.trailingAnchor.constraint(equalTo: cell!.trailingAnchor, constant: -6),
+                tf.centerYAnchor.constraint(equalTo: cell!.centerYAnchor),
+            ])
+        }
+        let iconName = item.isDirectory ? NSImage.folderName : NSImage.Name("NSDocument")
+        cell!.imageView?.image = NSImage(named: iconName) ?? NSImage(systemSymbolName: item.isDirectory ? "folder.fill" : "doc", accessibilityDescription: nil)
+        let attrStr = NSMutableAttributedString(string: item.name, attributes: [
+            .font: NSFont.monospacedSystemFont(ofSize: 13, weight: .regular),
+        ])
+        if !item.matchPrefix.isEmpty,
+           let range = item.name.range(of: item.matchPrefix, options: [.caseInsensitive, .anchored])
+        {
+            let nsRange = NSRange(range, in: item.name)
+            attrStr.addAttribute(.font, value: NSFont.monospacedSystemFont(ofSize: 13, weight: .bold), range: nsRange)
+        }
+        cell!.textField?.attributedStringValue = attrStr
+        return cell
     }
 }
