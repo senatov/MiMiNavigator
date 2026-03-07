@@ -327,6 +327,7 @@ extension AppState {
                 updatePath(newPath, for: panel)
                 // Reset selection so refreshFiles auto-selects first real file in new dir
                 if panel == .left { selectedLeftFile = nil } else { selectedRightFile = nil }
+                multiSelectionManager?.resetAnchor(for: panel)
                 if panel == .left {
                     await scanner.setLeftDirectory(pathStr: newPath)
                     await refreshLeftFiles()
