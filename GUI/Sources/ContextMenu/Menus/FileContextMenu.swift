@@ -17,11 +17,14 @@ struct FileContextMenu: View {
     let onAction: (FileAction) -> Void
     @Environment(\.dismiss) private var dismiss
     @State private var userFavorites = UserFavoritesStore.shared
+    // Pre-loaded once at init — prevents re-init of OpenWithSubmenu on every body re-evaluation
+    @State private var openWithApps: [AppInfo]
 
     init(file: CustomFile, panelSide: PanelSide, onAction: @escaping (FileAction) -> Void) {
         self.file = file
         self.panelSide = panelSide
         self.onAction = onAction
+        _openWithApps = State(initialValue: OpenWithService.shared.getApplications(for: file.urlValue))
     }
     
     var body: some View {
@@ -33,7 +36,7 @@ struct FileContextMenu: View {
             if file.isAppBundle {
                 menuButton(.browseContents)
             }
-            OpenWithSubmenu(file: file)
+            OpenWithSubmenu(file: file, apps: openWithApps)
             menuButton(.openInNewTab)
             menuButton(.viewLister)
 

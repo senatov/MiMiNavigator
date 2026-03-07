@@ -12,15 +12,9 @@ import FileModelKit
 /// Apps are pre-loaded at init time via State(initialValue:) — avoids body re-evaluation
 struct OpenWithSubmenu: View {
     let file: CustomFile
-    @State private var apps: [AppInfo]
+    // Apps injected from parent FileContextMenu @State — stable across body re-evaluations
+    let apps: [AppInfo]
 
-    // MARK: - Init
-    // Apps loaded synchronously from cache (instant) or LS (first time only).
-    // NSCache in OpenWithService guarantees subsequent opens are O(1).
-    init(file: CustomFile) {
-        self.file = file
-        _apps = State(initialValue: OpenWithService.shared.getApplications(for: file.urlValue))
-    }
 
     // MARK: - Body
     var body: some View {
@@ -82,6 +76,6 @@ struct OpenWithSubmenu: View {
     }
     .frame(width: 300, height: 200)
     .contextMenu {
-        OpenWithSubmenu(file: CustomFile(path: "/Users/senat/test.txt"))
+        OpenWithSubmenu(file: CustomFile(path: "/Users/senat/test.txt"), apps: [])
     }
 }
