@@ -255,8 +255,8 @@ final class AutoCompletePopupController: @unchecked Sendable {
     var onSelect: ((Int) -> Void)?
     var anchorFrame: CGRect = .zero
 
-    private let rowHeight: CGFloat = 24
-    private let maxVisibleRows = 8
+    private let rowHeight: CGFloat = 22
+    private let maxVisibleRows = 10
 
     // MARK: - Show
     func show(items: [AutoCompleteItem], selectedIndex: Int, onSelect: @escaping (Int) -> Void) {
@@ -282,6 +282,7 @@ final class AutoCompletePopupController: @unchecked Sendable {
             height: panelHeight
         )
         panel.setFrame(panelFrame, display: true)
+        log.debug("[AutoComplete] panel frame=\(panelFrame) items=\(items.count) visibleRows=\(visibleRows)")
         tableView?.reloadData()
         selectRow(selectedIndex)
         if !panel.isVisible {
@@ -322,6 +323,7 @@ final class AutoCompletePopupController: @unchecked Sendable {
         scrollView.hasVerticalScroller = true
         scrollView.autohidesScrollers = true
         scrollView.drawsBackground = false
+        scrollView.autoresizingMask = [.width, .height]
         let tv = NSTableView()
         tv.headerView = nil
         tv.rowHeight = rowHeight
@@ -332,7 +334,9 @@ final class AutoCompletePopupController: @unchecked Sendable {
         tv.doubleAction = #selector(tableDoubleClick)
         let col = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("name"))
         col.isEditable = false
+        col.resizingMask = .autoresizingMask
         tv.addTableColumn(col)
+        tv.sizeLastColumnToFit()
         let delegate = AutoCompleteTableDelegate(controller: self)
         tv.dataSource = delegate
         tv.delegate = delegate
