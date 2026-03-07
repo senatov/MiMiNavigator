@@ -268,14 +268,16 @@ final class AutoCompletePopupController: @unchecked Sendable {
         let panelWidth = max(anchorFrame.width, 300)
         if panel == nil { createPanel() }
         guard let panel, let window = NSApp.keyWindow else { return }
-        let anchorInWindow = anchorFrame
-        let screenOrigin = window.convertPoint(toScreen: NSPoint(
-            x: anchorInWindow.minX,
-            y: anchorInWindow.maxY
-        ))
+        // SwiftUI .global frame: origin at top-left of window, Y grows downward.
+        // AppKit window coords: origin at bottom-left, Y grows upward.
+        // Convert: appKitY = windowHeight - swiftUIY
+        let windowHeight = window.frame.height
+        let appKitX = anchorFrame.minX
+        let appKitY = windowHeight - anchorFrame.maxY  // bottom of text field in AppKit coords
+        let pointInScreen = window.convertPoint(toScreen: NSPoint(x: appKitX, y: appKitY))
         let panelFrame = NSRect(
-            x: screenOrigin.x,
-            y: screenOrigin.y - panelHeight - 2,
+            x: pointInScreen.x,
+            y: pointInScreen.y - panelHeight - 2,
             width: panelWidth,
             height: panelHeight
         )
