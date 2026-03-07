@@ -416,8 +416,13 @@ extension AppState {
     /// Navigate into an archive: extract to temp dir and open as directory
     func enterArchive(at archiveURL: URL, on panel: PanelSide, password: String? = nil) async {
         log.info("[AppState] Entering archive: \(archiveURL.lastPathComponent) panel=\(panel) hasPassword=\(password != nil)")
+        ArchiveProgressPanel.shared.show(
+            archiveName: archiveURL.lastPathComponent,
+            destinationPath: archiveURL.deletingLastPathComponent().path
+        )
         do {
             let tempDir = try await ArchiveManager.shared.openArchive(at: archiveURL, password: password)
+            ArchiveProgressPanel.shared.hide()
 
             var state = archiveState(for: panel)
             state.enterArchive(archiveURL: archiveURL, tempDir: tempDir)
@@ -437,6 +442,7 @@ extension AppState {
 
             log.info("[AppState] Successfully entered archive: \(archiveURL.lastPathComponent)")
         } catch {
+            ArchiveProgressPanel.shared.hide()
             log.error("[AppState] Failed to enter archive: \(error.localizedDescription)")
             await showArchiveErrorAlert(archiveName: archiveURL.lastPathComponent, archiveURL: archiveURL, error: error, panel: panel)
         }
