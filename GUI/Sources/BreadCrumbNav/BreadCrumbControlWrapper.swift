@@ -70,6 +70,7 @@ struct BreadCrumbControlWrapper: View {
                 y: 1
             )
             .frame(height: 34)
+            .zIndex(isEditing ? 10 : 0)
             .padding(.horizontal, Design.Padding.horizontal)
             .onTapGesture {
                 if !isEditing {
