@@ -62,8 +62,9 @@ final class MultiSelectionManager {
         case .shift:
             // Shift+Click: range select from last click to current
             let anchor = lastClickedIndex[panel] ?? 0
-            let rangeStart = min(anchor, clickedIndex)
-            let rangeEnd = max(anchor, clickedIndex)
+            let clampedAnchor = min(anchor, files.count - 1)
+            let rangeStart = min(clampedAnchor, clickedIndex)
+            let rangeEnd = max(clampedAnchor, clickedIndex)
             
             var marked = state.markedFiles(for: panel)
             for idx in rangeStart...rangeEnd {
@@ -86,6 +87,11 @@ final class MultiSelectionManager {
     /// Update last clicked index when selection changes (e.g. keyboard navigation)
     func updateLastClickedIndex(for panel: PanelSide, index: Int) {
         lastClickedIndex[panel] = index
+    }
+
+    /// Reset anchor when directory changes (stale index would crash on Shift+Click)
+    func resetAnchor(for panel: PanelSide) {
+        lastClickedIndex[panel] = nil
     }
     
     // MARK: - Toggle Mark (Insert key)
