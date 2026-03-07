@@ -118,7 +118,8 @@ final class BatchOperationManager {
         if !hasErrors && !state.isCancelled {
             appState.clearMarksAfterOperation(on: sourcePanel)
         }
-        await refreshPanelsAfterOperation(appState: appState, sourcePanel: sourcePanel)
+        await appState.refreshAndSelectAfterRemoval(removedFiles: files, on: sourcePanel)
+        await refreshOppositePanelAfterOperation(appState: appState, sourcePanel: sourcePanel)
     }
     
     // MARK: - Delete Files
@@ -159,7 +160,8 @@ final class BatchOperationManager {
         if !hasErrors && !state.isCancelled {
             appState.clearMarksAfterOperation(on: sourcePanel)
         }
-        await refreshPanelsAfterOperation(appState: appState, sourcePanel: sourcePanel)
+        await appState.refreshAndSelectAfterRemoval(removedFiles: files, on: sourcePanel)
+        await refreshOppositePanelAfterOperation(appState: appState, sourcePanel: sourcePanel)
     }
     
     // MARK: - Pack Files
@@ -304,5 +306,14 @@ final class BatchOperationManager {
     private func refreshPanelsAfterOperation(appState: AppState, sourcePanel: PanelSide) async {
         await appState.refreshLeftFiles()
         await appState.refreshRightFiles()
+    }
+
+    // MARK: - Refresh Opposite Panel
+    private func refreshOppositePanelAfterOperation(appState: AppState, sourcePanel: PanelSide) async {
+        if sourcePanel == .left {
+            await appState.refreshRightFiles()
+        } else {
+            await appState.refreshLeftFiles()
+        }
     }
 }

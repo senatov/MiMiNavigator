@@ -173,6 +173,41 @@ extension AppState {
         selectFileByName(name, on: panel)
     }
 
+    /// Refresh a panel after file removal (delete/move) and select the next file.
+    /// Finds the position of the last removed file in the old list, then after refresh
+    /// selects the file that now occupies that position (or the last file if beyond bounds).
+    func refreshAndSelectAfterRemoval(removedFiles: [CustomFile], on panel: PanelSide) async {
+        let oldFiles = displayedFiles(for: panel)
+        let removedNames = Set(removedFiles.map { $0.nameStr })
+        var lastRemovedIndex = 0
+        for (index, file) in oldFiles.enumerated() where removedNames.contains(file.nameStr) {
+            lastRemovedIndex = index
+        }
+        log.debug("[AppState] refreshAndSelectAfterRemoval: lastRemovedIndex=\(lastRemovedIndex) oldFiles=\(oldFiles.count) panel=\(panel)")
+        if panel == .left {
+            await refreshLeftFiles()
+        } else {
+            await refreshRightFiles()
+        }
+        let newFiles = displayedFiles(for: panel)
+        guard !newFiles.isEmpty else {
+            log.debug("[AppState] refreshAndSelectAfterRemoval: newFiles is empty")
+            return
+        }
+        var targetIndex = min(lastRemovedIndex, newFiles.count - 1)
+        // Skip virtual ".." parent entry
+        if newFiles[targetIndex].isParentEntry && targetIndex + 1 < newFiles.count {
+            targetIndex += 1
+        }
+        let targetFile = newFiles[targetIndex]
+        // Set selection directly without changing focusedPanel
+        switch panel {
+            case .left:  selectedLeftFile = targetFile
+            case .right: selectedRightFile = targetFile
+        }
+        log.info("[AppState] refreshAndSelectAfterRemoval on \(panel) → index \(targetIndex) '\(targetFile.nameStr)' (of \(newFiles.count))")
+    }
+
     func clearSelection(on panelSide: PanelSide) {
         selectionManager?.clearSelection(on: panelSide)
     }

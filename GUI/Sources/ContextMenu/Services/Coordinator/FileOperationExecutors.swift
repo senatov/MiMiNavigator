@@ -33,8 +33,12 @@ extension ContextMenuCoordinator {
                 await ArchiveManager.shared.markDirtyByTempPath(file.pathStr)
                 log.info("\(#function) marked archive dirty after deleting: \(file.nameStr)")
             }
-            refreshPanels(appState: appState)
-            log.info("\(#function) SUCCESS deleted \(files.count) item(s)")
+            let panel = panelForPath(files.first!.urlValue.deletingLastPathComponent().path, appState: appState)
+            await appState.refreshAndSelectAfterRemoval(removedFiles: files, on: panel)
+            // Also refresh opposite panel in case it shows the same directory
+            let otherPanel: PanelSide = panel == .left ? .right : .left
+            refreshPanel(otherPanel, appState: appState)
+            log.info("\(#function) SUCCESS deleted \(files.count) item(s) → cursor moved to next file on \(panel)")
         } catch {
             log.error("\(#function) FAILED: \(error.localizedDescription)")
             activeDialog = .error(title: "Delete Failed", message: error.localizedDescription)

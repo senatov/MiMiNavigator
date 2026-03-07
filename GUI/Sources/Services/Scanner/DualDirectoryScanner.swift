@@ -124,7 +124,12 @@ actor DualDirectoryScanner {
     // MARK: - Apply incremental patch from FSEvents
     private func applyPatch(_ patch: FSEventsDirectoryWatcher.DirectoryPatch, for side: PanelSide) async {
         lastFSEventsPatch[side] = Date()
-        
+        // Dir-level FSEvents: full rescan needed (cannot determine removals incrementally)
+        if patch.needsFullRescan {
+            log.info("[FSEvents] needsFullRescan for \(side) panel")
+            await refreshFiles(currSide: side)
+            return
+        }
         let childUpdates = patch.childCountUpdates
         let removedPaths = patch.removedPaths
         let addedOrModified = patch.addedOrModified

@@ -134,11 +134,7 @@ struct DuoFilePanelActions {
                         await ArchiveManager.shared.markDirty(archivePath: archiveURL.path)
                     }
                     log.info("performDelete: removed \(deletedCount) item(s) from archive, marked dirty")
-                    if panel == .left {
-                        await self.appState.refreshLeftFiles()
-                    } else {
-                        await self.appState.refreshRightFiles()
-                    }
+                    await self.appState.refreshAndSelectAfterRemoval(removedFiles: files, on: panel)
                     self.appState.unmarkAll()
                 }
             }
@@ -157,12 +153,8 @@ struct DuoFilePanelActions {
                     return
                 }
                 log.info("performDelete: \(trashedURLs.count) item(s) moved to Trash ✓")
+                await self.appState.refreshAndSelectAfterRemoval(removedFiles: files, on: panel)
                 await MainActor.run {
-                    if panel == .left {
-                        Task { await self.appState.refreshLeftFiles() }
-                    } else {
-                        Task { await self.appState.refreshRightFiles() }
-                    }
                     self.appState.unmarkAll()
                 }
             }
