@@ -180,23 +180,42 @@ final class FSEventsDirectoryWatcher: @unchecked Sendable {
             // Skip if this is the watched directory itself
             if cleanPath == watched { continue }
             let url = URL(fileURLWithPath: cleanPath)
-            if fm.fileExists(atPath: p) {
+            if fm.fileExists(atPath: cleanPath) {
                 if !hidden && url.lastPathComponent.hasPrefix(".") { continue }
-                let keys: Set<URLResourceKey> = [
-                    .isDirectoryKey, .isSymbolicLinkKey,
-                    .fileSizeKey, .contentModificationDateKey, .fileSecurityKey,
-                ]
-                if let rv = try? url.resourceValues(forKeys: keys) {
-                    var file = CustomFile(url: url, resourceValues: rv)
-                    if file.isDirectory {
-                        file.cachedChildCount = (try? fm.contentsOfDirectory(atPath: p).count) ?? 0
+                // For existing directories: dir-level FSEvents fires when contents change,
+                // NOT when the directory itself was added. Only update childCount.
+                var isDirFlag = ObjCBool(false)
+                _ = fm.fileExists(atPath: cleanPath, isDirectory: &isDirFlag)
+                if isDirFlag.boolValue {
+                    if let count = try? fm.contentsOfDirectory(atPath: cleanPath).count {
+                        childCountUpdates[cleanPath] = count
                     }
-                    added.append(file)
+                    // Still create/update the CustomFile entry for genuine adds
+                    // but only if this is flagged as a new item (not already in the list).
+                    // Since we can't check the existing list here (we're off MainActor),
+                    // always include it — applyPatch will merge by pathStr.
+                    let keys: Set<URLResourceKey> = [
+                        .isDirectoryKey, .isSymbolicLinkKey,
+                        .fileSizeKey, .contentModificationDateKey, .fileSecurityKey,
+                    ]
+                    if let rv = try? url.resourceValues(forKeys: keys) {
+                        var file = CustomFile(url: url, resourceValues: rv)
+                        file.cachedChildCount = (try? fm.contentsOfDirectory(atPath: cleanPath).count) ?? 0
+                        added.append(file)
+                    }
                 } else {
-                    added.append(CustomFile(name: url.lastPathComponent, path: p))
+                    let keys: Set<URLResourceKey> = [
+                        .isDirectoryKey, .isSymbolicLinkKey,
+                        .fileSizeKey, .contentModificationDateKey, .fileSecurityKey,
+                    ]
+                    if let rv = try? url.resourceValues(forKeys: keys) {
+                        added.append(CustomFile(url: url, resourceValues: rv))
+                    } else {
+                        added.append(CustomFile(name: url.lastPathComponent, path: cleanPath))
+                    }
                 }
             } else {
-                removed.append(p)
+                removed.append(cleanPath)
             }
         }
         
