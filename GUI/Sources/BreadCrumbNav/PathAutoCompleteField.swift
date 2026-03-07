@@ -255,7 +255,7 @@ final class AutoCompletePopupController: @unchecked Sendable {
     var onSelect: ((Int) -> Void)?
     var anchorFrame: CGRect = .zero
 
-    private let rowHeight: CGFloat = 22
+    private let rowHeight: CGFloat = 28
     private let maxVisibleRows = 10
 
     // MARK: - Show
