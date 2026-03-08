@@ -23,19 +23,31 @@ final class DragDropManager {
     /// Currently dragged files (for visual feedback)
     var draggedFiles: [CustomFile] = []
 
+    /// NSPasteboard providers for current drag session
+    var dragItemProviders: [NSItemProvider] = []
+
     /// Currently highlighted drop target (folder or panel)
     var dropTargetPath: URL?
 
     // MARK: - Start dragging files
     func startDrag(files: [CustomFile], from panelSide: PanelSide) {
         log.debug("DragDropManager: started dragging \(files.count) items from \(panelSide)")
+
         draggedFiles = files
+
+        // Create one NSItemProvider per file (required for multi-file drag)
+        dragItemProviders = files.map { file in
+            let provider = NSItemProvider(object: file.urlValue as NSURL)
+            provider.suggestedName = file.nameStr
+            return provider
+        }
     }
 
     // MARK: - End drag operation
     func endDrag() {
         log.debug("DragDropManager: drag ended")
         draggedFiles = []
+        dragItemProviders = []
         dropTargetPath = nil
     }
 

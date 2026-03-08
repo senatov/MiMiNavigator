@@ -82,16 +82,14 @@ final class OpenWithService {
     func getApplications(for fileURL: URL) -> [AppInfo] {
         let cacheKey = fileURL.path as NSString
         if let cached = OpenWithService.appsCache.object(forKey: cacheKey) as? [AppInfo] {
-            log.debug("\(#function) cache hit for '\(fileURL.lastPathComponent)' (\(cached.count) apps)")
+            //log.debug("\(#function) cache hit for '\(fileURL.lastPathComponent)' (\(cached.count) apps)")
             return cached
         }
-        log.debug("\(#function) file='\(fileURL.lastPathComponent)' ext=\(fileURL.pathExtension)")
-
+        //log.debug("\(#function) file='\(fileURL.lastPathComponent)' ext=\(fileURL.pathExtension)")
         guard UTType(filenameExtension: fileURL.pathExtension) != nil else {
-            log.warning("\(#function) unknown UTType for ext='\(fileURL.pathExtension)', using fallback editors")
+            //log.warning("\(#function) unknown UTType for ext='\(fileURL.pathExtension)', using fallback editors")
             return getAllEditors()
         }
-
         let defaultApp = workspace.urlForApplication(toOpen: fileURL)
         var apps: [AppInfo] = []
         var seenBundles = Set<String>()
@@ -242,7 +240,7 @@ final class OpenWithService {
             return makeAppInfo(from: url, isDefault: false)
         }
 
-        log.debug("\(#function) returning \(editors.count) fallback editors")
+        //log.debug("\(#function) returning \(editors.count) fallback editors")
         return editors
     }
 }
