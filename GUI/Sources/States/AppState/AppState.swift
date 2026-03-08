@@ -43,6 +43,11 @@ final class AppState {
     // MARK: - Archive Navigation State (per-panel)
     var leftArchiveState = ArchiveNavigationState()
     var rightArchiveState = ArchiveNavigationState()
+    // MARK: - Navigation callbacks (set by FileTableView for each panel)
+    /// DuoFilePanelKeyboardHandler calls these directly instead of relying
+    /// on returning NSEvent to SwiftUI .onKeyPress (which is unreliable
+    /// because NSEvent local monitors run before the SwiftUI responder chain).
+    var navigationCallbacks: [PanelSide: PanelNavigationCallbacks] = [:]
 
     // MARK: - Search Results State (per-panel)
     /// Non-nil when a panel is showing virtual search results instead of a real directory.
@@ -230,6 +235,33 @@ extension AppState {
         focusedPanel = focusedPanel == .left ? .right : .left
         ensureSelectionOnFocusedPanel()
     }
+    func navigateUp() { navigationCallbacks[focusedPanel]?.moveUp() }
+    func navigateDown() { navigationCallbacks[focusedPanel]?.moveDown() }
+    /// Shift+Arrow: mark/unmark current file, then move selection by direction (-1=up, +1=down).
+    /// Finder-style extending selection with Shift+Arrow keys.
+    func markCurrentAndMove(direction: Int) {
+        let panel = focusedPanel
+        let selectedFile: CustomFile? = panel == .left ? selectedLeftFile : selectedRightFile
+        guard let file = selectedFile, file.nameStr != ".." else {
+            // Just move if on ".." entry
+            if direction < 0 { navigateUp() } else { navigateDown() }
+            return
+        }
+        // Toggle mark on current file
+        var marked = markedFiles(for: panel)
+        if marked.contains(file.id) {
+            marked.remove(file.id)
+        } else {
+            marked.insert(file.id)
+        }
+        setMarkedFiles(marked, for: panel)
+        // Move selection in the requested direction
+        if direction < 0 { navigateUp() } else { navigateDown() }
+    }
+    func navigatePageUp() { navigationCallbacks[focusedPanel]?.pageUp() }
+    func navigatePageDown() { navigationCallbacks[focusedPanel]?.pageDown() }
+    func navigateToFirst() { navigationCallbacks[focusedPanel]?.jumpToFirst() }
+    func navigateToLast() { navigationCallbacks[focusedPanel]?.jumpToLast() }
 
     /// If the newly focused panel has no selected file, select the topmost one.
     func ensureSelectionOnFocusedPanel() {

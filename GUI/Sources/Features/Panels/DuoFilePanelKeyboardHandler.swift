@@ -56,10 +56,13 @@ final class DuoFilePanelKeyboardHandler {
     private func handleKeyEvent(_ event: NSEvent) -> NSEvent? {
         guard let appState else { return event }
 
-        // When a modal dialog is active, let SwiftUI handle Enter/Escape
+        // When a modal dialog is active, pass ALL events to SwiftUI
+        // so that TextField, buttons (.keyboardShortcut(.defaultAction)),
+        // and Esc (.cancelAction) work correctly.
         if ContextMenuCoordinator.shared.activeDialog != nil {
             return event
         }
+
         
         // When text field is focused, let it handle the event
         // (fixes Backspace/Delete not working in text fields)
@@ -73,6 +76,21 @@ final class DuoFilePanelKeyboardHandler {
 
         log.debug("[KEY] keyCode=\(keyCode) (0x\(String(keyCode, radix: 16))) modifiers=\(modifiers.rawValue)")
 
+        // Shift+Up/Down: mark current file and move selection (Finder-style multi-select)
+        // Must be handled BEFORE HotKeyStore lookup, because HotKeyStore only has
+        // unmodified Up/Down bindings and won't match Shift+Arrow.
+        let cleanMods = modifiers.intersection(.deviceIndependentFlagsMask)
+            .subtracting([.function, .numericPad])
+        if cleanMods == .shift {
+            if keyCode == 0x7E { // Shift+Up
+                appState.markCurrentAndMove(direction: -1)
+                return nil
+            } else if keyCode == 0x7D { // Shift+Down
+                appState.markCurrentAndMove(direction: 1)
+                return nil
+            }
+        }
+
         // Lookup action in HotKeyStore
         let store = HotKeyStore.shared
         if let action = store.action(forKeyCode: keyCode, modifiers: modifiers) {
@@ -81,8 +99,6 @@ final class DuoFilePanelKeyboardHandler {
 
         // Fallback: Space for toggle mark (special — not easily represented as a simple binding
         // because Space also needs to work in text fields, etc.)
-        let cleanMods = modifiers.intersection(.deviceIndependentFlagsMask)
-            .subtracting([.function, .numericPad])
         if keyCode == 0x31 && cleanMods.isEmpty {
             log.info("[KEY] Space → Toggle mark")
             appState.toggleMarkAndMoveNext()
@@ -135,11 +151,28 @@ final class DuoFilePanelKeyboardHandler {
             appState.toggleFocus()
             return nil
 
-        // Arrow keys + PgUp/PgDown/Home/End — let FileTableView handle via
-        // .onMoveCommand / .onKeyPress so scrollAnchorID is updated
-        // and ScrollView follows the cursor
-        case .moveUp, .moveDown, .pageUp, .pageDown, .moveToTop, .moveToBottom:
-            return event
+        // Arrow keys + PgUp/PgDown/Home/End — dispatch directly to TableKeyboardNavigation
+        // via AppState. Cannot rely on returning event to SwiftUI .onKeyPress because
+        // NSEvent local monitors run before the SwiftUI responder chain,
+        // and SwiftUI may not have focus on the correct view.
+        case .moveUp:
+            appState.navigateUp()
+            return nil
+        case .moveDown:
+            appState.navigateDown()
+            return nil
+        case .pageUp:
+            appState.navigatePageUp()
+            return nil
+        case .pageDown:
+            appState.navigatePageDown()
+            return nil
+        case .moveToTop:
+            appState.navigateToFirst()
+            return nil
+        case .moveToBottom:
+            appState.navigateToLast()
+            return nil
 
         case .openSelected:
             log.info("[KEY] → Open Selected")

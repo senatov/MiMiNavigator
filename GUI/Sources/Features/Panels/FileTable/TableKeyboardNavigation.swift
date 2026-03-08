@@ -99,23 +99,23 @@ struct TableKeyboardNavigation {
         let file = files[index]
         selectedID.wrappedValue = file.id
         onSelect(file)
-
         // Direct NSScrollView scroll — O(1), no cell materialization.
-        // For small lists (<500) fall back to SwiftUI scrollTo.
-        // For large lists NEVER use scrollTo — it materializes all cells and freezes.
-        if !scrollViaAppKit(toIndex: index) && files.count < 500 {
-            scrollAnchorID.wrappedValue = file.id
+        // NEVER fall back to SwiftUI scrollTo — it's O(n) on LazyVStack
+        // and causes 1s+ freezes even for 250 files.
+        let appKitOK = scrollViaAppKit(toIndex: index)
+        if !appKitOK {
+            log.warning("[Nav] AppKit scroll FAILED for \(panelSide) idx=\(index) — NO fallback to SwiftUI scrollTo")
         }
         let ms = Int(Date().timeIntervalSince(t0) * 1000)
-        log.debug("[Nav] idx=\(index) name=\(file.nameStr) selectAndScroll=\(ms)ms indexSize=\(files.count)")
+        log.debug("[Nav] idx=\(index) name=\(file.nameStr) selectAndScroll=\(ms)ms indexSize=\(files.count) appKit=\(appKitOK)")
     }
 
     /// Directly scroll the NSScrollView underlying SwiftUI ScrollView.
     /// Computes target offset as index * rowHeight — O(1), works for 26K+ items.
     /// Returns false if NSScrollView not found (fallback to SwiftUI scrollTo).
     private func scrollViaAppKit(toIndex index: Int) -> Bool {
-        guard let window = NSApp.keyWindow else {
-            log.debug("[Nav] scrollViaAppKit: no keyWindow")
+        guard let window = NSApp.keyWindow ?? NSApp.mainWindow ?? NSApp.windows.first(where: { $0.isVisible }) else {
+            log.debug("[Nav] scrollViaAppKit: no window found")
             return false
         }
         guard let scrollView = Self.findScrollView(in: window.contentView, panelSide: panelSide, windowWidth: window.frame.width) else {
