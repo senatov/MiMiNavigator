@@ -69,6 +69,7 @@ struct RenameDialog: View {
             )
         }
         .higDialogStyle()
+        .higAutoFocusTextField()
         .onAppear { isTextFieldFocused = true }
         .onChange(of: newName) { _, newValue in validateName(newValue) }
     }
@@ -86,7 +87,6 @@ struct RenameDialog: View {
         }
     }
 }
-
 // MARK: - Preview
 #Preview {
     RenameDialog(

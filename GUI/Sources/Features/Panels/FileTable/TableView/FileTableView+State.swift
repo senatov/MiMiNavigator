@@ -61,6 +61,19 @@ extension FileTableView {
         return ceil(maxW + charW)
     }
 
+    /// Register navigation callbacks so DuoFilePanelKeyboardHandler
+    /// can dispatch Up/Down/PgUp/PgDown/Home/End directly through AppState
+    /// instead of relying on NSEvent passthrough to SwiftUI .onKeyPress.
+    func registerNavigationCallbacks() {
+        appState.navigationCallbacks[panelSide] = PanelNavigationCallbacks(
+            moveUp: { [self] in keyboardNav.moveUp() },
+            moveDown: { [self] in keyboardNav.moveDown() },
+            pageUp: { [self] in keyboardNav.pageUp() },
+            pageDown: { [self] in keyboardNav.pageDown() },
+            jumpToFirst: { [self] in keyboardNav.jumpToFirst() },
+            jumpToLast: { [self] in keyboardNav.jumpToLast() }
+        )
+    }
     func autoFitSize() -> CGFloat {
         autoFitWidth(texts: cachedSortedFiles.map { $0.fileSizeFormatted },
                      font: .systemFont(ofSize: 12)) + 8

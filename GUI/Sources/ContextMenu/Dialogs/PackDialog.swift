@@ -142,6 +142,7 @@ struct PackDialog: View {
             )
         }
         .higDialogStyle()
+        .higAutoFocusTextField()
         .frame(minWidth: 380)
         .onAppear { isNameFieldFocused = true }
     }

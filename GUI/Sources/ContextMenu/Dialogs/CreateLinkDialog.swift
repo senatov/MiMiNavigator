@@ -110,6 +110,7 @@ struct CreateLinkDialog: View {
             )
         }
         .higDialogStyle()
+        .higAutoFocusTextField()
         .onAppear { isTextFieldFocused = true }
         .onChange(of: linkName) { _, newValue in validateName(newValue) }
     }

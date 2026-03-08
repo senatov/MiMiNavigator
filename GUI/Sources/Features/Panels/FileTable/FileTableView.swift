@@ -106,6 +106,7 @@ struct FileTableView: View {
             .onAppear {
                 log.debug("\(#function) FileTableView onAppear panel=\(panelSide) files.count=\(files.count)")
                 recomputeSortedCache()
+                registerNavigationCallbacks()
             }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(.horizontal, 6)
@@ -130,13 +131,17 @@ struct FileTableView: View {
             }
         }
         // No auto-scroll on selection change — user controls scroll position
-        .onMoveCommand { direction in
-            guard isFocused else { return }
-            switch direction {
-            case .up: keyboardNav.moveUp()
-            case .down: keyboardNav.moveDown()
-            default: break
-            }
+        // Up/Down via .onKeyPress — .onMoveCommand stopped delivering events
+        // after custom keyboard handler changes. onKeyPress is reliable like PgUp/PgDown.
+        .onKeyPress(.upArrow) {
+            guard isFocused else { return .ignored }
+            keyboardNav.moveUp()
+            return .handled
+        }
+        .onKeyPress(.downArrow) {
+            guard isFocused else { return .ignored }
+            keyboardNav.moveDown()
+            return .handled
         }
         // PgUp/PgDown/Home/End via onKeyPress — works regardless of scroll position
         // .keyboardShortcut on hidden Buttons fails on unfocused ScrollView content
