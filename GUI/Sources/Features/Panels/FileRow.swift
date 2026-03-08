@@ -85,12 +85,18 @@ struct FileRow: View {
                     .onDrag {
                         let filesToDrag = dragFiles
                         dragDropManager.startDrag(files: filesToDrag, from: panelSide)
-                        // Use lightweight URL provider — actual file data is in DragDropManager.draggedFiles
-                        // Avoid registerFileRepresentation which causes huge delays on large files
+                        log.debug("[FileRow] onDrag exporting \(filesToDrag.count) file(s)")
+
+                        // IMPORTANT: SwiftUI .onDrag supports only a single NSItemProvider.
+                        // To export multiple files, we register multiple fileURL representations
+                        // inside the SAME provider.
                         let provider = NSItemProvider()
-                        if let first = filesToDrag.first {
-                            provider.registerObject(first.urlValue as NSURL, visibility: .all)
+
+                        for file in filesToDrag {
+                            provider.registerObject(file.urlValue as NSURL, visibility: .all)
+                            log.debug("[FileRow] registered for drag: \(file.urlValue.lastPathComponent)")
                         }
+
                         return provider
                     } preview: {
                         makeDragPreview()
