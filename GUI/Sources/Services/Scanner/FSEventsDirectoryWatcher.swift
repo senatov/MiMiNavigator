@@ -47,6 +47,10 @@ final class FSEventsDirectoryWatcher: @unchecked Sendable {
     private var pendingWork: DispatchWorkItem?
     private let throttleDelay: TimeInterval = 0.3
 
+    // Full-rescan protection (avoid duplicate rescans from bursty FSEvents)
+    private var lastFullRescanDate: Date?
+    private let fullRescanMinInterval: TimeInterval = 1.0
+
     // FSEvents kernel-side coalescing latency
     private static let latency: CFTimeInterval = 0.5
 
@@ -124,7 +128,7 @@ final class FSEventsDirectoryWatcher: @unchecked Sendable {
     /// Coalesces rapid bursts: cancels previous work item, schedules new one after throttleDelay.
     private func scheduleHandleEvents(paths: [String], flags: [FSEventStreamEventFlags]) {
         pendingWork?.cancel()
-        log.debug("[FSEvents] scheduleHandleEvents: \(paths.count) paths for '\(watchedPath)': \(paths)")
+        //log.debug("[FSEvents] scheduleHandleEvents: \(paths.count) paths for '\(watchedPath)': \(paths)")
         let work = DispatchWorkItem { [weak self] in
             self?.handleEvents(paths: paths, flags: flags)
         }
@@ -170,9 +174,18 @@ final class FSEventsDirectoryWatcher: @unchecked Sendable {
         // When dir-level event fires for watched dir itself, trigger full rescan.
         // Dir-level FSEvents cannot tell us which files were added/removed —
         // only that "something changed" in the directory.
-        log.debug("[FSEvents] handleEvents: watchedDirChanged=\(watchedDirChanged) directChildren=\(directChildren.count) childCountUpdates=\(childCountUpdates.count)")
+        //log.debug("[FSEvents] handleEvents: watchedDirChanged=\(watchedDirChanged) directChildren=\(directChildren.count) childCountUpdates=\(childCountUpdates.count)")
         if watchedDirChanged && directChildren.isEmpty {
-            log.info("[FSEvents] watched dir event → full rescan for '\(watched)'")
+            let now = Date()
+            if let last = lastFullRescanDate,
+               now.timeIntervalSince(last) < fullRescanMinInterval {
+                log.debug("[FSEvents] full rescan suppressed (debounced) for '\(watched)'")
+                return
+            }
+
+            lastFullRescanDate = now
+            log.info("[FSEvents] watched dir event → full rescan for '\(watched)' (debounced)")
+
             let patch = DirectoryPatch(
                 childCountUpdates: childCountUpdates,
                 addedOrModified: [],
@@ -184,7 +197,7 @@ final class FSEventsDirectoryWatcher: @unchecked Sendable {
             return
         }
         guard !directChildren.isEmpty || !childCountUpdates.isEmpty else { return }
-        
+
         var added: [CustomFile] = []
         var removed: [String] = []
         
