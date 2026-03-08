@@ -82,25 +82,6 @@ struct FileRow: View {
                     .simultaneousGesture(singleTapGesture)
                     .animation(nil, value: isSelected)
                     .contextMenu { contextMenuContent }
-                    .onDrag {
-                        let filesToDrag = dragFiles
-                        dragDropManager.startDrag(files: filesToDrag, from: panelSide)
-                        log.debug("[FileRow] onDrag exporting \(filesToDrag.count) file(s)")
-
-                        // IMPORTANT: SwiftUI .onDrag supports only a single NSItemProvider.
-                        // To export multiple files, we register multiple fileURL representations
-                        // inside the SAME provider.
-                        let provider = NSItemProvider()
-
-                        for file in filesToDrag {
-                            provider.registerObject(file.urlValue as NSURL, visibility: .all)
-                            log.debug("[FileRow] registered for drag: \(file.urlValue.lastPathComponent)")
-                        }
-
-                        return provider
-                    } preview: {
-                        makeDragPreview()
-                    }
                     .modifier(
                         DropTargetModifier(
                             isValidTarget: isValidDropTarget,
