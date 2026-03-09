@@ -1,262 +1,292 @@
-// FileOperationExecutors.swift
-// MiMiNavigator
-//
-// Created by Claude AI on 04.02.2026.
-// Copyright © 2026 Senatov. All rights reserved.
-// Description: Executes file operations (delete, rename, duplicate, compress, pack, etc.)
+    // FileOperationExecutors.swift
+    // MiMiNavigator
+    //
+    // Created by Claude AI on 04.02.2026.
+    // Copyright © 2026 Senatov. All rights reserved.
+    // Description: Executes file operations (delete, rename, duplicate, compress, pack, etc.)
 
-import AppKit
-import FileModelKit
-import Foundation
+    import AppKit
+    import FileModelKit
+    import Foundation
 
-// MARK: - File Operation Executors
-/// Extension containing async file operation executors
-extension ContextMenuCoordinator {
+    // MARK: - File Operation Executors
+    /// Extension containing async file operation executors
+    extension ContextMenuCoordinator {
 
-    // MARK: - Delete
+        // MARK: - Delete
 
-    /// Delete files to trash
-    func performDelete(files: [CustomFile], appState: AppState) async {
-        log.debug("\(#function) files.count=\(files.count) files=\(files.map { $0.nameStr })")
+        /// Delete files to trash
+        func performDelete(files: [CustomFile], appState: AppState) async {
+            log.debug("\(#function) files.count=\(files.count) files=\(files.map { $0.nameStr })")
 
-        isProcessing = true
-        defer {
-            isProcessing = false
-            activeDialog = nil
-        }
-
-        do {
-            let urls = files.map { $0.urlValue }
-            _ = try await fileOps.deleteFiles(urls)
-            // Mark archives dirty when deleting files from archive search results
-            for file in files where file.isFromArchiveSearch {
-                await ArchiveManager.shared.markDirtyByTempPath(file.pathStr)
-                log.info("\(#function) marked archive dirty after deleting: \(file.nameStr)")
-            }
-            let panel = panelForPath(files.first!.urlValue.deletingLastPathComponent().path, appState: appState)
-            await appState.refreshAndSelectAfterRemoval(removedFiles: files, on: panel)
-            // Also refresh opposite panel in case it shows the same directory
-            let otherPanel: PanelSide = panel == .left ? .right : .left
-            refreshPanel(otherPanel, appState: appState)
-            log.info("\(#function) SUCCESS deleted \(files.count) item(s) → cursor moved to next file on \(panel)")
-        } catch {
-            log.error("\(#function) FAILED: \(error.localizedDescription)")
-            activeDialog = .error(title: "Delete Failed", message: error.localizedDescription)
-        }
-    }
-
-    // MARK: - Rename
-
-    /// Rename file or directory, then select the renamed item
-    func performRename(file: CustomFile, newName: String, appState: AppState) async {
-        log.debug("\(#function) file='\(file.nameStr)' newName='\(newName)'")
-
-        isProcessing = true
-        defer {
-            isProcessing = false
-            activeDialog = nil
-        }
-
-        do {
-            _ = try await fileOps.renameFile(file.urlValue, to: newName)
-            // Mark archive dirty if renaming file from archive search results
-            if file.isFromArchiveSearch {
-                await ArchiveManager.shared.markDirtyByTempPath(file.pathStr)
-                log.info("\(#function) marked archive dirty after renaming: \(file.nameStr)")
-            }
-            let panel = panelForPath(file.urlValue.deletingLastPathComponent().path, appState: appState)
-            log.info("\(#function) SUCCESS: '\(file.nameStr)' → '\(newName)' → selecting on \(panel)")
-            await appState.refreshAndSelect(name: newName, on: panel)
-        } catch {
-            log.error("\(#function) FAILED: \(error.localizedDescription)")
-            activeDialog = .error(title: "Rename Failed", message: error.localizedDescription)
-        }
-    }
-
-    // MARK: - Duplicate
-
-    /// Duplicate file (Finder-style naming), then select the duplicate
-    func performDuplicate(file: CustomFile, appState: AppState) async {
-        log.debug("\(#function) file='\(file.nameStr)'")
-
-        isProcessing = true
-        defer { isProcessing = false }
-
-        do {
-            let result = try await DuplicateService.shared.duplicate(file: file.urlValue)
-            let panel = panelForPath(file.urlValue.deletingLastPathComponent().path, appState: appState)
-            log.info("\(#function) SUCCESS created '\(result.lastPathComponent)' → selecting on \(panel)")
-            await appState.refreshAndSelect(name: result.lastPathComponent, on: panel)
-        } catch {
-            log.error("\(#function) FAILED: \(error.localizedDescription)")
-            activeDialog = .error(title: "Duplicate Failed", message: error.localizedDescription)
-        }
-    }
-
-    // MARK: - Compress
-
-    /// Compress files (Finder-style .zip)
-    func performCompress(files: [CustomFile], appState: AppState) async {
-        log.debug("\(#function) files.count=\(files.count)")
-
-        isProcessing = true
-        defer { isProcessing = false }
-
-        do {
-            let urls = files.map { $0.urlValue }
-            let result = try await CompressService.shared.compress(files: urls)
-            refreshPanels(appState: appState)
-            log.info("\(#function) SUCCESS created '\(result.lastPathComponent)'")
-        } catch {
-            log.error("\(#function) FAILED: \(error.localizedDescription)")
-            activeDialog = .error(title: "Compress Failed", message: error.localizedDescription)
-        }
-    }
-
-    // MARK: - Pack (Archive with options)
-
-    /// Pack files into archive with custom options.
-    /// Creates destination directory if it doesn't exist.
-    /// Selects the created archive in the appropriate panel.
-    func performPack(files: [CustomFile], archiveName: String, format: ArchiveFormat, destination: URL, deleteSource: Bool = false, appState: AppState) async {
-        log.debug("\(#function) files.count=\(files.count) archiveName='\(archiveName)' format=\(format) dest='\(destination.path)' deleteSource=\(deleteSource)")
-
-        isProcessing = true
-        defer {
-            isProcessing = false
-            activeDialog = nil
-        }
-
-        do {
-            // Create destination directory if it doesn't exist
-            if !FileManager.default.fileExists(atPath: destination.path) {
-                try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
-                log.info("\(#function) created destination directory: '\(destination.path)'")
+            isProcessing = true
+            defer {
+                isProcessing = false
+                activeDialog = nil
             }
 
-            let urls = files.map { $0.urlValue }
-            let archiveURL = try await archiveService.createArchive(
-                from: urls,
-                to: destination,
-                archiveName: archiveName,
-                format: format
-            )
-            
-            // Delete source files if requested
-            if deleteSource {
-                for url in urls {
-                    try FileManager.default.trashItem(at: url, resultingItemURL: nil)
-                    log.info("\(#function) trashed source: '\(url.lastPathComponent)'")
+            do {
+                let urls = files.map { $0.urlValue }
+                _ = try await fileOps.deleteFiles(urls)
+                // Mark archives dirty when deleting files from archive search results
+                for file in files where file.isFromArchiveSearch {
+                    await ArchiveManager.shared.markDirtyByTempPath(file.pathStr)
+                    log.info("\(#function) marked archive dirty after deleting: \(file.nameStr)")
                 }
+                let panel = panelForPath(files.first!.urlValue.deletingLastPathComponent().path, appState: appState)
+                await appState.refreshAndSelectAfterRemoval(removedFiles: files, on: panel)
+                // Also refresh opposite panel in case it shows the same directory
+                let otherPanel: PanelSide = panel == .left ? .right : .left
+                refreshPanel(otherPanel, appState: appState)
+                log.info("\(#function) SUCCESS deleted \(files.count) item(s) → cursor moved to next file on \(panel)")
+            } catch {
+                log.error("\(#function) FAILED: \(error.localizedDescription)")
+                activeDialog = .error(title: "Delete Failed", message: error.localizedDescription)
             }
-            
-            // Determine which panel shows the destination and navigate+select
-            let archiveName = archiveURL.lastPathComponent
-            let destPath = destination.path
-            let panel = panelForPath(destPath, appState: appState)
+        }
 
-            // If destination is the current directory of a panel, refresh and select
-            if PathUtils.areEqual(appState.leftPath, destPath) || PathUtils.areEqual(appState.rightPath, destPath) {
-                await appState.refreshAndSelect(name: archiveName, on: panel)
-            } else {
-                // Destination is a different directory — navigate to it, then select
-                navigateTo(destination, panel: panel, appState: appState)
-                // Small delay to let navigation + refresh complete
-                try? await Task.sleep(for: .milliseconds(300))
-                appState.selectFileByName(archiveName, on: panel)
+        // MARK: - Rename
+
+        /// Rename file or directory, then select the renamed item
+        func performRename(file: CustomFile, newName: String, appState: AppState) async {
+            log.debug("\(#function) file='\(file.nameStr)' newName='\(newName)'")
+
+            isProcessing = true
+            defer {
+                isProcessing = false
+                activeDialog = nil
             }
 
-            // Also refresh the other panel (source files may have been deleted)
-            let otherPanel: PanelSide = panel == .left ? .right : .left
-            refreshPanel(otherPanel, appState: appState)
-
-            log.info("\(#function) SUCCESS created '\(archiveName)' → selected on \(panel)")
-            activeDialog = .success(
-                title: "Archive Created",
-                message: "Created: \(archiveName)"
-            )
-        } catch {
-            log.error("\(#function) FAILED: \(error.localizedDescription)")
-            activeDialog = .error(title: "Pack Failed", message: error.localizedDescription)
-        }
-    }
-
-    // MARK: - Create Link
-
-    /// Create symbolic link or Finder alias
-    func performCreateLink(file: CustomFile, linkName: String, linkType: LinkType, destination: URL, appState: AppState) async {
-        log.debug("\(#function) file='\(file.nameStr)' linkName='\(linkName)' type=\(linkType) dest='\(destination.path)'")
-
-        isProcessing = true
-        defer {
-            isProcessing = false
-            activeDialog = nil
-        }
-
-        do {
-            switch linkType {
-                case .symbolic:
-                    _ = try await fileOps.createSymbolicLink(
-                        to: file.urlValue,
-                        at: destination,
-                        linkName: linkName
-                    )
-                case .alias:
-                    try await createFinderAlias(to: file.urlValue, at: destination, name: linkName)
+            do {
+                _ = try await fileOps.renameFile(file.urlValue, to: newName)
+                // Mark archive dirty if renaming file from archive search results
+                if file.isFromArchiveSearch {
+                    await ArchiveManager.shared.markDirtyByTempPath(file.pathStr)
+                    log.info("\(#function) marked archive dirty after renaming: \(file.nameStr)")
+                }
+                let panel = panelForPath(file.urlValue.deletingLastPathComponent().path, appState: appState)
+                log.info("\(#function) SUCCESS: '\(file.nameStr)' → '\(newName)' → selecting on \(panel)")
+                await appState.refreshAndSelect(name: newName, on: panel)
+            } catch {
+                log.error("\(#function) FAILED: \(error.localizedDescription)")
+                activeDialog = .error(title: "Rename Failed", message: error.localizedDescription)
             }
-            refreshPanels(appState: appState)
-            log.info("\(#function) SUCCESS created link '\(linkName)'")
-        } catch {
-            log.error("\(#function) FAILED: \(error.localizedDescription)")
-            activeDialog = .error(title: "Create Link Failed", message: error.localizedDescription)
-        }
-    }
-
-    /// Create Finder alias (bookmark)
-    func createFinderAlias(to source: URL, at destination: URL, name: String) async throws {
-        log.debug("\(#function) source='\(source.lastPathComponent)' dest='\(destination.path)' name='\(name)'")
-
-        let aliasURL = destination.appendingPathComponent(name)
-        let data = try source.bookmarkData(
-            options: .suitableForBookmarkFile,
-            includingResourceValuesForKeys: nil,
-            relativeTo: nil
-        )
-        try URL.writeBookmarkData(data, to: aliasURL)
-        log.info("\(#function) SUCCESS created Finder alias '\(aliasURL.lastPathComponent)'")
-    }
-
-    // MARK: - Paste
-
-    /// Paste from clipboard
-    func performPaste(to panel: PanelSide, appState: AppState) async {
-        log.debug("\(#function) panel=\(panel) clipboardHasContent=\(clipboard.hasContent)")
-
-        guard clipboard.hasContent else {
-            log.warning("\(#function) clipboard is empty")
-            return
         }
 
-        isProcessing = true
-        defer { isProcessing = false }
+        // MARK: - Duplicate
 
-        let destination = getDestinationPath(for: panel, appState: appState)
-        log.debug("\(#function) destination='\(destination.path)'")
+        /// Duplicate file (Finder-style naming), then select the duplicate
+        func performDuplicate(file: CustomFile, appState: AppState) async {
+            log.debug("\(#function) file='\(file.nameStr)'")
 
-        let result = await clipboard.paste(to: destination, coordinator: self)
+            isProcessing = true
+            defer { isProcessing = false }
 
-        switch result {
-            case .success(let urls):
-                log.info("\(#function) SUCCESS pasted \(urls.count) item(s)")
+            do {
+                let result = try await DuplicateService.shared.duplicate(file: file.urlValue)
+                let panel = panelForPath(file.urlValue.deletingLastPathComponent().path, appState: appState)
+                log.info("\(#function) SUCCESS created '\(result.lastPathComponent)' → selecting on \(panel)")
+                await appState.refreshAndSelect(name: result.lastPathComponent, on: panel)
+            } catch {
+                log.error("\(#function) FAILED: \(error.localizedDescription)")
+                activeDialog = .error(title: "Duplicate Failed", message: error.localizedDescription)
+            }
+        }
+
+        // MARK: - Compress
+
+        /// Compress files (Finder-style .zip)
+        func performCompress(files: [CustomFile], appState: AppState) async {
+            log.debug("\(#function) files.count=\(files.count)")
+
+            guard let moveToArchive = await promptMoveToArchiveOption(filesCount: files.count) else {
+                log.info("\(#function) cancelled by user")
+                activeDialog = nil
+                return
+            }
+
+            isProcessing = true
+            defer { isProcessing = false }
+
+            do {
+                let urls = files.map { $0.urlValue }
+                let result = try await CompressService.shared.compress(files: urls, moveToArchive: moveToArchive)
                 refreshPanels(appState: appState)
+                log.info("\(#function) SUCCESS created '\(result.lastPathComponent)' moveToArchive=\(moveToArchive)")
+            } catch {
+                log.error("\(#function) FAILED: \(error.localizedDescription)")
+                activeDialog = .error(title: "Compress Failed", message: error.localizedDescription)
+            }
+        }
 
-            case .failure(let error):
-                if case FileOperationError.operationCancelled = error {
-                    log.info("\(#function) cancelled by user")
-                } else {
-                    log.error("\(#function) FAILED: \(error.localizedDescription)")
-                    activeDialog = .error(title: "Paste Failed", message: error.localizedDescription)
+        @MainActor
+        private func promptMoveToArchiveOption(filesCount: Int) -> Bool? {
+            let alert = NSAlert()
+            alert.alertStyle = .informational
+            alert.messageText = filesCount == 1 ? "Compress Item" : "Compress Items"
+            alert.informativeText = filesCount == 1
+                ? "Create a ZIP archive for the selected item."
+                : "Create a ZIP archive for the selected items."
+            alert.addButton(withTitle: "Compress")
+            alert.addButton(withTitle: "Cancel")
+
+            let checkbox = NSButton(checkboxWithTitle: "Move originals into archive", target: nil, action: nil)
+            checkbox.state = .off
+            checkbox.setButtonType(.switch)
+            alert.accessoryView = checkbox
+
+            let response = alert.runModal()
+            guard response == .alertFirstButtonReturn else {
+                return nil
+            }
+
+            return checkbox.state == .on
+        }
+
+        // MARK: - Pack (Archive with options)
+
+        /// Pack files into archive with custom options.
+        /// Creates destination directory if it doesn't exist.
+        /// Selects the created archive in the appropriate panel.
+        func performPack(files: [CustomFile], archiveName: String, format: ArchiveFormat, destination: URL, deleteSource: Bool = false, appState: AppState) async {
+            log.debug("\(#function) files.count=\(files.count) archiveName='\(archiveName)' format=\(format) dest='\(destination.path)' deleteSource=\(deleteSource)")
+
+            isProcessing = true
+            defer {
+                isProcessing = false
+                activeDialog = nil
+            }
+
+            do {
+                // Create destination directory if it doesn't exist
+                if !FileManager.default.fileExists(atPath: destination.path) {
+                    try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
+                    log.info("\(#function) created destination directory: '\(destination.path)'")
                 }
+
+                let urls = files.map { $0.urlValue }
+                let archiveURL = try await archiveService.createArchive(
+                    from: urls,
+                    to: destination,
+                    archiveName: archiveName,
+                    format: format
+                )
+                
+                // Delete source files if requested
+                if deleteSource {
+                    for url in urls {
+                        try FileManager.default.trashItem(at: url, resultingItemURL: nil)
+                        log.info("\(#function) trashed source: '\(url.lastPathComponent)'")
+                    }
+                }
+                
+                // Determine which panel shows the destination and navigate+select
+                let archiveName = archiveURL.lastPathComponent
+                let destPath = destination.path
+                let panel = panelForPath(destPath, appState: appState)
+
+                // If destination is the current directory of a panel, refresh and select
+                if PathUtils.areEqual(appState.leftPath, destPath) || PathUtils.areEqual(appState.rightPath, destPath) {
+                    await appState.refreshAndSelect(name: archiveName, on: panel)
+                } else {
+                    // Destination is a different directory — navigate to it, then select
+                    navigateTo(destination, panel: panel, appState: appState)
+                    // Small delay to let navigation + refresh complete
+                    try? await Task.sleep(for: .milliseconds(300))
+                    appState.selectFileByName(archiveName, on: panel)
+                }
+
+                // Also refresh the other panel (source files may have been deleted)
+                let otherPanel: PanelSide = panel == .left ? .right : .left
+                refreshPanel(otherPanel, appState: appState)
+
+                log.info("\(#function) SUCCESS created '\(archiveName)' → selected on \(panel)")
+                activeDialog = .success(
+                    title: "Archive Created",
+                    message: "Created: \(archiveName)"
+                )
+            } catch {
+                log.error("\(#function) FAILED: \(error.localizedDescription)")
+                activeDialog = .error(title: "Pack Failed", message: error.localizedDescription)
+            }
+        }
+
+        // MARK: - Create Link
+
+        /// Create symbolic link or Finder alias
+        func performCreateLink(file: CustomFile, linkName: String, linkType: LinkType, destination: URL, appState: AppState) async {
+            log.debug("\(#function) file='\(file.nameStr)' linkName='\(linkName)' type=\(linkType) dest='\(destination.path)'")
+
+            isProcessing = true
+            defer {
+                isProcessing = false
+                activeDialog = nil
+            }
+
+            do {
+                switch linkType {
+                    case .symbolic:
+                        _ = try await fileOps.createSymbolicLink(
+                            to: file.urlValue,
+                            at: destination,
+                            linkName: linkName
+                        )
+                    case .alias:
+                        try await createFinderAlias(to: file.urlValue, at: destination, name: linkName)
+                }
+                refreshPanels(appState: appState)
+                log.info("\(#function) SUCCESS created link '\(linkName)'")
+            } catch {
+                log.error("\(#function) FAILED: \(error.localizedDescription)")
+                activeDialog = .error(title: "Create Link Failed", message: error.localizedDescription)
+            }
+        }
+
+        /// Create Finder alias (bookmark)
+        func createFinderAlias(to source: URL, at destination: URL, name: String) async throws {
+            log.debug("\(#function) source='\(source.lastPathComponent)' dest='\(destination.path)' name='\(name)'")
+
+            let aliasURL = destination.appendingPathComponent(name)
+            let data = try source.bookmarkData(
+                options: .suitableForBookmarkFile,
+                includingResourceValuesForKeys: nil,
+                relativeTo: nil
+            )
+            try URL.writeBookmarkData(data, to: aliasURL)
+            log.info("\(#function) SUCCESS created Finder alias '\(aliasURL.lastPathComponent)'")
+        }
+
+        // MARK: - Paste
+
+        /// Paste from clipboard
+        func performPaste(to panel: PanelSide, appState: AppState) async {
+            log.debug("\(#function) panel=\(panel) clipboardHasContent=\(clipboard.hasContent)")
+
+            guard clipboard.hasContent else {
+                log.warning("\(#function) clipboard is empty")
+                return
+            }
+
+            isProcessing = true
+            defer { isProcessing = false }
+
+            let destination = getDestinationPath(for: panel, appState: appState)
+            log.debug("\(#function) destination='\(destination.path)'")
+
+            let result = await clipboard.paste(to: destination, coordinator: self)
+
+            switch result {
+                case .success(let urls):
+                    log.info("\(#function) SUCCESS pasted \(urls.count) item(s)")
+                    refreshPanels(appState: appState)
+
+                case .failure(let error):
+                    if case FileOperationError.operationCancelled = error {
+                        log.info("\(#function) cancelled by user")
+                    } else {
+                        log.error("\(#function) FAILED: \(error.localizedDescription)")
+                        activeDialog = .error(title: "Paste Failed", message: error.localizedDescription)
+                    }
+            }
         }
     }
-}
