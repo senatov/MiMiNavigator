@@ -13,6 +13,7 @@ import AppKit
 import FileModelKit
 import QuickLookThumbnailing
 import SwiftUI
+import UniformTypeIdentifiers
 
 // MARK: - ThumbnailGridView
 
@@ -84,6 +85,7 @@ private struct ThumbnailCellView: View {
     @State private var isHovered = false
 
     @Environment(AppState.self) private var appState
+    @Environment(DragDropManager.self) private var dragDropManager
 
     private var imageSize: CGFloat { cellSize - 12 }
 
@@ -144,15 +146,31 @@ private struct ThumbnailCellView: View {
         .contextMenu { contextMenuContent }
         // MARK: Drag
         .onDrag {
-            let provider = NSItemProvider()
-            if let first = dragFiles.first {
-                provider.registerObject(first.urlValue as NSURL, visibility: .all)
-            }
-            return provider
+            dragDropManager.startDrag(files: dragFiles, from: panelSide)
+            return makeDragProvider()
         } preview: {
-            dragPreview
+            DragPreviewPopupView(files: dragFiles, panelSide: panelSide)
         }
         .task(id: file.pathStr) { await loadThumbnail() }
+    }
+
+    private func makeDragProvider() -> NSItemProvider {
+        let provider = NSItemProvider()
+
+        if let first = dragFiles.first {
+            provider.registerObject(first.urlValue as NSURL, visibility: .all)
+        }
+
+        let allDraggedPaths = dragFiles
+            .map { $0.urlValue.absoluteString }
+            .joined(separator: "\n")
+
+        provider.registerDataRepresentation(forTypeIdentifier: UTType.utf8PlainText.identifier, visibility: .all) { completion in
+            completion(allDraggedPaths.data(using: .utf8), nil)
+            return nil
+        }
+
+        return provider
     }
 
     // MARK: - Context menu content
@@ -167,30 +185,6 @@ private struct ThumbnailCellView: View {
                 onFileAction(action)
             }
         }
-    }
-
-    // MARK: - Drag preview
-    private var dragPreview: some View {
-        VStack(spacing: 2) {
-            if let img = thumbnail {
-                Image(nsImage: img)
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: 48, height: 48)
-                    .clipShape(RoundedRectangle(cornerRadius: 6))
-            } else {
-                Image(systemName: file.isDirectory ? "folder.fill" : "doc")
-                    .font(.system(size: 32))
-                    .foregroundStyle(file.isDirectory ? .yellow : .secondary)
-            }
-            if dragFiles.count > 1 {
-                Text("\(dragFiles.count) items")
-                    .font(.system(size: 10, weight: .medium))
-                    .foregroundStyle(.secondary)
-            }
-        }
-        .padding(8)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
     }
 
     // MARK: - Fallback SF Symbol icon
