@@ -54,8 +54,8 @@ struct FileRow: View {
 
     var body: some View {
         rowContainer
-            .id("\(panelSide)_\(file.id)")
-            .zIndex(isSelected ? 1 : 0)  // selected row renders above neighbours — border fully visible
+        .id("\(panelSide)_\(file.id)")
+        .zIndex(isSelected ? 1 : 0)  // selected row renders above neighbours — border fully visible
     }
 
     // MARK: - Main Container
@@ -64,31 +64,47 @@ struct FileRow: View {
             if isParentEntry {
                 // ".." entry — simple, no drag-drop, no context menu
                 stableContent
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .frame(height: FilePanelStyle.rowHeight)
-                    .contentShape(Rectangle())
-                    // tooltip removed — Get Info via context menu is sufficient
-                    .simultaneousGesture(doubleTapGesture)
-                    .simultaneousGesture(singleTapGesture)
-                    .animation(nil, value: isSelected)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .frame(height: FilePanelStyle.rowHeight)
+                .contentShape(Rectangle())
+                // tooltip removed — Get Info via context menu is sufficient
+                .simultaneousGesture(doubleTapGesture)
+                .simultaneousGesture(singleTapGesture)
+                .animation(nil, value: isSelected)
             } else {
                 // Normal file row — full drag-drop + context menu
                 stableContent
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .frame(height: FilePanelStyle.rowHeight)
-                    .contentShape(Rectangle())
-                    // tooltip removed — Get Info via context menu is sufficient
-                    .simultaneousGesture(doubleTapGesture)
-                    .simultaneousGesture(singleTapGesture)
-                    .animation(nil, value: isSelected)
-                    .contextMenu { contextMenuContent }
-                    .modifier(
-                        DropTargetModifier(
-                            isValidTarget: isValidDropTarget,
-                            isDropTargeted: $isDropTargeted,
-                            onDrop: handleDrop,
-                            onTargetChange: handleDropTargeting
-                        ))
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .frame(height: FilePanelStyle.rowHeight)
+                .contentShape(Rectangle())
+                // tooltip removed — Get Info via context menu is sufficient
+                .simultaneousGesture(doubleTapGesture)
+                .simultaneousGesture(singleTapGesture)
+                .animation(nil, value: isSelected)
+                .contextMenu { contextMenuContent }
+                .onDrag {
+                    let filesToDrag = dragFiles
+                    dragDropManager.startDrag(files: filesToDrag, from: panelSide)
+
+                    let provider = NSItemProvider()
+
+                    if let first = filesToDrag.first {
+                        provider.registerObject(first.urlValue as NSURL, visibility: .all)
+                    }
+                    return provider
+                } preview: {
+                    DragPreviewPopupView(
+                        files: dragFiles,
+                        panelSide: panelSide
+                    )
+                }
+                .modifier(
+                    DropTargetModifier(
+                        isValidTarget: isValidDropTarget,
+                        isDropTargeted: $isDropTargeted,
+                        onDrop: handleDrop,
+                        onTargetChange: handleDropTargeting
+                    ))
             }
         }
     }
@@ -119,44 +135,44 @@ struct FileRow: View {
             // ".." row — fixed light grey background regardless of zebra index
             return AnyView(
                 Color(nsColor: .systemGray).opacity(0.13)
-                    .allowsHitTesting(false))
+                .allowsHitTesting(false))
         }
         if isActivePanel {
             // Active panel: warm white base with subtle zebra stripe
             let isOdd = index % 2 == 1
             return AnyView(
                 DesignTokens.warmWhite
-                    .overlay(Color.black.opacity(isOdd ? 0.02 : 0))
-                    .allowsHitTesting(false))
+                .overlay(Color.black.opacity(isOdd ? 0.02 : 0))
+                .allowsHitTesting(false))
         }
         let zebraColors = NSColor.alternatingContentBackgroundColors
         return AnyView(
             Color(nsColor: zebraColors[index % zebraColors.count])
-                .allowsHitTesting(false))
+            .allowsHitTesting(false))
     }
 
     @ViewBuilder
     private var highlightLayer: some View {
         if isDropTargeted && isValidDropTarget {
             RoundedRectangle(cornerRadius: 6, style: .continuous)
-                .fill(Self.dropTargetFill)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 6, style: .continuous)
-                        .stroke(Self.dropTargetBorder, lineWidth: 2)
-                )
-                .padding(.horizontal, 4)
-                .allowsHitTesting(false)
+            .fill(Self.dropTargetFill)
+            .overlay(
+                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .stroke(Self.dropTargetBorder, lineWidth: 2)
+            )
+            .padding(.horizontal, 4)
+            .allowsHitTesting(false)
         } else if isSelected {
             RoundedRectangle(cornerRadius: 6, style: .continuous)
-                .fill(isActivePanel ? selectionActiveFill : selectionInactiveFill)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 6, style: .continuous)
-                        .inset(by: 0.5)
-                        .strokeBorder(Color(red: 0.18, green: 0.44, blue: 0.85).opacity(isActivePanel ? 0.75 : 0.35), lineWidth: 1)
-                )
-                .padding(.horizontal, 3)
-                .padding(.vertical, 0)
-                .allowsHitTesting(false)
+            .fill(isActivePanel ? selectionActiveFill : selectionInactiveFill)
+            .overlay(
+                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .inset(by: 0.5)
+                .strokeBorder(Color(red: 0.18, green: 0.44, blue: 0.85).opacity(isActivePanel ? 0.75 : 0.35), lineWidth: 1)
+            )
+            .padding(.horizontal, 3)
+            .padding(.vertical, 0)
+            .allowsHitTesting(false)
         }
     }
 
@@ -296,23 +312,23 @@ struct FileRow: View {
         return HStack(alignment: .center, spacing: 0) {
             // Name — flexible (matches header nameHeader)
             FileRowView(file: file, isSelected: isSelected, isActivePanel: isActivePanel, isMarked: isMarked)
-                .frame(minWidth: 60, maxWidth: .infinity, alignment: .leading)
+            .frame(minWidth: 60, maxWidth: .infinity, alignment: .leading)
 
             // Fixed columns — separator before each, width EXACT (no internal padding)
             ForEach(fixedCols.indices, id: \.self) { i in
                 let spec = fixedCols[i]
                 ColumnSeparator()
                 cellText(for: spec.id)
-                    .font(spec.id == .permissions
-                           ? .system(size: 11, design: .monospaced)
-                           : (spec.id == .size || spec.id == .childCount || [.dateModified, .dateCreated, .dateLastOpened, .dateAdded].contains(spec.id)
-                              ? columnFont.monospacedDigit()
-                              : columnFont))
-                    .foregroundStyle(cellColor(for: spec.id))
-                    .lineLimit(1)
-                    .truncationMode(.tail)
-                    .padding(.horizontal, TableColumnDefaults.cellPadding)
-                    .frame(width: spec.width, alignment: spec.id.alignment)
+                .font(spec.id == .permissions
+                ? .system(size: 11, design: .monospaced)
+                : (spec.id == .size || spec.id == .childCount || [.dateModified, .dateCreated, .dateLastOpened, .dateAdded].contains(spec.id)
+                ? columnFont.monospacedDigit()
+                : columnFont))
+                .foregroundStyle(cellColor(for: spec.id))
+                .lineLimit(1)
+                .truncationMode(.tail)
+                .padding(.horizontal, TableColumnDefaults.cellPadding)
+                .frame(width: spec.width, alignment: spec.id.alignment)
             }
         }
         .padding(.vertical, 2)
@@ -322,17 +338,17 @@ struct FileRow: View {
     @ViewBuilder
     private func cellText(for col: ColumnID) -> some View {
         switch col {
-            case .name: EmptyView()
-            case .dateModified: Text(file.modifiedDateFormatted)
-            case .size: Text(file.fileSizeFormatted)
-            case .kind: KindCell(file: file)
-            case .permissions: PermissionsCell(permissions: file.permissionsFormatted)
-            case .owner: Text(file.ownerFormatted)
-            case .childCount: Text(file.childCountFormatted)
-            case .dateCreated: Text(file.creationDateFormatted)
-            case .dateLastOpened: Text(file.lastOpenedFormatted)
-            case .dateAdded: Text(file.dateAddedFormatted)
-            case .group: Text(file.groupNameFormatted)
+        case .name: EmptyView()
+        case .dateModified: Text(file.modifiedDateFormatted)
+        case .size: Text(file.fileSizeFormatted)
+        case .kind: KindCell(file: file)
+        case .permissions: PermissionsCell(permissions: file.permissionsFormatted)
+        case .owner: Text(file.ownerFormatted)
+        case .childCount: Text(file.childCountFormatted)
+        case .dateCreated: Text(file.creationDateFormatted)
+        case .dateLastOpened: Text(file.lastOpenedFormatted)
+        case .dateAdded: Text(file.dateAddedFormatted)
+        case .group: Text(file.groupNameFormatted)
         }
     }
 }
@@ -345,26 +361,26 @@ private struct KindCell: View {
     var body: some View {
         if file.isDirectory || file.isSymbolicDirectory {
             Image(systemName: file.isSymbolicDirectory ? "folder.badge.questionmark" : "folder")
-                .symbolRenderingMode(.hierarchical)
-                .font(.system(size: 12, weight: .light))
-                .help(file.isSymbolicDirectory ? "Symbolic Link to Folder" : "Folder")
+            .symbolRenderingMode(.hierarchical)
+            .font(.system(size: 12, weight: .light))
+            .help(file.isSymbolicDirectory ? "Symbolic Link to Folder" : "Folder")
         } else if file.isSymbolicLink {
             Image(systemName: "arrow.up.right.square")
-                .symbolRenderingMode(.hierarchical)
-                .font(.system(size: 12, weight: .light))
-                .help("Symbolic Link")
+            .symbolRenderingMode(.hierarchical)
+            .font(.system(size: 12, weight: .light))
+            .help("Symbolic Link")
         } else if file.isArchiveFile {
             HStack(spacing: 3) {
                 Image(systemName: archiveSymbol)
-                    .symbolRenderingMode(.multicolor)
-                    .font(.system(size: 12, weight: .regular))
+                .symbolRenderingMode(.multicolor)
+                .font(.system(size: 12, weight: .regular))
                 Text(archiveAbbrev)
-                    .font(.system(size: 11, weight: .regular, design: .monospaced))
+                .font(.system(size: 11, weight: .regular, design: .monospaced))
             }
             .help(fullKindDescription)
         } else {
             Text(shortKind)
-                .help(fullKindDescription)
+            .help(fullKindDescription)
         }
     }
 
@@ -393,14 +409,14 @@ private struct KindCell: View {
         if ["jar","war","ear","aar","apk"].contains(ext) { return "archivebox.fill" }
         // modern compression (zst, lz4, xz, lzma)
         if ["zst","zstd","lz4","xz","lzma","txz","tlz"].contains(ext)
-            || name.hasSuffix(".tar.xz") || name.hasSuffix(".tar.lzma")
-            || name.hasSuffix(".tar.zst") || name.hasSuffix(".tar.lz4") { return "shippingbox" }
+        || name.hasSuffix(".tar.xz") || name.hasSuffix(".tar.lzma")
+        || name.hasSuffix(".tar.zst") || name.hasSuffix(".tar.lz4") { return "shippingbox" }
         // bzip2 family
         if ["bz2","bzip2","tbz","tbz2"].contains(ext)
-            || name.hasSuffix(".tar.bz2") { return "shippingbox.fill" }
+        || name.hasSuffix(".tar.bz2") { return "shippingbox.fill" }
         // gzip / tar.gz
         if ["gz","tgz","gzip","tar"].contains(ext)
-            || name.hasSuffix(".tar.gz") { return "cylinder" }
+        || name.hasSuffix(".tar.gz") { return "cylinder" }
         // 7z
         if ext == "7z" { return "doc.zipper" }
         // zip (default)
@@ -432,23 +448,20 @@ private struct PermissionsCell: View {
 
     var body: some View {
         Text(permissions)
-            .help(octalValue)
+        .help(octalValue)
     }
 
     /// Convert symbolic permissions (rwxr-xr-x) to octal (755)
     private var octalValue: String {
         let chars = Array(permissions)
         guard chars.count >= 9 else { return permissions }
-
         // Take last 9 characters (skip type indicator like 'd' or '-')
         let permChars = chars.suffix(9)
         guard permChars.count == 9 else { return permissions }
-
         let arr = Array(permChars)
         let owner = tripletToOctal(arr[0], arr[1], arr[2])
         let group = tripletToOctal(arr[3], arr[4], arr[5])
         let other = tripletToOctal(arr[6], arr[7], arr[8])
-
         return "\(owner)\(group)\(other)"
     }
 
