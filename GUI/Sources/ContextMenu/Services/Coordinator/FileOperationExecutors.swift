@@ -99,7 +99,7 @@
         func performCompress(files: [CustomFile], appState: AppState) async {
             log.debug("\(#function) files.count=\(files.count)")
 
-            guard let moveToArchive = await promptMoveToArchiveOption(filesCount: files.count) else {
+            guard let moveToArchive = promptMoveToArchiveOption(filesCount: files.count) else {
                 log.info("\(#function) cancelled by user")
                 activeDialog = nil
                 return
@@ -171,7 +171,7 @@
                     archiveName: archiveName,
                     format: format
                 )
-                
+
                 // Delete source files if requested
                 if deleteSource {
                     for url in urls {
@@ -179,7 +179,7 @@
                         log.info("\(#function) trashed source: '\(url.lastPathComponent)'")
                     }
                 }
-                
+
                 // Determine which panel shows the destination and navigate+select
                 let archiveName = archiveURL.lastPathComponent
                 let destPath = destination.path
