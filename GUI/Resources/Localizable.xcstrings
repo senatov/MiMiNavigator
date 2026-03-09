@@ -763,9 +763,6 @@
     "Delete %lld files?" : {
       "comment" : "Confirm batch delete"
     },
-    "Delete source files after packing" : {
-
-    },
     "Delete?" : {
       "comment" : "Delete confirmation dialog title",
       "localizations" : {
