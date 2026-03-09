@@ -29,8 +29,45 @@ struct ThumbnailGridView: View {
     let onSelect: (CustomFile) -> Void
     let onDoubleClick: (CustomFile) -> Void
 
+    @State private var selectedIDs: Set<CustomFile.ID> = []
+
     private var columns: [GridItem] {
         [GridItem(.adaptive(minimum: cellSize, maximum: cellSize + 20), spacing: 8)]
+    }
+
+    private func handleSelection(for file: CustomFile, modifiers: NSEvent.ModifierFlags) {
+        if modifiers.contains(.command) {
+            if selectedIDs.contains(file.id) {
+                selectedIDs.remove(file.id)
+            } else {
+                selectedIDs.insert(file.id)
+            }
+
+            // Update anchor selection
+            selectedID = selectedIDs.isEmpty ? nil : file.id
+
+            onSelect(file)
+            return
+        }
+
+        if modifiers.contains(.shift),
+            let anchor = selectedID,
+            let anchorIndex = files.firstIndex(where: { $0.id == anchor }),
+            let targetIndex = files.firstIndex(where: { $0.id == file.id })
+        {
+            let lower = min(anchorIndex, targetIndex)
+            let upper = max(anchorIndex, targetIndex)
+            selectedIDs.removeAll()
+            for item in files[lower...upper] {
+                selectedIDs.insert(item.id)
+            }
+            selectedID = file.id
+            onSelect(file)
+            return
+        }
+        selectedIDs = [file.id]
+        selectedID = file.id
+        onSelect(file)
     }
 
     // MARK: - Body
@@ -41,16 +78,19 @@ struct ThumbnailGridView: View {
                     ThumbnailCellView(
                         file: file,
                         cellSize: cellSize,
-                        isSelected: selectedID == file.id,
+                        isSelected: selectedIDs.contains(file.id),
                         panelSide: panelSide,
                         dragFiles: dragFilesFor(file),
-                        onSelect: { onSelect(file) },
+                        onSelect: { modifiers in
+                            handleSelection(for: file, modifiers: modifiers)
+                        },
                         onDoubleClick: { onDoubleClick(file) },
                         onFileAction: { action in
                             ContextMenuCoordinator.shared.handleFileAction(action, for: file, panel: panelSide, appState: appState)
                         },
                         onDirectoryAction: { action in
-                            ContextMenuCoordinator.shared.handleDirectoryAction(action, for: file, panel: panelSide, appState: appState)
+                            ContextMenuCoordinator.shared.handleDirectoryAction(
+                                action, for: file, panel: panelSide, appState: appState)
                         }
                     )
                 }
@@ -61,8 +101,9 @@ struct ThumbnailGridView: View {
 
     // MARK: - Drag helpers
     private func dragFilesFor(_ file: CustomFile) -> [CustomFile] {
-        let marked = appState.markedCustomFiles(for: panelSide)
-        if !marked.isEmpty && marked.contains(where: { $0.id == file.id }) { return marked }
+        if selectedIDs.contains(file.id) {
+            return files.filter { selectedIDs.contains($0.id) }
+        }
         return [file]
     }
 }
@@ -76,7 +117,7 @@ private struct ThumbnailCellView: View {
     let isSelected: Bool
     let panelSide: PanelSide
     let dragFiles: [CustomFile]
-    let onSelect: () -> Void
+    let onSelect: (NSEvent.ModifierFlags) -> Void
     let onDoubleClick: () -> Void
     let onFileAction: (FileAction) -> Void
     let onDirectoryAction: (DirectoryAction) -> Void
@@ -95,9 +136,11 @@ private struct ThumbnailCellView: View {
             // Thumbnail or icon
             ZStack {
                 RoundedRectangle(cornerRadius: 6, style: .continuous)
-                    .fill(isSelected
-                        ? Color.accentColor.opacity(0.18)
-                        : (isHovered ? Color.primary.opacity(0.06) : Color.clear))
+                    .fill(
+                        isSelected
+                            ? Color.accentColor.opacity(0.18)
+                            : (isHovered ? Color.primary.opacity(0.06) : Color.clear)
+                    )
                     .frame(width: cellSize, height: cellSize)
 
                 if let img = thumbnail {
@@ -141,7 +184,13 @@ private struct ThumbnailCellView: View {
         .contentShape(Rectangle())
         .onHover { isHovered = $0 }
         .onTapGesture(count: 2) { onDoubleClick() }
-        .onTapGesture(count: 1) { onSelect() }
+        .simultaneousGesture(
+            TapGesture(count: 1)
+                .onEnded {
+                    let modifiers = NSApp.currentEvent?.modifierFlags ?? []
+                    onSelect(modifiers)
+                }
+        )
         // MARK: Context menu
         .contextMenu { contextMenuContent }
         // MARK: Drag
@@ -161,7 +210,8 @@ private struct ThumbnailCellView: View {
             provider.registerObject(first.urlValue as NSURL, visibility: .all)
         }
 
-        let allDraggedPaths = dragFiles
+        let allDraggedPaths =
+            dragFiles
             .map { $0.urlValue.absoluteString }
             .joined(separator: "\n")
 
@@ -201,24 +251,24 @@ private struct ThumbnailCellView: View {
     private func sfSymbol(for name: String) -> String {
         let ext = (name as NSString).pathExtension.lowercased()
         switch ext {
-        case "jpg", "jpeg", "png", "gif", "webp", "heic", "heif", "bmp", "tiff":
-            return "photo"
-        case "mp4", "mov", "avi", "mkv", "m4v", "wmv":
-            return "film"
-        case "mp3", "aac", "flac", "wav", "m4a", "ogg":
-            return "music.note"
-        case "pdf":
-            return "doc.richtext"
-        case "zip", "tar", "gz", "7z", "rar", "bz2":
-            return "archivebox"
-        case "swift", "py", "js", "ts", "java", "kt", "cpp", "c", "h", "m", "rb", "go", "rs":
-            return "chevron.left.forwardslash.chevron.right"
-        case "txt", "md", "rtf":
-            return "doc.text"
-        case "app":
-            return "app.badge"
-        default:
-            return "doc"
+            case "jpg", "jpeg", "png", "gif", "webp", "heic", "heif", "bmp", "tiff":
+                return "photo"
+            case "mp4", "mov", "avi", "mkv", "m4v", "wmv":
+                return "film"
+            case "mp3", "aac", "flac", "wav", "m4a", "ogg":
+                return "music.note"
+            case "pdf":
+                return "doc.richtext"
+            case "zip", "tar", "gz", "7z", "rar", "bz2":
+                return "archivebox"
+            case "swift", "py", "js", "ts", "java", "kt", "cpp", "c", "h", "m", "rb", "go", "rs":
+                return "chevron.left.forwardslash.chevron.right"
+            case "txt", "md", "rtf":
+                return "doc.text"
+            case "app":
+                return "app.badge"
+            default:
+                return "doc"
         }
     }
 
@@ -229,7 +279,7 @@ private struct ThumbnailCellView: View {
         if file.isDirectory { return }
 
         let url = file.urlValue
-        let size = CGSize(width: imageSize * 2, height: imageSize * 2) // 2x for retina
+        let size = CGSize(width: imageSize * 2, height: imageSize * 2)  // 2x for retina
         let scale = NSScreen.main?.backingScaleFactor ?? 2.0
         let request = QLThumbnailGenerator.Request(
             fileAt: url,
