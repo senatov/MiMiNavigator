@@ -30,33 +30,55 @@
                 log.error("\(#function) FAILED: no files to compress")
                 throw CompressError.noFilesToCompress
             }
+            let parentDirectories = Set(files.map { $0.deletingLastPathComponent().path })
+            guard parentDirectories.count == 1 else {
+                let message = "All files must be located in the same directory"
+                log.error("\(#function) FAILED: \(message)")
+                throw CompressError.compressionFailed(message)
+            }
             let parentDir = files[0].deletingLastPathComponent()
             let archiveName = generateArchiveName(for: files, in: parentDir)
             let archiveURL = parentDir.appendingPathComponent(archiveName)
             log.info("\(#function) compressing \(files.count) item(s) → '\(archiveName)'")
             // Use ditto for Finder-compatible compression
             let task = Process()
-            // Run ditto from the parent directory when compressing multiple files
-            if files.count > 1 {
-                task.currentDirectoryURL = parentDir
-            }
             task.executableURL = URL(fileURLWithPath: "/usr/bin/ditto")
             var args = ["-c", "-k", "--sequesterRsrc"]
+            var temporaryStagingURL: URL?
 
-            // ditto cannot archive multiple sources with --keepParent
-            // so we only use it for single-file compression
             if files.count == 1 {
                 args.append("--keepParent")
+                args.append(files[0].path)
+            } else {
+                let temporaryRoot = fileManager.temporaryDirectory
+                let stagingDirName = ".MiMiNavigator-Compress-\(UUID().uuidString)"
+                let stagingDirURL = temporaryRoot.appendingPathComponent(stagingDirName, isDirectory: true)
+
+                try fileManager.createDirectory(at: stagingDirURL, withIntermediateDirectories: true)
+                temporaryStagingURL = stagingDirURL
+
+                for sourceURL in files {
+                    let targetURL = stagingDirURL.appendingPathComponent(sourceURL.lastPathComponent)
+
+                    if fileManager.fileExists(atPath: targetURL.path) {
+                        try fileManager.removeItem(at: targetURL)
+                    }
+
+                    try fileManager.copyItem(at: sourceURL, to: targetURL)
+                }
+
+                args.append(stagingDirURL.path)
             }
 
-            if files.count == 1 {
-                args.append(contentsOf: files.map { $0.path })
-            } else {
-                // Use relative paths when running from parent directory
-                args.append(contentsOf: files.map { $0.lastPathComponent })
-            }
             args.append(archiveURL.path)
             task.arguments = args
+
+            defer {
+                if let temporaryStagingURL {
+                    try? fileManager.removeItem(at: temporaryStagingURL)
+                }
+            }
+
             log.debug("\(#function) ditto args: \(args.joined(separator: " "))")
             let pipe = Pipe()
             task.standardError = pipe
@@ -78,7 +100,8 @@
                         try fileManager.removeItem(at: file)
                         log.debug("\(#function) removed original after archive: '\(file.path)'")
                     } catch {
-                        log.error("\(#function) FAILED to remove original after archive: '\(file.path)' error='\(error.localizedDescription)'")
+                        log.error(
+                            "\(#function) FAILED to remove original after archive: '\(file.path)' error='\(error.localizedDescription)'")
                         throw CompressError.moveToArchiveFailed(file.lastPathComponent, error.localizedDescription)
                     }
                 }
