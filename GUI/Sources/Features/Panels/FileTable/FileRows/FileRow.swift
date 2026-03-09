@@ -85,15 +85,18 @@ struct FileRow: View {
                     .onDrag {
                         let filesToDrag = dragFiles
                         dragDropManager.startDrag(files: filesToDrag, from: panelSide)
-                        // Use lightweight URL provider — actual file data is in DragDropManager.draggedFiles
-                        // Avoid registerFileRepresentation which causes huge delays on large files
+
                         let provider = NSItemProvider()
+
                         if let first = filesToDrag.first {
                             provider.registerObject(first.urlValue as NSURL, visibility: .all)
                         }
                         return provider
                     } preview: {
-                        makeDragPreview()
+                        DragPreviewPopupView(
+                            files: dragFiles,
+                            panelSide: panelSide
+                        )
                     }
                     .modifier(
                         DropTargetModifier(
@@ -452,16 +455,13 @@ private struct PermissionsCell: View {
     private var octalValue: String {
         let chars = Array(permissions)
         guard chars.count >= 9 else { return permissions }
-
         // Take last 9 characters (skip type indicator like 'd' or '-')
         let permChars = chars.suffix(9)
         guard permChars.count == 9 else { return permissions }
-
         let arr = Array(permChars)
         let owner = tripletToOctal(arr[0], arr[1], arr[2])
         let group = tripletToOctal(arr[3], arr[4], arr[5])
         let other = tripletToOctal(arr[6], arr[7], arr[8])
-
         return "\(owner)\(group)\(other)"
     }
 
