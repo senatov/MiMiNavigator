@@ -11,7 +11,7 @@
     struct ContextMenuDialogModifier: ViewModifier {
         let appState: AppState
         @Bindable var coordinator: ContextMenuCoordinator
-        
+
         func body(content: Content) -> some View {
             content
                 .overlay {
@@ -20,7 +20,7 @@
                     }
                 }
         }
-        
+
         @ViewBuilder
         private var dialogOverlay: some View {
             ZStack {
@@ -33,7 +33,7 @@
                             coordinator.dismissDialog()
                         }
                     }
-                
+
                 // Dialog content
                 if let dialog = coordinator.activeDialog {
                     dialogContent(for: dialog)
@@ -42,7 +42,7 @@
             }
             .animation(.easeOut(duration: 0.15), value: coordinator.activeDialog?.id)
         }
-        
+
         @ViewBuilder
         private func dialogContent(for dialog: ActiveDialog) -> some View {
             switch dialog {
@@ -58,7 +58,7 @@
                         coordinator.dismissDialog()
                     }
                 )
-                
+
             case .rename(let file):
                 RenameDialog(
                     file: file,
@@ -71,7 +71,7 @@
                         coordinator.dismissDialog()
                     }
                 )
-                
+
             case .pack(let files, let destination):
                 PackDialog(
                     mode: .pack,
@@ -93,7 +93,25 @@
                         coordinator.dismissDialog()
                     }
                 )
-                
+
+            case .compress(let files, let destination):
+                PackDialog(
+                    mode: .compress,
+                    files: files,
+                    destinationPath: destination,
+                    onPack: { archiveName, format, finalDestination, deleteSource in
+                        Task {
+                            await coordinator.performCompress(
+                                files: files,
+                                appState: appState
+                            )
+                        }
+                    },
+                    onCancel: {
+                        coordinator.dismissDialog()
+                    }
+                )
+
             case .createLink(let file, let destination):
                 CreateLinkDialog(
                     file: file,
@@ -113,7 +131,7 @@
                         coordinator.dismissDialog()
                     }
                 )
-                
+
             case .fileConflict(let conflict, _):
                 FileConflictDialog(
                     conflict: conflict,
@@ -121,7 +139,7 @@
                         coordinator.resolveConflict(resolution)
                     }
                 )
-                
+
             case .error(let title, let message):
                 HIGAlertDialog(
                     icon: "xmark.circle.fill",
@@ -132,7 +150,7 @@
                         coordinator.dismissDialog()
                     }
                 )
-                
+
             case .success(let title, let message):
                 HIGAlertDialog(
                     icon: "checkmark.circle.fill",
@@ -143,9 +161,9 @@
                         coordinator.dismissDialog()
                     }
                 )
-                
+
             // MARK: - Batch Operation Dialogs
-                
+
             case .batchCopyConfirmation(let files, let destination, let sourcePanel):
                 BatchConfirmationDialog(
                     operationType: .copy,
@@ -164,7 +182,7 @@
                         coordinator.dismissDialog()
                     }
                 )
-                
+
             case .batchMoveConfirmation(let files, let destination, let sourcePanel):
                 BatchConfirmationDialog(
                     operationType: .move,
@@ -183,7 +201,7 @@
                         coordinator.dismissDialog()
                     }
                 )
-                
+
             case .batchDeleteConfirmation(let files, let sourcePanel):
                 BatchConfirmationDialog(
                     operationType: .delete,
@@ -201,7 +219,7 @@
                         coordinator.dismissDialog()
                     }
                 )
-                
+
             case .batchPackConfirmation(let files, let destination, _):
                 PackDialog(
                     mode: .pack,
@@ -219,7 +237,7 @@
                         coordinator.dismissDialog()
                     }
                 )
-                
+
             case .batchProgress(let state):
                 BatchProgressDialog(
                     state: state,
@@ -242,7 +260,7 @@
         let title: String
         let message: String
         let onDismiss: () -> Void
-        
+
         var body: some View {
             VStack(spacing: 16) {
                 // App icon with badge
@@ -250,7 +268,7 @@
                     Image(nsImage: NSApp.applicationIconImage)
                         .resizable()
                         .frame(width: 64, height: 64)
-                    
+
                     Image(systemName: icon)
                         .font(.system(size: 24))
                         .foregroundStyle(iconColor)
@@ -261,19 +279,19 @@
                         )
                         .offset(x: 4, y: 4)
                 }
-                
+
                 // Title
                 Text(title)
                     .font(.system(size: 13, weight: .semibold))
                     .multilineTextAlignment(.center)
-                
+
                 // Message
                 Text(message)
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
                     .lineLimit(4)
-                
+
                 // Button
                 HIGPrimaryButton(title: "OK", action: onDismiss)
                     .keyboardShortcut(.defaultAction)
