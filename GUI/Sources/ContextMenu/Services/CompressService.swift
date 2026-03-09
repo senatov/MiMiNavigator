@@ -43,7 +43,7 @@
             // Use ditto for Finder-compatible compression
             let task = Process()
             task.executableURL = URL(fileURLWithPath: "/usr/bin/ditto")
-            var args = ["-c", "-k", "--sequesterRsrc"]
+            var args = ["-c", "-k"]
             var temporaryStagingURL: URL?
 
             if files.count == 1 {
