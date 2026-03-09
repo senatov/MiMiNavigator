@@ -8,6 +8,8 @@ set -e
 # скрипт сразу падает при любой ошибке, вместо тихого развала где-нибудь на середине.
 set -euo pipefail
 
+/Users/senat/Develop/MiMiNavigator/Scripts/refreshVersionFile.zsh
+
 PROJECT_DIR="/Users/senat/Develop/MiMiNavigator"
 DERIVED_DATA="/tmp/mimi_build"
 APP_NAME="MiMiNavigator.app"
