@@ -672,8 +672,12 @@
         }
       }
     },
+    "Create Archive — %@" : {
+      "comment" : "Pack dialog title"
+    },
     "Create archive from %@" : {
       "comment" : "Pack dialog title",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {

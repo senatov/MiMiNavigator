@@ -74,25 +74,32 @@ struct DropTargetModifier: ViewModifier {
     @Environment(DragDropManager.self) var dragDropManager
 
     func body(content: Content) -> some View {
-        content
-            .dropDestination(for: URL.self) { droppedURLs, _ in
-                // Internal drag: use draggedFiles (preserves full multi-selection)
-                let internalFiles = dragDropManager.draggedFiles
-                if !internalFiles.isEmpty {
-                    log.debug("[DropTarget] drop received, using \(internalFiles.count) internal draggedFiles")
-                    return onDrop(internalFiles)
+        // CRITICAL: Only register .dropDestination when this row IS a valid target
+        // (i.e. a directory). For non-directory files, skip registration entirely
+        // so SwiftUI propagates the drop UP to the parent (FileTableView panel handler).
+        // Without this guard, FileRow consumes the drop event even when returning false,
+        // causing "drop works every other time" bug.
+        if isValidTarget {
+            content
+                .dropDestination(for: URL.self) { droppedURLs, _ in
+                    let internalFiles = dragDropManager.draggedFiles
+                    if !internalFiles.isEmpty {
+                        log.debug("[DropTarget] drop received, using \(internalFiles.count) internal draggedFiles")
+                        return onDrop(internalFiles)
+                    }
+                    let files = Self.resolveDroppedURLs(droppedURLs)
+                    guard !files.isEmpty else {
+                        log.warning("[DropTarget] no valid file URLs in drop")
+                        return false
+                    }
+                    log.debug("[DropTarget] drop received, using \(files.count) external URLs")
+                    return onDrop(files)
+                } isTargeted: { targeted in
+                    onTargetChange(targeted)
                 }
-                // External drag (Finder etc.): decode from URLs with validation
-                let files = Self.resolveDroppedURLs(droppedURLs)
-                guard !files.isEmpty else {
-                    log.warning("[DropTarget] no valid file URLs in drop")
-                    return false
-                }
-                log.debug("[DropTarget] drop received, using \(files.count) external URLs")
-                return onDrop(files)
-            } isTargeted: { targeted in
-                onTargetChange(targeted)
-            }
+        } else {
+            content
+        }
     }
 
     /// Resolve dropped URLs for external drags, or use internal draggedFiles.
