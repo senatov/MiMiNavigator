@@ -41,10 +41,11 @@
                             onDirectoryAction: { action, f in handleDirectoryAction(action, f) },
                             onMultiSelectionAction: { action in handleMultiSelectionAction(action) }
                         )
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .fixedSize(horizontal: false, vertical: true)
                     }
                 }
             }
-            .drawingGroup(opaque: false)
             .transaction { $0.disablesAnimations = true }  // Disable animations for large lists
         }
     }

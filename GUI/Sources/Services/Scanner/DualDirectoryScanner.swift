@@ -25,6 +25,9 @@
         // MARK: - FSEvents watchers (primary change detection — per-file events, no full scan)
         private var leftFSEvents: FSEventsDirectoryWatcher?
         private var rightFSEvents: FSEventsDirectoryWatcher?
+        // Track currently watched paths to avoid restarting identical watchers
+        private var leftWatchedPath: String?
+        private var rightWatchedPath: String?
 
         // MARK: - Debounce: skip polling if FSEvents delivered changes recently
         private var lastFSEventsPatch: [PanelSide: Date] = [:]
@@ -97,6 +100,13 @@
         }
 
         private func launchFSEventsWatcher(for side: PanelSide, path: String, showHiddenFiles: Bool) {
+            // Avoid restarting watcher if it already watches the same path
+            switch side {
+            case .left:
+                if leftWatchedPath == path { return }
+            case .right:
+                if rightWatchedPath == path { return }
+            }
             let watcher = FSEventsDirectoryWatcher { [weak self] patch in
                 guard let self else { return }
                 Task {
@@ -105,8 +115,14 @@
             }
             watcher.watch(path: path, showHiddenFiles: showHiddenFiles)
             switch side {
-                case .left: leftFSEvents = watcher
-                case .right: rightFSEvents = watcher
+                case .left:
+                    leftFSEvents?.stop()
+                    leftFSEvents = watcher
+                    leftWatchedPath = path
+                case .right:
+                    rightFSEvents?.stop()
+                    rightFSEvents = watcher
+                    rightWatchedPath = path
             }
             // Mark FSEvents as "active" so polling debounce kicks in for static dirs
             lastFSEventsPatch[side] = Date()
