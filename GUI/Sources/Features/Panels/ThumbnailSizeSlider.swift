@@ -23,8 +23,8 @@ struct ThumbnailSizeSlider: View {
 
     // Layout
     private let trackWidth: CGFloat = 130
-    private let trackHeight: CGFloat = 6
-    private let knobDiameter: CGFloat = 14
+    private let trackHeight: CGFloat = 5
+    private let knobDiameter: CGFloat = 16
     private let totalHeight: CGFloat = 22
 
     /// The displayed value: local dragValue while dragging, bound value otherwise
@@ -39,12 +39,12 @@ struct ThumbnailSizeSlider: View {
         return (clamped - range.lowerBound) / (range.upperBound - range.lowerBound)
     }
 
-    /// Soft accent — muted version of theme accent
+    /// Track fill — visible but not screaming, uses theme accent
     private var trackFillColor: Color {
-        accentColor.opacity(0.35)
+        accentColor.opacity(0.55)
     }
     private var trackBgColor: Color {
-        Color(nsColor: .separatorColor).opacity(0.25)
+        Color(nsColor: .separatorColor).opacity(0.4)
     }
 
     private func snap(_ v: CGFloat) -> CGFloat {
@@ -68,32 +68,40 @@ struct ThumbnailSizeSlider: View {
                 let knobX = knobDiameter / 2 + usableWidth * fraction
 
                 ZStack(alignment: .leading) {
-                    // Background track
+                    // Background track — with subtle inner shadow via overlay
                     Capsule()
                         .fill(trackBgColor)
+                        .overlay(
+                            Capsule()
+                                .stroke(Color.black.opacity(0.08), lineWidth: 0.5)
+                        )
                         .frame(height: trackHeight)
 
-                    // Filled portion
+                    // Filled portion — solid gradient, crisp edges
                     Capsule()
                         .fill(
                             LinearGradient(
                                 colors: [
+                                    trackFillColor.opacity(0.9),
                                     trackFillColor,
-                                    trackFillColor.opacity(0.6),
                                 ],
                                 startPoint: .leading,
                                 endPoint: .trailing
                             )
                         )
+                        .overlay(
+                            Capsule()
+                                .stroke(accentColor.opacity(0.15), lineWidth: 0.5)
+                        )
                         .frame(width: max(trackHeight, knobX), height: trackHeight)
 
-                    // Knob — 3D gradient
+                    // Knob — crisp 3D, larger for easy grabbing
                     Circle()
                         .fill(
                             LinearGradient(
                                 colors: [
                                     Color.white,
-                                    Color(nsColor: .controlBackgroundColor),
+                                    Color(nsColor: .controlColor),
                                 ],
                                 startPoint: .top,
                                 endPoint: .bottom
@@ -101,9 +109,10 @@ struct ThumbnailSizeSlider: View {
                         )
                         .overlay(
                             Circle()
-                                .stroke(Color(nsColor: .separatorColor).opacity(0.5), lineWidth: 0.5)
+                                .stroke(Color(nsColor: .separatorColor).opacity(0.7), lineWidth: 0.75)
                         )
-                        .shadow(color: .black.opacity(0.18), radius: 1.5, x: 0, y: 1)
+                        .shadow(color: .black.opacity(0.22), radius: 2, x: 0, y: 1)
+                        .shadow(color: .white.opacity(0.6), radius: 0.5, x: 0, y: -0.5)
                         .frame(width: knobDiameter, height: knobDiameter)
                         .offset(x: knobX - knobDiameter / 2)
                 }
@@ -150,11 +159,11 @@ struct ThumbnailSizeSlider: View {
         .padding(.vertical, 2)
         .background(
             RoundedRectangle(cornerRadius: 6, style: .continuous)
-                .fill(Color(nsColor: .windowBackgroundColor).opacity(0.4))
+                .fill(Color(nsColor: .windowBackgroundColor).opacity(0.55))
         )
         .overlay(
             RoundedRectangle(cornerRadius: 6, style: .continuous)
-                .stroke(Color(nsColor: .separatorColor).opacity(0.2), lineWidth: 0.5)
+                .stroke(Color(nsColor: .separatorColor).opacity(0.35), lineWidth: 0.5)
         )
     }
 

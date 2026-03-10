@@ -42,11 +42,12 @@ struct BreadCrumbView: View {
     }
 
     // MARK: - Display segment with original index for navigation
-    private struct DisplaySegment: Identifiable {
+    struct DisplaySegment: Identifiable {
         let id = UUID()
         let text: String           // displayed text (may be truncated)
         let originalIndex: Int     // index in original pathComponents for navigation
         let fullName: String       // full directory name for tooltip
+        var isTruncated: Bool { text != fullName }
     }
 
     // MARK: - Compute segments that fit in available width
@@ -178,26 +179,20 @@ struct BreadCrumbView: View {
         segmentButton(segment: segment)
     }
 
-    // MARK: - Segment button
+    // MARK: - Segment button with hover-expand for truncated names (Finder-style)
     private func segmentButton(segment: DisplaySegment) -> some View {
-        Button(action: { handlePathSelection(upTo: segment.originalIndex) }) {
-            Text(segment.text)
-                .font(.callout)
-                .foregroundStyle(colorStore.activeTheme.symlinkColor)
-                .padding(.vertical, 2)
-                .lineLimit(1)
-        }
-        .buttonStyle(.plain)
-        .help(makeHelpTooltip(for: segment.originalIndex, fullName: segment.fullName))
-        .contextMenu {
-            Button("Copy path") {
+        ExpandableSegmentButton(
+            segment: segment,
+            symlinkColor: colorStore.activeTheme.symlinkColor,
+            onTap: { handlePathSelection(upTo: segment.originalIndex) },
+            helpText: makeHelpTooltip(for: segment.originalIndex, fullName: segment.fullName),
+            copyAction: {
                 let archiveState = panelSide == .left ? appState.leftArchiveState : appState.rightArchiveState
                 let pathToCopy: String
                 if archiveState.isInsideArchive,
                    let tempDir = archiveState.archiveTempDir
                 {
                     if segment.originalIndex == 0 {
-                        // Copy real archive path
                         pathToCopy = archiveState.archiveURL?.path ?? ""
                     } else {
                         let subComponents = Array(pathComponents[1...segment.originalIndex])
@@ -209,7 +204,7 @@ struct BreadCrumbView: View {
                 NSPasteboard.general.clearContents()
                 NSPasteboard.general.setString(pathToCopy, forType: .string)
             }
-        }
+        )
     }
 
     // MARK: - Tooltip helper
