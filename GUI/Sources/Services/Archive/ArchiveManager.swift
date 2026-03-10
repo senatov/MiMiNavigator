@@ -58,7 +58,7 @@
                 try await ArchiveExtractor.extract(archiveURL: archiveURL, format: format, to: tempDir, password: password)
             } catch {
                 log.error("[ArchiveManager] openArchive: Extraction failed: \(error)")
-                openingInProgress.remove(key) 
+                openingInProgress.remove(key)
                 try? fm.removeItem(at: tempDir)
                 throw error
             }
