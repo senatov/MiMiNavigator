@@ -141,7 +141,7 @@ struct TableKeyboardNavigation {
         guard let view else { return nil }
         if let sv = view as? NSScrollView,
            sv.documentView != nil,
-           sv.documentView!.frame.height > 1000 {
+           sv.documentView!.frame.height > 100 {
             // Determine which panel this ScrollView belongs to by its X position in window coords
             let frameInWindow = sv.convert(sv.bounds, to: nil)
             let midX = frameInWindow.midX
