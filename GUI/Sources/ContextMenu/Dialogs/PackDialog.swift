@@ -51,11 +51,14 @@
                 defaultName = "Archive"
             }
 
+            let defaultFormat: ArchiveFormat = .zip
+
             if mode == .compress {
-                self._archiveName = State(initialValue: defaultName + ".zip")
+                self._archiveName = State(initialValue: defaultName + "." + defaultFormat.fileExtension)
             } else {
                 self._archiveName = State(initialValue: defaultName)
             }
+            self._selectedFormat = State(initialValue: defaultFormat)
             let lastDir = UserDefaults.standard.string(forKey: Self.lastArchiveDirectoryKey)
             self._destinationPath = State(initialValue: lastDir ?? destinationPath.path)
         }
@@ -101,7 +104,7 @@
         }
 
         private var showsFormatPicker: Bool {
-            mode == .pack
+            true
         }
 
         var body: some View {
@@ -200,7 +203,7 @@
         private func performPack() {
             UserDefaults.standard.set(destinationPath, forKey: Self.lastArchiveDirectoryKey)
 
-            let format: ArchiveFormat = mode == .compress ? .zip : selectedFormat
+            let format: ArchiveFormat = selectedFormat
             onPack(archiveName, format, URL(fileURLWithPath: destinationPath), deleteSourceFiles)
         }
 

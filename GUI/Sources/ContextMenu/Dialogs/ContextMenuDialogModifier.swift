@@ -108,6 +108,10 @@
                                 moveToArchive: deleteSource,
                                 appState: appState
                             )
+
+                            await MainActor.run {
+                                coordinator.dismissDialog()
+                            }
                         }
                     },
                     onCancel: {
