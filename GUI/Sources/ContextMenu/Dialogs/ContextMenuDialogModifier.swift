@@ -119,6 +119,19 @@
                     }
                 )
 
+            case .createFolder(let parentURL):
+                CreateFolderDialog(
+                    parentURL: parentURL,
+                    onCreateFolder: { folderName in
+                        Task {
+                            await coordinator.performCreateFolder(name: folderName, at: parentURL, appState: appState)
+                        }
+                    },
+                    onCancel: {
+                        coordinator.dismissDialog()
+                    }
+                )
+
             case .createLink(let file, let destination):
                 CreateLinkDialog(
                     file: file,

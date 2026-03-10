@@ -198,6 +198,32 @@
             }
         }
 
+        // MARK: - Create Folder
+
+        /// Create new folder, then select it in the panel
+        func performCreateFolder(name: String, at parentURL: URL, appState: AppState) async {
+            log.debug("\(#function) name='\(name)' at='\(parentURL.path)'")
+
+            isProcessing = true
+            defer {
+                isProcessing = false
+                activeDialog = nil
+            }
+
+            let folderURL = parentURL.appendingPathComponent(name)
+            do {
+                try FileManager.default.createDirectory(at: folderURL, withIntermediateDirectories: false)
+                let panel = panelForPath(parentURL.path, appState: appState)
+                await appState.refreshAndSelect(name: name, on: panel)
+                let otherPanel: PanelSide = panel == .left ? .right : .left
+                refreshPanel(otherPanel, appState: appState)
+                log.info("\(#function) SUCCESS created '\(name)' → selected on \(panel)")
+            } catch {
+                log.error("\(#function) FAILED: \(error.localizedDescription)")
+                activeDialog = .error(title: L10n.Error.failedToCreateFolder, message: error.localizedDescription)
+            }
+        }
+
         // MARK: - Create Link
 
         /// Create symbolic link or Finder alias

@@ -74,7 +74,7 @@ enum L10n {
         // MARK: Pack/Archive
         enum Pack {
             static func title(_ itemsDescription: String) -> String {
-                String(localized: "Create archive from \(itemsDescription)", comment: "Pack dialog title")
+                String(localized: "Create Archive — \(itemsDescription)", comment: "Pack dialog title")
             }
             static let archiveNameLabel = String(localized: "Archive name:", comment: "Archive name label")
             static let saveToLabel = String(localized: "Save to:", comment: "Save to label")
