@@ -251,44 +251,13 @@
 
             Group {
                 if viewModeStore.mode(for: panelSide) == .thumbnail {
-                    HStack(spacing: 5) {
-                        // Small grid icon
-                        Image(systemName: "square.grid.2x2")
-                            .font(.system(size: 9, weight: .medium))
-                            .foregroundStyle(.tertiary)
-
-                        Slider(
-                            value: Binding(
-                                get: { viewModeStore.thumbSize(for: panelSide) },
-                                set: { viewModeStore.setThumbSize($0, for: panelSide) }
-                            ),
-                            in: 16...900,
-                            step: 10
-                        )
-                        .frame(width: 100)
-                        .controlSize(.mini)
-
-                        // Large grid icon
-                        Image(systemName: "square.grid.2x2.fill")
-                            .font(.system(size: 12, weight: .medium))
-                            .foregroundStyle(.secondary)
-
-                        // Size label — monospaced digits
-                        Text("\(Int(viewModeStore.thumbSize(for: panelSide))) pt")
-                            .monospacedDigit()
-                            .font(.system(size: 10, weight: .medium))
-                            .foregroundStyle(.secondary)
-                            .frame(width: 40, alignment: .leading)
-                    }
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 2)
-                    .background(
-                        RoundedRectangle(cornerRadius: 5, style: .continuous)
-                            .fill(Color(nsColor: .controlBackgroundColor).opacity(0.5))
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 5, style: .continuous)
-                            .stroke(Color(nsColor: .separatorColor).opacity(0.3), lineWidth: 0.5)
+                    ThumbnailSizeSlider(
+                        value: Binding(
+                            get: { viewModeStore.thumbSize(for: panelSide) },
+                            set: { viewModeStore.setThumbSize($0, for: panelSide) }
+                        ),
+                        range: 16...900,
+                        accentColor: colorStore.activeTheme.accentColor
                     )
                     .transition(.opacity.combined(with: .move(edge: .trailing)))
                 }
