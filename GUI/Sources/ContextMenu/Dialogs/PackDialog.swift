@@ -22,6 +22,7 @@
         /// Callback: (archiveName, format, destination, deleteSourceFiles)
         let onPack: (String, ArchiveFormat, URL, Bool) -> Void
         let onCancel: () -> Void
+        private static let lastArchiveDirectoryKey = "LastArchiveDirectory"
 
         @State private var archiveName: String
         @State private var destinationPath: String
@@ -49,8 +50,14 @@
             } else {
                 defaultName = "Archive"
             }
-            self._archiveName = State(initialValue: defaultName)
-            self._destinationPath = State(initialValue: destinationPath.path)
+
+            if mode == .compress {
+                self._archiveName = State(initialValue: defaultName + ".zip")
+            } else {
+                self._archiveName = State(initialValue: defaultName)
+            }
+            let lastDir = UserDefaults.standard.string(forKey: Self.lastArchiveDirectoryKey)
+            self._destinationPath = State(initialValue: lastDir ?? destinationPath.path)
         }
 
         private var isValidName: Bool {
@@ -191,6 +198,8 @@
         }
 
         private func performPack() {
+            UserDefaults.standard.set(destinationPath, forKey: Self.lastArchiveDirectoryKey)
+
             let format: ArchiveFormat = mode == .compress ? .zip : selectedFormat
             onPack(archiveName, format, URL(fileURLWithPath: destinationPath), deleteSourceFiles)
         }
@@ -202,6 +211,11 @@
             panel.allowsMultipleSelection = false
             panel.canCreateDirectories = true
             panel.prompt = L10n.Button.select
+
+            if FileManager.default.fileExists(atPath: destinationPath) {
+                panel.directoryURL = URL(fileURLWithPath: destinationPath)
+            }
+
             if panel.runModal() == .OK, let url = panel.url {
                 destinationPath = url.path
             }

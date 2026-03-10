@@ -3,13 +3,13 @@
     //
     // Created by Claude AI on 04.02.2026.
     // Copyright © 2026 Senatov. All rights reserved.
-    // Description: Executes file operations (delete, rename, duplicate, compress, pack, etc.)
+    // Description: Extension of ContextMenuCoordinator that implements file operation executors (delete, rename, duplicate, compress, pack, etc.)
 
     import AppKit
     import FileModelKit
     import Foundation
 
-    // MARK: - File Operation Executors
+    // MARK: - ContextMenuCoordinator + File Operations
     /// Extension containing async file operation executors
     extension ContextMenuCoordinator {
 
@@ -95,23 +95,30 @@
 
         // MARK: - Compress
 
-        /// Compress files (Finder-style .zip)
-        func performCompress(files: [CustomFile], appState: AppState) async {
-            log.debug("\(#function) files.count=\(files.count)")
-
-            guard let moveToArchive = promptMoveToArchiveOption(filesCount: files.count) else {
-                log.info("\(#function) cancelled by user")
-                activeDialog = nil
-                return
-            }
+        func performCompress(
+            files: [CustomFile],
+            archiveName: String,
+            destination: URL,
+            moveToArchive: Bool,
+            appState: AppState
+        ) async {
+            log.debug("\(#function) files.count=\(files.count) archiveName='\(archiveName)' dest='\(destination.path)' moveToArchive=\(moveToArchive)")
 
             isProcessing = true
             defer { isProcessing = false }
 
             do {
                 let urls = files.map { $0.urlValue }
-                let result = try await CompressService.shared.compress(files: urls, moveToArchive: moveToArchive)
+
+                let result = try await CompressService.shared.compress(
+                    files: urls,
+                    archiveName: archiveName,
+                    destination: destination,
+                    moveToArchive: moveToArchive
+                )
+
                 refreshPanels(appState: appState)
+
                 log.info("\(#function) SUCCESS created '\(result.lastPathComponent)' moveToArchive=\(moveToArchive)")
             } catch {
                 log.error("\(#function) FAILED: \(error.localizedDescription)")
@@ -119,37 +126,17 @@
             }
         }
 
-        @MainActor
-        private func promptMoveToArchiveOption(filesCount: Int) -> Bool? {
-            let alert = NSAlert()
-            alert.alertStyle = .informational
-            alert.messageText = filesCount == 1 ? "Compress Item" : "Compress Items"
-            alert.informativeText = filesCount == 1
-                ? "Create a ZIP archive for the selected item."
-                : "Create a ZIP archive for the selected items."
-            alert.addButton(withTitle: "Compress")
-            alert.addButton(withTitle: "Cancel")
-
-            let checkbox = NSButton(checkboxWithTitle: "Move originals into archive", target: nil, action: nil)
-            checkbox.state = .off
-            checkbox.setButtonType(.switch)
-            alert.accessoryView = checkbox
-
-            let response = alert.runModal()
-            guard response == .alertFirstButtonReturn else {
-                return nil
-            }
-
-            return checkbox.state == .on
-        }
-
         // MARK: - Pack (Archive with options)
-
         /// Pack files into archive with custom options.
         /// Creates destination directory if it doesn't exist.
         /// Selects the created archive in the appropriate panel.
-        func performPack(files: [CustomFile], archiveName: String, format: ArchiveFormat, destination: URL, deleteSource: Bool = false, appState: AppState) async {
-            log.debug("\(#function) files.count=\(files.count) archiveName='\(archiveName)' format=\(format) dest='\(destination.path)' deleteSource=\(deleteSource)")
+        func performPack(
+            files: [CustomFile], archiveName: String, format: ArchiveFormat, destination: URL, deleteSource: Bool = false,
+            appState: AppState
+        ) async {
+            log.debug(
+                "\(#function) files.count=\(files.count) archiveName='\(archiveName)' format=\(format) dest='\(destination.path)' deleteSource=\(deleteSource)"
+            )
 
             isProcessing = true
             defer {

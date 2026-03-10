@@ -24,22 +24,19 @@
         /// Compresses files using Finder-style naming (Archive.zip or item.zip)
         /// Returns URL of created archive
         @discardableResult
-        func compress(files: [URL], moveToArchive: Bool = false) async throws -> URL {
+        func compress(
+            files: [URL],
+            archiveName: String,
+            destination: URL,
+            moveToArchive: Bool = false
+        ) async throws -> URL {
             log.debug("\(#function) files.count=\(files.count) files=\(files.map { $0.lastPathComponent })")
             guard !files.isEmpty else {
                 log.error("\(#function) FAILED: no files to compress")
                 throw CompressError.noFilesToCompress
             }
-            let parentDirectories = Set(files.map { $0.deletingLastPathComponent().path })
-            guard parentDirectories.count == 1 else {
-                let message = "All files must be located in the same directory"
-                log.error("\(#function) FAILED: \(message)")
-                throw CompressError.compressionFailed(message)
-            }
-            let parentDir = files[0].deletingLastPathComponent()
-            let archiveName = generateArchiveName(for: files, in: parentDir)
-            let archiveURL = parentDir.appendingPathComponent(archiveName)
-            log.info("\(#function) compressing \(files.count) item(s) → '\(archiveName)'")
+            let archiveURL = destination.appendingPathComponent(archiveName)
+            log.info("\(#function) compressing \(files.count) item(s) → '\(archiveURL.path)'")
             // Use ditto for Finder-compatible compression
             let task = Process()
             task.executableURL = URL(fileURLWithPath: "/usr/bin/ditto")
