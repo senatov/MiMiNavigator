@@ -36,7 +36,17 @@
                     let panel = appState.focusedPanel
                     let files = appState.filesForOperation(on: panel)
                     guard !files.isEmpty else { stub("Pack…: select or mark files first")(); return }
-                    Task { await ContextMenuCoordinator.shared.performCompress(files: files, moveToArchive: false, appState: appState) }
+                    Task {
+                        let path = panel == .left ? appState.leftPath : appState.rightPath
+                        let destinationURL = URL(fileURLWithPath: path)
+                        await ContextMenuCoordinator.shared.performCompress(
+                            files: files,
+                            archiveName: "",
+                            destination: destinationURL,
+                            moveToArchive: false,
+                            appState: appState
+                        )
+                    }
                 },
                 shortcut: "⌥F5"
             ),
