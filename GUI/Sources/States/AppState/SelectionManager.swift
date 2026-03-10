@@ -92,9 +92,10 @@ final class SelectionManager {
                 lastRecordedPathRight = path
         }
 
-        log.debug("[SelectionManager] history add \(panelSide): \(path)")
+        // Only setCurrent — don't add to history.
+        // History is populated in updatePath() when user actually enters a directory.
+        // Arrow-key navigation through files/dirs should NOT pollute history.
         selectionsHistory.setCurrent(to: path)
-        selectionsHistory.add(path)
     }
 
     /// Move selection up/down by step count
