@@ -8,6 +8,7 @@
 //   - SF Symbol icon fallback for all other file types
 //   - File name + size shown below each cell
 //   - Tappable cells with selection highlight
+//   - Jump-to-edge buttons aligned with scrollbar
 
 import AppKit
 import FileModelKit
@@ -31,6 +32,9 @@ struct ThumbnailGridView: View {
 
     @State private var selectedIDs: Set<CustomFile.ID> = []
 
+    /// Width matching the native scrollbar track (~15pt)
+    private static let scrollbarWidth: CGFloat = 15
+
     private var columns: [GridItem] {
         [GridItem(.adaptive(minimum: cellSize, maximum: cellSize + 20), spacing: 8)]
     }
@@ -42,10 +46,7 @@ struct ThumbnailGridView: View {
             } else {
                 selectedIDs.insert(file.id)
             }
-
-            // Update anchor selection
             selectedID = selectedIDs.isEmpty ? nil : file.id
-
             onSelect(file)
             return
         }
@@ -97,6 +98,62 @@ struct ThumbnailGridView: View {
             }
             .padding(10)
         }
+        // MARK: - Jump-to-edge buttons (matching file table style)
+        .overlay(alignment: .trailing) {
+            if files.count > 50 {
+                VStack(spacing: 0) {
+                    scrollEdgeButton(icon: "chevron.up.2") {
+                        NotificationCenter.default.post(
+                            name: .jumpToFirst,
+                            object: panelSide
+                        )
+                    }
+                    .help("Jump to top (Home)")
+
+                    Spacer()
+
+                    scrollEdgeButton(icon: "chevron.down.2") {
+                        NotificationCenter.default.post(
+                            name: .jumpToLast,
+                            object: panelSide
+                        )
+                    }
+                    .help("Jump to bottom (End)")
+                }
+                .frame(width: Self.scrollbarWidth)
+            }
+        }
+    }
+
+    // MARK: - Scroll Edge Button (3D square, matches scrollbar width)
+    private func scrollEdgeButton(icon: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: icon)
+                .font(.system(size: 9, weight: .heavy))
+                .foregroundStyle(.secondary)
+                .frame(width: Self.scrollbarWidth, height: Self.scrollbarWidth)
+                .background(
+                    RoundedRectangle(cornerRadius: 3, style: .continuous)
+                        .fill(
+                            LinearGradient(
+                                colors: [
+                                    Color(nsColor: .controlBackgroundColor).opacity(0.95),
+                                    Color(nsColor: .controlBackgroundColor).opacity(0.75),
+                                ],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 3, style: .continuous)
+                        .stroke(Color(nsColor: .separatorColor).opacity(0.6), lineWidth: 0.5)
+                )
+                .shadow(color: .black.opacity(0.12), radius: 1, x: 0, y: 1)
+                .shadow(color: .white.opacity(0.5), radius: 0.5, x: 0, y: -0.5)
+        }
+        .buttonStyle(.plain)
+        .contentShape(Rectangle())
     }
 
     // MARK: - Drag helpers
@@ -133,7 +190,6 @@ private struct ThumbnailCellView: View {
     // MARK: - Body
     var body: some View {
         VStack(spacing: 4) {
-            // Thumbnail or icon
             ZStack {
                 RoundedRectangle(cornerRadius: 6, style: .continuous)
                     .fill(
@@ -191,9 +247,7 @@ private struct ThumbnailCellView: View {
                     onSelect(modifiers)
                 }
         )
-        // MARK: Context menu
         .contextMenu { contextMenuContent }
-        // MARK: Drag
         .onDrag {
             dragDropManager.startDrag(files: dragFiles, from: panelSide)
             return makeDragProvider()
@@ -205,21 +259,17 @@ private struct ThumbnailCellView: View {
 
     private func makeDragProvider() -> NSItemProvider {
         let provider = NSItemProvider()
-
         if let first = dragFiles.first {
             provider.registerObject(first.urlValue as NSURL, visibility: .all)
         }
-
         let allDraggedPaths =
             dragFiles
             .map { $0.urlValue.absoluteString }
             .joined(separator: "\n")
-
         provider.registerDataRepresentation(forTypeIdentifier: UTType.utf8PlainText.identifier, visibility: .all) { completion in
             completion(allDraggedPaths.data(using: .utf8), nil)
             return nil
         }
-
         return provider
     }
 
@@ -275,11 +325,9 @@ private struct ThumbnailCellView: View {
     // MARK: - Thumbnail loading via QLThumbnailGenerator
     @MainActor
     private func loadThumbnail() async {
-        // Directories get no QL thumbnail
         if file.isDirectory { return }
-
         let url = file.urlValue
-        let size = CGSize(width: imageSize * 2, height: imageSize * 2)  // 2x for retina
+        let size = CGSize(width: imageSize * 2, height: imageSize * 2)
         let scale = NSScreen.main?.backingScaleFactor ?? 2.0
         let request = QLThumbnailGenerator.Request(
             fileAt: url,
@@ -291,7 +339,7 @@ private struct ThumbnailCellView: View {
             let rep = try await QLThumbnailGenerator.shared.generateBestRepresentation(for: request)
             self.thumbnail = rep.nsImage
         } catch {
-            // Silently fall through to SF Symbol fallback — not every file has a QL provider
+            // Silently fall through to SF Symbol fallback
         }
     }
 }
