@@ -128,16 +128,20 @@ struct PathAutoCompleteField: View {
                 includingPropertiesForKeys: [.isDirectoryKey],
                 options: []
             )
+            let showHidden = UserPreferences.shared.snapshot.showHiddenFiles
             var matches = contents
+                .filter { url in
+                    // Only directories — this is a path navigator, not a file picker
+                    isDirAtURL(url)
+                }
                 .map(\.lastPathComponent)
                 .filter { name in
-                    prefix.isEmpty || name.lowercased().hasPrefix(prefix.lowercased())
+                    // Respect global "show hidden files" toggle
+                    if !showHidden && name.hasPrefix(".") { return false }
+                    return prefix.isEmpty || name.lowercased().hasPrefix(prefix.lowercased())
                 }
                 .sorted { lhs, rhs in
-                    let lDir = isDirAtURL(dirURL.appendingPathComponent(lhs))
-                    let rDir = isDirAtURL(dirURL.appendingPathComponent(rhs))
-                    if lDir != rDir { return lDir }
-                    return lhs.localizedCaseInsensitiveCompare(rhs) == .orderedAscending
+                    lhs.localizedCaseInsensitiveCompare(rhs) == .orderedAscending
                 }
             if matches.count > maxSuggestions {
                 matches = Array(matches.prefix(maxSuggestions))
@@ -147,9 +151,8 @@ struct PathAutoCompleteField: View {
             showSuggestions = !matches.isEmpty
             updateGhostFromSelection()
             if showSuggestions {
-                let items = matches.map { name -> AutoCompleteItem in
-                    let isDir = isDirAtURL(dirURL.appendingPathComponent(name))
-                    return AutoCompleteItem(name: name, isDirectory: isDir, matchPrefix: prefix)
+                let items = matches.map { name in
+                    AutoCompleteItem(name: name, isDirectory: true, matchPrefix: prefix)
                 }
                 popupController.show(items: items, selectedIndex: 0) { idx in
                     if idx >= 0, idx < suggestions.count {
@@ -286,15 +289,32 @@ final class AutoCompletePopupController: @unchecked Sendable {
         tableView?.reloadData()
         selectRow(selectedIndex)
         if !panel.isVisible {
+            panel.alphaValue = 0
             window.addChildWindow(panel, ordered: .above)
             panel.orderFront(nil)
+            NSAnimationContext.runAnimationGroup { ctx in
+                ctx.duration = 0.15
+                ctx.timingFunction = CAMediaTimingFunction(name: .easeOut)
+                panel.animator().alphaValue = 1
+            }
         }
     }
 
     // MARK: - Hide
     func hide() {
-        panel?.parent?.removeChildWindow(panel!)
-        panel?.orderOut(nil)
+        guard let panel, panel.isVisible else {
+            items = []
+            return
+        }
+        NSAnimationContext.runAnimationGroup({ ctx in
+            ctx.duration = 0.1
+            ctx.timingFunction = CAMediaTimingFunction(name: .easeIn)
+            panel.animator().alphaValue = 0
+        }, completionHandler: { [weak self] in
+            guard let self else { return }
+            self.panel?.parent?.removeChildWindow(self.panel!)
+            self.panel?.orderOut(nil)
+        })
         items = []
     }
 
