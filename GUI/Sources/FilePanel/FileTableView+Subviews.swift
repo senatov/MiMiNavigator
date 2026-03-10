@@ -1,90 +1,127 @@
-// FileTableView+Subviews.swift
-// MiMiNavigator
-//
-// Created by Iakov Senatov on 04.02.2026.
-// Copyright © 2024-2026 Senatov. All rights reserved.
-// Description: View components for FileTableView
+    // FileTableView+Subviews.swift
+    // MiMiNavigator
+    //
+    // Created by Iakov Senatov on 04.02.2026.
+    // Copyright © 2024-2026 Senatov. All rights reserved.
+    // Description: View components for FileTableView
 
-import SwiftUI
+    import SwiftUI
 
-// MARK: - Subviews
-extension FileTableView {
+    // MARK: - Subviews
+    extension FileTableView {
 
-    var mainScrollView: some View {
-        VStack(spacing: 0) {
-            ScrollViewReader { proxy in
-                ScrollView {
-                    LazyVStack(alignment: .leading, spacing: 0, pinnedViews: [.sectionHeaders]) {
+        var mainScrollView: some View {
+            VStack(spacing: 0) {
+                ScrollViewReader { proxy in
+                    ScrollView {
+                        LazyVStack(alignment: .leading, spacing: 0, pinnedViews: [.sectionHeaders]) {
 
-                        Section {
-                            FileTableRowsView(
-                                rows: sortedRows,
-                                selectedID: $selectedID,
-                                panelSide: panelSide,
-                                layout: layout,
-                                onSelect: onSelect,
-                                onDoubleClick: onDoubleClick,
-                                handleFileAction: handleFileAction,
-                                handleDirectoryAction: handleDirectoryAction,
-                                handleMultiSelectionAction: handleMultiSelectionAction
-                            )
+                            Section {
+                                FileTableRowsView(
+                                    rows: sortedRows,
+                                    selectedID: $selectedID,
+                                    panelSide: panelSide,
+                                    layout: layout,
+                                    onSelect: onSelect,
+                                    onDoubleClick: onDoubleClick,
+                                    handleFileAction: handleFileAction,
+                                    handleDirectoryAction: handleDirectoryAction,
+                                    handleMultiSelectionAction: handleMultiSelectionAction
+                                )
 
-                            // Empty space — clickable for background context menu
-                            Color.clear
-                                .opacity(0.01)
-                                .frame(minHeight: 300)
-                                .frame(maxWidth: .infinity)
-                                .contentShape(Rectangle())
-                                .contextMenu { panelBackgroundMenu }
-                                .onTapGesture { selectedID = nil }
+                                // Empty space — clickable for background context menu
+                                Color.clear
+                                    .opacity(0.01)
+                                    .frame(minHeight: 300)
+                                    .frame(maxWidth: .infinity)
+                                    .contentShape(Rectangle())
+                                    .contextMenu { panelBackgroundMenu }
+                                    .onTapGesture { selectedID = nil }
 
-                        } header: {
-                            TableHeaderView(
-                                panelSide: panelSide,
-                                layout: layout
-                            )
+                            } header: {
+                                TableHeaderView(
+                                    panelSide: panelSide,
+                                    layout: layout
+                                )
+                            }
                         }
                     }
+                    // Jump buttons near scrollbar (top / bottom)
+                    .overlay(alignment: .topTrailing) {
+                        if sortedRows.count > 200 {
+                            Button {
+                                NotificationCenter.default.post(
+                                    name: .jumpToFirst,
+                                    object: panelSide
+                                )
+                            } label: {
+                                Image(systemName: "chevron.up.2")
+                                    .font(.system(size: 9, weight: .bold))
+                                    .padding(6)
+                            }
+                            .buttonStyle(.plain)
+                            .background(.ultraThinMaterial, in: Circle())
+                            .padding(.trailing, 3)
+                            .padding(.top, 4)
+                        }
+                    }
+                    .overlay(alignment: .bottomTrailing) {
+                        if sortedRows.count > 200 {
+                            Button {
+                                NotificationCenter.default.post(
+                                    name: .jumpToLast,
+                                    object: panelSide
+                                )
+                            } label: {
+                                Image(systemName: "chevron.down.2")
+                                    .font(.system(size: 9, weight: .bold))
+                                    .padding(6)
+                            }
+                            .buttonStyle(.plain)
+                            .background(.ultraThinMaterial, in: Circle())
+                            .padding(.trailing, 3)
+                            .padding(.bottom, 6)
+                        }
+                    }
+                    .safeAreaInset(edge: .bottom, spacing: 0) {
+                        Color.clear.frame(height: 40)
+                    }
+                    .contextMenu { panelBackgroundMenu }
+                    // DISABLED: SwiftUI scrollTo is O(n) on LazyVStack — causes 1s+ freezes.
+                    // AppKit NSScrollView.scroll(to:) in TableKeyboardNavigation handles all scrolling.
+                    // .onChange(of: scrollAnchorID) { _, newID in
+                    //     guard let id = newID else { return }
+                    //     withAnimation(.easeOut(duration: 0.05)) {
+                    //         proxy.scrollTo(id, anchor: .center)
+                    //     }
+                    // }
                 }
-                .safeAreaInset(edge: .bottom, spacing: 0) {
-                    Color.clear.frame(height: 40)
-                }
-                .contextMenu { panelBackgroundMenu }
-                // DISABLED: SwiftUI scrollTo is O(n) on LazyVStack — causes 1s+ freezes.
-                // AppKit NSScrollView.scroll(to:) in TableKeyboardNavigation handles all scrolling.
-                // .onChange(of: scrollAnchorID) { _, newID in
-                //     guard let id = newID else { return }
-                //     withAnimation(.easeOut(duration: 0.05)) {
-                //         proxy.scrollTo(id, anchor: .center)
-                //     }
-                // }
             }
         }
-    }
 
-    @ViewBuilder
-    var panelBackgroundMenu: some View {
-        let currentPath = appState.pathURL(for: panelSide) ?? URL(fileURLWithPath: "/")
-        let hasMarkedDirs = appState.markedCustomFiles(for: panelSide).contains { $0.isDirectory }
-        PanelBackgroundContextMenu(
-            panelSide: panelSide,
-            currentPath: currentPath,
-            canGoBack: appState.selectionsHistory.canGoBack,
-            canGoForward: appState.selectionsHistory.canGoForward,
-            hasMarkedDirectories: hasMarkedDirs,
-            onAction: handlePanelBackgroundAction
-        )
-    }
-
-    var panelBorder: some View {
-        RoundedRectangle(cornerRadius: 8, style: .continuous)
-            .stroke(
-                isPanelDropTargeted
-                    ? Color.accentColor.opacity(0.8)
-                    : Color.clear,
-                lineWidth: isPanelDropTargeted ? 2 : 1
+        @ViewBuilder
+        var panelBackgroundMenu: some View {
+            let currentPath = appState.pathURL(for: panelSide) ?? URL(fileURLWithPath: "/")
+            let hasMarkedDirs = appState.markedCustomFiles(for: panelSide).contains { $0.isDirectory }
+            PanelBackgroundContextMenu(
+                panelSide: panelSide,
+                currentPath: currentPath,
+                canGoBack: appState.selectionsHistory.canGoBack,
+                canGoForward: appState.selectionsHistory.canGoForward,
+                hasMarkedDirectories: hasMarkedDirs,
+                onAction: handlePanelBackgroundAction
             )
-            .allowsHitTesting(false)
-    }
+        }
 
-}
+        var panelBorder: some View {
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .stroke(
+                    isPanelDropTargeted
+                        ? Color.accentColor.opacity(0.8)
+                        : Color.clear,
+                    lineWidth: isPanelDropTargeted ? 2 : 1
+                )
+                .allowsHitTesting(false)
+        }
+
+    }
