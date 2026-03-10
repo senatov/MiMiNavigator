@@ -5,6 +5,7 @@
 // Copyright © 2026 Senatov. All rights reserved.
 // Description: Custom slider for thumbnail cell size — macOS Sound-panel style.
 //   Rounded track with soft fill, knob with 3D look, grid icons on edges.
+//   Uses local @State during drag to avoid UserDefaults write-storm.
 
 import SwiftUI
 
@@ -16,19 +17,29 @@ struct ThumbnailSizeSlider: View {
     let range: ClosedRange<CGFloat>
     let accentColor: Color
 
+    // Local drag state — prevents UserDefaults write on every pixel
+    @State private var isDragging = false
+    @State private var dragValue: CGFloat = 0
+
     // Layout
-    private let trackWidth: CGFloat = 130      // ~30% wider than 100
+    private let trackWidth: CGFloat = 130
     private let trackHeight: CGFloat = 6
     private let knobDiameter: CGFloat = 14
     private let totalHeight: CGFloat = 22
 
+    /// The displayed value: local dragValue while dragging, bound value otherwise
+    private var displayValue: CGFloat {
+        isDragging ? dragValue : value
+    }
+
     /// Normalized 0…1
     private var fraction: CGFloat {
-        let clamped = min(max(value, range.lowerBound), range.upperBound)
+        let v = displayValue
+        let clamped = min(max(v, range.lowerBound), range.upperBound)
         return (clamped - range.lowerBound) / (range.upperBound - range.lowerBound)
     }
 
-    /// Soft accent — muted version of theme accent, not screaming blue
+    /// Soft accent — muted version of theme accent
     private var trackFillColor: Color {
         accentColor.opacity(0.35)
     }
@@ -36,12 +47,14 @@ struct ThumbnailSizeSlider: View {
         Color(nsColor: .separatorColor).opacity(0.25)
     }
 
+    private func snap(_ v: CGFloat) -> CGFloat {
+        (v / 10).rounded() * 10
+    }
+
     var body: some View {
         HStack(spacing: 6) {
             // Small grid icon (decrease button)
-            Button {
-                stepValue(by: -20)
-            } label: {
+            Button { stepValue(by: -20) } label: {
                 Image(systemName: "square.grid.2x2")
                     .font(.system(size: 9, weight: .semibold))
                     .foregroundStyle(.secondary)
@@ -55,7 +68,7 @@ struct ThumbnailSizeSlider: View {
                 let knobX = knobDiameter / 2 + usableWidth * fraction
 
                 ZStack(alignment: .leading) {
-                    // Background track (full width)
+                    // Background track
                     Capsule()
                         .fill(trackBgColor)
                         .frame(height: trackHeight)
@@ -74,7 +87,7 @@ struct ThumbnailSizeSlider: View {
                         )
                         .frame(width: max(trackHeight, knobX), height: trackHeight)
 
-                    // Knob
+                    // Knob — 3D gradient
                     Circle()
                         .fill(
                             LinearGradient(
@@ -99,20 +112,26 @@ struct ThumbnailSizeSlider: View {
                 .gesture(
                     DragGesture(minimumDistance: 0)
                         .onChanged { drag in
+                            if !isDragging {
+                                isDragging = true
+                                dragValue = value
+                            }
                             let newFraction = (drag.location.x - knobDiameter / 2) / usableWidth
                             let clamped = min(max(newFraction, 0), 1)
-                            value = range.lowerBound + clamped * (range.upperBound - range.lowerBound)
-                            // Snap to step of 10
-                            value = (value / 10).rounded() * 10
+                            let raw = range.lowerBound + clamped * (range.upperBound - range.lowerBound)
+                            dragValue = snap(raw)
+                        }
+                        .onEnded { _ in
+                            // Commit to binding only once — triggers UserDefaults write + thumbnail resize
+                            value = dragValue
+                            isDragging = false
                         }
                 )
             }
             .frame(width: trackWidth, height: totalHeight)
 
             // Large grid icon (increase button)
-            Button {
-                stepValue(by: 20)
-            } label: {
+            Button { stepValue(by: 20) } label: {
                 Image(systemName: "square.grid.2x2.fill")
                     .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(.secondary)
@@ -121,7 +140,7 @@ struct ThumbnailSizeSlider: View {
             .help("Larger thumbnails")
 
             // Size label
-            Text("\(Int(value)) pt")
+            Text("\(Int(displayValue)) pt")
                 .monospacedDigit()
                 .font(.system(size: 10, weight: .medium))
                 .foregroundStyle(.secondary)
@@ -141,7 +160,7 @@ struct ThumbnailSizeSlider: View {
 
     // MARK: - Step helper
     private func stepValue(by delta: CGFloat) {
-        let newVal = min(max(value + delta, range.lowerBound), range.upperBound)
-        value = (newVal / 10).rounded() * 10
+        let newVal = snap(min(max(value + delta, range.lowerBound), range.upperBound))
+        value = newVal
     }
 }
