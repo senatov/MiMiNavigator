@@ -29,7 +29,10 @@
         }
 
         func updateNSView(_ nsView: DragNSView, context: Context) {
+            nsView.panelSide = panelSide
             nsView.files = files
+            nsView.dragDropManager = dragDropManager
+            nsView.appState = appState
         }
     }
 
@@ -40,27 +43,54 @@
         weak var dragDropManager: DragDropManager?
         weak var appState: AppState?
 
+        private var mouseDownPoint: NSPoint = .zero
+        private let dragThreshold: CGFloat = 4.0
+        private var didStartDragging = false
+
+        override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
+            true
+        }
+
+        override func mouseDown(with event: NSEvent) {
+            mouseDownPoint = convert(event.locationInWindow, from: nil)
+            didStartDragging = false
+            super.mouseDown(with: event)
+        }
+
+        override func mouseUp(with event: NSEvent) {
+            didStartDragging = false
+            super.mouseUp(with: event)
+        }
+
         override func mouseDragged(with event: NSEvent) {
 
-            guard let appState else { return }
+            guard !didStartDragging else { return }
+            guard let appState, let panelSide else { return }
 
-            let selectedFiles = appState.markedFiles(for: panelSide)
+            let currentPoint = convert(event.locationInWindow, from: nil)
+            let deltaX = currentPoint.x - mouseDownPoint.x
+            let deltaY = currentPoint.y - mouseDownPoint.y
+            let dragDistance = hypot(deltaX, deltaY)
 
-            guard !selectedFiles.isEmpty else { return }
+            guard dragDistance >= dragThreshold else {
+                super.mouseDragged(with: event)
+                return
+            }
 
-            log.debug("[DragOverlay] starting AppKit drag with \(selectedFiles.count) file(s)")
+            let selectedPaths = appState.markedFiles(for: panelSide)
+            let selectedURLs = selectedPaths.map { URL(fileURLWithPath: $0) }
 
-            let draggingItems: [NSDraggingItem] = selectedFiles.map { file in
+            guard !selectedURLs.isEmpty else { return }
 
-                let pasteboardItem = NSPasteboardItem()
-                let fileURL = URL(fileURLWithPath: file)
-                pasteboardItem.setString(fileURL.absoluteString, forType: .fileURL)
+            didStartDragging = true
+            log.debug("[DragOverlay] starting AppKit drag with \(selectedURLs.count) file(s)")
 
-                let draggingItem = NSDraggingItem(pasteboardWriter: pasteboardItem)
-
-                let frame = self.bounds
-                draggingItem.setDraggingFrame(frame, contents: nil)
-
+            let draggingItems: [NSDraggingItem] = selectedURLs.map { fileURL in
+                let draggingItem = NSDraggingItem(pasteboardWriter: fileURL as NSURL)
+                let icon = NSWorkspace.shared.icon(forFile: fileURL.path)
+                icon.size = NSSize(width: 32, height: 32)
+                let draggingFrame = NSRect(origin: .zero, size: icon.size)
+                draggingItem.setDraggingFrame(draggingFrame, contents: icon)
                 return draggingItem
             }
 
@@ -71,6 +101,22 @@
             _ session: NSDraggingSession,
             sourceOperationMaskFor context: NSDraggingContext
         ) -> NSDragOperation {
-            return .copy
+            switch context {
+            case .outsideApplication:
+                return [.copy, .move]
+            case .withinApplication:
+                return [.move]
+            @unknown default:
+                return [.copy]
+            }
+        }
+
+        func ignoreModifierKeys(for session: NSDraggingSession) -> Bool {
+            false
+        }
+
+        func draggingSession(_ session: NSDraggingSession, endedAt screenPoint: NSPoint, operation: NSDragOperation) {
+            didStartDragging = false
+            log.debug("[DragOverlay] drag ended operation=\(String(describing: operation.rawValue))")
         }
     }
