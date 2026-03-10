@@ -103,6 +103,9 @@
                         Task {
                             await coordinator.performCompress(
                                 files: files,
+                                archiveName: archiveName,
+                                destination: finalDestination,
+                                moveToArchive: deleteSource,
                                 appState: appState
                             )
                         }

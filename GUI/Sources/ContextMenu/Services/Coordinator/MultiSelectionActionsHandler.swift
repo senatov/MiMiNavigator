@@ -1,66 +1,66 @@
-// MultiSelectionActionsHandler.swift
-// MiMiNavigator
-//
-// Created by Claude on 14.02.2026.
-// Copyright © 2026 Senatov. All rights reserved.
-// Description: Handles MultiSelectionAction dispatching for batch operations
+    // MultiSelectionActionsHandler.swift
+    // MiMiNavigator
+    //
+    // Created by Claude on 14.02.2026.
+    // Copyright © 2026 Senatov. All rights reserved.
+    // Description: Handles MultiSelectionAction dispatching for batch operations
 
-import AppKit
-import FileModelKit
-import Foundation
+    import AppKit
+    import FileModelKit
+    import Foundation
 
-// MARK: - Multi Selection Actions Handler
-/// Extension handling batch operations on multiple marked files
-extension ContextMenuCoordinator {
+    // MARK: - Multi Selection Actions Handler
+    /// Extension handling batch operations on multiple marked files
+    extension ContextMenuCoordinator {
 
-    /// Handles multi-selection context menu actions
-    func handleMultiSelectionAction(_ action: MultiSelectionAction, panel: PanelSide, appState: AppState) {
-        let files = appState.filesForOperation(on: panel)
+        /// Handles multi-selection context menu actions
+        func handleMultiSelectionAction(_ action: MultiSelectionAction, panel: PanelSide, appState: AppState) {
+            let files = appState.filesForOperation(on: panel)
 
-        guard !files.isEmpty else {
-            log.warning("[MultiSelectionActionsHandler] no files for operation")
-            return
-        }
-
-        log.debug("[MultiSelectionActionsHandler] action=\(action.rawValue) files.count=\(files.count) panel=\(panel)")
-
-        switch action {
-        case .cut:
-            clipboard.cut(files: files, from: panel)
-            log.info("[MultiSelectionActionsHandler] cut \(files.count) files")
-
-        case .copy:
-            clipboard.copy(files: files, from: panel)
-            log.info("[MultiSelectionActionsHandler] copied \(files.count) files")
-
-        case .copyAsPathname:
-            let paths = files.map { $0.urlValue.path }
-            let pasteboard = NSPasteboard.general
-            pasteboard.clearContents()
-            pasteboard.setString(paths.joined(separator: "\n"), forType: .string)
-            log.info("[MultiSelectionActionsHandler] copied \(paths.count) pathname(s) to clipboard")
-
-        case .paste:
-            Task {
-                await performPaste(to: panel, appState: appState)
+            guard !files.isEmpty else {
+                log.warning("[MultiSelectionActionsHandler] no files for operation")
+                return
             }
 
-        case .compress:
-            Task {
-                await performCompress(files: files, appState: appState)
-                appState.clearMarksAfterOperation(on: panel)
+            log.debug("[MultiSelectionActionsHandler] action=\(action.rawValue) files.count=\(files.count) panel=\(panel)")
+
+            switch action {
+            case .cut:
+                clipboard.cut(files: files, from: panel)
+                log.info("[MultiSelectionActionsHandler] cut \(files.count) files")
+
+            case .copy:
+                clipboard.copy(files: files, from: panel)
+                log.info("[MultiSelectionActionsHandler] copied \(files.count) files")
+
+            case .copyAsPathname:
+                let paths = files.map { $0.urlValue.path }
+                let pasteboard = NSPasteboard.general
+                pasteboard.clearContents()
+                pasteboard.setString(paths.joined(separator: "\n"), forType: .string)
+                log.info("[MultiSelectionActionsHandler] copied \(paths.count) pathname(s) to clipboard")
+
+            case .paste:
+                Task {
+                    await performPaste(to: panel, appState: appState)
+                }
+
+            case .compress:
+                // Default destination: opposite panel directory
+                let destinationPath = panel == .left ? appState.rightPath : appState.leftPath
+                let destination = URL(fileURLWithPath: destinationPath)
+                activeDialog = .compress(files: files, destination: destination)
+
+            case .share:
+                let urls = files.map { $0.urlValue }
+                ShareService.shared.showSharePicker(for: urls)
+
+            case .revealInFinder:
+                let urls = files.map { $0.urlValue }
+                NSWorkspace.shared.activateFileViewerSelecting(urls)
+
+            case .delete:
+                activeDialog = .deleteConfirmation(files: files)
             }
-
-        case .share:
-            let urls = files.map { $0.urlValue }
-            ShareService.shared.showSharePicker(for: urls)
-
-        case .revealInFinder:
-            let urls = files.map { $0.urlValue }
-            NSWorkspace.shared.activateFileViewerSelecting(urls)
-
-        case .delete:
-            activeDialog = .deleteConfirmation(files: files)
         }
     }
-}

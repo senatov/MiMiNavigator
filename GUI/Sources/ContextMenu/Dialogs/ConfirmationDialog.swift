@@ -1,402 +1,402 @@
-// ConfirmationDialog.swift
-//  MiMiNavigator
-//
-//  Created by Iakov Senatov on 22.01.2026.
-//  Copyright © 2026 Senatov. All rights reserved.
+    // ConfirmationDialog.swift
+    //  MiMiNavigator
+    //
+    //  Created by Iakov Senatov on 22.01.2026.
+    //  Copyright © 2026 Senatov. All rights reserved.
 
-import SwiftUI
-import FileModelKit
+    import FileModelKit
+    import SwiftUI
 
-// MARK: - macOS Word-Einstellungen style gray palette
-/// Three static gray tones matching macOS Settings / Word-Einstellungen dialogs:
-///   dialogLight  #F7F7F7 — section headers, card backgrounds
-///   dialogBase   #EFEFEF — main dialog background
-///   dialogStripe #E7E7E7 — contrast stripes, divider areas
-/// Dynamic dialog colors — driven by ColorThemeStore.
-/// When theme changes in Settings → Colors, all dialogs update immediately.
-@MainActor
-enum DialogColors {
-    /// Section headers, card backgrounds
-    static var light: Color {
-        let s = ColorThemeStore.shared
-        if !s.hexDialogBase.isEmpty, let c = Color(hex: s.hexDialogBase) {
-            return c.opacity(1.03)  // slightly lighter than base
+    // MARK: - macOS Word-Einstellungen style gray palette
+    /// Three static gray tones matching macOS Settings / Word-Einstellungen dialogs:
+    ///   dialogLight  #F7F7F7 — section headers, card backgrounds
+    ///   dialogBase   #EFEFEF — main dialog background
+    ///   dialogStripe #E7E7E7 — contrast stripes, divider areas
+    /// Dynamic dialog colors — driven by ColorThemeStore.
+    /// When theme changes in Settings → Colors, all dialogs update immediately.
+    @MainActor
+    enum DialogColors {
+        /// Section headers, card backgrounds
+        static var light: Color {
+            let s = ColorThemeStore.shared
+            if !s.hexDialogBase.isEmpty, let c = Color(hex: s.hexDialogBase) {
+                return c.opacity(1.03)  // slightly lighter than base
+            }
+            return s.activeTheme.dialogBase.blended(with: .white, fraction: 0.35)
         }
-        return s.activeTheme.dialogBase.blended(with: .white, fraction: 0.35)
-    }
-    /// Main dialog/panel background
-    static var base: Color {
-        let s = ColorThemeStore.shared
-        if !s.hexDialogBase.isEmpty, let c = Color(hex: s.hexDialogBase) {
-            return c
+        /// Main dialog/panel background
+        static var base: Color {
+            let s = ColorThemeStore.shared
+            if !s.hexDialogBase.isEmpty, let c = Color(hex: s.hexDialogBase) {
+                return c
+            }
+            return s.activeTheme.dialogBase
         }
-        return s.activeTheme.dialogBase
-    }
-    /// Contrast stripes, header/footer bars
-    static var stripe: Color {
-        let s = ColorThemeStore.shared
-        if !s.hexDialogStripe.isEmpty, let c = Color(hex: s.hexDialogStripe) {
-            return c
+        /// Contrast stripes, header/footer bars
+        static var stripe: Color {
+            let s = ColorThemeStore.shared
+            if !s.hexDialogStripe.isEmpty, let c = Color(hex: s.hexDialogStripe) {
+                return c
+            }
+            return s.activeTheme.dialogStripe
         }
-        return s.activeTheme.dialogStripe
-    }
-    /// Separator / border color for dialogs
-    static var border: Color {
-        let s = ColorThemeStore.shared
-        if !s.hexSeparator.isEmpty, let c = Color(hex: s.hexSeparator) {
-            return c
+        /// Separator / border color for dialogs
+        static var border: Color {
+            let s = ColorThemeStore.shared
+            if !s.hexSeparator.isEmpty, let c = Color(hex: s.hexSeparator) {
+                return c
+            }
+            return s.activeTheme.separatorColor
         }
-        return s.activeTheme.separatorColor
-    }
-    /// Accent color for buttons and highlights
-    static var accent: Color {
-        let s = ColorThemeStore.shared
-        if !s.hexAccent.isEmpty, let c = Color(hex: s.hexAccent) {
-            return c
+        /// Accent color for buttons and highlights
+        static var accent: Color {
+            let s = ColorThemeStore.shared
+            if !s.hexAccent.isEmpty, let c = Color(hex: s.hexAccent) {
+                return c
+            }
+            return s.activeTheme.accentColor
         }
-        return s.activeTheme.accentColor
     }
-}
 
-// MARK: - macOS HIG 26 Dialog Base Modifier
-/// Consistent panel styling for all modal dialogs.
-/// Uses Word-Einstellungen gray palette: base #EFEFEF background, 12pt radius.
-struct HIGDialogStyle: ViewModifier {
-    func body(content: Content) -> some View {
-        content
-            .padding(24)
-            .frame(minWidth: 320, maxWidth: 440)
-            .background(DialogColors.base)
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .strokeBorder(DialogColors.border.opacity(0.5), lineWidth: 0.5)
-            )
-            .shadow(color: .black.opacity(0.22), radius: 20, x: 0, y: 8)
+    // MARK: - macOS HIG 26 Dialog Base Modifier
+    /// Consistent panel styling for all modal dialogs.
+    /// Uses Word-Einstellungen gray palette: base #EFEFEF background, 12pt radius.
+    struct HIGDialogStyle: ViewModifier {
+        func body(content: Content) -> some View {
+            content
+                .padding(24)
+                .frame(minWidth: 320, maxWidth: 440)
+                .background(DialogColors.base)
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .strokeBorder(DialogColors.border.opacity(0.5), lineWidth: 0.5)
+                )
+                .shadow(color: .black.opacity(0.22), radius: 20, x: 0, y: 8)
+        }
     }
-}
 
-extension View {
-    func higDialogStyle() -> some View {
-        modifier(HIGDialogStyle())
+    extension View {
+        func higDialogStyle() -> some View {
+            modifier(HIGDialogStyle())
+        }
     }
-}
 
-// MARK: - HIG Input Field Style
-/// Renders a labeled input section matching GitHub Desktop / macOS Settings style.
-/// White fill, 1pt border, 6pt radius.
-struct HIGTextField: View {
-    let label: String?
-    let placeholder: String
-    @Binding var text: String
-    var hasError: Bool = false
-    var isSecure: Bool = false
-    var focusState: FocusState<Bool>.Binding? = nil
+    // MARK: - HIG Input Field Style
+    /// Renders a labeled input section matching GitHub Desktop / macOS Settings style.
+    /// White fill, 1pt border, 6pt radius.
+    struct HIGTextField: View {
+        let label: String?
+        let placeholder: String
+        @Binding var text: String
+        var hasError: Bool = false
+        var isSecure: Bool = false
+        var focusState: FocusState<Bool>.Binding? = nil
 
-    var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            if let label {
+        var body: some View {
+            VStack(alignment: .leading, spacing: 4) {
+                if let label {
+                    Text(label)
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(.primary)
+                }
+
+                Group {
+                    if isSecure {
+                        SecureField(placeholder, text: $text)
+                    } else {
+                        TextField(placeholder, text: $text)
+                    }
+                }
+                .textFieldStyle(.plain)
+                .autocorrectionDisabled()
+                .textContentType(.none)
+                .font(.system(size: 13))
+                .padding(.horizontal, 10)
+                .padding(.vertical, 7)
+                .background(Color(nsColor: .textBackgroundColor))
+                .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 6, style: .continuous)
+                        .strokeBorder(
+                            hasError ? Color.red.opacity(0.7) : Color(nsColor: .separatorColor),
+                            lineWidth: 1
+                        )
+                )
+            }
+        }
+    }
+
+    // MARK: - HIG Dropdown (Picker) Style
+    /// Matches macOS Settings "External Editor" / "Shell" picker — .menu style.
+    struct HIGPicker<T: Hashable & CustomStringConvertible, Content: View>: View {
+        let label: String
+        @Binding var selection: T
+        let options: [T]
+        var displayName: (T) -> String = { $0.description }
+
+        var body: some View {
+            VStack(alignment: .leading, spacing: 4) {
                 Text(label)
                     .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(.primary)
-            }
 
-            Group {
-                if isSecure {
-                    SecureField(placeholder, text: $text)
-                } else {
-                    TextField(placeholder, text: $text)
+                Picker("", selection: $selection) {
+                    ForEach(options, id: \.self) { option in
+                        Text(displayName(option)).tag(option)
+                    }
                 }
+                .pickerStyle(.menu)
+                .labelsHidden()
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .textFieldStyle(.plain)
-            .autocorrectionDisabled()
-            .textContentType(.none)
-            .font(.system(size: 13))
-            .padding(.horizontal, 10)
-            .padding(.vertical, 7)
-            .background(Color(nsColor: .textBackgroundColor))
-            .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: 6, style: .continuous)
-                    .strokeBorder(
-                        hasError ? Color.red.opacity(0.7) : Color(nsColor: .separatorColor),
-                        lineWidth: 1
-                    )
-            )
         }
     }
-}
 
-// MARK: - HIG Dropdown (Picker) Style
-/// Matches macOS Settings "External Editor" / "Shell" picker — .menu style.
-struct HIGPicker<T: Hashable & CustomStringConvertible, Content: View>: View {
-    let label: String
-    @Binding var selection: T
-    let options: [T]
-    var displayName: (T) -> String = { $0.description }
+    // MARK: - Dialog Button Row
+    /// Standard HIG button row: Cancel (Esc) left, primary action (Enter) right.
+    /// Uses native SwiftUI .bordered / .borderedProminent — system handles focus ring automatically.
+    struct HIGDialogButtons: View {
+        let cancelTitle: String
+        let confirmTitle: String
+        let isDestructive: Bool
+        let isConfirmDisabled: Bool
+        let onCancel: () -> Void
+        let onConfirm: () -> Void
 
-    var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(label)
-                .font(.system(size: 12, weight: .medium))
-                .foregroundStyle(.primary)
+        init(
+            cancelTitle: String = "Cancel",
+            confirmTitle: String,
+            isDestructive: Bool = false,
+            isConfirmDisabled: Bool = false,
+            onCancel: @escaping () -> Void,
+            onConfirm: @escaping () -> Void
+        ) {
+            self.cancelTitle = cancelTitle
+            self.confirmTitle = confirmTitle
+            self.isDestructive = isDestructive
+            self.isConfirmDisabled = isConfirmDisabled
+            self.onCancel = onCancel
+            self.onConfirm = onConfirm
+        }
 
-            Picker("", selection: $selection) {
-                ForEach(options, id: \.self) { option in
-                    Text(displayName(option)).tag(option)
-                }
+        var body: some View {
+            HStack(spacing: 10) {
+                Button(cancelTitle, action: onCancel)
+                    .keyboardShortcut(.cancelAction)  // Esc
+                    .buttonStyle(ThemedButtonStyle())
+                    .controlSize(.large)
+
+                Button(confirmTitle, action: onConfirm)
+                    .keyboardShortcut(.defaultAction)  // Enter — system draws blue ring
+                    .buttonStyle(ThemedButtonStyle())
+                    .tint(isDestructive ? .red : .accentColor)
+                    .controlSize(.large)
+                    .disabled(isConfirmDisabled)
             }
-            .pickerStyle(.menu)
-            .labelsHidden()
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(maxWidth: .infinity, alignment: .trailing)
+            .padding(.top, 6)
         }
     }
-}
 
-// MARK: - Dialog Button Row
-/// Standard HIG button row: Cancel (Esc) left, primary action (Enter) right.
-/// Uses native SwiftUI .bordered / .borderedProminent — system handles focus ring automatically.
-struct HIGDialogButtons: View {
-    let cancelTitle: String
-    let confirmTitle: String
-    let isDestructive: Bool
-    let isConfirmDisabled: Bool
-    let onCancel: () -> Void
-    let onConfirm: () -> Void
+    // MARK: - Dialog Icon + Title Block
+    /// Standard macOS app icon + bold title block used in all alert-style dialogs.
+    struct HIGDialogHeader: View {
+        let title: String
+        let subtitle: String?
 
-    init(
-        cancelTitle: String = "Cancel",
-        confirmTitle: String,
-        isDestructive: Bool = false,
-        isConfirmDisabled: Bool = false,
-        onCancel: @escaping () -> Void,
-        onConfirm: @escaping () -> Void
-    ) {
-        self.cancelTitle = cancelTitle
-        self.confirmTitle = confirmTitle
-        self.isDestructive = isDestructive
-        self.isConfirmDisabled = isConfirmDisabled
-        self.onCancel = onCancel
-        self.onConfirm = onConfirm
+        init(_ title: String, subtitle: String? = nil) {
+            self.title = title
+            self.subtitle = subtitle
+        }
+
+        var body: some View {
+            VStack(spacing: 10) {
+                Image(nsImage: NSApp.applicationIconImage)
+                    .resizable()
+                    .frame(width: 64, height: 64)
+
+                Text(title)
+                    .font(.system(size: 13, weight: .semibold))
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                if let subtitle {
+                    Text(subtitle)
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                        .truncationMode(.middle)
+                        .multilineTextAlignment(.center)
+                }
+            }
+        }
     }
 
-    var body: some View {
-        HStack(spacing: 10) {
-            Button(cancelTitle, action: onCancel)
-                .keyboardShortcut(.cancelAction)  // Esc
-                .buttonStyle(ThemedButtonStyle())
-                .controlSize(.large)
+    // MARK: - Legacy Button Aliases (backward compat — prefer HIGDialogButtons)
+    typealias HIGPrimaryButton = _LegacyHIGPrimaryButton
+    typealias HIGSecondaryButton = _LegacyHIGSecondaryButton
 
-            Button(confirmTitle, action: onConfirm)
-                .keyboardShortcut(.defaultAction)  // Enter — system draws blue ring
+    struct _LegacyHIGPrimaryButton: View {
+        let title: String
+        let action: () -> Void
+        var isDestructive: Bool = false
+
+        var body: some View {
+            Button(title, action: action)
                 .buttonStyle(ThemedButtonStyle())
                 .tint(isDestructive ? .red : .accentColor)
                 .controlSize(.large)
-                .disabled(isConfirmDisabled)
         }
-        .frame(maxWidth: .infinity, alignment: .trailing)
-        .padding(.top, 6)
-    }
-}
-
-// MARK: - Dialog Icon + Title Block
-/// Standard macOS app icon + bold title block used in all alert-style dialogs.
-struct HIGDialogHeader: View {
-    let title: String
-    let subtitle: String?
-
-    init(_ title: String, subtitle: String? = nil) {
-        self.title = title
-        self.subtitle = subtitle
     }
 
-    var body: some View {
-        VStack(spacing: 10) {
-            Image(nsImage: NSApp.applicationIconImage)
-                .resizable()
-                .frame(width: 64, height: 64)
+    struct _LegacyHIGSecondaryButton: View {
+        let title: String
+        let action: () -> Void
 
-            Text(title)
-                .font(.system(size: 13, weight: .semibold))
-                .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
+        var body: some View {
+            Button(title, action: action)
+                .buttonStyle(ThemedButtonStyle())
+                .controlSize(.large)
+        }
+    }
 
-            if let subtitle {
-                Text(subtitle)
-                    .font(.system(size: 11))
-                    .foregroundStyle(.secondary)
-                    .lineLimit(2)
-                    .truncationMode(.middle)
-                    .multilineTextAlignment(.center)
+    // MARK: - Delete Confirmation Dialog
+    struct DeleteConfirmationDialog: View {
+        let files: [CustomFile]
+        let onConfirm: () -> Void
+        let onCancel: () -> Void
+
+        private var itemsDescription: String {
+            files.count == 1 ? "\"\(files[0].nameStr)\"" : "\(files.count) items"
+        }
+
+        var body: some View {
+            VStack(spacing: 16) {
+                HIGDialogHeader(
+                    "Do you want to move \(itemsDescription) to Trash?",
+                    subtitle: files.count == 1 ? files[0].urlValue.deletingLastPathComponent().path : nil
+                )
+
+                HIGDialogButtons(
+                    confirmTitle: "Move to Trash",
+                    isDestructive: true,
+                    onCancel: onCancel,
+                    onConfirm: onConfirm
+                )
+            }
+            .higDialogStyle()
+        }
+    }
+
+    // MARK: - Generic Confirmation Dialog
+    struct GenericConfirmationDialog: View {
+        let title: String
+        let message: String?
+        let confirmTitle: String
+        let cancelTitle: String
+        let isDestructive: Bool
+        let onConfirm: () -> Void
+        let onCancel: () -> Void
+
+        init(
+            title: String,
+            message: String? = nil,
+            confirmTitle: String = "OK",
+            cancelTitle: String = "Cancel",
+            isDestructive: Bool = false,
+            onConfirm: @escaping () -> Void,
+            onCancel: @escaping () -> Void
+        ) {
+            self.title = title
+            self.message = message
+            self.confirmTitle = confirmTitle
+            self.cancelTitle = cancelTitle
+            self.isDestructive = isDestructive
+            self.onConfirm = onConfirm
+            self.onCancel = onCancel
+        }
+
+        var body: some View {
+            VStack(spacing: 16) {
+                HIGDialogHeader(title, subtitle: message)
+
+                HIGDialogButtons(
+                    cancelTitle: cancelTitle,
+                    confirmTitle: confirmTitle,
+                    isDestructive: isDestructive,
+                    onCancel: onCancel,
+                    onConfirm: onConfirm
+                )
+            }
+            .higDialogStyle()
+        }
+    }
+
+    // MARK: - Previews
+    #Preview("Delete Single File") {
+        DeleteConfirmationDialog(
+            files: [CustomFile(path: "/Users/test/document.txt")],
+            onConfirm: {},
+            onCancel: {}
+        )
+        .padding(40)
+        .background(Color.gray.opacity(0.3))
+    }
+
+    // MARK: - Auto-Focus TextField Modifier
+    /// Forces AppKit first responder to the first editable NSTextField
+    /// inside a SwiftUI overlay dialog. Needed because SwiftUI .overlay()
+    /// does not set AppKit keyboard focus automatically.
+    struct HIGAutoFocusTextField: ViewModifier {
+        func body(content: Content) -> some View {
+            content.onAppear {
+                Task { @MainActor in
+                    guard let window = NSApp.keyWindow else { return }
+                    Self.focusFirstTextField(in: window.contentView)
+                }
+            }
+        }
+        private static func focusFirstTextField(in view: NSView?) {
+            guard let view else { return }
+            if let tf = view as? NSTextField, tf.isEditable {
+                tf.window?.makeFirstResponder(tf)
+                tf.selectText(nil)
+                return
+            }
+            for sub in view.subviews {
+                focusFirstTextField(in: sub)
             }
         }
     }
-}
-
-// MARK: - Legacy Button Aliases (backward compat — prefer HIGDialogButtons)
-typealias HIGPrimaryButton = _LegacyHIGPrimaryButton
-typealias HIGSecondaryButton = _LegacyHIGSecondaryButton
-
-struct _LegacyHIGPrimaryButton: View {
-    let title: String
-    let action: () -> Void
-    var isDestructive: Bool = false
-
-    var body: some View {
-        Button(title, action: action)
-            .buttonStyle(ThemedButtonStyle())
-            .tint(isDestructive ? .red : .accentColor)
-            .controlSize(.large)
-    }
-}
-
-struct _LegacyHIGSecondaryButton: View {
-    let title: String
-    let action: () -> Void
-
-    var body: some View {
-        Button(title, action: action)
-            .buttonStyle(ThemedButtonStyle())
-            .controlSize(.large)
-    }
-}
-
-// MARK: - Delete Confirmation Dialog
-struct DeleteConfirmationDialog: View {
-    let files: [CustomFile]
-    let onConfirm: () -> Void
-    let onCancel: () -> Void
-
-    private var itemsDescription: String {
-        files.count == 1 ? "\"\(files[0].nameStr)\"" : "\(files.count) items"
-    }
-
-    var body: some View {
-        VStack(spacing: 16) {
-            HIGDialogHeader(
-                "Do you want to move \(itemsDescription) to Trash?",
-                subtitle: files.count == 1 ? files[0].urlValue.deletingLastPathComponent().path : nil
-            )
-
-            HIGDialogButtons(
-                confirmTitle: "Move to Trash",
-                isDestructive: true,
-                onCancel: onCancel,
-                onConfirm: onConfirm
-            )
-        }
-        .higDialogStyle()
-    }
-}
-
-// MARK: - Generic Confirmation Dialog
-struct GenericConfirmationDialog: View {
-    let title: String
-    let message: String?
-    let confirmTitle: String
-    let cancelTitle: String
-    let isDestructive: Bool
-    let onConfirm: () -> Void
-    let onCancel: () -> Void
-
-    init(
-        title: String,
-        message: String? = nil,
-        confirmTitle: String = "OK",
-        cancelTitle: String = "Cancel",
-        isDestructive: Bool = false,
-        onConfirm: @escaping () -> Void,
-        onCancel: @escaping () -> Void
-    ) {
-        self.title = title
-        self.message = message
-        self.confirmTitle = confirmTitle
-        self.cancelTitle = cancelTitle
-        self.isDestructive = isDestructive
-        self.onConfirm = onConfirm
-        self.onCancel = onCancel
-    }
-
-    var body: some View {
-        VStack(spacing: 16) {
-            HIGDialogHeader(title, subtitle: message)
-
-            HIGDialogButtons(
-                cancelTitle: cancelTitle,
-                confirmTitle: confirmTitle,
-                isDestructive: isDestructive,
-                onCancel: onCancel,
-                onConfirm: onConfirm
-            )
-        }
-        .higDialogStyle()
-    }
-}
-
-// MARK: - Previews
-#Preview("Delete Single File") {
-    DeleteConfirmationDialog(
-        files: [CustomFile(path: "/Users/test/document.txt")],
-        onConfirm: {},
-        onCancel: {}
-    )
-    .padding(40)
-    .background(Color.gray.opacity(0.3))
-}
-
-// MARK: - Auto-Focus TextField Modifier
-/// Forces AppKit first responder to the first editable NSTextField
-/// inside a SwiftUI overlay dialog. Needed because SwiftUI .overlay()
-/// does not set AppKit keyboard focus automatically.
-struct HIGAutoFocusTextField: ViewModifier {
-    func body(content: Content) -> some View {
-        content.onAppear {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                guard let window = NSApp.keyWindow else { return }
-                Self.focusFirstTextField(in: window.contentView)
-            }
+    extension View {
+        /// Apply to any dialog that contains a HIGTextField to auto-focus it on appear.
+        func higAutoFocusTextField() -> some View {
+            modifier(HIGAutoFocusTextField())
         }
     }
-    private static func focusFirstTextField(in view: NSView?) {
-        guard let view else { return }
-        if let tf = view as? NSTextField, tf.isEditable {
-            tf.window?.makeFirstResponder(tf)
-            tf.selectText(nil)
-            return
-        }
-        for sub in view.subviews {
-            focusFirstTextField(in: sub)
-        }
-    }
-}
-extension View {
-    /// Apply to any dialog that contains a HIGTextField to auto-focus it on appear.
-    func higAutoFocusTextField() -> some View {
-        modifier(HIGAutoFocusTextField())
-    }
-}
 
-#Preview("Delete Multiple") {
-    DeleteConfirmationDialog(
-        files: [
-            CustomFile(path: "/Users/test/file1.txt"),
-            CustomFile(path: "/Users/test/file2.txt"),
-        ],
-        onConfirm: {},
-        onCancel: {}
-    )
-    .padding(40)
-    .background(Color.gray.opacity(0.3))
-}
+    #Preview("Delete Multiple") {
+        DeleteConfirmationDialog(
+            files: [
+                CustomFile(path: "/Users/test/file1.txt"),
+                CustomFile(path: "/Users/test/file2.txt"),
+            ],
+            onConfirm: {},
+            onCancel: {}
+        )
+        .padding(40)
+        .background(Color.gray.opacity(0.3))
+    }
 
-#Preview("Generic") {
-    GenericConfirmationDialog(
-        title: "Do you want to duplicate items here?",
-        message: "/Users/senat/Downloads/Musor",
-        confirmTitle: "OK",
-        onConfirm: {},
-        onCancel: {}
-    )
-    .padding(40)
-    .background(Color.gray.opacity(0.3))
-}
+    #Preview("Generic") {
+        GenericConfirmationDialog(
+            title: "Do you want to duplicate items here?",
+            message: "/Users/senat/Downloads/Musor",
+            confirmTitle: "OK",
+            onConfirm: {},
+            onCancel: {}
+        )
+        .padding(40)
+        .background(Color.gray.opacity(0.3))
+    }
