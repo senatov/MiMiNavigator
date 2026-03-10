@@ -5,6 +5,19 @@ All notable changes to MiMiNavigator will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.6] — 2026-03-10
+### Added
+- **Breadcrumb hover-expand (Finder-style)** — truncated segments spring-expand on hover
+- **Custom thumbnail slider** — macOS Sound-panel style, theme-tinted, 3D knob
+- **Scroll jump buttons (3D)** — square embossed buttons at scrollbar edges
+
+### Changed
+- **Slider performance** — local State during drag, commit on mouse-up only
+- **safeAreaInset** — 40pt to 4pt, scrollbar reaches bottom
+- **Slider clarity** — track opacity 0.55, knob 16pt, inner shadow
+
+---
+
 ## [Unreleased] — 2026-03-06
 
 ### Added
