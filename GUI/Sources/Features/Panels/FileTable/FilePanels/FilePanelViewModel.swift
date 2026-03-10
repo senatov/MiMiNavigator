@@ -14,6 +14,7 @@ import SwiftUI
 final class FilePanelViewModel {
     let panelSide: PanelSide
     private let appState: AppState
+    // TODO: Remove fetchFiles — navigation now goes through AppState.navigateToDirectory
     private let fetchFiles: @Sendable @concurrent (PanelSide) async -> Void
 
     init(
@@ -32,15 +33,14 @@ final class FilePanelViewModel {
         appState.displayedFiles(for: panelSide)
     }
 
-    // MARK: - Handle path change
+    // MARK: - Handle path change (breadcrumb, path bar)
     func handlePathChange(to url: URL?) {
         guard let url else {
             log.warning("Attempted to set nil path for <<\(panelSide)>>")
             return
         }
         Task { @MainActor in
-            appState.updatePath(url.path, for: panelSide)
-            await fetchFiles(panelSide)
+            await appState.navigateToDirectory(url.path, on: panelSide)
         }
     }
 

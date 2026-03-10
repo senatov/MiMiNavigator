@@ -15,6 +15,7 @@ struct SettingsWindowView: View {
 
     @State private var selectedSection: SettingsSection = .general
     @State private var themeStore = ColorThemeStore.shared
+    @State private var coordinator = SettingsCoordinator.shared
     @Environment(\.colorScheme) private var colorScheme
 
     private var dialogBgColor: Color {
@@ -36,6 +37,18 @@ struct SettingsWindowView: View {
         }
         .frame(minWidth: 600, minHeight: 440)
         .background(dialogBgColor.ignoresSafeArea())
+        .onAppear {
+            if let pending = coordinator.pendingSection {
+                selectedSection = pending
+                coordinator.pendingSection = nil
+            }
+        }
+        .onChange(of: coordinator.pendingSection) { _, newValue in
+            if let section = newValue {
+                selectedSection = section
+                coordinator.pendingSection = nil
+            }
+        }
     }
 
     // MARK: - Sidebar

@@ -26,9 +26,18 @@ final class SettingsCoordinator {
 
     private init() {}
 
+    /// Section to select when window opens (nil = keep current)
+    var pendingSection: SettingsSection?
+
     // MARK: - Toggle
     func toggle() {
         isVisible ? close() : open()
+    }
+
+    /// Open Settings and navigate to a specific section
+    func openOnSection(_ section: SettingsSection) {
+        pendingSection = section
+        open()
     }
 
     // MARK: - Open

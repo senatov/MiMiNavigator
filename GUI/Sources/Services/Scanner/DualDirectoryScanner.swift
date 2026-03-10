@@ -421,6 +421,12 @@
             lastFSEventsPatch[side] = Date()
         }
 
+        // MARK: - Clear scan cooldown (called by explicit navigation to avoid skipping)
+        func clearCooldown(for side: PanelSide) {
+            lastFullScan[side] = nil
+            scanInProgress[side] = false
+        }
+
         // MARK: - Reset timer for a panel
         func resetRefreshTimer(for side: PanelSide) {
             switch side {

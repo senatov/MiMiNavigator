@@ -24,14 +24,27 @@ struct HotKeySettingsView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            headerBar
-            Divider()
-            HSplitView {
-                categorySidebar
-                    .frame(minWidth: 160, idealWidth: 180, maxWidth: 200)
-                bindingsList
-                    .frame(minWidth: 420)
+            if !embedded {
+                headerBar
+                Divider()
             }
+
+            if embedded {
+                // Inside Settings pane — no own sidebar, filter inline above list
+                VStack(spacing: 0) {
+                    embeddedToolbar
+                    Divider()
+                    bindingsList
+                }
+            } else {
+                HSplitView {
+                    categorySidebar
+                        .frame(minWidth: 160, idealWidth: 180, maxWidth: 200)
+                    bindingsList
+                        .frame(minWidth: 420)
+                }
+            }
+
             Divider()
             footerBar
         }
@@ -41,7 +54,7 @@ struct HotKeySettingsView: View {
             minHeight: embedded ? 0 : 480,
             maxHeight: .infinity
         )
-        .background(DialogColors.base)
+        .background(embedded ? Color.clear : DialogColors.base)
         .alert("Shortcut Conflict", isPresented: Binding(
             get: { conflictAlert != nil },
             set: { if !$0 { conflictAlert = nil } }
@@ -96,6 +109,55 @@ struct HotKeySettingsView: View {
         }
         .padding(.horizontal, 12).padding(.vertical, 8)
         .background(DialogColors.stripe)
+    }
+
+    // MARK: - Embedded toolbar (inside Settings pane — category picker + filter)
+    private var embeddedToolbar: some View {
+        HStack(spacing: 12) {
+            // Category picker as compact menu
+            Menu {
+                Button { selectedCategory = nil } label: {
+                    Label("All Shortcuts", systemImage: "list.bullet")
+                }
+                Divider()
+                ForEach(HotKeyCategory.allCases) { cat in
+                    Button { selectedCategory = cat } label: {
+                        Label(cat.displayName, systemImage: cat.icon)
+                    }
+                }
+            } label: {
+                HStack(spacing: 4) {
+                    Image(systemName: selectedCategory?.icon ?? "list.bullet")
+                        .font(.system(size: 11))
+                    Text(selectedCategory?.displayName ?? "All")
+                        .font(.system(size: 12))
+                    Image(systemName: "chevron.down")
+                        .font(.system(size: 9))
+                        .foregroundStyle(.tertiary)
+                }
+                .padding(.vertical, 3).padding(.horizontal, 8)
+                .background(
+                    RoundedRectangle(cornerRadius: 5)
+                        .fill(Color(nsColor: .controlBackgroundColor))
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 5)
+                        .stroke(Color.gray.opacity(0.2), lineWidth: 0.5)
+                )
+            }
+            .menuStyle(.borderlessButton)
+            .fixedSize()
+
+            filterField
+
+            Spacer()
+
+            Text("\(filteredAndSortedBindings.count) shortcuts")
+                .font(.system(size: 11))
+                .foregroundStyle(.tertiary)
+        }
+        .padding(.horizontal, 12).padding(.vertical, 6)
+        .background(DialogColors.stripe.opacity(0.5))
     }
 
     // MARK: - Filter field
@@ -242,7 +304,7 @@ struct HotKeySettingsView: View {
         return HStack(spacing: 10) {
             // Action name
             Text(binding.action.displayName)
-                .font(.system(size: 14, design: .default))
+                .font(.system(size: 13))
                 .lineLimit(1)
 
             Spacer()
@@ -282,12 +344,15 @@ struct HotKeySettingsView: View {
 
             Spacer()
 
-            Text("\(store.allBindings.count) shortcuts")
-                .font(.system(size: 11))
-                .foregroundStyle(.tertiary)
+            if !embedded {
+                Text("\(store.allBindings.count) shortcuts")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.tertiary)
+            }
         }
-        .padding(.horizontal, 12).padding(.vertical, 8)
-        .background(DialogColors.stripe)
+        .padding(.horizontal, embedded ? 0 : 12)
+        .padding(.vertical, embedded ? 4 : 8)
+        .background(embedded ? Color.clear : DialogColors.stripe)
     }
 
     // MARK: - Logic

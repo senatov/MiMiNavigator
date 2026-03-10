@@ -64,6 +64,9 @@ final class AppState {
     /// Set to true when navigating via history (Back/Forward) to avoid re-recording
     var isNavigatingFromHistory = false
 
+    /// Panel currently loading a slow directory (USB, network). Drives spinner overlay.
+    var navigatingPanel: PanelSide? = nil
+
     // MARK: - First real file helper (skips virtual ".." parent entry)
     private func firstRealFile(_ files: [CustomFile]) -> CustomFile? {
         files.first { !$0.isParentEntry }
@@ -419,17 +422,7 @@ extension AppState {
                 return
             }
             Task { @MainActor in
-                updatePath(newPath, for: panel)
-                // Reset selection so refreshFiles auto-selects first real file in new dir
-                if panel == .left { selectedLeftFile = nil } else { selectedRightFile = nil }
-                multiSelectionManager?.resetAnchor(for: panel)
-                if panel == .left {
-                    await scanner.setLeftDirectory(pathStr: newPath)
-                    await refreshLeftFiles()
-                } else {
-                    await scanner.setRightDirectory(pathStr: newPath)
-                    await refreshRightFiles()
-                }
+                await navigateToDirectory(newPath, on: panel)
             }
             return
         }
@@ -446,6 +439,86 @@ extension AppState {
 
     func revealLogFileInFinder() {
         FinderIntegration.revealLogFile()
+    }
+}
+
+// MARK: - Directory Navigation (retry + spinner for slow volumes)
+extension AppState {
+
+    /// Navigate into a directory with retry logic and spinner for slow volumes (USB, NAS).
+    /// Shows a loading overlay, waits for files to appear, retries up to 3 times.
+    func navigateToDirectory(_ newPath: String, on panel: PanelSide) async {
+        let previousPath = panel == .left ? leftPath : rightPath
+        log.info("[Navigate] \(panel): '\(previousPath)' → '\(newPath)'")
+
+        updatePath(newPath, for: panel)
+        if panel == .left { selectedLeftFile = nil } else { selectedRightFile = nil }
+        multiSelectionManager?.resetAnchor(for: panel)
+
+        // Show spinner after small delay — avoids flicker for fast local dirs
+        let spinnerTask = Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(200))
+            if !Task.isCancelled {
+                navigatingPanel = panel
+            }
+        }
+
+        defer {
+            spinnerTask.cancel()
+            navigatingPanel = nil
+        }
+
+        // Retry loop: slow volumes (USB/NAS) may need a moment for I/O
+        let maxAttempts = 3
+        for attempt in 1...maxAttempts {
+            // Force scanner to skip cooldown for explicit navigation
+            await scanner.clearCooldown(for: panel)
+
+            if panel == .left {
+                await scanner.setLeftDirectory(pathStr: newPath)
+                await refreshLeftFiles()
+            } else {
+                await scanner.setRightDirectory(pathStr: newPath)
+                await refreshRightFiles()
+            }
+
+            // Check if files actually loaded
+            let files = displayedFiles(for: panel)
+            let currentPath = panel == .left ? leftPath : rightPath
+            if !files.isEmpty && PathUtils.areEqual(currentPath, newPath) {
+                log.info("[Navigate] \(panel): SUCCESS on attempt \(attempt), \(files.count) files")
+                return
+            }
+
+            // Not loaded yet — wait and retry
+            if attempt < maxAttempts {
+                log.warning("[Navigate] \(panel): attempt \(attempt) got 0 files, retrying in 1s...")
+                try? await Task.sleep(for: .seconds(1))
+
+                // Check if path was changed externally (user navigated away)
+                let nowPath = panel == .left ? leftPath : rightPath
+                if !PathUtils.areEqual(nowPath, newPath) {
+                    log.info("[Navigate] \(panel): path changed externally, aborting retry")
+                    return
+                }
+            }
+        }
+
+        // All attempts exhausted — check if we ended up somewhere valid
+        let finalFiles = displayedFiles(for: panel)
+        let finalPath = panel == .left ? leftPath : rightPath
+        if finalFiles.isEmpty || !PathUtils.areEqual(finalPath, newPath) {
+            log.error("[Navigate] \(panel): FAILED after \(maxAttempts) attempts, staying on previous path")
+            // Restore previous path instead of falling back to Home
+            updatePath(previousPath, for: panel)
+            if panel == .left {
+                await scanner.setLeftDirectory(pathStr: previousPath)
+                await refreshLeftFiles()
+            } else {
+                await scanner.setRightDirectory(pathStr: previousPath)
+                await refreshRightFiles()
+            }
+        }
     }
 }
 
@@ -681,18 +754,9 @@ extension AppState {
             return
         }
 
-        // Normal parent navigation
+        // Normal parent navigation — use retry+spinner for slow volumes
         let parentURL = URL(fileURLWithPath: currentPath).deletingLastPathComponent()
-        let parentPath = parentURL.path
-
-        updatePath(parentPath, for: panel)
-        if panel == .left {
-            await scanner.setLeftDirectory(pathStr: parentPath)
-            await refreshLeftFiles()
-        } else {
-            await scanner.setRightDirectory(pathStr: parentPath)
-            await refreshRightFiles()
-        }
+        await navigateToDirectory(parentURL.path, on: panel)
     }
 }
 

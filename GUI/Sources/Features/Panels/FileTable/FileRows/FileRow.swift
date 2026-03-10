@@ -81,24 +81,9 @@
                         .simultaneousGesture(singleTapGesture)
                         .animation(nil, value: isSelected)
                         .contextMenu { contextMenuContent }
-                        .onDrag {
-                            let filesToDrag = dragFiles
-                            dragDropManager.startDrag(files: filesToDrag, from: panelSide)
-
-                            let provider = NSItemProvider()
-
-                            // Register all dragged files so external drop targets receive the full list
-                            for file in filesToDrag {
-                                provider.registerObject(file.urlValue as NSURL, visibility: .all)
-                            }
-
-                            return provider
-                        } preview: {
-                            DragPreviewPopupView(
-                                files: dragFiles,
-                                panelSide: panelSide
-                            )
-                        }
+                        // Drag is handled by DragOverlayView (AppKit NSDraggingSession)
+                        // which supports true multi-file drag. SwiftUI .onDrag only
+                        // supports one NSItemProvider = one file.
                         .modifier(
                             DropTargetModifier(
                                 isValidTarget: isValidDropTarget,
@@ -204,26 +189,6 @@
                     onFileAction(action, file)
                 }
             }
-        }
-
-        /// Files to drag: all marked files if this file is marked, otherwise just this file
-        private var dragFiles: [CustomFile] {
-            let marked = appState.markedCustomFiles(for: panelSide)
-            // If this file is in the marked set, drag all marked files
-            if !marked.isEmpty && marked.contains(where: { $0.id == file.id }) {
-                return marked
-            }
-            // If file is not marked but marks exist, drag only this file
-            // If no marks at all, drag this file
-            return [file]
-        }
-
-        private func makeDragPreview() -> DragPreviewView {
-            let files = dragFiles
-            if files.count > 1 {
-                return DragPreviewView(file: file, additionalCount: files.count - 1)
-            }
-            return DragPreviewView(file: file)
         }
 
         // MARK: - Event Handlers

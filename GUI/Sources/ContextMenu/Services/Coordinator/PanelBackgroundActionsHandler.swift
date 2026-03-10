@@ -83,19 +83,11 @@ extension ContextMenuCoordinator {
 
     // MARK: - Navigation
 
-    /// Navigate panel to specified path
+    /// Navigate panel to specified path (with retry + spinner for slow volumes)
     func navigateTo(_ url: URL, panel: PanelSide, appState: AppState) {
         log.debug("\(#function) url='\(url.path)' panel=\(panel)")
         Task { @MainActor in
-            appState.updatePath(url.path, for: panel)
-            if panel == .left {
-                await appState.scanner.setLeftDirectory(pathStr: url.path)
-                await appState.scanner.refreshFiles(currSide: .left)
-            } else {
-                await appState.scanner.setRightDirectory(pathStr: url.path)
-                await appState.scanner.refreshFiles(currSide: .right)
-            }
-            log.debug("\(#function) navigation completed")
+            await appState.navigateToDirectory(url.path, on: panel)
         }
     }
 
@@ -116,25 +108,10 @@ extension ContextMenuCoordinator {
         return appState.focusedPanel
     }
 
-    /// Create new folder in directory, then select it
+    /// Show Create Folder dialog so the user can enter a name
     func performNewFolder(in directory: URL, appState: AppState) {
-        log.debug("\(#function) directory='\(directory.path)'")
-
-        let baseName = "New Folder"
-        let newFolderURL = generateUniqueName(baseName: baseName, in: directory, isDirectory: true)
-
-        do {
-            try FileManager.default.createDirectory(at: newFolderURL, withIntermediateDirectories: false)
-            let createdName = newFolderURL.lastPathComponent
-            let panel = panelForPath(directory.path, appState: appState)
-            log.info("\(#function) SUCCESS created folder '\(createdName)' → selecting on \(panel)")
-            Task { @MainActor in
-                await appState.refreshAndSelect(name: createdName, on: panel)
-            }
-        } catch {
-            log.error("\(#function) FAILED: \(error.localizedDescription)")
-            activeDialog = .error(title: "Create Folder Failed", message: error.localizedDescription)
-        }
+        log.debug("\(#function) showing dialog for directory='\(directory.path)'")
+        activeDialog = .createFolder(parentURL: directory)
     }
 
     /// Create new empty file in directory, then select it

@@ -130,6 +130,25 @@ struct FilePanelView: View {
         }
         .background(DesignTokens.panelBg)
         .overlay(focusRingOverlay)
+        .overlay {
+            if appState.navigatingPanel == viewModel.panelSide {
+                ZStack {
+                    Color.black.opacity(0.15)
+                    VStack(spacing: 8) {
+                        ProgressView()
+                            .scaleEffect(1.2)
+                            .controlSize(.regular)
+                        Text("Loading…")
+                            .font(.system(size: 11))
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(16)
+                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 10))
+                }
+                .transition(.opacity)
+                .animation(.easeInOut(duration: 0.15), value: appState.navigatingPanel)
+            }
+        }
         .controlSize(.regular)
         .contentShape(Rectangle())
         .panelFocus(panelSide: viewModel.panelSide) {

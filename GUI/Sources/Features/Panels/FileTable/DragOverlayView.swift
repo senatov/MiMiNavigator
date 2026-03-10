@@ -1,12 +1,9 @@
-    //
-    //  Untitled.swift
-    //  MiMiNavigator
-    //
-    //  Created by Iakov Senatov on 08.03.2026.
-    //  Copyright © 2026 Senatov. All rights reserved.
-    //
-
     // DragOverlayView.swift
+    // MiMiNavigator
+    //
+    // Created by Iakov Senatov on 08.03.2026.
+    // Copyright © 2026 Senatov. All rights reserved.
+    // Description: AppKit drag source overlay — initiates NSDraggingSession for multi-file drag
 
     import AppKit
     import FileModelKit
@@ -17,12 +14,10 @@
         @Environment(DragDropManager.self) var dragDropManager
 
         let panelSide: PanelSide
-        let files: [CustomFile]
 
         func makeNSView(context: Context) -> DragNSView {
             let view = DragNSView()
             view.panelSide = panelSide
-            view.files = files
             view.dragDropManager = dragDropManager
             view.appState = appState
             return view
@@ -30,7 +25,6 @@
 
         func updateNSView(_ nsView: DragNSView, context: Context) {
             nsView.panelSide = panelSide
-            nsView.files = files
             nsView.dragDropManager = dragDropManager
             nsView.appState = appState
         }
@@ -39,48 +33,87 @@
     final class DragNSView: NSView, NSDraggingSource {
 
         var panelSide: PanelSide!
-        var files: [CustomFile] = []
         weak var dragDropManager: DragDropManager?
         weak var appState: AppState?
 
         private var mouseDownPoint: NSPoint = .zero
         private let dragThreshold: CGFloat = 4.0
         private var didStartDragging = false
+        private var mouseMonitor: Any?
+        private var dragMonitor: Any?
 
-        override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
-            true
+        /// Do not intercept normal mouse events — let SwiftUI handle clicks, selection, context menu.
+        /// Drag is initiated via NSEvent local monitor instead.
+        override func hitTest(_ point: NSPoint) -> NSView? {
+            return nil
         }
 
-        override func mouseDown(with event: NSEvent) {
-            mouseDownPoint = convert(event.locationInWindow, from: nil)
+        override func viewDidMoveToWindow() {
+            super.viewDidMoveToWindow()
+            if window != nil {
+                installMonitors()
+            } else {
+                removeMonitors()
+            }
+        }
+
+        private func installMonitors() {
+            removeMonitors()
+
+            mouseMonitor = NSEvent.addLocalMonitorForEvents(matching: .leftMouseDown) { [weak self] event in
+                self?.handleMouseDown(event)
+                return event  // pass through
+            }
+
+            dragMonitor = NSEvent.addLocalMonitorForEvents(matching: .leftMouseDragged) { [weak self] event in
+                if let self, self.handleMouseDragged(event) {
+                    return nil  // consumed by drag
+                }
+                return event  // pass through
+            }
+        }
+
+        private func removeMonitors() {
+            if let m = mouseMonitor { NSEvent.removeMonitor(m); mouseMonitor = nil }
+            if let m = dragMonitor { NSEvent.removeMonitor(m); dragMonitor = nil }
+        }
+
+        // Monitor cleanup is handled by viewDidMoveToWindow(nil) → removeMonitors().
+        // No deinit needed — avoids non-Sendable access from nonisolated context.
+
+        private func handleMouseDown(_ event: NSEvent) {
+            // Only track if the click is inside our bounds
+            guard let window = self.window, event.window === window else { return }
+            let loc = convert(event.locationInWindow, from: nil)
+            guard bounds.contains(loc) else { return }
+            mouseDownPoint = loc
             didStartDragging = false
-            super.mouseDown(with: event)
         }
 
-        override func mouseUp(with event: NSEvent) {
-            didStartDragging = false
-            super.mouseUp(with: event)
-        }
-
-        override func mouseDragged(with event: NSEvent) {
-
-            guard !didStartDragging else { return }
-            guard let appState, let panelSide else { return }
+        /// Returns true if drag was initiated (event consumed)
+        private func handleMouseDragged(_ event: NSEvent) -> Bool {
+            guard !didStartDragging else { return false }
+            guard let appState, let panelSide else { return false }
+            guard let window = self.window, event.window === window else { return false }
 
             let currentPoint = convert(event.locationInWindow, from: nil)
+            guard bounds.contains(currentPoint) else { return false }
+
             let deltaX = currentPoint.x - mouseDownPoint.x
             let deltaY = currentPoint.y - mouseDownPoint.y
             let dragDistance = hypot(deltaX, deltaY)
+            guard dragDistance >= dragThreshold else { return false }
 
-            guard dragDistance >= dragThreshold else {
-                super.mouseDragged(with: event)
-                return
+            // Prefer marked files (Total Commander style), fallback to selected file
+            var selectedPaths = appState.markedFiles(for: panelSide)
+            if selectedPaths.isEmpty {
+                let sel = panelSide == .left ? appState.selectedLeftFile : appState.selectedRightFile
+                if let sel, !ParentDirectoryEntry.isParentEntry(sel) {
+                    selectedPaths = [sel.pathStr]
+                }
             }
-
-            let selectedPaths = appState.markedFiles(for: panelSide)
             let selectedURLs = selectedPaths.map { URL(fileURLWithPath: $0) }
-
-            guard !selectedURLs.isEmpty else { return }
+            guard !selectedURLs.isEmpty else { return false }
 
             didStartDragging = true
             log.debug("[DragOverlay] starting AppKit drag with \(selectedURLs.count) file(s)")
@@ -95,6 +128,7 @@
             }
 
             beginDraggingSession(with: draggingItems, event: event, source: self)
+            return true
         }
 
         func draggingSession(

@@ -21,13 +21,13 @@
     struct FileTableView: View {
         @Environment(AppState.self) var appState
         @Environment(DragDropManager.self) var dragDropManager
-        
+
         let panelSide: PanelSide
         let files: [CustomFile]
         @Binding var selectedID: CustomFile.ID?
         let onSelect: (CustomFile) -> Void
         let onDoubleClick: (CustomFile) -> Void
-        
+
         // MARK: - Local State
         // sortKey and sortAscending live in AppState (single source of truth).
         // Local computed wrappers for convenience.
@@ -49,10 +49,10 @@
         @State var viewHeight: CGFloat = 400
         /// O(1) scroll target — set by keyboard nav, consumed by ScrollView(.scrollPosition)
         @State var scrollAnchorID: CustomFile.ID? = nil
-        
+
         /// Throttle for PgUp/PgDown — prevents overwhelming with rapid keypresses
         private let pageNavThrottle = KeypressThrottle(interval: 0.08)  // 80ms between page navigations
-        
+
         // MARK: - Column Layout — singleton from ColumnLayoutStore, no Binding needed
         let layout: ColumnLayoutModel
 
@@ -72,11 +72,11 @@
             self.onSelect = onSelect
             self.onDoubleClick = onDoubleClick
         }
-        
+
         // MARK: - Computed Properties
         var isFocused: Bool { appState.focusedPanel == panelSide }
         var sorter: TableFileSorter { TableFileSorter(sortKey: sortKey, ascending: sortAscending) }
-        
+
         /// Number of fully visible rows based on measured viewport height.
         var visibleRowCount: Int {
             max(1, Int(viewHeight / FilePanelStyle.rowHeight))
@@ -93,108 +93,104 @@
                 panelSide: panelSide
             )
         }
-        
+
         var dropHandler: TableDropHandler {
             TableDropHandler(panelSide: panelSide, appState: appState, dragDropManager: dragDropManager)
         }
-        
+
         var sortedRows: [(offset: Int, element: CustomFile)] { cachedSortedRows }
-            
+
         // MARK: - Body
         var body: some View {
-            mainScrollView
-                .overlay(
-                    DragOverlayView(
-                        panelSide: panelSide,
-                        files: files,
-                        dragDropManager: dragDropManager,
-                        appState: appState
-                    )
+            let baseView = ZStack {
+                mainScrollView
+
+                // AppKit drop target — receives drops from other panels and external apps
+                AppKitDropView(
+                    panelSide: panelSide,
+                    appState: appState,
+                    dragDropManager: dragDropManager
                 )
+
+                // AppKit drag source — initiates multi-file drag via NSDraggingSession
+                // (SwiftUI .onDrag only supports single NSItemProvider = single file)
+                DragOverlayView(panelSide: panelSide)
+            }
+
+            return baseView
                 .onAppear {
                     log.debug("\(#function) FileTableView onAppear panel=\(panelSide) files.count=\(files.count)")
                     recomputeSortedCache()
                     registerNavigationCallbacks()
                 }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .padding(.horizontal, 6)
-            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-            .overlay(panelBorder)
-            .contentShape(Rectangle())
-            .animation(nil, value: isFocused)
-            .animation(nil, value: selectedID)
-            .focusable(true)
-            .focusEffectDisabled()
-            .onGeometryChange(for: CGFloat.self, of: { $0.size.height }) { viewHeight = $0 }
-            // Compare version Int (O(1)) instead of [CustomFile] array (O(n)) — critical for 26k+ directories
-            .onChange(of: panelSide == .left ? appState.leftFilesVersion : appState.rightFilesVersion) { recomputeSortedCache() }
-            .onChange(of: appState.sortKey) { recomputeSortedCacheForSortChange() }
-            .onChange(of: appState.bSortAscending) { recomputeSortedCacheForSortChange() }
-            // Update selectedIndex in AppState when selection changes — O(1) lookup via cachedIndexByID
-            .onChange(of: selectedID) { _, newID in
-                if let id = newID, let idx = cachedIndexByID[id] {
-                    appState.setSelectedIndex(idx + 1, for: panelSide)  // 1-based
-                } else {
-                    appState.setSelectedIndex(0, for: panelSide)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .padding(.horizontal, 6)
+                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                .overlay(panelBorder)
+                .contentShape(Rectangle())
+                .animation(nil, value: isFocused)
+                .animation(nil, value: selectedID)
+                .focusable(true)
+                .focusEffectDisabled()
+                .onGeometryChange(for: CGFloat.self, of: { $0.size.height }) { viewHeight = $0 }
+                // Compare version Int (O(1)) instead of [CustomFile] array (O(n)) — critical for 26k+ directories
+                .onChange(of: panelSide == .left ? appState.leftFilesVersion : appState.rightFilesVersion) { recomputeSortedCache() }
+                .onChange(of: appState.sortKey) { recomputeSortedCacheForSortChange() }
+                .onChange(of: appState.bSortAscending) { recomputeSortedCacheForSortChange() }
+                // Update selectedIndex in AppState when selection changes — O(1) lookup via cachedIndexByID
+                .onChange(of: selectedID) { _, newID in
+                    if let id = newID, let idx = cachedIndexByID[id] {
+                        appState.setSelectedIndex(idx + 1, for: panelSide)  // 1-based
+                    } else {
+                        appState.setSelectedIndex(0, for: panelSide)
+                    }
                 }
-            }
-            // No auto-scroll on selection change — user controls scroll position
-            // Up/Down via .onKeyPress — .onMoveCommand stopped delivering events
-            // after custom keyboard handler changes. onKeyPress is reliable like PgUp/PgDown.
-            .onKeyPress(.upArrow) {
-                guard isFocused else { return .ignored }
-                keyboardNav.moveUp()
-                return .handled
-            }
-            .onKeyPress(.downArrow) {
-                guard isFocused else { return .ignored }
-                keyboardNav.moveDown()
-                return .handled
-            }
-            // PgUp/PgDown/Home/End via onKeyPress — works regardless of scroll position
-            // .keyboardShortcut on hidden Buttons fails on unfocused ScrollView content
-            // Throttled to prevent UI freeze on rapid keypresses in large directories
-            .onKeyPress(.pageUp) {
-                guard isFocused else { return .ignored }
-                if pageNavThrottle.allow() { keyboardNav.pageUp() }
-                return .handled
-            }
-            .onKeyPress(.pageDown) {
-                guard isFocused else { return .ignored }
-                if pageNavThrottle.allow() { keyboardNav.pageDown() }
-                return .handled
-            }
-            .onKeyPress(.home)      { guard isFocused else { return .ignored }; keyboardNav.jumpToFirst();  return .handled }
-            .onKeyPress(.end)       { guard isFocused else { return .ignored }; keyboardNav.jumpToLast();   return .handled }
-            // ESC: clear marks only — never clear file selection.
-            // Without this, SwiftUI resets the selectedID Binding to nil.
-            .onKeyPress(.escape) {
-                guard isFocused else { return .ignored }
-                let markedCount = appState.markedCount(for: panelSide)
-                if markedCount > 0 {
-                    appState.unmarkAll()
+                // No auto-scroll on selection change — user controls scroll position
+                // Up/Down via .onKeyPress — .onMoveCommand stopped delivering events
+                // after custom keyboard handler changes. onKeyPress is reliable like PgUp/PgDown.
+                .onKeyPress(.upArrow) {
+                    guard isFocused else { return .ignored }
+                    keyboardNav.moveUp()
+                    return .handled
                 }
-                // Ensure a file stays selected — fall back to first if none
-                appState.ensureSelectionOnFocusedPanel()
-                return .handled
-            }
-            // Jump-to-first / jump-to-last from status bar buttons
-            .onReceive(NotificationCenter.default.publisher(for: .jumpToFirst).filter { ($0.object as? PanelSide) == panelSide }) { _ in
-                keyboardNav.jumpToFirst()
-            }
-            .onReceive(NotificationCenter.default.publisher(for: .jumpToLast).filter { ($0.object as? PanelSide) == panelSide }) { _ in
-                keyboardNav.jumpToLast()
-            }
-            .dropDestination(for: URL.self) { droppedURLs, _ in
-                // Prefer internal drag (preserves multi-selection), fallback to URL decode
-                let droppedFiles = DropTargetModifier.safeResolveURLs(droppedURLs, dragDropManager: dragDropManager)
-                guard !droppedFiles.isEmpty else { return false }
-                return dropHandler.handlePanelDrop(droppedFiles)
-            } isTargeted: { targeted in
-                withAnimation(.easeInOut(duration: 0.15)) {
-                    isPanelDropTargeted = targeted
+                .onKeyPress(.downArrow) {
+                    guard isFocused else { return .ignored }
+                    keyboardNav.moveDown()
+                    return .handled
                 }
-                dropHandler.updateDropTarget(targeted: targeted)
-            }
+                // PgUp/PgDown/Home/End via onKeyPress — works regardless of scroll position
+                // .keyboardShortcut on hidden Buttons fails on unfocused ScrollView content
+                // Throttled to prevent UI freeze on rapid keypresses in large directories
+                .onKeyPress(.pageUp) {
+                    guard isFocused else { return .ignored }
+                    if pageNavThrottle.allow() { keyboardNav.pageUp() }
+                    return .handled
+                }
+                .onKeyPress(.pageDown) {
+                    guard isFocused else { return .ignored }
+                    if pageNavThrottle.allow() { keyboardNav.pageDown() }
+                    return .handled
+                }
+                .onKeyPress(.home)      { guard isFocused else { return .ignored }; keyboardNav.jumpToFirst();  return .handled }
+                .onKeyPress(.end)       { guard isFocused else { return .ignored }; keyboardNav.jumpToLast();   return .handled }
+                // ESC: clear marks only — never clear file selection.
+                // Without this, SwiftUI resets the selectedID Binding to nil.
+                .onKeyPress(.escape) {
+                    guard isFocused else { return .ignored }
+                    let markedCount = appState.markedCount(for: panelSide)
+                    if markedCount > 0 {
+                        appState.unmarkAll()
+                    }
+                    // Ensure a file stays selected — fall back to first if none
+                    appState.ensureSelectionOnFocusedPanel()
+                    return .handled
+                }
+                // Jump-to-first / jump-to-last from status bar buttons
+                .onReceive(NotificationCenter.default.publisher(for: .jumpToFirst).filter { ($0.object as? PanelSide) == panelSide }) { _ in
+                    keyboardNav.jumpToFirst()
+                }
+                .onReceive(NotificationCenter.default.publisher(for: .jumpToLast).filter { ($0.object as? PanelSide) == panelSide }) { _ in
+                    keyboardNav.jumpToLast()
+                }
         }
     }
