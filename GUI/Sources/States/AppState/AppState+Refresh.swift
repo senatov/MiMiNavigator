@@ -5,8 +5,8 @@
 // Copyright © 2025-2026 Senatov. All rights reserved.
 // Description: Panel refresh operations, remote file listing, path updates
 
-import Foundation
 import FileModelKit
+import Foundation
 
 // MARK: - Refresh Operations
 extension AppState {
@@ -24,7 +24,7 @@ extension AppState {
             await scanner.refreshFiles(currSide: .left)
         }
         if selectedLeftFile == nil {
-            selectedLeftFile = firstRealFile(displayedLeftFiles)
+            selectedLeftFile = firstRealFile(in: displayedLeftFiles)
             if let f = selectedLeftFile {
                 log.debug("[AppState] 👆 \(f.nameStr) selected (left)")
             }
@@ -38,7 +38,7 @@ extension AppState {
             await scanner.refreshFiles(currSide: .right)
         }
         if selectedRightFile == nil {
-            selectedRightFile = firstRealFile(displayedRightFiles)
+            selectedRightFile = firstRealFile(in: displayedRightFiles)
             if let f = selectedRightFile {
                 log.debug("[AppState] 👆 \(f.nameStr) selected (right)")
             }
@@ -68,12 +68,12 @@ extension AppState {
             let files = items.map { CustomFile(remoteItem: $0) }
             let sorted = applySorting(files)
             switch panel {
-            case .left:
-                displayedLeftFiles = sorted
-                if selectedLeftFile == nil { selectedLeftFile = firstRealFile(sorted) }
-            case .right:
-                displayedRightFiles = sorted
-                if selectedRightFile == nil { selectedRightFile = firstRealFile(sorted) }
+                case .left:
+                    displayedLeftFiles = sorted
+                    if selectedLeftFile == nil { selectedLeftFile = firstRealFile(in: sorted) }
+                case .right:
+                    displayedRightFiles = sorted
+                    if selectedRightFile == nil { selectedRightFile = firstRealFile(in: sorted) }
             }
         } catch {
             log.error("[AppState] remote listing failed: \(error.localizedDescription)")
@@ -100,18 +100,18 @@ extension AppState {
         }
 
         switch panelSide {
-        case .left:
-            if Self.isRemotePath(path) && !Self.isRemotePath(leftPath) {
-                savedLocalLeftPath = leftPath
-            }
-            leftPath = path
-            selectedLeftFile = firstRealFile(displayedLeftFiles)
-        case .right:
-            if Self.isRemotePath(path) && !Self.isRemotePath(rightPath) {
-                savedLocalRightPath = rightPath
-            }
-            rightPath = path
-            selectedRightFile = firstRealFile(displayedRightFiles)
+            case .left:
+                if Self.isRemotePath(path) && !Self.isRemotePath(leftPath) {
+                    savedLocalLeftPath = leftPath
+                }
+                leftPath = path
+                selectedLeftFile = firstRealFile(in: displayedLeftFiles)
+            case .right:
+                if Self.isRemotePath(path) && !Self.isRemotePath(rightPath) {
+                    savedLocalRightPath = rightPath
+                }
+                rightPath = path
+                selectedRightFile = firstRealFile(in: displayedRightFiles)
         }
     }
 
@@ -119,8 +119,8 @@ extension AppState {
     func restoreLocalPath(for panel: PanelSide) async {
         let saved: String?
         switch panel {
-        case .left: saved = savedLocalLeftPath
-        case .right: saved = savedLocalRightPath
+            case .left: saved = savedLocalLeftPath
+            case .right: saved = savedLocalRightPath
         }
         guard let localPath = saved else {
             log.warning("[AppState] no saved local path for \(panel)")

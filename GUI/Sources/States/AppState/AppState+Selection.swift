@@ -20,8 +20,8 @@ extension AppState {
         let files = displayedFiles(for: panel)
         if let match = files.first(where: { $0.nameStr == name }) {
             switch panel {
-            case .left: selectedLeftFile = match
-            case .right: selectedRightFile = match
+                case .left: selectedLeftFile = match
+                case .right: selectedRightFile = match
             }
         }
     }
@@ -45,8 +45,8 @@ extension AppState {
         if newFiles[targetIndex].isParentEntry && targetIndex + 1 < newFiles.count { targetIndex += 1 }
         let targetFile = newFiles[targetIndex]
         switch panel {
-        case .left: selectedLeftFile = targetFile
-        case .right: selectedRightFile = targetFile
+            case .left: selectedLeftFile = targetFile
+            case .right: selectedRightFile = targetFile
         }
     }
 
@@ -54,8 +54,8 @@ extension AppState {
 
     func clearFileSelection() {
         switch focusedPanel {
-        case .left: selectedLeftFile = nil
-        case .right: selectedRightFile = nil
+            case .left: selectedLeftFile = nil
+            case .right: selectedRightFile = nil
         }
     }
 
@@ -87,12 +87,12 @@ extension AppState {
 
     func ensureSelectionOnFocusedPanel() {
         switch focusedPanel {
-        case .left:
-            guard selectedLeftFile == nil else { return }
-            if let first = displayedLeftFiles.first(where: { !$0.isParentEntry }) { selectedLeftFile = first }
-        case .right:
-            guard selectedRightFile == nil else { return }
-            if let first = displayedRightFiles.first(where: { !$0.isParentEntry }) { selectedRightFile = first }
+            case .left:
+                guard selectedLeftFile == nil else { return }
+                if let first = displayedLeftFiles.first(where: { !$0.isParentEntry }) { selectedLeftFile = first }
+            case .right:
+                guard selectedRightFile == nil else { return }
+                if let first = displayedRightFiles.first(where: { !$0.isParentEntry }) { selectedRightFile = first }
         }
     }
 
@@ -153,8 +153,12 @@ extension AppState {
         let raw: [CustomFile]
         let query: String
         switch panelSide {
-        case .left: raw = displayedLeftFiles; query = leftFilterQuery
-        case .right: raw = displayedRightFiles; query = rightFilterQuery
+            case .left:
+                raw = displayedLeftFiles
+                query = leftFilterQuery
+            case .right:
+                raw = displayedRightFiles
+                query = rightFilterQuery
         }
         let trimmed = query.trimmingCharacters(in: .whitespaces)
         guard !trimmed.isEmpty else { return raw }
@@ -205,22 +209,33 @@ extension AppState {
 
     func toggleShowHiddenFiles() {
         UserPreferences.shared.snapshot.showHiddenFiles.toggle()
-        Task { await scanner.refreshFiles(currSide: .left); await scanner.refreshFiles(currSide: .right) }
+        Task {
+            await scanner.refreshFiles(currSide: .left)
+            await scanner.refreshFiles(currSide: .right)
+        }
     }
 
     func forceRefreshBothPanels() {
-        Task { await scanner.refreshFiles(currSide: .left); await scanner.refreshFiles(currSide: .right) }
+        Task {
+            await scanner.refreshFiles(currSide: .left)
+            await scanner.refreshFiles(currSide: .right)
+        }
     }
 
     func swapPanels() {
-        let tmpPath = leftPath; leftPath = rightPath; rightPath = tmpPath
+        let tmpPath = leftPath
+        leftPath = rightPath
+        rightPath = tmpPath
         tabManager(for: .left).updateActiveTabPath(leftPath)
         tabManager(for: .right).updateActiveTabPath(rightPath)
-        let tmpSel = selectedLeftFile; selectedLeftFile = selectedRightFile; selectedRightFile = tmpSel
+        let tmpSel = selectedLeftFile
+        selectedLeftFile = selectedRightFile
+        selectedRightFile = tmpSel
         Task {
             await scanner.setLeftDirectory(pathStr: leftPath)
             await scanner.setRightDirectory(pathStr: rightPath)
-            await refreshLeftFiles(); await refreshRightFiles()
+            await refreshLeftFiles()
+            await refreshRightFiles()
         }
     }
 }
@@ -242,27 +257,32 @@ extension AppState {
         StatePersistence.restoreSorting(into: self)
         focusedPanel = .left
         if let cached = PanelStartupCache.shared.load(forLeftPath: leftPath, rightPath: rightPath) {
-            displayedLeftFiles = cached.left; displayedRightFiles = cached.right
-            selectedLeftFile = firstRealFile(cached.left); selectedRightFile = firstRealFile(cached.right)
+            displayedLeftFiles = cached.left
+            displayedRightFiles = cached.right
+            selectedLeftFile = firstRealFile(in: cached.left)
+            selectedRightFile = firstRealFile(in: cached.right)
         }
         Task {
             await scanner.setLeftDirectory(pathStr: leftPath)
             await scanner.setRightDirectory(pathStr: rightPath)
             await scanner.startMonitoring()
-            async let l: Void = refreshLeftFiles(); async let r: Void = refreshRightFiles()
+            async let l: Void = refreshLeftFiles()
+            async let r: Void = refreshRightFiles()
             _ = await (l, r)
             selectionManager?.restoreSelectionsAndFocus()
             focusedPanel = .left
-            if selectedLeftFile == nil { selectedLeftFile = firstRealFile(displayedLeftFiles) }
-            PanelStartupCache.shared.save(leftPath: leftPath, rightPath: rightPath,
-                                          leftFiles: displayedLeftFiles, rightFiles: displayedRightFiles)
+            if selectedLeftFile == nil { selectedLeftFile = firstRealFile(in: displayedLeftFiles) }
+            PanelStartupCache.shared.save(
+                leftPath: leftPath, rightPath: rightPath,
+                leftFiles: displayedLeftFiles, rightFiles: displayedRightFiles)
         }
     }
 
     func saveBeforeExit() {
         StatePersistence.saveBeforeExit(from: self)
-        PanelStartupCache.shared.save(leftPath: leftPath, rightPath: rightPath,
-                                      leftFiles: displayedLeftFiles, rightFiles: displayedRightFiles)
+        PanelStartupCache.shared.save(
+            leftPath: leftPath, rightPath: rightPath,
+            leftFiles: displayedLeftFiles, rightFiles: displayedRightFiles)
         Task { await ArchiveManager.shared.cleanup() }
     }
 }
@@ -277,12 +297,16 @@ extension AppState {
     func showSearchResults(_ files: [CustomFile], virtualPath: String, on panel: PanelSide) {
         let sorted = applySorting(files)
         switch panel {
-        case .left:
-            leftSearchResultsPath = virtualPath; displayedLeftFiles = sorted
-            leftPath = virtualPath; selectedLeftFile = firstRealFile(sorted)
-        case .right:
-            rightSearchResultsPath = virtualPath; displayedRightFiles = sorted
-            rightPath = virtualPath; selectedRightFile = firstRealFile(sorted)
+            case .left:
+                leftSearchResultsPath = virtualPath
+                displayedLeftFiles = sorted
+                leftPath = virtualPath
+                selectedLeftFile = firstRealFile(in: sorted)
+            case .right:
+                rightSearchResultsPath = virtualPath
+                displayedRightFiles = sorted
+                rightPath = virtualPath
+                selectedRightFile = firstRealFile(in: sorted)
         }
         focusedPanel = panel
     }
@@ -315,15 +339,17 @@ extension AppState {
         let history = navigationHistory(for: panel)
         let previousPath = history.currentPath ?? NSHomeDirectory()
         switch panel {
-        case .left: leftSearchResultsPath = nil
-        case .right: rightSearchResultsPath = nil
+            case .left: leftSearchResultsPath = nil
+            case .right: rightSearchResultsPath = nil
         }
         updatePath(previousPath, for: panel)
         Task {
             if panel == .left {
-                await scanner.setLeftDirectory(pathStr: previousPath); await refreshLeftFiles()
+                await scanner.setLeftDirectory(pathStr: previousPath)
+                await refreshLeftFiles()
             } else {
-                await scanner.setRightDirectory(pathStr: previousPath); await refreshRightFiles()
+                await scanner.setRightDirectory(pathStr: previousPath)
+                await refreshRightFiles()
             }
         }
     }

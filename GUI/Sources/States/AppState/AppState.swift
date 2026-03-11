@@ -10,6 +10,9 @@ import AppKit
 import FileModelKit
 import Foundation
 
+/// Central application state for MiMiNavigator.
+/// Owns panel paths, file lists, selection state and navigation managers.
+/// Marked @MainActor because it is directly consumed by SwiftUI views.
 @MainActor
 @Observable
 final class AppState {
@@ -26,10 +29,31 @@ final class AppState {
     var rightFilterQuery: String = ""
 
     // MARK: - Paths
+    /// Canonical filesystem paths for panels (kept as String for compatibility with existing code)
     var leftPath: String
     var rightPath: String
     var savedLocalLeftPath: String?
     var savedLocalRightPath: String?
+
+    /// URL helpers (preferred API for new code)
+    var leftURL: URL { URL(fileURLWithPath: leftPath) }
+    var rightURL: URL { URL(fileURLWithPath: rightPath) }
+
+    func url(for panel: PanelSide) -> URL {
+        panel == .left ? leftURL : rightURL
+    }
+
+    func path(for panel: PanelSide) -> String {
+        panel == .left ? leftPath : rightPath
+    }
+
+    func setPath(_ path: String, for panel: PanelSide) {
+        if panel == .left {
+            leftPath = path
+        } else {
+            rightPath = path
+        }
+    }
 
     // MARK: - UI State
     var selectedDir: DirectorySelection = .init()
@@ -94,7 +118,8 @@ final class AppState {
         self.focusedPanel = StatePersistence.loadInitialFocus()
 
         if let storedKey = UserDefaults.standard.string(forKey: "MiMiNavigator.sortKey"),
-           let key = SortKeysEnum(rawValue: storedKey) {
+            let key = SortKeysEnum(rawValue: storedKey)
+        {
             self.sortKey = key
         }
         if UserDefaults.standard.object(forKey: "MiMiNavigator.sortAscending") != nil {
@@ -116,9 +141,33 @@ final class AppState {
     }
 
     // MARK: - Helpers
-    func firstRealFile(_ files: [CustomFile]) -> CustomFile? { files.first { !$0.isParentEntry } }
-    func selectedIndex(for p: PanelSide) -> Int { p == .left ? leftSelectedIndex : rightSelectedIndex }
-    func visibleIndex(for p: PanelSide) -> Int { p == .left ? leftVisibleIndex : rightVisibleIndex }
-    func setSelectedIndex(_ i: Int, for p: PanelSide) { if p == .left { leftSelectedIndex = i } else { rightSelectedIndex = i } }
-    func setVisibleIndex(_ i: Int, for p: PanelSide) { if p == .left { leftVisibleIndex = i } else { rightVisibleIndex = i } }
+    func firstRealFile(in files: [CustomFile]) -> CustomFile? {
+        files.first { !$0.isParentEntry }
+    }
+
+    func selectedIndex(for panel: PanelSide) -> Int {
+        panel == .left ? leftSelectedIndex : rightSelectedIndex
+    }
+
+    func visibleIndex(for panel: PanelSide) -> Int {
+        panel == .left ? leftVisibleIndex : rightVisibleIndex
+    }
+
+    func setSelectedIndex(_ index: Int, for panel: PanelSide) {
+        switch panel {
+            case .left:
+                leftSelectedIndex = index
+            case .right:
+                rightSelectedIndex = index
+        }
+    }
+
+    func setVisibleIndex(_ index: Int, for panel: PanelSide) {
+        switch panel {
+            case .left:
+                leftVisibleIndex = index
+            case .right:
+                rightVisibleIndex = index
+        }
+    }
 }

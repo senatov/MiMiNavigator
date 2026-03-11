@@ -18,7 +18,7 @@
         let panelSide: PanelSide
         let onAction: (FileAction) -> Void
         @Environment(\.dismiss) private var dismiss
-        @State private var userFavorites = UserFavoritesStore.shared
+        private let userFavorites = UserFavoritesStore.shared
         // Pre-loaded once at init — prevents re-init of OpenWithSubmenu on every body re-evaluation
         @State private var openWithApps: [AppInfo]
 
@@ -117,11 +117,11 @@
 
         @ViewBuilder
         private var favoritesToggleButton: some View {
-            let isInFavorites = userFavorites.contains(path: file.pathStr)
+            let isInFavorites = userFavorites.contains(url: file.urlValue)
             if isInFavorites {
                 Button(role: .destructive) {
-                    userFavorites.remove(path: file.pathStr)
-                    log.info("[Favorites] file removed via context menu: \(file.pathStr)")
+                    userFavorites.remove(url: file.urlValue)
+                    log.info("[Favorites] file removed via context menu: \(file.urlValue.path)")
                 } label: {
                     Label("Remove from Favorites", systemImage: "star.slash.fill")
                 }
@@ -175,7 +175,10 @@
         .frame(width: 300, height: 200)
         .contextMenu {
             FileContextMenu(
-                file: CustomFile(path: "/test/document.txt"),
+                file: CustomFile(
+                    url: URL(fileURLWithPath: "/test/document.txt"),
+                    resourceValues: URLResourceValues()
+                ),
                 panelSide: .left,
                 onAction: { action in
                     log.debug("Action: \(action)")
