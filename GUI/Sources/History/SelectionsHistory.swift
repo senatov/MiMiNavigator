@@ -24,6 +24,12 @@
 
         private var recentSelections: [URL] = []
         private static let maxEntries = 100
+        private let userDefaultsKey = "SelectionsHistory.recent.v3"
+
+        // MARK: - Init
+        init() {
+            loadRecent()
+        }
 
         // MARK: - Navigation state
 
