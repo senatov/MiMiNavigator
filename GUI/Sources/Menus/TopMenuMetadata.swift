@@ -302,7 +302,7 @@
                     guard let appState = AppStateProvider.shared else { return }
                     let panel = appState.focusedPanel
                     let path = panel == .left ? appState.leftPath : appState.rightPath
-                    _ = appState.tabManager(for: panel).addTab(path: path)
+                    _ = appState.tabManager(for: panel).addTab(url: URL(fileURLWithPath: path))
                 },
                 hotKey: .newTab
             ),

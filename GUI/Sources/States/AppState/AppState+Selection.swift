@@ -226,8 +226,8 @@
             let tmpPath = leftPath
             leftPath = rightPath
             rightPath = tmpPath
-            tabManager(for: .left).updateActiveTabPath(leftPath)
-            tabManager(for: .right).updateActiveTabPath(rightPath)
+            tabManager(for: .left).updateActiveTabPath(URL(fileURLWithPath: leftPath))
+            tabManager(for: .right).updateActiveTabPath(URL(fileURLWithPath: rightPath))
             let tmpSel = selectedLeftFile
             selectedLeftFile = selectedRightFile
             selectedRightFile = tmpSel
@@ -342,7 +342,7 @@
                 case .left: leftSearchResultsPath = nil
                 case .right: rightSearchResultsPath = nil
             }
-            updatePath(previousPath, for: panel)
+            updatePath(URL(fileURLWithPath: previousPath), for: panel)
             Task {
                 if panel == .left {
                     await scanner.setLeftDirectory(pathStr: previousPath)

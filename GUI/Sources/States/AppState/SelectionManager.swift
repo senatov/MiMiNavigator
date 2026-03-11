@@ -19,7 +19,8 @@
 
         // MARK: - State
         private var isRestoringSelections = false
-        private var lastRecordedPath: [PanelSide: String] = [:]
+        private var lastRecordedURL: [PanelSide: URL] = [:]
+        private var lastKnownIndex: [PanelSide: Int] = [:]
 
         // MARK: - Initialization
         init(appState: AppState, history: SelectionsHistory) {
@@ -68,13 +69,12 @@
             }
 
             let url = file.urlValue.standardizedFileURL
-            let path = url.path
 
-            if lastRecordedPath[panelSide] == path {
+            if lastRecordedURL[panelSide]?.standardizedFileURL == url {
                 log.debug("[SelectionManager] history skip dupe panel=\(panelSide)")
                 return
             }
-            lastRecordedPath[panelSide] = path
+            lastRecordedURL[panelSide] = url
 
             // Only set current item. Do not push navigation history here.
             // Real navigation history must be updated only when entering directories.
@@ -91,14 +91,19 @@
                 return
             }
 
-            let current = state.panel(state.focusedPanel).selectedFile
+            let panelSide = state.focusedPanel
+            let current = state.panel(panelSide).selectedFile
             let currentIdx: Int
 
-            if let cur = current {
-                let curPath = cur.urlValue.standardizedFileURL.path
-
+            if let cached = lastKnownIndex[panelSide],
+               cached >= 0,
+               cached < items.count,
+               current?.urlValue.standardizedFileURL == items[cached].urlValue.standardizedFileURL {
+                currentIdx = cached
+            } else if let cur = current {
+                let curURL = cur.urlValue.standardizedFileURL
                 currentIdx = items.firstIndex {
-                    $0.urlValue.standardizedFileURL.path == curPath
+                    $0.urlValue.standardizedFileURL == curURL
                 } ?? 0
             } else {
                 currentIdx = step >= 0 ? 0 : items.count - 1
@@ -106,8 +111,9 @@
 
             let nextIdx = max(0, min(items.count - 1, currentIdx + step))
             let next = items[nextIdx]
+            lastKnownIndex[panelSide] = nextIdx
 
-            if current?.urlValue.standardizedFileURL.path == next.urlValue.standardizedFileURL.path {
+            if current?.urlValue.standardizedFileURL == next.urlValue.standardizedFileURL {
                 return
             }
 

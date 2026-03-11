@@ -174,12 +174,13 @@
             
             // Validate paths exist (allow remote paths through)
             history = hist.compactMap { path in
-                if AppState.isRemotePath(path) {
-                    return URL(fileURLWithPath: path)
+                let url = URL(fileURLWithPath: path)
+                if AppState.isRemotePath(url) {
+                    return url
                 }
                 var isDir: ObjCBool = false
                 if FileManager.default.fileExists(atPath: path, isDirectory: &isDir), isDir.boolValue {
-                    return URL(fileURLWithPath: path)
+                    return url
                 }
                 return nil
             }

@@ -25,8 +25,8 @@ struct TabItemView: View {
 
     // MARK: - Layout constants (Edge-style)
     private let tabHeight: CGFloat = 28
-    private let minTabWidth: CGFloat = 60
-    private let maxTabWidth: CGFloat = 180
+    private let minTabWidth: CGFloat = 80
+    private let maxTabWidth: CGFloat = 210
     private let cornerRadius: CGFloat = 8
 
     // MARK: - Body
@@ -71,7 +71,7 @@ struct TabItemView: View {
                         onDuplicate: onDuplicate
                     )
                 }
-                .help(tab.path)
+                .help(tab.displayName)
 
             // Right shoulder curve (active tab only)
             if isActive {

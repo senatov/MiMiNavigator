@@ -347,7 +347,7 @@ final class FindFilesViewModel {
                     let targetDir = targetFileURL.deletingLastPathComponent().path
                     let targetFileName = targetFileURL.lastPathComponent
 
-                    appState.updatePath(targetDir, for: panel)
+                    appState.updatePath(URL(fileURLWithPath: targetDir), for: panel)
 
                     if panel == .left {
                         await appState.scanner.setLeftDirectory(pathStr: targetDir)
@@ -369,7 +369,7 @@ final class FindFilesViewModel {
                 } catch {
                     log.error("[FindFiles] goToFile: failed to extract archive: \(error.localizedDescription)")
                     // Fallback: reveal the archive in panel
-                    let archiveDir = archiveURL.deletingLastPathComponent().path
+                    let archiveDir = archiveURL.deletingLastPathComponent()
                     appState.updatePath(archiveDir, for: panel)
                     Task {
                         await appState.scanner.refreshFiles(currSide: panel)
@@ -383,7 +383,7 @@ final class FindFilesViewModel {
         } else {
             // Normal file result: navigate to containing directory and select
             let targetDir = result.fileURL.deletingLastPathComponent().path
-            appState.updatePath(targetDir, for: panel)
+            appState.updatePath(URL(fileURLWithPath: targetDir), for: panel)
             Task {
                 await appState.scanner.refreshFiles(currSide: panel)
                 let files = appState.displayedFiles(for: panel)

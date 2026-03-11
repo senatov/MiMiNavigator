@@ -57,45 +57,47 @@
                 log.error("[DualDirectoryScanner] Failed to initialize directory timers")
             }
             Task { @MainActor in
-                let lPath = appState.leftPath
-                let rPath = appState.rightPath
-                await self.startFSEvents(for: .left, path: lPath)
-                await self.startFSEvents(for: .right, path: rPath)
+                let lURL = appState.leftURL
+                let rURL = appState.rightURL
+                await self.startFSEvents(for: .left, url: lURL)
+                await self.startFSEvents(for: .right, url: rURL)
             }
         }
 
         // MARK: - Set directory for right panel
         func setRightDirectory(pathStr: String) {
             log.info("[DualDirectoryScanner] setRightDirectory: '\(pathStr)'")
+            let url = URL(fileURLWithPath: pathStr)
             Task { @MainActor in
-                appState.rightPath = pathStr
+                appState.rightURL = url
             }
-            startFSEvents(for: .right, path: pathStr)
+            startFSEvents(for: .right, url: url)
         }
 
         // MARK: - Set directory for left panel
         func setLeftDirectory(pathStr: String) {
             log.info("[DualDirectoryScanner] setLeftDirectory: '\(pathStr)'")
+            let url = URL(fileURLWithPath: pathStr)
             Task { @MainActor in
-                appState.leftPath = pathStr
+                appState.leftURL = url
             }
-            startFSEvents(for: .left, path: pathStr)
+            startFSEvents(for: .left, url: url)
         }
 
         // MARK: - FSEvents watcher setup
         /// Starts FSEventsDirectoryWatcher for a panel.
         /// Remote paths are skipped — FSEvents has no meaning for ftp:// / sftp://.
         /// async because showHiddenFiles is @MainActor-isolated (read via appState hop).
-        private func startFSEvents(for side: PanelSide, path: String) {
-            guard !AppState.isRemotePath(path) else {
-                log.debug("[FSEvents] Remote path — skip watcher: '\(path)' side=\(side)")
+        private func startFSEvents(for side: PanelSide, url: URL) {
+            guard !AppState.isRemotePath(url) else {
+                log.debug("[FSEvents] Remote path — skip watcher: '\(url.path)' side=\(side)")
                 stopFSEvents(for: side)
                 return
             }
             // appState is @MainActor — read showHiddenFiles via async Task hop
             Task {
                 let showHidden: Bool = await appState.showHiddenFilesSnapshot()
-                launchFSEventsWatcher(for: side, path: path, showHiddenFiles: showHidden)
+                launchFSEventsWatcher(for: side, path: url.path, showHiddenFiles: showHidden)
             }
         }
 
@@ -273,17 +275,17 @@
             scanInProgress[currSide] = true
             defer { scanInProgress[currSide] = false }
 
-            let (path, showHidden, sortKey, sortAsc): (String, Bool, SortKeysEnum, Bool) = await MainActor.run {
-                let p = currSide == .left ? appState.leftPath : appState.rightPath
+            let (url, showHidden, sortKey, sortAsc): (URL, Bool, SortKeysEnum, Bool) = await MainActor.run {
+                let u = currSide == .left ? appState.leftURL : appState.rightURL
                 let h = UserPreferences.shared.snapshot.showHiddenFiles
-                return (p, h, appState.sortKey, appState.bSortAscending)
+                return (u, h, appState.sortKey, appState.bSortAscending)
             }
-            if AppState.isRemotePath(path) {
+            if AppState.isRemotePath(url) {
                 await appState.refreshRemoteFiles(for: currSide)
                 return
             }
-            let originalURL = URL(fileURLWithPath: path)
-            let resolvedURL = originalURL.resolvingSymlinksInPath()
+            let originalURL = url
+            let resolvedURL = url.resolvingSymlinksInPath()
             if originalURL.path != resolvedURL.path {
                 log.debug("[Scan] Symlink resolved: '\(originalURL.path)' → '\(resolvedURL.path)'")
             }
@@ -317,7 +319,7 @@
                     }
                 }
             }
-            log.error("💀 ALL scan attempts failed for <<\(currSide)>> path: '\(path)'")
+            log.error("💀 ALL scan attempts failed for <<\(currSide)>> path: '\(url.path)'")
         }
 
         // MARK: - Permission helpers

@@ -23,64 +23,54 @@
         private(set) var canGoForward: Bool = false
 
         private var recentSelections: [URL] = []
-        private static let maxEntries = 100
-        private let userDefaultsKey = "SelectionsHistory.recent.v3"
+        private static let maxEntries = 128
 
-        // MARK: - Init
-        init() {
-            loadRecent()
-        }
-
-        // MARK: - Navigation state
-
-        // MARK: - Navigate to new location
-
-        func navigate(to url: URL) {
+        // MARK: - Core visit logic
+        private func visit(_ url: URL, recordHistory: Bool) {
 
             let normalized = url.standardizedFileURL
 
             // Ignore navigation to the same location
-            if current == normalized {
+            if current?.standardizedFileURL == normalized {
                 return
             }
 
-            // Only track directories
-            guard normalized.hasDirectoryPath else {
-                return
-            }
+            if recordHistory {
 
-            // Avoid duplicate consecutive entries
-            if let current, backStack.last != current {
-                backStack.append(current)
+                // Only track directories in navigation history
+                guard normalized.hasDirectoryPath else { return }
+
+                if let current, backStack.last != current {
+                    backStack.append(current)
+                }
+
+                forwardStack.removeAll()
+                trimHistory()
+
+            } else {
+
+                // Track recent selections (most recent first, no duplicates)
+                if let idx = recentSelections.firstIndex(where: { $0.standardizedFileURL == normalized }) {
+                    recentSelections.remove(at: idx)
+                }
+
+                recentSelections.insert(normalized, at: 0)
+
+                if recentSelections.count > Self.maxEntries {
+                    recentSelections.removeLast()
+                }
             }
 
             current = normalized
-            forwardStack.removeAll()
-
-            trimHistory()
             updateNavigationState()
         }
 
-        // MARK: - Set current without modifying history
+        func navigate(to url: URL) {
+            visit(url, recordHistory: true)
+        }
+
         func setCurrent(to url: URL) {
-            let normalized = url.standardizedFileURL
-            current = normalized
-
-            // Track recent selections (most recent first, no duplicates)
-            let normalizedPath = normalized.standardizedFileURL.path
-            recentSelections.removeAll { $0.standardizedFileURL.path == normalizedPath }
-            recentSelections.insert(normalized, at: 0)
-
-            if recentSelections.count > Self.maxEntries {
-                recentSelections.removeLast(recentSelections.count - Self.maxEntries)
-            }
-
-            updateNavigationState()
-        }
-
-        // MARK: - Add entry
-        func add(_ url: URL) {
-            setCurrent(to: url)
+            visit(url, recordHistory: false)
         }
 
         // MARK: - Back
@@ -136,8 +126,8 @@
         // MARK: - Remove entry from recent selections
 
         func remove(_ url: URL) {
-            let normalizedPath = url.standardizedFileURL.path
-            recentSelections.removeAll { $0.standardizedFileURL.path == normalizedPath }
+            let normalized = url.standardizedFileURL
+            recentSelections.removeAll { $0.standardizedFileURL == normalized }
         }
 
         // MARK: - History trimming

@@ -107,7 +107,7 @@
     // MARK: - Panel Navigation Helper
     /// Navigates a panel to a directory path and refreshes its file list.
     private func navigate(panel: PanelSide, to path: String, appState: AppState) async {
-        appState.updatePath(path, for: panel)
+        appState.updatePath(URL(fileURLWithPath: path), for: panel)
 
         if panel == .left {
             await appState.scanner.setLeftDirectory(pathStr: path)
@@ -153,7 +153,7 @@
             }
 
             let mgr = appState.tabManager(for: panel)
-            let newTab = mgr.addTab(path: targetPath)
+            let newTab = mgr.addTab(url: resolvedURL)
             log.info("[OpenInNewTab] directory tab added: '\(newTab.displayName)' panel=\(panel)")
 
         Task { @MainActor in
@@ -172,8 +172,7 @@
                     do {
                         let tempDir = try await ArchiveManager.shared.openArchive(at: file.urlValue)
                         let newTab = mgr.addTab(
-                            path: tempDir.path,
-                            isArchive: true,
+                            url: tempDir,
                             archiveURL: file.urlValue
                         )
                         log.info("[OpenInNewTab] archive tab added: '\(newTab.displayName)' panel=\(panel)")
@@ -192,15 +191,15 @@
             }
 
             // Regular files — open containing directory in new tab
-            let containingDir = file.urlValue.deletingLastPathComponent().path
-            log.info("[OpenInNewTab] file's parent dir in new tab: '\(containingDir)' for file '\(file.nameStr)'")
+            let containingDirURL = file.urlValue.deletingLastPathComponent()
+            log.info("[OpenInNewTab] file's parent dir in new tab: '\(containingDirURL.path)' for file '\(file.nameStr)'")
 
             let mgr = appState.tabManager(for: panel)
-            let newTab = mgr.addTab(path: containingDir)
+            let newTab = mgr.addTab(url: containingDirURL)
             log.info("[OpenInNewTab] file parent tab added: '\(newTab.displayName)' panel=\(panel)")
 
         Task { @MainActor in
-            await navigate(panel: panel, to: containingDir, appState: appState)
+            await navigate(panel: panel, to: containingDirURL.path, appState: appState)
         }
         }
 

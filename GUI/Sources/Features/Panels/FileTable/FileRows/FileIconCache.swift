@@ -1,40 +1,95 @@
-    //
-    //  FileIconCache.swift
-    //  MiMiNavigator
-    //
-    //  Created by Iakov Senatov on 11.03.2026.
-    //  Copyright © 2026 Senatov. All rights reserved.
-    //
+//
+//  FileIconCache.swift
+//  MiMiNavigator
+//
+//  Created by Iakov Senatov on 11.03.2026.
+//  Copyright © 2026 Senatov. All rights reserved.
+//
 
-    import AppKit
+import AppKit
+import UniformTypeIdentifiers
 
-    /// Global icon cache to avoid repeated NSWorkspace icon lookups.
-    @MainActor
-    final class FileIconCache {
+/// Global icon cache to avoid repeated NSWorkspace icon lookups.
+final class FileIconCache: @unchecked Sendable {
 
-        static let shared = FileIconCache()
+    static let shared = FileIconCache()
 
-        private let cache = NSCache<NSString, NSImage>()
+    private let cache = NSCache<NSString, NSImage>()
 
-        private init() {
-            // Limit number of cached icons to avoid unbounded memory growth
-            cache.countLimit = 2000
+    private init() {
+        // Limit number of cached icons to avoid unbounded memory growth
+        cache.countLimit = 2000
 
-            // Rough memory cap (~50 MB). NSCache may evict earlier under pressure.
-            cache.totalCostLimit = 50 * 1024 * 1024
+        // Rough memory cap (~50 MB). NSCache may evict earlier under pressure.
+        cache.totalCostLimit = 50 * 1024 * 1024
+    }
+
+    /// Derives a stable cache key based on UTType instead of full path.
+    /// This prevents thousands of duplicate icons while matching Finder behavior.
+    private func cacheKey(for url: URL, isDirectory: Bool) -> NSString {
+        if isDirectory {
+            return "folder" as NSString
         }
 
-        func icon(for path: String) -> NSImage {
-            if let cached = cache.object(forKey: path as NSString) {
-                return cached
+        if let type = UTType(filenameExtension: url.pathExtension) {
+            return type.identifier as NSString
+        }
+
+        if url.pathExtension.isEmpty {
+            return "public.data" as NSString
+        }
+
+        return url.pathExtension.lowercased() as NSString
+    }
+
+    /// Preferred API: fetch icon using URL
+    func icon(for url: URL) -> NSImage {
+
+        // Use URL metadata instead of filesystem syscall
+        let isDirectory = url.hasDirectoryPath
+
+        let key = cacheKey(for: url, isDirectory: isDirectory)
+
+        if let cached = cache.object(forKey: key) {
+            return cached
+        }
+
+        let icon: NSImage
+
+        // Determine icon by content type instead of filesystem lookup
+        if isDirectory {
+
+            // Bundle directories (.app, .framework, .bundle, etc.)
+            // should display their custom icon like Finder.
+            if !url.pathExtension.isEmpty,
+                let type = UTType(filenameExtension: url.pathExtension),
+                type.conforms(to: .bundle)
+            {
+
+                icon = NSWorkspace.shared.icon(forFile: url.path)
+
+            } else {
+                icon = NSWorkspace.shared.icon(for: .folder)
             }
 
-            let icon = NSWorkspace.shared.icon(forFile: path)
-            cache.setObject(icon, forKey: path as NSString)
-            return icon
-        }
+        } else if let type = UTType(url.pathExtension) {
 
-        func clear() {
-            cache.removeAllObjects()
+            icon = NSWorkspace.shared.icon(for: type)
+
+        } else {
+
+            icon = NSWorkspace.shared.icon(for: .data)
         }
+        cache.setObject(icon, forKey: key)
+        return icon
     }
+
+    /// Compatibility helper for older call sites still passing String paths
+    func icon(for path: String) -> NSImage {
+        icon(for: URL(fileURLWithPath: path))
+    }
+
+    func clear() {
+        cache.removeAllObjects()
+    }
+}

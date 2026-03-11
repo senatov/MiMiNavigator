@@ -204,9 +204,6 @@
     "~%@ remaining" : {
       "comment" : "Time remaining"
     },
-    "⌘W" : {
-
-    },
     "⚠️ Will be moved to Trash" : {
       "comment" : "Delete warning message",
       "localizations" : {

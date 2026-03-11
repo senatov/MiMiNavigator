@@ -6,8 +6,8 @@
     // Description: Handles FileAction dispatching from context menu
 
     import AppKit
-    import FileModelKit
     import FavoritesKit
+    import FileModelKit
     import Foundation
 
     // MARK: - File Actions Handler
@@ -117,19 +117,17 @@
             // Reset selection before navigation
             appState.selectedLeftFile = nil
             appState.selectedRightFile = nil
-
             // Update panel path
-            appState.updatePath(path, for: panel)
-
+            appState.updatePath(URL(fileURLWithPath: path), for: panel)
             // Navigate and refresh
             switch panel {
-            case .left:
-                await appState.scanner.setLeftDirectory(pathStr: path)
-                await appState.refreshLeftFiles()
+                case .left:
+                    await appState.scanner.setLeftDirectory(pathStr: path)
+                    await appState.refreshLeftFiles()
 
-            case .right:
-                await appState.scanner.setRightDirectory(pathStr: path)
-                await appState.refreshRightFiles()
+                case .right:
+                    await appState.scanner.setRightDirectory(pathStr: path)
+                    await appState.refreshRightFiles()
             }
         }
 

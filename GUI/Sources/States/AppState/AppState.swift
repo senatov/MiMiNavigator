@@ -42,15 +42,29 @@
         var rightFilterQuery: String = ""
 
         // MARK: - Paths
-        /// Canonical filesystem paths for panels (kept as String for compatibility with existing code)
-        var leftPath: String
-        var rightPath: String
-        var savedLocalLeftPath: String?
-        var savedLocalRightPath: String?
+        /// Canonical filesystem URLs for panels (primary storage)
+        var leftURL: URL
+        var rightURL: URL
+        var savedLocalLeftURL: URL?
+        var savedLocalRightURL: URL?
 
-        /// URL helpers (preferred API for new code)
-        var leftURL: URL { URL(fileURLWithPath: leftPath) }
-        var rightURL: URL { URL(fileURLWithPath: rightPath) }
+        /// String path accessors (compatibility bridge — prefer URL API for new code)
+        var leftPath: String {
+            get { leftURL.path }
+            set { leftURL = URL(fileURLWithPath: newValue) }
+        }
+        var rightPath: String {
+            get { rightURL.path }
+            set { rightURL = URL(fileURLWithPath: newValue) }
+        }
+        var savedLocalLeftPath: String? {
+            get { savedLocalLeftURL?.path }
+            set { savedLocalLeftURL = newValue.map { URL(fileURLWithPath: $0) } }
+        }
+        var savedLocalRightPath: String? {
+            get { savedLocalRightURL?.path }
+            set { savedLocalRightURL = newValue.map { URL(fileURLWithPath: $0) } }
+        }
 
         func url(for panel: PanelSide) -> URL {
             panel == .left ? leftURL : rightURL
@@ -62,9 +76,17 @@
 
         func setPath(_ path: String, for panel: PanelSide) {
             if panel == .left {
-                leftPath = path
+                leftURL = URL(fileURLWithPath: path)
             } else {
-                rightPath = path
+                rightURL = URL(fileURLWithPath: path)
+            }
+        }
+
+        func setURL(_ url: URL, for panel: PanelSide) {
+            if panel == .left {
+                leftURL = url
+            } else {
+                rightURL = url
             }
         }
 
@@ -136,17 +158,17 @@
             log.info("[AppState] init")
             let paths = StatePersistence.loadInitialPaths()
             leftPanel = PanelState(
-                currentDirectory: URL(fileURLWithPath: paths.left),
+                currentDirectory: paths.left,
                 navigationHistory: NavigationHistory()
             )
 
             rightPanel = PanelState(
-                currentDirectory: URL(fileURLWithPath: paths.right),
+                currentDirectory: paths.right,
                 navigationHistory: NavigationHistory()
             )
 
-            self.leftPath = paths.left
-            self.rightPath = paths.right
+            self.leftURL = paths.left
+            self.rightURL = paths.right
             self.focusedPanel = StatePersistence.loadInitialFocus()
 
             if let storedKey = UserDefaults.standard.string(forKey: "MiMiNavigator.sortKey"),
@@ -158,13 +180,13 @@
                 self.bSortAscending = UserDefaults.standard.bool(forKey: "MiMiNavigator.sortAscending")
             }
 
-            self.leftTabManager = TabManager(panelSide: .left, initialPath: paths.left)
-            self.rightTabManager = TabManager(panelSide: .right, initialPath: paths.right)
+            self.leftTabManager = TabManager(panelSide: .left, initialURL: leftURL)
+            self.rightTabManager = TabManager(panelSide: .right, initialURL: rightURL)
             self.leftNavigationHistory = PanelNavigationHistory(panel: .left)
             self.rightNavigationHistory = PanelNavigationHistory(panel: .right)
 
-            if leftNavigationHistory.currentPath == nil { leftNavigationHistory.navigateTo(URL(fileURLWithPath: paths.left)) }
-            if rightNavigationHistory.currentPath == nil { rightNavigationHistory.navigateTo(URL(fileURLWithPath: paths.right)) }
+            if leftNavigationHistory.currentPath == nil { leftNavigationHistory.navigateTo(leftURL) }
+            if rightNavigationHistory.currentPath == nil { rightNavigationHistory.navigateTo(rightURL) }
 
             self.selectionManager = SelectionManager(appState: self, history: selectionsHistory)
             self.multiSelectionManager = MultiSelectionManager(appState: self)

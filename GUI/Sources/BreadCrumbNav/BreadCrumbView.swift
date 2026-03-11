@@ -1,299 +1,299 @@
-//
-// BreadCrumbView.swift
-//  MiMiNavigator
-//
-//  Created by Iakov Senatov on 14.11.24.
-//  Copyright © 2024 Senatov. All rights reserved.
-//
+    //
+    // BreadCrumbView.swift
+    //  MiMiNavigator
+    //
+    //  Created by Iakov Senatov on 14.11.24.
+    //  Copyright © 2024 Senatov. All rights reserved.
+    //
 
-import AppKit
-import FileModelKit
-import SwiftUI
+    import AppKit
+    import FileModelKit
+    import SwiftUI
 
-// MARK: - Breadcrumb trail UI component for representing navigation path
-struct BreadCrumbView: View {
-    @Environment(AppState.self) var appState
-    let panelSide: PanelSide
-    @State private var colorStore = ColorThemeStore.shared
-    private let barHeight: CGFloat = 30
-    private let separatorWidth: CGFloat = 20  // approximate width of separator + padding
-    private let minSegmentWidth: CGFloat = 24 // minimum width for truncated segment "…"
+    // MARK: - Breadcrumb trail UI component for representing navigation path
+    struct BreadCrumbView: View {
+        @Environment(AppState.self) var appState
+        let panelSide: PanelSide
+        @State private var colorStore = ColorThemeStore.shared
+        private let barHeight: CGFloat = 30
+        private let separatorWidth: CGFloat = 20  // approximate width of separator + padding
+        private let minSegmentWidth: CGFloat = 24 // minimum width for truncated segment "…"
 
-    // MARK: -
-    init(selectedSide: PanelSide) {
-        self.panelSide = selectedSide
-    }
-
-    // MARK: -
-    var body: some View {
-        GeometryReader { geometry in
-            let displaySegments = computeDisplaySegments(availableWidth: geometry.size.width)
-            
-            HStack(alignment: .center, spacing: 4) {
-                ForEach(displaySegments.indices, id: \.self) { index in
-                    breadcrumbItem(segment: displaySegments[index], index: index)
-                }
-            }
-            .frame(maxWidth: .infinity, maxHeight: barHeight, alignment: .leading)
-        }
-        .padding(.horizontal, 0)
-        .frame(height: barHeight)
-        .controlSize(.mini)
-    }
-
-    // MARK: - Display segment with original index for navigation
-    struct DisplaySegment: Identifiable {
-        let id = UUID()
-        let text: String           // displayed text (may be truncated)
-        let originalIndex: Int     // index in original pathComponents for navigation
-        let fullName: String       // full directory name for tooltip
-        var isTruncated: Bool { text != fullName }
-    }
-
-    // MARK: - Compute segments that fit in available width
-    private func computeDisplaySegments(availableWidth: CGFloat) -> [DisplaySegment] {
-        let components = pathComponents
-        guard !components.isEmpty else { return [] }
-        
-        // Single component - show as is
-        if components.count == 1 {
-            return [DisplaySegment(text: components[0], originalIndex: 0, fullName: components[0])]
-        }
-        
-        // Estimate character width (approximate for system font)
-        let charWidth: CGFloat = 7.5
-        
-        // Calculate total separators width
-        let totalSeparatorsWidth = CGFloat(components.count - 1) * separatorWidth
-        let availableForText = availableWidth - totalSeparatorsWidth - 16 // padding
-        
-        // Calculate full width needed
-        let fullWidths = components.map { CGFloat($0.count) * charWidth }
-        let totalFullWidth = fullWidths.reduce(0, +)
-        
-        // If everything fits, return as is
-        if totalFullWidth <= availableForText {
-            return components.enumerated().map { index, name in
-                DisplaySegment(text: name, originalIndex: index, fullName: name)
-            }
-        }
-        
-        // Need to truncate - keep first and last full, truncate middle ones
-        var segments = components.enumerated().map { index, name in
-            (index: index, name: name, displayName: name, width: fullWidths[index], priority: truncationPriority(index: index, total: components.count, length: name.count))
-        }
-        
-        var currentWidth = totalFullWidth
-        
-        // Truncate segments by priority (longest middle segments first)
-        while currentWidth > availableForText {
-            // Find segment with highest truncation priority that can still be truncated
-            let truncatable = segments.enumerated().filter { $0.element.displayName.count > 3 }
-            guard let targetIdx = truncatable.max(by: { $0.element.priority < $1.element.priority })?.offset
-            else { break }
-            
-            let segment = segments[targetIdx]
-            let newDisplayName = truncateMiddle(segment.displayName, maxLength: max(3, segment.displayName.count - 4))
-            let newWidth = CGFloat(newDisplayName.count) * charWidth
-            let savedWidth = segment.width - newWidth
-            
-            segments[targetIdx].displayName = newDisplayName
-            segments[targetIdx].width = newWidth
-            segments[targetIdx].priority = 0 // reduce priority after truncation
-            
-            currentWidth -= savedWidth
-        }
-        
-        return segments.map { DisplaySegment(text: $0.displayName, originalIndex: $0.index, fullName: $0.name) }
-    }
-    
-    // MARK: - Truncation priority (higher = truncate first)
-    private func truncationPriority(index: Int, total: Int, length: Int) -> Int {
-        // Never truncate first and last
-        if index == 0 || index == total - 1 {
-            return 0
-        }
-        // Priority based on length - longer segments truncated first
-        return length * 10
-    }
-    
-    // MARK: - Truncate string in the middle
-    private func truncateMiddle(_ str: String, maxLength: Int) -> String {
-        guard str.count > maxLength, maxLength >= 3 else { return str }
-        let half = (maxLength - 1) / 2
-        let prefix = str.prefix(half)
-        let suffix = str.suffix(half)
-        return "\(prefix)…\(suffix)"
-    }
-
-    // MARK: - Path components
-    // When inside an archive, shows: ["archive.zip", "subdir", ...]
-    // instead of the real temp path like /var/folders/.../UUID/subdir
-    private var pathComponents: [String] {
-        let archiveState = panelSide == .left ? appState.leftArchiveState : appState.rightArchiveState
-        let currentPath = panelSide == .left ? appState.leftPath : appState.rightPath
-
-        if archiveState.isInsideArchive,
-           let archiveURL = archiveState.archiveURL,
-           let tempDir = archiveState.archiveTempDir
-        {
-            // Virtual path: archiveName + relative subdirs inside archive
-            let archiveName = archiveURL.lastPathComponent
-            let normalizedCurrent = URL(fileURLWithPath: currentPath).standardizedFileURL.path
-            let normalizedTemp = tempDir.standardizedFileURL.path
-
-            // Strip the temp root prefix to get relative path inside archive
-            var relative = ""
-            if normalizedCurrent.hasPrefix(normalizedTemp) {
-                relative = String(normalizedCurrent.dropFirst(normalizedTemp.count))
-                    .trimmingCharacters(in: CharacterSet(charactersIn: "/"))
-            }
-
-            if relative.isEmpty {
-                // At archive root — show just the archive name
-                return [archiveName]
-            } else {
-                // Inside subdirectory — archive name + sub-components
-                let subComponents = relative.split(separator: "/").map(String.init)
-                return [archiveName] + subComponents
-            }
+        // MARK: -
+        init(selectedSide: PanelSide) {
+            self.panelSide = selectedSide
         }
 
-        // Normal filesystem path
-        return currentPath.split(separator: "/").map(String.init).filter { !$0.isEmpty }
-    }
-
-    // MARK: - Breadcrumb item view
-    @ViewBuilder
-    private func breadcrumbItem(segment: DisplaySegment, index: Int) -> some View {
-        if index > 0 {
-            Image(systemName: "arrowtriangle.forward")
-                .symbolRenderingMode(.hierarchical)
-                .foregroundStyle(.blue)
-                .foregroundStyle(.secondary)
-                .shadow(color: .black.opacity(0.22), radius: 2, x: 1, y: 1)
-                .contrast(1.12)
-                .saturation(1.06)
-                .padding(.horizontal, 2)
-        }
-        segmentButton(segment: segment)
-    }
-
-    // MARK: - Segment button with hover-expand for truncated names (Finder-style)
-    private func segmentButton(segment: DisplaySegment) -> some View {
-        ExpandableSegmentButton(
-            segment: segment,
-            symlinkColor: colorStore.activeTheme.symlinkColor,
-            onTap: { handlePathSelection(upTo: segment.originalIndex) },
-            helpText: makeHelpTooltip(for: segment.originalIndex, fullName: segment.fullName),
-            copyAction: {
-                let archiveState = panelSide == .left ? appState.leftArchiveState : appState.rightArchiveState
-                let pathToCopy: String
-                if archiveState.isInsideArchive,
-                   let tempDir = archiveState.archiveTempDir
-                {
-                    if segment.originalIndex == 0 {
-                        pathToCopy = archiveState.archiveURL?.path ?? ""
-                    } else {
-                        let subComponents = Array(pathComponents[1...segment.originalIndex])
-                        pathToCopy = tempDir.standardizedFileURL.path + "/" + subComponents.joined(separator: "/")
+        // MARK: -
+        var body: some View {
+            GeometryReader { geometry in
+                let displaySegments = computeDisplaySegments(availableWidth: geometry.size.width)
+                
+                HStack(alignment: .center, spacing: 4) {
+                    ForEach(displaySegments.indices, id: \.self) { index in
+                        breadcrumbItem(segment: displaySegments[index], index: index)
                     }
-                } else {
-                    pathToCopy = "/" + pathComponents.prefix(segment.originalIndex + 1).joined(separator: "/")
                 }
-                NSPasteboard.general.clearContents()
-                NSPasteboard.general.setString(pathToCopy, forType: .string)
+                .frame(maxWidth: .infinity, maxHeight: barHeight, alignment: .leading)
             }
-        )
-    }
+            .padding(.horizontal, 0)
+            .frame(height: barHeight)
+            .controlSize(.mini)
+        }
 
-    // MARK: - Tooltip helper
-    private func makeHelpTooltip(for index: Int, fullName: String) -> String {
-        let archiveState = panelSide == .left ? appState.leftArchiveState : appState.rightArchiveState
+        // MARK: - Display segment with original index for navigation
+        struct DisplaySegment: Identifiable {
+            let id = UUID()
+            let text: String           // displayed text (may be truncated)
+            let originalIndex: Int     // index in original pathComponents for navigation
+            let fullName: String       // full directory name for tooltip
+            var isTruncated: Bool { text != fullName }
+        }
 
-        let displayPath: String
-        if archiveState.isInsideArchive, let archiveURL = archiveState.archiveURL {
-            // Virtual path inside archive: archive.zip/subdir/...
-            let parts = pathComponents.prefix(index + 1)
-            displayPath = parts.joined(separator: "/")
-            if index == 0 {
-                return "📦 \(archiveURL.path)"
+        // MARK: - Compute segments that fit in available width
+        private func computeDisplaySegments(availableWidth: CGFloat) -> [DisplaySegment] {
+            let components = pathComponents
+            guard !components.isEmpty else { return [] }
+            
+            // Single component - show as is
+            if components.count == 1 {
+                return [DisplaySegment(text: components[0], originalIndex: 0, fullName: components[0])]
             }
-        } else {
-            displayPath = "/" + pathComponents.prefix(index + 1).joined(separator: "/")
+            
+            // Estimate character width (approximate for system font)
+            let charWidth: CGFloat = 7.5
+            
+            // Calculate total separators width
+            let totalSeparatorsWidth = CGFloat(components.count - 1) * separatorWidth
+            let availableForText = availableWidth - totalSeparatorsWidth - 16 // padding
+            
+            // Calculate full width needed
+            let fullWidths = components.map { CGFloat($0.count) * charWidth }
+            let totalFullWidth = fullWidths.reduce(0, +)
+            
+            // If everything fits, return as is
+            if totalFullWidth <= availableForText {
+                return components.enumerated().map { index, name in
+                    DisplaySegment(text: name, originalIndex: index, fullName: name)
+                }
+            }
+            
+            // Need to truncate - keep first and last full, truncate middle ones
+            var segments = components.enumerated().map { index, name in
+                (index: index, name: name, displayName: name, width: fullWidths[index], priority: truncationPriority(index: index, total: components.count, length: name.count))
+            }
+            
+            var currentWidth = totalFullWidth
+            
+            // Truncate segments by priority (longest middle segments first)
+            while currentWidth > availableForText {
+                // Find segment with highest truncation priority that can still be truncated
+                let truncatable = segments.enumerated().filter { $0.element.displayName.count > 3 }
+                guard let targetIdx = truncatable.max(by: { $0.element.priority < $1.element.priority })?.offset
+                else { break }
+                
+                let segment = segments[targetIdx]
+                let newDisplayName = truncateMiddle(segment.displayName, maxLength: max(3, segment.displayName.count - 4))
+                let newWidth = CGFloat(newDisplayName.count) * charWidth
+                let savedWidth = segment.width - newWidth
+                
+                segments[targetIdx].displayName = newDisplayName
+                segments[targetIdx].width = newWidth
+                segments[targetIdx].priority = 0 // reduce priority after truncation
+                
+                currentWidth -= savedWidth
+            }
+            
+            return segments.map { DisplaySegment(text: $0.displayName, originalIndex: $0.index, fullName: $0.name) }
+        }
+        
+        // MARK: - Truncation priority (higher = truncate first)
+        private func truncationPriority(index: Int, total: Int, length: Int) -> Int {
+            // Never truncate first and last
+            if index == 0 || index == total - 1 {
+                return 0
+            }
+            // Priority based on length - longer segments truncated first
+            return length * 10
+        }
+        
+        // MARK: - Truncate string in the middle
+        private func truncateMiddle(_ str: String, maxLength: Int) -> String {
+            guard str.count > maxLength, maxLength >= 3 else { return str }
+            let half = (maxLength - 1) / 2
+            let prefix = str.prefix(half)
+            let suffix = str.suffix(half)
+            return "\(prefix)…\(suffix)"
         }
 
-        let maxLength = 60
-        let trimmed: String
-        if displayPath.count > maxLength {
-            trimmed = "\(displayPath.prefix(25))…\(displayPath.suffix(30))"
-        } else {
-            trimmed = displayPath
-        }
-        if fullName != pathComponents[index] {
-            return "📂 \(fullName)\n→ \(trimmed)"
-        }
-        return "📂 Open \(trimmed)"
-    }
+        // MARK: - Path components
+        // When inside an archive, shows: ["archive.zip", "subdir", ...]
+        // instead of the real temp path like /var/folders/.../UUID/subdir
+        private var pathComponents: [String] {
+            let archiveState = panelSide == .left ? appState.leftArchiveState : appState.rightArchiveState
+            let currentPath = panelSide == .left ? appState.leftPath : appState.rightPath
 
-    // MARK: - Handle Selection
-    private func handlePathSelection(upTo index: Int) {
-        log.info(#function + " for index \(index) on side <<\(panelSide)>>")
-        let archiveState = panelSide == .left ? appState.leftArchiveState : appState.rightArchiveState
+            if archiveState.isInsideArchive,
+               let archiveURL = archiveState.archiveURL,
+               let tempDir = archiveState.archiveTempDir
+            {
+                // Virtual path: archiveName + relative subdirs inside archive
+                let archiveName = archiveURL.lastPathComponent
+                let normalizedCurrent = URL(fileURLWithPath: currentPath).standardizedFileURL.path
+                let normalizedTemp = tempDir.standardizedFileURL.path
 
-        if archiveState.isInsideArchive,
-           let tempDir = archiveState.archiveTempDir
-        {
-            if index == 0 {
-                // Clicked the archive name itself — exit the archive
-                Task { await appState.exitArchive(on: panelSide) }
+                // Strip the temp root prefix to get relative path inside archive
+                var relative = ""
+                if normalizedCurrent.hasPrefix(normalizedTemp) {
+                    relative = String(normalizedCurrent.dropFirst(normalizedTemp.count))
+                        .trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+                }
+
+                if relative.isEmpty {
+                    // At archive root — show just the archive name
+                    return [archiveName]
+                } else {
+                    // Inside subdirectory — archive name + sub-components
+                    let subComponents = relative.split(separator: "/").map(String.init)
+                    return [archiveName] + subComponents
+                }
+            }
+
+            // Normal filesystem path
+            return currentPath.split(separator: "/").map(String.init).filter { !$0.isEmpty }
+        }
+
+        // MARK: - Breadcrumb item view
+        @ViewBuilder
+        private func breadcrumbItem(segment: DisplaySegment, index: Int) -> some View {
+            if index > 0 {
+                Image(systemName: "arrowtriangle.forward")
+                    .symbolRenderingMode(.hierarchical)
+                    .foregroundStyle(.blue)
+                    .foregroundStyle(.secondary)
+                    .shadow(color: .black.opacity(0.22), radius: 2, x: 1, y: 1)
+                    .contrast(1.12)
+                    .saturation(1.06)
+                    .padding(.horizontal, 2)
+            }
+            segmentButton(segment: segment)
+        }
+
+        // MARK: - Segment button with hover-expand for truncated names (Finder-style)
+        private func segmentButton(segment: DisplaySegment) -> some View {
+            ExpandableSegmentButton(
+                segment: segment,
+                symlinkColor: colorStore.activeTheme.symlinkColor,
+                onTap: { handlePathSelection(upTo: segment.originalIndex) },
+                helpText: makeHelpTooltip(for: segment.originalIndex, fullName: segment.fullName),
+                copyAction: {
+                    let archiveState = panelSide == .left ? appState.leftArchiveState : appState.rightArchiveState
+                    let pathToCopy: String
+                    if archiveState.isInsideArchive,
+                       let tempDir = archiveState.archiveTempDir
+                    {
+                        if segment.originalIndex == 0 {
+                            pathToCopy = archiveState.archiveURL?.path ?? ""
+                        } else {
+                            let subComponents = Array(pathComponents[1...segment.originalIndex])
+                            pathToCopy = tempDir.standardizedFileURL.path + "/" + subComponents.joined(separator: "/")
+                        }
+                    } else {
+                        pathToCopy = "/" + pathComponents.prefix(segment.originalIndex + 1).joined(separator: "/")
+                    }
+                    NSPasteboard.general.clearContents()
+                    NSPasteboard.general.setString(pathToCopy, forType: .string)
+                }
+            )
+        }
+
+        // MARK: - Tooltip helper
+        private func makeHelpTooltip(for index: Int, fullName: String) -> String {
+            let archiveState = panelSide == .left ? appState.leftArchiveState : appState.rightArchiveState
+
+            let displayPath: String
+            if archiveState.isInsideArchive, let archiveURL = archiveState.archiveURL {
+                // Virtual path inside archive: archive.zip/subdir/...
+                let parts = pathComponents.prefix(index + 1)
+                displayPath = parts.joined(separator: "/")
+                if index == 0 {
+                    return "📦 \(archiveURL.path)"
+                }
+            } else {
+                displayPath = "/" + pathComponents.prefix(index + 1).joined(separator: "/")
+            }
+
+            let maxLength = 60
+            let trimmed: String
+            if displayPath.count > maxLength {
+                trimmed = "\(displayPath.prefix(25))…\(displayPath.suffix(30))"
+            } else {
+                trimmed = displayPath
+            }
+            if fullName != pathComponents[index] {
+                return "📂 \(fullName)\n→ \(trimmed)"
+            }
+            return "📂 Open \(trimmed)"
+        }
+
+        // MARK: - Handle Selection
+        private func handlePathSelection(upTo index: Int) {
+            log.info(#function + " for index \(index) on side <<\(panelSide)>>")
+            let archiveState = panelSide == .left ? appState.leftArchiveState : appState.rightArchiveState
+
+            if archiveState.isInsideArchive,
+               let tempDir = archiveState.archiveTempDir
+            {
+                if index == 0 {
+                    // Clicked the archive name itself — exit the archive
+                    Task { await appState.exitArchive(on: panelSide) }
+                    return
+                }
+                // index > 0 means inside archive subdirectory
+                // pathComponents[0] = archiveName, [1..] = subpath components
+                let subComponents = Array(pathComponents[(1)...(index)])
+                let newPath = tempDir.standardizedFileURL.path + "/" + subComponents.joined(separator: "/")
+                let currentPath = panelSide == .left ? appState.leftPath : appState.rightPath
+                guard toCanonical(newPath) != toCanonical(currentPath) else { return }
+                appState.updatePath(URL(fileURLWithPath: newPath), for: panelSide)
+                Task { await performDirectoryUpdate(for: panelSide, path: newPath) }
                 return
             }
-            // index > 0 means inside archive subdirectory
-            // pathComponents[0] = archiveName, [1..] = subpath components
-            let subComponents = Array(pathComponents[(1)...(index)])
-            let newPath = tempDir.standardizedFileURL.path + "/" + subComponents.joined(separator: "/")
-            let currentPath = panelSide == .left ? appState.leftPath : appState.rightPath
-            guard toCanonical(newPath) != toCanonical(currentPath) else { return }
-            appState.updatePath(newPath, for: panelSide)
-            Task { await performDirectoryUpdate(for: panelSide, path: newPath) }
-            return
+
+            // Normal filesystem navigation
+            let newPath = ("/" + pathComponents.prefix(index + 1).joined(separator: "/"))
+                .replacingOccurrences(of: "//", with: "/")
+                .replacingOccurrences(of: "///", with: "/")
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            let currentPath = (panelSide == .left ? appState.leftPath : appState.rightPath)
+            guard toCanonical(newPath) != toCanonical(currentPath) else {
+                log.info("Path unchanged, skipping update")
+                return
+            }
+            appState.updatePath(URL(fileURLWithPath: newPath), for: panelSide)
+            Task {
+                await performDirectoryUpdate(for: panelSide, path: newPath)
+            }
         }
 
-        // Normal filesystem navigation
-        let newPath = ("/" + pathComponents.prefix(index + 1).joined(separator: "/"))
-            .replacingOccurrences(of: "//", with: "/")
-            .replacingOccurrences(of: "///", with: "/")
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-        let currentPath = (panelSide == .left ? appState.leftPath : appState.rightPath)
-        guard toCanonical(newPath) != toCanonical(currentPath) else {
-            log.info("Path unchanged, skipping update")
-            return
+        // MARK: - Canonicalize path
+        private func toCanonical(_ path: String) -> String {
+            URL(fileURLWithPath: path).standardizedFileURL.path
         }
-        appState.updatePath(newPath, for: panelSide)
-        Task {
-            await performDirectoryUpdate(for: panelSide, path: newPath)
-        }
-    }
 
-    // MARK: - Canonicalize path
-    private func toCanonical(_ path: String) -> String {
-        URL(fileURLWithPath: path).standardizedFileURL.path
-    }
-
-    // MARK: - Perform directory update
-    @MainActor
-    private func performDirectoryUpdate(for panelSide: PanelSide, path: String) async {
-        log.info("Task started for side <<\(panelSide)>> with path: \(path)")
-        if panelSide == .left {
-            await appState.scanner.setLeftDirectory(pathStr: path)
-            await appState.scanner.refreshFiles(currSide: .left)
-            await appState.refreshLeftFiles()
-        } else {
-            await appState.scanner.setRightDirectory(pathStr: path)
-            await appState.scanner.refreshFiles(currSide: .right)
-            await appState.refreshRightFiles()
+        // MARK: - Perform directory update
+        @MainActor
+        private func performDirectoryUpdate(for panelSide: PanelSide, path: String) async {
+            log.info("Task started for side <<\(panelSide)>> with path: \(path)")
+            if panelSide == .left {
+                await appState.scanner.setLeftDirectory(pathStr: path)
+                await appState.scanner.refreshFiles(currSide: .left)
+                await appState.refreshLeftFiles()
+            } else {
+                await appState.scanner.setRightDirectory(pathStr: path)
+                await appState.scanner.refreshFiles(currSide: .right)
+                await appState.refreshRightFiles()
+            }
+            log.info("Task finished successfully")
         }
-        log.info("Task finished successfully")
     }
-}

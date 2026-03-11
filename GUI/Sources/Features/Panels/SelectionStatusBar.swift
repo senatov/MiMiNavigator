@@ -44,9 +44,9 @@
             appState.displayedFiles(for: panelSide).count
         }
 
-        /// Current path for this panel
-        private var currentPath: String {
-            panelSide == .left ? appState.leftPath : appState.rightPath
+        /// Current URL for this panel
+        private var currentURL: URL {
+            panelSide == .left ? appState.leftURL : appState.rightURL
         }
 
         /// Selected file index (1‑based). 0 if nothing selected.
@@ -63,7 +63,7 @@
 
         /// Active remote connection (if panel path is remote)
         private var remoteConnection: RemoteConnection? {
-            guard AppState.isRemotePath(currentPath) else { return nil }
+            guard AppState.isRemotePath(currentURL) else { return nil }
             return RemoteConnectionManager.shared.activeConnection
         }
 
@@ -90,7 +90,7 @@
         /// Available disk space for the current path
         private var availableDiskSpace: String {
 
-            let url = URL(fileURLWithPath: currentPath)
+            let url = currentURL
 
             if let values = try? url.resourceValues(forKeys: [
                 .volumeAvailableCapacityForImportantUsageKey,
@@ -117,7 +117,7 @@
             }
 
             if let attrs = try? FileManager.default.attributesOfFileSystem(
-                forPath: currentPath
+                forPath: currentURL.path
             ),
                 let free = attrs[.systemFreeSize] as? Int64,
                 free > 0
