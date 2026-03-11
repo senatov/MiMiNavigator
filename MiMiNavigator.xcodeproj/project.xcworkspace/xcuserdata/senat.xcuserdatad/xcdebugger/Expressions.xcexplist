@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<VariablesViewState
+   version = "1.0">
+   <ContextStates>
+      <ContextState
+         contextName = "closure #1 in BreadCrumbView.body.getter:BreadCrumbView.swift">
+      </ContextState>
+      <ContextState
+         contextName = "BreadCrumbView.body.getter:BreadCrumbView.swift">
+         <PersistentStrings>
+            <PersistentString
+               value = "pathComponents">
+            </PersistentString>
+         </PersistentStrings>
+      </ContextState>
+   </ContextStates>
+</VariablesViewState>

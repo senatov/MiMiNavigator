@@ -7,11 +7,86 @@
     import AppKit
     import FileModelKit
     import SwiftUI
-    import UniformTypeIdentifiers
+
+import UniformTypeIdentifiers
+
+// MARK: - Finder‑style icon cache
+
+/// Global icon cache to avoid repeated NSWorkspace icon lookups.
+/// NSWorkspace icon lookup is relatively expensive (filesystem + LaunchServices),
+/// so caching dramatically improves performance in directories with many files.
+@MainActor
+final class FileIconCache {
+
+    static let shared = FileIconCache()
+
+    private var cache: [String: NSImage] = [:]
+
+    /// Returns cached icon or loads it from the system.
+    func icon(for path: String) -> NSImage {
+        if let cached = cache[path] {
+            return cached
+        }
+
+        let icon = NSWorkspace.shared.icon(forFile: path)
+        cache[path] = icon
+        return icon
+    }
+
+    /// Clears cache if memory pressure occurs or directory changes dramatically.
+    func clear() {
+        cache.removeAll()
+    }
+}
+
+// MARK: - Async icon loader view
+
+/// Loads file icon asynchronously to prevent UI blocking
+/// when many rows appear simultaneously.
+struct AsyncFileIconView: View {
+
+    let file: CustomFile
+
+    @State private var icon: NSImage?
+
+    var body: some View {
+        Group {
+            if let icon {
+                Image(nsImage: icon)
+                    .resizable()
+                    .interpolation(.high)
+            } else {
+                Image(systemName: "doc")
+                    .symbolRenderingMode(.hierarchical)
+            }
+        }
+        .task(id: file.urlValue.path) {
+            await loadIcon()
+        }
+    }
+
+    private func loadIcon() async {
+        let path = file.urlValue.path
+
+        // Run lookup on main actor because NSWorkspace is AppKit
+        let icon = await MainActor.run {
+            FileIconCache.shared.icon(for: path)
+        }
+
+        self.icon = icon
+    }
+}
 
     // MARK: - Lightweight row view for file list with drag-drop support
 
-    struct FileRow: View {
+    struct FileRow: View, Equatable {
+        // MARK: - Equatable optimization
+        /// Prevent SwiftUI from re-rendering the row unless the visible state actually changed.
+        static func == (lhs: FileRow, rhs: FileRow) -> Bool {
+            lhs.file.id == rhs.file.id &&
+            lhs.isSelected == rhs.isSelected &&
+            lhs.panelSide == rhs.panelSide
+        }
         let index: Int
         let file: CustomFile
         let isSelected: Bool

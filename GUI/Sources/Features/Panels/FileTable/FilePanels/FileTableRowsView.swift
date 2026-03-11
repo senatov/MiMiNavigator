@@ -9,7 +9,7 @@
 
     // MARK: - Renders LazyVStack of file rows
     struct FileTableRowsView: View {
-        let rows: [(offset: Int, element: CustomFile)]
+        let rows: [CustomFile]
         @Binding var selectedID: CustomFile.ID?
         let panelSide: PanelSide
         let layout: ColumnLayoutModel
@@ -21,28 +21,28 @@
 
         var body: some View {
             let currentSelectedID = selectedID  // Capture once to avoid repeated Binding access
-            LazyVStack(spacing: 0) {
-                ForEach(rows, id: \.element.id) { pair in
-                    let isSelected = currentSelectedID == pair.element.id
+            LazyVStack(alignment: .leading, spacing: 0) {
+                ForEach(rows.indices, id: \.self) { i in
+                    let file = rows[i]
+                    let isSelected = currentSelectedID == file.id
 
                     EquatableRow(
-                        id: pair.element.id,
+                        id: file.id,
                         isSelected: isSelected
                     ) {
                         FileRow(
-                            index: pair.offset,
-                            file: pair.element,
+                            index: i,
+                            file: file,
                             isSelected: isSelected,
                             panelSide: panelSide,
                             layout: layout,
-                            onSelect: { tapped in onSelect(tapped) },
-                            onDoubleClick: { tapped in onDoubleClick(tapped) },
-                            onFileAction: { action, f in handleFileAction(action, f) },
-                            onDirectoryAction: { action, f in handleDirectoryAction(action, f) },
-                            onMultiSelectionAction: { action in handleMultiSelectionAction(action) }
+                            onSelect: onSelect,
+                            onDoubleClick: onDoubleClick,
+                            onFileAction: handleFileAction,
+                            onDirectoryAction: handleDirectoryAction,
+                            onMultiSelectionAction: handleMultiSelectionAction
                         )
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .fixedSize(horizontal: false, vertical: true)
                     }
                 }
             }
@@ -51,7 +51,6 @@
     }
 
     // MARK: - Equatable wrapper to prevent unnecessary row re-rendering
-    @MainActor
     struct EquatableRow<Content: View>: View, Equatable {
         let id: CustomFile.ID
         let isSelected: Bool

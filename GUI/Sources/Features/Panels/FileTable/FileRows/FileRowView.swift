@@ -91,14 +91,9 @@
                 } else {
                     // Normal file icon (dimmed for hidden files, like Finder)
                     ZStack(alignment: .bottomTrailing) {
-                        Image(nsImage: Self.getSmartIcon(for: file))
-                            .resizable()
-                            .interpolation(.high)
-                            .antialiased(true)
-                            .aspectRatio(contentMode: .fit)
+                        AsyncSmartIconView(file: file)
                             .frame(width: DesignTokens.Row.iconSize, height: DesignTokens.Row.iconSize)
                             .opacity(iconOpacity)
-
                         // Alias badge is composited directly into the icon by AliasIconComposer — no overlay needed
                     }
                     .allowsHitTesting(false)
@@ -353,6 +348,42 @@
 
             return false
         }
+        // MARK: - Async icon loader (prevents UI stalls in large directories)
+        struct AsyncSmartIconView: View {
+
+            let file: CustomFile
+
+            @State private var icon: NSImage?
+
+            var body: some View {
+                Group {
+                    if let icon {
+                        Image(nsImage: icon)
+                            .resizable()
+                            .interpolation(.high)
+                            .antialiased(true)
+                            .aspectRatio(contentMode: .fit)
+                    } else {
+                        Image(systemName: "doc")
+                            .symbolRenderingMode(.hierarchical)
+                    }
+                }
+                .task(id: file.urlValue.path) {
+                    await loadIcon()
+                }
+            }
+
+            private func loadIcon() async {
+                let result = await Task.detached(priority: .utility) {
+                    FileRowView.getSmartIcon(for: file)
+                }.value
+
+                await MainActor.run {
+                    self.icon = result
+                }
+            }
+        }
+
         // MARK: - Icon cache (massively reduces icon generation for large folders)
         private static let iconCache: NSCache<NSString, NSImage> = {
             let cache = NSCache<NSString, NSImage>()

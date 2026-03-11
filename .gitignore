@@ -1,48 +1,101 @@
-!*.xcodeproj/xcshareddata/xcschemes/*.xcscheme
-.swiftpm/xcode/xcuserdata/
-.build/
-.xcshareddata/
-.xcuserdata/
-*.dSYM
-*.dSYM.zip
-*.log
-*.hmap
-*.ipa
-*.mdb
-*.xcactivitylog
-*.xcodeproj/project.xcsettings
-*.xcodeproj/project.xcworkspace/*
-!*.xcodeproj/project.xcworkspace/xcshareddata/
-*.xcodeproj/xcshareddata/xcschemes/*
-*.xcodeproj/xcuserdata/
-*.xcscmblueprint
-*.xcuserdata
-!**/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
-*.xcworkspace
-/.idea/
-Carthage/Build/**
-DerivedData/
-fastlane/Preview.html
-fastlane/report.xml
-fastlane/test_output
-# Package.resolved — track it for reproducible builds (recommended for apps)
-# Local SPM resolved packages cache — but track our own local packages
-.build/
-# Packages/   ← removed: Packages/ contains our local SPM packages (FavoritesKit, NetworkKit)
-
-playground.xcworkspace
-Pods/
-timeline.xctimeline
-
+# --------------------------------------------------
 # macOS
+# --------------------------------------------------
+
 .DS_Store
 .AppleDouble
 .LSOverride
 
-# Build logs
+
+# --------------------------------------------------
+# Xcode user files
+# --------------------------------------------------
+
+*.xcuserstate
+*.xcuserdata
+*.xcscmblueprint
+
+# Allow shared schemes
+!*.xcodeproj/xcshareddata/
+!*.xcodeproj/xcshareddata/xcschemes/
+
+
+# --------------------------------------------------
+# Xcode build artifacts
+# --------------------------------------------------
+
+DerivedData/
+build/
+*.dSYM
+*.dSYM.zip
+
+# Xcode index database
+*.xcactivitylog
+*.hmap
+
+
+# --------------------------------------------------
+# Swift Package Manager
+# --------------------------------------------------
+
+.build/
+.swiftpm/xcode/xcuserdata/
+
+# Keep resolved versions for reproducible builds
+!**/Package.resolved
+
+
+# --------------------------------------------------
+# Dependency managers
+# --------------------------------------------------
+
+Pods/
+Carthage/Build/
+
+
+# --------------------------------------------------
+# Fastlane
+# --------------------------------------------------
+
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/test_output
+
+
+# --------------------------------------------------
+# Logs
+# --------------------------------------------------
+
+*.log
 build-logs/
 
-# Xcode user state
-*.xcuserstate
-build/
-/.claude/worktrees/focused-banzai/
+
+# --------------------------------------------------
+# IDE
+# --------------------------------------------------
+
+.idea/
+
+
+# --------------------------------------------------
+# Playgrounds
+# --------------------------------------------------
+
+playground.xcworkspace
+timeline.xctimeline
+
+
+# --------------------------------------------------
+# Internal / experimental folders
+# --------------------------------------------------
+
+.claude/
+
+
+# --------------------------------------------------
+# Important: DO NOT ignore
+# --------------------------------------------------
+
+# Packages/ contains local Swift packages
+# Packages/FavoritesKit
+# Packages/NetworkKit

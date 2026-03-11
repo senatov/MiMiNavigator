@@ -42,8 +42,8 @@
         @State var cachedSortedFiles: [CustomFile] = []
         /// Pre-built index map: file.id → position in cachedSortedFiles. Rebuilt only when list changes.
         @State var cachedIndexByID: [CustomFile.ID: Int] = [:]
-        /// Pre-built enumerated rows for LazyVStack. Rebuilt only when list changes, not on selection.
-        @State var cachedSortedRows: [(offset: Int, element: CustomFile)] = []
+        /// Pre-built rows for LazyVStack. Rebuilt only when list changes, not on selection.
+        @State var cachedSortedRows: [CustomFile] = []
         @State var isPanelDropTargeted: Bool = false
         /// Measured height of the scroll viewport — used to compute real pageStep
         @State var viewHeight: CGFloat = 400
@@ -98,7 +98,20 @@
             TableDropHandler(panelSide: panelSide, appState: appState, dragDropManager: dragDropManager)
         }
 
-        var sortedRows: [(offset: Int, element: CustomFile)] { cachedSortedRows }
+        /// O(1) version counter for the currently displayed panel file list.
+        var filesVersion: Int {
+            panelSide == .left ? appState.leftFilesVersion : appState.rightFilesVersion
+        }
+
+        var sortedRows: [CustomFile] { cachedSortedRows }
+
+        private func updateSelectedIndex(for newID: CustomFile.ID?) {
+            if let id = newID, let idx = cachedIndexByID[id] {
+                appState.setSelectedIndex(idx + 1, for: panelSide)  // 1-based
+            } else {
+                appState.setSelectedIndex(0, for: panelSide)
+            }
+        }
 
         // MARK: - Body
         var body: some View {
@@ -130,20 +143,17 @@
                 .contentShape(Rectangle())
                 .animation(nil, value: isFocused)
                 .animation(nil, value: selectedID)
+                .transaction { $0.disablesAnimations = true }
                 .focusable(true)
                 .focusEffectDisabled()
                 .onGeometryChange(for: CGFloat.self, of: { $0.size.height }) { viewHeight = $0 }
                 // Compare version Int (O(1)) instead of [CustomFile] array (O(n)) — critical for 26k+ directories
-                .onChange(of: panelSide == .left ? appState.leftFilesVersion : appState.rightFilesVersion) { recomputeSortedCache() }
+                .onChange(of: filesVersion) { recomputeSortedCache() }
                 .onChange(of: appState.sortKey) { recomputeSortedCacheForSortChange() }
                 .onChange(of: appState.bSortAscending) { recomputeSortedCacheForSortChange() }
                 // Update selectedIndex in AppState when selection changes — O(1) lookup via cachedIndexByID
                 .onChange(of: selectedID) { _, newID in
-                    if let id = newID, let idx = cachedIndexByID[id] {
-                        appState.setSelectedIndex(idx + 1, for: panelSide)  // 1-based
-                    } else {
-                        appState.setSelectedIndex(0, for: panelSide)
-                    }
+                    updateSelectedIndex(for: newID)
                 }
                 // No auto-scroll on selection change — user controls scroll position
                 // Up/Down via .onKeyPress — .onMoveCommand stopped delivering events
