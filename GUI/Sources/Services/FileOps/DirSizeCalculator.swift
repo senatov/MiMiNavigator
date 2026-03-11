@@ -31,52 +31,62 @@ enum DirSizeCalculator {
     /// Scan a list of items (files and/or directories) and produce a flat manifest.
     /// Runs on a background thread — safe to call from MainActor.
     static func scan(_ items: [URL], fm: FileManager = .default) async -> DirScanResult {
-        await Task.detached(priority: .userInitiated) {
-            var totalBytes: Int64 = 0
-            var fileCount = 0
-            var maxDepth = 0
-            var maxFileSize: Int64 = 0
-            var flatList: [DirScanResult.FileEntry] = []
+        let itemsCopy = items
+        return
+            await Task.detached(priority: .userInitiated) {
+                performScan(itemsCopy)
+            }
+            .value
+    }
 
-            for item in items {
-                var isDir: ObjCBool = false
-                guard fm.fileExists(atPath: item.path, isDirectory: &isDir) else { continue }
+    /// Pure synchronous scan — no captured mutable state, safe for Sendable closure.
+    private static func performScan(_ items: [URL]) -> DirScanResult {
+        let fm = FileManager.default
+        var totalBytes: Int64 = 0
+        var fileCount = 0
+        var maxDepth = 0
+        var maxFileSize: Int64 = 0
+        var flatList: [DirScanResult.FileEntry] = []
 
-                if isDir.boolValue {
-                    scanDirectory(
-                        at: item,
-                        baseURL: item.deletingLastPathComponent(),
-                        depth: 0,
-                        fm: fm,
-                        totalBytes: &totalBytes,
-                        fileCount: &fileCount,
-                        maxDepth: &maxDepth,
-                        maxFileSize: &maxFileSize,
-                        flatList: &flatList
-                    )
-                } else {
-                    let size = fileSize(at: item, fm: fm)
-                    totalBytes += size
-                    fileCount += 1
-                    maxFileSize = max(maxFileSize, size)
-                    flatList.append(.init(
+        for item in items {
+            var isDir: ObjCBool = false
+            guard fm.fileExists(atPath: item.path, isDirectory: &isDir) else { continue }
+
+            if isDir.boolValue {
+                scanDirectory(
+                    at: item,
+                    baseURL: item.deletingLastPathComponent(),
+                    depth: 0,
+                    fm: fm,
+                    totalBytes: &totalBytes,
+                    fileCount: &fileCount,
+                    maxDepth: &maxDepth,
+                    maxFileSize: &maxFileSize,
+                    flatList: &flatList
+                )
+            } else {
+                let size = fileSize(at: item, fm: fm)
+                totalBytes += size
+                fileCount += 1
+                maxFileSize = max(maxFileSize, size)
+                flatList.append(
+                    .init(
                         url: item,
                         relativePath: item.lastPathComponent,
                         size: size,
                         isDirectory: false
                     ))
-                }
             }
+        }
 
-            log.debug("[DirScanCalc] \(fileCount) files, \(totalBytes) bytes, depth=\(maxDepth), maxFile=\(maxFileSize)")
-            return DirScanResult(
-                totalBytes: totalBytes,
-                fileCount: fileCount,
-                maxDepth: maxDepth,
-                maxFileSize: maxFileSize,
-                flatList: flatList
-            )
-        }.value
+        log.debug("[DirScanCalc] \(fileCount) files, \(totalBytes) bytes, depth=\(maxDepth), maxFile=\(maxFileSize)")
+        return DirScanResult(
+            totalBytes: totalBytes,
+            fileCount: fileCount,
+            maxDepth: maxDepth,
+            maxFileSize: maxFileSize,
+            flatList: flatList
+        )
     }
 
     // MARK: - Private
@@ -94,11 +104,13 @@ enum DirSizeCalculator {
     ) {
         maxDepth = max(maxDepth, depth)
 
-        guard let enumerator = fm.enumerator(
-            at: dirURL,
-            includingPropertiesForKeys: [.fileSizeKey, .isDirectoryKey],
-            options: []
-        ) else {
+        guard
+            let enumerator = fm.enumerator(
+                at: dirURL,
+                includingPropertiesForKeys: [.fileSizeKey, .isDirectoryKey],
+                options: []
+            )
+        else {
             log.warning("[DirScanCalc] can't enumerate: \(dirURL.path)")
             return
         }
@@ -108,7 +120,6 @@ enum DirSizeCalculator {
                 let vals = try fileURL.resourceValues(forKeys: [.fileSizeKey, .isDirectoryKey])
                 let isDir = vals.isDirectory ?? false
 
-                // Track directory entries for creating structure at destination
                 if isDir {
                     let relPath = relativePath(of: fileURL, base: baseURL)
                     flatList.append(.init(url: fileURL, relativePath: relPath, size: 0, isDirectory: true))

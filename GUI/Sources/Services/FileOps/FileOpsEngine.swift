@@ -16,7 +16,7 @@ final class FileOpsEngine {
 
     private let panel = FileOpProgressPanel.shared
     private let maxConcurrency = 5
-    private let chunkSize = 256 * 1024 // 256 KB
+    private let chunkSize = 256 * 1024  // 256 KB
 
     private init() {
         log.debug("[FileOpsEngine] init")
@@ -55,7 +55,7 @@ final class FileOpsEngine {
         let progress = FileOpProgress(
             totalFiles: items.count,
             totalBytes: totalSize,
-            type: .copy, // reuse for display
+            type: .copy,  // reuse for display
             destination: nil
         )
 
@@ -117,12 +117,12 @@ final class FileOpsEngine {
         }
 
         switch plan.strategy {
-        case .simple:
-            try await executeSimple(plan: plan, operation: operation, progress: progress)
-        case .manySmall:
-            try await executeManySmall(plan: plan, operation: operation, progress: progress)
-        case .fewLarge:
-            try await executeFewLarge(plan: plan, operation: operation, progress: progress)
+            case .simple:
+                try await executeSimple(plan: plan, operation: operation, progress: progress)
+            case .manySmall:
+                try await executeManySmall(plan: plan, operation: operation, progress: progress)
+            case .fewLarge:
+                try await executeFewLarge(plan: plan, operation: operation, progress: progress)
         }
 
         return progress
@@ -140,10 +140,10 @@ final class FileOpsEngine {
             let target = UniqueNameGen.resolve(name: item.lastPathComponent, in: plan.destination)
             do {
                 switch operation {
-                case .copy:
-                    try fm.copyItem(at: item, to: target)
-                case .move:
-                    try fm.moveItem(at: item, to: target)
+                    case .copy:
+                        try fm.copyItem(at: item, to: target)
+                    case .move:
+                        try fm.moveItem(at: item, to: target)
                 }
                 let size = (try? item.resourceValues(forKeys: [.fileSizeKey]).fileSize).map(Int64.init) ?? 0
                 progress.fileCompleted(name: item.lastPathComponent, success: true)
@@ -196,10 +196,10 @@ final class FileOpsEngine {
 
                     do {
                         switch operation {
-                        case .copy:
-                            try fm.copyItem(at: entry.url, to: targetURL)
-                        case .move:
-                            try fm.moveItem(at: entry.url, to: targetURL)
+                            case .copy:
+                                try fm.copyItem(at: entry.url, to: targetURL)
+                            case .move:
+                                try fm.moveItem(at: entry.url, to: targetURL)
                         }
                         progress.fileCompleted(name: entry.url.lastPathComponent, success: true)
                         progress.add(bytes: entry.size)
@@ -239,7 +239,7 @@ final class FileOpsEngine {
 
         for entry in fileEntries {
             guard !progress.isCancelled else { break }
-            await progress.setCurrentFile(entry.url.lastPathComponent)
+            progress.setCurrentFile(entry.url.lastPathComponent)
 
             let targetURL = UniqueNameGen.resolve(
                 name: entry.relativePath,
@@ -292,7 +292,7 @@ final class FileOpsEngine {
 
     // MARK: - Stream Copy (256KB chunks)
 
-    private nonisolated func streamCopy(
+    private func streamCopy(
         from source: URL,
         to destination: URL,
         progress: FileOpProgress
@@ -306,28 +306,29 @@ final class FileOpsEngine {
 
         input.open()
         output.open()
-        defer { input.close(); output.close() }
+        defer {
+            input.close()
+            output.close()
+        }
 
         let bufSize = 256 * 1024
         let buffer = UnsafeMutablePointer<UInt8>.allocate(capacity: bufSize)
         defer { buffer.deallocate() }
 
         while true {
-            let cancelled = await progress.isCancelled
-            if cancelled { break }
+            if progress.isCancelled { break }
 
             let bytesRead = input.read(buffer, maxLength: bufSize)
             if bytesRead < 0 {
                 throw FileOpError.readFailed(source.path)
             }
-            if bytesRead == 0 { break } // EOF
+            if bytesRead == 0 { break }  // EOF
 
             let written = output.write(buffer, maxLength: bytesRead)
             if written < 0 {
                 throw FileOpError.writeFailed(destination.path)
             }
-
-            await progress.add(bytes: Int64(written))
+            progress.add(bytes: Int64(written))
         }
     }
 
