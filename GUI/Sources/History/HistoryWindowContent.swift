@@ -7,8 +7,8 @@
     //              Replaces old HistoryPopoverView (popover) with a persistent window.
     //              Font: SF Pro Display Light 14 via PanelDialogCoordinator.
 
-    import SwiftUI
     import FileModelKit
+    import SwiftUI
 
     // MARK: - HistoryWindowContent
 
@@ -46,15 +46,15 @@
 
                 Spacer()
 
-                if !filteredPaths.isEmpty {
-                    Text("\(filteredPaths.count)")
+                if !filteredURLs.isEmpty {
+                    Text("\(filteredURLs.count)")
                         .foregroundStyle(.secondary)
                         .padding(.horizontal, 6)
                         .padding(.vertical, 2)
                         .background(Capsule().fill(Color.secondary.opacity(0.15)))
 
-                    if filteredPaths.count != directoryPaths.count {
-                        Text("of \(directoryPaths.count)")
+                    if filteredURLs.count != directoryURLs.count {
+                        Text("of \(directoryURLs.count)")
                             .foregroundStyle(.tertiary)
                     }
 
@@ -78,7 +78,9 @@
                     .focused($isSearchFocused)
 
                 if !searchText.isEmpty {
-                    Button { searchText = "" } label: {
+                    Button {
+                        searchText = ""
+                    } label: {
                         Image(systemName: "xmark.circle.fill")
                             .font(.system(size: 12))
                             .foregroundStyle(.secondary)
@@ -94,7 +96,8 @@
         }
 
         private var clearButton: some View {
-            Button(action: clearHistory) {
+            log.debug(#function + ": called")
+            return Button(action: clearHistory) {
                 Image(systemName: "trash")
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
@@ -107,9 +110,9 @@
 
         @ViewBuilder
         private var contentSection: some View {
-            if directoryPaths.isEmpty {
+            if directoryURLs.isEmpty {
                 emptyStateView
-            } else if filteredPaths.isEmpty {
+            } else if filteredURLs.isEmpty {
                 noMatchView
             } else {
                 historyListView
@@ -138,12 +141,13 @@
         private var historyListView: some View {
             ScrollView {
                 LazyVStack(spacing: 2) {
-                    ForEach(filteredPaths, id: \.self) { path in
+                    ForEach(filteredURLs, id: \.path) { url in
+                        let path = url.path
                         HistoryRow(
                             path: path,
                             highlightText: searchText,
                             onSelect: { navigateToPath(path) },
-                            onDelete: { deleteFromHistory(path) }
+                            onDelete: { deleteFromHistory(url) }
                         )
                     }
                 }
@@ -154,17 +158,18 @@
 
         // MARK: - Data
 
-        private var directoryPaths: [String] { appState.selectionsHistory.recentSelections }
+        private var directoryURLs: [URL] { appState.selectionsHistory.getRecentSelections() }
 
-        private var filteredPaths: [String] {
-            guard !searchText.isEmpty else { return directoryPaths }
+        private var filteredURLs: [URL] {
+            guard !searchText.isEmpty else { return directoryURLs }
             let q = searchText.lowercased()
-            return directoryPaths.filter { $0.lowercased().contains(q) }
+            return directoryURLs.filter { $0.path.lowercased().contains(q) }
         }
 
         // MARK: - Actions
 
         private func navigateToPath(_ path: String) {
+            log.debug(#function + "(\(path))")
             appState.updatePath(path, for: panelSide)
             Task {
                 if panelSide == .left {
@@ -178,13 +183,15 @@
             }
         }
 
-        private func deleteFromHistory(_ path: String) {
+        private func deleteFromHistory(_ url: URL) {
+            log.debug(#function + "(\(url.path))")
             withAnimation(.easeInOut(duration: 0.2)) {
-                appState.selectionsHistory.remove(path: path)
+                appState.selectionsHistory.remove(url)
             }
         }
 
         private func clearHistory() {
+            log.debug(#function + "()")
             withAnimation(.easeInOut(duration: 0.2)) { appState.selectionsHistory.clear() }
         }
     }

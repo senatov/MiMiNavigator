@@ -89,28 +89,47 @@ extension AppState {
 
         guard !PathUtils.areEqual(currentPath, path) else { return }
 
-        log.debug("[AppState] updatePath \(panelSide) → \(path)")
+        // Prevent files from being used as panel directories
+        var normalizedPath = path
+        let urlForFileCheck = URL(fileURLWithPath: path)
+        var isDirForFileCheck: ObjCBool = false
+        if FileManager.default.fileExists(atPath: urlForFileCheck.path, isDirectory: &isDirForFileCheck), !isDirForFileCheck.boolValue
+        {
+            // If a file is passed, switch to its parent directory
+            normalizedPath = urlForFileCheck.deletingLastPathComponent().path
+            log.debug("[AppState] updatePath: file detected, using parent directory → \(normalizedPath)")
+        }
+
+        log.debug("[AppState] updatePath \(panelSide) → \(normalizedPath)")
         focusedPanel = panelSide
 
-        tabManager(for: panelSide).updateActiveTabPath(path)
+        tabManager(for: panelSide).updateActiveTabPath(normalizedPath)
 
         if !isNavigatingFromHistory {
-            navigationHistory(for: panelSide).navigateTo(path)
-            selectionsHistory.add(path)
+            let url = URL(fileURLWithPath: normalizedPath)
+
+            // Only directories belong in Navigation History
+            var isDir: ObjCBool = false
+            if FileManager.default.fileExists(atPath: url.path, isDirectory: &isDir), isDir.boolValue {
+                navigationHistory(for: panelSide).navigateTo(url)
+            }
+
+            // Selections history may contain files
+            selectionsHistory.add(URL(fileURLWithPath: normalizedPath))
         }
 
         switch panelSide {
             case .left:
-                if Self.isRemotePath(path) && !Self.isRemotePath(leftPath) {
+                if Self.isRemotePath(normalizedPath) && !Self.isRemotePath(leftPath) {
                     savedLocalLeftPath = leftPath
                 }
-                leftPath = path
+                leftPath = normalizedPath
                 selectedLeftFile = firstRealFile(in: displayedLeftFiles)
             case .right:
-                if Self.isRemotePath(path) && !Self.isRemotePath(rightPath) {
+                if Self.isRemotePath(normalizedPath) && !Self.isRemotePath(rightPath) {
                     savedLocalRightPath = rightPath
                 }
-                rightPath = path
+                rightPath = normalizedPath
                 selectedRightFile = firstRealFile(in: displayedRightFiles)
         }
     }

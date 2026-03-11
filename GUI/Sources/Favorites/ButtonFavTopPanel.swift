@@ -7,8 +7,8 @@
 // Copyright © 2026 Senatov. All rights reserved.
 
 import AppKit
-import FileModelKit
 import FavoritesKit
+import FileModelKit
 import SwiftUI
 
 // MARK: - Navigation Panel with Favorites Button
@@ -88,7 +88,7 @@ struct ButtonFavTopPanel: View {
             navigationAdapter?.navigateUp(panel: panelSide.toFavPanelSide)
         }) {
             Image(systemName: "arrowshape.up").symbolRenderingMode(.hierarchical)
-            .foregroundStyle(iconColor)
+                .foregroundStyle(iconColor)
         }
         .buttonStyle(.plain)
         .shadow(color: .gray, radius: 7.0, x: 1, y: 1)
@@ -122,9 +122,9 @@ struct ButtonFavTopPanel: View {
     private func historyButton() -> some View {
         Button(action: { openHistoryWindow() }) {
             Image(systemName: "clock.arrow.circlepath")
-                .font(.system(size: 13, weight: .medium))
-                .symbolRenderingMode(.hierarchical)
-                .foregroundStyle(iconColor)
+                .font(.system(size: 15, weight: .semibold))
+                .symbolRenderingMode(.monochrome)
+                .foregroundStyle(Color(nsColor: .systemGreen))
         }
         .buttonStyle(ToolbarIconButtonStyle())
         .help("Show navigation history")
@@ -134,9 +134,9 @@ struct ButtonFavTopPanel: View {
     private func favoritesButton() -> some View {
         Button(action: { openFavoritesWindow() }) {
             Image(systemName: panelSide == .left ? "sidebar.left" : "sidebar.right")
-                .font(.system(size: 13, weight: .medium))
-                .symbolRenderingMode(.hierarchical)
-                .foregroundStyle(iconColor)
+                .font(.system(size: 15, weight: .semibold))
+                .symbolRenderingMode(.monochrome)
+                .foregroundStyle(Color(nsColor: .systemTeal))
         }
         .buttonStyle(ToolbarIconButtonStyle())
         .help("Navigation between favorites — \(String(describing: panelSide))")

@@ -8,8 +8,8 @@
 
 import AppKit
 import FileModelKit
-import SwiftUI
 import Foundation
+import SwiftUI
 
 struct DragPreviewPopupView: View {
     let files: [CustomFile]
@@ -48,17 +48,18 @@ struct DragPreviewPopupView: View {
     }
 
     private var visibleRows: [PreviewRow] {
-        Array(files.prefix(Self.maximumVisibleRows)).map { file in
-            let metadata = metadata(for: file)
-            return PreviewRow(
-                id: file.urlValue.path,
-                name: file.nameStr,
-                dateText: metadata.dateText,
-                sizeText: metadata.sizeText,
-                isDirectory: file.isDirectory,
-                icon: fileIcon(for: file)
-            )
-        }
+        Array(files.prefix(Self.maximumVisibleRows))
+            .map { file in
+                let metadata = metadata(for: file)
+                return PreviewRow(
+                    id: file.urlValue.path,
+                    name: file.nameStr,
+                    dateText: metadata.dateText,
+                    sizeText: metadata.sizeText,
+                    isDirectory: file.isDirectory,
+                    icon: fileIcon(for: file)
+                )
+            }
     }
 
     private var hasMoreRows: Bool {
@@ -66,7 +67,8 @@ struct DragPreviewPopupView: View {
     }
 
     private var popupWidth: CGFloat {
-        let longestVisibleNameWidth = visibleRows
+        let longestVisibleNameWidth =
+            visibleRows
             .map { measuredNameWidth(for: $0.name) }
             .max() ?? 0
 
@@ -115,7 +117,7 @@ struct DragPreviewPopupView: View {
                 .contentModificationDateKey,
                 .fileSizeKey,
                 .isDirectoryKey,
-                .totalFileAllocatedSizeKey
+                .totalFileAllocatedSizeKey,
             ])
             let dateText: String
             if let date = values.contentModificationDate {

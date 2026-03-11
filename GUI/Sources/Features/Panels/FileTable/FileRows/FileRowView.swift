@@ -120,11 +120,11 @@
 
         // MARK: - Smart icon selection with fallback chain
         /// Priority: Encrypted archive → Special types → Magic bytes (no ext) → App icon → UTType icon → Generic
-        static func getSmartIcon(for file: CustomFile) -> NSImage {
+        @MainActor static func getSmartIcon(for file: CustomFile) -> NSImage {
             // Fast icon cache to avoid thousands of NSWorkspace / UTType lookups
-            let extKey = (file.urlValue.pathExtension.lowercased() +
-                          (file.isDirectory ? "_dir" : "") +
-                          (file.isSymbolicLink ? "_sym" : "")) as NSString
+            let extKey =
+                (file.urlValue.pathExtension.lowercased() + (file.isDirectory ? "_dir" : "") + (file.isSymbolicLink ? "_sym" : ""))
+                as NSString
             if let cached = Self.iconCache.object(forKey: extKey) {
                 return cached
             }
@@ -267,7 +267,7 @@
             return fallback
         }
         // MARK: - URL-based icon (for FindFilesResultsView and other non-CustomFile callers)
-        static func getSmartIcon(for url: URL, size: NSSize = NSSize(width: 128, height: 128)) -> NSImage {
+        @MainActor static func getSmartIcon(for url: URL, size: NSSize = NSSize(width: 128, height: 128)) -> NSImage {
             let workspace = NSWorkspace.shared
             guard FileManager.default.fileExists(atPath: url.path) else {
                 // Remote / archive-internal — use UTType icon
@@ -293,13 +293,19 @@
                 return icon
             }
             let ext = url.pathExtension.lowercased()
-            let archiveExts: Set<String> = ["zip","7z","rar","tar","gz","tgz","bz2","tbz2","xz","txz","dmg","pkg","jar","apk"]
+            let archiveExts: Set<String> = [
+                "zip", "7z", "rar", "tar", "gz", "tgz", "bz2", "tbz2", "xz", "txz", "dmg", "pkg", "jar", "apk",
+            ]
             if archiveExts.contains(ext) && EncryptedArchiveCheck.isEncrypted(url: url) {
                 return encryptedArchiveIcon(size: size)
             }
-            if let special = getSpecialTypeIcon(for: ext) { special.size = size; return special }
+            if let special = getSpecialTypeIcon(for: ext) {
+                special.size = size
+                return special
+            }
             if let appURL = workspace.urlForApplication(toOpen: url),
-               !isGenericHandler(appURL: appURL, forExtension: ext) {
+                !isGenericHandler(appURL: appURL, forExtension: ext)
+            {
                 let icon = workspace.icon(forFile: appURL.path)
                 icon.size = size
                 return icon
@@ -314,7 +320,7 @@
             return icon
         }
 
-            // MARK: - SF Symbol to NSImage
+        // MARK: - SF Symbol to NSImage
         /// Renders an SF Symbol name as an NSImage at given size
         private static func sfSymbolIcon(_ symbolName: String, size: NSSize) -> NSImage {
             let config = NSImage.SymbolConfiguration(pointSize: size.height * 0.6, weight: .regular)
@@ -374,9 +380,11 @@
             }
 
             private func loadIcon() async {
-                let result = await Task.detached(priority: .utility) {
-                    FileRowView.getSmartIcon(for: file)
-                }.value
+                let result =
+                    await Task.detached(priority: .utility) {
+                        await FileRowView.getSmartIcon(for: file)
+                    }
+                    .value
 
                 await MainActor.run {
                     self.icon = result

@@ -1,194 +1,194 @@
-// PanelBackgroundActionsHandler.swift
-// MiMiNavigator
-//
-// Created by Iakov Senatov on 04.02.2026.
-// Copyright © 2026 Senatov. All rights reserved.
-// Description: Handles PanelBackgroundAction dispatching from panel empty area context menu
+    // PanelBackgroundActionsHandler.swift
+    // MiMiNavigator
+    //
+    // Created by Iakov Senatov on 04.02.2026.
+    // Copyright © 2026 Senatov. All rights reserved.
+    // Description: Handles PanelBackgroundAction dispatching from panel empty area context menu
 
-import AppKit
-import FileModelKit
-import Foundation
+    import AppKit
+    import FileModelKit
+    import Foundation
 
-// MARK: - Panel Background Actions Handler
-/// Extension handling PanelBackgroundAction dispatching
-extension ContextMenuCoordinator {
+    // MARK: - Panel Background Actions Handler
+    /// Extension handling PanelBackgroundAction dispatching
+    extension ContextMenuCoordinator {
 
-    /// Handles panel background context menu actions (right-click on empty area)
-    func handlePanelBackgroundAction(_ action: PanelBackgroundAction, for panel: PanelSide, appState: AppState) {
-        let currentPath = getDestinationPath(for: panel, appState: appState)
-        log.debug("\(#function) action=\(action.rawValue) panel=\(panel) path='\(currentPath.path)'")
+        /// Handles panel background context menu actions (right-click on empty area)
+        func handlePanelBackgroundAction(_ action: PanelBackgroundAction, for panel: PanelSide, appState: AppState) {
+            let currentPath = getDestinationPath(for: panel, appState: appState)
+            log.debug("\(#function) action=\(action.rawValue) panel=\(panel) path='\(currentPath.path)'")
 
-        switch action {
-            case .goUp:
-                let parent = currentPath.deletingLastPathComponent()
-                log.debug("\(#function) goUp to '\(parent.path)'")
-                navigateTo(parent, panel: panel, appState: appState)
+            switch action {
+                case .goUp:
+                    let parent = currentPath.deletingLastPathComponent()
+                    log.debug("\(#function) goUp to '\(parent.path)'")
+                    navigateTo(parent, panel: panel, appState: appState)
 
-            case .goBack:
-                guard let path = appState.selectionsHistory.goBack() else {
-                    log.debug("\(#function) goBack: no history")
-                    return
-                }
-                Task { @MainActor in
-                    appState.isNavigatingFromHistory = true
-                    defer { appState.isNavigatingFromHistory = false }
-                    navigateTo(URL(fileURLWithPath: path), panel: panel, appState: appState)
-                }
+                case .goBack:
+                    guard let path = appState.selectionsHistory.goBack() else {
+                        log.debug("\(#function) goBack: no history")
+                        return
+                    }
+                    Task { @MainActor in
+                        appState.isNavigatingFromHistory = true
+                        defer { appState.isNavigatingFromHistory = false }
+                        navigateTo(path, panel: panel, appState: appState)
+                    }
 
-            case .goForward:
-                guard let path = appState.selectionsHistory.goForward() else {
-                    log.debug("\(#function) goForward: no history")
-                    return
-                }
-                Task { @MainActor in
-                    appState.isNavigatingFromHistory = true
-                    defer { appState.isNavigatingFromHistory = false }
-                    navigateTo(URL(fileURLWithPath: path), panel: panel, appState: appState)
-                }
+                case .goForward:
+                    guard let path = appState.selectionsHistory.goForward() else {
+                        log.debug("\(#function) goForward: no history")
+                        return
+                    }
+                    Task { @MainActor in
+                        appState.isNavigatingFromHistory = true
+                        defer { appState.isNavigatingFromHistory = false }
+                        navigateTo(path, panel: panel, appState: appState)
+                    }
 
-            case .refresh:
-                refreshPanel(panel, appState: appState)
+                case .refresh:
+                    refreshPanel(panel, appState: appState)
 
-            case .newFolder:
-                performNewFolder(in: currentPath, appState: appState)
+                case .newFolder:
+                    performNewFolder(in: currentPath, appState: appState)
 
-            case .newFile:
-                performNewFile(in: currentPath, appState: appState)
+                case .newFile:
+                    performNewFile(in: currentPath, appState: appState)
 
-            case .paste:
-                Task {
-                    await performPaste(to: panel, appState: appState)
-                }
+                case .paste:
+                    Task {
+                        await performPaste(to: panel, appState: appState)
+                    }
 
-            case .sortByName, .sortByDate, .sortBySize, .sortByType:
-                // TODO: Implement sorting change
-                log.info("\(#function) sort action '\(action.rawValue)' not yet implemented")
+                case .sortByName, .sortByDate, .sortBySize, .sortByType:
+                    // TODO: Implement sorting change
+                    log.info("\(#function) sort action '\(action.rawValue)' not yet implemented")
 
-            case .openInFinder:
-                RevealInFinderService.shared.revealInFinder(currentPath)
+                case .openInFinder:
+                    RevealInFinderService.shared.revealInFinder(currentPath)
 
-            case .openInTerminal:
-                openTerminal(at: currentPath)
+                case .openInTerminal:
+                    openTerminal(at: currentPath)
 
-            case .mirrorPath:
-                mirrorPathToOtherPanel(panel, appState: appState)
+                case .mirrorPath:
+                    mirrorPathToOtherPanel(panel, appState: appState)
 
-            case .openMarkedOnOtherPanel:
-                openFirstMarkedDirectoryOnOtherPanel(panel, appState: appState)
+                case .openMarkedOnOtherPanel:
+                    openFirstMarkedDirectoryOnOtherPanel(panel, appState: appState)
 
-            case .getInfo:
-                GetInfoService.shared.showGetInfo(for: currentPath)
+                case .getInfo:
+                    GetInfoService.shared.showGetInfo(for: currentPath)
+            }
         }
-    }
 
-    // MARK: - Navigation
+        // MARK: - Navigation
 
-    /// Navigate panel to specified path (with retry + spinner for slow volumes)
-    func navigateTo(_ url: URL, panel: PanelSide, appState: AppState) {
-        log.debug("\(#function) url='\(url.path)' panel=\(panel)")
-        Task { @MainActor in
-            await appState.navigateToDirectory(url.path, on: panel)
-        }
-    }
-
-    /// Refresh single panel
-    func refreshPanel(_ panel: PanelSide, appState: AppState) {
-        log.debug("\(#function) panel=\(panel)")
-        Task { @MainActor in
-            await appState.scanner.refreshFiles(currSide: panel)
-        }
-    }
-
-    // MARK: - Create Operations
-
-    /// Determine which panel contains the given directory path
-    func panelForPath(_ path: String, appState: AppState) -> PanelSide {
-        if PathUtils.areEqual(appState.leftPath, path) { return .left }
-        if PathUtils.areEqual(appState.rightPath, path) { return .right }
-        return appState.focusedPanel
-    }
-
-    /// Show Create Folder dialog so the user can enter a name
-    func performNewFolder(in directory: URL, appState: AppState) {
-        log.debug("\(#function) showing dialog for directory='\(directory.path)'")
-        activeDialog = .createFolder(parentURL: directory)
-    }
-
-    /// Create new empty file in directory, then select it
-    func performNewFile(in directory: URL, appState: AppState) {
-        log.debug("\(#function) directory='\(directory.path)'")
-
-        let baseName = "New File.txt"
-        let newFileURL = generateUniqueName(baseName: baseName, in: directory, isDirectory: false)
-
-        do {
-            try Data().write(to: newFileURL)
-            let createdName = newFileURL.lastPathComponent
-            let panel = panelForPath(directory.path, appState: appState)
-            log.info("\(#function) SUCCESS created file '\(createdName)' → selecting on \(panel)")
+        /// Navigate panel to specified path (with retry + spinner for slow volumes)
+        func navigateTo(_ url: URL, panel: PanelSide, appState: AppState) {
+            log.debug("\(#function) url='\(url.path)' panel=\(panel)")
             Task { @MainActor in
-                await appState.refreshAndSelect(name: createdName, on: panel)
-            }
-        } catch {
-            log.error("\(#function) FAILED: \(error.localizedDescription)")
-            activeDialog = .error(title: "Create File Failed", message: error.localizedDescription)
-        }
-    }
-
-    // MARK: - Cross-Panel Operations
-
-    /// Mirror current panel's path to the opposite panel
-    func mirrorPathToOtherPanel(_ panel: PanelSide, appState: AppState) {
-        let currentPath = getDestinationPath(for: panel, appState: appState)
-        let otherPanel: PanelSide = panel == .left ? .right : .left
-        log.info("[MirrorPath] '\(currentPath.path)' → panel=\(otherPanel)")
-        navigateTo(currentPath, panel: otherPanel, appState: appState)
-    }
-
-    /// Open the first marked directory on the opposite panel
-    func openFirstMarkedDirectoryOnOtherPanel(_ panel: PanelSide, appState: AppState) {
-        let markedDirs = appState.markedCustomFiles(for: panel).filter { $0.isDirectory }
-        guard let firstDir = markedDirs.first else {
-            log.warning("[OpenMarkedOnOther] no marked directories on \(panel)")
-            return
-        }
-
-        let resolvedURL = firstDir.urlValue.resolvingSymlinksInPath()
-        let targetPath = resolvedURL.path
-
-        var isDir: ObjCBool = false
-        guard FileManager.default.fileExists(atPath: targetPath, isDirectory: &isDir), isDir.boolValue else {
-            log.warning("[OpenMarkedOnOther] not a valid directory: '\(targetPath)'")
-            return
-        }
-
-        let otherPanel: PanelSide = panel == .left ? .right : .left
-        log.info("[OpenMarkedOnOther] dir='\(firstDir.nameStr)' → panel=\(otherPanel)")
-        navigateTo(resolvedURL, panel: otherPanel, appState: appState)
-    }
-
-    // MARK: - Terminal
-
-    /// Open Terminal at specified path
-    func openTerminal(at url: URL) {
-        log.debug("\(#function) path='\(url.path)'")
-
-        let path = url.path
-        let script = """
-            tell application "Terminal"
-                activate
-                do script "cd '\(path.replacingOccurrences(of: "'", with: "'\\''"))'"
-            end tell
-            """
-
-        if let appleScript = NSAppleScript(source: script) {
-            var error: NSDictionary?
-            appleScript.executeAndReturnError(&error)
-            if let error = error {
-                log.error("\(#function) AppleScript FAILED: \(error)")
-            } else {
-                log.debug("\(#function) Terminal opened")
+                await appState.navigateToDirectory(url.path, on: panel)
             }
         }
+
+        /// Refresh single panel
+        func refreshPanel(_ panel: PanelSide, appState: AppState) {
+            log.debug("\(#function) panel=\(panel)")
+            Task { @MainActor in
+                await appState.scanner.refreshFiles(currSide: panel)
+            }
+        }
+
+        // MARK: - Create Operations
+
+        /// Determine which panel contains the given directory path
+        func panelForPath(_ path: String, appState: AppState) -> PanelSide {
+            if PathUtils.areEqual(appState.leftPath, path) { return .left }
+            if PathUtils.areEqual(appState.rightPath, path) { return .right }
+            return appState.focusedPanel
+        }
+
+        /// Show Create Folder dialog so the user can enter a name
+        func performNewFolder(in directory: URL, appState: AppState) {
+            log.debug("\(#function) showing dialog for directory='\(directory.path)'")
+            activeDialog = .createFolder(parentURL: directory)
+        }
+
+        /// Create new empty file in directory, then select it
+        func performNewFile(in directory: URL, appState: AppState) {
+            log.debug("\(#function) directory='\(directory.path)'")
+
+            let baseName = "New File.txt"
+            let newFileURL = generateUniqueName(baseName: baseName, in: directory, isDirectory: false)
+
+            do {
+                try Data().write(to: newFileURL)
+                let createdName = newFileURL.lastPathComponent
+                let panel = panelForPath(directory.path, appState: appState)
+                log.info("\(#function) SUCCESS created file '\(createdName)' → selecting on \(panel)")
+                Task { @MainActor in
+                    await appState.refreshAndSelect(name: createdName, on: panel)
+                }
+            } catch {
+                log.error("\(#function) FAILED: \(error.localizedDescription)")
+                activeDialog = .error(title: "Create File Failed", message: error.localizedDescription)
+            }
+        }
+
+        // MARK: - Cross-Panel Operations
+
+        /// Mirror current panel's path to the opposite panel
+        func mirrorPathToOtherPanel(_ panel: PanelSide, appState: AppState) {
+            let currentPath = getDestinationPath(for: panel, appState: appState)
+            let otherPanel: PanelSide = panel == .left ? .right : .left
+            log.info("[MirrorPath] '\(currentPath.path)' → panel=\(otherPanel)")
+            navigateTo(currentPath, panel: otherPanel, appState: appState)
+        }
+
+        /// Open the first marked directory on the opposite panel
+        func openFirstMarkedDirectoryOnOtherPanel(_ panel: PanelSide, appState: AppState) {
+            let markedDirs = appState.markedCustomFiles(for: panel).filter { $0.isDirectory }
+            guard let firstDir = markedDirs.first else {
+                log.warning("[OpenMarkedOnOther] no marked directories on \(panel)")
+                return
+            }
+
+            let resolvedURL = firstDir.urlValue.resolvingSymlinksInPath()
+            let targetPath = resolvedURL.path
+
+            var isDir: ObjCBool = false
+            guard FileManager.default.fileExists(atPath: targetPath, isDirectory: &isDir), isDir.boolValue else {
+                log.warning("[OpenMarkedOnOther] not a valid directory: '\(targetPath)'")
+                return
+            }
+
+            let otherPanel: PanelSide = panel == .left ? .right : .left
+            log.info("[OpenMarkedOnOther] dir='\(firstDir.nameStr)' → panel=\(otherPanel)")
+            navigateTo(resolvedURL, panel: otherPanel, appState: appState)
+        }
+
+        // MARK: - Terminal
+
+        /// Open Terminal at specified path
+        func openTerminal(at url: URL) {
+            log.debug("\(#function) path='\(url.path)'")
+
+            let path = url.path
+            let script = """
+                tell application "Terminal"
+                    activate
+                    do script "cd '\(path.replacingOccurrences(of: "'", with: "'\\''"))'"
+                end tell
+                """
+
+            if let appleScript = NSAppleScript(source: script) {
+                var error: NSDictionary?
+                appleScript.executeAndReturnError(&error)
+                if let error = error {
+                    log.error("\(#function) AppleScript FAILED: \(error)")
+                } else {
+                    log.debug("\(#function) Terminal opened")
+                }
+            }
+        }
     }
-}
