@@ -11,30 +11,24 @@ import SwiftUI
 struct FileTransferConfirmationDialog: View {
     let operation: FileTransferOperation
     let onAction: (FileTransferAction) -> Void
-
     @Environment(\.dismiss) private var dismiss
-
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            // ── Header: icon + bold title ──────────────────────────────
             HStack(alignment: .top, spacing: 14) {
                 ZStack(alignment: .bottomTrailing) {
                     Image(systemName: "folder.fill")
                         .font(.system(size: 52))
                         .foregroundStyle(.blue)
                         .symbolRenderingMode(.hierarchical)
-
                     Image(systemName: "arrow.right.circle.fill")
                         .font(.system(size: 20))
                         .foregroundStyle(.white, .orange)
                         .offset(x: 6, y: 4)
                 }
                 .frame(width: 56, height: 56)
-
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Move or Copy Items?")
                         .font(.system(size: 13, weight: .semibold))
-
                     Text("Do you want to move or copy \(operation.itemsDescription) to \"\(operation.destinationName)\"?")
                         .font(.system(size: 13))
                         .foregroundStyle(.primary)
@@ -42,12 +36,7 @@ struct FileTransferConfirmationDialog: View {
                 }
             }
             .padding(.bottom, 12)
-
-            // ── File list (max 5) ──────────────────────────────────────
-            fileListSection
-                .padding(.bottom, 8)
-
-            // ── From / To paths ────────────────────────────────────────
+            fileListSection.padding(.bottom, 8)
             VStack(alignment: .leading, spacing: 3) {
                 if let firstFile = operation.sourceFiles.first {
                     pathRow(label: "From:", path: firstFile.urlValue.deletingLastPathComponent().path)
@@ -55,21 +44,16 @@ struct FileTransferConfirmationDialog: View {
                 pathRow(label: "To:", path: operation.destinationPath.path)
             }
             .padding(.bottom, 20)
-
-            // ── Buttons: Cancel | Copy  Move ──────────────────────────
             HStack(spacing: 8) {
                 Button("Cancel") { handleAction(.abort) }
                     .keyboardShortcut(.cancelAction)
                     .buttonStyle(ThemedButtonStyle())
                     .controlSize(.large)
-
                 Spacer()
-
                 Button("Copy") { handleAction(.copy) }
                     .keyboardShortcut(.defaultAction)
                     .buttonStyle(ThemedButtonStyle())
                     .controlSize(.large)
-
                 Button("Move") { handleAction(.move) }
                     .buttonStyle(ThemedButtonStyle())
                     .controlSize(.large)
@@ -92,7 +76,6 @@ struct FileTransferConfirmationDialog: View {
         let files = operation.sourceFiles
         let visible = Array(files.prefix(maxVisible))
         let remaining = files.count - maxVisible
-
         return VStack(alignment: .leading, spacing: 3) {
             ForEach(visible, id: \.id) { file in
                 HStack(spacing: 6) {
@@ -114,7 +97,6 @@ struct FileTransferConfirmationDialog: View {
             }
         }
     }
-
     // MARK: - Path row
     private func pathRow(label: String, path: String) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 4) {
@@ -129,7 +111,7 @@ struct FileTransferConfirmationDialog: View {
                 .truncationMode(.middle)
         }
     }
-
+    // MARK: -
     private func handleAction(_ action: FileTransferAction) {
         log.debug("FileTransferConfirmationDialog: \(action)")
         dismiss()
@@ -141,7 +123,7 @@ struct FileTransferConfirmationDialog: View {
 struct VisualEffectBlur: NSViewRepresentable {
     let material: NSVisualEffectView.Material
     let blendingMode: NSVisualEffectView.BlendingMode
-
+    // MARK: -
     func makeNSView(context: Context) -> NSVisualEffectView {
         let view = NSVisualEffectView()
         view.material = material
@@ -149,7 +131,7 @@ struct VisualEffectBlur: NSViewRepresentable {
         view.state = .active
         return view
     }
-
+    // MARK: -
     func updateNSView(_ nsView: NSVisualEffectView, context: Context) {
         nsView.material = material
         nsView.blendingMode = blendingMode

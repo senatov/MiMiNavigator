@@ -108,83 +108,28 @@
             }
         }
 
-        // MARK: - Perform move operation
+        // MARK: - Perform move via FileOpsEngine
         private func performMove(operation: FileTransferOperation, appState: AppState) async {
-            log.info("DragDropManager: moving \(operation.sourceFiles.count) items to \(operation.destinationPath.path)")
-
-            let fm = FileManager.default
-            var successCount = 0
-            var failedItems: [String] = []
-
-            for file in operation.sourceFiles {
-                let sourceURL = file.urlValue
-                var destURL = operation.destinationPath.appendingPathComponent(sourceURL.lastPathComponent)
-
-                do {
-                    // If destination exists, generate a unique name instead of skipping
-                    if fm.fileExists(atPath: destURL.path) {
-                        destURL = generateUniqueDestination(for: destURL, fileManager: fm)
-                        log.debug("DragDropManager: destination exists, using unique name: \(destURL.lastPathComponent)")
-                    }
-
-                    try fm.moveItem(at: sourceURL, to: destURL)
-                    successCount += 1
-                    log.debug("DragDropManager: moved \(file.nameStr) → \(destURL.path)")
-                } catch {
-                    log.error("DragDropManager: failed to move \(file.nameStr): \(error.localizedDescription)")
-                    failedItems.append("\(file.nameStr) (\(error.localizedDescription))")
-                }
+            log.info("DragDropManager: move \(operation.sourceFiles.count) items → \(operation.destinationPath.path)")
+            let urls = operation.sourceFiles.map(\.urlValue)
+            do {
+                try await FileOpsEngine.shared.move(items: urls, to: operation.destinationPath)
+            } catch {
+                log.error("DragDropManager: move failed — \(error.localizedDescription)")
             }
-
-            log.info("DragDropManager: move completed. Success: \(successCount), Failed: \(failedItems.count)")
             await refreshPanels(appState: appState, operation: operation)
         }
 
-        // MARK: - Perform copy operation
+        // MARK: - Perform copy via FileOpsEngine
         private func performCopy(operation: FileTransferOperation, appState: AppState) async {
-            log.info("DragDropManager: copying \(operation.sourceFiles.count) items to \(operation.destinationPath.path)")
-
-            let fm = FileManager.default
-            var successCount = 0
-            var failedItems: [String] = []
-
-            for file in operation.sourceFiles {
-                let sourceURL = file.urlValue
-                var destURL = operation.destinationPath.appendingPathComponent(sourceURL.lastPathComponent)
-
-                do {
-                    destURL = generateUniqueDestination(for: destURL, fileManager: fm)
-                    try fm.copyItem(at: sourceURL, to: destURL)
-                    successCount += 1
-                    log.debug("DragDropManager: copied \(file.nameStr) → \(destURL.path)")
-                } catch {
-                    log.error("DragDropManager: failed to copy \(file.nameStr): \(error.localizedDescription)")
-                    failedItems.append("\(file.nameStr) (\(error.localizedDescription))")
-                }
+            log.info("DragDropManager: copy \(operation.sourceFiles.count) items → \(operation.destinationPath.path)")
+            let urls = operation.sourceFiles.map(\.urlValue)
+            do {
+                try await FileOpsEngine.shared.copy(items: urls, to: operation.destinationPath)
+            } catch {
+                log.error("DragDropManager: copy failed — \(error.localizedDescription)")
             }
-
-            log.info("DragDropManager: copy completed. Success: \(successCount), Failed: \(failedItems.count)")
             await refreshPanels(appState: appState, operation: operation)
-        }
-
-        // MARK: - Generate unique destination path (adds suffix like " 2", " 3", etc.)
-        private func generateUniqueDestination(for url: URL, fileManager: FileManager) -> URL {
-            guard fileManager.fileExists(atPath: url.path) else { return url }
-
-            let directory = url.deletingLastPathComponent()
-            let filename = url.deletingPathExtension().lastPathComponent
-            let ext = url.pathExtension
-
-            var counter = 2
-            var newURL: URL
-
-            repeat {
-                let newName = ext.isEmpty ? "\(filename) \(counter)" : "\(filename) \(counter).\(ext)"
-                newURL = directory.appendingPathComponent(newName)
-                counter += 1
-            } while fileManager.fileExists(atPath: newURL.path) && counter < 1000
-
-            return newURL
         }
 
         // MARK: - Refresh affected panels and clear marks
