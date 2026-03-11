@@ -355,10 +355,7 @@
             log.warning("🔐 No bookmark for \(url.path) — falling back to Home directory")
             let homeURL = URL(fileURLWithPath: NSHomeDirectory())
             await MainActor.run {
-                switch side {
-                case .left:  appState.leftPath = homeURL.path
-                case .right: appState.rightPath = homeURL.path
-                }
+                appState.setURL(homeURL, for: side)
             }
             do {
                 let showHidden = await MainActor.run { UserPreferences.shared.snapshot.showHiddenFiles }

@@ -106,12 +106,7 @@
                 log.error("[AppKitDrop] panelSide is nil")
                 return false
             }
-            switch panelSide {
-                case .left:
-                    destination = URL(fileURLWithPath: appState.leftPath)
-                case .right:
-                    destination = URL(fileURLWithPath: appState.rightPath)
-            }
+            destination = appState.url(for: panelSide)
             log.debug("[AppKitDrop] dropping \(files.count) files → \(destination.path)")
             dragDropManager.prepareTransfer(
                 files: files,

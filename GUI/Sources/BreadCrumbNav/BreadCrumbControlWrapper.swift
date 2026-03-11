@@ -256,7 +256,7 @@
 
         // MARK: - Helpers
         private var currentPath: String {
-            panelSide == .left ? appState.leftPath : appState.rightPath
+            appState.path(for: panelSide)
         }
 
         // MARK: - Apply Path Update

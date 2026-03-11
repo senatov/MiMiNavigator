@@ -99,6 +99,11 @@
     /// MARK: - Path Updates
     extension AppState {
 
+        /// Convenience overload: accepts a String path and converts to URL internally.
+        func updatePath(_ pathString: String, for panelSide: PanelSide) {
+            updatePath(URL(fileURLWithPath: pathString), for: panelSide)
+        }
+
         func updatePath(_ newURL: URL, for panelSide: PanelSide) {
             let currentURL = url(for: panelSide)
             guard !PathUtils.areEqual(currentURL, newURL) else { return }

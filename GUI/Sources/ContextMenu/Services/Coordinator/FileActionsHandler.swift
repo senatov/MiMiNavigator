@@ -118,7 +118,7 @@
             appState.selectedLeftFile = nil
             appState.selectedRightFile = nil
             // Update panel path
-            appState.updatePath(URL(fileURLWithPath: path), for: panel)
+            appState.updatePath(path, for: panel)
             // Navigate and refresh
             switch panel {
                 case .left:

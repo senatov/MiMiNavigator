@@ -41,14 +41,12 @@ final class ContextMenuCoordinator {
     
     /// Get destination path for panel
     func getDestinationPath(for panel: PanelSide, appState: AppState) -> URL {
-        let path = panel == .left ? appState.leftPath : appState.rightPath
-        return URL(fileURLWithPath: path)
+        appState.url(for: panel)
     }
     
     /// Get opposite panel destination path
     func getOppositeDestinationPath(for panel: PanelSide, appState: AppState) -> URL {
-        let path = panel == .left ? appState.rightPath : appState.leftPath
-        return URL(fileURLWithPath: path)
+        appState.url(for: panel == .left ? .right : .left)
     }
     
     // MARK: - Panel Refresh

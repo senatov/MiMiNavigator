@@ -167,7 +167,7 @@
         }
 
         func pathURL(for panelSide: PanelSide) -> URL? {
-            URL(fileURLWithPath: panelSide == .left ? leftPath : rightPath)
+            url(for: panelSide)
         }
 
         func tabManager(for panel: PanelSide) -> TabManager {
@@ -226,8 +226,8 @@
             let tmpPath = leftPath
             leftPath = rightPath
             rightPath = tmpPath
-            tabManager(for: .left).updateActiveTabPath(URL(fileURLWithPath: leftPath))
-            tabManager(for: .right).updateActiveTabPath(URL(fileURLWithPath: rightPath))
+            tabManager(for: .left).updateActiveTabPath(leftURL)
+            tabManager(for: .right).updateActiveTabPath(rightURL)
             let tmpSel = selectedLeftFile
             selectedLeftFile = selectedRightFile
             selectedRightFile = tmpSel
@@ -342,7 +342,7 @@
                 case .left: leftSearchResultsPath = nil
                 case .right: rightSearchResultsPath = nil
             }
-            updatePath(URL(fileURLWithPath: previousPath), for: panel)
+            updatePath(previousPath, for: panel)
             Task {
                 if panel == .left {
                     await scanner.setLeftDirectory(pathStr: previousPath)

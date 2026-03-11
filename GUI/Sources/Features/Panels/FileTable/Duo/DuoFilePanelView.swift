@@ -189,7 +189,7 @@ extension DuoFilePanelView {
         handler.onExit = { actions.performExit() }
         handler.onFindFiles = { [appState] in
             let panel = appState.focusedPanel
-            let searchPath = panel == .left ? appState.leftPath : appState.rightPath
+            let searchPath = appState.path(for: panel)
             let selectedFile = panel == .left ? appState.selectedLeftFile : appState.selectedRightFile
             FindFilesCoordinator.shared.toggle(
                 searchPath: searchPath,

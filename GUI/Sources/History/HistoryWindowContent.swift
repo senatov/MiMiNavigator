@@ -170,7 +170,7 @@
 
         private func navigateToPath(_ path: String) {
             log.debug(#function + "(\(path))")
-            appState.updatePath(URL(fileURLWithPath: path), for: panelSide)
+            appState.updatePath(path, for: panelSide)
             Task {
                 if panelSide == .left {
                     await appState.scanner.setLeftDirectory(pathStr: path)

@@ -52,5 +52,51 @@
             landmarkType = "24">
          </BreakpointContent>
       </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "9272C346-908C-4F0C-96D9-8AF4E9DB7C2D"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "Gui/Sources/Services/Scanner/DualDirectoryScanner.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "301"
+            endingLineNumber = "301"
+            landmarkName = "refreshFiles(currSide:)"
+            landmarkType = "7">
+            <Locations>
+               <Location
+                  uuid = "9272C346-908C-4F0C-96D9-8AF4E9DB7C2D - 570a7ed6b901d657"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "(1) suspend resume partial function for closure #2 () async throws -&gt; Swift.Array&lt;FileModelKit.CustomFile&gt; in MiMiNavigator.DualDirectoryScanner.refreshFiles@Sendable (currSide: FileModelKit.PanelSide) async -&gt; ()"
+                  moduleName = "MiMiNavigator.debug.dylib"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/senat/Develop/MiMiNavigator/Gui/Sources/Services/Scanner/DualDirectoryScanner.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "301"
+                  endingLineNumber = "301">
+               </Location>
+               <Location
+                  uuid = "9272C346-908C-4F0C-96D9-8AF4E9DB7C2D - 570a7ed6b901d657"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "(1) suspend resume partial function for closure #2 () async throws -&gt; Swift.Array&lt;FileModelKit.CustomFile&gt; in MiMiNavigator.DualDirectoryScanner.refreshFiles@Sendable (currSide: FileModelKit.PanelSide) async -&gt; ()"
+                  moduleName = "MiMiNavigator.debug.dylib"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/senat/Develop/MiMiNavigator/Gui/Sources/Services/Scanner/DualDirectoryScanner.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "301"
+                  endingLineNumber = "301">
+               </Location>
+            </Locations>
+         </BreakpointContent>
+      </BreakpointProxy>
    </Breakpoints>
 </Bucket>

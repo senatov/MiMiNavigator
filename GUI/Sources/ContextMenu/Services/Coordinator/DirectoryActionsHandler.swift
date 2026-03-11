@@ -107,7 +107,7 @@
     // MARK: - Panel Navigation Helper
     /// Navigates a panel to a directory path and refreshes its file list.
     private func navigate(panel: PanelSide, to path: String, appState: AppState) async {
-        appState.updatePath(URL(fileURLWithPath: path), for: panel)
+        appState.updatePath(path, for: panel)
 
         if panel == .left {
             await appState.scanner.setLeftDirectory(pathStr: path)

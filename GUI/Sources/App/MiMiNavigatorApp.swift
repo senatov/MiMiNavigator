@@ -251,7 +251,7 @@
         func performFindFiles() {
             log.debug("Search button clicked")
             let panel = appState.focusedPanel
-            let path = panel == .left ? appState.leftPath : appState.rightPath
+            let path = appState.path(for: panel)
             let selectedFile = panel == .left ? appState.selectedLeftFile : appState.selectedRightFile
             FindFilesCoordinator.shared.toggle(searchPath: path, selectedFile: selectedFile, appState: appState)
         }

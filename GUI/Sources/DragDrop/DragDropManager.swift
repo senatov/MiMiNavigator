@@ -140,8 +140,8 @@
                 log.debug("DragDropManager: cleared marks on \(sourceSide) after operation")
             }
 
-            let leftPath = URL(fileURLWithPath: appState.leftPath).standardizedFileURL
-            let rightPath = URL(fileURLWithPath: appState.rightPath).standardizedFileURL
+            let leftPath = appState.leftURL.standardizedFileURL
+            let rightPath = appState.rightURL.standardizedFileURL
             let destPath = operation.destinationPath.standardizedFileURL
 
             if destPath.path.hasPrefix(leftPath.path) || leftPath.path.hasPrefix(destPath.path) {

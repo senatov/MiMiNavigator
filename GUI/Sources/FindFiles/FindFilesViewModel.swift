@@ -347,7 +347,7 @@ final class FindFilesViewModel {
                     let targetDir = targetFileURL.deletingLastPathComponent().path
                     let targetFileName = targetFileURL.lastPathComponent
 
-                    appState.updatePath(URL(fileURLWithPath: targetDir), for: panel)
+                    appState.updatePath(targetDir, for: panel)
 
                     if panel == .left {
                         await appState.scanner.setLeftDirectory(pathStr: targetDir)
@@ -383,7 +383,7 @@ final class FindFilesViewModel {
         } else {
             // Normal file result: navigate to containing directory and select
             let targetDir = result.fileURL.deletingLastPathComponent().path
-            appState.updatePath(URL(fileURLWithPath: targetDir), for: panel)
+            appState.updatePath(targetDir, for: panel)
             Task {
                 await appState.scanner.refreshFiles(currSide: panel)
                 let files = appState.displayedFiles(for: panel)

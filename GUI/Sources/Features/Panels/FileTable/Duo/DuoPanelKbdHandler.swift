@@ -288,7 +288,7 @@
         private func handleNewTab(appState: AppState) {
             let panel = appState.focusedPanel
             let selectedFile = panel == .left ? appState.selectedLeftFile : appState.selectedRightFile
-            let currentPath = panel == .left ? appState.leftPath : appState.rightPath
+            let currentPath = appState.path(for: panel)
 
             let targetURL: URL
             if let file = selectedFile {

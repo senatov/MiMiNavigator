@@ -131,7 +131,7 @@
         // instead of the real temp path like /var/folders/.../UUID/subdir
         private var pathComponents: [String] {
             let archiveState = panelSide == .left ? appState.leftArchiveState : appState.rightArchiveState
-            let currentPath = panelSide == .left ? appState.leftPath : appState.rightPath
+            let currentPath = appState.path(for: panelSide)
 
             if archiveState.isInsideArchive,
                let archiveURL = archiveState.archiveURL,
@@ -253,9 +253,9 @@
                 // pathComponents[0] = archiveName, [1..] = subpath components
                 let subComponents = Array(pathComponents[(1)...(index)])
                 let newPath = tempDir.standardizedFileURL.path + "/" + subComponents.joined(separator: "/")
-                let currentPath = panelSide == .left ? appState.leftPath : appState.rightPath
+                let currentPath = appState.path(for: panelSide)
                 guard toCanonical(newPath) != toCanonical(currentPath) else { return }
-                appState.updatePath(URL(fileURLWithPath: newPath), for: panelSide)
+                appState.updatePath(newPath, for: panelSide)
                 Task { await performDirectoryUpdate(for: panelSide, path: newPath) }
                 return
             }
@@ -265,12 +265,12 @@
                 .replacingOccurrences(of: "//", with: "/")
                 .replacingOccurrences(of: "///", with: "/")
                 .trimmingCharacters(in: .whitespacesAndNewlines)
-            let currentPath = (panelSide == .left ? appState.leftPath : appState.rightPath)
+            let currentPath = appState.path(for: panelSide)
             guard toCanonical(newPath) != toCanonical(currentPath) else {
                 log.info("Path unchanged, skipping update")
                 return
             }
-            appState.updatePath(URL(fileURLWithPath: newPath), for: panelSide)
+            appState.updatePath(newPath, for: panelSide)
             Task {
                 await performDirectoryUpdate(for: panelSide, path: newPath)
             }

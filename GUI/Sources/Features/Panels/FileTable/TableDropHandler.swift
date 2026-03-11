@@ -23,8 +23,7 @@ struct TableDropHandler {
             log.debug("[TableDropHandler] drop ignored: empty")
             return false
         }
-        let panelPath = panelSide == .left ? appState.leftPath : appState.rightPath
-        let destinationURL = URL(fileURLWithPath: panelPath)
+        let destinationURL = appState.url(for: panelSide)
         // Determine source panel first
         let sourceSide: PanelSide? = panelSide == .left ? .right : .left
         // Prevent dropping onto same directory only if it originates from the same panel
@@ -44,9 +43,9 @@ struct TableDropHandler {
     /// Update drop target when panel is targeted
     func updateDropTarget(targeted: Bool) {
         if targeted {
-            let panelPath = panelSide == .left ? appState.leftPath : appState.rightPath
-            dragDropManager.setDropTarget(URL(fileURLWithPath: panelPath))
-            log.debug("[TableDropHandler] drop target set: \(panelPath)")
+            let panelURL = appState.url(for: panelSide)
+            dragDropManager.setDropTarget(panelURL)
+            log.debug("[TableDropHandler] drop target set: \(panelURL.path)")
         }
     }
 }

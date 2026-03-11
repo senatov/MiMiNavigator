@@ -37,8 +37,7 @@
                     let files = appState.filesForOperation(on: panel)
                     guard !files.isEmpty else { stub("Pack…: select or mark files first")(); return }
                     Task {
-                        let path = panel == .left ? appState.leftPath : appState.rightPath
-                        let destinationURL = URL(fileURLWithPath: path)
+                        let destinationURL = appState.url(for: panel)
                         await ContextMenuCoordinator.shared.performCompress(
                             files: files,
                             archiveName: "",
@@ -162,7 +161,7 @@
                 action: {
                     guard let appState = AppStateProvider.shared else { return }
                     let panel = appState.focusedPanel
-                    let path = panel == .left ? appState.leftPath : appState.rightPath
+                    let path = appState.path(for: panel)
                     let file = panel == .left ? appState.selectedLeftFile : appState.selectedRightFile
                     FindFilesCoordinator.shared.toggle(searchPath: path, selectedFile: file, appState: appState)
                 },
@@ -174,7 +173,7 @@
                 action: {
                     guard let appState = AppStateProvider.shared else { return }
                     let panel = appState.focusedPanel
-                    let path = panel == .left ? appState.leftPath : appState.rightPath
+                    let path = appState.path(for: panel)
                     let url = URL(fileURLWithPath: path)
                     ContextMenuCoordinator.shared.openTerminal(at: url)
                 },
@@ -186,7 +185,7 @@
                 action: {
                     guard let appState = AppStateProvider.shared else { return }
                     let panel = appState.focusedPanel
-                    let path = panel == .left ? appState.leftPath : appState.rightPath
+                    let path = appState.path(for: panel)
                     let file = panel == .left ? appState.selectedLeftFile : appState.selectedRightFile
                     if let f = file {
                         ContextMenuCoordinator.shared.openInFinder(f)
@@ -301,7 +300,7 @@
                 action: {
                     guard let appState = AppStateProvider.shared else { return }
                     let panel = appState.focusedPanel
-                    let path = panel == .left ? appState.leftPath : appState.rightPath
+                    let path = appState.path(for: panel)
                     _ = appState.tabManager(for: panel).addTab(url: URL(fileURLWithPath: path))
                 },
                 hotKey: .newTab

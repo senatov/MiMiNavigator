@@ -18,7 +18,7 @@
             let previousPath = path(for: panel)
             log.info("[Navigate] \(panel): '\(previousPath)' → '\(newPath)'")
 
-            updatePath(URL(fileURLWithPath: newPath), for: panel)
+            updatePath(newPath, for: panel)
             if panel == .left { selectedLeftFile = nil } else { selectedRightFile = nil }
             multiSelectionManager?.resetAnchor(for: panel)
 
@@ -71,7 +71,7 @@
             let finalPath = path(for: panel)
             if finalFiles.isEmpty || !PathUtils.areEqual(finalPath, newPath) {
                 log.error("[Navigate] \(panel): FAILED after \(maxAttempts) attempts, staying on previous path")
-                updatePath(URL(fileURLWithPath: previousPath), for: panel)
+                updatePath(previousPath, for: panel)
                 if panel == .left {
                     await scanner.setLeftDirectory(pathStr: previousPath)
                     await refreshLeftFiles()
@@ -85,10 +85,11 @@
         /// Handle ".." (parent directory) navigation — archive-aware
         func navigateToParent(on panel: PanelSide) async {
             let state = archiveState(for: panel)
-            let currentPath = path(for: panel)
+            let currentURL = url(for: panel)
+            let currentPath = currentURL.path
 
             // Remote path — navigate up via RemoteConnectionManager
-            if Self.isRemotePath(URL(fileURLWithPath: currentPath)) {
+            if Self.isRemotePath(currentURL) {
                 let manager = RemoteConnectionManager.shared
                 guard let conn = manager.activeConnection else { return }
                 let parentRemote = (conn.currentPath as NSString).deletingLastPathComponent
@@ -100,7 +101,7 @@
                     let sorted = applySorting(files)
                     let mountPath = conn.provider.mountPath
                     let displayPath = mountPath.hasSuffix("/") ? String(mountPath.dropLast()) : mountPath
-                    updatePath(URL(fileURLWithPath: displayPath + normalizedParent), for: panel)
+                    updatePath(displayPath + normalizedParent, for: panel)
                     switch panel {
                         case .left:
                             displayedLeftFiles = sorted
@@ -122,7 +123,7 @@
             }
 
             // Normal parent navigation — use retry+spinner for slow volumes
-            let parentURL = URL(fileURLWithPath: currentPath).deletingLastPathComponent()
+            let parentURL = currentURL.deletingLastPathComponent()
 
             // Prevent infinite "/" → "/" navigation
             guard parentURL.path != currentPath else {
