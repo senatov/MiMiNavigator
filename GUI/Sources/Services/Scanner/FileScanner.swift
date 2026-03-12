@@ -97,32 +97,38 @@
                 } else {
                     file = CustomFile(name: fileURL.lastPathComponent, path: fileURL.path)
                 }
-                // Defer expensive metadata computation to background to keep scans fast
-                if file.isDirectory {
-                    DispatchQueue.global(qos: .utility).async {
-                        let count =
-                            (try? fileManager.contentsOfDirectory(
-                                at: fileURL,
-                                includingPropertiesForKeys: nil,
-                                options: [.skipsHiddenFiles]
-                            ).count) ?? 0
-                        file.cachedChildCount = count
-                    }
-                }
-
-                // .app bundle size can be extremely expensive — compute lazily in background
-                if file.isAppBundle {
-                    DispatchQueue.global(qos: .utility).async {
-                        let size = Self.recursiveSize(url: fileURL, fileManager: fileManager)
-                        file.cachedAppSize = size
-                    }
-                }
+                // Deferred metadata loading was moved out of scan() to keep this function
+                // concurrency-safe under Swift 6 strict checking.
+                // scan() now performs only fast, deterministic model creation.
                 result.append(file)
             }
 
             let elapsed = CFAbsoluteTimeGetCurrent() - startTime
             log.info("[FileScanner] scan DONE: \(result.count) items in \(String(format: "%.3f", elapsed))s")
             return result
+        }
+
+        // MARK: - Deferred metadata helpers
+
+        /// Computes immediate child count for a directory URL.
+        /// This is intentionally separated from scan() so callers can schedule it
+        /// independently without capturing mutable model state inside @Sendable closures.
+        static func directoryChildCount(at url: URL, showHiddenFiles: Bool = false) -> Int {
+            let fm = FileManager()
+            let options: FileManager.DirectoryEnumerationOptions = showHiddenFiles ? [] : [.skipsHiddenFiles]
+            return (try? fm.contentsOfDirectory(
+                at: url,
+                includingPropertiesForKeys: nil,
+                options: options
+            ).count) ?? 0
+        }
+
+        /// Computes recursive size for an .app bundle or any directory URL.
+        /// This pure helper can be executed on a background queue by the caller,
+        /// while model mutation stays on the owning side.
+        static func directorySize(at url: URL) -> Int64 {
+            let fm = FileManager()
+            return recursiveSize(url: url, fileManager: fm)
         }
 
         // MARK: - Recursive byte size of a directory (used for .app bundles)

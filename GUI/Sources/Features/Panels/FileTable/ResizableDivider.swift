@@ -38,12 +38,11 @@ struct ResizableDivider: View {
                 .frame(width: ColumnSeparatorStyle.width)
                 .allowsHitTesting(false)
 
-            // Active line — bold black with shadow, only during hover/drag
+            // Active line — dark blue, only during hover/drag
             if isActive {
                 Rectangle()
-                    .fill(Color.black)
-                    .frame(width: 2.5)
-                    .shadow(color: Color.black.opacity(0.4), radius: 2, x: 0, y: 0)
+                    .fill(Color(nsColor: .controlAccentColor))
+                    .frame(width: 2)
                     .allowsHitTesting(false)
                     .transition(.opacity)
             }

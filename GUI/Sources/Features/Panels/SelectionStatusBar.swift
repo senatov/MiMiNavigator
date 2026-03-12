@@ -39,9 +39,11 @@
             appState.markedTotalSize(for: panelSide)
         }
 
-        /// Number of displayed files
+        /// Number of displayed files (excluding ".." parent directory entry)
         private var totalFiles: Int {
-            appState.displayedFiles(for: panelSide).count
+            appState.displayedFiles(for: panelSide)
+                .filter { !ParentDirectoryEntry.isParentEntry($0) }
+                .count
         }
 
         /// Current URL for this panel

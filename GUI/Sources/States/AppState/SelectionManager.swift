@@ -31,10 +31,16 @@
 
         // MARK: - Public Methods
 
-        /// Select file on specified panel, keep opposite panel selection (shown as gray)
+        /// Select file on specified panel, keep opposite panel selection (shown as gray).
+        /// The ".." parent directory entry is navigation-only and cannot be selected.
         func select(_ file: CustomFile, on panelSide: PanelSide) {
             guard let state = appState else {
                 log.error("[SelectionManager] appState is nil")
+                return
+            }
+            // ".." is purely navigational — ignore selection attempts
+            guard !ParentDirectoryEntry.isParentEntry(file) else {
+                log.debug("[SelectionManager] ignoring select on parent dir entry (..)")
                 return
             }
             log.debug("[SelectionManager] select file=\(file.nameStr) on=\(panelSide)")

@@ -96,6 +96,9 @@
             guard let appState, let panelSide else { return false }
             guard let window = self.window, event.window === window else { return false }
 
+            // Don't intercept column-resize drags (ResizableDivider sets resizeLeftRight cursor)
+            if NSCursor.current == NSCursor.resizeLeftRight { return false }
+
             let currentPoint = convert(event.locationInWindow, from: nil)
             guard bounds.contains(currentPoint) else { return false }
 

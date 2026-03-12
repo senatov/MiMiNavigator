@@ -40,6 +40,9 @@ struct ThumbnailGridView: View {
     }
 
     private func handleSelection(for file: CustomFile, modifiers: NSEvent.ModifierFlags) {
+        // ".." is navigation-only — never selectable
+        guard !ParentDirectoryEntry.isParentEntry(file) else { return }
+
         if modifiers.contains(.command) {
             if selectedIDs.contains(file.id) {
                 selectedIDs.remove(file.id)
@@ -59,7 +62,7 @@ struct ThumbnailGridView: View {
             let lower = min(anchorIndex, targetIndex)
             let upper = max(anchorIndex, targetIndex)
             selectedIDs.removeAll()
-            for item in files[lower...upper] {
+            for item in files[lower...upper] where !ParentDirectoryEntry.isParentEntry(item) {
                 selectedIDs.insert(item.id)
             }
             selectedID = file.id

@@ -225,7 +225,7 @@
                 Text("Search Results")
                     .font(.system(size: Design.fontSize, weight: .medium))
                     .foregroundStyle(.primary)
-                Text("\(appState.displayedFiles(for: panelSide).count) files")
+                Text("\(appState.displayedFiles(for: panelSide).filter { !ParentDirectoryEntry.isParentEntry($0) }.count) files")
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
                     .monospacedDigit()

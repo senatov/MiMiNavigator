@@ -164,9 +164,12 @@
                         let subdirName = String(relPath[..<firstSlash])
                         let subdirPath = (watched as NSString).appendingPathComponent(subdirName)
                         if childCountUpdates[subdirPath] == nil {
-                            // Avoid expensive directory scans during FSEvents handling.
-                            // Use -1 to signal "child count changed, recompute lazily".
-                            childCountUpdates[subdirPath] = -1
+                            // Ask OS for updated child count (single cached VFS call, no enumeration)
+                            let subdirURL = URL(fileURLWithPath: subdirPath)
+                            if let rv = try? subdirURL.resourceValues(forKeys: [.directoryEntryCountKey]),
+                               let count = rv.directoryEntryCount {
+                                childCountUpdates[subdirPath] = count
+                            }
                         }
                     }
                 }
@@ -214,9 +217,12 @@
                     var isDirFlag = ObjCBool(false)
                     _ = fm.fileExists(atPath: cleanPath, isDirectory: &isDirFlag)
                     if isDirFlag.boolValue {
-                        // Do not scan directory contents here (can be very expensive on bursts of events).
-                        // Mark child count as unknown; UI can recompute lazily if needed.
-                        childCountUpdates[cleanPath] = -1
+                        // Ask OS for child count (single cached VFS call, no enumeration)
+                        let dirURL = URL(fileURLWithPath: cleanPath)
+                        if let rv = try? dirURL.resourceValues(forKeys: [.directoryEntryCountKey]),
+                           let count = rv.directoryEntryCount {
+                            childCountUpdates[cleanPath] = count
+                        }
                         // Still create/update the CustomFile entry for genuine adds
                         // but only if this is flagged as a new item (not already in the list).
                         // Since we can't check the existing list here (we're off MainActor),
@@ -224,17 +230,17 @@
                         let keys: Set<URLResourceKey> = [
                             .isDirectoryKey, .isSymbolicLinkKey,
                             .fileSizeKey, .contentModificationDateKey, .fileSecurityKey,
+                            .directoryEntryCountKey,
                         ]
                         if let rv = try? url.resourceValues(forKeys: keys) {
-                            var file = CustomFile(url: url, resourceValues: rv)
-                            // Avoid directory enumeration during event handling
-                            file.cachedChildCount = -1
+                            let file = CustomFile(url: url, resourceValues: rv)
                             added.append(file)
                         }
                     } else {
                         let keys: Set<URLResourceKey> = [
                             .isDirectoryKey, .isSymbolicLinkKey,
                             .fileSizeKey, .contentModificationDateKey, .fileSecurityKey,
+                            .directoryEntryCountKey,
                         ]
                         if let rv = try? url.resourceValues(forKeys: keys) {
                             added.append(CustomFile(url: url, resourceValues: rv))

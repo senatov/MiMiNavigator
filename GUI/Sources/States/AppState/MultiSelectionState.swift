@@ -50,16 +50,17 @@ extension AppState {
         return files.filter { marked.contains($0.id) }
     }
     
-    /// Get files for operation: marked files if any, otherwise selected file
+    /// Get files for operation: marked files if any, otherwise selected file.
+    /// The ".." parent directory entry is never included.
     func filesForOperation(on panelSide: PanelSide) -> [CustomFile] {
         let marked = markedCustomFiles(for: panelSide)
         if !marked.isEmpty {
             return marked
         }
         
-        // Fallback to single selected file
+        // Fallback to single selected file (skip "..")
         let selected: CustomFile? = panelSide == .left ? selectedLeftFile : selectedRightFile
-        if let file = selected {
+        if let file = selected, !ParentDirectoryEntry.isParentEntry(file) {
             return [file]
         }
         
