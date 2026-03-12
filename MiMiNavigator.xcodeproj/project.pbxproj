@@ -164,6 +164,9 @@
 				52D4533F441E4D78BD910304 /* NetworkKit */,
 				AA000002AA000002AA000002 /* LogKit */,
 				CC000002CC000002CC000002 /* Citadel */,
+				BB000011BB000011BB000011 /* FileModelKit */,
+				BB000012BB000012BB000012 /* ScannerKit */,
+				BB000013BB000013BB000013 /* ArchiveKit */,
 			);
 			productName = MiMiNavigator;
 			productReference = 97AD1A2E2C624E020045C38D /* MiMiNavigator.app */;
@@ -244,6 +247,9 @@
 				971A28F72F1B140900094ADE /* XCLocalSwiftPackageReference "Packages/FavoritesKit" */,
 				9727CDA52F477FF400C4E234 /* XCLocalSwiftPackageReference "Packages/NetworkKit" */,
 				AA000001AA000001AA000001 /* XCLocalSwiftPackageReference "Packages/LogKit" */,
+				BB000001BB000001BB000001 /* XCLocalSwiftPackageReference "Packages/FileModelKit" */,
+				BB000002BB000002BB000002 /* XCLocalSwiftPackageReference "Packages/ScannerKit" */,
+				BB000004BB000004BB000004 /* XCLocalSwiftPackageReference "Packages/ArchiveKit" */,
 				CC000001CC000001CC000001 /* XCRemoteSwiftPackageReference "Citadel" */,
 			);
 			preferredProjectObjectVersion = 90;
@@ -692,6 +698,18 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/LogKit;
 		};
+		BB000001BB000001BB000001 /* XCLocalSwiftPackageReference "Packages/FileModelKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/FileModelKit;
+		};
+		BB000002BB000002BB000002 /* XCLocalSwiftPackageReference "Packages/ScannerKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/ScannerKit;
+		};
+		BB000004BB000004BB000004 /* XCLocalSwiftPackageReference "Packages/ArchiveKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/ArchiveKit;
+		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCRemoteSwiftPackageReference section */
@@ -779,6 +797,21 @@
 			isa = XCSwiftPackageProductDependency;
 			package = CC000001CC000001CC000001 /* XCRemoteSwiftPackageReference "Citadel" */;
 			productName = Citadel;
+		};
+		BB000011BB000011BB000011 /* FileModelKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = BB000001BB000001BB000001 /* XCLocalSwiftPackageReference "Packages/FileModelKit" */;
+			productName = FileModelKit;
+		};
+		BB000012BB000012BB000012 /* ScannerKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = BB000002BB000002BB000002 /* XCLocalSwiftPackageReference "Packages/ScannerKit" */;
+			productName = ScannerKit;
+		};
+		BB000013BB000013BB000013 /* ArchiveKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = BB000004BB000004BB000004 /* XCLocalSwiftPackageReference "Packages/ArchiveKit" */;
+			productName = ArchiveKit;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

@@ -25,6 +25,7 @@
             .creationDateKey,
             .contentAccessDateKey,
             .addedToDirectoryDateKey,
+            .directoryEntryCountKey,
         ]
 
         private static let prefetchKeySet = Set(prefetchKeys)
@@ -110,10 +111,16 @@
 
         // MARK: - Deferred metadata helpers
 
-        /// Computes immediate child count for a directory URL.
-        /// This is intentionally separated from scan() so callers can schedule it
-        /// independently without capturing mutable model state inside @Sendable closures.
+        /// Returns immediate child count for a directory URL.
+        /// Uses OS-level directoryEntryCountKey (single VFS call, no enumeration).
+        /// Falls back to contentsOfDirectory only if the OS key is unavailable.
         static func directoryChildCount(at url: URL, showHiddenFiles: Bool = false) -> Int {
+            // Prefer OS-cached value — no directory enumeration needed
+            if let rv = try? url.resourceValues(forKeys: [.directoryEntryCountKey]),
+               let count = rv.directoryEntryCount {
+                return count
+            }
+            // Fallback for filesystems that don't support directoryEntryCountKey
             let fm = FileManager()
             let options: FileManager.DirectoryEnumerationOptions = showHiddenFiles ? [] : [.skipsHiddenFiles]
             return (try? fm.contentsOfDirectory(
