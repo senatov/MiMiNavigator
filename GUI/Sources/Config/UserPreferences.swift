@@ -30,16 +30,14 @@ final class UserPreferences {
     func load() {
         log.info(#function)
         var s = PreferencesSnapshot.default
-        if let value = defaults.string(forKey: PreferenceKeys.leftPath.rawValue),
-            !value.isEmpty
-        {
+        if let value = defaults.string(forKey: PreferenceKeys.leftPath.rawValue), !value.isEmpty {
+            log.debug(#function + ": leftPath: \(value)")
             s.leftPath = value
         } else {
             log.warning("Missing leftPath — using default.")
         }
-        if let value = defaults.string(forKey: PreferenceKeys.rightPath.rawValue),
-            !value.isEmpty
-        {
+        if let value = defaults.string(forKey: PreferenceKeys.rightPath.rawValue), !value.isEmpty {
+            log.debug(#function + ": rightPath: \(value)")
             s.rightPath = value
         } else {
             log.warning("Missing rightPath — using default.")
@@ -90,7 +88,7 @@ final class UserPreferences {
 
     // MARK: - Capture from AppState
     func capture(from appState: AppState) {
-        log.info("Capturing AppState into preferences.")
+        log.debug(#function + ": leftPath: \(appState.leftPath), rightPath: \(appState.rightPath)")
         // Build updated snapshot in one assignment to avoid triggering didSet multiple times
         var s = snapshot
         s.leftPath = appState.leftPath

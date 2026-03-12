@@ -1,187 +1,190 @@
-    // MiMiNavigatorApp.swift
-    // MiMiNavigator
-    //
-    // Created by Iakov Senatov on 06.08.2024.
-    // Copyright © 2024-2026 Senatov. All rights reserved.
-    // Description: App entry point. Wires toolbar, panels, drag-drop, network mount callback.
-    //   Network Neighborhood opens as standalone NSPanel via NetworkNeighborhoodCoordinator.
-    //   SMB mount: silent via /sbin/mount_smbfs, no Finder fallback.
+// MiMiNavigatorApp.swift
+// MiMiNavigator
+//
+// Created by Iakov Senatov on 06.08.2024.
+// Copyright © 2024-2026 Senatov. All rights reserved.
+// Description: App entry point. Wires toolbar, panels, drag-drop, network mount callback.
+//   Network Neighborhood opens as standalone NSPanel via NetworkNeighborhoodCoordinator.
+//   SMB mount: silent via /sbin/mount_smbfs, no Finder fallback.
 
-    import AppKit
-    import FileModelKit
-    import NetworkKit
-    import SwiftUI
+import AppKit
+import FileModelKit
+import NetworkKit
+import SwiftUI
 
-    @main
-    struct MiMiNavigatorApp: App {
-        @State private var appState = AppState()
-        @State private var dragDropManager = DragDropManager()
-        @State private var contextMenuCoordinator = ContextMenuCoordinator.shared
-        @State private var showHiddenFiles = UserPreferences.shared.snapshot.showHiddenFiles
-        @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
-        @Environment(\.scenePhase) private var scenePhase
+@main
+struct MiMiNavigatorApp: App {
+    @State private var appState = AppState()
+    @State private var dragDropManager = DragDropManager()
+    @State private var contextMenuCoordinator = ContextMenuCoordinator.shared
+    @State private var showHiddenFiles = UserPreferences.shared.snapshot.showHiddenFiles
+    @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
+    @Environment(\.scenePhase) private var scenePhase
 
-        /// App version from CFBundleShortVersionString (e.g. "0.9.4")
-        static var appVersion: String {
-            Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.0"
-        }
+    /// App version from CFBundleShortVersionString (e.g. "0.9.4")
+    static var appVersion: String {
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.0"
+    }
 
-        // MARK: -
-        init() {
-            AppLogger.initialize()
-            log.debug("---- Logger initialized ------")
-            // BookmarkStore.restoreAll() is called in AppDelegate.applicationDidFinishLaunching
-            // to ensure NSApplication is fully initialized before sandbox token requests.
-            Task { await RemoteConnectionManager.shared.connectOnStartIfNeeded() }
-        }
+    // MARK: -
+    init() {
+        AppLogger.initialize()
+        log.debug("---- Logger initialized ------")
+        // BookmarkStore.restoreAll() is called in AppDelegate.applicationDidFinishLaunching
+        // to ensure NSApplication is fully initialized before sandbox token requests.
+        Task { await RemoteConnectionManager.shared.connectOnStartIfNeeded() }
+    }
 
-        // MARK: -
-        var body: some Scene {
-            WindowGroup {
-                DuoFilePanelView()
-                    .environment(appState)
-                    .environment(dragDropManager)
-                    .contextMenuDialogs(coordinator: contextMenuCoordinator, appState: appState)
-                    .navigationTitle("MiMiNavigator V \(Self.appVersion)")
-                    .onAppear {
-                        appDelegate.bind(appState)
-                        AppStateProvider.shared = appState
-                        showHiddenFiles = UserPreferences.shared.snapshot.showHiddenFiles
-                        // Wire connect callback for ConnectToServer panel
-                        ConnectToServerCoordinator.shared.onDisconnect = {
-                            Task { @MainActor in
-                                // Restore whichever panel(s) are showing remote content
-                                if AppState.isRemotePath(appState.leftURL) {
-                                    await appState.restoreLocalPath(for: .left)
-                                }
-                                if AppState.isRemotePath(appState.rightURL) {
-                                    await appState.restoreLocalPath(for: .right)
-                                }
+    // MARK: -
+    var body: some Scene {
+        WindowGroup {
+            DuoFilePanelView()
+                .environment(appState)
+                .environment(dragDropManager)
+                .contextMenuDialogs(coordinator: contextMenuCoordinator, appState: appState)
+                .navigationTitle("MiMiNavigator V \(Self.appVersion)")
+                .onAppear {
+                    appDelegate.bind(appState)
+                    AppStateProvider.shared = appState
+                    showHiddenFiles = UserPreferences.shared.snapshot.showHiddenFiles
+                    // Wire connect callback for ConnectToServer panel
+                    ConnectToServerCoordinator.shared.onDisconnect = {
+                        Task { @MainActor in
+                            // Restore whichever panel(s) are showing remote content
+                            if AppState.isRemotePath(appState.leftURL) {
+                                await appState.restoreLocalPath(for: .left)
+                            }
+                            if AppState.isRemotePath(appState.rightURL) {
+                                await appState.restoreLocalPath(for: .right)
                             }
                         }
-                        ConnectToServerCoordinator.shared.onConnect = { url, password in
-                            Task { @MainActor in
-                                let side = appState.focusedPanel
-                                // Build authenticated URL if password provided
-                                var connectURL = url
-                                if !password.isEmpty, var components = URLComponents(url: url, resolvingAgainstBaseURL: false) {
-                                    // Ensure both user and password are in URL for mount_smbfs
-                                    if components.user == nil || components.user?.isEmpty == true {
-                                        components.user = "guest"
-                                    }
-                                    components.password = password
-                                    connectURL = components.url ?? url
+                    }
+                    ConnectToServerCoordinator.shared.onConnect = { url, password in
+                        Task { @MainActor in
+                            let side = appState.focusedPanel
+                            // Build authenticated URL if password provided
+                            var connectURL = url
+                            if !password.isEmpty, var components = URLComponents(url: url, resolvingAgainstBaseURL: false) {
+                                // Ensure both user and password are in URL for mount_smbfs
+                                if components.user == nil || components.user?.isEmpty == true {
+                                    components.user = "guest"
                                 }
-                                let scheme = url.scheme ?? ""
-                                log.info("[ConnectToServer] connecting \(scheme)://\(url.host ?? "")")
-                                if scheme == "smb" || scheme == "afp" {
-                                    // SMB/AFP — mount via native macOS
-                                    if let mountedURL = await SMBMounter.shared.mountShare(connectURL) {
-                                        appState.updatePath(mountedURL, for: side)
-                                    }
-                                } else if scheme == "sftp" || scheme == "ftp" {
-                                    // SFTP/FTP — RemoteConnectionManager already connected by View
-                                    let manager = RemoteConnectionManager.shared
-                                    if manager.isConnected, let conn = manager.activeConnection {
-                                        let mountURL = URL(fileURLWithPath: conn.provider.mountPath)
-                                        appState.updatePath(mountURL, for: side)
-                                        await appState.refreshRemoteFiles(for: side)
-                                    }
-                                }
-                                // Panel stays open — user closes it manually
+                                components.password = password
+                                connectURL = components.url ?? url
                             }
-                        }
-                        // Wire navigate callback for Network panel
-                        NetworkNeighborhoodCoordinator.shared.onNavigate = { shareURL in
-                            Task { @MainActor in
-                                let side = appState.focusedPanel
-                                // file:// — already mounted volume, navigate directly
-                                if shareURL.isFileURL {
-                                    appState.updatePath(shareURL, for: side)
-                                    NetworkNeighborhoodCoordinator.shared.close()
-                                    return
-                                }
-                                // smb:/afp:// — mount silently, navigate on success
-                                // SMBMounter.mountShare no longer falls back to Finder
-                                if let mountedURL = await SMBMounter.shared.mountShare(shareURL) {
+                            let scheme = url.scheme ?? ""
+                            log.info("[ConnectToServer] connecting \(scheme)://\(url.host ?? "")")
+                            if scheme == "smb" || scheme == "afp" {
+                                // SMB/AFP — mount via native macOS
+                                if let mountedURL = await SMBMounter.shared.mountShare(connectURL) {
                                     appState.updatePath(mountedURL, for: side)
-                                    NetworkNeighborhoodCoordinator.shared.close()
                                 }
-                                // If mount failed — leave panel open so user can try Sign In
+                            } else if scheme == "sftp" || scheme == "ftp" {
+                                // SFTP/FTP — RemoteConnectionManager already connected by View
+                                let manager = RemoteConnectionManager.shared
+                                if manager.isConnected, let conn = manager.activeConnection {
+                                    let mountURL = URL(fileURLWithPath: conn.provider.mountPath)
+                                    appState.updatePath(mountURL, for: side)
+                                    await appState.refreshRemoteFiles(for: side)
+                                }
                             }
+                            // Panel stays open — user closes it manually
                         }
                     }
+                    // Wire navigate callback for Network panel
+                    NetworkNeighborhoodCoordinator.shared.onNavigate = { shareURL in
+                        Task { @MainActor in
+                            let side = appState.focusedPanel
+                            // file:// — already mounted volume, navigate directly
+                            if shareURL.isFileURL {
+                                appState.updatePath(shareURL, for: side)
+                                NetworkNeighborhoodCoordinator.shared.close()
+                                return
+                            }
+                            // smb:/afp:// — mount silently, navigate on success
+                            // SMBMounter.mountShare no longer falls back to Finder
+                            if let mountedURL = await SMBMounter.shared.mountShare(shareURL) {
+                                appState.updatePath(mountedURL, for: side)
+                                NetworkNeighborhoodCoordinator.shared.close()
+                            }
+                            // If mount failed — leave panel open so user can try Sign In
+                        }
+                    }
+                }
 
-                    // No .toolbarBackground — our ToolbarButtonGroup provides its own framing
-                    .onChange(of: scenePhase) {
-                        if scenePhase == .background {
-                            Task { await BookmarkStore.shared.stopAll() }
-                        }
+                // No .toolbarBackground — our ToolbarButtonGroup provides its own framing
+                .onChange(of: scenePhase) {
+                    if scenePhase == .background {
+                        Task { await BookmarkStore.shared.stopAll() }
                     }
-                    .toolbar {
-                        AppToolbarContent(app: self, appState: appState)  // menuBarToggle included inside
-                        toolBarItemBuildInfo()
-                    }
-                    // ToolbarRightClickMonitor started in AppDelegate.applicationDidFinishLaunching
-                    // MARK: - File Transfer Confirmation Dialog
-                    .sheet(isPresented: Binding(
+                }
+                .toolbar {
+                    AppToolbarContent(app: self, appState: appState)  // menuBarToggle included inside
+                    toolBarItemBuildInfo()
+                }
+                // ToolbarRightClickMonitor started in AppDelegate.applicationDidFinishLaunching
+                // MARK: - File Transfer Confirmation Dialog
+                .sheet(
+                    isPresented: Binding(
                         get: { dragDropManager.showConfirmationDialog },
                         set: { dragDropManager.showConfirmationDialog = $0 }
-                    )) {
-                        if let operation = dragDropManager.pendingOperation {
-                            FileTransferConfirmationDialog(operation: operation) { action in
-                                Task {
-                                    await dragDropManager.executeTransfer(action: action, appState: appState)
+                    )
+                ) {
+                    if let operation = dragDropManager.pendingOperation {
+                        FileTransferConfirmationDialog(operation: operation) { action in
+                            Task {
+                                await dragDropManager.executeTransfer(action: action, appState: appState)
+                            }
+                        }
+                    }
+                }
+                // MARK: - Network Neighborhood — handled via NetworkNeighborhoodCoordinator (NSPanel)
+                // No .sheet here — panel opens independently, movable, resizable, persists position
+                // MARK: - Batch Operation Progress Overlay
+                .overlay {
+                    if BatchOperationManager.shared.showProgressDialog,
+                        let state = BatchOperationManager.shared.currentOperation
+                    {
+                        ZStack {
+                            Color.black.opacity(0.2)
+                                .ignoresSafeArea()
+                            BatchProgressDialog(
+                                state: state,
+                                onCancel: {
+                                    BatchOperationManager.shared.cancelCurrentOperation()
+                                },
+                                onDismiss: {
+                                    BatchOperationManager.shared.dismissProgressDialog()
                                 }
-                            }
+                            )
                         }
+                        .transition(.opacity)
+                        .animation(.easeOut(duration: 0.15), value: BatchOperationManager.shared.showProgressDialog)
                     }
-                    // MARK: - Network Neighborhood — handled via NetworkNeighborhoodCoordinator (NSPanel)
-                    // No .sheet here — panel opens independently, movable, resizable, persists position
-                    // MARK: - Batch Operation Progress Overlay
-                    .overlay {
-                        if BatchOperationManager.shared.showProgressDialog,
-                           let state = BatchOperationManager.shared.currentOperation {
-                            ZStack {
-                                Color.black.opacity(0.2)
-                                    .ignoresSafeArea()
-                                BatchProgressDialog(
-                                    state: state,
-                                    onCancel: {
-                                        BatchOperationManager.shared.cancelCurrentOperation()
-                                    },
-                                    onDismiss: {
-                                        BatchOperationManager.shared.dismissProgressDialog()
-                                    }
-                                )
-                            }
-                            .transition(.opacity)
-                            .animation(.easeOut(duration: 0.15), value: BatchOperationManager.shared.showProgressDialog)
-                        }
-                    }
-            }
-            .defaultSize(width: 1200, height: 700)
-            .defaultPosition(.center)
-            .windowToolbarStyle(.unifiedCompact)
-            .commands {
-                AppCommands(appState: appState)
-                SettingsCommands()
-            }
+                }
         }
-
-        // MARK: - ═══════════════════════════════════════
-        // MARK:   Toolbar Icon / Toggle Factories
-        // MARK: - ═══════════════════════════════════════
-
-        /// Creates a ToolbarButton for a given ToolbarItemID with action closure.
-        func makeToolbarIcon(_ id: ToolbarItemID, action: @escaping () -> Void) -> some View {
-            ToolbarButton(systemImage: id.systemImage, help: id.helpText, action: action)
+        .defaultSize(width: 1200, height: 700)
+        .defaultPosition(.center)
+        .windowToolbarStyle(.unifiedCompact)
+        .commands {
+            AppCommands(appState: appState)
+            SettingsCommands()
         }
+    }
 
-        /// Creates a ToolbarToggleButton for specific known toggle items.
-        @ViewBuilder
-        func makeToolbarToggle(_ id: ToolbarItemID) -> some View {
-            switch id {
+    // MARK: - ═══════════════════════════════════════
+    // MARK:   Toolbar Icon / Toggle Factories
+    // MARK: - ═══════════════════════════════════════
+
+    /// Creates a ToolbarButton for a given ToolbarItemID with action closure.
+    func makeToolbarIcon(_ id: ToolbarItemID, action: @escaping () -> Void) -> some View {
+        ToolbarButton(systemImage: id.systemImage, help: id.helpText, action: action)
+    }
+
+    /// Creates a ToolbarToggleButton for specific known toggle items.
+    @ViewBuilder
+    func makeToolbarToggle(_ id: ToolbarItemID) -> some View {
+        switch id {
             case .hiddenFiles:
                 ToolbarToggleButton(
                     systemImage: "eye.slash",
@@ -204,171 +207,169 @@
                 }
             default:
                 EmptyView()
-            }
         }
+    }
 
-        // MARK: - ═══════════════════════════════════════
-        // MARK:   Toolbar Actions (called from AppToolbarContent)
-        // MARK: - ═══════════════════════════════════════
+    // MARK: - ═══════════════════════════════════════
+    // MARK:   Toolbar Actions (called from AppToolbarContent)
+    // MARK: - ═══════════════════════════════════════
 
-        func performRefresh() {
-            log.debug("Refresh button clicked")
-            appState.forceRefreshBothPanels()
-        }
+    func performRefresh() {
+        log.debug("Refresh button clicked")
+        appState.forceRefreshBothPanels()
+    }
 
-        func performToggleHidden() {
-            log.debug("Hidden toggle clicked")
-            showHiddenFiles.toggle()
-            UserPreferences.shared.snapshot.showHiddenFiles = showHiddenFiles
-            appState.forceRefreshBothPanels()
-        }
+    func performToggleHidden() {
+        log.debug("Hidden toggle clicked")
+        showHiddenFiles.toggle()
+        UserPreferences.shared.snapshot.showHiddenFiles = showHiddenFiles
+        appState.forceRefreshBothPanels()
+    }
 
-        func performOpenWith() {
-            log.debug("OpenWith button clicked")
-            appState.openSelectedItem()
-        }
+    func performOpenWith() {
+        log.debug("OpenWith button clicked")
+        appState.openSelectedItem()
+    }
 
-        func performSwapPanels() {
-            log.debug("Swap panels button clicked")
-            appState.swapPanels()
-        }
+    func performSwapPanels() {
+        log.debug("Swap panels button clicked")
+        appState.swapPanels()
+    }
 
-        func performCompare() {
-            log.debug("Compare button clicked")
-            compareItems()
-        }
+    func performCompare() {
+        log.debug("Compare button clicked")
+        compareItems()
+    }
 
-        func performNetwork() {
-            log.debug("Network Neighborhood button clicked")
-            NetworkNeighborhoodCoordinator.shared.toggle()
-        }
+    func performNetwork() {
+        log.debug("Network Neighborhood button clicked")
+        NetworkNeighborhoodCoordinator.shared.toggle()
+    }
 
-        func performConnectServer() {
-            log.debug("Connect to Server button clicked")
-            ConnectToServerCoordinator.shared.toggle()
-        }
+    func performConnectServer() {
+        log.debug("Connect to Server button clicked")
+        ConnectToServerCoordinator.shared.toggle()
+    }
 
-        func performFindFiles() {
-            log.debug("Search button clicked")
-            let panel = appState.focusedPanel
-            let path = appState.path(for: panel)
-            let selectedFile = panel == .left ? appState.selectedLeftFile : appState.selectedRightFile
-            FindFilesCoordinator.shared.toggle(searchPath: path, selectedFile: selectedFile, appState: appState)
-        }
+    func performFindFiles() {
+        log.debug("Search button clicked")
+        let panel = appState.focusedPanel
+        let path = appState.path(for: panel)
+        let selectedFile = panel == .left ? appState.selectedLeftFile : appState.selectedRightFile
+        FindFilesCoordinator.shared.toggle(searchPath: path, selectedFile: selectedFile, appState: appState)
+    }
 
-        func performSettings() {
-            log.debug("Settings button clicked")
-            SettingsCoordinator.shared.toggle()
-        }
+    func performSettings() {
+        log.debug("Settings button clicked")
+        SettingsCoordinator.shared.toggle()
+    }
 
-        // MARK: - Build info badge
-        fileprivate func toolBarItemBuildInfo() -> ToolbarItem<(), some View> {
-            return ToolbarItem(placement: .status) {
-                HStack(spacing: 8) {
-                    // Cat icon — embossed circle with orange border
-                    Text("🐈")
-                        .font(.system(size: 14))
-                        .padding(7)
-                        .background(
-                            Circle()
-                                .fill(
-                                    LinearGradient(
-                                        colors: [Color.white.opacity(0.95), Color(white: 0.88)],
-                                        startPoint: .top,
-                                        endPoint: .bottom
-                                    )
+    // MARK: - Build info badge
+    fileprivate func toolBarItemBuildInfo() -> ToolbarItem<(), some View> {
+        return ToolbarItem(placement: .status) {
+            HStack(spacing: 8) {
+                // Cat icon — embossed circle with orange border
+                Text("🐈")
+                    .font(.system(size: 14))
+                    .padding(7)
+                    .background(
+                        Circle()
+                            .fill(
+                                LinearGradient(
+                                    colors: [Color.white.opacity(0.95), Color(white: 0.88)],
+                                    startPoint: .top,
+                                    endPoint: .bottom
                                 )
-                                .shadow(color: Color.black.opacity(0.15), radius: 1, x: 0, y: 1)
-                        )
-                        .overlay(
-                            Circle()
-                                .strokeBorder(
-                                    LinearGradient(
-                                        colors: [Color.orange.opacity(0.8), Color.orange.opacity(0.5)],
-                                        startPoint: .top,
-                                        endPoint: .bottom
-                                    ),
-                                    lineWidth: 1.5
-                                )
-                        )
-                    VStack(alignment: .leading, spacing: 1) {
-                        Text("DEV BUILD")
-                            .font(.caption2)
-                            .fontWeight(.medium)
-                            .textCase(.uppercase)
-                            .foregroundStyle(.secondary)
-                        makeDevMark()
-                            .font(.caption2)
-                            .foregroundStyle(ColorThemeStore.shared.activeTheme.dirNameColor)
-                    }
-                }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
-                .background(
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .fill(
-                            LinearGradient(
-                                colors: [Color.white.opacity(0.6), Color(white: 0.94)],
-                                startPoint: .top,
-                                endPoint: .bottom
                             )
-                        )
-                        .shadow(color: Color.black.opacity(0.08), radius: 1, x: 0, y: 1)
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .strokeBorder(
-                            Color(red: 0.15, green: 0.25, blue: 0.5).opacity(0.6),
-                            lineWidth: 1
-                        )
-                )
-                .help("Current development build version")
+                            .shadow(color: Color.black.opacity(0.15), radius: 1, x: 0, y: 1)
+                    )
+                    .overlay(
+                        Circle()
+                            .strokeBorder(
+                                LinearGradient(
+                                    colors: [Color.orange.opacity(0.8), Color.orange.opacity(0.5)],
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                ),
+                                lineWidth: 1.5
+                            )
+                    )
+                VStack(alignment: .leading, spacing: 1) {
+                    Text("DEV BUILD")
+                        .font(.caption2)
+                        .fontWeight(.medium)
+                        .textCase(.uppercase)
+                        .foregroundStyle(.secondary)
+                    makeDevMark()
+                        .font(.caption2)
+                        .foregroundStyle(ColorThemeStore.shared.activeTheme.dirNameColor)
+                }
             }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            .background(
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .fill(
+                        LinearGradient(
+                            colors: [Color.white.opacity(0.6), Color(white: 0.94)],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+                    .shadow(color: Color.black.opacity(0.08), radius: 1, x: 0, y: 1)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .strokeBorder(
+                        Color(red: 0.15, green: 0.25, blue: 0.5).opacity(0.6),
+                        lineWidth: 1
+                    )
+            )
+            .help("Current development build version")
         }
+    }
 
-        // MARK: - Version string
-        private func compareItems() {
-            // Resolve what to compare:
-            // • Two files selected on one panel (marked) → compare those two files
-            // • One file per panel selected → compare left vs right
-            // • Otherwise → compare current panel directories
-            let focusedPanel = appState.focusedPanel
-            let markedOnFocused = appState.markedCustomFiles(for: focusedPanel)
-                .filter { !ParentDirectoryEntry.isParentEntry($0) }
-
-            let leftPath: String
-            let rightPath: String
-
-            if markedOnFocused.count == 2 {
-                // Two items marked on same panel → compare them directly
-                leftPath  = markedOnFocused[0].urlValue.path
-                rightPath = markedOnFocused[1].urlValue.path
-                log.info("[Compare] same-panel: '\(markedOnFocused[0].nameStr)' ↔ '\(markedOnFocused[1].nameStr)'")
-            } else {
-                let leftFile  = appState.selectedLeftFile
-                let rightFile = appState.selectedRightFile
-                switch (leftFile, rightFile) {
+    // MARK: - Version string
+    private func compareItems() {
+        // Resolve what to compare:
+        // • Two files selected on one panel (marked) → compare those two files
+        // • One file per panel selected → compare left vs right
+        // • Otherwise → compare current panel directories
+        let leftPath: String
+        let rightPath: String
+        let focusedPanel = appState.focusedPanel
+        let markedOnFocused = appState.markedCustomFiles(for: focusedPanel).filter { !ParentDirectoryEntry.isParentEntry($0) }
+        if markedOnFocused.count == 2 {
+            // Two items marked on same panel → compare them directly
+            log.debug(#function + ": two items marked on same panel")
+            leftPath = markedOnFocused[0].urlValue.path
+            rightPath = markedOnFocused[1].urlValue.path
+            log.info("[Compare] same-panel: '\(markedOnFocused[0].nameStr)' ↔ '\(markedOnFocused[1].nameStr)'")
+        } else {
+            let leftFile = appState.selectedLeftFile
+            let rightFile = appState.selectedRightFile
+            switch (leftFile, rightFile) {
                 case (.some(let l), .some(let r)) where !l.isDirectory && !r.isDirectory:
-                    leftPath  = l.urlValue.path
+                    leftPath = l.urlValue.path
                     rightPath = r.urlValue.path
                     log.info("[Compare] files: '\(l.nameStr)' ↔ '\(r.nameStr)'")
                 default:
-                    leftPath  = appState.leftPath
+                    leftPath = appState.leftPath
                     rightPath = appState.rightPath
                     log.info("[Compare] dirs: '\(leftPath)' ↔ '\(rightPath)'")
-                }
             }
-
-            launchDiffTool(left: leftPath, right: rightPath)
         }
 
-        /// Launch best available diff tool.
-        /// Priority: DirEqual → FileMerge (opendiff) → kdiff3 → Beyond Compare → App Store offer
-        /// Launch DirEqual via AppleScript — activate DirEqual directly, set paths via text fields.
-        /// No Finder involvement, no Finder windows, no Finder activate.
-        private static func launchDirEqualViaFinder(leftPath: String, rightPath: String, frame: NSRect?) {
-            log.debug("\(#function) left=\(leftPath) right=\(rightPath)")
-            let script = """
+        launchDiffTool(left: leftPath, right: rightPath)
+    }
+
+    /// Launch best available diff tool.
+    /// Priority: DirEqual → FileMerge (opendiff) → kdiff3 → Beyond Compare → App Store offer
+    /// Launch DirEqual via AppleScript — activate DirEqual directly, set paths via text fields.
+    /// No Finder involvement, no Finder windows, no Finder activate.
+    private static func launchDirEqualViaFinder(leftPath: String, rightPath: String, frame: NSRect?) {
+        log.debug("\(#function) left=\(leftPath) right=\(rightPath)")
+        let script = """
             tell application "DirEqual" to activate
             delay 0.5
             tell application "System Events"
@@ -384,24 +385,24 @@
                 end tell
             end tell
             """
-            var err: NSDictionary?
-            NSAppleScript(source: script)?.executeAndReturnError(&err)
-            if let err {
-                log.error("[Compare] DirEqual launch: \(err["NSAppleScriptErrorMessage"] ?? err)")
-                return
-            }
-            log.info("[Compare] DirEqual activated, paths set — waiting for ready ✓")
-            waitForDirEqualReady(leftPath: leftPath, rightPath: rightPath, frame: frame)
+        var err: NSDictionary?
+        NSAppleScript(source: script)?.executeAndReturnError(&err)
+        if let err {
+            log.error("[Compare] DirEqual launch: \(err["NSAppleScriptErrorMessage"] ?? err)")
+            return
         }
+        log.info("[Compare] DirEqual activated, paths set — waiting for ready ✓")
+        waitForDirEqualReady(leftPath: leftPath, rightPath: rightPath, frame: frame)
+    }
 
-        /// Polls DirEqual every 0.5s until window is ready, then clicks Compare and repositions.
-        /// All AppleScript runs on background thread to avoid blocking UI.
-        private static func waitForDirEqualReady(leftPath: String, rightPath: String, frame: NSRect?, attempt: Int = 0) {
-            let maxAttempts = 12
-            let interval    = 0.5
+    /// Polls DirEqual every 0.5s until window is ready, then clicks Compare and repositions.
+    /// All AppleScript runs on background thread to avoid blocking UI.
+    private static func waitForDirEqualReady(leftPath: String, rightPath: String, frame: NSRect?, attempt: Int = 0) {
+        let maxAttempts = 12
+        let interval = 0.5
 
-            Task.detached(priority: .utility) {
-                let checkScript = """
+        Task.detached(priority: .utility) {
+            let checkScript = """
                 tell application "System Events"
                     if exists process "DirEqual" then
                         if (count windows of process "DirEqual") > 0 then
@@ -411,32 +412,32 @@
                     return ""
                 end tell
                 """
-                var checkErr: NSDictionary?
-                let result = NSAppleScript(source: checkScript)?.executeAndReturnError(&checkErr)
-                let currentTF2 = result?.stringValue ?? ""
+            var checkErr: NSDictionary?
+            let result = NSAppleScript(source: checkScript)?.executeAndReturnError(&checkErr)
+            let currentTF2 = result?.stringValue ?? ""
 
-                guard !currentTF2.isEmpty else {
-                    if attempt < maxAttempts {
-                        try? await Task.sleep(for: .milliseconds(Int(interval * 1000)))
-                        await MainActor.run {
-                            waitForDirEqualReady(leftPath: leftPath, rightPath: rightPath, frame: frame, attempt: attempt + 1)
-                        }
-                    } else {
-                        await MainActor.run {
-                            log.warning("[Compare] DirEqual window never appeared after \(maxAttempts) attempts")
-                        }
+            guard !currentTF2.isEmpty else {
+                if attempt < maxAttempts {
+                    try? await Task.sleep(for: .milliseconds(Int(interval * 1000)))
+                    await MainActor.run {
+                        waitForDirEqualReady(leftPath: leftPath, rightPath: rightPath, frame: frame, attempt: attempt + 1)
                     }
-                    return
+                } else {
+                    await MainActor.run {
+                        log.warning("[Compare] DirEqual window never appeared after \(maxAttempts) attempts")
+                    }
                 }
+                return
+            }
 
-                let targetFrame = await MainActor.run { frame ?? NSRect(x: 100, y: 100, width: 1200, height: 800) }
-                let screenH = await MainActor.run { NSScreen.main?.frame.height ?? 1080 }
-                let wx = Int(targetFrame.origin.x)
-                let wy = Int(screenH - targetFrame.origin.y - targetFrame.height)
-                let ww = Int(targetFrame.width)
-                let wh = Int(targetFrame.height)
+            let targetFrame = await MainActor.run { frame ?? NSRect(x: 100, y: 100, width: 1200, height: 800) }
+            let screenH = await MainActor.run { NSScreen.main?.frame.height ?? 1080 }
+            let wx = Int(targetFrame.origin.x)
+            let wy = Int(screenH - targetFrame.origin.y - targetFrame.height)
+            let ww = Int(targetFrame.width)
+            let wh = Int(targetFrame.height)
 
-                let fixScript = """
+            let fixScript = """
                 tell application "DirEqual" to activate
                 delay 0.15
                 tell application "System Events"
@@ -448,91 +449,93 @@
                     end tell
                 end tell
                 """
-                var fixErr: NSDictionary?
-                NSAppleScript(source: fixScript)?.executeAndReturnError(&fixErr)
-                await MainActor.run {
-                    if let fixErr {
-                        log.warning("[Compare] DirEqual setup: \(fixErr["NSAppleScriptErrorMessage"] ?? fixErr)")
-                    } else {
-                        log.info("[Compare] DirEqual ready after \(attempt) poll(s) — compare started ✓")
-                    }
+            var fixErr: NSDictionary?
+            NSAppleScript(source: fixScript)?.executeAndReturnError(&fixErr)
+            await MainActor.run {
+                if let fixErr {
+                    log.warning("[Compare] DirEqual setup: \(fixErr["NSAppleScriptErrorMessage"] ?? fixErr)")
+                } else {
+                    log.info("[Compare] DirEqual ready after \(attempt) poll(s) — compare started ✓")
                 }
             }
         }
+    }
 
-        /// Launch diff tool chosen in Settings → Diff Tool.
-        /// Uses DiffToolRegistry.shared — respects user selection, falls back by priority.
-        @MainActor
-        private func launchDiffTool(left: String, right: String) {
-            log.debug("\(#function) left=\(left) right=\(right)")
-            let leftURL  = URL(fileURLWithPath: left).standardized
-            let rightURL = URL(fileURLWithPath: right).standardized
-            var isDir: ObjCBool = false
-            let comparingDirs = FileManager.default.fileExists(atPath: leftURL.path,
-                                                               isDirectory: &isDir) && isDir.boolValue
-            let scope: DiffToolScope = comparingDirs ? .dirsOnly : .filesOnly
-            let registry = DiffToolRegistry.shared
+    /// Launch diff tool chosen in Settings → Diff Tool.
+    /// Uses DiffToolRegistry.shared — respects user selection, falls back by priority.
+    @MainActor
+    private func launchDiffTool(left: String, right: String) {
+        log.debug("\(#function) left=\(left) right=\(right)")
+        let leftURL = URL(fileURLWithPath: left).standardized
+        let rightURL = URL(fileURLWithPath: right).standardized
+        var isDir: ObjCBool = false
+        let comparingDirs =
+            FileManager.default.fileExists(
+                atPath: leftURL.path,
+                isDirectory: &isDir) && isDir.boolValue
+        let scope: DiffToolScope = comparingDirs ? .dirsOnly : .filesOnly
+        let registry = DiffToolRegistry.shared
 
-            guard let tool = registry.resolveTool(for: scope) else {
-                log.warning("[Compare] no tool available for scope=\(scope)")
-                Self.offerNoToolInstalled(comparingDirs: comparingDirs)
-                return
-            }
-
-            log.info("[Compare] using '\(tool.name)' binary=\(tool.resolvedBinary)")
-
-            // DiffMerge special handling: quarantine strip + config apply
-            if tool.id == "diffmerge" {
-                Self.removeQuarantine(atPath: tool.appPath)
-                Self.applyDiffMergeConfigIfNeeded()
-            }
-
-            let args = tool.buildArgs(left: leftURL.path, right: rightURL.path)
-            let task = Process()
-            task.executableURL = URL(fileURLWithPath: tool.resolvedBinary)
-            task.arguments = args
-            do {
-                try task.run()
-                log.info("[Compare] launched \(tool.name) ✓  args=\(args)")
-                Self.waitForAppReady(processName: tool.processName, frame: NSApp.mainWindow?.frame)
-            } catch {
-                log.error("[Compare] \(tool.name) failed: \(error.localizedDescription)")
-                Self.offerNoToolInstalled(comparingDirs: comparingDirs)
-            }
+        guard let tool = registry.resolveTool(for: scope) else {
+            log.warning("[Compare] no tool available for scope=\(scope)")
+            Self.offerNoToolInstalled(comparingDirs: comparingDirs)
+            return
         }
 
-        /// Show install hint when no working diff tool is found.
-        @MainActor
-        private static func offerNoToolInstalled(comparingDirs: Bool) {
-            let alert = NSAlert()
-            alert.messageText = comparingDirs ? "No Directory Diff Tool Found" : "No File Diff Tool Found"
-            alert.informativeText = """
-                No suitable diff tool is installed or enabled.
+        log.info("[Compare] using '\(tool.name)' binary=\(tool.resolvedBinary)")
 
-                Recommended free options:
-                • DiffMerge  —  brew install --cask diffmerge
-                • Beyond Compare  —  scootersoftware.com
-                • Kaleidoscope  —  App Store
-
-                Configure tools in Settings (⌘,) → Diff Tool.
-                """
-            alert.alertStyle = .informational
-            alert.addButton(withTitle: "Open Settings")
-            alert.addButton(withTitle: "Cancel")
-            if alert.runModal() == .alertFirstButtonReturn {
-                SettingsCoordinator.shared.toggle()
-            }
+        // DiffMerge special handling: quarantine strip + config apply
+        if tool.id == "diffmerge" {
+            Self.removeQuarantine(atPath: tool.appPath)
+            Self.applyDiffMergeConfigIfNeeded()
         }
 
-        /// Poll until the given app's window appears, then activate and position it over MiMiNavigator.
-        /// All AppleScript runs on a background thread to avoid blocking UI.
-        private static func waitForAppReady(processName: String, frame: NSRect?, attempt: Int = 0) {
-            log.debug("\(#function) app=\(processName) attempt=\(attempt)")
-            let maxAttempts = 12
-            let interval    = 0.5
+        let args = tool.buildArgs(left: leftURL.path, right: rightURL.path)
+        let task = Process()
+        task.executableURL = URL(fileURLWithPath: tool.resolvedBinary)
+        task.arguments = args
+        do {
+            try task.run()
+            log.info("[Compare] launched \(tool.name) ✓  args=\(args)")
+            Self.waitForAppReady(processName: tool.processName, frame: NSApp.mainWindow?.frame)
+        } catch {
+            log.error("[Compare] \(tool.name) failed: \(error.localizedDescription)")
+            Self.offerNoToolInstalled(comparingDirs: comparingDirs)
+        }
+    }
 
-            Task.detached(priority: .utility) {
-                let checkScript = """
+    /// Show install hint when no working diff tool is found.
+    @MainActor
+    private static func offerNoToolInstalled(comparingDirs: Bool) {
+        let alert = NSAlert()
+        alert.messageText = comparingDirs ? "No Directory Diff Tool Found" : "No File Diff Tool Found"
+        alert.informativeText = """
+            No suitable diff tool is installed or enabled.
+
+            Recommended free options:
+            • DiffMerge  —  brew install --cask diffmerge
+            • Beyond Compare  —  scootersoftware.com
+            • Kaleidoscope  —  App Store
+
+            Configure tools in Settings (⌘,) → Diff Tool.
+            """
+        alert.alertStyle = .informational
+        alert.addButton(withTitle: "Open Settings")
+        alert.addButton(withTitle: "Cancel")
+        if alert.runModal() == .alertFirstButtonReturn {
+            SettingsCoordinator.shared.toggle()
+        }
+    }
+
+    /// Poll until the given app's window appears, then activate and position it over MiMiNavigator.
+    /// All AppleScript runs on a background thread to avoid blocking UI.
+    private static func waitForAppReady(processName: String, frame: NSRect?, attempt: Int = 0) {
+        log.debug("\(#function) app=\(processName) attempt=\(attempt)")
+        let maxAttempts = 12
+        let interval = 0.5
+
+        Task.detached(priority: .utility) {
+            let checkScript = """
                 tell application "System Events"
                     if exists process "\(processName)" then
                         return (count windows of process "\(processName)") as string
@@ -540,32 +543,32 @@
                     return "0"
                 end tell
                 """
-                var err: NSDictionary?
-                let result = NSAppleScript(source: checkScript)?.executeAndReturnError(&err)
-                let windowCount = Int(result?.stringValue ?? "0") ?? 0
+            var err: NSDictionary?
+            let result = NSAppleScript(source: checkScript)?.executeAndReturnError(&err)
+            let windowCount = Int(result?.stringValue ?? "0") ?? 0
 
-                guard windowCount > 0 else {
-                    guard attempt < maxAttempts else {
-                        await MainActor.run {
-                            log.warning("[Compare] \(processName) window never appeared")
-                        }
-                        return
-                    }
-                    try? await Task.sleep(for: .milliseconds(Int(interval * 1000)))
+            guard windowCount > 0 else {
+                guard attempt < maxAttempts else {
                     await MainActor.run {
-                        waitForAppReady(processName: processName, frame: frame, attempt: attempt + 1)
+                        log.warning("[Compare] \(processName) window never appeared")
                     }
                     return
                 }
+                try? await Task.sleep(for: .milliseconds(Int(interval * 1000)))
+                await MainActor.run {
+                    waitForAppReady(processName: processName, frame: frame, attempt: attempt + 1)
+                }
+                return
+            }
 
-                let f = await MainActor.run { frame ?? NSRect(x: 100, y: 100, width: 1200, height: 800) }
-                let screenH = await MainActor.run { NSScreen.main?.frame.height ?? 1080 }
-                let wx = Int(f.origin.x)
-                let wy = Int(screenH - f.origin.y - f.height)
-                let ww = Int(f.width)
-                let wh = Int(f.height)
+            let f = await MainActor.run { frame ?? NSRect(x: 100, y: 100, width: 1200, height: 800) }
+            let screenH = await MainActor.run { NSScreen.main?.frame.height ?? 1080 }
+            let wx = Int(f.origin.x)
+            let wy = Int(screenH - f.origin.y - f.height)
+            let ww = Int(f.width)
+            let wh = Int(f.height)
 
-                let posScript = """
+            let posScript = """
                 tell application "\(processName)" to activate
                 delay 0.2
                 tell application "System Events"
@@ -575,39 +578,39 @@
                     end tell
                 end tell
                 """
-                var posErr: NSDictionary?
-                NSAppleScript(source: posScript)?.executeAndReturnError(&posErr)
-                await MainActor.run {
-                    if let posErr {
-                        log.warning("[Compare] \(processName) position: \(posErr["NSAppleScriptErrorMessage"] ?? posErr)")
-                    } else {
-                        log.info("[Compare] \(processName) ready after \(attempt) poll(s), positioned ✓")
-                    }
+            var posErr: NSDictionary?
+            NSAppleScript(source: posScript)?.executeAndReturnError(&posErr)
+            await MainActor.run {
+                if let posErr {
+                    log.warning("[Compare] \(processName) position: \(posErr["NSAppleScriptErrorMessage"] ?? posErr)")
+                } else {
+                    log.info("[Compare] \(processName) ready after \(attempt) poll(s), positioned ✓")
                 }
             }
         }
+    }
 
-        /// Copy bundled DiffMerge preferences to ~/Library/Preferences if not yet configured.
-        /// Detects "unconfigured" state by absence of [Folder/Color/Different] section.
-        private static func applyDiffMergeConfigIfNeeded() {
-            log.debug("\(#function)")
-            let prefPath = NSHomeDirectory() + "/Library/Preferences/SourceGear DiffMerge Preferences"
-            let existing = (try? String(contentsOfFile: prefPath, encoding: .utf8)) ?? ""
-            // Already has user color config — don't overwrite
-            guard !existing.contains("[Folder/Color/Different]") else {
-                log.debug("[DiffMerge] config already applied, skipping")
-                return
-            }
-            do {
-                try diffMergeDefaultConfig.write(toFile: prefPath, atomically: true, encoding: .utf8)
-                log.info("[DiffMerge] default config written to \(prefPath) ✓")
-            } catch {
-                log.error("[DiffMerge] failed to write config: \(error.localizedDescription)")
-            }
+    /// Copy bundled DiffMerge preferences to ~/Library/Preferences if not yet configured.
+    /// Detects "unconfigured" state by absence of [Folder/Color/Different] section.
+    private static func applyDiffMergeConfigIfNeeded() {
+        log.debug("\(#function)")
+        let prefPath = NSHomeDirectory() + "/Library/Preferences/SourceGear DiffMerge Preferences"
+        let existing = (try? String(contentsOfFile: prefPath, encoding: .utf8)) ?? ""
+        // Already has user color config — don't overwrite
+        guard !existing.contains("[Folder/Color/Different]") else {
+            log.debug("[DiffMerge] config already applied, skipping")
+            return
         }
+        do {
+            try diffMergeDefaultConfig.write(toFile: prefPath, atomically: true, encoding: .utf8)
+            log.info("[DiffMerge] default config written to \(prefPath) ✓")
+        } catch {
+            log.error("[DiffMerge] failed to write config: \(error.localizedDescription)")
+        }
+    }
 
-        // MARK: - Bundled DiffMerge preferences (exported from developer's configured instance)
-        private static let diffMergeDefaultConfig = """
+    // MARK: - Bundled DiffMerge preferences (exported from developer's configured instance)
+    private static let diffMergeDefaultConfig = """
         [Window]
         [Window/Size]
         [Window/Size/Blank]
@@ -647,104 +650,104 @@
         CheckFoldersOnActivate=1
         """
 
-        /// Remove macOS quarantine extended attributes from an app bundle.
-        /// Required after `brew install --cask diffmerge` — otherwise macOS blocks launch.
-        private static func removeQuarantine(atPath path: String) {
-            log.debug("\(#function) path=\(path)")
-            let task = Process()
-            task.executableURL = URL(fileURLWithPath: "/usr/bin/xattr")
-            task.arguments = ["-cr", path]
-            do {
-                try task.run()
-                task.waitUntilExit()
-                log.info("[Compare] xattr -cr \(path) ✓")
-            } catch {
-                log.warning("[Compare] xattr failed: \(error.localizedDescription)")
-            }
+    /// Remove macOS quarantine extended attributes from an app bundle.
+    /// Required after `brew install --cask diffmerge` — otherwise macOS blocks launch.
+    private static func removeQuarantine(atPath path: String) {
+        log.debug("\(#function) path=\(path)")
+        let task = Process()
+        task.executableURL = URL(fileURLWithPath: "/usr/bin/xattr")
+        task.arguments = ["-cr", path]
+        do {
+            try task.run()
+            task.waitUntilExit()
+            log.info("[Compare] xattr -cr \(path) ✓")
+        } catch {
+            log.warning("[Compare] xattr failed: \(error.localizedDescription)")
         }
+    }
 
-        /// Offer to install DiffMerge via brew for directory comparison.
-        @MainActor
-        private static func offerInstallDiffMerge() {
-            log.debug("\(#function)")
-            let alert = NSAlert()
-            alert.messageText = "DiffMerge Not Found"
-            alert.informativeText = """
-                DiffMerge is a free tool for two-panel directory comparison.
+    /// Offer to install DiffMerge via brew for directory comparison.
+    @MainActor
+    private static func offerInstallDiffMerge() {
+        log.debug("\(#function)")
+        let alert = NSAlert()
+        alert.messageText = "DiffMerge Not Found"
+        alert.informativeText = """
+            DiffMerge is a free tool for two-panel directory comparison.
 
-                Install via Homebrew:
-                  brew install --cask diffmerge
+            Install via Homebrew:
+              brew install --cask diffmerge
 
-                Note: after installation macOS may block the app due to quarantine.
-                MiMiNavigator removes quarantine attributes automatically on first launch.
-                If you still see a warning, run manually:
-                  xattr -cr /Applications/DiffMerge.app
-                """
-            alert.alertStyle = .informational
-            alert.addButton(withTitle: "Install via brew")
-            alert.addButton(withTitle: "Cancel")
-            if alert.runModal() == .alertFirstButtonReturn {
-                let script = """
+            Note: after installation macOS may block the app due to quarantine.
+            MiMiNavigator removes quarantine attributes automatically on first launch.
+            If you still see a warning, run manually:
+              xattr -cr /Applications/DiffMerge.app
+            """
+        alert.alertStyle = .informational
+        alert.addButton(withTitle: "Install via brew")
+        alert.addButton(withTitle: "Cancel")
+        if alert.runModal() == .alertFirstButtonReturn {
+            let script = """
                 tell application "Terminal"
                     activate
                     do script "brew install --cask diffmerge && (xattr -cr /Applications/DiffMerge.app 2>/dev/null || xattr -cr ~/Applications/DiffMerge.app 2>/dev/null) && echo 'DiffMerge ready ✓'"
                 end tell
                 """
-                var err: NSDictionary?
-                NSAppleScript(source: script)?.executeAndReturnError(&err)
-                log.info("[Compare] offered DiffMerge install via brew")
-            }
+            var err: NSDictionary?
+            NSAppleScript(source: script)?.executeAndReturnError(&err)
+            log.info("[Compare] offered DiffMerge install via brew")
         }
+    }
 
-        /// Offer to install Xcode (which includes FileMerge) from the App Store.
-        @MainActor
-        private static func offerInstallXcode() {
-            log.debug("\(#function)")
-            let alert = NSAlert()
-            alert.messageText = "FileMerge Not Found"
-            alert.informativeText = "FileMerge is bundled with Xcode and works great for comparing files and folders.\n\nWould you like to install Xcode from the App Store?"
-            alert.alertStyle = .informational
-            alert.addButton(withTitle: "Open App Store")
-            alert.addButton(withTitle: "Cancel")
-            if alert.runModal() == .alertFirstButtonReturn {
-                NSWorkspace.shared.open(URL(string: "macappstore://apps.apple.com/app/id497799835")!)
-            }
-            log.info("[Compare] offered Xcode via App Store")
+    /// Offer to install Xcode (which includes FileMerge) from the App Store.
+    @MainActor
+    private static func offerInstallXcode() {
+        log.debug("\(#function)")
+        let alert = NSAlert()
+        alert.messageText = "FileMerge Not Found"
+        alert.informativeText =
+            "FileMerge is bundled with Xcode and works great for comparing files and folders.\n\nWould you like to install Xcode from the App Store?"
+        alert.alertStyle = .informational
+        alert.addButton(withTitle: "Open App Store")
+        alert.addButton(withTitle: "Cancel")
+        if alert.runModal() == .alertFirstButtonReturn {
+            NSWorkspace.shared.open(URL(string: "macappstore://apps.apple.com/app/id497799835")!)
         }
+        log.info("[Compare] offered Xcode via App Store")
+    }
 
-
-        private func makeDevMark() -> Text {
-            let versionURL = Bundle.main.url(forResource: "curr_version", withExtension: "asc")
-            let content: String
-            if let url = versionURL, let versionString = try? String(contentsOf: url, encoding: .utf8) {
-                let trimmed = versionString.trimmingCharacters(in: .whitespacesAndNewlines)
-                content = trimmed
+    private func makeDevMark() -> Text {
+        let versionURL = Bundle.main.url(forResource: "curr_version", withExtension: "asc")
+        let content: String
+        if let url = versionURL, let versionString = try? String(contentsOf: url, encoding: .utf8) {
+            let trimmed = versionString.trimmingCharacters(in: .whitespacesAndNewlines)
+            content = trimmed
+        } else {
+            let short = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String
+            let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String
+            if let s = short, let b = build {
+                content = "v\(s) (\(b))"
+            } else if let s = short {
+                content = "v\(s)"
+            } else if let b = build {
+                content = "build \(b)"
             } else {
-                let short = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String
-                let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String
-                if let s = short, let b = build {
-                    content = "v\(s) (\(b))"
-                } else if let s = short {
-                    content = "v\(s)"
-                } else if let b = build {
-                    content = "build \(b)"
-                } else {
-                    content = "Mimi Navigator — cannot determine version"
-                    log.error("failed to load version")
-                }
+                content = "Mimi Navigator — cannot determine version"
+                log.error("failed to load version")
             }
-            return Text(content)
         }
+        return Text(content)
     }
+}
 
-    // MARK: - Settings keyboard shortcut (⌘,)
-    struct SettingsCommands: Commands {
-        var body: some Commands {
-            CommandGroup(before: .appSettings) {
-                Button("Settings…") {
-                    SettingsCoordinator.shared.toggle()
-                }
-                .keyboardShortcut(",", modifiers: .command)
+// MARK: - Settings keyboard shortcut (⌘,)
+struct SettingsCommands: Commands {
+    var body: some Commands {
+        CommandGroup(before: .appSettings) {
+            Button("Settings…") {
+                SettingsCoordinator.shared.toggle()
             }
+            .keyboardShortcut(",", modifiers: .command)
         }
     }
+}

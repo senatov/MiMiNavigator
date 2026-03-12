@@ -11,7 +11,7 @@
     import FileModelKit
     import Foundation
 
-    // MARK: - File Scanner
+    // MARK: - File Scanner
 
     enum FileScanner {
 
@@ -40,14 +40,6 @@
 
             let fileManager = FileManager.default
 
-            guard fileManager.fileExists(atPath: url.path) else {
-                log.error("[FileScanner] path does not exist: \(url.path)")
-                throw NSError(
-                    domain: NSCocoaErrorDomain,
-                    code: NSFileNoSuchFileError,
-                    userInfo: [NSLocalizedDescriptionKey: "Path does not exist: \(url.path)"]
-                )
-            }
 
             if !fileManager.isReadableFile(atPath: url.path) {
                 log.warning("[FileScanner] path not readable, will attempt contentsOfDirectory: \(url.path)")
@@ -59,6 +51,27 @@
             let isVolumePath = url.path.hasPrefix("/Volumes/") && url.path != "/Volumes"
             let effectiveShowHidden = showHiddenFiles || isVolumePath
             let options: FileManager.DirectoryEnumerationOptions = effectiveShowHidden ? [] : [.skipsHiddenFiles]
+
+            var isDirectory: ObjCBool = false
+            let exists = fileManager.fileExists(atPath: url.path, isDirectory: &isDirectory)
+
+            guard exists else {
+                log.error("[FileScanner] path disappeared before scan: \(url.path)")
+                throw NSError(
+                    domain: NSCocoaErrorDomain,
+                    code: NSFileNoSuchFileError,
+                    userInfo: [NSLocalizedDescriptionKey: "Path disappeared before scan: \(url.path)"]
+                )
+            }
+
+            guard isDirectory.boolValue else {
+                log.error("[FileScanner] scan() expected directory but received file: \(url.path)")
+                throw NSError(
+                    domain: NSCocoaErrorDomain,
+                    code: NSFileReadUnknownError,
+                    userInfo: [NSLocalizedDescriptionKey: "FileScanner.scan() expected directory but received file: \(url.path)"]
+                )
+            }
 
             // Single syscall: enumerate directory AND prefetch all resource values
             let contents: [URL]
@@ -84,17 +97,25 @@
                 } else {
                     file = CustomFile(name: fileURL.lastPathComponent, path: fileURL.path)
                 }
-                // Cache child count for directories (one lightweight syscall per dir)
-                // Cache child count for directories (one lightweight syscall per dir)
+                // Defer expensive metadata computation to background to keep scans fast
                 if file.isDirectory {
-                    file.cachedChildCount = (try? fileManager.contentsOfDirectory(
-                        at: fileURL,
-                        includingPropertiesForKeys: nil,
-                        options: []
-                    ).count) ?? 0
+                    DispatchQueue.global(qos: .utility).async {
+                        let count =
+                            (try? fileManager.contentsOfDirectory(
+                                at: fileURL,
+                                includingPropertiesForKeys: nil,
+                                options: [.skipsHiddenFiles]
+                            ).count) ?? 0
+                        file.cachedChildCount = count
+                    }
                 }
+
+                // .app bundle size can be extremely expensive — compute lazily in background
                 if file.isAppBundle {
-                    file.cachedAppSize = Self.recursiveSize(url: fileURL, fileManager: fileManager)
+                    DispatchQueue.global(qos: .utility).async {
+                        let size = Self.recursiveSize(url: fileURL, fileManager: fileManager)
+                        file.cachedAppSize = size
+                    }
                 }
                 result.append(file)
             }
@@ -106,16 +127,19 @@
 
         // MARK: - Recursive byte size of a directory (used for .app bundles)
         private static func recursiveSize(url: URL, fileManager: FileManager) -> Int64 {
-            guard let enumerator = fileManager.enumerator(
-                at: url,
-                includingPropertiesForKeys: [.fileSizeKey, .isDirectoryKey],
-                options: [.skipsHiddenFiles]
-            ) else { return 0 }
+            guard
+                let enumerator = fileManager.enumerator(
+                    at: url,
+                    includingPropertiesForKeys: [.fileSizeKey, .isDirectoryKey],
+                    options: [.skipsHiddenFiles]
+                )
+            else { return 0 }
             var total: Int64 = 0
             for case let fileURL as URL in enumerator {
                 if let rv = try? fileURL.resourceValues(forKeys: [.fileSizeKey, .isDirectoryKey]),
-                   rv.isDirectory != true,
-                   let sz = rv.fileSize {
+                    rv.isDirectory != true,
+                    let sz = rv.fileSize
+                {
                     total += Int64(sz)
                 }
             }

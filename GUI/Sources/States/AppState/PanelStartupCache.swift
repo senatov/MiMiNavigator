@@ -43,8 +43,10 @@ final class PanelStartupCache: @unchecked Sendable {
 
     /// Saves current panel file lists to disk.
     /// Only saves if both panels have content — avoids caching empty state on crash.
-    func save(leftPath: String, rightPath: String,
-              leftFiles: [CustomFile], rightFiles: [CustomFile]) {
+    func save(
+        leftPath: String, rightPath: String,
+        leftFiles: [CustomFile], rightFiles: [CustomFile]
+    ) {
         guard !leftFiles.isEmpty || !rightFiles.isEmpty else { return }
         let payload = CachePayload(
             leftPath: leftPath,
@@ -69,8 +71,10 @@ final class PanelStartupCache: @unchecked Sendable {
     func load(forLeftPath leftPath: String, rightPath: String) -> (left: [CustomFile], right: [CustomFile])? {
         guard FileManager.default.fileExists(atPath: Self.cacheURL.path) else { return nil }
         do {
+            log.debug(#function + ": attempting to load from disk")
             let data = try Data(contentsOf: Self.cacheURL)
             let payload = try JSONDecoder().decode(CachePayload.self, from: data)
+            log.debug(#function + ": payload: \(payload)")
             // Invalidate if paths changed since last save
             guard payload.leftPath == leftPath, payload.rightPath == rightPath else {
                 log.info("[PanelStartupCache] paths changed — cache skipped")

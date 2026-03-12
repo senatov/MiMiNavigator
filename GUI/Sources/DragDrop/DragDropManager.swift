@@ -139,7 +139,7 @@
                 appState.unmarkAll(on: sourceSide)
                 log.debug("DragDropManager: cleared marks on \(sourceSide) after operation")
             }
-
+            log.debug(#function + ": refreshing affected panels")
             let leftPath = appState.leftURL.standardizedFileURL
             let rightPath = appState.rightURL.standardizedFileURL
             let destPath = operation.destinationPath.standardizedFileURL
