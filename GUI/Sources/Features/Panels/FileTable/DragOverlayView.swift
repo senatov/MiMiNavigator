@@ -39,6 +39,7 @@
         private var mouseDownPoint: NSPoint = .zero
         private let dragThreshold: CGFloat = 4.0
         private var didStartDragging = false
+        private var mouseDownOnResize = false
         private var mouseMonitor: Any?
         private var dragMonitor: Any?
 
@@ -88,6 +89,10 @@
             guard bounds.contains(loc) else { return }
             mouseDownPoint = loc
             didStartDragging = false
+            // Remember if cursor was resize at mouseDown — column divider drag in progress
+            mouseDownOnResize = (NSCursor.current == NSCursor.resizeLeftRight
+                || NSCursor.current == NSCursor.resizeLeft
+                || NSCursor.current == NSCursor.resizeRight)
         }
 
         /// Returns true if drag was initiated (event consumed)
@@ -96,8 +101,8 @@
             guard let appState, let panelSide else { return false }
             guard let window = self.window, event.window === window else { return false }
 
-            // Don't intercept column-resize drags (ResizableDivider sets resizeLeftRight cursor)
-            if NSCursor.current == NSCursor.resizeLeftRight { return false }
+            // Don't intercept column-resize drags (cursor was resize at mouseDown time)
+            if mouseDownOnResize { return false }
 
             let currentPoint = convert(event.locationInWindow, from: nil)
             guard bounds.contains(currentPoint) else { return false }
