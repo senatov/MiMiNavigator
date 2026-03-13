@@ -162,16 +162,16 @@
             }
             let isOdd = index % 2 == 1
             if isActivePanel {
-                // Active panel: subtle warm yellow zebra
-                let evenColor = Color(red: 1.0, green: 0.993, blue: 0.953)
-                let oddColor  = Color(red: 0.993, green: 0.973, blue: 0.907)
+                // Active panel: aged-paper tint, subtle warm zebra
+                let evenColor = Color(red: 0.99, green: 0.985, blue: 0.965)
+                let oddColor  = Color(red: 0.98, green: 0.97, blue: 0.94)
                 return AnyView(
                     (isOdd ? oddColor : evenColor)
                         .allowsHitTesting(false))
             }
-            // Inactive panel: neutral warm grey zebra, slightly more contrast than system default
-            let evenColor = Color(red: 0.96, green: 0.96, blue: 0.95)
-            let oddColor  = Color(red: 0.92, green: 0.92, blue: 0.91)
+            // Inactive panel: near-white even rows, light grey odd rows
+            let evenColor = Color(red: 0.985, green: 0.985, blue: 0.985)
+            let oddColor  = Color(red: 0.93, green: 0.93, blue: 0.925)
             return AnyView(
                 (isOdd ? oddColor : evenColor)
                     .allowsHitTesting(false))
