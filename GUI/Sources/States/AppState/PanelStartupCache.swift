@@ -48,17 +48,21 @@ final class PanelStartupCache: @unchecked Sendable {
         leftFiles: [CustomFile], rightFiles: [CustomFile]
     ) {
         guard !leftFiles.isEmpty || !rightFiles.isEmpty else { return }
+        // Remove synthetic parent ("..") rows before caching
+        let filteredLeft = leftFiles.filter { !$0.isParentEntry && $0.nameStr != ".." }
+        let filteredRight = rightFiles.filter { !$0.isParentEntry && $0.nameStr != ".." }
+
         let payload = CachePayload(
             leftPath: leftPath,
             rightPath: rightPath,
-            leftFiles: leftFiles,
-            rightFiles: rightFiles,
+            leftFiles: filteredLeft,
+            rightFiles: filteredRight,
             savedAt: Date()
         )
         do {
             let data = try JSONEncoder().encode(payload)
             try data.write(to: Self.cacheURL, options: .atomic)
-            log.info("[PanelStartupCache] saved L=\(leftFiles.count) R=\(rightFiles.count) files")
+            log.info("[PanelStartupCache] saved L=\(filteredLeft.count) R=\(filteredRight.count) files")
         } catch {
             log.warning("[PanelStartupCache] save failed: \(error.localizedDescription)")
         }

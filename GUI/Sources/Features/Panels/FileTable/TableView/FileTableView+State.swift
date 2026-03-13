@@ -41,20 +41,31 @@
             var index = [CustomFile.ID: Int](minimumCapacity: cachedSortedFiles.count)
 
             for (offset, file) in cachedSortedFiles.enumerated() {
+                // Parent entry should never be part of the navigation index
+                // Also guard against cached ".." rows restored without the flag
+                if file.isParentEntry || file.nameStr == ".." { continue }
                 index[file.id] = offset
             }
             cachedIndexByID = index
             // Build UI rows array.
-            // Parent entry participates in navigation but is not part of cachedSortedFiles.
+            // Ensure only one parent entry exists even if scanner already produced one.
             var rows: [CustomFile] = []
             rows.reserveCapacity(cachedSortedFiles.count + 1)
-            // Synthetic parent navigation entry (skip if already at filesystem root)
+
             let currentPath = appState.path(for: panelSide)
+
+            // Always create exactly one synthetic parent row (UI responsibility)
             if currentPath != "/" {
                 rows.append(CustomFile.parentLink(from: currentPath))
             }
-            // Real filesystem entries
-            rows.append(contentsOf: cachedSortedFiles)
+
+            // Append filesystem entries but NEVER include parent entries from scanner or cache
+            for file in cachedSortedFiles {
+                // Drop any parent entries coming from scanner or cache
+                if file.isParentEntry || file.nameStr == ".." { continue }
+                rows.append(file)
+            }
+
             cachedSortedRows = rows
         }
 
