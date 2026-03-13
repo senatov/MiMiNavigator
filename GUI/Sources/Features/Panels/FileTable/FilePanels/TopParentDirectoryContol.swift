@@ -50,25 +50,25 @@
         }
 
         var body: some View {
-            HStack(spacing: 8) {
+            HStack(spacing: 6) {
 
                 Image(systemName: "arrowshape.turn.up.left.fill")
-                    .frame(width: 16, height: 16)
-                    .foregroundStyle(.secondary)
+                    .frame(width: 14, height: 14)
+                    .foregroundStyle(Color(red: 0.55, green: 0.75, blue: 0.95))
 
                 Text("..")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.primary)
+                    .font(.system(size: 11, weight: .light))
+                    .foregroundStyle(Color(red: 0.55, green: 0.75, blue: 0.95))
 
                 Text(parentDirectoryName)
-                    .font(.system(size: 13, weight: .regular))
-                    .foregroundStyle(.primary)
+                    .font(.system(size: 11, weight: .light))
+                    .foregroundStyle(Color(red: 0.55, green: 0.75, blue: 0.95))
                     .lineLimit(1)
 
                 if let size = parentSizeString {
                     Text("(\(size))")
-                        .font(.system(size: 12))
-                        .foregroundStyle(.secondary)
+                        .font(.system(size: 10, weight: .ultraLight))
+                        .foregroundStyle(Color(red: 0.55, green: 0.75, blue: 0.95).opacity(0.7))
                 }
 
                 Spacer(minLength: 0)
