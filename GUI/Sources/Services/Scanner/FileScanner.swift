@@ -15,18 +15,20 @@
 
     enum FileScanner {
 
-        /// All resource keys needed by CustomFile — fetched once per directory in a single syscall batch.
+        /// Resource keys prefetched in one batch syscall via contentsOfDirectory.
+        /// fileSecurityKey        — permissions + owner (kernel VFS-cached, negligible overhead).
+        /// directoryEntryCountKey — child count without directory enumeration.
+        /// Date keys              — creation, last-access, added-to-directory for extended columns.
         private static let prefetchKeys: [URLResourceKey] = [
             .isDirectoryKey,
             .isSymbolicLinkKey,
             .fileSizeKey,
-            .totalFileAllocatedSizeKey,
             .contentModificationDateKey,
             .fileSecurityKey,
+            .directoryEntryCountKey,
             .creationDateKey,
             .contentAccessDateKey,
             .addedToDirectoryDateKey,
-            .directoryEntryCountKey,
         ]
 
         private static let prefetchKeySet = Set(prefetchKeys)
@@ -38,7 +40,7 @@
         /// Safe to call from any thread (no UI access).
         static func scan(url: URL, showHiddenFiles: Bool = false) throws -> [CustomFile] {
             let startTime = CFAbsoluteTimeGetCurrent()
-            log.info("[FileScanner] scan START: \(url.path)")
+            log.debug("[FileScanner] scan: \(url.path)")
 
             let fileManager = FileManager.default
 
@@ -101,14 +103,11 @@
                     file = CustomFile(name: fileURL.lastPathComponent, path: fileURL.path)
                 }
 
-                // Deferred metadata loading was moved out of scan() to keep this function
-                // concurrency-safe under Swift 6 strict checking.
-                // scan() now performs only fast, deterministic model creation.
                 result.append(file)
             }
 
             let elapsed = CFAbsoluteTimeGetCurrent() - startTime
-            log.info("[FileScanner] scan DONE: \(result.count) items in \(String(format: "%.3f", elapsed))s")
+            log.debug("[FileScanner] scan done: \(result.count) items in \(String(format: "%.3f", elapsed))s")
             return result
         }
 
@@ -122,7 +121,7 @@
             onBatch: ([CustomFile]) -> Void
         ) throws {
 
-            log.info("[FileScanner] incremental scan START: \(url.path)")
+            log.debug("[FileScanner] incremental scan: \(url.path)")
 
             let fileManager = FileManager.default
 
@@ -162,29 +161,24 @@
                 }
 
                 if batch.count >= batchSize {
-                    // Progressive sort so UI receives partially ordered results
                     batch.sort { (a: CustomFile, b: CustomFile) -> Bool in
-                        let an = a.urlValue.lastPathComponent
-                        let bn = b.urlValue.lastPathComponent
-                        return an.localizedStandardCompare(bn) == .orderedAscending
+                        a.urlValue.lastPathComponent
+                            .localizedStandardCompare(b.urlValue.lastPathComponent) == .orderedAscending
                     }
-
                     onBatch(batch)
                     batch.removeAll(keepingCapacity: true)
                 }
             }
 
             if !batch.isEmpty {
-                // Sort the final partial batch as well
                 batch.sort { (a: CustomFile, b: CustomFile) -> Bool in
-                    let an = a.urlValue.lastPathComponent
-                    let bn = b.urlValue.lastPathComponent
-                    return an.localizedStandardCompare(bn) == .orderedAscending
+                    a.urlValue.lastPathComponent
+                        .localizedStandardCompare(b.urlValue.lastPathComponent) == .orderedAscending
                 }
                 onBatch(batch)
             }
 
-            log.info("[FileScanner] incremental scan DONE")
+            log.debug("[FileScanner] incremental scan done")
         }
 
         // MARK: - Deferred metadata helpers
@@ -193,7 +187,6 @@
         /// Uses OS-level directoryEntryCountKey (single VFS call, no enumeration).
         /// Falls back to contentsOfDirectory only if the OS key is unavailable.
         static func directoryChildCount(at url: URL, showHiddenFiles: Bool = false) -> Int {
-            // Prefer OS-cached value — no directory enumeration needed
             if let rv = try? url.resourceValues(forKeys: [.directoryEntryCountKey]),
                 let count = rv.directoryEntryCount
             {
@@ -202,21 +195,17 @@
             // Fallback for filesystems that don't support directoryEntryCountKey
             let fm = FileManager()
             let options: FileManager.DirectoryEnumerationOptions = showHiddenFiles ? [] : [.skipsHiddenFiles]
-            return
-                (try? fm.contentsOfDirectory(
-                    at: url,
-                    includingPropertiesForKeys: nil,
-                    options: options
-                )
-                .count) ?? 0
+            return (try? fm.contentsOfDirectory(
+                at: url,
+                includingPropertiesForKeys: nil,
+                options: options
+            ).count) ?? 0
         }
 
         /// Computes recursive size for an .app bundle or any directory URL.
-        /// This pure helper can be executed on a background queue by the caller,
-        /// while model mutation stays on the owning side.
+        /// Pure helper — safe to call on a background queue.
         static func directorySize(at url: URL) -> Int64 {
-            let fm = FileManager()
-            return recursiveSize(url: url, fileManager: fm)
+            return recursiveSize(url: url, fileManager: FileManager())
         }
 
         // MARK: - Recursive byte size of a directory (used for .app bundles)
