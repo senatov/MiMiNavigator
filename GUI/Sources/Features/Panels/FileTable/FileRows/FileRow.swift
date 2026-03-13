@@ -162,9 +162,9 @@
             }
             let isOdd = index % 2 == 1
             if isActivePanel {
-                // Active panel: warm yellow base, visible zebra stripe
-                let evenColor = Color(red: 1.0, green: 0.99, blue: 0.93)
-                let oddColor  = Color(red: 0.99, green: 0.96, blue: 0.86)
+                // Active panel: subtle warm yellow zebra
+                let evenColor = Color(red: 1.0, green: 0.993, blue: 0.953)
+                let oddColor  = Color(red: 0.993, green: 0.973, blue: 0.907)
                 return AnyView(
                     (isOdd ? oddColor : evenColor)
                         .allowsHitTesting(false))

@@ -101,7 +101,7 @@ extension ColorTheme {
         columnChildCountColor:  Color(red: 0.30, green: 0.20, blue: 0.10),
         dividerNormalColor:  Color(red: 0.42, green: 0.42, blue: 0.46, opacity: 0.55),
         dividerActiveColor:  Color(red: 0.22, green: 0.01, blue: 0.85, opacity: 0.90),
-        panelBorderActive:   Color(red: 0.50, green: 0.50, blue: 0.55, opacity: 0.55),
+        panelBorderActive:   Color(red: 0.10, green: 0.15, blue: 0.58, opacity: 0.72),
         panelBorderInactive: Color(red: 0.45, green: 0.45, blue: 0.50, opacity: 0.38),
         warmWhite:           Color(red: 0.97, green: 0.97, blue: 0.95, opacity: 0.91),
         filterActiveColor:   Color(red: 0.25, green: 0.55, blue: 1.0, opacity: 0.8),
