@@ -96,10 +96,15 @@
             for fileURL in contents {
                 let file: CustomFile
 
-                if let rv = try? fileURL.resourceValues(forKeys: prefetchKeySet) {
+                if let rv = try? fileURL.resourceValues(forKeys: prefetchKeySet),
+                   rv.fileSecurity != nil || rv.contentModificationDate != nil
+                {
+                    // Batch-prefetched resource values are valid — fast path
                     file = CustomFile(url: fileURL, resourceValues: rv)
                 } else {
-                    // Fallback if resource values unexpectedly fail
+                    // Batch-prefetch returned empty values (common for symlinks into
+                    // CloudStorage / File Provider paths and sometimes regular files
+                    // on APFS). Fall back to path-based attributesOfItem which always works.
                     file = CustomFile(name: fileURL.lastPathComponent, path: fileURL.path)
                 }
 
@@ -151,7 +156,9 @@
                     let fileName = fileURL.lastPathComponent
 
                     let file: CustomFile
-                    if let rv = try? fileURL.resourceValues(forKeys: prefetchKeySet) {
+                    if let rv = try? fileURL.resourceValues(forKeys: prefetchKeySet),
+                       rv.fileSecurity != nil || rv.contentModificationDate != nil
+                    {
                         file = CustomFile(url: fileURL, resourceValues: rv)
                     } else {
                         file = CustomFile(name: fileName, path: fileURL.path)
