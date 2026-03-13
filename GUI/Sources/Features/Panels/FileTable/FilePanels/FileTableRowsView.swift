@@ -44,7 +44,8 @@
 
                     EquatableRow(
                         id: file.id,
-                        isSelected: isSelected
+                        isSelected: isSelected,
+                        isParent: file.isParentEntry
                     ) {
 
                         if file.isParentEntry {
@@ -98,6 +99,7 @@
     struct EquatableRow<Content: View>: View, Equatable {
         let id: CustomFile.ID
         let isSelected: Bool
+        var isParent: Bool = false
         @ViewBuilder let content: () -> Content
 
         nonisolated static func == (lhs: Self, rhs: Self) -> Bool {
@@ -109,9 +111,9 @@
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .contentShape(Rectangle())
                 .background(
-                    isSelected
-                        ? Color.accentColor.opacity(0.20)
-                        : Color.clear
+                    isParent
+                        ? Color.clear   // ParentDirectoryRow manages its own background + border
+                        : (isSelected ? Color.accentColor.opacity(0.20) : Color.clear)
                 )
         }
     }
