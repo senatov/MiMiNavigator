@@ -42,7 +42,6 @@
 
             let fileManager = FileManager.default
 
-
             if !fileManager.isReadableFile(atPath: url.path) {
                 log.warning("[FileScanner] path not readable, will attempt contentsOfDirectory: \(url.path)")
                 // Don't throw — a parent security-scoped bookmark may still grant access.
@@ -113,7 +112,6 @@
             return result
         }
 
-
         /// Incremental directory scan.
         /// Yields files in batches so the UI can display results progressively.
         /// Useful for very large directories (10k+ files) to avoid blocking UI.
@@ -130,50 +128,38 @@
 
             let isVolumePath = url.path.hasPrefix("/Volumes/") && url.path != "/Volumes"
             let effectiveShowHidden = showHiddenFiles || isVolumePath
-            let options: FileManager.DirectoryEnumerationOptions = effectiveShowHidden ? [] : [.skipsHiddenFiles]
+            let options: FileManager.DirectoryEnumerationOptions = effectiveShowHidden
+                ? [.skipsSubdirectoryDescendants, .skipsPackageDescendants]
+                : [.skipsHiddenFiles, .skipsSubdirectoryDescendants, .skipsPackageDescendants]
 
-            guard let enumerator = fileManager.enumerator(
-                at: url,
-                includingPropertiesForKeys: prefetchKeys,
-                options: options
-            ) else {
+            guard
+                let enumerator = fileManager.enumerator(
+                    at: url,
+                    includingPropertiesForKeys: prefetchKeys,
+                    options: options
+                )
+            else {
                 log.error("[FileScanner] incremental enumerator FAILED")
                 return
             }
-
-            // Limit parallel metadata warm-up tasks
-            let metadataLimiter = DispatchSemaphore(value: 4)
 
             var batch: [CustomFile] = []
             batch.reserveCapacity(batchSize)
 
             for case let fileURL as URL in enumerator {
-                if Task.isCancelled { break }
-                let fileName = fileURL.lastPathComponent
+                autoreleasepool {
+                    if Task.isCancelled { return }
+                    let fileName = fileURL.lastPathComponent
 
-                let file: CustomFile
-                if let rv = try? fileURL.resourceValues(forKeys: prefetchKeySet) {
-                    file = CustomFile(url: fileURL, resourceValues: rv)
-                } else {
-                    file = CustomFile(name: fileName, path: fileURL.path)
+                    let file: CustomFile
+                    if let rv = try? fileURL.resourceValues(forKeys: prefetchKeySet) {
+                        file = CustomFile(url: fileURL, resourceValues: rv)
+                    } else {
+                        file = CustomFile(name: fileName, path: fileURL.path)
+                    }
+
+                    batch.append(file)
                 }
-
-                // Parallel metadata warm-up (UTType / localized type description).
-                // Runs asynchronously so the main scan loop stays fast.
-                // This helps icons and type information appear sooner without blocking UI.
-                metadataLimiter.wait()
-                Task.detached(priority: .utility) {
-                    defer { metadataLimiter.signal() }
-                    _ = try? fileURL.resourceValues(forKeys: [
-                        .typeIdentifierKey,
-                        .localizedTypeDescriptionKey
-                    ])
-                }
-
-                batch.append(file)
-
-                // Prevent recursive traversal – we only want immediate children
-                enumerator.skipDescendants()
 
                 if batch.count >= batchSize {
                     // Progressive sort so UI receives partially ordered results
@@ -209,17 +195,20 @@
         static func directoryChildCount(at url: URL, showHiddenFiles: Bool = false) -> Int {
             // Prefer OS-cached value — no directory enumeration needed
             if let rv = try? url.resourceValues(forKeys: [.directoryEntryCountKey]),
-               let count = rv.directoryEntryCount {
+                let count = rv.directoryEntryCount
+            {
                 return count
             }
             // Fallback for filesystems that don't support directoryEntryCountKey
             let fm = FileManager()
             let options: FileManager.DirectoryEnumerationOptions = showHiddenFiles ? [] : [.skipsHiddenFiles]
-            return (try? fm.contentsOfDirectory(
-                at: url,
-                includingPropertiesForKeys: nil,
-                options: options
-            ).count) ?? 0
+            return
+                (try? fm.contentsOfDirectory(
+                    at: url,
+                    includingPropertiesForKeys: nil,
+                    options: options
+                )
+                .count) ?? 0
         }
 
         /// Computes recursive size for an .app bundle or any directory URL.

@@ -375,27 +375,23 @@
                     continue
                 }
                 do {
-                    // Scan off MainActor
-                    let scanned = try await Task.detached(priority: .userInitiated) {
-                        try FileScanner.scan(url: url, showHiddenFiles: showHidden)
+                    // Scan + sort in a single background task to reduce task overhead
+                    let (scanned, sorted) = try await Task.detached(priority: .userInitiated) {
+                        let scanned = try FileScanner.scan(url: url, showHiddenFiles: showHidden)
+                        let sorted = FileSortingService.sort(scanned, by: sortKey, bDirection: sortAsc)
+                        return (scanned, sorted)
                     }.value
 
-                    // Progressive UI update: show first items immediately for huge directories
-                    if scanned.count > 150 {
-                        let preview = Array(scanned.prefix(150))
-                        let previewSorted = FileSortingService.sort(preview, by: sortKey, bDirection: sortAsc)
+                    // Progressive UI update for very large directories
+                    if sorted.count > 150 {
+                        let preview = Array(sorted.prefix(150))
                         await MainActor.run {
                             switch currSide {
-                            case .left: appState.displayedLeftFiles = previewSorted
-                            case .right: appState.displayedRightFiles = previewSorted
+                            case .left: appState.displayedLeftFiles = preview
+                            case .right: appState.displayedRightFiles = preview
                             }
                         }
                     }
-
-                    // Full sort off MainActor
-                    let sorted = try await Task.detached(priority: .userInitiated) {
-                        FileSortingService.sort(scanned, by: sortKey, bDirection: sortAsc)
-                    }.value
 
                     // Ignore stale scan results if a newer navigation started
                     if scanGeneration[currSide] != generation {

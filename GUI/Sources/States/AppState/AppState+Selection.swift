@@ -13,6 +13,7 @@ import Foundation
 extension AppState {
 
     func select(_ file: CustomFile, on panelSide: PanelSide) {
+        log.debug(#function)
         selectionManager?.select(file, on: panelSide)
     }
 

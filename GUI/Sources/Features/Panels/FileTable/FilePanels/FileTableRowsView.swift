@@ -22,32 +22,95 @@
         var body: some View {
             let currentSelectedID = selectedID  // Capture once to avoid repeated Binding access
             LazyVStack(alignment: .leading, spacing: 0) {
-                ForEach(rows.indices, id: \.self) { i in
+                ForEach(Array(rows.indices), id: \.self) { i in
                     let file = rows[i]
-                    let isSelected = currentSelectedID == file.id
+
+                    // Keyboard navigation sometimes represents the ".." selection as nil
+                    // (because it is a synthetic entry and not a real file in the model).
+                    // We therefore treat the parent row as selected if selectedID is nil
+                    // and this row is the parent entry.
+                    let parentSelectedByKeyboard =
+                        file.isParentEntry &&
+                        currentSelectedID == file.urlValue.standardizedFileURL.path
+
+                    let isSelected =
+                        currentSelectedID == file.id ||
+                        parentSelectedByKeyboard
+
+                    // DEBUG logging for selection state (temporary, remove after debugging)
+                    let _ = {
+                        if file.isParentEntry {
+                            print(
+                                "[FileTableRowsView] parentRow",
+                                "file.id=\(file.id)",
+                                "selectedID=\(String(describing: currentSelectedID))",
+                                "parentSelectedByKeyboard=\(parentSelectedByKeyboard)",
+                                "isSelected=\(isSelected)"
+                            )
+                        }
+                    }()
 
                     EquatableRow(
                         id: file.id,
                         isSelected: isSelected
                     ) {
 
+                        Group {
+
                         // Parent directory entry: render as full-width navigation row
                         if file.isParentEntry {
 
-                            HStack(spacing: 10) {
+                            let parentName = file.urlValue.lastPathComponent.isEmpty
+                                ? file.urlValue.path
+                                : file.urlValue.lastPathComponent
+                            let visibleItemCount = max(rows.count - 1, 0)
+                            let parentSizeText: String = {
+                                if let values = try? file.urlValue.resourceValues(forKeys: [.fileAllocatedSizeKey, .totalFileAllocatedSizeKey]),
+                                   let size = values.totalFileAllocatedSize ?? values.fileAllocatedSize
+                                {
+                                    let formatter = ByteCountFormatter()
+                                    formatter.countStyle = .file
+                                    return formatter.string(fromByteCount: Int64(size))
+                                }
+                                return ""
+                            }()
+
+                            HStack(spacing: 8) {
                                 Image(systemName: "arrowshape.turn.up.left.fill")
                                     .frame(width: 16, height: 16)
+                                    .foregroundStyle(isSelected ? .primary : .secondary)
+
+                                Text("..")
+                                    .font(.system(size: 13, weight: .semibold))
+                                    .foregroundStyle(.primary)
+
+                                Text(parentName)
+                                    .font(.system(size: 13, weight: .semibold))
+                                    .foregroundStyle(.primary)
+                                    .lineLimit(1)
+                                    .padding(.leading, 4)
+
+                                Text("(\(visibleItemCount))")
+                                    .font(.system(size: 12, weight: .regular))
                                     .foregroundStyle(.secondary)
 
-                                Text(file.nameStr)
-                                    .font(.system(size: 14, weight: .semibold))
-                                    .lineLimit(1)
+                                if !parentSizeText.isEmpty {
+                                    Text(parentSizeText)
+                                        .font(.system(size: 12, weight: .regular))
+                                        .foregroundStyle(.secondary)
+                                }
 
                                 Spacer(minLength: 0)
                             }
                             .padding(.horizontal, 10)
-                            .padding(.vertical, 3)
-                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .frame(maxWidth: .infinity, minHeight: 22, alignment: .leading)
+                            .background(
+                                isSelected ? Color.accentColor.opacity(0.28) : Color.clear
+                            )
+                            .overlay(
+                                Rectangle()
+                                    .stroke(isSelected ? Color.accentColor.opacity(0.70) : Color.clear, lineWidth: 1)
+                            )
                             .contentShape(Rectangle())
                             .onTapGesture {
                                 onSelect(file)
@@ -70,6 +133,7 @@
                                 onMultiSelectionAction: handleMultiSelectionAction
                             )
                             .frame(maxWidth: .infinity, alignment: .leading)
+                        }
                         }
                     }
                 }
@@ -94,8 +158,8 @@
                 .contentShape(Rectangle())
                 .background(
                     isSelected
-                    ? Color.accentColor.opacity(0.20)
-                    : Color.clear
+                        ? Color.accentColor.opacity(0.20)
+                        : Color.clear
                 )
         }
     }

@@ -109,7 +109,7 @@
             // Protect against rare race conditions where the file list changes
             // between computing the index and accessing the array.
             guard files.indices.contains(index) else { return }
-
+            log.debug(#function)
             let t0 = Date()
             let file = files[index]
             selectedID.wrappedValue = file.id
