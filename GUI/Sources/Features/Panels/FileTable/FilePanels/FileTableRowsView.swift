@@ -83,30 +83,36 @@
             // Avoid expensive filesystem metadata calls during list rendering.
             let parentSizeText: String = ""
 
-            let clrBlue  = Color(#colorLiteral(red: 0.20, green: 0.40, blue: 0.75, alpha: 1))
-            let clrBg    = Color(#colorLiteral(red: 1.0,  green: 0.98, blue: 0.82, alpha: 1))
-            let clrBgSel = Color(#colorLiteral(red: 0.95, green: 0.90, blue: 0.60, alpha: 1))
-            HStack(spacing: 6) {
+            let clrBlue   = Color(#colorLiteral(red: 0.10, green: 0.30, blue: 0.65, alpha: 1))
+            let clrBorder = Color(#colorLiteral(red: 0.10, green: 0.30, blue: 0.65, alpha: 0.45))
+            let clrBg     = Color(#colorLiteral(red: 1.0,  green: 0.98, blue: 0.82, alpha: 1))
+            let clrBgSel  = Color(#colorLiteral(red: 0.95, green: 0.90, blue: 0.60, alpha: 1))
+            HStack(spacing: 8) {
                 Image(systemName: "arrowshape.turn.up.left.fill")
                     .resizable()
-                    .frame(width: 12, height: 11)
+                    .frame(width: 14, height: 13)
                     .foregroundStyle(clrBlue)
                 Text("..")
-                    .font(.system(size: 11, weight: .light))
+                    .font(.system(size: 13, weight: .regular))
                     .foregroundStyle(clrBlue)
                 Text(parentName)
-                    .font(.system(size: 11, weight: .light))
+                    .font(.system(size: 13, weight: .regular))
                     .foregroundStyle(clrBlue)
                     .lineLimit(1)
                 Text("(\(visibleItemCount))")
-                    .font(.system(size: 10, weight: .ultraLight))
-                    .foregroundStyle(clrBlue.opacity(0.7))
+                    .font(.system(size: 12, weight: .light))
+                    .foregroundStyle(clrBlue.opacity(0.75))
                 Spacer(minLength: 0)
             }
             .padding(.horizontal, 10)
-            .padding(.vertical, 3)
-            .frame(maxWidth: .infinity, minHeight: 22, alignment: .leading)
+            .padding(.vertical, 5)
+            .frame(maxWidth: .infinity, minHeight: 28, alignment: .leading)
             .background(isSelected ? clrBgSel : clrBg)
+            .overlay(alignment: .bottom) {
+                Rectangle()
+                    .fill(clrBorder)
+                    .frame(height: 1)
+            }
             .contentShape(Rectangle())
             .onTapGesture {
                 onSelect(file)
