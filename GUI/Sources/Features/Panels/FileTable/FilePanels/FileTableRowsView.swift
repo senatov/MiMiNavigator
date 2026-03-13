@@ -22,7 +22,9 @@
         var body: some View {
             let currentSelectedID = selectedID  // Capture once to avoid repeated Binding access
             LazyVStack(alignment: .leading, spacing: 0) {
-                ForEach(Array(rows.indices), id: \.self) { i in
+                // Avoid allocating a new Array for large directories (10k+ items).
+                // `rows.indices` is already a RandomAccessCollection and works directly with ForEach.
+                ForEach(rows.indices, id: \.self) { i in
                     let file = rows[i]
 
                     // Keyboard navigation sometimes represents the ".." selection as nil
@@ -37,108 +39,104 @@
                         currentSelectedID == file.id ||
                         parentSelectedByKeyboard
 
-                    // DEBUG logging for selection state (temporary, remove after debugging)
-                    let _ = {
-                        if file.isParentEntry {
-                            print(
-                                "[FileTableRowsView] parentRow",
-                                "file.id=\(file.id)",
-                                "selectedID=\(String(describing: currentSelectedID))",
-                                "parentSelectedByKeyboard=\(parentSelectedByKeyboard)",
-                                "isSelected=\(isSelected)"
-                            )
-                        }
-                    }()
+                    // Debug logging removed: printing inside SwiftUI row rendering
+                    // causes significant slowdown when directories contain thousands of files.
 
                     EquatableRow(
                         id: file.id,
                         isSelected: isSelected
                     ) {
 
-                        Group {
-
-                        // Parent directory entry: render as full-width navigation row
                         if file.isParentEntry {
-
-                            let parentName = file.urlValue.lastPathComponent.isEmpty
-                                ? file.urlValue.path
-                                : file.urlValue.lastPathComponent
-                            let visibleItemCount = max(rows.count - 1, 0)
-                            let parentSizeText: String = {
-                                if let values = try? file.urlValue.resourceValues(forKeys: [.fileAllocatedSizeKey, .totalFileAllocatedSizeKey]),
-                                   let size = values.totalFileAllocatedSize ?? values.fileAllocatedSize
-                                {
-                                    let formatter = ByteCountFormatter()
-                                    formatter.countStyle = .file
-                                    return formatter.string(fromByteCount: Int64(size))
-                                }
-                                return ""
-                            }()
-
-                            HStack(spacing: 8) {
-                                Image(systemName: "arrowshape.turn.up.left.fill")
-                                    .frame(width: 16, height: 16)
-                                    .foregroundStyle(isSelected ? .primary : .secondary)
-
-                                Text("..")
-                                    .font(.system(size: 13, weight: .semibold))
-                                    .foregroundStyle(.primary)
-
-                                Text(parentName)
-                                    .font(.system(size: 13, weight: .semibold))
-                                    .foregroundStyle(.primary)
-                                    .lineLimit(1)
-                                    .padding(.leading, 4)
-
-                                Text("(\(visibleItemCount))")
-                                    .font(.system(size: 12, weight: .regular))
-                                    .foregroundStyle(.secondary)
-
-                                if !parentSizeText.isEmpty {
-                                    Text(parentSizeText)
-                                        .font(.system(size: 12, weight: .regular))
-                                        .foregroundStyle(.secondary)
-                                }
-
-                                Spacer(minLength: 0)
-                            }
-                            .padding(.horizontal, 10)
-                            .frame(maxWidth: .infinity, minHeight: 22, alignment: .leading)
-                            .background(
-                                isSelected ? Color.accentColor.opacity(0.28) : Color.clear
-                            )
-                            .overlay(
-                                Rectangle()
-                                    .stroke(isSelected ? Color.accentColor.opacity(0.70) : Color.clear, lineWidth: 1)
-                            )
-                            .contentShape(Rectangle())
-                            .onTapGesture {
-                                onSelect(file)
-                            }
-                            .onTapGesture(count: 2) {
-                                onDoubleClick(file)
-                            }
-
-                        } else {
-                            FileRow(
-                                index: i,
+                            parentRowView(
                                 file: file,
                                 isSelected: isSelected,
-                                panelSide: panelSide,
-                                layout: layout,
-                                onSelect: onSelect,
-                                onDoubleClick: onDoubleClick,
-                                onFileAction: handleFileAction,
-                                onDirectoryAction: handleDirectoryAction,
-                                onMultiSelectionAction: handleMultiSelectionAction
+                                rowsCount: rows.count
                             )
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                        }
+                        } else {
+                            fileRowView(
+                                index: i,
+                                file: file,
+                                isSelected: isSelected
+                            )
                         }
                     }
                 }
             }
             .transaction { $0.disablesAnimations = true }  // Disable animations for large lists
+        }
+
+        // MARK: - Parent row renderer (kept outside body for clarity and logging)
+        @ViewBuilder
+        private func parentRowView(
+            file: CustomFile,
+            isSelected: Bool,
+            rowsCount: Int
+        ) -> some View {
+
+            let parentName = file.urlValue.lastPathComponent.isEmpty
+                ? file.urlValue.path
+                : file.urlValue.lastPathComponent
+
+            let visibleItemCount = max(rowsCount - 1, 0)
+
+            // Avoid expensive filesystem metadata calls during list rendering.
+            let parentSizeText: String = ""
+
+            let clrBlue  = Color(#colorLiteral(red: 0.20, green: 0.40, blue: 0.75, alpha: 1))
+            let clrBg    = Color(#colorLiteral(red: 1.0,  green: 0.98, blue: 0.82, alpha: 1))
+            let clrBgSel = Color(#colorLiteral(red: 0.95, green: 0.90, blue: 0.60, alpha: 1))
+            HStack(spacing: 6) {
+                Image(systemName: "arrowshape.turn.up.left.fill")
+                    .resizable()
+                    .frame(width: 12, height: 11)
+                    .foregroundStyle(clrBlue)
+                Text("..")
+                    .font(.system(size: 11, weight: .light))
+                    .foregroundStyle(clrBlue)
+                Text(parentName)
+                    .font(.system(size: 11, weight: .light))
+                    .foregroundStyle(clrBlue)
+                    .lineLimit(1)
+                Text("(\(visibleItemCount))")
+                    .font(.system(size: 10, weight: .ultraLight))
+                    .foregroundStyle(clrBlue.opacity(0.7))
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 3)
+            .frame(maxWidth: .infinity, minHeight: 22, alignment: .leading)
+            .background(isSelected ? clrBgSel : clrBg)
+            .contentShape(Rectangle())
+            .onTapGesture {
+                onSelect(file)
+            }
+            .onTapGesture(count: 2) {
+                onDoubleClick(file)
+            }
+        }
+
+        // MARK: - File row renderer
+        @ViewBuilder
+        private func fileRowView(
+            index: Int,
+            file: CustomFile,
+            isSelected: Bool
+        ) -> some View {
+
+            FileRow(
+                index: index,
+                file: file,
+                isSelected: isSelected,
+                panelSide: panelSide,
+                layout: layout,
+                onSelect: onSelect,
+                onDoubleClick: onDoubleClick,
+                onFileAction: handleFileAction,
+                onDirectoryAction: handleDirectoryAction,
+                onMultiSelectionAction: handleMultiSelectionAction
+            )
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 
