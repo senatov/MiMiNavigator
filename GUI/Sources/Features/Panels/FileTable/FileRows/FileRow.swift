@@ -160,17 +160,20 @@
                     Color(nsColor: .systemGray).opacity(0.13)
                         .allowsHitTesting(false))
             }
+            let isOdd = index % 2 == 1
             if isActivePanel {
-                // Active panel: warm white base with subtle zebra stripe
-                let isOdd = index % 2 == 1
+                // Active panel: warm yellow base, visible zebra stripe
+                let evenColor = Color(red: 1.0, green: 0.99, blue: 0.93)
+                let oddColor  = Color(red: 0.99, green: 0.96, blue: 0.86)
                 return AnyView(
-                    DesignTokens.warmWhite
-                        .overlay(Color.black.opacity(isOdd ? 0.02 : 0))
+                    (isOdd ? oddColor : evenColor)
                         .allowsHitTesting(false))
             }
-            let zebraColors = NSColor.alternatingContentBackgroundColors
+            // Inactive panel: neutral warm grey zebra, slightly more contrast than system default
+            let evenColor = Color(red: 0.96, green: 0.96, blue: 0.95)
+            let oddColor  = Color(red: 0.92, green: 0.92, blue: 0.91)
             return AnyView(
-                Color(nsColor: zebraColors[index % zebraColors.count])
+                (isOdd ? oddColor : evenColor)
                     .allowsHitTesting(false))
         }
 
