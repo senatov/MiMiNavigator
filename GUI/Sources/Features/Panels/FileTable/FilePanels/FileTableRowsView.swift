@@ -30,19 +30,47 @@
                         id: file.id,
                         isSelected: isSelected
                     ) {
-                        FileRow(
-                            index: i,
-                            file: file,
-                            isSelected: isSelected,
-                            panelSide: panelSide,
-                            layout: layout,
-                            onSelect: onSelect,
-                            onDoubleClick: onDoubleClick,
-                            onFileAction: handleFileAction,
-                            onDirectoryAction: handleDirectoryAction,
-                            onMultiSelectionAction: handleMultiSelectionAction
-                        )
-                        .frame(maxWidth: .infinity, alignment: .leading)
+
+                        // Parent directory entry: render as full-width navigation row
+                        if file.isParentEntry {
+
+                            HStack(spacing: 10) {
+                                Image(systemName: "arrowshape.turn.up.left.fill")
+                                    .frame(width: 16, height: 16)
+                                    .foregroundStyle(.secondary)
+
+                                Text(file.nameStr)
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .lineLimit(1)
+
+                                Spacer(minLength: 0)
+                            }
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 3)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                onSelect(file)
+                            }
+                            .onTapGesture(count: 2) {
+                                onDoubleClick(file)
+                            }
+
+                        } else {
+                            FileRow(
+                                index: i,
+                                file: file,
+                                isSelected: isSelected,
+                                panelSide: panelSide,
+                                layout: layout,
+                                onSelect: onSelect,
+                                onDoubleClick: onDoubleClick,
+                                onFileAction: handleFileAction,
+                                onDirectoryAction: handleDirectoryAction,
+                                onMultiSelectionAction: handleMultiSelectionAction
+                            )
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        }
                     }
                 }
             }
@@ -54,7 +82,7 @@
     struct EquatableRow<Content: View>: View, Equatable {
         let id: CustomFile.ID
         let isSelected: Bool
-        let content: () -> Content
+        @ViewBuilder let content: () -> Content
 
         nonisolated static func == (lhs: Self, rhs: Self) -> Bool {
             lhs.id == rhs.id && lhs.isSelected == rhs.isSelected
@@ -62,5 +90,12 @@
 
         var body: some View {
             content()
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(Rectangle())
+                .background(
+                    isSelected
+                    ? Color.accentColor.opacity(0.20)
+                    : Color.clear
+                )
         }
     }

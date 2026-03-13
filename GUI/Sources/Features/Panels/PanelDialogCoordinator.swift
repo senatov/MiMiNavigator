@@ -23,8 +23,8 @@
     final class PanelDialogCoordinator: NSObject, NSWindowDelegate {
 
         // MARK: - Shared instances
-        static let history   = PanelDialogCoordinator(kind: .history,   title: "Navigation History",  size: NSSize(width: 540, height: 600))
-        static let favorites = PanelDialogCoordinator(kind: .favorites, title: "Favorites",            size: NSSize(width: 480, height: 700))
+        static let history   = PanelDialogCoordinator(kind: .history,   title: "Navigation History",  size: NSSize(width: 620, height: 640))
+        static let favorites = PanelDialogCoordinator(kind: .favorites, title: "Favorites",            size: NSSize(width: 540, height: 720))
 
         // MARK: - State
         private(set) var isVisible = false
@@ -57,8 +57,6 @@
 
             let hostingView = NSHostingView(
                 rootView: content
-                    // Use a smaller, sharper system font for panel content (better readability for history/breadcrumb lists)
-                    .font(.system(size: 11, weight: .medium, design: .default))
             )
 
             let newPanel = NSPanel(
@@ -72,15 +70,16 @@
             newPanel.isOpaque = false
             newPanel.backgroundColor = .windowBackgroundColor
             newPanel.isReleasedWhenClosed = false
-            newPanel.minSize = NSSize(width: 380, height: 300)
+            newPanel.minSize = NSSize(width: 420, height: 360)
             newPanel.titlebarAppearsTransparent = false
             newPanel.titleVisibility = .visible
             newPanel.toolbarStyle = .unified
-            newPanel.animationBehavior = .utilityWindow
+            newPanel.animationBehavior = .default
             newPanel.isMovableByWindowBackground = true
-            newPanel.hidesOnDeactivate = true
-            newPanel.level = .floating
+            newPanel.hidesOnDeactivate = false // Window must stay visible; user closes it manually
+            newPanel.level = .normal
             newPanel.tabbingMode = .disallowed
+            newPanel.becomesKeyOnlyIfNeeded = true
             newPanel.delegate = self
 
             // Restore frame or compute centered default

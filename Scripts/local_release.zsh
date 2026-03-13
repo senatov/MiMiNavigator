@@ -2,32 +2,34 @@
 
 set -e
 
-cd ~/Develop/MiMiNavigator
+Scripts/refreshVersionFile.zsh
 
-git add .
-git commit -m "build update"
-git push
+BUILD=/tmp/mimi_build
+DMG=/tmp/MiMiNavigator.dmg
+
+rm -rf $BUILD
 
 xcodebuild \
 -project MiMiNavigator.xcodeproj \
 -scheme MiMiNavigator \
 -configuration Release \
--derivedDataPath build
+-derivedDataPath $BUILD \
+build
 
-APP="build/Build/Products/Release/MiMiNavigator.app"
+APP="$BUILD/Build/Products/Release/MiMiNavigator.app"
 
 xattr -cr "$APP"
 
-mkdir -p dmg
-rm -rf dmg/*
-cp -R "$APP" dmg/
+TMP=/tmp/mimi_dmg
+rm -rf $TMP
+mkdir $TMP
+cp -R "$APP" $TMP/
 
 hdiutil create \
 -volname "MiMiNavigator" \
--srcfolder dmg \
+-srcfolder $TMP \
 -ov \
 -format UDZO \
-MiMiNavigator.dmg
+$DMG
 
-echo "DMG created:"
-ls -lh MiMiNavigator.dmg
+echo "DMG created: $DMG"

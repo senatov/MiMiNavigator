@@ -36,6 +36,12 @@
         // MARK: - Guard against overlapping scans (critical for 26K+ dirs)
         private var scanInProgress: [PanelSide: Bool] = [.left: false, .right: false]
 
+        // MARK: - Scan task tracking for cancellation (navigation priority)
+        private var activeScanTask: [PanelSide: Task<Void, Never>?] = [.left: nil, .right: nil]
+
+        // Generation token to prevent stale scans from overriding newer navigation
+        private var scanGeneration: [PanelSide: Int] = [.left: 0, .right: 0]
+
         // Prevent back‑to‑back full scans (navigation + timer firing)
         private var lastFullScan: [PanelSide: Date] = [:]
         private let scanCooldown: TimeInterval = 3
@@ -260,9 +266,20 @@
             await refreshFiles(currSide: side)
         }
 
+        // MARK: - Cancel running scan (used by navigation like "..")
+        func cancelScan(for side: PanelSide) {
+            if let task = activeScanTask[side] ?? nil {
+                task.cancel()
+            }
+            activeScanTask[side] = nil
+            scanInProgress[side] = false
+            log.debug("[Scanner] Cancelled scan for \(side)")
+        }
+
         // MARK: - Full refresh (used by timer safety net and explicit navigation)
         @Sendable
         func refreshFiles(currSide: PanelSide) async {
+            if Task.isCancelled { return }
             // Guard: skip if a scan is already running for this panel
             guard scanInProgress[currSide] != true else {
                 return
@@ -274,9 +291,39 @@
             {
                 return
             }
-            scanInProgress[currSide] = true
-            defer { scanInProgress[currSide] = false }
+            // cancel any previous scan for this panel
+            if let task = activeScanTask[currSide] ?? nil {
+                task.cancel()
+            }
 
+            // Increment generation so older scans cannot override newer navigation
+            scanGeneration[currSide, default: 0] += 1
+            let generation = scanGeneration[currSide] ?? 0
+
+            scanInProgress[currSide] = true
+            log.debug("[Scan] Starting scan side=\(currSide)")
+            activeScanTask[currSide] = Task { [weak self] in
+                guard let self else { return }
+                defer {
+                    Task { await self.finishScan(for: currSide) }
+                }
+
+                await self.performRefreshFiles(currSide: currSide, generation: generation)
+            }
+            if let task = activeScanTask[currSide] ?? nil {
+                await task.value
+            }
+            return
+        }
+
+        private func finishScan(for side: PanelSide) {
+            scanInProgress[side] = false
+            activeScanTask[side] = nil
+            log.debug("[Scan] Finished scan side=\(side)")
+        }
+
+        private func performRefreshFiles(currSide: PanelSide, generation: Int) async {
+            let scanStart = Date()
             let (url, showHidden, sortKey, sortAsc): (URL, Bool, SortKeysEnum, Bool) = await MainActor.run {
                 let u = currSide == .left ? appState.leftURL : appState.rightURL
                 let h = UserPreferences.shared.snapshot.showHiddenFiles
@@ -316,26 +363,49 @@
             }()
             for (index, url) in urlsToTry.enumerated() {
                 log.info("[Scan] Attempt \(index + 1)/\(urlsToTry.count): \(url.path)")
-                // Guard: ensure the candidate resolves to a real directory
-                var isDirectory: ObjCBool = false
-                let exists = FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory)
-                guard exists else {
-                    log.error("[DualDirectoryScanner] refreshFiles path does not exist: \(url.path)")
-                    continue
-                }
-                guard isDirectory.boolValue else {
-                    log.error("[DualDirectoryScanner] refreshFiles received FILE instead of directory: \(url.path)")
+                // macOS-optimized: use URL resource values for directory validation
+                do {
+                    let values = try url.resourceValues(forKeys: [.isDirectoryKey])
+                    guard values.isDirectory == true else {
+                        log.error("[DualDirectoryScanner] refreshFiles expected directory but got file: \(url.path)")
+                        continue
+                    }
+                } catch {
+                    log.error("[DualDirectoryScanner] refreshFiles cannot access path: \(url.path) error=\(error.localizedDescription)")
                     continue
                 }
                 do {
-                    // Sort off MainActor — for 26k files this takes ~100ms
-                    let sorted =
-                        try await Task.detached(priority: .userInitiated) {
-                            let scanned = try FileScanner.scan(url: url, showHiddenFiles: showHidden)
-                            return FileSortingService.sort(scanned, by: sortKey, bDirection: sortAsc)
+                    // Scan off MainActor
+                    let scanned = try await Task.detached(priority: .userInitiated) {
+                        try FileScanner.scan(url: url, showHiddenFiles: showHidden)
+                    }.value
+
+                    // Progressive UI update: show first items immediately for huge directories
+                    if scanned.count > 150 {
+                        let preview = Array(scanned.prefix(150))
+                        let previewSorted = FileSortingService.sort(preview, by: sortKey, bDirection: sortAsc)
+                        await MainActor.run {
+                            switch currSide {
+                            case .left: appState.displayedLeftFiles = previewSorted
+                            case .right: appState.displayedRightFiles = previewSorted
+                            }
                         }
-                        .value
-                    log.info("[Scan] Succeeded for \(url.path): \(sorted.count) items")
+                    }
+
+                    // Full sort off MainActor
+                    let sorted = try await Task.detached(priority: .userInitiated) {
+                        FileSortingService.sort(scanned, by: sortKey, bDirection: sortAsc)
+                    }.value
+
+                    // Ignore stale scan results if a newer navigation started
+                    if scanGeneration[currSide] != generation {
+                        log.debug("[Scan] Ignoring stale scan result side=\(currSide) gen=\(generation)")
+                        return
+                    }
+
+                    let duration = Date().timeIntervalSince(scanStart)
+                    log.info("[Scan] Succeeded for \(url.path): \(sorted.count) items in \(String(format: "%.3f", duration))s")
+
                     lastFullScan[currSide] = Date()
                     await updateScannedFiles(sorted, for: currSide)
                     await updateFileList(panelSide: currSide, with: sorted)
@@ -353,7 +423,8 @@
                     }
                 }
             }
-            log.error("💀 ALL scan attempts failed for <<\(currSide)>> path: '\(url.path)'")
+            let duration = Date().timeIntervalSince(scanStart)
+            log.error("[Scan] All attempts failed side=\(currSide) gen=\(generation) path='\(url.path)' duration=\(String(format: "%.3f", duration))s")
         }
 
         // MARK: - Permission helpers
@@ -367,26 +438,26 @@
         }
 
         private func requestAndRetryAccess(for url: URL, side: PanelSide) async -> Bool {
-            log.info("🔐 requestAndRetryAccess: checking existing bookmarks for \(url.path)")
+            log.info("[Permissions] Checking bookmarks for path='\(url.path)'")
 
             // 1. Try restoring all bookmarks first — maybe a parent bookmark covers this path
             let restored = await BookmarkStore.shared.restoreAll()
             if !restored.isEmpty {
-                log.info("🔐 Re-restored \(restored.count) bookmarks, retrying scan")
+                log.info("[Permissions] Restored \(restored.count) bookmark(s), retrying scan")
                 do {
                     let showHidden = await MainActor.run { UserPreferences.shared.snapshot.showHiddenFiles }
                     let scanned = try FileScanner.scan(url: url, showHiddenFiles: showHidden)
-                    log.info("✅ Rescan after bookmark restore: \(scanned.count) items from \(url.path)")
+                    log.info("[Permissions] Rescan succeeded: items=\(scanned.count) path='\(url.path)'")
                     await updateScannedFiles(scanned, for: side)
                     await updateFileList(panelSide: side, with: scanned)
                     return true
                 } catch {
-                    log.warning("🔐 Rescan still failed after bookmark restore: \(error.localizedDescription)")
+                    log.warning("[Permissions] Rescan after bookmark restore failed: \(error.localizedDescription)")
                 }
             }
 
             // 2. No bookmark covers this path — fallback to Home instead of showing NSOpenPanel
-            log.warning("🔐 No bookmark for \(url.path) — falling back to Home directory")
+            log.warning("[Permissions] No bookmark for path='\(url.path)', falling back to Home directory")
             let homeURL = URL(fileURLWithPath: NSHomeDirectory())
             await MainActor.run {
                 log.debug(#function + ": setting Home as the current directory")
@@ -399,9 +470,9 @@
                     scanned, by: await MainActor.run { appState.sortKey }, bDirection: await MainActor.run { appState.bSortAscending })
                 await updateScannedFiles(sorted, for: side)
                 await updateFileList(panelSide: side, with: sorted)
-                log.info("✅ Fallback to Home succeeded: \(sorted.count) items")
+                log.info("[Permissions] Fallback to Home succeeded: items=\(sorted.count)")
             } catch {
-                log.error("❌ Even Home dir scan failed: \(error)")
+                log.error("[Permissions] Home directory scan failed: \(error)")
             }
             return false
         }
@@ -422,6 +493,11 @@
                     seenParent = true
                 }
                 return false
+            }
+            // Ensure parent entry is the first row so keyboard navigation (↓, Enter) works correctly
+            if let parentIndex = sortedFiles.firstIndex(where: { $0.isParentEntry }), parentIndex != 0 {
+                let parent = sortedFiles.remove(at: parentIndex)
+                sortedFiles.insert(parent, at: 0)
             }
             let now = Date()
             let isFirstUpdate = lastUpdateTime[side] == nil
@@ -451,7 +527,8 @@
                 // Also seed selection on the non-focused panel — it gets ensureSelection on next focus
                 switch side {
                     case .left where appState.selectedLeftFile == nil:
-                        appState.selectedLeftFile = sortedFiles.first(where: { !$0.isParentEntry })
+                        // Allow parent entry ("..") to be selectable via keyboard navigation
+                        appState.selectedLeftFile = sortedFiles.first
                         log.debug("[Scanner] Auto-selected first left: \(sortedFiles.first?.nameStr ?? "-")")
                     case .right where appState.selectedRightFile == nil:
                         appState.selectedRightFile = sortedFiles.first

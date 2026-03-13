@@ -72,34 +72,36 @@
 
         // MARK: - Base content for a single file row (icon + name)
         private func baseContent() -> some View {
-            HStack(spacing: 8) {
-                if isParentEntry {
-                    // Special icon for "..." parent directory entry — accented, larger
-                    Image(systemName: "arrowshape.turn.up.left.fill")
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .frame(width: DesignTokens.Row.iconSize + 2, height: DesignTokens.Row.iconSize + 2)
-                        .foregroundStyle(colorStore.activeTheme.parentEntryColor)
-                        .allowsHitTesting(false)
-                        .layoutPriority(1)
+            // Parent directory entry: render as a simple navigation control
+            if isParentEntry {
+                return AnyView(
+                    HStack(spacing: 6) {
+                        Image(systemName: "arrowshape.turn.up.left.fill")
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: DesignTokens.Row.iconSize + 2, height: DesignTokens.Row.iconSize + 2)
+                            .foregroundStyle(colorStore.activeTheme.parentEntryColor)
 
-                    Text("...")
-                        .font(.system(size: 14, weight: .bold))
-                        .foregroundStyle(nameColor)
-                        .lineLimit(1)
-                        .layoutPriority(0)
-                } else {
-                    // Normal file icon (dimmed for hidden files, like Finder)
+                        Text("...")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundStyle(nameColor)
+                            .lineLimit(1)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                )
+            }
+
+            // Normal file row
+            return AnyView(
+                HStack(spacing: 8) {
                     ZStack(alignment: .bottomTrailing) {
                         AsyncSmartIconView(file: file)
                             .frame(width: DesignTokens.Row.iconSize, height: DesignTokens.Row.iconSize)
                             .opacity(iconOpacity)
-                        // Alias badge is composited directly into the icon by AliasIconComposer — no overlay needed
                     }
                     .allowsHitTesting(false)
                     .layoutPriority(1)
 
-                    // File name - with mark indicator
                     HStack(spacing: 4) {
                         if isMarked {
                             Image(systemName: "checkmark.circle.fill")
@@ -115,7 +117,7 @@
                     }
                     .layoutPriority(0)
                 }
-            }
+            )
         }
 
         // MARK: - Smart icon selection with fallback chain
