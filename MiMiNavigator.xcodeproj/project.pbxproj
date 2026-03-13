@@ -49,7 +49,7 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		97E4E59F2E44A084001B4027 /* Exceptions for "Gui" folder in "MiMiNavigator" target */ = {
+		97E4E59F2E44A084001B4027 /* Exceptions for "GUI" folder in "MiMiNavigator" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
@@ -59,14 +59,14 @@
 			);
 			target = 97AD1A2D2C624E020045C38D /* MiMiNavigator */;
 		};
-		97E4E5A02E44A084001B4027 /* Exceptions for "Gui" folder in "MiMiNavigatorTests" target */ = {
+		97E4E5A02E44A084001B4027 /* Exceptions for "GUI" folder in "MiMiNavigatorTests" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Tests/MiMiNavigatorTests/MiMiNavigatorTests.swift,
 			);
 			target = 97AD1A402C624E040045C38D /* MiMiNavigatorTests */;
 		};
-		97E4E5A12E44A084001B4027 /* Exceptions for "Gui" folder in "MiMiNavigatorUITests" target */ = {
+		97E4E5A12E44A084001B4027 /* Exceptions for "GUI" folder in "MiMiNavigatorUITests" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Tests/MiMiNavigatorUITests/MiMiNavigatorUITests.swift,
@@ -77,14 +77,14 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		97E4E59E2E44A072001B4027 /* Gui */ = {
+		97E4E59E2E44A072001B4027 /* GUI */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				97E4E59F2E44A084001B4027 /* Exceptions for "Gui" folder in "MiMiNavigator" target */,
-				97E4E5A02E44A084001B4027 /* Exceptions for "Gui" folder in "MiMiNavigatorTests" target */,
-				97E4E5A12E44A084001B4027 /* Exceptions for "Gui" folder in "MiMiNavigatorUITests" target */,
+				97E4E59F2E44A084001B4027 /* Exceptions for "GUI" folder in "MiMiNavigator" target */,
+				97E4E5A02E44A084001B4027 /* Exceptions for "GUI" folder in "MiMiNavigatorTests" target */,
+				97E4E5A12E44A084001B4027 /* Exceptions for "GUI" folder in "MiMiNavigatorUITests" target */,
 			);
-			path = Gui;
+			path = GUI;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -124,7 +124,7 @@
 		97AD1A252C624E020045C38D = {
 			isa = PBXGroup;
 			children = (
-				97E4E59E2E44A072001B4027 /* Gui */,
+				97E4E59E2E44A072001B4027 /* GUI */,
 				976FEA872D49C8C70078EA90 /* README.md */,
 				979574EB2DB3F6A900CA5F0B /* .periphery.yml */,
 				97AD1A2F2C624E020045C38D /* Products */,
@@ -160,7 +160,7 @@
 				97D915692CD5624900EB5FDD /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				97E4E59E2E44A072001B4027 /* Gui */,
+				97E4E59E2E44A072001B4027 /* GUI */,
 			);
 			name = MiMiNavigator;
 			packageProductDependencies = (

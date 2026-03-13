@@ -9,6 +9,7 @@
 import FileModelKit
 import SwiftUI
 
+// MARK: - AsyncFileIconView
 struct AsyncFileIconView: View {
 
     let file: CustomFile
@@ -31,13 +32,15 @@ struct AsyncFileIconView: View {
         }
     }
 
+    // MARK: - loadIcon
     private func loadIcon() async {
-        let path = file.urlValue.path
-
-        let icon = await MainActor.run {
-            FileIconCache.shared.icon(for: path)
+        let url = file.urlValue
+        // Pass isDirectory explicitly so FileIconCache handles symlink-to-dir correctly
+        // (url.hasDirectoryPath is false for symlinks without trailing slash)
+        let isDir = file.isDirectory
+        let loaded = await MainActor.run {
+            FileIconCache.shared.icon(for: url, isDirectory: isDir)
         }
-
-        self.icon = icon
+        self.icon = loaded
     }
 }

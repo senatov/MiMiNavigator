@@ -216,7 +216,7 @@ xcodebuild -scheme MiMiNavigator -configuration Debug \
 
 ```
 MiMiNavigator/
-├── Gui/Sources/
+├── GUI/Sources/
 │   ├── App/                # Entry point, AppLogger, toolbar
 │   ├── AppDelegates/       # NSApplicationDelegate
 │   ├── States/
@@ -290,7 +290,7 @@ MiMiNavigator/
 │   ├── LogKit/             # Centralized logging (SwiftyBeaver)
 │   ├── NetworkKit/         # Network neighborhood discovery (SMB/AFP)
 │   └── ScannerKit/         # File scanning utilities
-└── Gui/Docs/               # Architecture docs, screenshots
+└── GUI/Docs/               # Architecture docs, screenshots
 ```
 
 ### Key Patterns

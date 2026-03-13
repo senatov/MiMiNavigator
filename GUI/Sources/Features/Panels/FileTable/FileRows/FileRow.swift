@@ -310,48 +310,79 @@
         /// Column widths and separators must EXACTLY match TableHeaderView layout:
         ///   [Name flexible] | sep(1pt) | [col2 spec.width] | sep(1pt) | [col3 spec.width] | ...
         /// NO extra padding inside fixed columns — width IS the total width.
+        @ViewBuilder
         private var rowContent: some View {
-            // Parent entry must behave like a navigation control, not like a normal file row.
-            // Do not render fixed columns, separators, or extra metadata for it.
             if isParentEntry {
-                return AnyView(
-                    FileRowView(file: file, isSelected: isSelected, isActivePanel: isActivePanel, isMarked: isMarked)
-                        .frame(minWidth: 60, maxWidth: .infinity, alignment: .leading)
-                        .padding(.vertical, 2)
-                        .padding(.horizontal, 4)
-                )
+                parentEntryContent()
+            } else {
+                normalRowContent()
             }
+        }
 
-            let fixedCols = layout.visibleColumns.filter { $0.id != .name }
-            return AnyView(
-                HStack(alignment: .center, spacing: 0) {
-                    // Name — flexible (matches header nameHeader)
-                    FileRowView(file: file, isSelected: isSelected, isActivePanel: isActivePanel, isMarked: isMarked)
-                        .frame(minWidth: 60, maxWidth: .infinity, alignment: .leading)
-
-                    // Fixed columns — separator before each, width EXACT (no internal padding)
-                    ForEach(fixedCols.indices, id: \.self) { i in
-                        let spec = fixedCols[i]
-                        ColumnSeparator()
-                        cellText(for: spec.id)
-                            .font(
-                                spec.id == .permissions
-                                    ? .system(size: 11, design: .monospaced)
-                                    : (spec.id == .size || spec.id == .childCount
-                                        || [.dateModified, .dateCreated, .dateLastOpened, .dateAdded].contains(spec.id)
-                                        ? columnFont.monospacedDigit()
-                                        : columnFont)
-                            )
-                            .foregroundStyle(cellColor(for: spec.id))
-                            .lineLimit(1)
-                            .truncationMode(.tail)
-                            .padding(.horizontal, TableColumnDefaults.cellPadding)
-                            .frame(width: spec.width, alignment: spec.id.alignment)
-                    }
-                }
-                .padding(.vertical, 2)
-                .padding(.horizontal, 4)
+        // MARK: - Parent entry renderer ("..")
+        @ViewBuilder
+        private func parentEntryContent() -> some View {
+            FileRowView(
+                file: file,
+                isSelected: isSelected,
+                isActivePanel: isActivePanel,
+                isMarked: isMarked
             )
+            .frame(minWidth: 60, maxWidth: .infinity, alignment: .leading)
+            .padding(.vertical, 2)
+            .padding(.horizontal, 4)
+        }
+
+        // MARK: - Normal file row renderer
+        @ViewBuilder
+        private func normalRowContent() -> some View {
+            let fixedCols = layout.visibleColumns.filter { $0.id != .name }
+            HStack(alignment: .center, spacing: 0) {
+                nameColumnView()
+                ForEach(fixedCols.indices, id: \.self) { i in
+                    let spec = fixedCols[i]
+                    ColumnSeparator()
+                    metadataCell(for: spec)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+
+        // MARK: - Name column (flexible)
+        @ViewBuilder
+        private func nameColumnView() -> some View {
+            FileRowView(
+                file: file,
+                isSelected: isSelected,
+                isActivePanel: isActivePanel,
+                isMarked: isMarked
+            )
+            .frame(minWidth: 60, alignment: .leading)   // flexible but NOT infinite
+            .layoutPriority(1)                          // allow shrinking before metadata
+            .clipped()                                  // prevent text overflow over columns
+            .padding(.vertical, 2)
+            .padding(.horizontal, 4)
+        }
+
+
+        // MARK: - Metadata column cell helper
+        @ViewBuilder
+        private func metadataCell(for spec: ColumnSpec) -> some View {
+
+            cellText(for: spec.id)
+                .font(
+                    spec.id == .permissions
+                        ? .system(size: 11, design: .monospaced)
+                        : (spec.id == .size || spec.id == .childCount
+                            || [.dateModified, .dateCreated, .dateLastOpened, .dateAdded].contains(spec.id)
+                                ? columnFont.monospacedDigit()
+                                : columnFont)
+                )
+                .foregroundStyle(cellColor(for: spec.id))
+                .lineLimit(1)
+                .truncationMode(.tail)
+                .padding(.horizontal, TableColumnDefaults.cellPadding)
+                .frame(width: spec.width, alignment: spec.id.alignment)
         }
 
         @ViewBuilder

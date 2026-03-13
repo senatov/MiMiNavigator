@@ -376,7 +376,7 @@
                 }
                 do {
                     // Scan + sort in a single background task to reduce task overhead
-                    let (scanned, sorted) = try await Task.detached(priority: .userInitiated) {
+                    let (_, sorted) = try await Task.detached(priority: .userInitiated) {
                         let scanned = try FileScanner.scan(url: url, showHiddenFiles: showHidden)
                         let sorted = FileSortingService.sort(scanned, by: sortKey, bDirection: sortAsc)
                         return (scanned, sorted)

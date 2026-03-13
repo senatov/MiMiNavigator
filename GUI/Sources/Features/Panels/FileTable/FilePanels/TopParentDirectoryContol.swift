@@ -13,7 +13,6 @@
 
     /// Parent directory navigation control (".." row).
     /// Pale-yellow background, light pale-blue text, no selection highlight.
-    // MARK: - TopParentDirectoryControl
     struct TopParentDirectoryControl: View {
 
         let file: CustomFile
@@ -23,9 +22,9 @@
 
         @State private var isHovering: Bool = false
 
-        private let paleBlue   = #colorLiteral(red: 0.55, green: 0.75, blue: 0.95, alpha: 1)
-        private let paleYellow = #colorLiteral(red: 1.0,  green: 0.98, blue: 0.82, alpha: 1)
-        private let paleYellowHover = #colorLiteral(red: 0.98, green: 0.95, blue: 0.72, alpha: 1)
+        private let paleBlue = Color(#colorLiteral(red: 0.826266822, green: 0.8257061658, blue: 0.95, alpha: 1))
+        private let paleYellow = Color(#colorLiteral(red: 1, green: 0.98, blue: 0.82, alpha: 1))
+        private let paleYellowHover = Color(#colorLiteral(red: 0.9686274529, green: 0.78039217, blue: 0.3450980484, alpha: 1))
 
         private var parentDirectoryName: String {
             file.urlValue.deletingLastPathComponent().lastPathComponent
@@ -48,21 +47,21 @@
                 Image(systemName: "arrowshape.turn.up.left.fill")
                     .resizable()
                     .frame(width: 12, height: 11)
-                    .foregroundStyle(Color(paleBlue))
+                    .foregroundStyle(paleBlue)
 
                 Text("..")
                     .font(.system(size: 11, weight: .light))
-                    .foregroundStyle(Color(paleBlue))
+                    .foregroundStyle(paleBlue)
 
                 Text(parentDirectoryName)
                     .font(.system(size: 11, weight: .light))
-                    .foregroundStyle(Color(paleBlue))
+                    .foregroundStyle(paleBlue)
                     .lineLimit(1)
 
                 if let size = parentSizeString {
                     Text("(\(size))")
                         .font(.system(size: 10, weight: .ultraLight))
-                        .foregroundStyle(Color(paleBlue).opacity(0.7))
+                        .foregroundStyle(paleBlue.opacity(0.7))
                 }
 
                 Spacer(minLength: 0)
@@ -71,7 +70,7 @@
             .padding(.vertical, 3)
             .frame(maxWidth: .infinity, alignment: .leading)
             .frame(height: 22)
-            .background(Color(isHovering ? paleYellowHover : paleYellow))
+            .background(isHovering ? paleYellowHover : paleYellow)
             .contentShape(Rectangle())
             .onHover { hovering in
                 withAnimation(.easeInOut(duration: 0.12)) {
