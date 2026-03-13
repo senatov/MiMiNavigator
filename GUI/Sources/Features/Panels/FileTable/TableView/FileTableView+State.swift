@@ -37,14 +37,25 @@
 
         /// Rebuilds the O(1) lookup dictionary and the rows array after list changes. Called only on list update.
         private func rebuildIndexByID() {
+            // Build O(1) lookup dictionary: file ID → index
             var index = [CustomFile.ID: Int](minimumCapacity: cachedSortedFiles.count)
 
             for (offset, file) in cachedSortedFiles.enumerated() {
                 index[file.id] = offset
             }
-
             cachedIndexByID = index
-            cachedSortedRows = cachedSortedFiles
+            // Build UI rows array.
+            // Parent entry participates in navigation but is not part of cachedSortedFiles.
+            var rows: [CustomFile] = []
+            rows.reserveCapacity(cachedSortedFiles.count + 1)
+            // Synthetic parent navigation entry (skip if already at filesystem root)
+            let currentPath = appState.path(for: panelSide)
+            if currentPath != "/" {
+                rows.append(CustomFile.parentLink(from: currentPath))
+            }
+            // Real filesystem entries
+            rows.append(contentsOf: cachedSortedFiles)
+            cachedSortedRows = rows
         }
 
         // MARK: - Auto-fit helpers (still available for future use)
@@ -73,32 +84,38 @@
             )
         }
         func autoFitSize() -> CGFloat {
-            autoFitWidth(texts: cachedSortedFiles.map { $0.fileSizeFormatted },
-                         font: .systemFont(ofSize: 12)) + 8
+            autoFitWidth(
+                texts: cachedSortedFiles.map { $0.fileSizeFormatted },
+                font: .systemFont(ofSize: 12)) + 8
         }
 
         func autoFitDate() -> CGFloat {
-            autoFitWidth(texts: cachedSortedFiles.map { $0.modifiedDateFormatted },
-                         font: .systemFont(ofSize: 12)) + 12
+            autoFitWidth(
+                texts: cachedSortedFiles.map { $0.modifiedDateFormatted },
+                font: .systemFont(ofSize: 12)) + 12
         }
 
         func autoFitPermissions() -> CGFloat {
-            autoFitWidth(texts: cachedSortedFiles.map { $0.permissionsFormatted },
-                         font: .monospacedSystemFont(ofSize: 11, weight: .regular)) + 12
+            autoFitWidth(
+                texts: cachedSortedFiles.map { $0.permissionsFormatted },
+                font: .monospacedSystemFont(ofSize: 11, weight: .regular)) + 12
         }
 
         func autoFitOwner() -> CGFloat {
-            autoFitWidth(texts: cachedSortedFiles.map { $0.ownerFormatted },
-                         font: .systemFont(ofSize: 12)) + 12
+            autoFitWidth(
+                texts: cachedSortedFiles.map { $0.ownerFormatted },
+                font: .systemFont(ofSize: 12)) + 12
         }
 
         func autoFitKind() -> CGFloat {
-            autoFitWidth(texts: cachedSortedFiles.map { $0.kindFormatted },
-                         font: .systemFont(ofSize: 12)) + 12
+            autoFitWidth(
+                texts: cachedSortedFiles.map { $0.kindFormatted },
+                font: .systemFont(ofSize: 12)) + 12
         }
 
         func autoFitChildCount() -> CGFloat {
-            autoFitWidth(texts: cachedSortedFiles.map { $0.childCountFormatted },
-                         font: .systemFont(ofSize: 12)) + 12
+            autoFitWidth(
+                texts: cachedSortedFiles.map { $0.childCountFormatted },
+                font: .systemFont(ofSize: 12)) + 12
         }
     }

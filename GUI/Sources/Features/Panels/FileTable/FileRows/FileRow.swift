@@ -12,6 +12,21 @@ import UniformTypeIdentifiers
 // MARK: - Lightweight row view for file list with drag-drop support
 @MainActor
 struct FileRow: View, Equatable {
+    /// Shared formatter to avoid repeated ByteCountFormatter allocations during scrolling
+    private static let sizeFormatter: ByteCountFormatter = {
+        let f = ByteCountFormatter()
+        f.countStyle = .file
+        f.allowedUnits = [.useKB, .useMB, .useGB, .useTB]
+        f.includesUnit = true
+        // Avoid strings like "Zero KB" – use numeric form instead (e.g. "0 KB")
+        f.allowsNonnumericFormatting = false
+        return f
+    }()
+    /// Format size with consistent rules (avoid "0 KB")
+    private static func formatSize(_ size: Int64) -> String {
+        if size == 0 { return "0 B" }
+        return sizeFormatter.string(fromByteCount: size)
+    }
     // MARK: - Equatable optimization
     /// Prevent SwiftUI from re-rendering the row unless the visible state actually changed.
     nonisolated static func == (lhs: FileRow, rhs: FileRow) -> Bool {
@@ -314,7 +329,51 @@ struct FileRow: View, Equatable {
         switch col {
             case .name: EmptyView()
             case .dateModified: Text(file.modifiedDateFormatted)
-            case .size: Text(file.fileSizeFormatted)
+            case .size:
+                // Parent directory entry ("..") never has a size
+                if isParentEntry {
+                    EmptyView()
+                } else if file.isDirectory {
+                    if let size = file.cachedAppSize {
+                        Text(Self.formatSize(size))
+                    } else {
+                        ProgressView()
+                            .controlSize(.mini)
+                            .frame(width: 12, height: 12)
+                            .task(id: file.id, priority: .utility) {
+                                // Do not start directory size calculations on inactive panel
+                                if !isActivePanel { return }
+
+                                // Prevent repeated launches caused by SwiftUI re-rendering
+                                if file.sizeCalculationStarted { return }
+                                file.sizeCalculationStarted = true
+
+                                // Delay calculation to avoid work during fast scrolling
+                                try? await Task.sleep(for: .seconds(5))
+
+                                // If task was cancelled (row scrolled away) stop immediately
+                                if Task.isCancelled { return }
+
+                                // If size already computed meanwhile, skip
+                                if file.cachedAppSize != nil { return }
+
+                                let size = await DirectorySizeService.shared.requestSize(for: file.urlValue)
+
+                                // Stop if cancelled while awaiting
+                                if Task.isCancelled { return }
+
+                                file.cachedAppSize = size
+                            }
+                            .onDisappear {
+                                // Reset only if calculation never completed
+                                if file.cachedAppSize == nil {
+                                    file.sizeCalculationStarted = false
+                                }
+                            }
+                    }
+                } else {
+                    Text(file.fileSizeFormatted)
+                }
             case .kind: KindCell(file: file)
             case .permissions: PermissionsCell(permissions: file.permissionsFormatted)
             case .owner: Text(file.ownerFormatted)

@@ -20,6 +20,7 @@
             .isDirectoryKey,
             .isSymbolicLinkKey,
             .fileSizeKey,
+            .totalFileAllocatedSizeKey,
             .contentModificationDateKey,
             .fileSecurityKey,
             .creationDateKey,
@@ -92,12 +93,15 @@
             result.reserveCapacity(contents.count)
 
             for fileURL in contents {
-                var file: CustomFile
+                let file: CustomFile
+
                 if let rv = try? fileURL.resourceValues(forKeys: prefetchKeySet) {
                     file = CustomFile(url: fileURL, resourceValues: rv)
                 } else {
+                    // Fallback if resource values unexpectedly fail
                     file = CustomFile(name: fileURL.lastPathComponent, path: fileURL.path)
                 }
+
                 // Deferred metadata loading was moved out of scan() to keep this function
                 // concurrency-safe under Swift 6 strict checking.
                 // scan() now performs only fast, deterministic model creation.
@@ -107,6 +111,94 @@
             let elapsed = CFAbsoluteTimeGetCurrent() - startTime
             log.info("[FileScanner] scan DONE: \(result.count) items in \(String(format: "%.3f", elapsed))s")
             return result
+        }
+
+
+        /// Incremental directory scan.
+        /// Yields files in batches so the UI can display results progressively.
+        /// Useful for very large directories (10k+ files) to avoid blocking UI.
+        static func scanIncremental(
+            url: URL,
+            showHiddenFiles: Bool = false,
+            batchSize: Int = 200,
+            onBatch: ([CustomFile]) -> Void
+        ) throws {
+
+            log.info("[FileScanner] incremental scan START: \(url.path)")
+
+            let fileManager = FileManager.default
+
+            let isVolumePath = url.path.hasPrefix("/Volumes/") && url.path != "/Volumes"
+            let effectiveShowHidden = showHiddenFiles || isVolumePath
+            let options: FileManager.DirectoryEnumerationOptions = effectiveShowHidden ? [] : [.skipsHiddenFiles]
+
+            guard let enumerator = fileManager.enumerator(
+                at: url,
+                includingPropertiesForKeys: prefetchKeys,
+                options: options
+            ) else {
+                log.error("[FileScanner] incremental enumerator FAILED")
+                return
+            }
+
+            // Limit parallel metadata warm-up tasks
+            let metadataLimiter = DispatchSemaphore(value: 4)
+
+            var batch: [CustomFile] = []
+            batch.reserveCapacity(batchSize)
+
+            for case let fileURL as URL in enumerator {
+                if Task.isCancelled { break }
+                let fileName = fileURL.lastPathComponent
+
+                let file: CustomFile
+                if let rv = try? fileURL.resourceValues(forKeys: prefetchKeySet) {
+                    file = CustomFile(url: fileURL, resourceValues: rv)
+                } else {
+                    file = CustomFile(name: fileName, path: fileURL.path)
+                }
+
+                // Parallel metadata warm-up (UTType / localized type description).
+                // Runs asynchronously so the main scan loop stays fast.
+                // This helps icons and type information appear sooner without blocking UI.
+                metadataLimiter.wait()
+                Task.detached(priority: .utility) {
+                    defer { metadataLimiter.signal() }
+                    _ = try? fileURL.resourceValues(forKeys: [
+                        .typeIdentifierKey,
+                        .localizedTypeDescriptionKey
+                    ])
+                }
+
+                batch.append(file)
+
+                // Prevent recursive traversal – we only want immediate children
+                enumerator.skipDescendants()
+
+                if batch.count >= batchSize {
+                    // Progressive sort so UI receives partially ordered results
+                    batch.sort { (a: CustomFile, b: CustomFile) -> Bool in
+                        let an = a.urlValue.lastPathComponent
+                        let bn = b.urlValue.lastPathComponent
+                        return an.localizedStandardCompare(bn) == .orderedAscending
+                    }
+
+                    onBatch(batch)
+                    batch.removeAll(keepingCapacity: true)
+                }
+            }
+
+            if !batch.isEmpty {
+                // Sort the final partial batch as well
+                batch.sort { (a: CustomFile, b: CustomFile) -> Bool in
+                    let an = a.urlValue.lastPathComponent
+                    let bn = b.urlValue.lastPathComponent
+                    return an.localizedStandardCompare(bn) == .orderedAscending
+                }
+                onBatch(batch)
+            }
+
+            log.info("[FileScanner] incremental scan DONE")
         }
 
         // MARK: - Deferred metadata helpers

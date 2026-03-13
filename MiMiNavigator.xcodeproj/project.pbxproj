@@ -9,6 +9,9 @@
 /* Begin PBXBuildFile section */
 		976FEA882D49C8C70078EA90 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 976FEA872D49C8C70078EA90 /* README.md */; };
 		97B3D6382DCA54B9002F1DB7 /* SystemPackage in Frameworks */ = {isa = PBXBuildFile; productRef = 97B3D6372DCA54B9002F1DB7 /* SystemPackage */; };
+		97B6C2A72F637D1F00578130 /* FileModelKit in Frameworks */ = {isa = PBXBuildFile; productRef = BB000011BB000011BB000011 /* FileModelKit */; };
+		97B6C2A82F637D1F00578130 /* ScannerKit in Frameworks */ = {isa = PBXBuildFile; productRef = BB000012BB000012BB000012 /* ScannerKit */; };
+		97B6C2A92F637D1F00578130 /* ArchiveKit in Frameworks */ = {isa = PBXBuildFile; productRef = BB000013BB000013BB000013 /* ArchiveKit */; };
 		97D128762DB62DD400274684 /* FilesProvider in Frameworks */ = {isa = PBXBuildFile; productRef = 97D128752DB62DD400274684 /* FilesProvider */; };
 		97D9156C2CD5625D00EB5FDD /* SwiftyBeaver in Frameworks */ = {isa = PBXBuildFile; productRef = 97D9156B2CD5625D00EB5FDD /* SwiftyBeaver */; };
 		97ECF2AD2F224FA5005A6EFB /* FavoritesKit in Frameworks */ = {isa = PBXBuildFile; productRef = 971A28F82F1B140900094ADE /* FavoritesKit */; };
@@ -90,6 +93,9 @@
 		97AD1A2B2C624E020045C38D /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			files = (
+				97B6C2A92F637D1F00578130 /* ArchiveKit in Frameworks */,
+				97B6C2A82F637D1F00578130 /* ScannerKit in Frameworks */,
+				97B6C2A72F637D1F00578130 /* FileModelKit in Frameworks */,
 				97ECF2AD2F224FA5005A6EFB /* FavoritesKit in Frameworks */,
 				FF82030CE1584192AE6E4DEA /* NetworkKit in Frameworks */,
 				AA000003AA000003AA000003 /* LogKit in Frameworks */,
@@ -793,11 +799,6 @@
 			package = AA000001AA000001AA000001 /* XCLocalSwiftPackageReference "Packages/LogKit" */;
 			productName = LogKit;
 		};
-		CC000002CC000002CC000002 /* Citadel */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = CC000001CC000001CC000001 /* XCRemoteSwiftPackageReference "Citadel" */;
-			productName = Citadel;
-		};
 		BB000011BB000011BB000011 /* FileModelKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = BB000001BB000001BB000001 /* XCLocalSwiftPackageReference "Packages/FileModelKit" */;
@@ -812,6 +813,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = BB000004BB000004BB000004 /* XCLocalSwiftPackageReference "Packages/ArchiveKit" */;
 			productName = ArchiveKit;
+		};
+		CC000002CC000002CC000002 /* Citadel */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = CC000001CC000001CC000001 /* XCRemoteSwiftPackageReference "Citadel" */;
+			productName = Citadel;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
