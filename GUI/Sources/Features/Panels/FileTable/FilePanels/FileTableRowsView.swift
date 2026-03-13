@@ -133,7 +133,7 @@ private struct ParentDirectoryRow: View {
             : file.urlValue.lastPathComponent
         let visibleItemCount = max(rowsCount - 1, 0)
         let clrBlue   = Color(#colorLiteral(red: 0.10, green: 0.30, blue: 0.65, alpha: 1))
-        let clrBorder = Color(#colorLiteral(red: 0.10, green: 0.30, blue: 0.65, alpha: 0.45))
+        let clrBorder = Color(#colorLiteral(red: 0.2196078449, green: 0.007843137719, blue: 0.8549019694, alpha: 1))
         let clrBg     = Color(#colorLiteral(red: 0.98, green: 0.96, blue: 0.90, alpha: 1))
         let clrBgHov  = Color(#colorLiteral(red: 1.0,  green: 0.98, blue: 0.72, alpha: 1))
         let clrBgSel  = Color(#colorLiteral(red: 0.98, green: 0.94, blue: 0.55, alpha: 1))
@@ -143,16 +143,16 @@ private struct ParentDirectoryRow: View {
                 .frame(width: 14, height: 13)
                 .foregroundStyle(clrBlue)
             Text("..")
-                .font(.system(size: 13, weight: .regular))
+                .font(.system(size: 13, weight: .ultraLight))
                 .foregroundStyle(clrBlue)
             Text(parentName)
-                .font(.system(size: 13, weight: .regular))
+                .font(.system(size: 13, weight: .ultraLight))
                 .foregroundStyle(clrBlue)
                 .lineLimit(1)
             Text("(\(visibleItemCount))")
-                .font(.system(size: 12, weight: .light))
+                .font(.system(size: 12, weight: .ultraLight))
                 .foregroundStyle(clrBlue.opacity(0.75))
-            Spacer(minLength: 0)
+            Spacer(minLength: 1)
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 5)
@@ -161,7 +161,7 @@ private struct ParentDirectoryRow: View {
         .overlay(alignment: .bottom) {
             Rectangle()
                 .fill(clrBorder)
-                .frame(height: 1)
+                .frame(height: 2)
         }
         .contentShape(Rectangle())
         .onHover { isHovering = $0 }

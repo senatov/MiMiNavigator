@@ -14,15 +14,15 @@ import SwiftUI
 struct FindFilesResultsView: View {
     @Bindable var viewModel: FindFilesViewModel
     var appState: AppState? = nil
-    private let colorStore = ColorThemeStore.shared   // @Observable singleton Ñ no @State needed
+    private let colorStore = ColorThemeStore.shared  // @Observable singleton Ñ no @State needed
 
-    @State private var sortOrder    = [KeyPathComparator(\FindFilesResult.fileName)]
+    @State private var sortOrder = [KeyPathComparator(\FindFilesResult.fileName)]
     @State private var cachedSorted: [FindFilesResult] = []
-    @State private var lastResultCount: Int  = 0
+    @State private var lastResultCount: Int = 0
     @State private var userHasSelected: Bool = false  // stops auto-scroll when user clicks
 
     // MARK: - Fonts (static Ñ same as FileRow)
-    private static let rowFont:  Font = .system(size: 12)
+    private static let rowFont: Font = .system(size: 12)
     private static let monoFont: Font = .system(size: 12).monospacedDigit()
 
     // MARK: - Formatters (static Ñ allocated once)
@@ -55,12 +55,13 @@ struct FindFilesResultsView: View {
             rebuildSort()
             lastResultCount = viewModel.results.count
             if viewModel.searchState == .searching && !userHasSelected,
-               let last = cachedSorted.last {
+                let last = cachedSorted.last
+            {
                 viewModel.selectedResult = last
             }
         }
-        .onChange(of: sortOrder)              { rebuildSort() }
-        .onChange(of: viewModel.searchState)  {
+        .onChange(of: sortOrder) { rebuildSort() }
+        .onChange(of: viewModel.searchState) {
             if viewModel.searchState == .searching { userHasSelected = false }
         }
     }
@@ -75,15 +76,19 @@ struct FindFilesResultsView: View {
 
     private var emptyState: some View {
         VStack(spacing: 8) {
-            Image(systemName: viewModel.searchState == .idle
-                  ? "magnifyingglass" : "doc.text.magnifyingglass")
-                .font(.system(size: 32))
-                .foregroundStyle(.tertiary)
-            Text(viewModel.searchState == .idle
-                 ? "Enter search criteria and press Search"
-                 : "No files found")
-                .font(Self.rowFont)
-                .foregroundStyle(.secondary)
+            Image(
+                systemName: viewModel.searchState == .idle
+                    ? "magnifyingglass" : "doc.text.magnifyingglass"
+            )
+            .font(.system(size: 32))
+            .foregroundStyle(.tertiary)
+            Text(
+                viewModel.searchState == .idle
+                    ? "Enter search criteria and press Search"
+                    : "No files found"
+            )
+            .font(Self.rowFont)
+            .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -91,16 +96,19 @@ struct FindFilesResultsView: View {
     // MARK: - Results Table
 
     private var resultsList: some View {
-        Table(cachedSorted, selection: Binding(
-            get: { viewModel.selectedResult?.id },
-            set: { newID in
-                viewModel.selectedResult = viewModel.results.first { $0.id == newID }
-                if let name = viewModel.selectedResult?.fileName {
-                    log.debug("[FindFilesResults] selected '\(name)'")
+        Table(
+            cachedSorted,
+            selection: Binding(
+                get: { viewModel.selectedResult?.id },
+                set: { newID in
+                    viewModel.selectedResult = viewModel.results.first { $0.id == newID }
+                    if let name = viewModel.selectedResult?.fileName {
+                        log.debug("[FindFilesResults] selected '\(name)'")
+                    }
+                    if viewModel.searchState == .searching { userHasSelected = true }
                 }
-                if viewModel.searchState == .searching { userHasSelected = true }
-            }
-        ), sortOrder: $sortOrder) {
+            ), sortOrder: $sortOrder
+        ) {
 
             TableColumn("#") { result in
                 rowCell(result) {
@@ -116,27 +124,32 @@ struct FindFilesResultsView: View {
             TableColumn("Name", value: \.fileName) { result in
                 resultNameCell(result)
             }
-            .width(min: 150, ideal: 200)
+            .width(min: 50, ideal: 320)
 
             TableColumn("Path", value: \.filePath) { result in
                 rowCell(result) {
-                    Text(result.isInsideArchive
-                         ? "\u{1F4E6} [\((result.archivePath as NSString?)?.lastPathComponent ?? "archive")] \(result.filePath)"
-                         : result.filePath)
-                        .font(Self.rowFont)
-                        .foregroundStyle(result.isPasswordProtected
+                    Text(
+                        result.isInsideArchive
+                            ? "\u{1F4E6} [\((result.archivePath as NSString?)?.lastPathComponent ?? "archive")] \(result.filePath)"
+                            : result.filePath
+                    )
+                    .font(Self.rowFont)
+                    .foregroundStyle(
+                        result.isPasswordProtected
                             ? .red
-                            : (result.isInsideArchive ? theme.archivePathColor : theme.columnDateColor))
-                        .lineLimit(1)
-                        .truncationMode(.middle)
-                        .help(result.isPasswordProtected
-                              ? "? Password protected archive"
-                              : (result.isInsideArchive
-                                 ? "Inside archive: \(result.archivePath ?? "?")\n\(result.filePath)"
-                                 : result.filePath))
+                            : (result.isInsideArchive ? theme.archivePathColor : theme.columnDateColor)
+                    )
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                    .help(
+                        result.isPasswordProtected
+                            ? "? Password protected archive"
+                            : (result.isInsideArchive
+                                ? "Inside archive: \(result.archivePath ?? "?")\n\(result.filePath)"
+                                : result.filePath))
                 }
             }
-            .width(min: 200, ideal: 300)
+            .width(min: 50, ideal: 180)
 
             TableColumn("Date Mod.", value: \.sortableDate) { result in
                 rowCell(result) {
@@ -145,7 +158,7 @@ struct FindFilesResultsView: View {
                         .foregroundStyle(result.isPasswordProtected ? .red : theme.columnDateColor)
                 }
             }
-            .width(min: 80, ideal: 120)
+            .width(min: 50, ideal: 180)
 
             TableColumn("Size", value: \.fileSize) { result in
                 rowCell(result) {
@@ -154,7 +167,7 @@ struct FindFilesResultsView: View {
                         .foregroundStyle(result.isPasswordProtected ? .red : theme.columnSizeColor)
                 }
             }
-            .width(min: 50, ideal: 65)
+            .width(min: 30, ideal: 75)
 
             TableColumn("Match") { result in
                 rowCell(result) {
@@ -179,14 +192,15 @@ struct FindFilesResultsView: View {
                     }
                 }
             }
-            .width(min: 80, ideal: 180)
+            .width(min: 50, ideal: 220)
         }
         .contextMenu(forSelectionType: FindFilesResult.ID.self) { selection in
             resultContextMenu(selection: selection)
         } primaryAction: { selection in
             if let id = selection.first,
-               let result = viewModel.results.first(where: { $0.id == id }),
-               let state = appState {
+                let result = viewModel.results.first(where: { $0.id == id }),
+                let state = appState
+            {
                 viewModel.goToFile(result: result, appState: state)
             }
         }
@@ -219,11 +233,15 @@ struct FindFilesResultsView: View {
                     .frame(width: 16, height: 16)
                     .opacity(result.isInsideArchive ? 0.75 : 1.0)
                 Text(result.fileName)
-                    .font(Self.rowFont.weight(
-                        result.isInsideArchive || result.isPasswordProtected ? .semibold : .regular))
-                    .foregroundStyle(result.isPasswordProtected
-                        ? .red
-                        : (result.isInsideArchive ? theme.archivePathColor : theme.columnNameColor))
+                    .font(
+                        Self.rowFont.weight(
+                            result.isInsideArchive || result.isPasswordProtected ? .semibold : .regular)
+                    )
+                    .foregroundStyle(
+                        result.isPasswordProtected
+                            ? .red
+                            : (result.isInsideArchive ? theme.archivePathColor : theme.columnNameColor)
+                    )
                     .lineLimit(1)
             }
         }
@@ -234,7 +252,8 @@ struct FindFilesResultsView: View {
     @ViewBuilder
     private func resultContextMenu(selection: Set<FindFilesResult.ID>) -> some View {
         if let id = selection.first,
-           let result = viewModel.results.first(where: { $0.id == id }) {
+            let result = viewModel.results.first(where: { $0.id == id })
+        {
             Button("Go to File") {
                 if let state = appState { viewModel.goToFile(result: result, appState: state) }
             }

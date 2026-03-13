@@ -157,6 +157,11 @@
                 baseView
                 .onAppear {
                     log.debug("\(#function) FileTableView onAppear panel=\(panelSide) files.count=\(files.count)")
+                    // Debug: log current column layout for this panel
+                    log.debug("[Columns] panel=\(panelSide) column count=\(layout.columns.count)")
+                    for column in layout.columns {
+                        log.debug("[Columns] panel=\(panelSide) id=\(column.id) width=\(column.width) visible=\(column.isVisible)")
+                    }
                     recomputeSortedCache()
                     registerNavigationCallbacks()
                 }
