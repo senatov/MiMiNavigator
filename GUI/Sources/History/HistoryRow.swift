@@ -2,9 +2,9 @@
 // MiMiNavigator
 //
 // Extracted from HistoryPopoverView.swift on 13.02.2026
-// Updated: 13.03.2026 — macOS 26 glass style, refined hover animation
+// Updated: 14.03.2026 — macOS 26 HIG: no custom row borders, system list handles chrome
 // Copyright © 2025-2026 Senatov. All rights reserved.
-// Description: Single row in navigation history list with hover, highlight, delete.
+// Description: Single row in navigation history List with hover, highlight, swipe-delete.
 
 import SwiftUI
 
@@ -41,7 +41,7 @@ struct HistoryRow: View {
         if p.contains("/applications") { return .green }
         if p.contains("/library") || p.contains("/system") { return .red }
         if p.contains("/users") { return .orange }
-        return .blue.opacity(0.8)
+        return .accentColor
     }
     // MARK: - Body
     var body: some View {
@@ -49,8 +49,7 @@ struct HistoryRow: View {
             Image(systemName: iconName)
                 .font(.system(size: 14))
                 .foregroundStyle(iconColor)
-                .frame(width: 18)
-                .symbolEffect(.bounce, value: isHovered)
+                .frame(width: 20, alignment: .center)
             VStack(alignment: .leading, spacing: 1) {
                 highlightedText(displayName)
                     .font(.system(size: 13, weight: .medium))
@@ -66,21 +65,15 @@ struct HistoryRow: View {
             Button(action: onDelete) {
                 Image(systemName: "xmark.circle.fill")
                     .font(.system(size: 13))
-                    .foregroundStyle(.red.opacity(isHovered ? 0.85 : 0.0))
+                    .foregroundStyle(.red.opacity(0.7))
             }
             .buttonStyle(.plain)
-            .animation(.easeInOut(duration: 0.18), value: isHovered)
+            .opacity(isHovered ? 1 : 0)
+            .animation(.easeInOut(duration: 0.15), value: isHovered)
         }
-        .padding(.vertical, 5)
-        .padding(.horizontal, 8)
-        .background(
-            RoundedRectangle(cornerRadius: 6, style: .continuous)
-                .fill(isHovered ? Color.accentColor.opacity(0.10) : Color.clear)
-        )
-        .animation(.easeInOut(duration: 0.14), value: isHovered)
+        .padding(.vertical, 4)
         .contentShape(Rectangle())
         .onHover { hovering in
-            if hovering { NSCursor.pointingHand.set() } else { NSCursor.arrow.set() }
             isHovered = hovering
         }
         .onTapGesture(perform: onSelect)

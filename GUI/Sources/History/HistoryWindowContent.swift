@@ -4,7 +4,8 @@
 // Created by Iakov Senatov on 20.02.2026.
 // Copyright © 2026 Senatov. All rights reserved.
 // Description: Content view for the standalone History NSPanel window.
-//              macOS 26 glass style with inset list, scroll-clipped frame, subtle animations.
+//              macOS 26 design: edge-to-edge content, system materials, progressive blur.
+//              Glass reserved for floating controls only (HIG 26).
 
 import FileModelKit
 import SwiftUI
@@ -18,37 +19,34 @@ struct HistoryWindowContent: View {
     @State private var appeared = false
     // MARK: - Body
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            headerSection
-                .padding(.top, 6)
+        VStack(spacing: 0) {
+            headerBar
             searchField
-                .padding(.top, 4)
-            Divider()
                 .padding(.horizontal, 12)
-                .padding(.vertical, 4)
-            listContainer
+                .padding(.vertical, 6)
+            Divider()
+            listArea
         }
         .frame(minWidth: 440, idealWidth: 560, maxWidth: .infinity)
         .frame(minHeight: 320, idealHeight: 620, maxHeight: .infinity)
         .background(.ultraThinMaterial)
         .opacity(appeared ? 1 : 0)
-        .offset(y: appeared ? 0 : 6)
-        .animation(.easeOut(duration: 0.25), value: appeared)
+        .offset(y: appeared ? 0 : 4)
+        .animation(.easeOut(duration: 0.22), value: appeared)
         .onAppear {
             isSearchFocused = true
-            appeared = true
+            withAnimation { appeared = true }
         }
         .onExitCommand { PanelDialogCoordinator.history.close() }
     }
-    // MARK: - Header
-    private var headerSection: some View {
+    // MARK: - Header Bar
+    private var headerBar: some View {
         HStack(spacing: 8) {
             Image(systemName: "clock.arrow.circlepath")
                 .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(.blue)
+                .foregroundStyle(.tint)
             Text("Navigation History")
-                .font(.system(size: 13, weight: .semibold, design: .default))
-                .foregroundStyle(.primary)
+                .font(.system(size: 13, weight: .semibold))
             Spacer()
             if !filteredURLs.isEmpty {
                 Text("\(filteredURLs.count)")
@@ -56,7 +54,7 @@ struct HistoryWindowContent: View {
                     .foregroundStyle(.secondary)
                     .padding(.horizontal, 7)
                     .padding(.vertical, 2)
-                    .background(Capsule().fill(Color.secondary.opacity(0.12)))
+                    .background(Capsule().fill(.quaternary))
                 if filteredURLs.count != directoryURLs.count {
                     Text("of \(directoryURLs.count)")
                         .font(.system(size: 11).monospacedDigit())
@@ -66,7 +64,7 @@ struct HistoryWindowContent: View {
             }
         }
         .padding(.horizontal, 14)
-        .padding(.vertical, 6)
+        .padding(.vertical, 8)
     }
     // MARK: - Search Field
     private var searchField: some View {
@@ -75,7 +73,7 @@ struct HistoryWindowContent: View {
                 .font(.system(size: 11))
                 .foregroundStyle(.secondary)
             TextField("Filter history…", text: $searchText)
-                .textFieldStyle(.plain)
+                .textFieldStyle(.roundedBorder)
                 .font(.system(size: 13))
                 .focused($isSearchFocused)
             if !searchText.isEmpty {
@@ -87,18 +85,9 @@ struct HistoryWindowContent: View {
                         .foregroundStyle(.secondary)
                 }
                 .buttonStyle(.plain)
-                .transition(.opacity.combined(with: .scale(scale: 0.8)))
+                .transition(.opacity)
             }
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 6)
-        .background(
-            RoundedRectangle(cornerRadius: 7, style: .continuous)
-                .fill(Color.primary.opacity(0.04))
-                .stroke(Color.primary.opacity(0.08), lineWidth: 0.5)
-        )
-        .padding(.horizontal, 12)
-        .padding(.bottom, 2)
     }
     // MARK: - Clear Button
     private var clearButton: some View {
@@ -110,41 +99,34 @@ struct HistoryWindowContent: View {
         .buttonStyle(.borderless)
         .help("Clear all history")
     }
-    // MARK: - List Container (inset bordered ScrollView)
+    // MARK: - List Area (system inset grouped list, auto scroll + border)
     @ViewBuilder
-    private var listContainer: some View {
+    private var listArea: some View {
         if directoryURLs.isEmpty {
             emptyStateView
         } else if filteredURLs.isEmpty {
             noMatchView
         } else {
-            ScrollView(.vertical, showsIndicators: true) {
-                LazyVStack(spacing: 1) {
-                    ForEach(filteredURLs, id: \.path) { url in
-                        let path = url.path
-                        HistoryRow(
-                            path: path,
-                            highlightText: searchText,
-                            onSelect: { navigateToPath(path) },
-                            onDelete: { deleteFromHistory(url) }
-                        )
-                        .transition(.opacity.combined(with: .move(edge: .leading)))
+            List {
+                ForEach(filteredURLs, id: \.path) { url in
+                    let path = url.path
+                    HistoryRow(
+                        path: path,
+                        highlightText: searchText,
+                        onSelect: { navigateToPath(path) },
+                        onDelete: { deleteFromHistory(url) }
+                    )
+                    .listRowSeparator(.hidden)
+                }
+                .onDelete { indexSet in
+                    let urls = filteredURLs
+                    for idx in indexSet {
+                        deleteFromHistory(urls[idx])
                     }
                 }
-                .padding(6)
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .strokeBorder(Color.primary.opacity(0.12), lineWidth: 0.5)
-            )
-            .background(
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(Color(nsColor: .controlBackgroundColor).opacity(0.35))
-            )
-            .padding(.horizontal, 10)
-            .padding(.bottom, 10)
+            .listStyle(.inset(alternatesRowBackgrounds: true))
+            .scrollContentBackground(.hidden)
         }
     }
     // MARK: - Empty State
@@ -160,8 +142,7 @@ struct HistoryWindowContent: View {
                 .font(.system(size: 11))
                 .foregroundStyle(.tertiary)
         }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 50)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
     // MARK: - No Match
     private var noMatchView: some View {
@@ -173,8 +154,7 @@ struct HistoryWindowContent: View {
                 .font(.system(size: 13))
                 .foregroundStyle(.secondary)
         }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 40)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
     // MARK: - Data
     private var directoryURLs: [URL] { appState.selectionsHistory.getRecentSelections() }
@@ -200,15 +180,11 @@ struct HistoryWindowContent: View {
     // MARK: - Delete from History
     private func deleteFromHistory(_ url: URL) {
         log.debug(#function + "(\(url.path))")
-        withAnimation(.easeInOut(duration: 0.2)) {
-            appState.selectionsHistory.remove(url)
-        }
+        withAnimation { appState.selectionsHistory.remove(url) }
     }
     // MARK: - Clear History
     private func clearHistory() {
         log.debug(#function + "()")
-        withAnimation(.easeInOut(duration: 0.25)) {
-            appState.selectionsHistory.clear()
-        }
+        withAnimation { appState.selectionsHistory.clear() }
     }
 }
