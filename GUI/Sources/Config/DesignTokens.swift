@@ -38,6 +38,11 @@ enum DesignTokens {
 
     /// Warm white background for active panel and session table
     @MainActor static var warmWhite: Color { ColorThemeStore.shared.activeTheme.warmWhite }
+    /// Zebra stripe colors — themed, persisted via ColorThemeStore
+    @MainActor static var zebraActiveEven: Color { ColorThemeStore.shared.activeTheme.zebraActiveEven }
+    @MainActor static var zebraActiveOdd: Color { ColorThemeStore.shared.activeTheme.zebraActiveOdd }
+    @MainActor static var zebraInactiveEven: Color { ColorThemeStore.shared.activeTheme.zebraInactiveEven }
+    @MainActor static var zebraInactiveOdd: Color { ColorThemeStore.shared.activeTheme.zebraInactiveOdd }
 
     /// Separator color
     static let separator = Color(nsColor: .separatorColor)

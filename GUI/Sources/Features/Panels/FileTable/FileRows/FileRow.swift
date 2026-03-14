@@ -162,18 +162,14 @@
             }
             let isOdd = index % 2 == 1
             if isActivePanel {
-                // Active panel: aged-paper tint, subtle warm zebra
-                let evenColor = Color(red: 0.99, green: 0.985, blue: 0.965)
-                let oddColor  = Color(red: 0.98, green: 0.97, blue: 0.94)
+                // Active panel: themed zebra (aged-paper by default)
                 return AnyView(
-                    (isOdd ? oddColor : evenColor)
+                    (isOdd ? DesignTokens.zebraActiveOdd : DesignTokens.zebraActiveEven)
                         .allowsHitTesting(false))
             }
-            // Inactive panel: near-white even rows, light grey odd rows
-            let evenColor = Color(red: 0.985, green: 0.985, blue: 0.985)
-            let oddColor  = Color(red: 0.93, green: 0.93, blue: 0.925)
+            // Inactive panel: themed zebra (near-white by default)
             return AnyView(
-                (isOdd ? oddColor : evenColor)
+                (isOdd ? DesignTokens.zebraInactiveOdd : DesignTokens.zebraInactiveEven)
                     .allowsHitTesting(false))
         }
 

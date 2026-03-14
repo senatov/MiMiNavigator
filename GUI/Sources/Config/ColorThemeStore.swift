@@ -54,7 +54,12 @@ final class ColorThemeStore {
     @ObservationIgnored @AppStorage("color.dividerActive")    var hexDividerActive: String = ""
     @ObservationIgnored @AppStorage("color.panelBorderActive")   var hexPanelBorderActive: String = ""
     @ObservationIgnored @AppStorage("color.panelBorderInactive") var hexPanelBorderInactive: String = ""
+    @ObservationIgnored @AppStorage("panel.borderWidth")         var storedPanelBorderWidth: Double = 0
     @ObservationIgnored @AppStorage("color.warmWhite")        var hexWarmWhite: String = ""
+    @ObservationIgnored @AppStorage("color.zebraActiveEven")   var hexZebraActiveEven: String = ""
+    @ObservationIgnored @AppStorage("color.zebraActiveOdd")    var hexZebraActiveOdd: String = ""
+    @ObservationIgnored @AppStorage("color.zebraInactiveEven") var hexZebraInactiveEven: String = ""
+    @ObservationIgnored @AppStorage("color.zebraInactiveOdd")  var hexZebraInactiveOdd: String = ""
     @ObservationIgnored @AppStorage("color.filterActive")     var hexFilterActive: String = ""
 
     // Button appearance
@@ -113,7 +118,12 @@ final class ColorThemeStore {
         if let c = Color(hex: hexDividerActive)    { theme.dividerActiveColor = c }
         if let c = Color(hex: hexPanelBorderActive)   { theme.panelBorderActive = c }
         if let c = Color(hex: hexPanelBorderInactive) { theme.panelBorderInactive = c }
+        if storedPanelBorderWidth > 0 { theme.panelBorderWidth = CGFloat(storedPanelBorderWidth) }
         if let c = Color(hex: hexWarmWhite)        { theme.warmWhite = c }
+        if let c = Color(hex: hexZebraActiveEven)   { theme.zebraActiveEven = c }
+        if let c = Color(hex: hexZebraActiveOdd)    { theme.zebraActiveOdd = c }
+        if let c = Color(hex: hexZebraInactiveEven) { theme.zebraInactiveEven = c }
+        if let c = Color(hex: hexZebraInactiveOdd)  { theme.zebraInactiveOdd = c }
         if let c = Color(hex: hexFilterActive)     { theme.filterActiveColor = c }
         return theme
     }
@@ -126,7 +136,8 @@ final class ColorThemeStore {
          hexColumnName, hexColumnSize, hexColumnKind, hexColumnDate,
          hexColumnPermissions, hexColumnOwner, hexColumnGroup, hexColumnChildCount,
          hexDividerNormal, hexDividerActive, hexPanelBorderActive, hexPanelBorderInactive,
-         hexWarmWhite, hexFilterActive]
+         hexWarmWhite, hexZebraActiveEven, hexZebraActiveOdd,
+         hexZebraInactiveEven, hexZebraInactiveOdd, hexFilterActive]
             .filter { !$0.isEmpty }.count
     }
 
@@ -149,7 +160,11 @@ final class ColorThemeStore {
         hexColumnPermissions = ""; hexColumnOwner = ""; hexColumnGroup = ""; hexColumnChildCount = ""
         hexDividerNormal = ""; hexDividerActive = ""
         hexPanelBorderActive = ""; hexPanelBorderInactive = ""
-        hexWarmWhite = ""; hexFilterActive = ""
+        storedPanelBorderWidth = 0
+        hexWarmWhite = ""
+        hexZebraActiveEven = ""; hexZebraActiveOdd = ""
+        hexZebraInactiveEven = ""; hexZebraInactiveOdd = ""
+        hexFilterActive = ""
         loadTheme(id: theme.id)
     }
 }

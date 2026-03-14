@@ -53,8 +53,14 @@ struct ColorTheme: Identifiable, Equatable {
     // Panel border
     var panelBorderActive: Color
     var panelBorderInactive: Color
+    var panelBorderWidth: CGFloat
     // Zebra stripe base for active panel
     var warmWhite: Color
+    // Zebra stripe colors (active panel: warm aged-paper, inactive: neutral near-white)
+    var zebraActiveEven: Color
+    var zebraActiveOdd: Color
+    var zebraInactiveEven: Color
+    var zebraInactiveOdd: Color
     // Filter bar active highlight
     var filterActiveColor: Color
     // Dark variants (nil = same as light)
@@ -103,7 +109,12 @@ extension ColorTheme {
         dividerActiveColor:  Color(red: 0.22, green: 0.01, blue: 0.85, opacity: 0.90),
         panelBorderActive:   Color(red: 0.10, green: 0.15, blue: 0.58, opacity: 0.72),
         panelBorderInactive: Color(red: 0.45, green: 0.45, blue: 0.50, opacity: 0.38),
+        panelBorderWidth:    1.5,
         warmWhite:           Color(red: 0.97, green: 0.97, blue: 0.95, opacity: 0.91),
+        zebraActiveEven:     Color(red: 0.99, green: 0.985, blue: 0.965),
+        zebraActiveOdd:      Color(red: 0.98, green: 0.97, blue: 0.94),
+        zebraInactiveEven:   Color(red: 0.985, green: 0.985, blue: 0.985),
+        zebraInactiveOdd:    Color(red: 0.93, green: 0.93, blue: 0.925),
         filterActiveColor:   Color(red: 0.25, green: 0.55, blue: 1.0, opacity: 0.8),
         panelBackgroundDark: Color(nsColor: .windowBackgroundColor),
         panelTextDark:       Color.primary,
@@ -147,7 +158,12 @@ extension ColorTheme {
         dividerActiveColor:  Color(red: 0.82, green: 0.55, blue: 0.15, opacity: 0.90),
         panelBorderActive:   Color(red: 0.70, green: 0.55, blue: 0.30, opacity: 0.55),
         panelBorderInactive: Color(red: 0.60, green: 0.55, blue: 0.45, opacity: 0.38),
+        panelBorderWidth:    1.5,
         warmWhite:           Color(red: 0.99, green: 0.97, blue: 0.92, opacity: 0.91),
+        zebraActiveEven:     Color(red: 0.99, green: 0.975, blue: 0.94),
+        zebraActiveOdd:      Color(red: 0.98, green: 0.96, blue: 0.91),
+        zebraInactiveEven:   Color(red: 0.98, green: 0.975, blue: 0.965),
+        zebraInactiveOdd:    Color(red: 0.94, green: 0.935, blue: 0.92),
         filterActiveColor:   Color(red: 0.75, green: 0.50, blue: 0.10, opacity: 0.8),
         panelBackgroundDark: Color(red: 40/255, green: 35/255, blue: 28/255),
         panelTextDark:       Color(red: 240/255, green: 225/255, blue: 200/255),
@@ -191,7 +207,12 @@ extension ColorTheme {
         dividerActiveColor:  Color(red: 0.40, green: 0.60, blue: 1.0, opacity: 0.90),
         panelBorderActive:   Color(red: 0.35, green: 0.50, blue: 0.80, opacity: 0.60),
         panelBorderInactive: Color(red: 0.30, green: 0.35, blue: 0.50, opacity: 0.40),
+        panelBorderWidth:    1.5,
         warmWhite:           Color(red: 0.16, green: 0.18, blue: 0.26, opacity: 0.50),
+        zebraActiveEven:     Color(red: 0.14, green: 0.16, blue: 0.24),
+        zebraActiveOdd:      Color(red: 0.12, green: 0.14, blue: 0.21),
+        zebraInactiveEven:   Color(red: 0.15, green: 0.15, blue: 0.18),
+        zebraInactiveOdd:    Color(red: 0.12, green: 0.12, blue: 0.15),
         filterActiveColor:   Color(red: 0.40, green: 0.65, blue: 1.0, opacity: 0.8),
         panelBackgroundDark: nil,
         panelTextDark:       nil,
@@ -235,7 +256,12 @@ extension ColorTheme {
         dividerActiveColor:  Color(red: 0.15, green: 0.55, blue: 0.82, opacity: 0.90),
         panelBorderActive:   Color(red: 0.15, green: 0.55, blue: 0.82, opacity: 0.50),
         panelBorderInactive: Color(red: 0.58, green: 0.63, blue: 0.63, opacity: 0.35),
+        panelBorderWidth:    1.5,
         warmWhite:           Color(red: 0.99, green: 0.96, blue: 0.89, opacity: 0.50),
+        zebraActiveEven:     Color(red: 0.99, green: 0.965, blue: 0.89),
+        zebraActiveOdd:      Color(red: 0.96, green: 0.94, blue: 0.86),
+        zebraInactiveEven:   Color(red: 0.97, green: 0.96, blue: 0.94),
+        zebraInactiveOdd:    Color(red: 0.93, green: 0.92, blue: 0.90),
         filterActiveColor:   Color(red: 0.15, green: 0.55, blue: 0.82, opacity: 0.8),
         panelBackgroundDark: Color(red: 0/255,   green: 43/255,  blue: 54/255),
         panelTextDark:       Color(red: 131/255, green: 148/255, blue: 150/255),

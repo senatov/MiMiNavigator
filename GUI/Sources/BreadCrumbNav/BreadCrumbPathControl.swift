@@ -49,7 +49,12 @@ struct BreadCrumbPathControl: View {
         )
         .background(
             RoundedRectangle(cornerRadius: Design.cornerRadius)
-                .strokeBorder(Color.secondary.opacity(Design.borderOpacity), lineWidth: 1)
+                .strokeBorder(
+                    isActivePanel
+                        ? ColorThemeStore.shared.activeTheme.panelBorderActive
+                        : ColorThemeStore.shared.activeTheme.panelBorderInactive,
+                    lineWidth: ColorThemeStore.shared.activeTheme.panelBorderWidth
+                )
         )
         .animation(.easeInOut(duration: 0.2), value: isActivePanel)
         // Note: Focus is now managed by BreadCrumbControlWrapper to avoid conflicts

@@ -54,7 +54,12 @@ struct SettingsColorsPane: View {
     @AppStorage("color.dividerActive")    private var hexDividerActive: String = ""
     @AppStorage("color.panelBorderActive")   private var hexPanelBorderActive: String = ""
     @AppStorage("color.panelBorderInactive") private var hexPanelBorderInactive: String = ""
+    @AppStorage("panel.borderWidth")         private var panelBorderWidth: Double = 0
     @AppStorage("color.warmWhite")        private var hexWarmWhite: String = ""
+    @AppStorage("color.zebraActiveEven")   private var hexZebraActiveEven: String = ""
+    @AppStorage("color.zebraActiveOdd")    private var hexZebraActiveOdd: String = ""
+    @AppStorage("color.zebraInactiveEven") private var hexZebraInactiveEven: String = ""
+    @AppStorage("color.zebraInactiveOdd")  private var hexZebraInactiveOdd: String = ""
     @AppStorage("color.filterActive")     private var hexFilterActive: String = ""
 
     private var currentPreset: ColorTheme {
@@ -223,14 +228,41 @@ struct SettingsColorsPane: View {
                     colorRow("Divider active", help: "Panel divider color while dragging",
                              preset: currentPreset.dividerActiveColor, hex: $hexDividerActive)
                     Divider()
-                    colorRow("Panel border (active)", help: "Focused panel border color",
+                    sectionHeader("Panel Border")
+                    colorRow("Border (active)", help: "Focused panel + breadcrumb border color",
                              preset: currentPreset.panelBorderActive, hex: $hexPanelBorderActive)
                     Divider()
-                    colorRow("Panel border (inactive)", help: "Unfocused panel border color",
+                    colorRow("Border (inactive)", help: "Unfocused panel + breadcrumb border color",
                              preset: currentPreset.panelBorderInactive, hex: $hexPanelBorderInactive)
                     Divider()
-                    colorRow("Warm white", help: "Active panel zebra stripe background",
+                    rowLabel("Border width:", help: "Thickness of panel border line (default: 1.5)") {
+                        HStack(spacing: 10) {
+                            Slider(value: $panelBorderWidth, in: 0.5...4, step: 0.25)
+                                .frame(width: 120)
+                                .onChange(of: panelBorderWidth) {
+                                    store.storedPanelBorderWidth = panelBorderWidth
+                                    store.reloadOverrides()
+                                }
+                            Text(String(format: "%.2f", panelBorderWidth > 0 ? panelBorderWidth : currentPreset.panelBorderWidth))
+                                .monospacedDigit().foregroundStyle(.secondary).frame(width: 36)
+                        }
+                    }
+                    Divider()
+                    colorRow("Warm white", help: "Active panel header/table background",
                              preset: currentPreset.warmWhite, hex: $hexWarmWhite)
+                    Divider()
+                    sectionHeader("Zebra Stripes")
+                    colorRow("Active even", help: "Active panel — even row background",
+                             preset: currentPreset.zebraActiveEven, hex: $hexZebraActiveEven)
+                    Divider()
+                    colorRow("Active odd", help: "Active panel — odd row background",
+                             preset: currentPreset.zebraActiveOdd, hex: $hexZebraActiveOdd)
+                    Divider()
+                    colorRow("Inactive even", help: "Inactive panel — even row background",
+                             preset: currentPreset.zebraInactiveEven, hex: $hexZebraInactiveEven)
+                    Divider()
+                    colorRow("Inactive odd", help: "Inactive panel — odd row background",
+                             preset: currentPreset.zebraInactiveOdd, hex: $hexZebraInactiveOdd)
                     Divider()
                     colorRow("Filter highlight", help: "Filter bar border when focused",
                              preset: currentPreset.filterActiveColor, hex: $hexFilterActive)

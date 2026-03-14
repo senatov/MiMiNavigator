@@ -170,7 +170,7 @@
                         focused
                             ? colorStore.activeTheme.panelBorderActive
                             : colorStore.activeTheme.panelBorderInactive,
-                        lineWidth: 1.5
+                        lineWidth: colorStore.activeTheme.panelBorderWidth
                     )
             }
             .shadow(color: Color.black.opacity(0.10), radius: 3, x: 0, y: 1)
