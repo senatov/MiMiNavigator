@@ -69,10 +69,12 @@
         /// Returns cached value immediately if available.
         func requestSize(for url: URL) async -> Int64 {
 
-            let path = url.path
+            // Resolve symlinks for consistent cache keys and calculation
+            let resolvedURL = url.resolvingSymlinksInPath()
+            let path = resolvedURL.path
 
             // 1. Return cached result if available
-            if let cached = cachedSize(for: url) {
+            if let cached = cachedSize(for: resolvedURL) {
                 return cached
             }
 
@@ -89,12 +91,12 @@
                         semaphore.wait()
                         defer { semaphore.signal() }
 
-                        let size = Self.computeDirectorySize(url)
+                        let size = Self.computeSizeWithPython(url, shallow: false)
                         continuation.resume(returning: size)
                     }
                 }
 
-                await self.storeCache(size: size, for: url)
+                await self.storeCache(size: size, for: resolvedURL)
                 return size
             }
 
@@ -174,7 +176,7 @@
             log.info("[DirectorySizeService] shallowSize start: \(url.path)")
             let result = await withCheckedContinuation { continuation in
                 queue.async {
-                    let size = Self.computeShallowSize(url)
+                    let size = Self.computeSizeWithPython(url, shallow: true)
                     log.info("[DirectorySizeService] shallowSize computed: \(url.path) -> \(size)")
                     continuation.resume(returning: size)
                 }
@@ -183,73 +185,98 @@
             return result
         }
 
-        // MARK: - Shallow Traversal (first level)
+        // MARK: - Python-based Size Calculation
 
-        /// Sums allocated sizes of regular files in the immediate directory — no subdirectory descent.
-        /// Typically completes in under 1ms even for directories with thousands of entries.
-        private static func computeShallowSize(_ url: URL) -> Int64 {
-            var total: Int64 = 0
-            let keys: Set<URLResourceKey> = [.isRegularFileKey, .totalFileAllocatedSizeKey, .fileAllocatedSizeKey]
+        /// Calculate directory size using Python script
+        /// Handles symlinks, cloud directories (OneDrive, iCloud), and regular directories
+        private static func computeSizeWithPython(_ url: URL, shallow: Bool) -> Int64 {
+            let mode = shallow ? "shallow" : "full"
+            let outputFile = "/tmp/mimi_dirsize_\(UUID().uuidString).json"
             
-            // Resolve symlinks to target directory
-            let resolvedURL = url.resolvingSymlinksInPath()
+            // Try multiple possible script paths
+            let possiblePaths = [
+                // Development path
+                "/Users/senat/Develop/MiMiNavigator/GUI/Resources/directory_size.py",
+                // Bundle resource path
+                Bundle.main.resourcePath.map { "\($0)/directory_size.py" } ?? "",
+                // Current directory relative
+                "./GUI/Resources/directory_size.py"
+            ]
             
-            guard let contents = try? FileManager.default.contentsOfDirectory(
-                at: resolvedURL, includingPropertiesForKeys: Array(keys), options: [.skipsHiddenFiles]
-            ) else { return 0 }
-            for fileURL in contents {
-                guard let values = try? fileURL.resourceValues(forKeys: keys) else { continue }
-                if values.isRegularFile == true {
-                    if let allocated = values.totalFileAllocatedSize {
-                        total += Int64(allocated)
-                    } else if let allocated = values.fileAllocatedSize {
-                        total += Int64(allocated)
-                    }
+            log.info("[DirectorySizeService] Bundle resource path: \(Bundle.main.resourcePath ?? "nil")")
+            
+            var scriptPath: String?
+            for path in possiblePaths {
+                if !path.isEmpty && FileManager.default.fileExists(atPath: path) {
+                    scriptPath = path
+                    log.info("[DirectorySizeService] Found Python script at: \(path)")
+                    break
                 }
             }
-            return total
-        }
-
-        // MARK: - Directory Traversal (full recursive)
-
-        /// Recursively calculates directory size.
-        private static func computeDirectorySize(_ url: URL) -> Int64 {
-
-            var total: Int64 = 0
-
-            let keys: [URLResourceKey] = [
-                .isRegularFileKey,
-                .totalFileAllocatedSizeKey,
-                .fileAllocatedSizeKey
-            ]
-
-            // Resolve symlinks to target directory
-            let resolvedURL = url.resolvingSymlinksInPath()
-
-            guard let enumerator = FileManager.default.enumerator(
-                at: resolvedURL,
-                includingPropertiesForKeys: keys,
-                options: [.skipsHiddenFiles, .skipsPackageDescendants],
-                errorHandler: nil
-            ) else {
+            
+            guard let finalScriptPath = scriptPath else {
+                log.warning("[DirectorySizeService] Python script not found in any location:")
+                for path in possiblePaths {
+                    log.warning("[DirectorySizeService]   Tried: \(path) - exists: \(FileManager.default.fileExists(atPath: path))")
+                }
                 return 0
             }
-
-            for case let fileURL as URL in enumerator {
-
-                guard let values = try? fileURL.resourceValues(forKeys: Set(keys)) else { continue }
-
-                // Count only regular files
-                if values.isRegularFile == true {
-
-                    if let allocated = values.totalFileAllocatedSize {
-                        total += Int64(allocated)
-                    } else if let allocated = values.fileAllocatedSize {
-                        total += Int64(allocated)
-                    }
+            
+            log.info("[DirectorySizeService] computeSizeWithPython start: \(url.path) mode=\(mode)")
+            log.info("[DirectorySizeService] Python command: /usr/bin/python3 \(finalScriptPath) '\(url.path)' \(mode) \(outputFile)")
+            
+            // Execute Python script
+            let process = Process()
+            process.executableURL = URL(fileURLWithPath: "/usr/bin/python3")
+            process.arguments = [finalScriptPath, url.path, mode, outputFile]
+            
+            do {
+                try process.run()
+                process.waitUntilExit()
+                
+                let exitCode = process.terminationStatus
+                log.info("[DirectorySizeService] Python process finished with exit code: \(exitCode)")
+                
+                // Check if output file exists
+                let fileExists = FileManager.default.fileExists(atPath: outputFile)
+                log.info("[DirectorySizeService] Output file exists: \(fileExists) at \(outputFile)")
+                
+                // Read JSON result
+                guard let data = try? Data(contentsOf: URL(fileURLWithPath: outputFile)) else {
+                    log.warning("[DirectorySizeService] failed to read data from \(outputFile)")
+                    return 0
                 }
+                
+                log.info("[DirectorySizeService] Read \(data.count) bytes from \(outputFile)")
+                
+                guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+                    log.warning("[DirectorySizeService] failed to parse JSON from \(outputFile)")
+                    if let jsonString = String(data: data, encoding: .utf8) {
+                        log.warning("[DirectorySizeService] Raw JSON: \(jsonString)")
+                    }
+                    return 0
+                }
+                
+                // Clean up temp file
+                try? FileManager.default.removeItem(atPath: outputFile)
+                
+                // Parse result
+                if let error = json["error"] as? String, !error.isEmpty {
+                    log.warning("[DirectorySizeService] Python error: \(error)")
+                    return 0
+                }
+                
+                let size = (json["size"] as? NSNumber)?.int64Value ?? 0
+                let files = (json["files"] as? NSNumber)?.intValue ?? 0
+                
+                log.info("[DirectorySizeService] computeSizeWithPython result: \(url.path) -> \(files) files, \(size) bytes")
+                return size
+                
+            } catch {
+                log.warning("[DirectorySizeService] Python execution failed: \(error)")
+                // Clean up temp file
+                try? FileManager.default.removeItem(atPath: outputFile)
+                return 0
             }
-
-            return total
         }
     }

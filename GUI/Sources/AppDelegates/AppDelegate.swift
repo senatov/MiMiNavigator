@@ -31,6 +31,9 @@ import AppKit
     func applicationDidFinishLaunching(_ notification: Notification) {
         log.debug("restoring security-scoped bookmarks")
         Task {
+            // Сначала создаём bookmarks для стандартных папок (если их нет)
+            await BookmarkStore.shared.ensureStandardDirectoryAccess()
+            // Потом восстанавливаем все bookmarks
             let restored = await BookmarkStore.shared.restoreAll()
             log.info("Restored \(restored.count) bookmarks")
         }

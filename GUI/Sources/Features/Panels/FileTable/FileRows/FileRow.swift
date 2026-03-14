@@ -403,6 +403,12 @@
                 case .name: EmptyView()
                 case .dateModified: Text(file.modifiedDateFormatted)
                 case .size:
+                    // Debug: log file type detection for all non-parent files
+                    if !isParentEntry {
+                        let _ = log.info("[FileRow] File '\(file.nameStr)' isDir=\(file.isDirectory) isSymLink=\(file.isSymbolicLink) isSymDir=\(file.isSymbolicDirectory)")
+                        let _ = print("[DEBUG] File '\(file.nameStr)' isDir=\(file.isDirectory) isSymLink=\(file.isSymbolicLink) isSymDir=\(file.isSymbolicDirectory)")
+                    }
+                    
                     // Parent directory entry ("..") never has a size
                     if isParentEntry {
                         EmptyView()

@@ -140,6 +140,7 @@
         var body: some View {
             let baseView = ZStack {
                 mainScrollView
+                    .scrollIndicators(isFocused ? .automatic : .hidden)
 
                 // AppKit drop target — receives drops from other panels and external apps
                 AppKitDropView(
