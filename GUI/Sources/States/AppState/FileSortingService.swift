@@ -72,6 +72,12 @@ enum FileSortingService {
 
     // MARK: -
     static func compareSize(_ a: CustomFile, _ b: CustomFile, ascending: Bool) -> Bool {
+        let aIsDir = isFolderLike(a) && !a.isAppBundle
+        let bIsDir = isFolderLike(b) && !b.isAppBundle
+        // Directories have no meaningful file size — sort them by name within their group
+        if aIsDir && bIsDir {
+            return a.nameStr.localizedCaseInsensitiveCompare(b.nameStr) == .orderedAscending
+        }
         let sa = a.isAppBundle ? (a.cachedAppSize ?? 0) : a.sizeInBytes
         let sb = b.isAppBundle ? (b.cachedAppSize ?? 0) : b.sizeInBytes
         if sa != sb {
