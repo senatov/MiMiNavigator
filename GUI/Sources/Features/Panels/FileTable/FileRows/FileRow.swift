@@ -406,43 +406,103 @@
                     // Parent directory entry ("..") never has a size
                     if isParentEntry {
                         EmptyView()
-                    } else if file.isDirectory {
-                        if let size = file.cachedAppSize {
-                            Text(Self.formatSize(size))
-                        } else {
-                            ProgressView()
-                                .controlSize(.mini)
-                                .frame(width: 12, height: 12)
-                                .task(id: file.id, priority: .utility) {
-                                    // Do not start directory size calculations on inactive panel
-                                    if !isActivePanel { return }
-
-                                    // Prevent repeated launches caused by SwiftUI re-rendering
-                                    if file.sizeCalculationStarted { return }
-                                    file.sizeCalculationStarted = true
-
-                                    // Delay calculation to avoid work during fast scrolling
-                                    try? await Task.sleep(for: .seconds(5))
-
-                                    // If task was cancelled (row scrolled away) stop immediately
-                                    if Task.isCancelled { return }
-
-                                    // If size already computed meanwhile, skip
-                                    if file.cachedAppSize != nil { return }
-
-                                    let size = await DirectorySizeService.shared.requestSize(for: file.urlValue)
-
-                                    // Stop if cancelled while awaiting
-                                    if Task.isCancelled { return }
-
-                                    file.cachedAppSize = size
+                    } else if file.isSymbolicLink && !file.isSymbolicDirectory {
+                        // Symlink to file - show target file size
+                        Group {
+                            if let size = file.cachedAppSize, file.sizeIsExact {
+                                Text(Self.formatSize(size))
+                                    .foregroundStyle(.secondary)
+                            } else {
+                                ProgressView()
+                                    .controlSize(.mini)
+                                    .scaleEffect(0.6)
+                                    .opacity(0.5)
+                                    .frame(width: 8, height: 8)
+                            }
+                        }
+                        .task(id: file.id, priority: .utility) {
+                            log.info("[FileRow] Task started for symlink file '\(file.nameStr)' activePanel=\(isActivePanel)")
+                            if !isActivePanel {
+                                log.info("[FileRow] Skip - not active panel for symlink '\(file.nameStr)'")
+                                return
+                            }
+                            if file.sizeCalculationStarted {
+                                log.info("[FileRow] Skip - already started for symlink '\(file.nameStr)'")
+                                return
+                            }
+                            file.sizeCalculationStarted = true
+                            
+                            // Get target file size
+                            let resolved = file.urlValue.resolvingSymlinksInPath()
+                            if let attrs = try? FileManager.default.attributesOfItem(atPath: resolved.path),
+                               let fileSize = attrs[.size] as? NSNumber {
+                                file.cachedAppSize = fileSize.int64Value
+                                file.sizeIsExact = true
+                                log.info("[FileRow] Symlink file '\(file.nameStr)' size=\(fileSize.int64Value)")
+                            }
+                        }
+                        .onDisappear {
+                            if !file.sizeIsExact {
+                                file.sizeCalculationStarted = false
+                            }
+                        }
+                    } else if file.isDirectory || file.isSymbolicDirectory {
+                        // Directory or symlink to directory - two-phase calculation
+                        Group {
+                            if let size = file.cachedAppSize, file.sizeIsExact {
+                                Text(Self.formatSize(size))
+                            } else if let shallow = file.cachedShallowSize, shallow > 0 {
+                                Text("~" + Self.formatSize(shallow))
+                                    .foregroundStyle(.secondary)
+                            } else {
+                                ProgressView()
+                                    .controlSize(.mini)
+                                    .scaleEffect(0.6)
+                                    .opacity(0.5)
+                                    .frame(width: 8, height: 8)
+                            }
+                        }
+                        .task(id: file.id, priority: .utility) {
+                            log.info("[FileRow] Task started for directory '\(file.nameStr)' activePanel=\(isActivePanel) symDir=\(file.isSymbolicDirectory)")
+                            if !isActivePanel {
+                                log.info("[FileRow] Skip - not active panel for '\(file.nameStr)'")
+                                return
+                            }
+                            if file.sizeCalculationStarted {
+                                log.info("[FileRow] Skip - already started for '\(file.nameStr)'")
+                                return
+                            }
+                            file.sizeCalculationStarted = true
+                            log.info("[FileRow] Phase 1: shallow size for '\(file.nameStr)'")
+                            
+                            // Phase 1: Instant shallow size (~1ms)
+                            if file.cachedShallowSize == nil {
+                                let shallow = await DirectorySizeService.shared.shallowSize(for: file.urlValue)
+                                if Task.isCancelled {
+                                    log.info("[FileRow] Phase 1 cancelled for '\(file.nameStr)'")
+                                    return
                                 }
-                                .onDisappear {
-                                    // Reset only if calculation never completed
-                                    if file.cachedAppSize == nil {
-                                        file.sizeCalculationStarted = false
-                                    }
+                                file.cachedShallowSize = shallow
+                                log.info("[FileRow] Phase 1 complete: '\(file.nameStr)' shallow=\(shallow)")
+                            }
+                            
+                            // Phase 2: Full recursive size (by readiness)
+                            if !file.sizeIsExact {
+                                log.info("[FileRow] Phase 2: full size for '\(file.nameStr)'")
+                                let size = await DirectorySizeService.shared.requestSize(for: file.urlValue)
+                                if Task.isCancelled {
+                                    log.info("[FileRow] Phase 2 cancelled for '\(file.nameStr)'")
+                                    return
                                 }
+                                file.cachedAppSize = size
+                                file.sizeIsExact = true
+                                log.info("[FileRow] Phase 2 complete: '\(file.nameStr)' size=\(size)")
+                            }
+                        }
+                        .onDisappear {
+                            if !file.sizeIsExact {
+                                file.sizeCalculationStarted = false
+                            }
                         }
                     } else {
                         Text(file.fileSizeFormatted)

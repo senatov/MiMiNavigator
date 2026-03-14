@@ -56,12 +56,25 @@ struct TableFileSorter {
     }
     
     private func compareSize(_ a: CustomFile, _ b: CustomFile) -> Bool {
+        let groupA = sizeGroupOrder(a)
+        let groupB = sizeGroupOrder(b)
+        if groupA != groupB { return groupA < groupB }
         let lhs = a.sizeInBytes
         let rhs = b.sizeInBytes
         if lhs != rhs {
             return ascending ? (lhs < rhs) : (lhs > rhs)
         }
         return a.nameStr.localizedCaseInsensitiveCompare(b.nameStr) == .orderedAscending
+    }
+    /// Stable group order for size sorting: directories first, then by object kind.
+    /// 0 = directories/symlink-dirs, 1 = app bundles, 2 = symlinks (files),
+    /// 3 = archives, 4 = regular files.
+    private func sizeGroupOrder(_ f: CustomFile) -> Int {
+        if f.isDirectory || f.isSymbolicDirectory { return 0 }
+        if f.isAppBundle { return 1 }
+        if f.isSymbolicLink { return 2 }
+        if f.isArchiveFile { return 3 }
+        return 4
     }
     
     private func compareDate(_ a: CustomFile, _ b: CustomFile) -> Bool {

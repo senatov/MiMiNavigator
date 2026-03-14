@@ -53,6 +53,7 @@
                                 file: file,
                                 isSelected: isSelected,
                                 rowsCount: rows.count,
+                                panelSide: panelSide,
                                 onSelect: onSelect,
                                 onDoubleClick: onDoubleClick
                             )
@@ -123,9 +124,12 @@ private struct ParentDirectoryRow: View {
     let file: CustomFile
     let isSelected: Bool
     let rowsCount: Int
+    let panelSide: PanelSide
     let onSelect: (CustomFile) -> Void
     let onDoubleClick: (CustomFile) -> Void
     @State private var isHovering = false
+    @Environment(AppState.self) private var appState
+    private var colorStore: ColorThemeStore { ColorThemeStore.shared }
     // MARK: - body
     var body: some View {
         let parentName = file.urlValue.lastPathComponent.isEmpty
@@ -133,10 +137,13 @@ private struct ParentDirectoryRow: View {
             : file.urlValue.lastPathComponent
         let visibleItemCount = max(rowsCount - 1, 0)
         let clrBlue   = Color(#colorLiteral(red: 0.10, green: 0.30, blue: 0.65, alpha: 1))
-        let clrBorder = Color(#colorLiteral(red: 0.2196078449, green: 0.007843137719, blue: 0.8549019694, alpha: 1))
         let clrBg     = Color(#colorLiteral(red: 0.98, green: 0.96, blue: 0.90, alpha: 1))
         let clrBgHov  = Color(#colorLiteral(red: 1.0,  green: 0.98, blue: 0.72, alpha: 1))
         let clrBgSel  = Color(#colorLiteral(red: 0.98, green: 0.94, blue: 0.55, alpha: 1))
+        let isFocused = appState.focusedPanel == panelSide
+        let theme = colorStore.activeTheme
+        let borderColor = isFocused ? theme.panelBorderActive : theme.panelBorderInactive
+        let borderW = theme.panelBorderWidth
         HStack(spacing: 8) {
             Image(systemName: "arrowshape.turn.up.left.fill")
                 .resizable()
@@ -157,15 +164,39 @@ private struct ParentDirectoryRow: View {
         .padding(.horizontal, 10)
         .padding(.vertical, 5)
         .frame(maxWidth: .infinity, minHeight: 28, alignment: .leading)
-        .background(isSelected ? clrBgSel : (isHovering ? clrBgHov : clrBg))
-        .overlay(alignment: .bottom) {
-            Rectangle()
-                .fill(clrBorder)
-                .frame(height: 2)
-        }
+        .background(
+            ZStack {
+                (isSelected ? clrBgSel : (isHovering ? clrBgHov : clrBg))
+                ParentRowInsetBorder(borderColor: borderColor, borderWidth: borderW)
+            }
+        )
         .contentShape(Rectangle())
         .onHover { isHovering = $0 }
         .onTapGesture { onSelect(file) }
         .onTapGesture(count: 2) { onDoubleClick(file) }
+    }
+}
+
+// MARK: - ParentRowInsetBorder
+/// Draws a subtle "inset" (recessed groove) effect around the parent row.
+/// Top and side edges get a slightly darker line (shadow),
+/// bottom edge gets a lighter line (highlight) — classic embossed look.
+private struct ParentRowInsetBorder: View {
+    let borderColor: Color
+    let borderWidth: CGFloat
+    var body: some View {
+        ZStack {
+            Rectangle()
+                .strokeBorder(borderColor.opacity(0.55), lineWidth: borderWidth)
+            VStack(spacing: 0) {
+                Rectangle()
+                    .fill(borderColor.opacity(0.35))
+                    .frame(height: borderWidth)
+                Spacer(minLength: 0)
+                Rectangle()
+                    .fill(Color.white.opacity(0.45))
+                    .frame(height: max(borderWidth * 0.6, 0.5))
+            }
+        }
     }
 }

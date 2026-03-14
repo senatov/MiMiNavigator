@@ -63,6 +63,7 @@ struct ButtonFavTopPanel: View {
     private func backButton() -> some View {
         let canGoBack = appState.navigationHistory(for: panelSide).canGoBack
         return Image(systemName: "arrowshape.backward")
+            .font(.system(size: 15))
             .symbolRenderingMode(.hierarchical)
             .foregroundStyle(iconColor)
             .contentShape(Rectangle())
@@ -87,7 +88,9 @@ struct ButtonFavTopPanel: View {
             log.debug("Up: navigating to parent directory")
             navigationAdapter?.navigateUp(panel: panelSide.toFavPanelSide)
         }) {
-            Image(systemName: "arrowshape.up").symbolRenderingMode(.hierarchical)
+            Image(systemName: "arrowshape.up")
+                .font(.system(size: 15))
+                .symbolRenderingMode(.hierarchical)
                 .foregroundStyle(iconColor)
         }
         .buttonStyle(.plain)
@@ -100,6 +103,7 @@ struct ButtonFavTopPanel: View {
     private func forwardButton() -> some View {
         let canGoForward = appState.navigationHistory(for: panelSide).canGoForward
         return Image(systemName: "arrowshape.right")
+            .font(.system(size: 15))
             .symbolRenderingMode(.hierarchical)
             .foregroundStyle(iconColor)
             .contentShape(Rectangle())

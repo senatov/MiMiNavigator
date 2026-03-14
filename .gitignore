@@ -99,3 +99,4 @@ timeline.xctimeline
 # Packages/ contains local Swift packages
 # Packages/FavoritesKit
 # Packages/NetworkKit*.dmg
+.spm-checkouts

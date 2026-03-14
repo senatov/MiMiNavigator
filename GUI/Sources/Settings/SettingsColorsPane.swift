@@ -237,7 +237,7 @@ struct SettingsColorsPane: View {
                     Divider()
                     rowLabel("Border width:", help: "Thickness of panel border line (default: 1.5)") {
                         HStack(spacing: 10) {
-                            Slider(value: $panelBorderWidth, in: 0.5...4, step: 0.25)
+                            Slider(value: $panelBorderWidth, in: 0.25...4, step: 0.25)
                                 .frame(width: 120)
                                 .onChange(of: panelBorderWidth) {
                                     store.storedPanelBorderWidth = panelBorderWidth

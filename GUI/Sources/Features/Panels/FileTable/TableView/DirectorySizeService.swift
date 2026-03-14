@@ -166,7 +166,51 @@
             try? data.write(to: cacheURL, options: .atomic)
         }
 
-        // MARK: - Directory Traversal
+        // MARK: - Shallow Size (first level only, ~1ms)
+
+        /// Sum file sizes of direct children only — no recursion.
+        /// Returns approximate size instantly for UI display with "~" prefix.
+        func shallowSize(for url: URL) async -> Int64 {
+            log.info("[DirectorySizeService] shallowSize start: \(url.path)")
+            let result = await withCheckedContinuation { continuation in
+                queue.async {
+                    let size = Self.computeShallowSize(url)
+                    log.info("[DirectorySizeService] shallowSize computed: \(url.path) -> \(size)")
+                    continuation.resume(returning: size)
+                }
+            }
+            log.info("[DirectorySizeService] shallowSize result: \(url.path) -> \(result)")
+            return result
+        }
+
+        // MARK: - Shallow Traversal (first level)
+
+        /// Sums allocated sizes of regular files in the immediate directory — no subdirectory descent.
+        /// Typically completes in under 1ms even for directories with thousands of entries.
+        private static func computeShallowSize(_ url: URL) -> Int64 {
+            var total: Int64 = 0
+            let keys: Set<URLResourceKey> = [.isRegularFileKey, .totalFileAllocatedSizeKey, .fileAllocatedSizeKey]
+            
+            // Resolve symlinks to target directory
+            let resolvedURL = url.resolvingSymlinksInPath()
+            
+            guard let contents = try? FileManager.default.contentsOfDirectory(
+                at: resolvedURL, includingPropertiesForKeys: Array(keys), options: [.skipsHiddenFiles]
+            ) else { return 0 }
+            for fileURL in contents {
+                guard let values = try? fileURL.resourceValues(forKeys: keys) else { continue }
+                if values.isRegularFile == true {
+                    if let allocated = values.totalFileAllocatedSize {
+                        total += Int64(allocated)
+                    } else if let allocated = values.fileAllocatedSize {
+                        total += Int64(allocated)
+                    }
+                }
+            }
+            return total
+        }
+
+        // MARK: - Directory Traversal (full recursive)
 
         /// Recursively calculates directory size.
         private static func computeDirectorySize(_ url: URL) -> Int64 {
@@ -179,8 +223,11 @@
                 .fileAllocatedSizeKey
             ]
 
+            // Resolve symlinks to target directory
+            let resolvedURL = url.resolvingSymlinksInPath()
+
             guard let enumerator = FileManager.default.enumerator(
-                at: url,
+                at: resolvedURL,
                 includingPropertiesForKeys: keys,
                 options: [.skipsHiddenFiles, .skipsPackageDescendants],
                 errorHandler: nil
