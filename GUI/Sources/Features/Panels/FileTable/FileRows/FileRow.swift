@@ -457,7 +457,8 @@
                         Group {
                             if let size = file.cachedAppSize, file.sizeIsExact {
                                 Text(Self.formatSize(size))
-                            } else if let shallow = file.cachedShallowSize, shallow > 0 {
+                            } else if let shallow = file.cachedShallowSize {
+                                // Show approximate shallow size even if it is 0 (prevents directories stuck at spinner/0 state)
                                 Text("~" + Self.formatSize(shallow))
                                     .foregroundStyle(.secondary)
                             } else {
@@ -470,11 +471,16 @@
                         }
                         .task(id: file.id, priority: .utility) {
                             log.info("[FileRow] Task started for directory '\(file.nameStr)' activePanel=\(isActivePanel) symDir=\(file.isSymbolicDirectory)")
+                            // If caches were cleared or the model was recreated but the flag remained true,
+                            // allow recalculation. This fixes directories stuck at "0 B".
+                            if file.cachedAppSize == nil && file.cachedShallowSize == nil {
+                                file.sizeCalculationStarted = false
+                            }
                             if !isActivePanel {
                                 log.info("[FileRow] Skip - not active panel for '\(file.nameStr)'")
                                 return
                             }
-                            if file.sizeCalculationStarted {
+                            guard !file.sizeCalculationStarted else {
                                 log.info("[FileRow] Skip - already started for '\(file.nameStr)'")
                                 return
                             }

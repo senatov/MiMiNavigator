@@ -170,8 +170,44 @@
         // MARK: - Exit
         func performExit() {
             log.debug("performExit - Exit button pressed")
+
+            // Cleanup temporary JSON files in /tmp owned by current user
+            cleanupUserTmpJSON()
+
             appState.saveBeforeExit()
             NSApplication.shared.terminate(nil)
+        }
+
+        // Remove *.json files in /tmp that belong to the current user
+        private func cleanupUserTmpJSON() {
+            let tmpURL = URL(fileURLWithPath: "/tmp", isDirectory: true)
+            let fm = FileManager.default
+            let currentUID = getuid()
+
+            guard let enumerator = fm.enumerator(at: tmpURL, includingPropertiesForKeys: [.isRegularFileKey, .nameKey], options: [.skipsHiddenFiles]) else {
+                log.warning("[TmpCleanup] failed to enumerate /tmp")
+                return
+            }
+
+            var removed = 0
+
+            for case let fileURL as URL in enumerator {
+                guard fileURL.pathExtension.lowercased() == "json" else { continue }
+
+                do {
+                    let attrs = try fm.attributesOfItem(atPath: fileURL.path)
+                    if let ownerID = attrs[.ownerAccountID] as? NSNumber,
+                       ownerID.uint32Value == currentUID {
+                        try fm.removeItem(at: fileURL)
+                        removed += 1
+                        log.debug("[TmpCleanup] removed \(fileURL.lastPathComponent)")
+                    }
+                } catch {
+                    log.warning("[TmpCleanup] failed to remove \(fileURL.lastPathComponent): \(error.localizedDescription)")
+                }
+            }
+
+            log.info("[TmpCleanup] removed \(removed) user JSON file(s) from /tmp")
         }
 
         // MARK: - Computed Properties
