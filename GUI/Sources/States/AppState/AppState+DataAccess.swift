@@ -3,7 +3,7 @@
 //
 // Created by Iakov Senatov on 15.03.2026.
 // Copyright © 2025-2026 Senatov. All rights reserved.
-// Description: Data access helpers — displayedFiles, pathURL, tabManager, archiveState
+// Description: Data access helpers — uses PanelState directly.
 
 import FileModelKit
 import Foundation
@@ -11,25 +11,16 @@ import Foundation
 // MARK: - Data Access
 extension AppState {
 
-    func displayedFiles(for panelSide: PanelSide) -> [CustomFile] {
-        let raw: [CustomFile]
-        let query: String
-        switch panelSide {
-            case .left:
-                raw = displayedLeftFiles
-                query = leftFilterQuery
-            case .right:
-                raw = displayedRightFiles
-                query = rightFilterQuery
-        }
-        let trimmed = query.trimmingCharacters(in: .whitespaces)
-        guard !trimmed.isEmpty else { return raw }
-        let lower = trimmed.lowercased()
+    func displayedFiles(for panel: PanelSide) -> [CustomFile] {
+        let raw = panel == .left ? displayedLeftFiles : displayedRightFiles
+        let query = self[panel: panel].filterQuery.trimmingCharacters(in: .whitespaces)
+        guard !query.isEmpty else { return raw }
+        let lower = query.lowercased()
         return raw.filter { $0.nameStr.lowercased().contains(lower) }
     }
 
-    func pathURL(for panelSide: PanelSide) -> URL? {
-        url(for: panelSide)
+    func pathURL(for panel: PanelSide) -> URL? {
+        url(for: panel)
     }
 
     func tabManager(for panel: PanelSide) -> TabManager {
@@ -37,11 +28,11 @@ extension AppState {
     }
 
     func archiveState(for panel: PanelSide) -> ArchiveNavigationState {
-        panel == .left ? leftArchiveState : rightArchiveState
+        self[panel: panel].archiveState
     }
 
     func setArchiveState(_ state: ArchiveNavigationState, for panel: PanelSide) {
-        if panel == .left { leftArchiveState = state } else { rightArchiveState = state }
+        self[panel: panel].archiveState = state
     }
 
     func showHiddenFilesSnapshot() -> Bool {

@@ -3,7 +3,7 @@
 //
 // Created by Iakov Senatov on 11.03.2026.
 // Copyright © 2025-2026 Senatov. All rights reserved.
-// Description: Core selection operations — select, clear, toggle focus
+// Description: Core selection operations — uses PanelState via panel subscript.
 
 import FileModelKit
 import Foundation
@@ -11,19 +11,16 @@ import Foundation
 // MARK: - Selection Operations
 extension AppState {
 
-    func select(_ file: CustomFile, on panelSide: PanelSide) {
+    func select(_ file: CustomFile, on panel: PanelSide) {
         log.debug(#function)
-        selectionManager?.select(file, on: panelSide)
+        selectionManager?.select(file, on: panel)
     }
 
     func selectFileByName(_ name: String, on panel: PanelSide) {
         let files = displayedFiles(for: panel)
         if let match = files.first(where: { $0.nameStr == name }) {
             log.info("[Selection] selectFileByName found '\(name)' on \(panel)")
-            switch panel {
-                case .left: selectedLeftFile = match
-                case .right: selectedRightFile = match
-            }
+            setSelectedFile(match, for: panel)
         } else {
             log.warning("[Selection] selectFileByName FAILED: '\(name)' not found on \(panel)")
         }
@@ -32,7 +29,7 @@ extension AppState {
     func refreshAndSelect(name: String, on panel: PanelSide) async {
         log.info("[Selection] refreshAndSelect: name='\(name)' panel=\(panel)")
         await scanner.clearCooldown(for: panel)
-        if panel == .left { await refreshLeftFiles() } else { await refreshRightFiles() }
+        await refreshFiles(for: panel)
         selectFileByName(name, on: panel)
     }
 
@@ -43,25 +40,18 @@ extension AppState {
         for (index, file) in oldFiles.enumerated() where removedNames.contains(file.nameStr) {
             lastRemovedIndex = index
         }
-        if panel == .left { await refreshLeftFiles() } else { await refreshRightFiles() }
+        await refreshFiles(for: panel)
         let newFiles = displayedFiles(for: panel)
         guard !newFiles.isEmpty else { return }
         var targetIndex = min(lastRemovedIndex, newFiles.count - 1)
         if newFiles[targetIndex].isParentEntry && targetIndex + 1 < newFiles.count { targetIndex += 1 }
-        let targetFile = newFiles[targetIndex]
-        switch panel {
-            case .left: selectedLeftFile = targetFile
-            case .right: selectedRightFile = targetFile
-        }
+        setSelectedFile(newFiles[targetIndex], for: panel)
     }
 
-    func clearSelection(on panelSide: PanelSide) { selectionManager?.clearSelection(on: panelSide) }
+    func clearSelection(on panel: PanelSide) { selectionManager?.clearSelection(on: panel) }
 
     func clearFileSelection() {
-        switch focusedPanel {
-            case .left: selectedLeftFile = nil
-            case .right: selectedRightFile = nil
-        }
+        setSelectedFile(nil, for: focusedPanel)
     }
 
     func toggleFocus() {
@@ -70,13 +60,11 @@ extension AppState {
     }
 
     func ensureSelectionOnFocusedPanel() {
-        switch focusedPanel {
-            case .left:
-                guard selectedLeftFile == nil else { return }
-                if let first = displayedLeftFiles.first(where: { !$0.isParentEntry }) { selectedLeftFile = first }
-            case .right:
-                guard selectedRightFile == nil else { return }
-                if let first = displayedRightFiles.first(where: { !$0.isParentEntry }) { selectedRightFile = first }
+        let panel = focusedPanel
+        guard self[panel: panel].selectedFile == nil else { return }
+        let files = panel == .left ? displayedLeftFiles : displayedRightFiles
+        if let first = files.first(where: { !$0.isParentEntry }) {
+            setSelectedFile(first, for: panel)
         }
     }
 

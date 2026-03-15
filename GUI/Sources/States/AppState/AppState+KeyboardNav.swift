@@ -21,7 +21,7 @@ extension AppState {
     // MARK: - Mark current file and move (Shift+Up/Down)
     func markCurrentAndMove(direction: Int) {
         let panel = focusedPanel
-        let selectedFile: CustomFile? = panel == .left ? selectedLeftFile : selectedRightFile
+        let selectedFile = self[panel: panel].selectedFile
         guard let file = selectedFile, !file.isParentEntry else {
             if direction < 0 { navigateUp() } else { navigateDown() }
             return

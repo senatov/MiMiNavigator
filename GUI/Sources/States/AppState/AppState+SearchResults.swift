@@ -13,24 +13,16 @@ import Foundation
 extension AppState {
 
     func isShowingSearchResults(on panel: PanelSide) -> Bool {
-        (panel == .left ? leftSearchResultsPath : rightSearchResultsPath) != nil
+        self[panel: panel].searchResultsPath != nil
     }
 
     func showSearchResults(_ files: [CustomFile], virtualPath: String, on panel: PanelSide) {
         let sorted = applySorting(files)
         log.debug(#function + ": \(sorted.count) files")
-        switch panel {
-            case .left:
-                leftSearchResultsPath = virtualPath
-                displayedLeftFiles = sorted
-                leftPath = virtualPath
-                selectedLeftFile = firstRealFile(in: sorted)
-            case .right:
-                rightSearchResultsPath = virtualPath
-                displayedRightFiles = sorted
-                rightPath = virtualPath
-                selectedRightFile = firstRealFile(in: sorted)
-        }
+        self[panel: panel].searchResultsPath = virtualPath
+        if panel == .left { displayedLeftFiles = sorted } else { displayedRightFiles = sorted }
+        setPath(virtualPath, for: panel)
+        setSelectedFile(firstRealFile(in: sorted), for: panel)
         focusedPanel = panel
     }
 
@@ -61,19 +53,15 @@ extension AppState {
     private func finishClearSearchResults(on panel: PanelSide) {
         let history = navigationHistory(for: panel)
         let previousPath = history.currentPath?.path ?? NSHomeDirectory()
-        switch panel {
-            case .left: leftSearchResultsPath = nil
-            case .right: rightSearchResultsPath = nil
-        }
+        self[panel: panel].searchResultsPath = nil
         updatePath(previousPath, for: panel)
         Task {
             if panel == .left {
                 await scanner.setLeftDirectory(pathStr: previousPath)
-                await refreshLeftFiles()
             } else {
                 await scanner.setRightDirectory(pathStr: previousPath)
-                await refreshRightFiles()
             }
+            await refreshFiles(for: panel)
         }
     }
 
