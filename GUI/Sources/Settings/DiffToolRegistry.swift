@@ -47,14 +47,22 @@ struct DiffTool: Identifiable, Codable, Equatable {
         URL(fileURLWithPath: appPath).deletingPathExtension().lastPathComponent
     }
 
-    /// Real binary inside .app, or the path as-is for CLIs
+    /// Real binary inside .app, or the path as-is for CLIs.
+    /// Prefers CLI launcher (bcomp, ksdiff) over raw GUI binary
+    /// because CLI launchers handle arguments correctly.
     var resolvedBinary: String {
         guard appPath.hasSuffix(".app") else { return appPath }
-        let appName = URL(fileURLWithPath: appPath).deletingPathExtension().lastPathComponent
-        let candidate = "\(appPath)/Contents/MacOS/\(appName)"
-        if FileManager.default.fileExists(atPath: candidate) { return candidate }
-        // Scan MacOS dir for any executable
         let dir = "\(appPath)/Contents/MacOS"
+        // Known CLI launcher names (preferred over GUI binary)
+        let cliNames = ["bcomp", "ksdiff"]
+        for cli in cliNames {
+            let path = "\(dir)/\(cli)"
+            if FileManager.default.fileExists(atPath: path) { return path }
+        }
+        let appName = URL(fileURLWithPath: appPath).deletingPathExtension().lastPathComponent
+        let candidate = "\(dir)/\(appName)"
+        if FileManager.default.fileExists(atPath: candidate) { return candidate }
+        // Fallback: first executable in MacOS dir
         if let first = (try? FileManager.default.contentsOfDirectory(atPath: dir))?.first {
             return "\(dir)/\(first)"
         }

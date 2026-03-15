@@ -43,7 +43,8 @@ enum DiffToolLauncher {
         do {
             try task.run()
             log.info("[Compare] launched \(tool.name) ✓  args=\(args)")
-            waitForAppReady(processName: tool.processName, frame: NSApp.mainWindow?.frame)
+            let bundlePath = tool.appPath.hasSuffix(".app") ? tool.appPath : nil
+            waitForAppReady(processName: tool.processName, appPath: bundlePath, frame: NSApp.mainWindow?.frame)
         } catch {
             log.error("[Compare] \(tool.name) failed: \(error.localizedDescription)")
             offerNoToolInstalled(comparingDirs: comparingDirs)
@@ -136,15 +137,20 @@ enum DiffToolLauncher {
     }
 
     // MARK: - waitForAppReady
-    static func waitForAppReady(processName: String, frame: NSRect?, attempt: Int = 0) {
+    /// Poll until the GUI process has a window, then activate + reposition.
+    /// `processName` is the System Events process name (e.g. "Beyond Compare").
+    /// `appPath` is the .app bundle path for `tell application` (e.g. "/Applications/Beyond Compare.app").
+    static func waitForAppReady(processName: String, appPath: String? = nil, frame: NSRect?, attempt: Int = 0) {
         log.debug("\(#function) app=\(processName) attempt=\(attempt)")
         let maxAttempts = 12
         let interval = 0.5
+        // For `tell application`, use quoted POSIX path if .app is available
+        let activateTarget = appPath.map { "\($0.appleScriptQuoted)" } ?? processName.appleScriptQuoted
         Task.detached(priority: .utility) {
             let checkScript = """
                 tell application "System Events"
-                    if exists process "\(processName)" then
-                        return (count windows of process "\(processName)") as string
+                    if exists process \(processName.appleScriptQuoted) then
+                        return (count windows of process \(processName.appleScriptQuoted)) as string
                     end if
                     return "0"
                 end tell
@@ -158,7 +164,7 @@ enum DiffToolLauncher {
                     return
                 }
                 try? await Task.sleep(for: .milliseconds(Int(interval * 1000)))
-                await MainActor.run { waitForAppReady(processName: processName, frame: frame, attempt: attempt + 1) }
+                await MainActor.run { waitForAppReady(processName: processName, appPath: appPath, frame: frame, attempt: attempt + 1) }
                 return
             }
             let f = await MainActor.run { frame ?? NSRect(x: 100, y: 100, width: 1200, height: 800) }
@@ -166,10 +172,10 @@ enum DiffToolLauncher {
             let wx = Int(f.origin.x); let wy = Int(screenH - f.origin.y - f.height)
             let ww = Int(f.width);    let wh = Int(f.height)
             let posScript = """
-                tell application "\(processName)" to activate
+                tell application \(activateTarget) to activate
                 delay 0.2
                 tell application "System Events"
-                    tell process "\(processName)"
+                    tell process \(processName.appleScriptQuoted)
                         set position of window 1 to {\(wx), \(wy)}
                         set size of window 1 to {\(ww), \(wh)}
                     end tell
