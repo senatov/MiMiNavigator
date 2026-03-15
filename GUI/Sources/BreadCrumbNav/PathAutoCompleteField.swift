@@ -267,8 +267,10 @@
         nonisolated(unsafe) private var escKeyMonitor: Any?
         var onDismissedByClickOutside: (() -> Void)?
 
-        private let rowHeight: CGFloat = 28
-        private let maxVisibleRows = 10
+        private let rowHeight: CGFloat = 32
+        private let maxVisibleRows = 12
+        private let minPanelHeight: CGFloat = 72
+        private let panelPadding: CGFloat = 12
 
         // MARK: - Show
         func show(items: [AutoCompleteItem], selectedIndex: Int, onSelect: @escaping (Int) -> Void) {
@@ -276,7 +278,7 @@
             self.onSelect = onSelect
             guard !items.isEmpty else { hide(); return }
             let visibleRows = min(items.count, maxVisibleRows)
-            let panelHeight = CGFloat(visibleRows) * rowHeight + 8
+            let panelHeight = max(CGFloat(visibleRows) * rowHeight + panelPadding, minPanelHeight)
             let panelWidth = max(anchorFrame.width, 300)
             if panel == nil { createPanel() }
             guard let panel, let window = NSApp.keyWindow else { return }
@@ -417,7 +419,7 @@
             effect.state = .active
             effect.blendingMode = .behindWindow
             effect.wantsLayer = true
-            effect.layer?.cornerRadius = 8
+            effect.layer?.cornerRadius = 10
             effect.layer?.masksToBounds = true
             p.contentView = effect
             let scrollView = NSScrollView()
@@ -427,8 +429,8 @@
             scrollView.translatesAutoresizingMaskIntoConstraints = false
             effect.addSubview(scrollView)
             NSLayoutConstraint.activate([
-                scrollView.topAnchor.constraint(equalTo: effect.topAnchor, constant: 4),
-                scrollView.bottomAnchor.constraint(equalTo: effect.bottomAnchor, constant: -4),
+                scrollView.topAnchor.constraint(equalTo: effect.topAnchor, constant: 6),
+                scrollView.bottomAnchor.constraint(equalTo: effect.bottomAnchor, constant: -6),
                 scrollView.leadingAnchor.constraint(equalTo: effect.leadingAnchor),
                 scrollView.trailingAnchor.constraint(equalTo: effect.trailingAnchor),
             ])
