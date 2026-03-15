@@ -98,6 +98,11 @@
                         }
                     })
                     .onAppear {
+                        popupController.onDismissedByClickOutside = { [self] in
+                            showSuggestions = false
+                            suggestions = []
+                            ghostSuffix = ""
+                        }
                         DispatchQueue.main.async {
                             if let editor = NSApp.keyWindow?.firstResponder as? NSTextView {
                                 editor.selectAll(nil)
@@ -250,6 +255,7 @@
     // MARK: - Auto Complete Popup Controller
     /// Manages a floating NSPanel that displays autocomplete suggestions below the text field.
     /// NSPanel escapes SwiftUI layout clipping — dropdown is never cut off by parent frames.
+    /// Dismisses on click outside, ESC key, or app deactivation.
     @MainActor
     final class AutoCompletePopupController: @unchecked Sendable {
         private var panel: NSPanel?
@@ -257,6 +263,9 @@
         private(set) var items: [AutoCompleteItem] = []
         var onSelect: ((Int) -> Void)?
         var anchorFrame: CGRect = .zero
+        private var clickOutsideMonitor: Any?
+        private var escKeyMonitor: Any?
+        var onDismissedByClickOutside: (() -> Void)?
 
         private let rowHeight: CGFloat = 28
         private let maxVisibleRows = 10
@@ -271,56 +280,73 @@
             let panelWidth = max(anchorFrame.width, 300)
             if panel == nil { createPanel() }
             guard let panel, let window = NSApp.keyWindow else { return }
-            // SwiftUI .global frame: origin at top-left of window, Y grows downward.
-            // AppKit window coords: origin at bottom-left, Y grows upward.
-            // Convert: appKitY = windowHeight - swiftUIY
             let windowHeight = window.frame.height
             let appKitX = anchorFrame.minX
-            let appKitY = windowHeight - anchorFrame.maxY  // bottom of text field in AppKit coords
+            let appKitY = windowHeight - anchorFrame.maxY
             let pointInScreen = window.convertPoint(toScreen: NSPoint(x: appKitX, y: appKitY))
-            let panelFrame = NSRect(
+            let targetFrame = NSRect(
                 x: pointInScreen.x,
                 y: pointInScreen.y - panelHeight - 2,
                 width: panelWidth,
                 height: panelHeight
             )
-            panel.setFrame(panelFrame, display: true)
-            log.debug("[AutoComplete] panel frame=\(panelFrame) items=\(items.count) visibleRows=\(visibleRows)")
             tableView?.reloadData()
             selectRow(selectedIndex)
             if !panel.isVisible {
+                let startFrame = NSRect(
+                    x: targetFrame.origin.x,
+                    y: targetFrame.origin.y + 8,
+                    width: targetFrame.width,
+                    height: targetFrame.height
+                )
+                panel.setFrame(startFrame, display: false)
                 panel.alphaValue = 0
                 window.addChildWindow(panel, ordered: .above)
                 panel.orderFront(nil)
                 NSAnimationContext.runAnimationGroup { ctx in
-                    ctx.duration = 0.15
+                    ctx.duration = 0.18
                     ctx.timingFunction = CAMediaTimingFunction(name: .easeOut)
+                    ctx.allowsImplicitAnimation = true
+                    panel.animator().setFrame(targetFrame, display: true)
                     panel.animator().alphaValue = 1
+                }
+                installMonitors()
+            } else {
+                NSAnimationContext.runAnimationGroup { ctx in
+                    ctx.duration = 0.12
+                    ctx.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+                    ctx.allowsImplicitAnimation = true
+                    panel.animator().setFrame(targetFrame, display: true)
                 }
             }
         }
 
         // MARK: - Hide
         func hide() {
+            removeMonitors()
             guard let panel = self.panel, panel.isVisible else {
                 items = []
                 return
             }
-
-            // Capture values outside the Sendable closure to avoid MainActor isolation errors
             let parentWindow = panel.parent
-
+            let shrunkFrame = NSRect(
+                x: panel.frame.origin.x,
+                y: panel.frame.origin.y + 6,
+                width: panel.frame.width,
+                height: panel.frame.height
+            )
             NSAnimationContext.runAnimationGroup({ ctx in
-                ctx.duration = 0.1
+                ctx.duration = 0.12
                 ctx.timingFunction = CAMediaTimingFunction(name: .easeIn)
+                ctx.allowsImplicitAnimation = true
                 panel.animator().alphaValue = 0
+                panel.animator().setFrame(shrunkFrame, display: true)
             }, completionHandler: {
                 Task { @MainActor in
                     parentWindow?.removeChildWindow(panel)
                     panel.orderOut(nil)
                 }
             })
-
             items = []
         }
 
@@ -329,6 +355,47 @@
             guard let tv = tableView, index >= 0, index < items.count else { return }
             tv.selectRowIndexes(IndexSet(integer: index), byExtendingSelection: false)
             tv.scrollRowToVisible(index)
+        }
+
+        // MARK: - Click Outside & ESC Monitors
+        private func installMonitors() {
+            removeMonitors()
+            clickOutsideMonitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] event in
+                guard let self, let panel = self.panel, panel.isVisible else { return event }
+                let clickWindow = event.window
+                if clickWindow === panel { return event }
+                let textFieldScreenRect = self.anchorScreenRect()
+                if let textFieldScreenRect, textFieldScreenRect.contains(NSEvent.mouseLocation) {
+                    return event
+                }
+                self.hide()
+                self.onDismissedByClickOutside?()
+                return event
+            }
+            escKeyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
+                guard let self, let panel = self.panel, panel.isVisible else { return event }
+                if event.keyCode == 53 {
+                    self.hide()
+                    self.onDismissedByClickOutside?()
+                    return nil
+                }
+                return event
+            }
+        }
+
+        // MARK: - Remove Monitors
+        private func removeMonitors() {
+            if let m = clickOutsideMonitor { NSEvent.removeMonitor(m); clickOutsideMonitor = nil }
+            if let m = escKeyMonitor { NSEvent.removeMonitor(m); escKeyMonitor = nil }
+        }
+
+        // MARK: - Anchor Screen Rect
+        private func anchorScreenRect() -> NSRect? {
+            guard let window = NSApp.keyWindow else { return nil }
+            let windowHeight = window.frame.height
+            let appKitY = windowHeight - anchorFrame.maxY
+            let origin = window.convertPoint(toScreen: NSPoint(x: anchorFrame.minX, y: appKitY))
+            return NSRect(x: origin.x, y: origin.y, width: anchorFrame.width, height: anchorFrame.height)
         }
 
         // MARK: - Create Panel
@@ -345,11 +412,26 @@
             p.backgroundColor = .controlBackgroundColor
             p.isOpaque = false
             p.level = .floating
+            let effect = NSVisualEffectView()
+            effect.material = .popover
+            effect.state = .active
+            effect.blendingMode = .behindWindow
+            effect.wantsLayer = true
+            effect.layer?.cornerRadius = 8
+            effect.layer?.masksToBounds = true
+            p.contentView = effect
             let scrollView = NSScrollView()
             scrollView.hasVerticalScroller = true
             scrollView.autohidesScrollers = true
             scrollView.drawsBackground = false
-            scrollView.autoresizingMask = [.width, .height]
+            scrollView.translatesAutoresizingMaskIntoConstraints = false
+            effect.addSubview(scrollView)
+            NSLayoutConstraint.activate([
+                scrollView.topAnchor.constraint(equalTo: effect.topAnchor, constant: 4),
+                scrollView.bottomAnchor.constraint(equalTo: effect.bottomAnchor, constant: -4),
+                scrollView.leadingAnchor.constraint(equalTo: effect.leadingAnchor),
+                scrollView.trailingAnchor.constraint(equalTo: effect.trailingAnchor),
+            ])
             let tv = NSTableView()
             tv.headerView = nil
             tv.rowHeight = rowHeight
@@ -368,7 +450,6 @@
             tv.delegate = delegate
             objc_setAssociatedObject(tv, "delegate", delegate, .OBJC_ASSOCIATION_RETAIN)
             scrollView.documentView = tv
-            p.contentView = scrollView
             self.panel = p
             self.tableView = tv
         }
@@ -379,6 +460,10 @@
             if row >= 0, row < items.count {
                 onSelect?(row)
             }
+        }
+
+        deinit {
+            removeMonitors()
         }
     }
 

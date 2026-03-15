@@ -31,13 +31,16 @@ extension FileTableView {
                                 handleMultiSelectionAction: handleMultiSelectionAction
                             )
 
-                            // Empty space — clickable for background context menu
-                            Color.clear
-                                .frame(minHeight: 300)
-                                .frame(maxWidth: .infinity)
-                                .contentShape(Rectangle())
-                                .contextMenu { panelBackgroundMenu }
-                                .onTapGesture { selectedID = nil }
+                            // Zebra-striped empty space below file rows
+                            ZebraBackgroundFill(
+                                startIndex: sortedRows.count,
+                                isActivePanel: appState.focusedPanel == panelSide,
+                                rowHeight: FilePanelStyle.rowHeight
+                            )
+                            .frame(maxWidth: .infinity)
+                            .contentShape(Rectangle())
+                            .contextMenu { panelBackgroundMenu }
+                            .onTapGesture { selectedID = nil }
 
                         } header: {
                             TableHeaderView(
