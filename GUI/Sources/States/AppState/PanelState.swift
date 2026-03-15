@@ -14,6 +14,6 @@ struct PanelState {
     /// Currently selected file
     var selectedFile: CustomFile?
 
-    /// Navigation history for this panel
-    var navigationHistory: NavigationHistory
+    /// Navigation history for this panel (legacy — prefer PanelNavigationHistory)
+    var navigationHistory: PanelNavigationHistory?
 }

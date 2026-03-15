@@ -10,15 +10,6 @@ import AppKit
 import FileModelKit
 import Foundation
 
-// Temporary simple navigation history implementation
-final class NavigationHistory {
-    private(set) var current: URL?
-
-    func navigate(to url: URL) {
-        current = url
-    }
-}
-
 /// Central application state for MiMiNavigator.
 /// Owns panel paths, file lists, selection state and navigation managers.
 /// Marked @MainActor because it is directly consumed by SwiftUI views.
@@ -176,13 +167,10 @@ final class AppState {
         log.info("[AppState] init")
         let paths = StatePersistence.loadInitialPaths()
         leftPanel = PanelState(
-            currentDirectory: paths.left,
-            navigationHistory: NavigationHistory()
+            currentDirectory: paths.left
         )
-
         rightPanel = PanelState(
-            currentDirectory: paths.right,
-            navigationHistory: NavigationHistory()
+            currentDirectory: paths.right
         )
 
         self.leftURL = paths.left

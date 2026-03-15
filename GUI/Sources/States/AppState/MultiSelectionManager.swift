@@ -34,7 +34,7 @@ final class MultiSelectionManager {
         let panel = state.focusedPanel
 
         // Skip parent directory entry
-        guard file.nameStr != ".." else {
+        guard !file.isParentEntry else {
             log.debug("[MultiSelectionManager] skip parent dir click")
             return
         }
@@ -69,7 +69,7 @@ final class MultiSelectionManager {
                 var marked = state.markedFiles(for: panel)
                 for idx in rangeStart...rangeEnd {
                     let f = files[idx]
-                    guard f.nameStr != ".." else { continue }
+                    guard !f.isParentEntry else { continue }
                     marked.insert(f.id)
                 }
                 state.setMarkedFiles(marked, for: panel)
@@ -108,7 +108,7 @@ final class MultiSelectionManager {
         }
 
         // Skip ".." parent directory
-        guard file.nameStr != ".." else {
+        guard !file.isParentEntry else {
             log.debug("[MultiSelectionManager] skipping parent dir marker")
             state.selectionMove(by: 1)
             return
@@ -169,7 +169,7 @@ final class MultiSelectionManager {
 
         for file in files {
             // Skip parent directory
-            guard file.nameStr != ".." else { continue }
+            guard !file.isParentEntry else { continue }
 
             if matchesPattern(file.nameStr, pattern: pattern) {
                 if shouldMark {
@@ -213,8 +213,7 @@ final class MultiSelectionManager {
         var marked = Set<String>()
 
         for file in files {
-            // Skip parent directory
-            guard file.nameStr != ".." else { continue }
+            guard !file.isParentEntry else { continue }
             marked.insert(file.id)
         }
 
@@ -242,9 +241,7 @@ final class MultiSelectionManager {
         var marked = state.markedFiles(for: panel)
 
         for file in files {
-            // Skip parent directory
-            guard file.nameStr != ".." else { continue }
-
+            guard !file.isParentEntry else { continue }
             if marked.contains(file.id) {
                 marked.remove(file.id)
             } else {
