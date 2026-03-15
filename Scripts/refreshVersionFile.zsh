@@ -15,18 +15,29 @@ NOW=$(date +"%Y.%m.%d %H:%M:%S")
 HOSTNAME=$(scutil --get LocalHostName 2>/dev/null || hostname)
 
 # ✅ Финальный формат версии
-VERSION="$NOW at Host: $HOSTNAME"
+VERSION_STRING="$NOW at Host: $HOSTNAME"
 
 # ✅ Определение пути к целевому файлу
 SCRIPT_DIR="$(cd -- "$(dirname "$0")" && pwd)"
-TARGET_DIR="$HOME/Develop/MiMiNavigator/Gui/Resources"
+PROJECT_DIR="$(cd -- "$SCRIPT_DIR/.." && pwd)"
+TARGET_DIR="$PROJECT_DIR/GUI/Resources"
 TARGET_FILE="${TARGET_DIR}/curr_version.asc"
+PBXPROJ="$PROJECT_DIR/MiMiNavigator.xcodeproj/project.pbxproj"
+
+# ✅ Получение версии из git tag (e.g. "v0.9.7" → "0.9.7")
+GIT=/usr/bin/git
+if TAG=$($GIT -C "$PROJECT_DIR" describe --tags --abbrev=0 2>/dev/null); then
+    GIT_VERSION="${TAG#v}"
+else
+    GIT_VERSION="0.0.0"
+fi
 
 # ✅ Диагностика
 echo "👣 Script started"
 echo "📂 Script directory: $SCRIPT_DIR"
 echo "📄 Target file: $TARGET_FILE"
-echo "🕒 Generated VERSION: $VERSION"
+echo "🕒 Generated VERSION: $VERSION_STRING"
+echo "🏷️  Git tag version: $GIT_VERSION"
 
 # ✅ Создание директории при необходимости
 mkdir -p "$TARGET_DIR"
@@ -38,7 +49,7 @@ if ! touch "$TARGET_FILE" 2>/dev/null; then
 fi
 
 # ✅ Запись строки версии в файл
-echo "$VERSION" > "$TARGET_FILE"
+echo "$VERSION_STRING" > "$TARGET_FILE"
 
 # ✅ Проверка, что файл не пуст
 if [[ ! -s "$TARGET_FILE" ]]; then
@@ -46,10 +57,16 @@ if [[ ! -s "$TARGET_FILE" ]]; then
   exit 2
 fi
 
+# ✅ Обновление MARKETING_VERSION в pbxproj из git tag
+if [[ -f "$PBXPROJ" ]]; then
+  sed -i '' "s/MARKETING_VERSION = [^;]*/MARKETING_VERSION = ${GIT_VERSION}/" "$PBXPROJ"
+  echo "📋 Updated MARKETING_VERSION → $GIT_VERSION"
+fi
+
 # ✅ Финальное сообщение
 if $DEBUG; then
   echo "📦 Wrote version to $TARGET_FILE:"
-  echo "$VERSION"
+  echo "$VERSION_STRING"
 else
-  echo "✅ Updated version"
+  echo "✅ Updated version: $GIT_VERSION ($VERSION_STRING)"
 fi

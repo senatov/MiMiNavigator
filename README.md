@@ -14,7 +14,7 @@
   <img src="https://img.shields.io/badge/SwiftUI-blue?logo=swift&logoColor=white" alt="SwiftUI" />
   <img src="https://img.shields.io/badge/Concurrency-Strict-2ea44f" alt="Strict Concurrency" />
   <img src="https://img.shields.io/badge/License-AGPL--3.0-blue" alt="AGPL-3.0" />
-  <img src="https://img.shields.io/badge/v0.9.6-Active_Development-orange" alt="Active Development" />
+  <img src="https://img.shields.io/badge/v0.9.6.1-Active_Development-orange" alt="Active Development" />
 </p>
 
 <p align="center">
@@ -104,7 +104,7 @@ MiMiNavigator is a dual-panel file manager inspired by **Total Commander** and *
 | **Archive VFS** | Open archives as virtual directories, navigate inside, auto-repack on exit |
 | **Parent Directory** | `...` entry pinned to top of every panel, archive-aware navigation |
 | **Navigation History** | Per-panel history with quick-jump popover |
-| **Breadcrumb Nav** | Click-to-navigate path bar |
+| **Breadcrumb Nav** | Click-to-navigate path bar with autocomplete popup (ESC/click-outside dismiss, slide animation) |
 | **Favorites Sidebar** | Quick access to bookmarked locations (FavoritesKit package) |
 | **Real-time Updates** | Automatic refresh on file system changes |
 | **FTP/SFTP** | Remote file browsing via curl (FTP) and Citadel/NIOSSH (SFTP) |
@@ -133,7 +133,9 @@ Eight menu categories matching Total Commander conventions: **Files** (F6 Rename
 
 - **macOS 26 Liquid-Glass** menu bar with ultra-thin material, gradient borders, and multi-layered shadows
 - Pixel-perfect Retina rendering via `backingScaleFactor`
-- Sticky column headers, zebra-striped rows, animated toolbar buttons
+- Sticky column headers, zebra-striped rows with themed colors (active/inactive panel)
+- Zebra background fill extends below file rows to fill empty panel space
+- Animated toolbar buttons, NSVisualEffectView popover for autocomplete
 - Hidden files shown in bluish-gray, symlinks labeled as "Alias"
 
 ---
@@ -183,22 +185,10 @@ Alternatively: right-click the app → Open → click **Open** in the dialog.
 - Xcode (latest) with Swift 6.2
 - Optional: `brew install swiftlint swift-format p7zip`
 
-**Production Build:**
-```
-~/Develop/MiMiNavigator [master*]  xcodebuild -project MiMiNavigator.xcodeproj -scheme MiMiNavigator -configuration Release -derivedDataPath /tmp/mimi_build build CODE_SIGNING_ALLOWED=YES
-```
-Then get copy the App from
-```
-/private/tmp/mimi_build/Build/Products/Release
-```
-
-
-
-
-
 ```bash
 git clone --recurse-submodules https://github.com/senatov/MiMiNavigator.git
 cd MiMiNavigator
+zsh Scripts/stamp_version.zsh   # sync version from git tag
 open MiMiNavigator.xcodeproj
 # ⌘R to build and run
 ```
@@ -206,9 +196,17 @@ open MiMiNavigator.xcodeproj
 Or via command line:
 
 ```bash
+zsh Scripts/stamp_version.zsh
 xcodebuild -scheme MiMiNavigator -configuration Debug \
   -destination 'platform=macOS' CODE_SIGNING_ALLOWED=NO build
 ```
+
+**Production Build:**
+```bash
+xcodebuild -project MiMiNavigator.xcodeproj -scheme MiMiNavigator \
+  -configuration Release -derivedDataPath /tmp/mimi_build build CODE_SIGNING_ALLOWED=YES
+```
+Binary output: `/tmp/mimi_build/Build/Products/Release/MiMiNavigator.app`
 
 ---
 
@@ -253,8 +251,9 @@ MiMiNavigator/
 │   │       │               # CompressService, QuickLookService
 │   │       ├── Coordinator/   # FileActionsHandler, DirectoryActionsHandler,
 │   │       │                  # MultiSelectionActionsHandler, ActiveDialog
-│   │       └── FileOperations/ # BatchOperationCoordinator, FileOperationsService,
-│   │                          # DirectorySizeCalculator, UniqueNameGenerator
+│   │       └── FileOperations/ # FileOperationsService (core: copy/move/conflict),
+│   │                          # FileOpsService+Delete, +Rename, +SymLink,
+│   │                          # BatchOperationCoordinator, DirectorySizeCalculator
 │   ├── Services/
 │   │   ├── Archive/        # ArchiveManager (actor), ArchiveExtractor,
 │   │   │                   # ArchiveRepacker, ArchiveFormatDetector,
@@ -313,7 +312,9 @@ MiMiNavigator/
 
 Uses **SwiftyBeaver** with tags: `[FindEngine]` `[ArchiveSearcher]` `[Extractor]` `[Repacker]` `[FormatDetector]` `[SELECT-FLOW]` `[NAV]` `[DOUBLE-CLICK]`
 
-Log file: `~/Library/Application Support/MiMiNavigator/Logs/MiMiNavigator.log`
+Log files:
+- Sandboxed: `~/Library/Containers/Senatov.MiMiNavigator/Data/Library/Application Support/MiMiNavigator/Logs/MiMiNavigator.log`
+- External (dev): `/private/tmp/MiMiNavigator.log`
 
 ---
 
@@ -346,12 +347,20 @@ Log file: `~/Library/Application Support/MiMiNavigator/Logs/MiMiNavigator.log`
 - [x] Hotkey customization
 - [x] Tabbed interface (multiple tabs per panel, context menu, persistence)
 - [x] Archive Open → TC-style virtual directory (not Finder/Archive Utility) NOT READY YET!
+- [x] Zebra-striped background fill for empty panel space
+- [x] Autocomplete popup: click-outside / ESC dismiss, slide animation, NSVisualEffectView
+- [x] FileOperationsService split into modular extensions (Delete, Rename, SymLink)
+- [x] HIGAlertDialog extracted to own file
+- [x] Firmlink handling for `/tmp`, `/var`, `/etc` in scanner and file operations
+- [x] Rename: panel tracking, scan cooldown fix, firmlink path resolution
+- [x] Version auto-sync from git tag via `Scripts/stamp_version.zsh`
 
 ### In Progress 🚧
 
 - [ ] Batch rename for marked files
 - [ ] Terminal integration at current path
 - [ ] Custom themes and color schemes
+- [ ] Scroll-to-selection after rename/create operations
 
 ### Planned 🎯
 - [ ] Three-panel layout option

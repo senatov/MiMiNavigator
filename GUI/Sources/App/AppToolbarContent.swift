@@ -19,11 +19,7 @@ struct AppToolbarContent: ToolbarContent {
 
     // MARK: - Body
     var body: some ToolbarContent {
-        // View mode toggle — right side
-        ToolbarItem(placement: .primaryAction) {
-            ViewModeToolbarItem(appState: appState)
-        }
-        // All action buttons — right side, own framed group
+        // All action buttons — left group
         ToolbarItem(placement: .primaryAction) {
             ToolbarButtonGroup {
                 if store.visibleIDs.contains(.refresh) {
@@ -55,11 +51,15 @@ struct AppToolbarContent: ToolbarContent {
                 }
             }
         }
-        // Menu bar toggle — rightmost
+        // Menu bar toggle
         ToolbarItem(placement: .primaryAction) {
             ToolbarButtonGroup {
                 app.makeToolbarToggle(.menuBarToggle)
             }
+        }
+        // View mode toggle — rightmost, near the title/version badge
+        ToolbarItem(placement: .primaryAction) {
+            ViewModeToolbarItem(appState: appState)
         }
     }
 }
