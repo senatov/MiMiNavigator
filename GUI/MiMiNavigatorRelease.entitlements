@@ -20,6 +20,7 @@
 	<array>
 		<string>com.apple.finder</string>
 		<string>com.apple.systemevents</string>
+		<string>com.apple.Terminal</string>
 		<string>com.apple.dt.FileMerge</string>
 	</array>
 	<key>com.apple.security.temporary-exception.files.absolute-path.read-write</key>

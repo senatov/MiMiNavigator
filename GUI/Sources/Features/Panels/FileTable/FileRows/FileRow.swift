@@ -241,8 +241,6 @@
             onSelect(file)
             // Handle multi-selection via modifier keys
             appState.handleClickWithModifiers(on: file, modifiers: modifiers)
-            // Show file info popup if name is truncated (registered by hover)
-            FileInfoPopupController.shared.showIfTruncated(for: file)
         }
 
         /// Read modifier keys from the current NSEvent

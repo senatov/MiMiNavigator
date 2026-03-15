@@ -107,6 +107,15 @@
                 return false
             }
             destination = appState.url(for: panelSide)
+            // Reject drop if ALL files already reside in the destination directory
+            let destPath = destination.standardizedFileURL.path
+            let allAlreadyInDest = uniqueItems.allSatisfy { url in
+                url.standardizedFileURL.deletingLastPathComponent().path == destPath
+            }
+            if allAlreadyInDest {
+                log.debug("[AppKitDrop] rejected: all \(files.count) file(s) already in \(destPath)")
+                return false
+            }
             log.debug("[AppKitDrop] dropping \(files.count) files → \(destination.path)")
             dragDropManager.prepareTransfer(
                 files: files,

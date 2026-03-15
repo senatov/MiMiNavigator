@@ -3,72 +3,66 @@
 //
 // Created by Claude on 15.03.2026.
 // Copyright © 2026 Senatov. All rights reserved.
-// Description: Modal mini-popup showing full file information on L-click
-//              when the file name is truncated. NSPanel-based, light yellow
-//              background, thin crisp fonts in black/dark-navy.
+// Description: Modal mini-popup showing full file information.
+//              NSPanel-based, light yellow, thin crisp black/dark-navy fonts.
 //              Text is selectable for copy. Dismisses on focus loss or ESC.
+//
+//              Trigger: small orange triangle button at the right edge of
+//              the Name column, visible only when the row is selected AND
+//              the file name is truncated.
 
 import AppKit
 import FileModelKit
 import SwiftUI
 
-// MARK: - FileInfoPopupModifier
-/// Tracks truncation state and anchor position for the name column.
-/// Does NOT add any gesture recognizers — popup is triggered externally
-/// via FileInfoPopupController.shared.showIfTruncated() from FileRow's
-/// existing single-click handler to avoid gesture conflicts with drag-drop.
-struct FileInfoPopupModifier: ViewModifier {
+// MARK: - FileInfoButton
+/// Small orange triangle button at the right edge of Name column.
+/// Visible when the row is selected AND the file name is truncated.
+/// Works for all types: files, directories, symlinks, bundles, archives.
+struct FileInfoButton: View {
     let file: CustomFile
+    let isSelected: Bool
 
     @State private var isTruncated = false
     @State private var anchorFrame: CGRect = .zero
 
-    func body(content: Content) -> some View {
-        content
-            .background(truncationDetector)
-            .background(anchorTracker)
-            .onHover { hovering in
-                if hovering && isTruncated {
-                    FileInfoPopupController.shared.registerTruncatedFile(
+    var body: some View {
+        GeometryReader { geo in
+            Color.clear
+                .onAppear {
+                    anchorFrame = geo.frame(in: .global)
+                    checkTruncation(width: geo.size.width)
+                }
+                .onChange(of: geo.size.width) { _, w in checkTruncation(width: w) }
+                .onChange(of: geo.frame(in: .global)) { _, f in anchorFrame = f }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .overlay(alignment: .trailing) {
+            if isSelected && isTruncated {
+                Button {
+                    FileInfoPopupController.shared.show(
                         file: file, anchorFrame: anchorFrame
                     )
-                } else if !hovering {
-                    FileInfoPopupController.shared.clearRegistration()
+                } label: {
+                    Image(systemName: "arrowtriangle.right.fill")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundStyle(Color.orange)
+                        .frame(width: 18, height: 18)
+                        .contentShape(Rectangle())
+                        .padding(.trailing, 1)
                 }
+                .buttonStyle(.plain)
+                .help("File Info")
+                .transition(.opacity.combined(with: .scale(scale: 0.6)))
+                .animation(.easeOut(duration: 0.15), value: isSelected)
             }
-    }
-
-    private var truncationDetector: some View {
-        GeometryReader { geo in
-            Color.clear
-                .onAppear { checkTruncation(availableWidth: geo.size.width) }
-                .onChange(of: geo.size.width) { _, newWidth in
-                    checkTruncation(availableWidth: newWidth)
-                }
         }
     }
 
-    private var anchorTracker: some View {
-        GeometryReader { geo in
-            Color.clear
-                .onAppear { anchorFrame = geo.frame(in: .global) }
-                .onChange(of: geo.frame(in: .global)) { _, newFrame in
-                    anchorFrame = newFrame
-                }
-        }
-    }
-
-    private func checkTruncation(availableWidth: CGFloat) {
+    private func checkTruncation(width: CGFloat) {
         let nsFont = NSFont.systemFont(ofSize: 13, weight: .regular)
         let textWidth = (file.nameStr as NSString).size(withAttributes: [.font: nsFont]).width
-        isTruncated = textWidth > availableWidth
-    }
-}
-
-// MARK: - View Extension
-extension View {
-    func fileInfoPopup(file: CustomFile) -> some View {
-        modifier(FileInfoPopupModifier(file: file))
+        isTruncated = textWidth > width
     }
 }
 
@@ -86,40 +80,20 @@ final class FileInfoPopupController {
 
     private init() {}
 
-    // MARK: - Registered truncated file (set by hover, consumed by click)
-    private var registeredFile: CustomFile?
-    private var registeredAnchorFrame: CGRect = .zero
-
-    /// Called by FileInfoPopupModifier on hover when name is truncated
-    func registerTruncatedFile(file: CustomFile, anchorFrame: CGRect) {
-        registeredFile = file
-        registeredAnchorFrame = anchorFrame
-    }
-
-    /// Called by FileInfoPopupModifier when hover ends
-    func clearRegistration() {
-        registeredFile = nil
-        registeredAnchorFrame = .zero
-    }
-
-    /// Called from FileRow.handleSingleClick() — shows popup only if a
-    /// truncated file was registered by hover on the name column.
-    func showIfTruncated(for file: CustomFile) {
-        guard let reg = registeredFile, reg.id == file.id else { return }
-        show(file: reg, anchorFrame: registeredAnchorFrame)
-    }
-
     // MARK: - Colors
-    /// Light warm yellow — reminiscent of classic sticky-note tooltips
     private static let bgColor = NSColor(calibratedRed: 1.0, green: 0.98, blue: 0.88, alpha: 0.97)
-    /// Black for primary info
     private static let primaryColor = NSColor.black
-    /// Dark navy for labels
     private static let labelColor = NSColor(calibratedRed: 0.08, green: 0.12, blue: 0.38, alpha: 1.0)
-    /// Thin crisp system font
     private static let valueFont = NSFont.systemFont(ofSize: 11.5, weight: .light)
     private static let labelFont = NSFont.systemFont(ofSize: 11, weight: .medium)
     private static let nameFont = NSFont.systemFont(ofSize: 12.5, weight: .regular)
+
+    // MARK: - Date formatter
+    private static let dateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "dd.MM.yyyy HH:mm:ss"
+        return f
+    }()
 
     // MARK: - Show
     func show(file: CustomFile, anchorFrame: CGRect) {
@@ -127,12 +101,12 @@ final class FileInfoPopupController {
         guard let panel, let textView, let window = NSApp.keyWindow else { return }
         let attributed = buildContent(for: file)
         textView.textStorage?.setAttributedString(attributed)
-        let textWidth: CGFloat = 320
+        let textWidth: CGFloat = 340
         textView.frame.size.width = textWidth - 20
         textView.sizeToFit()
         let textHeight = textView.frame.height
         let panelWidth = textWidth
-        let panelHeight = min(textHeight + 20, 300)
+        let panelHeight = min(textHeight + 20, 360)
         let windowHeight = window.frame.height
         let appKitX = anchorFrame.minX
         let appKitY = windowHeight - anchorFrame.maxY
@@ -145,6 +119,7 @@ final class FileInfoPopupController {
         )
         if panel.isVisible {
             panel.setFrame(targetFrame, display: true)
+            textView.textStorage?.setAttributedString(attributed)
             return
         }
         let startFrame = NSRect(
@@ -192,76 +167,105 @@ final class FileInfoPopupController {
         let nameParaStyle = NSMutableParagraphStyle()
         nameParaStyle.lineBreakMode = .byWordWrapping
         nameParaStyle.paragraphSpacing = 6
-        result.append(
-            NSAttributedString(
-                string: file.nameStr + "\n",
-                attributes: [
-                    .font: Self.nameFont,
-                    .foregroundColor: Self.primaryColor,
-                    .paragraphStyle: nameParaStyle,
-                ]
-            ))
+        result.append(NSAttributedString(
+            string: file.nameStr + "\n",
+            attributes: [
+                .font: Self.nameFont,
+                .foregroundColor: Self.primaryColor,
+                .paragraphStyle: nameParaStyle,
+            ]
+        ))
         addField(to: result, label: "Path", value: file.pathStr)
+        // Type description
+        var typeDesc = file.kindFormatted
+        if file.isAppBundle { typeDesc = "Application Bundle" }
+        else if file.isSymbolicDirectory { typeDesc = "Symbolic Link → Folder" }
+        else if file.isSymbolicLink { typeDesc = "Symbolic Link" }
+        else if file.isDirectory { typeDesc = "Folder" }
+        else if file.isArchiveFile { typeDesc = "Archive (\(file.fileExtension.uppercased()))" }
+        addField(to: result, label: "Kind", value: typeDesc)
+        // Size
         if !file.fileSizeFormatted.isEmpty {
             addField(to: result, label: "Size", value: file.fileSizeFormatted)
+        } else if let cached = file.cachedAppSize, cached > 0 {
+            addField(to: result, label: "Size", value: CustomFile.formatBytes(cached))
         }
-        addField(to: result, label: "Kind", value: file.kindFormatted)
-        if let date = file.modifiedDate {
-            addField(to: result, label: "Modified", value: CustomFile.formatDate(date))
+        // Child count for directories
+        if file.isDirectory, let count = file.cachedChildCount, count >= 0 {
+            addField(to: result, label: "Items", value: "\(count)")  
         }
-        if let date = file.creationDate {
-            addField(to: result, label: "Created", value: CustomFile.formatDate(date))
-        }
+        // Fetch all dates directly from the file system
+        let dates = fetchDates(for: file.urlValue)
+        if let d = dates.modified { addField(to: result, label: "Modified", value: Self.dateFormatter.string(from: d)) }
+        if let d = dates.created { addField(to: result, label: "Created", value: Self.dateFormatter.string(from: d)) }
+        if let d = dates.lastOpened { addField(to: result, label: "Last Opened", value: Self.dateFormatter.string(from: d)) }
+        if let d = dates.added { addField(to: result, label: "Date Added", value: Self.dateFormatter.string(from: d)) }
+        if let d = dates.lastUsed { addField(to: result, label: "Last Used", value: Self.dateFormatter.string(from: d)) }
         let perms = file.permissionsFormatted
-        if !perms.isEmpty {
-            addField(to: result, label: "Permissions", value: perms)
-        }
+        if !perms.isEmpty { addField(to: result, label: "Permissions", value: perms) }
         let owner = file.ownerFormatted
-        if !owner.isEmpty {
-            addField(to: result, label: "Owner", value: owner)
-        }
+        if !owner.isEmpty { addField(to: result, label: "Owner", value: owner) }
         if file.isSymbolicLink {
-            let resolved = file.urlValue.resolvingSymlinksInPath().path
-            addField(to: result, label: "Link target", value: resolved)
+            addField(to: result, label: "Link target", value: file.urlValue.resolvingSymlinksInPath().path)
         }
-        if let archive = file.archiveSourcePath {
-            addField(to: result, label: "Archive", value: archive)
-        }
-        if let internal_ = file.archiveInternalPath {
-            addField(to: result, label: "Inside", value: internal_)
-        }
+        if let archive = file.archiveSourcePath { addField(to: result, label: "Archive", value: archive) }
+        if let internal_ = file.archiveInternalPath { addField(to: result, label: "Inside", value: internal_) }
         return result
+    }
+
+    // MARK: - Fetch dates from file system
+    private struct FileDates {
+        var created: Date?
+        var modified: Date?
+        var lastOpened: Date?
+        var added: Date?
+        var lastUsed: Date?
+    }
+
+    private func fetchDates(for url: URL) -> FileDates {
+        let keys: Set<URLResourceKey> = [
+            .creationDateKey,
+            .contentModificationDateKey,
+            .contentAccessDateKey,
+            .addedToDirectoryDateKey,
+        ]
+        guard let vals = try? url.resourceValues(forKeys: keys) else {
+            return FileDates()
+        }
+        // MDItem for "last used" date (Spotlight metadata)
+        var lastUsed: Date?
+        if let mdItem = MDItemCreateWithURL(nil, url as CFURL) {
+            if let val = MDItemCopyAttribute(mdItem, kMDItemLastUsedDate) {
+                lastUsed = val as? Date
+            }
+        }
+        return FileDates(
+            created: vals.creationDate,
+            modified: vals.contentModificationDate,
+            lastOpened: vals.contentAccessDate,
+            added: vals.addedToDirectoryDate,
+            lastUsed: lastUsed
+        )
     }
 
     private func addField(to result: NSMutableAttributedString, label: String, value: String) {
         let paraStyle = NSMutableParagraphStyle()
         paraStyle.lineBreakMode = .byWordWrapping
         paraStyle.paragraphSpacing = 2
-        paraStyle.headIndent = 0
-        result.append(
-            NSAttributedString(
-                string: label + ": ",
-                attributes: [
-                    .font: Self.labelFont,
-                    .foregroundColor: Self.labelColor,
-                    .paragraphStyle: paraStyle,
-                ]
-            ))
-        result.append(
-            NSAttributedString(
-                string: value + "\n",
-                attributes: [
-                    .font: Self.valueFont,
-                    .foregroundColor: Self.primaryColor,
-                    .paragraphStyle: paraStyle,
-                ]
-            ))
+        result.append(NSAttributedString(
+            string: label + ": ",
+            attributes: [.font: Self.labelFont, .foregroundColor: Self.labelColor, .paragraphStyle: paraStyle]
+        ))
+        result.append(NSAttributedString(
+            string: value + "\n",
+            attributes: [.font: Self.valueFont, .foregroundColor: Self.primaryColor, .paragraphStyle: paraStyle]
+        ))
     }
 
     // MARK: - Create Panel
     private func createPanel() {
         let p = NSPanel(
-            contentRect: NSRect(x: 0, y: 0, width: 320, height: 200),
+            contentRect: NSRect(x: 0, y: 0, width: 340, height: 240),
             styleMask: [.nonactivatingPanel],
             backing: .buffered,
             defer: true
@@ -279,10 +283,6 @@ final class FileInfoPopupController {
         container.layer?.masksToBounds = true
         container.layer?.borderColor = NSColor(calibratedRed: 0.78, green: 0.74, blue: 0.58, alpha: 0.6).cgColor
         container.layer?.borderWidth = 0.5
-        container.layer?.shadowColor = NSColor.black.cgColor
-        container.layer?.shadowOpacity = 0.12
-        container.layer?.shadowRadius = 8
-        container.layer?.shadowOffset = CGSize(width: 0, height: -2)
         p.contentView = container
         let scrollView = NSScrollView()
         scrollView.hasVerticalScroller = true
@@ -323,36 +323,21 @@ final class FileInfoPopupController {
         }
         escKeyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
             guard let self, let panel = self.panel, panel.isVisible else { return event }
-            if event.keyCode == 53 {
-                self.hide()
-                return nil
-            }
+            if event.keyCode == 53 { self.hide(); return nil }
             return event
         }
         focusMonitor = NotificationCenter.default.addObserver(
             forName: NSApplication.didResignActiveNotification,
-            object: nil,
-            queue: .main
+            object: nil, queue: .main
         ) { [weak self] _ in
-            Task { @MainActor in
-                self?.hide()
-            }
+            Task { @MainActor in self?.hide() }
         }
     }
 
     private func removeMonitors() {
-        if let m = clickOutsideMonitor {
-            NSEvent.removeMonitor(m)
-            clickOutsideMonitor = nil
-        }
-        if let m = escKeyMonitor {
-            NSEvent.removeMonitor(m)
-            escKeyMonitor = nil
-        }
-        if let m = focusMonitor {
-            NotificationCenter.default.removeObserver(m)
-            focusMonitor = nil
-        }
+        if let m = clickOutsideMonitor { NSEvent.removeMonitor(m); clickOutsideMonitor = nil }
+        if let m = escKeyMonitor { NSEvent.removeMonitor(m); escKeyMonitor = nil }
+        if let m = focusMonitor { NotificationCenter.default.removeObserver(m); focusMonitor = nil }
     }
 
     deinit {

@@ -115,7 +115,9 @@
                             .lineLimit(1)
                             .truncationMode(.middle)
                     }
-                    .fileInfoPopup(file: file)
+                    .overlay(alignment: .trailing) {
+                        FileInfoButton(file: file, isSelected: isSelected)
+                    }
                     .layoutPriority(0)
                 }
             )

@@ -37,7 +37,7 @@
         weak var appState: AppState?
 
         private var mouseDownPoint: NSPoint = .zero
-        private let dragThreshold: CGFloat = 4.0
+        private let dragThreshold: CGFloat = 5.0
         private var didStartDragging = false
         private var mouseDownOnResize = false
         private var mouseMonitor: Any?

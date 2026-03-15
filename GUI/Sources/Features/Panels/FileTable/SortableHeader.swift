@@ -6,6 +6,7 @@
 // Description: Column header with separate sort arrow click target
 //              and title double-click for auto-fit.
 
+import FileModelKit
 import SwiftUI
 
 // MARK: - SortableHeader
