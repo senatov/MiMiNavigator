@@ -23,8 +23,8 @@
     final class PanelDialogCoordinator: NSObject, NSWindowDelegate {
 
         // MARK: - Shared instances
-        static let history   = PanelDialogCoordinator(kind: .history,   title: "Navigation History",  size: NSSize(width: 620, height: 640))
-        static let favorites = PanelDialogCoordinator(kind: .favorites, title: "Favorites",            size: NSSize(width: 540, height: 720))
+        static let history   = PanelDialogCoordinator(kind: .history,   title: "Navigation History",  systemImage: "clock.arrow.circlepath", size: NSSize(width: 620, height: 640))
+        static let favorites = PanelDialogCoordinator(kind: .favorites, title: "Favorites",            systemImage: "sidebar.left",            size: NSSize(width: 540, height: 720))
 
         // MARK: - State
         private(set) var isVisible = false
@@ -33,12 +33,14 @@
         // MARK: - Config
         private let kind: PanelDialogKind
         private let windowTitle: String
+        private let windowImage: String
         private let defaultSize: NSSize
 
         // MARK: - Init
-        private init(kind: PanelDialogKind, title: String, size: NSSize) {
+        private init(kind: PanelDialogKind, title: String, systemImage: String, size: NSSize) {
             self.kind = kind
             self.windowTitle = title
+            self.windowImage = systemImage
             self.defaultSize = size
         }
 
@@ -65,14 +67,13 @@
                 backing: .buffered,
                 defer: false
             )
-            newPanel.title = windowTitle
             newPanel.contentView = hostingView
             newPanel.isOpaque = false
             newPanel.backgroundColor = .windowBackgroundColor
             newPanel.isReleasedWhenClosed = false
             newPanel.minSize = NSSize(width: 420, height: 360)
             newPanel.titlebarAppearsTransparent = false
-            newPanel.titleVisibility = .visible
+            PanelTitleHelper.applyIconTitle(to: newPanel, systemImage: windowImage, title: windowTitle)
             newPanel.toolbarStyle = .unified
             newPanel.animationBehavior = .default
             newPanel.isMovableByWindowBackground = true

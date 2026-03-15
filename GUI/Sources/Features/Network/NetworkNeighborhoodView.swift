@@ -52,11 +52,9 @@ struct NetworkNeighborhoodView: View {
         }
     }
 
-    // MARK: - Header
+    // MARK: - Header (action bar only — title is in titlebar accessory)
     private var headerBar: some View {
         HStack(spacing: 6) {
-            Image(systemName: "network").foregroundStyle(.secondary)
-            Text("Network Neighborhood").font(.subheadline.weight(.medium))
             Spacer()
             if provider.isScanning {
                 ProgressView().scaleEffect(0.6)
@@ -70,7 +68,7 @@ struct NetworkNeighborhoodView: View {
                 .keyboardShortcut("r", modifiers: .command)
             }
         }
-        .padding(.horizontal, 12).padding(.vertical, 8)
+        .padding(.horizontal, 12).padding(.vertical, 6)
         .background(DialogColors.stripe)
     }
 

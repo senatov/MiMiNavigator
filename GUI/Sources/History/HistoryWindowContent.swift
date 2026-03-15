@@ -39,14 +39,9 @@ struct HistoryWindowContent: View {
         }
         .onExitCommand { PanelDialogCoordinator.history.close() }
     }
-    // MARK: - Header Bar
+    // MARK: - Header Bar (action bar only — title is in titlebar accessory)
     private var headerBar: some View {
         HStack(spacing: 8) {
-            Image(systemName: "clock.arrow.circlepath")
-                .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(.tint)
-            Text("Navigation History")
-                .font(.system(size: 13, weight: .semibold))
             Spacer()
             if !filteredURLs.isEmpty {
                 Text("\(filteredURLs.count)")

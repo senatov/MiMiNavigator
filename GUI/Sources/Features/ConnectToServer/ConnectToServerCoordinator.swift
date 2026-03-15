@@ -61,12 +61,11 @@ final class ConnectToServerCoordinator {
             backing: .buffered,
             defer: false
         )
-        panel.title = "Connect to Server"
         panel.contentView = NSHostingView(rootView: contentView)
         panel.isReleasedWhenClosed = false
         panel.minSize = NSSize(width: 660, height: 440)
         panel.titlebarAppearsTransparent = false
-        panel.titleVisibility = .visible
+        PanelTitleHelper.applyIconTitle(to: panel, systemImage: "link", title: "Connect to Server")
         panel.toolbarStyle = .unified
         panel.animationBehavior = .utilityWindow
         panel.isMovableByWindowBackground = true

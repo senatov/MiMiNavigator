@@ -48,22 +48,17 @@ struct ToolbarCustomizeView: View {
     }
 }
 
-// MARK: - Header
+// MARK: - Header (action bar only — title is in titlebar accessory)
 private struct TCV_Header: View {
     var body: some View {
         HStack(spacing: 8) {
-            Image(systemName: "rectangle.3.group")
-                .font(.system(size: 14))
-                .foregroundStyle(.orange)
-            Text("Customize Toolbar")
-                .font(.system(.subheadline, design: .default, weight: .semibold))
             Spacer()
             Text("Drag to reorder • click to toggle")
                 .font(.system(size: 10))
                 .foregroundStyle(.tertiary)
         }
         .padding(.horizontal, 12)
-        .padding(.vertical, 8)
+        .padding(.vertical, 6)
         .background(DialogColors.stripe)
     }
 }

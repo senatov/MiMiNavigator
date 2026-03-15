@@ -38,9 +38,8 @@
                 backing: .buffered,
                 defer: false
             )
-            p.title = "Customize Toolbar"
-            p.titleVisibility = .visible
             p.titlebarAppearsTransparent = false
+            PanelTitleHelper.applyIconTitle(to: p, systemImage: "wrench.adjustable", title: "Customize Toolbar")
             p.isFloatingPanel = false
             p.becomesKeyOnlyIfNeeded = false
             p.isMovableByWindowBackground = true

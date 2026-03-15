@@ -57,12 +57,11 @@ final class SettingsCoordinator {
             backing: .buffered,
             defer: false
         )
-        panel.title = "Settings"
         panel.contentView = NSHostingView(rootView: contentView)
         panel.isReleasedWhenClosed = false
         panel.minSize = NSSize(width: 600, height: 440)
         panel.titlebarAppearsTransparent = false
-        panel.titleVisibility = .visible
+        PanelTitleHelper.applyIconTitle(to: panel, systemImage: "gearshape", title: "Settings")
         panel.toolbarStyle = .unified
         panel.animationBehavior = .utilityWindow
         panel.isMovableByWindowBackground = true

@@ -67,12 +67,11 @@ final class FindFilesCoordinator {
             backing: .buffered,
             defer: false
         )
-        window.title = "Find Files"
         window.contentView = hostingView
         window.isReleasedWhenClosed = false
         window.minSize = NSSize(width: 520, height: 400)
         window.titlebarAppearsTransparent = false
-        window.titleVisibility = .visible
+        PanelTitleHelper.applyIconTitle(to: window, systemImage: "magnifyingglass", title: "Find Files")
         window.toolbarStyle = .unified
         window.animationBehavior = .utilityWindow
         window.isMovableByWindowBackground = true

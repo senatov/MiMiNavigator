@@ -63,12 +63,11 @@ final class NetworkNeighborhoodCoordinator {
             backing: .buffered,
             defer: false
         )
-        panel.title = "Network Neighborhood"
         panel.contentView = NSHostingView(rootView: contentView)
         panel.isReleasedWhenClosed = false
         panel.minSize = NSSize(width: 380, height: 400)
         panel.titlebarAppearsTransparent = false
-        panel.titleVisibility = .visible
+        PanelTitleHelper.applyIconTitle(to: panel, systemImage: "rectangle.connected.to.line.below", title: "Network Neighborhood")
         panel.toolbarStyle = .unified
         panel.animationBehavior = .utilityWindow
         panel.isMovableByWindowBackground = true
