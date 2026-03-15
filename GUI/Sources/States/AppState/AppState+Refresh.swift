@@ -3,21 +3,39 @@
 //
 // Created by Iakov Senatov on 11.03.2026.
 // Copyright © 2025-2026 Senatov. All rights reserved.
-// Description: Panel refresh operations, remote file listing, path updates
+// Description: Panel refresh, remote listing, path updates, scanner directory helper.
 
 import FileModelKit
 import Foundation
+
+// MARK: - Scanner Directory Helper
+extension AppState {
+
+    /// Unified scanner directory setter — eliminates left/right branching at call sites.
+    func setScannerDirectory(_ path: String, for panel: PanelSide) async {
+        if panel == .left {
+            await scanner.setLeftDirectory(pathStr: path)
+        } else {
+            await scanner.setRightDirectory(pathStr: path)
+        }
+    }
+
+    /// Set scanner directory + refresh in one call.
+    func setScannerDirectoryAndRefresh(_ path: String, for panel: PanelSide) async {
+        await setScannerDirectory(path, for: panel)
+        await refreshFiles(for: panel)
+    }
+}
 
 // MARK: - Refresh Operations
 extension AppState {
 
     @Sendable
     func refreshFiles() async {
-        await refreshLeftFiles()
-        await refreshRightFiles()
+        await refreshFiles(for: .left)
+        await refreshFiles(for: .right)
     }
 
-    // MARK: - Unified refresh for one panel
     func refreshFiles(for panel: PanelSide) async {
         let panelURL = url(for: panel)
         if Self.isRemotePath(panelURL) {
@@ -25,11 +43,9 @@ extension AppState {
         } else {
             await scanner.refreshFiles(currSide: panel)
         }
-        let selected = panel == .left ? selectedLeftFile : selectedRightFile
-        if selected == nil {
+        if self[panel: panel].selectedFile == nil {
             let files = panel == .left ? displayedLeftFiles : displayedRightFiles
-            let first = firstRealFile(in: files)
-            if let f = first {
+            if let f = firstRealFile(in: files) {
                 setSelectedFile(f, for: panel)
                 log.debug("[AppState] \(f.nameStr) selected (\(panel))")
             }
@@ -43,16 +59,12 @@ extension AppState {
 // MARK: - Remote Path Detection & Refresh
 extension AppState {
 
-    /// Returns true if the URL belongs to an active remote connection
     nonisolated static func isRemotePath(_ url: URL) -> Bool {
         let path = url.absoluteString
-        return path.hasPrefix("sftp://")
-            || path.hasPrefix("ftp://")
-            || path.hasPrefix("/sftp:")
-            || path.hasPrefix("/ftp:")
+        return path.hasPrefix("sftp://") || path.hasPrefix("ftp://")
+            || path.hasPrefix("/sftp:") || path.hasPrefix("/ftp:")
     }
 
-    /// Fetch remote directory listing and populate panel files
     func refreshRemoteFiles(for panel: PanelSide) async {
         let manager = RemoteConnectionManager.shared
         guard let conn = manager.activeConnection else {
@@ -65,13 +77,9 @@ extension AppState {
             let items = try await manager.listDirectory(remotePath)
             let files = items.map { CustomFile(remoteItem: $0) }
             let sorted = applySorting(files)
-            switch panel {
-            case .left:
-                displayedLeftFiles = sorted
-                if selectedLeftFile == nil { selectedLeftFile = firstRealFile(in: sorted) }
-            case .right:
-                displayedRightFiles = sorted
-                if selectedRightFile == nil { selectedRightFile = firstRealFile(in: sorted) }
+            if panel == .left { displayedLeftFiles = sorted } else { displayedRightFiles = sorted }
+            if self[panel: panel].selectedFile == nil {
+                setSelectedFile(firstRealFile(in: sorted), for: panel)
             }
         } catch {
             log.error("[AppState] remote listing failed: \(error.localizedDescription)")
@@ -82,62 +90,47 @@ extension AppState {
 // MARK: - Path Updates
 extension AppState {
 
-    /// Convenience overload: accepts a String path and converts to URL internally.
-    func updatePath(_ pathString: String, for panelSide: PanelSide) {
-        updatePath(URL(fileURLWithPath: pathString), for: panelSide)
+    func updatePath(_ pathString: String, for panel: PanelSide) {
+        updatePath(URL(fileURLWithPath: pathString), for: panel)
     }
 
-    func updatePath(_ newURL: URL, for panelSide: PanelSide) {
-        let currentURL = url(for: panelSide)
+    func updatePath(_ newURL: URL, for panel: PanelSide) {
+        let currentURL = url(for: panel)
         guard !PathUtils.areEqual(currentURL, newURL) else { return }
         var normalizedURL = newURL
         var isDirForFileCheck: ObjCBool = false
         if FileManager.default.fileExists(atPath: newURL.path, isDirectory: &isDirForFileCheck),
            !isDirForFileCheck.boolValue {
             normalizedURL = newURL.deletingLastPathComponent()
-            log.debug("[AppState] updatePath: file detected, using parent directory → \(normalizedURL.path)")
+            log.debug("[AppState] updatePath: file → parent dir: \(normalizedURL.path)")
         }
-        log.debug("[AppState] updatePath \(panelSide) → \(normalizedURL.path)")
-        focusedPanel = panelSide
-        tabManager(for: panelSide).updateActiveTabPath(normalizedURL)
+        log.debug("[AppState] updatePath \(panel) → \(normalizedURL.path)")
+        focusedPanel = panel
+        tabManager(for: panel).updateActiveTabPath(normalizedURL)
         if !isNavigatingFromHistory {
             var isDir: ObjCBool = false
             if FileManager.default.fileExists(atPath: normalizedURL.path, isDirectory: &isDir),
                isDir.boolValue {
-                navigationHistory(for: panelSide).navigateTo(normalizedURL)
+                navigationHistory(for: panel).navigateTo(normalizedURL)
             }
             selectionsHistory.setCurrent(to: normalizedURL)
         }
-        switch panelSide {
-        case .left:
-            if Self.isRemotePath(normalizedURL) && !Self.isRemotePath(leftURL) {
-                savedLocalLeftURL = leftURL
-            }
-            leftURL = normalizedURL
-            selectedLeftFile = firstRealFile(in: displayedLeftFiles)
-        case .right:
-            if Self.isRemotePath(normalizedURL) && !Self.isRemotePath(rightURL) {
-                savedLocalRightURL = rightURL
-            }
-            rightURL = normalizedURL
-            selectedRightFile = firstRealFile(in: displayedRightFiles)
+        let panelURL = url(for: panel)
+        if Self.isRemotePath(normalizedURL) && !Self.isRemotePath(panelURL) {
+            self[panel: panel].savedLocalURL = panelURL
         }
+        if panel == .left { leftURL = normalizedURL } else { rightURL = normalizedURL }
+        let files = panel == .left ? displayedLeftFiles : displayedRightFiles
+        setSelectedFile(firstRealFile(in: files), for: panel)
     }
 
-    /// Restore panel to saved local path after remote disconnect
     func restoreLocalPath(for panel: PanelSide) async {
-        let savedURL: URL? = panel == .left ? savedLocalLeftURL : savedLocalRightURL
-        guard let localURL = savedURL else {
+        guard let localURL = self[panel: panel].savedLocalURL else {
             log.warning("[AppState] no saved local path for \(panel)")
             return
         }
         log.info("[AppState] restoring local path \(panel): \(localURL.path)")
         updatePath(localURL, for: panel)
-        if panel == .left {
-            await scanner.setLeftDirectory(pathStr: localURL.path)
-        } else {
-            await scanner.setRightDirectory(pathStr: localURL.path)
-        }
-        await refreshFiles(for: panel)
+        await setScannerDirectoryAndRefresh(localURL.path, for: panel)
     }
 }

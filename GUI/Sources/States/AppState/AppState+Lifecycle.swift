@@ -3,7 +3,7 @@
 //
 // Created by Iakov Senatov on 15.03.2026.
 // Copyright © 2025-2026 Senatov. All rights reserved.
-// Description: App lifecycle — initialize, saveBeforeExit, spinner watchdog
+// Description: App lifecycle — initialize, saveBeforeExit, spinner watchdog.
 
 import AppKit
 import FileModelKit
@@ -28,19 +28,21 @@ extension AppState {
         if let cached = PanelStartupCache.shared.load(forLeftPath: leftPath, rightPath: rightPath) {
             displayedLeftFiles = cached.left
             displayedRightFiles = cached.right
-            selectedLeftFile = firstRealFile(in: cached.left)
-            selectedRightFile = firstRealFile(in: cached.right)
+            setSelectedFile(firstRealFile(in: cached.left), for: .left)
+            setSelectedFile(firstRealFile(in: cached.right), for: .right)
         }
         Task {
-            await scanner.setLeftDirectory(pathStr: leftPath)
-            await scanner.setRightDirectory(pathStr: rightPath)
+            await setScannerDirectory(leftPath, for: .left)
+            await setScannerDirectory(rightPath, for: .right)
             await scanner.startMonitoring()
-            async let l: Void = refreshLeftFiles()
-            async let r: Void = refreshRightFiles()
+            async let l: Void = refreshFiles(for: .left)
+            async let r: Void = refreshFiles(for: .right)
             _ = await (l, r)
             selectionManager?.restoreSelectionsAndFocus()
             focusedPanel = .left
-            if selectedLeftFile == nil { selectedLeftFile = firstRealFile(in: displayedLeftFiles) }
+            if self[panel: .left].selectedFile == nil {
+                setSelectedFile(firstRealFile(in: displayedLeftFiles), for: .left)
+            }
             PanelStartupCache.shared.save(
                 leftPath: leftPath, rightPath: rightPath,
                 leftFiles: displayedLeftFiles, rightFiles: displayedRightFiles)

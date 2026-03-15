@@ -3,7 +3,7 @@
 //
 // Created by Iakov Senatov on 15.03.2026.
 // Copyright © 2025-2026 Senatov. All rights reserved.
-// Description: Settings toggles, panel swap, force refresh
+// Description: Settings toggles, panel swap, force refresh.
 
 import AppKit
 import FileModelKit
@@ -29,19 +29,19 @@ extension AppState {
 
     func swapPanels() {
         log.debug(#function + ": leftPath: \(leftPath), rightPath: \(rightPath)")
-        let tmpPath = leftPath
-        leftPath = rightPath
-        rightPath = tmpPath
+        let tmpURL = leftURL
+        leftURL = rightURL
+        rightURL = tmpURL
         tabManager(for: .left).updateActiveTabPath(leftURL)
         tabManager(for: .right).updateActiveTabPath(rightURL)
-        let tmpSel = selectedLeftFile
-        selectedLeftFile = selectedRightFile
-        selectedRightFile = tmpSel
+        let tmpSel = self[panel: .left].selectedFile
+        setSelectedFile(self[panel: .right].selectedFile, for: .left)
+        setSelectedFile(tmpSel, for: .right)
         Task {
-            await scanner.setLeftDirectory(pathStr: leftPath)
-            await scanner.setRightDirectory(pathStr: rightPath)
-            await refreshLeftFiles()
-            await refreshRightFiles()
+            await setScannerDirectory(leftPath, for: .left)
+            await setScannerDirectory(rightPath, for: .right)
+            await refreshFiles(for: .left)
+            await refreshFiles(for: .right)
         }
     }
 }
