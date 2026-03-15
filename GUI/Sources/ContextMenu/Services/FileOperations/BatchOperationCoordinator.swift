@@ -26,10 +26,11 @@ final class BatchOperationCoordinator {
     /// Initiate batch copy from focused panel to opposite panel
     func initiateCopy(appState: AppState) {
         let sourcePanel = appState.focusedPanel
+        let selectedFile = sourcePanel == .left ? appState.selectedLeftFile : appState.selectedRightFile
+        log.info("[BatchOps] initiateCopy: panel=\(sourcePanel) selectedFile=\(selectedFile?.nameStr ?? "nil")")
         let files = appState.filesForOperation(on: sourcePanel)
-        
         guard !files.isEmpty else {
-            log.warning("[BatchOperationCoordinator] copy: no files selected")
+            log.warning("[BatchOps] copy: no files selected (selectedFile=\(selectedFile?.nameStr ?? "nil"), isParent=\(selectedFile?.isParentEntry ?? false))")
             return
         }
         

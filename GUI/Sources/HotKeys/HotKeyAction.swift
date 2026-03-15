@@ -20,6 +20,11 @@ enum HotKeyAction: String, CaseIterable, Identifiable, Codable, Sendable {
     case newFolder = "newFolder"
     case deleteFile = "deleteFile"
 
+    // MARK: - Clipboard
+    case clipboardCopy = "clipboardCopy"
+    case clipboardCut = "clipboardCut"
+    case clipboardPaste = "clipboardPaste"
+
     // MARK: - Navigation
     case togglePanelFocus = "togglePanelFocus"
     case moveUp = "moveUp"
@@ -67,6 +72,9 @@ enum HotKeyAction: String, CaseIterable, Identifiable, Codable, Sendable {
             case .moveFile: return "Move File"
             case .newFolder: return "New Folder"
             case .deleteFile: return "Delete File"
+            case .clipboardCopy: return "Copy to Clipboard"
+            case .clipboardCut: return "Cut to Clipboard"
+            case .clipboardPaste: return "Paste from Clipboard"
             case .togglePanelFocus: return "Toggle Panel Focus"
             case .moveUp: return "Move Up"
             case .moveDown: return "Move Down"
@@ -99,7 +107,8 @@ enum HotKeyAction: String, CaseIterable, Identifiable, Codable, Sendable {
     // MARK: - Category
     var category: HotKeyCategory {
         switch self {
-            case .viewFile, .editFile, .copyFile, .moveFile, .newFolder, .deleteFile:
+            case .viewFile, .editFile, .copyFile, .moveFile, .newFolder, .deleteFile,
+                 .clipboardCopy, .clipboardCut, .clipboardPaste:
                 return .fileOperations
             case .togglePanelFocus, .moveUp, .moveDown, .pageUp, .pageDown, .moveToTop, .moveToBottom, .openSelected, .parentDirectory, .refreshPanels,
                 .newTab, .closeTab, .nextTab, .prevTab:

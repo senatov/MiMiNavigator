@@ -24,10 +24,10 @@ struct DownToolbarButtonView: View {
                 .truncationMode(.tail)
                 .frame(minWidth: 90)
         }
-        // Native macOS bezel — rounded corners, visible border, system hover/press
         .buttonStyle(ThemedButtonStyle())
         .controlSize(.large)
         .tint(.primary)
+        .focusable(false)
         .help(title)
     }
 }

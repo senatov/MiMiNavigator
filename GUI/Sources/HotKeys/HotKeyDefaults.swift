@@ -43,6 +43,11 @@ enum HotKeyDefaults {
         HotKeyBinding(action: .unmarkAll,        keyCode: 0x35, modifiers: .none),         // Escape (when marks exist)
         HotKeyBinding(action: .markSameExtension, keyCode: 0x00, modifiers: [.command, .shift]), // ⌘⇧A
 
+        // ── Clipboard (macOS standard) ──
+        HotKeyBinding(action: .clipboardCopy,  keyCode: 0x08, modifiers: .command),       // ⌘C
+        HotKeyBinding(action: .clipboardCut,   keyCode: 0x07, modifiers: .command),       // ⌘X
+        HotKeyBinding(action: .clipboardPaste, keyCode: 0x09, modifiers: .command),       // ⌘V
+
         // ── Tabs ──
         HotKeyBinding(action: .newTab,           keyCode: 0x11, modifiers: .command),      // ⌘T
         HotKeyBinding(action: .closeTab,         keyCode: 0x0D, modifiers: .command),      // ⌘W
@@ -67,6 +72,10 @@ enum HotKeyDefaults {
     /// without replacing the primary binding shown in Settings.
     /// Format: (keyCode, modifiers) → action
     static let aliases: [(keyCode: UInt16, modifiers: HotKeyModifiers, action: HotKeyAction)] = [
-        (0x75, .none, .deleteFile),   // Fwd-Delete → same as F8
+        (0x75, .none, .deleteFile),       // Fwd-Delete → same as F8
+        (0x60, .function, .copyFile),     // Fn+F5 → Copy (fallback when macOS grabs bare F5)
+        (0x08, .control, .clipboardCopy), // Ctrl+C → clipboard copy (Windows style)
+        (0x07, .control, .clipboardCut),  // Ctrl+X → clipboard cut (Windows style)
+        (0x09, .control, .clipboardPaste),// Ctrl+V → clipboard paste (Windows style)
     ]
 }

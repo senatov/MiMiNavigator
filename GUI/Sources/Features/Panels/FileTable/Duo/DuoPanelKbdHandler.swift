@@ -146,6 +146,31 @@
                 onDelete?()
                 return nil
 
+            // ── Clipboard ──
+            case .clipboardCopy:
+                log.info("[KEY] → Clipboard Copy")
+                let panel = appState.focusedPanel
+                let files = appState.filesForOperation(on: panel)
+                guard !files.isEmpty else { return nil }
+                ClipboardManager.shared.copy(files: files, from: panel)
+                return nil
+
+            case .clipboardCut:
+                log.info("[KEY] → Clipboard Cut")
+                let panel = appState.focusedPanel
+                let files = appState.filesForOperation(on: panel)
+                guard !files.isEmpty else { return nil }
+                ClipboardManager.shared.cut(files: files, from: panel)
+                return nil
+
+            case .clipboardPaste:
+                log.info("[KEY] → Clipboard Paste")
+                let panel = appState.focusedPanel
+                Task {
+                    await ContextMenuCoordinator.shared.performPaste(to: panel, appState: appState)
+                }
+                return nil
+
             // ── Navigation ──
             case .togglePanelFocus:
                 appState.toggleFocus()
