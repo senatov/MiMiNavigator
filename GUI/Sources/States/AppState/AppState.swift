@@ -4,41 +4,59 @@
 // Created by Iakov Senatov on 28.05.2025.
 // Copyright © 2025-2026 Senatov. All rights reserved.
 // Description: Central application state — properties and init only.
-//   Extracted to: +Navigation, +Refresh, +Archive, +Marks
+//   Per-panel state lives in PanelState. AppState provides unified accessors.
+//   Extracted to: +Navigation, +Refresh, +Archive, +Marks, +Selection,
+//   +KeyboardNav, +FileActivation, +DataAccess, +Sorting, +Lifecycle,
+//   +SearchResults, +Settings
 
 import AppKit
 import FileModelKit
 import Foundation
 
-/// Central application state for MiMiNavigator.
-/// Owns panel paths, file lists, selection state and navigation managers.
-/// Marked @MainActor because it is directly consumed by SwiftUI views.
+// MARK: - AppState
 @MainActor
 @Observable
 final class AppState {
 
     var leftPanel: PanelState
     var rightPanel: PanelState
-
-    // MARK: - Version Counters
-    private(set) var leftFilesVersion: Int = 0
-    private(set) var rightFilesVersion: Int = 0
-    var displayedLeftFiles: [CustomFile] = [] { didSet { leftFilesVersion &+= 1 } }
-    var displayedRightFiles: [CustomFile] = [] { didSet { rightFilesVersion &+= 1 } }
     var focusedPanel: PanelSide = .left
 
-    // MARK: - Filter
-    var leftFilterQuery: String = ""
-    var rightFilterQuery: String = ""
+    // MARK: - Displayed files (primary storage with version tracking)
+    var displayedLeftFiles: [CustomFile] = [] { didSet { leftPanel.filesVersion &+= 1 } }
+    var displayedRightFiles: [CustomFile] = [] { didSet { rightPanel.filesVersion &+= 1 } }
 
-    // MARK: - Paths
-    /// Canonical filesystem URLs for panels (primary storage)
-    var leftURL: URL
-    var rightURL: URL
-    var savedLocalLeftURL: URL?
-    var savedLocalRightURL: URL?
+    // MARK: - Version counters (bridge to PanelState)
+    var leftFilesVersion: Int { leftPanel.filesVersion }
+    var rightFilesVersion: Int { rightPanel.filesVersion }
 
-    /// String path accessors (compatibility bridge — prefer URL API for new code)
+    // MARK: - Filter (bridge)
+    var leftFilterQuery: String {
+        get { leftPanel.filterQuery }
+        set { leftPanel.filterQuery = newValue }
+    }
+    var rightFilterQuery: String {
+        get { rightPanel.filterQuery }
+        set { rightPanel.filterQuery = newValue }
+    }
+
+    // MARK: - Paths (bridge)
+    var leftURL: URL {
+        get { leftPanel.currentDirectory }
+        set { leftPanel.currentDirectory = newValue }
+    }
+    var rightURL: URL {
+        get { rightPanel.currentDirectory }
+        set { rightPanel.currentDirectory = newValue }
+    }
+    var savedLocalLeftURL: URL? {
+        get { leftPanel.savedLocalURL }
+        set { leftPanel.savedLocalURL = newValue }
+    }
+    var savedLocalRightURL: URL? {
+        get { rightPanel.savedLocalURL }
+        set { rightPanel.savedLocalURL = newValue }
+    }
     var leftPath: String {
         get { leftURL.path }
         set { leftURL = URL(fileURLWithPath: newValue) }
@@ -74,29 +92,17 @@ final class AppState {
     }
 
     func setURL(_ url: URL, for panel: PanelSide) {
-
-        // Ensure the panel path is always a directory
         do {
             let values = try url.resourceValues(forKeys: [.isDirectoryKey, .isRegularFileKey])
-
             if values.isDirectory != true {
-                if values.isRegularFile == true {
-                    log.error("[AppState] Attempt to set panel path to FILE: \(url.path)")
-                } else {
-                    log.error("[AppState] Attempt to set panel path to NON-DIRECTORY: \(url.path)")
-                }
+                log.error("[AppState] Attempt to set panel path to non-directory: \(url.path)")
                 return
             }
         } catch {
-            log.error("[AppState] Failed to inspect URL before setting panel path: \(url.path) error=\(error.localizedDescription)")
+            log.error("[AppState] Failed to inspect URL: \(url.path) error=\(error.localizedDescription)")
             return
         }
-
-        if panel == .left {
-            leftURL = url
-        } else {
-            rightURL = url
-        }
+        if panel == .left { leftURL = url } else { rightURL = url }
     }
 
     // MARK: - UI State
@@ -104,14 +110,26 @@ final class AppState {
     var showFavTreePopup: Bool = false
     var showNetworkNeighborhood: Bool = false
 
-    // MARK: - Archive State (per-panel)
-    var leftArchiveState = ArchiveNavigationState()
-    var rightArchiveState = ArchiveNavigationState()
+    // MARK: - Archive State (bridge)
+    var leftArchiveState: ArchiveNavigationState {
+        get { leftPanel.archiveState }
+        set { leftPanel.archiveState = newValue }
+    }
+    var rightArchiveState: ArchiveNavigationState {
+        get { rightPanel.archiveState }
+        set { rightPanel.archiveState = newValue }
+    }
     var navigationCallbacks: [PanelSide: PanelNavigationCallbacks] = [:]
 
-    // MARK: - Search Results
-    var leftSearchResultsPath: String?
-    var rightSearchResultsPath: String?
+    // MARK: - Search Results (bridge)
+    var leftSearchResultsPath: String? {
+        get { leftPanel.searchResultsPath }
+        set { leftPanel.searchResultsPath = newValue }
+    }
+    var rightSearchResultsPath: String? {
+        get { rightPanel.searchResultsPath }
+        set { rightPanel.searchResultsPath = newValue }
+    }
     var searchResultArchives: [PanelSide: Set<String>] = [:]
 
     // MARK: - Sorting
@@ -122,7 +140,7 @@ final class AppState {
     var isNavigatingFromHistory = false
     var navigatingPanel: PanelSide? = nil
 
-    // MARK: - Selection
+    // MARK: - Selection (bridge)
     var selectedLeftFile: CustomFile? {
         get { leftPanel.selectedFile }
         set {
@@ -130,7 +148,6 @@ final class AppState {
             selectionManager?.recordSelection(.left, file: newValue)
         }
     }
-
     var selectedRightFile: CustomFile? {
         get { rightPanel.selectedFile }
         set {
@@ -139,15 +156,33 @@ final class AppState {
         }
     }
 
-    // MARK: - Marks
-    var markedLeftFiles: Set<String> = []
-    var markedRightFiles: Set<String> = []
+    // MARK: - Marks (bridge)
+    var markedLeftFiles: Set<String> {
+        get { leftPanel.markedFiles }
+        set { leftPanel.markedFiles = newValue }
+    }
+    var markedRightFiles: Set<String> {
+        get { rightPanel.markedFiles }
+        set { rightPanel.markedFiles = newValue }
+    }
 
-    // MARK: - Index tracking
-    var leftSelectedIndex: Int = 0
-    var rightSelectedIndex: Int = 0
-    var leftVisibleIndex: Int = 0
-    var rightVisibleIndex: Int = 0
+    // MARK: - Index tracking (bridge)
+    var leftSelectedIndex: Int {
+        get { leftPanel.selectedIndex }
+        set { leftPanel.selectedIndex = newValue }
+    }
+    var rightSelectedIndex: Int {
+        get { rightPanel.selectedIndex }
+        set { rightPanel.selectedIndex = newValue }
+    }
+    var leftVisibleIndex: Int {
+        get { leftPanel.visibleIndex }
+        set { leftPanel.visibleIndex = newValue }
+    }
+    var rightVisibleIndex: Int {
+        get { rightPanel.visibleIndex }
+        set { rightPanel.visibleIndex = newValue }
+    }
 
     // MARK: - Tab Managers
     private(set) var leftTabManager: TabManager!
@@ -166,34 +201,22 @@ final class AppState {
     init() {
         log.info("[AppState] init")
         let paths = StatePersistence.loadInitialPaths()
-        leftPanel = PanelState(
-            currentDirectory: paths.left
-        )
-        rightPanel = PanelState(
-            currentDirectory: paths.right
-        )
-
-        self.leftURL = paths.left
-        self.rightURL = paths.right
+        leftPanel = PanelState(currentDirectory: paths.left)
+        rightPanel = PanelState(currentDirectory: paths.right)
         self.focusedPanel = StatePersistence.loadInitialFocus()
-
         if let storedKey = UserDefaults.standard.string(forKey: "MiMiNavigator.sortKey"),
-            let key = SortKeysEnum(rawValue: storedKey)
-        {
+           let key = SortKeysEnum(rawValue: storedKey) {
             self.sortKey = key
         }
         if UserDefaults.standard.object(forKey: "MiMiNavigator.sortAscending") != nil {
             self.bSortAscending = UserDefaults.standard.bool(forKey: "MiMiNavigator.sortAscending")
         }
-
         self.leftTabManager = TabManager(panelSide: .left, initialURL: leftURL)
         self.rightTabManager = TabManager(panelSide: .right, initialURL: rightURL)
         self.leftNavigationHistory = PanelNavigationHistory(panel: .left)
         self.rightNavigationHistory = PanelNavigationHistory(panel: .right)
-
         if leftNavigationHistory.currentPath == nil { leftNavigationHistory.navigateTo(leftURL) }
         if rightNavigationHistory.currentPath == nil { rightNavigationHistory.navigateTo(rightURL) }
-
         self.selectionManager = SelectionManager(appState: self, history: selectionsHistory)
         self.multiSelectionManager = MultiSelectionManager(appState: self)
         self.fileActions = FileOperationActions(appState: self)
@@ -206,11 +229,7 @@ final class AppState {
     }
 
     func setSelectedFile(_ file: CustomFile?, for panel: PanelSide) {
-        if panel == .left {
-            selectedLeftFile = file
-        } else {
-            selectedRightFile = file
-        }
+        if panel == .left { selectedLeftFile = file } else { selectedRightFile = file }
     }
 
     func selectedIndex(for panel: PanelSide) -> Int {
@@ -222,24 +241,15 @@ final class AppState {
     }
 
     func setSelectedIndex(_ index: Int, for panel: PanelSide) {
-        switch panel {
-            case .left:
-                leftSelectedIndex = index
-            case .right:
-                rightSelectedIndex = index
-        }
+        if panel == .left { leftSelectedIndex = index } else { rightSelectedIndex = index }
     }
 
     func setVisibleIndex(_ index: Int, for panel: PanelSide) {
-        switch panel {
-            case .left:
-                leftVisibleIndex = index
-            case .right:
-                rightVisibleIndex = index
-        }
+        if panel == .left { leftVisibleIndex = index } else { rightVisibleIndex = index }
     }
 }
 
+// MARK: - Panel Access
 extension AppState {
 
     func panel(_ side: PanelSide) -> PanelState {
@@ -247,15 +257,9 @@ extension AppState {
     }
 
     subscript(panel side: PanelSide) -> PanelState {
-        get {
-            side == .left ? leftPanel : rightPanel
-        }
+        get { side == .left ? leftPanel : rightPanel }
         set {
-            if side == .left {
-                leftPanel = newValue
-            } else {
-                rightPanel = newValue
-            }
+            if side == .left { leftPanel = newValue } else { rightPanel = newValue }
         }
     }
 }
