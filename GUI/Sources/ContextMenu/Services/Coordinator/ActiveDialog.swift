@@ -12,7 +12,7 @@ import Foundation
 /// Represents different dialog types that can be shown by the coordinator
 enum ActiveDialog: Identifiable {
     case deleteConfirmation(files: [CustomFile])
-    case rename(file: CustomFile)
+    case rename(file: CustomFile, panel: PanelSide)
     case pack(files: [CustomFile], destination: URL)
     case compress(files: [CustomFile], destination: URL)
     case createLink(file: CustomFile, destination: URL)

@@ -282,6 +282,7 @@
             if Task.isCancelled { return }
             // Guard: skip if a scan is already running for this panel
             guard scanInProgress[currSide] != true else {
+                log.warning("[Scan] ⏭️ refreshFiles SKIPPED: scanInProgress=true for \(currSide)")
                 return
             }
 
@@ -289,6 +290,7 @@
             if let last = lastFullScan[currSide],
                 Date().timeIntervalSince(last) < scanCooldown
             {
+                log.warning("[Scan] ⏭️ refreshFiles SKIPPED: scanCooldown (\(String(format: "%.1f", Date().timeIntervalSince(last)))s < \(scanCooldown)s) for \(currSide)")
                 return
             }
             // cancel any previous scan for this panel
@@ -364,14 +366,21 @@
             for (index, url) in urlsToTry.enumerated() {
                 log.info("[Scan] Attempt \(index + 1)/\(urlsToTry.count): \(url.path)")
                 // macOS-optimized: use URL resource values for directory validation
+                // Fallback to FileManager for firmlinks (/tmp, /var, /etc) where
+                // URL.resourceValues returns isDirectory==false despite being directories
                 do {
                     let values = try url.resourceValues(forKeys: [.isDirectoryKey])
-                    guard values.isDirectory == true else {
-                        log.error("[DualDirectoryScanner] refreshFiles expected directory but got file: \(url.path)")
-                        continue
+                    if values.isDirectory != true {
+                        var isDir: ObjCBool = false
+                        if FileManager.default.fileExists(atPath: url.path, isDirectory: &isDir), isDir.boolValue {
+                            log.debug("[Scan] firmlink directory confirmed via FileManager: \(url.path)")
+                        } else {
+                            log.error("[Scan] not a directory: \(url.path)")
+                            continue
+                        }
                     }
                 } catch {
-                    log.error("[DualDirectoryScanner] refreshFiles cannot access path: \(url.path) error=\(error.localizedDescription)")
+                    log.error("[Scan] cannot access path: \(url.path) error=\(error.localizedDescription)")
                     continue
                 }
                 do {

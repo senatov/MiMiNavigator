@@ -86,18 +86,21 @@
         }
 
         private func confirmRename() {
-            guard isValidName && hasChanges else { return }
+            guard isValidName && hasChanges else {
+                log.warning("[RenameDialog] confirmRename: guard failed — isValidName=\(isValidName) hasChanges=\(hasChanges)")
+                return
+            }
 
             let dir = file.urlValue.deletingLastPathComponent()
             let targetURL = dir.appendingPathComponent(newName)
 
-            // If a file with the new name already exists we ask the user whether to overwrite it.
             if FileManager.default.fileExists(atPath: targetURL.path) {
-                // Ask user if overwrite is allowed
+                log.info("[RenameDialog] target exists, showing overwrite alert: '\(targetURL.path)'")
                 showOverwriteAlert = true
                 return
             }
 
+            log.info("[RenameDialog] ✅ confirmRename: calling onRename('\(newName)')")
             onRename(newName)
         }
 

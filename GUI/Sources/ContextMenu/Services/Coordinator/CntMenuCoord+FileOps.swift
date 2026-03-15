@@ -48,8 +48,8 @@
         // MARK: - Rename
 
         /// Rename file or directory, then select the renamed item
-        func performRename(file: CustomFile, newName: String, appState: AppState) async {
-            log.debug("\(#function) file='\(file.nameStr)' newName='\(newName)'")
+        func performRename(file: CustomFile, newName: String, panel: PanelSide, appState: AppState) async {
+            log.info("[Rename] 🏁 START: '\(file.nameStr)' → '\(newName)' path='\(file.urlValue.path)' panel=\(panel)")
 
             isProcessing = true
             defer {
@@ -58,19 +58,47 @@
             }
 
             do {
-                _ = try await fileOps.renameFile(file.urlValue, to: newName)
-                // Mark archive dirty if renaming file from archive search results
+                let oldURL = resolveSourceURL(file.urlValue)
+                let newURL = try await fileOps.renameFile(oldURL, to: newName)
+                let exists = FileManager.default.fileExists(atPath: newURL.path)
+                log.info("[Rename] ✅ FileManager.moveItem done: newURL='\(newURL.path)' exists=\(exists)")
                 if file.isFromArchiveSearch {
                     await ArchiveManager.shared.markDirtyByTempPath(file.pathStr)
-                    log.info("\(#function) marked archive dirty after renaming: \(file.nameStr)")
+                    log.info("[Rename] marked archive dirty after renaming: \(file.nameStr)")
                 }
-                let panel = panelForPath(file.urlValue.deletingLastPathComponent().path, appState: appState)
-                log.info("\(#function) SUCCESS: '\(file.nameStr)' → '\(newName)' → selecting on \(panel)")
+                log.info("[Rename] panel=\(panel) → refreshAndSelect('\(newName)')")
                 await appState.refreshAndSelect(name: newName, on: panel)
+                let otherPanel: PanelSide = panel == .left ? .right : .left
+                refreshPanel(otherPanel, appState: appState)
+                log.info("[Rename] 🏁 END SUCCESS")
             } catch {
-                log.error("\(#function) FAILED: \(error.localizedDescription)")
+                log.error("[Rename] ❌ FAILED: \(error.localizedDescription)")
                 activeDialog = .error(title: "Rename Failed", message: error.localizedDescription)
             }
+        }
+
+        /// Resolve firmlink paths: /tmp ↔ /private/tmp, /var ↔ /private/var, /etc ↔ /private/etc.
+        /// Returns the first existing variant, or the original URL if nothing works.
+        private func resolveSourceURL(_ url: URL) -> URL {
+            if FileManager.default.fileExists(atPath: url.path) { return url }
+            let path = url.path
+            let firmlinks: [(prefix: String, real: String)] = [
+                ("/private/tmp", "/tmp"),
+                ("/tmp", "/private/tmp"),
+                ("/private/var", "/var"),
+                ("/var", "/private/var"),
+                ("/private/etc", "/etc"),
+                ("/etc", "/private/etc"),
+            ]
+            for fl in firmlinks where path.hasPrefix(fl.prefix) {
+                let alt = fl.real + path.dropFirst(fl.prefix.count)
+                if FileManager.default.fileExists(atPath: alt) {
+                    log.info("[Rename] firmlink resolved: '\(path)' → '\(alt)'")
+                    return URL(fileURLWithPath: alt)
+                }
+            }
+            log.warning("[Rename] source not found at any firmlink variant: '\(path)'")
+            return url
         }
 
         // MARK: - Duplicate

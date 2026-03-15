@@ -3,177 +3,102 @@
 //
 // Created by Iakov Senatov on 22.01.2026.
 // Copyright © 2026 Senatov. All rights reserved.
-// Description: Main service for file system operations
+// Description: Core file operations service — copy, move, conflict detection.
+//   Extensions: FileOpsService+Delete, +Rename, +SymLink
 
 import AppKit
 import Foundation
 
 // MARK: - File Operations Service
-/// Handles all file system operations: copy, move, delete, rename, create link
+/// Singleton service for file system operations: copy, move, conflict detection.
+/// Delete, rename, symlink are in separate extension files.
 @MainActor
 final class FileOperationsService {
 
     static let shared = FileOperationsService()
-    private let fileManager = FileManager.default
+    let fileManager = FileManager.default
 
     private init() {
-        log.debug("[FileOperationsService] initialized")
+        log.debug("[FileOps] initialized")
     }
 
     // MARK: - Conflict Detection
-
     func checkConflict(source: URL, destination: URL) -> FileConflictInfo? {
         let targetURL = destination.appendingPathComponent(source.lastPathComponent)
-
-        if fileManager.fileExists(atPath: targetURL.path) {
-            log.debug("[FileOperationsService] conflict: \(targetURL.lastPathComponent)")
-            return FileConflictInfo(source: source, target: targetURL)
-        }
-        return nil
+        guard fileManager.fileExists(atPath: targetURL.path) else { return nil }
+        log.debug("[FileOps] conflict detected: '\(targetURL.lastPathComponent)'")
+        return FileConflictInfo(source: source, target: targetURL)
     }
 
-    // MARK: - Copy Operations
-
+    // MARK: - Copy Single File
     func copyFile(_ source: URL, to destination: URL, resolution: ConflictResolution) async throws -> URL {
-        log.debug("[FileOperationsService] copy \(source.lastPathComponent) → \(destination.path) [\(resolution)]")
-
+        log.debug("[FileOps] copy '\(source.lastPathComponent)' → '\(destination.path)' [\(resolution)]")
         let targetURL = destination.appendingPathComponent(source.lastPathComponent)
-        let finalURL: URL
-
-        switch resolution {
-            case .skip:
-                log.debug("[FileOperationsService] skipped: \(source.lastPathComponent)")
-                return targetURL
-
-            case .keepBoth:
-                finalURL = UniqueNameGenerator.generate(for: targetURL, fileManager: fileManager)
-
-            case .replace:
-                if fileManager.fileExists(atPath: targetURL.path) {
-                    try fileManager.removeItem(at: targetURL)
-                }
-                finalURL = targetURL
-
-            case .stop:
-                throw FileOperationError.operationCancelled
-        }
-
+        let finalURL = try resolveConflict(targetURL: targetURL, source: source, resolution: resolution)
         try fileManager.copyItem(at: source, to: finalURL)
-        log.info("[FileOperationsService] copied: \(source.lastPathComponent) → \(finalURL.lastPathComponent)")
+        log.info("[FileOps] ✅ copied: '\(source.lastPathComponent)' → '\(finalURL.lastPathComponent)'")
         return finalURL
     }
 
+    // MARK: - Copy Multiple Files
     func copyFiles(_ files: [URL], to destination: URL) async throws -> [URL] {
-        guard fileManager.fileExists(atPath: destination.path) else {
-            throw FileOperationError.invalidDestination(destination.path)
-        }
-
-        var copiedFiles: [URL] = []
+        try validateDestination(destination)
+        var result: [URL] = []
         for file in files {
-            let finalURL = try await copyFile(file, to: destination, resolution: .keepBoth)
-            copiedFiles.append(finalURL)
+            let url = try await copyFile(file, to: destination, resolution: .keepBoth)
+            result.append(url)
         }
-        return copiedFiles
+        return result
     }
 
-    // MARK: - Move Operations
-
+    // MARK: - Move Single File
     func moveFile(_ source: URL, to destination: URL, resolution: ConflictResolution) async throws -> URL {
-        log.debug("[FileOperationsService] move \(source.lastPathComponent) → \(destination.path) [\(resolution)]")
-
+        log.debug("[FileOps] move '\(source.lastPathComponent)' → '\(destination.path)' [\(resolution)]")
         let targetURL = destination.appendingPathComponent(source.lastPathComponent)
-        let finalURL: URL
-
-        switch resolution {
-            case .skip:
-                log.debug("[FileOperationsService] skipped: \(source.lastPathComponent)")
-                return source
-
-            case .keepBoth:
-                finalURL = UniqueNameGenerator.generate(for: targetURL, fileManager: fileManager)
-
-            case .replace:
-                if fileManager.fileExists(atPath: targetURL.path) {
-                    try fileManager.removeItem(at: targetURL)
-                }
-                finalURL = targetURL
-
-            case .stop:
-                throw FileOperationError.operationCancelled
+        if case .skip = resolution {
+            log.debug("[FileOps] skipped move: '\(source.lastPathComponent)'")
+            return source
         }
-
+        let finalURL = try resolveConflict(targetURL: targetURL, source: source, resolution: resolution)
         try fileManager.moveItem(at: source, to: finalURL)
-        log.info("[FileOperationsService] moved: \(source.lastPathComponent) → \(finalURL.lastPathComponent)")
+        log.info("[FileOps] ✅ moved: '\(source.lastPathComponent)' → '\(finalURL.lastPathComponent)'")
         return finalURL
     }
 
+    // MARK: - Move Multiple Files
     func moveFiles(_ files: [URL], to destination: URL) async throws -> [URL] {
+        try validateDestination(destination)
+        var result: [URL] = []
+        for file in files {
+            let url = try await moveFile(file, to: destination, resolution: .keepBoth)
+            result.append(url)
+        }
+        return result
+    }
+}
+
+// MARK: - Private Helpers
+private extension FileOperationsService {
+
+    func validateDestination(_ destination: URL) throws {
         guard fileManager.fileExists(atPath: destination.path) else {
             throw FileOperationError.invalidDestination(destination.path)
         }
-
-        var movedFiles: [URL] = []
-        for file in files {
-            let finalURL = try await moveFile(file, to: destination, resolution: .keepBoth)
-            movedFiles.append(finalURL)
-        }
-        return movedFiles
     }
-}
 
-// MARK: - Delete Operations
-extension FileOperationsService {
-
-    func deleteFiles(_ files: [URL]) async throws -> [URL] {
-        var trashedURLs: [URL] = []
-
-        for file in files {
-            var resultingURL: NSURL?
-            try fileManager.trashItem(at: file, resultingItemURL: &resultingURL)
-
-            if let trashURL = resultingURL as URL? {
-                trashedURLs.append(trashURL)
+    func resolveConflict(targetURL: URL, source: URL, resolution: ConflictResolution) throws -> URL {
+        switch resolution {
+        case .skip:
+            return targetURL
+        case .keepBoth:
+            return UniqueNameGenerator.generate(for: targetURL, fileManager: fileManager)
+        case .replace:
+            if fileManager.fileExists(atPath: targetURL.path) {
+                try fileManager.removeItem(at: targetURL)
             }
-            log.info("[FileOperationsService] trashed: \(file.lastPathComponent)")
+            return targetURL
+        case .stop:
+            throw FileOperationError.operationCancelled
         }
-
-        return trashedURLs
-    }
-}
-
-// MARK: - Rename Operations
-extension FileOperationsService {
-
-    func renameFile(_ file: URL, to newName: String) async throws -> URL {
-        guard !newName.isEmpty else {
-            throw FileOperationError.operationFailed("Name cannot be empty")
-        }
-
-        let parentDir = file.deletingLastPathComponent()
-        let newURL = parentDir.appendingPathComponent(newName)
-
-        if fileManager.fileExists(atPath: newURL.path) && newURL.path != file.path {
-            throw FileOperationError.fileAlreadyExists(newName)
-        }
-
-        try fileManager.moveItem(at: file, to: newURL)
-        log.info("[FileOperationsService] renamed: \(file.lastPathComponent) → \(newName)")
-
-        return newURL
-    }
-}
-
-// MARK: - Symbolic Link Operations
-extension FileOperationsService {
-
-    func createSymbolicLink(to source: URL, at destination: URL, linkName: String? = nil) async throws -> URL {
-        let name = linkName ?? "\(source.lastPathComponent) link"
-        let linkURL = destination.appendingPathComponent(name)
-        let finalURL = UniqueNameGenerator.generate(for: linkURL, fileManager: fileManager)
-
-        try fileManager.createSymbolicLink(at: finalURL, withDestinationURL: source)
-        log.info("[FileOperationsService] symlink created: \(finalURL.lastPathComponent) → \(source.path)")
-
-        return finalURL
     }
 }

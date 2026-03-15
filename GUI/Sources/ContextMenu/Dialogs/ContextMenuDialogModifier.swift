@@ -59,12 +59,12 @@
                     }
                 )
 
-            case .rename(let file):
+            case .rename(let file, let panel):
                 RenameDialog(
                     file: file,
                     onRename: { newName in
                         Task {
-                            await coordinator.performRename(file: file, newName: newName, appState: appState)
+                            await coordinator.performRename(file: file, newName: newName, panel: panel, appState: appState)
                         }
                     },
                     onCancel: {
@@ -270,54 +270,6 @@
                     }
                 )
             }
-        }
-    }
-
-    // MARK: - HIG Alert Dialog (for Error/Success)
-    struct HIGAlertDialog: View {
-        let icon: String
-        let iconColor: Color
-        let title: String
-        let message: String
-        let onDismiss: () -> Void
-
-        var body: some View {
-            VStack(spacing: 16) {
-                // App icon with badge
-                ZStack(alignment: .bottomTrailing) {
-                    Image(nsImage: NSApp.applicationIconImage)
-                        .resizable()
-                        .frame(width: 64, height: 64)
-
-                    Image(systemName: icon)
-                        .font(.system(size: 24))
-                        .foregroundStyle(iconColor)
-                        .background(
-                            Circle()
-                                .fill(Color(nsColor: .windowBackgroundColor))
-                                .frame(width: 28, height: 28)
-                        )
-                        .offset(x: 4, y: 4)
-                }
-
-                // Title
-                Text(title)
-                    .font(.system(size: 13, weight: .semibold))
-                    .multilineTextAlignment(.center)
-
-                // Message
-                Text(message)
-                    .font(.system(size: 11))
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .lineLimit(4)
-
-                // Button
-                HIGPrimaryButton(title: "OK", action: onDismiss)
-                    .keyboardShortcut(.defaultAction)
-                    .padding(.top, 4)
-            }
-            .higDialogStyle()
         }
     }
 

@@ -20,4 +20,6 @@ struct PanelNavigationCallbacks {
     var pageDown: () -> Void = {}
     var jumpToFirst: () -> Void = {}
     var jumpToLast: () -> Void = {}
+    /// Scroll to a file by name (used after rename/create to ensure visibility)
+    var scrollToName: (String) -> Void = { _ in }
 }

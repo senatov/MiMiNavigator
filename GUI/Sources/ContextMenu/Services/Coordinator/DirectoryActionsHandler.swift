@@ -52,7 +52,7 @@
                     activeDialog = .createLink(file: file, destination: destination)
 
                 case .rename:
-                    activeDialog = .rename(file: file)
+                    activeDialog = .rename(file: file, panel: panel)
 
                 case .getInfo:
                     GetInfoService.shared.showGetInfo(for: file.urlValue)

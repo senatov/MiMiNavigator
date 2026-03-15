@@ -20,14 +20,19 @@ extension AppState {
     func selectFileByName(_ name: String, on panel: PanelSide) {
         let files = displayedFiles(for: panel)
         if let match = files.first(where: { $0.nameStr == name }) {
+            log.info("[Selection] ✅ selectFileByName found '\(name)' on \(panel) (total \(files.count) files)")
             switch panel {
                 case .left: selectedLeftFile = match
                 case .right: selectedRightFile = match
             }
+        } else {
+            log.warning("[Selection] ⚠️ selectFileByName FAILED: '\(name)' not found on \(panel) (total \(files.count) files)")
         }
     }
 
     func refreshAndSelect(name: String, on panel: PanelSide) async {
+        log.info("[Selection] 🔄 refreshAndSelect: name='\(name)' panel=\(panel) — clearing cooldown")
+        await scanner.clearCooldown(for: panel)
         if panel == .left { await refreshLeftFiles() } else { await refreshRightFiles() }
         selectFileByName(name, on: panel)
     }
