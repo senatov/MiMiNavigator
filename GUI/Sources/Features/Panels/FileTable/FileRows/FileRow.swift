@@ -625,23 +625,25 @@
             }
         }
 
-        // MARK: - Safety: do not treat zero as exact unless directory is proven empty
+        // MARK: - Safety: do not treat zero as exact unless directory content is truly zero-sized
         private func isTrulyEmptyDirectory(_ url: URL) -> Bool {
             let target = normalizedURLForSize(url)
             let fm = FileManager.default
-
-            guard
-                let enumerator = fm.enumerator(
-                    at: target,
-                    includingPropertiesForKeys: nil,
-                    options: [.skipsSubdirectoryDescendants, .skipsPackageDescendants]
-                )
-            else {
-                // If we cannot enumerate (permissions / errors), we cannot prove emptiness.
+            guard let enumerator = fm.enumerator(
+                at: target,
+                includingPropertiesForKeys: [.fileSizeKey, .isDirectoryKey],
+                options: [.skipsPackageDescendants]
+            ) else {
                 return false
             }
-
-            return enumerator.nextObject() == nil
+            for case let fileURL as URL in enumerator {
+                if let vals = try? fileURL.resourceValues(forKeys: [.fileSizeKey, .isDirectoryKey]),
+                   vals.isDirectory != true,
+                   let size = vals.fileSize, size > 0 {
+                    return false
+                }
+            }
+            return true
         }
 
         private func isLikelyVirtualDirectory(_ url: URL) -> Bool {

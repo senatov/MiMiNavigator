@@ -263,8 +263,8 @@
         private(set) var items: [AutoCompleteItem] = []
         var onSelect: ((Int) -> Void)?
         var anchorFrame: CGRect = .zero
-        private var clickOutsideMonitor: Any?
-        private var escKeyMonitor: Any?
+        nonisolated(unsafe) private var clickOutsideMonitor: Any?
+        nonisolated(unsafe) private var escKeyMonitor: Any?
         var onDismissedByClickOutside: (() -> Void)?
 
         private let rowHeight: CGFloat = 28
@@ -463,7 +463,10 @@
         }
 
         deinit {
-            removeMonitors()
+            let monitor1 = clickOutsideMonitor
+            let monitor2 = escKeyMonitor
+            if let m = monitor1 { NSEvent.removeMonitor(m) }
+            if let m = monitor2 { NSEvent.removeMonitor(m) }
         }
     }
 
