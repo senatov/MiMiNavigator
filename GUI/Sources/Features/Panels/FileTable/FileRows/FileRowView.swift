@@ -115,6 +115,7 @@
                             .lineLimit(1)
                             .truncationMode(.middle)
                     }
+                    .fileInfoPopup(file: file)
                     .layoutPriority(0)
                 }
             )

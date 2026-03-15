@@ -241,6 +241,8 @@
             onSelect(file)
             // Handle multi-selection via modifier keys
             appState.handleClickWithModifiers(on: file, modifiers: modifiers)
+            // Show file info popup if name is truncated (registered by hover)
+            FileInfoPopupController.shared.showIfTruncated(for: file)
         }
 
         /// Read modifier keys from the current NSEvent
@@ -376,7 +378,8 @@
                 .foregroundStyle(cellColor(for: spec.id))
                 .lineLimit(1)
                 .truncationMode(.tail)
-                .padding(.horizontal, TableColumnDefaults.cellPadding)
+                .padding(.leading, spec.id == .owner ? TableColumnDefaults.cellPadding + 1 : TableColumnDefaults.cellPadding)
+                .padding(.trailing, TableColumnDefaults.cellPadding)
                 .frame(
                     width: clampedColumnWidth(spec.width),
                     alignment: spec.id.alignment

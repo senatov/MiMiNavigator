@@ -5,8 +5,8 @@
 // Copyright © 2025-2026 Senatov. All rights reserved.
 // Description: Horizontal layout of left panel + divider + right panel
 
-import SwiftUI
 import FileModelKit
+import SwiftUI
 
 // MARK: - PanelsRowView
 /// Arranges two FilePanelViews side by side with a draggable divider between them.
@@ -51,13 +51,7 @@ struct PanelsRowView: View {
                     .allowsHitTesting(false)
             }
         }
-        .modifier(
-            ToolTipMod(
-                isVisible: $divider.isTooltipVisible,
-                text: divider.tooltipText,
-                position: divider.tooltipPosition
-            )
-        )
+
     }
 
     // MARK: - Left Panel
