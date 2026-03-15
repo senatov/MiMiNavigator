@@ -27,8 +27,13 @@ extension AppState {
         }
     }
 
+    /// Active swap task — cancelled on re-entry to prevent stacking.
+    private static var swapTask: Task<Void, Never>?
+
     func swapPanels() {
         log.debug(#function + ": leftPath: \(leftPath), rightPath: \(rightPath)")
+        // Cancel any in-flight swap to prevent stacking
+        Self.swapTask?.cancel()
         let tmpURL = leftURL
         leftURL = rightURL
         rightURL = tmpURL
@@ -37,10 +42,18 @@ extension AppState {
         let tmpSel = self[panel: .left].selectedFile
         setSelectedFile(self[panel: .right].selectedFile, for: .left)
         setSelectedFile(tmpSel, for: .right)
-        Task {
+        // Swap displayed files instantly (no async wait)
+        let tmpFiles = displayedLeftFiles
+        displayedLeftFiles = displayedRightFiles
+        displayedRightFiles = tmpFiles
+        Self.swapTask = Task {
+            await scanner.clearCooldown(for: .left)
+            await scanner.clearCooldown(for: .right)
             await setScannerDirectory(leftPath, for: .left)
             await setScannerDirectory(rightPath, for: .right)
+            guard !Task.isCancelled else { return }
             await refreshFiles(for: .left)
+            guard !Task.isCancelled else { return }
             await refreshFiles(for: .right)
         }
     }

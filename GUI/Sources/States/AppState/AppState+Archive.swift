@@ -47,7 +47,9 @@ extension AppState {
         let parentDirURL = archiveURL.deletingLastPathComponent()
         log.info("[AppState] Exiting archive: \(archiveURL.lastPathComponent) → \(parentDirURL.path)")
         let session = await ArchiveManager.shared.sessionForArchive(at: archiveURL)
-        let isDirty = (session?.isDirty ?? false) || (await ArchiveManager.shared.isDirty(archiveURL: archiveURL))
+        let sessionDirty = session?.isDirty ?? false
+        let fsDirty = await ArchiveManager.shared.isDirty(archiveURL: archiveURL)
+        let isDirty = sessionDirty || fsDirty
         var shouldRepack = false
         if isDirty {
             shouldRepack = await confirmRepack(archiveName: archiveURL.lastPathComponent)
