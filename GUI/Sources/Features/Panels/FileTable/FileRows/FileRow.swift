@@ -23,7 +23,7 @@
             return f
         }()
         /// Format size with consistent rules (avoid "0 KB")
-        private static func formatSize(_ size: Int64) -> String {
+        static func formatSize(_ size: Int64) -> String {
             // DirectorySizeService uses a negative sentinel for "unavailable".
             if size < 0 { return "—" }
             if size == 0 { return "0 B" }
@@ -63,7 +63,7 @@
             appState.focusedPanel == panelSide
         }
 
-        private var isParentEntry: Bool {
+        var isParentEntry: Bool {
             ParentDirectoryEntry.isParentEntry(file)
         }
 

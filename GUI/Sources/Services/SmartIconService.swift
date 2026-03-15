@@ -16,7 +16,7 @@ import UniformTypeIdentifiers
 enum SmartIconService {
 
     // MARK: - Icon cache
-    private static let iconCache: NSCache<NSString, NSImage> = {
+    nonisolated(unsafe) private static let iconCache: NSCache<NSString, NSImage> = {
         let cache = NSCache<NSString, NSImage>()
         cache.countLimit = 256
         return cache
