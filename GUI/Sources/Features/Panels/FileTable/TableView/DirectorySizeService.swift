@@ -20,13 +20,20 @@ actor DirectorySizeService {
     // MARK: - Singleton
 
     static let shared = DirectorySizeService()
+    // MARK: - Constants
+    /// Special value meaning: size could not be determined (permission/sandbox/virtual FS/unreadable).
+    /// IMPORTANT: Do not format/display this as a real size.
+    static let unavailableSize: Int64 = -1
 
     // MARK: - Security-Scoped Access
 
     /// Best-effort wrapper for sandboxed locations.
     /// If the URL is not security-scoped, startAccessingSecurityScopedResource() returns false and we still try.
     nonisolated private func withSecurityScope<T>(_ url: URL, _ work: () throws -> T) rethrows -> T {
-        let didStart = url.startAccessingSecurityScopedResource()
+        // Best-effort: only attempt security-scoped access for file URLs.
+        // If not security-scoped, `startAccessing...` returns false and we still execute `work()`.
+        let isFileURL = url.isFileURL
+        let didStart = isFileURL ? url.startAccessingSecurityScopedResource() : false
         defer {
             if didStart {
                 url.stopAccessingSecurityScopedResource()
@@ -64,14 +71,10 @@ actor DirectorySizeService {
 
     // MARK: - Init
     private init() {
-
         let base = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first!
         let dir = base.appendingPathComponent("MiMiNavigator", isDirectory: true)
-
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-
         cacheURL = dir.appendingPathComponent("dirsize.cache")
-
         Task { await self.loadDiskCache() }
     }
 
@@ -80,21 +83,17 @@ actor DirectorySizeService {
     /// Returns cached value immediately if available.
     func requestSize(for url: URL) async -> Int64 {
         let resolvedURL = resolveURLForSizing(url)
-        let path = cacheKey(for: resolvedURL)
-
+        let key = cacheKey(for: resolvedURL)
         if let cached = cachedSize(for: resolvedURL) {
             return cached
         }
-
-        if let existingTask = inFlightTask(for: path) {
+        if let existingTask = inFlightTask(for: key) {
             return await existingTask.value
         }
-
         let task = makeSizeTask(for: resolvedURL)
-        setInFlightTask(task, for: path)
-
+        setInFlightTask(task, for: key)
         let result = await task.value
-        clearInFlightTask(for: path)
+        clearInFlightTask(for: key)
         return result
     }
 
@@ -102,7 +101,19 @@ actor DirectorySizeService {
 
     private func resolveURLForSizing(_ url: URL) -> URL {
         // Resolve symlinks for consistent cache keys and calculation
-        url.resolvingSymlinksInPath()
+        return url.resolvingSymlinksInPath()
+    }
+    // MARK: - File Attribute Helper
+
+    private func fileModificationTime(forResolvedPath path: String, urlForScope: URL) -> TimeInterval? {
+        let attrs: [FileAttributeKey: Any]?
+        attrs = try? withSecurityScope(urlForScope) {
+            try FileManager.default.attributesOfItem(atPath: path)
+        }
+        guard let attrs, let mtime = attrs[.modificationDate] as? Date else {
+            return nil
+        }
+        return mtime.timeIntervalSince1970
     }
 
     private func cacheKey(for url: URL) -> String {
@@ -123,8 +134,7 @@ actor DirectorySizeService {
 
     private func makeSizeTask(for url: URL) -> Task<Int64, Never> {
         Task { [weak self] () -> Int64 in
-            guard let self else { return 0 }
-
+            guard let self else { return Self.unavailableSize }
             let size = await self.computeSizeOnBackgroundQueue(for: url)
             await self.storeCache(size: size, for: url)
             return size
@@ -135,18 +145,15 @@ actor DirectorySizeService {
         await withCheckedContinuation { (continuation: CheckedContinuation<Int64, Never>) in
             queue.async { [semaphore, weak self] in
                 guard let self else {
-                    continuation.resume(returning: Int64(0))
+                    continuation.resume(returning: Self.unavailableSize)
                     return
                 }
-
                 semaphore.wait()
                 defer { semaphore.signal() }
-
                 // Phase 2 + 3 native calculation (security-scoped best-effort)
                 let size: Int64 = self.withSecurityScope(url) {
                     Self.computeDirectorySizeNative(url)
                 }
-
                 continuation.resume(returning: size)
             }
         }
@@ -156,82 +163,71 @@ actor DirectorySizeService {
 
     private func cachedSize(for url: URL) -> Int64? {
 
-        let path = url.path
-
-        guard let attrs = try? FileManager.default.attributesOfItem(atPath: path),
-            let mtime = attrs[.modificationDate] as? Date
-        else {
+        let resolvedURL = resolveURLForSizing(url)
+        let path = resolvedURL.path
+        guard let mtime = fileModificationTime(forResolvedPath: path, urlForScope: resolvedURL) else {
             return nil
         }
-
         guard let entry = memoryCache[path] else { return nil }
-
-        if entry.mtime == mtime.timeIntervalSince1970 {
+        if entry.size == Self.unavailableSize {
+            return nil
+        }
+        if entry.mtime == mtime {
             return entry.size
         }
-
         return nil
     }
 
     // MARK: - Cache Store
 
     private func storeCache(size: Int64, for url: URL) async {
-
-        let path = url.path
-
-        guard let attrs = try? FileManager.default.attributesOfItem(atPath: path),
-            let mtime = attrs[.modificationDate] as? Date
-        else {
+        // Do not cache "unavailable" results.
+        guard size != Self.unavailableSize else { return }
+        let resolvedURL = resolveURLForSizing(url)
+        let path = resolvedURL.path
+        guard let mtime = fileModificationTime(forResolvedPath: path, urlForScope: resolvedURL) else {
             return
         }
-
-        let entry = CacheEntry(size: size, mtime: mtime.timeIntervalSince1970)
-
+        let entry = CacheEntry(size: size, mtime: mtime)
         memoryCache[path] = entry
-
         saveDiskCache()
     }
 
     // MARK: - Disk Cache
 
     private func loadDiskCache() async {
-
         guard let data = try? Data(contentsOf: cacheURL) else { return }
-
         if let decoded = try? JSONDecoder().decode([String: CacheEntry].self, from: data) {
             memoryCache = decoded
         }
     }
 
     private func saveDiskCache() {
-
         let snapshot = memoryCache
-
         guard let data = try? JSONEncoder().encode(snapshot) else { return }
-
         try? data.write(to: cacheURL, options: .atomic)
     }
-
     // MARK: - Shallow Size (first level only, ~1ms)
-
     /// Sum file sizes of direct children only — no recursion.
     /// Returns approximate size instantly for UI display with "~" prefix.
     func shallowSize(for url: URL) async -> Int64 {
-        log.info("[DirectorySizeService] shallowSize start: \(url.path)")
+        let resolvedURL = resolveURLForSizing(url)
+        log.info("[DirectorySizeService] shallowSize start: \(resolvedURL.path)")
         let result = await withCheckedContinuation { (continuation: CheckedContinuation<Int64, Never>) in
             queue.async { [weak self] in
                 guard let self else {
-                    continuation.resume(returning: Int64(0))
+                    continuation.resume(returning: Self.unavailableSize)
                     return
                 }
-                let size: Int64 = self.withSecurityScope(url) {
-                    Self.computeShallowSize(url)
+                let size: Int64 = self.withSecurityScope(resolvedURL) {
+                    Self.computeShallowSize(resolvedURL)
                 }
-                log.info("[DirectorySizeService] shallowSize computed: \(url.path) -> \(size)")
+                let printable = (size == Self.unavailableSize) ? "unavailable" : "\(size)"
+                log.info("[DirectorySizeService] shallowSize computed: \(resolvedURL.path) -> \(printable)")
                 continuation.resume(returning: size)
             }
         }
-        log.info("[DirectorySizeService] shallowSize result: \(url.path) -> \(result)")
+        log.info("[DirectorySizeService] shallowSize result: \(resolvedURL.path) -> \(result)")
         return result
     }
 
@@ -240,27 +236,23 @@ actor DirectorySizeService {
     /// Phase 1 – shallow size (direct children only)
     private static func computeShallowSize(_ url: URL) -> Int64 {
         var total: Int64 = 0
-
         // Truly shallow: list direct children only.
         // Using enumerator(at:) here would walk the entire subtree (slow + can hit permission walls).
         let keys: Set<URLResourceKey> = [.isRegularFileKey, .fileSizeKey]
-
         guard
             let children = try? FileManager.default.contentsOfDirectory(
                 at: url,
                 includingPropertiesForKeys: Array(keys),
-                options: [.skipsHiddenFiles]
+                options: []
             )
         else {
-            return 0
+            return DirectorySizeService.unavailableSize
         }
-
         for child in children {
             guard let values = try? child.resourceValues(forKeys: keys) else { continue }
             guard values.isRegularFile == true else { continue }
             total += Int64(values.fileSize ?? 0)
         }
-
         return total
     }
 
@@ -269,25 +261,23 @@ actor DirectorySizeService {
     private static func computeFastDiskUsage(_ path: String) -> Int64 {
 
         var total: Int64 = 0
-
         let fm = FileManager.default
-
-        guard let enumerator = fm.enumerator(atPath: path) else { return 0 }
-
+        guard let enumerator = fm.enumerator(atPath: path) else { return DirectorySizeService.unavailableSize }
         while let item = enumerator.nextObject() as? String {
             let fullPath = path + "/" + item
-
             var statbuf = stat()
-
             // lstat can fail on protected entries; ignore and continue
-            if lstat(fullPath, &statbuf) == 0 {
-                // Count only non-directories to avoid double-counting
-                if (statbuf.st_mode & S_IFMT) != S_IFDIR {
-                    total += Int64(statbuf.st_blocks) * 512
-                }
+            if lstat(fullPath, &statbuf) != 0 {
+                continue
+            }
+            let type = statbuf.st_mode & S_IFMT
+
+            // Count only non-directories to avoid double-counting.
+            // Also skip symlinks to avoid loops / virtual mounts.
+            if type != S_IFDIR && type != S_IFLNK {
+                total += Int64(statbuf.st_blocks) * 512
             }
         }
-
         return total
     }
 
@@ -297,11 +287,10 @@ actor DirectorySizeService {
     private static func computeFullRecursive(_ url: URL) -> Int64 {
 
         var total: Int64 = 0
-
         let fm = FileManager.default
-
         let keys: Set<URLResourceKey> = [
             .isRegularFileKey,
+            .isDirectoryKey,
             .isSymbolicLinkKey,
             .fileSizeKey,
             .fileAllocatedSizeKey,
@@ -312,76 +301,141 @@ actor DirectorySizeService {
             let enumerator = fm.enumerator(
                 at: url,
                 includingPropertiesForKeys: Array(keys),
-                options: [.skipsHiddenFiles, .skipsPackageDescendants],
-                errorHandler: { _, _ in
-                    // Keep going even if a subtree is protected or disappears.
+                // IMPORTANT: do NOT skip packages here.
+                // If you do, folders like /Applications become “0 B”.
+                options: [],
+                errorHandler: { fileURL, error in
+                    log.warning("[DirectorySizeService] enumerate error: \(fileURL.path) error=\(error.localizedDescription)")
                     return true
                 }
             )
         else {
-            return 0
+            return DirectorySizeService.unavailableSize
         }
+
+        var countedFiles = 0
+        var skippedSymlinks = 0
+        var skippedDirs = 0
+        var resourceValueFailures = 0
+        var statFallbacks = 0
 
         while let fileURL = enumerator.nextObject() as? URL {
-            guard let values = try? fileURL.resourceValues(forKeys: keys) else { continue }
 
-            // Avoid following symlinks (and possible loops). Count the link itself as 0.
-            if values.isSymbolicLink == true {
+            // 1) Prefer resource values (fast + Finder-like).
+            if let values = try? fileURL.resourceValues(forKeys: keys) {
+                if values.isSymbolicLink == true {
+                    skippedSymlinks += 1
+                    continue
+                }
+                if values.isDirectory == true {
+                    skippedDirs += 1
+                    continue
+                }
+                guard values.isRegularFile == true else {
+                    continue
+                }
+                if let allocated = values.totalFileAllocatedSize {
+                    total += Int64(allocated)
+                } else if let allocated = values.fileAllocatedSize {
+                    total += Int64(allocated)
+                } else if let size = values.fileSize {
+                    total += Int64(size)
+                } else {
+                    // Rare: fall back to stat.
+                    if let statSize = statAllocatedSize(path: fileURL.path) {
+                        statFallbacks += 1
+                        total += statSize
+                    }
+                }
+                countedFiles += 1
                 continue
             }
+            // 2) If resource values fail (common under sandbox/virtual FS), fall back to lstat.
+            resourceValueFailures += 1
 
-            guard values.isRegularFile == true else { continue }
-
-            if let allocated = values.totalFileAllocatedSize {
-                total += Int64(allocated)
-            } else if let allocated = values.fileAllocatedSize {
-                total += Int64(allocated)
-            } else if let size = values.fileSize {
-                total += Int64(size)
+            if let statSize = statAllocatedSize(path: fileURL.path) {
+                statFallbacks += 1
+                total += statSize
+                countedFiles += 1
             }
         }
+        log.info(
+            "[DirectorySizeService] fullRecursive done: \(url.path) total=\(total) files=\(countedFiles) skippedDirs=\(skippedDirs) skippedSymlinks=\(skippedSymlinks) rvFail=\(resourceValueFailures) statFallbacks=\(statFallbacks)"
+        )
 
         return total
+    }
+
+    /// Best-effort allocated size via lstat (st_blocks * 512). Returns nil if lstat fails or the path is a directory/symlink.
+    private static func statAllocatedSize(path: String) -> Int64? {
+        var statbuf = stat()
+        if lstat(path, &statbuf) != 0 {
+            return nil
+        }
+
+        let type = statbuf.st_mode & S_IFMT
+
+        // Skip directories and symlinks.
+        if type == S_IFDIR || type == S_IFLNK {
+            return nil
+        }
+
+        return Int64(statbuf.st_blocks) * 512
     }
 
     /// Combined native strategy
     private static func computeDirectorySizeNative(_ url: URL) -> Int64 {
 
         let path = url.path
-        let fm = FileManager.default
-
         // Phase 2 fast estimation
         let fast = computeFastDiskUsage(path)
-
-        // If Phase 2 returns 0, it might be a real empty dir OR a protected/virtual dir.
-        // In that suspicious case, try Phase 3 (URL enumerator) before giving up.
+        if fast == DirectorySizeService.unavailableSize {
+            log.warning("[DirectorySizeService] Phase2 fast usage unavailable for: \(path)")
+            return DirectorySizeService.unavailableSize
+        }
+        // Fast path: return small results immediately
+        if fast > 0, fast < 1_000_000 {
+            return fast
+        }
+        // Suspicious zero: empty OR blocked OR virtual
         if fast == 0 {
-            // Fast pass may return 0 for:
-            // - empty directories
-            // - protected / sandboxed locations (stat/enumerator can fail silently)
-            // - virtual filesystems
-            // So always try the robust URL enumerator; it has an error handler and may still succeed.
             let full = computeFullRecursive(url)
+            if full == DirectorySizeService.unavailableSize {
+                log.warning("[DirectorySizeService] Phase3 full recursive unavailable for: \(path)")
+                return DirectorySizeService.unavailableSize
+            }
             if full > 0 {
+                log.warning("[DirectorySizeService] Phase3 full recursive produced 0 for: \(path)")
                 return full
             }
-
-            // If full is 0, double-check whether the directory is actually empty.
-            // If we cannot read it, treat as 0 (unknown/blocked) rather than crashing.
-            if let items = try? fm.contentsOfDirectory(atPath: path), items.isEmpty {
+            // If we can confirm it is empty, return 0.
+            if isDirectoryEmpty(path: path) == true {
                 return 0
             }
-
-            // Non-empty but we still got 0: likely blocked/virtual. Keep 0.
+            // If unreadable, propagate "unavailable".
+            if isDirectoryEmpty(path: path) == nil {
+                log.warning("[DirectorySizeService] Directory unreadable, size unavailable: \(path)")
+                return DirectorySizeService.unavailableSize
+            }
+            // Readable but still 0 after full scan: treat as empty.
+            log.warning("[DirectorySizeService] Directory readable but size remained 0 after full scan: \(path)")
             return 0
         }
 
-        // If result is very small, return quickly
-        if fast < 1_000_000 {
-            return fast
-        }
-
-        // Phase 3 accurate calculation
+        // Large directory: go accurate
         return computeFullRecursive(url)
+    }
+
+    // MARK: - Native sizing helpers
+    /// Returns true if the directory is readable and empty, false if readable and non-empty, nil if unreadable.
+    private static func isDirectoryEmpty(path: String) -> Bool? {
+        do {
+            let items = try FileManager.default.contentsOfDirectory(atPath: path)
+            return items.isEmpty
+        } catch {
+            log.warning(
+                "[DirectorySizeService] Cannot read directory to verify emptiness: \(path) error=\(error.localizedDescription)")
+            return nil
+        }
     }
 }
