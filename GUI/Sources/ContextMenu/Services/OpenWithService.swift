@@ -42,7 +42,7 @@
         private let lruMaxCount = 5
 
         // MARK: - Apps cache (per absolute file path)
-        nonisolated(unsafe) private static var appsCache = NSCache<NSString, NSArray>()
+        private static let appsCache = NSCache<NSString, NSArray>()
 
         private init() {
             OpenWithService.appsCache.countLimit = 64
@@ -81,15 +81,12 @@
         /// Returns list of applications that can open the given file
         func getApplications(for fileURL: URL) -> [AppInfo] {
             // Cache by file extension instead of full path to avoid thousands of LaunchServices calls
-            let extKey = fileURL.pathExtension.lowercased()
-            let cacheKey = extKey as NSString
+            let ext = fileURL.pathExtension.lowercased()
+            let normalizedExt = ext.isEmpty ? "__noext__" : ext
+            let cacheKey = normalizedExt as NSString
 
             if let cached = OpenWithService.appsCache.object(forKey: cacheKey) as? [AppInfo] {
                 return cached
-            }
-            guard UTType(filenameExtension: fileURL.pathExtension) != nil else {
-                //log.warning("\(#function) unknown UTType for ext='\(fileURL.pathExtension)', using fallback editors")
-                return getAllEditors()
             }
             let defaultApp = workspace.urlForApplication(toOpen: fileURL)
             var apps: [AppInfo] = []
@@ -108,7 +105,7 @@
                     }
                 }
             } else {
-                log.warning("\(#function) LSCopyApplicationURLsForURL returned nil")
+                log.debug("\(#function) LSCopyApplicationURLsForURL returned nil")
             }
 
             // Sort: default app first, then LRU recency, then alphabetically
@@ -118,7 +115,7 @@
             let knownBundles = Set(apps.map(\.bundleIdentifier))
             let savedURLs = MiMiDefaults.shared.dictionary(forKey: lruAppURLsKey) as? [String: String] ?? [:]
             for bundleID in recentBundles where !knownBundles.contains(bundleID) {
-                if let path = savedURLs[bundleID] {
+                if let path = savedURLs[bundleID], FileManager.default.fileExists(atPath: path) {
                     let url = URL(fileURLWithPath: path)
                     if let info = makeAppInfo(from: url, isDefault: url == defaultApp) {
                         apps.append(info)
