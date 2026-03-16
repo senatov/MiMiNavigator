@@ -96,7 +96,7 @@
                     Text(file.modifiedDateFormatted)
 
                 case .size:
-                    Text(SizeFormatter.format(file.sizeInBytes))
+                    Text(file.displaySizeFormatted)
 
                 case .kind:
                     KindCell(file: file)

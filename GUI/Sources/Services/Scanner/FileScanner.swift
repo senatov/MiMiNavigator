@@ -44,10 +44,10 @@
 
             let fileManager = FileManager.default
 
+            // Hard stop for unreadable directories — do not attempt enumeration.
             if !fileManager.isReadableFile(atPath: url.path) {
-                log.warning("[FileScanner] path not readable, will attempt contentsOfDirectory: \(url.path)")
-                // Don't throw — a parent security-scoped bookmark may still grant access.
-                // If contentsOfDirectory fails, DualDirectoryScanner handles the fallback.
+                log.debug("[FileScanner] unreadable directory skipped: \(url.path)")
+                return []
             }
 
             // Volume paths need hidden files visible (BSD UF_HIDDEN flag hides backup content)
@@ -85,6 +85,11 @@
                     options: options
                 )
             } catch {
+                let nsError = error as NSError
+                if nsError.code == NSFileReadNoPermissionError {
+                    log.debug("[FileScanner] permission denied, returning empty: \(url.path)")
+                    return []
+                }
                 log.error("[FileScanner] contentsOfDirectory FAILED: \(error.localizedDescription)")
                 throw error
             }
@@ -129,6 +134,11 @@
             log.debug("[FileScanner] incremental scan: \(url.path)")
 
             let fileManager = FileManager.default
+
+            if !fileManager.isReadableFile(atPath: url.path) {
+                log.debug("[FileScanner] incremental unreadable skipped: \(url.path)")
+                return
+            }
 
             let isVolumePath = url.path.hasPrefix("/Volumes/") && url.path != "/Volumes"
             let effectiveShowHidden = showHiddenFiles || isVolumePath

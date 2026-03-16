@@ -416,20 +416,16 @@
                     await updateFileList(panelSide: currSide, with: sorted)
                     return
                 } catch let error as NSError {
-                    log.error("[Scan] Attempt \(index + 1) failed: \(error.localizedDescription)")
                     if isPermissionDeniedError(error) {
-                        log.warning("[Scan] Permission denied for \(url.path), requesting access...")
-                        let granted = await requestAndRetryAccess(for: url, side: currSide)
-                        if granted {
-                            log.info("[Scan] Access granted, rescan succeeded for \(url.path)")
-                            return
-                        }
-                        log.warning("[Scan] Access request denied for \(url.path)")
+                        log.debug("[Scan] Permission denied, skipping directory: \(url.path)")
+                        // Do NOT retry, do NOT request access, just stop attempts.
+                        break
                     }
+                    log.error("[Scan] Attempt \(index + 1) failed: \(error.localizedDescription)")
                 }
             }
             let duration = Date().timeIntervalSince(scanStart)
-            log.error("[Scan] All attempts failed side=\(currSide) gen=\(generation) path='\(url.path)' duration=\(String(format: "%.3f", duration))s")
+            log.debug("[Scan] Scan finished without access side=\(currSide) path='\(url.path)'")
         }
 
         // MARK: - Permission helpers

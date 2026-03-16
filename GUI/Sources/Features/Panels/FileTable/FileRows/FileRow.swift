@@ -130,6 +130,10 @@
                                 onDrop: handleDrop,
                                 onTargetChange: handleDropTargeting
                             ))
+                        .task(id: file.id) {
+                            guard file.isDirectory else { return }
+                            await runDirectorySizeTask()
+                        }
                 }
             }
         }

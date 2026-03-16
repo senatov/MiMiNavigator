@@ -257,6 +257,12 @@
         /// Note: this can legitimately return 0 for empty dirs, but also for protected/virtual dirs.
         private static func computeFastDiskUsage(_ path: String) -> Int64 {
 
+            // Skip unreadable directories early
+            if !FileManager.default.isReadableFile(atPath: path) {
+                log.debug("[DirectorySizeService] fastDiskUsage skipped unreadable: \(path)")
+                return DirectorySizeService.unavailableSize
+            }
+
             var total: Int64 = 0
             let fm = FileManager.default
             guard let enumerator = fm.enumerator(atPath: path) else { return DirectorySizeService.unavailableSize }
@@ -283,6 +289,12 @@
         /// Prefers allocated size (Finder-like) when available.
         private static func computeFullRecursive(_ url: URL) -> Int64 {
 
+            // Skip unreadable directories early
+            if !FileManager.default.isReadableFile(atPath: url.path) {
+                log.debug("[DirectorySizeService] fullRecursive skipped unreadable: \(url.path)")
+                return DirectorySizeService.unavailableSize
+            }
+
             var total: Int64 = 0
             let fm = FileManager.default
             let keys: Set<URLResourceKey> = [
@@ -302,7 +314,10 @@
                     // If you do, folders like /Applications become “0 B”.
                     options: [],
                     errorHandler: { fileURL, error in
-                        log.warning("[DirectorySizeService] enumerate error: \(fileURL.path) error=\(error.localizedDescription)")
+                        // Ignore permission errors to prevent log spam
+                        if (error as NSError).code != NSFileReadNoPermissionError {
+                            log.warning("[DirectorySizeService] enumerate error: \(fileURL.path) error=\(error.localizedDescription)")
+                        }
                         return true
                     }
                 )
@@ -382,6 +397,12 @@
 
         /// Combined native strategy
         private static func computeDirectorySizeNative(_ url: URL) -> Int64 {
+
+            // Hard stop for unreadable directories
+            if !FileManager.default.isReadableFile(atPath: url.path) {
+                log.debug("[DirectorySizeService] skipping unreadable directory: \(url.path)")
+                return DirectorySizeService.unavailableSize
+            }
 
             let path = url.path
             // Phase 2 fast estimation

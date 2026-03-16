@@ -38,13 +38,14 @@
             // Skip known special / virtual directories to avoid useless scans and permission errors
             if shouldSkipSizeCalculation(file.urlValue) {
                 log.debug("[FileRow] Skipping size calculation for special directory '\(file.nameStr)' path='\(file.urlValue.path)'")
-                file.cachedAppSize = DirectorySizeService.unavailableSize
+                file.cachedDirectorySize = DirectorySizeService.unavailableSize
                 file.sizeIsExact = false
+                file.securityState = .restricted
                 file.sizeCalculationStarted = false
                 return
             }
             if file.sizeIsExact { return }
-            if file.cachedAppSize == nil && file.cachedShallowSize == nil {
+            if file.cachedDirectorySize == nil && file.cachedShallowSize == nil {
                 file.sizeCalculationStarted = false
             }
             guard !file.sizeCalculationStarted else {
@@ -104,15 +105,16 @@
                 if shouldFallback {
                     log.warning("[FileRow] Phase 2 unavailable for '\(file.nameStr)' — running fallback scan")
                     let fallback = await fallbackDirectoryScanAsync(url: url)
-                    file.cachedAppSize = fallback
+                    file.cachedDirectorySize = fallback
                     file.sizeIsExact = fallback > 0
                     file.sizeCalculationStarted = false
                     log.info("[FileRow] Phase 2 complete (fallback): '\(file.nameStr)' size=\(fallback)")
                     return
                 } else {
                     log.warning("[FileRow] Phase 2 unavailable for '\(file.nameStr)' — keeping non-exact")
-                    file.cachedAppSize = DirectorySizeService.unavailableSize
+                    file.cachedDirectorySize = DirectorySizeService.unavailableSize
                     file.sizeIsExact = false
+                    file.securityState = .restricted
                     file.sizeCalculationStarted = false
                     return
                 }
@@ -123,14 +125,15 @@
                 let provenEmpty = isTrulyEmptyDirectory(url)
                 if looksVirtual || !provenEmpty {
                     log.warning("[FileRow] Phase 2 produced 0 for '\(file.nameStr)' — keeping non-exact")
-                    file.cachedAppSize = 0
+                    file.cachedDirectorySize = 0
                     file.sizeIsExact = false
                     file.sizeCalculationStarted = false
                     return
                 }
             }
-            file.cachedAppSize = finalSize
+            file.cachedDirectorySize = finalSize
             file.sizeIsExact = true
+            file.securityState = .normal
             file.sizeCalculationStarted = false
             log.info("[FileRow] Phase 2 complete: '\(file.nameStr)' size=\(finalSize)")
         }
@@ -199,12 +202,14 @@
             url.resolvingSymlinksInPath().standardizedFileURL
         }
 
+        // MARK: -
         func hasNonZeroChildCountHint() -> Bool {
             let raw = file.childCountFormatted.trimmingCharacters(in: .whitespacesAndNewlines)
             guard !raw.isEmpty, raw != "0", raw != "-" else { return false }
             return true
         }
 
+        // MARK: -
         func isTrulyEmptyDirectory(_ url: URL) -> Bool {
             let target = normalizedURLForSize(url)
             let fm = FileManager.default
@@ -225,6 +230,7 @@
             return true
         }
 
+        // MARK: -
         func isLikelyVirtualDirectory(_ url: URL) -> Bool {
             let p = url.path
             if p.contains("/Library/CloudStorage/") { return true }
@@ -233,10 +239,11 @@
             if p.contains("ProtonDrive") { return true }
             return false
         }
-        /// Detect directories where size calculation should be skipped (system / virtual / restricted)
+
+
+        // MARK: - Detect directories where size calculation should be skipped (system / virtual / restricted)
         func shouldSkipSizeCalculation(_ url: URL) -> Bool {
             let path = url.path
-
             // macOS restricted or special directories
             if path.hasSuffix("/.Trash") { return true }
             if path.contains("/.Trashes") { return true }
@@ -253,15 +260,13 @@
                 "/usr/lib",
                 "/usr/share",
                 "/Volumes/Preboot",
-                "/Volumes/VM"
+                "/Volumes/VM",
             ]
-
             for root in systemRoots {
                 if path.hasPrefix(root) {
                     return true
                 }
             }
-
             return false
         }
     }
