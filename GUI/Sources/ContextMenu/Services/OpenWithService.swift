@@ -73,7 +73,19 @@
                 urls[bundleID] = appURL.path
                 MiMiDefaults.shared.set(urls, forKey: lruAppURLsKey)
             }
+            // Invalidate cached app list so next context menu shows updated order
+            invalidateCache(for: ext)
             log.debug("\(#function) LRU updated ext='\(key)' list=\(list)")
+        }
+        // MARK: - Cache Invalidation
+        /// Notification posted when Open With LRU order changes; userInfo["ext"] contains the extension
+        static let cacheInvalidatedNotification = Notification.Name("OpenWithService.cacheInvalidated")
+        /// Removes cached app list for the given extension so it is rebuilt with fresh LRU order
+        func invalidateCache(for ext: String) {
+            let normalizedExt = ext.lowercased().isEmpty ? "__noext__" : ext.lowercased()
+            OpenWithService.appsCache.removeObject(forKey: normalizedExt as NSString)
+            NotificationCenter.default.post(name: Self.cacheInvalidatedNotification, object: nil, userInfo: ["ext": normalizedExt])
+            log.debug("\(#function) cache invalidated for ext='\(normalizedExt)')")
         }
 
         // MARK: - Get Applications for File

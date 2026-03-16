@@ -14,6 +14,21 @@
     struct FileContextMenu: View {
         /// Cache of Open With apps by file extension
         private static var appsCache: [String: [AppInfo]] = [:]
+        // MARK: - Cache Observer
+        /// One-time observer setup for LRU cache invalidation from OpenWithService
+        private static let cacheObserver: Any = {
+            NotificationCenter.default.addObserver(
+                forName: OpenWithService.cacheInvalidatedNotification,
+                object: nil, queue: .main
+            ) { notification in
+                let ext = notification.userInfo?["ext"] as? String
+                MainActor.assumeIsolated {
+                    guard let ext else { return }
+                    appsCache.removeValue(forKey: ext)
+                    log.debug("FileContextMenu.appsCache cleared for ext='\(ext)'")
+                }
+            }
+        }()
         let file: CustomFile
         let panelSide: PanelSide
         let onAction: (FileAction) -> Void
@@ -23,6 +38,7 @@
         @State private var openWithApps: [AppInfo]
 
         init(file: CustomFile, panelSide: PanelSide, onAction: @escaping (FileAction) -> Void) {
+            _ = Self.cacheObserver  // ensure observer is registered
             self.file = file
             self.panelSide = panelSide
             self.onAction = onAction
