@@ -23,7 +23,7 @@
             file.sizeCalculationStarted = true
             let resolved = file.urlValue.resolvingSymlinksInPath()
             if let attrs = try? FileManager.default.attributesOfItem(atPath: resolved.path),
-               let fileSize = attrs[.size] as? NSNumber
+                let fileSize = attrs[.size] as? NSNumber
             {
                 file.cachedAppSize = fileSize.int64Value
                 file.sizeIsExact = true
@@ -166,30 +166,32 @@
         // MARK: - Fallback directory scan (slow but reliable)
         private func fallbackDirectoryScanAsync(url: URL) async -> Int64 {
             let target = normalizedURLForSize(url)
-            return await Task.detached(priority: .utility) {
-                let fm = FileManager.default
-                var total: Int64 = 0
-                let keys: Set<URLResourceKey> = [
-                    .isDirectoryKey, .fileSizeKey, .fileAllocatedSizeKey, .totalFileAllocatedSizeKey,
-                ]
-                if let enumerator = fm.enumerator(
-                    at: target, includingPropertiesForKeys: Array(keys),
-                    options: [.skipsPackageDescendants]
-                ) {
-                    while let next = enumerator.nextObject() as? URL {
-                        if let values = try? next.resourceValues(forKeys: keys) {
-                            if let alloc = values.totalFileAllocatedSize {
-                                total += Int64(alloc)
-                            } else if let alloc = values.fileAllocatedSize {
-                                total += Int64(alloc)
-                            } else if let s = values.fileSize {
-                                total += Int64(s)
+            return
+                await Task.detached(priority: .utility) {
+                    let fm = FileManager.default
+                    var total: Int64 = 0
+                    let keys: Set<URLResourceKey> = [
+                        .isDirectoryKey, .fileSizeKey, .fileAllocatedSizeKey, .totalFileAllocatedSizeKey,
+                    ]
+                    if let enumerator = fm.enumerator(
+                        at: target, includingPropertiesForKeys: Array(keys),
+                        options: [.skipsPackageDescendants]
+                    ) {
+                        while let next = enumerator.nextObject() as? URL {
+                            if let values = try? next.resourceValues(forKeys: keys) {
+                                if let alloc = values.totalFileAllocatedSize {
+                                    total += Int64(alloc)
+                                } else if let alloc = values.fileAllocatedSize {
+                                    total += Int64(alloc)
+                                } else if let s = values.fileSize {
+                                    total += Int64(s)
+                                }
                             }
                         }
                     }
+                    return total
                 }
-                return total
-            }.value
+                .value
         }
 
         // MARK: - Helpers
@@ -206,15 +208,19 @@
         func isTrulyEmptyDirectory(_ url: URL) -> Bool {
             let target = normalizedURLForSize(url)
             let fm = FileManager.default
-            guard let enumerator = fm.enumerator(
-                at: target, includingPropertiesForKeys: [.fileSizeKey, .isDirectoryKey],
-                options: [.skipsPackageDescendants]
-            ) else { return false }
+            guard
+                let enumerator = fm.enumerator(
+                    at: target, includingPropertiesForKeys: [.fileSizeKey, .isDirectoryKey],
+                    options: [.skipsPackageDescendants]
+                )
+            else { return false }
             for case let fileURL as URL in enumerator {
                 if let vals = try? fileURL.resourceValues(forKeys: [.fileSizeKey, .isDirectoryKey]),
-                   vals.isDirectory != true,
-                   let size = vals.fileSize, size > 0
-                { return false }
+                    vals.isDirectory != true,
+                    let size = vals.fileSize, size > 0
+                {
+                    return false
+                }
             }
             return true
         }
@@ -236,13 +242,25 @@
             if path.contains("/.Trashes") { return true }
             if path.contains("/Cryptexes") { return true }
 
-            // Known virtual storage providers
-            if path.contains("/Library/CloudStorage/") { return true }
-            if path.contains("/Library/Mobile Documents/") { return true }
+            // Protected / heavy system roots
+            let systemRoots: [String] = [
+                "/System",
+                "/private/var/db",
+                "/private/var/run",
+                "/private/var/tmp",
+                "/private/var/folders",
+                "/private/var/protected",
+                "/usr/lib",
+                "/usr/share",
+                "/Volumes/Preboot",
+                "/Volumes/VM"
+            ]
 
-            // Third‑party cloud drives (can behave like virtual FS)
-            if path.contains("OneDrive") { return true }
-            if path.contains("ProtonDrive") { return true }
+            for root in systemRoots {
+                if path.hasPrefix(root) {
+                    return true
+                }
+            }
 
             return false
         }

@@ -1,114 +1,97 @@
-//
-// UserPrefs.swift
-//  MiMiNavigator
-//
-//  Created by Iakov Senatov on 10.08.2025.
-//
+    //
+    // UserPrefs.swift
+    //  MiMiNavigator
+    //
+    //  Created by Iakov Senatov on 10.08.2025.
+    //
 
-import AppKit
-import Foundation
+    import AppKit
+    import Foundation
 
-// MARK: - UserPreferences
-@MainActor
-@Observable
-final class UserPreferences {
-    static let shared = UserPreferences()
-    private let defaults = MiMiDefaults.shared
+    // MARK: - UserPreferences
+    @MainActor
+    @Observable
+    final class UserPreferences {
+        static let shared = UserPreferences()
+        private let fileURL: URL = {
+            let home = FileManager.default.homeDirectoryForCurrentUser
+            let dir = home.appendingPathComponent(".mimi", isDirectory: true)
+            if !FileManager.default.fileExists(atPath: dir.path) {
+                try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+            }
+            return dir.appendingPathComponent("preferences.json")
+        }()
 
-    // MARK: - Properties
-    var snapshot: PreferencesSnapshot = .default {
-        didSet { save() }
-    }
+        // MARK: - Properties
+        var snapshot: PreferencesSnapshot = .default
 
-    // MARK: - Initializer
-    private init() {
-        log.info(#function)
-        subscribeTermination()
-    }
-
-    // MARK: - Load from UserDefaults
-    func load() {
-        log.info(#function)
-        var s = PreferencesSnapshot.default
-        if let value = defaults.string(forKey: PreferenceKeys.leftPath.rawValue), !value.isEmpty {
-            log.debug(#function + ": leftPath: \(value)")
-            s.leftPath = value
-        } else {
-            log.warning("Missing leftPath — using default.")
+        // MARK: - Initializer
+        private init() {
+            log.info(#function)
+            subscribeTermination()
         }
-        if let value = defaults.string(forKey: PreferenceKeys.rightPath.rawValue), !value.isEmpty {
-            log.debug(#function + ": rightPath: \(value)")
-            s.rightPath = value
-        } else {
-            log.warning("Missing rightPath — using default.")
+
+        // MARK: - Load from preferences.json
+        func load() {
+            log.info(#function)
+
+            guard FileManager.default.fileExists(atPath: fileURL.path) else {
+                log.warning("Preferences file not found — using defaults.")
+                snapshot = .default
+                return
+            }
+
+            do {
+                let data = try Data(contentsOf: fileURL)
+                let decoded = try JSONDecoder().decode(PreferencesSnapshot.self, from: data)
+                snapshot = decoded
+                log.info("Preferences loaded from ~/.mimi/preferences.json")
+            } catch {
+                log.error("Failed to load preferences: \(error.localizedDescription)")
+                snapshot = .default
+            }
         }
-        if defaults.object(forKey: PreferenceKeys.showHiddenFiles.rawValue) != nil {
-            s.showHiddenFiles = defaults.bool(forKey: PreferenceKeys.showHiddenFiles.rawValue)
-        } else {
-            log.warning("Missing showHiddenFiles — using default.")
+
+        // MARK: - Save to preferences.json
+        func save() {
+            let snapshotCopy = snapshot
+            Task.detached(priority: .utility) {
+                do {
+                    let data = try JSONEncoder().encode(snapshotCopy)
+                    try data.write(to: self.fileURL, options: .atomic)
+                    log.info("Preferences saved to ~/.mimi/preferences.json")
+                } catch {
+                    log.error("Failed to save preferences: \(error.localizedDescription)")
+                }
+            }
         }
-        if defaults.object(forKey: PreferenceKeys.favoritesMaxDepth.rawValue) != nil {
-            let val = defaults.integer(forKey: PreferenceKeys.favoritesMaxDepth.rawValue)
-            s.favoritesMaxDepth = max(val, 0)
-        } else {
-            log.warning("Missing favoritesMaxDepth — using default.")
+
+        // MARK: - Apply to AppState
+        func apply(to appState: AppState) {
+            log.info("Applying preferences (non-path settings) to AppState.")
         }
-        if let arr = defaults.array(forKey: PreferenceKeys.expandedFolders.rawValue) as? [String] {
-            s.expandedFolders = Set(arr)
-        } else {
-            log.warning("Missing expandedFolders — using default.")
+
+        // MARK: - Capture from AppState
+        func capture(from appState: AppState) {
+            log.debug(#function + ": leftPath: \(appState.leftPath), rightPath: \(appState.rightPath)")
+            // Build updated snapshot in one assignment to avoid triggering didSet multiple times
+            var s = snapshot
+            s.leftPath = appState.leftPath
+            s.rightPath = appState.rightPath
+            s.lastSelectedLeftFilePath = appState.selectedLeftFile?.pathStr
+            s.lastSelectedRightFilePath = appState.selectedRightFile?.pathStr
+            snapshot = s
         }
-        s.lastSelectedLeftFilePath = defaults.string(forKey: PreferenceKeys.lastSelectedLeftFilePath.rawValue)
-        s.lastSelectedRightFilePath = defaults.string(forKey: PreferenceKeys.lastSelectedRightFilePath.rawValue)
 
-        snapshot = s
-        log.info("Preferences loaded.")
-    }
-
-    // MARK: - Save to UserDefaults
-    func save() {
-        log.info(#function)
-        defaults.set(snapshot.leftPath, forKey: PreferenceKeys.leftPath.rawValue)
-        defaults.set(snapshot.rightPath, forKey: PreferenceKeys.rightPath.rawValue)
-        defaults.set(snapshot.showHiddenFiles, forKey: PreferenceKeys.showHiddenFiles.rawValue)
-        defaults.set(snapshot.favoritesMaxDepth, forKey: PreferenceKeys.favoritesMaxDepth.rawValue)
-        defaults.set(Array(snapshot.expandedFolders), forKey: PreferenceKeys.expandedFolders.rawValue)
-        defaults.set(snapshot.lastSelectedLeftFilePath, forKey: PreferenceKeys.lastSelectedLeftFilePath.rawValue)
-        defaults.set(snapshot.lastSelectedRightFilePath, forKey: PreferenceKeys.lastSelectedRightFilePath.rawValue)
-
-        log.info("Preferences saved.")
-    }
-
-    // MARK: - Apply to AppState
-    func apply(to appState: AppState) {
-        log.info("Applying preferences to AppState.")
-        appState.leftPath = snapshot.leftPath
-        appState.rightPath = snapshot.rightPath
-    }
-
-    // MARK: - Capture from AppState
-    func capture(from appState: AppState) {
-        log.debug(#function + ": leftPath: \(appState.leftPath), rightPath: \(appState.rightPath)")
-        // Build updated snapshot in one assignment to avoid triggering didSet multiple times
-        var s = snapshot
-        s.leftPath = appState.leftPath
-        s.rightPath = appState.rightPath
-        s.lastSelectedLeftFilePath = appState.selectedLeftFile?.pathStr
-        s.lastSelectedRightFilePath = appState.selectedRightFile?.pathStr
-        snapshot = s
-    }
-
-    // MARK: - Termination Handler
-    private func subscribeTermination() {
-        NotificationCenter.default.addObserver(
-            forName: NSApplication.willTerminateNotification,
-            object: nil,
-            queue: .main
-        ) { [weak self] _ in
-            Task { @MainActor in
+        // MARK: - Termination Handler
+        private func subscribeTermination() {
+            NotificationCenter.default.addObserver(
+                forName: NSApplication.willTerminateNotification,
+                object: nil,
+                queue: .main
+            ) { [weak self] _ in
                 self?.save()
                 log.info("Preferences saved on termination.")
             }
         }
     }
-}
