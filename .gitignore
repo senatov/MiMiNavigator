@@ -1,3 +1,4 @@
+
 # --------------------------------------------------
 # macOS
 # --------------------------------------------------
@@ -10,7 +11,8 @@
 # --------------------------------------------------
 # Xcode user files
 # --------------------------------------------------
-
+*.xcuserdatad
+*.xcworkspace/xcuserdata
 *.xcuserstate
 *.xcuserdata
 *.xcscmblueprint
@@ -106,3 +108,4 @@ timeline.xctimeline
 # Packages/FavoritesKit
 # Packages/NetworkKit*.dmg
 .spm-checkouts
+*.xcbkptlist
