@@ -13,7 +13,7 @@ import Foundation
 @Observable
 final class UserPreferences {
     static let shared = UserPreferences()
-    private let defaults = UserDefaults.standard
+    private let defaults = MiMiDefaults.shared
 
     // MARK: - Properties
     var snapshot: PreferencesSnapshot = .default {

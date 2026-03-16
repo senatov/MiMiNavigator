@@ -88,12 +88,12 @@ final class SessionColumnLayout {
 
     func saveWidths() {
         if let data = try? JSONEncoder().encode(columns) {
-            UserDefaults.standard.set(data, forKey: storageKey)
+            MiMiDefaults.shared.set(data, forKey: storageKey)
         }
     }
 
     private func load() {
-        guard let data = UserDefaults.standard.data(forKey: storageKey),
+        guard let data = MiMiDefaults.shared.data(forKey: storageKey),
               let saved = try? JSONDecoder().decode([SessionColumnSpec].self, from: data)
         else { return }
         for saved in saved {

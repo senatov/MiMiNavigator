@@ -162,11 +162,11 @@
                 "history": history.map { $0.path },
                 "currentIndex": currentIndex
             ]
-            UserDefaults.standard.set(data, forKey: userDefaultsKey)
-        }
-        
-        private func load() {
-            guard let data = UserDefaults.standard.dictionary(forKey: userDefaultsKey),
+            MiMiDefaults.shared.set(data, forKey: userDefaultsKey)
+            }
+            
+            private func load() {
+            guard let data = MiMiDefaults.shared.dictionary(forKey: userDefaultsKey),
                   let hist = data["history"] as? [String],
                   let idx = data["currentIndex"] as? Int else {
                 return

@@ -9,8 +9,8 @@ import FileModelKit
 import Foundation
 
 // MARK: - Preference Keys
-/// Centralized storage for all UserDefaults keys used in the app.
-/// Use with `UserDefaults.standard.string(forKey: PreferenceKeys.leftPath.rawValue)`
+/// Centralized storage keys for all persistent app preferences.
+/// Use with `MiMiDefaults.shared.string(forKey: PreferenceKeys.leftPath.rawValue)`
 enum PreferenceKeys: String, CaseIterable {
     // MARK: - Panel Paths
     case leftPath = "lastLeftPath"

@@ -105,7 +105,7 @@ final class HotKeyStore {
     /// Reset all bindings to factory defaults
     func resetToDefaults() {
         log.info("[HotKeys] Resetting to defaults")
-        UserDefaults.standard.removeObject(forKey: userDefaultsKey)
+        MiMiDefaults.shared.removeObject(forKey: userDefaultsKey)
         loadDefaults()
         saveBindings()
     }
@@ -120,9 +120,9 @@ final class HotKeyStore {
     // MARK: - Persistence
 
     private func loadBindings() {
-        if let data = UserDefaults.standard.data(forKey: userDefaultsKey),
+        if let data = MiMiDefaults.shared.data(forKey: userDefaultsKey),
            let stored = try? JSONDecoder().decode([HotKeyBinding].self, from: data) {
-            log.info("[HotKeys] Loaded \(stored.count) custom bindings from UserDefaults")
+            log.info("[HotKeys] Loaded \(stored.count) custom bindings from MiMiDefaults")
             applyBindings(stored)
         } else {
             log.info("[HotKeys] No custom bindings found, using defaults")
@@ -164,7 +164,7 @@ final class HotKeyStore {
     private func saveBindings() {
         let list = Array(bindings.values)
         if let data = try? JSONEncoder().encode(list) {
-            UserDefaults.standard.set(data, forKey: userDefaultsKey)
+            MiMiDefaults.shared.set(data, forKey: userDefaultsKey)
             log.debug("[HotKeys] Saved \(list.count) bindings")
         } else {
             log.error("[HotKeys] Failed to encode bindings")

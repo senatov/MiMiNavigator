@@ -81,11 +81,11 @@ final class ColumnLayoutModel {
 
     private func save() {
         guard let data = try? JSONEncoder().encode(columns) else { return }
-        UserDefaults.standard.set(data, forKey: storageKey)
+        MiMiDefaults.shared.set(data, forKey: storageKey)
     }
 
     private func load() {
-        guard let data = UserDefaults.standard.data(forKey: storageKey),
+        guard let data = MiMiDefaults.shared.data(forKey: storageKey),
               let saved = try? JSONDecoder().decode([ColumnSpec].self, from: data) else {
             log.debug("[ColumnLayout] no saved layout for key=\(storageKey)")
             return

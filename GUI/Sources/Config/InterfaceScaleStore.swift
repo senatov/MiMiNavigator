@@ -1,11 +1,11 @@
 // InterfaceScaleStore.swift
 // MiMiNavigator
 //
-// Created by Claude on 02.03.2026.
+// Created by Iakov Senatov on 02.03.2026.
 // Copyright © 2026 Senatov. All rights reserved.
 // Description: Centralized UI scale factor for the entire application.
 //   Provides a single multiplier (0.8–2.0) that all font sizes, icon sizes,
-//   and row heights should reference. Persisted in UserDefaults.
+//   and row heights should reference. Persisted in ~/.mimi/defaults.json.
 
 import SwiftUI
 
@@ -25,14 +25,14 @@ final class InterfaceScaleStore {
         didSet {
             let clamped = max(Self.minScale, min(scaleFactor, Self.maxScale))
             if scaleFactor != clamped { scaleFactor = clamped }
-            UserDefaults.standard.set(clamped, forKey: storageKey)
+            MiMiDefaults.shared.set(clamped, forKey: storageKey)
             log.debug("[InterfaceScale] set to \(Int(clamped * 100))%")
         }
     }
     private let storageKey = "settings.interfaceScale"
     // MARK: - Init
     private init() {
-        let saved = UserDefaults.standard.double(forKey: "settings.interfaceScale")
+        let saved = MiMiDefaults.shared.double(forKey: "settings.interfaceScale")
         if saved >= Self.minScale && saved <= Self.maxScale {
             self.scaleFactor = saved
         } else {

@@ -59,7 +59,7 @@
                 self._archiveName = State(initialValue: defaultName)
             }
             self._selectedFormat = State(initialValue: defaultFormat)
-            let lastDir = UserDefaults.standard.string(forKey: Self.lastArchiveDirectoryKey)
+            let lastDir = MiMiDefaults.shared.string(forKey: Self.lastArchiveDirectoryKey)
             self._destinationPath = State(initialValue: lastDir ?? destinationPath.path)
         }
 
@@ -201,7 +201,7 @@
         }
 
         private func performPack() {
-            UserDefaults.standard.set(destinationPath, forKey: Self.lastArchiveDirectoryKey)
+            MiMiDefaults.shared.set(destinationPath, forKey: Self.lastArchiveDirectoryKey)
 
             let format: ArchiveFormat = selectedFormat
             onPack(archiveName, format, URL(fileURLWithPath: destinationPath), deleteSourceFiles)

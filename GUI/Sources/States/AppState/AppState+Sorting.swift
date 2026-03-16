@@ -14,8 +14,8 @@ extension AppState {
     func updateSorting(key: SortKeysEnum? = nil, ascending: Bool? = nil) {
         if let key { sortKey = key }
         if let ascending { bSortAscending = ascending }
-        UserDefaults.standard.set(sortKey.rawValue, forKey: "MiMiNavigator.sortKey")
-        UserDefaults.standard.set(bSortAscending, forKey: "MiMiNavigator.sortAscending")
+        MiMiDefaults.shared.set(sortKey.rawValue, forKey: "MiMiNavigator.sortKey")
+        MiMiDefaults.shared.set(bSortAscending, forKey: "MiMiNavigator.sortAscending")
         displayedLeftFiles = FileSortingService.sort(displayedLeftFiles, by: sortKey, bDirection: bSortAscending)
         displayedRightFiles = FileSortingService.sort(displayedRightFiles, by: sortKey, bDirection: bSortAscending)
     }

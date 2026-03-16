@@ -95,8 +95,9 @@ final class ToolbarStore {
     // MARK: - Persistence
 
     private func load() {
+        let ud = MiMiDefaults.shared
         // Load order
-        if let rawOrder = UserDefaults.standard.array(forKey: orderKey) as? [String] {
+        if let rawOrder = ud.array(forKey: orderKey) as? [String] {
             let decoded = rawOrder.compactMap { ToolbarItemID(rawValue: $0) }
             let knownSaved = Set(decoded)
             let newIDs = ToolbarItemID.allCases.filter { !knownSaved.contains($0) }
@@ -104,9 +105,9 @@ final class ToolbarStore {
         }
 
         // Load visibility — new IDs not in saved set are added as visible by default
-        if let rawVisible = UserDefaults.standard.array(forKey: visibilityKey) as? [String] {
+        if let rawVisible = ud.array(forKey: visibilityKey) as? [String] {
             let saved = Set(rawVisible.compactMap { ToolbarItemID(rawValue: $0) })
-            let knownSaved = Set(rawVisible)  // raw strings that were in UserDefaults
+            let knownSaved = Set(rawVisible)  // raw strings that were in MiMiDefaults
             let brandNew = ToolbarItemID.allCases.filter {
                 !$0.isFixed && !knownSaved.contains($0.rawValue)
             }
@@ -116,20 +117,20 @@ final class ToolbarStore {
         }
 
         // Load menu bar visibility (default = true)
-        if UserDefaults.standard.object(forKey: menuBarKey) != nil {
-            menuBarVisible = UserDefaults.standard.bool(forKey: menuBarKey)
+        if ud.object(forKey: menuBarKey) != nil {
+            menuBarVisible = ud.bool(forKey: menuBarKey)
         }
 
         log.info("[Toolbar] loaded — order: \(orderedIDs.map(\.rawValue)), visible: \(visibleIDs.map(\.rawValue).sorted()), menuBar=\(menuBarVisible)")
     }
 
     private func save() {
-        UserDefaults.standard.set(orderedIDs.map(\.rawValue), forKey: orderKey)
-        UserDefaults.standard.set(visibleIDs.map(\.rawValue), forKey: visibilityKey)
+        MiMiDefaults.shared.set(orderedIDs.map(\.rawValue), forKey: orderKey)
+        MiMiDefaults.shared.set(visibleIDs.map(\.rawValue), forKey: visibilityKey)
     }
 
     private func saveMenuBarVisible() {
-        UserDefaults.standard.set(menuBarVisible, forKey: menuBarKey)
+        MiMiDefaults.shared.set(menuBarVisible, forKey: menuBarKey)
         log.debug("[Toolbar] menuBarVisible=\(menuBarVisible) saved")
     }
 }

@@ -164,8 +164,8 @@ final class DiffToolRegistry {
     private(set) var tools: [DiffTool] = []
 
     var activeToolID: String {
-        get { UserDefaults.standard.string(forKey: activeKey) ?? "auto" }
-        set { UserDefaults.standard.set(newValue, forKey: activeKey) }
+        get { MiMiDefaults.shared.string(forKey: activeKey) ?? "auto" }
+        set { MiMiDefaults.shared.set(newValue, forKey: activeKey) }
     }
 
     private init() { load() }
@@ -236,7 +236,7 @@ final class DiffToolRegistry {
     // MARK: - Persist
 
     private func load() {
-        if let data = UserDefaults.standard.data(forKey: listKey),
+        if let data = MiMiDefaults.shared.data(forKey: listKey),
            var saved = try? JSONDecoder().decode([DiffTool].self, from: data) {
             for builtin in DiffTool.allBuiltIns {
                 if !saved.contains(where: { $0.id == builtin.id }) { saved.append(builtin) }
@@ -250,7 +250,7 @@ final class DiffToolRegistry {
 
     func save() {
         if let data = try? JSONEncoder().encode(tools) {
-            UserDefaults.standard.set(data, forKey: listKey)
+            MiMiDefaults.shared.set(data, forKey: listKey)
         }
     }
 }

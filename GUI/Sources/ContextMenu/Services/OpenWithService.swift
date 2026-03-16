@@ -53,25 +53,25 @@
 
         /// Returns bundle IDs of recently-used apps for a given file extension, newest first
         private func lruBundles(for ext: String) -> [String] {
-            let dict = UserDefaults.standard.dictionary(forKey: lruDefaultsKey) as? [String: [String]] ?? [:]
+            let dict = MiMiDefaults.shared.dictionary(forKey: lruDefaultsKey) as? [String: [String]] ?? [:]
             return dict[ext.lowercased()] ?? []
         }
 
         /// Records that `bundleID` was used to open a file with `ext`
         private func recordLRU(bundleID: String, ext: String, appURL: URL? = nil) {
             let key = ext.lowercased()
-            var dict = UserDefaults.standard.dictionary(forKey: lruDefaultsKey) as? [String: [String]] ?? [:]
+            var dict = MiMiDefaults.shared.dictionary(forKey: lruDefaultsKey) as? [String: [String]] ?? [:]
             var list = dict[key] ?? []
             list.removeAll { $0 == bundleID }   // deduplicate
             list.insert(bundleID, at: 0)        // newest first
             if list.count > lruMaxCount { list = Array(list.prefix(lruMaxCount)) }
             dict[key] = list
-            UserDefaults.standard.set(dict, forKey: lruDefaultsKey)
+            MiMiDefaults.shared.set(dict, forKey: lruDefaultsKey)
             // Persist app URL so "Other..." picks can be restored in the list
             if let appURL {
-                var urls = UserDefaults.standard.dictionary(forKey: lruAppURLsKey) as? [String: String] ?? [:]
+                var urls = MiMiDefaults.shared.dictionary(forKey: lruAppURLsKey) as? [String: String] ?? [:]
                 urls[bundleID] = appURL.path
-                UserDefaults.standard.set(urls, forKey: lruAppURLsKey)
+                MiMiDefaults.shared.set(urls, forKey: lruAppURLsKey)
             }
             log.debug("\(#function) LRU updated ext='\(key)' list=\(list)")
         }
@@ -116,7 +116,7 @@
 
             // Add LRU-picked apps that are missing from the LS list (e.g. picked via "Other...")
             let knownBundles = Set(apps.map(\.bundleIdentifier))
-            let savedURLs = UserDefaults.standard.dictionary(forKey: lruAppURLsKey) as? [String: String] ?? [:]
+            let savedURLs = MiMiDefaults.shared.dictionary(forKey: lruAppURLsKey) as? [String: String] ?? [:]
             for bundleID in recentBundles where !knownBundles.contains(bundleID) {
                 if let path = savedURLs[bundleID] {
                     let url = URL(fileURLWithPath: path)

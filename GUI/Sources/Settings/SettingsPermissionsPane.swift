@@ -315,8 +315,8 @@ struct SettingsPermissionsPane: View {
     // MARK: - Logic
 
     private func loadAuthorizedFolders() {
-        // Read stored bookmark paths from UserDefaults directly
-        let dict = (UserDefaults.standard.dictionary(forKey: "FavoritesKit.Bookmarks.v1") as? [String: Data]) ?? [:]
+        // Read stored bookmark paths from MiMiDefaults
+        let dict = (MiMiDefaults.shared.dictionary(forKey: "FavoritesKit.Bookmarks.v1") as? [String: Data]) ?? [:]
         authorizedFolders = dict.keys.sorted().map { path in
             let accessible = FileManager.default.isReadableFile(atPath: path)
             return AuthorizedFolder(
@@ -388,9 +388,9 @@ struct SettingsPermissionsPane: View {
     private func removeSelectedFolder() {
         guard let selID = selectedFolderID,
               let folder = authorizedFolders.first(where: { $0.id == selID }) else { return }
-        var dict = (UserDefaults.standard.dictionary(forKey: "FavoritesKit.Bookmarks.v1") as? [String: Data]) ?? [:]
+        var dict = (MiMiDefaults.shared.dictionary(forKey: "FavoritesKit.Bookmarks.v1") as? [String: Data]) ?? [:]
         dict.removeValue(forKey: folder.path)
-        UserDefaults.standard.set(dict, forKey: "FavoritesKit.Bookmarks.v1")
+        MiMiDefaults.shared.set(dict, forKey: "FavoritesKit.Bookmarks.v1")
         selectedFolderID = nil
         loadAuthorizedFolders()
         log.info("[Permissions] removed folder '\(folder.path)'")

@@ -27,6 +27,12 @@ struct ConnectToServerView: View {
     @State private var sessionLayout = SessionColumnLayout()
     @State private var showPassword: Bool = false
     @State private var connectionError: String = ""
+    @State private var showSaveAlert: Bool = false
+    @State private var saveAlertIcon: String = "checkmark.circle.fill"
+    @State private var saveAlertColor: Color = .green
+    @State private var saveAlertTitle: String = ""
+    @State private var saveAlertMessage: String = ""
+    @State private var nameWasManuallyEdited: Bool = false
 
     private var dialogBgColor: Color {
         let s = ColorThemeStore.shared
@@ -48,6 +54,24 @@ struct ConnectToServerView: View {
         .background(dialogBgColor.ignoresSafeArea())
         .onAppear { selectFirst() }
         .onKeyPress(.escape) { onDismiss?(); return .handled }
+        .overlay {
+            if showSaveAlert {
+                ZStack {
+                    Color.black.opacity(0.3)
+                        .ignoresSafeArea()
+                        .onTapGesture { showSaveAlert = false }
+                    HIGAlertDialog(
+                        icon: saveAlertIcon,
+                        iconColor: saveAlertColor,
+                        title: saveAlertTitle,
+                        message: saveAlertMessage,
+                        onDismiss: { showSaveAlert = false }
+                    )
+                    .transition(.scale(scale: 0.95).combined(with: .opacity))
+                }
+                .animation(.easeOut(duration: 0.15), value: showSaveAlert)
+            }
+        }
     }
 
     // MARK: - Sidebar (ForkLift / Settings style)
@@ -82,6 +106,7 @@ struct ConnectToServerView: View {
                     draft = server
                     password = RemoteServerKeychain.loadPassword(for: server)
                     keepPassword = !password.isEmpty
+                    nameWasManuallyEdited = !server.name.isEmpty && server.name != server.host
                 }
             }
 
@@ -203,6 +228,9 @@ struct ConnectToServerView: View {
                     SettingsRow(label: "Name:", help: "Bookmark name for this server") {
                         TextField("", text: $draft.name)
                             .textFieldStyle(.roundedBorder)
+                            .onChange(of: draft.name) { _, newValue in
+                                if !newValue.isEmpty { nameWasManuallyEdited = true }
+                            }
                     }
                     Divider()
                     SettingsRow(label: "Protocol:", help: "Connection protocol") {
@@ -223,6 +251,12 @@ struct ConnectToServerView: View {
                     SettingsRow(label: "Host:", help: "Server hostname or IP address") {
                         TextField("", text: $draft.host)
                             .textFieldStyle(.roundedBorder)
+                            .onChange(of: draft.host) { _, newValue in
+                                if !nameWasManuallyEdited || draft.name.isEmpty {
+                                    draft.name = newValue
+                                }
+                            }
+                            .onSubmit { draft.host = Self.sanitizeHost(draft.host) }
                     }
                     Divider()
                     SettingsRow(label: "Port:", help: "Server port number") {
@@ -308,7 +342,7 @@ struct ConnectToServerView: View {
                 Spacer()
                 Button("Disconnect") { disconnectAction() }
                     .disabled(!isDraftConnected)
-                Button("Save") { saveAction() }
+                Button("Save") { saveActionWithFeedback() }
                     .disabled(draft.host.isEmpty)
                 Button("Connect") { connectAction() }
                     .buttonStyle(ThemedButtonStyle())
@@ -432,6 +466,7 @@ struct ConnectToServerView: View {
         password = ""
         keepPassword = true
         selectedID = nil
+        nameWasManuallyEdited = false
     }
 
     // MARK: - removeSelected
@@ -466,6 +501,85 @@ struct ConnectToServerView: View {
         if panel.runModal() == .OK, let url = panel.url {
             draft.privateKeyPath = url.path
         }
+    }
+
+    // MARK: - sanitizeHost
+    /// Removes whitespace, control characters and characters invalid in hostnames.
+    private static func sanitizeHost(_ raw: String) -> String {
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        let allowed = CharacterSet.alphanumerics
+            .union(CharacterSet(charactersIn: ".-_:"))
+        return String(trimmed.unicodeScalars.filter { allowed.contains($0) })
+    }
+
+    // MARK: - saveActionWithFeedback
+    /// Saves bookmark via RemoteServerStore AND exports to ~/.mimi/external_sftp.json,
+    /// then shows HIGAlertDialog with the result.
+    private func saveActionWithFeedback() {
+        saveAction()
+        do {
+            let filePath = try Self.exportToExternalSFTP(store: store)
+            saveAlertIcon = "checkmark.circle.fill"
+            saveAlertColor = .green
+            saveAlertTitle = "Saved"
+            saveAlertMessage = "Configuration written to\n\(filePath)"
+            log.info("[ConnectToServer] exported to \(filePath)")
+        } catch {
+            saveAlertIcon = "xmark.circle.fill"
+            saveAlertColor = .red
+            saveAlertTitle = "Save Failed"
+            saveAlertMessage = Self.describeError(error)
+            log.error("[ConnectToServer] export failed: \(error.localizedDescription)")
+        }
+        showSaveAlert = true
+    }
+
+    // MARK: - exportToExternalSFTP
+    /// Writes all saved servers to ~/.mimi/external_sftp.json (human-readable JSON).
+    /// Returns the file path on success.
+    @discardableResult
+    private static func exportToExternalSFTP(store: RemoteServerStore) throws -> String {
+        let dir = FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent(".mimi", isDirectory: true)
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        let fileURL = dir.appendingPathComponent("external_sftp.json")
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        encoder.dateEncodingStrategy = .iso8601
+        let data = try encoder.encode(store.servers)
+        try data.write(to: fileURL, options: .atomic)
+        return fileURL.path
+    }
+
+    // MARK: - describeError
+    /// Provides a user-friendly error description with diagnostic hints.
+    private static func describeError(_ error: Error) -> String {
+        let nsErr = error as NSError
+        var parts: [String] = [nsErr.localizedDescription]
+        if let underlying = nsErr.userInfo[NSUnderlyingErrorKey] as? NSError {
+            parts.append("Cause: \(underlying.localizedDescription)")
+        }
+        switch nsErr.domain {
+        case NSCocoaErrorDomain:
+            switch nsErr.code {
+            case 4:   parts.append("Hint: file/directory not found.")
+            case 513: parts.append("Hint: permission denied — check directory access.")
+            case 640: parts.append("Hint: encoding error — data may be corrupted.")
+            default:  break
+            }
+        case NSPOSIXErrorDomain:
+            switch nsErr.code {
+            case 2:  parts.append("Hint: ENOENT — path does not exist.")
+            case 13: parts.append("Hint: EACCES — permission denied.")
+            case 28: parts.append("Hint: ENOSPC — disk full.")
+            default: break
+            }
+        default: break
+        }
+        if let recovery = nsErr.localizedRecoverySuggestion {
+            parts.append(recovery)
+        }
+        return parts.joined(separator: "\n")
     }
 
     // MARK: - iconForProtocol

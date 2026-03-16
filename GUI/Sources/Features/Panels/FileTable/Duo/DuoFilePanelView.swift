@@ -85,7 +85,7 @@ struct DuoFilePanelView: View {
         .onChange(of: leftPanelWidth) { _, newValue in
             // Save only valid widths
             if newValue > 0 && isInitialized {
-                UserDefaults.standard.set(newValue, forKey: "leftPanelWidth")
+                MiMiDefaults.shared.set(newValue, forKey: "leftPanelWidth")
             }
         }
         // Batch operation progress overlay

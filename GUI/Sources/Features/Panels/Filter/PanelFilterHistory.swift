@@ -8,6 +8,7 @@
 import Foundation
 
 // MARK: - Filter history storage (max 16, chronological, no duplicates)
+@MainActor
 final class PanelFilterHistory: ObservableObject {
     static let maxEntries = 16
 
@@ -38,10 +39,10 @@ final class PanelFilterHistory: ObservableObject {
 
     // MARK: - Persistence
     private func save() {
-        UserDefaults.standard.set(entries, forKey: key)
+        MiMiDefaults.shared.set(entries, forKey: key)
     }
 
     private static func load(key: String) -> [String] {
-        UserDefaults.standard.stringArray(forKey: key) ?? []
+        MiMiDefaults.shared.stringArray(forKey: key) ?? []
     }
 }

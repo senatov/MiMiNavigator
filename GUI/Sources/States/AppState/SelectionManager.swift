@@ -183,7 +183,7 @@
             isRestoringSelections = true
             defer { isRestoringSelections = false }
 
-            let ud = UserDefaults.standard
+            let ud = MiMiDefaults.shared
 
             // Restore focus
             if let raw = ud.string(forKey: PreferenceKeys.lastFocusedPanel.rawValue), raw == "right" {

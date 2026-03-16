@@ -204,12 +204,12 @@ final class AppState {
         leftPanel = PanelState(currentDirectory: paths.left)
         rightPanel = PanelState(currentDirectory: paths.right)
         self.focusedPanel = StatePersistence.loadInitialFocus()
-        if let storedKey = UserDefaults.standard.string(forKey: "MiMiNavigator.sortKey"),
+        if let storedKey = MiMiDefaults.shared.string(forKey: "MiMiNavigator.sortKey"),
            let key = SortKeysEnum(rawValue: storedKey) {
             self.sortKey = key
         }
-        if UserDefaults.standard.object(forKey: "MiMiNavigator.sortAscending") != nil {
-            self.bSortAscending = UserDefaults.standard.bool(forKey: "MiMiNavigator.sortAscending")
+        if MiMiDefaults.shared.object(forKey: "MiMiNavigator.sortAscending") != nil {
+            self.bSortAscending = MiMiDefaults.shared.bool(forKey: "MiMiNavigator.sortAscending")
         }
         self.leftTabManager = TabManager(panelSide: .left, initialURL: leftURL)
         self.rightTabManager = TabManager(panelSide: .right, initialURL: rightURL)

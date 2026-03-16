@@ -19,7 +19,7 @@ enum StatePersistence {
     static func saveBeforeExit(from state: AppState) {
         log.debug("[StatePersistence] saveBeforeExit")
         UserPreferences.shared.capture(from: state)
-        let ud = UserDefaults.standard
+        let ud = MiMiDefaults.shared
         ud.set(state.leftPath, forKey: PreferenceKeys.leftPath.rawValue)
         ud.set(state.rightPath, forKey: PreferenceKeys.rightPath.rawValue)
         ud.set(state.focusedPanel == .left ? "left" : "right", forKey: PreferenceKeys.lastFocusedPanel.rawValue)
@@ -47,7 +47,7 @@ enum StatePersistence {
     /// Get initial URLs for panels (from UserDefaults or defaults).
     static func loadInitialPaths() -> (left: URL, right: URL) {
         let fm = FileManager.default
-        let ud = UserDefaults.standard
+        let ud = MiMiDefaults.shared
         let defaultLeft = fm.urls(for: .downloadsDirectory, in: .userDomainMask).first
             ?? URL(fileURLWithPath: NSHomeDirectory())
         let defaultRight = fm.urls(for: .documentDirectory, in: .userDomainMask).first
@@ -78,7 +78,7 @@ enum StatePersistence {
     
     /// Get initial focused panel
     static func loadInitialFocus() -> PanelSide {
-        let ud = UserDefaults.standard
+        let ud = MiMiDefaults.shared
         if let raw = ud.string(forKey: PreferenceKeys.lastFocusedPanel.rawValue), raw == "right" {
             return .right
         }
@@ -88,7 +88,7 @@ enum StatePersistence {
     // MARK: - Restore Tabs
     
     static func restoreTabs(into state: AppState) {
-        let ud = UserDefaults.standard
+        let ud = MiMiDefaults.shared
         if let leftData = ud.data(forKey: PreferenceKeys.leftTabs.rawValue) {
             state.leftTabManager.restoreTabs(from: leftData)
             if let activeID = ud.string(forKey: PreferenceKeys.leftActiveTabID.rawValue) {
@@ -107,7 +107,7 @@ enum StatePersistence {
     // MARK: - Restore Sorting
     
     static func restoreSorting(into state: AppState) {
-        let ud = UserDefaults.standard
+        let ud = MiMiDefaults.shared
         if let sortKeyRaw = ud.string(forKey: PreferenceKeys.sortKey.rawValue),
            let sortKey = SortKeysEnum(rawValue: sortKeyRaw) {
             state.sortKey = sortKey

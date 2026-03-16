@@ -22,7 +22,7 @@ final class SearchHistoryManager {
     }
 
     private let maxItems = 32
-    private let defaults = UserDefaults.standard
+    private let defaults = MiMiDefaults.shared
 
     private init() {}
 

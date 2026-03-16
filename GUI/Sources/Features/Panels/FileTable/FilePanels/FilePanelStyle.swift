@@ -44,31 +44,32 @@ enum FilePanelStyle {
     // MARK: - Row Density
     /// Supported row density presets
     enum RowDensity: String, CaseIterable {
-        case compact  = "compact"   // 18 pt
-        case normal   = "normal"    // 22 pt  (Finder default)
-        case relaxed  = "relaxed"   // 28 pt
+        case compact = "compact"  // 18 pt
+        case normal = "normal"  // 22 pt  (Finder default)
+        case relaxed = "relaxed"  // 28 pt
         case spacious = "spacious"  // 34 pt
 
         var baseHeight: CGFloat {
             switch self {
-            case .compact:  return 18
-            case .normal:   return 22
-            case .relaxed:  return 28
-            case .spacious: return 34
+                case .compact: return 18
+                case .normal: return 22
+                case .relaxed: return 28
+                case .spacious: return 34
             }
         }
         var label: String {
             switch self {
-            case .compact:  return "Compact (18 pt)"
-            case .normal:   return "Normal (22 pt)"
-            case .relaxed:  return "Relaxed (28 pt)"
-            case .spacious: return "Spacious (34 pt)"
+                case .compact: return "Compact (18 pt)"
+                case .normal: return "Normal (22 pt)"
+                case .relaxed: return "Relaxed (28 pt)"
+                case .spacious: return "Spacious (34 pt)"
             }
         }
     }
-    /// Base row height resolved from UserDefaults density setting
+    /// Base row height resolved from MiMiDefaults density setting
+    @MainActor
     private static var baseRowHeight: CGFloat {
-        let raw = UserDefaults.standard.string(forKey: "settings.panels.rowDensity") ?? "normal"
+        let raw = MiMiDefaults.shared.string(forKey: "settings.panels.rowDensity") ?? "normal"
         return (RowDensity(rawValue: raw) ?? .normal).baseHeight
     }
 

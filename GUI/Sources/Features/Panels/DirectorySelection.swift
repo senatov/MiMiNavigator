@@ -11,6 +11,7 @@ import FileModelKit
 // MARK: - Directory Selection State
 /// Observable class that encapsulates the selected file system entity
 /// and provides persistence for panel state across app launches.
+@MainActor
 @Observable
 class DirectorySelection {
     var selectedFSEntity: CustomFile?
@@ -34,7 +35,7 @@ class DirectorySelection {
     // MARK: - Resolve start path for panel
     /// Returns a stored start path for a given side if present and valid
     private static func resolveStartPath(for panelSide: PanelSide) -> String? {
-        let defaults = UserDefaults.standard
+        let defaults = MiMiDefaults.shared
         let key = (panelSide == .left) ? Keys.leftLastPath : Keys.rightLastPath
         
         if let path = defaults.string(forKey: key),
@@ -52,7 +53,7 @@ class DirectorySelection {
     // MARK: - Load side from config
     /// Attempts to load the last focused panel side from config
     private static func loadSideFromConfig() -> PanelSide? {
-        let defaults = UserDefaults.standard
+        let defaults = MiMiDefaults.shared
         if let raw = defaults.string(forKey: Keys.lastFocusedPanel),
            let side = parsePanelSide(raw) {
             return side
