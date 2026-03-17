@@ -72,7 +72,12 @@
 
         // MARK: - Set directory for right panel
         func setRightDirectory(pathStr: String) {
-            log.info("[DualDirectoryScanner] setRightDirectory: '\(pathStr)'")
+        func setRightDirectory(pathStr: String) {
+            guard pathStr.hasPrefix("/") else {
+                log.error("\(#function) rejected non-absolute path: '\(pathStr)'")
+                return
+            }
+            log.info("\(#function) '\(pathStr)'")
             let url = URL(fileURLWithPath: pathStr)
             Task { @MainActor in
                 appState.rightURL = url
@@ -82,7 +87,11 @@
 
         // MARK: - Set directory for left panel
         func setLeftDirectory(pathStr: String) {
-            log.info("[DualDirectoryScanner] setLeftDirectory: '\(pathStr)'")
+            guard pathStr.hasPrefix("/") else {
+                log.error("\(#function) rejected non-absolute path: '\(pathStr)'")
+                return
+            }
+            log.info("\(#function) '\(pathStr)'")
             let url = URL(fileURLWithPath: pathStr)
             Task { @MainActor in
                 appState.leftURL = url
@@ -425,7 +434,7 @@
                 }
             }
             let duration = Date().timeIntervalSince(scanStart)
-            log.debug("[Scan] Scan finished without access side=\(currSide) path='\(url.path)'")
+            log.debug("[Scan] Scan finished without access side=\(currSide) path='\(url.path)' in \(String(format: "%.3f", duration))s")
         }
 
         // MARK: - Permission helpers
