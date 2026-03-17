@@ -232,6 +232,13 @@
         func performCreateFolder(name: String, at parentURL: URL, appState: AppState) async {
             log.debug("\(#function) name='\(name)' at='\(parentURL.path)'")
 
+            // guard: reject remote / mangled URLs — can't create local folder there
+            guard !AppState.isRemotePath(parentURL) && parentURL.isFileURL else {
+                log.error("\(#function) aborted — parentURL is remote or non-local: \(parentURL.absoluteString)")
+                activeDialog = .error(title: L10n.Error.failedToCreateFolder, message: "Can't create folder in remote path: \(parentURL.lastPathComponent)")
+                return
+            }
+
             isProcessing = true
             defer {
                 isProcessing = false
@@ -245,7 +252,7 @@
                 await appState.refreshAndSelect(name: name, on: panel)
                 let otherPanel: PanelSide = panel == .left ? .right : .left
                 refreshPanel(otherPanel, appState: appState)
-                log.info("\(#function) SUCCESS created '\(name)' → selected on \(panel)")
+                log.info("\(#function) ok — '\(name)' created, selected on \(panel)")
             } catch {
                 log.error("\(#function) FAILED: \(error.localizedDescription)")
                 activeDialog = .error(title: L10n.Error.failedToCreateFolder, message: error.localizedDescription)

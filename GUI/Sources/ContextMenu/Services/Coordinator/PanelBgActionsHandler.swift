@@ -118,14 +118,20 @@
         func performNewFile(in directory: URL, appState: AppState) {
             log.debug("\(#function) directory='\(directory.path)'")
 
-            let baseName = "New File.txt"
-            let newFileURL = generateUniqueName(baseName: baseName, in: directory, isDirectory: false)
+            // guard: reject remote / mangled paths
+            guard !AppState.isRemotePath(directory) && directory.isFileURL else {
+                log.error("\(#function) aborted — directory is remote: \(directory.absoluteString)")
+                activeDialog = .error(title: "Create File Failed", message: "Can't create file in remote path: \(directory.lastPathComponent)")
+                return
+            }
+
+            let newFileURL = generateUniqueName(baseName: "New File.txt", in: directory, isDirectory: false)
 
             do {
                 try Data().write(to: newFileURL)
                 let createdName = newFileURL.lastPathComponent
                 let panel = panelForPath(directory.path, appState: appState)
-                log.info("\(#function) SUCCESS created file '\(createdName)' → selecting on \(panel)")
+                log.info("\(#function) ok — '\(createdName)' created, selecting on \(panel)")
                 Task { @MainActor in
                     await appState.refreshAndSelect(name: createdName, on: panel)
                 }
