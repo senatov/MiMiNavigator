@@ -19,9 +19,7 @@ final class ConnectErrorPopupController {
 
     private var panel: NSPanel?
     private var textView: NSTextView?
-    nonisolated(unsafe) private var clickMonitor: Any?
-    nonisolated(unsafe) private var escMonitor: Any?
-    nonisolated(unsafe) private var focusMonitor: Any?
+    private var monitors = PopupEventMonitors()
 
     private init() {}
 
@@ -80,13 +78,13 @@ final class ConnectErrorPopupController {
             panel.animator().setFrame(target, display: true)
             panel.animator().alphaValue = 1
         }
-        installMonitors()
+        monitors.install(panel: panel) { [weak self] in self?.hide() }
     }
 
     // MARK: - Hide
 
     func hide() {
-        removeMonitors()
+        monitors.remove()
         guard let panel, panel.isVisible else { return }
         let parent = panel.parent
         NSAnimationContext.runAnimationGroup({ ctx in
@@ -202,35 +200,6 @@ final class ConnectErrorPopupController {
         self.textView = tv
     }
 
-    // MARK: - Monitors
-
-    private func installMonitors() {
-        removeMonitors()
-        clickMonitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] e in
-            guard let self, let p = self.panel, p.isVisible else { return e }
-            if e.window === p { return e }
-            self.hide(); return e
-        }
-        escMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] e in
-            guard let self, let p = self.panel, p.isVisible else { return e }
-            if e.keyCode == 53 { self.hide(); return nil }
-            return e
-        }
-        focusMonitor = NotificationCenter.default.addObserver(
-            forName: NSApplication.didResignActiveNotification, object: nil, queue: .main
-        ) { [weak self] _ in Task { @MainActor in self?.hide() } }
-    }
-
-    private func removeMonitors() {
-        if let m = clickMonitor  { NSEvent.removeMonitor(m); clickMonitor  = nil }
-        if let m = escMonitor    { NSEvent.removeMonitor(m); escMonitor    = nil }
-        if let m = focusMonitor  { NotificationCenter.default.removeObserver(m); focusMonitor = nil }
-    }
-
-    deinit {
-        [clickMonitor, escMonitor].compactMap { $0 }.forEach { NSEvent.removeMonitor($0) }
-        if let m = focusMonitor { NotificationCenter.default.removeObserver(m) }
-    }
 }
 
 // MARK: - NSMutableAttributedString convenience

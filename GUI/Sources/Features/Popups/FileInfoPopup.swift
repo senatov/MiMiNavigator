@@ -74,9 +74,7 @@ final class FileInfoPopupController {
     static let shared = FileInfoPopupController()
     private var panel: NSPanel?
     private var textView: NSTextView?
-    nonisolated(unsafe) private var clickOutsideMonitor: Any?
-    nonisolated(unsafe) private var escKeyMonitor: Any?
-    nonisolated(unsafe) private var focusMonitor: Any?
+    private var monitors = PopupEventMonitors()
 
     private init() {}
 
@@ -139,12 +137,12 @@ final class FileInfoPopupController {
             panel.animator().setFrame(targetFrame, display: true)
             panel.animator().alphaValue = 1
         }
-        installMonitors()
+        monitors.install(panel: panel) { [weak self] in self?.hide() }
     }
 
     // MARK: - Hide
     func hide() {
-        removeMonitors()
+        monitors.remove()
         guard let panel, panel.isVisible else { return }
         let parentWindow = panel.parent
         NSAnimationContext.runAnimationGroup(
@@ -312,40 +310,4 @@ final class FileInfoPopupController {
         self.textView = tv
     }
 
-    // MARK: - Monitors
-    private func installMonitors() {
-        removeMonitors()
-        clickOutsideMonitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] event in
-            guard let self, let panel = self.panel, panel.isVisible else { return event }
-            if event.window === panel { return event }
-            self.hide()
-            return event
-        }
-        escKeyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
-            guard let self, let panel = self.panel, panel.isVisible else { return event }
-            if event.keyCode == 53 { self.hide(); return nil }
-            return event
-        }
-        focusMonitor = NotificationCenter.default.addObserver(
-            forName: NSApplication.didResignActiveNotification,
-            object: nil, queue: .main
-        ) { [weak self] _ in
-            Task { @MainActor in self?.hide() }
-        }
-    }
-
-    private func removeMonitors() {
-        if let m = clickOutsideMonitor { NSEvent.removeMonitor(m); clickOutsideMonitor = nil }
-        if let m = escKeyMonitor { NSEvent.removeMonitor(m); escKeyMonitor = nil }
-        if let m = focusMonitor { NotificationCenter.default.removeObserver(m); focusMonitor = nil }
-    }
-
-    deinit {
-        let m1 = clickOutsideMonitor
-        let m2 = escKeyMonitor
-        let m3 = focusMonitor
-        if let m = m1 { NSEvent.removeMonitor(m) }
-        if let m = m2 { NSEvent.removeMonitor(m) }
-        if let m = m3 { NotificationCenter.default.removeObserver(m) }
-    }
 }

@@ -263,8 +263,7 @@
         private(set) var items: [AutoCompleteItem] = []
         var onSelect: ((Int) -> Void)?
         var anchorFrame: CGRect = .zero
-        nonisolated(unsafe) private var clickOutsideMonitor: Any?
-        nonisolated(unsafe) private var escKeyMonitor: Any?
+        private var monitors = PopupEventMonitors()
         var onDismissedByClickOutside: (() -> Void)?
 
         private let rowHeight: CGFloat = 32
@@ -312,7 +311,8 @@
                     panel.animator().setFrame(targetFrame, display: true)
                     panel.animator().alphaValue = 1
                 }
-                installMonitors()
+                guard let p = panel else { return }
+                installMonitors(for: p)
             } else {
                 NSAnimationContext.runAnimationGroup { ctx in
                     ctx.duration = 0.12
@@ -325,7 +325,7 @@
 
         // MARK: - Hide
         func hide() {
-            removeMonitors()
+            monitors.remove()
             guard let panel = self.panel, panel.isVisible else {
                 items = []
                 return
@@ -359,36 +359,21 @@
             tv.scrollRowToVisible(index)
         }
 
-        // MARK: - Click Outside & ESC Monitors
-        private func installMonitors() {
-            removeMonitors()
-            clickOutsideMonitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] event in
-                guard let self, let panel = self.panel, panel.isVisible else { return event }
-                let clickWindow = event.window
-                if clickWindow === panel { return event }
-                let textFieldScreenRect = self.anchorScreenRect()
-                if let textFieldScreenRect, textFieldScreenRect.contains(NSEvent.mouseLocation) {
-                    return event
-                }
-                self.hide()
-                self.onDismissedByClickOutside?()
-                return event
-            }
-            escKeyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
-                guard let self, let panel = self.panel, panel.isVisible else { return event }
-                if event.keyCode == 53 {
-                    self.hide()
-                    self.onDismissedByClickOutside?()
-                    return nil
-                }
-                return event
-            }
-        }
-
-        // MARK: - Remove Monitors
-        private func removeMonitors() {
-            if let m = clickOutsideMonitor { NSEvent.removeMonitor(m); clickOutsideMonitor = nil }
-            if let m = escKeyMonitor { NSEvent.removeMonitor(m); escKeyMonitor = nil }
+        // MARK: - Monitors via PopupEventMonitors
+        private func installMonitors(for panel: NSPanel) {
+            monitors.install(
+                panel: panel,
+                onHide: { [weak self] in self?.hide() },
+                onClickOutside: { [weak self] in self?.onDismissedByClickOutside?() },
+                shouldDismissOnClick: { [weak self] _ in
+                    // keep popup open when click lands inside the text field anchor rect
+                    guard let self else { return true }
+                    if let rect = self.anchorScreenRect(),
+                       rect.contains(NSEvent.mouseLocation) { return false }
+                    return true
+                },
+                installResignObserver: false   // autocomplete closes on hide(), not app resign
+            )
         }
 
         // MARK: - Anchor Screen Rect
@@ -464,12 +449,7 @@
             }
         }
 
-        deinit {
-            let monitor1 = clickOutsideMonitor
-            let monitor2 = escKeyMonitor
-            if let m = monitor1 { NSEvent.removeMonitor(m) }
-            if let m = monitor2 { NSEvent.removeMonitor(m) }
-        }
+        // deinit handled by PopupEventMonitors.deinit — no manual cleanup needed
     }
 
     // MARK: - Auto Complete Table Delegate
