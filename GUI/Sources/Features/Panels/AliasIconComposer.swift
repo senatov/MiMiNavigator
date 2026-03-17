@@ -67,9 +67,10 @@ enum AliasIconComposer {
         outline.draw(in: outlineRect, from: .zero, operation: .sourceOver, fraction: 0.90)
         // Orange arrow
         let arrowCfg = NSImage.SymbolConfiguration(pointSize: rect.width, weight: .bold)
-            .applying(NSImage.SymbolConfiguration(paletteColors: [
-                NSColor(#colorLiteral(red: 1.0, green: 0.92, blue: 0.0, alpha: 1.0))
-            ]))
+            .applying(
+                NSImage.SymbolConfiguration(paletteColors: [
+                    NSColor(#colorLiteral(red: 1.0, green: 0.92, blue: 0.0, alpha: 1.0))
+                ]))
         let arrow = img.withSymbolConfiguration(arrowCfg) ?? img
         arrow.draw(in: rect, from: .zero, operation: .sourceOver, fraction: 1.0)
     }

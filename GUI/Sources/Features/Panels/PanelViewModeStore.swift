@@ -19,10 +19,10 @@ final class PanelViewModeStore {
 
     // MARK: - Keys
     private enum Keys {
-        static let leftMode        = "panelViewMode.left"
-        static let rightMode       = "panelViewMode.right"
-        static let leftThumbSize   = "panelThumbSize.left"
-        static let rightThumbSize  = "panelThumbSize.right"
+        static let leftMode = "panelViewMode.left"
+        static let rightMode = "panelViewMode.right"
+        static let leftThumbSize = "panelThumbSize.left"
+        static let rightThumbSize = "panelThumbSize.right"
     }
 
     // MARK: - State
@@ -50,9 +50,9 @@ final class PanelViewModeStore {
             let v = MiMiDefaults.shared.double(forKey: key)
             return v > 0 ? CGFloat(v) : def
         }
-        leftMode       = loadMode(Keys.leftMode)
-        rightMode      = loadMode(Keys.rightMode)
-        leftThumbSize  = loadSize(Keys.leftThumbSize,  default: 120)
+        leftMode = loadMode(Keys.leftMode)
+        rightMode = loadMode(Keys.rightMode)
+        leftThumbSize = loadSize(Keys.leftThumbSize, default: 120)
         rightThumbSize = loadSize(Keys.rightThumbSize, default: 120)
     }
 

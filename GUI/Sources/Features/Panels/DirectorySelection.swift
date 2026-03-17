@@ -5,8 +5,8 @@
 // Copyright © 2025-2026 Senatov. All rights reserved.
 // Description: Encapsulates the selected file system entity and persistence
 
-import Foundation
 import FileModelKit
+import Foundation
 
 // MARK: - Directory Selection State
 /// Observable class that encapsulates the selected file system entity
@@ -26,9 +26,9 @@ class DirectorySelection {
     // MARK: - Parse panel side from string
     private static func parsePanelSide(_ raw: String) -> PanelSide? {
         switch raw.lowercased() {
-        case "left": return .left
-        case "right": return .right
-        default: return nil
+            case "left": return .left
+            case "right": return .right
+            default: return nil
         }
     }
 
@@ -37,9 +37,10 @@ class DirectorySelection {
     private static func resolveStartPath(for panelSide: PanelSide) -> String? {
         let defaults = MiMiDefaults.shared
         let key = (panelSide == .left) ? Keys.leftLastPath : Keys.rightLastPath
-        
+
         if let path = defaults.string(forKey: key),
-           !path.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            !path.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        {
             // Validate path exists
             if FileManager.default.fileExists(atPath: path) {
                 return path
@@ -55,7 +56,8 @@ class DirectorySelection {
     private static func loadSideFromConfig() -> PanelSide? {
         let defaults = MiMiDefaults.shared
         if let raw = defaults.string(forKey: Keys.lastFocusedPanel),
-           let side = parsePanelSide(raw) {
+            let side = parsePanelSide(raw)
+        {
             return side
         }
         return nil
@@ -65,7 +67,7 @@ class DirectorySelection {
     init(side: PanelSide = .left, initialPath: String? = nil) {
         // Prefer side from config if available; otherwise use passed-in value
         let restoredSide = DirectorySelection.loadSideFromConfig() ?? side
-        
+
         // Determine start path: explicit param > config > default
         let configPath = DirectorySelection.resolveStartPath(for: restoredSide)
         let startPath = initialPath ?? configPath ?? "/tmp"

@@ -9,6 +9,6 @@ import Foundation
 
 // MARK: - PanelViewMode
 enum PanelViewMode: String, CaseIterable, Sendable {
-    case list      = "list"
+    case list = "list"
     case thumbnail = "thumbnail"
 }

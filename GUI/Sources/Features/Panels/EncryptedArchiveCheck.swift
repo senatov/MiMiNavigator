@@ -38,14 +38,14 @@ enum EncryptedArchiveCheck {
     private static func detect(url: URL) -> Bool {
         let ext = url.pathExtension.lowercased()
         switch ext {
-        case "zip":
-            return checkZipHeader(url: url)
-        case "7z":
-            return check7zHeader(url: url)
-        case "rar":
-            return checkRarHeader(url: url)
-        default:
-            return false
+            case "zip":
+                return checkZipHeader(url: url)
+            case "7z":
+                return check7zHeader(url: url)
+            case "rar":
+                return checkRarHeader(url: url)
+            default:
+                return false
         }
     }
     // MARK: - ZIP Header Check
@@ -70,7 +70,8 @@ enum EncryptedArchiveCheck {
         guard let data = readBytes(url: url, count: 32), data.count >= 32 else { return false }
         // Verify 7z signature
         guard data[0] == 0x37, data[1] == 0x7A, data[2] == 0xBC, data[3] == 0xAF,
-              data[4] == 0x27, data[5] == 0x1C else { return false }
+            data[4] == 0x27, data[5] == 0x1C
+        else { return false }
         // Read NextHeaderOffset (little-endian UInt64 at offset 12)
         let nextHeaderOffset = readUInt64LE(data, offset: 12)
         // Read NextHeaderSize (little-endian UInt64 at offset 20)
@@ -102,7 +103,8 @@ enum EncryptedArchiveCheck {
         guard let data = readBytes(url: url, count: 20), data.count >= 12 else { return false }
         // Check RAR signature
         guard data[0] == 0x52, data[1] == 0x61, data[2] == 0x72, data[3] == 0x21,
-              data[4] == 0x1A, data[5] == 0x07 else { return false }
+            data[4] == 0x1A, data[5] == 0x07
+        else { return false }
         if data[6] == 0x00 {
             // RAR4: flags at offset 8-9 (after 7-byte signature)
             // Archive header flags at offset 10 (after 3-byte header type)

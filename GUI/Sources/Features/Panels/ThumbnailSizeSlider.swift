@@ -54,7 +54,9 @@ struct ThumbnailSizeSlider: View {
     var body: some View {
         HStack(spacing: 6) {
             // Small grid icon (decrease button)
-            Button { stepValue(by: -20) } label: {
+            Button {
+                stepValue(by: -20)
+            } label: {
                 Image(systemName: "square.grid.2x2")
                     .font(.system(size: 9, weight: .semibold))
                     .foregroundStyle(.secondary)
@@ -140,7 +142,9 @@ struct ThumbnailSizeSlider: View {
             .frame(width: trackWidth, height: totalHeight)
 
             // Large grid icon (increase button)
-            Button { stepValue(by: 20) } label: {
+            Button {
+                stepValue(by: 20)
+            } label: {
                 Image(systemName: "square.grid.2x2.fill")
                     .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(.secondary)

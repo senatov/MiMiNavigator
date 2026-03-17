@@ -21,7 +21,7 @@ final class ResettableSplitView: NSSplitView {
 
     // Divider visual states
     var isDragging: Bool = false { didSet { setNeedsDisplay(bounds) } }
-    var isHovered: Bool = false  { didSet { setNeedsDisplay(bounds) } }
+    var isHovered: Bool = false { didSet { setNeedsDisplay(bounds) } }
 
     // Tracking area for hover detection
     private var trackingArea: NSTrackingArea?
@@ -103,7 +103,9 @@ final class ResettableSplitView: NSSplitView {
         let loc = convert(event.locationInWindow, from: nil)
         let leftMaxX = arrangedSubviews.first?.frame.maxX ?? 0
         let hit = NSRect(x: leftMaxX, y: 0, width: dividerThickness, height: bounds.height).insetBy(dx: -3, dy: -6)
-        log.debug("SV.mouseDown clickCount=\(event.clickCount) loc=\(NSStringFromPoint(loc)) hit=\(NSStringFromRect(hit)) flags=\(event.modifierFlags)")
+        log.debug(
+            "SV.mouseDown clickCount=\(event.clickCount) loc=\(NSStringFromPoint(loc)) hit=\(NSStringFromRect(hit)) flags=\(event.modifierFlags)"
+        )
         if event.clickCount == 1,
             event.type == .leftMouseDown,
             event.modifierFlags.intersection(.deviceIndependentFlagsMask).contains(.option),
@@ -142,7 +144,9 @@ final class ResettableSplitView: NSSplitView {
         if Self.verboseLogs {
             let locWin = event.locationInWindow
             let locView = convert(locWin, from: nil)
-            log.debug("SV.rightMouseDown count=\(event.clickCount) locWin=\(NSStringFromPoint(locWin)) locView=\(NSStringFromPoint(locView))")
+            log.debug(
+                "SV.rightMouseDown count=\(event.clickCount) locWin=\(NSStringFromPoint(locWin)) locView=\(NSStringFromPoint(locView))"
+            )
         }
         let loc = convert(event.locationInWindow, from: nil)
         let leftMaxX = arrangedSubviews.first?.frame.maxX ?? 0
