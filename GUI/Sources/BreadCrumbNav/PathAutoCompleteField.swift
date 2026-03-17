@@ -311,8 +311,7 @@
                     panel.animator().setFrame(targetFrame, display: true)
                     panel.animator().alphaValue = 1
                 }
-                guard let p = panel else { return }
-                installMonitors(for: p)
+                installMonitors(for: panel)
             } else {
                 NSAnimationContext.runAnimationGroup { ctx in
                     ctx.duration = 0.12
