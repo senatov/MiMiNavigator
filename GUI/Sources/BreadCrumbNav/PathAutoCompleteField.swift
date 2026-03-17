@@ -257,7 +257,7 @@
     /// NSPanel escapes SwiftUI layout clipping — dropdown is never cut off by parent frames.
     /// Dismisses on click outside, ESC key, or app deactivation.
     @MainActor
-    final class AutoCompletePopupController: @unchecked Sendable {
+    final class AutoCompletePopupController {
         private var panel: NSPanel?
         private var tableView: NSTableView?
         private(set) var items: [AutoCompleteItem] = []
