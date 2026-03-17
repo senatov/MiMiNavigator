@@ -167,16 +167,10 @@
         @MainActor
         private static func showNavFailAlert(path: String, panel: PanelSide) {
             log.warning("\(#function) panel=\(panel) path='\(path)'")
-            let alert = NSAlert()
-            alert.alertStyle = .warning
-            alert.messageText = "Can't Open Folder"
-            alert.informativeText = """
-                Couldn't read contents of:
-                \(path)
-
-                Possible causes: no access permission, drive disconnected, or path no longer exists.
-                """
-            alert.addButton(withTitle: "OK")
-            alert.runModal()
+            ErrorAlertService.show(
+                title: "Can't Open Folder",
+                message: "Couldn't read contents of:\n\(path)\n\nPossible causes: no access permission, drive disconnected, or path no longer exists.",
+                style: .warning
+            )
         }
     }

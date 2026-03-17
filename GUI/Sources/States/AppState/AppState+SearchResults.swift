@@ -67,14 +67,11 @@ extension AppState {
 
     @MainActor
     private func confirmRepackSearchResult(archiveName: String) async -> Bool {
-        await withCheckedContinuation { continuation in
-            let alert = NSAlert()
-            alert.messageText = "Archive Modified"
-            alert.informativeText = "\"\(archiveName)\" was modified while viewing search results.\n\nRepack?"
-            alert.alertStyle = .warning
-            alert.addButton(withTitle: "Repack")
-            alert.addButton(withTitle: "Discard Changes")
-            continuation.resume(returning: alert.runModal() == .alertFirstButtonReturn)
-        }
+        ErrorAlertService.confirm(
+            title: "Archive Modified",
+            message: "\"\(archiveName)\" was modified while viewing search results.\n\nRepack?",
+            confirmButton: "Repack",
+            cancelButton: "Discard Changes"
+        )
     }
 }

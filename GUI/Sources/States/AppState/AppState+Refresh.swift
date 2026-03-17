@@ -117,22 +117,38 @@ extension AppState {
         }
         let currentURL = url(for: panel)
         guard !PathUtils.areEqual(currentURL, newURL) else { return }
-        var normalizedURL = newURL
-        var isDirForFileCheck: ObjCBool = false
-        if FileManager.default.fileExists(atPath: newURL.path, isDirectory: &isDirForFileCheck),
-           !isDirForFileCheck.boolValue {
-            normalizedURL = newURL.deletingLastPathComponent()
-            log.debug("\(#function) file → parent dir: \(normalizedURL.path)")
+
+        // fileExists/isDirectory can block on NAS/SMB — run off MainActor, apply result back
+        Task {
+            let (normalizedURL, isDir) = await Self.resolveURLOffMainActor(newURL)
+            await MainActor.run {
+                self.applyPathUpdate(normalizedURL, isDir: isDir, for: panel)
+            }
         }
-        log.debug("\(#function) \(panel) → \(normalizedURL.path)")
+    }
+
+    /// fileExists + isDirectory check off MainActor — never blocks UI on slow volumes
+    nonisolated private static func resolveURLOffMainActor(_ url: URL) async -> (URL, Bool) {
+        await Task.detached(priority: .userInitiated) {
+            var isDirCheck: ObjCBool = false
+            if FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirCheck),
+               !isDirCheck.boolValue {
+                log.debug("resolveURLOffMainActor: file → parent dir: \(url.path)")
+                return (url.deletingLastPathComponent(), false)
+            }
+            var isDir: ObjCBool = false
+            let exists = FileManager.default.fileExists(atPath: url.path, isDirectory: &isDir)
+            return (url, exists && isDir.boolValue)
+        }.value
+    }
+
+    /// Apply resolved path — pure MainActor UI update, no IO
+    private func applyPathUpdate(_ normalizedURL: URL, isDir: Bool, for panel: PanelSide) {
+        log.debug("\(#function) \(panel) → \(normalizedURL.path) isDir=\(isDir)")
         focusedPanel = panel
         tabManager(for: panel).updateActiveTabPath(normalizedURL)
         if !isNavigatingFromHistory {
-            var isDir: ObjCBool = false
-            if FileManager.default.fileExists(atPath: normalizedURL.path, isDirectory: &isDir),
-               isDir.boolValue {
-                navigationHistory(for: panel).navigateTo(normalizedURL)
-            }
+            if isDir { navigationHistory(for: panel).navigateTo(normalizedURL) }
             selectionsHistory.setCurrent(to: normalizedURL)
         }
         let panelURL = url(for: panel)

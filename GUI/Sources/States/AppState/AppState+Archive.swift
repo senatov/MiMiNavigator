@@ -71,46 +71,30 @@ extension AppState {
     func showArchiveErrorAlert(archiveName: String, archiveURL: URL, error: Error, panel: PanelSide) async {
         let desc = error.localizedDescription
         let isEncrypted = desc.lowercased().contains("password") || desc.lowercased().contains("encrypted")
-        let alert = NSAlert()
-        alert.alertStyle = isEncrypted ? .warning : .critical
         if isEncrypted {
-            alert.messageText = "Password Required"
-            alert.informativeText = "\"\(archiveName)\" is password-protected.\nEnter password to open:"
-            let passwordField = NSSecureTextField(frame: NSRect(x: 0, y: 0, width: 260, height: 24))
-            passwordField.placeholderString = "Enter password"
-            alert.accessoryView = passwordField
-            alert.addButton(withTitle: "Open")
-            alert.addButton(withTitle: "Open with App")
-            alert.addButton(withTitle: "Cancel")
-            alert.window.initialFirstResponder = passwordField
-            let response = alert.runModal()
-            if response == .alertFirstButtonReturn {
-                let password = passwordField.stringValue
-                if !password.isEmpty {
-                    await enterArchive(at: archiveURL, on: panel, password: password)
-                }
-            } else if response == .alertSecondButtonReturn {
+            let (password, openWithApp) = ErrorAlertService.promptPassword(archiveName: archiveName)
+            if openWithApp {
                 NSWorkspace.shared.open(archiveURL)
+            } else if let pwd = password {
+                await enterArchive(at: archiveURL, on: panel, password: pwd)
             }
         } else {
-            alert.messageText = "Cannot Open Archive"
-            alert.informativeText = "\"\(archiveName)\" could not be opened.\n\n\(desc)"
-            alert.addButton(withTitle: "OK")
-            alert.runModal()
+            ErrorAlertService.show(
+                title: "Cannot Open Archive",
+                message: "\"\(archiveName)\" could not be opened.\n\n\(desc)",
+                style: .critical
+            )
         }
     }
 
     // MARK: - Repack Confirmation
     @MainActor
     func confirmRepack(archiveName: String) async -> Bool {
-        await withCheckedContinuation { continuation in
-            let alert = NSAlert()
-            alert.messageText = "Archive Modified"
-            alert.informativeText = "\"\(archiveName)\" has been modified.\n\nRepack the archive with your changes?"
-            alert.alertStyle = .warning
-            alert.addButton(withTitle: "Repack")
-            alert.addButton(withTitle: "Discard Changes")
-            continuation.resume(returning: alert.runModal() == .alertFirstButtonReturn)
-        }
+        ErrorAlertService.confirm(
+            title: "Archive Modified",
+            message: "\"\(archiveName)\" has been modified.\n\nRepack the archive with your changes?",
+            confirmButton: "Repack",
+            cancelButton: "Discard Changes"
+        )
     }
 }

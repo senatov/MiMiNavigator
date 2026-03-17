@@ -215,26 +215,17 @@
         }
 
         // MARK: - Delete error alert
-    /// pops NSAlert so user actually sees wtf went wrong (perms, gone file, etc.)
+    /// pops alert so user actually sees wtf went wrong (perms, gone file, etc.)
     @MainActor
     private static func showDeleteError(_ reason: String, urls: [URL]) {
         log.warning("\(#function) showing delete-fail alert for \(urls.count) item(s)")
         let names = urls.prefix(5).map(\.lastPathComponent).joined(separator: "\n  • ")
         let more = urls.count > 5 ? "\n  … and \(urls.count - 5) more" : ""
-
-        let alert = NSAlert()
-        alert.alertStyle = .warning
-        alert.messageText = "Can't Move to Trash"
-        alert.informativeText = """
-            Failed to delete:
-              • \(names)\(more)
-
-            Reason: \(reason)
-
-            Tip: system/temp files owned by root can't be trashed from sandbox.
-            """
-        alert.addButton(withTitle: "OK")
-        alert.runModal()
+        ErrorAlertService.show(
+            title: "Can't Move to Trash",
+            message: "Failed to delete:\n  • \(names)\(more)\n\nReason: \(reason)\n\nTip: system/temp files owned by root can't be trashed from sandbox.",
+            style: .warning
+        )
     }
 
     // MARK: - Computed Properties
