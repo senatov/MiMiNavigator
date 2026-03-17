@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.9.7] — 2026-03-17
 
+> **Release notes**  
+> This build is all about internals — no shiny new UI, just deep engine work: actor isolation fixes, popup infra refactor, non-blocking path resolution, SFTP error diagnostics, proper `ErrorAlertService`.  
+> Running the app daily for a week now, straight from Xcode — catching & fixing live bugs.  
+> Expect ~1 more month of active bugfixing, then a public release.
+
 ### Fixed
 - **`DualDirectoryScanner` brace corruption** — duplicate `func setRightDirectory` declaration + stray closing brace pushed all `private`/`static` methods out of actor scope; 35 compiler errors eliminated
 - **`DirectorySizeService` actor boundary** — repeated edit-induced brace drift kept closing actor too early, sending `static func computeShallowSize` / `computeFullRecursive` outside type
