@@ -148,6 +148,14 @@
             return items
         }
 
+        // MARK: - Download file from active connection
+        /// Downloads remotePath → tmp, returns local URL for NSWorkspace.open().
+        func downloadFile(remotePath: String) async throws -> URL {
+            guard let conn = activeConnection else { throw RemoteProviderError.notConnected }
+            log.info("[RemoteManager] downloadFile '\(remotePath)'")
+            return try await conn.provider.downloadFile(remotePath: remotePath)
+        }
+
         // MARK: - Navigate to parent directory
         func navigateUp() async throws -> [RemoteFileItem] {
             guard let conn = activeConnection else {

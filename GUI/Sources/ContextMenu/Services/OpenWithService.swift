@@ -136,11 +136,15 @@
                 }
             }
 
+            // Sort priority:
+            // 1. LRU-first (most recently used) — user's explicit choice wins
+            // 2. Default app (if not already LRU-first)
+            // 3. Alphabetical
             apps.sort { lhs, rhs in
+                let lhsLRU = recentBundles.firstIndex(of: lhs.bundleIdentifier) ?? Int.max
+                let rhsLRU = recentBundles.firstIndex(of: rhs.bundleIdentifier) ?? Int.max
+                if lhsLRU != rhsLRU { return lhsLRU < rhsLRU }
                 if lhs.isDefault != rhs.isDefault { return lhs.isDefault }
-                let lhsIdx = recentBundles.firstIndex(of: lhs.bundleIdentifier) ?? Int.max
-                let rhsIdx = recentBundles.firstIndex(of: rhs.bundleIdentifier) ?? Int.max
-                if lhsIdx != rhsIdx { return lhsIdx < rhsIdx }
                 return lhs.name.localizedCaseInsensitiveCompare(rhs.name) == .orderedAscending
             }
 
@@ -158,19 +162,34 @@
             recordLRU(bundleID: bundleID, ext: ext, appURL: appURL)
         }
 
-        /// Opens file with the chosen AppInfo and records it in LRU
+        /// Opens file with the chosen AppInfo and records it in LRU.
+        /// For remote files (sftp://) — downloads to tmp first.
         func openFile(_ fileURL: URL, with app: AppInfo) {
-            log.info("\(#function) file='\(fileURL.lastPathComponent)' app='\(app.name)' bundle=\(app.bundleIdentifier)")
+            log.info("\(#function) file='\(fileURL.lastPathComponent)' app='\(app.name)'")
             recordLRU(bundleID: app.bundleIdentifier, ext: fileURL.pathExtension)
-
             let config = NSWorkspace.OpenConfiguration()
             config.activates = true
-
+            // Remote URL — must download to tmp first
+            if fileURL.scheme == "sftp" || fileURL.scheme == "ftp" {
+                Task {
+                    do {
+                        let localURL = try await RemoteConnectionManager.shared.downloadFile(remotePath: fileURL.path)
+                        await MainActor.run {
+                            NSWorkspace.shared.open([localURL], withApplicationAt: app.url, configuration: config) { _, err in
+                                if let err { log.error("\(#function) open FAILED: \(err.localizedDescription)") }
+                            }
+                        }
+                    } catch {
+                        log.error("\(#function) remote download FAILED: \(error.localizedDescription)")
+                    }
+                }
+                return
+            }
             workspace.open([fileURL], withApplicationAt: app.url, configuration: config) { runningApp, error in
                 if let error = error {
                     log.error("\(#function) FAILED: \(error.localizedDescription)")
                 } else {
-                    log.debug("\(#function) SUCCESS opened with pid=\(runningApp?.processIdentifier ?? -1)")
+                    log.debug("\(#function) SUCCESS pid=\(runningApp?.processIdentifier ?? -1)")
                 }
             }
         }
