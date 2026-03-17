@@ -394,12 +394,10 @@
                         connectionError = ""
                         onConnect?(url, password)
                     } else {
-                        log.warning("[ConnectToServer] connection FAILED host=\(draft.host)")
-                        if let updated = store.servers.first(where: { $0.id == draft.id }) {
-                            connectionError = updated.lastResult.rawValue
-                        } else {
-                            connectionError = "Connection failed"
-                        }
+                        let reason = store.servers.first(where: { $0.id == draft.id })?.lastResult.rawValue ?? "Connection failed"
+                        log.warning("\(#function) SFTP/FTP connect bombed host=\(draft.host) reason=\(reason)")
+                        connectionError = reason
+                        Self.showConnectFailAlert(host: draft.host, reason: reason)
                     }
                     isConnecting = false
                 }
@@ -611,5 +609,24 @@
             case .smb:  return .orange
             case .afp:  return .purple
             }
+        }
+
+        // MARK: - connect fail alert
+        /// NSAlert so user actually sees wtf went wrong, not just tiny red text
+        @MainActor
+        private static func showConnectFailAlert(host: String, reason: String) {
+            log.warning("\(#function) host=\(host)")
+            let alert = NSAlert()
+            alert.alertStyle = .critical
+            alert.messageText = "Can't Connect to \(host)"
+            alert.informativeText = """
+                Connection failed.
+
+                Reason: \(reason)
+
+                Check: host/port, credentials, firewall, VPN.
+                """
+            alert.addButton(withTitle: "OK")
+            alert.runModal()
         }
     }

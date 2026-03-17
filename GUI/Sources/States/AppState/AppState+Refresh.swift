@@ -60,9 +60,14 @@ extension AppState {
 extension AppState {
 
     nonisolated static func isRemotePath(_ url: URL) -> Bool {
-        let path = url.absoluteString
-        return path.hasPrefix("sftp://") || path.hasPrefix("ftp://")
-            || path.hasPrefix("/sftp:") || path.hasPrefix("/ftp:")
+        // Check direct scheme first (clean case)
+        let scheme = url.scheme ?? ""
+        if scheme == "sftp" || scheme == "ftp" { return true }
+        // Catch mangled URLs like file:///...Container/Data/ftp://host
+        // that happen when remote URL got wrapped in fileURLWithPath()
+        let raw = url.absoluteString
+        let markers = ["ftp://", "sftp://", "/ftp:", "/sftp:"]
+        return markers.contains { raw.contains($0) }
     }
 
     func refreshRemoteFiles(for panel: PanelSide) async {
@@ -91,10 +96,25 @@ extension AppState {
 extension AppState {
 
     func updatePath(_ pathString: String, for panel: PanelSide) {
+        // remote strings must go through URL(string:) — not fileURLWithPath, that mangles them
+        if pathString.hasPrefix("sftp://") || pathString.hasPrefix("ftp://") {
+            guard let remoteURL = URL(string: pathString) else {
+                log.error("\(#function) bad remote URL string: \(pathString)")
+                return
+            }
+            log.debug("\(#function) remote path detected, using URL(string:) for \(pathString)")
+            updatePath(remoteURL, for: panel)
+            return
+        }
         updatePath(URL(fileURLWithPath: pathString), for: panel)
     }
 
     func updatePath(_ newURL: URL, for panel: PanelSide) {
+        // guard: mangled remote URL wrapped in fileURLWithPath — bail early
+        if Self.isRemotePath(newURL) && newURL.scheme == "file" {
+            log.warning("\(#function) mangled remote URL detected: \(newURL.absoluteString) — skipping local update")
+            return
+        }
         let currentURL = url(for: panel)
         guard !PathUtils.areEqual(currentURL, newURL) else { return }
         var normalizedURL = newURL
@@ -102,9 +122,9 @@ extension AppState {
         if FileManager.default.fileExists(atPath: newURL.path, isDirectory: &isDirForFileCheck),
            !isDirForFileCheck.boolValue {
             normalizedURL = newURL.deletingLastPathComponent()
-            log.debug("[AppState] updatePath: file → parent dir: \(normalizedURL.path)")
+            log.debug("\(#function) file → parent dir: \(normalizedURL.path)")
         }
-        log.debug("[AppState] updatePath \(panel) → \(normalizedURL.path)")
+        log.debug("\(#function) \(panel) → \(normalizedURL.path)")
         focusedPanel = panel
         tabManager(for: panel).updateActiveTabPath(normalizedURL)
         if !isNavigatingFromHistory {
