@@ -208,10 +208,24 @@
                     .font(.system(size: 17, weight: .semibold))
                 Spacer()
                 if !connectionError.isEmpty {
-                    Text(connectionError)
-                        .font(.system(size: 11))
-                        .foregroundStyle(.red)
-                        .lineLimit(2)
+                    // ⚠ clickable button — shows yellow diagnostics popup on tap
+                    GeometryReader { geo in
+                        Button {
+                            let frame = geo.frame(in: .global)
+                            ConnectErrorPopupController.shared.show(
+                                server: draft,
+                                anchorFrame: frame
+                            )
+                        } label: {
+                            Label(connectionError, systemImage: "exclamationmark.triangle.fill")
+                                .font(.system(size: 11, weight: .medium))
+                                .foregroundStyle(Color(nsColor: .systemOrange))
+                                .lineLimit(1)
+                        }
+                        .buttonStyle(.plain)
+                        .help("Tap for full diagnostics")
+                    }
+                    .frame(height: 18)
                 }
                 if isConnecting {
                     ProgressView()
@@ -394,10 +408,13 @@
                         connectionError = ""
                         onConnect?(url, password)
                     } else {
-                        let reason = store.servers.first(where: { $0.id == draft.id })?.lastResult.rawValue ?? "Connection failed"
-                        log.warning("\(#function) SFTP/FTP connect bombed host=\(draft.host) reason=\(reason)")
-                        connectionError = reason
-                        Self.showConnectFailAlert(host: draft.host, reason: reason)
+                        // refresh draft from store — it now has lastErrorDetail filled by RemoteConnectionManager
+                        if let fresh = store.servers.first(where: { $0.id == draft.id }) {
+                            draft = fresh
+                        }
+                        let reason = draft.lastResult.rawValue
+                        log.warning("\(#function) connect bombed host=\(draft.host) result=\(reason) detail=\(draft.lastErrorDetail ?? "—")")
+                        connectionError = reason   // shows ⚠ button in header
                     }
                     isConnecting = false
                 }
@@ -611,22 +628,5 @@
             }
         }
 
-        // MARK: - connect fail alert
-        /// NSAlert so user actually sees wtf went wrong, not just tiny red text
-        @MainActor
-        private static func showConnectFailAlert(host: String, reason: String) {
-            log.warning("\(#function) host=\(host)")
-            let alert = NSAlert()
-            alert.alertStyle = .critical
-            alert.messageText = "Can't Connect to \(host)"
-            alert.informativeText = """
-                Connection failed.
-
-                Reason: \(reason)
-
-                Check: host/port, credentials, firewall, VPN.
-                """
-            alert.addButton(withTitle: "OK")
-            alert.runModal()
         }
     }

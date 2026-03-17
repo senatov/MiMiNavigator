@@ -79,6 +79,8 @@ struct RemoteServer: Identifiable, Codable, Hashable {
     var connectOnStart: Bool
     var lastConnected: Date?
     var lastResult: ConnectionResult
+    /// full error string from last failed connect — shown in diagnostics popup
+    var lastErrorDetail: String?
 
     // Password is NOT stored here — it lives in Keychain
     // Use RemoteServerKeychain.loadPassword(for:) / savePassword(_:for:)
@@ -95,7 +97,8 @@ struct RemoteServer: Identifiable, Codable, Hashable {
         privateKeyPath: String = "~/.ssh/id_rsa",
         connectOnStart: Bool = false,
         lastConnected: Date? = nil,
-        lastResult: ConnectionResult = .none
+        lastResult: ConnectionResult = .none,
+        lastErrorDetail: String? = nil
     ) {
         self.id = id
         self.name = name
@@ -109,6 +112,7 @@ struct RemoteServer: Identifiable, Codable, Hashable {
         self.connectOnStart = connectOnStart
         self.lastConnected = lastConnected
         self.lastResult = lastResult
+        self.lastErrorDetail = lastErrorDetail
     }
 
     // MARK: - Build connection URL (without password — password added at connect time)

@@ -90,8 +90,11 @@
             } catch {
                 let nsError = error as NSError
                 let result = classifyError(error)
-
-                updateServerResult(server, result: result)
+                var failed = server
+                failed.lastResult = result
+                failed.lastConnected = Date()
+                failed.lastErrorDetail = error.localizedDescription
+                RemoteServerStore.shared.update(failed)
 
                 log.error(
                     """
