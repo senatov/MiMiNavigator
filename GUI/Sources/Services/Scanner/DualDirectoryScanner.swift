@@ -72,7 +72,6 @@
 
         // MARK: - Set directory for right panel
         func setRightDirectory(pathStr: String) {
-        func setRightDirectory(pathStr: String) {
             guard pathStr.hasPrefix("/") else {
                 log.error("\(#function) rejected non-absolute path: '\(pathStr)'")
                 return
@@ -591,4 +590,3 @@
             }
         }
     }
-}
