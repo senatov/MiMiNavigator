@@ -18,6 +18,8 @@ protocol RemoteFileProvider: AnyObject, Sendable {
     var mountPath: String { get }
     @concurrent func connect(host: String, port: Int, user: String, password: String, remotePath: String) async throws
     @concurrent func listDirectory(_ path: String) async throws -> [RemoteFileItem]
+    /// Downloads a remote file to a local temp URL. Returns the local URL.
+    @concurrent func downloadFile(remotePath: String) async throws -> URL
     @concurrent func disconnect() async
 }
 
@@ -115,6 +117,27 @@ final class SFTPFileProvider: RemoteFileProvider, @unchecked Sendable {
         return items
     }
 
+    // MARK: - Download File
+    /// Downloads remote file → /tmp/MiMiSFTP/<name>, returns local URL.
+    /// Uses Citadel SFTPClient.openFile + SFTPFile.readAll — no getFile helper needed.
+    @concurrent func downloadFile(remotePath: String) async throws -> URL {
+        guard let sftp = sftpClient else { throw RemoteProviderError.notConnected }
+        let fileName = (remotePath as NSString).lastPathComponent
+        let tmpDir   = FileManager.default.temporaryDirectory
+            .appendingPathComponent("MiMiSFTP", isDirectory: true)
+        try FileManager.default.createDirectory(at: tmpDir, withIntermediateDirectories: true)
+        let localURL = tmpDir.appendingPathComponent(fileName)
+        log.info("[SFTP] downloading '\(remotePath)' → '\(localURL.path)'")
+        // Open remote file read-only, read entire content as ByteBuffer, convert to Data
+        let buffer = try await sftp.withFile(filePath: remotePath, flags: .read) { file in
+            try await file.readAll()
+        }
+        let data = Data(buffer: buffer)
+        try data.write(to: localURL)
+        log.info("[SFTP] download OK size=\(data.count) → '\(localURL.lastPathComponent)'")
+        return localURL
+    }
+
     // MARK: - Disconnect
     @concurrent func disconnect() async {
         do { try await sftpClient?.close() }
@@ -147,6 +170,9 @@ final class SFTPFileProvider: RemoteFileProvider, @unchecked Sendable {
         throw RemoteProviderError.notImplemented
     }
     @concurrent func listDirectory(_ path: String) async throws -> [RemoteFileItem] {
+        throw RemoteProviderError.notImplemented
+    }
+    @concurrent func downloadFile(remotePath: String) async throws -> URL {
         throw RemoteProviderError.notImplemented
     }
     @concurrent func disconnect() async { isConnected = false; mountPath = "" }
@@ -247,6 +273,12 @@ final class FTPFileProvider: RemoteFileProvider, @unchecked Sendable {
         log.info("[FTP] disconnected")
     }
 
+    // MARK: - Download (FTP — not yet implemented)
+    @concurrent func downloadFile(remotePath: String) async throws -> URL {
+        log.error("[FTP] downloadFile not implemented")
+        throw RemoteProviderError.notImplemented
+    }
+
     private func parseFTPListing(_ raw: String, basePath: String) -> [RemoteFileItem] {
         raw.components(separatedBy: "\n")
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
@@ -275,6 +307,9 @@ final class NoOpRemoteFileProvider: RemoteFileProvider, @unchecked Sendable {
         throw RemoteProviderError.notImplemented
     }
     @concurrent func listDirectory(_ path: String) async throws -> [RemoteFileItem] {
+        throw RemoteProviderError.notImplemented
+    }
+    @concurrent func downloadFile(remotePath: String) async throws -> URL {
         throw RemoteProviderError.notImplemented
     }
     @concurrent func disconnect() async {}

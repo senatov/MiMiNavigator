@@ -23,6 +23,7 @@ extension ConnectToServerView {
         f.allowsFloats          = false
         f.minimum               = 1
         f.maximum               = 65535
+        log.debug(#function + ": \(f)")
         return f
     }()
 
@@ -59,6 +60,7 @@ extension ConnectToServerView {
         encoder.dateEncodingStrategy = .iso8601
         let data = try encoder.encode(store.servers)
         try data.write(to: fileURL, options: .atomic)
+        log.debug(#function + ": written to \(fileURL)")
         return fileURL.path
     }
 

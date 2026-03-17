@@ -1,51 +1,51 @@
-//
 // BreadCrumbView.swift
-//  MiMiNavigator
+// MiMiNavigator
 //
-//  Created by Iakov Senatov on 14.11.24.
-//  Copyright © 2024 Senatov. All rights reserved.
-//
+// Created by Iakov Senatov on 14.11.24.
+// Copyright © 2024-2026 Senatov. All rights reserved.
+// Description: Breadcrumb navigation bar.
+//   Handles three path types:
+//     • Local filesystem  — /Users/senat/Develop/…
+//     • Archive (virtual) — archive.zip › subdir › …
+//     • Remote (SFTP/FTP) — SFTP demo@host › /pub › docs
+//   Smart truncation: middle segments shrink first, Finder-style
+//   hover-expand reveals full name.
 
 import AppKit
 import FileModelKit
 import SwiftUI
 
-// MARK: - Breadcrumb trail UI component for representing navigation path
+// MARK: - BreadCrumbView
 struct BreadCrumbView: View {
+
     @Environment(AppState.self) var appState
     let panelSide: PanelSide
-    @State private var colorStore = ColorThemeStore.shared
-    private let barHeight: CGFloat = 30
-    private let separatorWidth: CGFloat = 20  // approx width of separator + padding
 
-    // MARK: - Active panel flag
+    @State private var colorStore = ColorThemeStore.shared
+
+    private let barHeight: CGFloat = 30
+    private let separatorWidth: CGFloat = 20
+
+    // MARK: - Active panel
     private var isActive: Bool { appState.focusedPanel == panelSide }
 
-    // MARK: - Themed breadcrumb text color (active vs inactive)
-    private var breadcrumbTextColor: Color {
+    private var textColor: Color {
         isActive
             ? colorStore.activeTheme.breadcrumbTextActive
             : colorStore.activeTheme.breadcrumbTextInactive
     }
 
-    // MARK: - Themed font size
-    private var breadcrumbFontSize: CGFloat {
-        colorStore.activeTheme.breadcrumbFontSize
-    }
+    private var fontSize: CGFloat { colorStore.activeTheme.breadcrumbFontSize }
 
     // MARK: - Init
-    init(selectedSide: PanelSide) {
-        self.panelSide = selectedSide
-    }
+    init(selectedSide: PanelSide) { self.panelSide = selectedSide }
 
     // MARK: - Body
     var body: some View {
-        GeometryReader { geometry in
-            let displaySegments = computeDisplaySegments(availableWidth: geometry.size.width)
-
+        GeometryReader { geo in
             HStack(alignment: .center, spacing: 4) {
-                ForEach(displaySegments.indices, id: \.self) { index in
-                    breadcrumbItem(segment: displaySegments[index], index: index)
+                ForEach(Array(visibleSegments(for: geo.size.width).enumerated()), id: \.offset) { idx, seg in
+                    breadcrumbItem(segment: seg, index: idx)
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: barHeight, alignment: .leading)
@@ -55,134 +55,174 @@ struct BreadCrumbView: View {
         .controlSize(.mini)
     }
 
-    // MARK: - Display segment with original index for navigation
+    // MARK: - DisplaySegment
     struct DisplaySegment: Identifiable {
         let id = UUID()
-        let text: String  // displayed text (may be truncated)
-        let originalIndex: Int  // index in original pathComponents for navigation
-        let fullName: String  // full directory name for tooltip
+        let text: String        // shown (may be truncated)
+        let fullName: String    // full name for tooltip + hover-expand
+        let originalIndex: Int  // index in pathComponents for navigation
         var isTruncated: Bool { text != fullName }
     }
 
-    // MARK: - Compute segments that fit in available width
-    private func computeDisplaySegments(availableWidth: CGFloat) -> [DisplaySegment] {
+    // MARK: - pathComponents
+    /// Returns segments to display. Three modes:
+    ///   remote  → ["SFTP demo@host", "pub", "docs"]   (first segment = origin label)
+    ///   archive → ["archive.zip", "subdir"]
+    ///   local   → ["Users", "senat", "Develop"]
+    private var pathComponents: [String] {
+        let panelURL = appState.url(for: panelSide)
+
+        // ── Remote (SFTP / FTP) ──────────────────────────────────────────────
+        if AppState.isRemotePath(panelURL) {
+            return remoteComponents(for: panelURL)
+        }
+
+        // ── Archive (virtual) ────────────────────────────────────────────────
+        let archState = panelSide == .left ? appState.leftArchiveState : appState.rightArchiveState
+        if archState.isInsideArchive,
+           let archiveURL = archState.archiveURL,
+           let tempDir    = archState.archiveTempDir
+        {
+            return archiveComponents(
+                currentPath: panelURL.path,
+                archiveName: archiveURL.lastPathComponent,
+                tempDir: tempDir.standardizedFileURL.path
+            )
+        }
+
+        // ── Local filesystem ─────────────────────────────────────────────────
+        return panelURL.path
+            .split(separator: "/")
+            .map(String.init)
+            .filter { !$0.isEmpty }
+    }
+
+    // MARK: - remoteComponents
+    /// First segment = "PROTO user@host[:port]", rest = path components.
+    /// Example: sftp://demo@test.rebex.net/pub/docs
+    ///          → ["SFTP demo@test.rebex.net", "pub", "docs"]
+    private func remoteComponents(for url: URL) -> [String] {
+        // Build origin label from active connection's mountPath for accuracy
+        let manager = RemoteConnectionManager.shared
+        let originLabel: String
+        let remotePath: String
+
+        if let conn = manager.activeConnection {
+            // e.g. "sftp://demo@test.rebex.net" → "SFTP demo@test.rebex.net"
+            let origin = AppState.remoteOrigin(from: conn.provider.mountPath)
+            originLabel = formatOriginLabel(origin)
+            remotePath  = conn.currentPath
+        } else {
+            // Fallback: parse from stored URL directly
+            originLabel = formatOriginLabel(url.absoluteString)
+            remotePath  = url.path
+        }
+
+        let pathParts = remotePath
+            .split(separator: "/")
+            .map(String.init)
+            .filter { !$0.isEmpty }
+
+        return [originLabel] + pathParts
+    }
+
+    // MARK: - formatOriginLabel
+    /// "sftp://demo@test.rebex.net" → "SFTP demo@test.rebex.net"
+    /// "ftp://user@host:21"         → "FTP user@host"  (default port stripped)
+    private func formatOriginLabel(_ raw: String) -> String {
+        guard let url = URL(string: raw),
+              let scheme = url.scheme,
+              let host   = url.host
+        else { return raw }
+
+        let protoLabel = scheme.uppercased()
+        let userPart   = url.user.map { "\($0)@" } ?? ""
+        let portPart: String
+        if let port = url.port,
+           !((scheme == "sftp" && port == 22) || (scheme == "ftp" && port == 21)
+             || (scheme == "smb" && port == 445) || (scheme == "afp" && port == 548))
+        {
+            portPart = ":\(port)"
+        } else {
+            portPart = ""
+        }
+        return "\(protoLabel) \(userPart)\(host)\(portPart)"
+    }
+
+    // MARK: - archiveComponents
+    private func archiveComponents(currentPath: String, archiveName: String, tempDir: String) -> [String] {
+        let normalizedCurrent = URL(fileURLWithPath: currentPath).standardizedFileURL.path
+        var relative = ""
+        if normalizedCurrent.hasPrefix(tempDir) {
+            relative = String(normalizedCurrent.dropFirst(tempDir.count))
+                .trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+        }
+        if relative.isEmpty { return [archiveName] }
+        return [archiveName] + relative.split(separator: "/").map(String.init)
+    }
+
+    // MARK: - visibleSegments — smart truncation
+    private func visibleSegments(for availableWidth: CGFloat) -> [DisplaySegment] {
         let components = pathComponents
         guard !components.isEmpty else { return [] }
 
-        // Single component - show as is
         if components.count == 1 {
-            return [DisplaySegment(text: components[0], originalIndex: 0, fullName: components[0])]
+            return [DisplaySegment(text: components[0], fullName: components[0], originalIndex: 0)]
         }
 
-        // Estimate character width (approximate for system font)
         let charWidth: CGFloat = 7.5
+        let totalSepWidth = CGFloat(components.count - 1) * separatorWidth
+        let budgetForText = availableWidth - totalSepWidth - 16
 
-        // Calculate total separators width
-        let totalSeparatorsWidth = CGFloat(components.count - 1) * separatorWidth
-        let availableForText = availableWidth - totalSeparatorsWidth - 16  // padding
+        let widths = components.map { CGFloat($0.count) * charWidth }
+        let totalWidth = widths.reduce(0, +)
 
-        // Calculate full width needed
-        let fullWidths = components.map { CGFloat($0.count) * charWidth }
-        let totalFullWidth = fullWidths.reduce(0, +)
-
-        // If everything fits, return as is
-        if totalFullWidth <= availableForText {
-            return components.enumerated()
-                .map { index, name in
-                    DisplaySegment(text: name, originalIndex: index, fullName: name)
-                }
+        if totalWidth <= budgetForText {
+            return components.enumerated().map { i, name in
+                DisplaySegment(text: name, fullName: name, originalIndex: i)
+            }
         }
 
-        // Need to truncate - keep first and last full, truncate middle ones
-        var segments = components.enumerated()
-            .map { index, name in
-                (
-                    index: index, name: name, displayName: name, width: fullWidths[index],
-                    priority: truncationPriority(index: index, total: components.count, length: name.count)
-                )
-            }
-
-        var currentWidth = totalFullWidth
-
-        // Truncate segments by priority (longest middle segments first)
-        while currentWidth > availableForText {
-            // Find segment with highest truncation priority that can still be truncated
-            let truncatable = segments.enumerated().filter { $0.element.displayName.count > 3 }
-            guard let targetIdx = truncatable.max(by: { $0.element.priority < $1.element.priority })?.offset
+        // Truncate: middle-first, by length
+        struct Seg {
+            var index: Int; var name: String; var display: String
+            var width: CGFloat; var priority: Int
+        }
+        var segs = components.enumerated().map { i, name in
+            Seg(index: i, name: name, display: name, width: widths[i],
+                priority: truncPriority(index: i, total: components.count, len: name.count))
+        }
+        var used = totalWidth
+        while used > budgetForText {
+            guard let idx = segs.enumerated()
+                .filter({ $0.element.display.count > 3 })
+                .max(by: { $0.element.priority < $1.element.priority })?.offset
             else { break }
-
-            let segment = segments[targetIdx]
-            let newDisplayName = truncateMiddle(segment.displayName, maxLength: max(3, segment.displayName.count - 4))
-            let newWidth = CGFloat(newDisplayName.count) * charWidth
-            let savedWidth = segment.width - newWidth
-
-            segments[targetIdx].displayName = newDisplayName
-            segments[targetIdx].width = newWidth
-            segments[targetIdx].priority = 0  // reduce priority after truncation
-
-            currentWidth -= savedWidth
+            let old = segs[idx]
+            let newDisplay = truncMiddle(old.display, maxLen: max(3, old.display.count - 4))
+            let newWidth = CGFloat(newDisplay.count) * charWidth
+            used -= old.width - newWidth
+            segs[idx].display  = newDisplay
+            segs[idx].width    = newWidth
+            segs[idx].priority = 0
         }
-
-        return segments.map { DisplaySegment(text: $0.displayName, originalIndex: $0.index, fullName: $0.name) }
+        return segs.map { DisplaySegment(text: $0.display, fullName: $0.name, originalIndex: $0.index) }
     }
 
-    // MARK: - Truncation priority (higher = truncate first)
-    private func truncationPriority(index: Int, total: Int, length: Int) -> Int {
-        // Never truncate first and last
-        if index == 0 || index == total - 1 {
-            return 0
-        }
-        // Priority based on length - longer segments truncated first
-        return length * 10
+    // MARK: - truncPriority — never truncate first/last; longer middle first
+    private func truncPriority(index: Int, total: Int, len: Int) -> Int {
+        guard index != 0 && index != total - 1 else { return 0 }
+        return len * 10
     }
 
-    // MARK: - Truncate string in the middle
-    private func truncateMiddle(_ str: String, maxLength: Int) -> String {
-        guard str.count > maxLength, maxLength >= 3 else { return str }
-        let half = (maxLength - 1) / 2
-        let prefix = str.prefix(half)
-        let suffix = str.suffix(half)
-        return "\(prefix)…\(suffix)"
+    // MARK: - truncMiddle
+    private func truncMiddle(_ s: String, maxLen: Int) -> String {
+        guard s.count > maxLen, maxLen >= 3 else { return s }
+        let half = (maxLen - 1) / 2
+        return "\(s.prefix(half))…\(s.suffix(half))"
     }
 
-    // MARK: - Path components
-    // When inside an archive, shows: ["archive.zip", "subdir", ...]
-    // instead of the real temp path like /var/folders/.../UUID/subdir
-    private var pathComponents: [String] {
-        let archiveState = panelSide == .left ? appState.leftArchiveState : appState.rightArchiveState
-        let currentPath = appState.path(for: panelSide)
-
-        if archiveState.isInsideArchive,
-            let archiveURL = archiveState.archiveURL,
-            let tempDir = archiveState.archiveTempDir
-        {
-            // Virtual path: archiveName + relative subdirs inside archive
-            let archiveName = archiveURL.lastPathComponent
-            let normalizedCurrent = URL(fileURLWithPath: currentPath).standardizedFileURL.path
-            let normalizedTemp = tempDir.standardizedFileURL.path
-
-            // Strip the temp root prefix to get relative path inside archive
-            var relative = ""
-            if normalizedCurrent.hasPrefix(normalizedTemp) {
-                relative = String(normalizedCurrent.dropFirst(normalizedTemp.count))
-                    .trimmingCharacters(in: CharacterSet(charactersIn: "/"))
-            }
-
-            if relative.isEmpty {
-                // At archive root — show just the archive name
-                return [archiveName]
-            } else {
-                // Inside subdirectory — archive name + sub-components
-                let subComponents = relative.split(separator: "/").map(String.init)
-                return [archiveName] + subComponents
-            }
-        }
-
-        // Normal filesystem path
-        return currentPath.split(separator: "/").map(String.init).filter { !$0.isEmpty }
-    }
-
-    // MARK: - Breadcrumb item view
+    // MARK: - breadcrumbItem
     @ViewBuilder
     private func breadcrumbItem(segment: DisplaySegment, index: Int) -> some View {
         if index > 0 {
@@ -191,116 +231,69 @@ struct BreadCrumbView: View {
                 .foregroundStyle(.secondary)
                 .padding(.horizontal, 2)
         }
-        segmentButton(segment: segment)
-    }
-
-    // MARK: - Segment button with hover-expand for truncated names (Finder-style)
-    private func segmentButton(segment: DisplaySegment) -> some View {
         ExpandableSegmentButton(
             segment: segment,
-            textColor: breadcrumbTextColor,
-            fontSize: breadcrumbFontSize,
-            onTap: { handlePathSelection(upTo: segment.originalIndex) },
-            helpText: makeHelpTooltip(for: segment.originalIndex, fullName: segment.fullName),
-            copyAction: {
-                let archiveState = panelSide == .left ? appState.leftArchiveState : appState.rightArchiveState
-                let pathToCopy: String
-                if archiveState.isInsideArchive,
-                    let tempDir = archiveState.archiveTempDir
-                {
-                    if segment.originalIndex == 0 {
-                        pathToCopy = archiveState.archiveURL?.path ?? ""
-                    } else {
-                        let subComponents = Array(pathComponents[1...segment.originalIndex])
-                        pathToCopy = tempDir.standardizedFileURL.path + "/" + subComponents.joined(separator: "/")
-                    }
-                } else {
-                    pathToCopy = "/" + pathComponents.prefix(segment.originalIndex + 1).joined(separator: "/")
-                }
-                NSPasteboard.general.clearContents()
-                NSPasteboard.general.setString(pathToCopy, forType: .string)
-            }
+            textColor: textColor,
+            fontSize: fontSize,
+            onTap: { handleTap(segment: segment) },
+            helpText: tooltip(for: segment),
+            copyAction: { copyPath(for: segment) }
         )
     }
 
-    // MARK: - Tooltip helper
-    private func makeHelpTooltip(for index: Int, fullName: String) -> String {
-        let archiveState = panelSide == .left ? appState.leftArchiveState : appState.rightArchiveState
+    // MARK: - handleTap
+    private func handleTap(segment: DisplaySegment) {
+        let panelURL = appState.url(for: panelSide)
+        log.info("[BreadCrumb] tap index=\(segment.originalIndex) on \(panelSide)")
 
-        let displayPath: String
-        if archiveState.isInsideArchive, let archiveURL = archiveState.archiveURL {
-            // Virtual path inside archive: archive.zip/subdir/...
-            let parts = pathComponents.prefix(index + 1)
-            displayPath = parts.joined(separator: "/")
-            if index == 0 {
-                return "📦 \(archiveURL.path)"
+        // ── Remote ──────────────────────────────────────────────────────────
+        if AppState.isRemotePath(panelURL) {
+            if segment.originalIndex == 0 {
+                // tapped origin label — go to root
+                let manager = RemoteConnectionManager.shared
+                if let conn = manager.activeConnection {
+                    let origin = AppState.remoteOrigin(from: conn.provider.mountPath)
+                    Task { await appState.navigateToDirectory(origin + "/", on: panelSide) }
+                }
+            } else {
+                // Build path from components[1..index]
+                let parts = Array(pathComponents[1...segment.originalIndex])
+                let remotePath = "/" + parts.joined(separator: "/")
+                let manager = RemoteConnectionManager.shared
+                if let conn = manager.activeConnection {
+                    let origin = AppState.remoteOrigin(from: conn.provider.mountPath)
+                    Task { await appState.navigateToDirectory(origin + remotePath, on: panelSide) }
+                }
             }
-        } else {
-            displayPath = "/" + pathComponents.prefix(index + 1).joined(separator: "/")
+            return
         }
 
-        let maxLength = 60
-        let trimmed: String
-        if displayPath.count > maxLength {
-            trimmed = "\(displayPath.prefix(25))…\(displayPath.suffix(30))"
-        } else {
-            trimmed = displayPath
-        }
-        if fullName != pathComponents[index] {
-            return "📂 \(fullName)\n→ \(trimmed)"
-        }
-        return "📂 Open \(trimmed)"
-    }
-
-    // MARK: - Handle Selection
-    private func handlePathSelection(upTo index: Int) {
-        log.info(#function + " for index \(index) on side <<\(panelSide)>>")
-        let archiveState = panelSide == .left ? appState.leftArchiveState : appState.rightArchiveState
-
-        if archiveState.isInsideArchive,
-            let tempDir = archiveState.archiveTempDir
-        {
-            if index == 0 {
-                // Clicked the archive name itself — exit the archive
+        // ── Archive ──────────────────────────────────────────────────────────
+        let archState = panelSide == .left ? appState.leftArchiveState : appState.rightArchiveState
+        if archState.isInsideArchive, let tempDir = archState.archiveTempDir {
+            if segment.originalIndex == 0 {
                 Task { await appState.exitArchive(on: panelSide) }
-                return
+            } else {
+                let sub = Array(pathComponents[1...segment.originalIndex])
+                let newPath = tempDir.standardizedFileURL.path + "/" + sub.joined(separator: "/")
+                appState.updatePath(newPath, for: panelSide)
+                Task { await performDirUpdate(path: newPath) }
             }
-            // index > 0 means inside archive subdirectory
-            // pathComponents[0] = archiveName, [1..] = subpath components
-            let subComponents = Array(pathComponents[(1)...(index)])
-            let newPath = tempDir.standardizedFileURL.path + "/" + subComponents.joined(separator: "/")
-            let currentPath = appState.path(for: panelSide)
-            guard toCanonical(newPath) != toCanonical(currentPath) else { return }
-            appState.updatePath(newPath, for: panelSide)
-            Task { await performDirectoryUpdate(for: panelSide, path: newPath) }
             return
         }
 
-        // Normal filesystem navigation
-        let newPath = ("/" + pathComponents.prefix(index + 1).joined(separator: "/"))
+        // ── Local ────────────────────────────────────────────────────────────
+        let newPath = ("/" + pathComponents.prefix(segment.originalIndex + 1).joined(separator: "/"))
             .replacingOccurrences(of: "//", with: "/")
-            .replacingOccurrences(of: "///", with: "/")
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-        let currentPath = appState.path(for: panelSide)
-        guard toCanonical(newPath) != toCanonical(currentPath) else {
-            log.info("Path unchanged, skipping update")
-            return
-        }
+        let current = appState.path(for: panelSide)
+        guard !PathUtils.areEqual(newPath, current) else { return }
         appState.updatePath(newPath, for: panelSide)
-        Task {
-            await performDirectoryUpdate(for: panelSide, path: newPath)
-        }
+        Task { await performDirUpdate(path: newPath) }
     }
 
-    // MARK: - Canonicalize path
-    private func toCanonical(_ path: String) -> String {
-        URL(fileURLWithPath: path).standardizedFileURL.path
-    }
-
-    // MARK: - Perform directory update
+    // MARK: - performDirUpdate
     @MainActor
-    private func performDirectoryUpdate(for panelSide: PanelSide, path: String) async {
-        log.info("Task started for side <<\(panelSide)>> with path: \(path)")
+    private func performDirUpdate(path: String) async {
         if panelSide == .left {
             await appState.scanner.setLeftDirectory(pathStr: path)
             await appState.scanner.refreshFiles(currSide: .left)
@@ -310,6 +303,53 @@ struct BreadCrumbView: View {
             await appState.scanner.refreshFiles(currSide: .right)
             await appState.refreshRightFiles()
         }
-        log.info("Task finished successfully")
+    }
+
+    // MARK: - tooltip
+    private func tooltip(for segment: DisplaySegment) -> String {
+        let panelURL = appState.url(for: panelSide)
+        if AppState.isRemotePath(panelURL) {
+            if segment.originalIndex == 0 { return "🌐 \(segment.fullName) — tap to go to root" }
+            let parts = Array(pathComponents[1...segment.originalIndex])
+            return "📂 /\(parts.joined(separator: "/"))"
+        }
+        let archState = panelSide == .left ? appState.leftArchiveState : appState.rightArchiveState
+        if archState.isInsideArchive {
+            if segment.originalIndex == 0 { return "📦 \(segment.fullName) — tap to exit archive" }
+            let parts = pathComponents.prefix(segment.originalIndex + 1)
+            return "📂 \(parts.joined(separator: "/"))"
+        }
+        let fullPath = "/" + pathComponents.prefix(segment.originalIndex + 1).joined(separator: "/")
+        return "📂 Open \(fullPath)"
+    }
+
+    // MARK: - copyPath
+    private func copyPath(for segment: DisplaySegment) {
+        let panelURL = appState.url(for: panelSide)
+        let pathToCopy: String
+        if AppState.isRemotePath(panelURL) {
+            if segment.originalIndex == 0 {
+                pathToCopy = RemoteConnectionManager.shared.activeConnection
+                    .map { AppState.remoteOrigin(from: $0.provider.mountPath) } ?? segment.fullName
+            } else {
+                let parts = Array(pathComponents[1...segment.originalIndex])
+                pathToCopy = "/" + parts.joined(separator: "/")
+            }
+        } else {
+            let archState = panelSide == .left ? appState.leftArchiveState : appState.rightArchiveState
+            if archState.isInsideArchive, let tempDir = archState.archiveTempDir {
+                if segment.originalIndex == 0 {
+                    pathToCopy = archState.archiveURL?.path ?? ""
+                } else {
+                    let sub = Array(pathComponents[1...segment.originalIndex])
+                    pathToCopy = tempDir.standardizedFileURL.path + "/" + sub.joined(separator: "/")
+                }
+            } else {
+                pathToCopy = "/" + pathComponents.prefix(segment.originalIndex + 1).joined(separator: "/")
+            }
+        }
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(pathToCopy, forType: .string)
+        log.debug("[BreadCrumb] copied: \(pathToCopy)")
     }
 }

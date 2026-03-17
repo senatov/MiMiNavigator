@@ -59,6 +59,24 @@
                 }
                 return
             }
+            // --- Remote file: download to tmp, open locally ---
+            let panelURL = url(for: panel)
+            if AppState.isRemotePath(panelURL) {
+                let remotePath = file.pathStr
+                log.info("[AppState] activateItem: remote file '\(remotePath)' — downloading to tmp")
+                Task {
+                    do {
+                        let localURL = try await RemoteConnectionManager.shared.downloadFile(remotePath: remotePath)
+                        await MainActor.run {
+                            NSWorkspace.shared.open(localURL)
+                        }
+                    } catch {
+                        log.error("[AppState] remote download failed '\(remotePath)': \(error.localizedDescription)")
+                    }
+                }
+                return
+            }
+
             NSWorkspace.shared.open(
                 [file.urlValue],
                 withApplicationAt: NSWorkspace.shared.urlForApplication(toOpen: file.urlValue)
