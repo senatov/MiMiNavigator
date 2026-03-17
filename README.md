@@ -231,7 +231,7 @@ MiMiNavigator/
 │   │   │                   # FritzBoxDiscovery, WebUIProber
 │   │   ├── ConnectToServer/# ConnectToServerView, RemoteFileProvider,
 │   │   │                   # RemoteConnectionManager, RemoteServerStore
-│   │   └── Popups/         # FileInfoPopupController, ConnectErrorPopupController,
+│   │   └── Popups/         # FileInfoPopupController, InfoPopupController, ConnectErrorPopupController, FileInfoPopupController,
 │   │                       # PopupEventMonitors (@MainActor, deinit-safe monitors)
 │   ├── ContextMenu/
 │   │   ├── ActionsEnums/   # FileAction, DirectoryAction, MultiSelectionAction,
