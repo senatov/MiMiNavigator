@@ -43,15 +43,7 @@ MiMiNavigator is a dual-panel file manager inspired by **Total Commander** and *
 
 ## Screenshots
 
-<table>
-  <tr>
-    <td><img src="GUI/Docs/Preview0.png" alt="Main Interface" width="100%"></td>
-  </tr>
-  <tr>
-    <td align="center"><em>Preview</em></td>
-  </tr>
-</table>
-
+[![Watch](https://youtu.be/rgPYIAMx0p0) 
 
 <table>
   <tr>
