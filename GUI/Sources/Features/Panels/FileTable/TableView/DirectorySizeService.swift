@@ -111,7 +111,6 @@
                 log.info("\(#function) vol mounted — purged \(deadPaths.count) unavail + \(deadCache.count) cache entries")
             }
         }
-        }
 
         // MARK: - Public API
         /// Request directory size.
@@ -500,3 +499,4 @@
                 return nil
             }
         }
+}
