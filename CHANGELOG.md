@@ -5,6 +5,31 @@ All notable changes to MiMiNavigator will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.7] — 2026-03-17
+
+### Fixed
+- **`DualDirectoryScanner` brace corruption** — duplicate `func setRightDirectory` declaration + stray closing brace pushed all `private`/`static` methods out of actor scope; 35 compiler errors eliminated
+- **`DirectorySizeService` actor boundary** — repeated edit-induced brace drift kept closing actor too early, sending `static func computeShallowSize` / `computeFullRecursive` outside type
+- **`NSWorkspace.didMountVolumeNotification` @MainActor** — replaced with raw `Notification.Name("NSWorkspaceDidMountNotification")` and correct `NSWorkspace.shared.notificationCenter` subscription
+- **`PathAutoCompleteField` `guard let` on non-Optional NSPanel** — removed spurious guard
+
+### Changed
+- **`PopupEventMonitors`** extracted to `GUI/Sources/Features/Popups/` — `@MainActor` class owns NSEvent local monitors; `nonisolated(unsafe)` confined to three `Any?` fields used only in `deinit`; `install()` accepts `onClickOutside` + `shouldDismissOnClick` guard closure + `installResignObserver` flag
+- **`FileInfoPopupController`** and **`ConnectErrorPopupController`** moved to `Features/Popups/`; replaced 3×`nonisolated(unsafe)` + `installMonitors`/`removeMonitors`/`deinit` with single `monitors.install(panel:onHide:)`
+- **`PathAutoCompleteField.AutoCompletePopupController`** — dropped `@unchecked Sendable`, same monitor migration; `installMonitors(for:)` uses `shouldDismissOnClick` for anchor-rect guard and disables resign observer
+- **`ErrorAlertService`** added (`GUI/Sources/Services/`) — `@MainActor enum` with `show` / `confirm` / `promptPassword`; replaces 4× scattered `NSAlert().runModal()` in `DuoFilePanelActions`, `AppState+Navigation`, `AppState+Archive`, `AppState+SearchResults`
+- **`updatePath(_:for:)` non-blocking** — `FileManager.fileExists` moved off MainActor into `Task.detached`; `applyPathUpdate` handles pure-UI mutation; eliminates potential NAS/SMB freeze on main thread
+- **`RemoteConnectionManager.updateServerResult`** unified — accepts `errorDetail: String?`; success and fail paths both route through it; saves `lastErrorDetail` to `RemoteServer`
+- **`ConnectToServerView`** — `connectionError` and `ConnectErrorPopupController` now reset/hidden when user switches server in sidebar
+- **`NoOpRemoteFileProvider`** replaces `FTPFileProvider()` stub for SMB/AFP protocols; throws `notImplemented` loudly instead of silently misbehaving
+- **`DirectorySizeService.permanentlyUnavailable`** — `registerVolumeMountObserver()` clears `/Volumes/` entries via `NSWorkspace.shared.notificationCenter` on disk mount
+
+### Added
+- **`ConnectErrorPopupController`** — yellow HUD popup (same style as `FileInfoPopupController`) shows full SFTP/FTP connection diagnostics; triggered by `⚠` button replacing static red error text
+- **`RemoteServer.lastErrorDetail`** — new field stores full `error.localizedDescription` from failed connect attempt
+
+---
+
 ## [0.9.6] — 2026-03-10
 ### Added
 - **Breadcrumb hover-expand (Finder-style)** — truncated segments spring-expand on hover
@@ -455,7 +480,9 @@ Each release should include:
 
 ---
 
-[Unreleased]: https://github.com/senatov/MiMiNavigator/compare/v0.9.4...HEAD
+[Unreleased]: https://github.com/senatov/MiMiNavigator/compare/v0.9.7...HEAD
+[0.9.7]: https://github.com/senatov/MiMiNavigator/compare/v0.9.6...v0.9.7
+[0.9.6]: https://github.com/senatov/MiMiNavigator/compare/v0.9.4...v0.9.6
 [0.9.4]: https://github.com/senatov/MiMiNavigator/compare/v0.9.3.2...v0.9.4
 [0.9.3.2]: https://github.com/senatov/MiMiNavigator/compare/v0.9.3...v0.9.3.2
 [0.9.2]: https://github.com/senatov/MiMiNavigator/compare/v0.9.1.1...v0.9.2

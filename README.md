@@ -14,7 +14,7 @@
   <img src="https://img.shields.io/badge/SwiftUI-blue?logo=swift&logoColor=white" alt="SwiftUI" />
   <img src="https://img.shields.io/badge/Concurrency-Strict-2ea44f" alt="Strict Concurrency" />
   <img src="https://img.shields.io/badge/License-AGPL--3.0-blue" alt="AGPL-3.0" />
-  <img src="https://img.shields.io/badge/v0.9.6.1-Active_Development-orange" alt="Active Development" />
+  <img src="https://img.shields.io/badge/v0.9.7-Active_Development-orange" alt="Active Development" />
 </p>
 
 <p align="center">
@@ -55,10 +55,10 @@ MiMiNavigator is a dual-panel file manager inspired by **Total Commander** and *
 
 <table>
   <tr>
-    <td><img src="GUI/Docs/Preview3.png" alt="Main Interface" width="100%"></td>
+      <td><video src="GUI/Docs/demo1.mp4" autoplay loop muted playsinline width="600"></video></td>
   </tr>
   <tr>
-    <td align="center"><em>History</em></td>
+    <td align="center"><em>Preview</em></td>
   </tr>
 </table>
 
@@ -237,8 +237,10 @@ MiMiNavigator/
 │   │   ├── Network/        # NetworkNeighborhoodView, NetworkHost,
 │   │   │                   # NetworkMountService, NetworkDeviceFingerprinter,
 │   │   │                   # FritzBoxDiscovery, WebUIProber
-│   │   └── ConnectToServer/# ConnectToServerView, RemoteFileProvider,
-│   │                       # RemoteConnectionManager, RemoteServerStore
+│   │   ├── ConnectToServer/# ConnectToServerView, RemoteFileProvider,
+│   │   │                   # RemoteConnectionManager, RemoteServerStore
+│   │   └── Popups/         # FileInfoPopupController, ConnectErrorPopupController,
+│   │                       # PopupEventMonitors (@MainActor, deinit-safe monitors)
 │   ├── ContextMenu/
 │   │   ├── ActionsEnums/   # FileAction, DirectoryAction, MultiSelectionAction,
 │   │   │                   # PanelBackgroundAction
@@ -261,6 +263,7 @@ MiMiNavigator/
 │   │   ├── Scanner/        # DualDirectoryScanner (actor), FileScanner,
 │   │   │                   # FSEventsDirectoryWatcher
 │   │   ├── FileOperations/ # BasicFileOperations, FileDialogs, VSCodeIntegration
+│   │   ├── ErrorAlertService.swift  # show / confirm / promptPassword helpers
 │   │   └── Diagnostics/    # SpinnerWatchdog
 │   ├── FindFiles/          # FindFilesViewModel, FindFilesCoordinator,
 │   │   │                   # FindFilesWindowContent, SearchHistoryManager
@@ -303,6 +306,8 @@ MiMiNavigator/
 | `actor` | `DualDirectoryScanner` — thread-safe file scanning |
 | `actor` | `ArchiveManager` — session lifecycle, dirty tracking, extraction, repacking |
 | `AsyncStream` | `FindFilesEngine` — streaming search results with cancellation |
+| `PopupEventMonitors` | `@MainActor` class, owns NSEvent monitors, `nonisolated(unsafe)` only in `deinit` |
+| `ErrorAlertService` | `@MainActor enum`, replaces scattered `NSAlert.runModal()` calls |
 | `filesForOperation()` | Unified API: returns marked files if any, single selected file otherwise |
 | `NSEvent.modifierFlags` | Detecting Cmd/Shift during SwiftUI gesture handlers |
 | Security-Scoped Bookmarks | Persistent file access in sandboxed mode |

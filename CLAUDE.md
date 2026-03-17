@@ -20,7 +20,7 @@ MiMiNavigator is a dual-panel file manager for macOS, built with Swift 6.2 and S
 - **Logging tags**: `[Component]` format (e.g. `[Rename]`, `[Scan]`, `[FileOps]`, `[Selection]`)
 - **`// MARK: - Name`** directly above every class/struct/enum/non-trivial method
 - **No blank lines inside method bodies**
-- **`nonisolated(unsafe)`** for Swift 6 NSCache statics and event monitors in `deinit`
+- **`nonisolated(unsafe)`** for Swift 6 NSCache statics; for popup event monitors use `PopupEventMonitors` class (three `Any?` fields only)
 
 ### Build & Run
 - **Builds only on user's Mac** via osascript (Control your Mac), never on remote
