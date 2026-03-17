@@ -191,6 +191,80 @@
             RemoteServerStore.shared.update(updated)
         }
 
+        // MARK: - Transfer files with console (upload or download, multi-file)
+        /// Entry point for any multi-file remote transfer.
+        /// Opens RemoteTransferConsole, runs transfers sequentially, auto-closes on done.
+        func transferFiles(
+            items: [(remotePath: String, localURL: URL, size: Int64)],
+            direction: RemoteTransferDirection,
+            serverLabel: String
+        ) async {
+            guard let conn = activeConnection else {
+                log.error("[RemoteManager] transferFiles — no active connection")
+                return
+            }
+            let transferItems = items.map { item in
+                RemoteTransferItem(remotePath: item.remotePath,
+                                   localURL:   item.localURL,
+                                   size:       item.size)
+            }
+            let progress = RemoteTransferProgress(
+                direction:   direction,
+                serverLabel: serverLabel,
+                items:       transferItems
+            )
+            // Open console window immediately on MainActor
+            await MainActor.run { RemoteTransferConsole.shared.open(progress: progress) }
+
+            for item in progress.items {
+                if progress.isCancelled { break }
+                await MainActor.run { progress.startItem(id: item.id, name: item.name) }
+                do {
+                    switch direction {
+                    case .download:
+                        // Download: remote → local
+                        let localURL = try await conn.provider.downloadFile(remotePath: item.remotePath)
+                        let size = (try? localURL.resourceValues(forKeys: [.fileSizeKey]).fileSize)
+                                        .map { Int64($0) } ?? item.size
+                        await MainActor.run {
+                            progress.updateItem(id: item.id, transferred: size)
+                            progress.completeItem(id: item.id, success: true)
+                        }
+                    case .upload:
+                        // Upload: local → remote (SFTPClient.writeFile when available)
+                        log.warning("[RemoteManager] upload not yet implemented for \(item.name)")
+                        await MainActor.run {
+                            progress.completeItem(id: item.id, success: false,
+                                                  error: "Upload not yet implemented")
+                        }
+                    }
+                } catch {
+                    await MainActor.run {
+                        progress.completeItem(id: item.id, success: false,
+                                              error: error.localizedDescription)
+                    }
+                }
+            }
+            await MainActor.run { progress.complete() }
+        }
+
+        // MARK: - Convenience: download single file with console
+        func downloadFileWithConsole(remotePath: String, size: Int64 = 0) async throws -> URL {
+            guard let conn = activeConnection else { throw RemoteProviderError.notConnected }
+            let serverLabel = AppState.remoteOrigin(from: conn.provider.mountPath)
+                .replacingOccurrences(of: "sftp://", with: "SFTP ")
+                .replacingOccurrences(of: "ftp://", with: "FTP ")
+            let localURL = FileManager.default.temporaryDirectory
+                .appendingPathComponent("MiMiSFTP")
+                .appendingPathComponent((remotePath as NSString).lastPathComponent)
+            await transferFiles(
+                items: [(remotePath: remotePath, localURL: localURL, size: size)],
+                direction: .download,
+                serverLabel: serverLabel
+            )
+            return localURL
+        }
+
         // MARK: - Classify connection error into ConnectionResult
         private func classifyError(_ error: Error) -> ConnectionResult {
             log.debug(#function + "(\(error))")
