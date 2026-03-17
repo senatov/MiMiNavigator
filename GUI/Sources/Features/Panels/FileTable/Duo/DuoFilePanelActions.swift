@@ -120,9 +120,11 @@
                         do {
                             try fm.removeItem(at: url)
                             deletedCount += 1
-                            log.debug("performDelete: removed from archive temp: \(url.lastPathComponent)")
+                            log.debug("\(#function) zapped archive tmp: \(url.lastPathComponent)")
                         } catch {
-                            log.error("performDelete: failed to remove \(url.lastPathComponent): \(error.localizedDescription)")
+                            let desc = error.localizedDescription
+                            log.error("\(#function) archive rm bombed '\(url.lastPathComponent)' — \(desc)")
+                            await MainActor.run { Self.showDeleteError(desc, urls: [url]) }
                         }
                     }
                     if deletedCount > 0 {
@@ -145,10 +147,12 @@
                         }
                     }
                     if let error {
-                        log.error("performDelete: recycle failed — \(error.localizedDescription)")
+                        let desc = error.localizedDescription
+                        log.error("\(#function) recycle bombed — \(desc)")
+                        await MainActor.run { Self.showDeleteError(desc, urls: urls) }
                         return
                     }
-                    log.info("performDelete: \(trashedURLs.count) item(s) moved to Trash ✓")
+                    log.info("\(#function) trashed \(trashedURLs.count) item(s) ✓")
                     await self.appState.refreshAndSelectAfterRemoval(removedFiles: files, on: panel)
                 }
             }
@@ -210,7 +214,30 @@
             log.info("[TmpCleanup] removed \(removed) user JSON file(s) from /tmp")
         }
 
-        // MARK: - Computed Properties
+        // MARK: - Delete error alert
+    /// pops NSAlert so user actually sees wtf went wrong (perms, gone file, etc.)
+    @MainActor
+    private static func showDeleteError(_ reason: String, urls: [URL]) {
+        log.warning("\(#function) showing delete-fail alert for \(urls.count) item(s)")
+        let names = urls.prefix(5).map(\.lastPathComponent).joined(separator: "\n  • ")
+        let more = urls.count > 5 ? "\n  … and \(urls.count - 5) more" : ""
+
+        let alert = NSAlert()
+        alert.alertStyle = .warning
+        alert.messageText = "Can't Move to Trash"
+        alert.informativeText = """
+            Failed to delete:
+              • \(names)\(more)
+
+            Reason: \(reason)
+
+            Tip: system/temp files owned by root can't be trashed from sandbox.
+            """
+        alert.addButton(withTitle: "OK")
+        alert.runModal()
+    }
+
+    // MARK: - Computed Properties
 
         private var currentSelectedFile: CustomFile? {
             appState.focusedPanel == .left ? appState.selectedLeftFile : appState.selectedRightFile
