@@ -81,25 +81,36 @@
             try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
             cacheURL = dir.appendingPathComponent("dirsize.cache")
             Task { await self.loadDiskCache() }
-            Task { await self.observeVolumeMount() }
+            self.registerVolumeMountObserver()
         }
 
         // MARK: - Volume mount observer
-        /// Clears permanentlyUnavailable + memoryCache entries under /Volumes when a disk mounts.
-        /// Detached because NotificationCenter.default is nonisolated.
-        private func observeVolumeMount() async {
-            for await _ in NotificationCenter.default.notifications(
-                named: NSWorkspace.didMountVolumeNotification,
-                object: nil
-            ) {
-                let purgedPaths = permanentlyUnavailable.filter { $0.hasPrefix("/Volumes/") }
-                let purgedCache = memoryCache.keys.filter { $0.hasPrefix("/Volumes/") }
-                permanentlyUnavailable.subtract(purgedPaths)
-                purgedCache.forEach { memoryCache.removeValue(forKey: $0) }
-                if !purgedPaths.isEmpty || !purgedCache.isEmpty {
-                    log.info("\(#function) volume mounted — cleared \(purgedPaths.count) unavailable + \(purgedCache.count) cache entries under /Volumes")
-                }
+        /// Clears permanentlyUnavailable + memoryCache for /Volumes paths when a disk mounts.
+        /// NSWorkspace posts to its own notificationCenter (not NotificationCenter.default).
+        /// nonisolated so it can be called from init; forwards mutations into actor via Task.
+        nonisolated private func registerVolumeMountObserver() {
+            // Raw string name avoids @MainActor isolation on NSWorkspace.didMountVolumeNotification
+            let note = Notification.Name("NSWorkspaceDidMountNotification")
+            NSWorkspace.shared.notificationCenter.addObserver(
+                forName: note,
+                object: nil,
+                queue: .main
+            ) { [weak self] _ in
+                guard let self else { return }
+                Task { await self.purgeVolumesCache() }
             }
+        }
+
+        /// Actor-isolated mutation — safe to call from Task
+        private func purgeVolumesCache() {
+            let deadPaths = permanentlyUnavailable.filter { $0.hasPrefix("/Volumes/") }
+            let deadCache = memoryCache.keys.filter { $0.hasPrefix("/Volumes/") }
+            permanentlyUnavailable.subtract(deadPaths)
+            deadCache.forEach { memoryCache.removeValue(forKey: $0) }
+            if !deadPaths.isEmpty || !deadCache.isEmpty {
+                log.info("\(#function) vol mounted — purged \(deadPaths.count) unavail + \(deadCache.count) cache entries")
+            }
+        }
         }
 
         // MARK: - Public API
@@ -489,4 +500,3 @@
                 return nil
             }
         }
-    }
