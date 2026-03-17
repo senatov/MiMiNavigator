@@ -106,11 +106,14 @@
                     .padding(.vertical, 6)
                 }
                 .onChange(of: selectedID) { _, newID in
+                    connectionError = ""   // clear stale error when switching servers
+                    ConnectErrorPopupController.shared.hide()
                     if let id = newID, let server = store.servers.first(where: { $0.id == id }) {
                         draft = server
                         password = RemoteServerKeychain.loadPassword(for: server)
                         keepPassword = !password.isEmpty
                         nameWasManuallyEdited = !server.name.isEmpty && server.name != server.host
+                        log.debug("\(#function) switched to server '\(server.displayName)'")
                     }
                 }
 
@@ -626,7 +629,5 @@
             case .smb:  return .orange
             case .afp:  return .purple
             }
-        }
-
         }
     }

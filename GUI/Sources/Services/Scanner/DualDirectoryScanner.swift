@@ -79,9 +79,8 @@
             }
             log.info("\(#function) '\(pathStr)'")
             let url = URL(fileURLWithPath: pathStr)
-            Task { @MainActor in
-                appState.rightURL = url
-            }
+            // route through updatePath so TabManager + history stay in sync
+            Task { @MainActor in appState.updatePath(url, for: .right) }
             startFSEvents(for: .right, url: url)
         }
 
@@ -93,9 +92,8 @@
             }
             log.info("\(#function) '\(pathStr)'")
             let url = URL(fileURLWithPath: pathStr)
-            Task { @MainActor in
-                appState.leftURL = url
-            }
+            // route through updatePath so TabManager + history stay in sync
+            Task { @MainActor in appState.updatePath(url, for: .left) }
             startFSEvents(for: .left, url: url)
         }
 
@@ -593,3 +591,4 @@
             }
         }
     }
+}

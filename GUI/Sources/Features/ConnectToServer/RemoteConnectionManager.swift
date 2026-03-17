@@ -85,29 +85,17 @@
                 )
                 connections.append(connection)
                 activeConnectionID = connection.id
-                updateServerResult(server, result: .success)
-                log.info("[RemoteManager] connected: \(connection.displayName) id=\(connection.id) total=\(connections.count)")
+                updateServerResult(server, result: .success, errorDetail: nil)
+                log.info("\(#function) connected: \(connection.displayName) id=\(connection.id) total=\(connections.count)")
             } catch {
                 let nsError = error as NSError
                 let result = classifyError(error)
-                var failed = server
-                failed.lastResult = result
-                failed.lastConnected = Date()
-                failed.lastErrorDetail = error.localizedDescription
-                RemoteServerStore.shared.update(failed)
-
+                updateServerResult(server, result: result, errorDetail: error.localizedDescription)
                 log.error(
                     """
-                    [RemoteManager] connect FAILED
-                    server=\(server.displayName)
-                    host=\(server.host)
-                    port=\(server.port)
-                    proto=\(server.remoteProtocol.rawValue)
-                    domain=\(nsError.domain)
-                    code=\(nsError.code)
+                    \(#function) FAILED host=\(server.host):\(server.port) proto=\(server.remoteProtocol.rawValue)
+                    domain=\(nsError.domain) code=\(nsError.code) classified=\(result.rawValue)
                     desc=\(nsError.localizedDescription)
-                    raw=\(error)
-                    classified=\(result.rawValue)
                     """)
             }
         }
@@ -179,19 +167,19 @@
                 case .ftp:
                     return FTPFileProvider()
                 case .smb, .afp:
-                    // SMB/AFP use macOS native mount — no custom provider needed
-                    // Return FTP as stub; actual SMB uses NetworkMountService
-                    log.warning("[RemoteManager] \(proto.rawValue) uses native mount, not RemoteFileProvider")
-                    return FTPFileProvider()
+                    // SMB/AFP use macOS native mount — RemoteFileProvider not involved
+                    log.warning("\(#function) \(proto.rawValue) uses native mount, returning NoOp provider")
+                    return NoOpRemoteFileProvider(reason: "\(proto.rawValue) uses native macOS mount")
             }
         }
 
-        // MARK: - Update server's last connection result in store
-        private func updateServerResult(_ server: RemoteServer, result: ConnectionResult) {
-            log.debug(#function + "(\(server), \(result))")
+        // MARK: - Update server result in store (success + fail unified)
+        private func updateServerResult(_ server: RemoteServer, result: ConnectionResult, errorDetail: String?) {
+            log.debug("\(#function) \(server.displayName) → \(result.rawValue)")
             var updated = server
             updated.lastConnected = Date()
             updated.lastResult = result
+            updated.lastErrorDetail = errorDetail
             RemoteServerStore.shared.update(updated)
         }
 

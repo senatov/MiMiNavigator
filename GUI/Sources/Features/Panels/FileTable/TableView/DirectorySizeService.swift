@@ -5,6 +5,7 @@
     //  Created by Iakov Senatov on 13.03.2026.
     //
 
+    import AppKit
     import Darwin
     import Foundation
 
@@ -80,6 +81,25 @@
             try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
             cacheURL = dir.appendingPathComponent("dirsize.cache")
             Task { await self.loadDiskCache() }
+            Task { await self.observeVolumeMount() }
+        }
+
+        // MARK: - Volume mount observer
+        /// Clears permanentlyUnavailable + memoryCache entries under /Volumes when a disk mounts.
+        /// Detached because NotificationCenter.default is nonisolated.
+        private func observeVolumeMount() async {
+            for await _ in NotificationCenter.default.notifications(
+                named: NSWorkspace.didMountVolumeNotification,
+                object: nil
+            ) {
+                let purgedPaths = permanentlyUnavailable.filter { $0.hasPrefix("/Volumes/") }
+                let purgedCache = memoryCache.keys.filter { $0.hasPrefix("/Volumes/") }
+                permanentlyUnavailable.subtract(purgedPaths)
+                purgedCache.forEach { memoryCache.removeValue(forKey: $0) }
+                if !purgedPaths.isEmpty || !purgedCache.isEmpty {
+                    log.info("\(#function) volume mounted — cleared \(purgedPaths.count) unavailable + \(purgedCache.count) cache entries under /Volumes")
+                }
+            }
         }
 
         // MARK: - Public API

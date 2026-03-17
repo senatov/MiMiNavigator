@@ -345,3 +345,31 @@
                 }
         }
     }
+
+    // MARK: - NoOpRemoteFileProvider
+    /// Used for protocols that use native OS mount (SMB, AFP) — not handled via RemoteFileProvider.
+    /// Throws `notImplemented` on any call so callers fail loudly instead of silently misbehaving.
+    final class NoOpRemoteFileProvider: RemoteFileProvider, @unchecked Sendable {
+        private(set) var isConnected = false
+        private(set) var mountPath = ""
+        private let reason: String
+
+        init(reason: String) {
+            self.reason = reason
+            log.debug("[NoOpProvider] created — \(reason)")
+        }
+
+        @concurrent func connect(host: String, port: Int, user: String, password: String, remotePath: String) async throws {
+            log.error("[NoOpProvider] connect called — \(reason)")
+            throw RemoteProviderError.notImplemented
+        }
+
+        @concurrent func listDirectory(_ path: String) async throws -> [RemoteFileItem] {
+            log.error("[NoOpProvider] listDirectory called — \(reason)")
+            throw RemoteProviderError.notImplemented
+        }
+
+        @concurrent func disconnect() async {
+            log.debug("[NoOpProvider] disconnect (noop) — \(reason)")
+        }
+    }
