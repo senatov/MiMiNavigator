@@ -56,6 +56,10 @@
         /// In‑memory cache
         private var memoryCache: [String: CacheEntry] = [:]
 
+        /// Paths confirmed unreadable (no perms / sandbox / virtual FS).
+        /// Never retry these — they won't become readable without a restart.
+        private var permanentlyUnavailable: Set<String> = []
+
         /// Tracks directory size calculations currently in progress
         /// Prevents the same directory from being scanned multiple times simultaneously.
         private var inFlightTasks: [String: Task<Int64, Never>] = [:]
@@ -84,6 +88,10 @@
         func requestSize(for url: URL) async -> Int64 {
             let resolvedURL = resolveURLForSizing(url)
             let key = cacheKey(for: resolvedURL)
+            // fast bail: already known unreadable — don't even try
+            if permanentlyUnavailable.contains(key) {
+                return Self.unavailableSize
+            }
             if let cached = cachedSize(for: resolvedURL) {
                 return cached
             }
@@ -94,6 +102,11 @@
             setInFlightTask(task, for: key)
             let result = await task.value
             clearInFlightTask(for: key)
+            // mark as permanently unavailable if unreadable
+            if result == Self.unavailableSize {
+                permanentlyUnavailable.insert(key)
+                log.debug("\(#function) marked permanently unavailable: \(key)")
+            }
             return result
         }
 
