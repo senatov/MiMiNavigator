@@ -118,7 +118,8 @@ final class SFTPFileProvider: RemoteFileProvider, @unchecked Sendable {
     }
 
     // MARK: - Download File
-    /// Downloads remote file → local tmp dir, returns local URL for NSWorkspace.open().
+    /// Downloads remote file → /tmp/MiMiSFTP/<name>, returns local URL.
+    /// Uses Citadel SFTPClient.openFile + SFTPFile.readAll — no getFile helper needed.
     @concurrent func downloadFile(remotePath: String) async throws -> URL {
         guard let sftp = sftpClient else { throw RemoteProviderError.notConnected }
         let fileName = (remotePath as NSString).lastPathComponent
@@ -127,7 +128,11 @@ final class SFTPFileProvider: RemoteFileProvider, @unchecked Sendable {
         try FileManager.default.createDirectory(at: tmpDir, withIntermediateDirectories: true)
         let localURL = tmpDir.appendingPathComponent(fileName)
         log.info("[SFTP] downloading '\(remotePath)' → '\(localURL.path)'")
-        let data = try await sftp.getFile(atPath: remotePath, timeoutInterval: 30)
+        // Open remote file read-only, read entire content as ByteBuffer, convert to Data
+        let buffer = try await sftp.withFile(filePath: remotePath, flags: .read) { file in
+            try await file.readAll()
+        }
+        let data = Data(buffer: buffer)
         try data.write(to: localURL)
         log.info("[SFTP] download OK size=\(data.count) → '\(localURL.lastPathComponent)'")
         return localURL
@@ -135,6 +140,7 @@ final class SFTPFileProvider: RemoteFileProvider, @unchecked Sendable {
 
     // MARK: - Disconnect
     @concurrent func disconnect() async {
+        do { try await sftpClient?.close() }
         catch { log.warning("[SFTP] close error: \(error)") }
         sshClient   = nil
         sftpClient  = nil
