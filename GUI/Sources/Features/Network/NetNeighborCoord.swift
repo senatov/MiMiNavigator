@@ -56,10 +56,7 @@ final class NetworkNeighborhoodCoordinator {
 
         let panel = NSPanel(
             contentRect: .zero,
-            styleMask: [
-                .titled, .closable, .resizable, .miniaturizable,
-                .utilityWindow, .nonactivatingPanel
-            ],
+            styleMask: [.titled, .closable, .resizable, .miniaturizable, .utilityWindow],
             backing: .buffered,
             defer: false
         )

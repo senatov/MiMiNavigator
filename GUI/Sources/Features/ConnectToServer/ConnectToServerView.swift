@@ -19,14 +19,12 @@
         var onDismiss: (() -> Void)?
 
         @State private var store = RemoteServerStore.shared
-
-        private var connectionManager: RemoteConnectionManager {
-            RemoteConnectionManager.shared
-        }
         @State private var selectedID: RemoteServer.ID?
         @State private var draft = RemoteServer()
         @State private var password: String = ""
         @State private var keepPassword: Bool = true
+        // @Observable singleton — accessed directly, SwiftUI tracks changes automatically
+        private var connectionManager: RemoteConnectionManager { .shared }
         @State private var isConnecting: Bool = false
         @State private var sessionLayout = SessionColumnLayout()
         @State private var showPassword: Bool = false
@@ -37,6 +35,13 @@
         @State private var saveAlertTitle: String = ""
         @State private var saveAlertMessage: String = ""
         @State private var nameWasManuallyEdited: Bool = false
+
+        @FocusState private var focusedField: FormField?
+        @Namespace private var focusNamespace
+
+        private enum FormField: Hashable {
+            case name, host, port, remotePath, user, password, keyPath
+        }
 
         private var dialogBgColor: Color {
             let s = ColorThemeStore.shared
@@ -54,6 +59,7 @@
                 contentPane
                     .frame(minWidth: 360)
             }
+            .focusScope(focusNamespace)
             .frame(minWidth: 660, idealWidth: 760, minHeight: 440, idealHeight: 520)
             .background(dialogBgColor.ignoresSafeArea())
             .onAppear { selectFirst() }
@@ -145,10 +151,22 @@
         // MARK: - Sidebar Server Row (matches Settings sidebarRow)
         private func sidebarServerRow(_ server: RemoteServer) -> some View {
             let isSelected = selectedID == server.id
+            // Status color: green=connected, red=error, grey=idle — same logic as ConnectionStatusLamp
+            let connected = connectionManager.connection(for: server) != nil
+            let statusColor: Color = {
+                if isSelected { return .white }
+                if connected  { return .green }
+                switch server.lastResult {
+                case .authFailed, .timeout, .refused, .error:
+                    return Color(nsColor: .systemRed)
+                default:
+                    return Color(nsColor: .systemGray).opacity(0.7)
+                }
+            }()
             return HStack(spacing: 8) {
-                Image(systemName: iconForProtocol(server.remoteProtocol))
+                Image(systemName: Self.iconForProtocol(server.remoteProtocol))
                     .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(isSelected ? .white : colorForProtocol(server.remoteProtocol))
+                    .foregroundStyle(statusColor)
                     .frame(width: 20)
                 VStack(alignment: .leading, spacing: 1) {
                     Text(server.displayName)
@@ -161,11 +179,6 @@
                         .lineLimit(1)
                 }
                 Spacer()
-                if connectionManager.connection(for: server) != nil {
-                    Circle()
-                        .fill(.green)
-                        .frame(width: 7, height: 7)
-                }
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
@@ -174,7 +187,11 @@
                     .fill(isSelected ? Color.accentColor : Color.clear)
             )
             .contentShape(Rectangle())
-            .onTapGesture { withAnimation(.easeOut(duration: 0.15)) { selectedID = server.id } }
+            .onTapGesture {
+                withAnimation(.spring(response: 0.28, dampingFraction: 0.72)) {
+                    selectedID = server.id
+                }
+            }
             .contextMenu {
                 Button("Connect") { connectServerAction(server: server) }
                 Button("Disconnect") { disconnectServerAction(server: server) }
@@ -201,24 +218,26 @@
             }
         }
 
-        // MARK: - Section Title Bar (matches Settings)
+        // MARK: - Section Title Bar
         private var sectionTitleBar: some View {
-            HStack {
-                Image(systemName: iconForProtocol(draft.remoteProtocol))
+            HStack(spacing: 8) {
+                Image(systemName: Self.iconForProtocol(draft.remoteProtocol))
                     .font(.system(size: 16, weight: .medium))
                     .foregroundStyle(DialogColors.accent)
                 Text(draft.remoteProtocol.rawValue)
                     .font(.system(size: 17, weight: .semibold))
+
+                // ── Status lamp ──────────────────────────────────────
+                ConnectionStatusLamp(server: draft, manager: connectionManager)
+
                 Spacer()
+
                 if !connectionError.isEmpty {
-                    // ⚠ clickable button — shows yellow diagnostics popup on tap
                     GeometryReader { geo in
                         Button {
                             let frame = geo.frame(in: .global)
                             ConnectErrorPopupController.shared.show(
-                                server: draft,
-                                anchorFrame: frame
-                            )
+                                server: draft, anchorFrame: frame)
                         } label: {
                             Label(connectionError, systemImage: "exclamationmark.triangle.fill")
                                 .font(.system(size: 11, weight: .medium))
@@ -231,8 +250,7 @@
                     .frame(height: 18)
                 }
                 if isConnecting {
-                    ProgressView()
-                        .controlSize(.small)
+                    ProgressView().controlSize(.small)
                 }
             }
             .padding(.horizontal, 24)
@@ -246,10 +264,12 @@
                 // Server identity group
                 SettingsGroupBox {
                     VStack(spacing: 0) {
-                        SettingsRow(label: "Name:", help: "Bookmark name for this server") {
-                            TextField("", text: $draft.name)
+                        SettingsRow(label: "Name:", help: "Bookmark name for this server. Paste a URL here to auto-fill all fields.") {
+                            TextField("or paste URL: sftp://user@host:port/path", text: $draft.name)
                                 .textFieldStyle(.roundedBorder)
+                                .focused($focusedField, equals: .name)
                                 .onChange(of: draft.name) { _, newValue in
+                                    if applyURLParserIfNeeded(newValue, clearName: true) { return }
                                     if !newValue.isEmpty { nameWasManuallyEdited = true }
                                 }
                         }
@@ -269,10 +289,12 @@
                             }
                         }
                         Divider()
-                        SettingsRow(label: "Host:", help: "Server hostname or IP address") {
-                            TextField("", text: $draft.host)
+                        SettingsRow(label: "Host:", help: "Hostname, IP, or paste full URL/connection string") {
+                            TextField("host  or  user@host:port  or  ftp://host/path", text: $draft.host)
                                 .textFieldStyle(.roundedBorder)
+                                .focused($focusedField, equals: .host)
                                 .onChange(of: draft.host) { _, newValue in
+                                    if applyURLParserIfNeeded(newValue, clearName: false) { return }
                                     if !nameWasManuallyEdited || draft.name.isEmpty {
                                         draft.name = newValue
                                     }
@@ -281,14 +303,16 @@
                         }
                         Divider()
                         SettingsRow(label: "Port:", help: "Server port number") {
-                            TextField("", value: $draft.port, format: .number)
+                            TextField("", value: $draft.port, formatter: Self.portFormatter)
                                 .textFieldStyle(.roundedBorder)
+                                .focused($focusedField, equals: .port)
                                 .frame(width: 80)
                         }
                         Divider()
                         SettingsRow(label: "Remote Path:", help: "Initial directory on server") {
                             TextField("", text: $draft.remotePath)
                                 .textFieldStyle(.roundedBorder)
+                                .focused($focusedField, equals: .remotePath)
                         }
                     }
                 }
@@ -299,6 +323,7 @@
                         SettingsRow(label: "User:", help: "Login username") {
                             TextField("", text: $draft.user)
                                 .textFieldStyle(.roundedBorder)
+                                .focused($focusedField, equals: .user)
                         }
                         Divider()
                         SettingsRow(label: "Password:", help: "Login password") {
@@ -307,9 +332,11 @@
                                     if showPassword {
                                         TextField("", text: $password)
                                             .textFieldStyle(.roundedBorder)
+                                            .focused($focusedField, equals: .password)
                                     } else {
                                         SecureField("", text: $password)
                                             .textFieldStyle(.roundedBorder)
+                                            .focused($focusedField, equals: .password)
                                     }
                                 }
                                 Button {
@@ -342,6 +369,7 @@
                                 HStack(spacing: 6) {
                                     TextField("", text: $draft.privateKeyPath)
                                         .textFieldStyle(.roundedBorder)
+                                        .focused($focusedField, equals: .keyPath)
                                     Button("Choose…") { chooseKeyFile() }
                                         .controlSize(.small)
                                 }
@@ -358,16 +386,18 @@
                     }
                 }
 
-                // Action buttons (matches Settings bottom style)
+                // Action buttons
                 HStack(spacing: 12) {
                     Spacer()
                     Button("Disconnect") { disconnectAction() }
                         .disabled(!isDraftConnected)
+                        .buttonStyle(AnimatedDialogButtonStyle(role: .destructive))
                     Button("Save") { saveActionWithFeedback() }
                         .disabled(draft.host.isEmpty)
+                        .buttonStyle(AnimatedDialogButtonStyle())
                     Button("Connect") { connectAction() }
-                        .buttonStyle(ThemedButtonStyle())
                         .disabled(draft.host.isEmpty || isConnecting)
+                        .buttonStyle(AnimatedDialogButtonStyle(role: .confirm))
                         .keyboardShortcut(.return, modifiers: .command)
                 }
             }
@@ -532,102 +562,66 @@
             }
         }
 
-        // MARK: - sanitizeHost
-        /// Removes whitespace, control characters and characters invalid in hostnames.
-        private static func sanitizeHost(_ raw: String) -> String {
-            let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
-            let allowed = CharacterSet.alphanumerics
-                .union(CharacterSet(charactersIn: ".-_:"))
-            return String(trimmed.unicodeScalars.filter { allowed.contains($0) })
+        // MARK: - applyURLParserIfNeeded
+        /// Tries to parse `input` as a URL/connection string.
+        /// If successful, fills all draft fields and returns true (caller should skip normal onChange logic).
+        /// `clearName`: if true, replaces draft.name with host (input came from Name field).
+        @discardableResult
+        private func applyURLParserIfNeeded(_ input: String, clearName: Bool) -> Bool {
+            guard let parsed = RemoteServerURLParser.parse(input) else { return false }
+            // Need at least a host to be useful
+            guard let host = parsed.host, !host.isEmpty else { return false }
+
+            log.debug("[ConnectToServer] URL-parsed input='\(input)' → host=\(host)")
+
+            // Apply parsed fields — only overwrite non-empty results
+            draft.host = host
+            if let proto = parsed.proto {
+                draft.remoteProtocol = proto
+                // Auto-set port only if it was explicitly in the URL, or reset to default
+                draft.port = parsed.port ?? proto.defaultPort
+            } else if let port = parsed.port {
+                draft.port = port
+            }
+            if let user = parsed.user       { draft.user       = user }
+            if let path = parsed.remotePath { draft.remotePath = path }
+            if clearName {
+                // Input was pasted into Name field — move host to Host, clear Name for user label
+                draft.name = ""
+                nameWasManuallyEdited = false
+            } else {
+                // Input was pasted into Host — use host as name if not manually set
+                if !nameWasManuallyEdited { draft.name = host }
+            }
+
+            // Surface parsed password to the password field (not stored in model)
+            if let pwd = parsed.password, !pwd.isEmpty {
+                password = pwd
+                keepPassword = true
+            }
+
+            // Move focus to next logical field
+            focusedField = draft.user.isEmpty ? .user : .password
+            return true
         }
 
         // MARK: - saveActionWithFeedback
-        /// Saves bookmark via RemoteServerStore AND exports to ~/.mimi/external_sftp.json,
-        /// then shows HIGAlertDialog with the result.
         private func saveActionWithFeedback() {
             saveAction()
             do {
                 let filePath = try Self.exportToExternalSFTP(store: store)
-                saveAlertIcon = "checkmark.circle.fill"
-                saveAlertColor = .green
-                saveAlertTitle = "Saved"
+                saveAlertIcon    = "checkmark.circle.fill"
+                saveAlertColor   = .green
+                saveAlertTitle   = "Saved"
                 saveAlertMessage = "Configuration written to\n\(filePath)"
                 log.info("[ConnectToServer] exported to \(filePath)")
             } catch {
-                saveAlertIcon = "xmark.circle.fill"
-                saveAlertColor = .red
-                saveAlertTitle = "Save Failed"
+                saveAlertIcon    = "xmark.circle.fill"
+                saveAlertColor   = .red
+                saveAlertTitle   = "Save Failed"
                 saveAlertMessage = Self.describeError(error)
                 log.error("[ConnectToServer] export failed: \(error.localizedDescription)")
             }
             showSaveAlert = true
-        }
-
-        // MARK: - exportToExternalSFTP
-        /// Writes all saved servers to ~/.mimi/external_sftp.json (human-readable JSON).
-        /// Returns the file path on success.
-        @discardableResult
-        private static func exportToExternalSFTP(store: RemoteServerStore) throws -> String {
-            let dir = FileManager.default.homeDirectoryForCurrentUser
-                .appendingPathComponent(".mimi", isDirectory: true)
-            try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-            let fileURL = dir.appendingPathComponent("external_sftp.json")
-            let encoder = JSONEncoder()
-            encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-            encoder.dateEncodingStrategy = .iso8601
-            let data = try encoder.encode(store.servers)
-            try data.write(to: fileURL, options: .atomic)
-            return fileURL.path
-        }
-
-        // MARK: - describeError
-        /// Provides a user-friendly error description with diagnostic hints.
-        private static func describeError(_ error: Error) -> String {
-            let nsErr = error as NSError
-            var parts: [String] = [nsErr.localizedDescription]
-            if let underlying = nsErr.userInfo[NSUnderlyingErrorKey] as? NSError {
-                parts.append("Cause: \(underlying.localizedDescription)")
-            }
-            switch nsErr.domain {
-            case NSCocoaErrorDomain:
-                switch nsErr.code {
-                case 4:   parts.append("Hint: file/directory not found.")
-                case 513: parts.append("Hint: permission denied — check directory access.")
-                case 640: parts.append("Hint: encoding error — data may be corrupted.")
-                default:  break
-                }
-            case NSPOSIXErrorDomain:
-                switch nsErr.code {
-                case 2:  parts.append("Hint: ENOENT — path does not exist.")
-                case 13: parts.append("Hint: EACCES — permission denied.")
-                case 28: parts.append("Hint: ENOSPC — disk full.")
-                default: break
-                }
-            default: break
-            }
-            if let recovery = nsErr.localizedRecoverySuggestion {
-                parts.append(recovery)
-            }
-            return parts.joined(separator: "\n")
-        }
-
-        // MARK: - iconForProtocol
-        private func iconForProtocol(_ proto: RemoteProtocol) -> String {
-            switch proto {
-            case .sftp: return "lock.shield"
-            case .ftp:  return "globe"
-            case .smb:  return "externaldrive.connected.to.line.below"
-            case .afp:  return "desktopcomputer"
-            }
-        }
-
-        // MARK: - colorForProtocol
-        private func colorForProtocol(_ proto: RemoteProtocol) -> Color {
-            switch proto {
-            case .sftp: return .green
-            case .ftp:  return .blue
-            case .smb:  return .orange
-            case .afp:  return .purple
-            }
         }
     }

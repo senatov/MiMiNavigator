@@ -62,6 +62,13 @@ final class ColorThemeStore {
     @ObservationIgnored @AppStorage("color.zebraInactiveOdd")  var hexZebraInactiveOdd: String = ""
     @ObservationIgnored @AppStorage("color.filterActive")     var hexFilterActive: String = ""
 
+    // BreadCrumb appearance
+    @ObservationIgnored @AppStorage("color.breadcrumbTextActive")   var hexBreadcrumbTextActive: String = ""
+    @ObservationIgnored @AppStorage("color.breadcrumbTextInactive") var hexBreadcrumbTextInactive: String = ""
+    @ObservationIgnored @AppStorage("color.breadcrumbBgActive")     var hexBreadcrumbBgActive: String = ""
+    @ObservationIgnored @AppStorage("color.breadcrumbBgInactive")   var hexBreadcrumbBgInactive: String = ""
+    @ObservationIgnored @AppStorage("breadcrumb.fontSize")          var breadcrumbFontSize: Double = 0
+
     // Button appearance
     @ObservationIgnored @AppStorage("button.borderColor")    var hexButtonBorder: String = ""
     @ObservationIgnored @AppStorage("button.borderWidth")    var buttonBorderWidth: Double = 0.5
@@ -125,6 +132,12 @@ final class ColorThemeStore {
         if let c = Color(hex: hexZebraInactiveEven) { theme.zebraInactiveEven = c }
         if let c = Color(hex: hexZebraInactiveOdd)  { theme.zebraInactiveOdd = c }
         if let c = Color(hex: hexFilterActive)     { theme.filterActiveColor = c }
+        // BreadCrumb
+        if let c = Color(hex: hexBreadcrumbTextActive)   { theme.breadcrumbTextActive = c }
+        if let c = Color(hex: hexBreadcrumbTextInactive) { theme.breadcrumbTextInactive = c }
+        if let c = Color(hex: hexBreadcrumbBgActive)     { theme.breadcrumbBgActive = c }
+        if let c = Color(hex: hexBreadcrumbBgInactive)   { theme.breadcrumbBgInactive = c }
+        if breadcrumbFontSize > 0 { theme.breadcrumbFontSize = CGFloat(breadcrumbFontSize) }
         return theme
     }
     // MARK: - Count active overrides
@@ -137,7 +150,9 @@ final class ColorThemeStore {
          hexColumnPermissions, hexColumnOwner, hexColumnGroup, hexColumnChildCount,
          hexDividerNormal, hexDividerActive, hexPanelBorderActive, hexPanelBorderInactive,
          hexWarmWhite, hexZebraActiveEven, hexZebraActiveOdd,
-         hexZebraInactiveEven, hexZebraInactiveOdd, hexFilterActive]
+         hexZebraInactiveEven, hexZebraInactiveOdd, hexFilterActive,
+         hexBreadcrumbTextActive, hexBreadcrumbTextInactive,
+         hexBreadcrumbBgActive, hexBreadcrumbBgInactive]
             .filter { !$0.isEmpty }.count
     }
 
@@ -165,6 +180,9 @@ final class ColorThemeStore {
         hexZebraActiveEven = ""; hexZebraActiveOdd = ""
         hexZebraInactiveEven = ""; hexZebraInactiveOdd = ""
         hexFilterActive = ""
+        hexBreadcrumbTextActive = ""; hexBreadcrumbTextInactive = ""
+        hexBreadcrumbBgActive = "";   hexBreadcrumbBgInactive = ""
+        breadcrumbFontSize = 0
         loadTheme(id: theme.id)
     }
 }

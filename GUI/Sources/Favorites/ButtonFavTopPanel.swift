@@ -27,7 +27,8 @@ struct ButtonFavTopPanel: View {
     }
 
     private var iconColor: Color {
-        isActivePanel ? Color.secondary : Color.secondary.opacity(0.5)
+        // darker + sharper — no wishy-washy opacity games
+        isActivePanel ? Color(nsColor: .labelColor).opacity(0.75) : Color(nsColor: .labelColor).opacity(0.4)
     }
 
     // MARK: - Init
@@ -38,14 +39,12 @@ struct ButtonFavTopPanel: View {
 
     // MARK: - Body
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            navigationControls
-        }
-        .onAppear {
-            if navigationAdapter == nil {
-                navigationAdapter = FavoritesNavigationAdapter(appState: appState)
+        navigationControls
+            .onAppear {
+                if navigationAdapter == nil {
+                    navigationAdapter = FavoritesNavigationAdapter(appState: appState)
+                }
             }
-        }
     }
 
     // MARK: - Navigation Controls
@@ -67,7 +66,6 @@ struct ButtonFavTopPanel: View {
             .symbolRenderingMode(.hierarchical)
             .foregroundStyle(iconColor)
             .contentShape(Rectangle())
-            .shadow(color: .gray, radius: 7.0, x: 1, y: 1)
             .opacity(canGoBack ? 1.0 : 0.4)
             .onTapGesture {
                 log.debug("\(#function) navigating back")
@@ -94,7 +92,6 @@ struct ButtonFavTopPanel: View {
                 .foregroundStyle(iconColor)
         }
         .buttonStyle(.plain)
-        .shadow(color: .gray, radius: 7.0, x: 1, y: 1)
         .help("Go to parent directory")
         .accessibilityLabel("Up button")
     }
@@ -107,7 +104,6 @@ struct ButtonFavTopPanel: View {
             .symbolRenderingMode(.hierarchical)
             .foregroundStyle(iconColor)
             .contentShape(Rectangle())
-            .shadow(color: .gray, radius: 7.0, x: 1, y: 1)
             .opacity(canGoForward ? 1.0 : 0.4)
             .onTapGesture {
                 log.debug("Forward button click: navigating forward")
@@ -127,8 +123,8 @@ struct ButtonFavTopPanel: View {
         Button(action: { openHistoryWindow() }) {
             Image(systemName: "clock.arrow.circlepath")
                 .font(.system(size: 15, weight: .semibold))
-                .symbolRenderingMode(.monochrome)
-                .foregroundStyle(Color(nsColor: .systemGreen))
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(Color(nsColor: NSColor(calibratedRed: 0.05, green: 0.52, blue: 0.18, alpha: 1.0)))
         }
         .buttonStyle(ToolbarIconButtonStyle())
         .help("Show navigation history")
@@ -139,11 +135,11 @@ struct ButtonFavTopPanel: View {
         Button(action: { openFavoritesWindow() }) {
             Image(systemName: panelSide == .left ? "sidebar.left" : "sidebar.right")
                 .font(.system(size: 15, weight: .semibold))
-                .symbolRenderingMode(.monochrome)
-                .foregroundStyle(Color(nsColor: .systemTeal))
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(Color(nsColor: NSColor(calibratedRed: 0.0, green: 0.42, blue: 0.55, alpha: 1.0)))
         }
         .buttonStyle(ToolbarIconButtonStyle())
-        .help("Navigation between favorites — \(String(describing: panelSide))")
+        .help("Navigation between favorites — \(panelSide.rawValue)")
     }
 
     // MARK: - Open History Window

@@ -55,27 +55,29 @@ struct SettingsWindowView: View {
 
     private var sidebar: some View {
         VStack(spacing: 0) {
-            // Search bar (ForkLift style)
+            // Header bar
             HStack(spacing: 6) {
                 Image(systemName: "magnifyingglass")
                     .foregroundStyle(.secondary)
                     .font(.system(size: 12))
-                Text("Search")
-                    .foregroundStyle(.tertiary)
-                    .font(.system(size: 12))
+                Text("Settings")
+                    .foregroundStyle(.secondary)
+                    .font(.system(size: 12, weight: .medium))
                 Spacer()
             }
             .padding(.horizontal, 10)
-            .padding(.vertical, 7)
+            .padding(.vertical, 8)
             .background(Color(nsColor: .controlBackgroundColor))
-            .overlay(alignment: .bottom) {
-                Divider()
-            }
+            .overlay(alignment: .bottom) { Divider() }
 
             // Section list
             ScrollView {
-                VStack(spacing: 1) {
+                VStack(spacing: 0) {
                     ForEach(SettingsSection.allCases) { section in
+                        // Group header divider (e.g. "Colors", "Layout")
+                        if let header = section.groupHeader {
+                            groupLabel(header)
+                        }
                         sidebarRow(section)
                     }
                 }
@@ -84,7 +86,6 @@ struct SettingsWindowView: View {
 
             Spacer(minLength: 0)
 
-            // Bottom "..." menu (ForkLift style)
             HStack {
                 Button {
                     // reserved: import/export/reset settings
@@ -101,24 +102,43 @@ struct SettingsWindowView: View {
         .background(DialogColors.base.opacity(0.96))
     }
 
-    private func sidebarRow(_ section: SettingsSection) -> some View {
-        HStack(spacing: 8) {
-            Image(systemName: section.icon)
-                .font(.system(size: 14, weight: .medium))
-                .foregroundStyle(selectedSection == section ? .white : Color.accentColor)
-                .frame(width: 20)
-
-            Text(section.rawValue)
-                .font(.system(size: 13, weight: selectedSection == section ? .semibold : .regular))
-                .foregroundStyle(selectedSection == section ? .white : Color.primary)
-
+    // MARK: - Group label (Nova-style section divider)
+    private func groupLabel(_ title: String) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: "paintpalette")
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundStyle(.secondary)
+            Text(title.uppercased())
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundStyle(.secondary)
+                .tracking(0.8)
             Spacer()
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 6)
+        .padding(.horizontal, 14)
+        .padding(.top, 14)
+        .padding(.bottom, 3)
+    }
+
+    private func sidebarRow(_ section: SettingsSection) -> some View {
+        let isSelected = selectedSection == section
+        let indent: CGFloat = section.isSubItem ? 14 : 0
+        return HStack(spacing: 6) {
+            Image(systemName: section.icon)
+                .font(.system(size: section.isSubItem ? 12 : 14, weight: .medium))
+                .foregroundStyle(isSelected ? .white : Color.accentColor)
+                .frame(width: 18)
+            Text(section.label)
+                .font(.system(size: section.isSubItem ? 12 : 13,
+                              weight: isSelected ? .semibold : .regular))
+                .foregroundStyle(isSelected ? .white : Color.primary)
+            Spacer()
+        }
+        .padding(.leading, 10 + indent)
+        .padding(.trailing, 10)
+        .padding(.vertical, section.isSubItem ? 4 : 6)
         .background(
             RoundedRectangle(cornerRadius: 6, style: .continuous)
-                .fill(selectedSection == section ? Color.accentColor : Color.clear)
+                .fill(isSelected ? Color.accentColor : Color.clear)
         )
         .contentShape(Rectangle())
         .onTapGesture { withAnimation(.easeOut(duration: 0.15)) { selectedSection = section } }
@@ -146,15 +166,18 @@ struct SettingsWindowView: View {
                         Divider().padding(.horizontal, 24).padding(.bottom, 16)
                         Group {
                             switch selectedSection {
-                            case .general:     SettingsGeneralPane()
-                            case .colors:      SettingsColorsPane()
-                            case .panels:      SettingsPanelsPane()
-                            case .tabs:        SettingsTabsPane()
-                            case .archives:    SettingsArchivesPane()
-                            case .network:     SettingsNetworkPane()
-                            case .diffTool:    SettingsDiffToolPane()
-                            case .permissions: SettingsPermissionsPane()
-                            case .hotkeys:     EmptyView() // handled above
+                            case .general:            SettingsGeneralPane()
+                            case .colorsPanels:       SettingsColorsPanelsPane()
+                            case .colorsChrome:       SettingsColorsChromePane()
+                            case .colorsBreadcrumb:   SettingsColorsBreadcrumbPane()
+                            case .colorsButtons:      SettingsColorsButtonsPane()
+                            case .panels:             SettingsPanelsPane()
+                            case .tabs:               SettingsTabsPane()
+                            case .archives:           SettingsArchivesPane()
+                            case .network:            SettingsNetworkPane()
+                            case .diffTool:           SettingsDiffToolPane()
+                            case .permissions:        SettingsPermissionsPane()
+                            case .hotkeys:            EmptyView()
                             }
                         }
                         .padding(.horizontal, 24)

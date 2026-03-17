@@ -54,10 +54,7 @@ final class ConnectToServerCoordinator {
 
         let panel = NSPanel(
             contentRect: .zero,
-            styleMask: [
-                .titled, .closable, .resizable, .miniaturizable,
-                .utilityWindow, .nonactivatingPanel,
-            ],
+            styleMask: [.titled, .closable, .resizable, .miniaturizable, .utilityWindow],
             backing: .buffered,
             defer: false
         )
@@ -81,6 +78,7 @@ final class ConnectToServerCoordinator {
 
         panel.delegate = ConnectToServerWindowDelegate.shared
         panel.makeKeyAndOrderFront(nil)
+        panel.makeFirstResponder(panel.contentView)
 
         window = panel
         isVisible = true

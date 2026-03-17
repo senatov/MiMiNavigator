@@ -63,6 +63,12 @@ struct ColorTheme: Identifiable, Equatable {
     var zebraInactiveOdd: Color
     // Filter bar active highlight
     var filterActiveColor: Color
+    // BreadCrumb bar
+    var breadcrumbTextActive: Color    // path text — active panel
+    var breadcrumbTextInactive: Color  // path text — inactive panel
+    var breadcrumbBgActive: Color      // bar background — active panel
+    var breadcrumbBgInactive: Color    // bar background — inactive panel
+    var breadcrumbFontSize: CGFloat    // e.g. 11.5
     // Dark variants (nil = same as light)
     var panelBackgroundDark: Color?
     var panelTextDark: Color?
@@ -116,6 +122,11 @@ extension ColorTheme {
         zebraInactiveEven:   Color(red: 0.985, green: 0.985, blue: 0.985),
         zebraInactiveOdd:    Color(red: 0.93, green: 0.93, blue: 0.925),
         filterActiveColor:   Color(red: 0.25, green: 0.55, blue: 1.0, opacity: 0.8),
+        breadcrumbTextActive:   Color(red: 0.06, green: 0.10, blue: 0.28),
+        breadcrumbTextInactive: Color(red: 0.35, green: 0.38, blue: 0.48),
+        breadcrumbBgActive:     Color(red: 0.97, green: 0.98, blue: 1.00),
+        breadcrumbBgInactive:   Color(nsColor: .windowBackgroundColor),
+        breadcrumbFontSize:     11.5,
         panelBackgroundDark: Color(nsColor: .windowBackgroundColor),
         panelTextDark:       Color.primary,
         dirNameColorDark:    Color.primary,
@@ -165,6 +176,11 @@ extension ColorTheme {
         zebraInactiveEven:   Color(red: 0.98, green: 0.975, blue: 0.965),
         zebraInactiveOdd:    Color(red: 0.94, green: 0.935, blue: 0.92),
         filterActiveColor:   Color(red: 0.75, green: 0.50, blue: 0.10, opacity: 0.8),
+        breadcrumbTextActive:   Color(red: 0.35, green: 0.22, blue: 0.05),
+        breadcrumbTextInactive: Color(red: 0.52, green: 0.44, blue: 0.30),
+        breadcrumbBgActive:     Color(red: 1.00, green: 0.97, blue: 0.91),
+        breadcrumbBgInactive:   Color(red: 0.99, green: 0.97, blue: 0.94),
+        breadcrumbFontSize:     11.5,
         panelBackgroundDark: Color(red: 40/255, green: 35/255, blue: 28/255),
         panelTextDark:       Color(red: 240/255, green: 225/255, blue: 200/255),
         dirNameColorDark:    Color(red: 255/255, green: 200/255, blue: 120/255),
@@ -214,6 +230,11 @@ extension ColorTheme {
         zebraInactiveEven:   Color(red: 0.15, green: 0.15, blue: 0.18),
         zebraInactiveOdd:    Color(red: 0.12, green: 0.12, blue: 0.15),
         filterActiveColor:   Color(red: 0.40, green: 0.65, blue: 1.0, opacity: 0.8),
+        breadcrumbTextActive:   Color(red: 0.65, green: 0.78, blue: 1.00),
+        breadcrumbTextInactive: Color(red: 0.42, green: 0.50, blue: 0.68),
+        breadcrumbBgActive:     Color(red: 0.14, green: 0.17, blue: 0.26),
+        breadcrumbBgInactive:   Color(red: 0.12, green: 0.14, blue: 0.22),
+        breadcrumbFontSize:     11.5,
         panelBackgroundDark: nil,
         panelTextDark:       nil,
         dirNameColorDark:    nil,
@@ -263,6 +284,11 @@ extension ColorTheme {
         zebraInactiveEven:   Color(red: 0.97, green: 0.96, blue: 0.94),
         zebraInactiveOdd:    Color(red: 0.93, green: 0.92, blue: 0.90),
         filterActiveColor:   Color(red: 0.15, green: 0.55, blue: 0.82, opacity: 0.8),
+        breadcrumbTextActive:   Color(red: 0.15, green: 0.45, blue: 0.72),
+        breadcrumbTextInactive: Color(red: 0.42, green: 0.52, blue: 0.55),
+        breadcrumbBgActive:     Color(red: 0.99, green: 0.97, blue: 0.91),
+        breadcrumbBgInactive:   Color(red: 0.97, green: 0.96, blue: 0.94),
+        breadcrumbFontSize:     11.5,
         panelBackgroundDark: Color(red: 0/255,   green: 43/255,  blue: 54/255),
         panelTextDark:       Color(red: 131/255, green: 148/255, blue: 150/255),
         dirNameColorDark:    Color(red: 38/255,  green: 139/255, blue: 210/255),

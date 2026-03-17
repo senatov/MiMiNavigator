@@ -161,6 +161,32 @@ struct HistoryWindowContent: View {
     // MARK: - Actions
     private func navigateToPath(_ path: String) {
         log.debug(#function + "(\(path))")
+        // Remote URL — reconnect if needed, then navigate
+        if let url = URL(string: path), AppState.isRemotePath(url) {
+            Task { @MainActor in
+                let mgr = RemoteConnectionManager.shared
+                if mgr.activeConnection != nil {
+                    // Connection alive — just navigate
+                    appState.updatePath(path, for: panelSide)
+                    await appState.refreshRemoteFiles(for: panelSide)
+                } else {
+                    // Dead — try to reconnect from saved server matching origin
+                    let origin = AppState.remoteOrigin(from: path)
+                    if let server = RemoteServerStore.shared.servers.first(where: {
+                        AppState.remoteOrigin(from: $0.connectionURL?.absoluteString ?? "") == origin
+                    }) {
+                        let pwd = RemoteServerKeychain.loadPassword(for: server)
+                        await mgr.connect(to: server, password: pwd)
+                        if mgr.isConnected {
+                            appState.updatePath(path, for: panelSide)
+                            await appState.refreshRemoteFiles(for: panelSide)
+                        }
+                    }
+                }
+            }
+            return
+        }
+        // Local path
         appState.updatePath(path, for: panelSide)
         Task {
             if panelSide == .left {

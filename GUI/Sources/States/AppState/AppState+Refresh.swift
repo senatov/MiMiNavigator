@@ -127,9 +127,12 @@ extension AppState {
         }
     }
 
-    /// fileExists + isDirectory check off MainActor — never blocks UI on slow volumes
+    /// fileExists + isDirectory check off MainActor — never blocks UI on slow volumes.
+    /// Remote URLs skip filesystem check entirely — always treated as directories.
     nonisolated private static func resolveURLOffMainActor(_ url: URL) async -> (URL, Bool) {
-        await Task.detached(priority: .userInitiated) {
+        // Remote URLs: skip FileManager (it can't resolve them), treat as dir
+        if isRemotePath(url) { return (url, true) }
+        return await Task.detached(priority: .userInitiated) {
             var isDirCheck: ObjCBool = false
             if FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirCheck),
                !isDirCheck.boolValue {
@@ -148,7 +151,10 @@ extension AppState {
         focusedPanel = panel
         tabManager(for: panel).updateActiveTabPath(normalizedURL)
         if !isNavigatingFromHistory {
-            if isDir { navigationHistory(for: panel).navigateTo(normalizedURL) }
+            // Remote paths are always directory-like — record regardless of isDir flag
+            if isDir || Self.isRemotePath(normalizedURL) {
+                navigationHistory(for: panel).navigateTo(normalizedURL)
+            }
             selectionsHistory.setCurrent(to: normalizedURL)
         }
         let panelURL = url(for: panel)

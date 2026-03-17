@@ -28,14 +28,14 @@ struct BreadCrumbPathControl: View {
         appState.focusedPanel == panelSide
     }
 
-    // MARK: -
+    // MARK: - Init
     init(selectedSide: PanelSide) {
         self.panelSide = selectedSide
     }
 
-    // MARK: -
+    // MARK: - Body
     var body: some View {
-        return HStack(spacing: 2) {
+        HStack(spacing: 2) {
             FavoritesButtonSection(selectedSide: panelSide)
             Spacer(minLength: 2)
             BreadCrumbView(selectedSide: panelSide)

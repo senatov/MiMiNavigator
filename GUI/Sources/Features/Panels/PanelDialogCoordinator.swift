@@ -79,10 +79,11 @@ final class PanelDialogCoordinator: NSObject, NSWindowDelegate {
         newPanel.toolbarStyle = .unified
         newPanel.animationBehavior = .default
         newPanel.isMovableByWindowBackground = true
-        newPanel.hidesOnDeactivate = false  // Window must stay visible; user closes it manually
+        newPanel.hidesOnDeactivate = false
         newPanel.level = .normal
         newPanel.tabbingMode = .disallowed
-        newPanel.becomesKeyOnlyIfNeeded = true
+        // Must be false — becomesKeyOnlyIfNeeded prevents Tab/Shift-Tab chain
+        newPanel.becomesKeyOnlyIfNeeded = false
         newPanel.delegate = self
 
         // Restore frame or compute centered default
@@ -93,6 +94,8 @@ final class PanelDialogCoordinator: NSObject, NSWindowDelegate {
         newPanel.setFrameAutosaveName(kind.rawValue)
 
         newPanel.makeKeyAndOrderFront(nil)
+        // Give key focus to the hosting view so Tab chain works immediately
+        newPanel.makeFirstResponder(newPanel.contentView)
         panel = newPanel
         isVisible = true
         log.info("[\(kind.rawValue)] Window opened")

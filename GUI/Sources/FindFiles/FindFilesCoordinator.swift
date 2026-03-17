@@ -63,7 +63,7 @@ final class FindFilesCoordinator {
 
         let window = NSPanel(
             contentRect: .zero,
-            styleMask: [.titled, .closable, .resizable, .miniaturizable, .utilityWindow, .nonactivatingPanel],
+            styleMask: [.titled, .closable, .resizable, .miniaturizable, .utilityWindow],
             backing: .buffered,
             defer: false
         )
@@ -90,6 +90,7 @@ final class FindFilesCoordinator {
 
         window.delegate = FindFilesWindowDelegate.shared
         window.makeKeyAndOrderFront(nil)
+        window.makeFirstResponder(window.contentView)
 
         findWindow = window
         isVisible = true

@@ -38,15 +38,19 @@ final class ConnectErrorPopupController {
     /// server: latest RemoteServer snapshot with lastResult / lastErrorDetail filled
     func show(server: RemoteServer, anchorFrame: CGRect) {
         if panel == nil { buildPanel() }
-        guard let panel, let textView, let window = NSApp.keyWindow else { return }
+        guard let panel, let textView,
+              let window = NSApp.keyWindow ?? NSApp.mainWindow
+        else { return }
 
         let attributed = buildContent(server: server)
         textView.textStorage?.setAttributedString(attributed)
 
         let panelW: CGFloat = 360
         textView.frame.size.width = panelW - 20
+        // Force full layout so sizeToFit returns real height, not 0
+        textView.layoutManager?.ensureLayout(for: textView.textContainer!)
         textView.sizeToFit()
-        let panelH = min(textView.frame.height + 20, 380)
+        let panelH = min(max(textView.frame.height + 24, 120), 380)
 
         let winH = window.frame.height
         let ptInScreen = window.convertPoint(

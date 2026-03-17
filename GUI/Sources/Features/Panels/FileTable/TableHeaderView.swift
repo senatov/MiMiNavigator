@@ -66,13 +66,16 @@ struct TableHeaderView: View {
         .frame(height: 22)
         .padding(.vertical, 1)
         .background(headerBackgroundColor)
-        .overlay(alignment: .bottom) {
-            Rectangle()
-                .fill(Color(nsColor: NSColor(calibratedRed: 0.68, green: 0.72, blue: 0.80, alpha: 0.45)))
-                .frame(height: 0.5)
+        .overlay {
+            // thin dark-navy border around the whole header — crisp, no blur
+            RoundedRectangle(cornerRadius: 3)
+                .stroke(
+                    Color(nsColor: NSColor(calibratedRed: 0.08, green: 0.13, blue: 0.32, alpha: 0.50)),
+                    lineWidth: 0.75
+                )
                 .allowsHitTesting(false)
         }
-        .shadow(color: Color.black.opacity(0.18), radius: 3, x: 0, y: 2)
+        .shadow(color: Color.black.opacity(0.10), radius: 1, x: 0, y: 1)
         .contextMenu { columnToggleMenu }
     }
 
@@ -173,38 +176,38 @@ struct TableHeaderView: View {
         let texts: [String]
         let font: NSFont
         switch col {
-        case .size:
-            texts = files.map { $0.fileSizeFormatted }
-            font = .systemFont(ofSize: 12)
-        case .dateModified:
-            texts = files.map { $0.modifiedDateFormatted }
-            font = .systemFont(ofSize: 12)
-        case .kind:
-            texts = files.map { $0.kindFormatted }
-            font = .systemFont(ofSize: 12)
-        case .permissions:
-            texts = files.map { $0.permissionsFormatted }
-            font = .monospacedSystemFont(ofSize: 11, weight: .regular)
-        case .owner:
-            texts = files.map { $0.ownerFormatted }
-            font = .systemFont(ofSize: 12)
-        case .childCount:
-            texts = files.map { $0.childCountFormatted }
-            font = .systemFont(ofSize: 12)
-        case .dateCreated:
-            texts = files.map { $0.creationDateFormatted }
-            font = .systemFont(ofSize: 12)
-        case .dateLastOpened:
-            texts = files.map { $0.lastOpenedFormatted }
-            font = .systemFont(ofSize: 12)
-        case .dateAdded:
-            texts = files.map { $0.dateAddedFormatted }
-            font = .systemFont(ofSize: 12)
-        case .group:
-            texts = files.map { $0.groupNameFormatted }
-            font = .systemFont(ofSize: 12)
-        case .name:
-            return
+            case .size:
+                texts = files.map { $0.fileSizeFormatted }
+                font = .systemFont(ofSize: 12)
+            case .dateModified:
+                texts = files.map { $0.modifiedDateFormatted }
+                font = .systemFont(ofSize: 12)
+            case .kind:
+                texts = files.map { $0.kindFormatted }
+                font = .systemFont(ofSize: 12)
+            case .permissions:
+                texts = files.map { $0.permissionsFormatted }
+                font = .monospacedSystemFont(ofSize: 11, weight: .regular)
+            case .owner:
+                texts = files.map { $0.ownerFormatted }
+                font = .systemFont(ofSize: 12)
+            case .childCount:
+                texts = files.map { $0.childCountFormatted }
+                font = .systemFont(ofSize: 12)
+            case .dateCreated:
+                texts = files.map { $0.creationDateFormatted }
+                font = .systemFont(ofSize: 12)
+            case .dateLastOpened:
+                texts = files.map { $0.lastOpenedFormatted }
+                font = .systemFont(ofSize: 12)
+            case .dateAdded:
+                texts = files.map { $0.dateAddedFormatted }
+                font = .systemFont(ofSize: 12)
+            case .group:
+                texts = files.map { $0.groupNameFormatted }
+                font = .systemFont(ofSize: 12)
+            case .name:
+                return
         }
         let attrs: [NSAttributedString.Key: Any] = [.font: font]
         var maxW: CGFloat = 0

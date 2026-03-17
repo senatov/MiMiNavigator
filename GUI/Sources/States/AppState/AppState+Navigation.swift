@@ -34,9 +34,12 @@
                     let files = items.map { CustomFile(remoteItem: $0) }
                     let sorted = applySorting(files)
 
-                    let mountPath = conn.provider.mountPath
-                    let displayPath = mountPath.hasSuffix("/") ? String(mountPath.dropLast()) : mountPath
-                    updatePath(displayPath + remotePath, for: panel)
+                    // mountPath = "sftp://user@host[:port]/initialPath" — extract origin only
+                    let displayBase = Self.remoteOrigin(from: conn.provider.mountPath)
+                    // Combine clean origin + current remote path (no Container junk)
+                    let cleanURL = remotePath == "/" ? displayBase
+                                                     : displayBase + remotePath
+                    updatePath(cleanURL, for: panel)
 
                     if panel == .left {
                         displayedLeftFiles = sorted
@@ -69,9 +72,19 @@
             for attempt in 1...maxAttempts {
                 await scanner.clearCooldown(for: panel)
                 await setScannerDirectoryAndRefresh(newPath, for: panel)
+                // yield so @MainActor displayedLeftFiles/Right gets the scanner write
+                await MainActor.run {}
                 let files = displayedFiles(for: panel)
                 if !files.isEmpty && PathUtils.areEqual(path(for: panel), newPath) {
                     log.info("[Navigate] \(panel): SUCCESS on attempt \(attempt), \(files.count) files")
+                    return
+                }
+                // Dir exists + readable but legitimately empty (e.g. /Library sub-dirs)
+                // Don't punish the user with a rollback in that case
+                if PathUtils.areEqual(path(for: panel), newPath),
+                   Self.isReadableDirectory(newPath)
+                {
+                    log.info("[Navigate] \(panel): empty but readable dir accepted (attempt \(attempt))")
                     return
                 }
                 if attempt < maxAttempts {
@@ -126,9 +139,10 @@
                 let items = try await manager.listDirectory(normalizedParent)
                 let files = items.map { CustomFile(remoteItem: $0) }
                 let sorted = applySorting(files)
-                let mountPath = conn.provider.mountPath
-                let displayPath = mountPath.hasSuffix("/") ? String(mountPath.dropLast()) : mountPath
-                updatePath(displayPath + normalizedParent, for: panel)
+                let displayBase = Self.remoteOrigin(from: conn.provider.mountPath)
+                let cleanURL = normalizedParent == "/" ? displayBase
+                                                       : displayBase + normalizedParent
+                updatePath(cleanURL, for: panel)
                 if panel == .left { displayedLeftFiles = sorted } else { displayedRightFiles = sorted }
                 setSelectedFile(firstRealFile(in: sorted), for: panel)
             } catch {
@@ -172,5 +186,37 @@
                 message: "Couldn't read contents of:\n\(path)\n\nPossible causes: no access permission, drive disconnected, or path no longer exists.",
                 style: .warning
             )
+        }
+
+        /// Extracts "scheme://user@host[:port]" from a full mountPath URL string.
+        /// e.g. "sftp://demo@test.rebex.net/pub/docs" → "sftp://demo@test.rebex.net"
+        nonisolated static func remoteOrigin(from mountPath: String) -> String {
+            guard let url = URL(string: mountPath),
+                  let scheme = url.scheme,
+                  let host   = url.host
+            else { return mountPath }
+            let userPart = url.user.map { "\($0)@" } ?? ""
+            let portPart: String
+            if let port = url.port,
+               !((scheme == "sftp" && port == 22) || (scheme == "ftp" && port == 21)) {
+                portPart = ":\(port)"
+            } else {
+                portPart = ""
+            }
+            return "\(scheme)://\(userPart)\(host)\(portPart)"
+        }
+
+        /// True when path exists as a directory AND FileManager can open it (even if empty).
+        nonisolated static func isReadableDirectory(_ path: String) -> Bool {
+            var isDir: ObjCBool = false
+            guard FileManager.default.fileExists(atPath: path, isDirectory: &isDir),
+                  isDir.boolValue
+            else { return false }
+            do {
+                _ = try FileManager.default.contentsOfDirectory(atPath: path)
+                return true
+            } catch {
+                return false
+            }
         }
     }

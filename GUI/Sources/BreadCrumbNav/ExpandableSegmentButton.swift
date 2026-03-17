@@ -7,6 +7,7 @@
 //   Truncated segments spring-animate to reveal the complete directory name
 //   when the cursor approaches, then collapse back when cursor leaves.
 
+import AppKit
 import SwiftUI
 
 // MARK: - ExpandableSegmentButton
@@ -14,7 +15,8 @@ import SwiftUI
 struct ExpandableSegmentButton: View {
 
     let segment: BreadCrumbView.DisplaySegment
-    let symlinkColor: Color
+    let textColor: Color      // breadcrumbText(Active|Inactive) from theme
+    let fontSize: CGFloat     // breadcrumbFontSize from theme
     let onTap: () -> Void
     let helpText: String
     let copyAction: () -> Void
@@ -29,25 +31,25 @@ struct ExpandableSegmentButton: View {
     var body: some View {
         Button(action: onTap) {
             Text(displayText)
-                .font(.callout)
-                .foregroundStyle(symlinkColor)
+                .font(.system(size: fontSize, weight: .regular, design: .rounded))
+                .foregroundStyle(textColor)
+                .kerning(0.1)
                 .padding(.vertical, 2)
                 .padding(.horizontal, isHovered && segment.isTruncated ? 4 : 0)
                 .lineLimit(1)
-                .fixedSize()  // allow text to expand beyond layout
+                .fixedSize()
                 .background(
                     Group {
                         if isHovered && segment.isTruncated {
                             RoundedRectangle(cornerRadius: 4, style: .continuous)
-                                .fill(Color(nsColor: .controlBackgroundColor).opacity(0.85))
-                                .shadow(color: .black.opacity(0.15), radius: 3, x: 0, y: 1)
+                                .fill(Color(nsColor: .controlBackgroundColor).opacity(0.92))
                         }
                     }
                 )
         }
         .buttonStyle(.plain)
         .help(helpText)
-        .zIndex(isHovered ? 10 : 0)  // expanded label on top of neighbors
+        .zIndex(isHovered ? 10 : 0)
         .onHover { hovering in
             withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
                 isHovered = hovering
