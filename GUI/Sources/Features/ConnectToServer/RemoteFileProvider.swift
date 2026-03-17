@@ -246,6 +246,11 @@
         // MARK: - List Directory (via curl — URLSession FTP support is broken/deprecated on macOS)
         @concurrent func listDirectory(_ path: String) async throws -> [RemoteFileItem] {
             guard let base = baseURL else { throw RemoteProviderError.notConnected }
+            // guard: reject if path somehow contains a full URL (ftp://...) — would produce curl exit=3
+            guard !path.contains("://"), !path.contains("ftp:"), !path.contains("sftp:") else {
+                log.error("\(#function) rejecting mangled path='\(path)' — looks like full URL not a dir path")
+                throw RemoteProviderError.invalidURL
+            }
             let dirPath = path.hasPrefix("/") ? path : "/\(path)"
             // Ensure trailing slash so curl lists the directory (not tries to download a file)
             let listPath = dirPath.hasSuffix("/") ? dirPath : dirPath + "/"
@@ -258,20 +263,36 @@
 
             let raw = try await curlFTPList(url: dirURL)
             let items = parseFTPListing(raw, basePath: path)
-            log.debug("[FTP] listed \(items.count) items at \(path) (raw \(raw.count) chars)")
+            log.debug("\(#function) listed \(items.count) items at \(path) (raw \(raw.count) chars)")
             return items
         }
 
         // MARK: - curl-based FTP LIST (reliable, unlike URLSession FTP)
         @concurrent private func curlFTPList(url: URL) async throws -> String {
-            try await withCheckedThrowingContinuation { continuation in
+            // exit=3 = CURLE_URL_MALFORMAT — validate before handing off to curl
+            let scheme = url.scheme ?? ""
+            guard scheme == "ftp" || scheme == "ftps" else {
+                log.error("\(#function) bad scheme '\(scheme)' in url=\(url.absoluteString) — aborting curl")
+                throw RemoteProviderError.invalidURL
+            }
+            guard let host = url.host, !host.isEmpty else {
+                log.error("\(#function) empty host in url=\(url.absoluteString) — aborting curl")
+                throw RemoteProviderError.invalidURL
+            }
+            let urlStr = url.absoluteString
+            guard urlStr.hasPrefix("ftp://") || urlStr.hasPrefix("ftps://") else {
+                log.error("\(#function) url doesn't start with ftp(s):// — got '\(urlStr.prefix(30))' — aborting curl")
+                throw RemoteProviderError.invalidURL
+            }
+            log.debug("\(#function) curl → \(urlStr)")
+            return try await withCheckedThrowingContinuation { continuation in
                 DispatchQueue.global(qos: .userInitiated).async {
                     let process = Process()
                     process.executableURL = URL(fileURLWithPath: "/usr/bin/curl")
                     process.arguments = [
-                        "-s",              // silent
+                        "-s",
                         "--max-time", "15",
-                        url.absoluteString
+                        urlStr
                     ]
                     let outPipe = Pipe()
                     let errPipe = Pipe()
@@ -285,8 +306,9 @@
                     let data = outPipe.fileHandleForReading.readDataToEndOfFile()
                     let raw = String(data: data, encoding: .utf8) ?? ""
                     if process.terminationStatus != 0 {
-                        let err = String(data: errPipe.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8) ?? ""
-                        log.warning("[FTP] curl exit=\(process.terminationStatus): \(err.prefix(200))")
+                        let errData = errPipe.fileHandleForReading.readDataToEndOfFile()
+                        let errStr = String(data: errData, encoding: .utf8) ?? ""
+                        log.warning("\(#function) curl exit=\(process.terminationStatus) url=\(urlStr): \(errStr.prefix(200))")
                         // Still try to parse — partial listing may be valid
                     }
                     continuation.resume(returning: raw)
