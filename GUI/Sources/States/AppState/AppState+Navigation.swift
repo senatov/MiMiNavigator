@@ -84,9 +84,13 @@
                 }
             }
             if displayedFiles(for: panel).isEmpty || !PathUtils.areEqual(path(for: panel), newPath) {
-                log.error("[Navigate] \(panel): FAILED after \(maxAttempts) attempts, staying on previous path")
+                log.error("\(#function) \(panel): nav failed after \(maxAttempts) attempts → back to '\(previousPath)'")
                 updatePath(previousPath, for: panel)
                 await setScannerDirectoryAndRefresh(previousPath, for: panel)
+                // alert only for explicit user-looking paths (not system/tmp junk)
+                if Self.isUserNavigablePath(newPath) {
+                    Self.showNavFailAlert(path: newPath, panel: panel)
+                }
             }
         }
 
@@ -144,5 +148,35 @@
             if FileManager.default.fileExists(atPath: url.path, isDirectory: &isDir), isDir.boolValue {
                 navigationHistory(for: panel).navigateTo(url)
             }
+        }
+
+        // MARK: - Nav fail helpers
+
+        /// paths worth alerting on — real user dirs, not numeric/tmp/system junk
+        nonisolated static func isUserNavigablePath(_ path: String) -> Bool {
+            guard path.hasPrefix("/") else { return false }
+            // skip pure-numeric last component (stale index saved as path)
+            let last = (path as NSString).lastPathComponent
+            if last.allSatisfy({ $0.isNumber }) { return false }
+            // skip known system noise dirs
+            let systemPrefixes = ["/tmp", "/var/folders", "/private/var", "/dev", "/proc"]
+            if systemPrefixes.contains(where: { path.hasPrefix($0) }) { return false }
+            return true
+        }
+
+        @MainActor
+        private static func showNavFailAlert(path: String, panel: PanelSide) {
+            log.warning("\(#function) panel=\(panel) path='\(path)'")
+            let alert = NSAlert()
+            alert.alertStyle = .warning
+            alert.messageText = "Can't Open Folder"
+            alert.informativeText = """
+                Couldn't read contents of:
+                \(path)
+
+                Possible causes: no access permission, drive disconnected, or path no longer exists.
+                """
+            alert.addButton(withTitle: "OK")
+            alert.runModal()
         }
     }
