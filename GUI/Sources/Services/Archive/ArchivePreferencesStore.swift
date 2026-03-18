@@ -32,6 +32,15 @@ final class ArchivePreferencesStore: ObservableObject {
     /// Whether to use Keychain for passwords
     @Published var useKeychainPasswords: Bool = true
     
+    /// Delete source files after archiving
+    @Published var deleteSourceFiles: Bool = false
+    
+    /// Use password encryption (per-session, not saved for security)
+    @Published var usePassword: Bool = false
+    
+    /// Last used archive name prefix (optional)
+    @Published var lastArchivePrefix: String = ""
+    
     // MARK: - Init
     
     private init() {
@@ -113,6 +122,8 @@ final class ArchivePreferencesStore: ObservableObject {
         var customDestination: String
         var formatPrefs: [String: ArchiveFormatPrefs]
         var useKeychainPasswords: Bool
+        var deleteSourceFiles: Bool?
+        var lastArchivePrefix: String?
     }
     
     func save() {
@@ -121,7 +132,9 @@ final class ArchivePreferencesStore: ObservableObject {
             destinationMode: destinationMode.rawValue,
             customDestination: customDestination,
             formatPrefs: formatPrefs,
-            useKeychainPasswords: useKeychainPasswords
+            useKeychainPasswords: useKeychainPasswords,
+            deleteSourceFiles: deleteSourceFiles,
+            lastArchivePrefix: lastArchivePrefix.isEmpty ? nil : lastArchivePrefix
         )
         do {
             let encoder = JSONEncoder()
@@ -152,8 +165,10 @@ final class ArchivePreferencesStore: ObservableObject {
             customDestination = data.customDestination
             formatPrefs = data.formatPrefs
             useKeychainPasswords = data.useKeychainPasswords
+            deleteSourceFiles = data.deleteSourceFiles ?? false
+            lastArchivePrefix = data.lastArchivePrefix ?? ""
             
-            log.debug("[ArchivePrefs] loaded: format=\(lastFormat) mode=\(destinationMode)")
+            log.debug("[ArchivePrefs] loaded: format=\(lastFormat) mode=\(destinationMode) deleteSource=\(deleteSourceFiles)")
         } catch {
             log.error("[ArchivePrefs] load failed: \(error)")
         }
@@ -173,6 +188,16 @@ final class ArchivePreferencesStore: ObservableObject {
     
     func updateCustomDestination(_ path: String) {
         customDestination = path
+        save()
+    }
+    
+    func updateDeleteSourceFiles(_ value: Bool) {
+        deleteSourceFiles = value
+        save()
+    }
+    
+    func updateUseKeychainPasswords(_ value: Bool) {
+        useKeychainPasswords = value
         save()
     }
 }

@@ -73,6 +73,7 @@ struct PackDialog: View {
         let savedMode = ArchivePreferencesStore.shared.destinationMode
         let savedCustom = ArchivePreferencesStore.shared.customDestination
         let savedLevel = ArchivePreferencesStore.shared.compressionLevel(for: savedFormat)
+        let savedDeleteSource = ArchivePreferencesStore.shared.deleteSourceFiles
         
         if mode == .compress {
             self._archiveName = State(initialValue: defaultName + "." + savedFormat.fileExtension)
@@ -83,6 +84,7 @@ struct PackDialog: View {
         self._destinationMode = State(initialValue: savedMode)
         self._customDestination = State(initialValue: savedCustom)
         self._compressionLevel = State(initialValue: savedLevel)
+        self._deleteSourceFiles = State(initialValue: savedDeleteSource)
     }
     
     // MARK: - Computed Properties
@@ -174,6 +176,9 @@ struct PackDialog: View {
                     .font(.system(size: 13))
             }
             .toggleStyle(.checkbox)
+            .onChange(of: deleteSourceFiles) { _, newVal in
+                prefs.updateDeleteSourceFiles(newVal)
+            }
             
             HIGDialogButtons(
                 confirmTitle: confirmTitle,

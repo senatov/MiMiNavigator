@@ -44,20 +44,28 @@ struct FileTableViewHybrid: View {
                 .fill(Color(nsColor: .separatorColor))
                 .frame(height: 1)
             
-            // NSTableView body (no header, synced with SwiftUI header)
-            NSFileTableView(
-                panelSide: panelSide,
-                files: files,
-                filesVersion: filesVersion,
-                sortKey: appState.sortKey,
-                sortAscending: appState.bSortAscending,
-                selectedID: $selectedID,
-                layout: layout,
-                colorStore: colorStore,
-                isFocused: isFocused,
-                onSelect: handleSelect,
-                onDoubleClick: onDoubleClick
-            )
+            // NSTableView body with glass jump buttons overlay
+            ZStack(alignment: .trailing) {
+                NSFileTableView(
+                    panelSide: panelSide,
+                    files: files,
+                    filesVersion: filesVersion,
+                    sortKey: appState.sortKey,
+                    sortAscending: appState.bSortAscending,
+                    selectedID: $selectedID,
+                    layout: layout,
+                    colorStore: colorStore,
+                    isFocused: isFocused,
+                    onSelect: handleSelect,
+                    onDoubleClick: onDoubleClick
+                )
+                
+                // Glass-style jump buttons (show when > 30 files)
+                if files.count > 30 {
+                    glassJumpButtons
+                        .padding(.trailing, 4)
+                }
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(.horizontal, 6)
@@ -157,6 +165,54 @@ struct FileTableViewHybrid: View {
     
     private func handleSelect(_ file: CustomFile) {
         onSelect(file)
+    }
+    
+    // MARK: - Glass Jump Buttons
+    
+    /// Frosted glass style buttons for jumping to start/end of list
+    private var glassJumpButtons: some View {
+        VStack(spacing: 0) {
+            // ▲ Jump to first
+            glassButton(icon: "chevron.up.2") {
+                selectFirst()
+            }
+            .help("Jump to top (Home)")
+            
+            Spacer()
+            
+            // ▼ Jump to last  
+            glassButton(icon: "chevron.down.2") {
+                selectLast()
+            }
+            .help("Jump to bottom (End)")
+        }
+    }
+    
+    /// Individual glass button — Control Center style (white pill, frosted glass)
+    private func glassButton(icon: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: icon)
+                .font(.system(size: 9, weight: .bold))
+                .foregroundStyle(.secondary)
+                .frame(width: 20, height: 20)
+                .background {
+                    Capsule()
+                        .fill(.white.opacity(0.85))
+                        .shadow(color: .black.opacity(0.12), radius: 1.5, x: 0, y: 0.5)
+                }
+                .overlay {
+                    Capsule()
+                        .stroke(
+                            LinearGradient(
+                                colors: [.white.opacity(0.6), .white.opacity(0.2)],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            ),
+                            lineWidth: 0.5
+                        )
+                }
+        }
+        .buttonStyle(.plain)
     }
     
 }
