@@ -1,22 +1,30 @@
 // ColumnID.swift
 // MiMiNavigator
-//
 // Created by Iakov Senatov on 20.02.2026.
-// Copyright © 2026 Senatov. All rights reserved.
-// Description: Column identity enum — defines all available table columns
-//              with their titles, icons, widths, alignment, sort keys.
+// Description: Column identity — titles, icons, widths, alignment, sort keys.
+//
+// Width policy — char count × glyph "0" width at column font + 5pt margin:
+//   Date*        : min 6,  max  50  chars @ 12pt system
+//   Size         : min 6,  max  50  chars @ 12pt system
+//   Kind         : min 6,  max  40  chars @ 12pt system
+//   Permissions  : min 6,  max  20  chars @ 11pt mono
+//   Owner/Group  : min 5,  max  40  chars @ 12pt system
+//   childCount   : min 2,  max  50  chars @ 12pt system
+//   Name         : min 6,  max 512  chars @ 12pt system (no ceiling in practice)
+//   minDragWidth : 4pt hard floor for all columns
 
 import FileModelKit
 import SwiftUI
 import UniformTypeIdentifiers
 
 // MARK: - Column Drag UTType
+
 extension UTType {
-    /// Custom UTType for column header drag-and-drop reorder
     static let mimiColumnID = UTType(exportedAs: "com.senatov.miminavigator.column-id")
 }
 
 // MARK: - ColumnID
+
 enum ColumnID: String, CaseIterable, Codable, Identifiable, Transferable {
     case name, dateModified, size, kind, permissions, owner, childCount
     case dateCreated, dateLastOpened, dateAdded, group
@@ -27,40 +35,42 @@ enum ColumnID: String, CaseIterable, Codable, Identifiable, Transferable {
         CodableRepresentation(contentType: .mimiColumnID)
     }
 
+    // MARK: - Display
+
     var title: String {
         switch self {
-        case .name: "Name"
-        case .dateModified: "Date Mod."
-        case .size: "Size"
-        case .kind: "Kind"
-        case .permissions: "Permiss."
-        case .owner: "Owner"
-        case .childCount: "Count"
-        case .dateCreated: "Created"
+        case .name:           "Name"
+        case .dateModified:   "Date Mod."
+        case .size:           "Size"
+        case .kind:           "Kind"
+        case .permissions:    "Permiss."
+        case .owner:          "Owner"
+        case .childCount:     "Count"
+        case .dateCreated:    "Created"
         case .dateLastOpened: "Last Open"
-        case .dateAdded: "Added"
-        case .group: "Group"
+        case .dateAdded:      "Added"
+        case .group:          "Group"
         }
     }
 
     var icon: String? {
         switch self {
         case .permissions: "lock.shield"
-        case .owner: "person"
-        case .childCount: "number"
-        case .group: "person.2"
-        default: nil
+        case .owner:       "person"
+        case .childCount:  "number"
+        case .group:       "person.2"
+        default:           nil
         }
     }
 
     var defaultWidth: CGFloat {
         switch self {
-        case .name: 0  // flexible
+        case .name:                                                      0   // flexible
         case .dateModified, .dateCreated, .dateLastOpened, .dateAdded: 130
-        case .size: 75
-        case .kind: 60
-        case .permissions: 64
-        case .childCount: 36
+        case .size:          75
+        case .kind:          64
+        case .permissions:   82
+        case .childCount:    40
         case .owner, .group: 70
         }
     }
@@ -74,25 +84,60 @@ enum ColumnID: String, CaseIterable, Codable, Identifiable, Transferable {
 
     var isRequired: Bool { self == .name }
 
-    var minHeaderWidth: CGFloat {
-        let font = NSFont.systemFont(ofSize: 12, weight: .medium)
-        let textWidth = (title as NSString).size(withAttributes: [.font: font]).width
-        let iconWidth: CGFloat = icon != nil ? 18 : 0
-        let sortArrowWidth: CGFloat = 16
-        let padding: CGFloat = 20
-        return ceil(textWidth + iconWidth + sortArrowWidth + padding)
-    }
+    // MARK: - Width limits
+    // Computed once per call — NSFont alloc is cheap, cached by system.
+    // "0" gives consistent digit-width reference across SF Pro variants.
 
-    var minDragWidth: CGFloat {
+    var minWidth: CGFloat {
         switch self {
-        case .childCount: return 28
-        case .permissions: return 40
-        case .size: return 30
-        case .kind: return 36
-        case .owner, .group: return 36
-        default: return minHeaderWidth
+        case .name:
+            cw(6,  .systemFont(ofSize: 12))
+        case .dateModified, .dateCreated, .dateLastOpened, .dateAdded:
+            cw(6,  .systemFont(ofSize: 12))
+        case .size:
+            cw(6,  .systemFont(ofSize: 12))
+        case .kind:
+            cw(6,  .systemFont(ofSize: 12))
+        case .permissions:
+            cw(6,  .monospacedSystemFont(ofSize: 11, weight: .regular))
+        case .owner, .group:
+            cw(5,  .systemFont(ofSize: 12))
+        case .childCount:
+            cw(2,  .systemFont(ofSize: 12))
         }
     }
+
+    var maxWidth: CGFloat {
+        switch self {
+        case .name:
+            cw(512, .systemFont(ofSize: 12))   // effectively unlimited
+        case .dateModified, .dateCreated, .dateLastOpened, .dateAdded:
+            cw(50,  .systemFont(ofSize: 12))
+        case .size:
+            cw(50,  .systemFont(ofSize: 12))
+        case .kind:
+            cw(40,  .systemFont(ofSize: 12))
+        case .permissions:
+            cw(20,  .monospacedSystemFont(ofSize: 11, weight: .regular))
+        case .owner, .group:
+            cw(40,  .systemFont(ofSize: 12))
+        case .childCount:
+            cw(50,  .systemFont(ofSize: 12))
+        }
+    }
+
+    /// Hard drag minimum — 4pt for all columns regardless of content.
+    var minDragWidth: CGFloat { 4 }
+
+    /// Header label minimum (informational only — not used as drag floor).
+    var minHeaderWidth: CGFloat {
+        let f = NSFont.systemFont(ofSize: 12, weight: .medium)
+        let textW = (title as NSString).size(withAttributes: [.font: f]).width
+        let iconW: CGFloat = icon != nil ? 18 : 0
+        return ceil(textW + iconW + 36)   // +16 sort arrow +20 padding
+    }
+
+    // MARK: - Alignment
 
     var alignment: Alignment {
         switch self {
@@ -102,29 +147,42 @@ enum ColumnID: String, CaseIterable, Codable, Identifiable, Transferable {
         }
     }
 
+    // MARK: - Theming
+
     func columnColor(from theme: ColorTheme) -> Color {
         switch self {
-        case .name:          theme.columnNameColor
-        case .size:          theme.columnSizeColor
-        case .kind:          theme.columnKindColor
+        case .name:           theme.columnNameColor
+        case .size:           theme.columnSizeColor
+        case .kind:           theme.columnKindColor
         case .dateModified, .dateCreated, .dateLastOpened, .dateAdded: theme.columnDateColor
-        case .permissions:   theme.columnPermissionsColor
-        case .owner:         theme.columnOwnerColor
-        case .group:         theme.columnGroupColor
-        case .childCount:    theme.columnChildCountColor
+        case .permissions:    theme.columnPermissionsColor
+        case .owner:          theme.columnOwnerColor
+        case .group:          theme.columnGroupColor
+        case .childCount:     theme.columnChildCountColor
         }
     }
 
+    // MARK: - Sort key
+
     var sortKey: SortKeysEnum? {
         switch self {
-        case .name: .name
-        case .dateModified: .date
-        case .size: .size
-        case .kind: .type
-        case .permissions: .permissions
-        case .owner: .owner
-        case .childCount: .childCount
-        default: nil
+        case .name:          .name
+        case .dateModified:  .date
+        case .size:          .size
+        case .kind:          .type
+        case .permissions:   .permissions
+        case .owner:         .owner
+        case .childCount:    .childCount
+        default:             nil
         }
+    }
+
+    // MARK: - Private
+
+    /// Width of n × "0" glyphs at given font + 5pt margin.
+    private func cw(_ n: Int, _ font: NSFont) -> CGFloat {
+        let w = (String(repeating: "0", count: n) as NSString)
+            .size(withAttributes: [.font: font]).width
+        return ceil(w) + 5
     }
 }
