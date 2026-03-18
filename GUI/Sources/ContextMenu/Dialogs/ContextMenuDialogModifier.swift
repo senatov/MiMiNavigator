@@ -95,6 +95,7 @@
                         coordinator.dismissDialog()
                     }
                 )
+                .environment(appState)
 
             case .compress(let files, _, let sourcePanel):
                 PackDialog(
@@ -122,6 +123,7 @@
                         coordinator.dismissDialog()
                     }
                 )
+                .environment(appState)
 
             case .createFolder(let parentURL):
                 CreateFolderDialog(
@@ -261,6 +263,7 @@
                         coordinator.dismissDialog()
                     }
                 )
+                .environment(appState)
 
             case .batchProgress(let state):
                 BatchProgressDialog(
