@@ -48,7 +48,7 @@
             case .compress:
                 // Default destination: opposite panel directory
                 let destination = appState.url(for: panel == .left ? .right : .left)
-                activeDialog = .compress(files: files, destination: destination)
+                activeDialog = .compress(files: files, destination: destination, sourcePanel: panel)
 
             case .share:
                 let urls = files.map { $0.urlValue }

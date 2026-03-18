@@ -113,13 +113,12 @@ final class BatchOperationManager {
 
         var hasErrors = false
         do {
+            let destDir = archiveURL.deletingLastPathComponent()
             try await ArchiveService.shared.createArchive(
                 from: files.map(\.urlValue),
-                to: archiveURL,
-                format: format,
-                progressHandler: { progress in
-                    state.processedBytes = Int64(Double(state.totalBytes) * progress)
-                }
+                to: destDir,
+                archiveName: archiveURL.deletingPathExtension().lastPathComponent,
+                format: format
             )
             state.processedFiles = files.count
         } catch {

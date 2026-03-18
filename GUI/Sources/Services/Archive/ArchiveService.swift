@@ -22,7 +22,9 @@ final class ArchiveService {
         from files: [URL],
         to destination: URL,
         archiveName: String,
-        format: ArchiveFormat
+        format: ArchiveFormat,
+        compressionLevel: CompressionLevel = .normal,
+        password: String? = nil
     ) async throws -> URL {
         guard !files.isEmpty else {
             throw ArchiveManagerError.repackFailed("No files provided")
@@ -32,40 +34,30 @@ final class ArchiveService {
             throw FileOperationError.fileAlreadyExists(archiveURL.lastPathComponent)
         }
         let workDir = files[0].deletingLastPathComponent()
-        try await pack(files: files, to: archiveURL, format: format, workDir: workDir)
-        log.info("[ArchiveService] Created: \(archiveURL.lastPathComponent)")
+        try await pack(files: files, to: archiveURL, format: format, workDir: workDir, compressionLevel: compressionLevel, password: password)
+        log.info("[ArchiveService] Created: \(archiveURL.lastPathComponent) level=\(compressionLevel)")
         return archiveURL
-    }
-
-    /// Creates an archive with progress reporting (progress is approximate).
-    func createArchive(
-        from files: [URL],
-        to archiveURL: URL,
-        format: ArchiveFormat,
-        progressHandler: @escaping (Double) -> Void
-    ) async throws {
-        guard !files.isEmpty else {
-            throw ArchiveManagerError.repackFailed("No files provided")
-        }
-        progressHandler(0.0)
-        let workDir = files[0].deletingLastPathComponent()
-        try await pack(files: files, to: archiveURL, format: format, workDir: workDir)
-        progressHandler(1.0)
-        log.info("[ArchiveService] Created: \(archiveURL.lastPathComponent)")
     }
 
     // MARK: - Private
 
-    private func pack(files: [URL], to archiveURL: URL, format: ArchiveFormat, workDir: URL) async throws {
+    private func pack(files: [URL], to archiveURL: URL, format: ArchiveFormat, workDir: URL, compressionLevel: CompressionLevel = .normal, password: String? = nil) async throws {
         let names = files.map(\.lastPathComponent)
         let errorPipe = Pipe()
         let process = Process()
         process.currentDirectoryURL = workDir
+        
+        let level = compressionLevel.rawValue
 
         switch format {
         case .zip:
             process.executableURL = URL(fileURLWithPath: "/usr/bin/zip")
-            process.arguments = ["-r", archiveURL.path] + names
+            var args = ["-\(level)", "-r"]
+            if let pwd = password, !pwd.isEmpty {
+                args += ["-e", "-P", pwd]
+            }
+            args += [archiveURL.path] + names
+            process.arguments = args
 
         case .tar:
             process.executableURL = URL(fileURLWithPath: "/usr/bin/tar")
@@ -73,14 +65,18 @@ final class ArchiveService {
 
         case .tarGz:
             process.executableURL = URL(fileURLWithPath: "/usr/bin/tar")
+            // GZIP level via env var
+            process.environment = ["GZIP": "-\(level)"]
             process.arguments = ["-c", "-z", "-f", archiveURL.path] + names
 
         case .tarBz2:
             process.executableURL = URL(fileURLWithPath: "/usr/bin/tar")
+            process.environment = ["BZIP2": "-\(level)"]
             process.arguments = ["-c", "-j", "-f", archiveURL.path] + names
 
         case .tarXz:
             process.executableURL = URL(fileURLWithPath: "/usr/bin/tar")
+            process.environment = ["XZ_OPT": "-\(level)"]
             process.arguments = ["-c", "-J", "-f", archiveURL.path] + names
 
         case .tarLzma, .tarZst, .tarLz4, .tarLzo, .tarLz, .compressZ:
@@ -89,7 +85,12 @@ final class ArchiveService {
 
         case .sevenZip, .sevenZipGeneric:
             process.executableURL = URL(fileURLWithPath: try ArchiveToolLocator.find7z())
-            process.arguments = ["a", archiveURL.path] + names
+            var args = ["a", "-mx=\(level)"]
+            if let pwd = password, !pwd.isEmpty {
+                args.append("-p\(pwd)")
+            }
+            args += [archiveURL.path] + names
+            process.arguments = args
         }
 
         process.standardOutput = Pipe()

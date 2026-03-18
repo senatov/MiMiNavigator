@@ -128,9 +128,11 @@
             archiveName: String,
             destination: URL,
             moveToArchive: Bool,
+            compressionLevel: CompressionLevel = .normal,
+            password: String? = nil,
             appState: AppState
         ) async {
-            log.debug("\(#function) files.count=\(files.count) archiveName='\(archiveName)' dest='\(destination.path)' moveToArchive=\(moveToArchive)")
+            log.debug("\(#function) files.count=\(files.count) archiveName='\(archiveName)' dest='\(destination.path)' moveToArchive=\(moveToArchive) level=\(compressionLevel) hasPassword=\(password != nil)")
 
             isProcessing = true
             defer { isProcessing = false }
@@ -142,12 +144,24 @@
                     files: urls,
                     archiveName: archiveName,
                     destination: destination,
-                    moveToArchive: moveToArchive
+                    moveToArchive: moveToArchive,
+                    compressionLevel: compressionLevel,
+                    password: password
                 )
 
                 refreshPanels(appState: appState)
 
                 log.info("\(#function) SUCCESS created '\(result.lastPathComponent)' moveToArchive=\(moveToArchive)")
+                
+                // Show yellow HUD popup
+                ArchiveInfoPopupController.shared.showArchiveCreated(
+                    archiveName: result.lastPathComponent,
+                    destination: destination,
+                    fileCount: files.count,
+                    format: .zip,  // CompressService always creates ZIP
+                    compressionLevel: compressionLevel,
+                    encrypted: password != nil && !password!.isEmpty
+                )
             } catch {
                 log.error("\(#function) FAILED: \(error.localizedDescription)")
                 activeDialog = .error(title: "Compress Failed", message: error.localizedDescription)
@@ -159,11 +173,17 @@
         /// Creates destination directory if it doesn't exist.
         /// Selects the created archive in the appropriate panel.
         func performPack(
-            files: [CustomFile], archiveName: String, format: ArchiveFormat, destination: URL, deleteSource: Bool = false,
+            files: [CustomFile],
+            archiveName: String,
+            format: ArchiveFormat,
+            destination: URL,
+            deleteSource: Bool = false,
+            compressionLevel: CompressionLevel = .normal,
+            password: String? = nil,
             appState: AppState
         ) async {
             log.debug(
-                "\(#function) files.count=\(files.count) archiveName='\(archiveName)' format=\(format) dest='\(destination.path)' deleteSource=\(deleteSource)"
+                "\(#function) files.count=\(files.count) archiveName='\(archiveName)' format=\(format) dest='\(destination.path)' deleteSource=\(deleteSource) level=\(compressionLevel) hasPassword=\(password != nil)"
             )
 
             isProcessing = true
@@ -184,7 +204,9 @@
                     from: urls,
                     to: destination,
                     archiveName: archiveName,
-                    format: format
+                    format: format,
+                    compressionLevel: compressionLevel,
+                    password: password
                 )
 
                 // Delete source files if requested
@@ -216,9 +238,15 @@
                 refreshPanel(otherPanel, appState: appState)
 
                 log.info("\(#function) SUCCESS created '\(archiveName)' → selected on \(panel)")
-                activeDialog = .success(
-                    title: "Archive Created",
-                    message: "Created: \(archiveName)"
+                
+                // Show yellow HUD popup with archive details
+                ArchiveInfoPopupController.shared.showArchiveCreated(
+                    archiveName: archiveName,
+                    destination: destination,
+                    fileCount: files.count,
+                    format: format,
+                    compressionLevel: compressionLevel,
+                    encrypted: password != nil && !password!.isEmpty
                 )
             } catch {
                 log.error("\(#function) FAILED: \(error.localizedDescription)")

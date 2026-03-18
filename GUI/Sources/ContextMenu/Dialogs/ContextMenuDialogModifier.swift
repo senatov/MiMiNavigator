@@ -72,12 +72,12 @@
                     }
                 )
 
-            case .pack(let files, let destination):
+            case .pack(let files, let destination, let sourcePanel):
                 PackDialog(
                     mode: .pack,
                     files: files,
-                    destinationPath: destination,
-                    onPack: { archiveName, format, finalDestination, deleteSource in
+                    sourcePanel: sourcePanel,
+                    onPack: { archiveName, format, finalDestination, deleteSource, compressionLevel, password in
                         Task {
                             await coordinator.performPack(
                                 files: files,
@@ -85,6 +85,8 @@
                                 format: format,
                                 destination: finalDestination,
                                 deleteSource: deleteSource,
+                                compressionLevel: compressionLevel,
+                                password: password,
                                 appState: appState
                             )
                         }
@@ -94,18 +96,20 @@
                     }
                 )
 
-            case .compress(let files, let destination):
+            case .compress(let files, let destination, let sourcePanel):
                 PackDialog(
                     mode: .compress,
                     files: files,
-                    destinationPath: destination,
-                    onPack: { archiveName, format, finalDestination, deleteSource in
+                    sourcePanel: sourcePanel,
+                    onPack: { archiveName, format, finalDestination, deleteSource, compressionLevel, password in
                         Task {
                             await coordinator.performCompress(
                                 files: files,
                                 archiveName: archiveName,
                                 destination: finalDestination,
                                 moveToArchive: deleteSource,
+                                compressionLevel: compressionLevel,
+                                password: password,
                                 appState: appState
                             )
 
@@ -240,12 +244,12 @@
                     }
                 )
 
-            case .batchPackConfirmation(let files, let destination, _):
+            case .batchPackConfirmation(let files, let destination, let sourcePanel):
                 PackDialog(
                     mode: .pack,
                     files: files,
-                    destinationPath: destination,
-                    onPack: { archiveName, format, finalDestination, deleteSource in
+                    sourcePanel: sourcePanel,
+                    onPack: { archiveName, format, finalDestination, deleteSource, compressionLevel, password in
                         coordinator.dismissDialog()
                         BatchOperationCoordinator.shared.initiatePack(
                             appState: appState,

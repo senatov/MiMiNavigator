@@ -13,8 +13,8 @@ import Foundation
 enum ActiveDialog: Identifiable {
     case deleteConfirmation(files: [CustomFile])
     case rename(file: CustomFile, panel: PanelSide)
-    case pack(files: [CustomFile], destination: URL)
-    case compress(files: [CustomFile], destination: URL)
+    case pack(files: [CustomFile], destination: URL, sourcePanel: PanelSide)
+    case compress(files: [CustomFile], destination: URL, sourcePanel: PanelSide)
     case createLink(file: CustomFile, destination: URL)
     case createFolder(parentURL: URL)
     case fileConflict(conflict: FileConflictInfo, continuation: CheckedContinuation<ConflictResolution, Never>)

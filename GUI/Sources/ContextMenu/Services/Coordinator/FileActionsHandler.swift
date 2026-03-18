@@ -83,12 +83,12 @@
                     // Show PackDialog with source directory as default destination
                     let sourceDir = file.urlValue.deletingLastPathComponent()
                     log.debug("\(#function) compress → PackDialog destination='\(sourceDir.path)'")
-                    activeDialog = .pack(files: batchFiles, destination: sourceDir)
+                    activeDialog = .pack(files: batchFiles, destination: sourceDir, sourcePanel: panel)
 
                 case .pack:
                     let destination = getOppositeDestinationPath(for: panel, appState: appState)
                     log.debug("\(#function) pack destination='\(destination.path)'")
-                    activeDialog = .pack(files: batchFiles, destination: destination)
+                    activeDialog = .pack(files: batchFiles, destination: destination, sourcePanel: panel)
 
                 case .share:
                     let urls = batchFiles.map { $0.urlValue }
