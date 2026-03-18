@@ -3,11 +3,12 @@
 //
 // Created by Iakov Senatov on 27.01.2026.
 // Copyright © 2026 Senatov. All rights reserved.
-// Description: Draggable divider for resizing table columns.
+// Description: Draggable divider for resizing table columns — Finder-style.
 //   Layout footprint = 1pt (same as ColumnSeparator in rows).
 //   Hit area = 14pt wide transparent overlay (does NOT affect layout).
-//   On hover: line becomes black, 2.5pt wide, with drop shadow — clear grab affordance.
-//   On drag: line stays bold black until mouse-up.
+//   On hover: line becomes accent color, 2pt wide — clear grab affordance.
+//   On drag: line stays bold until mouse-up.
+//   Direction matches Finder: drag right = wider, drag left = narrower.
 
 import SwiftUI
 
@@ -38,7 +39,7 @@ struct ResizableDivider: View {
                 .frame(width: ColumnSeparatorStyle.width)
                 .allowsHitTesting(false)
 
-            // Active line — dark blue, only during hover/drag
+            // Active line — accent color, only during hover/drag
             if isActive {
                 Rectangle()
                     .fill(Color(nsColor: .controlAccentColor))
@@ -67,7 +68,7 @@ struct ResizableDivider: View {
         }
     }
 
-    // MARK: - Drag (global coordinates to avoid feedback-loop oscillation)
+    // MARK: - Drag (Finder-style: right = wider, left = narrower)
 
     private var dragGesture: some Gesture {
         DragGesture(minimumDistance: 1, coordinateSpace: .global)
@@ -77,7 +78,8 @@ struct ResizableDivider: View {
                     dragStartWidth = width
                     dragStartX = value.startLocation.x
                 }
-                let delta = -(value.location.x - dragStartX)
+                // Finder semantics: drag right → delta positive → column wider
+                let delta = value.location.x - dragStartX
                 let newWidth = dragStartWidth + delta
                 width = Swift.min(Swift.max(newWidth, min), max)
             }
