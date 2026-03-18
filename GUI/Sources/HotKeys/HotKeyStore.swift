@@ -24,12 +24,17 @@ final class HotKeyStore {
 
     /// Reverse lookup: (keyCode, modifiers.rawValue) → action
     private var reverseLookup: [UInt64: HotKeyAction] = [:]
+    
+    /// Current preset (or .custom if user modified)
+    private(set) var currentPreset: HotKeyPreset = .totalCommander
 
     private let userDefaultsKey = "com.senatov.MiMiNavigator.hotkeys"
+    private let presetKey = "com.senatov.MiMiNavigator.hotkeyPreset"
 
     // MARK: - Init
     private init() {
         loadBindings()
+        loadPreset()
     }
 
     // MARK: - Public API
@@ -89,6 +94,7 @@ final class HotKeyStore {
         let newKey = lookupKey(keyCode: keyCode, modifiers: modifiers)
         reverseLookup[newKey] = action
 
+        markAsCustom()
         saveBindings()
         log.info("[HotKeys] Updated: \(action.rawValue) → \(newBinding.displayString)")
     }
@@ -104,11 +110,38 @@ final class HotKeyStore {
 
     /// Reset all bindings to factory defaults
     func resetToDefaults() {
-        log.info("[HotKeys] Resetting to defaults")
-        MiMiDefaults.shared.removeObject(forKey: userDefaultsKey)
-        loadDefaults()
-        saveBindings()
+        log.info("[HotKeys] Resetting to Total Commander defaults")
+        applyPreset(.totalCommander)
     }
+    
+    /// Apply a preset shortcut set
+    func applyPreset(_ preset: HotKeyPreset) {
+        guard preset != .custom else { return }
+        log.info("[HotKeys] Applying preset: \(preset.rawValue)")
+        let presetBindings = HotKeyPresets.bindings(for: preset)
+        applyBindings(presetBindings)
+        currentPreset = preset
+        saveBindings()
+        savePreset()
+    }
+    
+    /// Get all conflicts (duplicate shortcuts)
+    var conflicts: [(HotKeyBinding, HotKeyBinding)] {
+        var seen: [UInt64: HotKeyBinding] = [:]
+        var result: [(HotKeyBinding, HotKeyBinding)] = []
+        for binding in bindings.values where binding.keyCode != 0 {
+            let key = lookupKey(keyCode: binding.keyCode, modifiers: binding.modifiers)
+            if let existing = seen[key] {
+                result.append((existing, binding))
+            } else {
+                seen[key] = binding
+            }
+        }
+        return result
+    }
+    
+    /// Check if there are any shortcut conflicts
+    var hasConflicts: Bool { !conflicts.isEmpty }
 
     /// Reset a single binding to its default
     func resetBinding(for action: HotKeyAction) {
@@ -127,6 +160,27 @@ final class HotKeyStore {
         } else {
             log.info("[HotKeys] No custom bindings found, using defaults")
             loadDefaults()
+        }
+    }
+    
+    private func loadPreset() {
+        if let presetName = MiMiDefaults.shared.string(forKey: presetKey),
+           let preset = HotKeyPreset(rawValue: presetName) {
+            currentPreset = preset
+        } else {
+            currentPreset = .totalCommander
+        }
+    }
+    
+    private func savePreset() {
+        MiMiDefaults.shared.set(currentPreset.rawValue, forKey: presetKey)
+    }
+    
+    /// Mark as custom when user modifies a binding
+    private func markAsCustom() {
+        if currentPreset != .custom {
+            currentPreset = .custom
+            savePreset()
         }
     }
 

@@ -12,7 +12,7 @@ import SwiftUI
 
 struct SettingsHotkeysPane: View {
     var body: some View {
-        HotKeySettingsView(embedded: true)
+        HotKeySettingsView()
             .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }

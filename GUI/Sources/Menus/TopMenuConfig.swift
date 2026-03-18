@@ -112,13 +112,13 @@ import Foundation
             MenuItem(
                 title: "Check for Updates…",
                 icon: "arrow.down.circle",
-                action: stub("Check for Updates…"),
+                action: { showUpdateWindow() },
                 shortcut: nil
             ),
             MenuItem(
                 title: "About MimiNav…",
                 icon: "info.circle",
-                action: stub("About MimiNav…"),
+                action: { showAboutWindow() },
                 shortcut: nil
             ),
         ])

@@ -13,6 +13,13 @@ struct AppCommands: Commands {
     let appState: AppState
 
     var body: some Commands {
+        // Replace default "About" with our custom About window
+        CommandGroup(replacing: .appInfo) {
+            Button("About MiMiNavigator") {
+                showAboutWindow()
+            }
+        }
+
         // Replace default "New Window" etc. with nothing
         CommandGroup(replacing: .newItem) {}
 

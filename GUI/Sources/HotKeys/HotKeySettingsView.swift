@@ -3,58 +3,41 @@
 //
 // Created by Iakov Senatov on 10.02.2026.
 // Copyright © 2026 Senatov. All rights reserved.
-// Description: Settings panel for keyboard shortcuts — grouped by category, inline recorder.
-//   Visual style matches NetworkNeighborhoodView: SF Pro Display 14, DialogColors palette.
+// Description: Settings panel for keyboard shortcuts — Xcode-style UI with presets,
+//   conflict detection, search filter, and inline editing.
 
 import SwiftUI
 
 // MARK: - Hot Key Settings View
 struct HotKeySettingsView: View {
-    /// When embedded in Settings, skip outer frame constraints
-    var embedded: Bool = false
-
     @State private var store = HotKeyStore.shared
-    @State private var themeStore = ColorThemeStore.shared
     @State private var conflictAlert: ConflictInfo?
     @State private var systemConflict: SystemConflictInfo?
     @State private var showResetConfirmation = false
     @State private var filterText = ""
     @State private var selectedCategory: HotKeyCategory?
     @State private var hoveredAction: HotKeyAction?
+    @State private var showConflictsOnly = false
 
     var body: some View {
         VStack(spacing: 0) {
-            if !embedded {
-                headerBar
-                Divider()
+            // ── Top Toolbar ──
+            topToolbar
+            Divider()
+            
+            // ── Main Content ──
+            HSplitView {
+                categorySidebar
+                    .frame(minWidth: 140, idealWidth: 160, maxWidth: 180)
+                bindingsList
+                    .frame(minWidth: 400)
             }
-
-            if embedded {
-                // Inside Settings pane — no own sidebar, filter inline above list
-                VStack(spacing: 0) {
-                    embeddedToolbar
-                    Divider()
-                    bindingsList
-                }
-            } else {
-                HSplitView {
-                    categorySidebar
-                        .frame(minWidth: 160, idealWidth: 180, maxWidth: 200)
-                    bindingsList
-                        .frame(minWidth: 420)
-                }
-            }
-
+            
             Divider()
             footerBar
         }
-        .frame(
-            minWidth: embedded ? 0 : 660,
-            maxWidth: .infinity,
-            minHeight: embedded ? 0 : 480,
-            maxHeight: .infinity
-        )
-        .background(embedded ? Color.clear : DialogColors.base)
+        .frame(minWidth: 640, maxWidth: .infinity, minHeight: 440, maxHeight: .infinity)
+        .background(Color(nsColor: .windowBackgroundColor))
         .alert("Shortcut Conflict", isPresented: Binding(
             get: { conflictAlert != nil },
             set: { if !$0 { conflictAlert = nil } }
@@ -69,16 +52,16 @@ struct HotKeySettingsView: View {
             Button("Cancel", role: .cancel) { conflictAlert = nil }
         } message: {
             if let info = conflictAlert {
-                Text("'\(HotKeyBinding.keyName(for: info.keyCode))' is already assigned to '\(info.existingAction.displayName)'. Replace it?")
+                Text("'\(HotKeyBinding.keyName(for: info.keyCode))' is already assigned to '\(info.existingAction.displayName)'. Replace?")
             }
         }
-        .confirmationDialog("Reset All Shortcuts", isPresented: $showResetConfirmation) {
-            Button("Reset to Defaults", role: .destructive) { store.resetToDefaults() }
+        .confirmationDialog("Reset Shortcuts", isPresented: $showResetConfirmation) {
+            Button("Reset to Total Commander", role: .destructive) { store.applyPreset(.totalCommander) }
+            Button("Reset to Finder") { store.applyPreset(.finder) }
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("All keyboard shortcuts will be reset to factory defaults. This cannot be undone.")
+            Text("Choose a preset to reset all shortcuts.")
         }
-        // MARK: - System Shortcut Conflict Sheet
         .sheet(isPresented: Binding(
             get: { systemConflict != nil },
             set: { if !$0 { systemConflict = nil } }
@@ -96,80 +79,99 @@ struct HotKeySettingsView: View {
         }
     }
 
-    // MARK: - Header (Network Neighborhood style)
-    private var headerBar: some View {
-        HStack(spacing: 8) {
-            Image(systemName: "keyboard")
-                .font(.system(size: 16))
-                .foregroundStyle(.orange)
-            Text("Keyboard Shortcuts")
-                .font(.system(.subheadline, design: .default, weight: .medium))
-            Spacer()
-            filterField
-        }
-        .padding(.horizontal, 12).padding(.vertical, 8)
-        .background(DialogColors.stripe)
-    }
-
-    // MARK: - Embedded toolbar (inside Settings pane — category picker + filter)
-    private var embeddedToolbar: some View {
+    // MARK: - Top Toolbar (Xcode-style)
+    private var topToolbar: some View {
         HStack(spacing: 12) {
-            // Category picker as compact menu
+            // Preset picker
             Menu {
-                Button { selectedCategory = nil } label: {
-                    Label("All Shortcuts", systemImage: "list.bullet")
-                }
-                Divider()
-                ForEach(HotKeyCategory.allCases) { cat in
-                    Button { selectedCategory = cat } label: {
-                        Label(cat.displayName, systemImage: cat.icon)
+                ForEach(HotKeyPreset.allCases.filter { $0 != .custom }) { preset in
+                    Button {
+                        store.applyPreset(preset)
+                    } label: {
+                        HStack {
+                            Image(systemName: preset.icon)
+                            Text(preset.displayName)
+                            if store.currentPreset == preset {
+                                Spacer()
+                                Image(systemName: "checkmark")
+                            }
+                        }
                     }
                 }
             } label: {
-                HStack(spacing: 4) {
-                    Image(systemName: selectedCategory?.icon ?? "list.bullet")
-                        .font(.system(size: 11))
-                    Text(selectedCategory?.displayName ?? "All")
+                HStack(spacing: 6) {
+                    Text("Shortcut Set")
                         .font(.system(size: 12))
-                    Image(systemName: "chevron.down")
-                        .font(.system(size: 9))
-                        .foregroundStyle(.tertiary)
+                        .foregroundStyle(.secondary)
+                    HStack(spacing: 4) {
+                        Image(systemName: store.currentPreset.icon)
+                            .font(.system(size: 11))
+                        Text(store.currentPreset.displayName)
+                            .font(.system(size: 12, weight: .medium))
+                        Image(systemName: "chevron.up.chevron.down")
+                            .font(.system(size: 9))
+                            .foregroundStyle(.tertiary)
+                    }
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(
+                        RoundedRectangle(cornerRadius: 5)
+                            .fill(Color(nsColor: .controlBackgroundColor))
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 5)
+                            .stroke(Color.gray.opacity(0.3), lineWidth: 0.5)
+                    )
                 }
-                .padding(.vertical, 3).padding(.horizontal, 8)
-                .background(
-                    RoundedRectangle(cornerRadius: 5)
-                        .fill(Color(nsColor: .controlBackgroundColor))
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 5)
-                        .stroke(Color.gray.opacity(0.2), lineWidth: 0.5)
-                )
             }
             .menuStyle(.borderlessButton)
             .fixedSize()
-
-            filterField
-
+            
             Spacer()
-
-            Text("\(filteredAndSortedBindings.count) shortcuts")
-                .font(.system(size: 11))
-                .foregroundStyle(.tertiary)
+            
+            // Conflicts indicator
+            if store.hasConflicts {
+                Button {
+                    showConflictsOnly.toggle()
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .foregroundStyle(.orange)
+                        Text("\(store.conflicts.count) conflicts")
+                            .font(.system(size: 11))
+                    }
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
+                    .background(
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(showConflictsOnly ? Color.orange.opacity(0.2) : Color.clear)
+                    )
+                }
+                .buttonStyle(.plain)
+            }
+            
+            // Filter field
+            filterField
         }
-        .padding(.horizontal, 12).padding(.vertical, 6)
-        .background(DialogColors.stripe.opacity(0.5))
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(Color(nsColor: .windowBackgroundColor).opacity(0.95))
     }
 
-    // MARK: - Filter field
+    // MARK: - Filter Field
+    /// Search input field — filters shortcuts by name or key combination
     private var filterField: some View {
         HStack(spacing: 4) {
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 11))
                 .foregroundStyle(.tertiary)
-            TextField("Filter…", text: $filterText)
+            
+            TextField("Filter", text: $filterText)
                 .textFieldStyle(.plain)
-                .font(.system(size: 13, design: .default))
-                .frame(width: 140)
+                .font(.system(size: 12))
+                .frame(width: 120)
+            
+            // Clear button when filter is active
             if !filterText.isEmpty {
                 Button { filterText = "" } label: {
                     Image(systemName: "xmark.circle.fill")
@@ -179,68 +181,92 @@ struct HotKeySettingsView: View {
                 .buttonStyle(.plain)
             }
         }
-        .padding(.vertical, 4).padding(.horizontal, 8)
-        .background(
-            RoundedRectangle(cornerRadius: 6)
-                .fill(Color(nsColor: .controlBackgroundColor))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 6)
-                .stroke(Color.gray.opacity(0.2), lineWidth: 0.5)
-        )
+        .padding(.vertical, 4)
+        .padding(.horizontal, 8)
+        .background(fieldBackground)
+    }
+    
+    /// Reusable field background style
+    private var fieldBackground: some View {
+        RoundedRectangle(cornerRadius: 6)
+            .fill(Color(nsColor: .controlBackgroundColor))
+            .overlay(
+                RoundedRectangle(cornerRadius: 6)
+                    .stroke(Color.gray.opacity(0.25), lineWidth: 0.5)
+            )
     }
 
     // MARK: - Category Sidebar
+    /// Left sidebar with category list and counts
     private var categorySidebar: some View {
         VStack(spacing: 0) {
-            categoryButton(label: "All Shortcuts", icon: "list.bullet", category: nil)
-            Divider().padding(.horizontal, 8).padding(.vertical, 4)
-            ForEach(HotKeyCategory.allCases) { category in
-                categoryButton(
-                    label: category.displayName,
-                    icon: category.icon,
-                    category: category,
-                    count: store.bindings(for: category).count
+            // "All" category at top
+            categoryRow(
+                label: "All",
+                icon: "list.bullet",
+                category: nil,
+                count: store.allBindings.count
+            )
+            
+            Divider()
+                .padding(.horizontal, 8)
+                .padding(.vertical, 6)
+            
+            // Individual categories
+            ForEach(HotKeyCategory.allCases) { cat in
+                categoryRow(
+                    label: cat.displayName,
+                    icon: cat.icon,
+                    category: cat,
+                    count: store.bindings(for: cat).count
                 )
             }
+            
             Spacer()
         }
         .padding(.vertical, 8)
-        .background(DialogColors.base)
+        .background(Color(nsColor: .windowBackgroundColor).opacity(0.6))
     }
-
-    private func categoryButton(label: String, icon: String, category: HotKeyCategory?, count: Int? = nil) -> some View {
+    
+    /// Single category row with selection highlight
+    private func categoryRow(label: String, icon: String, category: HotKeyCategory?, count: Int) -> some View {
         let isSelected = selectedCategory == category
+        
         return Button {
-            withAnimation(.easeInOut(duration: 0.15)) { selectedCategory = category }
+            withAnimation(.easeInOut(duration: 0.12)) {
+                selectedCategory = category
+            }
         } label: {
             HStack(spacing: 8) {
                 Image(systemName: icon)
-                    .font(.system(size: 12))
+                    .font(.system(size: 11))
                     .foregroundStyle(isSelected ? .white : categoryColor(category))
-                    .frame(width: 18)
+                    .frame(width: 16)
+                
                 Text(label)
-                    .font(.system(size: 13, design: .default))
+                    .font(.system(size: 12))
                     .foregroundStyle(isSelected ? .white : .primary)
+                
                 Spacer()
-                if let c = count {
-                    Text("\(c)")
-                        .font(.system(size: 10))
-                        .foregroundStyle(isSelected ? Color.white.opacity(0.7) : Color.gray.opacity(0.5))
-                }
+                
+                Text("\(count)")
+                    .font(.system(size: 10, weight: .medium, design: .rounded))
+                    .foregroundStyle(isSelected ? .white.opacity(0.8) : .secondary)
             }
-            .padding(.horizontal, 10).padding(.vertical, 6)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 5)
             .background(
-                RoundedRectangle(cornerRadius: 6)
+                RoundedRectangle(cornerRadius: 5)
                     .fill(isSelected ? Color.accentColor : Color.clear)
             )
         }
         .buttonStyle(.plain)
         .padding(.horizontal, 6)
     }
-
-    private func categoryColor(_ category: HotKeyCategory?) -> Color {
-        guard let cat = category else { return .secondary }
+    
+    /// Category accent color for icons
+    private func categoryColor(_ cat: HotKeyCategory?) -> Color {
+        guard let cat else { return .secondary }
         switch cat {
         case .fileOperations: return .blue
         case .navigation:     return .orange
@@ -251,31 +277,35 @@ struct HotKeySettingsView: View {
     }
 
     // MARK: - Bindings List
+    /// Main content area — scrollable list of shortcut bindings
     private var bindingsList: some View {
-        let filtered = filteredAndSortedBindings
+        let filtered = filteredBindings
+        
         return ScrollView {
             LazyVStack(spacing: 0) {
                 if filtered.isEmpty {
-                    emptyState
+                    emptyStateView
                 } else {
                     ForEach(groupedBindings(filtered), id: \.category) { group in
                         sectionHeader(group.category)
                         ForEach(group.bindings) { binding in
                             bindingRow(binding)
-                            Divider().padding(.leading, 36)
+                            Divider().padding(.leading, 32)
                         }
                     }
                 }
             }
+            .padding(.bottom, 8)
         }
-        .background(DialogColors.base)
+        .background(Color(nsColor: .textBackgroundColor))
     }
-
-    private var emptyState: some View {
-        VStack(spacing: 8) {
-            Spacer().frame(height: 40)
+    
+    /// Empty state when filter matches nothing
+    private var emptyStateView: some View {
+        VStack(spacing: 10) {
+            Spacer().frame(height: 60)
             Image(systemName: "magnifyingglass")
-                .font(.system(size: 24))
+                .font(.system(size: 28))
                 .foregroundStyle(.quaternary)
             Text("No matching shortcuts")
                 .font(.system(size: 13))
@@ -284,89 +314,119 @@ struct HotKeySettingsView: View {
         }
         .frame(maxWidth: .infinity)
     }
-
+    
+    /// Section header for category groups
     private func sectionHeader(_ category: HotKeyCategory) -> some View {
         HStack(spacing: 6) {
             Image(systemName: category.icon)
-                .font(.system(size: 11))
+                .font(.system(size: 10))
                 .foregroundStyle(categoryColor(category))
             Text(category.displayName)
-                .font(.system(size: 12, weight: .semibold))
+                .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(.secondary)
             Spacer()
         }
-        .padding(.horizontal, 12).padding(.top, 12).padding(.bottom, 4)
+        .padding(.horizontal, 12)
+        .padding(.top, 14)
+        .padding(.bottom, 4)
     }
 
-    // MARK: - Binding Row (Network Neighborhood row style)
+    // MARK: - Binding Row
+    /// Single shortcut row with inline recorder and conflict indicator
     private func bindingRow(_ binding: HotKeyBinding) -> some View {
         let isHovered = hoveredAction == binding.action
+        let hasConflict = isConflicting(binding)
+        
         return HStack(spacing: 10) {
-            // Action name
+            // Conflict indicator (red dot)
+            if hasConflict {
+                Image(systemName: "exclamationmark.circle.fill")
+                    .font(.system(size: 12))
+                    .foregroundStyle(.red)
+            }
+            
+            // Action display name
             Text(binding.action.displayName)
-                .font(.system(size: 13))
+                .font(.system(size: 12))
+                .foregroundStyle(hasConflict ? .red : .primary)
                 .lineLimit(1)
-
+            
             Spacer()
-
-            // Key recorder
+            
+            // Inline key recorder
             HotKeyRecorderView(binding: binding) { keyCode, modifiers in
                 assignShortcut(action: binding.action, keyCode: keyCode, modifiers: modifiers)
             }
-
-            // Reset single binding
+            
+            // Reset button (visible on hover if modified)
             if isHovered && isModified(binding) {
-                Button { store.resetBinding(for: binding.action) } label: {
-                    Image(systemName: "arrow.counterclockwise")
-                        .font(.system(size: 11))
-                        .foregroundStyle(.secondary)
-                }
-                .buttonStyle(.plain)
-                .help("Reset to default")
+                resetButton(for: binding.action)
             }
         }
-        .padding(.horizontal, 12).padding(.vertical, 5)
-        .background(isHovered ? Color.accentColor.opacity(0.07) : Color.clear)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 5)
+        .background(rowBackground(isHovered: isHovered, hasConflict: hasConflict))
         .contentShape(Rectangle())
         .onHover { hoveredAction = $0 ? binding.action : nil }
     }
-
-    // MARK: - Footer
-    private var footerBar: some View {
-        HStack(spacing: 12) {
-            Button {
-                showResetConfirmation = true
-            } label: {
-                Label("Reset All", systemImage: "arrow.counterclockwise")
-                    .font(.system(size: 12))
-            }
-            .controlSize(.small)
-
-            Spacer()
-
-            if !embedded {
-                Text("\(store.allBindings.count) shortcuts")
-                    .font(.system(size: 11))
-                    .foregroundStyle(.tertiary)
-            }
+    
+    /// Row background color based on state
+    private func rowBackground(isHovered: Bool, hasConflict: Bool) -> Color {
+        if hasConflict { return Color.red.opacity(0.08) }
+        if isHovered { return Color.accentColor.opacity(0.06) }
+        return Color.clear
+    }
+    
+    /// Reset single binding button
+    private func resetButton(for action: HotKeyAction) -> some View {
+        Button { store.resetBinding(for: action) } label: {
+            Image(systemName: "arrow.counterclockwise")
+                .font(.system(size: 10))
+                .foregroundStyle(.secondary)
         }
-        .padding(.horizontal, embedded ? 0 : 12)
-        .padding(.vertical, embedded ? 4 : 8)
-        .background(embedded ? Color.clear : DialogColors.stripe)
+        .buttonStyle(.plain)
+        .help("Reset to default")
     }
 
-    // MARK: - Logic
+    // MARK: - Footer Bar
+    /// Bottom bar with reset button and shortcut count
+    private var footerBar: some View {
+        HStack(spacing: 12) {
+            // Reset dropdown
+            Menu {
+                Button("Total Commander") { store.applyPreset(.totalCommander) }
+                Button("Finder") { store.applyPreset(.finder) }
+            } label: {
+                Label("Reset All…", systemImage: "arrow.counterclockwise")
+                    .font(.system(size: 11))
+            }
+            .menuStyle(.borderlessButton)
+            .fixedSize()
+            
+            Spacer()
+            
+            // Shortcut count
+            Text("\(store.allBindings.count) shortcuts")
+                .font(.system(size: 11))
+                .foregroundStyle(.tertiary)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+    }
 
+    // MARK: - Logic Helpers
+    
+    /// Assign shortcut with conflict validation
     private func assignShortcut(action: HotKeyAction, keyCode: UInt16, modifiers: HotKeyModifiers) {
         let result = ShortcutConflictValidator.validate(
             keyCode: keyCode, modifiers: modifiers, forAction: action
         )
-
+        
         guard result.hasConflict else {
             store.updateBinding(action: action, keyCode: keyCode, modifiers: modifiers)
             return
         }
-
+        
         switch result.conflict {
         case .systemReserved:
             systemConflict = SystemConflictInfo(
@@ -374,36 +434,62 @@ struct HotKeySettingsView: View {
                 description: result.conflictDescription,
                 suggestions: result.suggested
             )
-        case .appInternal(let existingAction):
+        case .appInternal(let existing):
             conflictAlert = ConflictInfo(
-                newAction: action, existingAction: existingAction,
-                keyCode: keyCode, modifiers: modifiers
+                newAction: action,
+                existingAction: existing,
+                keyCode: keyCode,
+                modifiers: modifiers
             )
         case .none:
             break
         }
     }
-
+    
+    /// Check if binding differs from default
     private func isModified(_ binding: HotKeyBinding) -> Bool {
         guard let def = HotKeyDefaults.bindingsByAction[binding.action] else { return true }
         return binding.keyCode != def.keyCode || binding.modifiers != def.modifiers
     }
+    
+    /// Check if binding has a duplicate key assignment
+    private func isConflicting(_ binding: HotKeyBinding) -> Bool {
+        guard binding.keyCode != 0 else { return false }
+        return store.conflicts.contains { pair in
+            pair.0.action == binding.action || pair.1.action == binding.action
+        }
+    }
 
-    private var filteredAndSortedBindings: [HotKeyBinding] {
+    // MARK: - Filtering & Grouping
+    
+    /// Apply search filter and category filter
+    private var filteredBindings: [HotKeyBinding] {
         var result = store.allBindings
+        
+        // Category filter
         if let cat = selectedCategory {
             result = result.filter { $0.action.category == cat }
         }
+        
+        // Conflicts-only filter
+        if showConflictsOnly {
+            let conflictingActions = Set(store.conflicts.flatMap { [$0.0.action, $0.1.action] })
+            result = result.filter { conflictingActions.contains($0.action) }
+        }
+        
+        // Text filter
         if !filterText.isEmpty {
-            let q = filterText.lowercased()
+            let query = filterText.lowercased()
             result = result.filter {
-                $0.action.displayName.lowercased().contains(q)
-                || $0.displayString.lowercased().contains(q)
+                $0.action.displayName.lowercased().contains(query) ||
+                $0.displayString.lowercased().contains(query)
             }
         }
+        
         return result
     }
-
+    
+    /// Group bindings by category for section display
     private func groupedBindings(_ list: [HotKeyBinding]) -> [BindingGroup] {
         let grouped = Dictionary(grouping: list) { $0.action.category }
         return HotKeyCategory.allCases.compactMap { cat in
@@ -414,6 +500,8 @@ struct HotKeySettingsView: View {
 }
 
 // MARK: - Supporting Types
+
+/// Conflict alert info for duplicate shortcuts
 private struct ConflictInfo {
     let newAction: HotKeyAction
     let existingAction: HotKeyAction
@@ -421,7 +509,14 @@ private struct ConflictInfo {
     let modifiers: HotKeyModifiers
 }
 
+/// Grouped bindings for section display
 private struct BindingGroup {
     let category: HotKeyCategory
     let bindings: [HotKeyBinding]
+}
+
+// MARK: - Preview
+#Preview {
+    HotKeySettingsView()
+        .frame(width: 700, height: 500)
 }

@@ -42,6 +42,7 @@ enum HotKeyDefaults {
         HotKeyBinding(action: .markAll,          keyCode: 0x00, modifiers: .command),      // ⌘A
         HotKeyBinding(action: .unmarkAll,        keyCode: 0x35, modifiers: .none),         // Escape (when marks exist)
         HotKeyBinding(action: .markSameExtension, keyCode: 0x00, modifiers: [.command, .shift]), // ⌘⇧A
+        HotKeyBinding(action: .clearSelection,   keyCode: 0x35, modifiers: .command),      // ⌘Esc
 
         // ── Clipboard (macOS standard) ──
         HotKeyBinding(action: .clipboardCopy,  keyCode: 0x08, modifiers: .command),       // ⌘C
