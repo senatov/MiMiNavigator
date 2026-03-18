@@ -72,7 +72,7 @@
                     }
                 )
 
-            case .pack(let files, let destination, let sourcePanel):
+            case .pack(let files, _, let sourcePanel):
                 PackDialog(
                     mode: .pack,
                     files: files,
@@ -96,7 +96,7 @@
                     }
                 )
 
-            case .compress(let files, let destination, let sourcePanel):
+            case .compress(let files, _, let sourcePanel):
                 PackDialog(
                     mode: .compress,
                     files: files,
@@ -244,7 +244,7 @@
                     }
                 )
 
-            case .batchPackConfirmation(let files, let destination, let sourcePanel):
+            case .batchPackConfirmation(let files, _, let sourcePanel):
                 PackDialog(
                     mode: .pack,
                     files: files,

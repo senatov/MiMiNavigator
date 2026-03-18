@@ -114,7 +114,7 @@ final class BatchOperationManager {
         var hasErrors = false
         do {
             let destDir = archiveURL.deletingLastPathComponent()
-            try await ArchiveService.shared.createArchive(
+            _ = try await ArchiveService.shared.createArchive(
                 from: files.map(\.urlValue),
                 to: destDir,
                 archiveName: archiveURL.deletingPathExtension().lastPathComponent,

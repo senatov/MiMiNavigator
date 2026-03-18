@@ -67,7 +67,7 @@
                 Task {
                     do {
                         let localURL = try await RemoteConnectionManager.shared.downloadFile(remotePath: remotePath)
-                        await MainActor.run {
+                        _ = await MainActor.run {
                             NSWorkspace.shared.open(localURL)
                         }
                     } catch {
