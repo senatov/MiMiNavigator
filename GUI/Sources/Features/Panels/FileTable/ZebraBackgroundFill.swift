@@ -3,38 +3,35 @@
 //
 // Created by Iakov Senatov on 15.03.2026.
 // Copyright © 2026 Senatov. All rights reserved.
-// Description: Draws zebra-striped background to fill remaining panel space below file rows.
-//              Uses GeometryReader to fill only visible viewport — no extra scrollable content.
+// Description: Minimal zebra fill that doesn't create scroll overflow.
+//              Only renders visible rows, no GeometryReader inside ScrollView.
 
 import SwiftUI
 
 // MARK: - Zebra Background Fill
-/// Renders zebra stripes to fill empty space below file rows.
-/// Uses GeometryReader to measure available space and fill exactly that — no overflow.
+/// Minimal zebra fill — renders just a few rows to handle edge cases.
+/// Does NOT use GeometryReader (causes issues inside ScrollView).
 struct ZebraBackgroundFill: View {
     let startIndex: Int
     let isActivePanel: Bool
     let rowHeight: CGFloat
 
+    // Only render 2 extra rows max — enough to fill typical gaps without overflow
+    private var stripeCount: Int { 2 }
+
     var body: some View {
-        GeometryReader { geo in
-            let availableHeight = geo.size.height
-            let stripeCount = max(0, Int(ceil(availableHeight / rowHeight)))
-            
-            VStack(spacing: 0) {
-                ForEach(0..<stripeCount, id: \.self) { i in
-                    let isOdd = (startIndex + i) % 2 == 1
-                    Rectangle()
-                        .fill(stripeColor(isOdd: isOdd))
-                        .frame(height: rowHeight)
-                        .frame(maxWidth: .infinity)
-                }
+        VStack(spacing: 0) {
+            ForEach(0..<stripeCount, id: \.self) { i in
+                let isOdd = (startIndex + i) % 2 == 1
+                Rectangle()
+                    .fill(stripeColor(isOdd: isOdd))
+                    .frame(height: rowHeight)
+                    .frame(maxWidth: .infinity)
             }
         }
         .allowsHitTesting(false)
     }
 
-    // MARK: - Stripe Color
     private func stripeColor(isOdd: Bool) -> Color {
         if isActivePanel {
             return isOdd ? DesignTokens.zebraActiveOdd : DesignTokens.zebraActiveEven
