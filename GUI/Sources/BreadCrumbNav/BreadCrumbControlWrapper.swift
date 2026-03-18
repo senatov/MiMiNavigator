@@ -16,7 +16,9 @@ struct BreadCrumbControlWrapper: View {
     @State private var isEditing = false
     @FocusState private var isTextFieldFocused: Bool
     @State private var isHovering = false
-    @State private var colorStore = ColorThemeStore.shared
+    
+    /// Use computed property to always get current theme (live updates)
+    private var colorStore: ColorThemeStore { ColorThemeStore.shared }
 
     let panelSide: PanelSide
 

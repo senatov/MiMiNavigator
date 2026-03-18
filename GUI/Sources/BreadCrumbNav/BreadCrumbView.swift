@@ -21,7 +21,8 @@ struct BreadCrumbView: View {
     @Environment(AppState.self) var appState
     let panelSide: PanelSide
 
-    @State private var colorStore = ColorThemeStore.shared
+    /// Use computed property to always get current theme (live updates)
+    private var colorStore: ColorThemeStore { ColorThemeStore.shared }
 
     private let barHeight: CGFloat = 30
     private let separatorWidth: CGFloat = 20
