@@ -47,15 +47,24 @@ struct BreadCrumbControlWrapper: View {
 
     // MARK: - Body
     var body: some View {
-        // Access themeVersion to create @Observable dependency for live updates
-        let _ = ColorThemeStore.shared.themeVersion
+        // Capture themeVersion to force view refresh on theme changes
+        let themeVersion = ColorThemeStore.shared.themeVersion
         
-        // Throttled logging removed - only log on state changes
+        // Compute background color inline to ensure reactivity
+        let isActive = appState.focusedPanel == panelSide
+        let bgColor = isActive
+            ? colorStore.activeTheme.breadcrumbBgActive
+            : colorStore.activeTheme.breadcrumbBgInactive
+        
         return
             contentView
             .padding(.horizontal, Design.Padding.horizontal)
             .onHover { hovering in isHovering = hovering }
-            .background(backgroundShape)
+            .background(
+                RoundedRectangle(cornerRadius: Design.cornerRadius)
+                    .fill(isEditing ? Design.Colors.editingBackground : bgColor)
+                    .id(themeVersion)  // force redraw on theme change
+            )
             .overlay(borderShape)
             .frame(height: 34)
             .zIndex(isEditing ? 10 : 0)
@@ -76,16 +85,6 @@ struct BreadCrumbControlWrapper: View {
         } else {
             displayView
         }
-    }
-
-    // MARK: - Background Shape — themed breadcrumb bg, editing gets accent tint
-    private var backgroundShape: some View {
-        let isActive = appState.focusedPanel == panelSide
-        let idleBg = isActive
-            ? colorStore.activeTheme.breadcrumbBgActive
-            : colorStore.activeTheme.breadcrumbBgInactive
-        return RoundedRectangle(cornerRadius: Design.cornerRadius)
-            .fill(isEditing ? Design.Colors.editingBackground : idleBg)
     }
 
     // MARK: - Border Shape — thin dark-navy border, always visible
