@@ -12,8 +12,8 @@
 //   - Drag divider between columns → resize
 //   - Drag column header → reorder (Name always pinned at index 0)
 //
-// Layout logic:
-//   [Name flexible] | divider | [col2 fixed] | divider | [col3 fixed] | ...
+// Layout logic (must exactly mirror FileRow/FileRowMetadataColumnsView):
+//   [Name flex + pad(4)] | ResizableDivider(1pt) | [col2 frame(spec.width) + pad(cellPadding)] | ...
 //
 // Sub-components (separate files):
 //   SortableHeader.swift  — individual column header (title + sort arrow)
@@ -62,7 +62,9 @@ struct TableHeaderView: View {
                 draggableColumnHeader(for: spec)
             }
         }
-        .padding(.horizontal, 4)
+        // NO .padding(.horizontal) here — name column carries its own 4pt padding
+        // to match FileRow.nameColumnView which also uses .padding(.horizontal, 4).
+        // Fixed columns get their spacing from cellPadding inside the frame.
         .frame(height: 22)
         .padding(.vertical, 1)
         .background(headerBackgroundColor)
@@ -80,6 +82,7 @@ struct TableHeaderView: View {
     }
 
     // MARK: - Name Column (flexible)
+    // padding(.horizontal, 4) mirrors FileRow.nameColumnView padding — keeps name col aligned.
     private var nameHeader: some View {
         SortableHeader(
             title: ColumnID.name.title,
@@ -91,6 +94,7 @@ struct TableHeaderView: View {
             onAutoFit: nil
         )
         .frame(minWidth: 60, maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 4)
         .clipped()
     }
 
