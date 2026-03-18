@@ -1,101 +1,69 @@
 // ResizableDivider.swift
-// MiMiNavigator
-//
-// Created by Iakov Senatov on 27.01.2026.
-// Copyright © 2026 Senatov. All rights reserved.
-// Description: Draggable divider for resizing table columns.
-//   Layout footprint = 1pt (same as ColumnSeparator in rows).
-//   Hit area = 14pt wide transparent overlay (does NOT affect layout).
-//   On hover: line becomes black, 2.5pt wide, with drop shadow — clear grab affordance.
-//   On drag: line stays bold black until mouse-up.
+// MiMiNavigator — SwiftUI wrapper for NSResizableDividerView.
+// Drag right → column to the left grows (Finder-style).
 
 import SwiftUI
 
-// MARK: - Resizable Divider
-
 struct ResizableDivider: View {
+
     @Binding var width: CGFloat
     let min: CGFloat
     let max: CGFloat
-    /// Called only on mouse-up (saves to UserDefaults)
     let onEnd: () -> Void
-    /// Called on double-click; returns optimal width for the column
     var onAutoFit: (() -> CGFloat)? = nil
 
-    @State private var isHovering = false
-    @State private var isDragging = false
-    @State private var dragStartWidth: CGFloat = 0
-    @State private var dragStartX: CGFloat = 0
-
-    /// Active = hovering or dragging (grab affordance visible)
-    private var isActive: Bool { isHovering || isDragging }
-
     var body: some View {
-        ZStack {
-            // Passive line — always visible, thin
-            Rectangle()
-                .fill(ColumnSeparatorStyle.color)
-                .frame(width: ColumnSeparatorStyle.width)
-                .allowsHitTesting(false)
+        Representable(
+            width: $width,
+            min: min,
+            max: max,
+            onEnd: onEnd,
+            onAutoFit: onAutoFit
+        )
+        .frame(width: 14)
+    }
+}
 
-            // Active line — dark blue, only during hover/drag
-            if isActive {
-                Rectangle()
-                    .fill(Color(nsColor: .controlAccentColor))
-                    .frame(width: 2)
-                    .allowsHitTesting(false)
-                    .transition(.opacity)
-            }
-        }
-        .frame(width: ColumnSeparatorStyle.width)
-        .overlay {
-            Color.clear
-                .frame(width: 14)
-                .contentShape(Rectangle())
-                .gesture(dragGesture)
-                .simultaneousGesture(doubleTapGesture)
-                .onHover { hovering in
-                    withAnimation(.easeInOut(duration: 0.1)) {
-                        isHovering = hovering
-                    }
-                    if hovering {
-                        NSCursor.resizeLeftRight.push()
-                    } else {
-                        NSCursor.pop()
-                    }
-                }
-        }
+// MARK: - NSViewRepresentable
+
+private struct Representable: NSViewRepresentable {
+
+    @Binding var width: CGFloat
+    let min: CGFloat
+    let max: CGFloat
+    let onEnd: () -> Void
+    var onAutoFit: (() -> CGFloat)?
+
+    func makeNSView(context: Context) -> NSResizableDividerView {
+        let view = NSResizableDividerView()
+        configure(view)
+        return view
     }
 
-    // MARK: - Drag (global coordinates to avoid feedback-loop oscillation)
-
-    private var dragGesture: some Gesture {
-        DragGesture(minimumDistance: 1, coordinateSpace: .global)
-            .onChanged { value in
-                if !isDragging {
-                    isDragging = true
-                    dragStartWidth = width
-                    dragStartX = value.startLocation.x
-                }
-                let delta = -(value.location.x - dragStartX)
-                let newWidth = dragStartWidth + delta
-                width = Swift.min(Swift.max(newWidth, min), max)
-            }
-            .onEnded { _ in
-                isDragging = false
-                onEnd()
-            }
+    func updateNSView(_ view: NSResizableDividerView, context: Context) {
+        configure(view)
     }
 
-    // MARK: - Double-tap: auto-fit
+    private func configure(_ view: NSResizableDividerView) {
+        view.onDrag = { delta in
+            let newWidth = (width + delta).clamped(to: min...max)
+            width = newWidth
+        }
 
-    private var doubleTapGesture: some Gesture {
-        TapGesture(count: 2)
-            .onEnded {
-                guard let autoFit = onAutoFit else { return }
-                let optimal = Swift.min(Swift.max(autoFit(), min), max)
-                width = optimal
-                onEnd()
-            }
+        view.onDragEnd = onEnd
+
+        view.onDoubleClick = {
+            guard let fit = onAutoFit else { return }
+            width = fit().clamped(to: min...max)
+            onEnd()
+        }
+    }
+}
+
+// MARK: - CGFloat Extension
+
+extension CGFloat {
+    fileprivate func clamped(to range: ClosedRange<CGFloat>) -> CGFloat {
+        Swift.max(range.lowerBound, Swift.min(self, range.upperBound))
     }
 }

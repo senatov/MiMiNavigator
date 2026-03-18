@@ -32,13 +32,14 @@
         // MARK: - Equatable optimization
         /// Prevent SwiftUI from re-rendering the row unless the visible state actually changed.
         nonisolated static func == (lhs: FileRow, rhs: FileRow) -> Bool {
-            lhs.file.id == rhs.file.id && lhs.isSelected == rhs.isSelected && lhs.panelSide == rhs.panelSide
+            lhs.file.id == rhs.file.id && lhs.isSelected == rhs.isSelected && lhs.panelSide == rhs.panelSide && lhs.layoutVersion == rhs.layoutVersion
         }
         let index: Int
         let file: CustomFile
         let isSelected: Bool
         let panelSide: PanelSide
         let layout: ColumnLayoutModel
+        let layoutVersion: Int
         let onSelect: (CustomFile) -> Void
         let onDoubleClick: (CustomFile) -> Void
         let onFileAction: (FileAction, CustomFile) -> Void
@@ -355,7 +356,9 @@
             }
         }
 
-        // MARK: - Name column (flexible)
+        // MARK: - Name column
+        // Uses layout.nameWidth — same value as TableHeaderView nameColumnHeader.
+        // This guarantees pixel-perfect alignment between header and rows.
         @ViewBuilder
         private func nameColumnView() -> some View {
             FileRowView(
@@ -364,8 +367,7 @@
                 isActivePanel: isActivePanel,
                 isMarked: isMarked
             )
-            .frame(minWidth: 60, maxWidth: .infinity, alignment: .leading)
-            .layoutPriority(0)  // metadata columns must win width conflicts
+            .frame(width: layout.nameWidth, alignment: .leading)
             .clipped()
             .padding(.vertical, 2)
             .padding(.horizontal, 4)
