@@ -47,6 +47,9 @@ struct BreadCrumbControlWrapper: View {
 
     // MARK: - Body
     var body: some View {
+        // Access themeVersion to create @Observable dependency for live updates
+        let _ = ColorThemeStore.shared.themeVersion
+        
         // Throttled logging removed - only log on state changes
         return
             contentView

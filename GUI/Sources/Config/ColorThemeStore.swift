@@ -78,6 +78,9 @@ final class ColorThemeStore {
     @ObservationIgnored @AppStorage("button.shadowY")        var buttonShadowY: Double = 0.5
 
     private(set) var activeTheme: ColorTheme = .defaultTheme
+    
+    /// Version counter — increments on every theme change, triggers SwiftUI updates
+    private(set) var themeVersion: Int = 0
 
     private init() {
         loadTheme(id: savedThemeID)
@@ -160,6 +163,8 @@ final class ColorThemeStore {
     func reloadOverrides() {
         let base = ColorTheme.allPresets.first { $0.id == savedThemeID } ?? .defaultTheme
         activeTheme = applyOverrides(to: base)
+        themeVersion += 1
+        log.debug("[ColorTheme] reloaded, version=\(themeVersion)")
     }
     // MARK: - Apply preset
     func applyPreset(_ theme: ColorTheme) {

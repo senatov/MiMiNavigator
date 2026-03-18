@@ -43,6 +43,9 @@ struct BreadCrumbView: View {
 
     // MARK: - Body
     var body: some View {
+        // Access themeVersion to create @Observable dependency for live updates
+        let _ = ColorThemeStore.shared.themeVersion
+        
         GeometryReader { geo in
             HStack(alignment: .center, spacing: 4) {
                 ForEach(Array(visibleSegments(for: geo.size.width).enumerated()), id: \.offset) { idx, seg in
