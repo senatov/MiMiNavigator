@@ -12,12 +12,12 @@ import Foundation
 // MARK: - Settings & Panel Swap
 extension AppState {
 
+    /// Toggle hidden files visibility — BOTH panels update synchronously
     func toggleShowHiddenFiles() {
         UserPreferences.shared.snapshot.showHiddenFiles.toggle()
-        Task {
-            await scanner.refreshFiles(currSide: .left)
-            await scanner.refreshFiles(currSide: .right)
-        }
+        UserPreferences.shared.save()
+        log.info("[Settings] showHiddenFiles → \(UserPreferences.shared.snapshot.showHiddenFiles)")
+        forceRefreshBothPanels()
     }
 
     func forceRefreshBothPanels() {

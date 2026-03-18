@@ -59,17 +59,34 @@
                 self._archiveName = State(initialValue: defaultName)
             }
             self._selectedFormat = State(initialValue: defaultFormat)
+            // Use last directory ONLY if it's non-empty, not ".", and actually exists
             let lastDir = MiMiDefaults.shared.string(forKey: Self.lastArchiveDirectoryKey)
-            self._destinationPath = State(initialValue: lastDir ?? destinationPath.path)
+            let validLastDir: String? = {
+                guard let dir = lastDir, !dir.isEmpty, dir != ".", dir != ".." else { return nil }
+                var isDir: ObjCBool = false
+                guard FileManager.default.fileExists(atPath: dir, isDirectory: &isDir), isDir.boolValue else { return nil }
+                return dir
+            }()
+            self._destinationPath = State(initialValue: validLastDir ?? destinationPath.path)
         }
 
         private var isValidName: Bool {
             !archiveName.isEmpty && !archiveName.contains("/") && !archiveName.contains(":")
         }
 
+        /// Destination must be absolute path to an existing directory
         private var isValidDestination: Bool {
+            // Must be absolute path — reject ".", "..", "./foo", etc.
+            guard destinationPath.hasPrefix("/") else {
+                log.warning("[PackDialog] Invalid destination: '\(destinationPath)' — not absolute path")
+                return false
+            }
             var isDir: ObjCBool = false
-            return FileManager.default.fileExists(atPath: destinationPath, isDirectory: &isDir) && isDir.boolValue
+            let exists = FileManager.default.fileExists(atPath: destinationPath, isDirectory: &isDir)
+            if !exists || !isDir.boolValue {
+                log.warning("[PackDialog] Invalid destination: '\(destinationPath)' — exists=\(exists) isDir=\(isDir.boolValue)")
+            }
+            return exists && isDir.boolValue
         }
 
         private var itemsDescription: String {
@@ -201,10 +218,19 @@
         }
 
         private func performPack() {
-            MiMiDefaults.shared.set(destinationPath, forKey: Self.lastArchiveDirectoryKey)
+            log.info("[PackDialog] \(#function) archiveName='\(archiveName)' dest='\(destinationPath)' format=\(selectedFormat) deleteSource=\(deleteSourceFiles)")
+            
+            // Only save destination if it's a valid absolute path
+            if destinationPath.hasPrefix("/") && isValidDestination {
+                MiMiDefaults.shared.set(destinationPath, forKey: Self.lastArchiveDirectoryKey)
+            } else {
+                log.warning("[PackDialog] Not saving invalid destination: '\(destinationPath)'")
+            }
 
             let format: ArchiveFormat = selectedFormat
-            onPack(archiveName, format, URL(fileURLWithPath: destinationPath), deleteSourceFiles)
+            let destURL = URL(fileURLWithPath: destinationPath)
+            log.info("[PackDialog] Final destURL='\(destURL.path)' absolutePath='\(destURL.absoluteURL.path)'")
+            onPack(archiveName, format, destURL, deleteSourceFiles)
         }
 
         private func browseForFolder() {

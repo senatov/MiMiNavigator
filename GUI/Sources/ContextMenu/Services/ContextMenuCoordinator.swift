@@ -51,12 +51,14 @@ final class ContextMenuCoordinator {
     
     // MARK: - Panel Refresh
     
-    /// Refresh both panels
+    /// Refresh both panels after file operations
+    /// Adds small delay for FSEvents to catch up, then forces full refresh
     func refreshPanels(appState: AppState) {
-        log.debug("\(#function) refreshing both panels")
+        log.debug("\(#function) scheduling panel refresh")
         Task { @MainActor in
-            await appState.scanner.refreshFiles(currSide: .left)
-            await appState.scanner.refreshFiles(currSide: .right)
+            // Small delay to allow FSEvents to process filesystem changes
+            try? await Task.sleep(for: .milliseconds(100))
+            appState.forceRefreshBothPanels()
             log.debug("\(#function) refresh completed")
         }
     }

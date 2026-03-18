@@ -40,7 +40,14 @@ extension FileTableView {
                             .frame(maxWidth: .infinity)
                             .contentShape(Rectangle())
                             .contextMenu { panelBackgroundMenu }
-                            .onTapGesture { selectedID = nil }
+                            // Double-click on empty area → clear marks (like Esc)
+                            .onTapGesture(count: 2) {
+                                appState.unmarkAll(on: panelSide)
+                            }
+                            // Single-click → just deselect file (keep marks)
+                            .onTapGesture {
+                                selectedID = nil
+                            }
 
                         } header: {
                             TableHeaderView(

@@ -8,11 +8,15 @@
     import Foundation
 
     // MARK: - Archive Manager
+    /// Central archive session coordinator with reference counting.
+    /// Supports same archive opened on multiple panels — tmp deleted only when all close.
     actor ArchiveManager {
 
         static let shared = ArchiveManager()
 
         private var sessions: [String: ArchiveSession] = [:]
+        /// Reference count per archive path — how many panels have it open
+        private var refCounts: [String: Int] = [:]
         private var openingInProgress: Set<String> = []
         private let fm = FileManager.default
 
@@ -32,6 +36,9 @@
             let key = archiveURL.path
 
             if let existing = sessions[key] {
+                // Archive already open — increment reference count
+                refCounts[key, default: 1] += 1
+                log.debug("[ArchiveManager] Reusing session for \(archiveURL.lastPathComponent), refCount=\(refCounts[key] ?? 1)")
                 return existing.tempDirectory
             }
 
@@ -80,20 +87,34 @@
             )
 
             sessions[key] = session
+            refCounts[key] = 1  // First open — refCount = 1
             openingInProgress.remove(key)
-            log.info("[ArchiveManager] Opened: \(archiveURL.lastPathComponent)")
+            log.info("[ArchiveManager] Opened: \(archiveURL.lastPathComponent), refCount=1")
             return tempDir
         }
 
         // MARK: - Close
 
+        /// Close archive session. Only removes tmp when refCount reaches 0.
         func closeArchive(at archiveURL: URL, repackIfDirty: Bool) async throws {
             let key = archiveURL.path
             guard var session = sessions[key] else { return }
+            
+            // Decrement reference count
+            let currentRef = refCounts[key, default: 1]
+            if currentRef > 1 {
+                refCounts[key] = currentRef - 1
+                log.info("[ArchiveManager] Close \(archiveURL.lastPathComponent), refCount=\(currentRef - 1) — keeping tmp")
+                return  // Other panels still using this archive
+            }
+            
+            // Last reference — actually close and cleanup
+            log.info("[ArchiveManager] Close \(archiveURL.lastPathComponent), refCount=0 — removing tmp")
 
             defer {
                 try? fm.removeItem(at: session.tempDirectory)
                 sessions.removeValue(forKey: key)
+                refCounts.removeValue(forKey: key)
             }
 
             if repackIfDirty {
@@ -153,6 +174,7 @@
         func cleanup() {
             sessions.values.forEach { try? fm.removeItem(at: $0.tempDirectory) }
             sessions.removeAll()
+            refCounts.removeAll()
             try? fm.removeItem(at: baseTempDir)
         }
 

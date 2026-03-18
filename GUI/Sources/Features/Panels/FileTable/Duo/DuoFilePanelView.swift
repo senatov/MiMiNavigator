@@ -106,7 +106,8 @@ struct DuoFilePanelView: View {
                         }
                     )
                 }
-                .animation(.easeOut(duration: 0.15), value: BatchOperationManager.shared.showProgressDialog)
+                .transition(.opacity)
+                .animation(.easeOut(duration: 0.12), value: BatchOperationManager.shared.showProgressDialog)
             }
         }
         // Find Files is now a standalone window (see FindFilesCoordinator)
