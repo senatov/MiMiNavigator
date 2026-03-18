@@ -89,7 +89,7 @@ import Foundation
                 title: "Connect to Server…",
                 icon: "server.rack",
                 action: { ConnectToServerCoordinator.shared.toggle() },
-                shortcut: "⌃N"
+                hotKey: .connectToServer
             ),
             MenuItem(
                 title: "Network Neighborhood",
@@ -97,7 +97,7 @@ import Foundation
                 action: {
                     NetworkNeighborhoodCoordinator.shared.toggle()
                 },
-                shortcut: nil
+                hotKey: .networkNeighborhood
             ),
         ])
 

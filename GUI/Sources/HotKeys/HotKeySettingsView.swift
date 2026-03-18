@@ -272,6 +272,7 @@ struct HotKeySettingsView: View {
         case .navigation:     return .orange
         case .selection:      return .green
         case .search:         return .purple
+        case .network:        return .teal
         case .application:    return .gray
         }
     }

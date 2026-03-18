@@ -304,6 +304,16 @@
                 log.info("[KEY] → Exit")
                 onExit?()
                 return nil
+                
+            // ── Extended File Operations (not keyboard-driven yet) ──
+            case .packFiles, .unpackFiles, .compareContent, .syncDirectories:
+                log.debug("[KEY] Action \(action.rawValue) not bound to keyboard handler")
+                return event
+                
+            // ── Network (handled via menu/toolbar) ──
+            case .connectToServer, .networkNeighborhood:
+                log.debug("[KEY] Network action \(action.rawValue) not bound to keyboard handler")
+                return event
             }
         }
 

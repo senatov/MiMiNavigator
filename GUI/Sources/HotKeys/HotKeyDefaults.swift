@@ -21,6 +21,10 @@ enum HotKeyDefaults {
         HotKeyBinding(action: .moveFile,         keyCode: 0x61, modifiers: .none),         // F6
         HotKeyBinding(action: .newFolder,        keyCode: 0x62, modifiers: .none),         // F7
         HotKeyBinding(action: .deleteFile,       keyCode: 0x64, modifiers: .none),         // F8
+        HotKeyBinding(action: .packFiles,        keyCode: 0x60, modifiers: .option),       // ⌥F5
+        HotKeyBinding(action: .unpackFiles,      keyCode: 0x65, modifiers: .option),       // ⌥F9
+        HotKeyBinding(action: .compareContent,   keyCode: 0x08, modifiers: .control),      // ⌃C
+        HotKeyBinding(action: .syncDirectories,  keyCode: 0x01, modifiers: .control),      // ⌃S
 
         // ── Navigation ──
         HotKeyBinding(action: .togglePanelFocus, keyCode: 0x30, modifiers: .none),         // Tab
@@ -57,6 +61,10 @@ enum HotKeyDefaults {
 
         // ── Search ──
         HotKeyBinding(action: .findFiles,        keyCode: 0x62, modifiers: .option),       // ⌥F7
+        
+        // ── Network ──
+        HotKeyBinding(action: .connectToServer,    keyCode: 0x2D, modifiers: .control),    // ⌃N
+        HotKeyBinding(action: .networkNeighborhood, keyCode: 0x00, modifiers: .none),      // No default
         
         // ── Application ──
         HotKeyBinding(action: .toggleHiddenFiles, keyCode: 0x2F, modifiers: .command),     // ⌘.

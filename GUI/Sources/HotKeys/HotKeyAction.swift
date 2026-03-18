@@ -19,6 +19,10 @@ enum HotKeyAction: String, CaseIterable, Identifiable, Codable, Sendable {
     case moveFile = "moveFile"
     case newFolder = "newFolder"
     case deleteFile = "deleteFile"
+    case packFiles = "packFiles"
+    case unpackFiles = "unpackFiles"
+    case compareContent = "compareContent"
+    case syncDirectories = "syncDirectories"
 
     // MARK: - Clipboard
     case clipboardCopy = "clipboardCopy"
@@ -55,6 +59,10 @@ enum HotKeyAction: String, CaseIterable, Identifiable, Codable, Sendable {
 
     // MARK: - Search
     case findFiles = "findFiles"
+    
+    // MARK: - Network
+    case connectToServer = "connectToServer"
+    case networkNeighborhood = "networkNeighborhood"
 
     // MARK: - Application
     case toggleHiddenFiles = "toggleHiddenFiles"
@@ -72,6 +80,10 @@ enum HotKeyAction: String, CaseIterable, Identifiable, Codable, Sendable {
             case .moveFile: return "Move File"
             case .newFolder: return "New Folder"
             case .deleteFile: return "Delete File"
+            case .packFiles: return "Pack Files"
+            case .unpackFiles: return "Unpack Files"
+            case .compareContent: return "Compare by Content"
+            case .syncDirectories: return "Synchronize Directories"
             case .clipboardCopy: return "Copy to Clipboard"
             case .clipboardCut: return "Cut to Clipboard"
             case .clipboardPaste: return "Paste from Clipboard"
@@ -98,6 +110,8 @@ enum HotKeyAction: String, CaseIterable, Identifiable, Codable, Sendable {
             case .nextTab: return "Next Tab"
             case .prevTab: return "Previous Tab"
             case .findFiles: return "Find Files"
+            case .connectToServer: return "Connect to Server"
+            case .networkNeighborhood: return "Network Neighborhood"
             case .toggleHiddenFiles: return "Toggle Hidden Files"
             case .openSettings: return "Open Settings"
             case .exitApp: return "Exit Application"
@@ -108,6 +122,7 @@ enum HotKeyAction: String, CaseIterable, Identifiable, Codable, Sendable {
     var category: HotKeyCategory {
         switch self {
             case .viewFile, .editFile, .copyFile, .moveFile, .newFolder, .deleteFile,
+                 .packFiles, .unpackFiles, .compareContent, .syncDirectories,
                  .clipboardCopy, .clipboardCut, .clipboardPaste:
                 return .fileOperations
             case .togglePanelFocus, .moveUp, .moveDown, .pageUp, .pageDown, .moveToTop, .moveToBottom, .openSelected, .parentDirectory, .refreshPanels,
@@ -118,6 +133,8 @@ enum HotKeyAction: String, CaseIterable, Identifiable, Codable, Sendable {
                 return .selection
             case .findFiles:
                 return .search
+            case .connectToServer, .networkNeighborhood:
+                return .network
             case .toggleHiddenFiles, .openSettings, .exitApp:
                 return .application
         }
@@ -130,6 +147,7 @@ enum HotKeyCategory: String, CaseIterable, Identifiable, Sendable {
     case navigation = "Navigation"
     case selection = "Selection"
     case search = "Search"
+    case network = "Network"
     case application = "Application"
 
     var id: String { rawValue }
@@ -141,6 +159,7 @@ enum HotKeyCategory: String, CaseIterable, Identifiable, Sendable {
             case .navigation: return "arrow.left.arrow.right"
             case .selection: return "checkmark.circle"
             case .search: return "magnifyingglass"
+            case .network: return "globe"
             case .application: return "gearshape"
         }
     }

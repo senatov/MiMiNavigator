@@ -35,7 +35,7 @@ import Foundation
                         )
                     }
                 },
-                shortcut: "⌥F5"
+                hotKey: .packFiles
             ),
             MenuItem(
                 title: "Settings…",
@@ -47,7 +47,7 @@ import Foundation
                 title: "Unpack…",
                 icon: "archivebox.fill",
                 action: stub("Unpack…"),
-                shortcut: "⌥F9"
+                hotKey: .unpackFiles
             ),
             MenuItem(
                 title: "Test Archive(s)",
@@ -59,13 +59,13 @@ import Foundation
                 title: "Compare By Content…",
                 icon: "doc.text.magnifyingglass",
                 action: stub("Compare By Content…"),
-                shortcut: "⌃C"
+                hotKey: .compareContent
             ),
             MenuItem(
                 title: "Synchronize Directories…",
                 icon: "arrow.triangle.2.circlepath",
                 action: stub("Synchronize Directories…"),
-                shortcut: "⌃S"
+                hotKey: .syncDirectories
             ),
             MenuItem(
                 title: "Quit",
