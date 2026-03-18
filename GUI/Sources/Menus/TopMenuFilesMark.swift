@@ -41,7 +41,7 @@ import Foundation
                 title: "Settings…",
                 icon: "gearshape",
                 action: { SettingsCoordinator.shared.toggle() },
-                shortcut: "⌘,"
+                hotKey: .openSettings
             ),
             MenuItem(
                 title: "Unpack…",

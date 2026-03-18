@@ -97,7 +97,7 @@ import Foundation
                 title: "Keyboard Shortcuts",
                 icon: "keyboard",
                 action: { HotKeySettingsCoordinator.shared.showSettings() },
-                shortcut: "F1"
+                hotKey: .openSettings
             ),
             MenuItem(
                 title: "Visit MimiNav Website",
