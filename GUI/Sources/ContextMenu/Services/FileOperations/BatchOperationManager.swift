@@ -151,15 +151,15 @@ final class BatchOperationManager {
     // MARK: - Refresh Helpers
 
     private func refreshPanels(appState: AppState) async {
-        await appState.refreshLeftFiles()
-        await appState.refreshRightFiles()
+        await appState.refreshFiles(for: .left, force: true)
+        await appState.refreshFiles(for: .right, force: true)
     }
 
     private func refreshOpposite(appState: AppState, sourcePanel: PanelSide) async {
         if sourcePanel == .left {
-            await appState.refreshRightFiles()
+            await appState.refreshFiles(for: .right, force: true)
         } else {
-            await appState.refreshLeftFiles()
+            await appState.refreshFiles(for: .left, force: true)
         }
     }
 }

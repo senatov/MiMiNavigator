@@ -283,8 +283,9 @@
         }
 
         // MARK: - Full refresh (used by timer safety net and explicit navigation)
+        /// - Parameter force: if true, bypasses cooldown check (use after file operations)
         @Sendable
-        func refreshFiles(currSide: PanelSide) async {
+        func refreshFiles(currSide: PanelSide, force: Bool = false) async {
             if Task.isCancelled { return }
             // Guard: skip if a scan is already running for this panel
             guard scanInProgress[currSide] != true else {
@@ -293,11 +294,17 @@
             }
 
             // Guard: skip if a full scan happened very recently (navigation + timer double trigger)
-            if let last = lastFullScan[currSide],
-                Date().timeIntervalSince(last) < scanCooldown
+            // BUT allow forced refresh (after file operations like delete/move/copy)
+            if !force,
+               let last = lastFullScan[currSide],
+               Date().timeIntervalSince(last) < scanCooldown
             {
                 log.warning("[Scan] ⏭️ refreshFiles SKIPPED: scanCooldown (\(String(format: "%.1f", Date().timeIntervalSince(last)))s < \(scanCooldown)s) for \(currSide)")
                 return
+            }
+            
+            if force {
+                log.debug("[Scan] forced refresh requested, bypassing cooldown for \(currSide)")
             }
             // cancel any previous scan for this panel
             if let task = activeScanTask[currSide] ?? nil {

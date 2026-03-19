@@ -111,12 +111,12 @@
 
         if panel == .left {
             await appState.scanner.setLeftDirectory(pathStr: path)
-            await appState.scanner.refreshFiles(currSide: .left)
-            await appState.refreshLeftFiles()
+            await appState.scanner.refreshFiles(currSide: .left, force: true)
+            await appState.refreshFiles(for: .left, force: true)
         } else {
             await appState.scanner.setRightDirectory(pathStr: path)
-            await appState.scanner.refreshFiles(currSide: .right)
-            await appState.refreshRightFiles()
+            await appState.scanner.refreshFiles(currSide: .right, force: true)
+            await appState.refreshFiles(for: .right, force: true)
         }
     }
 

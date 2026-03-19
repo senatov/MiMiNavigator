@@ -28,8 +28,7 @@ extension AppState {
 
     func refreshAndSelect(name: String, on panel: PanelSide) async {
         log.info("[Selection] refreshAndSelect: name='\(name)' panel=\(panel)")
-        await scanner.clearCooldown(for: panel)
-        await refreshFiles(for: panel)
+        await refreshFiles(for: panel, force: true)
         selectFileByName(name, on: panel)
     }
 
@@ -46,9 +45,10 @@ extension AppState {
         }
         log.debug("[REFRESH] lastRemovedIndex=\(lastRemovedIndex)")
         
-        log.debug("[REFRESH] ⏱ calling refreshFiles...")
+        // Use force=true to bypass cooldown after file operations
+        log.debug("[REFRESH] ⏱ calling refreshFiles(force: true)...")
         let startRefresh = CFAbsoluteTimeGetCurrent()
-        await refreshFiles(for: panel)
+        await refreshFiles(for: panel, force: true)
         let refreshElapsed = CFAbsoluteTimeGetCurrent() - startRefresh
         log.debug("[REFRESH] ⏱ refreshFiles done in \(String(format: "%.3f", refreshElapsed))s")
         
@@ -56,7 +56,7 @@ extension AppState {
         log.debug("[REFRESH] newFiles.count=\(newFiles.count)")
         
         guard !newFiles.isEmpty else {
-            log.warning("[REFRESH] newFiles is empty, skipping selection")
+            log.debug("[REFRESH] newFiles is empty (dir now empty), skipping selection")
             return
         }
         var targetIndex = min(lastRemovedIndex, newFiles.count - 1)

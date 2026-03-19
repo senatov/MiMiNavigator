@@ -23,15 +23,15 @@ enum L10n {
         static let select = String(localized: "Select", comment: "Select button")
     }
     
-    // MARK: - Toolbar Buttons
+    // MARK: - Toolbar Buttons (labels only, hotkeys added dynamically)
     enum Toolbar {
-        static let view = String(localized: "F3 View", comment: "View toolbar button")
-        static let edit = String(localized: "F4 Edit", comment: "Edit toolbar button")
-        static let copy = String(localized: "F5 Copy", comment: "Copy toolbar button")
-        static let move = String(localized: "F6 Move", comment: "Move toolbar button")
-        static let newFolder = String(localized: "F7 NewFolder", comment: "New folder toolbar button")
-        static let delete = String(localized: "F8 Delete", comment: "Delete toolbar button")
-        static let settings = String(localized: "F9 Settings", comment: "Settings toolbar button")
+        static let view = String(localized: "View", comment: "View toolbar button")
+        static let edit = String(localized: "Edit", comment: "Edit toolbar button")
+        static let copy = String(localized: "Copy", comment: "Copy toolbar button")
+        static let move = String(localized: "Move", comment: "Move toolbar button")
+        static let newFolder = String(localized: "NewFolder", comment: "New folder toolbar button")
+        static let delete = String(localized: "Delete", comment: "Delete toolbar button")
+        static let settings = String(localized: "Settings", comment: "Settings toolbar button")
         static let console = String(localized: "Console", comment: "Console toolbar button")
         static let exit = String(localized: "Exit", comment: "Exit toolbar button")
     }

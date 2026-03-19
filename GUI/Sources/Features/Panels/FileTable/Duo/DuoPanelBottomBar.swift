@@ -33,17 +33,18 @@ struct DuoPanelBottomToolbarSection: View {
     }
     
     var body: some View {
+        let store = HotKeyStore.shared
         VStack(spacing: 0) {
             HStack(spacing: Layout.toolbarButtonSpacing) {
-                makeButton(title: L10n.Toolbar.view, icon: "eye.circle", action: onView)
-                makeButton(title: L10n.Toolbar.edit, icon: "pencil", action: onEdit)
-                makeButton(title: L10n.Toolbar.copy, icon: "doc.on.doc", action: onCopy)
-                makeButton(title: L10n.Toolbar.move, icon: "square.and.arrow.down.on.square", action: onMove)
-                makeButton(title: L10n.Toolbar.newFolder, icon: "folder.badge.plus", action: onNewFolder)
-                makeButton(title: L10n.Toolbar.delete, icon: "minus.rectangle", action: onDelete)
-                makeButton(title: L10n.Toolbar.settings, icon: "gearshape", action: onSettings)
+                makeButton(title: store.buttonLabel(L10n.Toolbar.view, for: .viewFile), icon: "eye.circle", action: onView)
+                makeButton(title: store.buttonLabel(L10n.Toolbar.edit, for: .editFile), icon: "pencil", action: onEdit)
+                makeButton(title: store.buttonLabel(L10n.Toolbar.copy, for: .copyFile), icon: "doc.on.doc", action: onCopy)
+                makeButton(title: store.buttonLabel(L10n.Toolbar.move, for: .moveFile), icon: "square.and.arrow.down.on.square", action: onMove)
+                makeButton(title: store.buttonLabel(L10n.Toolbar.newFolder, for: .newFolder), icon: "folder.badge.plus", action: onNewFolder)
+                makeButton(title: store.buttonLabel(L10n.Toolbar.delete, for: .deleteFile), icon: "minus.rectangle", action: onDelete)
+                makeButton(title: store.buttonLabel(L10n.Toolbar.settings, for: .openSettings), icon: "gearshape", action: onSettings)
                 makeButton(title: L10n.Toolbar.console, icon: "terminal", action: onConsole)
-                makeButton(title: L10n.Toolbar.exit, icon: "power", action: onExit)
+                makeButton(title: store.buttonLabel(L10n.Toolbar.exit, for: .exitApp), icon: "power", action: onExit)
             }
             .frame(maxWidth: .infinity)
             .padding(.horizontal, Layout.toolbarHorizontalPadding)

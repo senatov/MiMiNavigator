@@ -89,7 +89,7 @@ struct HotKeyBinding: Codable, Identifiable, Hashable, Sendable {
     // MARK: - Key Name Mapping
     static func keyName(for keyCode: UInt16) -> String {
         switch keyCode {
-        // Function keys
+        // Function keys F1-F12
         case 0x7A: return "F1"
         case 0x78: return "F2"
         case 0x63: return "F3"
@@ -102,6 +102,14 @@ struct HotKeyBinding: Codable, Identifiable, Hashable, Sendable {
         case 0x6D: return "F10"
         case 0x67: return "F11"
         case 0x6F: return "F12"
+        // Function keys F13-F19 (extended keyboard / Touch Bar)
+        case 0x69: return "F13"
+        case 0x6B: return "F14"
+        case 0x71: return "F15"
+        case 0x6A: return "F16"
+        case 0x40: return "F17"
+        case 0x4F: return "F18"
+        case 0x50: return "F19"
         // Navigation
         case 0x7E: return "↑"
         case 0x7D: return "↓"
@@ -173,6 +181,8 @@ struct HotKeyBinding: Codable, Identifiable, Hashable, Sendable {
             "F1": 0x7A, "F2": 0x78, "F3": 0x63, "F4": 0x76, "F5": 0x60,
             "F6": 0x61, "F7": 0x62, "F8": 0x64, "F9": 0x65, "F10": 0x6D,
             "F11": 0x67, "F12": 0x6F,
+            "F13": 0x69, "F14": 0x6B, "F15": 0x71, "F16": 0x6A,
+            "F17": 0x40, "F18": 0x4F, "F19": 0x50,
             "↑": 0x7E, "↓": 0x7D, "←": 0x7B, "→": 0x7C,
             "↩": 0x24, "⌅": 0x4C, "⌫": 0x33, "⌦": 0x75,
             "Home": 0x73, "End": 0x77, "PageUp": 0x74, "PageDown": 0x79,

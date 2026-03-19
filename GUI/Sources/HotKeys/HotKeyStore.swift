@@ -51,6 +51,19 @@ final class HotKeyStore {
         return b.keyCode == 0 ? "" : b.displayString
     }
 
+    /// Toolbar button label: "F5 Copy" or just "Copy" if no hotkey
+    func toolbarLabel(for action: HotKeyAction) -> String {
+        let name = action.displayName
+        let shortcut = shortcutString(for: action)
+        return shortcut.isEmpty ? name : "\(shortcut) \(name)"
+    }
+
+    /// Button label with custom text: "F5 Copy" combining hotkey + provided label
+    func buttonLabel(_ label: String, for action: HotKeyAction) -> String {
+        let shortcut = shortcutString(for: action)
+        return shortcut.isEmpty ? label : "\(shortcut) \(label)"
+    }
+
     /// Help text for toolbar buttons: "Description (shortcut)"
     func helpText(_ description: String, for action: HotKeyAction) -> String {
         let sc = shortcutString(for: action)

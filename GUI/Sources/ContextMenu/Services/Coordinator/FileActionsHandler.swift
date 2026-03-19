@@ -123,11 +123,11 @@
             switch panel {
                 case .left:
                     await appState.scanner.setLeftDirectory(pathStr: path)
-                    await appState.refreshLeftFiles()
+                    await appState.refreshFiles(for: .left, force: true)
 
                 case .right:
                     await appState.scanner.setRightDirectory(pathStr: path)
-                    await appState.refreshRightFiles()
+                    await appState.refreshFiles(for: .right, force: true)
             }
         }
 

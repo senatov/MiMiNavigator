@@ -36,15 +36,17 @@ extension AppState {
         await refreshFiles(for: .right)
     }
 
-    func refreshFiles(for panel: PanelSide) async {
-        log.debug("[REFRESH-FILES] ⏱ START panel=\(panel)")
+    /// Refresh files for a specific panel
+    /// - Parameter force: if true, bypasses cooldown check (use after file operations)
+    func refreshFiles(for panel: PanelSide, force: Bool = false) async {
+        log.debug("[REFRESH-FILES] ⏱ START panel=\(panel) force=\(force)")
         let panelURL = url(for: panel)
         if Self.isRemotePath(panelURL) {
             log.debug("[REFRESH-FILES] remote path detected, calling refreshRemoteFiles")
             await refreshRemoteFiles(for: panel)
         } else {
             log.debug("[REFRESH-FILES] local path, calling scanner.refreshFiles")
-            await scanner.refreshFiles(currSide: panel)
+            await scanner.refreshFiles(currSide: panel, force: force)
             log.debug("[REFRESH-FILES] scanner.refreshFiles done")
         }
         if self[panel: panel].selectedFile == nil {

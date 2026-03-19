@@ -337,6 +337,7 @@ struct HotKeySettingsView: View {
     private func bindingRow(_ binding: HotKeyBinding) -> some View {
         let isHovered = hoveredAction == binding.action
         let hasConflict = isConflicting(binding)
+        let hasBinding = binding.keyCode != 0
         
         return HStack(spacing: 10) {
             // Conflict indicator (red dot)
@@ -357,6 +358,22 @@ struct HotKeySettingsView: View {
             // Inline key recorder
             HotKeyRecorderView(binding: binding) { keyCode, modifiers in
                 assignShortcut(action: binding.action, keyCode: keyCode, modifiers: modifiers)
+            }
+            
+            // Delete binding button (minus) — always visible when has binding
+            if hasBinding {
+                Button {
+                    store.updateBinding(action: binding.action, keyCode: 0, modifiers: .none)
+                } label: {
+                    Image(systemName: "minus.circle")
+                        .font(.system(size: 14))
+                        .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+                .help("Remove shortcut")
+            } else {
+                // Spacer to keep alignment when no binding
+                Color.clear.frame(width: 14)
             }
             
             // Reset button (visible on hover if modified)
@@ -390,7 +407,7 @@ struct HotKeySettingsView: View {
     }
 
     // MARK: - Footer Bar
-    /// Bottom bar with reset button and shortcut count
+    /// Bottom bar with reset button, F5 warning, and shortcut count
     private var footerBar: some View {
         HStack(spacing: 12) {
             // Reset dropdown
@@ -403,6 +420,19 @@ struct HotKeySettingsView: View {
             }
             .menuStyle(.borderlessButton)
             .fixedSize()
+            
+            Spacer()
+            
+            // F5 warning
+            HStack(spacing: 4) {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .font(.system(size: 10))
+                    .foregroundStyle(.orange)
+                Text("F5 is reserved by macOS")
+                    .font(.system(size: 10))
+                    .foregroundStyle(.secondary)
+            }
+            .help("macOS uses F5 for 'Move focus to toolbar'. To use F5, disable it in System Preferences → Keyboard → Shortcuts → Keyboard.")
             
             Spacer()
             
