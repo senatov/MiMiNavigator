@@ -56,7 +56,10 @@ final class FileOpsEngine {
         // Show panel for any operation with multiple items or directories
         let hasDirectories = items.contains { (try? $0.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory == true }
         let showPanel = items.count > 1 || hasDirectories
-        if showPanel { panel.show(progress: progress) }
+        if showPanel { 
+            log.info("[FileOpsEngine] showing progress panel for \(items.count) items")
+            panel.show(progress: progress) 
+        }
         
         for item in items {
             let targetURL = UniqueNameGen.resolve(name: item.lastPathComponent, in: destination)
@@ -82,7 +85,8 @@ final class FileOpsEngine {
         }
         
         progress.complete()
-        if showPanel { panel.hide() }
+        // Don't hide panel here — it will hide itself when user clicks OK
+        // if showPanel { panel.hide() }
         
         return progress
     }
@@ -104,10 +108,13 @@ final class FileOpsEngine {
         )
 
         let showPanel = items.count > 5
-        if showPanel { panel.show(progress: progress) }
+        if showPanel { 
+            log.info("[FileOpsEngine] showing progress panel for delete \(items.count) items")
+            panel.show(progress: progress) 
+        }
         defer {
             progress.complete()
-            if showPanel { panel.hide() }
+            // Don't hide panel here — it will hide itself when user clicks OK
         }
 
         let fm = FileManager.default
@@ -154,10 +161,13 @@ final class FileOpsEngine {
 
         // Show panel for any non-trivial operation (>1 file or >1MB or any directory)
         let showPanel = plan.fileCount > 1 || plan.totalBytes > 1_000_000 || plan.items.contains { (try? $0.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory == true }
-        if showPanel { panel.show(progress: progress) }
+        if showPanel { 
+            log.info("[FileOpsEngine] showing progress panel for \(plan.fileCount) files")
+            panel.show(progress: progress) 
+        }
         defer {
             progress.complete()
-            if showPanel { panel.hide() }
+            // Don't hide panel here — it will hide itself when user clicks OK
         }
 
         switch plan.strategy {
