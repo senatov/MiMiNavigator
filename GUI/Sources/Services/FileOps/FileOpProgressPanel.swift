@@ -22,10 +22,12 @@ final class FileOpProgressPanel {
     private var bytesLabel: NSTextField?
     private var progressBar: NSProgressIndicator?
     private var stopButton: NSButton?
+    private var okButton: NSButton?
 
     // MARK: - State
     private var progress: FileOpProgress?
     private var updateTimer: Timer?
+    private var waitingForOK = false
 
     private init() {}
 
@@ -33,6 +35,7 @@ final class FileOpProgressPanel {
 
     func show(progress: FileOpProgress) {
         self.progress = progress
+        self.waitingForOK = false
         if panel == nil { createPanel() }
         guard let panel else { return }
 
@@ -42,6 +45,8 @@ final class FileOpProgressPanel {
         progressBar?.isIndeterminate = false
         progressBar?.doubleValue = 0
         progressBar?.startAnimation(nil)
+        stopButton?.isHidden = false
+        okButton?.isHidden = true
 
         centerInMainWindow()
         if let window = NSApp.mainWindow ?? NSApp.keyWindow {
@@ -80,9 +85,18 @@ final class FileOpProgressPanel {
         progressBar?.doubleValue = progress.fraction * 100.0
 
         if progress.isCompleted || progress.isCancelled {
-            // Auto-hide after 0.5s on completion
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
-                self?.hide()
+            // Show OK button, hide Stop button
+            stopButton?.isHidden = true
+            okButton?.isHidden = false
+            waitingForOK = true
+            
+            // Update title to show completion
+            if progress.isCancelled {
+                titleLabel?.stringValue = "❌ Cancelled"
+            } else if !progress.errors.isEmpty {
+                titleLabel?.stringValue = "⚠️ Completed with \(progress.errors.count) error(s)"
+            } else {
+                titleLabel?.stringValue = "✅ Completed: \(progress.processedFiles) files"
             }
         }
     }
@@ -180,6 +194,16 @@ final class FileOpProgressPanel {
         btn.target = self
         bg.addSubview(btn)
         stopButton = btn
+        
+        // OK button (hidden initially, shown on completion)
+        let okBtn = NSButton(title: "OK", target: nil, action: #selector(okClicked))
+        okBtn.frame = NSRect(x: w - 70, y: 4, width: 56, height: 22)
+        okBtn.bezelStyle = .rounded
+        okBtn.controlSize = .small
+        okBtn.target = self
+        okBtn.isHidden = true
+        bg.addSubview(okBtn)
+        okButton = okBtn
 
         p.contentView = bg
         self.panel = p
@@ -188,5 +212,10 @@ final class FileOpProgressPanel {
     @objc private func stopClicked() {
         progress?.cancel()
         log.info("[FileOpProgressPanel] stop clicked")
+    }
+    
+    @objc private func okClicked() {
+        log.info("[FileOpProgressPanel] OK clicked, hiding panel")
+        hide()
     }
 }

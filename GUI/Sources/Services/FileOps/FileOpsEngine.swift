@@ -35,12 +35,56 @@ final class FileOpsEngine {
 
     // MARK: - Public API: Move
 
-    /// Move items to destination. Auto-detects strategy.
+    /// Move items to destination. For same-volume directories, uses atomic rename.
+    /// For cross-volume or files, auto-detects strategy.
     @discardableResult
     func move(items: [URL], to destination: URL) async throws -> FileOpProgress {
         log.info("[FileOpsEngine] move \(items.count) items → \(destination.path)")
-        let plan = await buildPlan(items: items, destination: destination)
-        return try await execute(plan: plan, operation: .move)
+        
+        // Try atomic move first for each top-level item (works for same-volume dirs)
+        let fm = FileManager.default
+        var failedItems: [URL] = []
+        var movedCount = 0
+        
+        let progress = FileOpProgress(
+            totalFiles: items.count,
+            totalBytes: 0,
+            type: .move,
+            destination: destination
+        )
+        
+        // Show panel for any operation with multiple items or directories
+        let hasDirectories = items.contains { (try? $0.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory == true }
+        let showPanel = items.count > 1 || hasDirectories
+        if showPanel { panel.show(progress: progress) }
+        
+        for item in items {
+            let targetURL = UniqueNameGen.resolve(name: item.lastPathComponent, in: destination)
+            progress.setCurrentFile(item.lastPathComponent)
+            
+            do {
+                // Try atomic move (works for same-volume)
+                try fm.moveItem(at: item, to: targetURL)
+                movedCount += 1
+                progress.fileCompleted(name: item.lastPathComponent, success: true)
+                log.debug("[FileOpsEngine] atomic move OK: \(item.lastPathComponent)")
+            } catch {
+                // Cross-volume — need to copy + delete
+                log.debug("[FileOpsEngine] atomic move failed (cross-volume?): \(item.lastPathComponent)")
+                failedItems.append(item)
+            }
+        }
+        
+        // Handle cross-volume items with copy + delete
+        if !failedItems.isEmpty {
+            let plan = await buildPlan(items: failedItems, destination: destination)
+            try await executeFewLarge(plan: plan, operation: .move, progress: progress)
+        }
+        
+        progress.complete()
+        if showPanel { panel.hide() }
+        
+        return progress
     }
 
     // MARK: - Public API: Delete
@@ -108,8 +152,8 @@ final class FileOpsEngine {
             destination: plan.destination
         )
 
-        // Show panel for non-trivial operations
-        let showPanel = plan.strategy != .simple
+        // Show panel for any non-trivial operation (>1 file or >1MB or any directory)
+        let showPanel = plan.fileCount > 1 || plan.totalBytes > 1_000_000 || plan.items.contains { (try? $0.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory == true }
         if showPanel { panel.show(progress: progress) }
         defer {
             progress.complete()

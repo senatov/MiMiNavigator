@@ -15,6 +15,7 @@ final class NSResizableDividerView: NSView {
     // MARK: - State
 
     private var isDragging = false
+    private var cursorPushed = false
 
     // MARK: - NSView
 
@@ -72,13 +73,24 @@ final class NSResizableDividerView: NSView {
         isDragging = false
         needsDisplay = true
         onDragEnd?()
+        
+        // Reset cursor if mouse ended outside our bounds
+        let loc = convert(event.locationInWindow, from: nil)
+        if !bounds.contains(loc) && cursorPushed {
+            NSCursor.pop()
+            cursorPushed = false
+        }
     }
 
     override func mouseEntered(with event: NSEvent) {
+        guard !cursorPushed else { return }
         NSCursor.resizeLeftRight.push()
+        cursorPushed = true
     }
 
     override func mouseExited(with event: NSEvent) {
+        guard cursorPushed else { return }
         NSCursor.pop()
+        cursorPushed = false
     }
 }

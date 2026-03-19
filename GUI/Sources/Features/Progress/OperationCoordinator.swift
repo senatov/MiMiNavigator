@@ -17,6 +17,7 @@ final class OperationCoordinator {
     private init() {}
     
     private var activeOperations: [UUID: OperationProgress] = [:]
+    private var activeJournals: [UUID: OperationJournal] = [:]
     private var progressPanel: OperationProgressPanel?
     
     // MARK: - Public API
@@ -88,7 +89,15 @@ final class OperationCoordinator {
         
         log.info("[OpCoord] Estimate: \(estimate.totalFiles) files, \(estimate.formattedSize), \(estimate.formattedTime)")
         
-        // 3. Show confirmation if lengthy
+        // 3. Create transaction journal for rollback support
+        let journal = OperationJournal()
+        activeJournals[progress.id] = journal
+        
+        defer {
+            activeJournals.removeValue(forKey: progress.id)
+        }
+        
+        // 4. Show confirmation if lengthy
         if estimate.isLengthy {
             let confirmed = await showConfirmation(for: progress, estimate: estimate)
             if !confirmed {
@@ -101,36 +110,49 @@ final class OperationCoordinator {
             progressPanel?.onPause = { [weak self] in
                 Task { await self?.togglePause(progress) }
             }
-            progressPanel?.onCancel = { [weak self] in
-                Task { await self?.cancelOperation(progress) }
+            progressPanel?.onCancel = { [weak self, weak journal] in
+                Task { 
+                    await self?.cancelAndRollback(progress, journal: journal)
+                }
             }
             progressPanel?.show(for: progress)
         }
         
-        // 4. Execute operation
+        // 5. Execute operation
         progress.updateState(.running)
         
         do {
             switch type {
             case .copy:
-                try await performCopy(sources: sources, destination: destination!, progress: progress)
+                try await performCopy(sources: sources, destination: destination!, progress: progress, journal: journal)
             case .move:
-                try await performMove(sources: sources, destination: destination!, progress: progress)
+                try await performMove(sources: sources, destination: destination!, progress: progress, journal: journal)
             case .delete:
-                try await performDelete(sources: sources, progress: progress)
+                try await performDelete(sources: sources, progress: progress, journal: journal)
             default:
                 break
             }
             
-            progress.updateState(.completed)
-            log.info("[OpCoord] Completed: \(progress.processedFiles) files")
+            // Check if cancelled during operation
+            if progress.state.isCancelling {
+                log.info("[OpCoord] Operation was cancelled, rollback already done")
+            } else {
+                progress.updateState(.completed)
+                log.info("[OpCoord] Completed: \(progress.processedFiles) files")
+            }
             
         } catch {
+            // On error, rollback all changes
+            log.error("[OpCoord] Operation failed: \(error.localizedDescription)")
             progress.updateState(.failed(error.localizedDescription))
+            
+            let rolled = await journal.rollback(progress: progress)
+            log.info("[OpCoord] Rolled back \(rolled) entries after failure")
+            
             throw error
         }
         
-        // 5. Hide panel after short delay
+        // 6. Hide panel after short delay
         if estimate.isLengthy {
             try? await Task.sleep(for: .milliseconds(500))
             progressPanel?.hide()
@@ -173,39 +195,72 @@ final class OperationCoordinator {
         }
     }
     
-    private func cancelOperation(_ progress: OperationProgress) async {
+    /// Cancel operation and rollback all changes
+    private func cancelAndRollback(_ progress: OperationProgress, journal: OperationJournal?) async {
         progress.updateState(.cancelling)
-        log.info("[OpCoord] Cancelling...")
-        // Actual cancellation handled by operation loop checking state
+        log.info("[OpCoord] 🛑 Cancelling and rolling back...")
+        
+        // Wait a moment for current file operation to complete
+        try? await Task.sleep(for: .milliseconds(100))
+        
+        // Rollback all recorded changes
+        if let journal {
+            let rolled = await journal.rollback(progress: progress)
+            log.info("[OpCoord] ↩ Rolled back \(rolled) entries")
+            
+            // Show rollback result
+            let alert = NSAlert()
+            if journal.failedCount == 0 {
+                alert.messageText = "Operation Cancelled"
+                alert.informativeText = "Successfully rolled back \(rolled) changes."
+                alert.alertStyle = .informational
+            } else {
+                alert.messageText = "Rollback Incomplete"
+                alert.informativeText = "Rolled back \(rolled) changes, but \(journal.failedCount) failed to restore."
+                alert.alertStyle = .warning
+            }
+            alert.addButton(withTitle: "OK")
+            alert.runModal()
+        }
+        
+        progressPanel?.hide()
     }
     
     // MARK: - Perform Operations
     
-    private func performCopy(sources: [URL], destination: URL, progress: OperationProgress) async throws {
+    private func performCopy(sources: [URL], destination: URL, progress: OperationProgress, journal: OperationJournal) async throws {
         let fm = FileManager.default
         
         for source in sources {
-            if progress.state == .cancelling { break }
+            if progress.state.isCancelling { break }
             
-            while progress.state == .paused {
+            while progress.state.isPaused {
                 try await Task.sleep(for: .milliseconds(100))
             }
             
             let destURL = destination.appendingPathComponent(source.lastPathComponent)
             
             if source.isDirectory {
-                try await copyDirectory(source: source, destination: destURL, progress: progress)
+                try await copyDirectory(source: source, destination: destURL, progress: progress, journal: journal)
             } else {
+                // Handle overwrite
+                if fm.fileExists(atPath: destURL.path) {
+                    try journal.recordOverwrite(original: destURL, newSource: source)
+                    try fm.removeItem(at: destURL)
+                }
                 try fm.copyItem(at: source, to: destURL)
+                journal.recordCopy(from: source, to: destURL)
+                
                 let size = Int64((try? source.resourceValues(forKeys: [.fileSizeKey]))?.fileSize ?? 0)
                 progress.updateProgress(file: source.lastPathComponent, bytes: size)
             }
         }
     }
     
-    private func copyDirectory(source: URL, destination: URL, progress: OperationProgress) async throws {
+    private func copyDirectory(source: URL, destination: URL, progress: OperationProgress, journal: OperationJournal) async throws {
         let fm = FileManager.default
         try fm.createDirectory(at: destination, withIntermediateDirectories: true)
+        journal.recordCreateDirectory(destination)
         
         guard let enumerator = fm.enumerator(
             at: source,
@@ -214,9 +269,9 @@ final class OperationCoordinator {
         ) else { return }
         
         while let itemURL = enumerator.nextObject() as? URL {
-            if progress.state == .cancelling { break }
+            if progress.state.isCancelling { break }
             
-            while progress.state == .paused {
+            while progress.state.isPaused {
                 try await Task.sleep(for: .milliseconds(100))
             }
             
@@ -227,21 +282,28 @@ final class OperationCoordinator {
             
             if values?.isDirectory == true {
                 try fm.createDirectory(at: destItemURL, withIntermediateDirectories: true)
+                journal.recordCreateDirectory(destItemURL)
             } else {
+                if fm.fileExists(atPath: destItemURL.path) {
+                    try journal.recordOverwrite(original: destItemURL, newSource: itemURL)
+                    try fm.removeItem(at: destItemURL)
+                }
                 try fm.copyItem(at: itemURL, to: destItemURL)
+                journal.recordCopy(from: itemURL, to: destItemURL)
+                
                 let size = Int64(values?.fileSize ?? 0)
                 progress.updateProgress(file: itemURL.lastPathComponent, bytes: size)
             }
         }
     }
     
-    private func performMove(sources: [URL], destination: URL, progress: OperationProgress) async throws {
+    private func performMove(sources: [URL], destination: URL, progress: OperationProgress, journal: OperationJournal) async throws {
         let fm = FileManager.default
         
         for source in sources {
-            if progress.state == .cancelling { break }
+            if progress.state.isCancelling { break }
             
-            while progress.state == .paused {
+            while progress.state.isPaused {
                 try await Task.sleep(for: .milliseconds(100))
             }
             
@@ -249,21 +311,25 @@ final class OperationCoordinator {
             let size = Int64((try? source.resourceValues(forKeys: [.fileSizeKey]))?.fileSize ?? 0)
             
             try fm.moveItem(at: source, to: destURL)
+            journal.recordMove(from: source, to: destURL)
             progress.updateProgress(file: source.lastPathComponent, bytes: size)
         }
     }
     
-    private func performDelete(sources: [URL], progress: OperationProgress) async throws {
+    private func performDelete(sources: [URL], progress: OperationProgress, journal: OperationJournal) async throws {
         let fm = FileManager.default
         
         for source in sources {
-            if progress.state == .cancelling { break }
+            if progress.state.isCancelling { break }
             
-            while progress.state == .paused {
+            while progress.state.isPaused {
                 try await Task.sleep(for: .milliseconds(100))
             }
             
             let size = Int64((try? source.resourceValues(forKeys: [.fileSizeKey]))?.fileSize ?? 0)
+            
+            // Record delete first (creates backup)
+            try journal.recordDelete(source)
             try fm.removeItem(at: source)
             progress.updateProgress(file: source.lastPathComponent, bytes: size)
         }
