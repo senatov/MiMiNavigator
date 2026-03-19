@@ -168,8 +168,8 @@ extension AppState {
             self[panel: panel].savedLocalURL = panelURL
         }
         if panel == .left { leftURL = normalizedURL } else { rightURL = normalizedURL }
-        let files = panel == .left ? displayedLeftFiles : displayedRightFiles
-        setSelectedFile(firstRealFile(in: files), for: panel)
+        // NOTE: Do NOT set selectedFile here — displayedFiles still contains stale data
+        // from the previous directory. Selection is handled by refreshFiles() after scan completes.
     }
 
     func restoreLocalPath(for panel: PanelSide) async {
