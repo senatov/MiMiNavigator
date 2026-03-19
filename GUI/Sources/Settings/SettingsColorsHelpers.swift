@@ -108,7 +108,13 @@ extension ColorPaneHelpers {
     private func colorBinding(hex: Binding<String>, fallback: Color, store: ColorThemeStore) -> Binding<Color> {
         Binding<Color>(
             get: { hex.wrappedValue.isEmpty ? fallback : Color(hex: hex.wrappedValue) ?? fallback },
-            set: { newColor in hex.wrappedValue = newColor.toHex() ?? ""; store.reloadOverrides() }
+            set: { newColor in
+                let newHex = newColor.toHex() ?? ""
+                hex.wrappedValue = newHex
+                log.debug("[colorBinding] set hex='\(newHex)' UD='\(UserDefaults.standard.string(forKey: "color.breadcrumbBgActive") ?? "nil")'")
+                // applyOverrides now reads UserDefaults directly — no stale @AppStorage issue
+                store.reloadOverrides()
+            }
         )
     }
 

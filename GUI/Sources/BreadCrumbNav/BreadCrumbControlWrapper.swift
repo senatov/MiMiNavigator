@@ -56,6 +56,9 @@ struct BreadCrumbControlWrapper: View {
             ? colorStore.activeTheme.breadcrumbBgActive
             : colorStore.activeTheme.breadcrumbBgInactive
         
+        // DEBUG: log every body eval
+        log.debug("[BreadCrumbWrapper] body eval: themeVersion=\(themeVersion), isActive=\(isActive), bgColor=\(bgColor.description)")
+        
         return
             contentView
             .padding(.horizontal, Design.Padding.horizontal)
@@ -63,11 +66,11 @@ struct BreadCrumbControlWrapper: View {
             .background(
                 RoundedRectangle(cornerRadius: Design.cornerRadius)
                     .fill(isEditing ? Design.Colors.editingBackground : bgColor)
-                    .id(themeVersion)  // force redraw on theme change
             )
             .overlay(borderShape)
             .frame(height: 34)
             .zIndex(isEditing ? 10 : 0)
+            .id("breadcrumb-\(panelSide)-\(themeVersion)")  // force FULL redraw on theme change
             .padding(.horizontal, Design.Padding.horizontal)
             .onTapGesture {
                 if !isEditing {
