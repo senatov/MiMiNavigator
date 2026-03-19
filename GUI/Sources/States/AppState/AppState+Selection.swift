@@ -34,18 +34,36 @@ extension AppState {
     }
 
     func refreshAndSelectAfterRemoval(removedFiles: [CustomFile], on panel: PanelSide) async {
+        log.debug("[REFRESH] ⏱ START refreshAndSelectAfterRemoval panel=\(panel), removedFiles=\(removedFiles.map(\.nameStr))")
+        
         let oldFiles = displayedFiles(for: panel)
+        log.debug("[REFRESH] oldFiles.count=\(oldFiles.count)")
+        
         let removedNames = Set(removedFiles.map { $0.nameStr })
         var lastRemovedIndex = 0
         for (index, file) in oldFiles.enumerated() where removedNames.contains(file.nameStr) {
             lastRemovedIndex = index
         }
+        log.debug("[REFRESH] lastRemovedIndex=\(lastRemovedIndex)")
+        
+        log.debug("[REFRESH] ⏱ calling refreshFiles...")
+        let startRefresh = CFAbsoluteTimeGetCurrent()
         await refreshFiles(for: panel)
+        let refreshElapsed = CFAbsoluteTimeGetCurrent() - startRefresh
+        log.debug("[REFRESH] ⏱ refreshFiles done in \(String(format: "%.3f", refreshElapsed))s")
+        
         let newFiles = displayedFiles(for: panel)
-        guard !newFiles.isEmpty else { return }
+        log.debug("[REFRESH] newFiles.count=\(newFiles.count)")
+        
+        guard !newFiles.isEmpty else {
+            log.warning("[REFRESH] newFiles is empty, skipping selection")
+            return
+        }
         var targetIndex = min(lastRemovedIndex, newFiles.count - 1)
         if newFiles[targetIndex].isParentEntry && targetIndex + 1 < newFiles.count { targetIndex += 1 }
+        log.debug("[REFRESH] selecting file at index=\(targetIndex): \(newFiles[targetIndex].nameStr)")
         setSelectedFile(newFiles[targetIndex], for: panel)
+        log.debug("[REFRESH] ⏱ END refreshAndSelectAfterRemoval")
     }
 
     func clearSelection(on panel: PanelSide) { selectionManager?.clearSelection(on: panel) }

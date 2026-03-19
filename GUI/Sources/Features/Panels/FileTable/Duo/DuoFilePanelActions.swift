@@ -92,21 +92,27 @@
 
         // MARK: - Delete (Fwd-Delete / F8) — Trash for real files, removeItem inside archives
         func performDelete() {
-            log.debug("performDelete — moving to Trash")
+            log.debug("[DELETE] ⏱ START performDelete")
 
             let panel = appState.focusedPanel
             let files = appState.filesForOperation(on: panel)
+            log.debug("[DELETE] panel=\(panel), filesForOperation count=\(files.count)")
 
             guard !files.isEmpty else {
-                log.warning("performDelete: nothing to delete")
+                log.warning("[DELETE] nothing to delete — filesForOperation returned empty")
                 return
             }
 
             let urls = files
                 .filter { !ParentDirectoryEntry.isParentEntry($0) }
                 .map { $0.urlValue }
+            
+            log.debug("[DELETE] after filtering parent entries: \(urls.count) URLs to trash: \(urls.map(\.lastPathComponent))")
 
-            guard !urls.isEmpty else { return }
+            guard !urls.isEmpty else {
+                log.warning("[DELETE] all files were parent entries, nothing to delete")
+                return
+            }
 
             // Detect if we are inside an extracted archive temp dir
             let isInsideArchive = appState.archiveState(for: panel).isInsideArchive
@@ -139,21 +145,25 @@
             } else {
                 // Normal filesystem: move to Trash via NSWorkspace
                 // Run recycle off MainActor — it can take 10-15s in large directories
-                log.info("performDelete: recycling \(urls.count) item(s): \(urls.map(\.lastPathComponent))")
+                log.info("[DELETE] ⏱ calling NSWorkspace.recycle for \(urls.count) item(s): \(urls.map(\.lastPathComponent))")
                 Task.detached(priority: .userInitiated) {
+                    let startTime = CFAbsoluteTimeGetCurrent()
                     let (trashedURLs, error) = await withCheckedContinuation { cont in
                         NSWorkspace.shared.recycle(urls) { trashed, err in
                             cont.resume(returning: (trashed, err))
                         }
                     }
+                    let elapsed = CFAbsoluteTimeGetCurrent() - startTime
                     if let error {
                         let desc = error.localizedDescription
-                        log.error("\(#function) recycle bombed — \(desc)")
+                        log.error("[DELETE] ❌ recycle FAILED after \(String(format: "%.3f", elapsed))s — \(desc)")
                         await MainActor.run { Self.showDeleteError(desc, urls: urls) }
                         return
                     }
-                    log.info("\(#function) trashed \(trashedURLs.count) item(s) ✓")
+                    log.info("[DELETE] ✅ recycle OK: \(trashedURLs.count) item(s) trashed in \(String(format: "%.3f", elapsed))s")
+                    log.debug("[DELETE] ⏱ calling refreshAndSelectAfterRemoval...")
                     await self.appState.refreshAndSelectAfterRemoval(removedFiles: files, on: panel)
+                    log.debug("[DELETE] ⏱ END performDelete")
                 }
             }
         }

@@ -37,19 +37,24 @@ extension AppState {
     }
 
     func refreshFiles(for panel: PanelSide) async {
+        log.debug("[REFRESH-FILES] ⏱ START panel=\(panel)")
         let panelURL = url(for: panel)
         if Self.isRemotePath(panelURL) {
+            log.debug("[REFRESH-FILES] remote path detected, calling refreshRemoteFiles")
             await refreshRemoteFiles(for: panel)
         } else {
+            log.debug("[REFRESH-FILES] local path, calling scanner.refreshFiles")
             await scanner.refreshFiles(currSide: panel)
+            log.debug("[REFRESH-FILES] scanner.refreshFiles done")
         }
         if self[panel: panel].selectedFile == nil {
             let files = panel == .left ? displayedLeftFiles : displayedRightFiles
             if let f = firstRealFile(in: files) {
                 setSelectedFile(f, for: panel)
-                log.debug("[AppState] \(f.nameStr) selected (\(panel))")
+                log.debug("[REFRESH-FILES] auto-selected \(f.nameStr) (\(panel))")
             }
         }
+        log.debug("[REFRESH-FILES] ⏱ END panel=\(panel)")
     }
 
     func refreshLeftFiles() async { await refreshFiles(for: .left) }
