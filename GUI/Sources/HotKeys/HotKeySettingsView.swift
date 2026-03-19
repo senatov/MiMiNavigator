@@ -423,14 +423,14 @@ struct HotKeySettingsView: View {
             
             Spacer()
             
-            // F5 warning
-            HStack(spacing: 4) {
+            // F5 warning — prominent dark red
+            HStack(spacing: 6) {
                 Image(systemName: "exclamationmark.triangle.fill")
-                    .font(.system(size: 10))
-                    .foregroundStyle(.orange)
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundStyle(Color(red: 0.6, green: 0.0, blue: 0.0))
                 Text("F5 is reserved by macOS")
-                    .font(.system(size: 10))
-                    .foregroundStyle(.secondary)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(Color(red: 0.55, green: 0.0, blue: 0.0))
             }
             .help("macOS uses F5 for 'Move focus to toolbar'. To use F5, disable it in System Preferences → Keyboard → Shortcuts → Keyboard.")
             
