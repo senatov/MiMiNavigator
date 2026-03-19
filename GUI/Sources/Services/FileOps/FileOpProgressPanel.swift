@@ -127,10 +127,10 @@ final class FileOpProgressPanel {
             defer: true
         )
         p.isFloatingPanel = true
-        p.hidesOnDeactivate = false
+        p.hidesOnDeactivate = true   // Hide when app loses focus, reappear when regains
         p.hasShadow = true
         p.isOpaque = false
-        p.level = .modalPanel
+        p.level = .floating          // Non-modal, stays above main window but not system-wide
         p.isMovableByWindowBackground = true
         p.backgroundColor = .clear
 
