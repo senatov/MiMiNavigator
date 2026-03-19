@@ -26,6 +26,7 @@ struct SettingsColorsBreadcrumbPane: View, ColorPaneHelpers {
     }
 
     var body: some View {
+        let _ = log.debug("[BreadcrumbPane] body: textAct='\(hexTextActive)' textInact='\(hexTextInactive)' bgAct='\(hexBgActive)' bgInact='\(hexBgInactive)' UD.bgAct='\(UserDefaults.standard.string(forKey: "color.breadcrumbBgActive") ?? "nil")' UD.bgInact='\(UserDefaults.standard.string(forKey: "color.breadcrumbBgInactive") ?? "nil")'")
         VStack(alignment: .leading, spacing: 16) {
 
             // ── Colors ─────────────────────────────────────

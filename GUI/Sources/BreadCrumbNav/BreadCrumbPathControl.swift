@@ -43,19 +43,7 @@ struct BreadCrumbPathControl: View {
             EllipsisMenuSection()
         }
         .frame(height: 30)
-        .background(
-            RoundedRectangle(cornerRadius: Design.cornerRadius)
-                .fill(isActivePanel ? Design.activeBackgroundColor : Design.inactiveBackgroundColor)
-        )
-        .background(
-            RoundedRectangle(cornerRadius: Design.cornerRadius)
-                .strokeBorder(
-                    isActivePanel
-                        ? ColorThemeStore.shared.activeTheme.panelBorderActive
-                        : ColorThemeStore.shared.activeTheme.panelBorderInactive,
-                    lineWidth: ColorThemeStore.shared.activeTheme.panelBorderWidth
-                )
-        )
+        // Background is managed by BreadCrumbControlWrapper — dont overlay here
         .animation(.easeInOut(duration: 0.2), value: isActivePanel)
         // Note: Focus is now managed by BreadCrumbControlWrapper to avoid conflicts
     }

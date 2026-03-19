@@ -146,10 +146,15 @@ final class ColorThemeStore {
         if let c = Color(hex: ud("color.zebraInactiveOdd"))  { theme.zebraInactiveOdd = c }
         if let c = Color(hex: ud("color.filterActive"))      { theme.filterActiveColor = c }
         // BreadCrumb
-        if let c = Color(hex: ud("color.breadcrumbTextActive"))   { theme.breadcrumbTextActive = c }
-        if let c = Color(hex: ud("color.breadcrumbTextInactive")) { theme.breadcrumbTextInactive = c }
-        if let c = Color(hex: ud("color.breadcrumbBgActive"))     { theme.breadcrumbBgActive = c }
-        if let c = Color(hex: ud("color.breadcrumbBgInactive"))   { theme.breadcrumbBgInactive = c }
+        let udTextAct = ud("color.breadcrumbTextActive")
+        let udTextInact = ud("color.breadcrumbTextInactive")
+        let udBgAct = ud("color.breadcrumbBgActive")
+        let udBgInact = ud("color.breadcrumbBgInactive")
+        log.debug("[applyOverrides] UD raw: textAct='\(udTextAct)' textInact='\(udTextInact)' bgAct='\(udBgAct)' bgInact='\(udBgInact)'")
+        if let c = Color(hex: udTextAct)   { theme.breadcrumbTextActive = c }
+        if let c = Color(hex: udTextInact) { theme.breadcrumbTextInactive = c }
+        if let c = Color(hex: udBgAct)     { theme.breadcrumbBgActive = c; log.debug("[applyOverrides] breadcrumbBgActive → \(c.description)") }
+        if let c = Color(hex: udBgInact)   { theme.breadcrumbBgInactive = c; log.debug("[applyOverrides] breadcrumbBgInactive → \(c.description)") }
         let fs = udD("breadcrumb.fontSize")
         if fs > 0 { theme.breadcrumbFontSize = CGFloat(fs) }
         return theme
