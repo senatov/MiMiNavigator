@@ -3,140 +3,177 @@
 //
 // Created by Iakov Senatov on 11.03.2026.
 // Copyright © 2026 Senatov. All rights reserved.
-// Description: Unified async engine for copy/move/delete — replaces 4 scattered implementations.
-//   Supports 3 strategies: simple (sequential), manySmall (parallel TaskGroup), fewLarge (stream-copy).
+// Description: Unified async engine for copy/move/delete.
+//   Clean Code: small methods, single responsibility, no duplication.
 
 import Foundation
 
 // MARK: - File Operations Engine
+
 @MainActor
 final class FileOpsEngine {
 
     static let shared = FileOpsEngine()
 
     private let panel = FileOpProgressPanel.shared
+    private let fm = FileManager.default
     private let maxConcurrency = 5
-    private let chunkSize = 256 * 1024  // 256 KB
 
     private init() {
         log.debug("[FileOpsEngine] init")
     }
+}
 
-    // MARK: - Public API: Copy
+// MARK: - Public API
 
-    /// Copy items to destination. Auto-detects strategy.
-    /// Returns once all items are processed (or cancelled).
+extension FileOpsEngine {
+    
+    /// Copy items to destination
     @discardableResult
     func copy(items: [URL], to destination: URL) async throws -> FileOpProgress {
         log.info("[FileOpsEngine] copy \(items.count) items → \(destination.path)")
         let plan = await buildPlan(items: items, destination: destination)
-        return try await execute(plan: plan, operation: .copy)
+        return try await executeWithPanel(plan: plan, operation: .copy)
     }
-
-    // MARK: - Public API: Move
-
-    /// Move items to destination. For same-volume directories, uses atomic rename.
-    /// For cross-volume or files, auto-detects strategy.
+    
+    /// Move items to destination (atomic when possible)
     @discardableResult
     func move(items: [URL], to destination: URL) async throws -> FileOpProgress {
         log.info("[FileOpsEngine] move \(items.count) items → \(destination.path)")
-        
-        // Try atomic move first for each top-level item (works for same-volume dirs)
-        let fm = FileManager.default
-        var failedItems: [URL] = []
-        var movedCount = 0
-        
-        let progress = FileOpProgress(
-            totalFiles: items.count,
-            totalBytes: 0,
-            type: .move,
-            destination: destination
-        )
-        
-        // Show panel for any operation with multiple items or directories
-        let hasDirectories = items.contains { (try? $0.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory == true }
-        let showPanel = items.count > 1 || hasDirectories
-        if showPanel { 
-            log.info("[FileOpsEngine] showing progress panel for \(items.count) items")
-            panel.show(progress: progress) 
-        }
-        
-        for item in items {
-            let targetURL = UniqueNameGen.resolve(name: item.lastPathComponent, in: destination)
-            progress.setCurrentFile(item.lastPathComponent)
-            
-            do {
-                // Try atomic move (works for same-volume)
-                try fm.moveItem(at: item, to: targetURL)
-                movedCount += 1
-                progress.fileCompleted(name: item.lastPathComponent, success: true)
-                log.debug("[FileOpsEngine] atomic move OK: \(item.lastPathComponent)")
-            } catch {
-                // Cross-volume — need to copy + delete
-                log.debug("[FileOpsEngine] atomic move failed (cross-volume?): \(item.lastPathComponent)")
-                failedItems.append(item)
-            }
-        }
-        
-        // Handle cross-volume items with copy + delete
-        if !failedItems.isEmpty {
-            let plan = await buildPlan(items: failedItems, destination: destination)
-            try await executeFewLarge(plan: plan, operation: .move, progress: progress)
-        }
-        
-        progress.complete()
-        // Don't hide panel here — it will hide itself when user clicks OK
-        // if showPanel { panel.hide() }
-        
-        return progress
+        return try await performMove(items: items, to: destination)
     }
-
-    // MARK: - Public API: Delete
-
-    /// Trash items. Always sequential (macOS Trash API is not parallelizable).
+    
+    /// Delete items to Trash
     @discardableResult
     func delete(items: [URL]) async throws -> FileOpProgress {
         log.info("[FileOpsEngine] delete \(items.count) items")
-        let totalSize = items.reduce(Int64(0)) { sum, url in
-            sum + ((try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize).map(Int64.init) ?? 0)
-        }
-        let progress = FileOpProgress(
-            totalFiles: items.count,
-            totalBytes: totalSize,
-            type: .copy,  // reuse for display
-            destination: nil
-        )
+        return try await performDelete(items: items)
+    }
+}
 
-        let showPanel = items.count > 5
-        if showPanel { 
-            log.info("[FileOpsEngine] showing progress panel for delete \(items.count) items")
-            panel.show(progress: progress) 
-        }
-        defer {
-            progress.complete()
-            // Don't hide panel here — it will hide itself when user clicks OK
-        }
+// MARK: - Move Implementation
 
-        let fm = FileManager.default
+private extension FileOpsEngine {
+    
+    func performMove(items: [URL], to destination: URL) async throws -> FileOpProgress {
+        let progress = createProgress(items: items, type: .move, destination: destination)
+        let shouldShowPanel = shouldShowPanel(items: items)
+        
+        if shouldShowPanel { showPanel(progress: progress, itemCount: items.count) }
+        
+        let failedItems = await tryAtomicMoves(items: items, to: destination, progress: progress)
+        
+        if !failedItems.isEmpty {
+            try await handleCrossVolumeMove(items: failedItems, to: destination, progress: progress)
+        }
+        
+        progress.complete()
+        return progress
+    }
+    
+    func tryAtomicMoves(items: [URL], to destination: URL, progress: FileOpProgress) async -> [URL] {
+        var failedItems: [URL] = []
+        
+        for item in items {
+            let target = UniqueNameGen.resolve(name: item.lastPathComponent, in: destination)
+            progress.setCurrentFile(item.lastPathComponent)
+            
+            if tryAtomicMove(from: item, to: target) {
+                progress.fileCompleted(name: item.lastPathComponent, success: true)
+            } else {
+                failedItems.append(item)
+            }
+        }
+        return failedItems
+    }
+    
+    func tryAtomicMove(from source: URL, to target: URL) -> Bool {
+        do {
+            try fm.moveItem(at: source, to: target)
+            log.debug("[FileOpsEngine] atomic move OK: \(source.lastPathComponent)")
+            return true
+        } catch {
+            log.debug("[FileOpsEngine] atomic move failed: \(source.lastPathComponent)")
+            return false
+        }
+    }
+    
+    func handleCrossVolumeMove(items: [URL], to destination: URL, progress: FileOpProgress) async throws {
+        let plan = await buildPlan(items: items, destination: destination)
+        try await executeFewLarge(plan: plan, operation: .move, progress: progress)
+    }
+}
+
+
+// MARK: - Delete Implementation
+
+private extension FileOpsEngine {
+    
+    func performDelete(items: [URL]) async throws -> FileOpProgress {
+        let totalSize = calculateTotalSize(items: items)
+        let progress = FileOpProgress(totalFiles: items.count, totalBytes: totalSize, type: .copy, destination: nil)
+        
+        if items.count > 5 { showPanel(progress: progress, itemCount: items.count, operation: "delete") }
+        defer { progress.complete() }
+        
         for url in items {
             guard !progress.isCancelled else { break }
-            progress.setCurrentFile(url.lastPathComponent)
-            do {
-                try fm.trashItem(at: url, resultingItemURL: nil)
-                let size = (try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize).map(Int64.init) ?? 0
-                progress.fileCompleted(name: url.lastPathComponent, success: true)
-                progress.add(bytes: size)
-            } catch {
-                progress.fileCompleted(name: url.lastPathComponent, success: false, error: error.localizedDescription)
-                log.error("[FileOpsEngine] trash failed: \(url.lastPathComponent) — \(error.localizedDescription)")
-            }
+            trashItem(url: url, progress: progress)
         }
         return progress
     }
+    
+    func trashItem(url: URL, progress: FileOpProgress) {
+        progress.setCurrentFile(url.lastPathComponent)
+        do {
+            try fm.trashItem(at: url, resultingItemURL: nil)
+            let size = fileSize(url: url)
+            progress.fileCompleted(name: url.lastPathComponent, success: true)
+            progress.add(bytes: size)
+        } catch {
+            progress.fileCompleted(name: url.lastPathComponent, success: false, error: error.localizedDescription)
+            log.error("[FileOpsEngine] trash failed: \(url.lastPathComponent)")
+        }
+    }
+}
 
-    // MARK: - Plan
 
-    private func buildPlan(items: [URL], destination: URL) async -> FileOpPlan {
+// MARK: - Panel & Progress Helpers
+
+private extension FileOpsEngine {
+    
+    func createProgress(items: [URL], type: FileOpType, destination: URL?) -> FileOpProgress {
+        FileOpProgress(totalFiles: items.count, totalBytes: 0, type: type, destination: destination)
+    }
+    
+    func shouldShowPanel(items: [URL]) -> Bool {
+        items.count > 1 || items.contains { isDirectory(url: $0) }
+    }
+    
+    func showPanel(progress: FileOpProgress, itemCount: Int, operation: String = "items") {
+        log.info("[FileOpsEngine] showing panel for \(itemCount) \(operation)")
+        panel.show(progress: progress)
+    }
+    
+    func isDirectory(url: URL) -> Bool {
+        (try? url.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory ?? false
+    }
+    
+    func fileSize(url: URL) -> Int64 {
+        Int64((try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0)
+    }
+    
+    func calculateTotalSize(items: [URL]) -> Int64 {
+        items.reduce(0) { $0 + fileSize(url: $1) }
+    }
+}
+
+
+// MARK: - Plan & Execute
+
+private extension FileOpsEngine {
+    
+    func buildPlan(items: [URL], destination: URL) async -> FileOpPlan {
         let scan = await DirSizeCalculator.scan(items)
         let strategy = FileOpStrategy.detect(scan: scan)
         return FileOpPlan(
@@ -148,257 +185,243 @@ final class FileOpsEngine {
             flatList: scan.flatList
         )
     }
-
-    // MARK: - Execute
-
-    private func execute(plan: FileOpPlan, operation: FileOpType) async throws -> FileOpProgress {
+    
+    func executeWithPanel(plan: FileOpPlan, operation: FileOpType) async throws -> FileOpProgress {
         let progress = FileOpProgress(
             totalFiles: plan.fileCount,
             totalBytes: plan.totalBytes,
             type: operation,
             destination: plan.destination
         )
-
-        // Show panel for any non-trivial operation (>1 file or >1MB or any directory)
-        let showPanel = plan.fileCount > 1 || plan.totalBytes > 1_000_000 || plan.items.contains { (try? $0.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory == true }
-        if showPanel { 
-            log.info("[FileOpsEngine] showing progress panel for \(plan.fileCount) files")
-            panel.show(progress: progress) 
+        
+        if shouldShowPanelForPlan(plan) {
+            showPanel(progress: progress, itemCount: plan.fileCount, operation: "files")
         }
-        defer {
-            progress.complete()
-            // Don't hide panel here — it will hide itself when user clicks OK
-        }
-
-        switch plan.strategy {
-            case .simple:
-                try await executeSimple(plan: plan, operation: operation, progress: progress)
-            case .manySmall:
-                try await executeManySmall(plan: plan, operation: operation, progress: progress)
-            case .fewLarge:
-                try await executeFewLarge(plan: plan, operation: operation, progress: progress)
-        }
-
+        defer { progress.complete() }
+        
+        try await executeStrategy(plan: plan, operation: operation, progress: progress)
         return progress
     }
-
-    // MARK: - Simple (sequential, no parallelism)
-
-    private func executeSimple(plan: FileOpPlan, operation: FileOpType, progress: FileOpProgress) async throws {
-        let fm = FileManager.default
-
-        for item in plan.items {
-            guard !progress.isCancelled else { break }
-            progress.setCurrentFile(item.lastPathComponent)
-
-            let target = UniqueNameGen.resolve(name: item.lastPathComponent, in: plan.destination)
-            do {
-                switch operation {
-                    case .copy:
-                        try fm.copyItem(at: item, to: target)
-                    case .move:
-                        try fm.moveItem(at: item, to: target)
-                }
-                let size = (try? item.resourceValues(forKeys: [.fileSizeKey]).fileSize).map(Int64.init) ?? 0
-                progress.fileCompleted(name: item.lastPathComponent, success: true)
-                progress.add(bytes: size)
-            } catch {
-                progress.fileCompleted(name: item.lastPathComponent, success: false, error: error.localizedDescription)
-            }
+    
+    func shouldShowPanelForPlan(_ plan: FileOpPlan) -> Bool {
+        plan.fileCount > 1 || plan.totalBytes > 1_000_000 || plan.items.contains { isDirectory(url: $0) }
+    }
+    
+    func executeStrategy(plan: FileOpPlan, operation: FileOpType, progress: FileOpProgress) async throws {
+        switch plan.strategy {
+        case .simple:
+            try await executeSimple(plan: plan, operation: operation, progress: progress)
+        case .manySmall:
+            try await executeManySmall(plan: plan, operation: operation, progress: progress)
+        case .fewLarge:
+            try await executeFewLarge(plan: plan, operation: operation, progress: progress)
         }
     }
+}
 
-    // MARK: - ManySmall (parallel, up to 5 concurrent)
 
-    private func executeManySmall(plan: FileOpPlan, operation: FileOpType, progress: FileOpProgress) async throws {
-        let fm = FileManager.default
-        let dest = plan.destination
+// MARK: - Strategy: Simple (sequential)
 
-        // First pass: create directory structure
+private extension FileOpsEngine {
+    
+    func executeSimple(plan: FileOpPlan, operation: FileOpType, progress: FileOpProgress) async throws {
+        for item in plan.items {
+            guard !progress.isCancelled else { break }
+            try processItem(item: item, to: plan.destination, operation: operation, progress: progress)
+        }
+    }
+    
+    func processItem(item: URL, to destination: URL, operation: FileOpType, progress: FileOpProgress) throws {
+        progress.setCurrentFile(item.lastPathComponent)
+        let target = UniqueNameGen.resolve(name: item.lastPathComponent, in: destination)
+        
+        do {
+            try performFileOperation(from: item, to: target, operation: operation)
+            progress.fileCompleted(name: item.lastPathComponent, success: true)
+            progress.add(bytes: fileSize(url: item))
+        } catch {
+            progress.fileCompleted(name: item.lastPathComponent, success: false, error: error.localizedDescription)
+        }
+    }
+    
+    func performFileOperation(from source: URL, to target: URL, operation: FileOpType) throws {
+        switch operation {
+        case .copy: try fm.copyItem(at: source, to: target)
+        case .move: try fm.moveItem(at: source, to: target)
+        }
+    }
+}
+
+
+// MARK: - Strategy: ManySmall (parallel)
+
+private extension FileOpsEngine {
+    
+    func executeManySmall(plan: FileOpPlan, operation: FileOpType, progress: FileOpProgress) async throws {
+        createDirectoryStructure(plan: plan)
+        try await processFilesInParallel(plan: plan, operation: operation, progress: progress)
+        
+        if operation == .move {
+            cleanupEmptyDirs(plan: plan)
+        }
+    }
+    
+    func createDirectoryStructure(plan: FileOpPlan) {
         for entry in plan.flatList where entry.isDirectory {
-            let targetDir = dest.appendingPathComponent(entry.relativePath)
+            let targetDir = plan.destination.appendingPathComponent(entry.relativePath)
             try? fm.createDirectory(at: targetDir, withIntermediateDirectories: true)
         }
-
-        // Second pass: process files in parallel
+    }
+    
+    func processFilesInParallel(plan: FileOpPlan, operation: FileOpType, progress: FileOpProgress) async throws {
         let fileEntries = plan.flatList.filter { !$0.isDirectory }
-
+        
         try await withThrowingTaskGroup(of: Void.self) { group in
             var running = 0
-
+            
             for entry in fileEntries {
                 guard !progress.isCancelled else { break }
-
+                
                 if running >= maxConcurrency {
                     try await group.next()
                     running -= 1
                 }
-
+                
                 group.addTask { @MainActor in
-                    progress.setCurrentFile(entry.url.lastPathComponent)
-
-                    let targetURL = UniqueNameGen.resolve(
-                        name: entry.relativePath,
-                        in: dest
-                    )
-
-                    // Ensure parent dir exists
-                    let parentDir = targetURL.deletingLastPathComponent()
-                    if !fm.fileExists(atPath: parentDir.path) {
-                        try? fm.createDirectory(at: parentDir, withIntermediateDirectories: true)
-                    }
-
-                    do {
-                        switch operation {
-                            case .copy:
-                                try fm.copyItem(at: entry.url, to: targetURL)
-                            case .move:
-                                try fm.moveItem(at: entry.url, to: targetURL)
-                        }
-                        progress.fileCompleted(name: entry.url.lastPathComponent, success: true)
-                        progress.add(bytes: entry.size)
-                    } catch {
-                        progress.fileCompleted(
-                            name: entry.url.lastPathComponent,
-                            success: false,
-                            error: error.localizedDescription
-                        )
-                    }
+                    self.processFileEntry(entry: entry, destination: plan.destination, operation: operation, progress: progress)
                 }
                 running += 1
             }
-
             try await group.waitForAll()
         }
-
-        // For move: clean up empty source directories (bottom-up)
-        if operation == .move {
-            cleanupEmptyDirs(plan: plan, fm: fm)
+    }
+    
+    func processFileEntry(entry: DirScanResult.FileEntry, destination: URL, operation: FileOpType, progress: FileOpProgress) {
+        progress.setCurrentFile(entry.url.lastPathComponent)
+        let targetURL = UniqueNameGen.resolve(name: entry.relativePath, in: destination)
+        ensureParentDirectory(for: targetURL)
+        
+        do {
+            try performFileOperation(from: entry.url, to: targetURL, operation: operation)
+            progress.fileCompleted(name: entry.url.lastPathComponent, success: true)
+            progress.add(bytes: entry.size)
+        } catch {
+            progress.fileCompleted(name: entry.url.lastPathComponent, success: false, error: error.localizedDescription)
         }
     }
-
-    // MARK: - FewLarge (stream copy with byte-level progress)
-
-    private func executeFewLarge(plan: FileOpPlan, operation: FileOpType, progress: FileOpProgress) async throws {
-        let fm = FileManager.default
-        let dest = plan.destination
-
-        // Create directory structure
-        for entry in plan.flatList where entry.isDirectory {
-            let targetDir = dest.appendingPathComponent(entry.relativePath)
-            try? fm.createDirectory(at: targetDir, withIntermediateDirectories: true)
+    
+    func ensureParentDirectory(for url: URL) {
+        let parentDir = url.deletingLastPathComponent()
+        if !fm.fileExists(atPath: parentDir.path) {
+            try? fm.createDirectory(at: parentDir, withIntermediateDirectories: true)
         }
+    }
+}
 
-        let fileEntries = plan.flatList.filter { !$0.isDirectory }
 
-        for entry in fileEntries {
+// MARK: - Strategy: FewLarge (streaming)
+
+private extension FileOpsEngine {
+    
+    func executeFewLarge(plan: FileOpPlan, operation: FileOpType, progress: FileOpProgress) async throws {
+        createDirectoryStructure(plan: plan)
+        
+        for entry in plan.flatList where !entry.isDirectory {
             guard !progress.isCancelled else { break }
-            progress.setCurrentFile(entry.url.lastPathComponent)
-
-            let targetURL = UniqueNameGen.resolve(
-                name: entry.relativePath,
-                in: dest
-            )
-
-            // Ensure parent
-            let parentDir = targetURL.deletingLastPathComponent()
-            if !fm.fileExists(atPath: parentDir.path) {
-                try? fm.createDirectory(at: parentDir, withIntermediateDirectories: true)
-            }
-
-            do {
-                if operation == .move {
-                    // Attempt rename first (instant if same volume)
-                    do {
-                        try fm.moveItem(at: entry.url, to: targetURL)
-                        progress.fileCompleted(name: entry.url.lastPathComponent, success: true)
-                        progress.add(bytes: entry.size)
-                        continue
-                    } catch {
-                        // Cross-volume — fall through to stream copy + delete
-                        log.debug("[FileOpsEngine] cross-volume move, streaming: \(entry.url.lastPathComponent)")
-                    }
-                }
-
-                // Stream copy with chunked progress
-                try await streamCopy(from: entry.url, to: targetURL, progress: progress)
-
-                // For move: delete source after successful copy
-                if operation == .move {
-                    try fm.removeItem(at: entry.url)
-                }
-
-                progress.fileCompleted(name: entry.url.lastPathComponent, success: true)
-            } catch {
-                progress.fileCompleted(
-                    name: entry.url.lastPathComponent,
-                    success: false,
-                    error: error.localizedDescription
-                )
-            }
+            try await processLargeFile(entry: entry, destination: plan.destination, operation: operation, progress: progress)
         }
-
-        // For move: clean up empty dirs
+        
         if operation == .move {
-            cleanupEmptyDirs(plan: plan, fm: fm)
+            cleanupEmptyDirs(plan: plan)
         }
     }
+    
+    func processLargeFile(entry: DirScanResult.FileEntry, destination: URL, operation: FileOpType, progress: FileOpProgress) async throws {
+        progress.setCurrentFile(entry.url.lastPathComponent)
+        let targetURL = UniqueNameGen.resolve(name: entry.relativePath, in: destination)
+        ensureParentDirectory(for: targetURL)
+        
+        do {
+            if operation == .move && tryAtomicMove(from: entry.url, to: targetURL) {
+                progress.fileCompleted(name: entry.url.lastPathComponent, success: true)
+                progress.add(bytes: entry.size)
+                return
+            }
+            
+            try await streamCopy(from: entry.url, to: targetURL, progress: progress)
+            
+            if operation == .move {
+                try fm.removeItem(at: entry.url)
+            }
+            progress.fileCompleted(name: entry.url.lastPathComponent, success: true)
+        } catch {
+            progress.fileCompleted(name: entry.url.lastPathComponent, success: false, error: error.localizedDescription)
+        }
+    }
+}
 
-    // MARK: - Stream Copy (256KB chunks)
 
-    private func streamCopy(
-        from source: URL,
-        to destination: URL,
-        progress: FileOpProgress
-    ) async throws {
+// MARK: - Stream Copy
+
+private extension FileOpsEngine {
+    
+    func streamCopy(from source: URL, to destination: URL, progress: FileOpProgress) async throws {
         guard let input = InputStream(url: source) else {
             throw FileOpError.fileNotFound(source.path)
         }
         guard let output = OutputStream(url: destination, append: false) else {
             throw FileOpError.invalidDest(destination.path)
         }
-
+        
         input.open()
         output.open()
         defer {
             input.close()
             output.close()
         }
-
+        
+        try copyStreamChunks(input: input, output: output, source: source, progress: progress)
+    }
+    
+    func copyStreamChunks(input: InputStream, output: OutputStream, source: URL, progress: FileOpProgress) throws {
         let bufSize = 256 * 1024
         let buffer = UnsafeMutablePointer<UInt8>.allocate(capacity: bufSize)
         defer { buffer.deallocate() }
-
-        while true {
-            if progress.isCancelled { break }
-
+        
+        while !progress.isCancelled {
             let bytesRead = input.read(buffer, maxLength: bufSize)
-            if bytesRead < 0 {
-                throw FileOpError.readFailed(source.path)
-            }
-            if bytesRead == 0 { break }  // EOF
-
+            if bytesRead < 0 { throw FileOpError.readFailed(source.path) }
+            if bytesRead == 0 { break }
+            
             let written = output.write(buffer, maxLength: bytesRead)
-            if written < 0 {
-                throw FileOpError.writeFailed(destination.path)
-            }
+            if written < 0 { throw FileOpError.writeFailed(source.path) }
             progress.add(bytes: Int64(written))
         }
     }
+}
 
-    // MARK: - Cleanup empty dirs after move
 
-    private func cleanupEmptyDirs(plan: FileOpPlan, fm: FileManager) {
-        // Bottom-up: sort directories by depth (deepest first)
-        let dirs = plan.flatList
+// MARK: - Cleanup
+
+private extension FileOpsEngine {
+    
+    func cleanupEmptyDirs(plan: FileOpPlan) {
+        let dirs = sortDirectoriesByDepth(plan: plan)
+        for dir in dirs {
+            removeIfEmpty(url: dir.url)
+        }
+    }
+    
+    func sortDirectoriesByDepth(plan: FileOpPlan) -> [DirScanResult.FileEntry] {
+        plan.flatList
             .filter { $0.isDirectory }
             .sorted { $0.relativePath.components(separatedBy: "/").count > $1.relativePath.components(separatedBy: "/").count }
-
-        for dir in dirs {
-            let contents = (try? fm.contentsOfDirectory(atPath: dir.url.path)) ?? []
-            if contents.isEmpty {
-                try? fm.removeItem(at: dir.url)
-            }
+    }
+    
+    func removeIfEmpty(url: URL) {
+        let contents = (try? fm.contentsOfDirectory(atPath: url.path)) ?? []
+        if contents.isEmpty {
+            try? fm.removeItem(at: url)
         }
     }
 }
