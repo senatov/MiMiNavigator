@@ -34,7 +34,8 @@
         func openArchive(
             at archiveURL: URL,
             password: String? = nil,
-            onProgress: ArchiveExtractor.ProgressLine? = nil
+            onProgress: ArchiveExtractor.ProgressLine? = nil,
+            processHandle: ActiveArchiveProcess? = nil
         ) async throws -> URL {
             log.debug("[ArchiveManager] openArchive: \(archiveURL.lastPathComponent) hasPassword=\(password != nil) pwdLen=\(password?.count ?? 0)")
             let key = archiveURL.path
@@ -67,7 +68,7 @@
             do {
                 try await ArchiveExtractor.extract(
                     archiveURL: archiveURL, format: format, to: tempDir,
-                    password: password, onProgress: onProgress
+                    password: password, onProgress: onProgress, processHandle: processHandle
                 )
             } catch {
                 log.error("[ArchiveManager] openArchive: Extraction failed: \(error)")

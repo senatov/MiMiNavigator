@@ -283,7 +283,6 @@
         }
 
         // MARK: - Full refresh (used by timer safety net and explicit navigation)
-        /// - Parameter force: if true, bypasses cooldown check (use after file operations)
         @Sendable
         func refreshFiles(currSide: PanelSide, force: Bool = false) async {
             if Task.isCancelled { return }

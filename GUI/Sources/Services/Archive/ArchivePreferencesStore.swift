@@ -122,6 +122,7 @@ final class ArchivePreferencesStore: ObservableObject {
         var customDestination: String
         var formatPrefs: [String: ArchiveFormatPrefs]
         var useKeychainPasswords: Bool
+        var usePassword: Bool?
         var deleteSourceFiles: Bool?
         var lastArchivePrefix: String?
     }
@@ -133,6 +134,7 @@ final class ArchivePreferencesStore: ObservableObject {
             customDestination: customDestination,
             formatPrefs: formatPrefs,
             useKeychainPasswords: useKeychainPasswords,
+            usePassword: usePassword,
             deleteSourceFiles: deleteSourceFiles,
             lastArchivePrefix: lastArchivePrefix.isEmpty ? nil : lastArchivePrefix
         )
@@ -165,6 +167,7 @@ final class ArchivePreferencesStore: ObservableObject {
             customDestination = data.customDestination
             formatPrefs = data.formatPrefs
             useKeychainPasswords = data.useKeychainPasswords
+            usePassword = data.usePassword ?? false
             deleteSourceFiles = data.deleteSourceFiles ?? false
             lastArchivePrefix = data.lastArchivePrefix ?? ""
             
@@ -198,6 +201,11 @@ final class ArchivePreferencesStore: ObservableObject {
     
     func updateUseKeychainPasswords(_ value: Bool) {
         useKeychainPasswords = value
+        save()
+    }
+    
+    func updateUsePassword(_ value: Bool) {
+        usePassword = value
         save()
     }
 }

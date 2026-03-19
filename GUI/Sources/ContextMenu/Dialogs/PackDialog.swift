@@ -74,6 +74,7 @@ struct PackDialog: View {
         let savedCustom = ArchivePreferencesStore.shared.customDestination
         let savedLevel = ArchivePreferencesStore.shared.compressionLevel(for: savedFormat)
         let savedDeleteSource = ArchivePreferencesStore.shared.deleteSourceFiles
+        let savedUsePassword = ArchivePreferencesStore.shared.usePassword
         
         if mode == .compress {
             self._archiveName = State(initialValue: defaultName + "." + savedFormat.fileExtension)
@@ -85,6 +86,7 @@ struct PackDialog: View {
         self._customDestination = State(initialValue: savedCustom)
         self._compressionLevel = State(initialValue: savedLevel)
         self._deleteSourceFiles = State(initialValue: savedDeleteSource)
+        self._usePassword = State(initialValue: savedUsePassword)
     }
     
     // MARK: - Computed Properties
@@ -357,6 +359,9 @@ struct PackDialog: View {
                 }
             }
             .toggleStyle(.checkbox)
+            .onChange(of: usePassword) { _, newVal in
+                prefs.updateUsePassword(newVal)
+            }
             
             if usePassword {
                 HStack(spacing: 8) {

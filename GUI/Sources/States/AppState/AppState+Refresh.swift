@@ -37,7 +37,6 @@ extension AppState {
     }
 
     /// Refresh files for a specific panel
-    /// - Parameter force: if true, bypasses cooldown check (use after file operations)
     func refreshFiles(for panel: PanelSide, force: Bool = false) async {
         log.debug("[REFRESH-FILES] ⏱ START panel=\(panel) force=\(force)")
         let panelURL = url(for: panel)

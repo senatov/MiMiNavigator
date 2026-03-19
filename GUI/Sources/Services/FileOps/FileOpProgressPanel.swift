@@ -3,13 +3,13 @@
 //
 // Created by Iakov Senatov on 11.03.2026.
 // Copyright © 2026 Senatov. All rights reserved.
-// Description: Non-modal floating NSPanel showing file operation progress — like ArchiveProgressPanel
+// Description: Non-modal floating NSPanel showing file operation progress — like ProgressPanel
 
 import AppKit
 
 // MARK: - File Operation Progress Panel
 /// Non-modal floating panel showing copy/move progress.
-/// Re-uses the same visual style as ArchiveProgressPanel (HUD, rounded, no title bar).
+/// Re-uses the same visual style as ProgressPanel (HUD, rounded, no title bar).
 @MainActor
 final class FileOpProgressPanel {
 

@@ -18,7 +18,6 @@ final class OperationCoordinator {
     
     private var activeOperations: [UUID: OperationProgress] = [:]
     private var activeJournals: [UUID: OperationJournal] = [:]
-    private var progressPanel: OperationProgressPanel?
     
     // MARK: - Public API
     
@@ -106,16 +105,17 @@ final class OperationCoordinator {
             }
             
             // Show progress panel
-            progressPanel = OperationProgressPanel()
-            progressPanel?.onPause = { [weak self] in
-                Task { await self?.togglePause(progress) }
-            }
-            progressPanel?.onCancel = { [weak self, weak journal] in
-                Task { 
-                    await self?.cancelAndRollback(progress, journal: journal)
+            let panel = ProgressPanel.shared
+            panel.show(
+                icon: type.icon,
+                title: "\(type.verb) \(estimate.totalFiles) items",
+                status: "\(type.verb) \(estimate.totalFiles) item(s) — \(estimate.formattedSize)",
+                cancelHandler: { [weak self, weak journal] in
+                    Task {
+                        await self?.cancelAndRollback(progress, journal: journal)
+                    }
                 }
-            }
-            progressPanel?.show(for: progress)
+            )
         }
         
         // 5. Execute operation
@@ -155,7 +155,7 @@ final class OperationCoordinator {
         // 6. Hide panel after short delay
         if estimate.isLengthy {
             try? await Task.sleep(for: .milliseconds(500))
-            progressPanel?.hide()
+            ProgressPanel.shared.finish(success: true)
         }
     }
     
@@ -223,7 +223,7 @@ final class OperationCoordinator {
             alert.runModal()
         }
         
-        progressPanel?.hide()
+        ProgressPanel.shared.finish(success: false, message: "⏹ Cancelled")
     }
     
     // MARK: - Perform Operations

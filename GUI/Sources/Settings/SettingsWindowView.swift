@@ -176,6 +176,7 @@ struct SettingsWindowView: View {
                             case .archives:           SettingsArchivesPane()
                             case .network:            SettingsNetworkPane()
                             case .diffTool:           SettingsDiffToolPane()
+                            case .progress:           SettingsProgressPane()
                             case .permissions:        SettingsPermissionsPane()
                             case .hotkeys:            EmptyView()
                             }

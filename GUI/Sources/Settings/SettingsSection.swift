@@ -23,6 +23,7 @@ enum SettingsSection: String, CaseIterable, Identifiable, Hashable {
     case archives       = "Archives"
     case network        = "Network"
     case diffTool       = "Diff Tool"
+    case progress       = "Progress Panel"
     case permissions    = "Permissions"
     case hotkeys        = "Hotkeys"
 
@@ -60,6 +61,7 @@ enum SettingsSection: String, CaseIterable, Identifiable, Hashable {
         case .archives:          return "archivebox"
         case .network:           return "network"
         case .diffTool:          return "arrow.left.arrow.right"
+        case .progress:          return "chart.bar.doc.horizontal"
         case .permissions:       return "lock.shield"
         case .hotkeys:           return "keyboard"
         }

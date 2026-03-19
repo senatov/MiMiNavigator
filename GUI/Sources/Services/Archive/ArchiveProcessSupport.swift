@@ -8,9 +8,8 @@
 import Foundation
 
 // MARK: - Tool Locator
-/// Resolves paths to optional CLI tools (7z, etc.)
-enum ArchiveToolLocator {
 
+enum ArchiveToolLocator {
     static func find7z() throws -> String {
         let candidates = ["/opt/homebrew/bin/7z", "/usr/local/bin/7z", "/usr/bin/7z"]
         guard let path = candidates.first(where: { FileManager.default.fileExists(atPath: $0) }) else {
@@ -20,99 +19,115 @@ enum ArchiveToolLocator {
     }
 }
 
-// MARK: - Process Runner
-/// Async wrapper for running CLI archive tools with optional stdout streaming
-enum ArchiveProcessRunner {
+// MARK: - Active Process Handle
 
-    /// unzip exit 1 = metadata warnings (extraction succeeded)
-    /// unzip exit 50 = attribute warning on /tmp (extraction succeeded)
-    /// tar exit 1 = files changed during archive (non-fatal)
-    private static let nonFatalExitCodes: Set<Int32> = [1, 50]
+/// Sendable handle to a running extraction process — allows cancel from UI
+final class ActiveArchiveProcess: @unchecked Sendable {
+    private let lock = NSLock()
+    private var process: Process?
 
-    /// Timeout for extraction process (5 min default)
-    private static let timeoutSeconds: Double = 300
+    init() { self.process = nil }
 
-    // MARK: - Simple run (legacy compat)
-
-    @concurrent static func run(_ process: Process, errorPipe: Pipe) async throws {
-        try await runWithProgress(process, errorPipe: errorPipe, outputPipe: nil, onLine: nil)
+    func set(_ p: Process) {
+        lock.lock()
+        process = p
+        lock.unlock()
     }
 
-    // MARK: - Run with progress streaming
+    func terminate() {
+        lock.lock()
+        let p = process
+        lock.unlock()
+        if let p, p.isRunning {
+            log.info("[ActiveArchiveProcess] terminate() pid=\(p.processIdentifier)")
+            p.terminate()
+        }
+    }
+}
 
+// MARK: - Process Runner
+
+enum ArchiveProcessRunner {
+
+    private static let nonFatalExitCodes: Set<Int32> = [1, 50]
+    private static let timeoutSeconds: Double = 300
+
+    // MARK: - Simple run (legacy)
+    @concurrent static func run(_ process: Process, errorPipe: Pipe) async throws {
+        try await runWithProgress(process, errorPipe: errorPipe, outputPipe: nil, onLine: nil, processHandle: nil)
+    }
+
+    // MARK: - Run with progress
     @concurrent static func runWithProgress(
         _ process: Process,
         errorPipe: Pipe,
         outputPipe: Pipe?,
-        onLine: (@Sendable (String) -> Void)?
+        onLine: (@Sendable (String) -> Void)?,
+        processHandle: ActiveArchiveProcess? = nil
     ) async throws {
         let toolName = process.executableURL?.lastPathComponent ?? "?"
         log.debug("[ProcessRunner] starting \(toolName) args=\(process.arguments?.prefix(4).joined(separator: " ") ?? "?")")
 
-        // Stream stdout lines in bg if callback provided
-        let lineReader: Task<Void, Never>? = if let outPipe = outputPipe, let callback = onLine {
+        // Read lines from a pipe in background — UTF-8 w/ Latin1 fallback
+        func startLineReader(for pipe: Pipe, callback: @escaping @Sendable (String) -> Void) -> Task<Void, Never> {
             Task.detached {
-                let fh = outPipe.fileHandleForReading
+                let fh = pipe.fileHandleForReading
                 var buffer = Data()
                 while true {
                     let chunk = fh.availableData
                     if chunk.isEmpty { break }
                     buffer.append(chunk)
-                    // split on newlines
                     while let range = buffer.range(of: Data([0x0A])) {
                         let lineData = buffer.subdata(in: buffer.startIndex..<range.lowerBound)
                         buffer.removeSubrange(buffer.startIndex...range.lowerBound)
-                        if let line = String(data: lineData, encoding: .utf8)?
-                            .trimmingCharacters(in: .whitespacesAndNewlines),
-                           !line.isEmpty {
+                        // try UTF-8 first, fallback to Latin1 (never nil)
+                        let line = (String(data: lineData, encoding: .utf8)
+                            ?? String(data: lineData, encoding: .isoLatin1)
+                            ?? String(describing: lineData))
+                            .trimmingCharacters(in: .whitespacesAndNewlines)
+                        if !line.isEmpty {
                             callback(line)
                         }
                     }
                 }
-                // flush remainder
-                if !buffer.isEmpty,
-                   let line = String(data: buffer, encoding: .utf8)?
-                    .trimmingCharacters(in: .whitespacesAndNewlines),
-                   !line.isEmpty {
-                    callback(line)
+                if !buffer.isEmpty {
+                    let line = (String(data: buffer, encoding: .utf8)
+                        ?? String(data: buffer, encoding: .isoLatin1)
+                        ?? String(describing: buffer))
+                        .trimmingCharacters(in: .whitespacesAndNewlines)
+                    if !line.isEmpty {
+                        callback(line)
+                    }
                 }
             }
-        } else {
-            nil
         }
 
-        // If no progress callback, just sink stdout
-        if outputPipe != nil && onLine == nil {
-            // already assigned to process — let it drain
+        // Stream both stdout AND stderr — tar outputs filenames to stdout,
+        // unzip to stdout, 7z to stdout, but warnings/errors go to stderr
+        var readers: [Task<Void, Never>] = []
+        if let callback = onLine {
+            if let outPipe = outputPipe {
+                readers.append(startLineReader(for: outPipe, callback: callback))
+            }
+            // Also read stderr for progress (some tools put file list there)
+            readers.append(startLineReader(for: errorPipe, callback: callback))
         }
 
         try await withCheckedThrowingContinuation { (cont: CheckedContinuation<Void, Error>) in
-            var resumed = false
-            let lock = NSLock()
-            func resumeOnce(with result: Result<Void, Error>) {
-                lock.lock()
-                defer { lock.unlock() }
-                guard !resumed else { return }
-                resumed = true
-                switch result {
-                case .success: cont.resume()
-                case .failure(let e): cont.resume(throwing: e)
-                }
-            }
+            let gate = _ResumeGate(continuation: cont)
 
             process.terminationHandler = { proc in
                 let status = proc.terminationStatus
                 log.debug("[ProcessRunner] \(toolName) exited status=\(status)")
                 if status == 0 || Self.nonFatalExitCodes.contains(status) {
                     if status != 0 {
-                        let msg = String(data: errorPipe.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8) ?? ""
-                        log.warning("[ProcessRunner] exit=\(status) (non-fatal): \(msg.prefix(200))")
+                        log.warning("[ProcessRunner] exit=\(status) (non-fatal)")
                     }
-                    resumeOnce(with: .success(()))
+                    gate.resume(with: .success(()))
                 } else {
-                    let msg = String(data: errorPipe.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8) ?? "exit=\(status)"
-                    log.error("[ProcessRunner] exit=\(status): \(msg.prefix(300))")
-                    resumeOnce(with: .failure(ArchiveManagerError.extractionFailed("exit=\(status): \(msg)")))
+                    let reason = "exit=\(status)"
+                    log.error("[ProcessRunner] \(reason)")
+                    gate.resume(with: .failure(ArchiveManagerError.extractionFailed(reason)))
                 }
             }
 
@@ -121,24 +136,47 @@ enum ArchiveProcessRunner {
                 log.debug("[ProcessRunner] \(toolName) launched pid=\(process.processIdentifier)")
             } catch {
                 log.error("[ProcessRunner] failed to launch \(toolName): \(error)")
-                resumeOnce(with: .failure(error))
+                gate.resume(with: .failure(error))
+                return
             }
 
             // Timeout watchdog
-            DispatchQueue.global().asyncAfter(deadline: .now() + Self.timeoutSeconds) {
-                lock.lock()
-                let wasResumed = resumed
-                lock.unlock()
-                if !wasResumed && process.isRunning {
-                    log.error("[ProcessRunner] TIMEOUT after \(Self.timeoutSeconds)s — killing \(toolName)")
-                    process.terminate()
-                    resumeOnce(with: .failure(
-                        ArchiveManagerError.extractionFailed("Timeout after \(Int(Self.timeoutSeconds))s")
-                    ))
+            DispatchQueue.global()
+                .asyncAfter(deadline: .now() + Self.timeoutSeconds) {
+                    if process.isRunning {
+                        log.error("[ProcessRunner] TIMEOUT after \(Self.timeoutSeconds)s — killing \(toolName)")
+                        process.terminate()
+                        gate.resume(
+                            with: .failure(
+                                ArchiveManagerError.extractionFailed("Timeout after \(Int(Self.timeoutSeconds))s")
+                            ))
+                    }
                 }
-            }
         }
 
-        lineReader?.cancel()
+        readers.forEach { $0.cancel() }
+    }
+}
+
+// MARK: - Resume Gate
+
+private final class _ResumeGate: @unchecked Sendable {
+    private let lock = NSLock()
+    private var resumed = false
+    private let continuation: CheckedContinuation<Void, Error>
+
+    init(continuation: CheckedContinuation<Void, Error>) {
+        self.continuation = continuation
+    }
+
+    func resume(with result: Result<Void, Error>) {
+        lock.lock()
+        defer { lock.unlock() }
+        guard !resumed else { return }
+        resumed = true
+        switch result {
+            case .success: continuation.resume()
+            case .failure(let e): continuation.resume(throwing: e)
+        }
     }
 }

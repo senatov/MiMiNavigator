@@ -4,7 +4,6 @@
 // Created by Iakov Senatov on 11.03.2026.
 // Copyright © 2025-2026 Senatov. All rights reserved.
 // Description: Archive enter/exit, password dialogs, repack confirmation.
-//              Uses setScannerDirectoryAndRefresh to avoid left/right branching.
 
 import AppKit
 import FileModelKit
@@ -17,18 +16,21 @@ extension AppState {
     func enterArchive(at archiveURL: URL, on panel: PanelSide, password: String? = nil) async {
         log.info("[AppState] Entering archive: \(archiveURL.lastPathComponent) panel=\(panel) hasPassword=\(password != nil)")
 
-        let progressPanel = ArchiveProgressPanel.shared
+        let progressPanel = ProgressPanel.shared
+        let handle = ActiveArchiveProcess()
+
         await MainActor.run {
             progressPanel.show(
                 archiveName: archiveURL.lastPathComponent,
                 destinationPath: archiveURL.deletingLastPathComponent().path,
-                cancelHandler: {
-                    log.info("[AppState] Archive extraction cancelled by user")
+                cancelHandler: { [handle] in
+                    log.info("[AppState] User cancelled archive extraction")
+                    handle.terminate()
                 }
             )
+            progressPanel.appendLog("⏳ Decompressing \(archiveURL.lastPathComponent)…")
         }
 
-        // Progress callback — runs on bg thread, dispatches UI update to main
         let onProgress: @Sendable (String) -> Void = { line in
             Task { @MainActor in
                 progressPanel.appendLog(line)
@@ -37,7 +39,8 @@ extension AppState {
 
         do {
             let tempDir = try await ArchiveManager.shared.openArchive(
-                at: archiveURL, password: password, onProgress: onProgress
+                at: archiveURL, password: password,
+                onProgress: onProgress, processHandle: handle
             )
             await MainActor.run {
                 progressPanel.finish(success: true)
@@ -51,7 +54,11 @@ extension AppState {
             log.info("[AppState] Successfully entered archive: \(archiveURL.lastPathComponent)")
         } catch {
             await MainActor.run {
-                progressPanel.finish(success: false, message: "❌ \(error.localizedDescription)")
+                if progressPanel.isCancelled {
+                    progressPanel.finish(success: false, message: "⏹ Cancelled by user")
+                } else {
+                    progressPanel.finish(success: false, message: "❌ \(error.localizedDescription)")
+                }
             }
             log.error("[AppState] Failed to enter archive: \(error.localizedDescription)")
         }

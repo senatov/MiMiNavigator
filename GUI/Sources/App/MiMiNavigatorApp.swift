@@ -53,10 +53,10 @@ struct MiMiNavigatorApp: App {
                         Task { @MainActor in
                             // Restore whichever panel(s) are showing remote content
                             if AppState.isRemotePath(appState.leftURL) {
-                                await appState.restoreLocalPath(for: .left)
+                                await appState.restoreLocalPath(for: PanelSide.left)
                             }
                             if AppState.isRemotePath(appState.rightURL) {
-                                await appState.restoreLocalPath(for: .right)
+                                await appState.restoreLocalPath(for: PanelSide.right)
                             }
                         }
                     }
@@ -251,7 +251,7 @@ struct MiMiNavigatorApp: App {
         if markedOnFocused.count == 2 {
             lp = markedOnFocused[0].urlValue.path
             rp = markedOnFocused[1].urlValue.path
-        } else if case let (.some(l), .some(r)) = (leftFile, rightFile), !l.isDirectory, !r.isDirectory {
+        } else if case (.some(let l), .some(let r)) = (leftFile, rightFile), !l.isDirectory, !r.isDirectory {
             lp = l.urlValue.path
             rp = r.urlValue.path
         } else {
@@ -284,6 +284,4 @@ struct MiMiNavigatorApp: App {
         SettingsCoordinator.shared.toggle()
     }
 
-
 }
-

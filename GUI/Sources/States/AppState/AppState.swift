@@ -205,7 +205,8 @@ final class AppState {
         rightPanel = PanelState(currentDirectory: paths.right)
         self.focusedPanel = StatePersistence.loadInitialFocus()
         if let storedKey = MiMiDefaults.shared.string(forKey: "MiMiNavigator.sortKey"),
-           let key = SortKeysEnum(rawValue: storedKey) {
+            let key = SortKeysEnum(rawValue: storedKey)
+        {
             self.sortKey = key
         }
         if MiMiDefaults.shared.object(forKey: "MiMiNavigator.sortAscending") != nil {
@@ -260,6 +261,16 @@ extension AppState {
         get { side == .left ? leftPanel : rightPanel }
         set {
             if side == .left { leftPanel = newValue } else { rightPanel = newValue }
+        }
+    }
+
+    /// Unified panel update helper (keeps mutation localized and consistent)
+    func updatePanel(_ side: PanelSide, update: (PanelState) -> Void) {
+        switch side {
+            case .left:
+                update(leftPanel)
+            case .right:
+                update(rightPanel)
         }
     }
 }

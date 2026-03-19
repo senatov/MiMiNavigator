@@ -24,7 +24,9 @@ final class ArchiveService {
         archiveName: String,
         format: ArchiveFormat,
         compressionLevel: CompressionLevel = .normal,
-        password: String? = nil
+        password: String? = nil,
+        onProgress: (@Sendable (String) -> Void)? = nil,
+        processHandle: ActiveArchiveProcess? = nil
     ) async throws -> URL {
         guard !files.isEmpty else {
             throw ArchiveManagerError.repackFailed("No files provided")
@@ -33,20 +35,29 @@ final class ArchiveService {
         guard !FileManager.default.fileExists(atPath: archiveURL.path) else {
             throw FileOperationError.fileAlreadyExists(archiveURL.lastPathComponent)
         }
-        let workDir = files[0].deletingLastPathComponent()
-        try await pack(files: files, to: archiveURL, format: format, workDir: workDir, compressionLevel: compressionLevel, password: password)
+        let parentDirectories = Set(files.map { $0.deletingLastPathComponent().path })
+        guard parentDirectories.count == 1, let workDirPath = parentDirectories.first else {
+            throw ArchiveManagerError.repackFailed("All files must be in the same directory")
+        }
+        let workDir = URL(fileURLWithPath: workDirPath, isDirectory: true)
+        try await pack(files: files, to: archiveURL, format: format, workDir: workDir, compressionLevel: compressionLevel, password: password, onProgress: onProgress, processHandle: processHandle)
         log.info("[ArchiveService] Created: \(archiveURL.lastPathComponent) level=\(compressionLevel)")
         return archiveURL
     }
 
     // MARK: - Private
 
-    private func pack(files: [URL], to archiveURL: URL, format: ArchiveFormat, workDir: URL, compressionLevel: CompressionLevel = .normal, password: String? = nil) async throws {
+    private func pack(files: [URL], to archiveURL: URL, format: ArchiveFormat, workDir: URL, compressionLevel: CompressionLevel = .normal, password: String? = nil, onProgress: (@Sendable (String) -> Void)? = nil, processHandle: ActiveArchiveProcess? = nil) async throws {
         let names = files.map(\.lastPathComponent)
         let errorPipe = Pipe()
         let process = Process()
         process.currentDirectoryURL = workDir
-        
+
+        // force UTF-8 output from CLI tools — prevents garbled Cyrillic/CJK filenames
+        var baseEnv = ProcessInfo.processInfo.environment
+        baseEnv["LANG"] = "en_US.UTF-8"
+        baseEnv["LC_ALL"] = "en_US.UTF-8"
+
         let level = compressionLevel.rawValue
 
         switch format {
@@ -65,18 +76,23 @@ final class ArchiveService {
 
         case .tarGz:
             process.executableURL = URL(fileURLWithPath: "/usr/bin/tar")
-            // GZIP level via env var
-            process.environment = ["GZIP": "-\(level)"]
+            var env = baseEnv
+            env["GZIP"] = "-\(level)"
+            process.environment = env
             process.arguments = ["-c", "-z", "-f", archiveURL.path] + names
 
         case .tarBz2:
             process.executableURL = URL(fileURLWithPath: "/usr/bin/tar")
-            process.environment = ["BZIP2": "-\(level)"]
+            var env = baseEnv
+            env["BZIP2"] = "-\(level)"
+            process.environment = env
             process.arguments = ["-c", "-j", "-f", archiveURL.path] + names
 
         case .tarXz:
             process.executableURL = URL(fileURLWithPath: "/usr/bin/tar")
-            process.environment = ["XZ_OPT": "-\(level)"]
+            var env = baseEnv
+            env["XZ_OPT"] = "-\(level)"
+            process.environment = env
             process.arguments = ["-c", "-J", "-f", archiveURL.path] + names
 
         case .tarLzma, .tarZst, .tarLz4, .tarLzo, .tarLz, .compressZ:
@@ -93,8 +109,15 @@ final class ArchiveService {
             process.arguments = args
         }
 
-        process.standardOutput = Pipe()
+        let outputPipe = Pipe()
+        // ensure UTF-8 env for all branches (tarGz/tarBz2/tarXz set their own env from baseEnv)
+        if process.environment == nil {
+            process.environment = baseEnv
+        }
+        process.standardOutput = onProgress != nil ? outputPipe : nil
         process.standardError = errorPipe
-        try await ArchiveProcessRunner.run(process, errorPipe: errorPipe)
+        log.debug("[ArchiveService] \(#function) tool=\(process.executableURL?.path ?? "?") args=\(process.arguments ?? []) workDir=\(workDir.path)")
+        processHandle?.set(process)
+        try await ArchiveProcessRunner.runWithProgress(process, errorPipe: errorPipe, outputPipe: onProgress != nil ? outputPipe : nil, onLine: onProgress, processHandle: processHandle)
     }
 }
