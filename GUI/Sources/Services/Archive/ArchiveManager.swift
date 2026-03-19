@@ -31,12 +31,15 @@
 
         // MARK: - Open
 
-        func openArchive(at archiveURL: URL, password: String? = nil) async throws -> URL {
+        func openArchive(
+            at archiveURL: URL,
+            password: String? = nil,
+            onProgress: ArchiveExtractor.ProgressLine? = nil
+        ) async throws -> URL {
             log.debug("[ArchiveManager] openArchive: \(archiveURL.lastPathComponent) hasPassword=\(password != nil) pwdLen=\(password?.count ?? 0)")
             let key = archiveURL.path
 
             if let existing = sessions[key] {
-                // Archive already open — increment reference count
                 refCounts[key, default: 1] += 1
                 log.debug("[ArchiveManager] Reusing session for \(archiveURL.lastPathComponent), refCount=\(refCounts[key] ?? 1)")
                 return existing.tempDirectory
@@ -62,7 +65,10 @@
             let attrs = (try? fm.attributesOfItem(atPath: archiveURL.path)) ?? [:]
 
             do {
-                try await ArchiveExtractor.extract(archiveURL: archiveURL, format: format, to: tempDir, password: password)
+                try await ArchiveExtractor.extract(
+                    archiveURL: archiveURL, format: format, to: tempDir,
+                    password: password, onProgress: onProgress
+                )
             } catch {
                 log.error("[ArchiveManager] openArchive: Extraction failed: \(error)")
                 openingInProgress.remove(key)

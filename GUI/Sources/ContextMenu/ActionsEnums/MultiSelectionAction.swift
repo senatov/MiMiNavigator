@@ -47,7 +47,7 @@ enum MultiSelectionAction: String, CaseIterable, Identifiable {
         switch self {
         case .cut: return "scissors"
         case .copy: return "doc.on.doc"
-        case .copyAsPathname: return "doc.on.doc.fill"
+        case .copyAsPathname: return "link.circle.fill"
         case .paste: return "doc.on.clipboard"
         case .compress: return "archivebox"
         case .share: return "square.and.arrow.up"

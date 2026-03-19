@@ -77,6 +77,8 @@ struct MultiSelectionContextMenu: View {
                 }
             } icon: {
                 Image(systemName: action.systemImage)
+                    .symbolRenderingMode(action == .copyAsPathname ? .hierarchical : .monochrome)
+                    .foregroundStyle(action == .copyAsPathname ? .blue : .primary)
             }
         }
         .disabled(isActionDisabled(action))

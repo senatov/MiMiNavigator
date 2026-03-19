@@ -16,13 +16,32 @@ extension AppState {
     /// Navigate into an archive: extract to temp dir and open as directory
     func enterArchive(at archiveURL: URL, on panel: PanelSide, password: String? = nil) async {
         log.info("[AppState] Entering archive: \(archiveURL.lastPathComponent) panel=\(panel) hasPassword=\(password != nil)")
-        ArchiveProgressPanel.shared.show(
-            archiveName: archiveURL.lastPathComponent,
-            destinationPath: archiveURL.deletingLastPathComponent().path
-        )
+
+        let progressPanel = ArchiveProgressPanel.shared
+        await MainActor.run {
+            progressPanel.show(
+                archiveName: archiveURL.lastPathComponent,
+                destinationPath: archiveURL.deletingLastPathComponent().path,
+                cancelHandler: {
+                    log.info("[AppState] Archive extraction cancelled by user")
+                }
+            )
+        }
+
+        // Progress callback — runs on bg thread, dispatches UI update to main
+        let onProgress: @Sendable (String) -> Void = { line in
+            Task { @MainActor in
+                progressPanel.appendLog(line)
+            }
+        }
+
         do {
-            let tempDir = try await ArchiveManager.shared.openArchive(at: archiveURL, password: password)
-            ArchiveProgressPanel.shared.hide()
+            let tempDir = try await ArchiveManager.shared.openArchive(
+                at: archiveURL, password: password, onProgress: onProgress
+            )
+            await MainActor.run {
+                progressPanel.finish(success: true)
+            }
             var state = archiveState(for: panel)
             state.enterArchive(archiveURL: archiveURL, tempDir: tempDir)
             setArchiveState(state, for: panel)
@@ -31,9 +50,10 @@ extension AppState {
             await setScannerDirectoryAndRefresh(tempDir.path, for: panel)
             log.info("[AppState] Successfully entered archive: \(archiveURL.lastPathComponent)")
         } catch {
-            ArchiveProgressPanel.shared.hide()
+            await MainActor.run {
+                progressPanel.finish(success: false, message: "❌ \(error.localizedDescription)")
+            }
             log.error("[AppState] Failed to enter archive: \(error.localizedDescription)")
-            await showArchiveErrorAlert(archiveName: archiveURL.lastPathComponent, archiveURL: archiveURL, error: error, panel: panel)
         }
     }
 
