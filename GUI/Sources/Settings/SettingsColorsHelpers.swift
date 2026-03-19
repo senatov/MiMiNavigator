@@ -107,19 +107,9 @@ extension ColorPaneHelpers {
     // MARK: - colorBinding
     private func colorBinding(hex: Binding<String>, fallback: Color, store: ColorThemeStore) -> Binding<Color> {
         Binding<Color>(
-            get: {
-                let cur = hex.wrappedValue
-                let resolved = cur.isEmpty ? fallback : Color(hex: cur) ?? fallback
-                log.debug("[colorBinding] GET hex='\(cur)' isEmpty=\(cur.isEmpty) fallback=\(fallback.description) → \(resolved.description)")
-                return resolved
-            },
+            get: { hex.wrappedValue.isEmpty ? fallback : Color(hex: hex.wrappedValue) ?? fallback },
             set: { newColor in
-                let oldHex = hex.wrappedValue
-                let newHex = newColor.toHex() ?? ""
-                log.debug("[colorBinding] SET old='\(oldHex)' new='\(newHex)' toHex=\(newColor.toHex() ?? "NIL")")
-                hex.wrappedValue = newHex
-                let afterWrite = hex.wrappedValue
-                log.debug("[colorBinding] SET afterWrite hex.wrappedValue='\(afterWrite)' UD.bgAct='\(UserDefaults.standard.string(forKey: "color.breadcrumbBgActive") ?? "nil")' UD.bgInact='\(UserDefaults.standard.string(forKey: "color.breadcrumbBgInactive") ?? "nil")'")
+                hex.wrappedValue = newColor.toHex() ?? ""
                 store.reloadOverrides()
             }
         )

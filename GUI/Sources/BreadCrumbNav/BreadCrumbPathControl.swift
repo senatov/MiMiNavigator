@@ -18,9 +18,6 @@ struct BreadCrumbPathControl: View {
     // MARK: - Design Constants
     @MainActor private enum Design {
         static let cornerRadius: CGFloat = 8
-        static var activeBackgroundColor: Color { ColorThemeStore.shared.activeTheme.panelBackground }
-        static var inactiveBackgroundColor: Color { DesignTokens.card }
-        static let borderOpacity: CGFloat = 0.15
     }
 
     // MARK: - Is Active Panel
