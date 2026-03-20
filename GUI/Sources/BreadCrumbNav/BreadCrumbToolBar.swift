@@ -11,22 +11,14 @@ import FavoritesKit
 import FileModelKit
 import SwiftUI
 
-private struct NoSelectionButtonStyle: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .opacity(configuration.isPressed ? 0.7 : 1.0) // subtle feedback, no selection
-    }
-}
-
 // MARK: - Navigation Panel with Favorites Button
-struct ButtonFavTopPanel: View {
+struct BreadCrumbToolBar: View {
     @Environment(AppState.self) var appState
     // MARK: - State
     @State private var favorites: [FavoriteItem] = []
     @State private var navigationAdapter: FavoritesNavigationAdapter?
     let panelSide: PanelSide
-    
-    
+
     // Active panel check for icon contrast
     private var isActivePanel: Bool {
         appState.focusedPanel == panelSide
@@ -108,18 +100,60 @@ struct ButtonFavTopPanel: View {
 
     // MARK: - Up Button
     private func upButton() -> some View {
-        Button(action: {
+        @State var isHovered = false
+
+        return Button(action: {
             log.debug("Up: navigating to parent directory")
             navigationAdapter?.navigateUp(panel: panelSide.toFavPanelSide)
         }) {
             Image(systemName: "arrowshape.up")
-                .font(.system(size: 15))
-                .symbolRenderingMode(.multicolor)
-                .symbolEffect(.bounce, value: 2)
-                .foregroundStyle(iconColor)
+                .font(.system(size: 15, weight: .semibold))
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(isHovered ? Color.white : iconColor)
+                .frame(width: 28, height: 28)
+                .background(
+                    ZStack {
+                        // Glass base
+                        RoundedRectangle(cornerRadius: 7, style: .continuous)
+                            .fill(.ultraThinMaterial)
+
+                        // Top highlight (3D light)
+                        RoundedRectangle(cornerRadius: 7)
+                            .stroke(Color.white.opacity(0.35), lineWidth: 1)
+                            .blur(radius: 0.5)
+                            .offset(x: -0.5, y: -0.5)
+                            .mask(
+                                LinearGradient(colors: [.white, .clear], startPoint: .top, endPoint: .bottom)
+                            )
+
+                        // Bottom shadow (3D depth)
+                        RoundedRectangle(cornerRadius: 7)
+                            .stroke(Color.black.opacity(0.4), lineWidth: 1)
+                            .blur(radius: 0.5)
+                            .offset(x: 0.5, y: 0.5)
+                            .mask(
+                                LinearGradient(colors: [.clear, .black], startPoint: .top, endPoint: .bottom)
+                            )
+
+                        // Hover tint
+                        if isHovered {
+                            RoundedRectangle(cornerRadius: 7)
+                                .fill(Color.blue.opacity(0.25))
+                        }
+                    }
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 7)
+                        .stroke(Color(red: 0.35, green: 0.55, blue: 0.85).opacity(isHovered ? 0.7 : 0.3), lineWidth: 0.6)
+                )
+                .scaleEffect(isHovered ? 1.05 : 1.0)
+                .animation(.spring(response: 0.25, dampingFraction: 0.6), value: isHovered)
         }
-        .buttonStyle(NoSelectionButtonStyle())
+        .buttonStyle(.plain)
         .focusable(false)
+        .onHover { hovering in
+            isHovered = hovering
+        }
         .help("Go to parent directory")
         .accessibilityLabel("Up button")
     }

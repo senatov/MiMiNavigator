@@ -1,30 +1,14 @@
-// NavigationMenuItems.swift
-// MiMiNavigator
 //
-// Created by Iakov Senatov on 10.05.2024.
-// Copyright © 2024-2026 Senatov. All rights reserved.
-// Description: Navigation menu components for breadcrumb panel
+//  EllipsisMenuSection.swift
+//  MiMiNavigator
+//
+//  Created by Iakov Senatov on 20.03.2026.
+//  Copyright © 2026 Senatov. All rights reserved.
+//
 
 import AppKit
 import FileModelKit
 import SwiftUI
-
-// MARK: - Favorites Button Section (left side of breadcrumb)
-struct FavoritesButtonSection: View {
-    @Environment(AppState.self) var appState
-    let panelSide: PanelSide
-
-    init(selectedSide: PanelSide) {
-        self.panelSide = selectedSide
-    }
-
-    var body: some View {
-        HStack(spacing: 4) {
-            ButtonFavTopPanel(selectedSide: panelSide)
-        }
-        .padding(.leading, 6)
-    }
-}
 
 // MARK: - Ellipsis Menu Section (right side of breadcrumb)
 struct EllipsisMenuSection: View {
@@ -69,7 +53,7 @@ struct EllipsisMenuSection: View {
         log.info("Opening in Finder: \(url.path)")
         NSWorkspace.shared.activateFileViewerSelecting([url])
     }
-    
+
     // MARK: - Copy path to clipboard
     private func handleCopyPath() {
         guard let url = currentDirectoryURL else {
@@ -80,7 +64,7 @@ struct EllipsisMenuSection: View {
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(url.path, forType: .string)
     }
-    
+
     // MARK: - Get current directory URL from focused panel
     private var currentDirectoryURL: URL? {
         appState.pathURL(for: appState.focusedPanel)
