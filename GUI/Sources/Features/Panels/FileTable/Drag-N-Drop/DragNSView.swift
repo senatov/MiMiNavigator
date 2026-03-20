@@ -9,21 +9,36 @@ import AppKit
 import FileModelKit
 import SwiftUI
 
+@MainActor
 final class DragNSView: NSView, NSDraggingSource {
 
-    var panelSide: PanelSide!
+    var panelSide: PanelSide?
     weak var dragDropManager: DragDropManager?
-    weak var appState: AppState?
+    unowned var appState: AppState
 
-    private var mouseDownPoint: NSPoint = .zero
-    private let dragThreshold: CGFloat = 5.0
-    private var didStartDragging = false
-    private var mouseDownOnResize = false
+    private var dragState = DragState(startPoint: nil, didStart: false, isResize: false)
+    private var cachedSelection: [URL] = []
     private var mouseMonitor: Any?
     private var dragMonitor: Any?
 
+    private enum UI {
+        static let dragThreshold: CGFloat = 5.0
+        static let dragStartTolerance: CGFloat = 10.0
+    }
+
+    init(appState: AppState) {
+        self.appState = appState
+        super.init(frame: .zero)
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
     /// Do not intercept normal mouse events — let SwiftUI handle clicks, selection, context menu.
     /// Drag is initiated via NSEvent local monitor instead.
+    /// This view intentionally returns nil to allow event passthrough.
     override func hitTest(_ point: NSPoint) -> NSView? {
         return nil
     }
@@ -37,15 +52,25 @@ final class DragNSView: NSView, NSDraggingSource {
         }
     }
 
+    override func viewWillMove(toWindow newWindow: NSWindow?) {
+        super.viewWillMove(toWindow: newWindow)
+        if newWindow == nil {
+            removeMonitors()
+        }
+    }
+
     private func installMonitors() {
         removeMonitors()
 
-        mouseMonitor = NSEvent.addLocalMonitorForEvents(matching: .leftMouseDown) { [weak self] event in
+        let downMask: NSEvent.EventTypeMask = [.leftMouseDown]
+        let dragMask: NSEvent.EventTypeMask = [.leftMouseDragged]
+
+        mouseMonitor = NSEvent.addLocalMonitorForEvents(matching: downMask) { [weak self] event in
             self?.handleMouseDown(event)
             return event  // pass through
         }
 
-        dragMonitor = NSEvent.addLocalMonitorForEvents(matching: .leftMouseDragged) { [weak self] event in
+        dragMonitor = NSEvent.addLocalMonitorForEvents(matching: dragMask) { [weak self] event in
             if let self, self.handleMouseDragged(event) {
                 return nil  // consumed by drag
             }
@@ -68,61 +93,98 @@ final class DragNSView: NSView, NSDraggingSource {
     // No deinit needed — avoids non-Sendable access from nonisolated context.
 
     private func handleMouseDown(_ event: NSEvent) {
-        // Only track if the click is inside our bounds
         guard let window = self.window, event.window === window else { return }
-        // Only react to primary (left) mouse button without control-click
-        guard event.type == .leftMouseDown,
-            NSEvent.pressedMouseButtons == 1,
-            !event.modifierFlags.contains(.control)
-        else { return }
-        let loc = convert(event.locationInWindow, from: nil)
+        guard event.type == .leftMouseDown, isPrimaryMouseDown, !event.modifierFlags.contains(.control) else { return }
+        let locWindow = event.locationInWindow
+        let loc = convert(locWindow, from: nil)
         guard bounds.contains(loc) else { return }
-        mouseDownPoint = loc
-        didStartDragging = false
-        // Remember if cursor was resize at mouseDown — column divider drag in progress
-        mouseDownOnResize =
-            (NSCursor.current == NSCursor.resizeLeftRight
-                || NSCursor.current == NSCursor.resizeLeft
-                || NSCursor.current == NSCursor.resizeRight)
+        dragState.startPoint = locWindow
+        dragState.didStart = false
+        dragState.isResize = isResizeCursor
+        if let panelSide {
+            cachedSelection = DragSelectionResolver.resolve(from: appState, side: panelSide)
+        } else {
+            cachedSelection = []
+        }
     }
 
     /// Returns true if drag was initiated (event consumed)
     private func handleMouseDragged(_ event: NSEvent) -> Bool {
-        guard shouldHandlePrimaryDrag(event) else { return false }
-        guard !didStartDragging else { return false }
-        guard let appState, let panelSide else { return false }
-        guard let window = self.window, event.window === window else { return false }
-        guard !mouseDownOnResize else { return false }
+        guard let window = self.window, event.window === window else {
+            log.debug("[DragOverlay] ignored: event window mismatch or no window")
+            return false
+        }
+        guard shouldHandlePrimaryDrag(event) else {
+            log.debug("[DragOverlay] ignored: not primary drag")
+            return false
+        }
+        guard !dragState.didStart, !dragState.isResize else {
+            log.debug("[DragOverlay] ignored: drag already started or mouse down on resize cursor")
+            return false
+        }
+        guard let mouseDownPoint = dragState.startPoint else {
+            log.debug("[DragOverlay] ignored: no mouseDown registered")
+            return false
+        }
+        guard resolvedDependencies() != nil else { return false }
 
-        let currentPoint = convert(event.locationInWindow, from: nil)
-        guard bounds.contains(currentPoint) else { return false }
-        guard passedDragThreshold(currentPoint: currentPoint) else { return false }
+        let currentWindowPoint = event.locationInWindow
+        let currentPoint = convert(currentWindowPoint, from: nil)
+        guard expandedBounds(tolerance: UI.dragStartTolerance).contains(currentPoint) else {
+            log.debug("[DragOverlay] ignored: drag point outside extended bounds")
+            return false
+        }
+        guard passedDragThreshold(from: mouseDownPoint, to: currentWindowPoint) else {
+            log.debug("[DragOverlay] ignored: below drag threshold")
+            return false
+        }
 
-        let selectedURLs = DragSelectionResolver.resolve(from: appState, side: panelSide)
+        let selectedURLs = cachedSelection
         guard !selectedURLs.isEmpty else {
             log.debug("[DragOverlay] drag ignored: no selection")
             return false
         }
 
-        startDrag(with: selectedURLs, event: event)
+        beginDrag(with: selectedURLs, event: event)
         return true
     }
 
     // MARK: - Drag Helpers
 
+    private var isPrimaryMouseDown: Bool {
+        NSEvent.pressedMouseButtons == 1
+    }
+
+    private var isResizeCursor: Bool {
+        // TODO: Replace with explicit resize zone detection if splitter is introduced
+        let c = NSCursor.current
+        return c == .resizeLeftRight || c == .resizeLeft || c == .resizeRight
+    }
+
     private func shouldHandlePrimaryDrag(_ event: NSEvent) -> Bool {
-        event.type == .leftMouseDragged && NSEvent.pressedMouseButtons == 1 && !event.modifierFlags.contains(.control)
+        event.type == .leftMouseDragged && isPrimaryMouseDown && !event.modifierFlags.contains(.control)
     }
 
-    private func passedDragThreshold(currentPoint: NSPoint) -> Bool {
-        let deltaX = currentPoint.x - mouseDownPoint.x
-        let deltaY = currentPoint.y - mouseDownPoint.y
-        let distance = hypot(deltaX, deltaY)
-        return distance >= dragThreshold
+    private func expandedBounds(tolerance: CGFloat) -> NSRect {
+        bounds.insetBy(dx: -tolerance, dy: -tolerance)
     }
 
-    private func startDrag(with urls: [URL], event: NSEvent) {
-        didStartDragging = true
+    private func passedDragThreshold(from start: NSPoint, to current: NSPoint) -> Bool {
+        let dx = current.x - start.x
+        let dy = current.y - start.y
+        return hypot(dx, dy) >= UI.dragThreshold
+    }
+
+    private func resolvedDependencies() -> (appState: AppState, panelSide: PanelSide)? {
+        guard let panelSide else {
+            log.error("[DragOverlay] critical: missing panelSide")
+            return nil
+        }
+        return (appState, panelSide)
+    }
+
+    private func beginDrag(with urls: [URL], event: NSEvent) {
+        dragState.didStart = true
         log.debug("[DragOverlay] starting AppKit drag with \(urls.count) file(s)")
 
         let draggingItems = DragSessionBuilder.makeDraggingItems(from: urls)
@@ -149,7 +211,8 @@ final class DragNSView: NSView, NSDraggingSource {
     }
 
     func draggingSession(_ session: NSDraggingSession, endedAt screenPoint: NSPoint, operation: NSDragOperation) {
-        didStartDragging = false
+        dragState = DragState(startPoint: nil, didStart: false, isResize: false)
+        cachedSelection.removeAll()
         log.debug("[DragOverlay] drag ended operation=\(String(describing: operation.rawValue))")
     }
 }

@@ -18,16 +18,14 @@
         let panelSide: PanelSide
 
         func makeNSView(context: Context) -> DragNSView {
-            let view = DragNSView()
+            let view = DragNSView(appState: appState)
             view.panelSide = panelSide
             view.dragDropManager = dragDropManager
-            view.appState = appState
             return view
         }
 
         func updateNSView(_ nsView: DragNSView, context: Context) {
             nsView.panelSide = panelSide
             nsView.dragDropManager = dragDropManager
-            nsView.appState = appState
         }
     }

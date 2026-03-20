@@ -7,32 +7,6 @@
 
 import SwiftUI
 
-// MARK: - Divider Drag State
-struct DividerDragState {
-    var isDragging: Bool = false
-    var dragStartWidth: CGFloat = .nan
-    var lastAppliedWidth: CGFloat = -1
-    var dragGrabOffset: CGFloat = 0
-    var dragPreviewLeft: CGFloat?
-    var suppressDragUntilMouseUp: Bool = false
-    // Tooltip
-    var tooltipText: String = ""
-    var tooltipPosition: CGPoint = .zero
-    var isTooltipVisible: Bool = false
-    var lastTooltipLeft: CGFloat = .nan
-    // Throttling
-    var lastLoggedWidth: CGFloat = -1
-    var lastUILogTS: TimeInterval = 0
-}
-
-// MARK: - Divider Style Constants
-enum PanelDividerStyle {
-    static let hitAreaWidth: CGFloat = 24
-    static let normalWidth: CGFloat = 2.0
-    static let activeWidth: CGFloat = 5.0
-    static let minPanelWidth: CGFloat = 80
-}
-
 // MARK: - Panel Divider View
 /// Draggable divider line between panels. Supports drag resize, double-click 50/50, Option+click 50/50.
 struct PanelDividerView: View {
@@ -43,49 +17,36 @@ struct PanelDividerView: View {
     @State private var colorStore = ColorThemeStore.shared
 
     var body: some View {
-        let lineWidth = divider.isDragging ? PanelDividerStyle.activeWidth : PanelDividerStyle.normalWidth
+        let lineWidth = divider.isDragging ? PanelDividerMetrics.activeWidth : PanelDividerMetrics.normalWidth
         let lineColor = divider.isDragging ? colorStore.activeTheme.dividerActiveColor : colorStore.activeTheme.dividerNormalColor
 
         ZStack {
-            // 3D highlight: 1pt white strip on left edge — simulates light source from top-left
-            Rectangle()
-                .fill(Color.white.opacity(divider.isDragging ? 0.0 : 0.80))
-                .frame(width: 1, height: containerHeight)
-                .offset(x: -0.5)
-                .allowsHitTesting(false)
-            // Main divider line
-            Rectangle()
-                .fill(lineColor)
-                .frame(width: lineWidth, height: containerHeight)
-                .shadow(color: Color.black.opacity(divider.isDragging ? 0.35 : 0.38), radius: divider.isDragging ? 5 : 4, x: 1, y: 0)
-                .allowsHitTesting(false)
-            // 3D shadow: 1pt dark strip on right edge — simulates depth
-            Rectangle()
-                .fill(Color.black.opacity(divider.isDragging ? 0.0 : 0.32))
-                .frame(width: 1, height: containerHeight)
-                .offset(x: 0.5)
-                .allowsHitTesting(false)
+            if divider.isDragging {
+                activeDivider(height: containerHeight, lineWidth: lineWidth, color: lineColor)
+            } else {
+                inactiveGroove(height: containerHeight)
+            }
 
             // Invisible hit area for comfortable grabbing
             Color.clear
-                .frame(width: PanelDividerStyle.hitAreaWidth, height: containerHeight)
+                .frame(width: PanelDividerMetrics.hitAreaWidth, height: containerHeight)
                 .contentShape(Rectangle())
                 .gesture(makeDragGesture())
                 .simultaneousGesture(makeDoubleTapGesture())
                 .simultaneousGesture(makeOptionTapGesture())
         }
-        .frame(width: PanelDividerStyle.hitAreaWidth, height: containerHeight)
+        .frame(width: PanelDividerMetrics.hitAreaWidth, height: containerHeight)
         .background(Color.black.opacity(0.001))
         .contentShape(Rectangle())
         .onHover { inside in
-            if inside {
-                NSCursor.resizeLeftRight.set()
-            } else {
-                NSCursor.arrow.set()
-            }
+            updateCursor(inside)
         }
         .allowsHitTesting(true)
         .zIndex(10)
+    }
+
+    private func updateCursor(_ inside: Bool) {
+        inside ? NSCursor.resizeLeftRight.set() : NSCursor.arrow.set()
     }
 
     // MARK: - Drag Gesture
@@ -98,13 +59,13 @@ struct PanelDividerView: View {
                 if !divider.isDragging {
                     divider.isDragging = true
                     divider.dragPreviewLeft = leftPanelWidth
-                    divider.dragGrabOffset = value.startLocation.x - (leftPanelWidth + PanelDividerStyle.hitAreaWidth / 2)
+                    divider.dragGrabOffset = value.startLocation.x - (leftPanelWidth + PanelDividerMetrics.hitAreaWidth / 2)
                     log.debug("[Divider] Drag begin")
                 }
 
-                let proposed = (value.location.x - divider.dragGrabOffset) - (PanelDividerStyle.hitAreaWidth / 2)
-                let maxW = containerWidth - PanelDividerStyle.minPanelWidth - PanelDividerStyle.hitAreaWidth
-                let clamped = max(PanelDividerStyle.minPanelWidth, min(proposed, maxW))
+                let proposed = (value.location.x - divider.dragGrabOffset) - (PanelDividerMetrics.hitAreaWidth / 2)
+                let maxW = containerWidth - PanelDividerMetrics.minPanelWidth - PanelDividerMetrics.hitAreaWidth
+                let clamped = max(PanelDividerMetrics.minPanelWidth, min(proposed, maxW))
                 let snapped = snapToPixelGrid(clamped)
 
                 let moved = abs((divider.dragPreviewLeft ?? leftPanelWidth) - snapped) >= 0.5
@@ -144,7 +105,7 @@ struct PanelDividerView: View {
         divider.suppressDragUntilMouseUp = true
         let scale = NSScreen.main?.backingScaleFactor ?? 2.0
         let halfCenter = (containerWidth / 2.0 * scale).rounded() / scale
-        let halfLeft = halfCenter - PanelDividerStyle.hitAreaWidth / 2
+        let halfLeft = halfCenter - PanelDividerMetrics.hitAreaWidth / 2
         divider.lastAppliedWidth = halfLeft
         leftPanelWidth = halfLeft
         showTooltip(text: "50%", at: CGPoint(x: halfCenter, y: 46))
@@ -188,7 +149,7 @@ struct PanelDividerView: View {
         guard delta >= 2 else { return }
 
         divider.lastTooltipLeft = snapped
-        let centerX = snapped + PanelDividerStyle.hitAreaWidth / 2
+        let centerX = snapped + PanelDividerMetrics.hitAreaWidth / 2
         let percent = Int(((centerX / max(containerWidth, 1)) * 100.0).rounded()).clamped(to: 0...100)
 
         showTooltip(text: "\(percent)%", at: CGPoint(x: centerX, y: max(34, locationY - 70)))
@@ -205,6 +166,50 @@ struct PanelDividerView: View {
     private func snapToPixelGrid(_ value: CGFloat) -> CGFloat {
         let scale = NSScreen.main?.backingScaleFactor ?? 2.0
         return (value * scale).rounded() / scale
+    }
+
+    @ViewBuilder
+    private func inactiveGroove(height: CGFloat) -> some View {
+        RoundedRectangle(cornerRadius: 3)
+            .fill(.ultraThinMaterial)
+            .frame(width: 6, height: height)
+            .overlay(
+                RoundedRectangle(cornerRadius: 3)
+                    .stroke(Color.white.opacity(0.25), lineWidth: 1)
+                    .blur(radius: 0.5)
+                    .offset(x: -0.5, y: -0.5)
+                    .mask(LinearGradient(colors: [.white, .clear], startPoint: .top, endPoint: .bottom))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 3)
+                    .stroke(Color.black.opacity(0.4), lineWidth: 1)
+                    .blur(radius: 0.5)
+                    .offset(x: 0.5, y: 0.5)
+                    .mask(LinearGradient(colors: [.clear, .black], startPoint: .top, endPoint: .bottom))
+            )
+            .overlay(
+                Rectangle()
+                    .fill(Color.black.opacity(0.25))
+                    .frame(width: 1)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 3)
+                    .stroke(PanelDividerMetrics.Colors.grooveBorder, lineWidth: 0.5)
+            )
+            .allowsHitTesting(false)
+    }
+
+    @ViewBuilder
+    private func activeDivider(height: CGFloat, lineWidth: CGFloat, color: Color) -> some View {
+        Rectangle()
+            .fill(color)
+            .frame(width: lineWidth, height: height)
+            .shadow(color: Color.black.opacity(0.35), radius: 5, x: 1, y: 0)
+            .overlay(
+                Rectangle()
+                    .stroke(PanelDividerMetrics.Colors.grooveBorderActive, lineWidth: 0.5)
+            )
+            .allowsHitTesting(false)
     }
 }
 
