@@ -16,7 +16,7 @@ struct BreadCrumbControlWrapper: View {
     @State private var isEditing = false
     @FocusState private var isTextFieldFocused: Bool
     @State private var isHovering = false
-    
+
     /// Use computed property to always get current theme (live updates)
     private var colorStore: ColorThemeStore { ColorThemeStore.shared }
 
@@ -25,7 +25,7 @@ struct BreadCrumbControlWrapper: View {
     // MARK: - Constants
     private enum Design {
         static let cornerRadius: CGFloat = 8
-        static let borderWidth: CGFloat = 1.5       // editing mode border
+        static let borderWidth: CGFloat = 1.5  // editing mode border
         static let idleBorderWidth: CGFloat = 0.75  // resting dark-navy border
         static let animationDuration: CGFloat = 0.25
 
@@ -49,16 +49,17 @@ struct BreadCrumbControlWrapper: View {
     var body: some View {
         // Capture themeVersion to force view refresh on theme changes
         let themeVersion = ColorThemeStore.shared.themeVersion
-        
+
         // Compute background color inline to ensure reactivity
         let isActive = appState.focusedPanel == panelSide
-        let bgColor = isActive
+        let bgColor =
+            isActive
             ? colorStore.activeTheme.breadcrumbBgActive
             : colorStore.activeTheme.breadcrumbBgInactive
-        
+
         // DEBUG: log every body eval
-        log.debug("[BreadCrumbWrapper] body eval: themeVersion=\(themeVersion), isActive=\(isActive), bgColor=\(bgColor.description)")
-        
+        //log.debug("[BreadCrumbWrapper] body eval: themeVersion=\(themeVersion), isActive=\(isActive), bgColor=\(bgColor.description)")
+
         return
             contentView
             .padding(.horizontal, Design.Padding.horizontal)

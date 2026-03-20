@@ -70,7 +70,7 @@ extension FileTableView {
                                 )
                             }
                             .help("Jump to top (Home)")
-
+                           
                             Spacer()
 
                             // ▼ Jump to last
@@ -90,14 +90,6 @@ extension FileTableView {
                     Color.clear.frame(height: 4)
                 }
                 .contextMenu { panelBackgroundMenu }
-                // DISABLED: SwiftUI scrollTo is O(n) on LazyVStack — causes 1s+ freezes.
-                // AppKit NSScrollView.scroll(to:) in TableKeyboardNavigation handles all scrolling.
-                // .onChange(of: scrollAnchorID) { _, newID in
-                //     guard let id = newID else { return }
-                //     withAnimation(.easeOut(duration: 0.05)) {
-                //         proxy.scrollTo(id, anchor: .center)
-                //     }
-                // }
             }
         }
     }

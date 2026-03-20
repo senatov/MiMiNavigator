@@ -21,7 +21,6 @@ struct DuoFilePanelView: View {
     private enum Layout {
         static let dividerHitAreaWidth: CGFloat = 24
         static let minPanelWidth: CGFloat = 80
-        static let defaultSplitRatio: CGFloat = 0.5 // 50/50 split
     }
 
     // MARK: - Body
@@ -30,37 +29,9 @@ struct DuoFilePanelView: View {
             if toolbarStore.menuBarVisible {
                 DuoPanelTopMenuBarSection()
             }
-            
-            GeometryReader { geometry in
-                DuoPanelFilePanelsSection(
-                    leftPanelWidth: $leftPanelWidth,
-                    containerWidth: geometry.size.width,
-                    containerHeight: geometry.size.height,
-                    fetchFiles: fetchFiles
-                )
-                .onAppear {
-                    // Initialize panel width INSIDE GeometryReader where we have actual container size
-                    if !isInitialized {
-                        log.debug("\(#function) onAppear: initializing with containerWidth=\(Int(geometry.size.width))")
-                        initializePanelWidth(containerWidth: geometry.size.width)
-                        isInitialized = true
-                    }
-                }
-                .onChange(of: geometry.size.width) { oldWidth, newWidth in
-                    // Maintain split ratio when window resizes
-                    if isInitialized && oldWidth > 0 {
-                        let ratio = leftPanelWidth / oldWidth
-                        let newLeftWidth = calculateConstrainedWidth(
-                            proposed: newWidth * ratio,
-                            containerWidth: newWidth
-                        )
-                        log.debug("\(#function) resize: \(Int(oldWidth))→\(Int(newWidth)) ratio=\(String(format: "%.2f", ratio)) newLeft=\(Int(newLeftWidth))")
-                        leftPanelWidth = newLeftWidth
-                    }
-                }
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            
+
+            geometrySection
+
             DuoPanelBottomToolbarSection(
                 onView: { actions.performView() },
                 onEdit: { actions.performEdit() },
@@ -73,46 +44,88 @@ struct DuoFilePanelView: View {
                 onExit: { actions.performExit() }
             )
         }
-        .onAppear {
-            log.debug("\(#function) DuoFilePanelView onAppear")
-            appState.initialize()
-            setupKeyboardHandler()
-        }
-        .onDisappear {
-            log.debug("\(#function) DuoFilePanelView onDisappear")
-            keyboardHandler?.unregister()
-        }
+        .onAppear(perform: onAppear)
+        .onDisappear(perform: onDisappear)
         .onChange(of: leftPanelWidth) { _, newValue in
-            // Save only valid widths
-            if newValue > 0 && isInitialized {
-                MiMiDefaults.shared.set(newValue, forKey: "leftPanelWidth")
-            }
+            guard newValue > 0, isInitialized else { return }
+            MiMiDefaults.shared.set(newValue, forKey: "leftPanelWidth")
         }
-        // Batch operation progress overlay
         .overlay {
-            if BatchOperationManager.shared.showProgressDialog,
-               let state = BatchOperationManager.shared.currentOperation {
-                ZStack {
-                    Color.black.opacity(0.3)
-                        .ignoresSafeArea()
-                    
-                    BatchProgressDialog(
-                        state: state,
-                        onCancel: {
-                            BatchOperationCoordinator.shared.cancelCurrentOperation()
-                        },
-                        onDismiss: {
-                            BatchOperationManager.shared.dismissProgressDialog()
-                        }
-                    )
-                }
-                .transition(.opacity)
-                .animation(.easeOut(duration: 0.12), value: BatchOperationManager.shared.showProgressDialog)
+            progressOverlay
+        }
+    }
+
+    @ViewBuilder
+    private var progressOverlay: some View {
+        if BatchOperationManager.shared.showProgressDialog,
+           let state = BatchOperationManager.shared.currentOperation {
+            ZStack {
+                Color.black.opacity(0.3)
+                    .ignoresSafeArea()
+
+                BatchProgressDialog(
+                    state: state,
+                    onCancel: {
+                        BatchOperationCoordinator.shared.cancelCurrentOperation()
+                    },
+                    onDismiss: {
+                        BatchOperationManager.shared.dismissProgressDialog()
+                    }
+                )
+            }
+            .transition(.opacity)
+            .animation(.easeOut(duration: 0.12), value: BatchOperationManager.shared.showProgressDialog)
+        }
+    }
+
+    private var geometrySection: some View {
+        GeometryReader { geometry in
+            DuoPanelFilePanelsSection(
+                leftPanelWidth: $leftPanelWidth,
+                containerWidth: geometry.size.width,
+                containerHeight: geometry.size.height,
+                fetchFiles: fetchFiles
+            )
+            .onAppear {
+                handleInitialLayout(containerWidth: geometry.size.width)
+            }
+            .onChange(of: geometry.size.width) { oldWidth, newWidth in
+                handleResize(oldWidth: oldWidth, newWidth: newWidth)
             }
         }
-        // Find Files is now a standalone window (see FindFilesCoordinator)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
-    
+
+    private func onAppear() {
+        log.debug("\(#function) DuoFilePanelView onAppear")
+        appState.initialize()
+        setupKeyboardHandler()
+    }
+
+    private func onDisappear() {
+        log.debug("\(#function) DuoFilePanelView onDisappear")
+        keyboardHandler?.unregister()
+    }
+
+    private func handleInitialLayout(containerWidth: CGFloat) {
+        if !isInitialized {
+            log.debug("\(#function) initializing with containerWidth=\(Int(containerWidth))")
+            initializePanelWidth(containerWidth: containerWidth)
+            isInitialized = true
+        }
+    }
+
+    private func handleResize(oldWidth: CGFloat, newWidth: CGFloat) {
+        guard isInitialized, oldWidth > 0 else { return }
+
+        let ratio = leftPanelWidth / oldWidth
+        let newLeftWidth = calculateConstrainedWidth(
+            proposed: newWidth * ratio,
+            containerWidth: newWidth
+        )
+        leftPanelWidth = newLeftWidth
+    }
+
     // MARK: - Actions Helper
     private var actions: DuoFilePanelActions {
         DuoFilePanelActions(
@@ -129,7 +142,7 @@ extension DuoFilePanelView {
         log.debug("\(#function) side=\(side)")
         await appState.scanner.refreshFiles(currSide: side)
     }
-    
+
     @MainActor
     private func refreshBothPanels() async {
         log.debug("\(#function)")
@@ -140,23 +153,19 @@ extension DuoFilePanelView {
 
 // MARK: - Panel Width Management
 extension DuoFilePanelView {
-    /// Initialize panel width using CONTAINER width, not screen width
-    /// This fixes the bug where divider goes to wrong position on first launch
     private func initializePanelWidth(containerWidth: CGFloat) {
         log.debug("\(#function) containerWidth=\(Int(containerWidth))")
-        
+
         guard containerWidth > 0 else {
             log.warning("\(#function) containerWidth is 0, deferring initialization")
             return
         }
-        
+
         let scale = NSScreen.main?.backingScaleFactor ?? 2.0
-        
-        // Calculate 50/50 split based on CONTAINER width (not screen width!)
+
         let halfCenter = (containerWidth / 2.0 * scale).rounded() / scale
         let defaultLeftWidth = halfCenter - Layout.dividerHitAreaWidth / 2
-        
-        // Always start 50/50 -- saved width often stale after window resize
+
         let constrained = calculateConstrainedWidth(
             proposed: defaultLeftWidth,
             containerWidth: containerWidth
@@ -164,8 +173,7 @@ extension DuoFilePanelView {
         leftPanelWidth = constrained
         log.info("\(#function) 50/50 split: container=\(Int(containerWidth)) left=\(Int(constrained))")
     }
-    
-    /// Calculate constrained width within valid bounds
+
     private func calculateConstrainedWidth(proposed: CGFloat, containerWidth: CGFloat) -> CGFloat {
         let maxWidth = containerWidth - Layout.minPanelWidth - Layout.dividerHitAreaWidth
         let scale = NSScreen.main?.backingScaleFactor ?? 2.0

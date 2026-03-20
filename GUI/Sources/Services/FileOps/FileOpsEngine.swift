@@ -57,9 +57,7 @@ private extension FileOpsEngine {
     
     func performMove(items: [URL], to destination: URL) async throws -> FileOpProgress {
         let progress = createProgress(items: items, type: .move, destination: destination)
-        let shouldShowPanel = shouldShowPanel(items: items)
-        
-        if shouldShowPanel { showPanel(progress: progress, itemCount: items.count) }
+        showPanel(progress: progress, itemCount: items.count, operation: "move")
         
         let failedItems = await tryAtomicMoves(items: items, to: destination, progress: progress)
         
@@ -113,7 +111,7 @@ private extension FileOpsEngine {
         let totalSize = calculateTotalSize(items: items)
         let progress = FileOpProgress(totalFiles: items.count, totalBytes: totalSize, type: .copy, destination: nil)
         
-        if items.count > 5 { showPanel(progress: progress, itemCount: items.count, operation: "delete") }
+        showPanel(progress: progress, itemCount: items.count, operation: "delete")
         defer { progress.complete() }
         
         for url in items {
@@ -151,8 +149,17 @@ private extension FileOpsEngine {
     }
     
     func showPanel(progress: FileOpProgress, itemCount: Int, operation: String = "items") {
-        log.info("[FileOpsEngine] showing panel for \(itemCount) \(operation)")
-        panel.show(progress: progress)
+        log.info("[FileOpsEngine] scheduling panel for \(itemCount) \(operation)")
+
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 200_000_000) // 200 ms delay
+
+            // Do not show if already completed
+            guard !progress.isCompleted else { return }
+
+            panel.hide()
+            panel.show(progress: progress)
+        }
     }
     
     func isDirectory(url: URL) -> Bool {
@@ -194,9 +201,7 @@ private extension FileOpsEngine {
             destination: plan.destination
         )
         
-        if shouldShowPanelForPlan(plan) {
-            showPanel(progress: progress, itemCount: plan.fileCount, operation: "files")
-        }
+        showPanel(progress: progress, itemCount: plan.fileCount, operation: String(describing: operation))
         defer { progress.complete() }
         
         try await executeStrategy(plan: plan, operation: operation, progress: progress)

@@ -32,19 +32,14 @@
             Task { @MainActor in
                 await setScannerDirectory(leftPath, for: .left)
                 await setScannerDirectory(rightPath, for: .right)
-
                 await scanner.startMonitoring()
-
                 await refreshFiles(for: .left)
                 await refreshFiles(for: .right)
-
                 selectionManager?.restoreSelectionsAndFocus()
                 focusedPanel = .left
-
                 if self[panel: .left].selectedFile == nil {
                     setSelectedFile(firstRealFile(in: displayedLeftFiles), for: .left)
                 }
-
                 PanelStartupCache.shared.save(
                     leftPath: leftPath,
                     rightPath: rightPath,

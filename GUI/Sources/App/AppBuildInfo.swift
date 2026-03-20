@@ -21,21 +21,39 @@ enum AppBuildInfo {
         ToolbarItem(placement: .status) {
             HStack(spacing: 8) {
                 Text("🐈")
-                    .font(.system(size: 14))
-                    .padding(7)
+                    .font(.system(size: 14, weight: .semibold, design: .rounded))
+                    .padding(6)
                     .background(
                         Circle()
-                            .fill(LinearGradient(
-                                colors: [Color.white.opacity(0.95), Color(white: 0.88)],
-                                startPoint: .top, endPoint: .bottom))
-                            .shadow(color: Color.black.opacity(0.15), radius: 1, x: 0, y: 1))
+                            .fill(.ultraThinMaterial) // glass effect
+                            .overlay(
+                                Circle()
+                                    .fill(
+                                        LinearGradient(
+                                            colors: [Color.white.opacity(0.25), Color.white.opacity(0.05)],
+                                            startPoint: .top,
+                                            endPoint: .bottom
+                                        )
+                                    )
+                            )
+                            .overlay(
+                                Circle()
+                                    .stroke(Color.white.opacity(0.4), lineWidth: 0.5)
+                            )
+                            .shadow(color: Color.black.opacity(0.2), radius: 2, x: 0, y: 1)
+                    )
                     .overlay(
                         Circle()
                             .strokeBorder(
                                 LinearGradient(
-                                    colors: [Color.orange.opacity(0.8), Color.orange.opacity(0.5)],
-                                    startPoint: .top, endPoint: .bottom),
-                                lineWidth: 1.5))
+                                    colors: [Color.orange.opacity(0.9), Color.orange.opacity(0.4)],
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                ),
+                                lineWidth: 1.2
+                            )
+                    )
+                    .drawingGroup() // improves rendering sharpness
                 VStack(alignment: .leading, spacing: 1) {
                     Text("DEV BUILD")
                         .font(.caption2)
@@ -51,15 +69,33 @@ enum AppBuildInfo {
             .padding(.vertical, 6)
             .background(
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(LinearGradient(
-                        colors: [Color.white.opacity(0.6), Color(white: 0.94)],
-                        startPoint: .top, endPoint: .bottom))
-                    .shadow(color: Color.black.opacity(0.08), radius: 1, x: 0, y: 1))
+                    .fill(.ultraThinMaterial) // glass container
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                            .fill(
+                                LinearGradient(
+                                    colors: [Color.white.opacity(0.2), Color.white.opacity(0.05)],
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                )
+                            )
+                    )
+                    .shadow(color: Color.black.opacity(0.12), radius: 3, x: 0, y: 2)
+            )
             .overlay(
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
                     .strokeBorder(
-                        Color(red: 0.15, green: 0.25, blue: 0.5).opacity(0.6),
-                        lineWidth: 1))
+                        LinearGradient(
+                            colors: [
+                                Color.white.opacity(0.5),
+                                Color.blue.opacity(0.4)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 0.8
+                    )
+            )
             .help("Current development build version")
         }
     }

@@ -26,17 +26,17 @@ final class ConsoleCurrPath {
             return false
         }
         let escapedDir = dir.replacingOccurrences(of: "\\", with: "\\\\")
-                            .replacingOccurrences(of: "\"", with: "\\\"")
+            .replacingOccurrences(of: "\"", with: "\\\"")
         // `launch` starts Terminal without bringing it to front (no-op if already running)
         // `activate` brings it to front
         // `do script` executes cd in a new tab/window
         let script = """
-        tell application "Terminal"
-            launch
-            activate
-            do script "cd \\\"\(escapedDir)\\\" && clear"
-        end tell
-        """
+            tell application "Terminal"
+                launch
+                activate
+                do script "cd \\\"\(escapedDir)\\\" && clear"
+            end tell
+            """
         guard let appleScript = NSAppleScript(source: script) else {
             log.error("[Console] Failed to create AppleScript")
             return false

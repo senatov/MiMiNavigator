@@ -120,9 +120,12 @@ struct MiMiNavigatorApp: App {
                     }
                 }
                 .toolbar {
-                    AppToolbarContent(app: self, appState: appState)  // menuBarToggle included inside
+                    AppToolbarContent(app: self, appState: appState)
+                        .sharedBackgroundVisibility(.hidden)  // menuBarToggle included inside
                     AppBuildInfo.toolBarItem()
+                        .sharedBackgroundVisibility(.hidden)
                 }
+                .glassEffect(Glass.identity)
                 // ToolbarRightClickMonitor started in AppDelegate.applicationDidFinishLaunching
                 // MARK: - File Transfer Confirmation Dialog
                 .sheet(

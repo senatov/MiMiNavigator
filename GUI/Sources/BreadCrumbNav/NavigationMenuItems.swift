@@ -46,6 +46,7 @@ struct EllipsisMenuSection: View {
                 }
         }
         .menuStyle(.borderlessButton)
+        .focusable(false)
         .help("More options...")
     }
 

@@ -11,16 +11,22 @@ import FavoritesKit
 import FileModelKit
 import SwiftUI
 
+private struct NoSelectionButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .opacity(configuration.isPressed ? 0.7 : 1.0) // subtle feedback, no selection
+    }
+}
+
 // MARK: - Navigation Panel with Favorites Button
 struct ButtonFavTopPanel: View {
     @Environment(AppState.self) var appState
-
     // MARK: - State
     @State private var favorites: [FavoriteItem] = []
     @State private var navigationAdapter: FavoritesNavigationAdapter?
-
     let panelSide: PanelSide
-
+    
+    
     // Active panel check for icon contrast
     private var isActivePanel: Bool {
         appState.focusedPanel == panelSide
@@ -50,21 +56,38 @@ struct ButtonFavTopPanel: View {
     // MARK: - Navigation Controls
     private var navigationControls: some View {
         HStack(spacing: 6) {
+            navigationGroup
+            utilityGroup
+        }
+        .focusable(false)
+    }
+
+    private var navigationGroup: some View {
+        HStack(spacing: 6) {
             backButton()
             upButton()
             forwardButton()
+        }
+    }
+
+    private var utilityGroup: some View {
+        HStack(spacing: 6) {
             historyButton()
             favoritesButton()
         }
     }
 
+    private func navIcon(_ name: String) -> some View {
+        Image(systemName: name)
+            .font(.system(size: 15))
+            .symbolRenderingMode(.multicolor)
+            .foregroundStyle(iconColor)
+    }
+
     // MARK: - Back Button
     private func backButton() -> some View {
         let canGoBack = appState.navigationHistory(for: panelSide).canGoBack
-        return Image(systemName: "arrowshape.backward")
-            .font(.system(size: 15))
-            .symbolRenderingMode(.hierarchical)
-            .foregroundStyle(iconColor)
+        return navIcon("arrowshape.backward")
             .contentShape(Rectangle())
             .opacity(canGoBack ? 1.0 : 0.4)
             .onTapGesture {
@@ -76,6 +99,9 @@ struct ButtonFavTopPanel: View {
                     .modifiers(.control)
                     .onEnded { _ in openHistoryWindow() }
             )
+            .focusable(false)
+            .allowsHitTesting(true)
+            .background(Color.clear)
             .help("Click: go back | Ctrl+click: show history")
             .accessibilityLabel("Back button")
     }
@@ -88,10 +114,12 @@ struct ButtonFavTopPanel: View {
         }) {
             Image(systemName: "arrowshape.up")
                 .font(.system(size: 15))
-                .symbolRenderingMode(.hierarchical)
+                .symbolRenderingMode(.multicolor)
+                .symbolEffect(.bounce, value: 2)
                 .foregroundStyle(iconColor)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(NoSelectionButtonStyle())
+        .focusable(false)
         .help("Go to parent directory")
         .accessibilityLabel("Up button")
     }
@@ -99,10 +127,7 @@ struct ButtonFavTopPanel: View {
     // MARK: - Forward Button
     private func forwardButton() -> some View {
         let canGoForward = appState.navigationHistory(for: panelSide).canGoForward
-        return Image(systemName: "arrowshape.right")
-            .font(.system(size: 15))
-            .symbolRenderingMode(.hierarchical)
-            .foregroundStyle(iconColor)
+        return navIcon("arrowshape.right")
             .contentShape(Rectangle())
             .opacity(canGoForward ? 1.0 : 0.4)
             .onTapGesture {
@@ -114,6 +139,9 @@ struct ButtonFavTopPanel: View {
                     .modifiers(.control)
                     .onEnded { _ in openHistoryWindow() }
             )
+            .focusable(false)
+            .allowsHitTesting(true)
+            .background(Color.clear)
             .help("Click: go forward | Ctrl+click: show history")
             .accessibilityLabel("Forward button")
     }
@@ -123,10 +151,11 @@ struct ButtonFavTopPanel: View {
         Button(action: { openHistoryWindow() }) {
             Image(systemName: "clock.arrow.circlepath")
                 .font(.system(size: 15, weight: .semibold))
-                .symbolRenderingMode(.hierarchical)
+                .symbolRenderingMode(.multicolor)
                 .foregroundStyle(Color(nsColor: NSColor(calibratedRed: 0.05, green: 0.52, blue: 0.18, alpha: 1.0)))
         }
-        .buttonStyle(ToolbarIconButtonStyle())
+        .buttonStyle(NoSelectionButtonStyle())
+        .focusable(false)
         .help("Show navigation history")
     }
 
@@ -135,10 +164,11 @@ struct ButtonFavTopPanel: View {
         Button(action: { openFavoritesWindow() }) {
             Image(systemName: panelSide == .left ? "sidebar.left" : "sidebar.right")
                 .font(.system(size: 15, weight: .semibold))
-                .symbolRenderingMode(.hierarchical)
+                .symbolRenderingMode(.multicolor)
                 .foregroundStyle(Color(nsColor: NSColor(calibratedRed: 0.0, green: 0.42, blue: 0.55, alpha: 1.0)))
         }
-        .buttonStyle(ToolbarIconButtonStyle())
+        .buttonStyle(NoSelectionButtonStyle())
+        .focusable(false)
         .help("Navigation between favorites — \(panelSide.rawValue)")
     }
 
@@ -151,7 +181,6 @@ struct ButtonFavTopPanel: View {
     }
 
     // MARK: - Open Favorites Window
-
     private func openFavoritesWindow() {
         log.debug("Navigation between favorites")
         if favorites.isEmpty {
