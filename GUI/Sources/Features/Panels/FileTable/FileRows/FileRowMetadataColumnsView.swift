@@ -28,7 +28,7 @@ struct FileRowMetadataColumnsView: View {
 
     /// 14pt spacer matching header ResizableDivider width
     private var dividerSpacer: some View {
-        ZStack {
+        return ZStack {
             Color.clear.frame(width: 14)
             Rectangle()
                 .fill(ColumnSeparatorStyle.color)

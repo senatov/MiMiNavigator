@@ -112,6 +112,7 @@ struct DragPreviewPopupView: View {
     }
 
     private func metadata(for file: CustomFile) -> (dateText: String, sizeText: String) {
+        log.debug(#function)
         do {
             let values = try file.urlValue.resourceValues(forKeys: [
                 .contentModificationDateKey,

@@ -14,30 +14,21 @@ import SwiftUI
 enum FilePanelStyle {
 
     // MARK: - Colors (Finder-style: minimal color differentiation)
-
     /// Blue color for symlink directories (subtle differentiation)
     static let blueSymlinkDirNameColor = Color(nsColor: .linkColor)
-
     /// Directory name color (same as files in Finder)
     static let dirNameColor = Color.primary
-
     /// File name color
     static let fileNameColor = Color.primary
-
     /// Orange stroke for focused panel
     static let orangeSelRowStroke = Color.accentColor.opacity(0.5)
-
     /// Light blue accent
     static let skyBlauColor = Color.accentColor
-
     /// Selected row fill (active) — fallback constant; live value comes from ColorThemeStore in FileRow
     static let orangeSelRowFill = Color(nsColor: .selectedContentBackgroundColor)
-
     /// Selected row fill (inactive) — fallback constant; live value comes from ColorThemeStore in FileRow
     static let yellowSelRowFill = Color(nsColor: .unemphasizedSelectedContentBackgroundColor)
-
     // MARK: - Layout - Finder style (standard macOS sizes)
-
     /// Base icon size - 16pt (Finder list view standard)
     private static let baseIconSize: CGFloat = 16
 
