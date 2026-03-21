@@ -50,19 +50,75 @@ struct FileInfoButton: View {
         }
     }
 
+    // MARK: - Glass drop indicator
     private var turquoiseIndicator: some View {
-        ZStack(alignment: .trailing) {
-            RoundedRectangle(cornerRadius: 3, style: .continuous)
-                .fill(Color(red: 0.2, green: 0.8, blue: 0.75))
-                .frame(width: 6)
-                .shadow(color: Color.black.opacity(0.25), radius: 2, x: -1, y: 0)
+        GlassDropShape()
+            .fill(
+                LinearGradient(
+                    stops: [
+                        .init(color: Color(red: 0.45, green: 0.78, blue: 1.00).opacity(0.92), location: 0.0),
+                        .init(color: Color(red: 0.18, green: 0.52, blue: 0.95).opacity(0.80), location: 0.55),
+                        .init(color: Color(red: 0.10, green: 0.38, blue: 0.82).opacity(0.88), location: 1.0)
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            )
+            .overlay {
+                GlassDropShape()
+                    .fill(
+                        LinearGradient(
+                            stops: [
+                                .init(color: Color.white.opacity(0.55), location: 0.0),
+                                .init(color: Color.white.opacity(0.0),  location: 0.45)
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+                    .padding(.horizontal, 1)
+                    .padding(.top, 1)
+            }
+            .overlay {
+                GlassDropShape()
+                    .stroke(Color.white.opacity(0.30), lineWidth: 0.5)
+            }
+            .shadow(color: Color(red: 0.10, green: 0.38, blue: 0.90).opacity(0.45), radius: 3, x: -1, y: 1)
+            .frame(width: 9, height: 20)
+            .contentShape(Rectangle())
+    }
 
-            RoundedRectangle(cornerRadius: 3)
-                .stroke(Color.white.opacity(0.4), lineWidth: 0.5)
-                .frame(width: 6)
+    // MARK: - GlassDropShape
+    /// Teardrop flush to right edge: rounded on left/top/bottom, flat on right.
+    private struct GlassDropShape: Shape {
+        // MARK: - path
+        func path(in rect: CGRect) -> Path {
+            var p = Path()
+            let r: CGFloat = rect.width * 0.72
+            let tipR: CGFloat = 2.0
+            p.move(to: CGPoint(x: rect.maxX, y: rect.minY + tipR))
+            p.addArc(
+                center: CGPoint(x: rect.maxX - tipR, y: rect.minY + tipR),
+                radius: tipR, startAngle: .degrees(-90), endAngle: .degrees(0),
+                clockwise: true
+            )
+            p.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY - tipR))
+            p.addArc(
+                center: CGPoint(x: rect.maxX - tipR, y: rect.maxY - tipR),
+                radius: tipR, startAngle: .degrees(0), endAngle: .degrees(90),
+                clockwise: false
+            )
+            p.addQuadCurve(
+                to: CGPoint(x: rect.maxX - r, y: rect.midY),
+                control: CGPoint(x: rect.minX, y: rect.maxY)
+            )
+            p.addQuadCurve(
+                to: CGPoint(x: rect.maxX - tipR, y: rect.minY + tipR),
+                control: CGPoint(x: rect.minX, y: rect.minY)
+            )
+            p.closeSubpath()
+            return p
         }
-        .frame(width: 10, height: 18)
-        .contentShape(Rectangle())
     }
 
     private func geometryObserver(geo: GeometryProxy) -> some View {
