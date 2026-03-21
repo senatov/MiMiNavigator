@@ -49,7 +49,7 @@ enum AppLanguage: String, CaseIterable, Identifiable {
 struct SettingsGeneralPane: View {
 
     @AppStorage("settings.appearance")       private var appearance: String = "system"
-    @AppStorage("settings.panelFontSize")    private var panelFontSize: Double = 13
+    @AppStorage("settings.panelFontSize")    private var panelFontSize: Double = 14
     @AppStorage("settings.iconSize")         private var iconSize: String = "medium"
     @AppStorage("settings.showHiddenFiles")  private var showHiddenFiles: Bool = false
     @AppStorage("settings.showExtensions")   private var showExtensions: Bool = true
@@ -109,10 +109,10 @@ struct SettingsGeneralPane: View {
                     SettingsRow(label: "Interface scale:", help: "Scale all UI elements — fonts, icons, row heights") {
                         HStack(spacing: 12) {
                             Image(systemName: "eye")
-                                .font(.system(size: 13))
+                                .font(.system(size: 14))
                                 .foregroundStyle(.secondary)
                             Text("Default interface scale")
-                                .font(.system(size: 13))
+                                .font(.system(size: 14))
                             Spacer()
                             Toggle("", isOn: Binding(
                                 get: { scaleStore.scaleFactor != InterfaceScaleStore.defaultScale },

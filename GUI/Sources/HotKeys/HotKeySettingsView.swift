@@ -309,7 +309,7 @@ struct HotKeySettingsView: View {
                 .font(.system(size: 28))
                 .foregroundStyle(.quaternary)
             Text("No matching shortcuts")
-                .font(.system(size: 13))
+                .font(.system(size: 14))
                 .foregroundStyle(.secondary)
             Spacer()
         }

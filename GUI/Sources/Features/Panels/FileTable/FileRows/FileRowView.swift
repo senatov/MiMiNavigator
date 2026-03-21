@@ -45,7 +45,7 @@
 
         // MARK: - Constants
         private static let nameWeight: Font.Weight = .regular
-        private static let nameFontSize: CGFloat = 13
+        private static let nameFontSize: CGFloat = 14
 
         // MARK: - Icon opacity (dimming for hidden files)
         private var iconOpacity: Double {

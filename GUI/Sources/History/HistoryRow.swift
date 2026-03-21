@@ -64,7 +64,7 @@ struct HistoryRow: View {
             Spacer(minLength: 4)
             Button(action: onDelete) {
                 Image(systemName: "xmark.circle.fill")
-                    .font(.system(size: 13))
+                    .font(.system(size: 14))
                     .foregroundStyle(.red.opacity(0.7))
             }
             .buttonStyle(.plain)

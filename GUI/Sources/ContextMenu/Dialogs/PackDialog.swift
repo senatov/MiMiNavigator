@@ -175,7 +175,7 @@ struct PackDialog: View {
             // Delete source toggle
             Toggle(isOn: $deleteSourceFiles) {
                 Text(mode == .pack ? "Delete source files after packing" : "Move originals into archive")
-                    .font(.system(size: 13))
+                    .font(.system(size: 14))
             }
             .toggleStyle(.checkbox)
             .onChange(of: deleteSourceFiles) { _, newVal in
@@ -355,7 +355,7 @@ struct PackDialog: View {
                     Image(systemName: "lock.fill")
                         .font(.system(size: 11))
                     Text("Encrypt archive")
-                        .font(.system(size: 13))
+                        .font(.system(size: 14))
                 }
             }
             .toggleStyle(.checkbox)
@@ -373,7 +373,7 @@ struct PackDialog: View {
                         }
                     }
                     .textFieldStyle(.plain)
-                    .font(.system(size: 13))
+                    .font(.system(size: 14))
                     .padding(.horizontal, 10)
                     .padding(.vertical, 7)
                     .background(Color(nsColor: .textBackgroundColor))

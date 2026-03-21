@@ -158,7 +158,7 @@ private struct TCV_MenuBarRow: View {
     var body: some View {
         HStack(spacing: 10) {
             Image(systemName: "menubar.rectangle")
-                .font(.system(size: 13))
+                .font(.system(size: 14))
                 .foregroundStyle(store.menuBarVisible ? Color.accentColor : Color.secondary.opacity(0.5))
                 .symbolRenderingMode(.hierarchical)
                 .frame(width: 20)
@@ -200,7 +200,7 @@ private struct TCV_FilterField: View {
                 .foregroundStyle(.tertiary)
             TextField("Filter buttons…", text: $text)
                 .textFieldStyle(.plain)
-                .font(.system(size: 13))
+                .font(.system(size: 14))
             if !text.isEmpty {
                 Button { text = "" } label: {
                     Image(systemName: "xmark.circle.fill")

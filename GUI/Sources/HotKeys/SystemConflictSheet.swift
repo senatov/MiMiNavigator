@@ -34,7 +34,7 @@ struct SystemConflictSheet: View {
                     .font(.system(size: 16, weight: .semibold))
 
                 Text(info.description)
-                    .font(.system(size: 13))
+                    .font(.system(size: 14))
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 12)
@@ -66,7 +66,7 @@ struct SystemConflictSheet: View {
                                     .foregroundStyle(.primary)
                                 Spacer()
                                 Image(systemName: "arrow.right.circle")
-                                    .font(.system(size: 13))
+                                    .font(.system(size: 14))
                                     .foregroundStyle(.blue)
                             }
                             .padding(.horizontal, 16)

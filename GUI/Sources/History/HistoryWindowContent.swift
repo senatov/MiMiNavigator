@@ -69,7 +69,7 @@ struct HistoryWindowContent: View {
                 .foregroundStyle(.secondary)
             TextField("Filter history…", text: $searchText)
                 .textFieldStyle(.roundedBorder)
-                .font(.system(size: 13))
+                .font(.system(size: 14))
                 .focused($isSearchFocused)
             if !searchText.isEmpty {
                 Button {
@@ -146,7 +146,7 @@ struct HistoryWindowContent: View {
                 .font(.system(size: 22))
                 .foregroundStyle(.tertiary)
             Text("No matches for \"\(searchText)\"")
-                .font(.system(size: 13))
+                .font(.system(size: 14))
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

@@ -49,7 +49,7 @@ extension ColorPaneHelpers {
     func rowLabel<C: View>(_ label: String, help: String, @ViewBuilder content: () -> C) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 0) {
             Text(label)
-                .font(.system(size: 13))
+                .font(.system(size: 14))
                 .foregroundStyle(.secondary)
                 .frame(width: 190, alignment: .trailing)
                 .help(help)

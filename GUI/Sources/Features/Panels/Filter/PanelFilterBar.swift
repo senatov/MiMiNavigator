@@ -48,7 +48,7 @@ struct PanelFilterBar: View {
             if !query.isEmpty {
                 Button { query = "" } label: {
                     Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 13))
+                        .font(.system(size: 14))
                         .foregroundStyle(.tertiary)
                 }
                 .buttonStyle(.plain)

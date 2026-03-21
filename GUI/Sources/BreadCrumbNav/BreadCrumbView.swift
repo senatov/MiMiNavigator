@@ -45,7 +45,7 @@ struct BreadCrumbView: View {
     var body: some View {
         // Access themeVersion to create @Observable dependency for live updates
         let _ = ColorThemeStore.shared.themeVersion
-        
+
         GeometryReader { geo in
             HStack(alignment: .center, spacing: 4) {
                 ForEach(Array(visibleSegments(for: geo.size.width).enumerated()), id: \.offset) { idx, seg in
@@ -55,6 +55,7 @@ struct BreadCrumbView: View {
             .frame(maxWidth: .infinity, maxHeight: barHeight, alignment: .leading)
         }
         .padding(.horizontal, 0)
+        .focusable(false)
         .frame(height: barHeight)
         .controlSize(.mini)
     }
@@ -62,8 +63,8 @@ struct BreadCrumbView: View {
     // MARK: - DisplaySegment
     struct DisplaySegment: Identifiable {
         let id = UUID()
-        let text: String        // shown (may be truncated)
-        let fullName: String    // full name for tooltip + hover-expand
+        let text: String  // shown (may be truncated)
+        let fullName: String  // full name for tooltip + hover-expand
         let originalIndex: Int  // index in pathComponents for navigation
         var isTruncated: Bool { text != fullName }
     }
@@ -84,8 +85,8 @@ struct BreadCrumbView: View {
         // ── Archive (virtual) ────────────────────────────────────────────────
         let archState = panelSide == .left ? appState.leftArchiveState : appState.rightArchiveState
         if archState.isInsideArchive,
-           let archiveURL = archState.archiveURL,
-           let tempDir    = archState.archiveTempDir
+            let archiveURL = archState.archiveURL,
+            let tempDir = archState.archiveTempDir
         {
             return archiveComponents(
                 currentPath: panelURL.path,
@@ -115,14 +116,15 @@ struct BreadCrumbView: View {
             // e.g. "sftp://demo@test.rebex.net" → "SFTP demo@test.rebex.net"
             let origin = AppState.remoteOrigin(from: conn.provider.mountPath)
             originLabel = formatOriginLabel(origin)
-            remotePath  = conn.currentPath
+            remotePath = conn.currentPath
         } else {
             // Fallback: parse from stored URL directly
             originLabel = formatOriginLabel(url.absoluteString)
-            remotePath  = url.path
+            remotePath = url.path
         }
 
-        let pathParts = remotePath
+        let pathParts =
+            remotePath
             .split(separator: "/")
             .map(String.init)
             .filter { !$0.isEmpty }
@@ -135,16 +137,16 @@ struct BreadCrumbView: View {
     /// "ftp://user@host:21"         → "FTP user@host"  (default port stripped)
     private func formatOriginLabel(_ raw: String) -> String {
         guard let url = URL(string: raw),
-              let scheme = url.scheme,
-              let host   = url.host
+            let scheme = url.scheme,
+            let host = url.host
         else { return raw }
 
         let protoLabel = scheme.uppercased()
-        let userPart   = url.user.map { "\($0)@" } ?? ""
+        let userPart = url.user.map { "\($0)@" } ?? ""
         let portPart: String
         if let port = url.port,
-           !((scheme == "sftp" && port == 22) || (scheme == "ftp" && port == 21)
-             || (scheme == "smb" && port == 445) || (scheme == "afp" && port == 548))
+            !((scheme == "sftp" && port == 22) || (scheme == "ftp" && port == 21)
+                || (scheme == "smb" && port == 445) || (scheme == "afp" && port == 548))
         {
             portPart = ":\(port)"
         } else {
@@ -182,32 +184,40 @@ struct BreadCrumbView: View {
         let totalWidth = widths.reduce(0, +)
 
         if totalWidth <= budgetForText {
-            return components.enumerated().map { i, name in
-                DisplaySegment(text: name, fullName: name, originalIndex: i)
-            }
+            return components.enumerated()
+                .map { i, name in
+                    DisplaySegment(text: name, fullName: name, originalIndex: i)
+                }
         }
 
         // Truncate: middle-first, by length
         struct Seg {
-            var index: Int; var name: String; var display: String
-            var width: CGFloat; var priority: Int
+            var index: Int
+            var name: String
+            var display: String
+            var width: CGFloat
+            var priority: Int
         }
-        var segs = components.enumerated().map { i, name in
-            Seg(index: i, name: name, display: name, width: widths[i],
-                priority: truncPriority(index: i, total: components.count, len: name.count))
-        }
+        var segs = components.enumerated()
+            .map { i, name in
+                Seg(
+                    index: i, name: name, display: name, width: widths[i],
+                    priority: truncPriority(index: i, total: components.count, len: name.count))
+            }
         var used = totalWidth
         while used > budgetForText {
-            guard let idx = segs.enumerated()
-                .filter({ $0.element.display.count > 3 })
-                .max(by: { $0.element.priority < $1.element.priority })?.offset
+            guard
+                let idx = segs.enumerated()
+                    .filter({ $0.element.display.count > 3 })
+                    .max(by: { $0.element.priority < $1.element.priority })?
+                    .offset
             else { break }
             let old = segs[idx]
             let newDisplay = truncMiddle(old.display, maxLen: max(3, old.display.count - 4))
             let newWidth = CGFloat(newDisplay.count) * charWidth
             used -= old.width - newWidth
-            segs[idx].display  = newDisplay
-            segs[idx].width    = newWidth
+            segs[idx].display = newDisplay
+            segs[idx].width = newWidth
             segs[idx].priority = 0
         }
         return segs.map { DisplaySegment(text: $0.display, fullName: $0.name, originalIndex: $0.index) }
@@ -333,7 +343,8 @@ struct BreadCrumbView: View {
         let pathToCopy: String
         if AppState.isRemotePath(panelURL) {
             if segment.originalIndex == 0 {
-                pathToCopy = RemoteConnectionManager.shared.activeConnection
+                pathToCopy =
+                    RemoteConnectionManager.shared.activeConnection
                     .map { AppState.remoteOrigin(from: $0.provider.mountPath) } ?? segment.fullName
             } else {
                 let parts = Array(pathComponents[1...segment.originalIndex])

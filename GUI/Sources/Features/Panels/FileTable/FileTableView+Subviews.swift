@@ -105,16 +105,11 @@ extension FileTableView {
                 .frame(width: Self.scrollbarWidth, height: Self.scrollbarWidth)
                 .background(
                     RoundedRectangle(cornerRadius: 3, style: .continuous)
-                        .fill(
-                            LinearGradient(
-                                colors: [
-                                    Color(nsColor: .controlBackgroundColor).opacity(0.95),
-                                    Color(nsColor: .controlBackgroundColor).opacity(0.75),
-                                ],
-                                startPoint: .top,
-                                endPoint: .bottom
-                            )
-                        )
+                        .fill(.ultraThinMaterial)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 3, style: .continuous)
+                        .stroke(Color.white.opacity(0.25), lineWidth: 0.5)
                 )
                 .overlay(
                     RoundedRectangle(cornerRadius: 3, style: .continuous)

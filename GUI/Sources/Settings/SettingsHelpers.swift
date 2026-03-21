@@ -17,7 +17,7 @@ struct SettingsRow<Content: View>: View {
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: 0) {
             Text(label)
-                .font(.system(size: 13))
+                .font(.system(size: 14))
                 .foregroundStyle(.secondary)
                 .frame(width: 200, alignment: .trailing)
                 .help(help)
@@ -57,7 +57,7 @@ struct StubPane: View {
                 .font(.system(size: 40, weight: .light))
                 .foregroundStyle(.tertiary)
             Text("\(section.rawValue) settings coming soon")
-                .font(.system(size: 13))
+                .font(.system(size: 14))
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, minHeight: 200)

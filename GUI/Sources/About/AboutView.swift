@@ -64,7 +64,7 @@ struct AboutView: View {
                 .foregroundStyle(.primary)
             
             Text(tagline)
-                .font(.system(size: 13))
+                .font(.system(size: 14))
                 .foregroundStyle(.secondary)
         }
         .padding(.vertical, 20)

@@ -33,7 +33,7 @@ struct HIGTextField: View {
             .textFieldStyle(.plain)
             .autocorrectionDisabled()
             .textContentType(.none)
-            .font(.system(size: 13))
+            .font(.system(size: 14))
             .padding(.horizontal, 10)
             .padding(.vertical, 7)
             .background(Color(nsColor: .textBackgroundColor))

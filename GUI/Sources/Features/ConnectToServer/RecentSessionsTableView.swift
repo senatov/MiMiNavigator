@@ -145,7 +145,7 @@ struct RecentSessionsTableView: View {
             // Status
             VStack(spacing: 2) {
                 Image(systemName: server.lastResult.icon)
-                    .font(.system(size: 13))
+                    .font(.system(size: 14))
                     .foregroundStyle(isSelected ? .white : colorForResult(server.lastResult))
                 Text(server.lastResult.rawValue)
                     .font(.system(size: 10, design: .default))

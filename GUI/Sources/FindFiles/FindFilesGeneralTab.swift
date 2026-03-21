@@ -155,11 +155,11 @@ struct FindFilesGeneralTab: View {
         HStack(alignment: .center, spacing: 10) {
             HStack(spacing: 6) {
                 Image(systemName: icon)
-                    .font(.system(size: 13))
+                    .font(.system(size: 14))
                     .foregroundStyle(iconColor)
                     .frame(width: 18, alignment: .center)
                 Text(label)
-                    .font(.system(size: 13))
+                    .font(.system(size: 14))
                     .foregroundStyle(.secondary)
             }
             .frame(width: 118, alignment: .leading)
@@ -181,7 +181,7 @@ struct FindFilesGeneralTab: View {
                 .foregroundStyle(iconColor)
                 .frame(width: 22, alignment: .center)
             Text(title)
-                .font(.system(size: 13))
+                .font(.system(size: 14))
             Spacer()
             Toggle("", isOn: isOn)
                 .labelsHidden()

@@ -356,7 +356,7 @@ private struct HostNodeRow: View {
             if isHovered {
                 Button { showInfoPopup.toggle() } label: {
                     Image(systemName: "info.circle")
-                        .font(.system(size: 13)).foregroundStyle(.blue)
+                        .font(.system(size: 14)).foregroundStyle(.blue)
                 }
                 .buttonStyle(.plain)
                 .help("Device info")
@@ -411,7 +411,7 @@ private struct ShareRow: View {
     var body: some View {
         HStack(spacing: 8) {
             Image(systemName: "folder.fill.badge.person.crop")
-                .font(.system(size: 13))
+                .font(.system(size: 14))
                 .foregroundStyle(.blue.opacity(0.7))
                 .frame(width: 20)
             Text(share.name)
