@@ -8,6 +8,7 @@
 import FavoritesKit
 import FileModelKit
 import SwiftUI
+import UniformTypeIdentifiers
 
 /// Context menu for file items (non-directory).
 /// Matches Finder's context menu structure and functionality.
@@ -146,11 +147,30 @@ struct FileContextMenu: View {
 
     private func isMediaFile(_ file: CustomFile) -> Bool {
         let ext = file.urlValue.pathExtension.lowercased()
-        return [
-            "mp4","mov","mkv","avi",
-            "mp3","wav","flac",
-            "jpg","jpeg","png","heic"
-        ].contains(ext)
+
+        // Primary detection via UTType (Finder-level behavior)
+        if let type = UTType(filenameExtension: ext) {
+            if type.conforms(to: .image)
+                || type.conforms(to: .movie)
+                || type.conforms(to: .audio) {
+                return true
+            }
+        }
+
+        // Fallback for unknown / uncommon extensions
+        let video: Set<String> = [
+            "mp4","mov","mkv","avi","wmv","flv","webm","m4v","3gp"
+        ]
+
+        let audio: Set<String> = [
+            "mp3","wav","flac","aac","ogg","m4a","wma","aiff"
+        ]
+
+        let image: Set<String> = [
+            "jpg","jpeg","png","gif","heic","heif","bmp","tiff","webp","ico"
+        ]
+
+        return video.contains(ext) || audio.contains(ext) || image.contains(ext)
     }
 
     // MARK: - Add / Remove Favorites toggle

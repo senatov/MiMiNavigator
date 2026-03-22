@@ -62,7 +62,8 @@ final class MediaInfoGetter: @unchecked Sendable {
         handle.readabilityHandler = { fileHandle in
             let data = fileHandle.availableData
             guard !data.isEmpty,
-                  let chunk = String(data: data, encoding: .utf8) else { return }
+                let chunk = String(data: data, encoding: .utf8)
+            else { return }
 
             // Parse progress lines from Python
             let lines = chunk.split(separator: "\n")
@@ -74,7 +75,8 @@ final class MediaInfoGetter: @unchecked Sendable {
                     let percent = parts.first.map(String.init) ?? ""
                     let message = parts.count > 1 ? String(parts[1]) : ""
 
-                    let text = message.isEmpty
+                    let text =
+                        message.isEmpty
                         ? "Processing… \(percent)%"
                         : "\(message.capitalized) (\(percent)%)"
 
