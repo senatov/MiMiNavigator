@@ -78,7 +78,7 @@ struct BreadCrumbToolBar: View {
 
     private func navIcon(_ name: String) -> some View {
         Image(systemName: name)
-            .font(.system(size: 15))
+            .font(.system(size: 15, weight: .light))
             .symbolRenderingMode(.multicolor)
             .foregroundStyle(iconColor)
     }
@@ -114,7 +114,7 @@ struct BreadCrumbToolBar: View {
             navigationAdapter?.navigateUp(panel: panelSide.toFavPanelSide)
         }) {
             Image(systemName: "arrowshape.up")
-                .font(.system(size: 15, weight: .semibold))
+                .font(.system(size: 15, weight: .light))
                 .symbolRenderingMode(.hierarchical)
                 .foregroundStyle(isHovered ? Color.white : iconColor)
                 .frame(width: 28, height: 28)
@@ -194,7 +194,7 @@ struct BreadCrumbToolBar: View {
             openHistoryWindow()
         }) {
             Image(systemName: "clock.arrow.circlepath")
-                .font(.system(size: 15, weight: .semibold))
+                .font(.system(size: 15, weight: .light))
                 .symbolRenderingMode(.multicolor)
                 .foregroundStyle(Color(nsColor: NSColor(calibratedRed: 0.05, green: 0.52, blue: 0.18, alpha: 1.0)))
         }
@@ -210,7 +210,7 @@ struct BreadCrumbToolBar: View {
             openFavoritesWindow()
         }) {
             Image(systemName: panelSide == .left ? "sidebar.left" : "sidebar.right")
-                .font(.system(size: 15, weight: .semibold))
+                .font(.system(size: 15, weight: .light))
                 .symbolRenderingMode(.multicolor)
                 .foregroundStyle(Color(nsColor: NSColor(calibratedRed: 0.0, green: 0.42, blue: 0.55, alpha: 1.0)))
         }

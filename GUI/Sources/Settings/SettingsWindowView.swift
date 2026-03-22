@@ -106,10 +106,10 @@ struct SettingsWindowView: View {
     private func groupLabel(_ title: String) -> some View {
         HStack(spacing: 6) {
             Image(systemName: "paintpalette")
-                .font(.system(size: 10, weight: .semibold))
+                .font(.system(size: 10, weight: .light))
                 .foregroundStyle(.secondary)
             Text(title.uppercased())
-                .font(.system(size: 10, weight: .semibold))
+                .font(.system(size: 10, weight: .light))
                 .foregroundStyle(.secondary)
                 .tracking(0.8)
             Spacer()
@@ -129,7 +129,7 @@ struct SettingsWindowView: View {
                 .frame(width: 18)
             Text(section.label)
                 .font(.system(size: section.isSubItem ? 12 : 13,
-                              weight: isSelected ? .semibold : .regular))
+                              weight: isSelected ? .light : .regular))
                 .foregroundStyle(isSelected ? .white : Color.primary)
             Spacer()
         }
@@ -195,7 +195,7 @@ struct SettingsWindowView: View {
                 .font(.system(size: 16, weight: .medium))
                 .foregroundStyle(DialogColors.accent)
             Text(selectedSection.rawValue)
-                .font(.system(size: 17, weight: .semibold))
+                .font(.system(size: 17, weight: .light))
             Spacer()
         }
         .padding(.horizontal, 24)

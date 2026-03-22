@@ -21,7 +21,7 @@ enum AppBuildInfo {
         ToolbarItem(placement: .status) {
             HStack(spacing: 8) {
                 Text("🐈")
-                    .font(.system(size: 14, weight: .semibold, design: .rounded))
+                    .font(.system(size: 14, weight: .light, design: .rounded))
                     .padding(6)
                     .background(
                         Circle()

@@ -31,7 +31,7 @@ struct SystemConflictSheet: View {
                     .foregroundStyle(.orange)
 
                 Text("Shortcut Conflict")
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(.system(size: 16, weight: .light))
 
                 Text(info.description)
                     .font(.system(size: 14))

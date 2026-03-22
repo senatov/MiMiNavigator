@@ -22,7 +22,7 @@ struct HIGDialogHeader: View {
                 .resizable()
                 .frame(width: 64, height: 64)
             Text(title)
-                .font(.system(size: 13, weight: .semibold))
+                .font(.system(size: 13, weight: .light))
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
             if let subtitle {

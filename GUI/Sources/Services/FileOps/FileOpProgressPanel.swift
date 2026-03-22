@@ -153,7 +153,7 @@ final class FileOpProgressPanel {
         // Title (operation type + counter)
         let tLabel = NSTextField(labelWithString: "")
         tLabel.frame = NSRect(x: 42, y: h - 30, width: w - 100, height: 16)
-        tLabel.font = NSFont.systemFont(ofSize: 13, weight: .semibold)
+        tLabel.font = NSFont.systemFont(ofSize: 13, weight: .light)
         tLabel.textColor = .labelColor
         tLabel.lineBreakMode = .byTruncatingMiddle
         bg.addSubview(tLabel)

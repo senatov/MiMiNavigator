@@ -27,6 +27,7 @@ struct FileRow: View, Equatable {
 
     @Environment(AppState.self) var appState
     @Environment(DragDropManager.self) var dragDropManager
+    @Environment(\.displayScale) private var displayScale
 
     @State private var colorStore = ColorThemeStore.shared
     @State private var isDropTargeted: Bool = false
@@ -38,6 +39,25 @@ struct FileRow: View, Equatable {
 
     private static let dropTargetFill = Color.accentColor.opacity(0.2)
     private static let dropTargetBorder = Color.accentColor
+
+    private var onePixel: CGFloat { 1.0 / displayScale }
+
+    private func selectionBorderOverlay(color: Color) -> some View {
+        ZStack {
+            Rectangle().fill(color)
+                .frame(height: onePixel)
+                .frame(maxHeight: .infinity, alignment: .top)
+            Rectangle().fill(color)
+                .frame(height: onePixel)
+                .frame(maxHeight: .infinity, alignment: .bottom)
+            Rectangle().fill(color)
+                .frame(width: onePixel)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            Rectangle().fill(color)
+                .frame(width: onePixel)
+                .frame(maxWidth: .infinity, alignment: .trailing)
+        }
+    }
 
     /// Shared formatter to avoid repeated ByteCountFormatter allocations during scrolling
     private static let sizeFormatter: ByteCountFormatter = {
@@ -163,23 +183,28 @@ struct FileRow: View, Equatable {
                     .stroke(Self.dropTargetBorder, lineWidth: 2)
             )
             .padding(.horizontal, 4)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
             .allowsHitTesting(false)
     }
 
     private var selectionHighlight: some View {
-        RoundedRectangle(cornerRadius: 6, style: .continuous)
-            .fill(isActivePanel ? selectionActiveFill : selectionInactiveFill)
+        let fill = isActivePanel ? selectionActiveFill : selectionInactiveFill
+
+        return RoundedRectangle(cornerRadius: 6, style: .continuous)
+            .fill(fill)
             .overlay(
                 RoundedRectangle(cornerRadius: 6, style: .continuous)
-                    .inset(by: 0.5)
-                    .strokeBorder(selectionBorderColor, lineWidth: 1)
+                    // Draw the border strictly inside the row bounds to avoid clipping on the last visible row.
+                    .inset(by: onePixel * 0.5)
+                    .strokeBorder(selectionBorderColor, lineWidth: onePixel)
             )
             .padding(.horizontal, 3)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
             .allowsHitTesting(false)
     }
 
     private var selectionBorderColor: Color {
-        Color(#colorLiteral(red: 0.18, green: 0.44, blue: 0.85, alpha: 1))
+        Color(#colorLiteral(red: 0.1215686277, green: 0.01176470611, blue: 0.4235294163, alpha: 1))
             .opacity(isActivePanel ? 0.75 : 0.35)
     }
 

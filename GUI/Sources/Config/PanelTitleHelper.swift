@@ -31,7 +31,7 @@ enum PanelTitleHelper {
         let titleView = NSHostingView(
             rootView: HStack(spacing: 6) {
                 Image(systemName: systemImage)
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.system(size: 13, weight: .light))
                     .foregroundColor(Color(nsColor: iconColor))
                 Text(title)
                     .font(.system(size: 13, weight: .medium))

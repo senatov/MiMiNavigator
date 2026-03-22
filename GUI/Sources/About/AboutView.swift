@@ -64,7 +64,7 @@ struct AboutView: View {
                 .foregroundStyle(.primary)
             
             Text(tagline)
-                .font(.system(size: 14))
+                .font(.system(size: 14, weight: .light))
                 .foregroundStyle(.secondary)
         }
         .padding(.vertical, 20)
@@ -138,7 +138,7 @@ struct AboutView: View {
         } label: {
             HStack(spacing: 12) {
                 Image(systemName: icon)
-                    .font(.system(size: 16))
+                    .font(.system(size: 16, weight: .light))
                     .foregroundStyle(.accent)
                     .frame(width: 24)
                 VStack(alignment: .leading, spacing: 2) {
@@ -146,7 +146,7 @@ struct AboutView: View {
                         .font(.system(size: 12, weight: .medium))
                         .foregroundStyle(.primary)
                     Text(subtitle)
-                        .font(.system(size: 10))
+                        .font(.system(size: 10, weight: .light))
                         .foregroundStyle(.secondary)
                 }
                 Spacer()
@@ -165,7 +165,7 @@ struct AboutView: View {
     private var acknowledgmentsSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Third-Party Libraries")
-                .font(.system(size: 11, weight: .semibold))
+                .font(.system(size: 11, weight: .light))
                 .foregroundStyle(.secondary)
                 .padding(.horizontal, 4)
             

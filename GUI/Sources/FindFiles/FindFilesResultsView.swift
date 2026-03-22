@@ -176,7 +176,7 @@ struct FindFilesResultsView: View {
                             Image(systemName: "lock.fill").foregroundStyle(.red)
                             Text("Password protected").foregroundStyle(.red)
                         }
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(.system(size: 12, weight: .light))
                     } else if let context = result.matchContext, let line = result.lineNumber {
                         Text("L\(line): \(context)")
                             .font(.system(size: 12, design: .monospaced))
@@ -235,7 +235,7 @@ struct FindFilesResultsView: View {
                 Text(result.fileName)
                     .font(
                         Self.rowFont.weight(
-                            result.isInsideArchive || result.isPasswordProtected ? .semibold : .regular)
+                            result.isInsideArchive || result.isPasswordProtected ? .light : .regular)
                     )
                     .foregroundStyle(
                         result.isPasswordProtected

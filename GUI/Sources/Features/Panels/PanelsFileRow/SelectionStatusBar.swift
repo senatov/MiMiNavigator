@@ -305,7 +305,7 @@ extension SelectionStatusBar {
                     .font(.system(size: 9, weight: .bold))
 
                 Text(label)
-                    .font(.system(size: 10, weight: .semibold))
+                    .font(.system(size: 10, weight: .light))
             }
             .foregroundStyle(Color(nsColor: .labelColor).opacity(0.75))
             .padding(.horizontal, 6)

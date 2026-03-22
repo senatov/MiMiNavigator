@@ -15,7 +15,7 @@ enum TableHeaderStyle {
     static let color = Color(nsColor: .labelColor)
     /// Very dark purple (almost black) for active sort column title + chevron
     @MainActor static var sortIndicatorColor: Color { ColorThemeStore.shared.activeTheme.dividerActiveColor }
-    /// Active sort column title weight — semibold for clear contrast with light base
+    /// Active sort column title weight — .light for clear contrast with light base
     static let sortActiveWeight: Font.Weight = .light
     /// No background highlight for active sort column
     static let backgroundColor = Color(nsColor: .controlBackgroundColor)

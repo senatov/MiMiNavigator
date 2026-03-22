@@ -144,7 +144,7 @@ struct BreadCrumbControlWrapper: View {
             Image(systemName: "checkmark.circle.fill")
                 .symbolRenderingMode(.palette)
                 .foregroundStyle(.white, Color(#colorLiteral(red: 0.2, green: 0.78, blue: 0.35, alpha: 1.0)))
-                .font(.system(size: 18, weight: .medium))
+                .font(.system(size: 18, weight: .light))
                 .shadow(color: .black.opacity(0.15), radius: 1, x: 0, y: 1)
         }
         .buttonStyle(.plain)
@@ -162,7 +162,7 @@ struct BreadCrumbControlWrapper: View {
             Image(systemName: "xmark.circle.fill")
                 .symbolRenderingMode(.palette)
                 .foregroundStyle(.white, Color(#colorLiteral(red: 0.9, green: 0.25, blue: 0.2, alpha: 1.0)))
-                .font(.system(size: 18, weight: .medium))
+                .font(.system(size: 18, weight: .light))
                 .shadow(color: .black.opacity(0.15), radius: 1, x: 0, y: 1)
         }
         .buttonStyle(.plain)

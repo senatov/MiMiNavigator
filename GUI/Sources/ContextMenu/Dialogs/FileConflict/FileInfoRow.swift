@@ -46,7 +46,7 @@
         
         private var titleText: some View {
             Text(title)
-                .font(.system(size: 12, weight: .semibold))
+                .font(.system(size: 12, weight: .light))
         }
         
         private var nameText: some View {

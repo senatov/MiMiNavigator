@@ -28,7 +28,7 @@ struct FileTransferConfirmationDialog: View {
                 .frame(width: 56, height: 56)
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Move or Copy Items?")
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(.system(size: 14, weight: .light))
                     Text("Do you want to move or copy \(operation.itemsDescription) to \"\(operation.destinationName)\"?")
                         .font(.system(size: 14))
                         .foregroundStyle(.primary)

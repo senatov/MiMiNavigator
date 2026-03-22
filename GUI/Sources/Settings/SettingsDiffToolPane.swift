@@ -51,7 +51,7 @@ struct SettingsDiffToolPane: View {
                 VStack(alignment: .leading, spacing: 8) {
 
                     Text("AVAILABLE TOOLS")
-                        .font(.system(size: 10, weight: .semibold))
+                        .font(.system(size: 10, weight: .light))
                         .foregroundStyle(.secondary)
                         .kerning(0.5)
 
@@ -209,7 +209,7 @@ struct SettingsDiffToolPane: View {
 
     private func badge(_ text: String, fg: Color, bg: Color) -> some View {
         Text(text)
-            .font(.system(size: 9, weight: .semibold))
+            .font(.system(size: 9, weight: .light))
             .foregroundStyle(fg)
             .padding(.horizontal, 5).padding(.vertical, 2)
             .background(bg.cornerRadius(4))
@@ -244,7 +244,7 @@ struct DiffToolEditSheet: View {
         VStack(alignment: .leading, spacing: 18) {
 
             Text(tool == nil ? "Add Diff Tool" : "Edit Diff Tool")
-                .font(.system(size: 15, weight: .semibold))
+                .font(.system(size: 15, weight: .light))
 
             labeledField("Name:", placeholder: "e.g. Beyond Compare", text: $name)
 

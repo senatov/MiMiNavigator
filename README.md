@@ -337,7 +337,7 @@ Log files:
 - [x] Group context menu with batch operations
 - [x] Multi-file drag & drop with badge preview (list and thumbnail modes)
 - [x] Batch-aware file actions (Cut/Copy/Delete/Compress/Share on marked files)
-- [x] Total Commander style marking: dark red, semibold, enlarged font
+- [x] Total Commander style marking: dark red, .light, enlarged font
 - [x] Selection status bar (marked count + total size + disk free space + inline slider)
 - [x] Thumbnail grid view per panel (16–900 pt, QL thumbnails, context menu, drag-drop)
 - [x] Open With LRU per file extension (max 5, "Other..." picks persisted)

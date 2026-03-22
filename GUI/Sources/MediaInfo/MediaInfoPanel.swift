@@ -305,7 +305,7 @@ final class MediaInfoPanel {
         let label = NSAttributedString(
             string: title + "\n",
             attributes: [
-                .font: NSFont.systemFont(ofSize: 13, weight: .semibold),
+                .font: NSFont.systemFont(ofSize: 13, weight: .light),
                 .foregroundColor: NSColor.linkColor,
                 .link: url,
                 .paragraphStyle: paragraphStyle

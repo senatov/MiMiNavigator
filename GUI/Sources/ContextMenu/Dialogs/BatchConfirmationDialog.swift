@@ -41,7 +41,7 @@ struct BatchConfirmationDialog: View {
             
             // Title
             Text(titleText)
-                .font(.system(size: 14, weight: .semibold))
+                .font(.system(size: 14, weight: .light))
                 .multilineTextAlignment(.center)
             
             // Summary info

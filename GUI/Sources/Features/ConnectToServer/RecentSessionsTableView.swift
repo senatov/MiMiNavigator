@@ -78,12 +78,12 @@ struct RecentSessionsTableView: View {
     private func sessionHeaderCell(_ col: SessionColumnID) -> some View {
         HStack(spacing: 3) {
             Text(col.title)
-                .font(.system(size: 14, weight: sortKey.rawValue == col.rawValue ? .semibold : .regular, design: .default))
+                .font(.system(size: 14, weight: sortKey.rawValue == col.rawValue ? .light : .regular, design: .default))
                 .foregroundStyle(sortKey.rawValue == col.rawValue ? .primary : .secondary)
                 .lineLimit(1)
             if sortKey.rawValue == col.rawValue {
                 Image(systemName: sortAscending ? "chevron.up" : "chevron.down")
-                    .font(.system(size: 10, weight: .semibold))
+                    .font(.system(size: 10, weight: .light))
                     .foregroundStyle(.primary)
             }
         }

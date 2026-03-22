@@ -116,10 +116,10 @@ struct TransferConsoleView: View {
         HStack(spacing: 10) {
             Image(systemName: progress.direction.icon)
                 .foregroundStyle(D.accentGreen)
-                .font(.system(size: 16, weight: .semibold))
+                .font(.system(size: 16, weight: .light))
             VStack(alignment: .leading, spacing: 1) {
                 Text("\(progress.direction.title) · \(progress.serverLabel)")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.system(size: 13, weight: .light))
                     .foregroundStyle(.primary)
                 Text(progress.statusLine)
                     .font(D.labelFont)

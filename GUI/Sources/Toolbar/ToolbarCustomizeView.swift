@@ -72,7 +72,7 @@ private struct TCV_PreviewStrip: View {
     var body: some View {
         VStack(spacing: 4) {
             Text("TOOLBAR PREVIEW")
-                .font(.system(size: 9, weight: .semibold))
+                .font(.system(size: 9, weight: .light))
                 .foregroundStyle(.tertiary)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, 12)

@@ -48,7 +48,7 @@ struct NetworkAuthSheet: View {
                 .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
             VStack(alignment: .leading, spacing: 2) {
                 Text("Connect to \"\(host.name)\"")
-                    .font(.subheadline.weight(.semibold))
+                    .font(.subheadline.weight(.light))
                 Text(host.hostName)
                     .font(.caption2)
                     .foregroundStyle(.secondary)

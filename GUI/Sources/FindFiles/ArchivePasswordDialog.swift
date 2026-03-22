@@ -25,7 +25,7 @@ struct ArchivePasswordDialog: View {
                     .foregroundStyle(.orange)
 
                 Text("Password Required")
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.system(size: 14, weight: .light))
 
                 VStack(spacing: 2) {
                     Text("The archive is password-protected:")

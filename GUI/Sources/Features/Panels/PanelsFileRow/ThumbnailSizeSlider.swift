@@ -58,7 +58,7 @@ struct ThumbnailSizeSlider: View {
                 stepValue(by: -20)
             } label: {
                 Image(systemName: "square.grid.2x2")
-                    .font(.system(size: 9, weight: .semibold))
+                    .font(.system(size: 9, weight: .light))
                     .foregroundStyle(.secondary)
             }
             .buttonStyle(.plain)

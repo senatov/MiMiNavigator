@@ -21,7 +21,7 @@ struct BatchProgressDialog: View {
             // Header: operation title + destination
             VStack(alignment: .leading, spacing: 2) {
                 Text(state.operationType.localizedTitle)
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.system(size: 13, weight: .light))
                 if let dest = state.destinationURL {
                     Text(dest.path)
                         .font(.system(size: 11))

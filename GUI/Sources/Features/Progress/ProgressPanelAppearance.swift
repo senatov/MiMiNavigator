@@ -56,7 +56,7 @@ final class ProgressPanelAppearance {
     var borderColor: NSColor   { Self.nsColor(hex: hexBorder) ?? .separatorColor }
     var logFont: NSFont        { NSFont(name: logFontName, size: CGFloat(logFontSize)) ?? .monospacedSystemFont(ofSize: CGFloat(logFontSize), weight: .light) }
     var logColor: NSColor      { Self.nsColor(hex: hexLogColor) ?? .textColor }
-    var titleFont: NSFont      { .systemFont(ofSize: 13, weight: .semibold) }
+    var titleFont: NSFont      { .systemFont(ofSize: 13, weight: .light) }
     var titleColor: NSColor    { Self.nsColor(hex: hexTitleColor) ?? .labelColor }
     var statusFont: NSFont     { .systemFont(ofSize: 11.5, weight: .regular) }
     var statusColor: NSColor   { Self.nsColor(hex: hexStatusColor) ?? .secondaryLabelColor }

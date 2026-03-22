@@ -67,7 +67,7 @@ final class ArchiveInfoPopupController: InfoPopupController {
         // Title with checkmark
         result.appendHUD(
             "✓ Archive Created\n\n",
-            font: NSFont.systemFont(ofSize: 14, weight: .semibold),
+            font: NSFont.systemFont(ofSize: 14, weight: .light),
             color: NSColor(calibratedRed: 0.1, green: 0.5, blue: 0.2, alpha: 1.0)
         )
         

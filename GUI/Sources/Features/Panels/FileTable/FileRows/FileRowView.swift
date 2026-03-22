@@ -24,7 +24,7 @@ struct FileRowView: View {
     private let colorStore = ColorThemeStore.shared
 
     // MARK: - Constants
-    private static let nameWeight: Font.Weight = .regular
+    private static let nameWeight: Font.Weight = .light
     private static let nameFontSize: CGFloat = 14
 
     // MARK: - View Body
@@ -58,7 +58,6 @@ struct FileRowView: View {
     // MARK: - Base content
     @ViewBuilder
     private func baseContent() -> some View {
-        let _ = log.debug(#function)
         if isParentEntry {
             parentEntryRow
         } else {
@@ -67,16 +66,16 @@ struct FileRowView: View {
     }
 
     // MARK: - Parent entry row ("..")
-private var parentEntryRow: some View {
-    let parentUrl = file.urlValue
-    return ParentEntryStripView(
-        parentUrl: parentUrl,
-        file: file,
-        isSelected: isSelected,
-        onSelect: onSelect,
-        onDoubleClick: onDoubleClick
-    )
-}
+    private var parentEntryRow: some View {
+        let parentUrl = file.urlValue
+        return ParentEntryStripView(
+            parentUrl: parentUrl,
+            file: file,
+            isSelected: isSelected,
+            onSelect: onSelect,
+            onDoubleClick: onDoubleClick
+        )
+    }
 
     // MARK: - Normal file row
     private var normalFileRow: some View {
@@ -173,12 +172,18 @@ private var parentEntryRow: some View {
                 }
             }
             .task(id: file.urlValue.path) {
-                let result =
-                    await Task.detached(priority: .utility) {
-                        await SmartIconService.icon(for: file)
+                let path = file.urlValue.path
+                let image =
+                    await Task.detached(priority: .utility) { () -> NSImage in
+                        let img = NSWorkspace.shared.icon(forFile: path)
+                        img.size = NSSize(width: 128, height: 128)
+                        return img
                     }
                     .value
-                await MainActor.run { self.icon = result }
+
+                await MainActor.run {
+                    self.icon = image
+                }
             }
         }
 
@@ -186,7 +191,7 @@ private var parentEntryRow: some View {
         @ViewBuilder
         private var lockOverlay: some View {
             Image(systemName: lockSymbol)
-                .font(.system(size: 8, weight: .bold))
+                .font(.system(size: 8, weight: .medium))
                 .foregroundStyle(lockColor)
                 .background(
                     Circle()
@@ -198,7 +203,6 @@ private var parentEntryRow: some View {
         }
 
         private var lockSymbol: String {
-            log.debug(#function)
             switch file.securityState {
                 case .restricted: return "lock.fill"
                 case .systemProtected: return "lock.shield.fill"
@@ -235,17 +239,19 @@ private var parentEntryRow: some View {
 
 // MARK: - Backward compatibility bridge
 extension FileRowView {
-    /// Legacy API — redirects to SmartIconService
+    /// Legacy API — redirects to NSWorkspace
     @MainActor
     static func getSmartIcon(for file: CustomFile) -> NSImage {
-        log.debug(#function)
-        return SmartIconService.icon(for: file)
+        let img = NSWorkspace.shared.icon(forFile: file.urlValue.path)
+        img.size = NSSize(width: 128, height: 128)
+        return img
     }
 
-    /// Legacy API — redirects to SmartIconService
+    /// Legacy API — NSWorkspace fallback (avoid SmartIconService overload ambiguity)
     @MainActor
     static func getSmartIcon(for url: URL, size: NSSize = NSSize(width: 128, height: 128)) -> NSImage {
-        log.debug(#function)
-        return SmartIconService.icon(for: url, size: size)
+        let img = NSWorkspace.shared.icon(forFile: url.path)
+        img.size = size
+        return img
     }
 }

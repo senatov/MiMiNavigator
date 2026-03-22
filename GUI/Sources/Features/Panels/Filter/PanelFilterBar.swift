@@ -60,7 +60,7 @@ struct PanelFilterBar: View {
             if !history.entries.isEmpty {
                 Button { showHistory.toggle() } label: {
                     Image(systemName: "chevron.down")
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(.system(size: 12, weight: .light))
                         .foregroundStyle(.secondary)
                         .rotationEffect(.degrees(showHistory ? 180 : 0))
                         .animation(.easeInOut(duration: 0.15), value: showHistory)

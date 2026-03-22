@@ -51,7 +51,7 @@ struct AnimatedToolbarButton: View {
             Image(systemName: currentImage)
                 .symbolRenderingMode(.hierarchical)
                 .foregroundStyle(currentColor)
-                .font(.system(size: 13, weight: .semibold))
+                .font(.system(size: 13, weight: .light))
                 .rotationEffect(.degrees(isAnimating ? 360 : 0))
                 .scaleEffect(isAnimating ? 1.2 : 1.0)
                 .animation(.easeInOut(duration: 0.6), value: isAnimating)

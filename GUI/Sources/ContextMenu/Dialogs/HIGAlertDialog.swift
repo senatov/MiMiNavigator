@@ -49,7 +49,7 @@ struct HIGAlertDialog: View {
     // MARK: - Title
     private var titleText: some View {
         Text(title)
-            .font(.system(size: 13, weight: .semibold))
+            .font(.system(size: 13, weight: .light))
             .multilineTextAlignment(.center)
     }
 

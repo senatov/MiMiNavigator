@@ -27,7 +27,7 @@ class InfoPopupController {
     static let labelColor = NSColor(calibratedRed: 0.08, green: 0.12, blue: 0.38, alpha: 1.0)
     static let titleColor = NSColor(calibratedRed: 0.55, green: 0.10, blue: 0.05, alpha: 1.0)
     static let valueColor = NSColor.black
-    static let titleFont = NSFont.systemFont(ofSize: 12.5, weight: .semibold)
+    static let titleFont = NSFont.systemFont(ofSize: 12.5, weight: .light)
     static let labelFont = NSFont.systemFont(ofSize: 11, weight: .medium)
     static let valueFont = NSFont.systemFont(ofSize: 11.5, weight: .light)
     static let nameFont = NSFont.systemFont(ofSize: 12.5, weight: .regular)

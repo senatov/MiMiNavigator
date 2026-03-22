@@ -108,7 +108,7 @@ struct FindFilesAdvancedTab: View {
     private func sectionHeader(title: String, icon: String, color: Color) -> some View {
         HStack(spacing: 8) {
             Image(systemName: icon)
-                .font(.system(size: 14, weight: .semibold))
+                .font(.system(size: 14, weight: .light))
                 .foregroundStyle(color)
             Text(title)
                 .font(.system(size: 13, weight: .bold))

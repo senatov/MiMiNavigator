@@ -170,7 +170,7 @@
                     .frame(width: 20)
                 VStack(alignment: .leading, spacing: 1) {
                     Text(server.displayName)
-                        .font(.system(size: 13, weight: isSelected ? .semibold : .regular))
+                        .font(.system(size: 13, weight: isSelected ? .light : .regular))
                         .foregroundStyle(isSelected ? .white : Color.primary)
                         .lineLimit(1)
                     Text(server.sessionSummary)
@@ -225,7 +225,7 @@
                     .font(.system(size: 16, weight: .medium))
                     .foregroundStyle(DialogColors.accent)
                 Text(draft.remoteProtocol.rawValue)
-                    .font(.system(size: 17, weight: .semibold))
+                    .font(.system(size: 17, weight: .light))
 
                 // ── Status lamp ──────────────────────────────────────
                 ConnectionStatusLamp(server: draft, manager: connectionManager)

@@ -71,7 +71,7 @@ struct SortableHeader: View {
     private var titleArea: some View {
         if let iconName = icon {
             Image(systemName: iconName)
-                .font(.system(size: 12, weight: isActive ? .semibold : .regular))
+                .font(.system(size: 12, weight: isActive ? .light : .regular))
                 .foregroundStyle(isActive ? activeColor : TableHeaderStyle.color)
                 .help(title)
                 .frame(maxWidth: .infinity)

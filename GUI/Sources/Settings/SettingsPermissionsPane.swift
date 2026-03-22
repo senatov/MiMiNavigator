@@ -51,7 +51,7 @@ struct SettingsPermissionsPane: View {
             paneGroupBox {
                 VStack(alignment: .leading, spacing: 10) {
                     Text("Folder Access")
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(.system(size: 13, weight: .light))
                     Text("Due to macOS sandbox restrictions, MiMiNavigator needs your permission to access folders outside of standard locations. Add folders below to grant access.")
                         .font(.system(size: 12))
                         .foregroundStyle(.secondary)
