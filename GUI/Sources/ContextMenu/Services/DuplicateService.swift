@@ -65,9 +65,7 @@ final class DuplicateService {
             log.error("\(#function) failed to create NSAppleScript for: \(context)")
             throw DuplicateError.scriptCreationFailed
         }
-
         let result = script.executeAndReturnError(&error)
-
         if let error = error {
             let msg = error[NSAppleScript.errorMessage] as? String ?? "Unknown AppleScript error"
             log.error("\(#function) AppleScript FAILED (\(context)): \(msg)")

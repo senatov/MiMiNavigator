@@ -52,7 +52,7 @@ final class ProgressPanel: NSObject {
             window.addChildWindow(panel, ordered: .above)
         }
         panel.alphaValue = 0
-        panel.orderFront(nil)
+        panel.makeKeyAndOrderFront(nil)
         NSAnimationContext.runAnimationGroup { ctx in
             ctx.duration = 0.18
             ctx.timingFunction = CAMediaTimingFunction(name: .easeOut)
@@ -137,10 +137,11 @@ final class ProgressPanel: NSObject {
         let a = appearance
         let p = NSPanel(
             contentRect: NSRect(x: 0, y: 0, width: a.panelWidth, height: a.panelHeight),
-            styleMask: [.titled, .resizable, .nonactivatingPanel],
+            styleMask: [.titled, .resizable],
             backing: .buffered,
             defer: true
         )
+        p.becomesKeyOnlyIfNeeded = false
         p.isFloatingPanel = true
         p.hidesOnDeactivate = false
         p.hasShadow = true
@@ -199,9 +200,11 @@ final class ProgressPanel: NSObject {
         sv.layer?.cornerRadius = 4
         sv.layer?.borderColor = a.borderColor.cgColor
         sv.layer?.borderWidth = 0.5
-        let tv = NSTextView()
+        let tv = CopyableTextView()
         tv.isEditable = false
-        tv.isSelectable = true
+        tv.isAutomaticTextCompletionEnabled = false
+        tv.allowsUndo = true
+        tv.isRichText = false
         tv.drawsBackground = false
         tv.isRichText = true
         tv.textContainerInset = NSSize(width: 4, height: 4)
@@ -210,6 +213,9 @@ final class ProgressPanel: NSObject {
         tv.isVerticallyResizable = true
         tv.isHorizontallyResizable = false
         tv.autoresizingMask = [.width]
+        let menu = NSMenu()
+        menu.addItem(withTitle: "Copy All", action: #selector(copyAll), keyEquivalent: "")
+        tv.menu = menu
         sv.documentView = tv
         ct.addSubview(sv)
         scrollView = sv
@@ -251,6 +257,17 @@ final class ProgressPanel: NSObject {
             btn.widthAnchor.constraint(greaterThanOrEqualToConstant: 60),
         ])
         self.panel = p
+    }
+    // MARK: - Copy to Clipboard
+    func copyAllToClipboard() {
+        guard let text = logTextView?.string, !text.isEmpty else { return }
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        pasteboard.setString(text, forType: .string)
+        log.debug("[ProgressPanel] copied log to clipboard")
+    }
+    @objc private func copyAll() {
+        copyAllToClipboard()
     }
     // MARK: - Action Button
     @objc private func actionButtonTapped() {
@@ -316,5 +333,15 @@ extension ProgressPanel: NSWindowDelegate {
             let size = panel.frame.size
             appearance.updateSize(width: size.width, height: size.height)
         }
+    }
+}
+
+private final class CopyableTextView: NSTextView {
+    override func performKeyEquivalent(with event: NSEvent) -> Bool {
+        if event.modifierFlags.contains(.command), event.charactersIgnoringModifiers == "c" {
+            self.copy(self)
+            return true
+        }
+        return super.performKeyEquivalent(with: event)
     }
 }

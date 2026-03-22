@@ -8,6 +8,8 @@ import AppKit
 //
 import Foundation
 import QuartzCore
+import ImageIO
+import AVFoundation
 
 final class MediaInfoGetter: @unchecked Sendable {
 
@@ -39,11 +41,55 @@ final class MediaInfoGetter: @unchecked Sendable {
             let size = (attrs[.size] as? NSNumber)?.int64Value ?? 0
             let sizeMB = Double(size) / (1024 * 1024)
 
-            let info = """
-            File: \(fileName)
-            Size: \(String(format: "%.2f", sizeMB)) MB
-            Path: \(url.path)
-            """
+            var lines: [String] = []
+
+            lines.append("File: \(fileName)")
+            lines.append("Size: \(String(format: "%.2f", sizeMB)) MB")
+            lines.append("Path: \(url.path)")
+
+            // MARK: - Image metadata
+            if let src = CGImageSourceCreateWithURL(url as CFURL, nil),
+               let metadata = CGImageSourceCopyPropertiesAtIndex(src, 0, nil) as? [String: Any] {
+
+                if let w = metadata[kCGImagePropertyPixelWidth as String],
+                   let h = metadata[kCGImagePropertyPixelHeight as String] {
+                    lines.append("Resolution: \(w)x\(h)")
+                }
+
+                if let exif = metadata[kCGImagePropertyExifDictionary as String] as? [String: Any],
+                   let date = exif[kCGImagePropertyExifDateTimeOriginal as String] {
+                    lines.append("Date: \(date)")
+                }
+
+                if let gps = metadata[kCGImagePropertyGPSDictionary as String] as? [String: Any] {
+                    if let lat = gps[kCGImagePropertyGPSLatitude as String],
+                       let lon = gps[kCGImagePropertyGPSLongitude as String] {
+                        lines.append("GPS: \(lat), \(lon)")
+                    }
+                }
+            }
+
+            // MARK: - Video / Audio metadata
+            let asset = AVURLAsset(url: url)
+            let duration = CMTimeGetSeconds(asset.duration)
+
+            if duration.isFinite && duration > 0 {
+                lines.append("Duration: \(String(format: "%.2f", duration)) sec")
+            }
+
+            if let videoTrack = asset.tracks(withMediaType: .video).first {
+                let size = videoTrack.naturalSize.applying(videoTrack.preferredTransform)
+                let width = abs(size.width)
+                let height = abs(size.height)
+                lines.append("Video: \(Int(width))x\(Int(height))")
+            }
+
+            if let audioTrack = asset.tracks(withMediaType: .audio).first {
+                let sampleRate = audioTrack.naturalTimeScale
+                lines.append("Audio sample rate: \(sampleRate)")
+            }
+
+            let info = lines.joined(separator: "\n")
 
             await MainActor.run {
                 ProgressPanel.shared.show(archiveName: "Media Info", destinationPath: url.path)
