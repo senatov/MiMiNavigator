@@ -18,7 +18,14 @@ struct FileRowView: View {
     let isSelected: Bool
     let isActivePanel: Bool
     var isMarked: Bool = false
+    // Optional interaction callbacks (can be ignored by caller)
+    var onSelect: (CustomFile) -> Void = { _ in }
+    var onDoubleClick: (CustomFile) -> Void = { _ in }
     private let colorStore = ColorThemeStore.shared
+
+    // MARK: - Constants
+    private static let nameWeight: Font.Weight = .regular
+    private static let nameFontSize: CGFloat = 14
 
     // MARK: - View Body
     var body: some View {
@@ -43,10 +50,6 @@ struct FileRowView: View {
         return colorStore.activeTheme.fileNameColor
     }
 
-    // MARK: - Constants
-    private static let nameWeight: Font.Weight = .regular
-    private static let nameFontSize: CGFloat = 14
-
     // MARK: - Icon opacity (dimming for hidden files)
     private var iconOpacity: Double {
         file.isHidden ? 0.45 : 1.0
@@ -64,15 +67,16 @@ struct FileRowView: View {
     }
 
     // MARK: - Parent entry row ("..")
-    private var parentEntryRow: some View {
-        TopParentDirectoryControl(
-            currentPath: file.urlValue.path,
-            fileCount: 0,
-            onNavigateUp: {
-            }
-        )
-        //ParentEntryStripView(currentURL: file.urlValue)
-    }
+private var parentEntryRow: some View {
+    let parentUrl = file.urlValue
+    return ParentEntryStripView(
+        parentUrl: parentUrl,
+        file: file,
+        isSelected: isSelected,
+        onSelect: onSelect,
+        onDoubleClick: onDoubleClick
+    )
+}
 
     // MARK: - Normal file row
     private var normalFileRow: some View {

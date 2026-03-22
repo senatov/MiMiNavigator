@@ -22,6 +22,7 @@ struct ParentEntryStripView: View {
     private var label: String {
         "\(parentName)   (\(rowsCount) dirs)"
     }
+
     private let textColor = Color(#colorLiteral(red: 0.25, green: 0.25, blue: 0.27, alpha: 1))
     private let chevronColor = Color(#colorLiteral(red: 0.50, green: 0.50, blue: 0.54, alpha: 1))
     private let dividerColor = Color(#colorLiteral(red: 0.82, green: 0.82, blue: 0.84, alpha: 1))
@@ -49,7 +50,6 @@ struct ParentEntryStripView: View {
         if parentURL.path == "/" {
             return "Root"
         }
-
         return parentURL.path
     }
 

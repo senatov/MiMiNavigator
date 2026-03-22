@@ -1,6 +1,6 @@
 # Archive Layer — Architecture & Virtual Filesystem
 
-## Date: 18.02.2026
+## Date: 22.03.2026
 ## Status: Refactored
 
 ---
