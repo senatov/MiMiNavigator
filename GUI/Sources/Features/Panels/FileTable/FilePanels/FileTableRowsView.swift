@@ -41,24 +41,28 @@ struct FileTableRowsView: View {
             }
             return out
         }()
-        LazyVStack(alignment: .leading, spacing: 0) {
-            ForEach(Array(displayRows.enumerated()), id: \.element.id) { (i, file) in
-                let isSelected = isRowSelected(file: file, currentSelectedID: currentSelectedID)
-                let isParent = isParentRowCandidate(file)
+        VStack(spacing: 0) {
+            LazyVStack(alignment: .leading, spacing: 0) {
+                ForEach(Array(displayRows.enumerated()), id: \.element.id) { (i, file) in
+                    let isSelected = isRowSelected(file: file, currentSelectedID: currentSelectedID)
+                    let isParent = isParentRowCandidate(file)
 
-                SizeAwareRow(
-                    id: file.id,
-                    isSelected: isSelected,
-                    layoutVersion: layout.layoutVersion,
-                    sizeVersion: file.sizeVersion,
-                    isParent: isParent
-                ) {
-                    rowContent(index: i, file: file, isSelected: isSelected)
+                    SizeAwareRow(
+                        id: file.id,
+                        isSelected: isSelected,
+                        layoutVersion: layout.layoutVersion,
+                        sizeVersion: file.sizeVersion,
+                        isParent: isParent
+                    ) {
+                        rowContent(index: i, file: file, isSelected: isSelected)
+                    }
                 }
             }
+
+            // Give the last row 1px breathing room inside scroll content so the bottom border won't be clipped.
+            Color.clear
+                .frame(height: onePixel)
         }
-        // Give the last row 1px breathing room so borders drawn at the bottom edge won't be clipped.
-        .padding(.bottom, onePixel)
         .transaction { $0.disablesAnimations = true }
     }
 

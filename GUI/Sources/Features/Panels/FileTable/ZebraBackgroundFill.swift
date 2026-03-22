@@ -17,13 +17,12 @@ struct ZebraBackgroundFill: View {
     let rowHeight: CGFloat
 
     var body: some View {
-        Color.clear
-            .overlay(
-                stripesLayer()
-                    .frame(maxWidth: .infinity, alignment: .top),
-                alignment: .top
-            )
-            .allowsHitTesting(false)
+        ZStack(alignment: .top) {
+            stripesLayer()
+                .frame(maxWidth: .infinity, alignment: .top)
+        }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
     }
 
     // MARK: - Layers
@@ -36,10 +35,6 @@ struct ZebraBackgroundFill: View {
         }
     }
 
-    private func backgroundExpander() -> some View {
-        // This forces full height even inside complex layouts
-        Color.clear
-    }
 
     // MARK: - Stripe Rows
 
@@ -54,7 +49,7 @@ struct ZebraBackgroundFill: View {
         let isOdd = (startIndex + index) % 2 == 1
         return stripeColor(isOdd: isOdd)
     }
-    
+
     private func stripeColor(isOdd: Bool) -> Color {
         if isActivePanel {
             return isOdd ? DesignTokens.zebraActiveOdd : DesignTokens.zebraActiveEven
@@ -63,8 +58,8 @@ struct ZebraBackgroundFill: View {
         }
     }
 
-    // MARK: - Layout Calculation
 
+    // MARK: - Layout Calculation
     private func maxVisibleRows() -> Int {
         // Large enough to visually cover any panel height without scroll issues
         // Avoid GeometryReader completely
