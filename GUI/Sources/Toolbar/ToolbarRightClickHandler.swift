@@ -17,7 +17,7 @@ final class ToolbarRightClickMonitor {
 
     static let shared = ToolbarRightClickMonitor()
     private var monitor: Any?
-
+    private let toolbarHeight: CGFloat = 52
     private init() {}
 
     // MARK: - Start / Stop
@@ -43,30 +43,48 @@ final class ToolbarRightClickMonitor {
     }
 
     // MARK: - Hit test
-
     private func handleRightClick(_ event: NSEvent) {
-        guard let window = event.window ?? NSApp.keyWindow ?? NSApp.mainWindow else {
+        log.debug("[ToolbarRightClick] event received")
+
+        guard let window = resolveWindow(from: event) else {
             log.debug("[ToolbarRightClick] no window — ignored")
             return
         }
 
-        let y       = event.locationInWindow.y
-        let windowH = window.frame.height
-        let scale   = window.backingScaleFactor  // 2.0 on Retina
+        if isClickInToolbar(event: event, window: window) {
+            log.info("[ToolbarRightClick] ✓ opening customize panel")
+            openCustomizePanel()
+        } else {
+            log.debug("[ToolbarRightClick] click outside toolbar — ignored")
+        }
+    }
 
-        // Toolbar height in points = 52pt standard unifiedCompact.
-        // event.locationInWindow is in POINTS, window.frame is in POINTS.
-        // But log showed windowH=1318 which suggests backing coordinates.
-        // Safe fix: use 52pt * scale to match whatever coordinate space we're in.
-        let toolbarPt: CGFloat = 52
-        let toolbarZoneBottom = windowH - (toolbarPt * scale)
-        let inToolbar = y >= toolbarZoneBottom
+    // MARK: - Helpers
+    private func resolveWindow(from event: NSEvent) -> NSWindow? {
+        log.debug(#function + " called")
+        if let window = event.window {
+            return window
+        }
+        if let window = NSApp.keyWindow {
+            return window
+        }
+        return NSApp.mainWindow
+    }
 
-        log.debug("[ToolbarRightClick] click y=\(Int(y)) windowH=\(Int(windowH)) scale=\(scale) threshold=\(Int(toolbarZoneBottom)) hit=\(inToolbar)")
+    private func isClickInToolbar(event: NSEvent, window: NSWindow) -> Bool {
+        let y = event.locationInWindow.y
+        let windowHeight = window.frame.height
+        // Coordinates are already in points, no scale needed
+        let threshold = windowHeight - toolbarHeight
+        let isInside = y >= threshold
+        log.debug(
+            "[ToolbarRightClick] hitTest y=\(Int(y)) windowH=\(Int(windowHeight)) threshold=\(Int(threshold)) result=\(isInside)"
+        )
+        return isInside
+    }
 
-        guard inToolbar else { return }
-
-        log.info("[ToolbarRightClick] ✓ opening customize panel")
+    private func openCustomizePanel() {
+        log.debug("[ToolbarRightClick] toggling customize panel")
         ToolbarCustomizeCoordinator.shared.toggle()
     }
 }

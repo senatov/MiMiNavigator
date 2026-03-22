@@ -97,6 +97,12 @@ final class ProgressPanel: NSObject {
     func updateStatus(_ text: String) {
         statusLabel?.stringValue = text
     }
+
+    // MARK: - Update (preferred for live progress)
+    func update(text: String) {
+        guard panel?.isVisible == true else { return }
+        statusLabel?.stringValue = text
+    }
     // MARK: - Finish (Cancel → OK)
     func finish(success: Bool, message: String? = nil) {
         if let msg = message {

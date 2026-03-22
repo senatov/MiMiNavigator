@@ -1,88 +1,127 @@
-    // ToolbarCustomizeCoordinator.swift
-    // MiMiNavigator
-    //
-    // Created by Iakov Senatov on 24.02.2026.
-    // Copyright © 2026 Senatov. All rights reserved.
-    // Description: Floating NSPanel for toolbar customization.
-    //   - First open: centered on main window (or screen fallback)
-    //   - User can resize/move; position persisted via frameAutosaveName
-    //   - Resizable: user can drag edges to resize
+// ToolbarCustomizeCoordinator.swift
+// MiMiNavigator
+//
+// Created by Iakov Senatov on 24.02.2026.
+// Copyright © 2026 Senatov. All rights reserved.
+// Description: Floating NSPanel for toolbar customization.
+//   - First open: centered on main window (or screen fallback)
+//   - User can resize/move; position persisted via frameAutosaveName
+//   - Resizable: user can drag edges to resize
 
-    import AppKit
-    import SwiftUI
+import AppKit
+import SwiftUI
 
-    // MARK: - Toolbar Customize Coordinator
-    @MainActor
-    final class ToolbarCustomizeCoordinator {
+// MARK: - Toolbar Customize Coordinator
+@MainActor
+final class ToolbarCustomizeCoordinator {
 
-        static let shared = ToolbarCustomizeCoordinator()
-        private var panel: NSPanel?
+    static let shared = ToolbarCustomizeCoordinator()
+    private var panel: NSPanel?
 
-        private let frameAutosaveName = "MiMiNavigator.ToolbarCustomizePanel"
-        private let defaultSize = NSSize(width: 420, height: 520)
+    private let frameAutosaveName = "MiMiNavigator.ToolbarCustomizePanel"
+    private let defaultSize = NSSize(width: 420, height: 520)
 
-        private init() {}
+    private init() {}
 
-        // MARK: - Toggle
-        func toggle() {
-            if let p = panel, p.isVisible { close() } else { show() }
+    // MARK: - Toggle
+    func toggle() {
+        if let p = panel, p.isVisible { close() } else { show() }
+    }
+
+    // MARK: - Show
+    func show() {
+        log.debug("[ToolbarCustomize] show() invoked")
+
+        guard panel == nil || panel?.isVisible == false else {
+            log.debug("[ToolbarCustomize] already visible — skip")
+            return
         }
 
-        // MARK: - Show
-        func show() {
-            guard panel == nil || panel?.isVisible == false else { return }
+        let p = makePanel()
 
-            let p = NSPanel(
-                contentRect: .zero,
-                styleMask: [.titled, .closable, .resizable, .fullSizeContentView],
-                backing: .buffered,
-                defer: false
-            )
-            p.titlebarAppearsTransparent = false
-            PanelTitleHelper.applyIconTitle(to: p, systemImage: "wrench.adjustable", title: "Customize Toolbar")
-            p.isFloatingPanel = false
-            p.becomesKeyOnlyIfNeeded = false
-            p.isMovableByWindowBackground = true
-            p.level = .normal
-            p.contentView = NSHostingView(rootView: ToolbarCustomizeView())
-            p.hasShadow = true
-            p.animationBehavior = .utilityWindow
-            p.backgroundColor = NSColor(DialogColors.base)
-            p.minSize = NSSize(width: 360, height: 420)
+        restoreOrApplyDefaultFrame(for: p)
+        p.setFrameAutosaveName(frameAutosaveName)
 
-            // Restore saved frame, or default to center of main window
-            if !p.setFrameUsingName(frameAutosaveName) {
-                p.setFrame(defaultFrame(), display: false)
-            }
-            p.setFrameAutosaveName(frameAutosaveName)
+        p.makeKeyAndOrderFront(nil)
+        self.panel = p
 
-            p.makeKeyAndOrderFront(nil)
-            self.panel = p
-            log.info("[ToolbarCustomize] opened")
-        }
+        log.info("[ToolbarCustomize] opened ✓")
+    }
 
-        // MARK: - Close
-        func close() {
-            panel?.orderOut(nil)
-            panel = nil
-            log.info("[ToolbarCustomize] closed")
-        }
+    // MARK: - Panel Factory
 
-        // MARK: - Default: centered on main window
-        private func defaultFrame() -> NSRect {
-            let size = defaultSize
-            if let win = NSApp.mainWindow ?? NSApp.windows.first(where: { $0.isVisible && !($0 is NSPanel) }) {
-                let mf = win.frame
-                let x  = mf.midX - size.width  / 2
-                let y  = mf.midY - size.height / 2
-                return NSRect(origin: NSPoint(x: x, y: y), size: size)
-            }
-            // screen fallback
-            let sf = NSScreen.main?.visibleFrame ?? NSRect(x: 0, y: 0, width: 1280, height: 800)
-            return NSRect(
-                x: sf.midX - size.width  / 2,
-                y: sf.midY - size.height / 2,
-                width: size.width, height: size.height
-            )
+    private func makePanel() -> NSPanel {
+        let p = NSPanel(
+            contentRect: .zero,
+            styleMask: [.titled, .closable, .resizable, .fullSizeContentView],
+            backing: .buffered,
+            defer: false
+        )
+
+        configure(panel: p)
+        return p
+    }
+
+    private func configure(panel p: NSPanel) {
+        log.debug("[ToolbarCustomize] configuring panel")
+        p.titlebarAppearsTransparent = false
+        PanelTitleHelper.applyIconTitle(to: p, systemImage: "wrench.adjustable", title: "Customize Toolbar")
+        p.isFloatingPanel = false
+        p.becomesKeyOnlyIfNeeded = false
+        p.isMovableByWindowBackground = true
+        p.level = .normal
+        p.contentView = NSHostingView(rootView: ToolbarCustomizeView())
+        p.hasShadow = true
+        p.animationBehavior = .utilityWindow
+        p.backgroundColor = NSColor(DialogColors.base)
+        p.minSize = NSSize(width: 360, height: 420)
+    }
+
+    // MARK: - Frame Management
+
+    private func restoreOrApplyDefaultFrame(for panel: NSPanel) {
+        log.debug(#function + "()")
+        if panel.setFrameUsingName(frameAutosaveName) {
+            log.debug("[ToolbarCustomize] restored frame from autosave")
+        } else {
+            let df = defaultFrame()
+            panel.setFrame(df, display: false)
+            log.debug("[ToolbarCustomize] applied default frame: \(df)")
         }
     }
+
+    // MARK: - Close
+    func close() {
+        log.debug("[ToolbarCustomize] close() invoked")
+        guard let p = panel else {
+            log.debug("[ToolbarCustomize] no panel — skip")
+            return
+        }
+        p.orderOut(nil)
+        panel = nil
+
+        log.info("[ToolbarCustomize] closed ✓")
+    }
+
+    // MARK: - Default: centered on main window
+    private func defaultFrame() -> NSRect {
+        log.debug(#function + "()")
+        let size = defaultSize
+        if let win = NSApp.mainWindow ?? NSApp.windows.first(where: { $0.isVisible && !($0 is NSPanel) }) {
+            let mf = win.frame
+            let x = mf.midX - size.width / 2
+            let y = mf.midY - size.height / 2
+            let rect = NSRect(origin: NSPoint(x: x, y: y), size: size)
+            log.debug("[ToolbarCustomize] default frame from window: \(rect)")
+            return rect
+        }
+        let sf = NSScreen.main?.visibleFrame ?? NSRect(x: 0, y: 0, width: 1280, height: 800)
+        let rect = NSRect(
+            x: sf.midX - size.width / 2,
+            y: sf.midY - size.height / 2,
+            width: size.width, height: size.height
+        )
+        log.debug("[ToolbarCustomize] default frame from screen fallback: \(rect)")
+        return rect
+    }
+}
