@@ -36,15 +36,15 @@ struct DuoPanelBottomToolbarSection: View {
         let store = HotKeyStore.shared
         VStack(spacing: 0) {
             HStack(spacing: Layout.toolbarButtonSpacing) {
-                makeButton(title: store.buttonLabel(L10n.Toolbar.view, for: .viewFile), icon: "eye.circle", action: onView)
-                makeButton(title: store.buttonLabel(L10n.Toolbar.edit, for: .editFile), icon: "pencil", action: onEdit)
-                makeButton(title: store.buttonLabel(L10n.Toolbar.copy, for: .copyFile), icon: "doc.on.doc", action: onCopy)
-                makeButton(title: store.buttonLabel(L10n.Toolbar.move, for: .moveFile), icon: "square.and.arrow.down.on.square", action: onMove)
-                makeButton(title: store.buttonLabel(L10n.Toolbar.newFolder, for: .newFolder), icon: "folder.badge.plus", action: onNewFolder)
-                makeButton(title: store.buttonLabel(L10n.Toolbar.delete, for: .deleteFile), icon: "minus.rectangle", action: onDelete)
-                makeButton(title: store.buttonLabel(L10n.Toolbar.settings, for: .openSettings), icon: "gearshape", action: onSettings)
-                makeButton(title: L10n.Toolbar.console, icon: "terminal", action: onConsole)
-                makeButton(title: store.buttonLabel(L10n.Toolbar.exit, for: .exitApp), icon: "power", action: onExit)
+                downToolBarButton(title: store.buttonLabel(L10n.Toolbar.view, for: .viewFile), icon: "eye.circle", action: onView)
+                downToolBarButton(title: store.buttonLabel(L10n.Toolbar.edit, for: .editFile), icon: "pencil", action: onEdit)
+                downToolBarButton(title: store.buttonLabel(L10n.Toolbar.copy, for: .copyFile), icon: "doc.on.doc", action: onCopy)
+                downToolBarButton(title: store.buttonLabel(L10n.Toolbar.move, for: .moveFile), icon: "square.and.arrow.down.on.square", action: onMove)
+                downToolBarButton(title: store.buttonLabel(L10n.Toolbar.newFolder, for: .newFolder), icon: "folder.badge.plus", action: onNewFolder)
+                downToolBarButton(title: store.buttonLabel(L10n.Toolbar.delete, for: .deleteFile), icon: "document.on.trash", action: onDelete)
+                downToolBarButton(title: store.buttonLabel(L10n.Toolbar.settings, for: .openSettings), icon: "gearshape", action: onSettings)
+                downToolBarButton(title: L10n.Toolbar.console, icon: "terminal", action: onConsole)
+                downToolBarButton(title: store.buttonLabel(L10n.Toolbar.exit, for: .exitApp), icon: "power", action: onExit)
             }
             .frame(maxWidth: .infinity)
             .padding(.horizontal, Layout.toolbarHorizontalPadding)
@@ -57,7 +57,7 @@ struct DuoPanelBottomToolbarSection: View {
         .padding(.bottom, Layout.toolbarBottomPadding)
     }
     
-    private func makeButton(title: String, icon: String, action: @escaping () -> Void) -> some View {
+    private func downToolBarButton(title: String, icon: String, action: @escaping () -> Void) -> some View {
         DownToolbarButtonView(
             title: title,
             systemImage: icon,

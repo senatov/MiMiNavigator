@@ -120,7 +120,6 @@ final class ToolbarStore {
         if ud.object(forKey: menuBarKey) != nil {
             menuBarVisible = ud.bool(forKey: menuBarKey)
         }
-
         log.info("[Toolbar] loaded — order: \(orderedIDs.map(\.rawValue)), visible: \(visibleIDs.map(\.rawValue).sorted()), menuBar=\(menuBarVisible)")
     }
 
