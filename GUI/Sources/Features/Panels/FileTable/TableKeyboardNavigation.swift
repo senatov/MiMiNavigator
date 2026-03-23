@@ -5,10 +5,7 @@
 // Copyright © 2026 Senatov. All rights reserved.
 // Description: Keyboard navigation logic for FileTableView.
 //
-// Scroll strategy: uses scrollAnchorID binding consumed by ScrollView.scrollPosition(id:).
-// SwiftUI computes the scroll offset as index * rowHeight — O(1), no cell materialization.
-// The old ScrollViewProxy.scrollTo(id:) approach was O(n) on LazyVStack:
-// SwiftUI had to materialize all cells up to the target to determine its position.
+// Keyboard navigation for FileTableView (O(1) index lookup + AppKit scrolling)
 
 import AppKit
 import FileModelKit
@@ -27,6 +24,8 @@ struct TableKeyboardNavigation {
     let onSelect: (CustomFile) -> Void
     let pageStep: Int
     let panelSide: PanelSide
+    /// Callback to move focus outside the table (e.g. to "go to parent" button)
+    let onMoveFocusToParent: (() -> Void)?
     // Injected from outside — built once when list changes, not on every keypress
     private let indexByID: [CustomFile.ID: Int]
 
@@ -39,7 +38,8 @@ struct TableKeyboardNavigation {
         scrollAnchorID: Binding<CustomFile.ID?>,
         onSelect: @escaping (CustomFile) -> Void,
         pageStep: Int = 20,
-        panelSide: PanelSide
+        panelSide: PanelSide,
+        onMoveFocusToParent: (() -> Void)? = nil
     ) {
         self.files = files
         self.indexByID = indexByID
@@ -48,72 +48,111 @@ struct TableKeyboardNavigation {
         self.onSelect = onSelect
         self.pageStep = pageStep
         self.panelSide = panelSide
+        self.onMoveFocusToParent = onMoveFocusToParent
+    }
+
+    private func resolvedIndex() -> Int? {
+        // If selection is lost (e.g. focus moved outside), fallback to top
+        guard let id = selectedID.wrappedValue else {
+            log.debug("[Nav] resolvedIndex: nil selection → fallback idx=0")
+            return files.isEmpty ? nil : 0
+        }
+
+        if let idx = indexByID[id] {
+            return idx
+        }
+
+        // fallback: parent entry at top
+        if let first = files.first,
+            first.id == id,
+            first.isParentEntry
+        {
+            log.debug("[Nav] resolvedIndex: parent entry idx=0")
+            return 0
+        }
+
+        return nil
     }
 
     // MARK: - Navigation Actions
 
     func moveUp() {
         guard !files.isEmpty else { return }
-        let idx = currentIndex()
-        selectAndScroll(at: max(0, idx - 1))
+
+        guard let idx = resolvedIndex() else {
+            log.debug("[Nav] moveUp: no resolved index")
+            return
+        }
+
+        log.debug("[Nav] ↑ idx=\(idx)")
+
+        if idx == 0 {
+            log.debug("[Nav] TOP → move focus to parent button")
+            onMoveFocusToParent?()
+            return
+        }
+
+        selectAndScroll(at: idx - 1)
     }
 
     func moveDown() {
         guard !files.isEmpty else { return }
-        let idx = currentIndex()
-        selectAndScroll(at: min(files.count - 1, idx + 1))
+
+        guard let idx = resolvedIndex() else {
+            log.debug("[Nav] moveDown: no resolved index")
+            return
+        }
+
+        let next = min(files.count - 1, idx + 1)
+
+        log.debug("[Nav] ↓ idx=\(idx) → \(next)")
+
+        selectAndScroll(at: next)
     }
 
     func pageUp() {
         guard !files.isEmpty else { return }
-        let idx = currentIndex()
-        selectAndScroll(at: max(startIndex, idx - pageStep))
+        guard let idx = resolvedIndex() else {
+            log.debug("[Nav] pageUp: no resolved index")
+            return
+        }
+        log.debug("[Nav] pageUp idx=\(idx) → \(max(0, idx - pageStep))")
+        selectAndScroll(at: max(0, idx - pageStep))
     }
 
     func pageDown() {
         guard !files.isEmpty else { return }
-        let idx = currentIndex()
+        guard let idx = resolvedIndex() else {
+            log.debug("[Nav] pageDown: no resolved index")
+            return
+        }
+        log.debug("[Nav] pageDown idx=\(idx) → \(min(files.count - 1, idx + pageStep))")
         selectAndScroll(at: min(files.count - 1, idx + pageStep))
     }
 
     func jumpToFirst() {
-        guard files.count > startIndex else { return }
-        selectAndScroll(at: startIndex)
+        guard !files.isEmpty else { return }
+        log.debug("[Nav] jumpToFirst")
+        selectAndScroll(at: 0)
     }
 
     func jumpToLast() {
         guard !files.isEmpty else { return }
+        log.debug("[Nav] jumpToLast")
         selectAndScroll(at: files.count - 1)
     }
 
     // MARK: - Private helpers
-
-    /// Returns the currently selected row index, including the parent entry if present.
-    private func currentIndex() -> Int {
-        guard let id = selectedID.wrappedValue else { return startIndex }
-
-        // Parent entry is not present in indexByID, handle explicitly.
-        if let first = files.first, first.id == id, first.isParentEntry {
-            return 0
-        }
-
-        return indexByID[id] ?? startIndex
-    }
-
-    /// Start index for real filesystem entries (skips synthetic parent row if present)
-    private var startIndex: Int {
-        files.first?.isParentEntry == true ? 1 : 0
-    }
-
     private func selectAndScroll(at index: Int) {
         // Protect against rare race conditions where the file list changes
         // between computing the index and accessing the array.
         guard files.indices.contains(index) else { return }
-        log.debug(#function)
         let t0 = Date()
         let file = files[index]
-        selectedID.wrappedValue = file.id
-        onSelect(file)
+        // Update selection only if changed to avoid redundant work
+        if selectedID.wrappedValue != file.id {
+            selectedID.wrappedValue = file.id
+        }
         // Direct NSScrollView scroll — O(1), no cell materialization.
         // NEVER fall back to SwiftUI scrollTo — it's O(n) on LazyVStack
         // and causes 1s+ freezes even for 250 files.
@@ -121,21 +160,21 @@ struct TableKeyboardNavigation {
         if !appKitOK {
             log.warning("[Nav] AppKit scroll FAILED for \(panelSide) idx=\(index) — NO fallback to SwiftUI scrollTo")
         }
+        // Call onSelect after scroll to avoid side-effects interfering with scroll timing.
+        onSelect(file)
         let ms = Int(Date().timeIntervalSince(t0) * 1000)
-        log.debug("[Nav] idx=\(index) name=\(file.nameStr) selectAndScroll=\(ms)ms indexSize=\(files.count) appKit=\(appKitOK)")
+        log.debug("[Nav] idx=\(index) name=\(file.nameStr) time=\(ms)ms appKit=\(appKitOK)")
     }
 
-    /// Directly scroll the NSScrollView underlying SwiftUI ScrollView.
-    /// Computes target offset as index * rowHeight — O(1), works for 26K+ items.
-    /// Returns false if NSScrollView not found (fallback to SwiftUI scrollTo).
+    /// AppKit scroll: index → offset (O(1))
     private func scrollViaAppKit(toIndex index: Int) -> Bool {
         guard let window = NSApp.keyWindow ?? NSApp.mainWindow ?? NSApp.windows.first(where: { $0.isVisible }) else {
-            log.debug("[Nav] scrollViaAppKit: no window found")
+            log.warning("[Nav] scroll: no window")
             return false
         }
         guard let scrollView = Self.findScrollView(in: window.contentView, panelSide: panelSide, windowWidth: window.frame.width)
         else {
-            log.debug("[Nav] scrollViaAppKit: NSScrollView not found for \(panelSide)")
+            log.warning("[Nav] scroll: no scrollView for \(panelSide)")
             return false
         }
         let rowH = FilePanelStyle.rowHeight
@@ -143,7 +182,11 @@ struct TableKeyboardNavigation {
         let targetY = CGFloat(index) * rowH + headerEstimate
         let clipHeight = scrollView.contentView.bounds.height
         let scrollY = max(0, targetY - clipHeight / 2)
-        let maxY = max(0, scrollView.documentView!.frame.height - clipHeight)
+        guard let doc = scrollView.documentView else {
+            log.warning("[Nav] scrollViaAppKit: missing documentView")
+            return false
+        }
+        let maxY = max(0, doc.frame.height - clipHeight)
         let clampedY = min(scrollY, maxY)
         scrollView.contentView.scroll(to: NSPoint(x: 0, y: clampedY))
         scrollView.reflectScrolledClipView(scrollView.contentView)

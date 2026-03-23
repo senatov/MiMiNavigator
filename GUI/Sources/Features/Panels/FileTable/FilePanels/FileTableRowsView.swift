@@ -19,42 +19,36 @@ struct FileTableRowsView: View {
     let handleFileAction: (FileAction, CustomFile) -> Void
     let handleDirectoryAction: (DirectoryAction, CustomFile) -> Void
     let handleMultiSelectionAction: (MultiSelectionAction) -> Void
+    let isParentFocused: Bool
+
+    @State private var cachedDisplayRows: [CustomFile] = []
+
+    // MARK: - Normalized Rows
+
+    private var displayRows: [CustomFile] {
+        cachedDisplayRows
+    }
 
     var body: some View {
         let currentSelectedID = selectedID
+        let displayRows = cachedDisplayRows.isEmpty ? normalizedRows(from: rows) : cachedDisplayRows
 
-        // Keep exactly one parent entry even if legacy/restored ".." row sneaks in without the flag.
-        let displayRows: [CustomFile] = {
-            var out: [CustomFile] = []
-            out.reserveCapacity(rows.count)
-
-            var seenParent = false
-            for f in rows {
-                let isParent = isParentRowCandidate(f)
-                if isParent {
-                    if seenParent {
-                        continue
-                    }
-                    seenParent = true
-                }
-                out.append(f)
-            }
-            return out
-        }()
         VStack(spacing: 0) {
             LazyVStack(alignment: .leading, spacing: 0) {
-                ForEach(Array(displayRows.enumerated()), id: \.element.id) { (i, file) in
-                    let isSelected = isRowSelected(file: file, currentSelectedID: currentSelectedID)
+                ForEach(displayRows.indices, id: \.self) { index in
+                    let file = displayRows[index]
                     let isParent = isParentRowCandidate(file)
+                    let isSelected = isRowSelected(file: file, isParent: isParent, currentSelectedID: currentSelectedID)
 
                     SizeAwareRow(
                         id: file.id,
                         isSelected: isSelected,
                         layoutVersion: layout.layoutVersion,
                         sizeVersion: file.sizeVersion,
-                        isParent: isParent
+                        isParent: isParent,
+                        isParentFocused: isParent ? isParentFocused : false
                     ) {
-                        rowContent(index: i, file: file, isSelected: isSelected)
+                        rowContent(index: index, file: file, isSelected: isSelected)
                     }
                 }
             }
@@ -63,21 +57,30 @@ struct FileTableRowsView: View {
             Color.clear
                 .frame(height: onePixel)
         }
+        .onAppear {
+            updateCache()
+        }
+        .onChange(of: rows) { _, _ in
+            updateCache()
+        }
         .transaction { $0.disablesAnimations = true }
+    }
+
+    private func updateCache() {
+        cachedDisplayRows = normalizedRows(from: rows)
     }
 
     // MARK: - Selection Check
 
-    private func isRowSelected(file: CustomFile, currentSelectedID: CustomFile.ID?) -> Bool {
+    private func isRowSelected(file: CustomFile, isParent: Bool, currentSelectedID: CustomFile.ID?) -> Bool {
         if currentSelectedID == file.id { return true }
-
-        if isParentRowCandidate(file),
-            currentSelectedID == file.urlValue.standardizedFileURL.path
-        {
-            return true
-        }
-
+        if isParentSelected(file: file, isParent: isParent, currentSelectedID: currentSelectedID) { return true }
         return false
+    }
+
+    private func isParentSelected(file: CustomFile, isParent: Bool, currentSelectedID: CustomFile.ID?) -> Bool {
+        guard isParent else { return false }
+        return currentSelectedID == file.urlValue.standardizedFileURL.path
     }
 
     // MARK: - Parent Row Detection
@@ -88,19 +91,43 @@ struct FileTableRowsView: View {
         return file.nameStr == ".."
     }
 
+    private func normalizedRows(from rows: [CustomFile]) -> [CustomFile] {
+        var normalized: [CustomFile] = []
+        normalized.reserveCapacity(rows.count)
+
+        var hasParent = false
+        for file in rows {
+            let isParent = isParentRowCandidate(file)
+            if isParent {
+                if hasParent {
+                    log.debug("[Rows] duplicate parent entry skipped: \(file.nameStr)")
+                    continue
+                }
+                hasParent = true
+            }
+            normalized.append(file)
+        }
+
+        return normalized
+    }
+
     // MARK: - Row Content
 
     @ViewBuilder
     private func rowContent(index: Int, file: CustomFile, isSelected: Bool) -> some View {
-        if isParentRowCandidate(file) {
+        let isParent = isParentRowCandidate(file)
+        if isParent {
             let parentUrl = file.urlValue
             ParentEntryStripView(
                 parentUrl: parentUrl,
                 file: file,
                 isSelected: isSelected,
                 onSelect: onSelect,
-                onDoubleClick: onDoubleClick
+                onDoubleClick: onDoubleClick,
+                isFocused: isParentFocused
             )
+            .focusable(true)
+            .animation(nil, value: isParentFocused)
         } else {
             FileRow(
                 index: index,
@@ -130,6 +157,7 @@ struct SizeAwareRow<Content: View>: View, Equatable {
     let layoutVersion: Int
     let sizeVersion: Int
     let isParent: Bool
+    let isParentFocused: Bool
     @ViewBuilder let content: () -> Content
 
     nonisolated static func == (lhs: Self, rhs: Self) -> Bool {
@@ -138,6 +166,7 @@ struct SizeAwareRow<Content: View>: View, Equatable {
             && lhs.layoutVersion == rhs.layoutVersion
             && lhs.sizeVersion == rhs.sizeVersion
             && lhs.isParent == rhs.isParent
+            && lhs.isParentFocused == rhs.isParentFocused
     }
 
     var body: some View {

@@ -32,6 +32,7 @@ struct FileRow: View, Equatable {
     @State private var colorStore = ColorThemeStore.shared
     @State private var isDropTargeted: Bool = false
     @State private var isHoveringParentRow: Bool = false
+    @State private var isHoveringRow: Bool = false
 
     // MARK: - Selection colors — live from ColorThemeStore
     private var selectionActiveFill: Color { colorStore.activeTheme.selectionActive }
@@ -117,14 +118,10 @@ struct FileRow: View, Equatable {
     }
 
     private var stableContent: some View {
-        StableKeyView(
-            file.id.hashValue ^ (isSelected ? 1 : 0) ^ (isActivePanel ? 2 : 0) ^ (isDropTargeted ? 4 : 0) ^ (isMarked ? 8 : 0)
-        ) {
-            ZStack(alignment: .leading) {
-                zebraBackground
-                highlightLayer
-                rowContent
-            }
+        ZStack(alignment: .leading) {
+            zebraBackground
+            highlightLayer
+            rowContent
         }
     }
 
@@ -166,7 +163,7 @@ struct FileRow: View, Equatable {
     private var highlightLayer: some View {
         if isDropTargetActive {
             dropTargetHighlight
-        } else if isSelected {
+        } else if isSelected || isHoveringRow {
             selectionHighlight
         }
     }
@@ -188,7 +185,8 @@ struct FileRow: View, Equatable {
     }
 
     private var selectionHighlight: some View {
-        let fill = isActivePanel ? selectionActiveFill : selectionInactiveFill
+        let base = isActivePanel ? selectionActiveFill : selectionInactiveFill
+        let fill = isSelected ? base : base.opacity(0.6)
 
         return RoundedRectangle(cornerRadius: 6, style: .continuous)
             .fill(fill)
@@ -364,7 +362,6 @@ struct FileRow: View, Equatable {
     // MARK: - Parent Row View
     private func parentRowView() -> some View {
         stableContent
-            .background(parentRowHoverBackground)
             .frame(maxWidth: .infinity, alignment: .leading)
             .frame(height: FilePanelStyle.rowHeight)
             .contentShape(Rectangle())
@@ -374,15 +371,10 @@ struct FileRow: View, Equatable {
             .animation(nil, value: isSelected)
     }
 
-    private var parentRowHoverBackground: Color {
-        isHoveringParentRow
-            ? Color.accentColor.opacity(0.08)
-            : Color.clear
-    }
-
     private func handleParentHover(_ hovering: Bool) {
         withAnimation(.spring(response: 0.30, dampingFraction: 0.75, blendDuration: 0.1)) {
             isHoveringParentRow = hovering
+            isHoveringRow = hovering
         }
 
         hovering
@@ -397,6 +389,9 @@ struct FileRow: View, Equatable {
             .frame(height: FilePanelStyle.rowHeight)
             .contentShape(Rectangle())
             .gesture(rowGestures())
+            .onHover { hovering in
+                isHoveringRow = hovering
+            }
             .animation(nil, value: isSelected)
             .contextMenu { contextMenuContent }
             .modifier(

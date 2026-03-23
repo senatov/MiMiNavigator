@@ -57,6 +57,14 @@ struct FileTableView: View {
     /// O(1) scroll target — set by keyboard nav, consumed by ScrollView(.scrollPosition)
     @State var scrollAnchorID: CustomFile.ID? = nil
 
+    // MARK: - Focus State (UI navigation outside table)
+    @FocusState var focusedElement: FocusElement?
+
+    enum FocusElement {
+        case table
+        case parentButton
+    }
+
     /// Throttle for PgUp/PgDown — prevents overwhelming with rapid keypresses
     private let pageNavThrottle = KeypressThrottle(interval: 0.08)  // 80ms between page navigations
 
@@ -97,7 +105,11 @@ struct FileTableView: View {
             scrollAnchorID: $scrollAnchorID,
             onSelect: onSelect,
             pageStep: visibleRowCount,
-            panelSide: panelSide
+            panelSide: panelSide,
+            onMoveFocusToParent: {
+                log.debug("[Focus] move to parent button (from FileTableView)")
+                focusedElement = .parentButton
+            }
         )
     }
 
@@ -167,6 +179,7 @@ struct FileTableView: View {
             .animation(nil, value: selectedID)
             .transaction { $0.disablesAnimations = true }
             .focusable(true)
+            .focused($focusedElement, equals: .table)
             .focusEffectDisabled()
             .onGeometryChange(for: CGFloat.self, of: { $0.size.height }) { viewHeight = $0 }
             .onChange(of: filesVersion) { _, newValue in handleFilesVersionChange(newValue) }
@@ -180,6 +193,13 @@ struct FileTableView: View {
                 return .handled
             }
             .onKeyPress(.downArrow) {
+                // If focus is currently on parent button → return to table
+                if focusedElement == .parentButton {
+                    log.debug("[Focus] parentButton → table (↓)")
+                    focusedElement = .table
+                    return .handled
+                }
+
                 guard isFocused else { return .ignored }
                 keyboardNav.moveDown()
                 return .handled

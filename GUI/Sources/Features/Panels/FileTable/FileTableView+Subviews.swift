@@ -33,7 +33,8 @@ extension FileTableView {
                                 onDoubleClick: onDoubleClick,
                                 handleFileAction: handleFileAction,
                                 handleDirectoryAction: handleDirectoryAction,
-                                handleMultiSelectionAction: handleMultiSelectionAction
+                                handleMultiSelectionAction: handleMultiSelectionAction,
+                                isParentFocused: focusedElement == .parentButton
                             )
                         } header: {
                             TableHeaderView(

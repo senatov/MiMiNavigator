@@ -17,6 +17,8 @@ struct ParentEntryStripView: View {
     let parentURL: URL
     @State private var rowsCount: Int = 0
     @State private var isHovering = false
+    // Focus state injected from parent (keyboard navigation)
+    let isFocused: Bool
 
     // MARK: - label
     private var label: String {
@@ -36,13 +38,15 @@ struct ParentEntryStripView: View {
     init(
         parentUrl: URL, file: CustomFile, isSelected: Bool,
         onSelect: @escaping (CustomFile) -> Void,
-        onDoubleClick: @escaping (CustomFile) -> Void
+        onDoubleClick: @escaping (CustomFile) -> Void,
+        isFocused: Bool = false
     ) {
         self.parentURL = parentUrl
         self.file = file
         self.isSelected = isSelected
         self.onSelect = onSelect
         self.onDoubleClick = onDoubleClick
+        self.isFocused = isFocused
     }
 
     // MARK: - parentName
@@ -60,15 +64,26 @@ struct ParentEntryStripView: View {
 
     // MARK: - bgColor
     private var bgColor: Color {
-        isHovering
-            ? Color(#colorLiteral(red: 0.9764705896, green: 0.850980401, blue: 0.5490196347, alpha: 1))
-            : Color(#colorLiteral(red: 0.97, green: 0.97, blue: 0.97, alpha: 1))
+        if isHovering || isFocused {
+            return Color(#colorLiteral(red: 0.9764705896, green: 0.850980401, blue: 0.5490196347, alpha: 1))
+        } else {
+            return Color(#colorLiteral(red: 0.97, green: 0.97, blue: 0.97, alpha: 1))
+        }
     }
 
     // MARK: - body
     var body: some View {
         ZStack {
             bgColor
+                .overlay(
+                    RoundedRectangle(cornerRadius: 4)
+                        .stroke(
+                            (isHovering || isFocused)
+                                ? Color.accentColor.opacity(0.4)
+                                : Color.clear,
+                            lineWidth: 1
+                        )
+                )
             HStack(spacing: 4) {
                 Spacer()
                 Image(systemName: "chevron.up.2")
