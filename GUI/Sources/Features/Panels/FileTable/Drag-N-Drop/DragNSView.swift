@@ -111,19 +111,19 @@ final class DragNSView: NSView, NSDraggingSource {
     /// Returns true if drag was initiated (event consumed)
     private func handleMouseDragged(_ event: NSEvent) -> Bool {
         guard let window = self.window, event.window === window else {
-            log.debug("[DragOverlay] ignored: event window mismatch or no window")
+            //log.debug("[DragOverlay] ignored: event window mismatch or no window")
             return false
         }
         guard shouldHandlePrimaryDrag(event) else {
-            log.debug("[DragOverlay] ignored: not primary drag")
+            // Removed noisy debug log
             return false
         }
         guard !dragState.didStart, !dragState.isResize else {
-            log.debug("[DragOverlay] ignored: drag already started or mouse down on resize cursor")
+            // Removed noisy debug log
             return false
         }
         guard let mouseDownPoint = dragState.startPoint else {
-            log.debug("[DragOverlay] ignored: no mouseDown registered")
+            // Removed noisy debug log
             return false
         }
         guard resolvedDependencies() != nil else { return false }
@@ -131,17 +131,17 @@ final class DragNSView: NSView, NSDraggingSource {
         let currentWindowPoint = event.locationInWindow
         let currentPoint = convert(currentWindowPoint, from: nil)
         guard expandedBounds(tolerance: UI.dragStartTolerance).contains(currentPoint) else {
-            log.debug("[DragOverlay] ignored: drag point outside extended bounds")
+            // Removed noisy debug log
             return false
         }
         guard passedDragThreshold(from: mouseDownPoint, to: currentWindowPoint) else {
-            log.debug("[DragOverlay] ignored: below drag threshold")
+            // Removed noisy debug log
             return false
         }
 
         let selectedURLs = cachedSelection
         guard !selectedURLs.isEmpty else {
-            log.debug("[DragOverlay] drag ignored: no selection")
+            // no selection, ignore silently
             return false
         }
 
@@ -213,6 +213,6 @@ final class DragNSView: NSView, NSDraggingSource {
     func draggingSession(_ session: NSDraggingSession, endedAt screenPoint: NSPoint, operation: NSDragOperation) {
         dragState = DragState(startPoint: nil, didStart: false, isResize: false)
         cachedSelection.removeAll()
-        log.debug("[DragOverlay] drag ended operation=\(String(describing: operation.rawValue))")
+        log.debug("[DragOverlay] drag ended op=\(operation.rawValue)")
     }
 }
