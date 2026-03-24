@@ -64,10 +64,9 @@ struct FileTableView: View {
     /// Throttle for PgUp/PgDown — prevents overwhelming with rapid keypresses
     private let pageNavThrottle = KeypressThrottle(interval: 0.08)  // 80ms between page navigations
 
-    /// Temporary fallback: explicit loading flags are not exposed by AppState yet.
-    /// Keep overlay disabled until a real loading source is wired in.
+    /// Wired to AppState loading flags — true while scanner refreshes this panel
     private var isLoading: Bool {
-        false
+        appState.isLoading(panelSide)
     }
 
     // MARK: - Column Layout — singleton from ColumnLayoutStore, no Binding needed
@@ -183,17 +182,14 @@ struct FileTableView: View {
             // (SwiftUI .onDrag only supports single NSItemProvider = single file)
             DragOverlayView(panelSide: panelSide)
 
-            // Loading overlay instead of flicker
+            // Spinner only — no grey overlay, no flicker on fast dirs
             if showSpinner {
-                ZStack {
-                    Color.black.opacity(0.08)
-                        .ignoresSafeArea()
-
-                    ProgressView()
-                        .controlSize(.small)
-                        .scaleEffect(0.9)
-                }
-                .transition(.opacity)
+                ProgressView()
+                    .controlSize(.small)
+                    .scaleEffect(0.9)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .allowsHitTesting(false)
+                    .transition(.opacity)
             }
         }
 

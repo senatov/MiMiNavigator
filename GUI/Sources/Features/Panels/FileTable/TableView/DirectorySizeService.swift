@@ -252,7 +252,7 @@ actor DirectorySizeService {
     /// Returns approximate size instantly for UI display with "~" prefix.
     func shallowSize(for url: URL) async -> Int64 {
         let resolvedURL = resolveURLForSizing(url)
-        log.info("[DirectorySizeService] shallowSize start: \(resolvedURL.path)")
+        //log.info("[DirectorySizeService] shallowSize start: \(resolvedURL.path)")
         let result = await withCheckedContinuation { (continuation: CheckedContinuation<Int64, Never>) in
             queue.async { [weak self] in
                 guard let self else {

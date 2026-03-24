@@ -14,45 +14,14 @@ import Foundation
 extension AppState {
 
     /// Navigate into a directory with retry logic and spinner for slow volumes (USB, NAS).
+    /// Shows cached content instantly if available, then refreshes in background.
     func navigateToDirectory(_ newPath: String, on panel: FavPanelSide) async {
         let previousPath = path(for: panel)
         log.info("[Navigate] \(panel): '\(previousPath)' → '\(newPath)'")
 
         // --- Remote navigation handling ---
         if let remoteURL = URL(string: newPath), Self.isRemotePath(remoteURL) {
-            let manager = RemoteConnectionManager.shared
-            guard let conn = manager.activeConnection else {
-                log.error("[Navigate] \(panel): remote navigation requested but no active connection")
-                return
-            }
-
-            let remotePath = remoteURL.path.isEmpty ? "/" : remoteURL.path
-            log.info("[Navigate] \(panel): remote enter '\(remotePath)'")
-
-            do {
-                let items = try await manager.listDirectory(remotePath)
-                let files = items.map { CustomFile(remoteItem: $0) }
-                let sorted = applySorting(files)
-
-                // mountPath = "sftp://user@host[:port]/initialPath" — extract origin only
-                let displayBase = Self.remoteOrigin(from: conn.provider.mountPath)
-                // Combine clean origin + current remote path (no Container junk)
-                let cleanURL = remotePath == "/" ? displayBase
-                                                 : displayBase + remotePath
-                updatePath(cleanURL, for: panel)
-
-                if panel == .left {
-                    displayedLeftFiles = sorted
-                } else {
-                    displayedRightFiles = sorted
-                }
-
-                setSelectedFile(firstRealFile(in: sorted), for: panel)
-                log.info("[Navigate] \(panel): remote SUCCESS, \(sorted.count) files")
-            } catch {
-                log.error("[Navigate] \(panel): remote FAILED '\(remotePath)' error=\(error.localizedDescription)")
-            }
-
+            await navigateToRemoteDirectory(remoteURL, on: panel, previousPath: previousPath)
             return
         }
         // --- End remote navigation handling ---
@@ -60,6 +29,27 @@ extension AppState {
         updatePath(newPath, for: panel)
         setSelectedFile(nil, for: panel)
         multiSelectionManager?.resetAnchor(for: panel)
+
+        // --- Instant cache hit: show stale listing immediately, refresh in bg ---
+        if let cached = await DirectoryContentCache.shared.lookup(newPath) {
+            log.info("[Navigate] \(panel): cache HIT (\(cached.files.count) items, stale=\(cached.isStale))")
+            if panel == .left { displayedLeftFiles = cached.files } else { displayedRightFiles = cached.files }
+            if let f = firstRealFile(in: cached.files) { setSelectedFile(f, for: panel) }
+            // background refresh — no spinner, no blocking
+            Task { [weak self] in
+                guard let self else { return }
+                await self.scanner.clearCooldown(for: panel)
+                await self.setScannerDirectoryAndRefresh(newPath, for: panel)
+                // store fresh data in cache
+                let fresh = self.displayedFiles(for: panel)
+                if !fresh.isEmpty {
+                    await DirectoryContentCache.shared.store(path: newPath, files: fresh)
+                }
+            }
+            return
+        }
+
+        // --- Cache miss: scan with spinner + retry ---
         let spinnerTask = Task { @MainActor in
             try? await Task.sleep(for: .milliseconds(200))
             if !Task.isCancelled { navigatingPanel = panel }
@@ -72,19 +62,18 @@ extension AppState {
         for attempt in 1...maxAttempts {
             await scanner.clearCooldown(for: panel)
             await setScannerDirectoryAndRefresh(newPath, for: panel)
-            // yield so @MainActor displayedLeftFiles/Right gets the scanner write
             await MainActor.run {}
             let files = displayedFiles(for: panel)
             if !files.isEmpty && PathUtils.areEqual(path(for: panel), newPath) {
                 log.info("[Navigate] \(panel): SUCCESS on attempt \(attempt), \(files.count) files")
+                await DirectoryContentCache.shared.store(path: newPath, files: files)
                 return
             }
-            // Dir exists + readable but legitimately empty (e.g. /Library sub-dirs)
-            // Don't punish the user with a rollback in that case
             if PathUtils.areEqual(path(for: panel), newPath),
                Self.isReadableDirectory(newPath)
             {
                 log.info("[Navigate] \(panel): empty but readable dir accepted (attempt \(attempt))")
+                await DirectoryContentCache.shared.store(path: newPath, files: files)
                 return
             }
             if attempt < maxAttempts {
@@ -100,10 +89,33 @@ extension AppState {
             log.error("\(#function) \(panel): nav failed after \(maxAttempts) attempts → back to '\(previousPath)'")
             updatePath(previousPath, for: panel)
             await setScannerDirectoryAndRefresh(previousPath, for: panel)
-            // alert only for explicit user-looking paths (not system/tmp junk)
             if Self.isUserNavigablePath(newPath) {
                 Self.showNavFailAlert(path: newPath, panel: panel)
             }
+        }
+    }
+
+    // MARK: - Remote directory navigation (extracted for clean code)
+    private func navigateToRemoteDirectory(_ remoteURL: URL, on panel: FavPanelSide, previousPath: String) async {
+        let manager = RemoteConnectionManager.shared
+        guard let conn = manager.activeConnection else {
+            log.error("[Navigate] \(panel): remote nav requested but no active connection")
+            return
+        }
+        let remotePath = remoteURL.path.isEmpty ? "/" : remoteURL.path
+        log.info("[Navigate] \(panel): remote enter '\(remotePath)'")
+        do {
+            let items = try await manager.listDirectory(remotePath)
+            let files = items.map { CustomFile(remoteItem: $0) }
+            let sorted = applySorting(files)
+            let displayBase = Self.remoteOrigin(from: conn.provider.mountPath)
+            let cleanURL = remotePath == "/" ? displayBase : displayBase + remotePath
+            updatePath(cleanURL, for: panel)
+            if panel == .left { displayedLeftFiles = sorted } else { displayedRightFiles = sorted }
+            setSelectedFile(firstRealFile(in: sorted), for: panel)
+            log.info("[Navigate] \(panel): remote SUCCESS, \(sorted.count) files")
+        } catch {
+            log.error("[Navigate] \(panel): remote FAILED '\(remotePath)' error=\(error.localizedDescription)")
         }
     }
 

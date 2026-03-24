@@ -280,6 +280,12 @@ actor DualDirectoryScanner {
         cancelScan(for: side)
         lastFullScan[side] = nil
 
+        // invalidate dir cache — stale after file ops
+        let path: String = await MainActor.run {
+            side == .left ? appState.leftURL.path : appState.rightURL.path
+        }
+        await DirectoryContentCache.shared.invalidate(path)
+
         await refreshFiles(currSide: side, force: true)
     }
 
@@ -429,6 +435,8 @@ actor DualDirectoryScanner {
                 log.info("[Scan] Succeeded for \(url.path): \(sorted.count) items in \(String(format: "%.3f", duration))s")
 
                 lastFullScan[currSide] = Date()
+                // populate LRU dir cache for instant re-visits
+                await DirectoryContentCache.shared.store(path: url.path, files: sorted)
                 await updateScannedFiles(sorted, for: currSide)
                 await updateFileList(panelSide: currSide, with: sorted)
                 return
