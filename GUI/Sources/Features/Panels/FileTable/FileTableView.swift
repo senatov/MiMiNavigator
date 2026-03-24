@@ -60,6 +60,8 @@ struct FileTableView: View {
 
     @State private var showSpinner: Bool = false
     @State private var spinnerTask: Task<Void, Never>? = nil
+    /// Path for which autoFit already ran — prevents re-fitting on FSEvents refreshes
+    @State private var lastAutoFitPath: String = ""
 
     /// Throttle for PgUp/PgDown — prevents overwhelming with rapid keypresses
     private let pageNavThrottle = KeypressThrottle(interval: 0.08)  // 80ms between page navigations
@@ -286,6 +288,17 @@ struct FileTableView: View {
 
     private func handleFilesVersionChange(_: Int) {
         recomputeSortedCache()
+        autoFitColumnsIfEnabled()
+    }
+
+    /// Trigger content-aware column resize when the preference is on.
+    /// Runs only once per directory — FSEvents refreshes won't re-trigger.
+    private func autoFitColumnsIfEnabled() {
+        guard UserDefaults.standard.bool(forKey: "settings.autoFitColumnsOnNavigate") else { return }
+        let currentPath = appState.path(for: panelSide)
+        guard currentPath != lastAutoFitPath else { return }
+        lastAutoFitPath = currentPath
+        ColumnAutoFitter.autoFitAll(layout: layout, files: files)
     }
 
     private func handleSortChange<T>(_: T) {

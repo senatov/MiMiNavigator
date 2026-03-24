@@ -69,18 +69,6 @@ extension FileTableView {
         cachedSortedRows = rows
     }
 
-    // MARK: - Auto-fit helpers (still available for future use)
-    private func autoFitWidth(texts: [String], font: NSFont) -> CGFloat {
-        let attrs: [NSAttributedString.Key: Any] = [.font: font]
-        let charW = ("W" as NSString).size(withAttributes: attrs).width
-        var maxW: CGFloat = 0
-        for text in texts {
-            let w = (text as NSString).size(withAttributes: attrs).width
-            if w > maxW { maxW = w }
-        }
-        return ceil(maxW + charW)
-    }
-
     /// Register navigation callbacks so DuoFilePanelKeyboardHandler
     /// can dispatch Up/Down/PgUp/PgDown/Home/End directly through AppState
     /// instead of relying on NSEvent passthrough to SwiftUI .onKeyPress.
@@ -93,40 +81,5 @@ extension FileTableView {
             jumpToFirst: { [self] in keyboardNav.jumpToFirst() },
             jumpToLast: { [self] in keyboardNav.jumpToLast() }
         )
-    }
-    func autoFitSize() -> CGFloat {
-        autoFitWidth(
-            texts: cachedSortedFiles.map { $0.fileSizeFormatted },
-            font: .systemFont(ofSize: 12)) + 8
-    }
-
-    func autoFitDate() -> CGFloat {
-        autoFitWidth(
-            texts: cachedSortedFiles.map { $0.modifiedDateFormatted },
-            font: .systemFont(ofSize: 12)) + 12
-    }
-
-    func autoFitPermissions() -> CGFloat {
-        autoFitWidth(
-            texts: cachedSortedFiles.map { $0.permissionsFormatted },
-            font: .monospacedSystemFont(ofSize: 11, weight: .regular)) + 12
-    }
-
-    func autoFitOwner() -> CGFloat {
-        autoFitWidth(
-            texts: cachedSortedFiles.map { $0.ownerFormatted },
-            font: .systemFont(ofSize: 12)) + 12
-    }
-
-    func autoFitKind() -> CGFloat {
-        autoFitWidth(
-            texts: cachedSortedFiles.map { $0.kindFormatted },
-            font: .systemFont(ofSize: 12)) + 12
-    }
-
-    func autoFitChildCount() -> CGFloat {
-        autoFitWidth(
-            texts: cachedSortedFiles.map { $0.childCountFormatted },
-            font: .systemFont(ofSize: 12)) + 12
     }
 }

@@ -54,6 +54,7 @@ struct SettingsGeneralPane: View {
     @AppStorage("settings.showHiddenFiles")  private var showHiddenFiles: Bool = false
     @AppStorage("settings.showExtensions")   private var showExtensions: Bool = true
     @AppStorage("settings.startupPath")      private var startupPath: String = "home"
+    @AppStorage("settings.autoFitColumnsOnNavigate") private var autoFitColumnsOnNavigate: Bool = false
     @State private var selectedLanguage: AppLanguage = AppLanguage.current()
     @State private var showRestartHint: Bool = false
     @State private var scaleStore = InterfaceScaleStore.shared
@@ -186,6 +187,19 @@ struct SettingsGeneralPane: View {
 
                     SettingsRow(label: "Extensions:", help: "Always show file extensions in file names") {
                         Toggle("Always show file extensions", isOn: $showExtensions)
+                            .toggleStyle(.checkbox)
+                    }
+                }
+            }
+
+            // ── Columns ──
+            SettingsGroupBox {
+                VStack(spacing: 0) {
+                    SettingsRow(
+                        label: "Auto-fit columns:",
+                        help: "Shrink data columns to fit their content when navigating. Empty columns collapse to minimum width. Recovered space goes to the Name column."
+                    ) {
+                        Toggle("Auto-fit column widths on navigate", isOn: $autoFitColumnsOnNavigate)
                             .toggleStyle(.checkbox)
                     }
                 }
