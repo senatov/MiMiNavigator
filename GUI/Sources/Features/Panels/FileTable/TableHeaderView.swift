@@ -267,6 +267,21 @@ struct TableHeaderView: View {
             }
         }
         Divider()
+
+        // Auto-fit toggle — same key as Settings > General
+        let autoFitOn = UserDefaults.standard.bool(forKey: "settings.autoFitColumnsOnNavigate")
+        Button {
+            let newVal = !autoFitOn
+            UserDefaults.standard.set(newVal, forKey: "settings.autoFitColumnsOnNavigate")
+            if newVal {
+                let files = panelSide == .left ? appState.displayedLeftFiles : appState.displayedRightFiles
+                ColumnAutoFitter.autoFitAll(layout: layout, files: files)
+            }
+        } label: {
+            Label("Auto-fit columns on navigate", systemImage: autoFitOn ? "checkmark" : "")
+        }
+
+        Divider()
         Button("Restore Defaults") { restoreDefaults() }
     }
 
