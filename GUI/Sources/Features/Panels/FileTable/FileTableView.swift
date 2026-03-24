@@ -24,6 +24,7 @@ struct FileTableView: View {
 
     let panelSide: PanelSide
     let files: [CustomFile]
+    /// NOTE: selectedID is mapped to visible row IDs (including synthetic parent row)
     @Binding var selectedID: CustomFile.ID?
     let onSelect: (CustomFile) -> Void
     let onDoubleClick: (CustomFile) -> Void
@@ -124,6 +125,22 @@ struct FileTableView: View {
 
     var sortedRows: [CustomFile] { cachedSortedRows }
 
+    private func isParentRow(_ file: CustomFile) -> Bool {
+        ParentDirectoryEntry.isParentEntry(file) || file.nameStr == ".."
+    }
+
+    /// Compare a visible row with a selectedID, handling synthetic parent row correctly
+    private func isSameRow(_ file: CustomFile, id: CustomFile.ID?) -> Bool {
+        guard let id else { return false }
+
+        // Parent row is synthetic and may have different instances/IDs
+        if isParentRow(file) {
+            return cachedSortedRows.first(where: { isParentRow($0) })?.id == id
+        }
+
+        return file.id == id
+    }
+
     /// Current selected file ID from AppState (source of truth for keyboard navigation).
     /// For the synthetic parent-navigation row, map AppState selection to the visible row ID
     /// from cachedSortedRows, because the visible parent row may be recreated with its own ID.
@@ -132,13 +149,16 @@ struct FileTableView: View {
             return nil
         }
 
-        if selected.isParentEntry {
-            return cachedSortedRows.first(where: { $0.isParentEntry })?.id
+        // Map synthetic parent entry ("..") from AppState to the visible row instance
+        if isParentRow(selected) {
+            return cachedSortedRows.first(where: { isParentRow($0) })?.id
         }
 
         return selected.id
     }
 
+    // Note: for the parent row (".."), newID already refers to the visible row id
+    // produced by `selectedFileIDFromState` mapping above.
     private func updateSelectedIndex(for newID: CustomFile.ID?) {
         if let id = newID,
             let rowIndex = cachedSortedRows.firstIndex(where: { $0.id == id })

@@ -94,14 +94,14 @@ extension FileTableView {
         )
         .onEnded { gesture in
             switch gesture {
-            case .first:
-                // Double-click on empty area → clear marks (like Esc)
-                appState.unmarkAll(on: panelSide)
-                selectedID = nil
-            case .second:
-                // Single-click on empty area → exit multi-selection and deselect
-                appState.unmarkAll(on: panelSide)
-                selectedID = nil
+                case .first:
+                    // Double-click on empty area → clear marks (like Esc)
+                    appState.unmarkAll(on: panelSide)
+                    selectedID = nil
+                case .second:
+                    // Single-click on empty area → exit multi-selection and deselect
+                    appState.unmarkAll(on: panelSide)
+                    selectedID = nil
             }
         }
     }

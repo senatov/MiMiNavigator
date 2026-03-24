@@ -37,7 +37,10 @@ struct FileRowView: View {
 
     // MARK: - Parent entry check
     private var isParentEntry: Bool {
-        ParentDirectoryEntry.isParentEntry(file)
+        // Primary check
+        if ParentDirectoryEntry.isParentEntry(file) { return true }
+        // Fallback for synthetic rows
+        return file.nameStr == ".."
     }
 
     // MARK: - Name color
@@ -59,23 +62,18 @@ struct FileRowView: View {
     @ViewBuilder
     private func baseContent() -> some View {
         if isParentEntry {
-            parentEntryRow
+            ParentEntryStripView(
+                parentUrl: file.urlValue,
+                file: file,
+                isSelected: isSelected,
+                onSelect: onSelect,
+                onDoubleClick: onDoubleClick
+            )
         } else {
             normalFileRow
         }
     }
 
-    // MARK: - Parent entry row ("..")
-    private var parentEntryRow: some View {
-        let parentUrl = file.urlValue
-        return ParentEntryStripView(
-            parentUrl: parentUrl,
-            file: file,
-            isSelected: isSelected,
-            onSelect: onSelect,
-            onDoubleClick: onDoubleClick
-        )
-    }
 
     // MARK: - Normal file row
     private var normalFileRow: some View {
