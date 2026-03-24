@@ -33,8 +33,7 @@ extension FileTableView {
                                 onDoubleClick: onDoubleClick,
                                 handleFileAction: handleFileAction,
                                 handleDirectoryAction: handleDirectoryAction,
-                                handleMultiSelectionAction: handleMultiSelectionAction,
-                                isParentFocused: focusedElement == .parentButton
+                                handleMultiSelectionAction: handleMultiSelectionAction
                             )
                         } header: {
                             TableHeaderView(
@@ -47,7 +46,7 @@ extension FileTableView {
 
                     // 1px breathing room inside scroll content so the bottom selection border isn't clipped.
                     Color.clear
-                        .frame(height: onePixel)
+                    .frame(height: onePixel)
                 }
             }
             .background(scrollBackgroundLayer)
@@ -71,8 +70,8 @@ extension FileTableView {
 
             // Hit layer for empty area clicks. Does NOT receive events from subviews (rows).
             Color.clear
-                .contentShape(Rectangle())
-                .gesture(emptyAreaTapGesture, including: .gesture)
+            .contentShape(Rectangle())
+            .gesture(emptyAreaTapGesture, including: .gesture)
         }
     }
 
@@ -94,14 +93,14 @@ extension FileTableView {
         )
         .onEnded { gesture in
             switch gesture {
-                case .first:
-                    // Double-click on empty area → clear marks (like Esc)
-                    appState.unmarkAll(on: panelSide)
-                    selectedID = nil
-                case .second:
-                    // Single-click on empty area → exit multi-selection and deselect
-                    appState.unmarkAll(on: panelSide)
-                    selectedID = nil
+            case .first:
+                // Double-click on empty area → clear marks (like Esc)
+                appState.unmarkAll(on: panelSide)
+                selectedID = nil
+            case .second:
+                // Single-click on empty area → exit multi-selection and deselect
+                appState.unmarkAll(on: panelSide)
+                selectedID = nil
             }
         }
     }
@@ -140,23 +139,23 @@ extension FileTableView {
     private func scrollEdgeButton(icon: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: icon)
-                .font(.system(size: 9, weight: .heavy))
-                .foregroundStyle(.secondary)
-                .frame(width: Self.scrollbarWidth, height: Self.scrollbarWidth)
-                .background(
-                    RoundedRectangle(cornerRadius: 3, style: .continuous)
-                        .fill(.ultraThinMaterial)
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 3, style: .continuous)
-                        .stroke(Color.white.opacity(0.25), lineWidth: 0.5)
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 3, style: .continuous)
-                        .stroke(Color(nsColor: .separatorColor).opacity(0.6), lineWidth: 0.5)
-                )
-                .shadow(color: .black.opacity(0.12), radius: 1, x: 0, y: 1)
-                .shadow(color: .white.opacity(0.5), radius: 0.5, x: 0, y: -0.5)
+            .font(.system(size: 9, weight: .heavy))
+            .foregroundStyle(.secondary)
+            .frame(width: Self.scrollbarWidth, height: Self.scrollbarWidth)
+            .background(
+                RoundedRectangle(cornerRadius: 3, style: .continuous)
+                .fill(.ultraThinMaterial)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 3, style: .continuous)
+                .stroke(Color.white.opacity(0.25), lineWidth: 0.5)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 3, style: .continuous)
+                .stroke(Color(nsColor: .separatorColor).opacity(0.6), lineWidth: 0.5)
+            )
+            .shadow(color: .black.opacity(0.12), radius: 1, x: 0, y: 1)
+            .shadow(color: .white.opacity(0.5), radius: 0.5, x: 0, y: -0.5)
         }
         .buttonStyle(.plain)
         .contentShape(Rectangle())
@@ -178,13 +177,13 @@ extension FileTableView {
 
     var panelBorder: some View {
         RoundedRectangle(cornerRadius: 8, style: .continuous)
-            .stroke(
-                isPanelDropTargeted
-                    ? Color.accentColor.opacity(0.8)
-                    : Color.clear,
-                lineWidth: isPanelDropTargeted ? 2 : 1
-            )
-            .allowsHitTesting(false)
+        .stroke(
+            isPanelDropTargeted
+            ? Color.accentColor.opacity(0.8)
+            : Color.clear,
+            lineWidth: isPanelDropTargeted ? 2 : 1
+        )
+        .allowsHitTesting(false)
     }
 
 }

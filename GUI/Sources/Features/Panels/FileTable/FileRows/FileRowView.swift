@@ -30,9 +30,9 @@ struct FileRowView: View {
     // MARK: - View Body
     var body: some View {
         baseContent()
-            .padding(.vertical, DesignTokens.grid / 2)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .contentShape(Rectangle())
+        .padding(.vertical, DesignTokens.grid / 2)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .contentShape(Rectangle())
     }
 
     // MARK: - Parent entry check
@@ -80,62 +80,62 @@ struct FileRowView: View {
         HStack(spacing: 8) {
             ZStack(alignment: .bottomTrailing) {
                 AsyncSmartIconView(file: file)
-                    .frame(width: DesignTokens.Row.iconSize, height: DesignTokens.Row.iconSize)
-                    .opacity(iconOpacity)
-                    .allowsHitTesting(false)
+                .frame(width: DesignTokens.Row.iconSize, height: DesignTokens.Row.iconSize)
+                .opacity(iconOpacity)
+                .allowsHitTesting(false)
 
                 switch file.securityState {
-                    case .restricted:
-                        Image(systemName: "lock.square.stack")
-                            .font(.system(size: 12, weight: .bold))
-                            .foregroundStyle(
-                                Color(#colorLiteral(red: 0.3098039329, green: 0.01568627544, blue: 0.1294117719, alpha: 1))
-                            )
-                            .offset(x: 2, y: 2)
-                    case .systemProtected:
-                        Image(systemName: "shield.lefthalf.filled")
-                            .font(.system(size: 12, weight: .bold))
-                            .foregroundStyle(
-                                Color(#colorLiteral(red: 0.2745098174, green: 0.4862745106, blue: 0.1411764771, alpha: 1))
-                            )
-                            .offset(x: 2, y: 2)
-                    case .immutable:
-                        Image(systemName: "lock.fill")
-                            .font(.system(size: 12, weight: .bold))
-                            .foregroundStyle(
-                                Color(#colorLiteral(red: 0.4392156899, green: 0.01176470611, blue: 0.1921568662, alpha: 1))
-                            )
-                            .offset(x: 2, y: 2)
-                    case .brokenSymlink:
-                        Image(systemName: "exclamationmark.link")
-                            .font(.system(size: 12, weight: .bold))
-                            .foregroundStyle(
-                                Color(#colorLiteral(red: 0.2549019754, green: 0.2745098174, blue: 0.3019607961, alpha: 1))
-                            )
-                            .offset(x: 2, y: 2)
-                    case .specialDevice:
-                        Image(systemName: "cpu.fill")
-                            .font(.system(size: 12, weight: .bold))
-                            .foregroundStyle(
-                                Color(#colorLiteral(red: 0.1215686277, green: 0.01176470611, blue: 0.4235294163, alpha: 1))
-                            )
-                            .offset(x: 2, y: 2)
-                    case .normal:
-                        EmptyView()
+                case .restricted:
+                    Image(systemName: "lock.square.stack")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(
+                        Color(#colorLiteral(red: 0.3098039329, green: 0.01568627544, blue: 0.1294117719, alpha: 1))
+                    )
+                    .offset(x: 2, y: 2)
+                case .systemProtected:
+                    Image(systemName: "shield.lefthalf.filled")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(
+                        Color(#colorLiteral(red: 0.2745098174, green: 0.4862745106, blue: 0.1411764771, alpha: 1))
+                    )
+                    .offset(x: 2, y: 2)
+                case .immutable:
+                    Image(systemName: "lock.fill")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(
+                        Color(#colorLiteral(red: 0.4392156899, green: 0.01176470611, blue: 0.1921568662, alpha: 1))
+                    )
+                    .offset(x: 2, y: 2)
+                case .brokenSymlink:
+                    Image(systemName: "exclamationmark.link")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(
+                        Color(#colorLiteral(red: 0.2549019754, green: 0.2745098174, blue: 0.3019607961, alpha: 1))
+                    )
+                    .offset(x: 2, y: 2)
+                case .specialDevice:
+                    Image(systemName: "cpu.fill")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(
+                        Color(#colorLiteral(red: 0.1215686277, green: 0.01176470611, blue: 0.4235294163, alpha: 1))
+                    )
+                    .offset(x: 2, y: 2)
+                case .normal:
+                    EmptyView()
                 }
             }
             .layoutPriority(1)
             HStack(spacing: 4) {
                 if isMarked {
                     Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 12))
-                        .foregroundStyle(colorStore.activeTheme.markedFileColor)
+                    .font(.system(size: 12))
+                    .foregroundStyle(colorStore.activeTheme.markedFileColor)
                 }
                 Text(file.nameStr)
-                    .font(.system(size: Self.nameFontSize, weight: Self.nameWeight))
-                    .foregroundStyle(nameColor)
-                    .lineLimit(1)
-                    .truncationMode(.middle)
+                .font(.system(size: Self.nameFontSize, weight: Self.nameWeight))
+                .foregroundStyle(nameColor)
+                .lineLimit(1)
+                .truncationMode(.middle)
             }
             .overlay(alignment: .trailing) {
                 FileInfoButton(file: file, isSelected: isSelected)
@@ -154,13 +154,13 @@ struct FileRowView: View {
                 Group {
                     if let icon {
                         Image(nsImage: icon)
-                            .resizable()
-                            .interpolation(.high)
-                            .antialiased(true)
-                            .aspectRatio(contentMode: .fit)
+                        .resizable()
+                        .interpolation(.high)
+                        .antialiased(true)
+                        .aspectRatio(contentMode: .fit)
                     } else {
                         Image(systemName: "doc")
-                            .symbolRenderingMode(.hierarchical)
+                        .symbolRenderingMode(.hierarchical)
                     }
                 }
 
@@ -172,12 +172,12 @@ struct FileRowView: View {
             .task(id: file.urlValue.path) {
                 let path = file.urlValue.path
                 let image =
-                    await Task.detached(priority: .utility) { () -> NSImage in
-                        let img = NSWorkspace.shared.icon(forFile: path)
-                        img.size = NSSize(width: 128, height: 128)
-                        return img
-                    }
-                    .value
+                await Task.detached(priority: .utility) { () -> NSImage in
+                    let img = NSWorkspace.shared.icon(forFile: path)
+                    img.size = NSSize(width: 128, height: 128)
+                    return img
+                }
+                .value
 
                 await MainActor.run {
                     self.icon = image
@@ -189,47 +189,47 @@ struct FileRowView: View {
         @ViewBuilder
         private var lockOverlay: some View {
             Image(systemName: lockSymbol)
-                .font(.system(size: 8, weight: .medium))
-                .foregroundStyle(lockColor)
-                .background(
-                    Circle()
-                        .fill(.background.opacity(0.85))
-                        .frame(width: 11, height: 11)
-                )
-                .offset(x: 2, y: 2)
-                .help(lockTooltip)
+            .font(.system(size: 8, weight: .medium))
+            .foregroundStyle(lockColor)
+            .background(
+                Circle()
+                .fill(.background.opacity(0.85))
+                .frame(width: 11, height: 11)
+            )
+            .offset(x: 2, y: 2)
+            .help(lockTooltip)
         }
 
         private var lockSymbol: String {
             switch file.securityState {
-                case .restricted: return "lock.fill"
-                case .systemProtected: return "lock.shield.fill"
-                case .immutable: return "lock.doc.fill"
-                case .brokenSymlink: return "exclamationmark.triangle.fill"
-                case .specialDevice: return "cpu.fill"
-                case .normal: return ""
+            case .restricted: return "lock.fill"
+            case .systemProtected: return "lock.shield.fill"
+            case .immutable: return "lock.doc.fill"
+            case .brokenSymlink: return "exclamationmark.triangle.fill"
+            case .specialDevice: return "cpu.fill"
+            case .normal: return ""
             }
         }
 
         private var lockColor: Color {
             switch file.securityState {
-                case .restricted: return .orange
-                case .systemProtected: return .red
-                case .immutable: return .purple
-                case .brokenSymlink: return .yellow
-                case .specialDevice: return .gray
-                case .normal: return .clear
+            case .restricted: return .orange
+            case .systemProtected: return .red
+            case .immutable: return .purple
+            case .brokenSymlink: return .yellow
+            case .specialDevice: return .gray
+            case .normal: return .clear
             }
         }
 
         private var lockTooltip: String {
             switch file.securityState {
-                case .restricted: return "Read-only (no write access)"
-                case .systemProtected: return "System protected directory"
-                case .immutable: return "Immutable (locked file)"
-                case .brokenSymlink: return "Broken symbolic link"
-                case .specialDevice: return "Special device"
-                case .normal: return ""
+            case .restricted: return "Read-only (no write access)"
+            case .systemProtected: return "System protected directory"
+            case .immutable: return "Immutable (locked file)"
+            case .brokenSymlink: return "Broken symbolic link"
+            case .specialDevice: return "Special device"
+            case .normal: return ""
             }
         }
     }

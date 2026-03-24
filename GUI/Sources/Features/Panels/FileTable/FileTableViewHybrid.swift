@@ -42,8 +42,8 @@ struct FileTableViewHybrid: View {
 
             // Separator line
             Rectangle()
-                .fill(Color(nsColor: .separatorColor))
-                .frame(height: 1)
+            .fill(Color(nsColor: .separatorColor))
+            .frame(height: 1)
 
             // NSTableView body with glass jump buttons overlay
             ZStack(alignment: .trailing) {
@@ -64,7 +64,7 @@ struct FileTableViewHybrid: View {
                 // Glass-style jump buttons (show when > 30 files)
                 if files.count > 30 {
                     glassJumpButtons
-                        .padding(.trailing, 4)
+                    .padding(.trailing, 4)
                 }
             }
         }
@@ -79,9 +79,9 @@ struct FileTableViewHybrid: View {
         .onMoveCommand { direction in
             guard isFocused else { return }
             switch direction {
-                case .up: moveSelection(by: -1)
-                case .down: moveSelection(by: 1)
-                default: break
+            case .up: moveSelection(by: -1)
+            case .down: moveSelection(by: 1)
+            default: break
             }
         }
         .onKeyPress(.pageUp) {
@@ -125,11 +125,11 @@ struct FileTableViewHybrid: View {
     private var panelBorder: some View {
         log.debug(#function + ": Re-rendering panel border")
         return RoundedRectangle(cornerRadius: 8, style: .continuous)
-            .stroke(
-                isPanelDropTargeted ? Color.accentColor.opacity(0.8) : Color.clear,
-                lineWidth: isPanelDropTargeted ? 2 : 1
-            )
-            .allowsHitTesting(false)
+        .stroke(
+            isPanelDropTargeted ? Color.accentColor.opacity(0.8) : Color.clear,
+            lineWidth: isPanelDropTargeted ? 2 : 1
+        )
+        .allowsHitTesting(false)
     }
 
     // MARK: - Keyboard Navigation
@@ -194,25 +194,25 @@ struct FileTableViewHybrid: View {
     private func glassButton(icon: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: icon)
-                .font(.system(size: 9, weight: .bold))
-                .foregroundStyle(.secondary)
-                .frame(width: 20, height: 20)
-                .background {
-                    Capsule()
-                        .fill(.white.opacity(0.85))
-                        .shadow(color: .black.opacity(0.12), radius: 1.5, x: 0, y: 0.5)
-                }
-                .overlay {
-                    Capsule()
-                        .stroke(
-                            LinearGradient(
-                                colors: [.white.opacity(0.6), .white.opacity(0.2)],
-                                startPoint: .top,
-                                endPoint: .bottom
-                            ),
-                            lineWidth: 0.5
-                        )
-                }
+            .font(.system(size: 9, weight: .bold))
+            .foregroundStyle(.secondary)
+            .frame(width: 20, height: 20)
+            .background {
+                Capsule()
+                .fill(.white.opacity(0.85))
+                .shadow(color: .black.opacity(0.12), radius: 1.5, x: 0, y: 0.5)
+            }
+            .overlay {
+                Capsule()
+                .stroke(
+                    LinearGradient(
+                        colors: [.white.opacity(0.6), .white.opacity(0.2)],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    ),
+                    lineWidth: 0.5
+                )
+            }
         }
         .buttonStyle(.plain)
     }

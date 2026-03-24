@@ -58,14 +58,6 @@ struct FileTableView: View {
     /// O(1) scroll target — set by keyboard nav, consumed by ScrollView(.scrollPosition)
     @State var scrollAnchorID: CustomFile.ID? = nil
 
-    // MARK: - Focus State (UI navigation outside table)
-    @FocusState var focusedElement: FocusElement?
-
-    enum FocusElement {
-        case table
-        case parentButton
-    }
-
     /// Throttle for PgUp/PgDown — prevents overwhelming with rapid keypresses
     private let pageNavThrottle = KeypressThrottle(interval: 0.08)  // 80ms between page navigations
 
@@ -74,12 +66,12 @@ struct FileTableView: View {
 
     // MARK: - Init
     init(
-        panelSide: PanelSide,
-        files: [CustomFile],
-        selectedID: Binding<CustomFile.ID?>,
-        layout: ColumnLayoutModel,
-        onSelect: @escaping (CustomFile) -> Void,
-        onDoubleClick: @escaping (CustomFile) -> Void
+    panelSide: PanelSide,
+    files: [CustomFile],
+    selectedID: Binding<CustomFile.ID?>,
+    layout: ColumnLayoutModel,
+    onSelect: @escaping (CustomFile) -> Void,
+    onDoubleClick: @escaping (CustomFile) -> Void
     ) {
         self.panelSide = panelSide
         self.files = files
@@ -106,11 +98,7 @@ struct FileTableView: View {
             scrollAnchorID: $scrollAnchorID,
             onSelect: onSelect,
             pageStep: visibleRowCount,
-            panelSide: panelSide,
-            onMoveFocusToParent: {
-                log.debug("[Focus] move to parent button (from FileTableView)")
-                focusedElement = .parentButton
-            }
+            panelSide: panelSide
         )
     }
 
@@ -161,8 +149,8 @@ struct FileTableView: View {
     // produced by `selectedFileIDFromState` mapping above.
     private func updateSelectedIndex(for newID: CustomFile.ID?) {
         if let id = newID,
-            let rowIndex = cachedSortedRows.firstIndex(where: { $0.id == id })
-        {
+        let rowIndex = cachedSortedRows.firstIndex(where: { $0.id == id })
+            {
             appState.setSelectedIndex(rowIndex, for: panelSide)
         } else {
             appState.setSelectedIndex(0, for: panelSide)
@@ -173,7 +161,7 @@ struct FileTableView: View {
     var body: some View {
         let baseView = ZStack {
             mainScrollView
-                .scrollIndicators(isFocused ? .automatic : .hidden)
+            .scrollIndicators(isFocused ? .automatic : .hidden)
 
             // AppKit drop target — receives drops from other panels and external apps
             AppKitDropView(
@@ -187,66 +175,57 @@ struct FileTableView: View {
             DragOverlayView(panelSide: panelSide)
         }
 
-        return
-            baseView
+        return baseView
             .onAppear(perform: onAppear)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .padding(.horizontal, 6)
-            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-            .overlay(panelBorder)
-            .contentShape(Rectangle())
-            .animation(nil, value: isFocused)
-            .animation(nil, value: selectedID)
-            .transaction { $0.disablesAnimations = true }
-            .focusable(true)
-            .focused($focusedElement, equals: .table)
-            .focusEffectDisabled()
-            .onGeometryChange(for: CGFloat.self, of: { $0.size.height }) { viewHeight = $0 }
-            .onChange(of: filesVersion) { _, newValue in handleFilesVersionChange(newValue) }
-            .onChange(of: appState.sortKey) { _, newValue in handleSortChange(newValue) }
-            .onChange(of: appState.bSortAscending) { _, newValue in handleSortChange(newValue) }
-            .onChange(of: selectedID) { _, newValue in handleSelectionChange(newValue) }
-            .onChange(of: selectedFileIDFromState) { _, newValue in syncSelectionFromState(newValue) }
-            .onKeyPress(.upArrow) {
-                guard isFocused else { return .ignored }
-                keyboardNav.moveUp()
-                return .handled
-            }
-            .onKeyPress(.downArrow) {
-                // If focus is currently on parent button → return to table
-                if focusedElement == .parentButton {
-                    log.debug("[Focus] parentButton → table (↓)")
-                    focusedElement = .table
-                    return .handled
-                }
-
-                guard isFocused else { return .ignored }
-                keyboardNav.moveDown()
-                return .handled
-            }
-            .onKeyPress(.pageUp) {
-                guard isFocused else { return .ignored }
-                if pageNavThrottle.allow() { keyboardNav.pageUp() }
-                return .handled
-            }
-            .onKeyPress(.pageDown) {
-                guard isFocused else { return .ignored }
-                if pageNavThrottle.allow() { keyboardNav.pageDown() }
-                return .handled
-            }
-            .onKeyPress(.home) {
-                guard isFocused else { return .ignored }
-                keyboardNav.jumpToFirst()
-                return .handled
-            }
-            .onKeyPress(.end) {
-                guard isFocused else { return .ignored }
-                keyboardNav.jumpToLast()
-                return .handled
-            }
-            .onKeyPress(.escape) { handleEscape() }
-            .onReceive(jumpToFirstPublisher, perform: handleJumpToFirst)
-            .onReceive(jumpToLastPublisher, perform: handleJumpToLast)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(.horizontal, 6)
+        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .overlay(panelBorder)
+        .contentShape(Rectangle())
+        .animation(nil, value: isFocused)
+        .animation(nil, value: selectedID)
+        .transaction { $0.disablesAnimations = true }
+        .focusable(true)
+        .focusEffectDisabled()
+        .onGeometryChange(for: CGFloat.self, of: { $0.size.height }) { viewHeight = $0 }
+        .onChange(of: filesVersion) { _, newValue in handleFilesVersionChange(newValue) }
+        .onChange(of: appState.sortKey) { _, newValue in handleSortChange(newValue) }
+        .onChange(of: appState.bSortAscending) { _, newValue in handleSortChange(newValue) }
+        .onChange(of: selectedID) { _, newValue in handleSelectionChange(newValue) }
+        .onChange(of: selectedFileIDFromState) { _, newValue in syncSelectionFromState(newValue) }
+        .onKeyPress(.upArrow) {
+            guard isFocused else { return .ignored }
+            keyboardNav.moveUp()
+            return .handled
+        }
+        .onKeyPress(.downArrow) {
+            guard isFocused else { return .ignored }
+            keyboardNav.moveDown()
+            return .handled
+        }
+        .onKeyPress(.pageUp) {
+            guard isFocused else { return .ignored }
+            if pageNavThrottle.allow() { keyboardNav.pageUp() }
+            return .handled
+        }
+        .onKeyPress(.pageDown) {
+            guard isFocused else { return .ignored }
+            if pageNavThrottle.allow() { keyboardNav.pageDown() }
+            return .handled
+        }
+        .onKeyPress(.home) {
+            guard isFocused else { return .ignored }
+            keyboardNav.jumpToFirst()
+            return .handled
+        }
+        .onKeyPress(.end) {
+            guard isFocused else { return .ignored }
+            keyboardNav.jumpToLast()
+            return .handled
+        }
+        .onKeyPress(.escape) { handleEscape() }
+        .onReceive(jumpToFirstPublisher, perform: handleJumpToFirst)
+        .onReceive(jumpToLastPublisher, perform: handleJumpToLast)
     }
 
     private func onAppear() {
@@ -288,14 +267,14 @@ struct FileTableView: View {
 
     private var jumpToFirstPublisher: AnyPublisher<Notification, Never> {
         NotificationCenter.default.publisher(for: .jumpToFirst)
-            .filter { ($0.object as? PanelSide) == panelSide }
-            .eraseToAnyPublisher()
+        .filter { ($0.object as? PanelSide) == panelSide }
+        .eraseToAnyPublisher()
     }
 
     private var jumpToLastPublisher: AnyPublisher<Notification, Never> {
         NotificationCenter.default.publisher(for: .jumpToLast)
-            .filter { ($0.object as? PanelSide) == panelSide }
-            .eraseToAnyPublisher()
+        .filter { ($0.object as? PanelSide) == panelSide }
+        .eraseToAnyPublisher()
     }
 
     private func handleJumpToFirst(_: Notification) {
