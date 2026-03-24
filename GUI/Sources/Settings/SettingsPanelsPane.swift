@@ -12,18 +12,14 @@ import SwiftUI
 
 struct SettingsPanelsPane: View {
 
-    // Sync these keys with UserPreferences / AppState where wired
-    @AppStorage("settings.panels.showHiddenFiles")   private var showHiddenFiles: Bool = false
-    @AppStorage("settings.panels.showExtensions")    private var showExtensions: Bool = true
-    @AppStorage("settings.panels.showIcons")         private var showIcons: Bool = true
-    @AppStorage("settings.panels.calculateSizes")    private var calculateSizes: Bool = false
-    @AppStorage("settings.panels.highlightBorder")   private var highlightBorder: Bool = true
-    @AppStorage("settings.panels.defaultSort")       private var defaultSort: String = "name"
-    @AppStorage("settings.panels.sortAscending")     private var sortAscending: Bool = true
-    @AppStorage("settings.panels.dateFormat")        private var dateFormat: String = "short"
-    @AppStorage("settings.panels.showSizeInKB")      private var showSizeInKB: Bool = false
-    @AppStorage("settings.panels.openOnSingleClick") private var openOnSingleClick: Bool = false
-    @AppStorage("settings.panels.rowDensity")        private var rowDensity: String = "normal"
+    @State private var prefs = UserPreferences.shared
+
+    private func prefBinding<T>(_ keyPath: WritableKeyPath<PreferencesSnapshot, T>) -> Binding<T> {
+        Binding(
+            get: { prefs.snapshot[keyPath: keyPath] },
+            set: { prefs.snapshot[keyPath: keyPath] = $0; prefs.save() }
+        )
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
@@ -32,16 +28,15 @@ struct SettingsPanelsPane: View {
             SettingsGroupBox {
                 VStack(spacing: 0) {
                     SettingsRow(label: "Row height:", help: "Height of each row in the file list. Compact = dense list, Spacious = more breathing room.") {
-                        Picker("", selection: $rowDensity) {
+                        Picker("", selection: prefBinding(\.rowDensity)) {
                             ForEach(FilePanelStyle.RowDensity.allCases, id: \.rawValue) { d in
                                 Text(d.label).tag(d.rawValue)
                             }
                         }
                         .labelsHidden()
                         .frame(width: 200)
-                        .onChange(of: rowDensity) { _, _ in
-                            // FilePanelStyle.rowHeight reads UserDefaults directly — no extra action needed
-                            // Panels will pick up new height on next layout pass
+                        .onChange(of: prefs.snapshot.rowDensity) { _, _ in
+                            // panels pick up new height on next layout pass
                         }
                     }
                 }
@@ -50,24 +45,24 @@ struct SettingsPanelsPane: View {
             SettingsGroupBox {
                 VStack(spacing: 0) {
                     SettingsRow(label: "Hidden files:", help: "Show files and folders starting with dot (.)") {
-                        Toggle("Show hidden files (.dotfiles)", isOn: $showHiddenFiles)
+                        Toggle("Show hidden files (.dotfiles)", isOn: prefBinding(\.showHiddenFiles))
                             .toggleStyle(.checkbox)
                     }
                     Divider()
                     SettingsRow(label: "Extensions:", help: "Always show file extensions") {
-                        Toggle("Always show file extensions", isOn: $showExtensions)
+                        Toggle("Always show file extensions", isOn: prefBinding(\.showExtensions))
                             .toggleStyle(.checkbox)
                     }
                     Divider()
                     SettingsRow(label: "Icons:", help: "Show file and folder icons in list view") {
-                        Toggle("Show icons in file list", isOn: $showIcons)
+                        Toggle("Show icons in file list", isOn: prefBinding(\.showIcons))
                             .toggleStyle(.checkbox)
                     }
                     Divider()
                     SettingsRow(label: "Folder sizes:", help: "Calculate and show folder sizes (slower, uses du)") {
-                        Toggle("Calculate folder sizes", isOn: $calculateSizes)
+                        Toggle("Calculate folder sizes", isOn: prefBinding(\.calculateSizes))
                             .toggleStyle(.checkbox)
-                        if calculateSizes {
+                        if prefs.snapshot.calculateSizes {
                             Text("May slow down large directories")
                                 .font(.system(size: 11))
                                 .foregroundStyle(.orange)
@@ -76,7 +71,7 @@ struct SettingsPanelsPane: View {
                     }
                     Divider()
                     SettingsRow(label: "Active panel:", help: "Highlight border of the focused panel") {
-                        Toggle("Highlight active panel border", isOn: $highlightBorder)
+                        Toggle("Highlight active panel border", isOn: prefBinding(\.highlightBorder))
                             .toggleStyle(.checkbox)
                     }
                 }
@@ -87,7 +82,7 @@ struct SettingsPanelsPane: View {
                 VStack(spacing: 0) {
                     SettingsRow(label: "Default sort:", help: "Sort files by this column when opening a folder") {
                         HStack(spacing: 12) {
-                            Picker("", selection: $defaultSort) {
+                            Picker("", selection: prefBinding(\.defaultSort)) {
                                 Text("Name").tag("name")
                                 Text("Date").tag("date")
                                 Text("Size").tag("size")
@@ -95,7 +90,7 @@ struct SettingsPanelsPane: View {
                             }
                             .labelsHidden()
                             .frame(width: 110)
-                            Picker("", selection: $sortAscending) {
+                            Picker("", selection: prefBinding(\.sortAscending)) {
                                 Text("↑ Ascending").tag(true)
                                 Text("↓ Descending").tag(false)
                             }
@@ -110,7 +105,7 @@ struct SettingsPanelsPane: View {
             SettingsGroupBox {
                 VStack(spacing: 0) {
                     SettingsRow(label: "Date format:", help: "How modification date is shown in the file list") {
-                        Picker("", selection: $dateFormat) {
+                        Picker("", selection: prefBinding(\.dateFormat)) {
                             Text("Short  (14.02.26)").tag("short")
                             Text("Medium (Feb 14, 2026)").tag("medium")
                             Text("Relative (2 days ago)").tag("relative")
@@ -121,7 +116,7 @@ struct SettingsPanelsPane: View {
                     }
                     Divider()
                     SettingsRow(label: "Size display:", help: "Show file sizes in KB instead of auto-scaling") {
-                        Toggle("Always show size in KB", isOn: $showSizeInKB)
+                        Toggle("Always show size in KB", isOn: prefBinding(\.showSizeInKB))
                             .toggleStyle(.checkbox)
                     }
                 }
@@ -131,7 +126,7 @@ struct SettingsPanelsPane: View {
             SettingsGroupBox {
                 VStack(spacing: 0) {
                     SettingsRow(label: "Open on:", help: "Open files and folders with single or double click") {
-                        Picker("", selection: $openOnSingleClick) {
+                        Picker("", selection: prefBinding(\.openOnSingleClick)) {
                             Text("Double click").tag(false)
                             Text("Single click").tag(true)
                         }

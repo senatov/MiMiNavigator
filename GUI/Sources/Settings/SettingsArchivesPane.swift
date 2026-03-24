@@ -12,15 +12,16 @@ import SwiftUI
 
 struct SettingsArchivesPane: View {
 
-    @AppStorage("settings.archives.defaultCreateFormat") private var defaultCreateFormat: String = "zip"
+    @State private var prefs = UserPreferences.shared
     @State private var archivePassword: String = ArchivePasswordStore.shared.loadPassword() ?? ""
     @State private var showPassword: Bool = false
-    @AppStorage("settings.archives.openOnDoubleClick")   private var openOnDoubleClick: Bool = true
-    @AppStorage("settings.archives.confirmOnModified")   private var confirmOnModified: Bool = true
-    @AppStorage("settings.archives.autoRepack")          private var autoRepack: Bool = true
-    @AppStorage("settings.archives.compressionLevel")    private var compressionLevel: Double = 6
-    @AppStorage("settings.archives.showExtractProgress") private var showExtractProgress: Bool = true
-    @AppStorage("settings.archives.extractToSubfolder")  private var extractToSubfolder: Bool = true
+
+    private func prefBinding<T>(_ keyPath: WritableKeyPath<PreferencesSnapshot, T>) -> Binding<T> {
+        Binding(
+            get: { prefs.snapshot[keyPath: keyPath] },
+            set: { prefs.snapshot[keyPath: keyPath] = $0; prefs.save() }
+        )
+    }
 
     // Supported formats from ArchiveModels.swift
     private let formatOptions: [(tag: String, label: String)] = [
@@ -39,7 +40,7 @@ struct SettingsArchivesPane: View {
             SettingsGroupBox {
                 VStack(spacing: 0) {
                     SettingsRow(label: "Default format:", help: "Format used when creating a new archive") {
-                        Picker("", selection: $defaultCreateFormat) {
+                        Picker("", selection: prefBinding(\.archiveDefaultFormat)) {
                             ForEach(formatOptions, id: \.tag) { opt in
                                 Text(opt.label).tag(opt.tag)
                             }
@@ -51,10 +52,10 @@ struct SettingsArchivesPane: View {
                     SettingsRow(label: "Compression:", help: "Compression level: 1 = fastest, 9 = smallest file") {
                         HStack(spacing: 10) {
                             Text("Fast").font(.system(size: 11)).foregroundStyle(.secondary)
-                            Slider(value: $compressionLevel, in: 1...9, step: 1)
+                            Slider(value: prefBinding(\.archiveCompressionLevel), in: 1...9, step: 1)
                                 .frame(width: 120)
                             Text("Best").font(.system(size: 11)).foregroundStyle(.secondary)
-                            Text("\(Int(compressionLevel))").monospacedDigit()
+                            Text("\(Int(prefs.snapshot.archiveCompressionLevel))").monospacedDigit()
                                 .foregroundStyle(.secondary).frame(width: 18)
                         }
                     }
@@ -65,12 +66,12 @@ struct SettingsArchivesPane: View {
             SettingsGroupBox {
                 VStack(spacing: 0) {
                     SettingsRow(label: "Extract to:", help: "Where extracted files are placed") {
-                        Toggle("Always extract into a subfolder", isOn: $extractToSubfolder)
+                        Toggle("Always extract into a subfolder", isOn: prefBinding(\.archiveExtractToSubfolder))
                             .toggleStyle(.checkbox)
                     }
                     Divider()
                     SettingsRow(label: "Progress:", help: "Show extraction progress dialog for large archives") {
-                        Toggle("Show extract progress dialog", isOn: $showExtractProgress)
+                        Toggle("Show extract progress dialog", isOn: prefBinding(\.archiveShowExtractProgress))
                             .toggleStyle(.checkbox)
                     }
                 }
@@ -131,7 +132,7 @@ struct SettingsArchivesPane: View {
             SettingsGroupBox {
                 VStack(spacing: 0) {
                     SettingsRow(label: "Open archive:", help: "How to handle double-click on an archive file") {
-                        Picker("", selection: $openOnDoubleClick) {
+                        Picker("", selection: prefBinding(\.archiveOpenOnDoubleClick)) {
                             Text("Browse inside (navigate)").tag(true)
                             Text("Open with default app").tag(false)
                         }
@@ -140,14 +141,14 @@ struct SettingsArchivesPane: View {
                     }
                     Divider()
                     SettingsRow(label: "Modified archive:", help: "Ask before repacking when leaving a modified archive") {
-                        Toggle("Confirm repack on close", isOn: $confirmOnModified)
+                        Toggle("Confirm repack on close", isOn: prefBinding(\.archiveConfirmOnModified))
                             .toggleStyle(.checkbox)
                     }
                     Divider()
                     SettingsRow(label: "Auto-repack:", help: "Silently repack modified archives without asking (overrides confirm)") {
-                        Toggle("Auto-repack without asking", isOn: $autoRepack)
+                        Toggle("Auto-repack without asking", isOn: prefBinding(\.archiveAutoRepack))
                             .toggleStyle(.checkbox)
-                            .disabled(confirmOnModified == false)
+                            .disabled(!prefs.snapshot.archiveConfirmOnModified)
                     }
                 }
             }

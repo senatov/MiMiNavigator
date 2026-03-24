@@ -11,11 +11,15 @@ import SwiftUI
 // MARK: - ════════════════════════════════════════════
 
 struct SettingsNetworkPane: View {
-    @AppStorage("settings.network.timeoutSec")       private var timeoutSec: Double = 15
-    @AppStorage("settings.network.retryCount")       private var retryCount: Double = 3
-    @AppStorage("settings.network.savePasswords")    private var savePasswords: Bool = true
-    @AppStorage("settings.network.showInSidebar")    private var showInSidebar: Bool = true
-    @AppStorage("settings.network.autoReconnect")    private var autoReconnect: Bool = false
+
+    @State private var prefs = UserPreferences.shared
+
+    private func prefBinding<T>(_ keyPath: WritableKeyPath<PreferencesSnapshot, T>) -> Binding<T> {
+        Binding(
+            get: { prefs.snapshot[keyPath: keyPath] },
+            set: { prefs.snapshot[keyPath: keyPath] = $0; prefs.save() }
+        )
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
@@ -24,24 +28,24 @@ struct SettingsNetworkPane: View {
                 VStack(spacing: 0) {
                     SettingsRow(label: "Timeout:", help: "Connection timeout in seconds") {
                         HStack(spacing: 10) {
-                            Slider(value: $timeoutSec, in: 5...60, step: 5)
+                            Slider(value: prefBinding(\.networkTimeoutSec), in: 5...60, step: 5)
                                 .frame(width: 140)
-                            Text("\(Int(timeoutSec)) s")
+                            Text("\(Int(prefs.snapshot.networkTimeoutSec)) s")
                                 .monospacedDigit().foregroundStyle(.secondary).frame(width: 36)
                         }
                     }
                     Divider()
                     SettingsRow(label: "Retry attempts:", help: "How many times to retry on connection drop") {
                         HStack(spacing: 10) {
-                            Slider(value: $retryCount, in: 0...10, step: 1)
+                            Slider(value: prefBinding(\.networkRetryCount), in: 0...10, step: 1)
                                 .frame(width: 140)
-                            Text("\(Int(retryCount))×")
+                            Text("\(Int(prefs.snapshot.networkRetryCount))×")
                                 .monospacedDigit().foregroundStyle(.secondary).frame(width: 28)
                         }
                     }
                     Divider()
                     SettingsRow(label: "Auto-reconnect:", help: "Try to restore dropped connections automatically") {
-                        Toggle("Reconnect automatically", isOn: $autoReconnect)
+                        Toggle("Reconnect automatically", isOn: prefBinding(\.networkAutoReconnect))
                             .toggleStyle(.checkbox)
                     }
                 }
@@ -50,12 +54,12 @@ struct SettingsNetworkPane: View {
             SettingsGroupBox {
                 VStack(spacing: 0) {
                     SettingsRow(label: "Passwords:", help: "Save server passwords in macOS Keychain") {
-                        Toggle("Save passwords in Keychain", isOn: $savePasswords)
+                        Toggle("Save passwords in Keychain", isOn: prefBinding(\.networkSavePasswords))
                             .toggleStyle(.checkbox)
                     }
                     Divider()
                     SettingsRow(label: "Sidebar:", help: "Show connected servers in the Favorites sidebar") {
-                        Toggle("Show connected servers in sidebar", isOn: $showInSidebar)
+                        Toggle("Show connected servers in sidebar", isOn: prefBinding(\.networkShowInSidebar))
                             .toggleStyle(.checkbox)
                     }
                 }
