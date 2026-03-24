@@ -75,9 +75,10 @@ enum ColumnAutoFitter {
     private static func optimalWidth(for col: ColumnID, files: [CustomFile]) -> CGFloat {
         let (texts, font) = textSamples(col, files: files)
 
-        let meaningful = texts.filter { !$0.isEmpty && $0 != "-" && $0 != "–" }
+        let meaningful = texts.filter { isRealContent($0) }
         guard !meaningful.isEmpty else {
-            return col.minDragWidth
+            // all placeholders — collapse but keep icon+padding visible
+            return max(col.minDragWidth, 24)
         }
 
         let attrs: [NSAttributedString.Key: Any] = [.font: font]
@@ -89,6 +90,14 @@ enum ColumnAutoFitter {
         let headerW = col.minHeaderWidth
         let optimal = max(contentW, headerW)
         return optimal.clamped(to: col.minWidth...col.maxWidth)
+    }
+
+    /// True when the cell text carries actual data (not a placeholder dash/empty).
+    private static func isRealContent(_ text: String) -> Bool {
+        guard !text.isEmpty else { return false }
+        // catch all dash variants: "-", "–" (en), "—" (em), "―" (horizontal bar)
+        let stripped = text.trimmingCharacters(in: .whitespaces)
+        return !stripped.allSatisfy { $0 == "-" || $0 == "\u{2013}" || $0 == "\u{2014}" || $0 == "\u{2015}" }
     }
 
     /// Extract display strings and font for a column — mirrors TableHeaderView.textsAndFont
