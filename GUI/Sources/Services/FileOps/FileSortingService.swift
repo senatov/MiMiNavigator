@@ -16,21 +16,41 @@ enum FileSortingService {
 
     /// Sort files with directories first, then by specified key
     static func sort(_ items: [CustomFile], by key: SortKeysEnum, bDirection: Bool) -> [CustomFile] {
+
+        // Stable grouping priority:
+        // 0 - parent ("..")
+        // 1 - directories (including symlink dirs, excluding .app)
+        // 2 - regular files
+        // 3 - aliases (always last)
         func priority(_ item: CustomFile) -> Int {
             if ParentDirectoryEntry.isParentEntry(item) { return 0 }
-            if item.isAppBundle { return 2 }   // .app bundles sort with files, not folders
-            if isFolderLike(item) { return 1 }
+
+            if item.isAlias {
+                return 3
+            }
+
+            if isFolderLike(item) && !item.isAppBundle {
+                return 1
+            }
+
             return 2
         }
+
         let sorted = items.sorted { a, b in
+            // Parent entry must always stay at top regardless of sort direction
             let pa = priority(a)
             let pb = priority(b)
+
+            // ALWAYS enforce grouping first (critical fix)
             if pa != pb {
                 return pa < pb
             }
+
+            // Within same group — apply user-selected sort
             return compare(a, b, by: key, ascending: bDirection)
         }
-        log.debug("[FileSortingService] sorted \(sorted.count) items by=\(key) asc=\(bDirection)")
+
+        log.debug("[FileSortingService] sorted \(sorted.count) items by=\(key) asc=\(bDirection) (grouped)")
         return sorted
     }
 
@@ -67,7 +87,7 @@ enum FileSortingService {
         if da != db {
             return ascending ? (da < db) : (da > db)
         }
-        return a.nameStr.localizedCaseInsensitiveCompare(b.nameStr) == .orderedAscending
+        return compareName(a, b, ascending: ascending)
     }
 
     // MARK: -
@@ -76,14 +96,14 @@ enum FileSortingService {
         let bIsDir = isFolderLike(b) && !b.isAppBundle
         // Directories have no meaningful file size — sort them by name within their group
         if aIsDir && bIsDir {
-            return a.nameStr.localizedCaseInsensitiveCompare(b.nameStr) == .orderedAscending
+            return compareName(a, b, ascending: ascending)
         }
         let sa = a.isAppBundle ? (a.cachedAppSize ?? 0) : a.sizeInBytes
         let sb = b.isAppBundle ? (b.cachedAppSize ?? 0) : b.sizeInBytes
         if sa != sb {
             return ascending ? (sa < sb) : (sa > sb)
         }
-        return a.nameStr.localizedCaseInsensitiveCompare(b.nameStr) == .orderedAscending
+        return compareName(a, b, ascending: ascending)
     }
 
     // MARK: -
@@ -94,7 +114,7 @@ enum FileSortingService {
             let cmp = ta.localizedCaseInsensitiveCompare(tb)
             return ascending ? (cmp == .orderedAscending) : (cmp == .orderedDescending)
         }
-        return a.nameStr.localizedCaseInsensitiveCompare(b.nameStr) == .orderedAscending
+        return compareName(a, b, ascending: ascending)
     }
 
     // MARK: -
@@ -104,7 +124,7 @@ enum FileSortingService {
         if pa != pb {
             return ascending ? (pa < pb) : (pa > pb)
         }
-        return a.nameStr.localizedCaseInsensitiveCompare(b.nameStr) == .orderedAscending
+        return compareName(a, b, ascending: ascending)
     }
 
     // MARK: -
@@ -115,7 +135,7 @@ enum FileSortingService {
             let cmp = oa.localizedCaseInsensitiveCompare(ob)
             return ascending ? (cmp == .orderedAscending) : (cmp == .orderedDescending)
         }
-        return a.nameStr.localizedCaseInsensitiveCompare(b.nameStr) == .orderedAscending
+        return compareName(a, b, ascending: ascending)
     }
 
     // MARK: -
@@ -125,7 +145,7 @@ enum FileSortingService {
         if ca != cb {
             return ascending ? (ca < cb) : (ca > cb)
         }
-        return a.nameStr.localizedCaseInsensitiveCompare(b.nameStr) == .orderedAscending
+        return compareName(a, b, ascending: ascending)
     }
 
     // MARK: - Check if file should be treated as folder

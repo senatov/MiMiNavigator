@@ -224,15 +224,9 @@ extension FileRow {
 
     // MARK: -
     func hasNonZeroChildCountHint() -> Bool {
-        // Prefer real numeric value instead of formatted string (avoids race conditions and UI inconsistencies)
-        if let count = file.childCount {
-            return count > 0
-        }
-
-        // Fallback to formatted string only if raw value is unavailable
-        let raw = file.childCountFormatted.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !raw.isEmpty, raw != "0", raw != "-" else { return false }
-        return true
+        // Strictly rely on numeric model data — never UI strings
+        guard let count = file.childCount else { return false }
+        return count > 0
     }
 
     // MARK: -
