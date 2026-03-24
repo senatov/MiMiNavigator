@@ -24,7 +24,6 @@ struct ParentEntryStripView: View {
     }
 
     private let textColor = Color(#colorLiteral(red: 0.25, green: 0.25, blue: 0.27, alpha: 1))
-    private let chevronColor = Color(#colorLiteral(red: 0.50, green: 0.50, blue: 0.54, alpha: 1))
     private let dividerColor = Color(#colorLiteral(red: 0.82, green: 0.82, blue: 0.84, alpha: 1))
     let onSelect: (CustomFile) -> Void
     let onDoubleClick: (CustomFile) -> Void
@@ -61,15 +60,28 @@ struct ParentEntryStripView: View {
     // MARK: - bgColor
     private var bgColor: Color {
         if isSelected {
-            return Color(#colorLiteral(red: 0.9568627477, green: 0.6588235497, blue: 0.5450980663, alpha: 1))
+            return  Color(#colorLiteral(red: 0.9764705896, green: 0.850980401, blue: 0.5490196347, alpha: 1)).opacity(0.6)
         }
 
         if isHovering {
             return Color(#colorLiteral(red: 0.9764705896, green: 0.850980401, blue: 0.5490196347, alpha: 1)).opacity(0.6)
         }
-
-        return Color(#colorLiteral(red: 0.97, green: 0.97, blue: 0.97, alpha: 1))
+        return Color(#colorLiteral(red: 1, green: 1, blue: 1, alpha: 1))
     }
+
+    // MARK: - bgColor
+    private var fgShevronColor: Color {
+        if isSelected {
+            return  Color(#colorLiteral(red: 0.521568656, green: 0.1098039225, blue: 0.05098039284, alpha: 1)).opacity(0.6)
+        }
+
+        if isHovering {
+            return Color(#colorLiteral(red: 0.5725490451, green: 0, blue: 0.2313725501, alpha: 1)).opacity(0.6)
+        }
+        return Color(#colorLiteral(red: 0.2549019754, green: 0.2745098174, blue: 0.3019607961, alpha: 1))
+    }
+
+
 
     // MARK: - body
     var body: some View {
@@ -80,7 +92,11 @@ struct ParentEntryStripView: View {
                 Spacer()
                 Image(systemName: "chevron.up.2")
                     .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(chevronColor)
+                    .foregroundStyle(fgShevronColor)
+                Image(systemName: "chevron.up.2")
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundStyle(fgShevronColor)
+                Spacer()
                 Spacer()
                 Text(label)
                     .font(.system(size: 14, weight: .light))
@@ -91,7 +107,10 @@ struct ParentEntryStripView: View {
                 Spacer()
                 Image(systemName: "chevron.up.2")
                     .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(chevronColor)
+                    .foregroundStyle(fgShevronColor)
+                Image(systemName: "chevron.up.2")
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundStyle(fgShevronColor)
                 Spacer()
             }
             .frame(maxWidth: .infinity, alignment: .center)
