@@ -58,20 +58,29 @@ struct FileTableView: View {
     /// O(1) scroll target — set by keyboard nav, consumed by ScrollView(.scrollPosition)
     @State var scrollAnchorID: CustomFile.ID? = nil
 
+    @State private var showSpinner: Bool = false
+    @State private var spinnerTask: Task<Void, Never>? = nil
+
     /// Throttle for PgUp/PgDown — prevents overwhelming with rapid keypresses
     private let pageNavThrottle = KeypressThrottle(interval: 0.08)  // 80ms between page navigations
+
+    /// Temporary fallback: explicit loading flags are not exposed by AppState yet.
+    /// Keep overlay disabled until a real loading source is wired in.
+    private var isLoading: Bool {
+        false
+    }
 
     // MARK: - Column Layout — singleton from ColumnLayoutStore, no Binding needed
     let layout: ColumnLayoutModel
 
     // MARK: - Init
     init(
-    panelSide: PanelSide,
-    files: [CustomFile],
-    selectedID: Binding<CustomFile.ID?>,
-    layout: ColumnLayoutModel,
-    onSelect: @escaping (CustomFile) -> Void,
-    onDoubleClick: @escaping (CustomFile) -> Void
+        panelSide: PanelSide,
+        files: [CustomFile],
+        selectedID: Binding<CustomFile.ID?>,
+        layout: ColumnLayoutModel,
+        onSelect: @escaping (CustomFile) -> Void,
+        onDoubleClick: @escaping (CustomFile) -> Void
     ) {
         self.panelSide = panelSide
         self.files = files
@@ -149,8 +158,8 @@ struct FileTableView: View {
     // produced by `selectedFileIDFromState` mapping above.
     private func updateSelectedIndex(for newID: CustomFile.ID?) {
         if let id = newID,
-        let rowIndex = cachedSortedRows.firstIndex(where: { $0.id == id })
-            {
+            let rowIndex = cachedSortedRows.firstIndex(where: { $0.id == id })
+        {
             appState.setSelectedIndex(rowIndex, for: panelSide)
         } else {
             appState.setSelectedIndex(0, for: panelSide)
@@ -161,7 +170,7 @@ struct FileTableView: View {
     var body: some View {
         let baseView = ZStack {
             mainScrollView
-            .scrollIndicators(isFocused ? .automatic : .hidden)
+                .scrollIndicators(isFocused ? .automatic : .hidden)
 
             // AppKit drop target — receives drops from other panels and external apps
             AppKitDropView(
@@ -173,63 +182,97 @@ struct FileTableView: View {
             // AppKit drag source — initiates multi-file drag via NSDraggingSession
             // (SwiftUI .onDrag only supports single NSItemProvider = single file)
             DragOverlayView(panelSide: panelSide)
+
+            // Loading overlay instead of flicker
+            if showSpinner {
+                ZStack {
+                    Color.black.opacity(0.08)
+                        .ignoresSafeArea()
+
+                    ProgressView()
+                        .controlSize(.small)
+                        .scaleEffect(0.9)
+                }
+                .transition(.opacity)
+            }
         }
 
-        return baseView
+        return
+            baseView
             .onAppear(perform: onAppear)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding(.horizontal, 6)
-        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-        .overlay(panelBorder)
-        .contentShape(Rectangle())
-        .animation(nil, value: isFocused)
-        .animation(nil, value: selectedID)
-        .transaction { $0.disablesAnimations = true }
-        .focusable(true)
-        .focusEffectDisabled()
-        .onGeometryChange(for: CGFloat.self, of: { $0.size.height }) { viewHeight = $0 }
-        .onChange(of: filesVersion) { _, newValue in handleFilesVersionChange(newValue) }
-        .onChange(of: appState.sortKey) { _, newValue in handleSortChange(newValue) }
-        .onChange(of: appState.bSortAscending) { _, newValue in handleSortChange(newValue) }
-        .onChange(of: selectedID) { _, newValue in handleSelectionChange(newValue) }
-        .onChange(of: selectedFileIDFromState) { _, newValue in syncSelectionFromState(newValue) }
-        .onKeyPress(.upArrow) {
-            guard isFocused else { return .ignored }
-            keyboardNav.moveUp()
-            return .handled
-        }
-        .onKeyPress(.downArrow) {
-            guard isFocused else { return .ignored }
-            keyboardNav.moveDown()
-            return .handled
-        }
-        .onKeyPress(.pageUp) {
-            guard isFocused else { return .ignored }
-            if pageNavThrottle.allow() { keyboardNav.pageUp() }
-            return .handled
-        }
-        .onKeyPress(.pageDown) {
-            guard isFocused else { return .ignored }
-            if pageNavThrottle.allow() { keyboardNav.pageDown() }
-            return .handled
-        }
-        .onKeyPress(.home) {
-            guard isFocused else { return .ignored }
-            keyboardNav.jumpToFirst()
-            return .handled
-        }
-        .onKeyPress(.end) {
-            guard isFocused else { return .ignored }
-            keyboardNav.jumpToLast()
-            return .handled
-        }
-        .onKeyPress(.escape) { handleEscape() }
-        .onReceive(jumpToFirstPublisher, perform: handleJumpToFirst)
-        .onReceive(jumpToLastPublisher, perform: handleJumpToLast)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .padding(.horizontal, 6)
+            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .overlay(panelBorder)
+            .contentShape(Rectangle())
+            .animation(nil, value: isFocused)
+            .animation(nil, value: selectedID)
+            .animation(nil, value: filesVersion)
+            .transaction { $0.disablesAnimations = true }
+            .focusable(true)
+            .focusEffectDisabled()
+            .onGeometryChange(for: CGFloat.self, of: { $0.size.height }) { viewHeight = $0 }
+            .onChange(of: filesVersion) { _, newValue in handleFilesVersionChange(newValue) }
+            .onChange(of: appState.sortKey) { _, newValue in handleSortChange(newValue) }
+            .onChange(of: appState.bSortAscending) { _, newValue in handleSortChange(newValue) }
+            .onChange(of: selectedID) { _, newValue in handleSelectionChange(newValue) }
+            .onChange(of: selectedFileIDFromState) { _, newValue in syncSelectionFromState(newValue) }
+            .onChange(of: isLoading) { _, loading in
+                // Cancel any pending spinner task
+                spinnerTask?.cancel()
+
+                if loading {
+                    // Start a new cancellable delay task
+                    spinnerTask = Task { @MainActor in
+                        try? await Task.sleep(nanoseconds: 150_000_000)
+                        if !Task.isCancelled && isLoading {
+                            showSpinner = true
+                        }
+                    }
+                } else {
+                    showSpinner = false
+                }
+            }
+            .onKeyPress(.upArrow) {
+                guard isFocused else { return .ignored }
+                keyboardNav.moveUp()
+                return .handled
+            }
+            .onKeyPress(.downArrow) {
+                guard isFocused else { return .ignored }
+                keyboardNav.moveDown()
+                return .handled
+            }
+            .onKeyPress(.pageUp) {
+                guard isFocused else { return .ignored }
+                if pageNavThrottle.allow() { keyboardNav.pageUp() }
+                return .handled
+            }
+            .onKeyPress(.pageDown) {
+                guard isFocused else { return .ignored }
+                if pageNavThrottle.allow() { keyboardNav.pageDown() }
+                return .handled
+            }
+            .onKeyPress(.home) {
+                guard isFocused else { return .ignored }
+                keyboardNav.jumpToFirst()
+                return .handled
+            }
+            .onKeyPress(.end) {
+                guard isFocused else { return .ignored }
+                keyboardNav.jumpToLast()
+                return .handled
+            }
+            .onKeyPress(.escape) { handleEscape() }
+            .onReceive(jumpToFirstPublisher, perform: handleJumpToFirst)
+            .onReceive(jumpToLastPublisher, perform: handleJumpToLast)
+            .onDisappear {
+                spinnerTask?.cancel()
+            }
     }
 
     private func onAppear() {
-        log.debug("\(#function) FileTableView onAppear panel=\(panelSide) files.count=\(files.count)")
+        log.debug("[FileTableView] appear panel=\(panelSide) files=\(files.count)")
         log.debug("[Columns] panel=\(panelSide) column count=\(layout.columns.count)")
         recomputeSortedCache()
         registerNavigationCallbacks()
@@ -267,14 +310,14 @@ struct FileTableView: View {
 
     private var jumpToFirstPublisher: AnyPublisher<Notification, Never> {
         NotificationCenter.default.publisher(for: .jumpToFirst)
-        .filter { ($0.object as? PanelSide) == panelSide }
-        .eraseToAnyPublisher()
+            .filter { ($0.object as? PanelSide) == panelSide }
+            .eraseToAnyPublisher()
     }
 
     private var jumpToLastPublisher: AnyPublisher<Notification, Never> {
         NotificationCenter.default.publisher(for: .jumpToLast)
-        .filter { ($0.object as? PanelSide) == panelSide }
-        .eraseToAnyPublisher()
+            .filter { ($0.object as? PanelSide) == panelSide }
+            .eraseToAnyPublisher()
     }
 
     private func handleJumpToFirst(_: Notification) {

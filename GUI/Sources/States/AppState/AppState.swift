@@ -30,6 +30,43 @@ final class AppState {
     var leftFilesVersion: Int { leftPanel.filesVersion }
     var rightFilesVersion: Int { rightPanel.filesVersion }
 
+    // MARK: - Tab Managers
+    private(set) var leftTabManager: TabManager!
+    private(set) var rightTabManager: TabManager!
+
+    // MARK: - Sub-managers
+    private(set) var selectionManager: SelectionManager?
+    private(set) var multiSelectionManager: MultiSelectionManager?
+    private(set) var fileActions: FileOperationActions?
+    let selectionsHistory = SelectionsHistory()
+    var scanner: DualDirectoryScanner!
+    private(set) var leftNavigationHistory: PanelNavigationHistory!
+    private(set) var rightNavigationHistory: PanelNavigationHistory!
+    // MARK: - UI State
+    var selectedDir: DirectorySelection = .init()
+    var showFavTreePopup: Bool = false
+    var showNetworkNeighborhood: Bool = false
+
+    // MARK: - Loading State
+    /// Explicit loading flags for panels (used by UI instead of guessing from scanner)
+    var isLeftLoading: Bool = false
+    var isRightLoading: Bool = false
+
+    func isLoading(_ side: PanelSide) -> Bool {
+        side == .left ? isLeftLoading : isRightLoading
+    }
+
+    func setLoading(_ side: PanelSide, _ value: Bool) {
+        switch side {
+            case .left:
+                isLeftLoading = value
+            case .right:
+                isRightLoading = value
+        }
+    }
+
+
+
     // MARK: - Filter (bridge)
     var leftFilterQuery: String {
         get { leftPanel.filterQuery }
@@ -75,20 +112,53 @@ final class AppState {
     }
 
     func url(for panel: PanelSide) -> URL {
-        panel == .left ? leftURL : rightURL
+        switch panel {
+            case .left: return leftURL
+            case .right: return rightURL
+        }
     }
 
     func path(for panel: PanelSide) -> String {
-        panel == .left ? leftPath : rightPath
+        switch panel {
+            case .left: return leftPath
+            case .right: return rightPath
+        }
     }
 
     func setPath(_ path: String, for panel: PanelSide) {
-        log.debug(#function + " for \(panel): \(path)")
+        log.debug("[AppState] setPath panel=\(panel) path=\(path)")
         if panel == .left {
             leftURL = URL(fileURLWithPath: path)
         } else {
             rightURL = URL(fileURLWithPath: path)
         }
+    }
+
+    // MARK: - Init
+    init() {
+        log.info("[AppState] init")
+        let paths = StatePersistence.loadInitialPaths()
+        leftPanel = PanelState(currentDirectory: paths.left)
+        rightPanel = PanelState(currentDirectory: paths.right)
+        self.focusedPanel = StatePersistence.loadInitialFocus()
+        if let storedKey = MiMiDefaults.shared.string(forKey: "MiMiNavigator.sortKey"),
+            let key = SortKeysEnum(rawValue: storedKey)
+        {
+            self.sortKey = key
+        }
+        if MiMiDefaults.shared.object(forKey: "MiMiNavigator.sortAscending") != nil {
+            self.bSortAscending = MiMiDefaults.shared.bool(forKey: "MiMiNavigator.sortAscending")
+        }
+        self.leftTabManager = TabManager(panelSide: .left, initialURL: leftURL)
+        self.rightTabManager = TabManager(panelSide: .right, initialURL: rightURL)
+        self.leftNavigationHistory = PanelNavigationHistory(panel: .left)
+        self.rightNavigationHistory = PanelNavigationHistory(panel: .right)
+        if leftNavigationHistory.currentPath == nil { leftNavigationHistory.navigateTo(leftURL) }
+        if rightNavigationHistory.currentPath == nil { rightNavigationHistory.navigateTo(rightURL) }
+        self.selectionManager = SelectionManager(appState: self, history: selectionsHistory)
+        self.multiSelectionManager = MultiSelectionManager(appState: self)
+        self.fileActions = FileOperationActions(appState: self)
+        self.scanner = DualDirectoryScanner(appState: self)
     }
 
     func setURL(_ url: URL, for panel: PanelSide) {
@@ -105,10 +175,6 @@ final class AppState {
         if panel == .left { leftURL = url } else { rightURL = url }
     }
 
-    // MARK: - UI State
-    var selectedDir: DirectorySelection = .init()
-    var showFavTreePopup: Bool = false
-    var showNetworkNeighborhood: Bool = false
 
     // MARK: - Archive State (bridge)
     var leftArchiveState: ArchiveNavigationState {
@@ -184,45 +250,9 @@ final class AppState {
         set { rightPanel.visibleIndex = newValue }
     }
 
-    // MARK: - Tab Managers
-    private(set) var leftTabManager: TabManager!
-    private(set) var rightTabManager: TabManager!
 
-    // MARK: - Sub-managers
-    private(set) var selectionManager: SelectionManager?
-    private(set) var multiSelectionManager: MultiSelectionManager?
-    private(set) var fileActions: FileOperationActions?
-    let selectionsHistory = SelectionsHistory()
-    var scanner: DualDirectoryScanner!
-    private(set) var leftNavigationHistory: PanelNavigationHistory!
-    private(set) var rightNavigationHistory: PanelNavigationHistory!
 
-    // MARK: - Init
-    init() {
-        log.info("[AppState] init")
-        let paths = StatePersistence.loadInitialPaths()
-        leftPanel = PanelState(currentDirectory: paths.left)
-        rightPanel = PanelState(currentDirectory: paths.right)
-        self.focusedPanel = StatePersistence.loadInitialFocus()
-        if let storedKey = MiMiDefaults.shared.string(forKey: "MiMiNavigator.sortKey"),
-            let key = SortKeysEnum(rawValue: storedKey)
-        {
-            self.sortKey = key
-        }
-        if MiMiDefaults.shared.object(forKey: "MiMiNavigator.sortAscending") != nil {
-            self.bSortAscending = MiMiDefaults.shared.bool(forKey: "MiMiNavigator.sortAscending")
-        }
-        self.leftTabManager = TabManager(panelSide: .left, initialURL: leftURL)
-        self.rightTabManager = TabManager(panelSide: .right, initialURL: rightURL)
-        self.leftNavigationHistory = PanelNavigationHistory(panel: .left)
-        self.rightNavigationHistory = PanelNavigationHistory(panel: .right)
-        if leftNavigationHistory.currentPath == nil { leftNavigationHistory.navigateTo(leftURL) }
-        if rightNavigationHistory.currentPath == nil { rightNavigationHistory.navigateTo(rightURL) }
-        self.selectionManager = SelectionManager(appState: self, history: selectionsHistory)
-        self.multiSelectionManager = MultiSelectionManager(appState: self)
-        self.fileActions = FileOperationActions(appState: self)
-        self.scanner = DualDirectoryScanner(appState: self)
-    }
+
 
     // MARK: - Helpers
     func firstRealFile(in files: [CustomFile]) -> CustomFile? {
@@ -250,27 +280,4 @@ final class AppState {
     }
 }
 
-// MARK: - Panel Access
-extension AppState {
 
-    func panel(_ side: PanelSide) -> PanelState {
-        side == .left ? leftPanel : rightPanel
-    }
-
-    subscript(panel side: PanelSide) -> PanelState {
-        get { side == .left ? leftPanel : rightPanel }
-        set {
-            if side == .left { leftPanel = newValue } else { rightPanel = newValue }
-        }
-    }
-
-    /// Unified panel update helper (keeps mutation localized and consistent)
-    func updatePanel(_ side: PanelSide, update: (PanelState) -> Void) {
-        switch side {
-            case .left:
-                update(leftPanel)
-            case .right:
-                update(rightPanel)
-        }
-    }
-}
