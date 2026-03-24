@@ -88,7 +88,11 @@ struct FileRow: View, Equatable {
     }
 
     var isParentEntry: Bool {
-        ParentDirectoryEntry.isParentEntry(file)
+        // Primary check
+        if ParentDirectoryEntry.isParentEntry(file) { return true }
+
+        // Fallback: synthetic parent row may not have the flag
+        return file.nameStr == ".."
     }
 
     private var isMarked: Bool {

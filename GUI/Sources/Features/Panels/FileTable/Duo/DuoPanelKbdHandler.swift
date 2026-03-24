@@ -1,119 +1,119 @@
-    // DuoFilePanelKeyboardHandler.swift
-    // MiMiNavigator
-    //
-    // Created by Iakov Senatov on 27.01.2026.
-    // Copyright © 2026 Senatov. All rights reserved.
-    // Description: Keyboard shortcuts handler — uses HotKeyStore for configurable bindings
+// DuoFilePanelKeyboardHandler.swift
+// MiMiNavigator
+//
+// Created by Iakov Senatov on 27.01.2026.
+// Copyright © 2026 Senatov. All rights reserved.
+// Description: Keyboard shortcuts handler — uses HotKeyStore for configurable bindings
 
-    import AppKit
-    import Foundation
+import AppKit
+import Foundation
 
-    /// Handles keyboard shortcuts for the dual-panel file manager.
-    /// All bindings are resolved through HotKeyStore, making them user-configurable.
-    @MainActor
-    final class DuoFilePanelKeyboardHandler {
-        private var keyMonitor: Any?
-        private weak var appState: AppState?
+/// Handles keyboard shortcuts for the dual-panel file manager.
+/// All bindings are resolved through HotKeyStore, making them user-configurable.
+@MainActor
+final class DuoFilePanelKeyboardHandler {
+    private var keyMonitor: Any?
+    private weak var appState: AppState?
 
-        // Action callbacks — set by DuoFilePanelView during setup
-        var onView: (() -> Void)?
-        var onEdit: (() -> Void)?
-        var onCopy: (() -> Void)?
-        var onMove: (() -> Void)?
-        var onNewFolder: (() -> Void)?
-        var onDelete: (() -> Void)?
-        var onExit: (() -> Void)?
-        var onFindFiles: (() -> Void)?
-        var onOpenSelected: (() -> Void)?
-        var onParentDirectory: (() -> Void)?
-        var onRefreshPanels: (() -> Void)?
-        var onToggleHiddenFiles: (() -> Void)?
-        var onOpenSettings: (() -> Void)?
+    // Action callbacks — set by DuoFilePanelView during setup
+    var onView: (() -> Void)?
+    var onEdit: (() -> Void)?
+    var onCopy: (() -> Void)?
+    var onMove: (() -> Void)?
+    var onNewFolder: (() -> Void)?
+    var onDelete: (() -> Void)?
+    var onExit: (() -> Void)?
+    var onFindFiles: (() -> Void)?
+    var onOpenSelected: (() -> Void)?
+    var onParentDirectory: (() -> Void)?
+    var onRefreshPanels: (() -> Void)?
+    var onToggleHiddenFiles: (() -> Void)?
+    var onOpenSettings: (() -> Void)?
 
-        init(appState: AppState) {
-            self.appState = appState
+    init(appState: AppState) {
+        self.appState = appState
+    }
+
+    // MARK: - Registration
+
+    func register() {
+        guard keyMonitor == nil else { return }
+
+        keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
+            self?.handleKeyEvent(event)
         }
+    }
 
-        // MARK: - Registration
-
-        func register() {
-            guard keyMonitor == nil else { return }
-
-            keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
-                self?.handleKeyEvent(event)
-            }
+    func unregister() {
+        if let monitor = keyMonitor {
+            NSEvent.removeMonitor(monitor)
+            keyMonitor = nil
         }
+    }
 
-        func unregister() {
-            if let monitor = keyMonitor {
-                NSEvent.removeMonitor(monitor)
-                keyMonitor = nil
-            }
-        }
+    // MARK: - Key Event Handling
 
-        // MARK: - Key Event Handling
+    private func handleKeyEvent(_ event: NSEvent) -> NSEvent? {
+        guard let appState else { return event }
 
-        private func handleKeyEvent(_ event: NSEvent) -> NSEvent? {
-            guard let appState else { return event }
-
-            // When a modal dialog is active, pass ALL events to SwiftUI
-            // so that TextField, buttons (.keyboardShortcut(.defaultAction)),
-            // and Esc (.cancelAction) work correctly.
-            if ContextMenuCoordinator.shared.activeDialog != nil {
-                return event
-            }
-
-
-            // When text field is focused, let it handle the event
-            // (fixes Backspace/Delete not working in text fields)
-            if let responder = NSApp.keyWindow?.firstResponder,
-               responder is NSTextView || responder is NSTextField {
-                return event
-            }
-
-            let keyCode = event.keyCode
-            let modifiers = event.modifierFlags
-
-            log.debug("[KEY] keyCode=\(keyCode) (0x\(String(keyCode, radix: 16))) modifiers=\(modifiers.rawValue)")
-
-            // Shift+Up/Down: mark current file and move selection (Finder-style multi-select)
-            // Must be handled BEFORE HotKeyStore lookup, because HotKeyStore only has
-            // unmodified Up/Down bindings and won't match Shift+Arrow.
-            let cleanMods = modifiers.intersection(.deviceIndependentFlagsMask)
-                .subtracting([.function, .numericPad])
-            if cleanMods == .shift {
-                if keyCode == 0x7E { // Shift+Up
-                    appState.markCurrentAndMove(direction: -1)
-                    return nil
-                } else if keyCode == 0x7D { // Shift+Down
-                    appState.markCurrentAndMove(direction: 1)
-                    return nil
-                }
-            }
-
-            // Lookup action in HotKeyStore
-            let store = HotKeyStore.shared
-            if let action = store.action(forKeyCode: keyCode, modifiers: modifiers) {
-                return dispatch(action: action, appState: appState, event: event)
-            }
-
-            // Fallback: Space for toggle mark (special — not easily represented as a simple binding
-            // because Space also needs to work in text fields, etc.)
-            if keyCode == 0x31 && cleanMods.isEmpty {
-                log.info("[KEY] Space → Toggle mark")
-                appState.toggleMarkAndMoveNext()
-                return nil
-            }
-
+        // When a modal dialog is active, pass ALL events to SwiftUI
+        // so that TextField, buttons (.keyboardShortcut(.defaultAction)),
+        // and Esc (.cancelAction) work correctly.
+        if ContextMenuCoordinator.shared.activeDialog != nil {
             return event
         }
 
-        // MARK: - Action Dispatch
+        // When text field is focused, let it handle the event
+        // (fixes Backspace/Delete not working in text fields)
+        if let responder = NSApp.keyWindow?.firstResponder,
+            responder is NSTextView || responder is NSTextField
+        {
+            return event
+        }
 
-        /// Dispatches a resolved HotKeyAction to the appropriate callback or AppState method.
-        /// Returns nil if the event was consumed, or the original event if not.
-        private func dispatch(action: HotKeyAction, appState: AppState, event: NSEvent) -> NSEvent? {
-            switch action {
+        let keyCode = event.keyCode
+        let modifiers = event.modifierFlags
+
+        log.debug("[KEY] keyCode=\(keyCode) (0x\(String(keyCode, radix: 16))) modifiers=\(modifiers.rawValue)")
+
+        // Shift+Up/Down: mark current file and move selection (Finder-style multi-select)
+        // Must be handled BEFORE HotKeyStore lookup, because HotKeyStore only has
+        // unmodified Up/Down bindings and won't match Shift+Arrow.
+        let cleanMods = modifiers.intersection(.deviceIndependentFlagsMask)
+            .subtracting([.function, .numericPad])
+        if cleanMods == .shift {
+            if keyCode == 0x7E {  // Shift+Up
+                appState.markCurrentAndMove(direction: -1)
+                return nil
+            } else if keyCode == 0x7D {  // Shift+Down
+                appState.markCurrentAndMove(direction: 1)
+                return nil
+            }
+        }
+
+        // Lookup action in HotKeyStore
+        let store = HotKeyStore.shared
+        if let action = store.action(forKeyCode: keyCode, modifiers: modifiers) {
+            return dispatch(action: action, appState: appState, event: event)
+        }
+
+        // Fallback: Space for toggle mark (special — not easily represented as a simple binding
+        // because Space also needs to work in text fields, etc.)
+        if keyCode == 0x31 && cleanMods.isEmpty {
+            log.info("[KEY] Space → Toggle mark")
+            appState.toggleMarkAndMoveNext()
+            return nil
+        }
+
+        return event
+    }
+
+    // MARK: - Action Dispatch
+
+    /// Dispatches a resolved HotKeyAction to the appropriate callback or AppState method.
+    /// Returns nil if the event was consumed, or the original event if not.
+    private func dispatch(action: HotKeyAction, appState: AppState, event: NSEvent) -> NSEvent? {
+        switch action {
 
             // ── File Operations ──
             case .viewFile:
@@ -304,83 +304,83 @@
                 log.info("[KEY] → Exit")
                 onExit?()
                 return nil
-                
+
             // ── Extended File Operations (not keyboard-driven yet) ──
             case .packFiles, .unpackFiles, .compareContent, .syncDirectories:
                 log.debug("[KEY] Action \(action.rawValue) not bound to keyboard handler")
                 return event
-                
+
             // ── Network (handled via menu/toolbar) ──
             case .connectToServer, .networkNeighborhood:
                 log.debug("[KEY] Network action \(action.rawValue) not bound to keyboard handler")
                 return event
-            }
         }
+    }
 
-        // MARK: - Tab Helpers
+    // MARK: - Tab Helpers
 
-        /// Opens a new tab with the selected file/directory or current path
-        private func handleNewTab(appState: AppState) {
-            let panel = appState.focusedPanel
-            let selectedFile = panel == .left ? appState.selectedLeftFile : appState.selectedRightFile
-            let currentPath = appState.path(for: panel)
+    /// Opens a new tab with the selected file/directory or current path
+    private func handleNewTab(appState: AppState) {
+        let panel = appState.focusedPanel
+        let selectedFile = panel == .left ? appState.selectedLeftFile : appState.selectedRightFile
+        let currentPath = appState.path(for: panel)
 
-            let targetURL: URL
-            if let file = selectedFile {
-                if file.isDirectory || file.isSymbolicDirectory {
-                    targetURL = file.urlValue.resolvingSymlinksInPath()
-                } else if file.isArchiveFile {
-                    // Archive — delegate to context menu handler for archive opening
-                    log.info("[KEY] newTab on archive: '\(file.nameStr)'")
-                    ContextMenuCoordinator.shared.openFileInNewTab(file, panel: panel, appState: appState)
-                    return
-                } else {
-                    // Regular file — open containing directory
-                    targetURL = file.urlValue.deletingLastPathComponent()
-                }
-            } else {
-                targetURL = URL(fileURLWithPath: currentPath)
-            }
-
-            let mgr = appState.tabManager(for: panel)
-            mgr.addTab(url: targetURL)
-            log.info("[KEY] newTab panel=\(panel) path='\(targetURL.path)'")
-            syncPanelToActiveTab(appState: appState)
-        }
-
-        /// Closes the active tab on focused panel
-        private func handleCloseTab(appState: AppState) {
-            let panel = appState.focusedPanel
-            let mgr = appState.tabManager(for: panel)
-
-            guard mgr.tabs.count > 1 else {
-                log.debug("[KEY] closeTab: only one tab, ignoring")
+        let targetURL: URL
+        if let file = selectedFile {
+            if file.isDirectory || file.isSymbolicDirectory {
+                targetURL = file.urlValue.resolvingSymlinksInPath()
+            } else if file.isArchiveFile {
+                // Archive — delegate to context menu handler for archive opening
+                log.info("[KEY] newTab on archive: '\(file.nameStr)'")
+                ContextMenuCoordinator.shared.openFileInNewTab(file, panel: panel, appState: appState)
                 return
+            } else {
+                // Regular file — open containing directory
+                targetURL = file.urlValue.deletingLastPathComponent()
             }
-
-            mgr.closeActiveTab()
-            log.info("[KEY] closeTab panel=\(panel) remaining=\(mgr.tabs.count)")
-            syncPanelToActiveTab(appState: appState)
+        } else {
+            targetURL = URL(fileURLWithPath: currentPath)
         }
 
-        /// Syncs panel path/scanner to the currently active tab
-        private func syncPanelToActiveTab(appState: AppState) {
-            let panel = appState.focusedPanel
-            let mgr = appState.tabManager(for: panel)
-            let tab = mgr.activeTab
+        let mgr = appState.tabManager(for: panel)
+        mgr.addTab(url: targetURL)
+        log.info("[KEY] newTab panel=\(panel) path='\(targetURL.path)'")
+        syncPanelToActiveTab(appState: appState)
+    }
 
-            Task { @MainActor in
-                let url = tab.url
-                appState.updatePath(url, for: panel)
-                if panel == .left {
-                    await appState.scanner.setLeftDirectory(pathStr: url.path)
-                    await appState.scanner.refreshFiles(currSide: .left)
-                    await appState.refreshLeftFiles()
-                } else {
-                    await appState.scanner.setRightDirectory(pathStr: url.path)
-                    await appState.scanner.refreshFiles(currSide: .right)
-                    await appState.refreshRightFiles()
-                }
+    /// Closes the active tab on focused panel
+    private func handleCloseTab(appState: AppState) {
+        let panel = appState.focusedPanel
+        let mgr = appState.tabManager(for: panel)
+
+        guard mgr.tabs.count > 1 else {
+            log.debug("[KEY] closeTab: only one tab, ignoring")
+            return
+        }
+
+        mgr.closeActiveTab()
+        log.info("[KEY] closeTab panel=\(panel) remaining=\(mgr.tabs.count)")
+        syncPanelToActiveTab(appState: appState)
+    }
+
+    /// Syncs panel path/scanner to the currently active tab
+    private func syncPanelToActiveTab(appState: AppState) {
+        let panel = appState.focusedPanel
+        let mgr = appState.tabManager(for: panel)
+        let tab = mgr.activeTab
+
+        Task { @MainActor in
+            let url = tab.url
+            appState.updatePath(url, for: panel)
+            if panel == .left {
+                await appState.scanner.setLeftDirectory(pathStr: url.path)
+                await appState.scanner.refreshFiles(currSide: .left)
+                await appState.refreshLeftFiles()
+            } else {
+                await appState.scanner.setRightDirectory(pathStr: url.path)
+                await appState.scanner.refreshFiles(currSide: .right)
+                await appState.refreshRightFiles()
             }
         }
     }
+}

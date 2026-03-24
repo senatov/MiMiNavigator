@@ -30,6 +30,8 @@ struct TableKeyboardNavigation {
     // Injected from outside — built once when list changes, not on every keypress
     private let indexByID: [CustomFile.ID: Int]
 
+    private let logPrefix = "[Nav]"
+
     // MARK: - Init
 
     init(
@@ -55,19 +57,50 @@ struct TableKeyboardNavigation {
     func moveUp() {
         guard !files.isEmpty else { return }
         let idx = currentIndex()
-        selectAndScroll(at: max(0, idx - 1))
+
+        // Already at parent entry — do nothing
+        if idx == 0 { return }
+
+        let previousIndex = idx - 1
+
+        // Special UX: only when moving FROM first real file → parent entry
+        if idx == firstRealFileIndex {
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.7)) {
+                selectAndScroll(at: 0)
+            }
+            log.debug("\(logPrefix) ↑ from first real file → parent entry")
+            return
+        }
+
+        selectAndScroll(at: previousIndex)
     }
 
     func moveDown() {
         guard !files.isEmpty else { return }
         let idx = currentIndex()
-        selectAndScroll(at: min(files.count - 1, idx + 1))
+        let last = files.count - 1
+        if idx == last { return }
+        selectAndScroll(at: idx + 1)
     }
 
     func pageUp() {
         guard !files.isEmpty else { return }
+
         let idx = currentIndex()
-        selectAndScroll(at: max(startIndex, idx - pageStep))
+        let target = max(firstRealFileIndex, idx - pageStep)
+
+        guard files.indices.contains(target) else { return }
+
+        let file = files[target]
+        if isParentRow(file) {
+            log.error("\(logPrefix) pageUp resolved to parent entry at idx=\(target); forcing first real file")
+            if files.indices.contains(firstRealFileIndex) {
+                selectAndScroll(at: firstRealFileIndex)
+            }
+            return
+        }
+
+        selectAndScroll(at: target)
     }
 
     func pageDown() {
@@ -77,8 +110,9 @@ struct TableKeyboardNavigation {
     }
 
     func jumpToFirst() {
-        guard files.count > startIndex else { return }
-        selectAndScroll(at: startIndex)
+        guard files.indices.contains(firstRealFileIndex) else { return }
+        // Jump-to-first targets the first real file, not the synthetic parent entry.
+        selectAndScroll(at: firstRealFileIndex)
     }
 
     func jumpToLast() {
@@ -88,41 +122,55 @@ struct TableKeyboardNavigation {
 
     // MARK: - Private helpers
 
-    /// Returns the currently selected row index, including the parent entry if present.
-    private func currentIndex() -> Int {
-        guard let id = selectedID.wrappedValue else { return startIndex }
+    private func isParentRow(_ file: CustomFile) -> Bool {
+        // Primary detection
+        if ParentDirectoryEntry.isParentEntry(file) { return true }
 
-        // Parent entry is not present in indexByID, handle explicitly.
-        if let first = files.first, first.id == id, first.isParentEntry {
-            return 0
-        }
-
-        return indexByID[id] ?? startIndex
+        // Fallback: UI may provide synthetic ".." without flag
+        return file.nameStr == ".."
     }
 
-    /// Start index for real filesystem entries (skips synthetic parent row if present)
-    private var startIndex: Int {
-        files.first?.isParentEntry == true ? 1 : 0
+    /// Returns the currently selected row index, including the parent entry if present.
+    private func currentIndex() -> Int {
+        guard let id = selectedID.wrappedValue else { return firstRealFileIndex }
+
+        if let first = files.first, isParentRow(first), first.id == id {
+            return 0
+        }
+        return indexByID[id] ?? firstRealFileIndex
+    }
+
+    private func isAlreadySelected(_ file: CustomFile, index: Int) -> Bool {
+        if selectedID.wrappedValue == file.id {
+            log.debug("\(logPrefix) skip — already selected idx=\(index) name='\(file.nameStr)'")
+            return true
+        }
+        return false
+    }
+
+    /// Index of the first real filesystem entry.
+    /// The synthetic parent row ("..") is never a PageUp/jump-to-first target.
+    private var firstRealFileIndex: Int {
+        guard let first = files.first else { return 0 }
+        return isParentRow(first) ? 1 : 0
     }
 
     private func selectAndScroll(at index: Int) {
         // Protect against rare race conditions where the file list changes
         // between computing the index and accessing the array.
-        guard files.indices.contains(index) else { return }
-        log.debug(#function)
+        guard index >= 0 && index < files.count else { return }
         let t0 = Date()
         let file = files[index]
+        log.debug("\(logPrefix) resolved target idx=\(index) name='\(file.nameStr)' parent=\(isParentRow(file))")
         selectedID.wrappedValue = file.id
         onSelect(file)
-        // Direct NSScrollView scroll — O(1), no cell materialization.
-        // NEVER fall back to SwiftUI scrollTo — it's O(n) on LazyVStack
-        // and causes 1s+ freezes even for 250 files.
+        // Direct AppKit scroll (O(1)) — avoids LazyVStack materialization
         let appKitOK = scrollViaAppKit(toIndex: index)
         if !appKitOK {
-            log.warning("[Nav] AppKit scroll FAILED for \(panelSide) idx=\(index) — NO fallback to SwiftUI scrollTo")
+            log.warning("\(logPrefix) AppKit scroll FAILED for \(panelSide) idx=\(index) — NO fallback to SwiftUI scrollTo")
         }
         let ms = Int(Date().timeIntervalSince(t0) * 1000)
-        log.debug("[Nav] idx=\(index) name=\(file.nameStr) selectAndScroll=\(ms)ms indexSize=\(files.count) appKit=\(appKitOK)")
+        log.debug("\(logPrefix) select idx=\(index) name='\(file.nameStr)' time=\(ms)ms size=\(files.count) appKit=\(appKitOK)")
     }
 
     /// Directly scroll the NSScrollView underlying SwiftUI ScrollView.
@@ -130,12 +178,12 @@ struct TableKeyboardNavigation {
     /// Returns false if NSScrollView not found (fallback to SwiftUI scrollTo).
     private func scrollViaAppKit(toIndex index: Int) -> Bool {
         guard let window = NSApp.keyWindow ?? NSApp.mainWindow ?? NSApp.windows.first(where: { $0.isVisible }) else {
-            log.debug("[Nav] scrollViaAppKit: no window found")
+            log.debug("\(logPrefix) scrollViaAppKit: no window found")
             return false
         }
         guard let scrollView = Self.findScrollView(in: window.contentView, panelSide: panelSide, windowWidth: window.frame.width)
         else {
-            log.debug("[Nav] scrollViaAppKit: NSScrollView not found for \(panelSide)")
+            log.debug("\(logPrefix) scrollViaAppKit: NSScrollView not found for \(panelSide)")
             return false
         }
         let rowH = FilePanelStyle.rowHeight

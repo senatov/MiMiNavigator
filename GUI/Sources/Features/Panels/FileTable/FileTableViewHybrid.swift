@@ -6,8 +6,8 @@
 // Description: Hybrid table view that uses NSTableView for performance
 //              while keeping SwiftUI header and integration with existing architecture.
 
-import SwiftUI
 import FileModelKit
+import SwiftUI
 
 // MARK: - Hybrid File Table View
 /// Combines SwiftUI header with high-performance NSTableView body.
@@ -15,7 +15,7 @@ import FileModelKit
 struct FileTableViewHybrid: View {
     @Environment(AppState.self) var appState
     @Environment(DragDropManager.self) var dragDropManager
-    
+
     let panelSide: PanelSide
     let files: [CustomFile]
     let filesVersion: Int  // Version number for efficient change detection
@@ -23,27 +23,28 @@ struct FileTableViewHybrid: View {
     let layout: ColumnLayoutModel
     let onSelect: (CustomFile) -> Void
     let onDoubleClick: (CustomFile) -> Void
-    
+
     @State private var colorStore = ColorThemeStore.shared
     @State private var isPanelDropTargeted: Bool = false
-    
+
     private var isFocused: Bool { appState.focusedPanel == panelSide }
-    
+
     /// Background color for entire panel
     private var panelBackgroundColor: Color {
-        isFocused ? colorStore.activeTheme.warmWhite : Color(nsColor: .controlBackgroundColor)
+        log.debug(#function + ": isFocused: \(isFocused)")
+        return isFocused ? colorStore.activeTheme.warmWhite : Color(nsColor: .controlBackgroundColor)
     }
-    
+
     var body: some View {
         VStack(spacing: 0) {
             // SwiftUI header (existing, working)
             TableHeaderView(panelSide: panelSide, layout: layout, isFocused: isFocused)
-            
+
             // Separator line
             Rectangle()
                 .fill(Color(nsColor: .separatorColor))
                 .frame(height: 1)
-            
+
             // NSTableView body with glass jump buttons overlay
             ZStack(alignment: .trailing) {
                 NSFileTableView(
@@ -59,7 +60,7 @@ struct FileTableViewHybrid: View {
                     onSelect: handleSelect,
                     onDoubleClick: onDoubleClick
                 )
-                
+
                 // Glass-style jump buttons (show when > 30 files)
                 if files.count > 30 {
                     glassJumpButtons
@@ -78,9 +79,9 @@ struct FileTableViewHybrid: View {
         .onMoveCommand { direction in
             guard isFocused else { return }
             switch direction {
-            case .up: moveSelection(by: -1)
-            case .down: moveSelection(by: 1)
-            default: break
+                case .up: moveSelection(by: -1)
+                case .down: moveSelection(by: 1)
+                default: break
             }
         }
         .onKeyPress(.pageUp) {
@@ -119,56 +120,57 @@ struct FileTableViewHybrid: View {
             }
         }
     }
-    
+
     // MARK: - Panel Border
-    
     private var panelBorder: some View {
-        RoundedRectangle(cornerRadius: 8, style: .continuous)
+        log.debug(#function + ": Re-rendering panel border")
+        return RoundedRectangle(cornerRadius: 8, style: .continuous)
             .stroke(
                 isPanelDropTargeted ? Color.accentColor.opacity(0.8) : Color.clear,
                 lineWidth: isPanelDropTargeted ? 2 : 1
             )
             .allowsHitTesting(false)
     }
-    
+
     // MARK: - Keyboard Navigation
-    
+
     private func moveSelection(by delta: Int) {
         guard !files.isEmpty else { return }
-        
+        log.debug(#function + ": Moving selection by \(delta)")
         let currentIdx: Int
         if let id = selectedID, let idx = files.firstIndex(where: { $0.id == id }) {
             currentIdx = idx
         } else {
             currentIdx = delta > 0 ? -1 : files.count
         }
-        
+
         let newIdx = max(0, min(files.count - 1, currentIdx + delta))
         let file = files[newIdx]
         selectedID = file.id
         onSelect(file)
     }
-    
+
     private func selectFirst() {
         guard let first = files.first else { return }
         selectedID = first.id
         onSelect(first)
     }
-    
+
     private func selectLast() {
         guard let last = files.last else { return }
         selectedID = last.id
         onSelect(last)
     }
-    
+
     // MARK: - Selection Handler
-    
+
     private func handleSelect(_ file: CustomFile) {
+        log.debug(#function + ": Selecting file with ID \(file.id)")
         onSelect(file)
     }
-    
+
     // MARK: - Glass Jump Buttons
-    
+
     /// Frosted glass style buttons for jumping to start/end of list
     private var glassJumpButtons: some View {
         VStack(spacing: 0) {
@@ -177,17 +179,17 @@ struct FileTableViewHybrid: View {
                 selectFirst()
             }
             .help("Jump to top (Home)")
-            
+
             Spacer()
-            
-            // ▼ Jump to last  
+
+            // ▼ Jump to last
             glassButton(icon: "chevron.down.2") {
                 selectLast()
             }
             .help("Jump to bottom (End)")
         }
     }
-    
+
     /// Individual glass button — Control Center style (white pill, frosted glass)
     private func glassButton(icon: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
@@ -214,5 +216,5 @@ struct FileTableViewHybrid: View {
         }
         .buttonStyle(.plain)
     }
-    
+
 }
