@@ -66,8 +66,12 @@ enum ColumnAutoFitter {
 
     // MARK: - Private
 
-    /// Measure max text width across all files for a column.
-    /// Returns `minDragWidth` when all values are empty or placeholder ("-", "–").
+    /// Compute optimal column width based on actual cell content.
+    ///
+    /// Policy:
+    /// - **All values empty/placeholder** → collapse to `minDragWidth` (save max space)
+    /// - **Has real data** → use average text width (not max!) so common values fit
+    ///   comfortably while outliers just truncate. Clamp to `[minWidth … maxWidth]`.
     private static func optimalWidth(for col: ColumnID, files: [CustomFile]) -> CGFloat {
         let (texts, font) = textSamples(col, files: files)
 
@@ -77,11 +81,11 @@ enum ColumnAutoFitter {
         }
 
         let attrs: [NSAttributedString.Key: Any] = [.font: font]
-        let maxTextW = meaningful.reduce(CGFloat(0)) {
-            max($0, ($1 as NSString).size(withAttributes: attrs).width)
-        }
-        let padded = ceil(maxTextW + 2 * TableColumnDefaults.cellPadding + 5)
-        return min(padded, col.maxWidth)
+        let widths = meaningful.map { ($0 as NSString).size(withAttributes: attrs).width }
+
+        let avgW = widths.reduce(0, +) / CGFloat(widths.count)
+        let padded = ceil(avgW + 2 * TableColumnDefaults.cellPadding + 5)
+        return padded.clamped(to: col.minWidth...col.maxWidth)
     }
 
     /// Extract display strings and font for a column — mirrors TableHeaderView.textsAndFont
@@ -99,5 +103,13 @@ enum ColumnAutoFitter {
         case .group:          (files.map(\.groupNameFormatted),     .systemFont(ofSize: 12))
         case .name:           ([], .systemFont(ofSize: 12))
         }
+    }
+}
+
+// MARK: - CGFloat clamp
+
+private extension CGFloat {
+    func clamped(to range: ClosedRange<CGFloat>) -> CGFloat {
+        Swift.max(range.lowerBound, Swift.min(self, range.upperBound))
     }
 }
