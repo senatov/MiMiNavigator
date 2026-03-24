@@ -11,12 +11,12 @@ import Foundation
 // MARK: - Selection Operations
 extension AppState {
 
-    func select(_ file: CustomFile, on panel: PanelSide) {
+    func select(_ file: CustomFile, on panel: FavPanelSide) {
         log.debug(#function)
         selectionManager?.select(file, on: panel)
     }
 
-    func selectFileByName(_ name: String, on panel: PanelSide) {
+    func selectFileByName(_ name: String, on panel: FavPanelSide) {
         let files = displayedFiles(for: panel)
         if let match = files.first(where: { $0.nameStr == name }) {
             log.info("[Selection] selectFileByName found '\(name)' on \(panel)")
@@ -26,13 +26,13 @@ extension AppState {
         }
     }
 
-    func refreshAndSelect(name: String, on panel: PanelSide) async {
+    func refreshAndSelect(name: String, on panel: FavPanelSide) async {
         log.info("[Selection] refreshAndSelect: name='\(name)' panel=\(panel)")
         await refreshFiles(for: panel, force: true)
         selectFileByName(name, on: panel)
     }
 
-    func refreshAndSelectAfterRemoval(removedFiles: [CustomFile], on panel: PanelSide) async {
+    func refreshAndSelectAfterRemoval(removedFiles: [CustomFile], on panel: FavPanelSide) async {
         log.debug("[REFRESH] ⏱ START refreshAndSelectAfterRemoval panel=\(panel), removedFiles=\(removedFiles.map(\.nameStr))")
         
         let oldFiles = displayedFiles(for: panel)
@@ -66,7 +66,7 @@ extension AppState {
         log.debug("[REFRESH] ⏱ END refreshAndSelectAfterRemoval")
     }
 
-    func clearSelection(on panel: PanelSide) { selectionManager?.clearSelection(on: panel) }
+    func clearSelection(on panel: FavPanelSide) { selectionManager?.clearSelection(on: panel) }
 
     func clearFileSelection() {
         setSelectedFile(nil, for: focusedPanel)

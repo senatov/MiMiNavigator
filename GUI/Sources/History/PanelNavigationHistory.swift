@@ -25,7 +25,7 @@ final class PanelNavigationHistory {
             self.save()
         }
     }
-    private let panel: PanelSide
+    private let panel: FavPanelSide
     private let userDefaultsKey: String
 
     /// Stack of visited paths (oldest first, newest last)
@@ -55,7 +55,7 @@ final class PanelNavigationHistory {
 
     // MARK: - Init
 
-    init(panel: PanelSide) {
+    init(panel: FavPanelSide) {
         self.panel = panel
         self.userDefaultsKey = "PanelNavigationHistory.\(panel)"
         load()

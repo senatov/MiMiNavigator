@@ -24,7 +24,7 @@ class DirectorySelection {
     }
 
     // MARK: - Parse panel side from string
-    private static func parsePanelSide(_ raw: String) -> PanelSide? {
+    private static func parsePanelSide(_ raw: String) -> FavPanelSide? {
         switch raw.lowercased() {
             case "left": return .left
             case "right": return .right
@@ -34,7 +34,7 @@ class DirectorySelection {
 
     // MARK: - Resolve start path for panel
     /// Returns a stored start path for a given side if present and valid
-    private static func resolveStartPath(for panelSide: PanelSide) -> String? {
+    private static func resolveStartPath(for panelSide: FavPanelSide) -> String? {
         let defaults = MiMiDefaults.shared
         let key = (panelSide == .left) ? Keys.leftLastPath : Keys.rightLastPath
 
@@ -53,7 +53,7 @@ class DirectorySelection {
 
     // MARK: - Load side from config
     /// Attempts to load the last focused panel side from config
-    private static func loadSideFromConfig() -> PanelSide? {
+    private static func loadSideFromConfig() -> FavPanelSide? {
         let defaults = MiMiDefaults.shared
         if let raw = defaults.string(forKey: Keys.lastFocusedPanel),
             let side = parsePanelSide(raw)
@@ -64,7 +64,7 @@ class DirectorySelection {
     }
 
     // MARK: - Designated initializer
-    init(side: PanelSide = .left, initialPath: String? = nil) {
+    init(side: FavPanelSide = .left, initialPath: String? = nil) {
         // Prefer side from config if available; otherwise use passed-in value
         let restoredSide = DirectorySelection.loadSideFromConfig() ?? side
 

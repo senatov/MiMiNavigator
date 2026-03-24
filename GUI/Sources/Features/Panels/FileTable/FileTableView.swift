@@ -22,7 +22,7 @@ struct FileTableView: View {
     @Environment(AppState.self) var appState
     @Environment(DragDropManager.self) var dragDropManager
 
-    let panelSide: PanelSide
+    let panelSide: FavPanelSide
     let files: [CustomFile]
     /// NOTE: selectedID is mapped to visible row IDs (including synthetic parent row)
     @Binding var selectedID: CustomFile.ID?
@@ -75,7 +75,7 @@ struct FileTableView: View {
 
     // MARK: - Init
     init(
-        panelSide: PanelSide,
+        panelSide: FavPanelSide,
         files: [CustomFile],
         selectedID: Binding<CustomFile.ID?>,
         layout: ColumnLayoutModel,
@@ -310,13 +310,13 @@ struct FileTableView: View {
 
     private var jumpToFirstPublisher: AnyPublisher<Notification, Never> {
         NotificationCenter.default.publisher(for: .jumpToFirst)
-            .filter { ($0.object as? PanelSide) == panelSide }
+            .filter { ($0.object as? FavPanelSide) == panelSide }
             .eraseToAnyPublisher()
     }
 
     private var jumpToLastPublisher: AnyPublisher<Notification, Never> {
         NotificationCenter.default.publisher(for: .jumpToLast)
-            .filter { ($0.object as? PanelSide) == panelSide }
+            .filter { ($0.object as? FavPanelSide) == panelSide }
             .eraseToAnyPublisher()
     }
 

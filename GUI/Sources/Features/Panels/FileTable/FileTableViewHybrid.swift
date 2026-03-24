@@ -16,7 +16,7 @@ struct FileTableViewHybrid: View {
     @Environment(AppState.self) var appState
     @Environment(DragDropManager.self) var dragDropManager
 
-    let panelSide: PanelSide
+    let panelSide: FavPanelSide
     let files: [CustomFile]
     let filesVersion: Int  // Version number for efficient change detection
     @Binding var selectedID: CustomFile.ID?

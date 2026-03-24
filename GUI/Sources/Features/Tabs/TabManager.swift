@@ -18,7 +18,7 @@
 
         // MARK: - Properties
 
-        let panelSide: PanelSide
+        let panelSide: FavPanelSide
         private(set) var tabs: [TabItem] = []
         private(set) var activeTabID: UUID
         private(set) var activeTabIndex: Int
@@ -31,7 +31,7 @@
 
         // MARK: - Init
 
-        init(panelSide: PanelSide, initialURL: URL) {
+        init(panelSide: FavPanelSide, initialURL: URL) {
             self.panelSide = panelSide
             let initialTab = TabItem.directory(url: initialURL)
             self.tabs = [initialTab]

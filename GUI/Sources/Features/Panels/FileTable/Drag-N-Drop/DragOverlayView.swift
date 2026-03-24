@@ -15,7 +15,7 @@
         @Environment(AppState.self) var appState
         @Environment(DragDropManager.self) var dragDropManager
 
-        let panelSide: PanelSide
+        let panelSide: FavPanelSide
 
         func makeNSView(context: Context) -> DragNSView {
             let view = DragNSView(appState: appState)

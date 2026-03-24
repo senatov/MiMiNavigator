@@ -12,9 +12,9 @@ import Foundation
 /// Represents different dialog types that can be shown by the coordinator
 enum ActiveDialog: Identifiable {
     case deleteConfirmation(files: [CustomFile])
-    case rename(file: CustomFile, panel: PanelSide)
-    case pack(files: [CustomFile], destination: URL, sourcePanel: PanelSide)
-    case compress(files: [CustomFile], destination: URL, sourcePanel: PanelSide)
+    case rename(file: CustomFile, panel: FavPanelSide)
+    case pack(files: [CustomFile], destination: URL, sourcePanel: FavPanelSide)
+    case compress(files: [CustomFile], destination: URL, sourcePanel: FavPanelSide)
     case createLink(file: CustomFile, destination: URL)
     case createFolder(parentURL: URL)
     case fileConflict(conflict: FileConflictInfo, continuation: CheckedContinuation<ConflictResolution, Never>)
@@ -22,10 +22,10 @@ enum ActiveDialog: Identifiable {
     case success(title: String, message: String)
 
     // Batch operation dialogs
-    case batchCopyConfirmation(files: [CustomFile], destination: URL, sourcePanel: PanelSide)
-    case batchMoveConfirmation(files: [CustomFile], destination: URL, sourcePanel: PanelSide)
-    case batchDeleteConfirmation(files: [CustomFile], sourcePanel: PanelSide)
-    case batchPackConfirmation(files: [CustomFile], destination: URL, sourcePanel: PanelSide)
+    case batchCopyConfirmation(files: [CustomFile], destination: URL, sourcePanel: FavPanelSide)
+    case batchMoveConfirmation(files: [CustomFile], destination: URL, sourcePanel: FavPanelSide)
+    case batchDeleteConfirmation(files: [CustomFile], sourcePanel: FavPanelSide)
+    case batchPackConfirmation(files: [CustomFile], destination: URL, sourcePanel: FavPanelSide)
     case batchProgress(state: BatchOperationState)
 
     var id: String {

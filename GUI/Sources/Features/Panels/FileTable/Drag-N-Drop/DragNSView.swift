@@ -12,7 +12,7 @@ import SwiftUI
 @MainActor
 final class DragNSView: NSView, NSDraggingSource {
 
-    var panelSide: PanelSide?
+    var panelSide: FavPanelSide?
     weak var dragDropManager: DragDropManager?
     unowned var appState: AppState
 
@@ -175,7 +175,7 @@ final class DragNSView: NSView, NSDraggingSource {
         return hypot(dx, dy) >= UI.dragThreshold
     }
 
-    private func resolvedDependencies() -> (appState: AppState, panelSide: PanelSide)? {
+    private func resolvedDependencies() -> (appState: AppState, panelSide: FavPanelSide)? {
         guard let panelSide else {
             log.error("[DragOverlay] critical: missing panelSide")
             return nil

@@ -16,7 +16,7 @@ struct PanelsRowView: View {
     @Binding var leftPanelWidth: CGFloat
     let containerWidth: CGFloat
     let containerHeight: CGFloat
-    let fetchFiles: @MainActor (PanelSide) async -> Void
+    let fetchFiles: @MainActor (FavPanelSide) async -> Void
 
     @State private var divider = DividerDragState()
 

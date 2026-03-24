@@ -17,16 +17,16 @@ struct FilePanelView: View {
     @State private var viewModeStore = PanelViewModeStore.shared
     let containerWidth: CGFloat
     @Binding var leftPanelWidth: CGFloat
-    let onPanelTap: (PanelSide) -> Void
+    let onPanelTap: (FavPanelSide) -> Void
 
     // MARK: - Init
     init(
-        selectedSide: PanelSide,
+        selectedSide: FavPanelSide,
         containerWidth: CGFloat,
         leftPanelWidth: Binding<CGFloat>,
-        fetchFiles: @escaping @Sendable @concurrent (PanelSide) async -> Void,
+        fetchFiles: @escaping @Sendable @concurrent (FavPanelSide) async -> Void,
         appState: AppState,
-        onPanelTap: @escaping (PanelSide) -> Void = { _ in }
+        onPanelTap: @escaping (FavPanelSide) -> Void = { _ in }
     ) {
         self._leftPanelWidth = leftPanelWidth
         self.containerWidth = containerWidth

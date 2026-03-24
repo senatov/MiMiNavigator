@@ -13,7 +13,7 @@ import SwiftUI
 // MARK: - Subviews
 struct PanelBreadcrumbSection: View {
     @Environment(AppState.self) var appState
-    let panelSide: PanelSide
+    let panelSide: FavPanelSide
     let currentPath: URL?
     let onPathChange: (URL?) -> Void
 

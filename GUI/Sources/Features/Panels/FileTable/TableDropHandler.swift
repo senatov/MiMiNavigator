@@ -12,7 +12,7 @@ import SwiftUI
 /// Handles drag and drop operations on the panel background
 @MainActor
 struct TableDropHandler {
-    let panelSide: PanelSide
+    let panelSide: FavPanelSide
     let appState: AppState
     let dragDropManager: DragDropManager
 
@@ -25,7 +25,7 @@ struct TableDropHandler {
         }
         let destinationURL = appState.url(for: panelSide)
         // Determine source panel first
-        let sourceSide: PanelSide? = panelSide == .left ? .right : .left
+        let sourceSide: FavPanelSide? = panelSide == .left ? .right : .left
         // Prevent dropping onto same directory only if it originates from the same panel
         if let firstFile = droppedFiles.first {
             let sourceDir = firstFile.urlValue.deletingLastPathComponent()

@@ -12,7 +12,7 @@ import SwiftUI
 extension FileTableView {
 
     /// Track last files reference to skip redundant rebuilds
-    private static var lastFilesHash: [PanelSide: Int] = [:]
+    private static var lastFilesHash: [FavPanelSide: Int] = [:]
 
     func recomputeSortedCache() {
         /// Very cheap change detection: count + first + last file hash.

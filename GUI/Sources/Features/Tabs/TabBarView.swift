@@ -15,7 +15,7 @@
     struct TabBarView: View {
 
         @Environment(AppState.self) var appState
-        let panelSide: PanelSide
+        let panelSide: FavPanelSide
 
         // MARK: - Computed
 

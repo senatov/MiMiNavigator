@@ -31,7 +31,7 @@ final class BatchOperationManager {
     func copyFiles(
         _ files: [CustomFile],
         to destination: URL,
-        from sourcePanel: PanelSide,
+        from sourcePanel: FavPanelSide,
         appState: AppState
     ) async {
         log.info("[BatchOpMgr] copy \(files.count) → \(destination.path)")
@@ -52,7 +52,7 @@ final class BatchOperationManager {
     func moveFiles(
         _ files: [CustomFile],
         to destination: URL,
-        from sourcePanel: PanelSide,
+        from sourcePanel: FavPanelSide,
         appState: AppState
     ) async {
         log.info("[BatchOpMgr] move \(files.count) → \(destination.path)")
@@ -73,7 +73,7 @@ final class BatchOperationManager {
 
     func deleteFiles(
         _ files: [CustomFile],
-        from sourcePanel: PanelSide,
+        from sourcePanel: FavPanelSide,
         appState: AppState
     ) async {
         log.info("[BatchOpMgr] delete \(files.count)")
@@ -96,7 +96,7 @@ final class BatchOperationManager {
         _ files: [CustomFile],
         to archiveURL: URL,
         format: ArchiveFormat,
-        from sourcePanel: PanelSide,
+        from sourcePanel: FavPanelSide,
         appState: AppState
     ) async {
         log.info("[BatchOpMgr] pack \(files.count) → \(archiveURL.path)")
@@ -155,7 +155,7 @@ final class BatchOperationManager {
         await appState.refreshFiles(for: .right, force: true)
     }
 
-    private func refreshOpposite(appState: AppState, sourcePanel: PanelSide) async {
+    private func refreshOpposite(appState: AppState, sourcePanel: FavPanelSide) async {
         if sourcePanel == .left {
             await appState.refreshFiles(for: .right, force: true)
         } else {

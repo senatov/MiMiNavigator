@@ -138,7 +138,7 @@ struct DuoFilePanelView: View {
 // MARK: - File Operations
 extension DuoFilePanelView {
     @MainActor
-    private func fetchFiles(for side: PanelSide) async {
+    private func fetchFiles(for side: FavPanelSide) async {
         log.debug("\(#function) side=\(side)")
         await appState.scanner.refreshFiles(currSide: side)
     }

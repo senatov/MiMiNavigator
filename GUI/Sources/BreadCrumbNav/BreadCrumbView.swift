@@ -19,7 +19,7 @@ import SwiftUI
 struct BreadCrumbView: View {
 
     @Environment(AppState.self) var appState
-    let panelSide: PanelSide
+    let panelSide: FavPanelSide
 
     /// Use computed property to always get current theme (live updates)
     private var colorStore: ColorThemeStore { ColorThemeStore.shared }
@@ -39,7 +39,7 @@ struct BreadCrumbView: View {
     private var fontSize: CGFloat { colorStore.activeTheme.breadcrumbFontSize }
 
     // MARK: - Init
-    init(selectedSide: PanelSide) { self.panelSide = selectedSide }
+    init(selectedSide: FavPanelSide) { self.panelSide = selectedSide }
 
     // MARK: - Body
     var body: some View {

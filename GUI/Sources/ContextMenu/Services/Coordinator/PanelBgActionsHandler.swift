@@ -14,7 +14,7 @@
     extension ContextMenuCoordinator {
 
         /// Handles panel background context menu actions (right-click on empty area)
-        func handlePanelBackgroundAction(_ action: PanelBackgroundAction, for panel: PanelSide, appState: AppState) {
+        func handlePanelBackgroundAction(_ action: PanelBackgroundAction, for panel: FavPanelSide, appState: AppState) {
             let currentPath = getDestinationPath(for: panel, appState: appState)
             log.debug("\(#function) action=\(action.rawValue) panel=\(panel) path='\(currentPath.path)'")
 
@@ -84,7 +84,7 @@
         // MARK: - Navigation
 
         /// Navigate panel to specified path (with retry + spinner for slow volumes)
-        func navigateTo(_ url: URL, panel: PanelSide, appState: AppState) {
+        func navigateTo(_ url: URL, panel: FavPanelSide, appState: AppState) {
             log.debug("\(#function) url='\(url.path)' panel=\(panel)")
             Task { @MainActor in
                 await appState.navigateToDirectory(url.path, on: panel)
@@ -92,7 +92,7 @@
         }
 
         /// Refresh single panel
-        func refreshPanel(_ panel: PanelSide, appState: AppState) {
+        func refreshPanel(_ panel: FavPanelSide, appState: AppState) {
             log.debug("\(#function) panel=\(panel)")
             Task { @MainActor in
                 await appState.scanner.refreshFiles(currSide: panel)
@@ -102,7 +102,7 @@
         // MARK: - Create Operations
 
         /// Determine which panel contains the given directory path
-        func panelForPath(_ path: String, appState: AppState) -> PanelSide {
+        func panelForPath(_ path: String, appState: AppState) -> FavPanelSide {
             if PathUtils.areEqual(appState.leftPath, path) { return .left }
             if PathUtils.areEqual(appState.rightPath, path) { return .right }
             return appState.focusedPanel
@@ -144,15 +144,15 @@
         // MARK: - Cross-Panel Operations
 
         /// Mirror current panel's path to the opposite panel
-        func mirrorPathToOtherPanel(_ panel: PanelSide, appState: AppState) {
+        func mirrorPathToOtherPanel(_ panel: FavPanelSide, appState: AppState) {
             let currentPath = getDestinationPath(for: panel, appState: appState)
-            let otherPanel: PanelSide = panel == .left ? .right : .left
+            let otherPanel: FavPanelSide = panel == .left ? .right : .left
             log.info("[MirrorPath] '\(currentPath.path)' → panel=\(otherPanel)")
             navigateTo(currentPath, panel: otherPanel, appState: appState)
         }
 
         /// Open the first marked directory on the opposite panel
-        func openFirstMarkedDirectoryOnOtherPanel(_ panel: PanelSide, appState: AppState) {
+        func openFirstMarkedDirectoryOnOtherPanel(_ panel: FavPanelSide, appState: AppState) {
             let markedDirs = appState.markedCustomFiles(for: panel).filter { $0.isDirectory }
             guard let firstDir = markedDirs.first else {
                 log.warning("[OpenMarkedOnOther] no marked directories on \(panel)")
@@ -168,7 +168,7 @@
                 return
             }
 
-            let otherPanel: PanelSide = panel == .left ? .right : .left
+            let otherPanel: FavPanelSide = panel == .left ? .right : .left
             log.info("[OpenMarkedOnOther] dir='\(firstDir.nameStr)' → panel=\(otherPanel)")
             navigateTo(resolvedURL, panel: otherPanel, appState: appState)
         }

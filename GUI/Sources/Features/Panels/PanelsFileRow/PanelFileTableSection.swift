@@ -20,8 +20,8 @@ struct PanelFileTableSection: View {
 
     let files: [CustomFile]
     @Binding var selectedID: CustomFile.ID?
-    let panelSide: PanelSide
-    let onPanelTap: (PanelSide) -> Void
+    let panelSide: FavPanelSide
+    let onPanelTap: (FavPanelSide) -> Void
     let onSelect: (CustomFile) -> Void
     let onDoubleClick: (CustomFile) -> Void
 
@@ -36,8 +36,8 @@ struct PanelFileTableSection: View {
     init(
         files: [CustomFile],
         selectedID: Binding<CustomFile.ID?>,
-        panelSide: PanelSide,
-        onPanelTap: @escaping (PanelSide) -> Void,
+        panelSide: FavPanelSide,
+        onPanelTap: @escaping (FavPanelSide) -> Void,
         onSelect: @escaping (CustomFile) -> Void,
         onDoubleClick: @escaping (CustomFile) -> Void
     ) {

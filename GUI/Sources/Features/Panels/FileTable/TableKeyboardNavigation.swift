@@ -26,7 +26,7 @@ struct TableKeyboardNavigation {
     let scrollAnchorID: Binding<CustomFile.ID?>
     let onSelect: (CustomFile) -> Void
     let pageStep: Int
-    let panelSide: PanelSide
+    let panelSide: FavPanelSide
     // Injected from outside — built once when list changes, not on every keypress
     private let indexByID: [CustomFile.ID: Int]
 
@@ -41,7 +41,7 @@ struct TableKeyboardNavigation {
         scrollAnchorID: Binding<CustomFile.ID?>,
         onSelect: @escaping (CustomFile) -> Void,
         pageStep: Int = 20,
-        panelSide: PanelSide
+        panelSide: FavPanelSide
     ) {
         self.files = files
         self.indexByID = indexByID
@@ -201,7 +201,7 @@ struct TableKeyboardNavigation {
     /// Walk the view hierarchy to find the NSScrollView belonging to the correct panel.
     /// Panels are side-by-side: left panel ScrollView has frame.minX < windowWidth/2,
     /// right panel ScrollView has frame.minX > windowWidth/2.
-    private static func findScrollView(in view: NSView?, panelSide: PanelSide, windowWidth: CGFloat) -> NSScrollView? {
+    private static func findScrollView(in view: NSView?, panelSide: FavPanelSide, windowWidth: CGFloat) -> NSScrollView? {
         guard let view else { return nil }
         if let sv = view as? NSScrollView,
             sv.documentView != nil,

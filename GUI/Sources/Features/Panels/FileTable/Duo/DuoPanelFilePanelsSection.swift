@@ -14,7 +14,7 @@ struct DuoPanelFilePanelsSection: View {
     @Binding var leftPanelWidth: CGFloat
     let containerWidth: CGFloat
     let containerHeight: CGFloat
-    let fetchFiles: @Sendable @concurrent (PanelSide) async -> Void
+    let fetchFiles: @Sendable @concurrent (FavPanelSide) async -> Void
     
     var body: some View {
         PanelsRowView(

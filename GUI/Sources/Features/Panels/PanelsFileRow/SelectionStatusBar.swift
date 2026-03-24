@@ -20,7 +20,7 @@ struct SelectionStatusBar: View {
 
     // MARK: - Inputs
 
-    let panelSide: PanelSide
+    let panelSide: FavPanelSide
 
     // MARK: - State
 

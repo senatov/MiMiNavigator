@@ -11,7 +11,7 @@
 
     // MARK: - NSViewRepresentable
     struct NSFileTableView: NSViewRepresentable {
-        let panelSide: PanelSide
+        let panelSide: FavPanelSide
         let files: [CustomFile]
         let filesVersion: Int
         let sortKey: SortKeysEnum

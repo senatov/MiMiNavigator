@@ -58,7 +58,7 @@ final class ColumnLayoutStore {
         log.info("[ColumnLayoutStore] init done — left=\(left.columns.count) cols, right=\(right.columns.count) cols")
     }
 
-    func layout(for side: PanelSide) -> ColumnLayoutModel {
+    func layout(for side: FavPanelSide) -> ColumnLayoutModel {
         side == .left ? left : right
     }
 

@@ -20,7 +20,7 @@ struct BreadCrumbControlWrapper: View {
     /// Use computed property to always get current theme (live updates)
     private var colorStore: ColorThemeStore { ColorThemeStore.shared }
 
-    let panelSide: PanelSide
+    let panelSide: FavPanelSide
 
     // MARK: - Constants
     private enum Design {
@@ -41,7 +41,7 @@ struct BreadCrumbControlWrapper: View {
     }
 
     // MARK: - Initializer
-    init(selectedSide: PanelSide) {
+    init(selectedSide: FavPanelSide) {
         self.panelSide = selectedSide
     }
 

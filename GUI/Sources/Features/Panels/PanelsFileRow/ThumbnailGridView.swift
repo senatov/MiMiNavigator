@@ -25,7 +25,7 @@ struct ThumbnailGridView: View {
 
     let files: [CustomFile]
     @Binding var selectedID: CustomFile.ID?
-    let panelSide: PanelSide
+    let panelSide: FavPanelSide
     let cellSize: CGFloat
     let onSelect: (CustomFile) -> Void
     let onDoubleClick: (CustomFile) -> Void
@@ -175,7 +175,7 @@ private struct ThumbnailCellView: View {
     let file: CustomFile
     let cellSize: CGFloat
     let isSelected: Bool
-    let panelSide: PanelSide
+    let panelSide: FavPanelSide
     let dragFiles: [CustomFile]
     let onSelect: (NSEvent.ModifierFlags) -> Void
     let onDoubleClick: () -> Void

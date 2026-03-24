@@ -16,7 +16,7 @@ struct FileRow: View, Equatable {
     let index: Int
     let file: CustomFile
     let isSelected: Bool
-    let panelSide: PanelSide
+    let panelSide: FavPanelSide
     let layout: ColumnLayoutModel
     let layoutVersion: Int
     let onSelect: (CustomFile) -> Void

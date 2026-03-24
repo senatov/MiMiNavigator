@@ -1,5 +1,5 @@
 //
-// ButtonFavTopPanel.swift
+// BreadCrumbToolBar.swift
 // MiMiNavigator
 //
 // Created by Iakov Senatov on 17.01.2026.
@@ -16,7 +16,8 @@ struct BreadCrumbToolBar: View {
     @Environment(AppState.self) var appState
     // MARK: - State
     @StateObject private var store = FavoritesKit.FavoritesStore.shared
-    let panelSide: PanelSide
+    @State private var favNavAdapter: FavNavAdapter? = nil
+    let panelSide: FavPanelSide
 
     // Active panel check for icon contrast
     private var isActivePanel: Bool {
@@ -30,12 +31,6 @@ struct BreadCrumbToolBar: View {
 
     private var navigator: PathNavigationService {
         PathNavigationService.shared(appState: appState)
-    }
-
-    // MARK: - Init
-    init(selectedSide: PanelSide) {
-        log.debug("[BreadCrumbToolBar] init panel=\(selectedSide)")
-        self.panelSide = selectedSide
     }
 
     // MARK: - Body
@@ -70,6 +65,12 @@ struct BreadCrumbToolBar: View {
         }
     }
 
+    // MARK: - Init
+    init(selectedSide: FavPanelSide) {
+        log.debug("[BreadCrumbToolBar] init panel=\(selectedSide)")
+        self.panelSide = selectedSide
+    }
+
     private func navIcon(_ name: String) -> some View {
         Image(systemName: name)
             .font(.system(size: 15, weight: .light))
@@ -84,8 +85,10 @@ struct BreadCrumbToolBar: View {
             .contentShape(Rectangle())
             .opacity(canGoBack ? 1.0 : 0.4)
             .onTapGesture {
-                log.debug("[BreadCrumbToolBar] navigate back for panel=\(panelSide)")
-                _ = appState.navigationHistory(for: panelSide).goBack()
+                if canGoBack {
+                    log.info("[Nav] back panel=\(panelSide)")
+                    _ = appState.navigationHistory(for: panelSide).goBack()
+                }
             }
             .gesture(
                 TapGesture(count: 1)
@@ -105,16 +108,13 @@ struct BreadCrumbToolBar: View {
 
         return Button(action: {
             log.debug("[BreadCrumbToolBar] navigate up for panel=\(panelSide)")
-
             let current = appState.path(for: panelSide)
             let url = URL(fileURLWithPath: current)
             var parent = url.deletingLastPathComponent().path
-
             // Ensure we don't end up with empty path; keep root
             if parent.isEmpty {
                 parent = "/"
             }
-
             Task {
                 await navigator.navigate(to: parent, side: panelSide)
             }
@@ -178,8 +178,10 @@ struct BreadCrumbToolBar: View {
             .contentShape(Rectangle())
             .opacity(canGoForward ? 1.0 : 0.4)
             .onTapGesture {
-                log.debug("[BreadCrumbToolBar] navigate forward for panel=\(panelSide)")
-                _ = appState.navigationHistory(for: panelSide).goForward()
+                if canGoForward {
+                    log.info("[Nav] forward panel=\(panelSide)")
+                    _ = appState.navigationHistory(for: panelSide).goForward()
+                }
             }
             .gesture(
                 TapGesture(count: 1)
@@ -202,7 +204,7 @@ struct BreadCrumbToolBar: View {
             Image(systemName: "clock.arrow.circlepath")
                 .font(.system(size: 15, weight: .light))
                 .symbolRenderingMode(.multicolor)
-                .foregroundStyle(Color(nsColor: NSColor(calibratedRed: 0.05, green: 0.52, blue: 0.18, alpha: 1.0)))
+                .foregroundStyle(Color(nsColor: NSColor(calibratedRed: 0.0, green: 0.42, blue: 0.55, alpha: 1.0)))
         }
         .buttonStyle(NoSelectionButtonStyle())
         .focusable(false)
@@ -237,17 +239,17 @@ struct BreadCrumbToolBar: View {
     // MARK: - Open Favorites Window
     private func openFavoritesWindow() {
         log.debug("[BreadCrumbToolBar] open favorites requested for panel=\(panelSide)")
-
         // Favorites are managed by FavoritesStore
-
         appState.focusedPanel = panelSide
-
         // isPresented binding for FavoritesTreeView — toggles close via Esc
         let isPresented = Binding<Bool>(
             get: { PanelDialogCoordinator.favorites.isVisible },
             set: { if !$0 { PanelDialogCoordinator.favorites.close() } }
         )
 
+        if favNavAdapter == nil {
+            favNavAdapter = FavNavAdapter(appState: appState)
+        }
         let content = FavoritesTreeView(
             items: Binding(
                 get: { store.userFavorites },
@@ -257,9 +259,9 @@ struct BreadCrumbToolBar: View {
             ),
             isPresented: isPresented,
             panelSide: panelSide.toFavPanelSide,
-            navigationDelegate: nil
+            navigationDelegate: favNavAdapter
         )
-        log.debug("[BreadCrumbToolBar] opening favorites panel for panel=\(panelSide) items=\(store.userFavorites.count)")
+        log.info("[Favorites] open panel=\(panelSide) items=\(store.userFavorites.count)")
         PanelDialogCoordinator.favorites.open(content: content)
     }
 }

@@ -12,13 +12,13 @@ import SwiftUI
 // MARK: - Main SwiftUI view
 struct PanelFilterBar: View {
     @Binding var query: String
-    let panelSide: PanelSide
+    let panelSide: FavPanelSide
 
     @StateObject private var history: PanelFilterHistory
     @State private var showHistory = false
     @FocusState private var isFocused: Bool
 
-    init(query: Binding<String>, panelSide: PanelSide) {
+    init(query: Binding<String>, panelSide: FavPanelSide) {
         self._query = query
         self.panelSide = panelSide
         self._history = StateObject(wrappedValue: PanelFilterHistory(panelSide: panelSide.rawValue))

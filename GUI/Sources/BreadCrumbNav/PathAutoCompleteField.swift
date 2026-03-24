@@ -9,9 +9,6 @@ import AppKit
 import SwiftUI
 
 // MARK: - Path Auto Complete Field
-/// Text field with directory path autocomplete.
-/// Features: NSPanel-based floating dropdown (escapes parent clipping), inline ghost text,
-/// Tab/RightArrow to accept, arrow keys to navigate, Escape to dismiss.
 struct PathAutoCompleteField: View {
     @Binding var text: String
     @FocusState.Binding var isFocused: Bool
@@ -560,7 +557,7 @@ final class AutoCompletePopupController {
     final class CustomSelectionRowView: NSTableRowView {
         override var isEmphasized: Bool {
             get { false }
-            set { }
+            set {}
         }
 
         override func drawSelection(in dirtyRect: NSRect) {

@@ -103,7 +103,7 @@
         }
 
         /// Get initial focused panel
-        static func loadInitialFocus() -> PanelSide {
+        static func loadInitialFocus() -> FavPanelSide {
             guard let data = try? Data(contentsOf: stateFileURL),
                   let decoded = try? JSONDecoder().decode(PersistentState.self, from: data),
                   decoded.focusedPanel == "right" else {

@@ -13,7 +13,7 @@ import SwiftUI
 // MARK: - PanelFocusModifier
 struct PanelFocusModifier: ViewModifier {
     @Environment(AppState.self) var appState
-    let panelSide: PanelSide
+    let panelSide: FavPanelSide
     let onFocusLost: () -> Void
 
     // MARK: -
@@ -32,7 +32,7 @@ struct PanelFocusModifier: ViewModifier {
 
 extension View {
     // MARK: - Applies focus behavior for a file panel; sets focus on tap and clears selection when losing focus.
-    func panelFocus(panelSide: PanelSide, onFocusLost: @escaping () -> Void) -> some View {
+    func panelFocus(panelSide: FavPanelSide, onFocusLost: @escaping () -> Void) -> some View {
         return modifier(PanelFocusModifier(panelSide: panelSide, onFocusLost: onFocusLost))
     }
 }

@@ -1,5 +1,5 @@
 //
-// FavoritesNavigationAdapter.swift
+// FavNavAdapter.swift
 // MiMiNavigator
 //
 // Created by Iakov Senatov on 17.01.2026.
@@ -13,7 +13,7 @@ import Foundation
 
 // MARK: - Adapter connecting FavoritesKit to AppState
 @MainActor
-final class FavoritesNavigationAdapter: FavoritesNavigationDelegate {
+final class FavNavAdapter: FavoritesNavigationDelegate {
 
     private let appState: AppState
 
@@ -32,7 +32,7 @@ final class FavoritesNavigationAdapter: FavoritesNavigationDelegate {
     }
 
     func navigate(to url: URL, panel: FavPanelSide) async {
-        let targetPanel: PanelSide = panel == .left ? .left : .right
+        let targetPanel: FavPanelSide = panel == .left ? .left : .right
 
         log.info("\(#function) url=\(url.path) panel=\(panel)")
 
@@ -51,7 +51,7 @@ final class FavoritesNavigationAdapter: FavoritesNavigationDelegate {
     func navigateBack(panel: FavPanelSide) {
         log.info("\(#function) panel=\(panel)")
 
-        let targetPanel: PanelSide = panel == .left ? .left : .right
+        let targetPanel: FavPanelSide = panel == .left ? .left : .right
         let history = appState.navigationHistory(for: targetPanel)
 
         guard let path = history.goBack() else {
@@ -73,7 +73,7 @@ final class FavoritesNavigationAdapter: FavoritesNavigationDelegate {
     func navigateForward(panel: FavPanelSide) {
         log.info("\(#function) panel=\(panel)")
 
-        let targetPanel: PanelSide = panel == .left ? .left : .right
+        let targetPanel: FavPanelSide = panel == .left ? .left : .right
         let history = appState.navigationHistory(for: targetPanel)
 
         guard let path = history.goForward() else {
@@ -108,39 +108,28 @@ final class FavoritesNavigationAdapter: FavoritesNavigationDelegate {
         }
     }
 
-    func navigateToURL(_ url: URL, panel: FavoritesKit.FavPanelSide) async {
+    func navigateToURL(_ url: URL, panel: FavPanelSide) async {
         // Forward to the main navigation implementation
         await navigate(to: url, panel: panel)
     }
 
-    func currentURL(for panel: FavoritesKit.FavPanelSide) -> URL {
+    func currentURL(for panel: FavPanelSide) -> URL {
         // Convert AppState path to URL
         let path = panel == .left ? appState.leftPath : appState.rightPath
         return URL(fileURLWithPath: path)
     }
 
     func canGoBack(panel: FavPanelSide) -> Bool {
-        let targetPanel: PanelSide = panel == .left ? .left : .right
+        let targetPanel: FavPanelSide = panel == .left ? .left : .right
         return appState.navigationHistory(for: targetPanel).canGoBack
     }
 
     func canGoForward(panel: FavPanelSide) -> Bool {
-        let targetPanel: PanelSide = panel == .left ? .left : .right
+        let targetPanel: FavPanelSide = panel == .left ? .left : .right
         return appState.navigationHistory(for: targetPanel).canGoForward
     }
 
     func currentPath(for panel: FavPanelSide) -> String {
         panel == .left ? appState.leftPath : appState.rightPath
-    }
-}
-
-// MARK: - Extension to convert between PanelSide and FavPanelSide
-extension PanelSide {
-    var toFavPanelSide: FavPanelSide {
-        self == .left ? .left : .right
-    }
-
-    init(from favPanel: FavPanelSide) {
-        self = favPanel == .left ? .left : .right
     }
 }

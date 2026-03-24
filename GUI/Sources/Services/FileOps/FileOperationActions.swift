@@ -40,7 +40,7 @@ final class FileOperationActions {
         log.debug("[FileOperationActions] copyToOppositePanel focus=\(state.focusedPanel)")
 
         let srcFile: CustomFile?
-        let dstSide: PanelSide
+        let dstSide: FavPanelSide
 
         switch state.focusedPanel {
             case .left:
@@ -87,7 +87,7 @@ final class FileOperationActions {
         file: CustomFile,
         to dstDirURL: URL,
         state: AppState,
-        dstSide: PanelSide
+        dstSide: FavPanelSide
     ) {
         let srcURL = file.urlValue
         let dstURL = dstDirURL.appendingPathComponent(srcURL.lastPathComponent)

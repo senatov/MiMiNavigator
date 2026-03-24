@@ -1,4 +1,4 @@
-// NavigationMenuItems.swift
+// BreadCrumbMnu.swift
 // MiMiNavigator
 //
 // Created by Iakov Senatov on 10.05.2024.
@@ -12,9 +12,9 @@ import SwiftUI
 // MARK: - Favorites Button Section (left side of breadcrumb)
 struct BreadCrumbMnu: View {
     @Environment(AppState.self) var appState
-    let panelSide: PanelSide
+    let panelSide: FavPanelSide
 
-    init(selectedSide: PanelSide) {
+    init(selectedSide: FavPanelSide) {
         self.panelSide = selectedSide
     }
 

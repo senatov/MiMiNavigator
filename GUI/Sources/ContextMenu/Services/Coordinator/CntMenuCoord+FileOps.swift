@@ -36,7 +36,7 @@ extension ContextMenuCoordinator {
             let panel = panelForPath(files.first!.urlValue.deletingLastPathComponent().path, appState: appState)
             await appState.refreshAndSelectAfterRemoval(removedFiles: files, on: panel)
             // Also refresh opposite panel in case it shows the same directory
-            let otherPanel: PanelSide = panel == .left ? .right : .left
+            let otherPanel: FavPanelSide = panel == .left ? .right : .left
             refreshPanel(otherPanel, appState: appState)
             log.info("\(#function) SUCCESS deleted \(files.count) item(s) → cursor moved to next file on \(panel)")
         } catch {
@@ -48,7 +48,7 @@ extension ContextMenuCoordinator {
     // MARK: - Rename
 
     /// Rename file or directory, then select the renamed item
-    func performRename(file: CustomFile, newName: String, panel: PanelSide, appState: AppState) async {
+    func performRename(file: CustomFile, newName: String, panel: FavPanelSide, appState: AppState) async {
         log.info("[Rename] 🏁 START: '\(file.nameStr)' → '\(newName)' path='\(file.urlValue.path)' panel=\(panel)")
 
         isProcessing = true
@@ -68,7 +68,7 @@ extension ContextMenuCoordinator {
             }
             log.info("[Rename] panel=\(panel) → refreshAndSelect('\(newName)')")
             await appState.refreshAndSelect(name: newName, on: panel)
-            let otherPanel: PanelSide = panel == .left ? .right : .left
+            let otherPanel: FavPanelSide = panel == .left ? .right : .left
             refreshPanel(otherPanel, appState: appState)
             log.info("[Rename] 🏁 END SUCCESS")
         } catch {
@@ -281,7 +281,7 @@ extension ContextMenuCoordinator {
                 navigateTo(destination, panel: panel, appState: appState)
             }
             appState.selectFileByName(createdName, on: panel)
-            let otherPanel: PanelSide = panel == .left ? .right : .left
+            let otherPanel: FavPanelSide = panel == .left ? .right : .left
             refreshPanel(otherPanel, appState: appState)
 
             log.info("[Pack] SUCCESS '\(createdName)' → selected on \(panel)")
@@ -339,7 +339,7 @@ extension ContextMenuCoordinator {
             try FileManager.default.createDirectory(at: folderURL, withIntermediateDirectories: false)
             let panel = panelForPath(parentURL.path, appState: appState)
             await appState.refreshAndSelect(name: name, on: panel)
-            let otherPanel: PanelSide = panel == .left ? .right : .left
+            let otherPanel: FavPanelSide = panel == .left ? .right : .left
             refreshPanel(otherPanel, appState: appState)
             log.info("\(#function) ok — '\(name)' created, selected on \(panel)")
         } catch {
@@ -396,7 +396,7 @@ extension ContextMenuCoordinator {
     // MARK: - Paste
 
     /// Paste from clipboard
-    func performPaste(to panel: PanelSide, appState: AppState) async {
+    func performPaste(to panel: FavPanelSide, appState: AppState) async {
         log.debug("\(#function) panel=\(panel) clipboardHasContent=\(clipboard.hasContent)")
 
         guard clipboard.hasContent else {

@@ -12,7 +12,7 @@ import SwiftUI
 
 struct TopMenuBarView: View {
     @Environment(AppState.self) var appState
-    @State private var favoritesTargetSide: PanelSide = .left
+    @State private var favoritesTargetSide: FavPanelSide = .left
         // MARK: - Pixel helpers
     fileprivate var px: CGFloat {
         let scale = NSScreen.main?.backingScaleFactor ?? 2.0

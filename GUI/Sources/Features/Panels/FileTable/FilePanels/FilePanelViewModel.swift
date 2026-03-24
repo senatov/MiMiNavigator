@@ -12,15 +12,15 @@ import SwiftUI
 @MainActor
 @Observable
 final class FilePanelViewModel {
-    let panelSide: PanelSide
+    let panelSide: FavPanelSide
     private let appState: AppState
     // TODO: Remove fetchFiles — navigation now goes through AppState.navigateToDirectory
-    private let fetchFiles: @Sendable @concurrent (PanelSide) async -> Void
+    private let fetchFiles: @Sendable @concurrent (FavPanelSide) async -> Void
 
     init(
-        panelSide: PanelSide,
+        panelSide: FavPanelSide,
         appState: AppState,
-        fetchFiles: @escaping @Sendable @concurrent (PanelSide) async -> Void
+        fetchFiles: @escaping @Sendable @concurrent (FavPanelSide) async -> Void
     ) {
         self.panelSide = panelSide
         self.appState = appState

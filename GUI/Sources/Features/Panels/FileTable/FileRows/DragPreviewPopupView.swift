@@ -13,7 +13,7 @@ import SwiftUI
 
 struct DragPreviewPopupView: View {
     let files: [CustomFile]
-    let panelSide: PanelSide
+    let panelSide: FavPanelSide
 
     private static let maximumVisibleRows = 5
     private static let minimumPopupWidth: CGFloat = 420

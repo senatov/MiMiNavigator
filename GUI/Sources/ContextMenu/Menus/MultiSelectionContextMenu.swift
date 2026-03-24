@@ -13,7 +13,7 @@ import FileModelKit
 /// Shows only actions that make sense for batch operations.
 struct MultiSelectionContextMenu: View {
     let markedCount: Int
-    let panelSide: PanelSide
+    let panelSide: FavPanelSide
     let onAction: (MultiSelectionAction) -> Void
 
     var body: some View {

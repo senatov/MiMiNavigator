@@ -11,7 +11,7 @@ import Foundation
 // MARK: - Data Access
 extension AppState {
 
-    func displayedFiles(for panel: PanelSide) -> [CustomFile] {
+    func displayedFiles(for panel: FavPanelSide) -> [CustomFile] {
         let raw = panel == .left ? displayedLeftFiles : displayedRightFiles
         let query = self[panel: panel].filterQuery.trimmingCharacters(in: .whitespaces)
         guard !query.isEmpty else { return raw }
@@ -19,19 +19,19 @@ extension AppState {
         return raw.filter { $0.nameStr.lowercased().contains(lower) }
     }
 
-    func pathURL(for panel: PanelSide) -> URL? {
+    func pathURL(for panel: FavPanelSide) -> URL? {
         url(for: panel)
     }
 
-    func tabManager(for panel: PanelSide) -> TabManager {
+    func tabManager(for panel: FavPanelSide) -> TabManager {
         panel == .left ? leftTabManager : rightTabManager
     }
 
-    func archiveState(for panel: PanelSide) -> ArchiveNavigationState {
+    func archiveState(for panel: FavPanelSide) -> ArchiveNavigationState {
         self[panel: panel].archiveState
     }
 
-    func setArchiveState(_ state: ArchiveNavigationState, for panel: PanelSide) {
+    func setArchiveState(_ state: ArchiveNavigationState, for panel: FavPanelSide) {
         self[panel: panel].archiveState = state
     }
 

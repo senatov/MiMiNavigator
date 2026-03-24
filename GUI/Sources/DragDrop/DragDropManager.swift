@@ -31,7 +31,7 @@ static let shared = DragDropManager()
     var dropTargetPath: URL?
 
     // MARK: - Start dragging files
-    func startDrag(files: [CustomFile], from panelSide: PanelSide) {
+    func startDrag(files: [CustomFile], from panelSide: FavPanelSide) {
         log.debug("DragDropManager: started dragging \(files.count) items from \(panelSide)")
 
         draggedFiles = files
@@ -61,7 +61,7 @@ static let shared = DragDropManager()
     func prepareTransfer(
         files: [CustomFile],
         to destination: URL,
-        from sourcePanelSide: PanelSide?
+        from sourcePanelSide: FavPanelSide?
     ) {
         log.debug("DragDropManager: preparing transfer of \(files.count) items to \(destination.path)")
 

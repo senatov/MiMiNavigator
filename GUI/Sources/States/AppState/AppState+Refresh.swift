@@ -12,7 +12,7 @@ import Foundation
 extension AppState {
 
     /// Unified scanner directory setter — eliminates left/right branching at call sites.
-    func setScannerDirectory(_ path: String, for panel: PanelSide) async {
+    func setScannerDirectory(_ path: String, for panel: FavPanelSide) async {
         if panel == .left {
             await scanner.setLeftDirectory(pathStr: path)
         } else {
@@ -21,7 +21,7 @@ extension AppState {
     }
 
     /// Set scanner directory + refresh in one call.
-    func setScannerDirectoryAndRefresh(_ path: String, for panel: PanelSide) async {
+    func setScannerDirectoryAndRefresh(_ path: String, for panel: FavPanelSide) async {
         await setScannerDirectory(path, for: panel)
         await refreshFiles(for: panel)
     }

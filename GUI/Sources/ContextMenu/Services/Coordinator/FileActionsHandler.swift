@@ -18,7 +18,7 @@ extension ContextMenuCoordinator {
     /// use filesForOperation() to include all marked files when present.
     /// Single-file actions (open/openWith/viewLister/rename/getInfo/duplicate/createLink)
     /// always operate on the clicked file only.
-    func handleFileAction(_ action: FileAction, for file: CustomFile, panel: PanelSide, appState: AppState) {
+    func handleFileAction(_ action: FileAction, for file: CustomFile, panel: FavPanelSide, appState: AppState) {
         log.debug(#function + "(\(action), \(file), \(panel))")
         let batchFiles = appState.filesForOperation(on: panel)
         log.debug("[FileActions] action='\(action.rawValue)' file='\(file.nameStr)' path='\(file.urlValue.path)' batch=\(batchFiles.count) panel=\(panel)")
@@ -108,7 +108,7 @@ extension ContextMenuCoordinator {
     // MARK: - Panel Navigation Helper
     /// Navigates the given panel to a directory path and refreshes file list.
     @MainActor
-    private func navigate(panel: PanelSide, to path: String, appState: AppState) async {
+    private func navigate(panel: FavPanelSide, to path: String, appState: AppState) async {
         log.debug(#function + "(\(path))")
         // Reset selection before navigation
         appState.selectedLeftFile = nil
@@ -131,7 +131,7 @@ extension ContextMenuCoordinator {
 
     /// Opens file: archive files open as virtual directory (Total Commander style),
     /// regular files open with default application via NSWorkspace.
-    func openFileOrArchive(_ file: CustomFile, panel: PanelSide, appState: AppState) {
+    func openFileOrArchive(_ file: CustomFile, panel: FavPanelSide, appState: AppState) {
         log.debug(#function + "(\(file.nameStr))")
         // Archive files — open as virtual directory in current tab (Total Commander behavior)
         if file.isArchiveFile {

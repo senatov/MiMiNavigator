@@ -56,7 +56,7 @@ final class ColumnLayoutModel: Codable {
 
     // MARK: - Init
 
-    init(panelSide: PanelSide) {
+    init(panelSide: FavPanelSide) {
         self.storageKey = "ColumnLayout.\(panelSide.rawValue)"
         self.columns = Self.defaultOrder.map { ColumnSpec(id: $0) }
         load()

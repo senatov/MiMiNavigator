@@ -51,7 +51,7 @@ final class BatchOperationCoordinator {
     }
     
     /// Execute confirmed copy operation
-    func executeCopy(files: [CustomFile], destination: URL, sourcePanel: PanelSide, appState: AppState) {
+    func executeCopy(files: [CustomFile], destination: URL, sourcePanel: FavPanelSide, appState: AppState) {
         log.info("[BatchOperationCoordinator] executeCopy: \(files.count) files")
         
         Task { @MainActor in
@@ -87,7 +87,7 @@ final class BatchOperationCoordinator {
     }
     
     /// Execute confirmed move operation
-    func executeMove(files: [CustomFile], destination: URL, sourcePanel: PanelSide, appState: AppState) {
+    func executeMove(files: [CustomFile], destination: URL, sourcePanel: FavPanelSide, appState: AppState) {
         log.info("[BatchOperationCoordinator] executeMove: \(files.count) files")
         
         Task { @MainActor in
@@ -116,7 +116,7 @@ final class BatchOperationCoordinator {
     }
     
     /// Execute confirmed delete operation
-    func executeDelete(files: [CustomFile], sourcePanel: PanelSide, appState: AppState) {
+    func executeDelete(files: [CustomFile], sourcePanel: FavPanelSide, appState: AppState) {
         log.info("[BatchOperationCoordinator] executeDelete: \(files.count) files")
         
         Task { @MainActor in

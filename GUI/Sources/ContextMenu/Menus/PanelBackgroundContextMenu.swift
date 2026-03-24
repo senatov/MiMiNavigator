@@ -10,7 +10,7 @@ import FileModelKit
 
 /// Context menu shown when right-clicking on empty area of file panel
 struct PanelBackgroundContextMenu: View {
-    let panelSide: PanelSide
+    let panelSide: FavPanelSide
     let currentPath: URL
     let onAction: (PanelBackgroundAction) -> Void
     var canGoBack: Bool = false
@@ -18,7 +18,7 @@ struct PanelBackgroundContextMenu: View {
     /// True when marked files contain at least one directory
     var hasMarkedDirectories: Bool = false
     
-    init(panelSide: PanelSide, currentPath: URL, canGoBack: Bool = false, canGoForward: Bool = false, hasMarkedDirectories: Bool = false, onAction: @escaping (PanelBackgroundAction) -> Void) {
+    init(panelSide: FavPanelSide, currentPath: URL, canGoBack: Bool = false, canGoForward: Bool = false, hasMarkedDirectories: Bool = false, onAction: @escaping (PanelBackgroundAction) -> Void) {
         self.panelSide = panelSide
         self.currentPath = currentPath
         self.canGoBack = canGoBack

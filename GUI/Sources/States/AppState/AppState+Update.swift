@@ -12,7 +12,7 @@ import Foundation
 // MARK: - Path Updates
 extension AppState {
 
-    func updatePath(_ pathString: String, for panel: PanelSide) {
+    func updatePath(_ pathString: String, for panel: FavPanelSide) {
         // remote strings must go through URL(string:) — not fileURLWithPath, that mangles them
         if pathString.hasPrefix("sftp://") || pathString.hasPrefix("ftp://") {
             guard let remoteURL = URL(string: pathString) else {
@@ -26,7 +26,7 @@ extension AppState {
         updatePath(URL(fileURLWithPath: pathString), for: panel)
     }
 
-    func updatePath(_ newURL: URL, for panel: PanelSide) {
+    func updatePath(_ newURL: URL, for panel: FavPanelSide) {
         // guard: mangled remote URL wrapped in fileURLWithPath — bail early
         if Self.isRemotePath(newURL) && newURL.scheme == "file" {
             log.warning("\(#function) mangled remote URL detected: \(newURL.absoluteString) — skipping local update")
@@ -66,7 +66,7 @@ extension AppState {
     }
 
     /// Apply resolved path — pure MainActor UI update, no IO
-    private func applyPathUpdate(_ normalizedURL: URL, isDir: Bool, for panel: PanelSide) {
+    private func applyPathUpdate(_ normalizedURL: URL, isDir: Bool, for panel: FavPanelSide) {
         log.debug("\(#function) \(panel) → \(normalizedURL.path) isDir=\(isDir)")
         focusedPanel = panel
         tabManager(for: panel).updateActiveTabPath(normalizedURL)
@@ -86,7 +86,7 @@ extension AppState {
         // from the previous directory. Selection is handled by refreshFiles() after scan completes.
     }
 
-    func restoreLocalPath(for panel: PanelSide) async {
+    func restoreLocalPath(for panel: FavPanelSide) async {
         guard let localURL = self[panel: panel].savedLocalURL else {
             log.warning("[AppState] no saved local path for \(panel)")
             return

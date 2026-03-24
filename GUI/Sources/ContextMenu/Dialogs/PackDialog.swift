@@ -23,7 +23,7 @@ struct PackDialog: View {
     
     let mode: PackDialogMode
     let files: [CustomFile]
-    let sourcePanel: PanelSide
+    let sourcePanel: FavPanelSide
     /// Callback: (archiveName, format, destination, deleteSourceFiles, compressionLevel, password)
     let onPack: (String, ArchiveFormat, URL, Bool, CompressionLevel, String?) -> Void
     let onCancel: () -> Void
@@ -48,7 +48,7 @@ struct PackDialog: View {
     init(
         mode: PackDialogMode = .pack,
         files: [CustomFile],
-        sourcePanel: PanelSide,
+        sourcePanel: FavPanelSide,
         onPack: @escaping (String, ArchiveFormat, URL, Bool, CompressionLevel, String?) -> Void,
         onCancel: @escaping () -> Void
     ) {
@@ -101,7 +101,7 @@ struct PackDialog: View {
         case .currentPanel:
             return URL(fileURLWithPath: appState.path(for: sourcePanel))
         case .oppositePanel:
-            let opposite: PanelSide = sourcePanel == .left ? .right : .left
+            let opposite: FavPanelSide = sourcePanel == .left ? .right : .left
             return URL(fileURLWithPath: appState.path(for: opposite))
         case .custom:
             return URL(fileURLWithPath: customDestination)

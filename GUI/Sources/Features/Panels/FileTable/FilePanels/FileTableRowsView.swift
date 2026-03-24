@@ -11,7 +11,7 @@ struct FileTableRowsView: View {
 
     let rows: [CustomFile]
     @Binding var selectedID: CustomFile.ID?
-    let panelSide: PanelSide
+    let panelSide: FavPanelSide
     let layout: ColumnLayoutModel
     let onSelect: (CustomFile) -> Void
     let onDoubleClick: (CustomFile) -> Void

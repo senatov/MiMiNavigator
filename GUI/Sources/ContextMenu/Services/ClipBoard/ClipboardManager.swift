@@ -21,7 +21,7 @@ final class ClipboardManager {
     // MARK: - State
     private(set) var files: [URL] = []
     private(set) var operation: ClipboardOperation?
-    private(set) var sourcePanel: PanelSide?
+    private(set) var sourcePanel: FavPanelSide?
 
     var hasContent: Bool { !files.isEmpty && operation != nil }
     var isCut: Bool { operation == .cut }
@@ -30,7 +30,7 @@ final class ClipboardManager {
     private init() {}
 
     // MARK: - Copy files to clipboard
-    func copy(files: [CustomFile], from panel: PanelSide) {
+    func copy(files: [CustomFile], from panel: FavPanelSide) {
         self.files = files.map { $0.urlValue }
         self.operation = .copy
         self.sourcePanel = panel
@@ -47,7 +47,7 @@ final class ClipboardManager {
     }
 
     // MARK: - Cut files to clipboard
-    func cut(files: [CustomFile], from panel: PanelSide) {
+    func cut(files: [CustomFile], from panel: FavPanelSide) {
         self.files = files.map { $0.urlValue }
         self.operation = .cut
         self.sourcePanel = panel

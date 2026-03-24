@@ -12,11 +12,11 @@ import Foundation
 // MARK: - Search Results
 extension AppState {
 
-    func isShowingSearchResults(on panel: PanelSide) -> Bool {
+    func isShowingSearchResults(on panel: FavPanelSide) -> Bool {
         self[panel: panel].searchResultsPath != nil
     }
 
-    func showSearchResults(_ files: [CustomFile], virtualPath: String, on panel: PanelSide) {
+    func showSearchResults(_ files: [CustomFile], virtualPath: String, on panel: FavPanelSide) {
         let sorted = applySorting(files)
         log.debug(#function + ": \(sorted.count) files")
         self[panel: panel].searchResultsPath = virtualPath
@@ -26,7 +26,7 @@ extension AppState {
         focusedPanel = panel
     }
 
-    func clearSearchResults(on panel: PanelSide) {
+    func clearSearchResults(on panel: FavPanelSide) {
         guard isShowingSearchResults(on: panel) else { return }
         let archivePaths = searchResultArchives[panel] ?? []
         if !archivePaths.isEmpty {
@@ -50,7 +50,7 @@ extension AppState {
         }
     }
 
-    private func finishClearSearchResults(on panel: PanelSide) {
+    private func finishClearSearchResults(on panel: FavPanelSide) {
         let history = navigationHistory(for: panel)
         let previousPath = history.currentPath?.path ?? NSHomeDirectory()
         self[panel: panel].searchResultsPath = nil

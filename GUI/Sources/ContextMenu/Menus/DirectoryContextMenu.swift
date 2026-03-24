@@ -13,11 +13,11 @@
     /// Matches Finder's context menu structure for folders.
     struct DirectoryContextMenu: View {
         let file: CustomFile
-        let panelSide: PanelSide
+        let panelSide: FavPanelSide
         let onAction: (DirectoryAction) -> Void
         @State private var userFavorites = UserFavoritesStore.shared
 
-        init(file: CustomFile, panelSide: PanelSide, onAction: @escaping (DirectoryAction) -> Void) {
+        init(file: CustomFile, panelSide: FavPanelSide, onAction: @escaping (DirectoryAction) -> Void) {
             self.file = file
             self.panelSide = panelSide
             self.onAction = onAction

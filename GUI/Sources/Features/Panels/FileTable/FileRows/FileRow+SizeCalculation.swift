@@ -111,11 +111,14 @@ extension FileRow {
                 log.info("[FileRow] Phase 2 complete (fallback): '\(file.nameStr)' size=\(fallback)")
                 return
             } else {
-                log.warning("[FileRow] Phase 2 unavailable for '\(file.nameStr)' — keeping non-exact")
-                file.cachedDirectorySize = DirectorySizeService.unavailableSize
+                log.warning("[FileRow] Phase 2 unavailable for '\(file.nameStr)' — marking as restricted (🔒)")
+
+                // Mark as inaccessible instead of pretending size exists
+                file.cachedDirectorySize = nil
                 file.sizeIsExact = false
                 file.securityState = .restricted
                 file.sizeCalculationStarted = false
+
                 return
             }
         }
@@ -130,11 +133,21 @@ extension FileRow {
                 log.warning("[FileRow] Phase 2 produced 0 for '\(file.nameStr)' — running fallback instead")
 
                 let fallback = await fallbackDirectoryScanAsync(url: url)
-                file.cachedDirectorySize = fallback
-                file.sizeIsExact = fallback > 0
-                file.sizeCalculationStarted = false
 
-                log.info("[FileRow] Phase 2 recovered via fallback: '\(file.nameStr)' size=\(fallback)")
+                if fallback > 0 {
+                    file.cachedDirectorySize = fallback
+                    file.sizeIsExact = true
+                    file.securityState = .normal
+                    log.info("[FileRow] Phase 2 recovered via fallback: '\(file.nameStr)' size=\(fallback)")
+                } else {
+                    // Fallback also failed → treat as inaccessible (🔒)
+                    file.cachedDirectorySize = nil
+                    file.sizeIsExact = false
+                    file.securityState = .restricted
+                    log.warning("[FileRow] Phase 2 fallback failed for '\(file.nameStr)' → marking as restricted (🔒)")
+                }
+
+                file.sizeCalculationStarted = false
                 return
             }
         }
@@ -211,6 +224,12 @@ extension FileRow {
 
     // MARK: -
     func hasNonZeroChildCountHint() -> Bool {
+        // Prefer real numeric value instead of formatted string (avoids race conditions and UI inconsistencies)
+        if let count = file.childCount {
+            return count > 0
+        }
+
+        // Fallback to formatted string only if raw value is unavailable
         let raw = file.childCountFormatted.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !raw.isEmpty, raw != "0", raw != "-" else { return false }
         return true

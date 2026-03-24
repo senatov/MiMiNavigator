@@ -20,7 +20,7 @@ final class AppState {
 
     var leftPanel: PanelState
     var rightPanel: PanelState
-    var focusedPanel: PanelSide = .left
+    var focusedPanel: FavPanelSide = .left
 
     // MARK: - Displayed files (primary storage with version tracking)
     var displayedLeftFiles: [CustomFile] = [] { didSet { leftPanel.filesVersion &+= 1 } }
@@ -52,11 +52,11 @@ final class AppState {
     var isLeftLoading: Bool = false
     var isRightLoading: Bool = false
 
-    func isLoading(_ side: PanelSide) -> Bool {
+    func isLoading(_ side: FavPanelSide) -> Bool {
         side == .left ? isLeftLoading : isRightLoading
     }
 
-    func setLoading(_ side: PanelSide, _ value: Bool) {
+    func setLoading(_ side: FavPanelSide, _ value: Bool) {
         switch side {
             case .left:
                 isLeftLoading = value
@@ -111,21 +111,21 @@ final class AppState {
         set { savedLocalRightURL = newValue.map { URL(fileURLWithPath: $0) } }
     }
 
-    func url(for panel: PanelSide) -> URL {
+    func url(for panel: FavPanelSide) -> URL {
         switch panel {
             case .left: return leftURL
             case .right: return rightURL
         }
     }
 
-    func path(for panel: PanelSide) -> String {
+    func path(for panel: FavPanelSide) -> String {
         switch panel {
             case .left: return leftPath
             case .right: return rightPath
         }
     }
 
-    func setPath(_ path: String, for panel: PanelSide) {
+    func setPath(_ path: String, for panel: FavPanelSide) {
         log.debug("[AppState] setPath panel=\(panel) path=\(path)")
         if panel == .left {
             leftURL = URL(fileURLWithPath: path)
@@ -161,7 +161,7 @@ final class AppState {
         self.scanner = DualDirectoryScanner(appState: self)
     }
 
-    func setURL(_ url: URL, for panel: PanelSide) {
+    func setURL(_ url: URL, for panel: FavPanelSide) {
         do {
             let values = try url.resourceValues(forKeys: [.isDirectoryKey, .isRegularFileKey])
             if values.isDirectory != true {
@@ -185,7 +185,7 @@ final class AppState {
         get { rightPanel.archiveState }
         set { rightPanel.archiveState = newValue }
     }
-    var navigationCallbacks: [PanelSide: PanelNavigationCallbacks] = [:]
+    var navigationCallbacks: [FavPanelSide: PanelNavigationCallbacks] = [:]
 
     // MARK: - Search Results (bridge)
     var leftSearchResultsPath: String? {
@@ -196,7 +196,7 @@ final class AppState {
         get { rightPanel.searchResultsPath }
         set { rightPanel.searchResultsPath = newValue }
     }
-    var searchResultArchives: [PanelSide: Set<String>] = [:]
+    var searchResultArchives: [FavPanelSide: Set<String>] = [:]
 
     // MARK: - Sorting
     var sortKey: SortKeysEnum = .name
@@ -204,7 +204,7 @@ final class AppState {
 
     // MARK: - Flags
     var isNavigatingFromHistory = false
-    var navigatingPanel: PanelSide? = nil
+    var navigatingPanel: FavPanelSide? = nil
 
     // MARK: - Selection (bridge)
     var selectedLeftFile: CustomFile? {
@@ -259,23 +259,23 @@ final class AppState {
         files.first { !$0.isParentEntry }
     }
 
-    func setSelectedFile(_ file: CustomFile?, for panel: PanelSide) {
+    func setSelectedFile(_ file: CustomFile?, for panel: FavPanelSide) {
         if panel == .left { selectedLeftFile = file } else { selectedRightFile = file }
     }
 
-    func selectedIndex(for panel: PanelSide) -> Int {
+    func selectedIndex(for panel: FavPanelSide) -> Int {
         panel == .left ? leftSelectedIndex : rightSelectedIndex
     }
 
-    func visibleIndex(for panel: PanelSide) -> Int {
+    func visibleIndex(for panel: FavPanelSide) -> Int {
         panel == .left ? leftVisibleIndex : rightVisibleIndex
     }
 
-    func setSelectedIndex(_ index: Int, for panel: PanelSide) {
+    func setSelectedIndex(_ index: Int, for panel: FavPanelSide) {
         if panel == .left { leftSelectedIndex = index } else { rightSelectedIndex = index }
     }
 
-    func setVisibleIndex(_ index: Int, for panel: PanelSide) {
+    func setVisibleIndex(_ index: Int, for panel: FavPanelSide) {
         if panel == .left { leftVisibleIndex = index } else { rightVisibleIndex = index }
     }
 }

@@ -40,12 +40,12 @@ final class ContextMenuCoordinator {
     // MARK: - Path Helpers
     
     /// Get destination path for panel
-    func getDestinationPath(for panel: PanelSide, appState: AppState) -> URL {
+    func getDestinationPath(for panel: FavPanelSide, appState: AppState) -> URL {
         appState.url(for: panel)
     }
     
     /// Get opposite panel destination path
-    func getOppositeDestinationPath(for panel: PanelSide, appState: AppState) -> URL {
+    func getOppositeDestinationPath(for panel: FavPanelSide, appState: AppState) -> URL {
         appState.url(for: panel == .left ? .right : .left)
     }
     

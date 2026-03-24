@@ -13,7 +13,7 @@ import SwiftUI
 // MARK: - HistoryWindowContent
 struct HistoryWindowContent: View {
     @Environment(AppState.self) var appState
-    let panelSide: PanelSide
+    let panelSide: FavPanelSide
     @State private var searchText = ""
     @FocusState private var isSearchFocused: Bool
     @State private var appeared = false

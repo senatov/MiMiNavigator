@@ -16,7 +16,7 @@
         func openSelectedItem() { fileActions?.openSelectedItem() }
 
         // MARK: - Activate item (double-click / Enter)
-        func activateItem(_ file: CustomFile, on panel: PanelSide) {
+        func activateItem(_ file: CustomFile, on panel: FavPanelSide) {
             if ParentDirectoryEntry.isParentEntry(file) {
                 Task { await navigateToParent(on: panel) }
                 return

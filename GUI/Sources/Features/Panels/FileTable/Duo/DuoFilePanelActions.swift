@@ -245,7 +245,7 @@
         }
 
         private var targetPanelURL: URL? {
-            let targetSide: PanelSide = appState.focusedPanel == .left ? .right : .left
+            let targetSide: FavPanelSide = appState.focusedPanel == .left ? .right : .left
             return appState.pathURL(for: targetSide)
         }
     }

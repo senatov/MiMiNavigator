@@ -14,7 +14,7 @@ import Foundation
 extension AppState {
 
     /// Navigate into a directory with retry logic and spinner for slow volumes (USB, NAS).
-    func navigateToDirectory(_ newPath: String, on panel: PanelSide) async {
+    func navigateToDirectory(_ newPath: String, on panel: FavPanelSide) async {
         let previousPath = path(for: panel)
         log.info("[Navigate] \(panel): '\(previousPath)' → '\(newPath)'")
 
@@ -108,7 +108,7 @@ extension AppState {
     }
 
     /// Handle ".." (parent directory) navigation — archive-aware
-    func navigateToParent(on panel: PanelSide) async {
+    func navigateToParent(on panel: FavPanelSide) async {
         let state = archiveState(for: panel)
         let currentURL = url(for: panel)
         let currentPath = currentURL.path
@@ -129,7 +129,7 @@ extension AppState {
     }
 
     /// Remote parent navigation
-    private func navigateToParentRemote(on panel: PanelSide) async {
+    private func navigateToParentRemote(on panel: FavPanelSide) async {
         let manager = RemoteConnectionManager.shared
         guard let conn = manager.activeConnection else { return }
         let parentRemote = (conn.currentPath as NSString).deletingLastPathComponent
@@ -151,11 +151,11 @@ extension AppState {
     }
 
     // MARK: - Navigation History
-    func navigationHistory(for panel: PanelSide) -> PanelNavigationHistory {
+    func navigationHistory(for panel: FavPanelSide) -> PanelNavigationHistory {
         panel == .left ? leftNavigationHistory : rightNavigationHistory
     }
 
-    func recordNavigation(to path: String, panel: PanelSide) {
+    func recordNavigation(to path: String, panel: FavPanelSide) {
         guard !isNavigatingFromHistory else { return }
         let url = URL(fileURLWithPath: path).standardizedFileURL
         var isDir: ObjCBool = false
@@ -179,7 +179,7 @@ extension AppState {
     }
 
     @MainActor
-    private static func showNavFailAlert(path: String, panel: PanelSide) {
+    private static func showNavFailAlert(path: String, panel: FavPanelSide) {
         log.warning("\(#function) panel=\(panel) path='\(path)'")
         ErrorAlertService.show(
             title: "Can't Open Folder",

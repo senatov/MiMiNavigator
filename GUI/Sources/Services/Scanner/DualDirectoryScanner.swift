@@ -30,20 +30,20 @@ actor DualDirectoryScanner {
     private var rightWatchedPath: String?
 
     // MARK: - Debounce: skip polling if FSEvents delivered changes recently
-    private var lastFSEventsPatch: [PanelSide: Date] = [:]
+    private var lastFSEventsPatch: [FavPanelSide: Date] = [:]
     private let fsEventsDebounceInterval: TimeInterval = 120  // skip poll if FSEvents fired within 2 min
 
     // MARK: - Guard against overlapping scans (critical for 26K+ dirs)
-    private var scanInProgress: [PanelSide: Bool] = [.left: false, .right: false]
+    private var scanInProgress: [FavPanelSide: Bool] = [.left: false, .right: false]
 
     // MARK: - Scan task tracking for cancellation (navigation priority)
-    private var activeScanTask: [PanelSide: Task<Void, Never>] = [:]
+    private var activeScanTask: [FavPanelSide: Task<Void, Never>] = [:]
 
     // Generation token to prevent stale scans from overriding newer navigation
-    private var scanGeneration: [PanelSide: Int] = [.left: 0, .right: 0]
+    private var scanGeneration: [FavPanelSide: Int] = [.left: 0, .right: 0]
 
     // Prevent back‑to‑back full scans (navigation + timer firing)
-    private var lastFullScan: [PanelSide: Date] = [:]
+    private var lastFullScan: [FavPanelSide: Date] = [:]
     private let scanCooldown: TimeInterval = 3
 
     /// Refresh interval from centralized constants (safety net only)
@@ -100,7 +100,7 @@ actor DualDirectoryScanner {
     /// Starts FSEventsDirectoryWatcher for a panel.
     /// Remote paths are skipped — FSEvents has no meaning for ftp:// / sftp://.
     /// async because showHiddenFiles is @MainActor-isolated (read via appState hop).
-    private func startFSEvents(for side: PanelSide, url: URL) {
+    private func startFSEvents(for side: FavPanelSide, url: URL) {
         guard !AppState.isRemotePath(url) else {
             log.debug("[FSEvents] Remote path — skip watcher: '\(url.path)' side=\(side)")
             stopFSEvents(for: side)
@@ -113,7 +113,7 @@ actor DualDirectoryScanner {
         }
     }
 
-    private func launchFSEventsWatcher(for side: PanelSide, path: String, showHiddenFiles: Bool) {
+    private func launchFSEventsWatcher(for side: FavPanelSide, path: String, showHiddenFiles: Bool) {
         // Avoid restarting watcher if it already watches the same path
         switch side {
             case .left:
@@ -144,7 +144,7 @@ actor DualDirectoryScanner {
 
     }
 
-    private func stopFSEvents(for side: PanelSide) {
+    private func stopFSEvents(for side: FavPanelSide) {
         switch side {
             case .left:
                 leftFSEvents?.stop()
@@ -156,7 +156,7 @@ actor DualDirectoryScanner {
     }
 
     // MARK: - Apply incremental patch from FSEvents
-    private func applyPatch(_ patch: FSEventsDirectoryWatcher.DirectoryPatch, for side: PanelSide) async {
+    private func applyPatch(_ patch: FSEventsDirectoryWatcher.DirectoryPatch, for side: FavPanelSide) async {
         lastFSEventsPatch[side] = Date()
         // Dir-level FSEvents: full rescan needed (cannot determine removals incrementally)
         if patch.needsFullRescan {
@@ -230,7 +230,7 @@ actor DualDirectoryScanner {
         return lo
     }
 
-    private func setupTimer(for side: PanelSide) {
+    private func setupTimer(for side: FavPanelSide) {
         let timer = DispatchSource.makeTimerSource(queue: DispatchQueue.global())
         // Start after first interval — avoids double scan at startup (refreshFiles already called explicitly)
         timer.schedule(deadline: .now() + .seconds(refreshInterval), repeating: .seconds(refreshInterval))
@@ -248,7 +248,7 @@ actor DualDirectoryScanner {
     }
 
     // MARK: - Timer handler with smart skip
-    private func timerFired(for side: PanelSide) async {
+    private func timerFired(for side: FavPanelSide) async {
         // Check if FSEvents delivered changes recently — skip redundant poll
         if let lastPatch = lastFSEventsPatch[side] {
             let elapsed = Date().timeIntervalSince(lastPatch)
@@ -264,7 +264,7 @@ actor DualDirectoryScanner {
     }
 
     // MARK: - Cancel running scan (used by navigation like "..")
-    func cancelScan(for side: PanelSide) {
+    func cancelScan(for side: FavPanelSide) {
         if let task = activeScanTask[side] {
             task.cancel()
             activeScanTask.removeValue(forKey: side)
@@ -274,7 +274,7 @@ actor DualDirectoryScanner {
     }
 
     // MARK: - Force refresh after file operations (rename/delete/move)
-    func forceRefreshAfterFileOp(side: PanelSide) async {
+    func forceRefreshAfterFileOp(side: FavPanelSide) async {
         log.debug("[Scan] forceRefreshAfterFileOp triggered for \(side)")
 
         cancelScan(for: side)
@@ -285,7 +285,7 @@ actor DualDirectoryScanner {
 
     // MARK: - Full refresh (used by timer safety net and explicit navigation)
     @Sendable
-    func refreshFiles(currSide: PanelSide, force: Bool = false) async {
+    func refreshFiles(currSide: FavPanelSide, force: Bool = false) async {
         if Task.isCancelled { return }
         // Guard: skip if a scan is already running for this panel, unless force is true
         if scanInProgress[currSide] == true && !force {
@@ -333,13 +333,13 @@ actor DualDirectoryScanner {
         }
     }
 
-    private func finishScan(for side: PanelSide) {
+    private func finishScan(for side: FavPanelSide) {
         scanInProgress[side] = false
         activeScanTask.removeValue(forKey: side)
         log.debug("[Scan] Finished scan side=\(side)")
     }
 
-    private func performRefreshFiles(currSide: PanelSide, generation: Int) async {
+    private func performRefreshFiles(currSide: FavPanelSide, generation: Int) async {
         let scanStart = Date()
         let (url, showHidden, sortKey, sortAsc): (URL, Bool, SortKeysEnum, Bool) = await MainActor.run {
             let u = currSide == .left ? appState.leftURL : appState.rightURL
@@ -455,7 +455,7 @@ actor DualDirectoryScanner {
         return false
     }
 
-    private func requestAndRetryAccess(for url: URL, side: PanelSide) async -> Bool {
+    private func requestAndRetryAccess(for url: URL, side: FavPanelSide) async -> Bool {
         log.info("[Permissions] Checking bookmarks for path='\(url.path)'")
 
         // 1. Try restoring all bookmarks first — maybe a parent bookmark covers this path
@@ -497,11 +497,11 @@ actor DualDirectoryScanner {
 
     // MARK: - Update displayed files (full replace — used by polling timer)
     // files arrive pre-sorted from Task.detached — no sort on MainActor
-    @MainActor private var lastUpdateTime: [PanelSide: Date] = [:]
-    @MainActor private var lastContentHashOnMain: [PanelSide: Int] = [:]
+    @MainActor private var lastUpdateTime: [FavPanelSide: Date] = [:]
+    @MainActor private var lastContentHashOnMain: [FavPanelSide: Int] = [:]
 
     @MainActor
-    private func updateScannedFiles(_ incomingFiles: [CustomFile], for side: PanelSide) {
+    private func updateScannedFiles(_ incomingFiles: [CustomFile], for side: FavPanelSide) {
         // Ensure only a single parent ("..") entry exists
         var sortedFiles = incomingFiles
         var seenParent = false
@@ -557,18 +557,18 @@ actor DualDirectoryScanner {
     }
 
     // MARK: - Re-seed FSEvents debounce (called when content unchanged after safety scan)
-    func resetFSEventsDebounce(for side: PanelSide) {
+    func resetFSEventsDebounce(for side: FavPanelSide) {
         lastFSEventsPatch[side] = Date()
     }
 
     // MARK: - Clear scan cooldown (called by explicit navigation to avoid skipping)
-    func clearCooldown(for side: PanelSide) {
+    func clearCooldown(for side: FavPanelSide) {
         lastFullScan[side] = nil
         scanInProgress[side] = false
     }
 
     // MARK: - Reset timer for a panel
-    func resetRefreshTimer(for side: PanelSide) {
+    func resetRefreshTimer(for side: FavPanelSide) {
         switch side {
             case .left:
                 leftTimer?.cancel()
@@ -594,7 +594,7 @@ actor DualDirectoryScanner {
 
     // MARK: - Update file list in storage
     @MainActor
-    private func updateFileList(panelSide: PanelSide, with files: [CustomFile]) async {
+    private func updateFileList(panelSide: FavPanelSide, with files: [CustomFile]) async {
         switch panelSide {
             case .left: await fileCache.updateLeftFiles(files)
             case .right: await fileCache.updateRightFiles(files)

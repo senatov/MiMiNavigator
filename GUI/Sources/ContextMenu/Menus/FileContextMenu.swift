@@ -31,14 +31,14 @@ struct FileContextMenu: View {
         }
     }()
     let file: CustomFile
-    let panelSide: PanelSide
+    let panelSide: FavPanelSide
     let onAction: (FileAction) -> Void
     @Environment(\.dismiss) private var dismiss
     private let userFavorites = UserFavoritesStore.shared
     // Pre-loaded once at init — prevents re-init of OpenWithSubmenu on every body re-evaluation
     @State private var openWithApps: [AppInfo]
 
-    init(file: CustomFile, panelSide: PanelSide, onAction: @escaping (FileAction) -> Void) {
+    init(file: CustomFile, panelSide: FavPanelSide, onAction: @escaping (FileAction) -> Void) {
         _ = Self.cacheObserver  // ensure observer is registered
         self.file = file
         self.panelSide = panelSide

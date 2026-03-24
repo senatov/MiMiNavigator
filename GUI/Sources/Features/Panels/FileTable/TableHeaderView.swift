@@ -9,7 +9,7 @@ import SwiftUI
 struct TableHeaderView: View {
 
     @Environment(AppState.self) var appState
-    let panelSide: PanelSide
+    let panelSide: FavPanelSide
     @Bindable var layout: ColumnLayoutModel
     var isFocused: Bool = false
 

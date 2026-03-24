@@ -17,8 +17,8 @@ final class SelectionManager {
     private let selectionsHistory: SelectionsHistory
     // MARK: - State
     private var isRestoringSelections = false
-    private var lastRecordedURL: [PanelSide: URL] = [:]
-    private var lastKnownIndex: [PanelSide: Int] = [:]
+    private var lastRecordedURL: [FavPanelSide: URL] = [:]
+    private var lastKnownIndex: [FavPanelSide: Int] = [:]
 
 
 
@@ -30,7 +30,7 @@ final class SelectionManager {
     }
 
     // MARK: - Panel Update Helper (avoids copy-mutate bugs)
-    private func updatePanel(_ side: PanelSide, mutate: (inout PanelState) -> Void) {
+    private func updatePanel(_ side: FavPanelSide, mutate: (inout PanelState) -> Void) {
         guard let state = appState else { return }
         var panel = state.panel(side)
         mutate(&panel)
@@ -42,7 +42,7 @@ final class SelectionManager {
     /// Select file on specified panel, keep opposite panel selection (shown as gray).
     /// The ".." parent directory entry is navigation-only but CAN be selected/highlighted
     /// so keyboard navigation and UI highlighting behave consistently.
-    func select(_ file: CustomFile, on panelSide: PanelSide) {
+    func select(_ file: CustomFile, on panelSide: FavPanelSide) {
         guard let state = appState else {
             log.error("[SelectionManager] appState is nil")
             return
@@ -60,7 +60,7 @@ final class SelectionManager {
     }
 
     /// Clear selection on specified panel
-    func clearSelection(on panelSide: PanelSide) {
+    func clearSelection(on panelSide: FavPanelSide) {
         log.debug("[SelectionManager] clearSelection on=\(panelSide)")
         updatePanel(panelSide) { panel in
             panel.selectedFile = nil
@@ -68,7 +68,7 @@ final class SelectionManager {
     }
 
     /// Record selection to history (called from didSet)
-    func recordSelection(_ panelSide: PanelSide, file: CustomFile?) {
+    func recordSelection(_ panelSide: FavPanelSide, file: CustomFile?) {
         guard !isRestoringSelections else {
             log.debug("[SelectionManager] history skip (restoring)")
             return
@@ -139,7 +139,7 @@ final class SelectionManager {
         log.debug("[SelectionManager] focus toggled \(oldFocus) → \(state.focusedPanel)")
     }
 
-    private func restoreSelection(for side: PanelSide, key: PreferenceKeys) {
+    private func restoreSelection(for side: FavPanelSide, key: PreferenceKeys) {
         guard let state = appState else { return }
         let ud = MiMiDefaults.shared
         guard let url = ud.url(forKey: key.rawValue)?.standardizedFileURL else { return }

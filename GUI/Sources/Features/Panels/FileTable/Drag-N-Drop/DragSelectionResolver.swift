@@ -12,7 +12,7 @@
 
     struct DragSelectionResolver {
         @MainActor
-        static func resolve(from appState: AppState, side: PanelSide) -> [URL] {
+        static func resolve(from appState: AppState, side: FavPanelSide) -> [URL] {
             var selectedPaths = appState.markedFiles(for: side)
 
             if selectedPaths.isEmpty {

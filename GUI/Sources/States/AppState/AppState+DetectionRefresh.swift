@@ -23,7 +23,7 @@ extension AppState {
         return markers.contains { raw.contains($0) }
     }
 
-    func refreshRemoteFiles(for panel: PanelSide) async {
+    func refreshRemoteFiles(for panel: FavPanelSide) async {
         let manager = RemoteConnectionManager.shared
         guard let conn = manager.activeConnection else {
             log.error("[AppState] refreshRemoteFiles — no active connection")

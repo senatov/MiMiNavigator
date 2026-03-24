@@ -57,19 +57,19 @@ final class PanelViewModeStore {
     }
 
     // MARK: - Helpers
-    func mode(for side: PanelSide) -> PanelViewMode {
+    func mode(for side: FavPanelSide) -> PanelViewMode {
         side == .left ? leftMode : rightMode
     }
 
-    func setMode(_ mode: PanelViewMode, for side: PanelSide) {
+    func setMode(_ mode: PanelViewMode, for side: FavPanelSide) {
         if side == .left { leftMode = mode } else { rightMode = mode }
     }
 
-    func thumbSize(for side: PanelSide) -> CGFloat {
+    func thumbSize(for side: FavPanelSide) -> CGFloat {
         side == .left ? leftThumbSize : rightThumbSize
     }
 
-    func setThumbSize(_ size: CGFloat, for side: PanelSide) {
+    func setThumbSize(_ size: CGFloat, for side: FavPanelSide) {
         let clamped = min(900, max(16, size))
         if side == .left { leftThumbSize = clamped } else { rightThumbSize = clamped }
     }

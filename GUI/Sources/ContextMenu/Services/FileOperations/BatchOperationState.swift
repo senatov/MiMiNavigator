@@ -49,7 +49,7 @@ final class BatchOperationState {
     
     // MARK: - Operation Info
     let operationType: BatchOperationType
-    let sourcePanel: PanelSide
+    let sourcePanel: FavPanelSide
     let destinationURL: URL?
     let totalFiles: Int
     
@@ -121,7 +121,7 @@ final class BatchOperationState {
     
     init(
         operationType: BatchOperationType,
-        sourcePanel: PanelSide,
+        sourcePanel: FavPanelSide,
         destinationURL: URL?,
         files: [CustomFile]
     ) {

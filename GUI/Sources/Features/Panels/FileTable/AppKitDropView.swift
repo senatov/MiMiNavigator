@@ -12,7 +12,7 @@
 
     struct AppKitDropView: NSViewRepresentable {
 
-        let panelSide: PanelSide
+        let panelSide: FavPanelSide
         let appState: AppState
         let dragDropManager: DragDropManager
 
@@ -36,7 +36,7 @@
 
         weak var appState: AppState?
         weak var dragDropManager: DragDropManager?
-        var panelSide: PanelSide!
+        var panelSide: FavPanelSide!
 
         override init(frame frameRect: NSRect) {
             super.init(frame: frameRect)

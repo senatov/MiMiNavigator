@@ -53,10 +53,10 @@ struct MiMiNavigatorApp: App {
                         Task { @MainActor in
                             // Restore whichever panel(s) are showing remote content
                             if AppState.isRemotePath(appState.leftURL) {
-                                await appState.restoreLocalPath(for: PanelSide.left)
+                                await appState.restoreLocalPath(for: FavPanelSide.left)
                             }
                             if AppState.isRemotePath(appState.rightURL) {
-                                await appState.restoreLocalPath(for: PanelSide.right)
+                                await appState.restoreLocalPath(for: FavPanelSide.right)
                             }
                         }
                     }

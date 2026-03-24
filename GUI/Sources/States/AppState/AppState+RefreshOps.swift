@@ -19,7 +19,7 @@ extension AppState {
     }
 
     /// Refresh files for a specific panel
-    func refreshFiles(for panel: PanelSide, force: Bool = false) async {
+    func refreshFiles(for panel: FavPanelSide, force: Bool = false) async {
         log.debug("[REFRESH-FILES] ⏱ START panel=\(panel) force=\(force)")
         setLoading(panel, true)
         defer {

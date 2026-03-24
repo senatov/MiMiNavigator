@@ -18,7 +18,7 @@ final class MultiSelectionManager {
     private weak var appState: AppState?
 
     /// Last clicked file index for Shift+Click range selection
-    private var lastClickedIndex: [PanelSide: Int] = [:]
+    private var lastClickedIndex: [FavPanelSide: Int] = [:]
 
     // MARK: - Initialization
     init(appState: AppState) {
@@ -85,12 +85,12 @@ final class MultiSelectionManager {
     }
 
     /// Update last clicked index when selection changes (e.g. keyboard navigation)
-    func updateLastClickedIndex(for panel: PanelSide, index: Int) {
+    func updateLastClickedIndex(for panel: FavPanelSide, index: Int) {
         lastClickedIndex[panel] = index
     }
 
     /// Reset anchor when directory changes (stale index would crash on Shift+Click)
-    func resetAnchor(for panel: PanelSide) {
+    func resetAnchor(for panel: FavPanelSide) {
         lastClickedIndex[panel] = nil
     }
 
@@ -160,7 +160,7 @@ final class MultiSelectionManager {
     }
 
     /// Apply pattern to mark/unmark files
-    private func applyPattern(_ pattern: String, shouldMark: Bool, on panel: PanelSide) {
+    private func applyPattern(_ pattern: String, shouldMark: Bool, on panel: FavPanelSide) {
         guard let state = appState else { return }
 
         let files = state.displayedFiles(for: panel)
@@ -273,7 +273,7 @@ final class MultiSelectionManager {
 
     // MARK: - Clear Marks After Operation
     /// Clear marks on panel after successful operation
-    func clearMarksAfterOperation(on panel: PanelSide) {
+    func clearMarksAfterOperation(on panel: FavPanelSide) {
         guard let state = appState else { return }
         state.setMarkedFiles([], for: panel)
         log.debug("[MultiSelectionManager] cleared marks after operation on \(panel)")

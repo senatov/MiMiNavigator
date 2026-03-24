@@ -13,7 +13,7 @@ import SwiftUI
 // MARK: - A view displaying a breadcrumb-style editable path bar with panel navigation menus.
 struct BreadCrumbPathControl: View {
     @Environment(AppState.self) var appState
-    let panelSide: PanelSide
+    let panelSide: FavPanelSide
 
     // MARK: - Design Constants
     @MainActor private enum Design {
@@ -26,7 +26,7 @@ struct BreadCrumbPathControl: View {
     }
 
     // MARK: - Init
-    init(selectedSide: PanelSide) {
+    init(selectedSide: FavPanelSide) {
         self.panelSide = selectedSide
     }
 

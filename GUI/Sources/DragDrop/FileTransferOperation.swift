@@ -14,7 +14,7 @@ struct FileTransferOperation: Identifiable, Equatable {
     let id = UUID()
     let sourceFiles: [CustomFile]
     let destinationPath: URL
-    let sourcePanelSide: PanelSide?
+    let sourcePanelSide: FavPanelSide?
     
     /// Human-readable description of items being transferred
     var itemsDescription: String {

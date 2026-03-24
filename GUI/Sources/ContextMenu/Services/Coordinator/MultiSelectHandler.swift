@@ -14,7 +14,7 @@
     extension ContextMenuCoordinator {
 
         /// Handles multi-selection context menu actions
-        func handleMultiSelectionAction(_ action: MultiSelectionAction, panel: PanelSide, appState: AppState) {
+        func handleMultiSelectionAction(_ action: MultiSelectionAction, panel: FavPanelSide, appState: AppState) {
             let files = appState.filesForOperation(on: panel)
 
             guard !files.isEmpty else {

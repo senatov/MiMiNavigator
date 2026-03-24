@@ -13,7 +13,7 @@ import Foundation
 extension AppState {
 
     /// Navigate into an archive: extract to temp dir and open as directory
-    func enterArchive(at archiveURL: URL, on panel: PanelSide, password: String? = nil) async {
+    func enterArchive(at archiveURL: URL, on panel: FavPanelSide, password: String? = nil) async {
         log.info("[AppState] Entering archive: \(archiveURL.lastPathComponent) panel=\(panel) hasPassword=\(password != nil)")
 
         let progressPanel = ProgressPanel.shared
@@ -65,7 +65,7 @@ extension AppState {
     }
 
     /// Navigate out of an archive: optionally repack if dirty, go to archive's parent dir
-    func exitArchive(on panel: PanelSide) async {
+    func exitArchive(on panel: FavPanelSide) async {
         let state = archiveState(for: panel)
         guard state.isInsideArchive, let archiveURL = state.archiveURL else {
             log.warning("[AppState] exitArchive called but not inside archive on panel=\(panel)")
@@ -95,7 +95,7 @@ extension AppState {
 
     // MARK: - Archive Error Alert
     @MainActor
-    func showArchiveErrorAlert(archiveName: String, archiveURL: URL, error: Error, panel: PanelSide) async {
+    func showArchiveErrorAlert(archiveName: String, archiveURL: URL, error: Error, panel: FavPanelSide) async {
         let desc = error.localizedDescription
         let isEncrypted = desc.lowercased().contains("password") || desc.lowercased().contains("encrypted")
         if isEncrypted {
