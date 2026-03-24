@@ -199,7 +199,8 @@ struct FileTableView: View {
             baseView
             .onAppear(perform: onAppear)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .padding(.horizontal, 6)
+            .padding(.leading, 6)
+            .padding(.trailing, 1)  // scrollbar flush against right edge
             .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
             .overlay(panelBorder)
             .contentShape(Rectangle())

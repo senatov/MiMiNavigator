@@ -107,55 +107,48 @@ extension FileTableView {
 
     // MARK: - Jump Buttons
 
+    /// Glass-style jump-to-edge buttons flush against the right border,
+    /// vertically confined to the file rows area (below header, above status bar).
     @ViewBuilder
     private var jumpButtonsOverlay: some View {
         if sortedRows.count > 50 {
             VStack(spacing: 0) {
-                scrollEdgeButton(icon: "chevron.up.2") {
-                    NotificationCenter.default.post(
-                        name: .jumpToFirst,
-                        object: panelSide
-                    )
+                // skip header area
+                Color.clear.frame(height: 26)
+
+                glassJumpButton(icon: "chevron.up.2") {
+                    NotificationCenter.default.post(name: .jumpToFirst, object: panelSide)
                 }
                 .help("Jump to top (Home)")
 
-                Spacer()
+                Spacer(minLength: 0)
 
-                scrollEdgeButton(icon: "chevron.down.2") {
-                    NotificationCenter.default.post(
-                        name: .jumpToLast,
-                        object: panelSide
-                    )
+                glassJumpButton(icon: "chevron.down.2") {
+                    NotificationCenter.default.post(name: .jumpToLast, object: panelSide)
                 }
                 .help("Jump to bottom (End)")
             }
             .frame(width: Self.scrollbarWidth)
+            .padding(.trailing, 0)
         }
     }
 
-    // MARK: - Scroll Edge Button (3D square, matches scrollbar width)
-    /// Compact square button sitting at the edge of the scrollbar track.
-    /// Uses a subtle 3D gradient + shadow for a tactile, embossed look.
-    private func scrollEdgeButton(icon: String, action: @escaping () -> Void) -> some View {
+    // MARK: - Glass Jump Button
+    /// Translucent pill flush with scrollbar track. Blends with the glass chrome.
+    private func glassJumpButton(icon: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: icon)
-            .font(.system(size: 9, weight: .heavy))
-            .foregroundStyle(.secondary)
-            .frame(width: Self.scrollbarWidth, height: Self.scrollbarWidth)
-            .background(
-                RoundedRectangle(cornerRadius: 3, style: .continuous)
-                .fill(.ultraThinMaterial)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 3, style: .continuous)
-                .stroke(Color.white.opacity(0.25), lineWidth: 0.5)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 3, style: .continuous)
-                .stroke(Color(nsColor: .separatorColor).opacity(0.6), lineWidth: 0.5)
-            )
-            .shadow(color: .black.opacity(0.12), radius: 1, x: 0, y: 1)
-            .shadow(color: .white.opacity(0.5), radius: 0.5, x: 0, y: -0.5)
+                .font(.system(size: 8, weight: .semibold))
+                .foregroundStyle(.tertiary)
+                .frame(width: Self.scrollbarWidth - 2, height: 18)
+                .background(
+                    .ultraThinMaterial,
+                    in: RoundedRectangle(cornerRadius: 4, style: .continuous)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 4, style: .continuous)
+                        .strokeBorder(Color(nsColor: .separatorColor).opacity(0.3), lineWidth: 0.5)
+                )
         }
         .buttonStyle(.plain)
         .contentShape(Rectangle())
