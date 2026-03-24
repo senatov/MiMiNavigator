@@ -295,7 +295,7 @@ struct FileTableView: View {
     /// Trigger content-aware column resize when the preference is on.
     /// Runs only once per directory — FSEvents refreshes won't re-trigger.
     private func autoFitColumnsIfEnabled() {
-        guard UserDefaults.standard.bool(forKey: "settings.autoFitColumnsOnNavigate") else { return }
+        guard UserPreferences.shared.snapshot.autoFitColumnsOnNavigate else { return }
         let currentPath = appState.path(for: panelSide)
         guard currentPath != lastAutoFitPath else { return }
         lastAutoFitPath = currentPath

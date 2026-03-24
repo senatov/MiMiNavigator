@@ -48,16 +48,18 @@ enum AppLanguage: String, CaseIterable, Identifiable {
 // MARK: - SettingsGeneralPane
 struct SettingsGeneralPane: View {
 
-    @AppStorage("settings.appearance")       private var appearance: String = "system"
-    @AppStorage("settings.panelFontSize")    private var panelFontSize: Double = 14
-    @AppStorage("settings.iconSize")         private var iconSize: String = "medium"
-    @AppStorage("settings.showHiddenFiles")  private var showHiddenFiles: Bool = false
-    @AppStorage("settings.showExtensions")   private var showExtensions: Bool = true
-    @AppStorage("settings.startupPath")      private var startupPath: String = "home"
-    @AppStorage("settings.autoFitColumnsOnNavigate") private var autoFitColumnsOnNavigate: Bool = false
+    @State private var prefs = UserPreferences.shared
     @State private var selectedLanguage: AppLanguage = AppLanguage.current()
     @State private var showRestartHint: Bool = false
     @State private var scaleStore = InterfaceScaleStore.shared
+
+    /// Convenience binding that auto-saves on every change.
+    private func prefBinding<T>(_ keyPath: WritableKeyPath<PreferencesSnapshot, T>) -> Binding<T> {
+        Binding(
+            get: { prefs.snapshot[keyPath: keyPath] },
+            set: { prefs.snapshot[keyPath: keyPath] = $0; prefs.save() }
+        )
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
@@ -66,7 +68,7 @@ struct SettingsGeneralPane: View {
             SettingsGroupBox {
                 VStack(spacing: 0) {
                     SettingsRow(label: "Appearance:", help: "Override system light/dark mode") {
-                        Picker("", selection: $appearance) {
+                        Picker("", selection: prefBinding(\.appearance)) {
                             Text("Follow System").tag("system")
                             Text("Light").tag("light")
                             Text("Dark").tag("dark")
@@ -151,9 +153,9 @@ struct SettingsGeneralPane: View {
                 VStack(spacing: 0) {
                     SettingsRow(label: "Panel font size:", help: "Font size used in file lists") {
                         HStack(spacing: 10) {
-                            Slider(value: $panelFontSize, in: 10...18, step: 1)
+                            Slider(value: prefBinding(\.panelFontSize), in: 10...18, step: 1)
                                 .frame(width: 140)
-                            Text("\(Int(panelFontSize)) pt")
+                            Text("\(Int(prefs.snapshot.panelFontSize)) pt")
                                 .monospacedDigit()
                                 .foregroundStyle(.secondary)
                                 .frame(width: 36)
@@ -163,7 +165,7 @@ struct SettingsGeneralPane: View {
                     Divider().padding(.leading, 0)
 
                     SettingsRow(label: "Icon size:", help: "Size of file/folder icons in panels") {
-                        Picker("", selection: $iconSize) {
+                        Picker("", selection: prefBinding(\.iconSize)) {
                             Text("Small").tag("small")
                             Text("Medium").tag("medium")
                             Text("Large").tag("large")
@@ -179,14 +181,14 @@ struct SettingsGeneralPane: View {
             SettingsGroupBox {
                 VStack(spacing: 0) {
                     SettingsRow(label: "Hidden files:", help: "Show files and folders starting with dot (.)") {
-                        Toggle("Show hidden files (.dotfiles)", isOn: $showHiddenFiles)
+                        Toggle("Show hidden files (.dotfiles)", isOn: prefBinding(\.showHiddenFiles))
                             .toggleStyle(.checkbox)
                     }
 
                     Divider()
 
                     SettingsRow(label: "Extensions:", help: "Always show file extensions in file names") {
-                        Toggle("Always show file extensions", isOn: $showExtensions)
+                        Toggle("Always show file extensions", isOn: prefBinding(\.showExtensions))
                             .toggleStyle(.checkbox)
                     }
                 }
@@ -199,7 +201,7 @@ struct SettingsGeneralPane: View {
                         label: "Auto-fit columns:",
                         help: "Shrink data columns to fit their content when navigating. Empty columns collapse to minimum width. Recovered space goes to the Name column."
                     ) {
-                        Toggle("Auto-fit column widths on navigate", isOn: $autoFitColumnsOnNavigate)
+                        Toggle("Auto-fit column widths on navigate", isOn: prefBinding(\.autoFitColumnsOnNavigate))
                             .toggleStyle(.checkbox)
                     }
                 }
@@ -209,7 +211,7 @@ struct SettingsGeneralPane: View {
             SettingsGroupBox {
                 VStack(spacing: 0) {
                     SettingsRow(label: "Start in:", help: "Which directory to open at app launch") {
-                        Picker("", selection: $startupPath) {
+                        Picker("", selection: prefBinding(\.startupPath)) {
                             Text("Home folder (~)").tag("home")
                             Text("Last visited location").tag("last")
                             Text("Desktop").tag("desktop")

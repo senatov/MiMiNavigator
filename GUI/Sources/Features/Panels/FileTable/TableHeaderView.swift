@@ -268,11 +268,12 @@ struct TableHeaderView: View {
         }
         Divider()
 
-        // Auto-fit toggle — same key as Settings > General
-        let autoFitOn = UserDefaults.standard.bool(forKey: "settings.autoFitColumnsOnNavigate")
+        // Auto-fit toggle — synced with ~/.mimi/preferences.json
+        let autoFitOn = UserPreferences.shared.snapshot.autoFitColumnsOnNavigate
         Button {
             let newVal = !autoFitOn
-            UserDefaults.standard.set(newVal, forKey: "settings.autoFitColumnsOnNavigate")
+            UserPreferences.shared.snapshot.autoFitColumnsOnNavigate = newVal
+            UserPreferences.shared.save()
             if newVal {
                 let files = panelSide == .left ? appState.displayedLeftFiles : appState.displayedRightFiles
                 ColumnAutoFitter.autoFitAll(layout: layout, files: files)
