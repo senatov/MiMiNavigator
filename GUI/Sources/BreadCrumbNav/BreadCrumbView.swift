@@ -240,9 +240,10 @@ struct BreadCrumbView: View {
     @ViewBuilder
     private func breadcrumbItem(segment: DisplaySegment, index: Int) -> some View {
         if index > 0 {
-            Image(systemName: "arrowtriangle.forward")
+            Image(systemName: "arrowtriangle.forward.fill")
                 .symbolRenderingMode(.hierarchical)
                 .foregroundStyle(.secondary)
+                .font(.system(size: 14, weight: .light, design: .rounded))
                 .padding(.horizontal, 2)
         }
         ExpandableSegmentButton(
@@ -257,67 +258,52 @@ struct BreadCrumbView: View {
 
     // MARK: - handleTap
     private func handleTap(segment: DisplaySegment) {
-        let panelURL = appState.url(for: panelSide)
         log.info("[BreadCrumb] tap index=\(segment.originalIndex) on \(panelSide)")
 
-        // ── Remote ──────────────────────────────────────────────────────────
+        let targetPath: String
+        let panelURL = appState.url(for: panelSide)
+
+        // Remote
         if AppState.isRemotePath(panelURL) {
             if segment.originalIndex == 0 {
-                // tapped origin label — go to root
-                let manager = RemoteConnectionManager.shared
-                if let conn = manager.activeConnection {
-                    let origin = AppState.remoteOrigin(from: conn.provider.mountPath)
-                    Task { await appState.navigateToDirectory(origin + "/", on: panelSide) }
+                if let conn = RemoteConnectionManager.shared.activeConnection {
+                    targetPath = AppState.remoteOrigin(from: conn.provider.mountPath) + "/"
+                } else {
+                    return
                 }
             } else {
-                // Build path from components[1..index]
                 let parts = Array(pathComponents[1...segment.originalIndex])
-                let remotePath = "/" + parts.joined(separator: "/")
-                let manager = RemoteConnectionManager.shared
-                if let conn = manager.activeConnection {
+                if let conn = RemoteConnectionManager.shared.activeConnection {
                     let origin = AppState.remoteOrigin(from: conn.provider.mountPath)
-                    Task { await appState.navigateToDirectory(origin + remotePath, on: panelSide) }
+                    targetPath = origin + "/" + parts.joined(separator: "/")
+                } else {
+                    return
                 }
             }
-            return
         }
-
-        // ── Archive ──────────────────────────────────────────────────────────
-        let archState = panelSide == .left ? appState.leftArchiveState : appState.rightArchiveState
-        if archState.isInsideArchive, let tempDir = archState.archiveTempDir {
+        // Archive
+        else if (panelSide == .left ? appState.leftArchiveState : appState.rightArchiveState).isInsideArchive,
+                let archState = (panelSide == .left ? appState.leftArchiveState : appState.rightArchiveState).archiveTempDir {
             if segment.originalIndex == 0 {
                 Task { await appState.exitArchive(on: panelSide) }
+                return
             } else {
                 let sub = Array(pathComponents[1...segment.originalIndex])
-                let newPath = tempDir.standardizedFileURL.path + "/" + sub.joined(separator: "/")
-                appState.updatePath(newPath, for: panelSide)
-                Task { await performDirUpdate(path: newPath) }
+                targetPath = archState.standardizedFileURL.path + "/" + sub.joined(separator: "/")
             }
-            return
+        }
+        // Local
+        else {
+            targetPath = ("/" + pathComponents.prefix(segment.originalIndex + 1).joined(separator: "/"))
+                .replacingOccurrences(of: "//", with: "/")
         }
 
-        // ── Local ────────────────────────────────────────────────────────────
-        let newPath = ("/" + pathComponents.prefix(segment.originalIndex + 1).joined(separator: "/"))
-            .replacingOccurrences(of: "//", with: "/")
-        let current = appState.path(for: panelSide)
-        guard !PathUtils.areEqual(newPath, current) else { return }
-        appState.updatePath(newPath, for: panelSide)
-        Task { await performDirUpdate(path: newPath) }
-    }
-
-    // MARK: - performDirUpdate
-    @MainActor
-    private func performDirUpdate(path: String) async {
-        if panelSide == .left {
-            await appState.scanner.setLeftDirectory(pathStr: path)
-            await appState.scanner.refreshFiles(currSide: .left)
-            await appState.refreshLeftFiles()
-        } else {
-            await appState.scanner.setRightDirectory(pathStr: path)
-            await appState.scanner.refreshFiles(currSide: .right)
-            await appState.refreshRightFiles()
+        Task {
+            await PathNavigationService.shared(appState: appState)
+                .navigate(to: targetPath, side: panelSide)
         }
     }
+
 
     // MARK: - tooltip
     private func tooltip(for segment: DisplaySegment) -> String {

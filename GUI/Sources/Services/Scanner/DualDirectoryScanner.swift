@@ -37,7 +37,7 @@ actor DualDirectoryScanner {
     private var scanInProgress: [PanelSide: Bool] = [.left: false, .right: false]
 
     // MARK: - Scan task tracking for cancellation (navigation priority)
-    private var activeScanTask: [PanelSide: Task<Void, Never>?] = [.left: nil, .right: nil]
+    private var activeScanTask: [PanelSide: Task<Void, Never>] = [:]
 
     // Generation token to prevent stale scans from overriding newer navigation
     private var scanGeneration: [PanelSide: Int] = [.left: 0, .right: 0]
@@ -257,15 +257,6 @@ actor DualDirectoryScanner {
             }
         }
 
-        // Check if FSEvents watcher is active for this panel
-        let hasActiveWatcher: Bool
-        switch side {
-            case .left: hasActiveWatcher = leftFSEvents != nil
-            case .right: hasActiveWatcher = rightFSEvents != nil
-        }
-
-        // For local paths with active FSEvents, only poll as safety net every 5 minutes
-        // The 60s interval is now just for remote paths or when FSEvents failed
         // For local paths with active FSEvents, only poll as safety net every 5 minutes
         // The 60s interval is now just for remote paths or when FSEvents failed
 
@@ -276,8 +267,8 @@ actor DualDirectoryScanner {
     func cancelScan(for side: PanelSide) {
         if let task = activeScanTask[side] {
             task.cancel()
+            activeScanTask.removeValue(forKey: side)
         }
-        activeScanTask[side] = nil
         scanInProgress[side] = false
         log.debug("[Scanner] Cancelled scan for \(side)")
     }
@@ -320,6 +311,7 @@ actor DualDirectoryScanner {
         // cancel any previous scan for this panel
         if let task = activeScanTask[currSide] {
             task.cancel()
+            activeScanTask.removeValue(forKey: currSide)
         }
 
         // Increment generation so older scans cannot override newer navigation
@@ -343,7 +335,7 @@ actor DualDirectoryScanner {
 
     private func finishScan(for side: PanelSide) {
         scanInProgress[side] = false
-        activeScanTask[side] = nil
+        activeScanTask.removeValue(forKey: side)
         log.debug("[Scan] Finished scan side=\(side)")
     }
 

@@ -60,8 +60,7 @@ struct BreadCrumbControlWrapper: View {
         // DEBUG: log every body eval
         //log.debug("[BreadCrumbWrapper] body eval: themeVersion=\(themeVersion), isActive=\(isActive), bgColor=\(bgColor.description)")
 
-        return
-            contentView
+        return contentView
             .padding(.horizontal, Design.Padding.horizontal)
             .onHover { hovering in isHovering = hovering }
             .background(
@@ -72,7 +71,6 @@ struct BreadCrumbControlWrapper: View {
             .frame(height: 34)
             .zIndex(isEditing ? 10 : 0)
             .id("breadcrumb-\(panelSide)-\(themeVersion)")  // force FULL redraw on theme change
-            .padding(.horizontal, Design.Padding.horizontal)
             .onTapGesture {
                 if !isEditing {
                     appState.focusedPanel = panelSide
@@ -109,6 +107,13 @@ struct BreadCrumbControlWrapper: View {
         return Color(nsColor: NSColor(calibratedRed: 0.08, green: 0.13, blue: 0.32, alpha: isHovering ? 0.65 : 0.45))
     }
 
+    // MARK: - Helpers
+    private func animated(_ action: @escaping () -> Void) {
+        withAnimation(.easeInOut(duration: Design.animationDuration)) {
+            action()
+        }
+    }
+
     // MARK: - Editing View
     private var editingView: some View {
         HStack(spacing: 8) {
@@ -121,9 +126,7 @@ struct BreadCrumbControlWrapper: View {
                 },
                 onCancel: {
                     log.info("Exit command received (Escape)")
-                    withAnimation(.easeInOut(duration: Design.animationDuration)) {
-                        isEditing = false
-                    }
+                    animated { isEditing = false }
                 }
             )
             .onAppear {
@@ -155,9 +158,7 @@ struct BreadCrumbControlWrapper: View {
     private var cancelButton: some View {
         Button {
             log.info("Cancelled path editing with X button")
-            withAnimation(.easeInOut(duration: Design.animationDuration)) {
-                isEditing = false
-            }
+            animated { isEditing = false }
         } label: {
             Image(systemName: "xmark.circle.fill")
                 .symbolRenderingMode(.palette)
@@ -248,6 +249,10 @@ struct BreadCrumbControlWrapper: View {
         appState.path(for: panelSide)
     }
 
+    private var navigator: PathNavigationService {
+        PathNavigationService.shared(appState: appState)
+    }
+
     // MARK: - Apply Path Update
     private func applyPathUpdate() {
         log.info(#function + " for side <<\(panelSide)>> with path: \(editedPathStr)")
@@ -257,46 +262,26 @@ struct BreadCrumbControlWrapper: View {
 
         guard !trimmedPath.isEmpty else {
             log.warning("Empty path provided, ignoring update")
-            withAnimation(.easeInOut(duration: Design.animationDuration)) {
-                isEditing = false
-            }
+            animated { isEditing = false }
             return
         }
 
-        // Validate path exists
-        let fileManager = FileManager.default
-        guard fileManager.fileExists(atPath: trimmedPath) else {
+        let url = URL(fileURLWithPath: trimmedPath)
+        guard FileManager.default.fileExists(atPath: url.path) else {
             log.error("Path does not exist: \(trimmedPath)")
-            withAnimation(.easeInOut(duration: Design.animationDuration)) {
-                isEditing = false
-            }
+            animated { isEditing = false }
             return
         }
 
-        withAnimation(.easeInOut(duration: Design.animationDuration)) {
-            isEditing = false
-        }
+        animated { isEditing = false }
 
         Task {
             log.info("Applying path update for <<\(panelSide)>>: \(trimmedPath)")
 
-            // Update path through AppState to record in navigation history
-            let newURL = URL(fileURLWithPath: trimmedPath)
-            appState.updatePath(newURL, for: panelSide)
-
-            if panelSide == .left {
-                await appState.scanner.setLeftDirectory(pathStr: trimmedPath)
-                await appState.scanner.resetRefreshTimer(for: .left)
-                await appState.scanner.refreshFiles(currSide: .left)
-                await appState.refreshLeftFiles()
-                log.info("Left panel updated to: \(trimmedPath)")
-            } else {
-                await appState.scanner.setRightDirectory(pathStr: trimmedPath)
-                await appState.scanner.resetRefreshTimer(for: .right)
-                await appState.scanner.refreshFiles(currSide: .right)
-                await appState.refreshRightFiles()
-                log.info("Right panel updated to: \(trimmedPath)")
-            }
+            await navigator.navigate(
+                to: trimmedPath,
+                side: panelSide
+            )
         }
     }
 }

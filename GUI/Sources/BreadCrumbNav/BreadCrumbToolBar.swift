@@ -16,7 +16,6 @@ struct BreadCrumbToolBar: View {
     @Environment(AppState.self) var appState
     // MARK: - State
     @StateObject private var store = FavoritesKit.FavoritesStore.shared
-    @State private var navigationAdapter: FavoritesNavigationAdapter?
     let panelSide: PanelSide
 
     // Active panel check for icon contrast
@@ -29,6 +28,10 @@ struct BreadCrumbToolBar: View {
         isActivePanel ? Color(nsColor: .labelColor).opacity(0.75) : Color(nsColor: .labelColor).opacity(0.4)
     }
 
+    private var navigator: PathNavigationService {
+        PathNavigationService.shared(appState: appState)
+    }
+
     // MARK: - Init
     init(selectedSide: PanelSide) {
         log.debug("[BreadCrumbToolBar] init panel=\(selectedSide)")
@@ -39,17 +42,8 @@ struct BreadCrumbToolBar: View {
     var body: some View {
         navigationControls
             .onAppear {
-                configureNavigationAdapterIfNeeded()
                 store.load()
             }
-    }
-
-    // MARK: - Lifecycle
-
-    private func configureNavigationAdapterIfNeeded() {
-        guard navigationAdapter == nil else { return }
-        log.debug("[BreadCrumbToolBar] create navigation adapter for panel=\(panelSide)")
-        navigationAdapter = FavoritesNavigationAdapter(appState: appState)
     }
 
     // MARK: - Navigation Controls
@@ -91,7 +85,7 @@ struct BreadCrumbToolBar: View {
             .opacity(canGoBack ? 1.0 : 0.4)
             .onTapGesture {
                 log.debug("[BreadCrumbToolBar] navigate back for panel=\(panelSide)")
-                navigationAdapter?.navigateBack(panel: panelSide.toFavPanelSide)
+                _ = appState.navigationHistory(for: panelSide).goBack()
             }
             .gesture(
                 TapGesture(count: 1)
@@ -111,7 +105,19 @@ struct BreadCrumbToolBar: View {
 
         return Button(action: {
             log.debug("[BreadCrumbToolBar] navigate up for panel=\(panelSide)")
-            navigationAdapter?.navigateUp(panel: panelSide.toFavPanelSide)
+
+            let current = appState.path(for: panelSide)
+            let url = URL(fileURLWithPath: current)
+            var parent = url.deletingLastPathComponent().path
+
+            // Ensure we don't end up with empty path; keep root
+            if parent.isEmpty {
+                parent = "/"
+            }
+
+            Task {
+                await navigator.navigate(to: parent, side: panelSide)
+            }
         }) {
             Image(systemName: "arrowshape.up")
                 .font(.system(size: 15, weight: .light))
@@ -173,7 +179,7 @@ struct BreadCrumbToolBar: View {
             .opacity(canGoForward ? 1.0 : 0.4)
             .onTapGesture {
                 log.debug("[BreadCrumbToolBar] navigate forward for panel=\(panelSide)")
-                navigationAdapter?.navigateForward(panel: panelSide.toFavPanelSide)
+                _ = appState.navigationHistory(for: panelSide).goForward()
             }
             .gesture(
                 TapGesture(count: 1)
@@ -251,7 +257,7 @@ struct BreadCrumbToolBar: View {
             ),
             isPresented: isPresented,
             panelSide: panelSide.toFavPanelSide,
-            navigationDelegate: navigationAdapter
+            navigationDelegate: nil
         )
         log.debug("[BreadCrumbToolBar] opening favorites panel for panel=\(panelSide) items=\(store.userFavorites.count)")
         PanelDialogCoordinator.favorites.open(content: content)
