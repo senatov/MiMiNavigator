@@ -502,6 +502,7 @@ Special thanks to **Anthropic / Claude** for pair-programming throughout this pr
 <p align="center">
   <a href="https://www.linkedin.com/in/iakov-senatov-07060765"><img src="https://img.shields.io/badge/LinkedIn-Iakov_Senatov-0077B5?logo=linkedin&logoColor=white" alt="LinkedIn"></a>
   <a href="https://github.com/senatov"><img src="https://img.shields.io/badge/GitHub-senatov-181717?logo=github&logoColor=white" alt="GitHub"></a>
+[![Hypercommit](https://img.shields.io/badge/Hypercommit-DB2475)](https://hypercommit.com/miminavigator)
 </p>
 
 <p align="center"><sub>Made with ❤️ for macOS · Building the future of file management, one commit at a time</sub></p>
