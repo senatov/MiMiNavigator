@@ -91,9 +91,9 @@ enum ColumnAutoFitter {
 
     // MARK: - Content measurement
 
-    /// Measure column width needed for actual content (avg of real values).
+    /// Measure column width needed for actual content.
     /// Empty/placeholder columns → `emptyColWidth`.
-    /// Content columns → avg text width, clamped to [minWidth … maxWidth].
+    /// Content columns → max text width so nothing is clipped.
     private static func contentWidth(for col: ColumnID, files: [CustomFile]) -> CGFloat {
         let (texts, font) = textSamples(col, files: files)
 
@@ -103,9 +103,10 @@ enum ColumnAutoFitter {
         }
 
         let attrs: [NSAttributedString.Key: Any] = [.font: font]
-        let widths = meaningful.map { ($0 as NSString).size(withAttributes: attrs).width }
-        let avgW = widths.reduce(0, +) / CGFloat(widths.count)
-        let padded = ceil(avgW + 2 * TableColumnDefaults.cellPadding + 5)
+        let maxW = meaningful.reduce(CGFloat(0)) {
+            max($0, ($1 as NSString).size(withAttributes: attrs).width)
+        }
+        let padded = ceil(maxW + 2 * TableColumnDefaults.cellPadding + 5)
         return padded.clamped(to: col.minWidth...col.maxWidth)
     }
 
