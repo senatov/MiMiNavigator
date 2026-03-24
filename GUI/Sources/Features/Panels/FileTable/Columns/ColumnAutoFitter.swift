@@ -83,9 +83,12 @@ enum ColumnAutoFitter {
         let attrs: [NSAttributedString.Key: Any] = [.font: font]
         let widths = meaningful.map { ($0 as NSString).size(withAttributes: attrs).width }
 
+        // use max of avg content width and header label width — header must never be clipped
         let avgW = widths.reduce(0, +) / CGFloat(widths.count)
-        let padded = ceil(avgW + 2 * TableColumnDefaults.cellPadding + 5)
-        return padded.clamped(to: col.minWidth...col.maxWidth)
+        let contentW = ceil(avgW + 2 * TableColumnDefaults.cellPadding + 5)
+        let headerW = col.minHeaderWidth
+        let optimal = max(contentW, headerW)
+        return optimal.clamped(to: col.minWidth...col.maxWidth)
     }
 
     /// Extract display strings and font for a column — mirrors TableHeaderView.textsAndFont
