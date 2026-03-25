@@ -63,9 +63,9 @@ struct FileRowView: View {
     private func baseContent() -> some View {
         if isParentEntry {
             ParentEntryStripView(
-                parentUrl: file.urlValue,
                 file: file,
                 isSelected: isSelected,
+                parentURL: file.urlValue,
                 onSelect: onSelect,
                 onDoubleClick: onDoubleClick
             )

@@ -97,9 +97,9 @@ struct FileTableRowsView: View {
         if isParentRow(file) {
             let parentUrl = file.urlValue
             ParentEntryStripView(
-                parentUrl: parentUrl,
                 file: file,
                 isSelected: isSelected,
+                parentURL: parentUrl,
                 onSelect: onSelect,
                 onDoubleClick: onDoubleClick
             )

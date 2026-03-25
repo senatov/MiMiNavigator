@@ -1,168 +1,154 @@
+// ParentEntryStripView.swift
+// MiMiNavigator
 //
-//  ParentEntryStripView.swift
-//  MiMiNavigator
-//
-//  Created by Iakov Senatov on 21.03.2026.
-//  Copyright © 2026 Senatov. All rights reserved.
-//  Description: ".." row rendered as a slim centered strip.
-//               ⌃⌃  /ParentDir (N)  ⌃⌃  — N respects Show Hidden global setting.
+// Created by Iakov Senatov on 21.03.2026.
+// Copyright © 2026 Senatov. All rights reserved.
+// Description: ".." parent-navigation strip with corner-triangle pebble button.
+//   ◤ /ParentDir (N dirs)  — N respects Show Hidden setting.
 
 import FileModelKit
 import SwiftUI
+
 
 // MARK: - ParentEntryStripView
 struct ParentEntryStripView: View {
     let file: CustomFile
     let isSelected: Bool
     let parentURL: URL
-    @State private var rowsCount: Int = 0
-    @State private var isHovering = false
-
-    // MARK: - label
-    private var label: String {
-        "\(parentName)   (\(rowsCount) dirs)"
-    }
-
-    private let textColor = Color(#colorLiteral(red: 0.25, green: 0.25, blue: 0.27, alpha: 1))
-    private let dividerColor = Color(#colorLiteral(red: 0.82, green: 0.82, blue: 0.84, alpha: 1))
     let onSelect: (CustomFile) -> Void
     let onDoubleClick: (CustomFile) -> Void
 
-    // Derived
-    private var currentURL: URL { file.urlValue }
 
-    // MARK: - Init
-    init(
-        parentUrl: URL, file: CustomFile, isSelected: Bool,
-        onSelect: @escaping (CustomFile) -> Void,
-        onDoubleClick: @escaping (CustomFile) -> Void
-    ) {
-        self.parentURL = parentUrl
-        self.file = file
-        self.isSelected = isSelected
-        self.onSelect = onSelect
-        self.onDoubleClick = onDoubleClick
+    @State private var rowsCount: Int = 0
+    @State private var isHovering = false
+
+
+    private enum UI {
+        static let stripHeight: CGFloat = 25
+        static let pebbleWidth: CGFloat = 0.08
+        static let pebbleHeight: CGFloat = 20
+        static let textInset: CGFloat = 0.09
+        static let borderHeight: CGFloat = 1.5
+        static let shadowRadius: CGFloat = 3.0
+        static let shadowY: CGFloat = -2.0
     }
 
-    // MARK: - parentName
+
+    private var pebbleActive: Bool { isSelected || isHovering }
+
+
+    private var showHidden: Bool { UserPreferences.shared.snapshot.showHiddenFiles }
+
+
     private var parentName: String {
-        if parentURL.path == "/" {
-            return "/Root"
-        }
-        return parentURL.path
+        parentURL.path == "/" ? "/Root" : parentURL.path
     }
 
-    // MARK: - showHidden
-    private var showHidden: Bool {
-        UserPreferences.shared.snapshot.showHiddenFiles
-    }
 
-    // MARK: - bgColor — always neutral, no highlight
-    private var bgColor: Color {
-        Color(#colorLiteral(red: 1, green: 1, blue: 1, alpha: 1))
-    }
+    private var label: String { "\(parentName)   (\(rowsCount) dirs)" }
 
-    // MARK: - pebbleActive
-    private var pebbleActive: Bool {
-        isSelected || isHovering
-    }
 
-    // MARK: - body
+    private let textColor = Color(#colorLiteral(red: 0.25, green: 0.25, blue: 0.27, alpha: 1))
+
+
+    private let borderColor = Color(#colorLiteral(red: 0.55, green: 0.55, blue: 0.58, alpha: 1))
+
+
+    // MARK: - Body
     var body: some View {
         GeometryReader { geo in
             let _ = log.debug("[ParentEntryStripView] render sel=\(isSelected) hov=\(isHovering)")
-            let btnStyle = LiquidGlassButtonStyle(isHighlighted: pebbleActive)
             ZStack(alignment: .leading) {
-                bgColor
-                // info text on background, offset right of pebble
-                Text(label)
-                    .font(.system(size: 10, weight: .thin, design: .monospaced))
-                    .foregroundStyle(textColor)
-                    .lineLimit(1)
-                    .truncationMode(.middle)
-                    .padding(.leading, geo.size.width * 0.07)
-                VStack(spacing: 0) {
-                    HStack(spacing: 0) {
-                        Button(action: { onDoubleClick(file) }) {
-                            Image(systemName: "arrowshape.turn.up.left")
-                                .font(.system(size: 12, weight: .semibold))
-                                .foregroundColor(btnStyle.iconColor)
-                                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                                .rotationEffect(.degrees(pebbleActive ? 44 : 0))
-                                .scaleEffect(pebbleActive ? 1.0 : 0.9)
-                                .animation(
-                                    pebbleActive
-                                        ? .interpolatingSpring(stiffness: 180, damping: 6)
-                                        : .easeOut(duration: 0.15),
-                                    value: pebbleActive
-                                )
-                        }
-                        .buttonStyle(btnStyle)
-                        .frame(width: geo.size.width * 0.07, height: 16)
-                        Spacer()
-                    }
-                    Spacer()
-                }
-                // bottom separator — matches top header border
-                VStack {
-                    Spacer()
-                    Color(nsColor: .separatorColor).frame(height: 1)
-                }
+                Color.white
+                pathLabel(geo: geo)
+                pebbleButton(geo: geo)
+                bottomBorder
             }
         }
         .frame(maxWidth: .infinity)
-        .frame(height: 21)
+        .frame(height: UI.stripHeight)
         .zIndex(10)
         .onHover { h in withAnimation(.easeInOut(duration: 0.10)) { isHovering = h } }
-        .onTapGesture {
-            onSelect(file)
-        }
-        .onTapGesture(count: 2) {
-            onDoubleClick(file)
-        }
-        .task(id: "\(parentURL.path)-\(showHidden)") {
-            await loadParentCount()
+        .onTapGesture { onSelect(file) }
+        .onTapGesture(count: 2) { onDoubleClick(file) }
+        .task(id: "\(parentURL.path)-\(showHidden)") { await loadParentCount() }
+    }
+
+
+    // MARK: - Path Label
+    private func pathLabel(geo: GeometryProxy) -> some View {
+        Text(label)
+            .font(.system(size: 10, weight: .thin, design: .monospaced))
+            .foregroundStyle(textColor)
+            .lineLimit(1)
+            .truncationMode(.middle)
+            .padding(.leading, geo.size.width * UI.textInset)
+    }
+
+
+    // MARK: - Pebble Button (corner triangle)
+    private func pebbleButton(geo: GeometryProxy) -> some View {
+        let btnStyle = LiquidGlassButtonStyle(isHighlighted: pebbleActive)
+        return VStack(spacing: 0) {
+            HStack(spacing: 0) {
+                Button(action: { onDoubleClick(file) }) {
+                    Image(systemName: "arrowshape.turn.up.left")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundColor(btnStyle.iconColor)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .rotationEffect(.degrees(pebbleActive ? 44 : 0))
+                        .scaleEffect(pebbleActive ? 1.0 : 0.9)
+                        .animation(
+                            pebbleActive
+                                ? .interpolatingSpring(stiffness: 180, damping: 6)
+                                : .easeOut(duration: 0.15),
+                            value: pebbleActive
+                        )
+                }
+                .buttonStyle(btnStyle)
+                .frame(width: geo.size.width * UI.pebbleWidth, height: UI.pebbleHeight)
+                Spacer()
+            }
+            Spacer()
         }
     }
 
-    // MARK: - loadParentCount
-    private func loadParentCount() async {
-        let count: Int
-        do {
-            let items = try FileManager.default.contentsOfDirectory(
-                at: parentURL,
-                includingPropertiesForKeys: nil,
-                options: []
-            )
-            if showHidden {
-                count =
-                    items.filter { url in
-                        (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
-                    }
-                    .count
-                log.debug(#function)
-            } else {
-                count =
-                    items.filter { url in
-                        do {
-                            let values = try url.resourceValues(forKeys: [.isDirectoryKey, .isHiddenKey])
-                            let isDirectory = values.isDirectory ?? false
-                            let isHidden = values.isHidden ?? false
-                            return isDirectory && !isHidden
-                        } catch {
-                            return false
-                        }
-                    }
-                    .count
-                log.debug(#function)
-            }
-            await MainActor.run {
-                rowsCount = count
-            }
-        } catch {
-            await MainActor.run {
-                rowsCount = 0
-            }
+
+    // MARK: - Bottom Border (prominent, with upward shadow)
+    private var bottomBorder: some View {
+        VStack {
+            Spacer()
+            borderColor
+                .frame(height: UI.borderHeight)
+                .shadow(color: .black.opacity(0.30), radius: UI.shadowRadius, x: 0, y: UI.shadowY)
         }
+    }
+
+
+    // MARK: - Load Parent Directory Count
+    private func loadParentCount() async {
+        let url = parentURL
+        let hidden = showHidden
+        let count = await Task.detached(priority: .utility) {
+            Self.countSubdirectories(in: url, showHidden: hidden)
+        }.value
+        await MainActor.run { rowsCount = count }
+    }
+
+
+    // MARK: - Count Subdirectories (off MainActor)
+    nonisolated static func countSubdirectories(in url: URL, showHidden: Bool) -> Int {
+        let fm = FileManager.default
+        guard let items = try? fm.contentsOfDirectory(
+            at: url,
+            includingPropertiesForKeys: [.isDirectoryKey, .isHiddenKey],
+            options: []
+        ) else { return 0 }
+        return items.filter { item in
+            guard let vals = try? item.resourceValues(forKeys: [.isDirectoryKey, .isHiddenKey]) else { return false }
+            let isDir = vals.isDirectory ?? false
+            let isHid = vals.isHidden ?? false
+            return isDir && (showHidden || !isHid)
+        }.count
     }
 }
