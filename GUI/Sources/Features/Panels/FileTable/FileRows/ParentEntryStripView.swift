@@ -25,7 +25,7 @@ struct ParentEntryStripView: View {
 
     private enum UI {
         static let stripHeight: CGFloat = 25
-        static let pebbleWidth: CGFloat = 0.08
+        static let pebbleWidth: CGFloat = 0.092
         static let pebbleHeight: CGFloat = 20
         static let textInset: CGFloat = 0.09
         static let borderHeight: CGFloat = 1.5
@@ -96,7 +96,7 @@ struct ParentEntryStripView: View {
                         .font(.system(size: 11, weight: .semibold))
                         .foregroundColor(btnStyle.iconColor)
                         .rotationEffect(
-                            .degrees(pebbleActive ? -45 : 0),
+                            .degrees(pebbleActive ? 45 : 0),
                             anchor: .center
                         )
                         .animation(
@@ -105,7 +105,8 @@ struct ParentEntryStripView: View {
                                 : .easeOut(duration: 0.15),
                             value: pebbleActive
                         )
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+                        .padding(.leading, 4)
                 }
                 .buttonStyle(btnStyle)
                 .frame(width: geo.size.width * UI.pebbleWidth, height: UI.pebbleHeight)
