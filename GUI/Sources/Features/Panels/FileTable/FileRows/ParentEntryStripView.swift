@@ -17,7 +17,15 @@ struct ParentEntryStripView: View {
     let parentURL: URL
     let onSelect: (CustomFile) -> Void
     let onDoubleClick: (CustomFile) -> Void
+    private var label: String { "\(parentName)   (\(rowsCount) dirs)" }
+    private let textColor = Color(#colorLiteral(red: 0.25, green: 0.25, blue: 0.27, alpha: 1))
+    private let borderColor = Color(#colorLiteral(red: 0.55, green: 0.55, blue: 0.58, alpha: 1))
+    private var pebbleActive: Bool { isSelected || isHovering }
+    private var showHidden: Bool { UserPreferences.shared.snapshot.showHiddenFiles }
 
+    private var parentName: String {
+        parentURL.path == "/" ? "/Root" : parentURL.path
+    }
 
     @State private var rowsCount: Int = 0
     @State private var isHovering = false
@@ -33,25 +41,6 @@ struct ParentEntryStripView: View {
         static let shadowY: CGFloat = -2.0
     }
 
-
-    private var pebbleActive: Bool { isSelected || isHovering }
-
-
-    private var showHidden: Bool { UserPreferences.shared.snapshot.showHiddenFiles }
-
-
-    private var parentName: String {
-        parentURL.path == "/" ? "/Root" : parentURL.path
-    }
-
-
-    private var label: String { "\(parentName)   (\(rowsCount) dirs)" }
-
-
-    private let textColor = Color(#colorLiteral(red: 0.25, green: 0.25, blue: 0.27, alpha: 1))
-
-
-    private let borderColor = Color(#colorLiteral(red: 0.55, green: 0.55, blue: 0.58, alpha: 1))
 
 
     // MARK: - Body
