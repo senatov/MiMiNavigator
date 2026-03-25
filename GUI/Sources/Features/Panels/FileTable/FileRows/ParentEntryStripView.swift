@@ -101,14 +101,14 @@ struct ParentEntryStripView: View {
                             )
                     }
                     .buttonStyle(btnStyle)
-                    .frame(width: geo.size.width * 0.17, height: 25)
-                    .offset(y: -3)
+                    .frame(width: geo.size.width * 0.17, height: 27)
+                    .offset(y: -5)
                     Spacer()
                 }
-                // bottom divider
+                // bottom separator — matches top header border
                 VStack {
                     Spacer()
-                    dividerColor.frame(height: 0.5)
+                    Color(nsColor: .separatorColor).frame(height: 1)
                 }
             }
         }

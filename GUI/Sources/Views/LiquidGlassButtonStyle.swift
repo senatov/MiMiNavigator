@@ -31,9 +31,9 @@ struct LiquidGlassButtonStyle: ButtonStyle {
                     ? AnyShapeStyle(
                         LinearGradient(
                             colors: [
-                                Color(red: 0.42, green: 0.12, blue: 0.72),
-                                Color(red: 0.30, green: 0.06, blue: 0.55),
-                                Color(red: 0.22, green: 0.04, blue: 0.42)
+                                Color(red: 0.62, green: 0.52, blue: 0.78),
+                                Color(red: 0.52, green: 0.42, blue: 0.70),
+                                Color(red: 0.46, green: 0.36, blue: 0.64)
                             ],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
