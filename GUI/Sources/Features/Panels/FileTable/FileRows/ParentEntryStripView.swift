@@ -92,7 +92,7 @@ struct ParentEntryStripView: View {
         return VStack(spacing: 0) {
             HStack(spacing: 0) {
                 Button(action: { onDoubleClick(file) }) {
-                    Image(systemName: "arrowshape.turn.up.left")
+                    Image(systemName: pebbleActive ? "arrowshape.turn.up.left.fill" : "arrowshape.turn.up.left")
                         .font(.system(size: 11, weight: .semibold))
                         .foregroundColor(btnStyle.iconColor)
                         .rotationEffect(
@@ -106,7 +106,8 @@ struct ParentEntryStripView: View {
                             value: pebbleActive
                         )
                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-                        .padding(.leading, 4)
+                        .padding(.leading, 1)
+                        .offset(x: -3, y: -3)
                 }
                 .buttonStyle(btnStyle)
                 .frame(width: geo.size.width * UI.pebbleWidth, height: UI.pebbleHeight)
