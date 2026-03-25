@@ -29,24 +29,45 @@ final class MediaInfoPanel {
     private var currentIndex: Int = 0
     private var panelCreated = false
 
+    private enum PreviewConstants {
+        static let iconSize = NSSize(width: 128, height: 128)
+        static let thumbnailMaxSize = CGSize(width: 480, height: 480)
+        static let thumbnailTime = CMTime(seconds: 1, preferredTimescale: 600)
+    }
+
+    private enum LayoutConstants {
+        static let panelSize = NSSize(width: 900, height: 550)
+        static let minPanelSize = NSSize(width: 600, height: 350)
+        static let arrowWidth: CGFloat = 32
+        static let previewInsets: CGFloat = 8
+        static let previewSpacing: CGFloat = 4
+        static let stackBottomInset: CGFloat = 8
+        static let separatorToStackSpacing: CGFloat = 6
+        static let stackHeight: CGFloat = 28
+        static let textWidthMultiplier: CGFloat = 0.48
+    }
+
+    private static let supportedImageExtensions: Set<String> = ["jpg", "jpeg", "png", "gif", "bmp", "tiff", "tif", "heic", "heif", "webp", "ico", "svg"]
+    private static let supportedVideoExtensions: Set<String> = ["mp4", "mov", "avi", "mkv", "m4v", "wmv", "flv", "ts", "webm"]
+    private static let supportedAudioExtensions: Set<String> = ["mp3", "aac", "flac", "wav", "m4a", "ogg", "wma", "aiff", "alac"]
+    private static let supportedMediaExtensions: Set<String> = supportedImageExtensions
+        .union(supportedVideoExtensions)
+        .union(supportedAudioExtensions)
+
     // MARK: - show (first open only positions window)
     func show(title: String, text: String, url: URL? = nil, coordinates: (Double, Double)? = nil) {
-        if panel == nil { createPanel() }
+        ensurePanelExists()
         currentURL = url
         currentCoordinates = coordinates ?? extractCoordinates(from: text)
-        if let url { loadMediaSiblings(for: url); updatePreview(for: url) }
+
+        if let url {
+            loadMediaSiblings(for: url)
+            updatePreview(for: url)
+        }
+
         log.debug("[MediaInfoPanel] show url=\(url?.path ?? "nil")")
         refreshText(title: title, text: text)
-
-        if !panelCreated {
-            panelCreated = true
-            if let main = NSApp.mainWindow {
-                panel?.setFrameOrigin(NSPoint(
-                    x: main.frame.midX - panel!.frame.width / 2,
-                    y: main.frame.midY - panel!.frame.height / 2
-                ))
-            }
-        }
+        positionPanelIfNeeded()
         panel?.makeKeyAndOrderFront(nil)
         panel?.makeKey()
     }
@@ -64,6 +85,24 @@ final class MediaInfoPanel {
 
     func hide() { panel?.orderOut(nil) }
 
+    private func ensurePanelExists() {
+        if panel == nil {
+            createPanel()
+        }
+    }
+
+    private func positionPanelIfNeeded() {
+        guard !panelCreated, let panel else { return }
+        panelCreated = true
+
+        if let main = NSApp.mainWindow {
+            panel.setFrameOrigin(NSPoint(
+                x: main.frame.midX - panel.frame.width / 2,
+                y: main.frame.midY - panel.frame.height / 2
+            ))
+        }
+    }
+
     // MARK: - refreshText (internal — just update text content)
     private func refreshText(title: String, text: String) {
         panel?.title = title
@@ -75,20 +114,21 @@ final class MediaInfoPanel {
     // MARK: - Media siblings
     private func loadMediaSiblings(for url: URL) {
         let dir = url.deletingLastPathComponent()
-        let exts: Set<String> = [
-            "jpg", "jpeg", "png", "gif", "bmp", "tiff", "tif", "heic", "heif", "webp", "svg", "ico", "raw", "cr2", "nef", "arw", "dng",
-            "mp4", "mov", "avi", "mkv", "m4v", "wmv", "flv", "ts", "webm",
-            "mp3", "aac", "flac", "wav", "m4a", "ogg", "wma", "aiff", "alac"
-        ]
+
         do {
-            let items = try FileManager.default.contentsOfDirectory(at: dir, includingPropertiesForKeys: nil, options: [.skipsHiddenFiles])
-            mediaFiles = items.filter { exts.contains($0.pathExtension.lowercased()) }
+            let items = try FileManager.default.contentsOfDirectory(
+                at: dir,
+                includingPropertiesForKeys: nil,
+                options: [.skipsHiddenFiles]
+            )
+            mediaFiles = items
+                .filter { Self.supportedMediaExtensions.contains($0.pathExtension.lowercased()) }
                 .sorted { $0.lastPathComponent.localizedStandardCompare($1.lastPathComponent) == .orderedAscending }
             currentIndex = mediaFiles.firstIndex(of: url) ?? 0
         } catch {
             mediaFiles = [url]
             currentIndex = 0
-            log.error("[MediaInfoPanel] Failed to load siblings for \(url.path)")
+            log.error("[MediaInfoPanel] Failed to load siblings for \(url.path): \(error.localizedDescription)")
         }
     }
 
@@ -120,50 +160,84 @@ final class MediaInfoPanel {
     // MARK: - updatePreview (images + video thumbnails via AVAssetImageGenerator)
     private func updatePreview(for url: URL) {
         guard let imageView else { return }
-        let ext = url.pathExtension.lowercased()
-        let imageExts: Set<String> = ["jpg", "jpeg", "png", "gif", "bmp", "tiff", "tif", "heic", "heif", "webp", "ico", "svg"]
-        let videoExts: Set<String> = ["mp4", "mov", "avi", "mkv", "m4v", "wmv", "flv", "ts", "webm"]
 
-        if imageExts.contains(ext), let img = NSImage(contentsOf: url) {
-            imageView.image = img
-            imageView.isHidden = false
-        } else if videoExts.contains(ext) {
-            // extract thumbnail at 1s mark
-            Task(priority: .userInitiated) { [weak self] in
-                guard let self else { return }
-                let thumb = Self.videoThumbnail(url: url)
-                self.imageView?.image = thumb
-                self.imageView?.isHidden = false
+        let ext = url.pathExtension.lowercased()
+
+        if Self.supportedImageExtensions.contains(ext), let img = NSImage(contentsOf: url) {
+            applyPreviewImage(img, to: imageView)
+            return
+        }
+
+        if Self.supportedVideoExtensions.contains(ext) {
+            updateVideoPreview(for: url)
+            return
+        }
+
+        applyPreviewImage(fallbackIcon(for: url), to: imageView)
+    }
+
+    private func updateVideoPreview(for url: URL) {
+        Task(priority: .userInitiated) { [weak self] in
+            guard let self else { return }
+            let thumb = await Self.videoThumbnail(url: url)
+            await MainActor.run {
+                guard self.currentURL == url else { return }
+                if let imageView = self.imageView {
+                    self.applyPreviewImage(thumb, to: imageView)
+                }
             }
-        } else {
-            let icon = NSWorkspace.shared.icon(forFile: url.path)
-            icon.size = NSSize(width: 128, height: 128)
-            imageView.image = icon
-            imageView.isHidden = false
         }
     }
 
+    private func applyPreviewImage(_ image: NSImage, to imageView: NSImageView) {
+        imageView.image = image
+        imageView.isHidden = false
+    }
+
+    private func fallbackIcon(for url: URL) -> NSImage {
+        let icon = NSWorkspace.shared.icon(forFile: url.path)
+        icon.size = PreviewConstants.iconSize
+        return icon
+    }
+
     // MARK: - videoThumbnail
-    private nonisolated static func videoThumbnail(url: URL) -> NSImage {
+    private nonisolated static func videoThumbnail(url: URL) async -> NSImage {
         let asset = AVURLAsset(url: url)
         let gen = AVAssetImageGenerator(asset: asset)
         gen.appliesPreferredTrackTransform = true
-        gen.maximumSize = CGSize(width: 480, height: 480)
-        let time = CMTime(seconds: 1, preferredTimescale: 600)
+        gen.maximumSize = PreviewConstants.thumbnailMaxSize
+        let time = PreviewConstants.thumbnailTime
+
         do {
-            let cgImg = try gen.copyCGImage(at: time, actualTime: nil)
+            let cgImg = try await generateThumbnailImage(generator: gen, time: time)
             return NSImage(cgImage: cgImg, size: NSSize(width: cgImg.width, height: cgImg.height))
         } catch {
             let icon = NSWorkspace.shared.icon(forFile: url.path)
-            icon.size = NSSize(width: 128, height: 128)
+            icon.size = PreviewConstants.iconSize
             return icon
+        }
+    }
+
+    private nonisolated static func generateThumbnailImage(generator: AVAssetImageGenerator, time: CMTime) async throws -> CGImage {
+        try await withCheckedThrowingContinuation { continuation in
+            generator.generateCGImageAsynchronously(for: time) { image, _, error in
+                if let image {
+                    continuation.resume(returning: image)
+                } else {
+                    continuation.resume(throwing: error ?? NSError(
+                        domain: "MediaInfoPanel",
+                        code: -1,
+                        userInfo: [NSLocalizedDescriptionKey: "AVAssetImageGenerator returned no image"]
+                    ))
+                }
+            }
         }
     }
 
     // MARK: - createPanel
     private func createPanel() {
         let p = NSPanel(
-            contentRect: NSRect(x: 0, y: 0, width: 900, height: 550),
+            contentRect: NSRect(origin: .zero, size: LayoutConstants.panelSize),
             styleMask: [.titled, .closable, .resizable],
             backing: .buffered, defer: false
         )
@@ -176,7 +250,7 @@ final class MediaInfoPanel {
         p.becomesKeyOnlyIfNeeded = false
         p.title = "Media Info"
         p.standardWindowButton(.closeButton)?.keyEquivalent = "\u{1b}"
-        p.minSize = NSSize(width: 600, height: 350)
+        p.minSize = LayoutConstants.minPanelSize
 
         let warmBg = NSColor(calibratedRed: 0.98, green: 0.97, blue: 0.92, alpha: 1.0)
         let container = NSView(frame: p.contentView!.bounds)
@@ -253,7 +327,7 @@ final class MediaInfoPanel {
         container.addSubview(stack)
 
         // constraints
-        let aw: CGFloat = 32
+        let aw = LayoutConstants.arrowWidth
         NSLayoutConstraint.activate([
             prevBtn.leadingAnchor.constraint(equalTo: container.leadingAnchor),
             prevBtn.topAnchor.constraint(equalTo: container.topAnchor),
@@ -263,12 +337,12 @@ final class MediaInfoPanel {
             scrollView.leadingAnchor.constraint(equalTo: prevBtn.trailingAnchor),
             scrollView.topAnchor.constraint(equalTo: container.topAnchor),
             scrollView.bottomAnchor.constraint(equalTo: separator.topAnchor),
-            scrollView.widthAnchor.constraint(equalTo: container.widthAnchor, multiplier: 0.48, constant: -aw),
+            scrollView.widthAnchor.constraint(equalTo: container.widthAnchor, multiplier: LayoutConstants.textWidthMultiplier, constant: -aw),
 
-            iv.leadingAnchor.constraint(equalTo: scrollView.trailingAnchor, constant: 4),
-            iv.topAnchor.constraint(equalTo: container.topAnchor, constant: 8),
-            iv.bottomAnchor.constraint(equalTo: separator.topAnchor, constant: -8),
-            iv.trailingAnchor.constraint(equalTo: nextBtn.leadingAnchor, constant: -4),
+            iv.leadingAnchor.constraint(equalTo: scrollView.trailingAnchor, constant: LayoutConstants.previewSpacing),
+            iv.topAnchor.constraint(equalTo: container.topAnchor, constant: LayoutConstants.previewInsets),
+            iv.bottomAnchor.constraint(equalTo: separator.topAnchor, constant: -LayoutConstants.previewInsets),
+            iv.trailingAnchor.constraint(equalTo: nextBtn.leadingAnchor, constant: -LayoutConstants.previewSpacing),
 
             nextBtn.trailingAnchor.constraint(equalTo: container.trailingAnchor),
             nextBtn.topAnchor.constraint(equalTo: container.topAnchor),
@@ -277,12 +351,12 @@ final class MediaInfoPanel {
 
             separator.leadingAnchor.constraint(equalTo: container.leadingAnchor),
             separator.trailingAnchor.constraint(equalTo: container.trailingAnchor),
-            separator.bottomAnchor.constraint(equalTo: stack.topAnchor, constant: -6),
+            separator.bottomAnchor.constraint(equalTo: stack.topAnchor, constant: -LayoutConstants.separatorToStackSpacing),
 
             stack.leadingAnchor.constraint(greaterThanOrEqualTo: container.leadingAnchor, constant: 12),
             stack.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -12),
-            stack.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -8),
-            stack.heightAnchor.constraint(equalToConstant: 28)
+            stack.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -LayoutConstants.stackBottomInset),
+            stack.heightAnchor.constraint(equalToConstant: LayoutConstants.stackHeight)
         ])
 
         p.contentView = container
@@ -393,14 +467,17 @@ final class MediaInfoPanel {
     // MARK: - Actions
     @objc private func copyPathAction() {
         guard let url = currentURL else { return }
-        NSPasteboard.general.clearContents()
-        NSPasteboard.general.setString(url.path, forType: .string)
+        copyToPasteboard(url.path)
     }
 
     @objc private func copyAllAction() {
         guard let text = textView?.string else { return }
+        copyToPasteboard(text)
+    }
+
+    private func copyToPasteboard(_ string: String) {
         NSPasteboard.general.clearContents()
-        NSPasteboard.general.setString(text, forType: .string)
+        NSPasteboard.general.setString(string, forType: .string)
     }
 
     @objc private func revealAction() {

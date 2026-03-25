@@ -45,17 +45,17 @@ struct FileRow: View, Equatable {
     private func selectionBorderOverlay(color: Color) -> some View {
         ZStack {
             Rectangle().fill(color)
-            .frame(height: onePixel)
-            .frame(maxHeight: .infinity, alignment: .top)
+                .frame(height: onePixel)
+                .frame(maxHeight: .infinity, alignment: .top)
             Rectangle().fill(color)
-            .frame(height: onePixel)
-            .frame(maxHeight: .infinity, alignment: .bottom)
+                .frame(height: onePixel)
+                .frame(maxHeight: .infinity, alignment: .bottom)
             Rectangle().fill(color)
-            .frame(width: onePixel)
-            .frame(maxWidth: .infinity, alignment: .leading)
+                .frame(width: onePixel)
+                .frame(maxWidth: .infinity, alignment: .leading)
             Rectangle().fill(color)
-            .frame(width: onePixel)
-            .frame(maxWidth: .infinity, alignment: .trailing)
+                .frame(width: onePixel)
+                .frame(maxWidth: .infinity, alignment: .trailing)
         }
     }
 
@@ -80,7 +80,7 @@ struct FileRow: View, Equatable {
     /// Prevent SwiftUI from re-rendering the row unless the visible state actually changed.
     nonisolated static func == (lhs: FileRow, rhs: FileRow) -> Bool {
         lhs.file.id == rhs.file.id && lhs.isSelected == rhs.isSelected && lhs.panelSide == rhs.panelSide
-        && lhs.layoutVersion == rhs.layoutVersion
+            && lhs.layoutVersion == rhs.layoutVersion
     }
 
     private var isActivePanel: Bool {
@@ -105,7 +105,7 @@ struct FileRow: View, Equatable {
 
     var body: some View {
         rowContainer
-        .zIndex(isSelected ? 1 : 0)  // selected row renders above neighbours — border fully visible
+            .zIndex(isSelected ? 1 : 0)  // selected row renders above neighbours — border fully visible
     }
 
     // MARK: - Main Container
@@ -152,16 +152,16 @@ struct FileRow: View, Equatable {
 
     private var parentRowBackground: some View {
         Color(nsColor: .systemGray)
-        .opacity(0.13)
-        .allowsHitTesting(false)
+            .opacity(0.13)
+            .allowsHitTesting(false)
     }
 
     private var standardRowBackground: some View {
         let isOdd = index % 2 == 1
         let color: Color =
-        isActivePanel
-        ? (isOdd ? DesignTokens.zebraActiveOdd : DesignTokens.zebraActiveEven)
-        : (isOdd ? DesignTokens.zebraInactiveOdd : DesignTokens.zebraInactiveEven)
+            isActivePanel
+            ? (isOdd ? DesignTokens.zebraActiveOdd : DesignTokens.zebraActiveEven)
+            : (isOdd ? DesignTokens.zebraInactiveOdd : DesignTokens.zebraInactiveEven)
 
         return color.allowsHitTesting(false)
     }
@@ -169,9 +169,11 @@ struct FileRow: View, Equatable {
     @ViewBuilder
     private var highlightLayer: some View {
         if isDropTargetActive {
+            let _ = log.debug("dropTargetHighlight")
             dropTargetHighlight
         } else if isSelected {
             selectionHighlight
+            let _ = log.debug("selectionHighlight")
         }
     }
 
@@ -187,8 +189,8 @@ struct FileRow: View, Equatable {
 
     private var dropTargetHighlight: some View {
         PulsingDropHighlight()
-            .padding(.horizontal, 4)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .clipShape(Rectangle())
             .allowsHitTesting(false)
     }
 
@@ -196,21 +198,29 @@ struct FileRow: View, Equatable {
         let fill = isActivePanel ? selectionActiveFill : selectionInactiveFill
 
         return RoundedRectangle(cornerRadius: 6, style: .continuous)
-        .fill(fill)
-        .overlay(
-            RoundedRectangle(cornerRadius: 6, style: .continuous)
-            // Draw the border strictly inside the row bounds to avoid clipping on the last visible row.
-            .inset(by: onePixel * 0.5)
-            .strokeBorder(selectionBorderColor, lineWidth: onePixel)
-        )
-        .padding(.horizontal, 3)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .allowsHitTesting(false)
+            .fill(fill)
+            .overlay(
+                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    // Draw the border strictly inside the row bounds to avoid clipping on the last visible row.
+                    .inset(by: onePixel * 0.5)
+                    .strokeBorder(selectionBorderColor, lineWidth: onePixel)
+            )
+            .padding(.horizontal, 3)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .allowsHitTesting(false)
+    }
+
+    private var fullRowDropSurface: some View {
+        Rectangle()
+            .fill(Color.clear)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .contentShape(Rectangle())
+            .allowsHitTesting(false)
     }
 
     private var selectionBorderColor: Color {
         Color(#colorLiteral(red: 0.1215686277, green: 0.01176470611, blue: 0.4235294163, alpha: 1))
-        .opacity(isActivePanel ? 0.75 : 0.35)
+            .opacity(isActivePanel ? 0.75 : 0.35)
     }
 
     /// True when there are marked files on this panel (show group menu)
@@ -270,9 +280,13 @@ struct FileRow: View, Equatable {
 
     private func handleDropTargeting(_ targeted: Bool) {
         guard isValidDropTarget else { return }
+
+        log.debug("[FileRow] drop target change: file='\(file.nameStr)' targeted=\(targeted) rowHeight=\(FilePanelStyle.rowHeight)")
+
         withAnimation(.easeInOut(duration: 0.15)) {
             isDropTargeted = targeted
         }
+
         if targeted {
             dragDropManager.setDropTarget(file.urlValue)
         }
@@ -368,20 +382,20 @@ struct FileRow: View, Equatable {
     // MARK: - Parent Row View
     private func parentRowView() -> some View {
         stableContent
-        .background(parentRowHoverBackground)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .frame(height: FilePanelStyle.rowHeight)
-        .contentShape(Rectangle())
-        .onHover(perform: handleParentHover)
-        .gesture(rowGestures())
-        .animation(.spring(response: 0.35, dampingFraction: 0.70), value: isHoveringParentRow)
-        .animation(nil, value: isSelected)
+            .background(parentRowHoverBackground)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(height: FilePanelStyle.rowHeight)
+            .contentShape(Rectangle())
+            .onHover(perform: handleParentHover)
+            .gesture(rowGestures())
+            .animation(.spring(response: 0.35, dampingFraction: 0.70), value: isHoveringParentRow)
+            .animation(nil, value: isSelected)
     }
 
     private var parentRowHoverBackground: Color {
         isHoveringParentRow
-        ? Color.accentColor.opacity(0.08)
-        : Color.clear
+            ? Color.accentColor.opacity(0.08)
+            : Color.clear
     }
 
     private func handleParentHover(_ hovering: Bool) {
@@ -390,16 +404,21 @@ struct FileRow: View, Equatable {
         }
 
         hovering
-        ? NSCursor.pointingHand.set()
-        : NSCursor.arrow.set()
+            ? NSCursor.pointingHand.set()
+            : NSCursor.arrow.set()
     }
 
     // MARK: - Normal Row View
     private func normalRowView() -> some View {
-        stableContent
+        ZStack(alignment: .leading) {
+            fullRowDropSurface
+            stableContent
+        }
         .frame(maxWidth: .infinity, alignment: .leading)
         .frame(height: FilePanelStyle.rowHeight)
+        .background(Color.clear)
         .contentShape(Rectangle())
+        .clipped()
         .gesture(rowGestures())
         .animation(nil, value: isSelected)
         .contextMenu { contextMenuContent }

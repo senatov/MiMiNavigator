@@ -9,7 +9,6 @@ import AppKit
 import FileModelKit
 import SwiftUI
 
-
 // MARK: - DragNSView
 @MainActor
 final class DragNSView: NSView, NSDraggingSource {
@@ -21,42 +20,34 @@ final class DragNSView: NSView, NSDraggingSource {
     private var mouseMonitor: Any?
     private var dragMonitor: Any?
 
-
     private enum UI {
         static let dragThreshold: CGFloat = 5.0
         static let dragStartTolerance: CGFloat = 10.0
     }
-
 
     init(appState: AppState) {
         self.appState = appState
         super.init(frame: .zero)
     }
 
-
     @available(*, unavailable)
     required init?(coder: NSCoder) {
         fatalError("init(coder:) not supported")
     }
 
-
     /// Passthrough — let SwiftUI handle clicks, selection, context menu.
     /// Drag is initiated via NSEvent local monitor.
     override func hitTest(_ point: NSPoint) -> NSView? { nil }
 
-
     override func viewDidMoveToWindow() {
         super.viewDidMoveToWindow()
-        if window != nil { installMonitors() }
-        else { removeMonitors() }
+        if window != nil { installMonitors() } else { removeMonitors() }
     }
-
 
     override func viewWillMove(toWindow newWindow: NSWindow?) {
         super.viewWillMove(toWindow: newWindow)
         if newWindow == nil { removeMonitors() }
     }
-
 
     // MARK: - Monitor Installation
     private func installMonitors() {
@@ -71,18 +62,23 @@ final class DragNSView: NSView, NSDraggingSource {
         }
     }
 
-
     private func removeMonitors() {
-        if let m = mouseMonitor { NSEvent.removeMonitor(m); mouseMonitor = nil }
-        if let m = dragMonitor { NSEvent.removeMonitor(m); dragMonitor = nil }
+        if let m = mouseMonitor {
+            NSEvent.removeMonitor(m)
+            mouseMonitor = nil
+        }
+        if let m = dragMonitor {
+            NSEvent.removeMonitor(m)
+            dragMonitor = nil
+        }
     }
-
 
     // MARK: - Mouse Down
     private func handleMouseDown(_ event: NSEvent) {
         guard let window = self.window, event.window === window else { return }
         guard event.type == .leftMouseDown, isPrimaryMouseDown,
-              !event.modifierFlags.contains(.control) else { return }
+            !event.modifierFlags.contains(.control)
+        else { return }
         let locWindow = event.locationInWindow
         let loc = convert(locWindow, from: nil)
         guard bounds.contains(loc) else { return }
@@ -95,7 +91,6 @@ final class DragNSView: NSView, NSDraggingSource {
             cachedSelection = []
         }
     }
-
 
     // MARK: - Mouse Dragged
     /// Returns true if drag was initiated (event consumed).
@@ -114,7 +109,6 @@ final class DragNSView: NSView, NSDraggingSource {
         return true
     }
 
-
     // MARK: - Begin Drag
     private func beginDrag(with urls: [URL], event: NSEvent) {
         dragState.didStart = true
@@ -128,12 +122,8 @@ final class DragNSView: NSView, NSDraggingSource {
         beginDraggingSession(with: draggingItems, event: event, source: self)
     }
 
-
     // MARK: - NSDraggingSource
-    func draggingSession(
-        _ session: NSDraggingSession,
-        sourceOperationMaskFor context: NSDraggingContext
-    ) -> NSDragOperation {
+    func draggingSession(_ session: NSDraggingSession, sourceOperationMaskFor context: NSDraggingContext) -> NSDragOperation {
         switch context {
             case .outsideApplication: return [.copy, .move]
             case .withinApplication: return [.move]
@@ -141,9 +131,7 @@ final class DragNSView: NSView, NSDraggingSource {
         }
     }
 
-
     func ignoreModifierKeys(for session: NSDraggingSession) -> Bool { false }
-
 
     func draggingSession(_ session: NSDraggingSession, movedTo screenPoint: NSPoint) {
         guard let dragDropManager, let appState, let window = self.window else { return }
@@ -160,7 +148,6 @@ final class DragNSView: NSView, NSDraggingSource {
         dragDropManager.setDropTarget(dirURL)
     }
 
-
     func draggingSession(_ session: NSDraggingSession, endedAt screenPoint: NSPoint, operation: NSDragOperation) {
         defer {
             dragState = DragState(startPoint: nil, didStart: false, isResize: false)
@@ -175,7 +162,8 @@ final class DragNSView: NSView, NSDraggingSource {
         // Internal drop: AppKit can't route between SwiftUI-embedded NSViews,
         // so we resolve the target panel ourselves from screen coordinates.
         guard let dragDropManager, let appState, let panelSide,
-              let window = self.window else {
+            let window = self.window
+        else {
             dragDropManager?.endDrag()
             log.debug("[DragNSView] drag ended op=0, no window context")
             return
@@ -198,30 +186,27 @@ final class DragNSView: NSView, NSDraggingSource {
             panelFrame: panelFrame
         )
         let destination = dirUnderCursor ?? appState.url(for: dropSide)
-        log.info("[DragNSView] internal drop: \(files.count) file(s) → \(dropSide) (\(destination.lastPathComponent)) subdir=\(dirUnderCursor != nil)")
+        log.info(
+            "[DragNSView] internal drop: \(files.count) file(s) → \(dropSide) (\(destination.lastPathComponent)) subdir=\(dirUnderCursor != nil)"
+        )
         dragDropManager.prepareTransfer(files: files, to: destination, from: panelSide)
     }
 
-
     // MARK: - Helpers
     private var isPrimaryMouseDown: Bool { NSEvent.pressedMouseButtons == 1 }
-
 
     private var isResizeCursor: Bool {
         let c = NSCursor.current
         return c == .resizeLeftRight || c == .resizeLeft || c == .resizeRight
     }
 
-
     private func shouldHandlePrimaryDrag(_ event: NSEvent) -> Bool {
         event.type == .leftMouseDragged && isPrimaryMouseDown && !event.modifierFlags.contains(.control)
     }
 
-
     private func expandedBounds(tolerance: CGFloat) -> NSRect {
         bounds.insetBy(dx: -tolerance, dy: -tolerance)
     }
-
 
     private func passedDragThreshold(from start: NSPoint, to current: NSPoint) -> Bool {
         hypot(current.x - start.x, current.y - start.y) >= UI.dragThreshold

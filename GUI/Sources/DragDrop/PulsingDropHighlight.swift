@@ -15,16 +15,17 @@ struct PulsingDropHighlight: View {
 
 
     private let fillColor = Color.accentColor.opacity(0.15)
-    private let borderColor = Color.accentColor
-    private let pulseRange: ClosedRange<Double> = 0.4...1.0
+    private let borderColor = Color.orange
+    private let pulseRange: ClosedRange<Double> = 0.4...1.7
 
 
     var body: some View {
-        RoundedRectangle(cornerRadius: 6, style: .continuous)
+        log.debug(#function)
+        return RoundedRectangle(cornerRadius: 6, style: .continuous)
             .fill(fillColor)
             .overlay(
                 RoundedRectangle(cornerRadius: 6, style: .continuous)
-                    .stroke(borderColor, lineWidth: 2.5)
+                    .stroke(.yellow, lineWidth: 2.5)
                     .opacity(pulse ? pulseRange.upperBound : pulseRange.lowerBound)
             )
             .onAppear {
