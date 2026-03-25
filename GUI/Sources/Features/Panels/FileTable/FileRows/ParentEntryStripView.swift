@@ -57,70 +57,64 @@ struct ParentEntryStripView: View {
         UserPreferences.shared.snapshot.showHiddenFiles
     }
 
-    // MARK: - bgColor
+    // MARK: - bgColor — always neutral, no highlight
     private var bgColor: Color {
-        if isSelected {
-            return  Color(#colorLiteral(red: 0.9764705896, green: 0.850980401, blue: 0.5490196347, alpha: 1)).opacity(0.6)
-        }
-
-        if isHovering {
-            return Color(#colorLiteral(red: 0.9764705896, green: 0.850980401, blue: 0.5490196347, alpha: 1)).opacity(0.6)
-        }
-        return Color(#colorLiteral(red: 1, green: 1, blue: 1, alpha: 1))
+        Color(#colorLiteral(red: 1, green: 1, blue: 1, alpha: 1))
     }
 
-    // MARK: - bgColor
-    private var fgShevronColor: Color {
-        if isSelected {
-            return  Color(#colorLiteral(red: 0.521568656, green: 0.1098039225, blue: 0.05098039284, alpha: 1)).opacity(0.6)
-        }
-
-        if isHovering {
-            return Color(#colorLiteral(red: 0.5725490451, green: 0, blue: 0.2313725501, alpha: 1)).opacity(0.6)
-        }
-        return Color(#colorLiteral(red: 0.2549019754, green: 0.2745098174, blue: 0.3019607961, alpha: 1))
+    // MARK: - pebbleActive
+    private var pebbleActive: Bool {
+        isSelected || isHovering
     }
 
 
 
     // MARK: - body
     var body: some View {
-        ZStack {
-            let _ = log.debug("[ParentEntryStripView] render isSelected=\(isSelected) hovering=\(isHovering)")
-            bgColor
-            HStack(spacing: 4) {
-                Spacer()
-                Image(systemName: "chevron.up.2")
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(fgShevronColor)
-                Image(systemName: "chevron.up.2")
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(fgShevronColor)
-                Spacer()
-                Spacer()
+        GeometryReader { geo in
+            let _ = log.debug("[ParentEntryStripView] render sel=\(isSelected) hov=\(isHovering)")
+            let btnStyle = LiquidGlassButtonStyle(isHighlighted: pebbleActive)
+            ZStack(alignment: .leading) {
+                bgColor
+                // info text on background, offset right of pebble
                 Text(label)
-                    .font(.system(size: 14, weight: .light))
+                    .font(.system(size: 10, weight: .thin, design: .monospaced))
                     .foregroundStyle(textColor)
                     .lineLimit(1)
                     .truncationMode(.middle)
-                    .fixedSize(horizontal: false, vertical: true)
-                Spacer()
-                Image(systemName: "chevron.up.2")
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(fgShevronColor)
-                Image(systemName: "chevron.up.2")
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(fgShevronColor)
-                Spacer()
-            }
-            .frame(maxWidth: .infinity, alignment: .center)
-            VStack {
-                Spacer()
-                dividerColor.frame(height: 0.5)
+                    .padding(.leading, geo.size.width * 0.17 + 6)
+                // pebble — left-aligned, half width, peeks into header
+                HStack(spacing: 0) {
+                    Button(action: { onDoubleClick(file) }) {
+                        Image(systemName: "arrowshape.turn.up.left")
+                            .font(.system(size: 15, weight: .medium))
+                            .foregroundStyle(btnStyle.iconColor)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            // icon animation on select/hover
+                            .rotationEffect(.degrees(pebbleActive ? -12 : 0))
+                            .scaleEffect(pebbleActive ? 1.15 : 1.0)
+                            .animation(
+                                pebbleActive
+                                    ? .interpolatingSpring(stiffness: 180, damping: 8)
+                                    : .easeOut(duration: 0.15),
+                                value: pebbleActive
+                            )
+                    }
+                    .buttonStyle(btnStyle)
+                    .frame(width: geo.size.width * 0.17, height: 25)
+                    .offset(y: -3)
+                    Spacer()
+                }
+                // bottom divider
+                VStack {
+                    Spacer()
+                    dividerColor.frame(height: 0.5)
+                }
             }
         }
         .frame(maxWidth: .infinity)
         .frame(height: 21)
+        .zIndex(10)
         .onHover { h in withAnimation(.easeInOut(duration: 0.10)) { isHovering = h } }
         .onTapGesture {
             onSelect(file)

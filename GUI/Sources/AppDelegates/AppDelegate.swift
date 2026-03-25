@@ -29,6 +29,8 @@ import AppKit
     // MARK: - Launch
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        UserPreferences.shared.load()
+        log.debug("prefs loaded, autoFit=\(UserPreferences.shared.snapshot.autoFitColumnsOnNavigate)")
         log.debug("restoring security-scoped bookmarks")
         Task {
             // Сначала создаём bookmarks для стандартных папок (если их нет)
