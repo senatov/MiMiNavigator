@@ -95,20 +95,21 @@ struct ParentEntryStripView: View {
                     Image(systemName: "arrowshape.turn.up.left")
                         .font(.system(size: 11, weight: .semibold))
                         .foregroundColor(btnStyle.iconColor)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                        .padding(.leading, 2)
-                        .padding(.top, 1)
-                        .rotationEffect(.degrees(pebbleActive ? 44 : 0))
-                        .scaleEffect(pebbleActive ? 1.0 : 0.9)
+                        .rotationEffect(
+                            .degrees(pebbleActive ? -45 : 0),
+                            anchor: .center
+                        )
                         .animation(
                             pebbleActive
                                 ? .interpolatingSpring(stiffness: 180, damping: 6)
                                 : .easeOut(duration: 0.15),
                             value: pebbleActive
                         )
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
                 .buttonStyle(btnStyle)
                 .frame(width: geo.size.width * UI.pebbleWidth, height: UI.pebbleHeight)
+                .clipped()
                 Spacer()
             }
             Spacer()
