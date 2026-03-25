@@ -23,6 +23,10 @@ final class DragNSView: NSView, NSDraggingSource {
     private enum UI {
         static let dragThreshold: CGFloat = 5.0
         static let dragStartTolerance: CGFloat = 10.0
+        static let dropTargetProbeYOffset: CGFloat = 14.0
+        static let dropPreviewSize = NSSize(width: 36, height: 36)
+        static let dropPreviewFadeDuration: TimeInterval = 0.16
+        static let dropPreviewEndScale: CGFloat = 0.92
     }
 
     init(appState: AppState) {
@@ -119,7 +123,9 @@ final class DragNSView: NSView, NSDraggingSource {
         let mouseInView = convert(event.locationInWindow, from: nil)
         log.debug("[DragNSView] starting drag with \(urls.count) file(s) at \(mouseInView)")
         let draggingItems = DragSessionBuilder.makeDraggingItems(from: urls, at: mouseInView)
-        beginDraggingSession(with: draggingItems, event: event, source: self)
+        let session = beginDraggingSession(with: draggingItems, event: event, source: self)
+        session.animatesToStartingPositionsOnCancelOrFail = false
+        log.debug("[DragNSView] drag session configured: animatesToStartingPositionsOnCancelOrFail=false")
     }
 
     // MARK: - NSDraggingSource
@@ -135,26 +141,43 @@ final class DragNSView: NSView, NSDraggingSource {
 
     func draggingSession(_ session: NSDraggingSession, movedTo screenPoint: NSPoint) {
         guard let dragDropManager, let appState, let window = self.window else { return }
-        let windowPoint = window.convertPoint(fromScreen: screenPoint)
+        let cursorScreenPoint = currentMouseScreenPoint(fallback: screenPoint)
+        let probeScreenPoint = dropTargetProbeScreenPoint(from: cursorScreenPoint)
+        let windowPoint = window.convertPoint(fromScreen: probeScreenPoint)
         let contentWidth = window.contentView?.frame.width ?? window.frame.width
         let midX = contentWidth / 2
         let hoverSide: FavPanelSide = windowPoint.x < midX ? .left : .right
+        let panelFrame = panelFrameInWindowCoordinates()
         let dirURL = dragDropManager.resolveDirectoryUnderCursor(
             windowPoint: windowPoint,
             panelSide: hoverSide,
             appState: appState,
-            panelFrame: self.frame
+            panelFrame: panelFrame
         )
+        let targetName = dirURL?.lastPathComponent ?? "nil"
+        let logMessage =
+            "[DragNSView] movedTo dragImageScreen=\(screenPoint) "
+            + "cursorScreen=\(cursorScreenPoint) "
+            + "probeScreen=\(probeScreenPoint) "
+            + "window=\(windowPoint) "
+            + "hoverSide=\(hoverSide) "
+            + "panelFrame=\(panelFrame) "
+            + "target=\(targetName)"
+        log.debug(logMessage)
         dragDropManager.setDropTarget(dirURL)
     }
 
     func draggingSession(_ session: NSDraggingSession, endedAt screenPoint: NSPoint, operation: NSDragOperation) {
         defer {
+            session.animatesToStartingPositionsOnCancelOrFail = false
             dragState = DragState(startPoint: nil, didStart: false, isResize: false)
             cachedSelection.removeAll()
         }
         // If AppKit resolved the drop externally (Finder accepted it), op != 0 → done
         if operation != [] {
+            if let draggedFiles = dragDropManager?.draggedFiles {
+                animateDropPreviewIfPossible(screenPoint: screenPoint, files: draggedFiles)
+            }
             dragDropManager?.endDrag()
             log.debug("[DragNSView] drag ended externally op=\(operation.rawValue)")
             return
@@ -173,12 +196,14 @@ final class DragNSView: NSView, NSDraggingSource {
             dragDropManager.endDrag()
             return
         }
-        let windowPoint = window.convertPoint(fromScreen: screenPoint)
+        let cursorScreenPoint = currentMouseScreenPoint(fallback: screenPoint)
+        let probeScreenPoint = dropTargetProbeScreenPoint(from: cursorScreenPoint)
+        let windowPoint = window.convertPoint(fromScreen: probeScreenPoint)
         let contentWidth = window.contentView?.frame.width ?? window.frame.width
         let midX = contentWidth / 2
         let dropSide: FavPanelSide = windowPoint.x < midX ? .left : .right
         // try to find a directory row under cursor — drop INTO it
-        let panelFrame = self.frame
+        let panelFrame = panelFrameInWindowCoordinates()
         let dirUnderCursor = dragDropManager.resolveDirectoryUnderCursor(
             windowPoint: windowPoint,
             panelSide: dropSide,
@@ -189,10 +214,88 @@ final class DragNSView: NSView, NSDraggingSource {
         log.info(
             "[DragNSView] internal drop: \(files.count) file(s) → \(dropSide) (\(destination.lastPathComponent)) subdir=\(dirUnderCursor != nil)"
         )
+        animateDropPreviewIfPossible(screenPoint: screenPoint, files: files)
         dragDropManager.prepareTransfer(files: files, to: destination, from: panelSide)
     }
 
     // MARK: - Helpers
+    private func animateDropPreviewIfPossible(screenPoint: NSPoint, files: [CustomFile]) {
+        guard let contentView = window?.contentView else { return }
+        guard let previewImage = makeDropPreviewImage(from: files) else { return }
+
+        let windowPoint = window!.convertPoint(fromScreen: screenPoint)
+        let contentPoint = contentView.convert(windowPoint, from: nil)
+        let previewFrame = dropPreviewFrame(centeredAt: contentPoint)
+
+        let previewView = NSImageView(frame: previewFrame)
+        previewView.image = previewImage
+        previewView.imageScaling = .scaleProportionallyUpOrDown
+        previewView.alphaValue = 1.0
+        previewView.wantsLayer = true
+        previewView.layer?.anchorPoint = CGPoint(x: 0.5, y: 0.5)
+        previewView.layer?.position = CGPoint(x: previewFrame.midX, y: previewFrame.midY)
+
+        contentView.addSubview(previewView)
+        log.debug("[DragNSView] drop preview fade-out started at \(contentPoint)")
+
+        NSAnimationContext.runAnimationGroup { context in
+            context.duration = UI.dropPreviewFadeDuration
+            context.timingFunction = CAMediaTimingFunction(name: .easeOut)
+            previewView.animator().alphaValue = 0.0
+            previewView.animator().frame = dropPreviewScaledFrame(from: previewFrame)
+        } completionHandler: {
+            DispatchQueue.main.async {
+                previewView.removeFromSuperview()
+            }
+        }
+    }
+
+    private func makeDropPreviewImage(from files: [CustomFile]) -> NSImage? {
+        let image = NSImage(systemSymbolName: "doc.fill", accessibilityDescription: "Dragged file")
+        image?.size = UI.dropPreviewSize
+        return image
+    }
+
+    private func dropPreviewFrame(centeredAt point: NSPoint) -> NSRect {
+        NSRect(
+            x: point.x - (UI.dropPreviewSize.width / 2),
+            y: point.y - (UI.dropPreviewSize.height / 2),
+            width: UI.dropPreviewSize.width,
+            height: UI.dropPreviewSize.height
+        )
+    }
+
+    private func dropPreviewScaledFrame(from frame: NSRect) -> NSRect {
+        let scaledWidth = frame.width * UI.dropPreviewEndScale
+        let scaledHeight = frame.height * UI.dropPreviewEndScale
+        return NSRect(
+            x: frame.midX - (scaledWidth / 2),
+            y: frame.midY - (scaledHeight / 2),
+            width: scaledWidth,
+            height: scaledHeight
+        )
+    }
+
+    private func panelFrameInWindowCoordinates() -> NSRect {
+        guard let window else { return .zero }
+        return convert(bounds, to: nil)
+    }
+
+    private func currentMouseScreenPoint(fallback: NSPoint) -> NSPoint {
+        let mouseLocation = NSEvent.mouseLocation
+        if mouseLocation == .zero {
+            return fallback
+        }
+        return mouseLocation
+    }
+
+    private func dropTargetProbeScreenPoint(from cursorScreenPoint: NSPoint) -> NSPoint {
+        NSPoint(
+            x: cursorScreenPoint.x,
+            y: cursorScreenPoint.y + UI.dropTargetProbeYOffset
+        )
+    }
+
     private var isPrimaryMouseDown: Bool { NSEvent.pressedMouseButtons == 1 }
 
     private var isResizeCursor: Bool {

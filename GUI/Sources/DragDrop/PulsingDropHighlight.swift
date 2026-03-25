@@ -7,27 +7,20 @@
 
 import SwiftUI
 
-
 // MARK: - PulsingDropHighlight
-/// Pulsating blue glow on directory rows when they are drop targets.
+/// Yellow background highlight for drop target directory rows.
 struct PulsingDropHighlight: View {
     @State private var pulse = false
 
-
-    private let fillColor = Color.accentColor.opacity(0.15)
-    private let borderColor = Color.orange
-    private let pulseRange: ClosedRange<Double> = 0.4...1.7
-
+    private let cornerRadius: CGFloat = 6
+    private let fillRange: ClosedRange<Double> = 0.18...0.32
 
     var body: some View {
         log.debug(#function)
-        return RoundedRectangle(cornerRadius: 6, style: .continuous)
-            .fill(fillColor)
-            .overlay(
-                RoundedRectangle(cornerRadius: 6, style: .continuous)
-                    .stroke(.yellow, lineWidth: 2.5)
-                    .opacity(pulse ? pulseRange.upperBound : pulseRange.lowerBound)
-            )
+
+        return RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+            .fill(Color.yellow.opacity(pulse ? fillRange.upperBound : fillRange.lowerBound))
+            .compositingGroup()
             .onAppear {
                 withAnimation(.easeInOut(duration: 0.5).repeatForever(autoreverses: true)) {
                     pulse = true

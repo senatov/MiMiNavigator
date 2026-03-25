@@ -169,11 +169,9 @@ struct FileRow: View, Equatable {
     @ViewBuilder
     private var highlightLayer: some View {
         if isDropTargetActive {
-            let _ = log.debug("dropTargetHighlight")
             dropTargetHighlight
         } else if isSelected {
             selectionHighlight
-            let _ = log.debug("selectionHighlight")
         }
     }
 
@@ -189,8 +187,8 @@ struct FileRow: View, Equatable {
 
     private var dropTargetHighlight: some View {
         PulsingDropHighlight()
+            .padding(.horizontal, 4)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .clipShape(Rectangle())
             .allowsHitTesting(false)
     }
 
@@ -207,14 +205,6 @@ struct FileRow: View, Equatable {
             )
             .padding(.horizontal, 3)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .allowsHitTesting(false)
-    }
-
-    private var fullRowDropSurface: some View {
-        Rectangle()
-            .fill(Color.clear)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .contentShape(Rectangle())
             .allowsHitTesting(false)
     }
 
@@ -280,13 +270,9 @@ struct FileRow: View, Equatable {
 
     private func handleDropTargeting(_ targeted: Bool) {
         guard isValidDropTarget else { return }
-
-        log.debug("[FileRow] drop target change: file='\(file.nameStr)' targeted=\(targeted) rowHeight=\(FilePanelStyle.rowHeight)")
-
         withAnimation(.easeInOut(duration: 0.15)) {
             isDropTargeted = targeted
         }
-
         if targeted {
             dragDropManager.setDropTarget(file.urlValue)
         }
@@ -410,29 +396,24 @@ struct FileRow: View, Equatable {
 
     // MARK: - Normal Row View
     private func normalRowView() -> some View {
-        ZStack(alignment: .leading) {
-            fullRowDropSurface
-            stableContent
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .frame(height: FilePanelStyle.rowHeight)
-        .background(Color.clear)
-        .contentShape(Rectangle())
-        .clipped()
-        .gesture(rowGestures())
-        .animation(nil, value: isSelected)
-        .contextMenu { contextMenuContent }
-        .modifier(
-            DropTargetModifier(
-                isValidTarget: isValidDropTarget,
-                isDropTargeted: $isDropTargeted,
-                onDrop: handleDrop,
-                onTargetChange: handleDropTargeting
+        stableContent
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(height: FilePanelStyle.rowHeight)
+            .contentShape(Rectangle())
+            .gesture(rowGestures())
+            .animation(nil, value: isSelected)
+            .contextMenu { contextMenuContent }
+            .modifier(
+                DropTargetModifier(
+                    isValidTarget: isValidDropTarget,
+                    isDropTargeted: $isDropTargeted,
+                    onDrop: handleDrop,
+                    onTargetChange: handleDropTargeting
+                )
             )
-        )
-        .task(id: file.id) {
-            guard file.isDirectory else { return }
-            await runDirectorySizeTask()
-        }
+            .task(id: file.id) {
+                guard file.isDirectory else { return }
+                await runDirectorySizeTask()
+            }
     }
 }
