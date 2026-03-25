@@ -32,10 +32,17 @@ class Coordinator: NSObject, NSTableViewDelegate, NSTableViewDataSource, NSMenuD
     }
 
     func updateFiles(_ newFiles: [CustomFile], version: Int) {
+        log.debug("[Coordinator] updateFiles count=\(newFiles.count) version=\(version)")
         files = newFiles
         lastVersion = version
+        rebuildIndex()
+    }
+
+    private func rebuildIndex() {
         indexByID.removeAll(keepingCapacity: true)
-        for (i, f) in files.enumerated() { indexByID[f.id] = i }
+        for (i, f) in files.enumerated() {
+            indexByID[f.id] = i
+        }
     }
 
     func numberOfRows(in tableView: NSTableView) -> Int { files.count }
@@ -54,12 +61,14 @@ class Coordinator: NSObject, NSTableViewDelegate, NSTableViewDataSource, NSMenuD
             cell = createCell(identifier: cellID, columnID: colID)
         }
 
+        log.debug("[Coordinator] configure cell row=\(row) col=\(colRaw)")
         configureCell(cell!, file: file, columnID: colID, row: row, tableView: tableView)
         return cell
     }
 
     private func createCell(identifier: NSUserInterfaceItemIdentifier, columnID: ColumnID) -> NSTableCellView {
         let cell = NSTableCellView()
+        log.debug("[Coordinator] createCell id=\(identifier.rawValue)")
         cell.identifier = identifier
 
         let tf = NSTextField(labelWithString: "")
@@ -100,6 +109,7 @@ class Coordinator: NSObject, NSTableViewDelegate, NSTableViewDataSource, NSMenuD
     }
 
     private func configureCell(_ cell: NSTableCellView, file: CustomFile, columnID: ColumnID, row: Int, tableView: NSTableView) {
+        log.debug("[Coordinator] configureCell row=\(row) file=\(file.nameStr)")
         cell.textField?.stringValue = text(for: columnID, file: file)
         cell.textField?.font =
             columnID == .permissions
@@ -154,23 +164,13 @@ class Coordinator: NSObject, NSTableViewDelegate, NSTableViewDataSource, NSMenuD
         return rv
     }
 
-    func tableViewSelectionDidChange(_ n: Notification) {
-        guard let tv = n.object as? NSTableView else { return }
-        let row = tv.selectedRow
-        if row >= 0 && row < files.count {
-            let f = files[row]
-            lastSelectedID = f.id
-            parent.selectedID = f.id
-            parent.onSelect(f)
-        } else {
-            lastSelectedID = nil
-            parent.selectedID = nil
-        }
-    }
-
     @objc func tableViewDoubleClick(_ sender: NSTableView) {
         let row = sender.clickedRow
-        guard row >= 0 && row < files.count else { return }
+        guard row >= 0, row < files.count else {
+            log.warning("[Coordinator] doubleClick invalid row=\(sender.clickedRow)")
+            return
+        }
+        log.debug("[Coordinator] doubleClick file=\(files[row].nameStr)")
         parent.onDoubleClick(files[row])
     }
 
@@ -387,16 +387,32 @@ class Coordinator: NSObject, NSTableViewDelegate, NSTableViewDataSource, NSMenuD
             newURL = dir.appendingPathComponent(ext.isEmpty ? "\(baseName) copy \(counter)" : "\(baseName) copy \(counter).\(ext)")
             counter += 1
         }
-        try? fm.copyItem(at: file.urlValue, to: newURL)
+        do {
+            try fm.copyItem(at: file.urlValue, to: newURL)
+            log.debug("[Coordinator] duplicated to \(newURL.path)")
+        } catch {
+            log.error("[Coordinator] duplicate failed: \(error)")
+        }
     }
 
     @objc private func menuCompress() {
         guard let file = clickedFile else { return }
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/zip")
-        process.currentDirectoryURL = file.urlValue.deletingLastPathComponent()
-        process.arguments = ["-r", "\(file.nameStr).zip", file.nameStr]
-        try? process.run()
+        log.debug("[Coordinator] compress \(file.urlValue.path)")
+
+        Task {
+            let process = Process()
+            process.executableURL = URL(fileURLWithPath: "/usr/bin/zip")
+            process.currentDirectoryURL = file.urlValue.deletingLastPathComponent()
+            process.arguments = ["-r", "\(file.nameStr).zip", file.nameStr]
+
+            do {
+                try process.run()
+                process.waitUntilExit()
+                log.debug("[Coordinator] compress finished")
+            } catch {
+                log.error("[Coordinator] compress failed: \(error)")
+            }
+        }
     }
 
     @objc private func menuShare() {
@@ -421,7 +437,7 @@ class Coordinator: NSObject, NSTableViewDelegate, NSTableViewDataSource, NSMenuD
         do {
             try FileManager.default.trashItem(at: file.urlValue, resultingItemURL: nil)
         } catch {
-            log.error("[NSFileTableView] trash failed: \(error)")
+            log.error("[Coordinator] trash failed: \(error)")
         }
     }
 

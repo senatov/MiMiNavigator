@@ -16,14 +16,14 @@ struct LiquidGlassButtonStyle: ButtonStyle {
     // MARK: - iconColor
     var iconColor: Color {
         isHighlighted
-            ? Color(red: 0.96, green: 0.10, blue: 0.12)
-            : Color(white: 0.15)
+            ? Color(#colorLiteral(red: 0.96, green: 0.10, blue: 0.12, alpha: 1))
+            : Color(#colorLiteral(red: 0.521568656, green: 0.1098039225, blue: 0.05098039284, alpha: 1))
     }
 
     // MARK: - makeBody
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .padding(.horizontal, 6)
+            .padding(.horizontal, 4)
             .padding(.vertical, 2)
             // ── layer 1: deep violet or neutral base ──
             .background(
@@ -31,16 +31,16 @@ struct LiquidGlassButtonStyle: ButtonStyle {
                     ? AnyShapeStyle(
                         LinearGradient(
                             colors: [
-                                Color(red: 0.62, green: 0.52, blue: 0.78),
-                                Color(red: 0.52, green: 0.42, blue: 0.70),
-                                Color(red: 0.46, green: 0.36, blue: 0.64)
+                                Color(#colorLiteral(red: 1, green: 0.8082827781, blue: 0.8750300931, alpha: 1)),
+                                Color(#colorLiteral(red: 0.7170629799, green: 0.5761168817, blue: 0.9715820313, alpha: 1)),
+                                Color(#colorLiteral(red: 0.6521054361, green: 0.504282305, blue: 0.9057421875, alpha: 1))
                             ],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         )
                     )
                     : AnyShapeStyle(
-                        Color(white: 0.78, opacity: 0.80)
+                        Color(#colorLiteral(red: 0.78, green: 0.78, blue: 0.78, alpha: 0.8))
                     )
             )
             // ── layer 2: glass material ──

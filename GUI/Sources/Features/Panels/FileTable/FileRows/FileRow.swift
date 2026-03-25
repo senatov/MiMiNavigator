@@ -269,7 +269,6 @@ struct FileRow: View, Equatable {
 
     private func handleDropTargeting(_ targeted: Bool) {
         guard isValidDropTarget else { return }
-        log.verbose("[FileRow] drop target '\(file.nameStr)' targeted=\(targeted)")
         withAnimation(.easeInOut(duration: 0.15)) {
             isDropTargeted = targeted
         }

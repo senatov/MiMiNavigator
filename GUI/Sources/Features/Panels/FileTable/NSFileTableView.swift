@@ -35,7 +35,7 @@
             scrollView.borderType = .noBorder
             scrollView.drawsBackground = false
 
-            let tableView = NSTableView()
+            let tableView = ClickTrackingTableView()
             tableView.style = .plain
             tableView.usesAlternatingRowBackgroundColors = false
             tableView.rowHeight = FilePanelStyle.rowHeight

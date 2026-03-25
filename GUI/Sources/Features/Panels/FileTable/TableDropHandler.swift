@@ -3,49 +3,36 @@
 //
 // Created by Iakov Senatov on 27.01.2026.
 // Copyright © 2026 Senatov. All rights reserved.
-// Description: Drag and drop handling for FileTableView panel background
+// Description: Drop handler for FileTableView panel background
 
 import FileModelKit
 import SwiftUI
 
-// MARK: - Table Drop Handler
-/// Handles drag and drop operations on the panel background
+
+// MARK: - TableDropHandler
+/// Handles files dropped on the panel background (not on a specific row/folder).
 @MainActor
 struct TableDropHandler {
     let panelSide: FavPanelSide
     let appState: AppState
     let dragDropManager: DragDropManager
 
-    /// Handle files dropped on panel background
+
+    // MARK: - Handle Panel Drop
     func handlePanelDrop(_ droppedFiles: [CustomFile]) -> Bool {
-        log.debug("[DROP] handlePanelDrop called with \(droppedFiles.count) files")
-        guard !droppedFiles.isEmpty else {
-            log.debug("[TableDropHandler] drop ignored: empty")
-            return false
-        }
+        guard !droppedFiles.isEmpty else { return false }
         let destinationURL = appState.url(for: panelSide)
-        // Determine source panel first
         let sourceSide: FavPanelSide? = panelSide == .left ? .right : .left
-        // Prevent dropping onto same directory only if it originates from the same panel
-        if let firstFile = droppedFiles.first {
-            let sourceDir = firstFile.urlValue.deletingLastPathComponent()
-            if sourceDir.path == destinationURL.path && sourceSide == panelSide {
-                log.debug("[TableDropHandler] drop ignored: same directory (same panel)")
-                return false
-            }
-        }
-        log.debug("[DROP] destination = \(destinationURL.path)")
         dragDropManager.prepareTransfer(files: droppedFiles, to: destinationURL, from: sourceSide)
-        log.info("[TableDropHandler] prepared transfer of \(droppedFiles.count) files to \(destinationURL.path)")
+        log.info("[TableDrop] \(droppedFiles.count) file(s) → \(destinationURL.lastPathComponent)")
         return true
     }
 
-    /// Update drop target when panel is targeted
+
+    // MARK: - Update Drop Target
     func updateDropTarget(targeted: Bool) {
-        if targeted {
-            let panelURL = appState.url(for: panelSide)
-            dragDropManager.setDropTarget(panelURL)
-            log.debug("[TableDropHandler] drop target set: \(panelURL.path)")
-        }
+        guard targeted else { return }
+        let panelURL = appState.url(for: panelSide)
+        dragDropManager.setDropTarget(panelURL)
     }
 }

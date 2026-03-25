@@ -15,6 +15,15 @@ final class FileOpsEngine {
 
     static let shared = FileOpsEngine()
 
+    /// Result of an off-MainActor file I/O operation
+    struct IOResult: Sendable {
+        let bytes: Int64
+        let error: String?
+        var succeeded: Bool { error == nil }
+        static func ok(_ bytes: Int64) -> IOResult { IOResult(bytes: bytes, error: nil) }
+        static func fail(_ msg: String) -> IOResult { IOResult(bytes: 0, error: msg) }
+    }
+
     private let panel = FileOpProgressPanel.shared
     private let fm = FileManager.default
     private let maxConcurrency = 5
@@ -232,14 +241,39 @@ private extension FileOpsEngine {
     func executeSimple(plan: FileOpPlan, operation: FileOpType, progress: FileOpProgress) async throws {
         for item in plan.items {
             guard !progress.isCancelled else { break }
-            try processItem(item: item, to: plan.destination, operation: operation, progress: progress)
+            progress.setCurrentFile(item.lastPathComponent)
+            let destination = plan.destination
+            let result = await Task.detached(priority: .userInitiated) {
+                Self.performSingleItemIO(item: item, destination: destination, operation: operation)
+            }.value
+            if result.succeeded {
+                progress.fileCompleted(name: item.lastPathComponent, success: true)
+                progress.add(bytes: result.bytes)
+            } else {
+                progress.fileCompleted(name: item.lastPathComponent, success: false, error: result.error)
+            }
         }
     }
-    
+
+    /// Single item I/O off MainActor.
+    nonisolated static func performSingleItemIO(item: URL, destination: URL, operation: FileOpType) -> IOResult {
+        let fm = FileManager.default
+        let target = UniqueNameGen.resolve(name: item.lastPathComponent, in: destination)
+        do {
+            switch operation {
+            case .copy: try fm.copyItem(at: item, to: target)
+            case .move: try fm.moveItem(at: item, to: target)
+            }
+            let size = Int64((try? item.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0)
+            return .ok(size)
+        } catch {
+            return .fail(error.localizedDescription)
+        }
+    }
+
     func processItem(item: URL, to destination: URL, operation: FileOpType, progress: FileOpProgress) throws {
         progress.setCurrentFile(item.lastPathComponent)
         let target = UniqueNameGen.resolve(name: item.lastPathComponent, in: destination)
-        
         do {
             try performFileOperation(from: item, to: target, operation: operation)
             progress.fileCompleted(name: item.lastPathComponent, success: true)
@@ -280,20 +314,26 @@ private extension FileOpsEngine {
     
     func processFilesInParallel(plan: FileOpPlan, operation: FileOpType, progress: FileOpProgress) async throws {
         let fileEntries = plan.flatList.filter { !$0.isDirectory }
-        
+        let destination = plan.destination
+        let maxConc = maxConcurrency
         try await withThrowingTaskGroup(of: Void.self) { group in
             var running = 0
-            
             for entry in fileEntries {
                 guard !progress.isCancelled else { break }
-                
-                if running >= maxConcurrency {
+                if running >= maxConc {
                     try await group.next()
                     running -= 1
                 }
-                
-                group.addTask { @MainActor in
-                    self.processFileEntry(entry: entry, destination: plan.destination, operation: operation, progress: progress)
+                group.addTask(priority: .userInitiated) {
+                    let result = Self.performFileEntryIO(entry: entry, destination: destination, operation: operation)
+                    await MainActor.run {
+                        if result.succeeded {
+                            progress.fileCompleted(name: entry.url.lastPathComponent, success: true)
+                            progress.add(bytes: result.bytes)
+                        } else {
+                            progress.fileCompleted(name: entry.url.lastPathComponent, success: false, error: result.error)
+                        }
+                    }
                 }
                 running += 1
             }
@@ -305,7 +345,6 @@ private extension FileOpsEngine {
         progress.setCurrentFile(entry.url.lastPathComponent)
         let targetURL = UniqueNameGen.resolve(name: entry.relativePath, in: destination)
         ensureParentDirectory(for: targetURL)
-        
         do {
             try performFileOperation(from: entry.url, to: targetURL, operation: operation)
             progress.fileCompleted(name: entry.url.lastPathComponent, success: true)
@@ -314,7 +353,30 @@ private extension FileOpsEngine {
             progress.fileCompleted(name: entry.url.lastPathComponent, success: false, error: error.localizedDescription)
         }
     }
-    
+
+    /// Perform file I/O off MainActor — eliminates QoS priority inversion.
+    nonisolated static func performFileEntryIO(
+        entry: DirScanResult.FileEntry,
+        destination: URL,
+        operation: FileOpType
+    ) -> IOResult {
+        let fm = FileManager.default
+        let targetURL = UniqueNameGen.resolve(name: entry.relativePath, in: destination)
+        let parentDir = targetURL.deletingLastPathComponent()
+        if !fm.fileExists(atPath: parentDir.path) {
+            try? fm.createDirectory(at: parentDir, withIntermediateDirectories: true)
+        }
+        do {
+            switch operation {
+            case .copy: try fm.copyItem(at: entry.url, to: targetURL)
+            case .move: try fm.moveItem(at: entry.url, to: targetURL)
+            }
+            return .ok(entry.size)
+        } catch {
+            return .fail(error.localizedDescription)
+        }
+    }
+
     func ensureParentDirectory(for url: URL) {
         let parentDir = url.deletingLastPathComponent()
         if !fm.fileExists(atPath: parentDir.path) {
@@ -371,37 +433,41 @@ private extension FileOpsEngine {
 private extension FileOpsEngine {
     
     func streamCopy(from source: URL, to destination: URL, progress: FileOpProgress) async throws {
+        let result = await Task.detached(priority: .userInitiated) {
+            Self.performStreamCopy(from: source, to: destination)
+        }.value
+        switch result {
+        case .success(let totalBytes):
+            progress.add(bytes: totalBytes)
+        case .failure(let error):
+            throw error
+        }
+    }
+
+    /// Pure I/O — runs off MainActor on background thread.
+    nonisolated static func performStreamCopy(from source: URL, to destination: URL) -> Result<Int64, FileOpError> {
         guard let input = InputStream(url: source) else {
-            throw FileOpError.fileNotFound(source.path)
+            return .failure(.fileNotFound(source.path))
         }
         guard let output = OutputStream(url: destination, append: false) else {
-            throw FileOpError.invalidDest(destination.path)
+            return .failure(.invalidDest(destination.path))
         }
-        
         input.open()
         output.open()
-        defer {
-            input.close()
-            output.close()
-        }
-        
-        try copyStreamChunks(input: input, output: output, source: source, progress: progress)
-    }
-    
-    func copyStreamChunks(input: InputStream, output: OutputStream, source: URL, progress: FileOpProgress) throws {
+        defer { input.close(); output.close() }
         let bufSize = 256 * 1024
         let buffer = UnsafeMutablePointer<UInt8>.allocate(capacity: bufSize)
         defer { buffer.deallocate() }
-        
-        while !progress.isCancelled {
+        var totalCopied: Int64 = 0
+        while true {
             let bytesRead = input.read(buffer, maxLength: bufSize)
-            if bytesRead < 0 { throw FileOpError.readFailed(source.path) }
+            if bytesRead < 0 { return .failure(.readFailed(source.path)) }
             if bytesRead == 0 { break }
-            
             let written = output.write(buffer, maxLength: bytesRead)
-            if written < 0 { throw FileOpError.writeFailed(source.path) }
-            progress.add(bytes: Int64(written))
+            if written < 0 { return .failure(.writeFailed(source.path)) }
+            totalCopied += Int64(written)
         }
+        return .success(totalCopied)
     }
 }
 

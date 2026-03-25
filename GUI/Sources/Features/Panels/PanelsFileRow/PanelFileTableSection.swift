@@ -78,8 +78,17 @@ struct PanelFileTableSection: View {
         .simultaneousGesture(
             TapGesture(count: 1)
                 .onEnded {
+                    // set focus
                     if appState.focusedPanel != panelSide {
                         appState.focusedPanel = panelSide
+                    }
+                    // plain click anywhere on panel → clear marks if no modifier keys held
+                    let mods = NSEvent.modifierFlags.intersection(.deviceIndependentFlagsMask)
+                        .subtracting([.function, .numericPad])
+                    let isPlain = mods.isEmpty || mods == .capsLock
+                    if isPlain && appState.markedCount(for: panelSide) > 0 {
+                        appState.unmarkAll(on: panelSide)
+                        log.debug("[PanelFileTableSection] tap → marks nuked on \(panelSide)")
                     }
                 }
         )

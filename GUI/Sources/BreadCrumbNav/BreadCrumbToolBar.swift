@@ -157,7 +157,11 @@ struct BreadCrumbToolBar: View {
                 )
                 .overlay(
                     RoundedRectangle(cornerRadius: 7)
-                        .stroke(Color(red: 0.35, green: 0.55, blue: 0.85).opacity(isHovered ? 0.7 : 0.3), lineWidth: 0.6)
+                        .stroke(
+                            Color(#colorLiteral(red: 0.9529411793, green: 0.6862745285, blue: 0.1333333403, alpha: 1))
+                                .opacity(isHovered ? 0.7 : 0.3),
+                            lineWidth: 0.6
+                        )
                 )
                 .scaleEffect(isHovered ? 1.05 : 1.0)
                 .animation(.spring(response: 0.25, dampingFraction: 0.6), value: isHovered)

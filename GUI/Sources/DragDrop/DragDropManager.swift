@@ -1,80 +1,71 @@
-//
 // DragDropManager.swift
-//  MiMiNavigator
+// MiMiNavigator
 //
-//  Created by Iakov Senatov on 22.01.2026.
-//  Copyright © 2026 Senatov. All rights reserved.
-//
+// Created by Iakov Senatov on 22.01.2026.
+// Copyright © 2026 Senatov. All rights reserved.
 
 import SwiftUI
 import FileModelKit
 import UniformTypeIdentifiers
 
-/// Manages drag-and-drop operations between panels
+
+// MARK: - DragDropManager
+/// Central coordinator for drag-and-drop between panels and external apps.
+/// Owns pending transfer state, confirmation dialog, and drag session tracking.
 @MainActor
 @Observable
 final class DragDropManager {
-static let shared = DragDropManager()
-    /// Currently pending transfer operation (shown in confirmation dialog)
+
+
+    static let shared = DragDropManager()
+
+
+    /// Currently pending transfer (shown in confirmation dialog)
     var pendingOperation: FileTransferOperation?
+
 
     /// Whether the confirmation dialog is visible
     var showConfirmationDialog: Bool = false
 
-    /// Currently dragged files (for visual feedback)
+
+    /// Files being dragged in the current session (set by both SwiftUI .onDrag and AppKit NSDraggingSession)
     var draggedFiles: [CustomFile] = []
 
-    /// NSPasteboard providers for current drag session
-    var dragItemProviders: [NSItemProvider] = []
 
-    /// Currently highlighted drop target (folder or panel)
+    /// Currently highlighted drop target folder
     var dropTargetPath: URL?
 
-    // MARK: - Start dragging files
+
+    // MARK: - Start Drag
+    /// Register files being dragged. Called from SwiftUI .onDrag (grid mode) and DragNSView (list mode).
     func startDrag(files: [CustomFile], from panelSide: FavPanelSide) {
-        log.debug("DragDropManager: started dragging \(files.count) items from \(panelSide)")
-
+        log.debug("[DnD] drag started: \(files.count) item(s) from \(panelSide)")
         draggedFiles = files
-
-        // Create one NSItemProvider per file (required for multi-file drag)
-        dragItemProviders = files.map { file in
-            let provider = NSItemProvider(object: file.urlValue as NSURL)
-            provider.suggestedName = file.nameStr
-            return provider
-        }
     }
 
-    // MARK: - End drag operation
+
+    // MARK: - End Drag
     func endDrag() {
-        log.debug("DragDropManager: drag ended")
         draggedFiles = []
-        dragItemProviders = []
         dropTargetPath = nil
     }
 
-    // MARK: - Set drop target highlight
+
+    // MARK: - Set Drop Target
     func setDropTarget(_ url: URL?) {
         dropTargetPath = url
     }
 
-    // MARK: - Prepare transfer operation and show confirmation
+
+    // MARK: - Prepare Transfer
+    /// Stage a transfer operation and show confirmation dialog.
+    /// No validation here — let FileManager reject invalid ops at execution time.
     func prepareTransfer(
         files: [CustomFile],
         to destination: URL,
         from sourcePanelSide: FavPanelSide?
     ) {
-        log.debug("DragDropManager: preparing transfer of \(files.count) items to \(destination.path)")
-
-        // Check if dropping on same location
-        if let firstFile = files.first {
-            let sourceDir = firstFile.urlValue.deletingLastPathComponent()
-            if sourceDir.path == destination.path {
-                log.debug("DragDropManager: dropping on same directory, ignoring")
-                endDrag()
-                return
-            }
-        }
-
+        log.debug("[DnD] prepareTransfer: \(files.count) file(s) → \(destination.lastPathComponent)")
         pendingOperation = FileTransferOperation(
             sourceFiles: files,
             destinationPath: destination,
@@ -83,83 +74,77 @@ static let shared = DragDropManager()
         showConfirmationDialog = true
     }
 
-    // MARK: - Execute the transfer with chosen action
+
+    // MARK: - Execute Transfer
     func executeTransfer(action: FileTransferAction, appState: AppState) async {
         guard let operation = pendingOperation else {
-            log.error("DragDropManager: no pending operation to execute")
+            log.error("[DnD] executeTransfer called with no pending op")
             return
         }
-
         defer {
             pendingOperation = nil
             showConfirmationDialog = false
             endDrag()
         }
-
         switch action {
             case .abort:
-                log.debug("DragDropManager: transfer aborted by user")
-                return
-
+                log.debug("[DnD] transfer aborted")
             case .move:
-                await performMove(operation: operation, appState: appState)
-
+                await performFileOp(.move, operation: operation, appState: appState)
             case .copy:
-                await performCopy(operation: operation, appState: appState)
+                await performFileOp(.copy, operation: operation, appState: appState)
         }
     }
 
-    // MARK: - Perform move via FileOpsEngine
-    private func performMove(operation: FileTransferOperation, appState: AppState) async {
-        log.info("DragDropManager: move \(operation.sourceFiles.count) items → \(operation.destinationPath.path)")
+
+    // MARK: - Perform File Operation
+    private func performFileOp(
+        _ kind: FileTransferAction,
+        operation: FileTransferOperation,
+        appState: AppState
+    ) async {
         let urls = operation.sourceFiles.map(\.urlValue)
+        let dest = operation.destinationPath
+        log.info("[DnD] \(kind) \(urls.count) item(s) → \(dest.lastPathComponent)")
         do {
-            try await FileOpsEngine.shared.move(items: urls, to: operation.destinationPath)
+            switch kind {
+                case .move: try await FileOpsEngine.shared.move(items: urls, to: dest)
+                case .copy: try await FileOpsEngine.shared.copy(items: urls, to: dest)
+                case .abort: return
+            }
         } catch {
-            log.error("DragDropManager: move failed — \(error.localizedDescription)")
+            log.error("[DnD] \(kind) failed: \(error.localizedDescription)")
         }
-        await refreshPanels(appState: appState, operation: operation)
+        await refreshAffectedPanels(appState: appState, operation: operation)
     }
 
-    // MARK: - Perform copy via FileOpsEngine
-    private func performCopy(operation: FileTransferOperation, appState: AppState) async {
-        log.info("DragDropManager: copy \(operation.sourceFiles.count) items → \(operation.destinationPath.path)")
-        let urls = operation.sourceFiles.map(\.urlValue)
-        do {
-            try await FileOpsEngine.shared.copy(items: urls, to: operation.destinationPath)
-        } catch {
-            log.error("DragDropManager: copy failed — \(error.localizedDescription)")
-        }
-        await refreshPanels(appState: appState, operation: operation)
-    }
 
-    // MARK: - Refresh affected panels and clear marks
-    private func refreshPanels(appState: AppState, operation: FileTransferOperation) async {
-        // Clear marks after successful operation
+    // MARK: - Refresh Affected Panels
+    /// Refresh only the panels whose directories overlap with source or destination.
+    /// Uses Set to avoid double-refreshing the same panel.
+    private func refreshAffectedPanels(appState: AppState, operation: FileTransferOperation) async {
         if let sourceSide = operation.sourcePanelSide {
             appState.unmarkAll(on: sourceSide)
-            log.debug("DragDropManager: cleared marks on \(sourceSide) after operation")
         }
-        log.debug(#function + ": refreshing affected panels")
-        let leftPath = appState.leftURL.standardizedFileURL
-        let rightPath = appState.rightURL.standardizedFileURL
-        let destPath = operation.destinationPath.standardizedFileURL
-
-        if destPath.path.hasPrefix(leftPath.path) || leftPath.path.hasPrefix(destPath.path) {
-            await appState.refreshLeftFiles()
+        var refreshed = Set<FavPanelSide>()
+        let destPath = operation.destinationPath.standardizedFileURL.path
+        let leftPath = appState.leftURL.standardizedFileURL.path
+        let rightPath = appState.rightURL.standardizedFileURL.path
+        if destPath.hasPrefix(leftPath) || leftPath.hasPrefix(destPath) {
+            refreshed.insert(.left)
         }
-
-        if destPath.path.hasPrefix(rightPath.path) || rightPath.path.hasPrefix(destPath.path) {
-            await appState.refreshRightFiles()
+        if destPath.hasPrefix(rightPath) || rightPath.hasPrefix(destPath) {
+            refreshed.insert(.right)
         }
-
         if let sourceSide = operation.sourcePanelSide {
-            switch sourceSide {
-                case .left:
-                    await appState.refreshLeftFiles()
-                case .right:
-                    await appState.refreshRightFiles()
+            refreshed.insert(sourceSide)
+        }
+        for side in refreshed {
+            switch side {
+                case .left: await appState.refreshLeftFiles()
+                case .right: await appState.refreshRightFiles()
             }
         }
+        log.debug("[DnD] refreshed panels: \(refreshed)")
     }
 }

@@ -47,7 +47,7 @@ struct ParentEntryStripView: View {
     // MARK: - parentName
     private var parentName: String {
         if parentURL.path == "/" {
-            return "Root"
+            return "/Root"
         }
         return parentURL.path
     }
@@ -67,8 +67,6 @@ struct ParentEntryStripView: View {
         isSelected || isHovering
     }
 
-
-
     // MARK: - body
     var body: some View {
         GeometryReader { geo in
@@ -82,27 +80,27 @@ struct ParentEntryStripView: View {
                     .foregroundStyle(textColor)
                     .lineLimit(1)
                     .truncationMode(.middle)
-                    .padding(.leading, geo.size.width * 0.17 + 6)
-                // pebble — left-aligned, half width, peeks into header
-                HStack(spacing: 0) {
-                    Button(action: { onDoubleClick(file) }) {
-                        Image(systemName: "arrowshape.turn.up.left")
-                            .font(.system(size: 15, weight: .medium))
-                            .foregroundStyle(btnStyle.iconColor)
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                            // icon animation on select/hover
-                            .rotationEffect(.degrees(pebbleActive ? -12 : 0))
-                            .scaleEffect(pebbleActive ? 1.15 : 1.0)
-                            .animation(
-                                pebbleActive
-                                    ? .interpolatingSpring(stiffness: 180, damping: 8)
-                                    : .easeOut(duration: 0.15),
-                                value: pebbleActive
-                            )
+                    .padding(.leading, geo.size.width * 0.07)
+                VStack(spacing: 0) {
+                    HStack(spacing: 0) {
+                        Button(action: { onDoubleClick(file) }) {
+                            Image(systemName: "arrowshape.turn.up.left")
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundColor(btnStyle.iconColor)
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                .rotationEffect(.degrees(pebbleActive ? 44 : 0))
+                                .scaleEffect(pebbleActive ? 1.0 : 0.9)
+                                .animation(
+                                    pebbleActive
+                                        ? .interpolatingSpring(stiffness: 180, damping: 6)
+                                        : .easeOut(duration: 0.15),
+                                    value: pebbleActive
+                                )
+                        }
+                        .buttonStyle(btnStyle)
+                        .frame(width: geo.size.width * 0.07, height: 16)
+                        Spacer()
                     }
-                    .buttonStyle(btnStyle)
-                    .frame(width: geo.size.width * 0.17, height: 27)
-                    .offset(y: -5)
                     Spacer()
                 }
                 // bottom separator — matches top header border

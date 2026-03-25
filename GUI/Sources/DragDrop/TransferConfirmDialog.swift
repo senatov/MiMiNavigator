@@ -1,63 +1,27 @@
-// FileTransferConfirmationDialog.swift
-//  MiMiNavigator
+// TransferConfirmDialog.swift
+// MiMiNavigator
 //
-//  Created by Iakov Senatov on 22.01.2026.
-//  Copyright © 2026 Senatov. All rights reserved.
+// Created by Iakov Senatov on 22.01.2026.
+// Copyright © 2026 Senatov. All rights reserved.
+// Description: macOS HIG confirmation dialog for move/copy file operations
 
 import SwiftUI
 
-/// macOS HIG 26 confirmation dialog for file move/copy operations.
-/// Style matches DeleteConfirmationDialog: app icon top-left, bold question, path rows, native buttons.
+
+// MARK: - FileTransferConfirmationDialog
+/// HIG-style confirmation dialog: app icon top-left, bold question, path rows, native buttons.
 struct FileTransferConfirmationDialog: View {
     let operation: FileTransferOperation
     let onAction: (FileTransferAction) -> Void
     @Environment(\.dismiss) private var dismiss
+
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            HStack(alignment: .top, spacing: 14) {
-                ZStack(alignment: .bottomTrailing) {
-                    Image(systemName: "folder.fill")
-                        .font(.system(size: 52))
-                        .foregroundStyle(.blue)
-                        .symbolRenderingMode(.hierarchical)
-                    Image(systemName: "arrow.right.circle.fill")
-                        .font(.system(size: 20))
-                        .foregroundStyle(.white, .orange)
-                        .offset(x: 6, y: 4)
-                }
-                .frame(width: 56, height: 56)
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Move or Copy Items?")
-                        .font(.system(size: 14, weight: .light))
-                    Text("Do you want to move or copy \(operation.itemsDescription) to \"\(operation.destinationName)\"?")
-                        .font(.system(size: 14))
-                        .foregroundStyle(.primary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-            }
-            .padding(.bottom, 12)
+            headerSection.padding(.bottom, 12)
             fileListSection.padding(.bottom, 8)
-            VStack(alignment: .leading, spacing: 3) {
-                if let firstFile = operation.sourceFiles.first {
-                    pathRow(label: "From:", path: firstFile.urlValue.deletingLastPathComponent().path)
-                }
-                pathRow(label: "To:", path: operation.destinationPath.path)
-            }
-            .padding(.bottom, 20)
-            HStack(spacing: 8) {
-                Button("Cancel") { handleAction(.abort) }
-                    .keyboardShortcut(.cancelAction)
-                    .buttonStyle(ThemedButtonStyle())
-                    .controlSize(.large)
-                Spacer()
-                Button("Copy") { handleAction(.copy) }
-                    .keyboardShortcut(.defaultAction)
-                    .buttonStyle(ThemedButtonStyle())
-                    .controlSize(.large)
-                Button("Move") { handleAction(.move) }
-                    .buttonStyle(ThemedButtonStyle())
-                    .controlSize(.large)
-            }
+            pathSection.padding(.bottom, 20)
+            buttonSection
         }
         .padding(20)
         .frame(width: 400)
@@ -70,7 +34,34 @@ struct FileTransferConfirmationDialog: View {
         .shadow(color: .black.opacity(0.22), radius: 20, x: 0, y: 8)
     }
 
-    // MARK: - File list
+
+    // MARK: - Header
+    private var headerSection: some View {
+        HStack(alignment: .top, spacing: 14) {
+            ZStack(alignment: .bottomTrailing) {
+                Image(systemName: "folder.fill")
+                    .font(.system(size: 52))
+                    .foregroundStyle(.blue)
+                    .symbolRenderingMode(.hierarchical)
+                Image(systemName: "arrow.right.circle.fill")
+                    .font(.system(size: 20))
+                    .foregroundStyle(.white, .orange)
+                    .offset(x: 6, y: 4)
+            }
+            .frame(width: 56, height: 56)
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Move or Copy Items?")
+                    .font(.system(size: 14, weight: .light))
+                Text("Do you want to move or copy \(operation.itemsDescription) to \"\(operation.destinationName)\"?")
+                    .font(.system(size: 14))
+                    .foregroundStyle(.primary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+    }
+
+
+    // MARK: - File List
     private var fileListSection: some View {
         let maxVisible = 5
         let files = operation.sourceFiles
@@ -97,7 +88,19 @@ struct FileTransferConfirmationDialog: View {
             }
         }
     }
-    // MARK: - Path row
+
+
+    // MARK: - Path Rows
+    private var pathSection: some View {
+        VStack(alignment: .leading, spacing: 3) {
+            if let firstFile = operation.sourceFiles.first {
+                pathRow(label: "From:", path: firstFile.urlValue.deletingLastPathComponent().path)
+            }
+            pathRow(label: "To:", path: operation.destinationPath.path)
+        }
+    }
+
+
     private func pathRow(label: String, path: String) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 4) {
             Text(label)
@@ -111,29 +114,31 @@ struct FileTransferConfirmationDialog: View {
                 .truncationMode(.middle)
         }
     }
-    // MARK: -
+
+
+    // MARK: - Buttons
+    private var buttonSection: some View {
+        HStack(spacing: 8) {
+            Button("Cancel") { handleAction(.abort) }
+                .keyboardShortcut(.cancelAction)
+                .buttonStyle(ThemedButtonStyle())
+                .controlSize(.large)
+            Spacer()
+            Button("Copy") { handleAction(.copy) }
+                .keyboardShortcut(.defaultAction)
+                .buttonStyle(ThemedButtonStyle())
+                .controlSize(.large)
+            Button("Move") { handleAction(.move) }
+                .buttonStyle(ThemedButtonStyle())
+                .controlSize(.large)
+        }
+    }
+
+
+    // MARK: - Handle Action
     private func handleAction(_ action: FileTransferAction) {
-        log.debug("FileTransferConfirmationDialog: \(action)")
+        log.debug("[TransferDialog] action=\(action)")
         dismiss()
         onAction(action)
-    }
-}
-
-// MARK: - Visual Effect Blur (retained for other uses)
-struct VisualEffectBlur: NSViewRepresentable {
-    let material: NSVisualEffectView.Material
-    let blendingMode: NSVisualEffectView.BlendingMode
-    // MARK: -
-    func makeNSView(context: Context) -> NSVisualEffectView {
-        let view = NSVisualEffectView()
-        view.material = material
-        view.blendingMode = blendingMode
-        view.state = .active
-        return view
-    }
-    // MARK: -
-    func updateNSView(_ nsView: NSVisualEffectView, context: Context) {
-        nsView.material = material
-        nsView.blendingMode = blendingMode
     }
 }
