@@ -175,8 +175,7 @@ final class DragNSView: NSView, NSDraggingSource {
         let dropSide: FavPanelSide = windowPoint.x < midX ? .left : .right
         log.debug("[DragNSView] drop resolve: windowPt.x=\(windowPoint.x) midX=\(midX) → dropSide=\(dropSide) sourceSide=\(panelSide)")
         let destination = appState.url(for: dropSide)
-        // prepareTransfer already rejects same-dir drops; allow same-panel drops
-        // because user might be dropping INTO a subfolder on the same panel
+        // no validation — FileManager handles invalid ops at execution time
         log.info("[DragNSView] internal drop: \(files.count) file(s) → \(dropSide) (\(destination.lastPathComponent))")
         dragDropManager.prepareTransfer(files: files, to: destination, from: panelSide)
     }

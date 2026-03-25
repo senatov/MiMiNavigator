@@ -95,7 +95,9 @@ struct ParentEntryStripView: View {
                     Image(systemName: "arrowshape.turn.up.left")
                         .font(.system(size: 11, weight: .semibold))
                         .foregroundColor(btnStyle.iconColor)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                        .padding(.leading, 2)
+                        .padding(.top, 1)
                         .rotationEffect(.degrees(pebbleActive ? 44 : 0))
                         .scaleEffect(pebbleActive ? 1.0 : 0.9)
                         .animation(
