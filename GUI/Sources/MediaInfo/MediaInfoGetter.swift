@@ -17,7 +17,7 @@ final class MediaInfoGetter: @unchecked Sendable {
         log.info("[MediaInfo] request file='\(url.path)'")
 
         Task { @MainActor in
-            MediaInfoPanel.shared.show(title: "📦 Media Info", text: "Processing…")
+            MediaInfoPanel.shared.show(title: "📦 Media Info", text: "Processing…", url: url)
         }
 
         Task.detached(priority: .userInitiated) { [url, fast] in
@@ -123,8 +123,38 @@ final class MediaInfoGetter: @unchecked Sendable {
                     } else if let iso = exif[kCGImagePropertyExifISOSpeed as String] as? NSNumber {
                         image.append("ISO: \(iso.intValue)")
                     }
-                    if let lensModel = exif[kCGImagePropertyExifLensModel as String] {
+                        if let lensModel = exif[kCGImagePropertyExifLensModel as String] {
                         image.append("Lens: \(lensModel)")
+                    }
+                    if let flash = exif[kCGImagePropertyExifFlash as String] as? NSNumber {
+                        image.append("Flash: \(flash.intValue != 0 ? "Fired" : "No flash")")
+                    }
+                    if let wb = exif[kCGImagePropertyExifWhiteBalance as String] as? NSNumber {
+                        image.append("White Balance: \(wb.intValue == 0 ? "Auto" : "Manual")")
+                    }
+                    if let subjDist = exif[kCGImagePropertyExifSubjectDistance as String] as? NSNumber {
+                        image.append(String(format: "Subject Distance: %.2f m", subjDist.doubleValue))
+                    }
+                }
+
+                // DPI
+                if let dpiX = metadata[kCGImagePropertyDPIWidth as String] as? NSNumber {
+                    image.append(String(format: "DPI: %.0f", dpiX.doubleValue))
+                }
+                // Bit depth
+                if let depth = metadata[kCGImagePropertyDepth as String] as? NSNumber {
+                    image.append("Bit Depth: \(depth.intValue)")
+                }
+                // IPTC
+                if let iptc = metadata[kCGImagePropertyIPTCDictionary as String] as? [String: Any] {
+                    if let caption = iptc[kCGImagePropertyIPTCCaptionAbstract as String] as? String {
+                        image.append("Caption: \(caption)")
+                    }
+                    if let copyright = iptc[kCGImagePropertyIPTCCopyrightNotice as String] as? String {
+                        image.append("Copyright: \(copyright)")
+                    }
+                    if let keywords = iptc[kCGImagePropertyIPTCKeywords as String] as? [String] {
+                        image.append("Keywords: \(keywords.joined(separator: ", "))")
                     }
                 }
 
@@ -230,6 +260,17 @@ final class MediaInfoGetter: @unchecked Sendable {
                     media.append(String(format: "Video Bitrate: %.2f Mbps", bitRate / 1_000_000.0))
                 }
 
+                // aspect ratio
+                if let naturalSize = try? await videoTrack.load(.naturalSize),
+                   naturalSize.height > 0 {
+                    let ratio = naturalSize.width / naturalSize.height
+                    let label = abs(ratio - 16.0/9.0) < 0.05 ? "16:9" :
+                                abs(ratio - 4.0/3.0) < 0.05 ? "4:3" :
+                                abs(ratio - 21.0/9.0) < 0.1 ? "21:9" :
+                                String(format: "%.2f:1", ratio)
+                    media.append("Aspect Ratio: \(label)")
+                }
+
                 if let formatDescriptions = try? await videoTrack.load(.formatDescriptions),
                    let firstDescription = formatDescriptions.first {
                     let mediaSubType = CMFormatDescriptionGetMediaSubType(firstDescription)
@@ -242,6 +283,11 @@ final class MediaInfoGetter: @unchecked Sendable {
             if let audioTracks = try? await asset.loadTracks(withMediaType: .audio),
                let audioTrack = audioTracks.first {
                 media.append("Audio Track: present")
+
+                // audio language
+                if let lang = try? await audioTrack.load(.languageCode), !lang.isEmpty {
+                    media.append("Audio Language: \(lang)")
+                }
 
                 if let bitRate = try? await audioTrack.load(.estimatedDataRate), bitRate > 0 {
                     media.append(String(format: "Audio Bitrate: %.2f kbps", bitRate / 1000.0))
