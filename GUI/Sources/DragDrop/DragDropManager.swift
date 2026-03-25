@@ -57,6 +57,29 @@ final class DragDropManager {
     }
 
 
+    // MARK: - Resolve Row Under Cursor
+    /// Given a window Y coordinate and panel side, find the directory row under the cursor.
+    /// Returns the directory URL if cursor is over a directory row, otherwise nil.
+    func resolveDirectoryUnderCursor(
+        windowPoint: NSPoint,
+        panelSide: FavPanelSide,
+        appState: AppState,
+        panelFrame: NSRect
+    ) -> URL? {
+        let headerHeight: CGFloat = 26
+        let rowHeight = FilePanelStyle.rowHeight
+        let yInPanel = panelFrame.maxY - windowPoint.y
+        let rowY = yInPanel - headerHeight
+        guard rowY >= 0 else { return nil }
+        let rowIndex = Int(floor(rowY / rowHeight))
+        let files = panelSide == .left ? appState.displayedLeftFiles : appState.displayedRightFiles
+        guard rowIndex >= 0, rowIndex < files.count else { return nil }
+        let file = files[rowIndex]
+        guard file.isDirectory || file.isSymbolicDirectory else { return nil }
+        return file.urlValue
+    }
+
+
     // MARK: - Prepare Transfer
     /// Stage a transfer operation and show confirmation dialog.
     /// No validation here — let FileManager reject invalid ops at execution time.

@@ -176,19 +176,20 @@ struct FileRow: View, Equatable {
     }
 
     private var isDropTargetActive: Bool {
-        isDropTargeted && isValidDropTarget
+        (isDropTargeted || isInternalDropTarget) && isValidDropTarget
+    }
+
+    /// True when DragDropManager signals this directory as the hover target during internal drag
+    private var isInternalDropTarget: Bool {
+        guard isValidDropTarget, !dragDropManager.draggedFiles.isEmpty else { return false }
+        return dragDropManager.dropTargetPath == file.urlValue
     }
 
     private var dropTargetHighlight: some View {
-        RoundedRectangle(cornerRadius: 6, style: .continuous)
-        .fill(Self.dropTargetFill)
-        .overlay(
-            RoundedRectangle(cornerRadius: 6, style: .continuous)
-            .stroke(Self.dropTargetBorder, lineWidth: 2)
-        )
-        .padding(.horizontal, 4)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .allowsHitTesting(false)
+        PulsingDropHighlight()
+            .padding(.horizontal, 4)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .allowsHitTesting(false)
     }
 
     private var selectionHighlight: some View {

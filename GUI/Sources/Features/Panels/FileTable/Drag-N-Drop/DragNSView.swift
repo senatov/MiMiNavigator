@@ -145,6 +145,22 @@ final class DragNSView: NSView, NSDraggingSource {
     func ignoreModifierKeys(for session: NSDraggingSession) -> Bool { false }
 
 
+    func draggingSession(_ session: NSDraggingSession, movedTo screenPoint: NSPoint) {
+        guard let dragDropManager, let appState, let window = self.window else { return }
+        let windowPoint = window.convertPoint(fromScreen: screenPoint)
+        let contentWidth = window.contentView?.frame.width ?? window.frame.width
+        let midX = contentWidth / 2
+        let hoverSide: FavPanelSide = windowPoint.x < midX ? .left : .right
+        let dirURL = dragDropManager.resolveDirectoryUnderCursor(
+            windowPoint: windowPoint,
+            panelSide: hoverSide,
+            appState: appState,
+            panelFrame: self.frame
+        )
+        dragDropManager.setDropTarget(dirURL)
+    }
+
+
     func draggingSession(_ session: NSDraggingSession, endedAt screenPoint: NSPoint, operation: NSDragOperation) {
         defer {
             dragState = DragState(startPoint: nil, didStart: false, isResize: false)
@@ -173,10 +189,16 @@ final class DragNSView: NSView, NSDraggingSource {
         let contentWidth = window.contentView?.frame.width ?? window.frame.width
         let midX = contentWidth / 2
         let dropSide: FavPanelSide = windowPoint.x < midX ? .left : .right
-        log.debug("[DragNSView] drop resolve: windowPt.x=\(windowPoint.x) midX=\(midX) → dropSide=\(dropSide) sourceSide=\(panelSide)")
-        let destination = appState.url(for: dropSide)
-        // no validation — FileManager handles invalid ops at execution time
-        log.info("[DragNSView] internal drop: \(files.count) file(s) → \(dropSide) (\(destination.lastPathComponent))")
+        // try to find a directory row under cursor — drop INTO it
+        let panelFrame = self.frame
+        let dirUnderCursor = dragDropManager.resolveDirectoryUnderCursor(
+            windowPoint: windowPoint,
+            panelSide: dropSide,
+            appState: appState,
+            panelFrame: panelFrame
+        )
+        let destination = dirUnderCursor ?? appState.url(for: dropSide)
+        log.info("[DragNSView] internal drop: \(files.count) file(s) → \(dropSide) (\(destination.lastPathComponent)) subdir=\(dirUnderCursor != nil)")
         dragDropManager.prepareTransfer(files: files, to: destination, from: panelSide)
     }
 
