@@ -292,21 +292,13 @@ struct FileTableView: View {
         autoFitColumnsIfEnabled()
     }
 
-    /// Trigger content-aware column resize when the preference is on.
-    /// Runs on directory change + delayed re-fit after 0.5s for late-loading content.
+    /// Trigger content-aware column resize on directory change only.
     private func autoFitColumnsIfEnabled() {
         guard UserPreferences.shared.snapshot.autoFitColumnsOnNavigate else { return }
         let currentPath = appState.path(for: panelSide)
-        let isNewDir = currentPath != lastAutoFitPath
-        if isNewDir {
-            lastAutoFitPath = currentPath
-            ColumnAutoFitter.autoFitAll(layout: layout, files: files)
-        }
-        // delayed re-fit: content may arrive after initial scan
-        Task { @MainActor in
-            try? await Task.sleep(nanoseconds: 500_000_000)
-            ColumnAutoFitter.autoFitAll(layout: layout, files: files)
-        }
+        guard currentPath != lastAutoFitPath else { return }
+        lastAutoFitPath = currentPath
+        ColumnAutoFitter.autoFitAll(layout: layout, files: files)
     }
 
     private func handleSortChange<T>(_: T) {
