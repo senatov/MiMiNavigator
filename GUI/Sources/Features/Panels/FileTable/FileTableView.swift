@@ -62,6 +62,8 @@ struct FileTableView: View {
     @State private var spinnerTask: Task<Void, Never>? = nil
     /// Path for which autoFit already ran — prevents re-fitting on FSEvents refreshes
     @State private var lastAutoFitPath: String = ""
+    /// Container width at last autoFit — re-fit when delta > threshold
+    @State private var lastAutoFitWidth: CGFloat = 0
 
     /// Throttle for PgUp/PgDown — prevents overwhelming with rapid keypresses
     private let pageNavThrottle = KeypressThrottle(interval: 0.08)  // 80ms between page navigations
@@ -211,6 +213,7 @@ struct FileTableView: View {
             .focusable(true)
             .focusEffectDisabled()
             .onGeometryChange(for: CGFloat.self, of: { $0.size.height }) { viewHeight = $0 }
+            .onChange(of: layout.containerWidth) { _, newWidth in handleContainerWidthChange(newWidth) }
             .onChange(of: filesVersion) { _, newValue in handleFilesVersionChange(newValue) }
             .onChange(of: appState.sortKey) { _, newValue in handleSortChange(newValue) }
             .onChange(of: appState.bSortAscending) { _, newValue in handleSortChange(newValue) }
@@ -298,6 +301,19 @@ struct FileTableView: View {
         let currentPath = appState.path(for: panelSide)
         guard currentPath != lastAutoFitPath else { return }
         lastAutoFitPath = currentPath
+        lastAutoFitWidth = layout.containerWidth
+        ColumnAutoFitter.autoFitAll(layout: layout, files: files)
+    }
+
+
+    /// Re-fit columns when window width changes substantially (>40pt ≈ 1cm).
+    /// Vertical resizing and small horizontal jitter are ignored.
+    private func handleContainerWidthChange(_ newWidth: CGFloat) {
+        guard UserPreferences.shared.snapshot.autoFitColumnsOnNavigate else { return }
+        guard !files.isEmpty else { return }
+        let delta = abs(newWidth - lastAutoFitWidth)
+        guard delta > 40 else { return }
+        lastAutoFitWidth = newWidth
         ColumnAutoFitter.autoFitAll(layout: layout, files: files)
     }
 
