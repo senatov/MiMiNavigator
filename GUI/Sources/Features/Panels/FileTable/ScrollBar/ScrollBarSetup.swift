@@ -12,6 +12,7 @@ import SwiftUI
 
 /// Applies ScrollBarConfig to an NSScrollView.
 /// Call from NSViewRepresentable.makeNSView() to keep scroll bar setup centralised.
+@MainActor
 enum ScrollBarSetup {
 
     /// Configure an NSScrollView with values from ScrollBarConfig.

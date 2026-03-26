@@ -277,7 +277,7 @@ final class DragNSView: NSView, NSDraggingSource {
     }
 
     private func panelFrameInWindowCoordinates() -> NSRect {
-        guard let window else { return .zero }
+        guard self.window != nil else { return .zero }
         return convert(bounds, to: nil)
     }
 
