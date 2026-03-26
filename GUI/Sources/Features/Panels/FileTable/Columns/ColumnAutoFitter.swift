@@ -3,13 +3,15 @@
 //
 // Created by Claude on 24.03.2026.
 // Copyright © 2026 Senatov. All rights reserved.
-// Description: Content-aware auto-fit for fixed columns on directory change.
-//   Measures actual cell content, collapses placeholders,
-//   processes columns right-to-left, donates all savings to Name.
+// Description: Content-aware auto-fit for fixed columns.
+//   Right→left: each column shrinks to its max content width.
+//   All recovered space donated to Name (leftmost).
+//   Header labels are NOT considered — only cell content matters.
 
 import AppKit
 import FileModelKit
 import SwiftUI
+
 
 // MARK: - ColumnAutoFitter
 
@@ -18,60 +20,58 @@ enum ColumnAutoFitter {
     private static let dividerWidth: CGFloat = 14
     private static let minNameWidth: CGFloat = 120
     private static let edgeMargin: CGFloat = 5
-    /// Floor for fully empty (placeholder-only) columns — just enough for a dash glyph
+    /// Floor for fully empty (placeholder-only) columns
     private static let emptyColWidth: CGFloat = 24
+
 
     // MARK: - Public
 
-    /// Recompute all visible fixed column widths based on cell content.
-    /// Columns are sized to their content (avg text width), processed right→left.
-    /// All recovered space is donated to the Name column.
+    /// Recompute all visible fixed column widths based on cell content only.
+    /// Algorithm: right→left, each column shrinks to max content width,
+    /// freed space goes to Name.
     static func autoFitAll(layout: ColumnLayoutModel, files: [CustomFile]) {
-        guard layout.containerWidth > 0 else {
-            log.debug("[AutoFit] skip — container not measured yet")
-            return
-        }
-        guard !files.isEmpty else {
-            log.debug("[AutoFit] skip — empty file list")
-            return
-        }
+        guard layout.containerWidth > 0 else { return }
+        guard !files.isEmpty else { return }
 
         let visibleFixed = layout.fixedColumns
         guard !visibleFixed.isEmpty else { return }
 
-        // Phase 1: measure content-only width for each fixed column (right→left)
+        // Phase 1: measure content width for each fixed col, right→left
         var colWidths: [(ColumnID, CGFloat)] = []
         for spec in visibleFixed.reversed() {
             let w = contentWidth(for: spec.id, files: files)
             colWidths.append((spec.id, w))
         }
-        colWidths.reverse()  // restore original order for layout
+        colWidths.reverse()
 
-        var totalFixed = colWidths.reduce(CGFloat(0)) { $0 + $1.1 }
+        // Phase 2: compute Name width = container minus all fixed cols minus dividers
+        let totalFixed = colWidths.reduce(CGFloat(0)) { $0 + $1.1 }
         let divTotal = CGFloat(visibleFixed.count) * dividerWidth
         var nameW = layout.containerWidth - totalFixed - divTotal - edgeMargin
 
-        // Phase 2: if Name is squeezed below minimum, shrink rightmost cols further
+
+        // Phase 3: if Name still squeezed, shrink rightmost cols further
         if nameW < minNameWidth {
             let deficit = minNameWidth - nameW
             var recovered: CGFloat = 0
             for i in stride(from: colWidths.count - 1, through: 0, by: -1) {
                 guard recovered < deficit else { break }
-                let (id, w) = colWidths[i]
-                let floor = max(id.minDragWidth, emptyColWidth)
+                let (_, w) = colWidths[i]
+                let floor = emptyColWidth
                 let canShrink = w - floor
                 if canShrink > 0 {
                     let shrink = min(canShrink, deficit - recovered)
-                    colWidths[i] = (id, w - shrink)
+                    colWidths[i] = (colWidths[i].0, w - shrink)
                     recovered += shrink
                 }
             }
-            totalFixed -= recovered
-            nameW = layout.containerWidth - totalFixed - divTotal - edgeMargin
+            let newTotalFixed = colWidths.reduce(CGFloat(0)) { $0 + $1.1 }
+            nameW = layout.containerWidth - newTotalFixed - divTotal - edgeMargin
         }
         nameW = max(minNameWidth, nameW)
 
-        // Phase 3: stability guard — skip mutation when nothing changed
+
+        // Phase 4: stability guard — skip if nothing changed
         let nameStable = abs(layout.nameWidth - nameW) < 1.0
         let colsStable = colWidths.allSatisfy { id, w in
             guard let idx = layout.columns.firstIndex(where: { $0.id == id }) else { return true }
@@ -79,7 +79,7 @@ enum ColumnAutoFitter {
         }
         guard !nameStable || !colsStable else { return }
 
-        // Phase 4: apply
+        // Phase 5: apply — fixed cols first, then Name gets the rest
         for (id, w) in colWidths {
             layout.setWidth(w, for: id)
         }
@@ -89,26 +89,28 @@ enum ColumnAutoFitter {
         log.info("[AutoFit] Name=\(Int(nameW))pt  \(detail)")
     }
 
+
     // MARK: - Content measurement
 
-    /// Measure column width needed for actual content.
+    /// Measure column width needed for actual cell content only.
+    /// Header label is NOT considered.
     /// Empty/placeholder columns → `emptyColWidth`.
     /// Content columns → max text width so nothing is clipped.
     private static func contentWidth(for col: ColumnID, files: [CustomFile]) -> CGFloat {
         let (texts, font) = textSamples(col, files: files)
-
         let meaningful = texts.filter { isRealContent($0) }
         guard !meaningful.isEmpty else {
             return emptyColWidth
         }
-
         let attrs: [NSAttributedString.Key: Any] = [.font: font]
         let maxW = meaningful.reduce(CGFloat(0)) {
             max($0, ($1 as NSString).size(withAttributes: attrs).width)
         }
         let padded = ceil(maxW + 2 * TableColumnDefaults.cellPadding + 5)
-        return padded.clamped(to: col.minWidth...col.maxWidth)
+        // clamp to content-sensible range — ignore header, use col min/max
+        return padded.clamped(to: emptyColWidth...col.maxWidth)
     }
+
 
     // MARK: - Helpers
 
@@ -118,6 +120,7 @@ enum ColumnAutoFitter {
         let stripped = text.trimmingCharacters(in: .whitespaces)
         return !stripped.allSatisfy { $0 == "-" || $0 == "\u{2013}" || $0 == "\u{2014}" || $0 == "\u{2015}" }
     }
+
 
     /// Extract display strings and font for a column.
     private static func textSamples(_ col: ColumnID, files: [CustomFile]) -> ([String], NSFont) {
@@ -136,6 +139,7 @@ enum ColumnAutoFitter {
         }
     }
 }
+
 
 // MARK: - CGFloat clamp
 
