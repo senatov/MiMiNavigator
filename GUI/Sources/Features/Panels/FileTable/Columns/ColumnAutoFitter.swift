@@ -4,7 +4,8 @@
 // Created by Claude on 24.03.2026.
 // Copyright © 2026 Senatov. All rights reserved.
 // Description: Content-aware auto-fit for fixed columns on directory change.
-//   Right→left: each column shrinks to its max content width.
+//   Right→left: each column sized to weighted-average content width + 2 chars margin.
+//   Outlier-long values are NOT considered — SwiftUI truncates them naturally.
 //   Header labels are NOT considered — only cell content matters.
 //   Then Name gets exactly what's left so rightmost column touches right edge.
 
@@ -95,17 +96,24 @@ enum ColumnAutoFitter {
 
     // MARK: - Content measurement
 
-    /// Measure column width needed for actual cell content only.
+    /// Extra character slots added on top of the weighted-average width.
+    private static let marginChars: Int = 2
+
+    /// Measure column width using weighted-average text width + margin.
+    /// Long outliers are ignored — SwiftUI will truncate them naturally.
     /// Header label is NOT considered.
     private static func contentWidth(for col: ColumnID, files: [CustomFile]) -> CGFloat {
         let (texts, font) = textSamples(col, files: files)
         let meaningful = texts.filter { isRealContent($0) }
         guard !meaningful.isEmpty else { return emptyColWidth }
         let attrs: [NSAttributedString.Key: Any] = [.font: font]
-        let maxW = meaningful.reduce(CGFloat(0)) {
-            max($0, ($1 as NSString).size(withAttributes: attrs).width)
-        }
-        let padded = ceil(maxW + 2 * TableColumnDefaults.cellPadding + 5)
+        // measure each cell
+        let widths = meaningful.map { ($0 as NSString).size(withAttributes: attrs).width }
+        // weighted average (sum / count)
+        let avgW = widths.reduce(0, +) / CGFloat(widths.count)
+        // margin = width of 2 extra "0" glyphs at column font
+        let marginW = ("00" as NSString).size(withAttributes: attrs).width
+        let padded = ceil(avgW + marginW + 2 * TableColumnDefaults.cellPadding)
         return padded.clamped(to: emptyColWidth...col.maxWidth)
     }
 
