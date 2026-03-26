@@ -51,6 +51,7 @@ enum ColumnAutoFitter {
 
 
         // Step 4: Name = container − fixed − dividers
+        // dividers: N total (1 nameDivider + N-1 between fixed cols = N)
         let totalFixed = fitWidths.reduce(CGFloat(0)) { $0 + $1.1 }
         let divTotal = CGFloat(visibleFixed.count) * dividerWidth
         var nameW = layout.containerWidth - totalFixed - divTotal
@@ -73,6 +74,16 @@ enum ColumnAutoFitter {
             nameW = layout.containerWidth - newTotal - divTotal
         }
         nameW = max(minNameWidth, nameW)
+
+
+        // Step 6: push any remaining slack into last fixed column
+        // so rightmost column sits flush against the right panel edge.
+        // Slack comes from subpixel ceil() rounding across N columns.
+        let finalFixed = fitWidths.reduce(CGFloat(0)) { $0 + $1.1 }
+        let slack = layout.containerWidth - nameW - finalFixed - divTotal
+        if slack > 1, let lastIdx = fitWidths.indices.last {
+            fitWidths[lastIdx].1 += slack
+        }
 
 
         // Stability guard — skip when nothing changed

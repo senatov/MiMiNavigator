@@ -81,6 +81,7 @@ final class ColumnLayoutModel: Codable {
 
     private func calculateMaxNameWidth() -> CGFloat {
         guard containerWidth > 0 else { return 9999 }
+        // dividers: N total (1 nameDivider + N-1 between fixed cols = N)
         let divTotal = CGFloat(fixedColumns.count) * Self.dividerWidth
         let minFixedTotal = fixedColumns.reduce(0) { $0 + $1.id.minDragWidth }
         return containerWidth - minFixedTotal - divTotal - Self.edgeMargin
