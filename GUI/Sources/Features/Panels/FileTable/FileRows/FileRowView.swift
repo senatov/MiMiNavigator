@@ -163,25 +163,19 @@ struct FileRowView: View {
                         .symbolRenderingMode(.hierarchical)
                     }
                 }
-
                 // Lock overlay for restricted/read-only directories
                 if file.isDirectory && file.securityState != .normal {
                     lockOverlay
                 }
             }
             .task(id: file.urlValue.path) {
-                let path = file.urlValue.path
-                let image =
-                await Task.detached(priority: .utility) { () -> NSImage in
-                    let img = NSWorkspace.shared.icon(forFile: path)
-                    img.size = NSSize(width: 128, height: 128)
-                    return img
+                // SmartIconService handles all icon logic: OS-hidden badge,
+                // symlink arrows, encrypted archive keys, UTType icons etc.
+                let capturedFile = file
+                let image = await MainActor.run {
+                    SmartIconService.icon(for: capturedFile)
                 }
-                .value
-
-                await MainActor.run {
-                    self.icon = image
-                }
+                self.icon = image
             }
         }
 

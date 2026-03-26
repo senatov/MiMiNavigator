@@ -306,13 +306,13 @@ struct FileTableView: View {
     }
 
 
-    /// Re-fit columns when window width changes substantially (>40pt ≈ 1cm).
-    /// Vertical resizing and small horizontal jitter are ignored.
+    /// Re-fit columns when panel width changes.
+    /// Small jitter (<8pt) is ignored to avoid layout thrash.
     private func handleContainerWidthChange(_ newWidth: CGFloat) {
         guard UserPreferences.shared.snapshot.autoFitColumnsOnNavigate else { return }
         guard !files.isEmpty else { return }
         let delta = abs(newWidth - lastAutoFitWidth)
-        guard delta > 40 else { return }
+        guard delta > 8 else { return }
         lastAutoFitWidth = newWidth
         ColumnAutoFitter.autoFitAll(layout: layout, files: files)
     }

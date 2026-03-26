@@ -76,13 +76,13 @@ enum ColumnAutoFitter {
         nameW = max(minNameWidth, nameW)
 
 
-        // Step 6: push any remaining slack into last fixed column
-        // so rightmost column sits flush against the right panel edge.
-        // Slack comes from subpixel ceil() rounding across N columns.
+        // Step 6: reconcile — last fixed col absorbs slack or overflow
+        // so rightmost column sits flush against right panel edge.
         let finalFixed = fitWidths.reduce(CGFloat(0)) { $0 + $1.1 }
-        let slack = layout.containerWidth - nameW - finalFixed - divTotal
-        if slack > 1, let lastIdx = fitWidths.indices.last {
-            fitWidths[lastIdx].1 += slack
+        let remainder = layout.containerWidth - nameW - finalFixed - divTotal
+        if let lastIdx = fitWidths.indices.last, abs(remainder) > 0.5 {
+            let adjusted = fitWidths[lastIdx].1 + remainder
+            fitWidths[lastIdx].1 = max(emptyColWidth, adjusted)
         }
 
 
