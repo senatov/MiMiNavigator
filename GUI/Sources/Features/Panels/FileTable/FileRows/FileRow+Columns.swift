@@ -55,7 +55,6 @@ struct KindCell: View {
             if name.hasSuffix(".tar.lzo") { return "TLO" }
             if name.hasSuffix(".tar.lz") { return "TLZ" }
             let ext = file.fileExtension.uppercased()
-            if ext.count > 5 { return String(ext.prefix(4)) + "…" }
             return ext.isEmpty ? "ARC" : ext
         }
 
@@ -98,7 +97,6 @@ struct KindCell: View {
             if let idx = ext.firstIndex(where: { $0 == "_" || $0 == "-" }) {
                 return String(ext[..<idx])
             }
-            if ext.count > 5 { return String(ext.prefix(4)) + "…" }
             return ext
         }
 
