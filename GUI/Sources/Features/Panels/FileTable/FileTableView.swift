@@ -171,7 +171,7 @@ struct FileTableView: View {
     var body: some View {
         let baseView = ZStack {
             mainScrollView
-                .scrollIndicators(isFocused ? .automatic : .hidden)
+                .panelScrollIndicators(isFocused: isFocused)
 
             // AppKit drop target — receives drops from other panels and external apps
             AppKitDropView(
@@ -200,7 +200,7 @@ struct FileTableView: View {
             .onAppear(perform: onAppear)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .padding(.leading, 6)
-            .padding(.trailing, 1)  // scrollbar flush against right edge
+            .padding(.trailing, ScrollBarConfig.trailingPadding)  // scrollbar flush against right edge
             .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
             .overlay(panelBorder)
             .contentShape(Rectangle())

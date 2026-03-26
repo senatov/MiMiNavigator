@@ -32,8 +32,8 @@ struct ThumbnailGridView: View {
 
     @State private var selectedIDs: Set<CustomFile.ID> = []
 
-    /// Width matching the native scrollbar track (~15pt)
-    private static let scrollbarWidth: CGFloat = 15
+    /// Width matching the native scrollbar track — driven by ScrollBarConfig
+    private static let scrollbarWidth: CGFloat = ScrollBarConfig.trackWidth
 
     private var columns: [GridItem] {
         [GridItem(.adaptive(minimum: cellSize, maximum: cellSize + 20), spacing: 8)]

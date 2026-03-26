@@ -11,8 +11,8 @@ import SwiftUI
 // MARK: - Subviews
 extension FileTableView {
 
-    /// Width of the macOS native scrollbar track (system default ~15pt)
-    private static let scrollbarWidth: CGFloat = 15
+    /// Width of the macOS native scrollbar track — driven by ScrollBarConfig
+    private static let scrollbarWidth: CGFloat = ScrollBarConfig.trackWidth
 
     private var onePixel: CGFloat {
         1.0 / (NSScreen.main?.backingScaleFactor ?? 2.0)
@@ -107,51 +107,10 @@ extension FileTableView {
 
     // MARK: - Jump Buttons
 
-    /// Glass-style jump-to-edge buttons flush against the right border,
-    /// vertically confined to the file rows area (below header, above status bar).
+    /// Glass-style jump-to-edge buttons — delegated to ScrollBar/ScrollBarJumpButtons.
     @ViewBuilder
     private var jumpButtonsOverlay: some View {
-        if sortedRows.count > 50 {
-            VStack(spacing: 0) {
-                // skip header area
-                Color.clear.frame(height: 26)
-
-                glassJumpButton(icon: "chevron.up.2") {
-                    NotificationCenter.default.post(name: .jumpToFirst, object: panelSide)
-                }
-                .help("Jump to top (Home)")
-
-                Spacer(minLength: 0)
-
-                glassJumpButton(icon: "chevron.down.2") {
-                    NotificationCenter.default.post(name: .jumpToLast, object: panelSide)
-                }
-                .help("Jump to bottom (End)")
-            }
-            .frame(width: Self.scrollbarWidth)
-            .padding(.trailing, 0)
-        }
-    }
-
-    // MARK: - Glass Jump Button
-    /// Translucent pill flush with scrollbar track. Blends with the glass chrome.
-    private func glassJumpButton(icon: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Image(systemName: icon)
-                .font(.system(size: 8, weight: .semibold))
-                .foregroundStyle(.tertiary)
-                .frame(width: Self.scrollbarWidth - 2, height: 18)
-                .background(
-                    .ultraThinMaterial,
-                    in: RoundedRectangle(cornerRadius: 4, style: .continuous)
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 4, style: .continuous)
-                        .strokeBorder(Color(nsColor: .separatorColor).opacity(0.3), lineWidth: 0.5)
-                )
-        }
-        .buttonStyle(.plain)
-        .contentShape(Rectangle())
+        ScrollBarJumpButtons(panelSide: panelSide, rowCount: sortedRows.count)
     }
 
     @ViewBuilder

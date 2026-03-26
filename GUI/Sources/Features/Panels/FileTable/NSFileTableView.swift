@@ -29,11 +29,7 @@
 
         func makeNSView(context: Context) -> NSScrollView {
             let scrollView = NSScrollView()
-            scrollView.hasVerticalScroller = true
-            scrollView.hasHorizontalScroller = false
-            scrollView.autohidesScrollers = true
-            scrollView.borderType = .noBorder
-            scrollView.drawsBackground = false
+            ScrollBarSetup.apply(to: scrollView)
 
             let tableView = ClickTrackingTableView()
             tableView.style = .plain
