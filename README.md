@@ -14,7 +14,7 @@
   <img src="https://img.shields.io/badge/SwiftUI-blue?logo=swift&logoColor=white" alt="SwiftUI" />
   <img src="https://img.shields.io/badge/Concurrency-Strict-2ea44f" alt="Strict Concurrency" />
   <img src="https://img.shields.io/badge/License-AGPL--3.0-blue" alt="AGPL-3.0" />
-  <img src="https://img.shields.io/badge/v0.9.7-Active_Development-orange" alt="Active Development" />
+  <img src="https://img.shields.io/badge/v0.9.7.1-Active_Development-orange" alt="Active Development" />
 </p>
 
 <p align="center">
@@ -29,6 +29,28 @@
 ---
 
 > **⚠️ Under active development.** APIs and UI may change without notice.
+
+## Recent Changes (v0.9.7.1 — March 2026)
+
+**Drag & Drop overhaul** — full DnD support with drop-onto-subdirectory targeting via coordinate lookup and pulsing highlight on target folders.
+
+**Media Preview** — new native media info window with multi-map support, UTType-based media detection, and streaming progress extraction (replaced Python pipeline with native Swift).
+
+**Glass UI polish** — glass scroll bars, glass "go to parent" button, pebble-shaped info button with spring rotation animation, softer violet accents, and refined divider styling.
+
+**Column auto-fit** — columns auto-resize on navigate: content-only sizing, right-to-left shrink, Name column gets leftover space; header labels guaranteed never clipped; auto-fit toggle in table header context menu.
+
+**Settings migration** — all settings panes (General, Panels, Tabs, Archives, Network) migrated from `@AppStorage` to `~/.mimi/preferences.json` for portability across machines.
+
+**Keyboard navigation fixes** — parent row (`..`) selection now correctly reflects keyboard navigation; restored line cursor highlighting; branch merge for keyboard repair.
+
+**File operations** — batch rename/mass fix, async path resolution, unified navigation via `PathNavigationService` (removed `NavigationAdapter`), UTType-based file kind detection with alias support.
+
+**Breadcrumb & panels** — default font size 14pt across panel/breadcrumb/help, breadcrumb layout split into section methods, firmlink path resolution for `/tmp`/`var`/`etc`.
+
+**Progress panel** — resizable, appearance settings, non-modal floating window, stays visible until explicit OK click.
+
+---
 
 ## What is MiMiNavigator?
 
