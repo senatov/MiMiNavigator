@@ -225,9 +225,8 @@ struct MiMiNavigatorApp: App {
 
     func performToggleHidden() {
         log.debug("Hidden toggle clicked")
-        showHiddenFiles.toggle()
-        UserPreferences.shared.snapshot.showHiddenFiles = showHiddenFiles
-        appState.forceRefreshBothPanels()
+        appState.toggleShowHiddenFiles()
+        showHiddenFiles = UserPreferences.shared.snapshot.showHiddenFiles
     }
 
     func performOpenWith() {

@@ -589,6 +589,22 @@ actor DualDirectoryScanner {
         }
     }
 
+    // MARK: - Restart FSEvents watchers (after toggle hidden files)
+    /// Forces both FSEvents watchers to restart with fresh showHiddenFiles value.
+    /// Must be called after toggling the hidden files preference.
+    func restartFSEventsWatchers() async {
+        let (leftURL, rightURL): (URL, URL) = await MainActor.run {
+            (appState.leftURL, appState.rightURL)
+        }
+        // force restart by clearing watched paths
+        leftWatchedPath = nil
+        rightWatchedPath = nil
+        startFSEvents(for: .left, url: leftURL)
+        startFSEvents(for: .right, url: rightURL)
+        log.info("[FSEvents] watchers restarted after hidden files toggle")
+    }
+
+
     // MARK: - Stop all watchers
     func stopMonitoring() {
         leftTimer?.cancel()

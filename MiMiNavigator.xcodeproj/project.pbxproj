@@ -293,7 +293,7 @@
 		97AD1A2A2C624E020045C38D /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			files = (
-);
+			);
 		};
 		97AD1A3D2C624E040045C38D /* Sources */ = {
 			isa = PBXSourcesBuildPhase;

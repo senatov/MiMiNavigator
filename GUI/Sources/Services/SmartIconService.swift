@@ -41,6 +41,10 @@ enum SmartIconService {
             return AliasIconComposer.compose(symlinkURL: url, size: iconSize)
         }
         if file.isDirectory {
+            // OS-hidden dirs (~/Library etc.) — eye.slash badge
+            if file.isOSHiddenOnly {
+                return OSHiddenIconComposer.compose(url: url, size: iconSize)
+            }
             let icon = workspace.icon(forFile: url.path)
             icon.size = iconSize
             return icon

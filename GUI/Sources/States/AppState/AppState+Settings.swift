@@ -22,8 +22,12 @@ extension AppState {
 
     func forceRefreshBothPanels() {
         Task {
-            await scanner.refreshFiles(currSide: .left)
-            await scanner.refreshFiles(currSide: .right)
+            // restart FSEvents watchers w/ fresh showHiddenFiles flag
+            await scanner.restartFSEventsWatchers()
+            // parallel refresh — both panels update simultaneously
+            async let leftDone: Void = scanner.refreshFiles(currSide: .left, force: true)
+            async let rightDone: Void = scanner.refreshFiles(currSide: .right, force: true)
+            _ = await (leftDone, rightDone)
         }
     }
 
