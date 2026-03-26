@@ -88,6 +88,8 @@ echo "[8/9] Creating DMG..."
 rm -rf "${DMG_STAGE}"
 mkdir -p "${DMG_STAGE}"
 cp -R "${APP}" "${DMG_STAGE}/"
+xattr -cr "${DMG_STAGE}/MiMiNavigator.app"
+echo "   xattr cleared on staged app"
 
 rm -f "${DMG}"
 hdiutil create \
