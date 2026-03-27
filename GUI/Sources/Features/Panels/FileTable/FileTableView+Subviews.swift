@@ -139,3 +139,10 @@ extension FileTableView {
     }
 
 }
+
+private extension View {
+    @ViewBuilder
+    func panelScrollIndicators(isFocused _: Bool) -> some View {
+        self
+    }
+}

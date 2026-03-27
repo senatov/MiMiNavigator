@@ -125,6 +125,97 @@ struct FileTableView: View {
 
     var sortedRows: [CustomFile] { cachedSortedRows }
 
+    private var contentView: some View {
+        ZStack {
+            mainScrollView
+
+            // AppKit drop target — receives drops from other panels and external apps
+            AppKitDropView(
+                panelSide: panelSide,
+                appState: appState,
+                dragDropManager: dragDropManager
+            )
+
+            // AppKit drag source — initiates multi-file drag via NSDraggingSession
+            // (SwiftUI .onDrag only supports single NSItemProvider = single file)
+            DragOverlayView(panelSide: panelSide)
+
+            if showSpinner {
+                spinnerView
+            }
+        }
+    }
+
+    private var spinnerView: some View {
+        ProgressView()
+            .controlSize(.small)
+            .scaleEffect(0.9)
+            .frame(maxWidth: CGFloat.infinity, maxHeight: CGFloat.infinity)
+            .allowsHitTesting(false)
+            .transition(.opacity)
+    }
+
+    private var styledContentView: some View {
+        contentView
+            .frame(maxWidth: CGFloat.infinity, maxHeight: CGFloat.infinity)
+            .padding(.leading, 6)
+            .padding(.trailing, ScrollBarConfig.trailingPadding)
+            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .overlay(panelBorder)
+            .contentShape(Rectangle())
+            .animation(nil as Animation?, value: isFocused)
+            .animation(nil as Animation?, value: selectedID)
+            .animation(nil as Animation?, value: filesVersion)
+            .transaction { transaction in
+                transaction.disablesAnimations = true
+            }
+            .focusable(true)
+            .focusEffectDisabled()
+            .onGeometryChange(for: CGFloat.self, of: { geometry in
+                geometry.size.height
+            }) { newHeight in
+                viewHeight = newHeight
+            }
+            .onChange(of: layout.containerWidth) { _, newWidth in
+                handleContainerWidthChange(newWidth)
+            }
+            .onChange(of: filesVersion) { _, newValue in
+                handleFilesVersionChange(newValue)
+            }
+            .onChange(of: appState.sortKey) { _, newValue in
+                handleSortChange(newValue)
+            }
+            .onChange(of: appState.bSortAscending) { _, newValue in
+                handleSortChange(newValue)
+            }
+            .onChange(of: selectedID) { _, newValue in
+                handleSelectionChange(newValue)
+            }
+            .onChange(of: selectedFileIDFromState) { _, newValue in
+                syncSelectionFromState(newValue)
+            }
+            .onChange(of: isLoading) { _, loading in
+                handleLoadingChange(loading)
+            }
+            .onKeyPress(.upArrow, action: handleUpArrow)
+            .onKeyPress(.downArrow, action: handleDownArrow)
+            .onKeyPress(.pageUp, action: handlePageUp)
+            .onKeyPress(.pageDown, action: handlePageDown)
+            .onKeyPress(.home, action: handleHome)
+            .onKeyPress(.end, action: handleEnd)
+            .onKeyPress(.escape, action: handleEscape)
+            .onReceive(jumpToFirstPublisher, perform: handleJumpToFirst)
+            .onReceive(jumpToLastPublisher, perform: handleJumpToLast)
+            .onDisappear {
+                spinnerTask?.cancel()
+            }
+    }
+
+    var body: some View {
+        styledContentView
+            .onAppear(perform: onAppear)
+    }
+
     private func isParentRow(_ file: CustomFile) -> Bool {
         ParentDirectoryEntry.isParentEntry(file) || file.nameStr == ".."
     }
@@ -169,110 +260,6 @@ struct FileTableView: View {
         }
     }
 
-    // MARK: - Body
-    var body: some View {
-        let baseView = ZStack {
-            mainScrollView
-                .panelScrollIndicators(isFocused: isFocused)
-
-            // AppKit drop target — receives drops from other panels and external apps
-            AppKitDropView(
-                panelSide: panelSide,
-                appState: appState,
-                dragDropManager: dragDropManager
-            )
-
-            // AppKit drag source — initiates multi-file drag via NSDraggingSession
-            // (SwiftUI .onDrag only supports single NSItemProvider = single file)
-            DragOverlayView(panelSide: panelSide)
-
-            // Spinner only — no grey overlay, no flicker on fast dirs
-            if showSpinner {
-                ProgressView()
-                    .controlSize(.small)
-                    .scaleEffect(0.9)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .allowsHitTesting(false)
-                    .transition(.opacity)
-            }
-        }
-
-        return
-            baseView
-            .onAppear(perform: onAppear)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .padding(.leading, 6)
-            .padding(.trailing, ScrollBarConfig.trailingPadding)  // scrollbar flush against right edge
-            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-            .overlay(panelBorder)
-            .contentShape(Rectangle())
-            .animation(nil, value: isFocused)
-            .animation(nil, value: selectedID)
-            .animation(nil, value: filesVersion)
-            .transaction { $0.disablesAnimations = true }
-            .focusable(true)
-            .focusEffectDisabled()
-            .onGeometryChange(for: CGFloat.self, of: { $0.size.height }) { viewHeight = $0 }
-            .onChange(of: layout.containerWidth) { _, newWidth in handleContainerWidthChange(newWidth) }
-            .onChange(of: filesVersion) { _, newValue in handleFilesVersionChange(newValue) }
-            .onChange(of: appState.sortKey) { _, newValue in handleSortChange(newValue) }
-            .onChange(of: appState.bSortAscending) { _, newValue in handleSortChange(newValue) }
-            .onChange(of: selectedID) { _, newValue in handleSelectionChange(newValue) }
-            .onChange(of: selectedFileIDFromState) { _, newValue in syncSelectionFromState(newValue) }
-            .onChange(of: isLoading) { _, loading in
-                // Cancel any pending spinner task
-                spinnerTask?.cancel()
-
-                if loading {
-                    // Start a new cancellable delay task
-                    spinnerTask = Task { @MainActor in
-                        try? await Task.sleep(nanoseconds: 150_000_000)
-                        if !Task.isCancelled && isLoading {
-                            showSpinner = true
-                        }
-                    }
-                } else {
-                    showSpinner = false
-                }
-            }
-            .onKeyPress(.upArrow) {
-                guard isFocused else { return .ignored }
-                keyboardNav.moveUp()
-                return .handled
-            }
-            .onKeyPress(.downArrow) {
-                guard isFocused else { return .ignored }
-                keyboardNav.moveDown()
-                return .handled
-            }
-            .onKeyPress(.pageUp) {
-                guard isFocused else { return .ignored }
-                if pageNavThrottle.allow() { keyboardNav.pageUp() }
-                return .handled
-            }
-            .onKeyPress(.pageDown) {
-                guard isFocused else { return .ignored }
-                if pageNavThrottle.allow() { keyboardNav.pageDown() }
-                return .handled
-            }
-            .onKeyPress(.home) {
-                guard isFocused else { return .ignored }
-                keyboardNav.jumpToFirst()
-                return .handled
-            }
-            .onKeyPress(.end) {
-                guard isFocused else { return .ignored }
-                keyboardNav.jumpToLast()
-                return .handled
-            }
-            .onKeyPress(.escape) { handleEscape() }
-            .onReceive(jumpToFirstPublisher, perform: handleJumpToFirst)
-            .onReceive(jumpToLastPublisher, perform: handleJumpToLast)
-            .onDisappear {
-                spinnerTask?.cancel()
-            }
-    }
-
     private func onAppear() {
         log.debug("[FileTableView] appear panel=\(panelSide) files=\(files.count)")
         log.debug("[Columns] panel=\(panelSide) column count=\(layout.columns.count)")
@@ -290,6 +277,61 @@ struct FileTableView: View {
         }
     }
 
+    private func handleLoadingChange(_ loading: Bool) {
+        spinnerTask?.cancel()
+
+        if loading {
+            spinnerTask = Task { @MainActor in
+                try? await Task.sleep(nanoseconds: 150_000_000)
+                if !Task.isCancelled && isLoading {
+                    showSpinner = true
+                }
+            }
+        } else {
+            showSpinner = false
+        }
+    }
+
+    private func handleUpArrow() -> KeyPress.Result {
+        guard isFocused else { return KeyPress.Result.ignored }
+        keyboardNav.moveUp()
+        return KeyPress.Result.handled
+    }
+
+    private func handleDownArrow() -> KeyPress.Result {
+        guard isFocused else { return KeyPress.Result.ignored }
+        keyboardNav.moveDown()
+        return KeyPress.Result.handled
+    }
+
+    private func handlePageUp() -> KeyPress.Result {
+        guard isFocused else { return KeyPress.Result.ignored }
+        if pageNavThrottle.allow() {
+            keyboardNav.pageUp()
+        }
+        return KeyPress.Result.handled
+    }
+
+    private func handlePageDown() -> KeyPress.Result {
+        guard isFocused else { return KeyPress.Result.ignored }
+        if pageNavThrottle.allow() {
+            keyboardNav.pageDown()
+        }
+        return KeyPress.Result.handled
+    }
+
+    private func handleHome() -> KeyPress.Result {
+        guard isFocused else { return KeyPress.Result.ignored }
+        keyboardNav.jumpToFirst()
+        return KeyPress.Result.handled
+    }
+
+    private func handleEnd() -> KeyPress.Result {
+        guard isFocused else { return KeyPress.Result.ignored }
+        keyboardNav.jumpToLast()
+        return KeyPress.Result.handled
+    }
+
     private func handleFilesVersionChange(_: Int) {
         recomputeSortedCache()
         autoFitColumnsIfEnabled()
@@ -304,7 +346,6 @@ struct FileTableView: View {
         lastAutoFitWidth = layout.containerWidth
         ColumnAutoFitter.autoFitAll(layout: layout, files: files)
     }
-
 
     /// Re-fit columns when panel width changes.
     /// Small jitter (<8pt) is ignored to avoid layout thrash.
@@ -322,7 +363,7 @@ struct FileTableView: View {
     }
 
     private func handleEscape() -> KeyPress.Result {
-        guard isFocused else { return .ignored }
+        guard isFocused else { return KeyPress.Result.ignored }
 
         let markedCount = appState.markedCount(for: panelSide)
         if markedCount > 0 {
@@ -330,7 +371,7 @@ struct FileTableView: View {
         }
 
         appState.ensureSelectionOnFocusedPanel()
-        return .handled
+        return KeyPress.Result.handled
     }
 
     private var jumpToFirstPublisher: AnyPublisher<Notification, Never> {
