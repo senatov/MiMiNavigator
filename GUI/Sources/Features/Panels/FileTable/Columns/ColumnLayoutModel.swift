@@ -75,14 +75,16 @@ final class ColumnLayoutModel: Codable {
         guard containerWidth > 0 else { return Self.unconstrainedWidthFallback }
 
         let dividerTotal = totalDividerWidth(for: fixedColumns.count)
-        let minimumFixedWidth = fixedColumns.reduce(CGFloat.zero) { partial, spec in
-            partial + spec.id.minDragWidth
-        }
+        let currentFixedWidth = totalFixedWidth(for: fixedColumns)
+        let availableWidth = containerWidth - currentFixedWidth - dividerTotal - Self.trailingContentInset
 
-        return max(
-            Self.minNameWidth,
-            containerWidth - minimumFixedWidth - dividerTotal - Self.trailingContentInset
-        )
+        return max(Self.minNameWidth, availableWidth)
+    }
+
+    private func totalFixedWidth(for columns: [ColumnSpec]) -> CGFloat {
+        columns.reduce(CGFloat.zero) { partial, spec in
+            partial + spec.width
+        }
     }
 
     func setWidth(_ width: CGFloat, for id: ColumnID) {
@@ -105,11 +107,9 @@ final class ColumnLayoutModel: Codable {
     private func calculateMaxWidth(for id: ColumnID) -> CGFloat {
         guard containerWidth > 0 else { return max(id.maxWidth, Self.unconstrainedWidthFallback) }
 
-        let visibleFixedColumns = fixedColumns.filter { $0.id != id }
+        let remainingFixedColumns = fixedColumns.filter { $0.id != id }
         let dividerTotal = totalDividerWidth(for: fixedColumns.count)
-        let remainingFixedWidth = visibleFixedColumns.reduce(CGFloat.zero) { partial, spec in
-            partial + spec.width
-        }
+        let remainingFixedWidth = totalFixedWidth(for: remainingFixedColumns)
 
         let maximumWidth = containerWidth
             - storedNameWidth
