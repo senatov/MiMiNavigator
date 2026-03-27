@@ -11,6 +11,11 @@ import SwiftUI
 
 enum ColumnAutoFitter {
 
+    private struct FittedColumn {
+        let id: ColumnID
+        var width: CGFloat
+    }
+
     private static let dividerWidth: CGFloat = 14
     private static let minNameWidth: CGFloat = 120
     private static let emptyColumnWidth: CGFloat = 24
@@ -22,33 +27,43 @@ enum ColumnAutoFitter {
 
 
     static func autoFitAll(layout: ColumnLayoutModel, files: [CustomFile]) {
-        guard shouldAutoFit(layout: layout, files: files) else { return }
+        guard let result = makeAutoFitResult(layout: layout, files: files) else { return }
+        guard needsUpdate(layout: layout, fittedColumns: result.fittedColumns, nameWidth: result.nameWidth) else { return }
+
+        apply(fittedColumns: result.fittedColumns, nameWidth: result.nameWidth, to: layout)
+        logAutoFit(layout: layout, fittedColumns: result.fittedColumns, nameWidth: result.nameWidth)
+    }
+
+    private struct AutoFitResult {
+        let fittedColumns: [FittedColumn]
+        let nameWidth: CGFloat
+    }
+
+    private static func makeAutoFitResult(layout: ColumnLayoutModel, files: [CustomFile]) -> AutoFitResult? {
+        guard shouldAutoFit(layout: layout, files: files) else { return nil }
 
         let visibleFixedColumns = layout.fixedColumns
-        var fitWidths = measuredFixedWidths(for: visibleFixedColumns, files: files)
+        var fittedColumns = measuredFixedWidths(for: visibleFixedColumns, files: files)
         let dividerTotal = totalDividerWidth(for: visibleFixedColumns.count)
-        var nameWidth = proposedNameWidth(containerWidth: layout.containerWidth, fitWidths: fitWidths, dividerTotal: dividerTotal)
+        var nameWidth = proposedNameWidth(containerWidth: layout.containerWidth, fittedColumns: fittedColumns, dividerTotal: dividerTotal)
 
         if nameWidth < minNameWidth {
-            reclaimWidthFromRightColumns(fitWidths: &fitWidths, requiredWidth: minNameWidth - nameWidth)
-            nameWidth = proposedNameWidth(containerWidth: layout.containerWidth, fitWidths: fitWidths, dividerTotal: dividerTotal)
+            reclaimWidthFromRightColumns(fittedColumns: &fittedColumns, requiredWidth: minNameWidth - nameWidth)
+            nameWidth = proposedNameWidth(containerWidth: layout.containerWidth, fittedColumns: fittedColumns, dividerTotal: dividerTotal)
         }
 
         nameWidth = max(minNameWidth, nameWidth)
-        alignTrailingEdge(fitWidths: &fitWidths, containerWidth: layout.containerWidth, nameWidth: nameWidth, dividerTotal: dividerTotal)
+        alignTrailingEdge(fittedColumns: &fittedColumns, containerWidth: layout.containerWidth, nameWidth: nameWidth, dividerTotal: dividerTotal)
 
-        guard needsUpdate(layout: layout, fitWidths: fitWidths, nameWidth: nameWidth) else { return }
-
-        apply(fitWidths: fitWidths, nameWidth: nameWidth, to: layout)
-        logAutoFit(layout: layout, fitWidths: fitWidths, nameWidth: nameWidth)
+        return AutoFitResult(fittedColumns: fittedColumns, nameWidth: nameWidth)
     }
 
     private static func shouldAutoFit(layout: ColumnLayoutModel, files: [CustomFile]) -> Bool {
         layout.containerWidth > 0 && !files.isEmpty && !layout.fixedColumns.isEmpty
     }
 
-    private static func logAutoFit(layout: ColumnLayoutModel, fitWidths: [(ColumnID, CGFloat)], nameWidth: CGFloat) {
-        let detail = fitWidths.map { "\($0.0.title)=\(Int($0.1))" }.joined(separator: " ")
+    private static func logAutoFit(layout: ColumnLayoutModel, fittedColumns: [FittedColumn], nameWidth: CGFloat) {
+        let detail = fittedColumns.map { "\($0.id.title)=\(Int($0.width))" }.joined(separator: " ")
         log.debug("[AutoFit] panelWidth=\(Int(layout.containerWidth)) name=\(Int(nameWidth)) trailingInset=\(Int(trailingPanelInset)) \(detail)")
     }
 
@@ -59,16 +74,17 @@ enum ColumnAutoFitter {
         guard !meaningfulTexts.isEmpty else { return emptyColumnWidth }
 
         let measuredWidths = measuredTextWidths(meaningfulTexts, font: font)
-        let fittedWidth: CGFloat
-
-        switch col {
-        case .owner:
-            fittedWidth = ownerContentWidth(measuredWidths)
-        default:
-            fittedWidth = weightedAverageContentWidth(measuredWidths)
-        }
-
+        let fittedWidth = fittedContentWidth(for: col, measuredWidths: measuredWidths)
         return fittedWidth.clamped(to: emptyColumnWidth...col.maxWidth)
+    }
+
+    private static func fittedContentWidth(for column: ColumnID, measuredWidths: [CGFloat]) -> CGFloat {
+        switch column {
+        case .owner:
+            ownerContentWidth(measuredWidths)
+        default:
+            weightedAverageContentWidth(measuredWidths)
+        }
     }
 
     private static func measuredTextWidths(_ texts: [String], font: NSFont) -> [CGFloat] {
@@ -86,78 +102,67 @@ enum ColumnAutoFitter {
         return ceil(maximumWidth + 2 * measuredContentInset + ownerColumnInsetBoost)
     }
 
-    private static func measuredFixedWidths(
-        for columns: [ColumnSpec],
-        files: [CustomFile]
-    ) -> [(ColumnID, CGFloat)] {
-        var fitWidths: [(ColumnID, CGFloat)] = []
+    private static func measuredFixedWidths(for columns: [ColumnSpec], files: [CustomFile]) -> [FittedColumn] {
+        var fittedColumns: [FittedColumn] = []
 
         for spec in columns.reversed() {
-            fitWidths.append((spec.id, contentWidth(for: spec.id, files: files)))
+            let measuredWidth = contentWidth(for: spec.id, files: files)
+            fittedColumns.append(FittedColumn(id: spec.id, width: measuredWidth))
         }
 
-        return fitWidths.reversed()
+        return fittedColumns.reversed()
     }
 
-    private static func proposedNameWidth(
-        containerWidth: CGFloat,
-        fitWidths: [(ColumnID, CGFloat)],
-        dividerTotal: CGFloat
-    ) -> CGFloat {
-        containerWidth - totalFixedWidth(fitWidths) - dividerTotal - trailingPanelInset
+    private static func proposedNameWidth(containerWidth: CGFloat, fittedColumns: [FittedColumn], dividerTotal: CGFloat) -> CGFloat {
+        containerWidth - totalFixedWidth(fittedColumns) - dividerTotal - trailingPanelInset
     }
 
-    private static func reclaimWidthFromRightColumns(fitWidths: inout [(ColumnID, CGFloat)], requiredWidth: CGFloat) {
+    private static func reclaimWidthFromRightColumns(fittedColumns: inout [FittedColumn], requiredWidth: CGFloat) {
         guard requiredWidth > 0 else { return }
 
         var reclaimedWidth: CGFloat = 0
-        for index in stride(from: fitWidths.count - 1, through: 0, by: -1) {
+        for index in stride(from: fittedColumns.count - 1, through: 0, by: -1) {
             guard reclaimedWidth < requiredWidth else { break }
 
-            let currentWidth = fitWidths[index].1
+            let currentWidth = fittedColumns[index].width
             let shrinkableWidth = currentWidth - emptyColumnWidth
             guard shrinkableWidth > 0 else { continue }
 
             let shrinkAmount = min(shrinkableWidth, requiredWidth - reclaimedWidth)
-            fitWidths[index].1 = currentWidth - shrinkAmount
+            fittedColumns[index].width = currentWidth - shrinkAmount
             reclaimedWidth += shrinkAmount
         }
     }
 
-    private static func alignTrailingEdge(fitWidths: inout [(ColumnID, CGFloat)], containerWidth: CGFloat, nameWidth: CGFloat, dividerTotal: CGFloat) {
-        guard let lastIndex = fitWidths.indices.last else { return }
+    private static func alignTrailingEdge(fittedColumns: inout [FittedColumn], containerWidth: CGFloat, nameWidth: CGFloat, dividerTotal: CGFloat) {
+        guard let lastIndex = fittedColumns.indices.last else { return }
 
-        let remainder = containerWidth - nameWidth - totalFixedWidth(fitWidths) - dividerTotal - trailingPanelInset
+        let remainder = containerWidth - nameWidth - totalFixedWidth(fittedColumns) - dividerTotal - trailingPanelInset
         guard abs(remainder) > edgeAlignmentEpsilon else { return }
 
-        let adjustedWidth = fitWidths[lastIndex].1 + remainder
-        fitWidths[lastIndex].1 = max(emptyColumnWidth, adjustedWidth)
+        let adjustedWidth = fittedColumns[lastIndex].width + remainder
+        fittedColumns[lastIndex].width = max(emptyColumnWidth, adjustedWidth)
     }
 
-    private static func needsUpdate(layout: ColumnLayoutModel, fitWidths: [(ColumnID, CGFloat)], nameWidth: CGFloat) -> Bool {
+    private static func needsUpdate(layout: ColumnLayoutModel, fittedColumns: [FittedColumn], nameWidth: CGFloat) -> Bool {
         let isNameStable = abs(layout.nameWidth - nameWidth) < widthStabilityEpsilon
-        let areFixedColumnsStable = fitWidths.allSatisfy { id, width in
-            guard let index = layout.columns.firstIndex(where: { $0.id == id }) else { return true }
-            return abs(layout.columns[index].width - width) < widthStabilityEpsilon
+        let areFixedColumnsStable = fittedColumns.allSatisfy { fittedColumn in
+            guard let index = layout.columns.firstIndex(where: { $0.id == fittedColumn.id }) else { return true }
+            return abs(layout.columns[index].width - fittedColumn.width) < widthStabilityEpsilon
         }
-
         return !isNameStable || !areFixedColumnsStable
     }
 
-    private static func apply(
-        fitWidths: [(ColumnID, CGFloat)],
-        nameWidth: CGFloat,
-        to layout: ColumnLayoutModel
-    ) {
-        for (id, width) in fitWidths.reversed() {
-            layout.setWidth(width, for: id)
+    private static func apply(fittedColumns: [FittedColumn], nameWidth: CGFloat, to layout: ColumnLayoutModel) {
+        for fittedColumn in fittedColumns.reversed() {
+            layout.setWidth(fittedColumn.width, for: fittedColumn.id)
         }
         layout.nameWidth = nameWidth
     }
 
-    private static func totalFixedWidth(_ fitWidths: [(ColumnID, CGFloat)]) -> CGFloat {
-        fitWidths.reduce(CGFloat.zero) { partialWidth, item in
-            partialWidth + item.1
+    private static func totalFixedWidth(_ fittedColumns: [FittedColumn]) -> CGFloat {
+        fittedColumns.reduce(CGFloat.zero) { partialWidth, fittedColumn in
+            partialWidth + fittedColumn.width
         }
     }
 

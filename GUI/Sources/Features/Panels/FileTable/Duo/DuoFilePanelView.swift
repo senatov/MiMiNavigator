@@ -17,6 +17,8 @@ struct DuoFilePanelView: View {
     @State private var isInitialized = false
     @State private var keyboardHandler: DuoFilePanelKeyboardHandler?
 
+    // MARK: - Persisted divider position (via MiMiDefaults JSON storage)
+
     // MARK: - Constants
     private enum Layout {
         static let dividerHitAreaWidth: CGFloat = 24
@@ -155,23 +157,27 @@ extension DuoFilePanelView {
 extension DuoFilePanelView {
     private func initializePanelWidth(containerWidth: CGFloat) {
         log.debug("\(#function) containerWidth=\(Int(containerWidth))")
-
         guard containerWidth > 0 else {
             log.warning("\(#function) containerWidth is 0, deferring initialization")
             return
         }
-
         let scale = NSScreen.main?.backingScaleFactor ?? 2.0
-
-        let halfCenter = (containerWidth / 2.0 * scale).rounded() / scale
-        let defaultLeftWidth = halfCenter - Layout.dividerHitAreaWidth / 2
-
-        let constrained = calculateConstrainedWidth(
-            proposed: defaultLeftWidth,
+        // Use persisted divider position if available
+        let proposed: CGFloat
+        let savedWidth = MiMiDefaults.shared.double(forKey: "leftPanelWidth")
+        if savedWidth > 0 {
+            proposed = CGFloat(savedWidth)
+            log.info("\(#function) restoring saved divider from MiMiDefaults: \(Int(proposed))")
+        } else {
+            let halfCenter = (containerWidth / 2.0 * scale).rounded() / scale
+            proposed = halfCenter - Layout.dividerHitAreaWidth / 2
+            log.info("\(#function) no saved divider, using 50/50: \(Int(proposed))")
+        }
+        leftPanelWidth = calculateConstrainedWidth(
+            proposed: proposed,
             containerWidth: containerWidth
         )
-        leftPanelWidth = constrained
-        log.info("\(#function) 50/50 split: container=\(Int(containerWidth)) left=\(Int(constrained))")
+        log.info("\(#function) → leftPanelWidth=\(Int(leftPanelWidth))")
     }
 
     private func calculateConstrainedWidth(proposed: CGFloat, containerWidth: CGFloat) -> CGFloat {

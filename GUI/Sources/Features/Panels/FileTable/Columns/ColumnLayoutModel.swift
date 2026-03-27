@@ -13,11 +13,13 @@ final class ColumnLayoutModel: Codable {
         .dateCreated, .dateLastOpened, .dateAdded, .group,
     ]
 
-    private static let dividerWidth: CGFloat = 14
-    private static let minNameWidth: CGFloat = 60
-    private static let trailingContentInset: CGFloat = 17
-    private static let widthChangeEpsilon: CGFloat = 0.5
-    private static let unconstrainedWidthFallback: CGFloat = 9_999
+    private enum LayoutMetrics {
+        static let dividerWidth: CGFloat = 14
+        static let minNameWidth: CGFloat = 60
+        static let trailingContentInset: CGFloat = 17
+        static let widthChangeEpsilon: CGFloat = 0.5
+        static let unconstrainedWidthFallback: CGFloat = 9_999
+    }
 
     var columns: [ColumnSpec]
     private(set) var layoutVersion: Int = 0
@@ -30,7 +32,7 @@ final class ColumnLayoutModel: Codable {
 
     var nameWidth: CGFloat {
         get { storedNameWidth }
-        set { setNameWidth(newValue) }
+        set { applyNameWidth(newValue) }
     }
 
     private enum CodingKeys: String, CodingKey { case columns, storedNameWidth }
@@ -54,74 +56,94 @@ final class ColumnLayoutModel: Codable {
         load()
     }
 
-    private func setNameWidth(_ value: CGFloat) {
-        let clampedWidth = value.clamped(to: Self.minNameWidth...calculateMaxNameWidth())
-        guard abs(storedNameWidth - clampedWidth) > Self.widthChangeEpsilon else { return }
-
-        storedNameWidth = clampedWidth
-        layoutVersion += 1
+    private func applyNameWidth(_ value: CGFloat) {
+        let clampedWidth = clampNameWidth(value)
+        applyStoredNameWidthIfNeeded(clampedWidth)
     }
 
     func updateNameWidthForContainer() {
-        let maximumNameWidth = calculateMaxNameWidth()
-        let clampedWidth = storedNameWidth.clamped(to: Self.minNameWidth...maximumNameWidth)
-        guard abs(storedNameWidth - clampedWidth) > Self.widthChangeEpsilon else { return }
-
-        storedNameWidth = clampedWidth
-        layoutVersion += 1
+        let clampedWidth = clampNameWidth(storedNameWidth)
+        applyStoredNameWidthIfNeeded(clampedWidth)
     }
 
-    private func calculateMaxNameWidth() -> CGFloat {
-        guard containerWidth > 0 else { return Self.unconstrainedWidthFallback }
+    /// Max Name width accounting for all visible fixed columns. Used by divider drag constraint.
+    var effectiveMaxNameWidth: CGFloat { maximumNameWidth }
+    private var maximumNameWidth: CGFloat {
+        guard containerWidth > 0 else { return LayoutMetrics.unconstrainedWidthFallback }
 
         let dividerTotal = totalDividerWidth(for: fixedColumns.count)
-        let minimumFixedWidth = fixedColumns.reduce(CGFloat.zero) { partial, spec in
-            partial + spec.id.minDragWidth
-        }
+        let currentFixedWidth = totalFixedWidth(for: fixedColumns)
+        let availableWidth = containerWidth - currentFixedWidth - dividerTotal - LayoutMetrics.trailingContentInset
 
-        return max(
-            Self.minNameWidth,
-            containerWidth - minimumFixedWidth - dividerTotal - Self.trailingContentInset
-        )
+        return max(LayoutMetrics.minNameWidth, availableWidth)
+    }
+
+    private func totalFixedWidth(for columns: [ColumnSpec]) -> CGFloat {
+        columns.reduce(CGFloat.zero) { partial, spec in
+            partial + spec.width
+        }
     }
 
     func setWidth(_ width: CGFloat, for id: ColumnID) {
-        guard let index = columns.firstIndex(where: { $0.id == id }) else { return }
+        guard let index = indexOfColumn(with: id) else { return }
 
         if id == .name {
-            setNameWidth(width)
+            applyNameWidth(width)
             return
         }
 
-        let allowedRange = id.minDragWidth...calculateMaxWidth(for: id)
-        let clampedWidth = width.clamped(to: allowedRange)
-        guard abs(columns[index].width - clampedWidth) > Self.widthChangeEpsilon else { return }
+        let clampedWidth = clampWidth(width, for: id)
+        guard shouldApplyWidthChange(current: columns[index].width, new: clampedWidth) else { return }
 
         columns[index].width = clampedWidth
         updateNameWidthForContainer()
-        layoutVersion += 1
+        incrementLayoutVersion()
     }
 
     private func calculateMaxWidth(for id: ColumnID) -> CGFloat {
-        guard containerWidth > 0 else { return max(id.maxWidth, Self.unconstrainedWidthFallback) }
+        guard containerWidth > 0 else { return max(id.maxWidth, LayoutMetrics.unconstrainedWidthFallback) }
 
-        let visibleFixedColumns = fixedColumns.filter { $0.id != id }
+        let remainingFixedColumns = fixedColumns.filter { $0.id != id }
         let dividerTotal = totalDividerWidth(for: fixedColumns.count)
-        let remainingFixedWidth = visibleFixedColumns.reduce(CGFloat.zero) { partial, spec in
-            partial + spec.width
-        }
+        let remainingFixedWidth = totalFixedWidth(for: remainingFixedColumns)
 
         let maximumWidth = containerWidth
             - storedNameWidth
             - remainingFixedWidth
             - dividerTotal
-            - Self.trailingContentInset
+            - LayoutMetrics.trailingContentInset
 
         return max(id.minDragWidth, maximumWidth)
     }
 
     private func totalDividerWidth(for fixedColumnCount: Int) -> CGFloat {
-        CGFloat(fixedColumnCount) * Self.dividerWidth
+        CGFloat(fixedColumnCount) * LayoutMetrics.dividerWidth
+    }
+
+    private func clampNameWidth(_ value: CGFloat) -> CGFloat {
+        value.clamped(to: LayoutMetrics.minNameWidth...maximumNameWidth)
+    }
+
+    private func clampWidth(_ width: CGFloat, for id: ColumnID) -> CGFloat {
+        width.clamped(to: id.minDragWidth...calculateMaxWidth(for: id))
+    }
+
+    private func applyStoredNameWidthIfNeeded(_ width: CGFloat) {
+        guard shouldApplyWidthChange(current: storedNameWidth, new: width) else { return }
+        storedNameWidth = width
+        incrementLayoutVersion()
+    }
+
+    private func shouldApplyWidthChange(current: CGFloat, new: CGFloat) -> Bool {
+        abs(current - new) > LayoutMetrics.widthChangeEpsilon
+    }
+
+    private func incrementLayoutVersion() {
+        layoutVersion += 1
+    }
+
+    private func indexOfColumn(with id: ColumnID) -> Int? {
+        columns.firstIndex(where: { $0.id == id })
     }
 
     @MainActor
@@ -161,7 +183,7 @@ final class ColumnLayoutModel: Codable {
 }
 
 private extension CGFloat {
-    fileprivate func clamped(to range: ClosedRange<CGFloat>) -> CGFloat {
+    func clamped(to range: ClosedRange<CGFloat>) -> CGFloat {
         Swift.max(range.lowerBound, Swift.min(self, range.upperBound))
     }
 }

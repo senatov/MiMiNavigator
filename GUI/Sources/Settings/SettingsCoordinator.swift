@@ -66,7 +66,7 @@ final class SettingsCoordinator {
         panel.animationBehavior = .utilityWindow
         panel.isMovableByWindowBackground = true
         panel.hidesOnDeactivate = false
-        panel.level = .floating
+        panel.level = .normal
         panel.tabbingMode = .disallowed
 
         if !panel.setFrameUsingName(frameAutosaveName) {

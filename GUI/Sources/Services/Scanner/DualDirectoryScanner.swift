@@ -249,6 +249,14 @@ actor DualDirectoryScanner {
 
     // MARK: - Timer handler with smart skip
     private func timerFired(for side: FavPanelSide) async {
+        // Remote panels: timer polls are wasteful — AppState.refreshRemoteFiles handles them
+        // when the user navigates. Skip periodic timer entirely for remote paths.
+        let isRemote: Bool = await MainActor.run {
+            let u = side == .left ? appState.leftURL : appState.rightURL
+            return AppState.isRemotePath(u)
+        }
+        if isRemote { return }
+
         // Check if FSEvents delivered changes recently — skip redundant poll
         if let lastPatch = lastFSEventsPatch[side] {
             let elapsed = Date().timeIntervalSince(lastPatch)
@@ -256,9 +264,6 @@ actor DualDirectoryScanner {
                 return
             }
         }
-
-        // For local paths with active FSEvents, only poll as safety net every 5 minutes
-        // The 60s interval is now just for remote paths or when FSEvents failed
 
         await refreshFiles(currSide: side)
     }

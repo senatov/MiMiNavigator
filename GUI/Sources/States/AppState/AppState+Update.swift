@@ -35,7 +35,14 @@ extension AppState {
         let currentURL = url(for: panel)
         guard !PathUtils.areEqual(currentURL, newURL) else { return }
 
-        // fileExists/isDirectory can block on NAS/SMB — run off MainActor, apply result back
+        // Remote URLs: apply synchronously — no filesystem check needed,
+        // ensures URL is set before refreshRemoteFiles() reads it
+        if Self.isRemotePath(newURL) {
+            applyPathUpdate(newURL, isDir: true, for: panel)
+            return
+        }
+
+        // Local paths: fileExists/isDirectory can block on NAS/SMB — run off MainActor
         Task {
             let (normalizedURL, isDir) = await Self.resolveURLOffMainActor(newURL)
             await MainActor.run {
@@ -78,8 +85,20 @@ extension AppState {
             selectionsHistory.setCurrent(to: normalizedURL)
         }
         let panelURL = url(for: panel)
+        // Save local path before switching to remote — but only if it's a real user directory
+        // (not root "/", not empty, not already remote). This is the restore point on disconnect.
         if Self.isRemotePath(normalizedURL) && !Self.isRemotePath(panelURL) {
-            self[panel: panel].savedLocalURL = panelURL
+            let p = panelURL.path
+            let isRealLocalDir = !p.isEmpty && p != "/" && p != "/private"
+            if isRealLocalDir {
+                self[panel: panel].savedLocalURL = panelURL
+                log.debug("\(#function) saved local URL for \(panel): \(p)")
+            } else {
+                // Fall back to home directory if panel was at root
+                let home = FileManager.default.homeDirectoryForCurrentUser
+                self[panel: panel].savedLocalURL = home
+                log.debug("\(#function) panel was at root, saved home instead: \(home.path)")
+            }
         }
         if panel == .left { leftURL = normalizedURL } else { rightURL = normalizedURL }
         // NOTE: Do NOT set selectedFile here — displayedFiles still contains stale data
@@ -87,12 +106,25 @@ extension AppState {
     }
 
     func restoreLocalPath(for panel: FavPanelSide) async {
-        guard let localURL = self[panel: panel].savedLocalURL else {
-            log.warning("[AppState] no saved local path for \(panel)")
-            return
+        var localURL = self[panel: panel].savedLocalURL
+        // Guard: if saved path is root or nil, fall back to home
+        let home = FileManager.default.homeDirectoryForCurrentUser
+        if localURL == nil || localURL?.path == "/" || localURL?.path == "" {
+            localURL = home
+            log.warning("[AppState] savedLocalURL missing/root for \(panel), restoring to home")
         }
-        log.info("[AppState] restoring local path \(panel): \(localURL.path)")
-        updatePath(localURL, for: panel)
-        await setScannerDirectoryAndRefresh(localURL.path, for: panel)
+        guard let localURL else { return }
+        let localPath = localURL.path
+        log.info("[AppState] restoring local path \(panel): \(localPath)")
+        // 1. Wipe stale remote file list immediately
+        if panel == .left { displayedLeftFiles = [] } else { displayedRightFiles = [] }
+        // 2. Set URL synchronously — must be before any refresh so url(for:) returns local path
+        if panel == .left { leftURL = localURL } else { rightURL = localURL }
+        tabManager(for: panel).updateActiveTabPath(localURL)
+        self[panel: panel].savedLocalURL = nil
+        // 3. Single scan — no double-scan, no gen-mismatch
+        await scanner.clearCooldown(for: panel)
+        await setScannerDirectoryAndRefresh(localPath, for: panel)
+        log.info("[AppState] restore done \(panel): \(localPath), files=\(displayedFiles(for: panel).count)")
     }
 }

@@ -5,11 +5,13 @@
 // Description: Protocol and implementations for remote file access.
 //   SFTPFileProvider — Citadel (SPM: https://github.com/orlandos-nl/Citadel).
 //   FTPFileProvider  — built-in URLSession/curl, no dependencies.
+//   SFTP downloads use the already-open Citadel session.
 
-import Foundation
 import FileModelKit
+import Foundation
+
 #if canImport(Citadel)
-import Citadel
+    import Citadel
 #endif
 
 // MARK: - RemoteFileProvider
@@ -20,287 +22,229 @@ protocol RemoteFileProvider: AnyObject, Sendable {
     @concurrent func listDirectory(_ path: String) async throws -> [RemoteFileItem]
     /// Downloads a remote file to a local temp URL. Returns the local URL.
     @concurrent func downloadFile(remotePath: String) async throws -> URL
+    /// Downloads file or directory to a specific local path. `recursive` enables dir tree copy.
+    @concurrent func downloadToLocal(remotePath: String, localPath: String, recursive: Bool) async throws
     @concurrent func disconnect() async
 }
 
-// MARK: - RemoteProviderError
-enum RemoteProviderError: LocalizedError {
-    case notConnected
-    case invalidURL
-    case authFailed
-    case listingFailed(String)
-    case notImplemented
 
-    var errorDescription: String? {
-        switch self {
-        case .notConnected:           return "Not connected to remote server"
-        case .invalidURL:             return "Invalid server URL"
-        case .authFailed:             return "Authentication failed"
-        case .listingFailed(let msg): return "Directory listing failed: \(msg)"
-        case .notImplemented:         return "Protocol not yet implemented"
-        }
-    }
-}
 
 // MARK: - SFTPFileProvider
 #if canImport(Citadel)
-/// SFTP via Citadel (NIOSSH). Uses real Citadel API:
-///   SSHClient.connect(host:port:authenticationMethod:hostKeyValidator:reconnect:)
-final class SFTPFileProvider: RemoteFileProvider, @unchecked Sendable {
+    /// SFTP via Citadel (NIOSSH). Downloads use the active SFTP session.
+    final class SFTPFileProvider: RemoteFileProvider, @unchecked Sendable {
 
-    private(set) var isConnected = false
-    private(set) var mountPath = ""
+        private(set) var isConnected = false
+        private(set) var mountPath = ""
 
-    private var sshClient: SSHClient?
-    private var sftpClient: SFTPClient?
+        private var sshClient: SSHClient?
+        private var sftpClient: SFTPClient?
 
-    // MARK: - Connect
-    @concurrent func connect(host: String, port: Int, user: String, password: String, remotePath: String) async throws {
-        log.debug("""
-        [SFTP] connect host=\(host) port=\(port) user=\(user) \
-        remotePath=\(remotePath) pwdProvided=\(!password.isEmpty)
-        """)
-        do {
-            // Real Citadel API — no SSHClientSettings, direct connect call
-            let client = try await SSHClient.connect(
-                host: host,
-                port: port,
-                authenticationMethod: .passwordBased(username: user, password: password),
-                hostKeyValidator: .acceptAnything(),   // TODO: replace with known-hosts in prod
-                reconnect: .never,
-                algorithms: .all   // enables legacy algorithms for broader server compat
-            )
-            let sftp = try await client.openSFTP()
-            sshClient  = client
-            sftpClient = sftp
-            mountPath  = Self.buildMountPath(scheme: "sftp", user: user, host: host,
-                                             port: port, remotePath: remotePath)
-            isConnected = true
-            log.info("[SFTP] connected → \(mountPath)")
-        } catch {
-            let ns = error as NSError
-            log.error("""
-            [SFTP] FAILED host=\(host):\(port) user=\(user)
-            domain=\(ns.domain) code=\(ns.code) desc=\(ns.localizedDescription) raw=\(error)
-            """)
-            throw error
-        }
-    }
-
-    // MARK: - List Directory
-    @concurrent func listDirectory(_ path: String) async throws -> [RemoteFileItem] {
-        guard let sftp = sftpClient else { throw RemoteProviderError.notConnected }
-        let dirPath = path.isEmpty ? "/" : path
-        // Citadel: SFTPMessage.Name has .components: [SFTPPathComponent] (public)
-        // .path is internal computed — do NOT use it
-        let names = try await sftp.listDirectory(atPath: dirPath)
-        let items: [RemoteFileItem] = names.flatMap { nameMsg in
-            nameMsg.components.compactMap { comp in
-                let name = comp.filename
-                guard name != "." && name != ".." else { return nil }
-                let fullPath = dirPath.hasSuffix("/") ? "\(dirPath)\(name)"
-                                                      : "\(dirPath)/\(name)"
-                // POSIX S_IFDIR = 0o040000
-                let isDir: Bool
-                if let perms = comp.attributes.permissions {
-                    isDir = (perms & 0o170000) == 0o040000
-                } else {
-                    isDir = comp.longname.hasPrefix("d")
-                }
-                let size  = Int64(comp.attributes.size ?? 0)
-                let mdate = comp.attributes.accessModificationTime?.modificationTime
-                return RemoteFileItem(name: name, path: fullPath,
-                                      isDirectory: isDir, size: size, modified: mdate)
+        // MARK: - Connect
+        @concurrent func connect(host: String, port: Int, user: String, password: String, remotePath: String) async throws {
+            log.debug(
+                """
+                [SFTP] connect host=\(host) port=\(port) user=\(user) \
+                remotePath=\(remotePath) pwdProvided=\(!password.isEmpty)
+                """)
+            do {
+                let client = try await SSHClient.connect(
+                    host: host,
+                    port: port,
+                    authenticationMethod: .passwordBased(username: user, password: password),
+                    hostKeyValidator: .acceptAnything(),
+                    reconnect: .never,
+                    algorithms: .all
+                )
+                let sftp = try await client.openSFTP()
+                sshClient = client
+                sftpClient = sftp
+                mountPath = Self.buildMountPath(
+                    scheme: "sftp", user: user, host: host,
+                    port: port, remotePath: remotePath)
+                isConnected = true
+                log.info("[SFTP] connected → \(mountPath)")
+            } catch {
+                let ns = error as NSError
+                log.error(
+                    """
+                    [SFTP] FAILED host=\(host):\(port) user=\(user)
+                    domain=\(ns.domain) code=\(ns.code) desc=\(ns.localizedDescription) raw=\(error)
+                    """)
+                throw error
             }
         }
-        log.debug("[SFTP] listed \(items.count) items at \(dirPath)")
-        return items
-    }
 
-    // MARK: - Download File
-    /// Downloads remote file → /tmp/MiMiSFTP/<name>, returns local URL.
-    /// Uses Citadel SFTPClient.openFile + SFTPFile.readAll — no getFile helper needed.
-    @concurrent func downloadFile(remotePath: String) async throws -> URL {
-        guard let sftp = sftpClient else { throw RemoteProviderError.notConnected }
-        let fileName = (remotePath as NSString).lastPathComponent
-        let tmpDir   = FileManager.default.temporaryDirectory
-            .appendingPathComponent("MiMiSFTP", isDirectory: true)
-        try FileManager.default.createDirectory(at: tmpDir, withIntermediateDirectories: true)
-        let localURL = tmpDir.appendingPathComponent(fileName)
-        log.info("[SFTP] downloading '\(remotePath)' → '\(localURL.path)'")
-        // Open remote file read-only, read entire content as ByteBuffer, convert to Data
-        let buffer = try await sftp.withFile(filePath: remotePath, flags: .read) { file in
-            try await file.readAll()
+        // MARK: - List Directory
+        @concurrent func listDirectory(_ path: String) async throws -> [RemoteFileItem] {
+            guard let sftp = sftpClient else { throw RemoteProviderError.notConnected }
+            let dirPath = path.isEmpty ? "/" : path
+            let names = try await sftp.listDirectory(atPath: dirPath)
+            let items: [RemoteFileItem] = names.flatMap { nameMsg in
+                nameMsg.components.compactMap { comp in
+                    let name = comp.filename
+                    guard name != "." && name != ".." else { return nil }
+                    let fullPath =
+                        dirPath.hasSuffix("/")
+                        ? "\(dirPath)\(name)"
+                        : "\(dirPath)/\(name)"
+                    let isDir: Bool
+                    if let perms = comp.attributes.permissions {
+                        isDir = (perms & 0o170000) == 0o040000
+                    } else {
+                        isDir = comp.longname.hasPrefix("d")
+                    }
+                    let size = Int64(comp.attributes.size ?? 0)
+                    let mdate = comp.attributes.accessModificationTime?.modificationTime
+                    return RemoteFileItem(
+                        name: name, path: fullPath,
+                        isDirectory: isDir, size: size, modified: mdate)
+                }
+            }
+            log.debug("[SFTP] listed \(items.count) items at \(dirPath)")
+            return items
         }
-        let data = Data(buffer: buffer)
-        try data.write(to: localURL)
-        log.info("[SFTP] download OK size=\(data.count) → '\(localURL.lastPathComponent)'")
-        return localURL
-    }
 
-    // MARK: - Disconnect
-    @concurrent func disconnect() async {
-        do { try await sftpClient?.close() }
-        catch { log.warning("[SFTP] close error: \(error)") }
-        sshClient   = nil
-        sftpClient  = nil
-        isConnected = false
-        mountPath   = ""
-        log.info("[SFTP] disconnected")
-    }
+        // MARK: - Download File
+        /// Downloads remote file → /tmp/MiMiSFTP/<name> using the active SFTP session.
+        @concurrent func downloadFile(remotePath: String) async throws -> URL {
+            guard isConnected else { throw RemoteProviderError.notConnected }
+            let normalizedPath = normalizeRemotePath(remotePath)
+            let fileName = (normalizedPath as NSString).lastPathComponent
+            let tmpDir = FileManager.default.temporaryDirectory
+                .appendingPathComponent("MiMiSFTP", isDirectory: true)
+            try FileManager.default.createDirectory(at: tmpDir, withIntermediateDirectories: true)
+            let localURL = tmpDir.appendingPathComponent(fileName)
+            if FileManager.default.fileExists(atPath: localURL.path) {
+                try? FileManager.default.removeItem(at: localURL)
+            }
+            log.info("[SFTP] downloading '\(normalizedPath)' → '\(localURL.path)'")
+            try await downloadToLocal(remotePath: normalizedPath, localPath: localURL.path, recursive: false)
+            let size = (try? FileManager.default.attributesOfItem(atPath: localURL.path)[.size] as? Int64) ?? 0
+            log.info("[SFTP] download OK size=\(size) → '\(localURL.lastPathComponent)'")
+            return localURL
+        }
 
-    // MARK: - Build clean mount path  (sftp://user@host[:port]/remotePath)
-    private static func buildMountPath(scheme: String, user: String,
-                                       host: String, port: Int,
-                                       remotePath: String) -> String {
-        let portStr = (scheme == "sftp" && port == 22) ||
-                      (scheme == "ftp"  && port == 21) ? "" : ":\(port)"
-        let path = remotePath.isEmpty ? "" :
-                   remotePath.hasPrefix("/") ? remotePath : "/\(remotePath)"
-        return "\(scheme)://\(user)@\(host)\(portStr)\(path)"
+        // MARK: - Download to Local (file or directory)
+        /// Downloads a file or directory tree to a specific local path using the active SFTP session.
+        @concurrent func downloadToLocal(remotePath: String, localPath: String, recursive: Bool) async throws {
+            guard let sftp = sftpClient, isConnected else { throw RemoteProviderError.notConnected }
+
+            let normalizedPath = normalizeRemotePath(remotePath)
+            let localURL = URL(fileURLWithPath: localPath)
+            let attrs = try await sftp.getAttributes(at: normalizedPath)
+            let isDirectory = {
+                guard let permissions = attrs.permissions else { return false }
+                return (permissions & 0o170000) == 0o040000
+            }()
+
+            if isDirectory {
+                guard recursive else {
+                    throw RemoteProviderError.downloadFailed("Directory download requires recursive=true")
+                }
+                log.info("[SFTP] recursive session download '\(normalizedPath)' → '\(localPath)'")
+                try await downloadDirectory(from: normalizedPath, to: localURL, sftp: sftp)
+                return
+            }
+
+            log.info("[SFTP] session download '\(normalizedPath)' → '\(localPath)'")
+            try await downloadRegularFile(from: normalizedPath, to: localURL, sftp: sftp)
+        }
+
+        private func normalizeRemotePath(_ path: String) -> String {
+            guard !path.isEmpty else { return "/" }
+            return path.hasPrefix("/") ? path : "/\(path)"
+        }
+
+        private func appendRemoteComponent(_ name: String, to basePath: String) -> String {
+            let normalizedBase = normalizeRemotePath(basePath)
+            return normalizedBase == "/" ? "/\(name)" : "\(normalizedBase)/\(name)"
+        }
+
+        private func ensureParentDirectoryExists(for localURL: URL) throws {
+            let parentURL = localURL.deletingLastPathComponent()
+            try FileManager.default.createDirectory(at: parentURL, withIntermediateDirectories: true)
+        }
+
+        private func downloadRegularFile(from remotePath: String, to localURL: URL, sftp: SFTPClient) async throws {
+            try ensureParentDirectoryExists(for: localURL)
+
+            let buffer = try await sftp.withFile(filePath: remotePath, flags: .read) { file in
+                try await file.read(from: 0, length: .max)
+            }
+
+            let data = Data(buffer.readableBytesView)
+            try data.write(to: localURL, options: Data.WritingOptions.atomic)
+        }
+
+        private func downloadDirectory(from remotePath: String, to localURL: URL, sftp: SFTPClient) async throws {
+            try FileManager.default.createDirectory(at: localURL, withIntermediateDirectories: true)
+            let entries = try await listDirectory(remotePath)
+
+            for entry in entries {
+                let childRemotePath = appendRemoteComponent(entry.name, to: remotePath)
+                let childLocalURL = localURL.appendingPathComponent(entry.name, isDirectory: entry.isDirectory)
+
+                if entry.isDirectory {
+                    try await downloadDirectory(from: childRemotePath, to: childLocalURL, sftp: sftp)
+                } else {
+                    try await downloadRegularFile(from: childRemotePath, to: childLocalURL, sftp: sftp)
+                }
+            }
+        }
+
+        // MARK: - Disconnect
+        @concurrent func disconnect() async {
+            do { try await sftpClient?.close() } catch { log.warning("[SFTP] close error: \(error)") }
+            sshClient = nil
+            sftpClient = nil
+            isConnected = false
+            mountPath = ""
+            log.info("[SFTP] disconnected")
+        }
+
+        // MARK: - Build mount path  (sftp://user@host[:port]/remotePath)
+        private static func buildMountPath(
+            scheme: String, user: String,
+            host: String, port: Int,
+            remotePath: String
+        ) -> String {
+            let portStr = (scheme == "sftp" && port == 22) || (scheme == "ftp" && port == 21) ? "" : ":\(port)"
+            let path = remotePath.isEmpty ? "" : remotePath.hasPrefix("/") ? remotePath : "/\(remotePath)"
+            return "\(scheme)://\(user)@\(host)\(portStr)\(path)"
+        }
     }
-}
 #else
-// MARK: - SFTPFileProvider stub (Citadel not in SPM yet)
-final class SFTPFileProvider: RemoteFileProvider, @unchecked Sendable {
-    private(set) var isConnected = false
-    private(set) var mountPath   = ""
-    @concurrent func connect(host: String, port: Int, user: String, password: String, remotePath: String) async throws {
-        log.error("[SFTP] Citadel not available — add SPM dependency")
-        throw RemoteProviderError.notImplemented
+    // MARK: - SFTPFileProvider stub (Citadel not in SPM yet)
+    final class SFTPFileProvider: RemoteFileProvider, @unchecked Sendable {
+        private(set) var isConnected = false
+        private(set) var mountPath = ""
+        @concurrent func connect(host: String, port: Int, user: String, password: String, remotePath: String) async throws {
+            log.error("[SFTP] Citadel not available — add SPM dependency")
+            throw RemoteProviderError.notImplemented
+        }
+        @concurrent func listDirectory(_ path: String) async throws -> [RemoteFileItem] {
+            throw RemoteProviderError.notImplemented
+        }
+        @concurrent func downloadFile(remotePath: String) async throws -> URL {
+            throw RemoteProviderError.notImplemented
+        }
+        @concurrent func downloadToLocal(remotePath: String, localPath: String, recursive: Bool) async throws {
+            throw RemoteProviderError.notImplemented
+        }
+        @concurrent func disconnect() async {
+            isConnected = false
+            mountPath = ""
+        }
     }
-    @concurrent func listDirectory(_ path: String) async throws -> [RemoteFileItem] {
-        throw RemoteProviderError.notImplemented
-    }
-    @concurrent func downloadFile(remotePath: String) async throws -> URL {
-        throw RemoteProviderError.notImplemented
-    }
-    @concurrent func disconnect() async { isConnected = false; mountPath = "" }
-}
 #endif
 
-// MARK: - FTPFileProvider
-final class FTPFileProvider: RemoteFileProvider, @unchecked Sendable {
 
-    private(set) var isConnected = false
-    private(set) var mountPath   = ""
-    private var baseURL: URL?
-    private var ftpUser: String     = ""
-    private var ftpPassword: String = ""
-
-    private static func buildMountPath(scheme: String, user: String,
-                                       host: String, port: Int,
-                                       remotePath: String) -> String {
-        let portStr = (scheme == "sftp" && port == 22) ||
-                      (scheme == "ftp"  && port == 21) ? "" : ":\(port)"
-        let path = remotePath.isEmpty ? "" :
-                   remotePath.hasPrefix("/") ? remotePath : "/\(remotePath)"
-        return "\(scheme)://\(user)@\(host)\(portStr)\(path)"
-    }
-
-    // MARK: - Connect
-    @concurrent func connect(host: String, port: Int, user: String, password: String, remotePath: String) async throws {
-        var components = URLComponents()
-        components.scheme = "ftp"
-        components.host   = host
-        components.port   = port != 21 ? port : nil
-        components.path   = remotePath.hasPrefix("/") ? remotePath : "/\(remotePath)"
-        guard let url = components.url else { throw RemoteProviderError.invalidURL }
-        baseURL     = url
-        ftpUser     = user
-        ftpPassword = password
-        _ = try await listDirectory(remotePath.isEmpty ? "/" : remotePath)
-        mountPath   = Self.buildMountPath(scheme: "ftp", user: user, host: host,
-                                          port: port, remotePath: remotePath)
-        isConnected = true
-        log.info("[FTP] connected → \(mountPath)")
-    }
-
-    // MARK: - List Directory (curl — URLSession FTP is deprecated on macOS)
-    @concurrent func listDirectory(_ path: String) async throws -> [RemoteFileItem] {
-        guard let base = baseURL else { throw RemoteProviderError.notConnected }
-        guard !path.contains("://") else {
-            log.error("[FTP] rejecting mangled path='\(path)'")
-            throw RemoteProviderError.invalidURL
-        }
-        let dirPath  = path.hasPrefix("/") ? path : "/\(path)"
-        let listPath = dirPath.hasSuffix("/") ? dirPath : dirPath + "/"
-        var comps    = URLComponents(url: base, resolvingAgainstBaseURL: false)
-        comps?.path     = listPath
-        comps?.user     = ftpUser
-        comps?.password = ftpPassword
-        guard let dirURL = comps?.url else { throw RemoteProviderError.invalidURL }
-        let raw   = try await curlFTPList(url: dirURL)
-        let items = parseFTPListing(raw, basePath: path)
-        log.debug("[FTP] listed \(items.count) items at \(path)")
-        return items
-    }
-
-    @concurrent private func curlFTPList(url: URL) async throws -> String {
-        let scheme = url.scheme ?? ""
-        guard scheme == "ftp" || scheme == "ftps",
-              let host = url.host, !host.isEmpty
-        else { throw RemoteProviderError.invalidURL }
-        let urlStr = url.absoluteString
-        return try await withCheckedThrowingContinuation { cont in
-            DispatchQueue.global(qos: .userInitiated).async {
-                let proc = Process()
-                proc.executableURL = URL(fileURLWithPath: "/usr/bin/curl")
-                proc.arguments     = ["-s", "--max-time", "15", urlStr]
-                let out = Pipe(), err = Pipe()
-                proc.standardOutput = out; proc.standardError = err
-                do { try proc.run() } catch {
-                    cont.resume(throwing: RemoteProviderError.listingFailed("curl: \(error)"))
-                    return
-                }
-                proc.waitUntilExit()
-                let raw = String(data: out.fileHandleForReading.readDataToEndOfFile(),
-                                 encoding: .utf8) ?? ""
-                if proc.terminationStatus != 0 {
-                    let e = String(data: err.fileHandleForReading.readDataToEndOfFile(),
-                                   encoding: .utf8) ?? ""
-                    log.warning("[FTP] curl exit=\(proc.terminationStatus): \(e.prefix(200))")
-                }
-                cont.resume(returning: raw)
-            }
-        }
-    }
-
-    // MARK: - Disconnect
-    @concurrent func disconnect() async {
-        isConnected = false; baseURL = nil
-        ftpUser = ""; ftpPassword = ""; mountPath = ""
-        log.info("[FTP] disconnected")
-    }
-
-    // MARK: - Download (FTP — not yet implemented)
-    @concurrent func downloadFile(remotePath: String) async throws -> URL {
-        log.error("[FTP] downloadFile not implemented")
-        throw RemoteProviderError.notImplemented
-    }
-
-    private func parseFTPListing(_ raw: String, basePath: String) -> [RemoteFileItem] {
-        raw.components(separatedBy: "\n")
-            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-            .filter { !$0.isEmpty }
-            .compactMap { line -> RemoteFileItem? in
-                let parts = line.components(separatedBy: .whitespaces).filter { !$0.isEmpty }
-                guard parts.count >= 9 else { return nil }
-                let name = parts[8...].joined(separator: " ")
-                guard name != "." && name != ".." else { return nil }
-                let isDir = parts[0].hasPrefix("d")
-                let size  = Int64(parts[4]) ?? 0
-                let path  = basePath.hasSuffix("/") ? "\(basePath)\(name)" : "\(basePath)/\(name)"
-                return RemoteFileItem(name: name, path: path, isDirectory: isDir,
-                                      size: size, permissions: parts[0])
-            }
-    }
-}
 
 // MARK: - NoOpRemoteFileProvider  (SMB/AFP use native OS mount)
 final class NoOpRemoteFileProvider: RemoteFileProvider, @unchecked Sendable {
     private(set) var isConnected = false
-    private(set) var mountPath   = ""
+    private(set) var mountPath = ""
     private let reason: String
     init(reason: String) { self.reason = reason }
     @concurrent func connect(host: String, port: Int, user: String, password: String, remotePath: String) async throws {
@@ -310,6 +254,9 @@ final class NoOpRemoteFileProvider: RemoteFileProvider, @unchecked Sendable {
         throw RemoteProviderError.notImplemented
     }
     @concurrent func downloadFile(remotePath: String) async throws -> URL {
+        throw RemoteProviderError.notImplemented
+    }
+    @concurrent func downloadToLocal(remotePath: String, localPath: String, recursive: Bool) async throws {
         throw RemoteProviderError.notImplemented
     }
     @concurrent func disconnect() async {}

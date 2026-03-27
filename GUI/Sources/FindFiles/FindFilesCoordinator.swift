@@ -77,7 +77,7 @@ final class FindFilesCoordinator {
         window.isMovableByWindowBackground = true
         // Follow main window: rise when app activates, stay visible when app is active
         window.hidesOnDeactivate = false
-        window.level = .floating
+        window.level = .normal
         window.tabbingMode = .disallowed
 
         // Restore saved frame or compute default position

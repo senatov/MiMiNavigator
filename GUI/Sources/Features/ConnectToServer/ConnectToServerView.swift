@@ -55,9 +55,9 @@
         var body: some View {
             HSplitView {
                 sidebar
-                    .frame(minWidth: 200, idealWidth: 260, maxWidth: 320)
+                    .frame(minWidth: 120, idealWidth: 260, maxWidth: 500)
                 contentPane
-                    .frame(minWidth: 360)
+                    .frame(minWidth: 320)
             }
             .focusScope(focusNamespace)
             .frame(minWidth: 660, idealWidth: 760, minHeight: 440, idealHeight: 520)
@@ -264,7 +264,7 @@
                 // Server identity group
                 SettingsGroupBox {
                     VStack(spacing: 0) {
-                        SettingsRow(label: "Name:", help: "Bookmark name for this server. Paste a URL here to auto-fill all fields.") {
+                        SettingsRow(label: "Name:", help: "Bookmark name for this server. Paste a URL here to auto-fill all fields.", labelWidth: 120) {
                             TextField("or paste URL: sftp://user@host:port/path", text: $draft.name)
                                 .textFieldStyle(.roundedBorder)
                                 .focused($focusedField, equals: .name)
@@ -274,7 +274,7 @@
                                 }
                         }
                         Divider()
-                        SettingsRow(label: "Protocol:", help: "Connection protocol") {
+                        SettingsRow(label: "Protocol:", help: "Connection protocol", labelWidth: 120) {
                             Picker("", selection: $draft.remoteProtocol) {
                                 ForEach(RemoteProtocol.allCases) { proto in
                                     Text(proto.rawValue).tag(proto)
@@ -289,7 +289,7 @@
                             }
                         }
                         Divider()
-                        SettingsRow(label: "Host:", help: "Hostname, IP, or paste full URL/connection string") {
+                        SettingsRow(label: "Host:", help: "Hostname, IP, or paste full URL/connection string", labelWidth: 120) {
                             TextField("host  or  user@host:port  or  ftp://host/path", text: $draft.host)
                                 .textFieldStyle(.roundedBorder)
                                 .focused($focusedField, equals: .host)
@@ -302,14 +302,14 @@
                                 .onSubmit { draft.host = Self.sanitizeHost(draft.host) }
                         }
                         Divider()
-                        SettingsRow(label: "Port:", help: "Server port number") {
+                        SettingsRow(label: "Port:", help: "Server port number", labelWidth: 120) {
                             TextField("", value: $draft.port, formatter: Self.portFormatter)
                                 .textFieldStyle(.roundedBorder)
                                 .focused($focusedField, equals: .port)
                                 .frame(width: 80)
                         }
                         Divider()
-                        SettingsRow(label: "Remote Path:", help: "Initial directory on server") {
+                        SettingsRow(label: "Remote Path:", help: "Initial directory on server", labelWidth: 120) {
                             TextField("", text: $draft.remotePath)
                                 .textFieldStyle(.roundedBorder)
                                 .focused($focusedField, equals: .remotePath)
@@ -320,13 +320,13 @@
                 // Authentication group
                 SettingsGroupBox {
                     VStack(spacing: 0) {
-                        SettingsRow(label: "User:", help: "Login username") {
+                        SettingsRow(label: "User:", help: "Login username", labelWidth: 120) {
                             TextField("", text: $draft.user)
                                 .textFieldStyle(.roundedBorder)
                                 .focused($focusedField, equals: .user)
                         }
                         Divider()
-                        SettingsRow(label: "Password:", help: "Login password") {
+                        SettingsRow(label: "Password:", help: "Login password", labelWidth: 120) {
                             HStack(spacing: 6) {
                                 ZStack {
                                     if showPassword {
@@ -353,7 +353,7 @@
                             }
                         }
                         Divider()
-                        SettingsRow(label: "Authenticate:", help: "Authentication method") {
+                        SettingsRow(label: "Authenticate:", help: "Authentication method", labelWidth: 120) {
                             Picker("", selection: $draft.authType) {
                                 ForEach(RemoteAuthType.allCases) { auth in
                                     Text(auth.rawValue).tag(auth)
@@ -365,7 +365,7 @@
                         }
                         if draft.authType == .privateKey {
                             Divider()
-                            SettingsRow(label: "Key Path:", help: "Path to SSH private key") {
+                            SettingsRow(label: "Key Path:", help: "Path to SSH private key", labelWidth: 120) {
                                 HStack(spacing: 6) {
                                     TextField("", text: $draft.privateKeyPath)
                                         .textFieldStyle(.roundedBorder)
@@ -375,14 +375,11 @@
                                 }
                             }
                         }
-                    }
-                }
-
-                // Options group
-                SettingsGroupBox {
-                    SettingsRow(label: "Startup:", help: "Automatically connect when MiMiNavigator starts") {
-                        Toggle("Connect when app starts", isOn: $draft.connectOnStart)
-                            .toggleStyle(.checkbox)
+                        Divider()
+                        SettingsRow(label: "Startup:", help: "Automatically connect when MiMiNavigator starts", labelWidth: 120) {
+                            Toggle("Connect when app starts", isOn: $draft.connectOnStart)
+                                .toggleStyle(.checkbox)
+                        }
                     }
                 }
 

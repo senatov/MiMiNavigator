@@ -16,7 +16,7 @@ final class DragNSView: NSView, NSDraggingSource {
     weak var dragDropManager: DragDropManager?
     weak var appState: AppState?
     private var dragState = DragState(startPoint: nil, didStart: false, isResize: false)
-    private var cachedSelection: [URL] = []
+    private var cachedSelection: [CustomFile] = []
     private var mouseMonitor: Any?
     private var dragMonitor: Any?
 
@@ -90,6 +90,8 @@ final class DragNSView: NSView, NSDraggingSource {
         dragState.didStart = false
         dragState.isResize = isResizeCursor
         if let panelSide, let appState {
+            // Resolve real CustomFile objects — preserves remote urlValue (ftp://host/path)
+            // Never use fileURLWithPath on remote paths — it mangles them to file:///path
             cachedSelection = DragSelectionResolver.resolve(from: appState, side: panelSide)
         } else {
             cachedSelection = []
@@ -114,17 +116,17 @@ final class DragNSView: NSView, NSDraggingSource {
     }
 
     // MARK: - Begin Drag
-    private func beginDrag(with urls: [URL], event: NSEvent) {
+    private func beginDrag(with files: [CustomFile], event: NSEvent) {
         dragState.didStart = true
-        let files = urls.map { CustomFile(path: $0.path) }
-        if let panelSide {
-            dragDropManager?.startDrag(files: files, from: panelSide)
-        }
+        registerDragStart(files: files)
+
         let mouseInView = convert(event.locationInWindow, from: nil)
-        log.debug("[DragNSView] starting drag with \(urls.count) file(s) at \(mouseInView)")
-        let draggingItems = DragSessionBuilder.makeDraggingItems(from: urls, at: mouseInView)
+        log.debug("[DragNSView] starting drag with \(files.count) file(s) at \(mouseInView)")
+
+        let draggingItems = makeDraggingItems(from: files, at: mouseInView)
         let session = beginDraggingSession(with: draggingItems, event: event, source: self)
         session.animatesToStartingPositionsOnCancelOrFail = false
+
         log.debug("[DragNSView] drag session configured: animatesToStartingPositionsOnCancelOrFail=false")
     }
 
@@ -140,92 +142,164 @@ final class DragNSView: NSView, NSDraggingSource {
     func ignoreModifierKeys(for session: NSDraggingSession) -> Bool { false }
 
     func draggingSession(_ session: NSDraggingSession, movedTo screenPoint: NSPoint) {
-        guard let dragDropManager, let appState, let window = self.window else { return }
-        let cursorScreenPoint = currentMouseScreenPoint(fallback: screenPoint)
-        let probeScreenPoint = dropTargetProbeScreenPoint(from: cursorScreenPoint)
-        let windowPoint = window.convertPoint(fromScreen: probeScreenPoint)
-        let contentWidth = window.contentView?.frame.width ?? window.frame.width
-        let midX = contentWidth / 2
-        let hoverSide: FavPanelSide = windowPoint.x < midX ? .left : .right
+        guard let dragDropManager, let appState, let window else { return }
+
+        let dragContext = makeDragLocationContext(screenPoint: screenPoint, window: window)
+        let hoverSide = resolvePanelSide(for: dragContext.windowPoint, in: window)
         let panelFrame = panelFrameInWindowCoordinates()
         let dirURL = dragDropManager.resolveDirectoryUnderCursor(
-            windowPoint: windowPoint,
+            windowPoint: dragContext.windowPoint,
             panelSide: hoverSide,
             appState: appState,
             panelFrame: panelFrame
         )
-        let targetName = dirURL?.lastPathComponent ?? "nil"
-        let logMessage =
-            "[DragNSView] movedTo dragImageScreen=\(screenPoint) "
-            + "cursorScreen=\(cursorScreenPoint) "
-            + "probeScreen=\(probeScreenPoint) "
-            + "window=\(windowPoint) "
-            + "hoverSide=\(hoverSide) "
-            + "panelFrame=\(panelFrame) "
-            + "target=\(targetName)"
-        log.debug(logMessage)
+
+        logDragMove(
+            dragImageScreenPoint: screenPoint,
+            context: dragContext,
+            hoverSide: hoverSide,
+            panelFrame: panelFrame,
+            targetURL: dirURL
+        )
         dragDropManager.setDropTarget(dirURL)
     }
 
     func draggingSession(_ session: NSDraggingSession, endedAt screenPoint: NSPoint, operation: NSDragOperation) {
         defer {
             session.animatesToStartingPositionsOnCancelOrFail = false
-            dragState = DragState(startPoint: nil, didStart: false, isResize: false)
-            cachedSelection.removeAll()
+            resetDragState()
         }
-        // If AppKit resolved the drop externally (Finder accepted it), op != 0 → done
-        if operation != [] {
-            if let draggedFiles = dragDropManager?.draggedFiles {
-                animateDropPreviewIfPossible(screenPoint: screenPoint, files: draggedFiles)
-            }
-            dragDropManager?.endDrag()
-            log.debug("[DragNSView] drag ended externally op=\(operation.rawValue)")
+
+        if handleExternalDragEnd(screenPoint: screenPoint, operation: operation) {
             return
         }
-        // Internal drop: AppKit can't route between SwiftUI-embedded NSViews,
-        // so we resolve the target panel ourselves from screen coordinates.
-        guard let dragDropManager, let appState, let panelSide,
-            let window = self.window
-        else {
+
+        handleInternalDragEnd(screenPoint: screenPoint)
+    }
+    private struct DragLocationContext {
+        let cursorScreenPoint: NSPoint
+        let probeScreenPoint: NSPoint
+        let windowPoint: NSPoint
+    }
+
+    private func registerDragStart(files: [CustomFile]) {
+        guard let panelSide else { return }
+        dragDropManager?.startDrag(files: files, from: panelSide)
+    }
+
+    private func makeDraggingItems(from files: [CustomFile], at mouseInView: NSPoint) -> [NSDraggingItem] {
+        let urls = pasteboardURLs(from: files)
+        return DragSessionBuilder.makeDraggingItems(from: urls, at: mouseInView)
+    }
+
+    private func pasteboardURLs(from files: [CustomFile]) -> [URL] {
+        files.map { file in
+            let url = file.urlValue
+            if AppState.isRemotePath(url) {
+                return URL(fileURLWithPath: file.pathStr)
+            }
+            return url
+        }
+    }
+
+    private func handleExternalDragEnd(screenPoint: NSPoint, operation: NSDragOperation) -> Bool {
+        guard operation != [] else { return false }
+
+        if let draggedFiles = dragDropManager?.draggedFiles {
+            animateDropPreviewIfPossible(screenPoint: screenPoint, files: draggedFiles)
+        }
+
+        dragDropManager?.endDrag()
+        log.debug("[DragNSView] drag ended externally op=\(operation.rawValue)")
+        return true
+    }
+
+    private func handleInternalDragEnd(screenPoint: NSPoint) {
+        guard let dragDropManager, let appState, let panelSide, let window else {
             dragDropManager?.endDrag()
             log.debug("[DragNSView] drag ended op=0, no window context")
             return
         }
+
         let files = dragDropManager.draggedFiles
         guard !files.isEmpty else {
             dragDropManager.endDrag()
+            log.debug("[DragNSView] drag ended op=0, draggedFiles is empty")
             return
         }
-        let cursorScreenPoint = currentMouseScreenPoint(fallback: screenPoint)
-        let probeScreenPoint = dropTargetProbeScreenPoint(from: cursorScreenPoint)
-        let windowPoint = window.convertPoint(fromScreen: probeScreenPoint)
-        let contentWidth = window.contentView?.frame.width ?? window.frame.width
-        let midX = contentWidth / 2
-        let dropSide: FavPanelSide = windowPoint.x < midX ? .left : .right
-        // try to find a directory row under cursor — drop INTO it
+
+        let dragContext = makeDragLocationContext(screenPoint: screenPoint, window: window)
+        let dropSide = resolvePanelSide(for: dragContext.windowPoint, in: window)
         let panelFrame = panelFrameInWindowCoordinates()
         let dirUnderCursor = dragDropManager.resolveDirectoryUnderCursor(
-            windowPoint: windowPoint,
+            windowPoint: dragContext.windowPoint,
             panelSide: dropSide,
             appState: appState,
             panelFrame: panelFrame
         )
         let destination = dirUnderCursor ?? appState.url(for: dropSide)
+
         log.info(
             "[DragNSView] internal drop: \(files.count) file(s) → \(dropSide) (\(destination.lastPathComponent)) subdir=\(dirUnderCursor != nil)"
         )
+
         animateDropPreviewIfPossible(screenPoint: screenPoint, files: files)
         dragDropManager.prepareTransfer(files: files, to: destination, from: panelSide)
     }
 
+    private func makeDragLocationContext(screenPoint: NSPoint, window: NSWindow) -> DragLocationContext {
+        let cursorScreenPoint = currentMouseScreenPoint(fallback: screenPoint)
+        let probeScreenPoint = dropTargetProbeScreenPoint(from: cursorScreenPoint)
+        let windowPoint = window.convertPoint(fromScreen: probeScreenPoint)
+        return DragLocationContext(
+            cursorScreenPoint: cursorScreenPoint,
+            probeScreenPoint: probeScreenPoint,
+            windowPoint: windowPoint
+        )
+    }
+
+    private func resolvePanelSide(for windowPoint: NSPoint, in window: NSWindow) -> FavPanelSide {
+        let contentWidth = window.contentView?.frame.width ?? window.frame.width
+        let midX = contentWidth / 2
+        return windowPoint.x < midX ? .left : .right
+    }
+
+    private func logDragMove(
+        dragImageScreenPoint: NSPoint,
+        context: DragLocationContext,
+        hoverSide: FavPanelSide,
+        panelFrame: NSRect,
+        targetURL: URL?
+    ) {
+        let targetName = targetURL?.lastPathComponent ?? "nil"
+        let logMessage =
+            "[DragNSView] movedTo dragImageScreen=\(dragImageScreenPoint) "
+            + "cursorScreen=\(context.cursorScreenPoint) "
+            + "probeScreen=\(context.probeScreenPoint) "
+            + "window=\(context.windowPoint) "
+            + "hoverSide=\(hoverSide) "
+            + "panelFrame=\(panelFrame) "
+            + "target=\(targetName)"
+        log.debug(logMessage)
+    }
+
+    private func resetDragState() {
+        dragState = DragState(startPoint: nil, didStart: false, isResize: false)
+        cachedSelection = []
+    }
+
     // MARK: - Helpers
     private func animateDropPreviewIfPossible(screenPoint: NSPoint, files: [CustomFile]) {
-        guard let contentView = window?.contentView else { return }
+        guard let window,
+            let contentView = window.contentView,
+            let overlayContainer = contentView.superview
+        else { return }
         guard let previewImage = makeDropPreviewImage(from: files) else { return }
 
-        let windowPoint = window!.convertPoint(fromScreen: screenPoint)
+        let windowPoint = window.convertPoint(fromScreen: screenPoint)
         let contentPoint = contentView.convert(windowPoint, from: nil)
-        let previewFrame = dropPreviewFrame(centeredAt: contentPoint)
+        let overlayPoint = overlayContainer.convert(contentPoint, from: contentView)
+        let previewFrame = dropPreviewFrame(centeredAt: overlayPoint)
 
         let previewView = NSImageView(frame: previewFrame)
         previewView.image = previewImage
@@ -235,8 +309,8 @@ final class DragNSView: NSView, NSDraggingSource {
         previewView.layer?.anchorPoint = CGPoint(x: 0.5, y: 0.5)
         previewView.layer?.position = CGPoint(x: previewFrame.midX, y: previewFrame.midY)
 
-        contentView.addSubview(previewView)
-        log.debug("[DragNSView] drop preview fade-out started at \(contentPoint)")
+        overlayContainer.addSubview(previewView, positioned: .above, relativeTo: contentView)
+        log.debug("[DragNSView] drop preview fade-out started at \(overlayPoint)")
 
         NSAnimationContext.runAnimationGroup { context in
             context.duration = UI.dropPreviewFadeDuration

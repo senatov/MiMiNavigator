@@ -12,6 +12,7 @@ import SwiftUI
 struct SettingsRow<Content: View>: View {
     let label: String
     let help: String
+    var labelWidth: CGFloat = 200
     @ViewBuilder let content: () -> Content
 
     var body: some View {
@@ -19,7 +20,7 @@ struct SettingsRow<Content: View>: View {
             Text(label)
                 .font(.system(size: 14))
                 .foregroundStyle(.secondary)
-                .frame(width: 200, alignment: .trailing)
+                .frame(width: labelWidth, alignment: .trailing)
                 .help(help)
             Spacer().frame(width: 16)
             content()

@@ -3,8 +3,9 @@
     //
     // Created by Iakov Senatov on 27.01.2026.
     // Copyright © 2026 Senatov. All rights reserved.
-    // Description: Save and restore app state to/from UserDefaults
+    // Description: Save and restore app state to/from ~/.mimi/state.json
 
+    import AppKit
     import Foundation
     import FileModelKit
 
@@ -34,6 +35,10 @@
             var rightActiveTabID: String?
             var sortKey: String
             var sortAscending: Bool
+            var windowFrameX: Double?
+            var windowFrameY: Double?
+            var windowFrameW: Double?
+            var windowFrameH: Double?
         }
 
         // MARK: - Save State
@@ -42,6 +47,8 @@
         static func saveBeforeExit(from state: AppState) {
             log.debug("[StatePersistence] saveBeforeExit")
 
+            // Capture main window frame
+            let mainFrame = NSApp.windows.first(where: { !($0 is NSPanel) })?.frame
             let snapshot = PersistentState(
                 leftPath: state.leftPath,
                 rightPath: state.rightPath,
@@ -53,7 +60,11 @@
                 leftActiveTabID: state.leftTabManager.activeTabIDString,
                 rightActiveTabID: state.rightTabManager.activeTabIDString,
                 sortKey: state.sortKey.rawValue,
-                sortAscending: state.bSortAscending
+                sortAscending: state.bSortAscending,
+                windowFrameX: mainFrame.map { Double($0.origin.x) },
+                windowFrameY: mainFrame.map { Double($0.origin.y) },
+                windowFrameW: mainFrame.map { Double($0.size.width) },
+                windowFrameH: mainFrame.map { Double($0.size.height) }
             )
 
             do {
@@ -110,6 +121,30 @@
                 return .left
             }
             return .right
+        }
+
+        // MARK: - Restore Window Frame
+
+        /// Restore main window frame from state.json
+        static func restoreWindowFrame() -> NSRect? {
+            guard let data = try? Data(contentsOf: stateFileURL),
+                  let decoded = try? JSONDecoder().decode(PersistentState.self, from: data),
+                  let x = decoded.windowFrameX,
+                  let y = decoded.windowFrameY,
+                  let w = decoded.windowFrameW,
+                  let h = decoded.windowFrameH,
+                  w > 100, h > 100 else {
+                return nil
+            }
+            let frame = NSRect(x: x, y: y, width: w, height: h)
+            // Sanity: frame must overlap at least one screen
+            let overlaps = NSScreen.screens.contains { $0.visibleFrame.intersects(frame) }
+            guard overlaps else {
+                log.warning("[StatePersistence] saved frame off-screen: \(frame) — ignoring")
+                return nil
+            }
+            log.debug("[StatePersistence] restored window frame: \(Int(w))x\(Int(h)) at (\(Int(x)),\(Int(y)))")
+            return frame
         }
 
         // MARK: - Restore Tabs

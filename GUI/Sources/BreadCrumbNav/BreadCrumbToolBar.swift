@@ -19,14 +19,32 @@ struct BreadCrumbToolBar: View {
     @State private var favNavAdapter: FavNavAdapter? = nil
     let panelSide: FavPanelSide
 
+    private enum Metrics {
+        static let groupSpacing: CGFloat = 6
+        static let iconSize: CGFloat = 15
+        static let buttonSize: CGFloat = 28
+        static let cornerRadius: CGFloat = 7
+        static let borderLineWidth: CGFloat = 0.6
+        static let hoverScale: CGFloat = 1.05
+    }
+
+    private enum Palette {
+        static let activeIcon = Color(nsColor: .labelColor).opacity(0.75)
+        static let inactiveIcon = Color(nsColor: .labelColor).opacity(0.4)
+        static let utilityIcon = Color(nsColor: NSColor(calibratedRed: 0.0, green: 0.42, blue: 0.55, alpha: 1.0))
+        static let hoverFill = Color.blue.opacity(0.25)
+        static let topHighlight = Color.white.opacity(0.35)
+        static let bottomShadow = Color.black.opacity(0.4)
+        static let hoverBorder = Color(#colorLiteral(red: 0.9529411793, green: 0.6862745285, blue: 0.1333333403, alpha: 1))
+    }
+
     // Active panel check for icon contrast
     private var isActivePanel: Bool {
         appState.focusedPanel == panelSide
     }
 
     private var iconColor: Color {
-        // darker + sharper — no wishy-washy opacity games
-        isActivePanel ? Color(nsColor: .labelColor).opacity(0.75) : Color(nsColor: .labelColor).opacity(0.4)
+        isActivePanel ? Palette.activeIcon : Palette.inactiveIcon
     }
 
     private var navigator: PathNavigationService {
@@ -36,14 +54,12 @@ struct BreadCrumbToolBar: View {
     // MARK: - Body
     var body: some View {
         navigationControls
-            .onAppear {
-                store.load()
-            }
+            .onAppear(perform: handleAppear)
     }
 
     // MARK: - Navigation Controls
     private var navigationControls: some View {
-        HStack(spacing: 6) {
+        HStack(spacing: Metrics.groupSpacing) {
             navigationGroup
             utilityGroup
         }
@@ -51,7 +67,7 @@ struct BreadCrumbToolBar: View {
     }
 
     private var navigationGroup: some View {
-        HStack(spacing: 6) {
+        HStack(spacing: Metrics.groupSpacing) {
             backButton()
             upButton()
             forwardButton()
@@ -59,7 +75,7 @@ struct BreadCrumbToolBar: View {
     }
 
     private var utilityGroup: some View {
-        HStack(spacing: 6) {
+        HStack(spacing: Metrics.groupSpacing) {
             historyButton()
             favoritesButton()
         }
@@ -73,7 +89,7 @@ struct BreadCrumbToolBar: View {
 
     private func navIcon(_ name: String) -> some View {
         Image(systemName: name)
-            .font(.system(size: 15, weight: .light))
+            .font(.system(size: Metrics.iconSize, weight: .light))
             .symbolRenderingMode(.multicolor)
             .foregroundStyle(iconColor)
     }
@@ -81,14 +97,12 @@ struct BreadCrumbToolBar: View {
     // MARK: - Back Button
     private func backButton() -> some View {
         let canGoBack = appState.navigationHistory(for: panelSide).canGoBack
+
         return navIcon("arrowshape.backward")
             .contentShape(Rectangle())
             .opacity(canGoBack ? 1.0 : 0.4)
             .onTapGesture {
-                if canGoBack {
-                    log.info("[Nav] back panel=\(panelSide)")
-                    _ = appState.navigationHistory(for: panelSide).goBack()
-                }
+                handleBackTap(canGoBack: canGoBack)
             }
             .gesture(
                 TapGesture(count: 1)
@@ -104,73 +118,10 @@ struct BreadCrumbToolBar: View {
 
     // MARK: - Up Button
     private func upButton() -> some View {
-        @State var isHovered = false
-
-        return Button(action: {
-            log.debug("[BreadCrumbToolBar] navigate up for panel=\(panelSide)")
-            let current = appState.path(for: panelSide)
-            let url = URL(fileURLWithPath: current)
-            var parent = url.deletingLastPathComponent().path
-            // Ensure we don't end up with empty path; keep root
-            if parent.isEmpty {
-                parent = "/"
-            }
-            Task {
-                await navigator.navigate(to: parent, side: panelSide)
-            }
-        }) {
-            Image(systemName: "arrowshape.up")
-                .font(.system(size: 15, weight: .light))
-                .symbolRenderingMode(.hierarchical)
-                .foregroundStyle(isHovered ? Color.white : iconColor)
-                .frame(width: 28, height: 28)
-                .background(
-                    ZStack {
-                        // Glass base
-                        RoundedRectangle(cornerRadius: 7, style: .continuous)
-                            .fill(.ultraThinMaterial)
-
-                        // Top highlight (3D light)
-                        RoundedRectangle(cornerRadius: 7)
-                            .stroke(Color.white.opacity(0.35), lineWidth: 1)
-                            .blur(radius: 0.5)
-                            .offset(x: -0.5, y: -0.5)
-                            .mask(
-                                LinearGradient(colors: [.white, .clear], startPoint: .top, endPoint: .bottom)
-                            )
-
-                        // Bottom shadow (3D depth)
-                        RoundedRectangle(cornerRadius: 7)
-                            .stroke(Color.black.opacity(0.4), lineWidth: 1)
-                            .blur(radius: 0.5)
-                            .offset(x: 0.5, y: 0.5)
-                            .mask(
-                                LinearGradient(colors: [.clear, .black], startPoint: .top, endPoint: .bottom)
-                            )
-
-                        // Hover tint
-                        if isHovered {
-                            RoundedRectangle(cornerRadius: 7)
-                                .fill(Color.blue.opacity(0.25))
-                        }
-                    }
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 7)
-                        .stroke(
-                            Color(#colorLiteral(red: 0.9529411793, green: 0.6862745285, blue: 0.1333333403, alpha: 1))
-                                .opacity(isHovered ? 0.7 : 0.3),
-                            lineWidth: 0.6
-                        )
-                )
-                .scaleEffect(isHovered ? 1.05 : 1.0)
-                .animation(.spring(response: 0.25, dampingFraction: 0.6), value: isHovered)
+        UpNavigationButton(iconColor: iconColor) {
+            handleNavigateUp()
         }
-        .buttonStyle(.plain)
         .focusable(false)
-        .onHover { hovering in
-            isHovered = hovering
-        }
         .help("Go to parent directory")
         .accessibilityLabel("Up button")
     }
@@ -178,14 +129,12 @@ struct BreadCrumbToolBar: View {
     // MARK: - Forward Button
     private func forwardButton() -> some View {
         let canGoForward = appState.navigationHistory(for: panelSide).canGoForward
+
         return navIcon("arrowshape.right")
             .contentShape(Rectangle())
             .opacity(canGoForward ? 1.0 : 0.4)
             .onTapGesture {
-                if canGoForward {
-                    log.info("[Nav] forward panel=\(panelSide)")
-                    _ = appState.navigationHistory(for: panelSide).goForward()
-                }
+                handleForwardTap(canGoForward: canGoForward)
             }
             .gesture(
                 TapGesture(count: 1)
@@ -206,9 +155,9 @@ struct BreadCrumbToolBar: View {
             openHistoryWindow()
         }) {
             Image(systemName: "clock.arrow.circlepath")
-                .font(.system(size: 15, weight: .light))
+                .font(.system(size: Metrics.iconSize, weight: .light))
                 .symbolRenderingMode(.multicolor)
-                .foregroundStyle(Color(nsColor: NSColor(calibratedRed: 0.0, green: 0.42, blue: 0.55, alpha: 1.0)))
+                .foregroundStyle(Palette.utilityIcon)
         }
         .buttonStyle(NoSelectionButtonStyle())
         .focusable(false)
@@ -222,13 +171,46 @@ struct BreadCrumbToolBar: View {
             openFavoritesWindow()
         }) {
             Image(systemName: panelSide == .left ? "sidebar.left" : "sidebar.right")
-                .font(.system(size: 15, weight: .light))
+                .font(.system(size: Metrics.iconSize, weight: .light))
                 .symbolRenderingMode(.multicolor)
-                .foregroundStyle(Color(nsColor: NSColor(calibratedRed: 0.0, green: 0.42, blue: 0.55, alpha: 1.0)))
+                .foregroundStyle(Palette.utilityIcon)
         }
         .buttonStyle(NoSelectionButtonStyle())
         .focusable(false)
         .help("Navigation between favorites — \(panelSide.rawValue)")
+    }
+
+    private func handleAppear() {
+        store.load()
+    }
+
+    private func handleBackTap(canGoBack: Bool) {
+        guard canGoBack else { return }
+        log.info("[Nav] back panel=\(panelSide)")
+        guard let targetURL = appState.navigationHistory(for: panelSide).goBack() else { return }
+        appState.isNavigatingFromHistory = true
+        Task {
+            defer { appState.isNavigatingFromHistory = false }
+            await appState.navigateToDirectory(targetURL.path, on: panelSide)
+        }
+    }
+
+    private func handleForwardTap(canGoForward: Bool) {
+        guard canGoForward else { return }
+        log.info("[Nav] forward panel=\(panelSide)")
+        guard let targetURL = appState.navigationHistory(for: panelSide).goForward() else { return }
+        appState.isNavigatingFromHistory = true
+        Task {
+            defer { appState.isNavigatingFromHistory = false }
+            await appState.navigateToDirectory(targetURL.path, on: panelSide)
+        }
+    }
+
+    private func handleNavigateUp() {
+        log.debug("[BreadCrumbToolBar] navigate up for panel=\(panelSide)")
+        Task {
+            await appState.navigateToParent(on: panelSide)
+        }
     }
 
     // MARK: - Open History Window
@@ -267,5 +249,63 @@ struct BreadCrumbToolBar: View {
         )
         log.info("[Favorites] open panel=\(panelSide) items=\(store.userFavorites.count)")
         PanelDialogCoordinator.favorites.open(content: content)
+    }
+
+    private struct UpNavigationButton: View {
+        let iconColor: Color
+        let action: () -> Void
+
+        @State private var isHovered = false
+
+        var body: some View {
+            Button(action: action) {
+                Image(systemName: "arrowshape.up")
+                    .font(.system(size: Metrics.iconSize, weight: .light))
+                    .symbolRenderingMode(.hierarchical)
+                    .foregroundStyle(isHovered ? Color.white : iconColor)
+                    .frame(width: Metrics.buttonSize, height: Metrics.buttonSize)
+                    .background(buttonBackground)
+                    .overlay(buttonBorder)
+                    .scaleEffect(isHovered ? Metrics.hoverScale : 1.0)
+                    .animation(.spring(response: 0.25, dampingFraction: 0.6), value: isHovered)
+            }
+            .buttonStyle(.plain)
+            .onHover { hovering in
+                isHovered = hovering
+            }
+        }
+
+        private var buttonBackground: some View {
+            ZStack {
+                RoundedRectangle(cornerRadius: Metrics.cornerRadius, style: .continuous)
+                    .fill(.ultraThinMaterial)
+
+                RoundedRectangle(cornerRadius: Metrics.cornerRadius)
+                    .stroke(Palette.topHighlight, lineWidth: 1)
+                    .blur(radius: 0.5)
+                    .offset(x: -0.5, y: -0.5)
+                    .mask(
+                        LinearGradient(colors: [.white, .clear], startPoint: .top, endPoint: .bottom)
+                    )
+
+                RoundedRectangle(cornerRadius: Metrics.cornerRadius)
+                    .stroke(Palette.bottomShadow, lineWidth: 1)
+                    .blur(radius: 0.5)
+                    .offset(x: 0.5, y: 0.5)
+                    .mask(
+                        LinearGradient(colors: [.clear, .black], startPoint: .top, endPoint: .bottom)
+                    )
+
+                if isHovered {
+                    RoundedRectangle(cornerRadius: Metrics.cornerRadius)
+                        .fill(Palette.hoverFill)
+                }
+            }
+        }
+
+        private var buttonBorder: some View {
+            RoundedRectangle(cornerRadius: Metrics.cornerRadius)
+                .stroke(Palette.hoverBorder.opacity(isHovered ? 0.7 : 0.3), lineWidth: Metrics.borderLineWidth)
+        }
     }
 }

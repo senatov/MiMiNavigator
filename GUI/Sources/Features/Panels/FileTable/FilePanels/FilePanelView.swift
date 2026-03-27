@@ -216,16 +216,11 @@ struct FilePanelView: View {
                 let items = try await manager.listDirectory(newPath)
                 let files = items.map { CustomFile(remoteItem: $0) }
                 let sorted = appState.applySorting(files)
-                let mountPath = conn.provider.mountPath
-                // Update panel path to reflect new remote location
-                let displayPath = mountPath.hasSuffix("/") ? String(mountPath.dropLast()) : mountPath
-                let baseURL = URL(fileURLWithPath: displayPath)
-
-                // Normalize remote path to avoid "//" or missing separators
-                let sanitized = newPath.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
-                let combinedURL = baseURL.appendingPathComponent(sanitized, isDirectory: true)
-
-                appState.updatePath(combinedURL, for: viewModel.panelSide)
+                // Build proper remote URL via URL(string:) — never fileURLWithPath for remote
+                let origin = AppState.remoteOrigin(from: conn.provider.mountPath)
+                let sanitized = newPath.hasPrefix("/") ? newPath : "/\(newPath)"
+                let cleanURL = sanitized == "/" ? origin : origin + sanitized
+                appState.updatePath(cleanURL, for: viewModel.panelSide)
                 switch viewModel.panelSide {
                     case .left:
                         appState.displayedLeftFiles = sorted

@@ -45,6 +45,15 @@ struct MiMiNavigatorApp: App {
                 .contextMenuDialogs(coordinator: contextMenuCoordinator, appState: appState)
                 .navigationTitle("MiMiNavigator V \(Self.appVersion)")
                 .onAppear {
+                    // Restore window frame from ~/.mimi/state.json
+                    if let win = NSApp.windows.first(where: { !($0 is NSPanel) }) {
+                        if let savedFrame = StatePersistence.restoreWindowFrame() {
+                            win.setFrame(savedFrame, display: true, animate: false)
+                            log.info("[App] window frame restored: \(Int(savedFrame.width))x\(Int(savedFrame.height))")
+                        }
+                        // Also set autosave so macOS tracks subsequent moves/resizes
+                        win.setFrameAutosaveName("MiMiNavigator.MainWindow")
+                    }
                     appDelegate.bind(appState)
                     AppStateProvider.shared = appState
                     showHiddenFiles = UserPreferences.shared.snapshot.showHiddenFiles
@@ -84,8 +93,13 @@ struct MiMiNavigatorApp: App {
                                 // SFTP/FTP — RemoteConnectionManager already connected by View
                                 let manager = RemoteConnectionManager.shared
                                 if manager.isConnected, let conn = manager.activeConnection {
-                                    let mountURL = URL(fileURLWithPath: conn.provider.mountPath)
-                                    appState.updatePath(mountURL, for: side)
+                                    // Use URL(string:) — not fileURLWithPath which mangles sftp:// into file:///sftp:
+                                    let mountPath = conn.provider.mountPath
+                                    if let remoteURL = URL(string: mountPath) {
+                                        appState.updatePath(remoteURL, for: side)
+                                    } else {
+                                        log.error("[ConnectToServer] bad mountPath URL: \(mountPath)")
+                                    }
                                     await appState.refreshRemoteFiles(for: side)
                                 }
                             }

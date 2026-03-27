@@ -43,6 +43,8 @@ final class AboutCoordinator {
         p.isFloatingPanel = false
         p.becomesKeyOnlyIfNeeded = false
         p.level = .normal
+        p.hidesOnDeactivate = false
+        p.tabbingMode = .disallowed
 
         // Center on screen or restore position
         if !p.setFrameUsingName(frameAutosaveName) {

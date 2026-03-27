@@ -7,27 +7,48 @@
 //              inside a SwiftUI overlay dialog.
 
 import AppKit
+import Dispatch
 import SwiftUI
 
 // MARK: - HIGAutoFocusTextField
 struct HIGAutoFocusTextField: ViewModifier {
     func body(content: Content) -> some View {
         content.onAppear {
-            Task { @MainActor in
-                guard let window = NSApp.keyWindow else { return }
-                Self.focusFirstTextField(in: window.contentView)
-            }
+            Self.scheduleInitialFocus()
         }
     }
     private static func focusFirstTextField(in view: NSView?) {
-        guard let view else { return }
-        if let tf = view as? NSTextField, tf.isEditable {
-            tf.window?.makeFirstResponder(tf)
-            tf.selectText(nil)
-            return
+        guard let textField = firstEditableTextField(in: view) else { return }
+        focus(textField)
+    }
+
+    private static func scheduleInitialFocus() {
+        DispatchQueue.main.async {
+            guard let window = NSApp.keyWindow else { return }
+            focusFirstTextField(in: window.contentView)
         }
-        for sub in view.subviews {
-            focusFirstTextField(in: sub)
+    }
+
+    private static func firstEditableTextField(in view: NSView?) -> NSTextField? {
+        guard let view else { return nil }
+        if let textField = view as? NSTextField, textField.isEditable {
+            return textField
+        }
+
+        for subview in view.subviews {
+            if let textField = firstEditableTextField(in: subview) {
+                return textField
+            }
+        }
+
+        return nil
+    }
+
+    private static func focus(_ textField: NSTextField) {
+        DispatchQueue.main.async {
+            guard let window = textField.window else { return }
+            window.makeFirstResponder(textField)
+            textField.selectText(nil)
         }
     }
 }

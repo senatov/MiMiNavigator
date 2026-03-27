@@ -66,9 +66,9 @@ final class ConnectToServerCoordinator {
         panel.toolbarStyle = .unified
         panel.animationBehavior = .utilityWindow
         panel.isMovableByWindowBackground = true
-        // Follow main window: hide when app deactivates, rise when app activates
+        // Normal window level — not floating, not always-on-top
+        panel.level = .normal
         panel.hidesOnDeactivate = false
-        panel.level = .floating
         panel.tabbingMode = .disallowed
 
         if !panel.setFrameUsingName(frameAutosaveName) {

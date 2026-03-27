@@ -70,7 +70,7 @@ final class NetworkNeighborhoodCoordinator {
         panel.isMovableByWindowBackground = true
         // Follow main window: hide when app deactivates, rise when app activates
         panel.hidesOnDeactivate = false
-        panel.level = .floating
+        panel.level = .normal
         panel.tabbingMode = .disallowed
 
         if !panel.setFrameUsingName(frameAutosaveName) {

@@ -25,12 +25,14 @@ extension AppState {
 
     func refreshRemoteFiles(for panel: FavPanelSide) async {
         let manager = RemoteConnectionManager.shared
-        guard let conn = manager.activeConnection else {
+        guard manager.activeConnection != nil else {
             log.error("[AppState] refreshRemoteFiles — no active connection")
             return
         }
         do {
-            let remotePath = conn.currentPath
+            // Use panel URL path — NOT conn.currentPath which may lag behind navigation
+            let panelURL = url(for: panel)
+            let remotePath = panelURL.path.isEmpty ? "/" : panelURL.path
             log.info("[AppState] refreshRemoteFiles panel=\(panel) path=\(remotePath)")
             let items = try await manager.listDirectory(remotePath)
             let files = items.map { CustomFile(remoteItem: $0) }

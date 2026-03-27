@@ -133,13 +133,16 @@ struct TableHeaderView: View {
     // MARK: - Dividers
 
     private func nameDivider() -> some View {
-        ResizableDivider(
+        let effectiveMax = layout.containerWidth > 5
+            ? layout.effectiveMaxNameWidth
+            : CGFloat(9999)
+        return ResizableDivider(
             width: Binding(
                 get: { layout.nameWidth },
                 set: { layout.nameWidth = $0 }
             ),
             min: 60,
-            max: maxRight,
+            max: effectiveMax,
             onEnd: { layout.saveWidths() },
             onAutoFit: { autoFitWidth(for: .name) }
         )

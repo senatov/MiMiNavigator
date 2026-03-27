@@ -97,11 +97,17 @@ final class PathNavigationService {
             return
         }
         log.info("[PathNav] navigating \(side) → \(target.pathForScanner)")
-        // 1. Update AppState (history + UI)
+
+        // Remote URLs: use navigateToDirectory which handles SFTP/FTP correctly.
+        // Do NOT pass remote URL to scanner — scanner only handles local paths.
+        if let url = URL(string: target.pathForScanner), isRemoteURL(url) {
+            await appState.navigateToDirectory(target.pathForScanner, on: side)
+            return
+        }
+
+        // Local: update AppState + scanner + refresh as before
         appState.updatePath(target.urlForAppState, for: side)
-        // 2. Apply to scanner
         await setDirectory(path: target.pathForScanner, side: side)
-        // 3. Force refresh (user navigation)
         await refresh(side: side)
     }
 

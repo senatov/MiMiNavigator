@@ -43,16 +43,14 @@ struct SplitContainer<Left: View, Right: View>: NSViewRepresentable {
         if Self.verboseLogs { log.debug(msg()) }
     }
 
-    // MARK: - Persisted left panel width (sentinel -1 = "not yet configured → use 50/50")
-    @AppStorage("leftPanelWidth") fileprivate var leftPanelWidthValue: Double = -1
-
+    // MARK: - Persisted left panel width via MiMiDefaults (sentinel 0 = "not yet configured → use 50/50")
     var leftPanelWidth: CGFloat {
-        get { CGFloat(leftPanelWidthValue) }
-        set { leftPanelWidthValue = Double(newValue) }
+        get { CGFloat(MiMiDefaults.shared.double(forKey: "leftPanelWidth")) }
+        set { MiMiDefaults.shared.set(Double(newValue), forKey: "leftPanelWidth") }
     }
 
     /// True when no persisted width exists yet (fresh install / config reset)
-    var needsInitialLayout: Bool { leftPanelWidthValue < 0 }
+    var needsInitialLayout: Bool { MiMiDefaults.shared.double(forKey: "leftPanelWidth") <= 0 }
 
     // MARK: - NSViewRepresentable
     func makeNSView(context: Context) -> NSSplitView {
@@ -86,8 +84,7 @@ struct SplitContainer<Left: View, Right: View>: NSViewRepresentable {
             context.coordinator.lastSetPosition = clamped
             // Persist the computed 50/50 so subsequent updateNSView calls don't fight it
             if self.needsInitialLayout {
-                var mutableSelf = self
-                mutableSelf.leftPanelWidth = clamped
+                MiMiDefaults.shared.set(Double(clamped), forKey: "leftPanelWidth")
             }
             context.coordinator.isProgrammatic = false
             log.debug("SplitContainer.makeNSView → initial left=\(Int(clamped)) total=\(Int(total)) wasDefault=\(self.needsInitialLayout)")

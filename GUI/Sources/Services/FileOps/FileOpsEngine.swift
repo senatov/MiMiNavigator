@@ -257,6 +257,10 @@ private extension FileOpsEngine {
 
     /// Single item I/O off MainActor.
     nonisolated static func performSingleItemIO(item: URL, destination: URL, operation: FileOpType) -> IOResult {
+        // Safety net: never attempt local FileManager ops on remote URLs — they produce 0-byte files
+        if AppState.isRemotePath(item) || AppState.isRemotePath(destination) {
+            return .fail("Remote URLs not supported in FileOpsEngine — use BatchOperationCoordinator or DragDropManager for remote ops")
+        }
         let fm = FileManager.default
         let target = UniqueNameGen.resolve(name: item.lastPathComponent, in: destination)
         do {
@@ -360,6 +364,10 @@ private extension FileOpsEngine {
         destination: URL,
         operation: FileOpType
     ) -> IOResult {
+        // Safety net: remote URLs must never reach FileManager
+        if AppState.isRemotePath(entry.url) || AppState.isRemotePath(destination) {
+            return .fail("Remote URL in FileOpEntry — skipped")
+        }
         let fm = FileManager.default
         let targetURL = UniqueNameGen.resolve(name: entry.relativePath, in: destination)
         let parentDir = targetURL.deletingLastPathComponent()

@@ -262,6 +262,11 @@ extension FileRow {
 
     // MARK: - Detect directories where size calculation should be skipped (system / virtual / restricted)
     func shouldSkipSizeCalculation(_ url: URL) -> Bool {
+        // Remote URLs (sftp:// ftp://) — FileManager can't resolve, skip immediately
+        if AppState.isRemotePath(url) { return true }
+        // Remote paths stored as local paths (e.g. "/pub", "/pub/docs") with no host prefix
+        // When the panel is showing remote content these paths have no leading real filesystem component
+        if let scheme = url.scheme, scheme != "file" { return true }
         let path = url.path
         // macOS restricted or special directories
         if path.hasSuffix("/.Trash") { return true }

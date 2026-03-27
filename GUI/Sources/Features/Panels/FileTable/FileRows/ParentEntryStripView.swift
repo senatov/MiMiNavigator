@@ -58,8 +58,9 @@ struct ParentEntryStripView: View {
         .frame(height: UI.stripHeight)
         .zIndex(10)
         .onHover { h in withAnimation(.easeInOut(duration: 0.10)) { isHovering = h } }
-        .onTapGesture { onSelect(file) }
-        .onTapGesture(count: 2) { onDoubleClick(file) }
+        // Single tap on the strip itself = navigate to parent (same as double-click in TC)
+        // The pebble button also triggers onDoubleClick directly
+        .onTapGesture { onDoubleClick(file) }
         .task(id: "\(parentURL.path)-\(showHidden)") { await loadParentCount() }
     }
 

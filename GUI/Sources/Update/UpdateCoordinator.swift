@@ -40,6 +40,8 @@ final class UpdateCoordinator {
         p.backgroundColor = .windowBackgroundColor
         p.isFloatingPanel = false
         p.level = .normal
+        p.hidesOnDeactivate = false
+        p.tabbingMode = .disallowed
         
         if !p.setFrameUsingName(frameAutosaveName) {
             p.center()

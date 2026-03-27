@@ -140,26 +140,19 @@ extension AppState {
         await navigateToDirectory(parentURL.path, on: panel)
     }
 
-    /// Remote parent navigation
+    /// Remote parent navigation — uses panel URL (not conn.currentPath which can lag)
     private func navigateToParentRemote(on panel: FavPanelSide) async {
         let manager = RemoteConnectionManager.shared
-        guard let conn = manager.activeConnection else { return }
-        let parentRemote = (conn.currentPath as NSString).deletingLastPathComponent
+        guard manager.activeConnection != nil else { return }
+        // Use the panel's actual URL — always current, never stale
+        let currentRemotePath = url(for: panel).path
+        let parentRemote = (currentRemotePath as NSString).deletingLastPathComponent
         let normalizedParent = parentRemote.isEmpty ? "/" : parentRemote
-        log.info("[AppState] navigateToParent remote: \(conn.currentPath) → \(normalizedParent)")
-        do {
-            let items = try await manager.listDirectory(normalizedParent)
-            let files = items.map { CustomFile(remoteItem: $0) }
-            let sorted = applySorting(files)
-            let displayBase = Self.remoteOrigin(from: conn.provider.mountPath)
-            let cleanURL = normalizedParent == "/" ? displayBase
-                                                   : displayBase + normalizedParent
-            updatePath(cleanURL, for: panel)
-            if panel == .left { displayedLeftFiles = sorted } else { displayedRightFiles = sorted }
-            setSelectedFile(firstRealFile(in: sorted), for: panel)
-        } catch {
-            log.error("[AppState] remote navigateToParent failed: \(error.localizedDescription)")
-        }
+        log.info("[AppState] navigateToParent remote: \(currentRemotePath) → \(normalizedParent)")
+        // Build full remote URL and navigate
+        let origin = Self.remoteOrigin(from: manager.activeConnection?.provider.mountPath ?? "")
+        let targetURL = normalizedParent == "/" ? origin : origin + normalizedParent
+        await navigateToDirectory(targetURL, on: panel)
     }
 
     // MARK: - Navigation History
