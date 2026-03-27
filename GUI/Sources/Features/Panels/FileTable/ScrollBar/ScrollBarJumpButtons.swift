@@ -16,53 +16,82 @@ struct ScrollBarJumpButtons: View {
     let panelSide: FavPanelSide
     let rowCount: Int
 
-    /// Minimum row count before buttons appear.
-    private static let visibilityThreshold = 50
+    private enum Metrics {
+        static let minimumScrollableRows = 50
+        static let buttonHeight: CGFloat = 18
+        static let buttonWidthInset: CGFloat = 2
+        static let containerSpacing: CGFloat = 4
+        static let verticalPadding: CGFloat = 4
+        static let cornerRadius: CGFloat = 4
+        static let borderOpacity: Double = 0.16
+        static let borderWidth: CGFloat = 0.5
+        static let minimumButtonWidth: CGFloat = 12
+        static let symbolSize: CGFloat = 9
+    }
 
-    /// Height reserved to skip the sticky header zone.
-    private static let headerAreaHeight: CGFloat = 26
+    private var shouldShowButtons: Bool {
+        rowCount > Metrics.minimumScrollableRows
+    }
 
+    private var buttonWidth: CGFloat {
+        max(Metrics.minimumButtonWidth, ScrollBarConfig.trackWidth - Metrics.buttonWidthInset)
+    }
 
     var body: some View {
-        if rowCount > Self.visibilityThreshold {
-            VStack(spacing: 0) {
-                Color.clear.frame(height: Self.headerAreaHeight)
+        Group {
+            if shouldShowButtons {
+                VStack(spacing: Metrics.containerSpacing) {
+                    jumpButton(
+                        icon: "chevron.up.2",
+                        help: "Jump to top (Home)",
+                        accessibilityLabel: "Jump to top",
+                        action: handleJumpToTop
+                    )
 
-                glassJumpButton(icon: "chevron.up.2") {
-                    NotificationCenter.default.post(name: .jumpToFirst, object: panelSide)
+                    Spacer(minLength: 0)
+
+                    jumpButton(
+                        icon: "chevron.down.2",
+                        help: "Jump to bottom (End)",
+                        accessibilityLabel: "Jump to bottom",
+                        action: handleJumpToBottom
+                    )
                 }
-                .help("Jump to top (Home)")
-
-                Spacer(minLength: 0)
-
-                glassJumpButton(icon: "chevron.down.2") {
-                    NotificationCenter.default.post(name: .jumpToLast, object: panelSide)
-                }
-                .help("Jump to bottom (End)")
+                .frame(width: ScrollBarConfig.trackWidth)
+                .frame(maxHeight: .infinity)
+                .padding(.vertical, Metrics.verticalPadding)
             }
-            .frame(width: ScrollBarConfig.trackWidth)
-            .padding(.trailing, 0)
         }
     }
 
-
-    /// Translucent pill flush with scrollbar track. Blends with the glass chrome.
-    private func glassJumpButton(icon: String, action: @escaping () -> Void) -> some View {
+    private func jumpButton(
+        icon: String,
+        help: String,
+        accessibilityLabel: String,
+        action: @escaping () -> Void
+    ) -> some View {
         Button(action: action) {
             Image(systemName: icon)
-                .font(.system(size: 8, weight: .semibold))
-                .foregroundStyle(.tertiary)
-                .frame(width: ScrollBarConfig.trackWidth - 2, height: 18)
-                .background(
-                    .ultraThinMaterial,
-                    in: RoundedRectangle(cornerRadius: 4, style: .continuous)
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 4, style: .continuous)
-                        .strokeBorder(Color(nsColor: .separatorColor).opacity(0.3), lineWidth: 0.5)
-                )
+                .font(.system(size: Metrics.symbolSize, weight: .semibold))
+                .frame(width: buttonWidth, height: Metrics.buttonHeight)
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .contentShape(Rectangle())
+        .help(help)
+        .accessibilityLabel(accessibilityLabel)
+        .glassEffect(.regular)
+        .clipShape(RoundedRectangle(cornerRadius: Metrics.cornerRadius, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: Metrics.cornerRadius, style: .continuous)
+                .strokeBorder(.primary.opacity(Metrics.borderOpacity), lineWidth: Metrics.borderWidth)
+        }
+    }
+
+    private func handleJumpToTop() {
+        NotificationCenter.default.post(name: .jumpToFirst, object: panelSide)
+    }
+
+    private func handleJumpToBottom() {
+        NotificationCenter.default.post(name: .jumpToLast, object: panelSide)
     }
 }
