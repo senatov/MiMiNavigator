@@ -123,7 +123,7 @@ struct AboutView: View {
                 title: "View License",
                 subtitle: "MIT License",
                 icon: "doc.text",
-                url: "\(githubURL)/blob/main/LICENSE"
+                url: "\(githubURL)/blob/master/LICENSE"
             )
         }
         .padding(.vertical, 12)
