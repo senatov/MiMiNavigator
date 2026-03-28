@@ -46,7 +46,6 @@ struct ParentEntryStripView: View {
     // MARK: - Body
     var body: some View {
         GeometryReader { geo in
-            let _ = log.debug("[ParentEntryStripView] render sel=\(isSelected) hov=\(isHovering)")
             ZStack(alignment: .leading) {
                 Color.white
                 pathLabel(geo: geo)
