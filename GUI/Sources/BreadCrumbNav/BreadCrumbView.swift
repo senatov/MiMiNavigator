@@ -38,6 +38,18 @@ struct BreadCrumbView: View {
 
     private var fontSize: CGFloat { colorStore.activeTheme.breadcrumbFontSize }
 
+    private var panelURL: URL {
+        appState.url(for: panelSide)
+    }
+
+    private var archiveState: ArchiveState {
+        panelSide == .left ? appState.leftArchiveState : appState.rightArchiveState
+    }
+
+    private var activeRemoteConnection: RemoteConnection? {
+        RemoteConnectionManager.shared.activeConnection
+    }
+
     // MARK: - Init
     init(selectedSide: FavPanelSide) { self.panelSide = selectedSide }
 
@@ -75,7 +87,7 @@ struct BreadCrumbView: View {
     ///   archive → ["archive.zip", "subdir"]
     ///   local   → ["Users", "senat", "Develop"]
     private var pathComponents: [String] {
-        let panelURL = appState.url(for: panelSide)
+        let panelURL = panelURL
 
         // ── Remote (SFTP / FTP) ──────────────────────────────────────────────
         if AppState.isRemotePath(panelURL) {
@@ -83,10 +95,9 @@ struct BreadCrumbView: View {
         }
 
         // ── Archive (virtual) ────────────────────────────────────────────────
-        let archState = panelSide == .left ? appState.leftArchiveState : appState.rightArchiveState
-        if archState.isInsideArchive,
-            let archiveURL = archState.archiveURL,
-            let tempDir = archState.archiveTempDir
+        if archiveState.isInsideArchive,
+            let archiveURL = archiveState.archiveURL,
+            let tempDir = archiveState.archiveTempDir
         {
             return archiveComponents(
                 currentPath: panelURL.path,
@@ -107,29 +118,27 @@ struct BreadCrumbView: View {
     /// Example: sftp://demo@test.rebex.net/pub/docs
     ///          → ["SFTP demo@test.rebex.net", "pub", "docs"]
     private func remoteComponents(for url: URL) -> [String] {
-        // Build origin label from active connection's mountPath for accuracy
-        let manager = RemoteConnectionManager.shared
         let originLabel: String
         let remotePath: String
 
-        if let conn = manager.activeConnection {
-            // e.g. "sftp://demo@test.rebex.net" → "SFTP demo@test.rebex.net"
-            let origin = AppState.remoteOrigin(from: conn.provider.mountPath)
+        if let connection = activeRemoteConnection {
+            let origin = AppState.remoteOrigin(from: connection.provider.mountPath)
             originLabel = formatOriginLabel(origin)
-            remotePath = conn.currentPath
+            remotePath = connection.currentPath
         } else {
-            // Fallback: parse from stored URL directly
             originLabel = formatOriginLabel(url.absoluteString)
             remotePath = url.path
         }
 
-        let pathParts =
-            remotePath
+        let pathParts = pathParts(from: remotePath)
+        return [originLabel] + pathParts
+    }
+
+    private func pathParts(from path: String) -> [String] {
+        path
             .split(separator: "/")
             .map(String.init)
             .filter { !$0.isEmpty }
-
-        return [originLabel] + pathParts
     }
 
     // MARK: - formatOriginLabel
@@ -236,6 +245,31 @@ struct BreadCrumbView: View {
         return "\(s.prefix(half))…\(s.suffix(half))"
     }
 
+    private func remoteTargetPath(for segment: DisplaySegment) -> String? {
+        guard let connection = activeRemoteConnection else { return nil }
+
+        let origin = AppState.remoteOrigin(from: connection.provider.mountPath)
+        if segment.originalIndex == 0 {
+            return origin + "/"
+        }
+
+        let parts = Array(pathComponents[1...segment.originalIndex])
+        return origin + "/" + parts.joined(separator: "/")
+    }
+
+    private func archiveTargetPath(for segment: DisplaySegment) -> String? {
+        guard let tempDir = archiveState.archiveTempDir else { return nil }
+        guard segment.originalIndex > 0 else { return nil }
+
+        let sub = Array(pathComponents[1...segment.originalIndex])
+        return tempDir.standardizedFileURL.path + "/" + sub.joined(separator: "/")
+    }
+
+    private func localTargetPath(for segment: DisplaySegment) -> String {
+        ("/" + pathComponents.prefix(segment.originalIndex + 1).joined(separator: "/"))
+            .replacingOccurrences(of: "//", with: "/")
+    }
+
     // MARK: - breadcrumbItem
     @ViewBuilder
     private func breadcrumbItem(segment: DisplaySegment, index: Int) -> some View {
@@ -261,41 +295,19 @@ struct BreadCrumbView: View {
         log.info("[BreadCrumb] tap index=\(segment.originalIndex) on \(panelSide)")
 
         let targetPath: String
-        let panelURL = appState.url(for: panelSide)
 
-        // Remote
         if AppState.isRemotePath(panelURL) {
-            if segment.originalIndex == 0 {
-                if let conn = RemoteConnectionManager.shared.activeConnection {
-                    targetPath = AppState.remoteOrigin(from: conn.provider.mountPath) + "/"
-                } else {
-                    return
-                }
-            } else {
-                let parts = Array(pathComponents[1...segment.originalIndex])
-                if let conn = RemoteConnectionManager.shared.activeConnection {
-                    let origin = AppState.remoteOrigin(from: conn.provider.mountPath)
-                    targetPath = origin + "/" + parts.joined(separator: "/")
-                } else {
-                    return
-                }
-            }
-        }
-        // Archive
-        else if (panelSide == .left ? appState.leftArchiveState : appState.rightArchiveState).isInsideArchive,
-                let archState = (panelSide == .left ? appState.leftArchiveState : appState.rightArchiveState).archiveTempDir {
+            guard let remotePath = remoteTargetPath(for: segment) else { return }
+            targetPath = remotePath
+        } else if archiveState.isInsideArchive {
             if segment.originalIndex == 0 {
                 Task { await appState.exitArchive(on: panelSide) }
                 return
-            } else {
-                let sub = Array(pathComponents[1...segment.originalIndex])
-                targetPath = archState.standardizedFileURL.path + "/" + sub.joined(separator: "/")
             }
-        }
-        // Local
-        else {
-            targetPath = ("/" + pathComponents.prefix(segment.originalIndex + 1).joined(separator: "/"))
-                .replacingOccurrences(of: "//", with: "/")
+            guard let archivePath = archiveTargetPath(for: segment) else { return }
+            targetPath = archivePath
+        } else {
+            targetPath = localTargetPath(for: segment)
         }
 
         Task {
@@ -307,48 +319,59 @@ struct BreadCrumbView: View {
 
     // MARK: - tooltip
     private func tooltip(for segment: DisplaySegment) -> String {
-        let panelURL = appState.url(for: panelSide)
         if AppState.isRemotePath(panelURL) {
-            if segment.originalIndex == 0 { return "🌐 \(segment.fullName) — tap to go to root" }
+            if segment.originalIndex == 0 {
+                return "🌐 \(segment.fullName) — tap to go to root"
+            }
             let parts = Array(pathComponents[1...segment.originalIndex])
             return "📂 /\(parts.joined(separator: "/"))"
         }
-        let archState = panelSide == .left ? appState.leftArchiveState : appState.rightArchiveState
-        if archState.isInsideArchive {
-            if segment.originalIndex == 0 { return "📦 \(segment.fullName) — tap to exit archive" }
+
+        if archiveState.isInsideArchive {
+            if segment.originalIndex == 0 {
+                return "📦 \(segment.fullName) — tap to exit archive"
+            }
             let parts = pathComponents.prefix(segment.originalIndex + 1)
             return "📂 \(parts.joined(separator: "/"))"
         }
+
         let fullPath = "/" + pathComponents.prefix(segment.originalIndex + 1).joined(separator: "/")
         return "📂 Open \(fullPath)"
     }
 
+    private func remoteCopyPath(for segment: DisplaySegment) -> String {
+        if segment.originalIndex == 0 {
+            return activeRemoteConnection
+                .map { AppState.remoteOrigin(from: $0.provider.mountPath) }
+                ?? segment.fullName
+        }
+
+        let parts = Array(pathComponents[1...segment.originalIndex])
+        return "/" + parts.joined(separator: "/")
+    }
+
+    private func archiveCopyPath(for segment: DisplaySegment) -> String {
+        if segment.originalIndex == 0 {
+            return archiveState.archiveURL?.path ?? ""
+        }
+
+        guard let tempDir = archiveState.archiveTempDir else { return "" }
+        let sub = Array(pathComponents[1...segment.originalIndex])
+        return tempDir.standardizedFileURL.path + "/" + sub.joined(separator: "/")
+    }
+
     // MARK: - copyPath
     private func copyPath(for segment: DisplaySegment) {
-        let panelURL = appState.url(for: panelSide)
         let pathToCopy: String
+
         if AppState.isRemotePath(panelURL) {
-            if segment.originalIndex == 0 {
-                pathToCopy =
-                    RemoteConnectionManager.shared.activeConnection
-                    .map { AppState.remoteOrigin(from: $0.provider.mountPath) } ?? segment.fullName
-            } else {
-                let parts = Array(pathComponents[1...segment.originalIndex])
-                pathToCopy = "/" + parts.joined(separator: "/")
-            }
+            pathToCopy = remoteCopyPath(for: segment)
+        } else if archiveState.isInsideArchive {
+            pathToCopy = archiveCopyPath(for: segment)
         } else {
-            let archState = panelSide == .left ? appState.leftArchiveState : appState.rightArchiveState
-            if archState.isInsideArchive, let tempDir = archState.archiveTempDir {
-                if segment.originalIndex == 0 {
-                    pathToCopy = archState.archiveURL?.path ?? ""
-                } else {
-                    let sub = Array(pathComponents[1...segment.originalIndex])
-                    pathToCopy = tempDir.standardizedFileURL.path + "/" + sub.joined(separator: "/")
-                }
-            } else {
-                pathToCopy = "/" + pathComponents.prefix(segment.originalIndex + 1).joined(separator: "/")
-            }
+            pathToCopy = "/" + pathComponents.prefix(segment.originalIndex + 1).joined(separator: "/")
         }
+
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(pathToCopy, forType: .string)
         log.debug("[BreadCrumb] copied: \(pathToCopy)")

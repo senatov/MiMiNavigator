@@ -49,21 +49,11 @@ final class PathNavigationService {
 
         // Remote URLs: keep as URL(string:) and pass absoluteString to scanner.
         if let remoteURL = URL(string: trimmed), isRemoteURL(remoteURL) {
-            return NavigationTarget(urlForAppState: remoteURL, pathForScanner: remoteURL.absoluteString)
+            return makeRemoteTarget(from: remoteURL)
         }
 
         // Local: expand tilde and normalize.
-        let expanded = (trimmed as NSString).expandingTildeInPath
-        let fileURL: URL
-
-        if let asURL = URL(string: expanded), asURL.isFileURL {
-            fileURL = asURL
-        } else {
-            fileURL = URL(fileURLWithPath: expanded)
-        }
-
-        let normalizedDirURL = normalizeToDirectory(fileURL)
-        return NavigationTarget(urlForAppState: normalizedDirURL, pathForScanner: normalizedDirURL.path)
+        return makeLocalTarget(from: trimmed)
     }
 
     private func isRemoteURL(_ url: URL) -> Bool {
@@ -77,11 +67,54 @@ final class PathNavigationService {
     }
 
     private func normalizeToDirectory(_ url: URL) -> URL {
-        // If user points to a file, navigate to its parent directory.
-        if let isDir = try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory, isDir == false {
-            return url.deletingLastPathComponent().standardizedFileURL
+        let standardizedURL = url.standardizedFileURL
+        let resolvedURL = standardizedURL.resolvingSymlinksInPath()
+
+        var isDirectory: ObjCBool = false
+        if FileManager.default.fileExists(atPath: resolvedURL.path, isDirectory: &isDirectory) {
+            if isDirectory.boolValue {
+                return standardizedURL
+            }
+            return standardizedURL.deletingLastPathComponent().standardizedFileURL
         }
-        return url.standardizedFileURL
+
+        // Fallback for non-existing paths: preserve the typed directory path.
+        return standardizedURL
+    }
+
+    private func makeRemoteTarget(from remoteURL: URL) -> NavigationTarget {
+        NavigationTarget(urlForAppState: remoteURL, pathForScanner: remoteURL.absoluteString)
+    }
+
+    private func localFileURL(from input: String) -> URL {
+        let expanded = (input as NSString).expandingTildeInPath
+
+        if let url = URL(string: expanded), url.isFileURL {
+            return url
+        }
+
+        return URL(fileURLWithPath: expanded)
+    }
+
+    private func makeLocalTarget(from input: String) -> NavigationTarget {
+        let fileURL = localFileURL(from: input)
+        let normalizedDirURL = normalizeToDirectory(fileURL)
+        return NavigationTarget(urlForAppState: normalizedDirURL, pathForScanner: normalizedDirURL.path)
+    }
+
+    private func localFileURL(from input: String) -> URL {
+        let expanded = (input as NSString).expandingTildeInPath
+
+        if let url = URL(string: expanded), url.isFileURL {
+            return url
+        }
+
+        return URL(fileURLWithPath: expanded)
+    }
+
+    private func isRemoteTarget(_ target: NavigationTarget) -> Bool {
+        guard let url = URL(string: target.pathForScanner) else { return false }
+        return isRemoteURL(url)
     }
 
     // MARK: - Public API
@@ -98,10 +131,8 @@ final class PathNavigationService {
         }
         log.info("[PathNav] navigating \(side) → \(target.pathForScanner)")
 
-        // Remote URLs: use navigateToDirectory which handles SFTP/FTP correctly.
-        // Do NOT pass remote URL to scanner — scanner only handles local paths.
-        if let url = URL(string: target.pathForScanner), isRemoteURL(url) {
-            await appState.navigateToDirectory(target.pathForScanner, on: side)
+        if isRemoteTarget(target) {
+            await navigateToRemoteTarget(target, side: side)
             return
         }
 
@@ -111,15 +142,25 @@ final class PathNavigationService {
         await refresh(side: side)
     }
 
+    private func navigateToRemoteTarget(_ target: NavigationTarget, side: FavPanelSide) async {
+        // Remote URLs: use navigateToDirectory which handles SFTP/FTP correctly.
+        // Do NOT pass remote URL to scanner — scanner only handles local paths.
+        await appState.navigateToDirectory(target.pathForScanner, on: side)
+    }
+
+    private func isValidLocalDirectoryPath(_ path: String) -> Bool {
+        var isDirectory: ObjCBool = false
+        let exists = FileManager.default.fileExists(atPath: path, isDirectory: &isDirectory)
+        return exists && isDirectory.boolValue
+    }
+
     private func validate(target: NavigationTarget) -> Bool {
         // Remote URLs are assumed navigable here.
-        if let url = URL(string: target.pathForScanner), isRemoteURL(url) {
+        if isRemoteTarget(target) {
             return true
         }
 
-        var isDir: ObjCBool = false
-        let exists = FileManager.default.fileExists(atPath: target.pathForScanner, isDirectory: &isDir)
-        return exists && isDir.boolValue
+        return isValidLocalDirectoryPath(target.pathForScanner)
     }
 
     // MARK: - Scanner integration
@@ -133,15 +174,22 @@ final class PathNavigationService {
         }
     }
 
-    private func refresh(side: FavPanelSide) async {
-        // Force refresh because user explicitly navigated
-        await appState.scanner.forceRefreshAfterFileOp(side: side)
-
+    private func refreshPanel(_ side: FavPanelSide) async {
         switch side {
             case .left:
                 await appState.refreshLeftFiles()
             case .right:
                 await appState.refreshRightFiles()
         }
+    }
+
+    private func forceRefreshScanner(_ side: FavPanelSide) async {
+        await appState.scanner.forceRefreshAfterFileOp(side: side)
+    }
+
+    private func refresh(side: FavPanelSide) async {
+        // Force refresh because user explicitly navigated.
+        await forceRefreshScanner(side)
+        await refreshPanel(side)
     }
 }

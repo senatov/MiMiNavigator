@@ -15,11 +15,6 @@ struct BreadCrumbPathControl: View {
     @Environment(AppState.self) var appState
     let panelSide: FavPanelSide
 
-    // MARK: - Design Constants
-    @MainActor private enum Design {
-        static let cornerRadius: CGFloat = 8
-    }
-
     // MARK: - Is Active Panel
     private var isActivePanel: Bool {
         appState.focusedPanel == panelSide
@@ -33,10 +28,10 @@ struct BreadCrumbPathControl: View {
     // MARK: - Body
     var body: some View {
         HStack(spacing: 2) {
-            breadcrumbMenuSection()
-            spacerSection()
-            breadcrumbPathSection()
-            ellipsisSection()
+            breadcrumbMenuSection
+            spacerSection
+            breadcrumbPathSection
+            ellipsisSection
         }
         .frame(height: 30)
         // Background is managed by BreadCrumbControlWrapper — dont overlay here
@@ -46,20 +41,20 @@ struct BreadCrumbPathControl: View {
 
     // MARK: - Sections
 
-    private func breadcrumbMenuSection() -> some View {
+    private var breadcrumbMenuSection: some View {
         BreadCrumbMnu(selectedSide: panelSide)
     }
 
-    private func spacerSection() -> some View {
+    private var spacerSection: some View {
         Spacer(minLength: 2)
     }
 
-    private func breadcrumbPathSection() -> some View {
+    private var breadcrumbPathSection: some View {
         BreadCrumbView(selectedSide: panelSide)
             .environment(appState)
     }
 
-    private func ellipsisSection() -> some View {
+    private var ellipsisSection: some View {
         EllipsisMenuSection()
     }
 }

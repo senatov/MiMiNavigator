@@ -22,6 +22,20 @@ struct BreadCrumbControlWrapper: View {
 
     let panelSide: FavPanelSide
 
+    private var themeVersion: Int {
+        ColorThemeStore.shared.themeVersion
+    }
+
+    private var isActivePanel: Bool {
+        appState.focusedPanel == panelSide
+    }
+
+    private var backgroundColor: Color {
+        isActivePanel
+            ? colorStore.activeTheme.breadcrumbBgActive
+            : colorStore.activeTheme.breadcrumbBgInactive
+    }
+
     // MARK: - Constants
     private enum Design {
         static let cornerRadius: CGFloat = 8
@@ -47,36 +61,22 @@ struct BreadCrumbControlWrapper: View {
 
     // MARK: - Body
     var body: some View {
-        // Capture themeVersion to force view refresh on theme changes
-        let themeVersion = ColorThemeStore.shared.themeVersion
-
-        // Compute background color inline to ensure reactivity
-        let isActive = appState.focusedPanel == panelSide
-        let bgColor =
-            isActive
-            ? colorStore.activeTheme.breadcrumbBgActive
-            : colorStore.activeTheme.breadcrumbBgInactive
-
-        // DEBUG: log every body eval
-        //log.debug("[BreadCrumbWrapper] body eval: themeVersion=\(themeVersion), isActive=\(isActive), bgColor=\(bgColor.description)")
-
-        return contentView
+        contentView
             .padding(.horizontal, Design.Padding.horizontal)
-            .onHover { hovering in isHovering = hovering }
-            .background(
-                RoundedRectangle(cornerRadius: Design.cornerRadius)
-                    .fill(isEditing ? Design.Colors.editingBackground : bgColor)
-            )
+            .onHover { isHovering = $0 }
+            .background(backgroundShape)
             .overlay(borderShape)
             .frame(height: 34)
             .zIndex(isEditing ? 10 : 0)
-            .id("breadcrumb-\(panelSide)-\(themeVersion)")  // force FULL redraw on theme change
+            .id("breadcrumb-\(panelSide)-\(themeVersion)")
             .onTapGesture {
-                if !isEditing {
-                    appState.focusedPanel = panelSide
-                    log.info("Focus set to \(panelSide) panel via wrapper tap")
-                }
+                handleWrapperTap()
             }
+    }
+
+    private var backgroundShape: some View {
+        RoundedRectangle(cornerRadius: Design.cornerRadius)
+            .fill(isEditing ? Design.Colors.editingBackground : backgroundColor)
     }
 
     // MARK: - Content View
@@ -109,8 +109,18 @@ struct BreadCrumbControlWrapper: View {
 
     // MARK: - Helpers
     private func animated(_ action: @escaping () -> Void) {
-        withAnimation(.easeInOut(duration: Design.animationDuration)) {
-            action()
+        withAnimation(.easeInOut(duration: Design.animationDuration), action)
+    }
+
+    private func handleWrapperTap() {
+        guard !isEditing else { return }
+        appState.focusedPanel = panelSide
+        log.info("Focus set to \(panelSide) panel via wrapper tap")
+    }
+
+    private func exitEditingMode() {
+        animated {
+            isEditing = false
         }
     }
 
@@ -126,7 +136,7 @@ struct BreadCrumbControlWrapper: View {
                 },
                 onCancel: {
                     log.info("Exit command received (Escape)")
-                    animated { isEditing = false }
+                    exitEditingMode()
                 }
             )
             .onAppear {
@@ -158,7 +168,7 @@ struct BreadCrumbControlWrapper: View {
     private var cancelButton: some View {
         Button {
             log.info("Cancelled path editing with X button")
-            animated { isEditing = false }
+            exitEditingMode()
         } label: {
             Image(systemName: "xmark.circle.fill")
                 .symbolRenderingMode(.palette)
@@ -238,7 +248,7 @@ struct BreadCrumbControlWrapper: View {
     private func enterEditingMode() {
         log.info("Switching to editing mode for side: \(panelSide)")
         Task { @MainActor in
-            withAnimation(.easeInOut(duration: Design.animationDuration)) {
+            animated {
                 isEditing = true
             }
         }
@@ -253,35 +263,52 @@ struct BreadCrumbControlWrapper: View {
         PathNavigationService.shared(appState: appState)
     }
 
+    private func trimmedEditedPath() -> String {
+        editedPathStr.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private func validateSubmittedPath(_ path: String) -> Bool {
+        guard !path.isEmpty else {
+            log.warning("Empty path provided, ignoring update")
+            return false
+        }
+
+        if let remoteURL = URL(string: path), isRemoteInputURL(remoteURL) {
+            return true
+        }
+
+        let url = URL(fileURLWithPath: path)
+        guard FileManager.default.fileExists(atPath: url.path) else {
+            log.error("Path does not exist: \(path)")
+            return false
+        }
+
+        return true
+    }
+
+    private func isRemoteInputURL(_ url: URL) -> Bool {
+        guard let scheme = url.scheme?.lowercased() else { return false }
+        return scheme == "sftp" || scheme == "ftp" || scheme == "afp" || scheme == "smb"
+    }
+
+    private func submitPathUpdate(_ path: String) {
+        Task {
+            log.info("Applying path update for <<\(panelSide)>>: \(path)")
+            await navigator.navigate(to: path, side: panelSide)
+        }
+    }
+
     // MARK: - Apply Path Update
     private func applyPathUpdate() {
         log.info(#function + " for side <<\(panelSide)>> with path: \(editedPathStr)")
 
-        // Trim whitespace and validate path
-        let trimmedPath = editedPathStr.trimmingCharacters(in: .whitespacesAndNewlines)
-
-        guard !trimmedPath.isEmpty else {
-            log.warning("Empty path provided, ignoring update")
-            animated { isEditing = false }
+        let trimmedPath = trimmedEditedPath()
+        guard validateSubmittedPath(trimmedPath) else {
+            exitEditingMode()
             return
         }
 
-        let url = URL(fileURLWithPath: trimmedPath)
-        guard FileManager.default.fileExists(atPath: url.path) else {
-            log.error("Path does not exist: \(trimmedPath)")
-            animated { isEditing = false }
-            return
-        }
-
-        animated { isEditing = false }
-
-        Task {
-            log.info("Applying path update for <<\(panelSide)>>: \(trimmedPath)")
-
-            await navigator.navigate(
-                to: trimmedPath,
-                side: panelSide
-            )
-        }
+        exitEditingMode()
+        submitPathUpdate(trimmedPath)
     }
 }
