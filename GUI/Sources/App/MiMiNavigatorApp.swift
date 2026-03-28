@@ -39,147 +39,7 @@ struct MiMiNavigatorApp: App {
     // MARK: -
     var body: some Scene {
         WindowGroup {
-            DuoFilePanelView()
-                .environment(appState)
-                .environment(dragDropManager)
-                .contextMenuDialogs(coordinator: contextMenuCoordinator, appState: appState)
-                .navigationTitle("MiMiNavigator V \(Self.appVersion)")
-                .onAppear {
-                    // Restore window frame from ~/.mimi/state.json
-                    if let win = NSApp.windows.first(where: { !($0 is NSPanel) }) {
-                        if let savedFrame = StatePersistence.restoreWindowFrame() {
-                            win.setFrame(savedFrame, display: true, animate: false)
-                            log.info("[App] window frame restored: \(Int(savedFrame.width))x\(Int(savedFrame.height))")
-                        }
-                        // Also set autosave so macOS tracks subsequent moves/resizes
-                        win.setFrameAutosaveName("MiMiNavigator.MainWindow")
-                    }
-                    appDelegate.bind(appState)
-                    AppStateProvider.shared = appState
-                    showHiddenFiles = UserPreferences.shared.snapshot.showHiddenFiles
-                    // Wire connect callback for ConnectToServer panel
-                    ConnectToServerCoordinator.shared.onDisconnect = {
-                        Task { @MainActor in
-                            // Restore whichever panel(s) are showing remote content
-                            if AppState.isRemotePath(appState.leftURL) {
-                                await appState.restoreLocalPath(for: FavPanelSide.left)
-                            }
-                            if AppState.isRemotePath(appState.rightURL) {
-                                await appState.restoreLocalPath(for: FavPanelSide.right)
-                            }
-                        }
-                    }
-                    ConnectToServerCoordinator.shared.onConnect = { url, password in
-                        Task { @MainActor in
-                            let side = appState.focusedPanel
-                            // Build authenticated URL if password provided
-                            var connectURL = url
-                            if !password.isEmpty, var components = URLComponents(url: url, resolvingAgainstBaseURL: false) {
-                                // Ensure both user and password are in URL for mount_smbfs
-                                if components.user == nil || components.user?.isEmpty == true {
-                                    components.user = "guest"
-                                }
-                                components.password = password
-                                connectURL = components.url ?? url
-                            }
-                            let scheme = url.scheme ?? ""
-                            log.info("[ConnectToServer] connecting \(scheme)://\(url.host ?? "")")
-                            if scheme == "smb" || scheme == "afp" {
-                                // SMB/AFP — mount via native macOS
-                                if let mountedURL = await SMBMounter.shared.mountShare(connectURL) {
-                                    appState.updatePath(mountedURL, for: side)
-                                }
-                            } else if scheme == "sftp" || scheme == "ftp" {
-                                // SFTP/FTP — RemoteConnectionManager already connected by View
-                                let manager = RemoteConnectionManager.shared
-                                if manager.isConnected, let conn = manager.activeConnection {
-                                    // Use URL(string:) — not fileURLWithPath which mangles sftp:// into file:///sftp:
-                                    let mountPath = conn.provider.mountPath
-                                    if let remoteURL = URL(string: mountPath) {
-                                        appState.updatePath(remoteURL, for: side)
-                                    } else {
-                                        log.error("[ConnectToServer] bad mountPath URL: \(mountPath)")
-                                    }
-                                    await appState.refreshRemoteFiles(for: side)
-                                }
-                            }
-                            // Panel stays open — user closes it manually
-                        }
-                    }
-                    // Wire navigate callback for Network panel
-                    NetworkNeighborhoodCoordinator.shared.onNavigate = { shareURL in
-                        Task { @MainActor in
-                            let side = appState.focusedPanel
-                            // file:// — already mounted volume, navigate directly
-                            if shareURL.isFileURL {
-                                appState.updatePath(shareURL, for: side)
-                                NetworkNeighborhoodCoordinator.shared.close()
-                                return
-                            }
-                            // smb:/afp:// — mount silently, navigate on success
-                            // SMBMounter.mountShare no longer falls back to Finder
-                            if let mountedURL = await SMBMounter.shared.mountShare(shareURL) {
-                                appState.updatePath(mountedURL, for: side)
-                                NetworkNeighborhoodCoordinator.shared.close()
-                            }
-                            // If mount failed — leave panel open so user can try Sign In
-                        }
-                    }
-                }
-
-                // No .toolbarBackground — our ToolbarButtonGroup provides its own framing
-                .onChange(of: scenePhase) {
-                    if scenePhase == .background {
-                        Task { await BookmarkStore.shared.stopAll() }
-                    }
-                }
-                .toolbar {
-                    AppToolbarContent(app: self, appState: appState)
-                        .sharedBackgroundVisibility(.hidden)  // menuBarToggle included inside
-                    AppBuildInfo.toolBarItem()
-                        .sharedBackgroundVisibility(.hidden)
-                }
-                .glassEffect(Glass.identity)
-                // ToolbarRightClickMonitor started in AppDelegate.applicationDidFinishLaunching
-                // MARK: - File Transfer Confirmation Dialog
-                .sheet(
-                    isPresented: Binding(
-                        get: { dragDropManager.showConfirmationDialog },
-                        set: { dragDropManager.showConfirmationDialog = $0 }
-                    )
-                ) {
-                    if let operation = dragDropManager.pendingOperation {
-                        FileTransferConfirmationDialog(operation: operation) { action in
-                            Task {
-                                await dragDropManager.executeTransfer(action: action, appState: appState)
-                            }
-                        }
-                    }
-                }
-                // MARK: - Network Neighborhood — handled via NetworkNeighborhoodCoordinator (NSPanel)
-                // No .sheet here — panel opens independently, movable, resizable, persists position
-                // MARK: - Batch Operation Progress Overlay
-                .overlay {
-                    if BatchOperationManager.shared.showProgressDialog,
-                        let state = BatchOperationManager.shared.currentOperation
-                    {
-                        ZStack {
-                            Color.black.opacity(0.2)
-                                .ignoresSafeArea()
-                            BatchProgressDialog(
-                                state: state,
-                                onCancel: {
-                                    BatchOperationManager.shared.cancelCurrentOperation()
-                                },
-                                onDismiss: {
-                                    BatchOperationManager.shared.dismissProgressDialog()
-                                }
-                            )
-                        }
-                        .transition(.opacity)
-                        .animation(.easeOut(duration: 0.15), value: BatchOperationManager.shared.showProgressDialog)
-                    }
-                }
+            mainWindowContent
         }
         .defaultSize(width: 1200, height: 700)
         .defaultPosition(.center)
@@ -187,6 +47,215 @@ struct MiMiNavigatorApp: App {
         .commands {
             AppCommands(appState: appState)
             SettingsCommands()
+        }
+    }
+
+    // MARK: - Main Window Content
+    private var mainWindowContent: some View {
+        DuoFilePanelView()
+            .environment(appState)
+            .environment(dragDropManager)
+            .contextMenuDialogs(coordinator: contextMenuCoordinator, appState: appState)
+            .navigationTitle("MiMiNavigator V \(Self.appVersion)")
+            .onAppear {
+                handleMainWindowAppear()
+            }
+            .onChange(of: scenePhase) {
+                handleScenePhaseChange()
+            }
+            .toolbar {
+                appToolbarContent
+            }
+            .glassEffect(Glass.identity)
+            .sheet(
+                isPresented: Binding(
+                    get: { dragDropManager.showConfirmationDialog },
+                    set: { dragDropManager.showConfirmationDialog = $0 }
+                )
+            ) {
+                if let operation = dragDropManager.pendingOperation {
+                    transferConfirmationDialog(for: operation)
+                }
+            }
+            .overlay {
+                batchProgressOverlay
+            }
+    }
+
+    private var appToolbarContent: some ToolbarContent {
+        Group {
+            AppToolbarContent(app: self, appState: appState)
+                .sharedBackgroundVisibility(.hidden)
+            AppBuildInfo.toolBarItem()
+                .sharedBackgroundVisibility(.hidden)
+        }
+    }
+
+    @ViewBuilder
+    private var batchProgressOverlay: some View {
+        if BatchOperationManager.shared.showProgressDialog,
+            let state = BatchOperationManager.shared.currentOperation
+        {
+            ZStack {
+                Color.black.opacity(0.2)
+                    .ignoresSafeArea()
+                BatchProgressDialog(
+                    state: state,
+                    onCancel: {
+                        BatchOperationManager.shared.cancelCurrentOperation()
+                    },
+                    onDismiss: {
+                        BatchOperationManager.shared.dismissProgressDialog()
+                    }
+                )
+            }
+            .transition(.opacity)
+            .animation(.easeOut(duration: 0.15), value: BatchOperationManager.shared.showProgressDialog)
+        }
+    }
+
+    // MARK: - App Lifecycle Helpers
+    private func handleMainWindowAppear() {
+        restoreMainWindowFrameIfNeeded()
+        bindAppStateIfNeeded()
+        wireCoordinatorCallbacks()
+    }
+
+    private func restoreMainWindowFrameIfNeeded() {
+        guard let win = NSApp.windows.first(where: { !($0 is NSPanel) }) else { return }
+
+        if let savedFrame = StatePersistence.restoreWindowFrame() {
+            win.setFrame(savedFrame, display: true, animate: false)
+            log.info("[App] window frame restored: \(Int(savedFrame.width))x\(Int(savedFrame.height))")
+        }
+
+        win.setFrameAutosaveName("MiMiNavigator.MainWindow")
+    }
+
+    private func bindAppStateIfNeeded() {
+        appDelegate.bind(appState)
+        AppStateProvider.shared = appState
+        showHiddenFiles = UserPreferences.shared.snapshot.showHiddenFiles
+    }
+
+    private func wireCoordinatorCallbacks() {
+        ConnectToServerCoordinator.shared.onDisconnect = {
+            Task { @MainActor in
+                await handleRemoteDisconnect()
+            }
+        }
+
+        ConnectToServerCoordinator.shared.onConnect = { url, password in
+            Task { @MainActor in
+                await handleRemoteConnect(url: url, password: password)
+            }
+        }
+
+        NetworkNeighborhoodCoordinator.shared.onNavigate = { shareURL in
+            Task { @MainActor in
+                await handleNetworkNavigate(shareURL)
+            }
+        }
+    }
+
+    private func handleScenePhaseChange() {
+        if scenePhase == .background {
+            Task {
+                await BookmarkStore.shared.stopAll()
+            }
+        }
+    }
+
+    private func handleRemoteDisconnect() async {
+        if AppState.isRemotePath(appState.leftURL) {
+            await appState.restoreLocalPath(for: FavPanelSide.left)
+        }
+
+        if AppState.isRemotePath(appState.rightURL) {
+            await appState.restoreLocalPath(for: FavPanelSide.right)
+        }
+    }
+
+    private func handleRemoteConnect(url: URL, password: String) async {
+        let side = appState.focusedPanel
+        let connectURL = buildAuthenticatedConnectURL(from: url, password: password)
+        let scheme = url.scheme ?? ""
+
+        log.info("[ConnectToServer] connecting \(scheme)://\(url.host ?? "")")
+
+        if scheme == "smb" || scheme == "afp" {
+            await connectMountedShare(connectURL, for: side)
+            return
+        }
+
+        if scheme == "sftp" || scheme == "ftp" {
+            await connectRemoteProvider(for: side)
+        }
+    }
+
+    private func buildAuthenticatedConnectURL(from url: URL, password: String) -> URL {
+        guard !password.isEmpty,
+            var components = URLComponents(url: url, resolvingAgainstBaseURL: false)
+        else {
+            return url
+        }
+
+        if components.user == nil || components.user?.isEmpty == true {
+            components.user = "guest"
+        }
+        components.password = password
+        return components.url ?? url
+    }
+
+    private func connectMountedShare(_ url: URL, for side: FavPanelSide) async {
+        if let mountedURL = await SMBMounter.shared.mountShare(url) {
+            appState.updatePath(mountedURL, for: side)
+        }
+    }
+
+    private func connectRemoteProvider(for side: FavPanelSide) async {
+        let manager = RemoteConnectionManager.shared
+        guard manager.isConnected, let conn = manager.activeConnection else { return }
+
+        let mountPath = conn.provider.mountPath
+        guard let remoteURL = URL(string: mountPath) else {
+            log.error("[ConnectToServer] bad mountPath URL: \(mountPath)")
+            return
+        }
+
+        appState.updatePath(remoteURL, for: side)
+        await appState.refreshRemoteFiles(for: side)
+    }
+
+    private func handleNetworkNavigate(_ shareURL: URL) async {
+        let side = appState.focusedPanel
+
+        if shareURL.isFileURL {
+            appState.updatePath(shareURL, for: side)
+            NetworkNeighborhoodCoordinator.shared.close()
+            return
+        }
+
+        if let mountedURL = await SMBMounter.shared.mountShare(shareURL) {
+            appState.updatePath(mountedURL, for: side)
+            NetworkNeighborhoodCoordinator.shared.close()
+        }
+    }
+
+    // MARK: - Transfer Confirmation Helpers
+    @ViewBuilder
+    private func transferConfirmationDialog(for operation: FileTransferOperation) -> some View {
+        FileTransferConfirmationDialog(operation: operation) { action in
+            executePendingTransfer(action)
+        }
+    }
+
+    private func executePendingTransfer(_ action: FileTransferAction) {
+        let manager = dragDropManager
+        let state = appState
+
+        Task { @MainActor in
+            await manager.executeTransfer(action: action, appState: state)
         }
     }
 
@@ -299,5 +368,4 @@ struct MiMiNavigatorApp: App {
         log.debug("Settings button clicked")
         SettingsCoordinator.shared.toggle()
     }
-
 }
