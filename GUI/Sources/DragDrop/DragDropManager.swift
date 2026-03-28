@@ -29,6 +29,14 @@ final class DragDropManager {
     /// Currently highlighted drop target folder
     var dropTargetPath: URL?
 
+    private func transferURLs(from files: [CustomFile]) -> [URL] {
+        files.map(\.urlValue)
+    }
+
+    private func destinationIsRemote(_ destination: URL) -> Bool {
+        AppState.isRemotePath(destination)
+    }
+
     // MARK: - Start Drag
     /// Register files being dragged. Called from SwiftUI .onDrag (grid mode) and DragNSView (list mode).
     func startDrag(files: [CustomFile], from panelSide: FavPanelSide) {
@@ -78,12 +86,24 @@ final class DragDropManager {
         from sourcePanelSide: FavPanelSide?
     ) {
         log.debug("[DnD] prepareTransfer: \(files.count) file(s) → \(destination.lastPathComponent)")
-        pendingOperation = FileTransferOperation(
+        pendingOperation = makePendingOperation(
+            files: files,
+            destination: destination,
+            sourcePanelSide: sourcePanelSide
+        )
+        showConfirmationDialog = true
+    }
+
+    private func makePendingOperation(
+        files: [CustomFile],
+        destination: URL,
+        sourcePanelSide: FavPanelSide?
+    ) -> FileTransferOperation {
+        FileTransferOperation(
             sourceFiles: files,
             destinationPath: destination,
             sourcePanelSide: sourcePanelSide
         )
-        showConfirmationDialog = true
     }
 
     // MARK: - Execute Transfer
@@ -128,11 +148,11 @@ final class DragDropManager {
         appState: AppState
     ) async {
         let files = operation.sourceFiles
-        let urls = files.map(\.urlValue)
+        let urls = transferURLs(from: files)
         let dest = operation.destinationPath
         let sourceIsRemote = sourceFilesAreRemote(files)
         let sourceIsLocal = sourceFilesAreLocal(files)
-        let destIsRemote = AppState.isRemotePath(dest)
+        let destIsRemote = destinationIsRemote(dest)
 
         if hasMixedSourceLocality(files) {
             log.error("[DnD] mixed local/remote drag set is not supported")
@@ -172,6 +192,12 @@ final class DragDropManager {
         await refreshAffectedPanels(appState: appState, operation: operation)
     }
 
+    private func fileOperationTitle(for files: [CustomFile]) -> String {
+        let totalSize = files.reduce(Int64(0)) { $0 + $1.sizeInBytes }
+        let sizeString = ByteCountFormatter.string(fromByteCount: totalSize, countStyle: .file)
+        return "⬇ Downloading \(files.count) item(s) — \(sizeString)"
+    }
+
     // MARK: - Remote Download (SFTP/FTP → local)
     private func performRemoteDownload(
         operation: FileTransferOperation,
@@ -186,11 +212,9 @@ final class DragDropManager {
         let provider = conn.provider
         let panel = ProgressPanel.shared
         let files = operation.sourceFiles
-        let totalSize = files.reduce(Int64(0)) { $0 + $1.sizeInBytes }
-        let sizeStr = ByteCountFormatter.string(fromByteCount: totalSize, countStyle: .file)
         panel.showFileOp(
             icon: "arrow.down.doc.fill",
-            title: "⬇ Downloading \(files.count) item(s) — \(sizeStr)",
+            title: fileOperationTitle(for: files),
             itemCount: files.count,
             destination: dest.path
         )
@@ -242,6 +266,15 @@ final class DragDropManager {
         await refreshAffectedPanels(appState: appState, operation: operation)
     }
 
+    private func panelPath(_ side: FavPanelSide, in appState: AppState) -> URL {
+        switch side {
+            case .left:
+                return appState.leftURL
+            case .right:
+                return appState.rightURL
+        }
+    }
+
     // MARK: - Refresh Affected Panels
     /// Refresh only the panels whose directories overlap with source or destination.
     /// Uses Set to avoid double-refreshing the same panel.
@@ -252,20 +285,15 @@ final class DragDropManager {
         }
         var refreshed = Set<FavPanelSide>()
         let destPath = operation.destinationPath.standardizedFileURL.path
-        let leftURL = appState.leftURL
-        let rightURL = appState.rightURL
-        let leftIsRemote = AppState.isRemotePath(leftURL)
-        let rightIsRemote = AppState.isRemotePath(rightURL)
-        if !leftIsRemote {
-            let leftPath = leftURL.standardizedFileURL.path
-            if destPath.hasPrefix(leftPath) || leftPath.hasPrefix(destPath) {
-                refreshed.insert(.left)
+        for side in [FavPanelSide.left, .right] {
+            let panelURL = panelPath(side, in: appState)
+            if AppState.isRemotePath(panelURL) {
+                continue
             }
-        }
-        if !rightIsRemote {
-            let rightPath = rightURL.standardizedFileURL.path
-            if destPath.hasPrefix(rightPath) || rightPath.hasPrefix(destPath) {
-                refreshed.insert(.right)
+
+            let panelPath = panelURL.standardizedFileURL.path
+            if destPath.hasPrefix(panelPath) || panelPath.hasPrefix(destPath) {
+                refreshed.insert(side)
             }
         }
         if let sourceSide = operation.sourcePanelSide {

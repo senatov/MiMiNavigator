@@ -42,8 +42,22 @@ struct BreadCrumbView: View {
         appState.url(for: panelSide)
     }
 
-    private var archiveState: ArchiveState {
-        panelSide == .left ? appState.leftArchiveState : appState.rightArchiveState
+    private var isInsideArchive: Bool {
+        panelSide == .left
+            ? appState.leftArchiveState.isInsideArchive
+            : appState.rightArchiveState.isInsideArchive
+    }
+
+    private var archiveURL: URL? {
+        panelSide == .left
+            ? appState.leftArchiveState.archiveURL
+            : appState.rightArchiveState.archiveURL
+    }
+
+    private var archiveTempDir: URL? {
+        panelSide == .left
+            ? appState.leftArchiveState.archiveTempDir
+            : appState.rightArchiveState.archiveTempDir
     }
 
     private var activeRemoteConnection: RemoteConnection? {
@@ -95,9 +109,9 @@ struct BreadCrumbView: View {
         }
 
         // ── Archive (virtual) ────────────────────────────────────────────────
-        if archiveState.isInsideArchive,
-            let archiveURL = archiveState.archiveURL,
-            let tempDir = archiveState.archiveTempDir
+        if isInsideArchive,
+            let archiveURL,
+            let tempDir = archiveTempDir
         {
             return archiveComponents(
                 currentPath: panelURL.path,
@@ -258,7 +272,7 @@ struct BreadCrumbView: View {
     }
 
     private func archiveTargetPath(for segment: DisplaySegment) -> String? {
-        guard let tempDir = archiveState.archiveTempDir else { return nil }
+        guard let tempDir = archiveTempDir else { return nil }
         guard segment.originalIndex > 0 else { return nil }
 
         let sub = Array(pathComponents[1...segment.originalIndex])
@@ -299,7 +313,7 @@ struct BreadCrumbView: View {
         if AppState.isRemotePath(panelURL) {
             guard let remotePath = remoteTargetPath(for: segment) else { return }
             targetPath = remotePath
-        } else if archiveState.isInsideArchive {
+        } else if isInsideArchive {
             if segment.originalIndex == 0 {
                 Task { await appState.exitArchive(on: panelSide) }
                 return
@@ -316,7 +330,6 @@ struct BreadCrumbView: View {
         }
     }
 
-
     // MARK: - tooltip
     private func tooltip(for segment: DisplaySegment) -> String {
         if AppState.isRemotePath(panelURL) {
@@ -327,7 +340,7 @@ struct BreadCrumbView: View {
             return "📂 /\(parts.joined(separator: "/"))"
         }
 
-        if archiveState.isInsideArchive {
+        if isInsideArchive {
             if segment.originalIndex == 0 {
                 return "📦 \(segment.fullName) — tap to exit archive"
             }
@@ -341,7 +354,8 @@ struct BreadCrumbView: View {
 
     private func remoteCopyPath(for segment: DisplaySegment) -> String {
         if segment.originalIndex == 0 {
-            return activeRemoteConnection
+            return
+                activeRemoteConnection
                 .map { AppState.remoteOrigin(from: $0.provider.mountPath) }
                 ?? segment.fullName
         }
@@ -352,10 +366,10 @@ struct BreadCrumbView: View {
 
     private func archiveCopyPath(for segment: DisplaySegment) -> String {
         if segment.originalIndex == 0 {
-            return archiveState.archiveURL?.path ?? ""
+            return archiveURL?.path ?? ""
         }
 
-        guard let tempDir = archiveState.archiveTempDir else { return "" }
+        guard let tempDir = archiveTempDir else { return "" }
         let sub = Array(pathComponents[1...segment.originalIndex])
         return tempDir.standardizedFileURL.path + "/" + sub.joined(separator: "/")
     }
@@ -366,7 +380,7 @@ struct BreadCrumbView: View {
 
         if AppState.isRemotePath(panelURL) {
             pathToCopy = remoteCopyPath(for: segment)
-        } else if archiveState.isInsideArchive {
+        } else if isInsideArchive {
             pathToCopy = archiveCopyPath(for: segment)
         } else {
             pathToCopy = "/" + pathComponents.prefix(segment.originalIndex + 1).joined(separator: "/")

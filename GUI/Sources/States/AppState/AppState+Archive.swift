@@ -45,12 +45,8 @@ extension AppState {
             await MainActor.run {
                 progressPanel.finish(success: true)
             }
-            var state = archiveState(for: panel)
-            state.enterArchive(archiveURL: archiveURL, tempDir: tempDir)
-            setArchiveState(state, for: panel)
-            tabManager(for: panel).updateActiveTabForArchive(extractedURL: tempDir, archiveURL: archiveURL)
-            updatePath(tempDir, for: panel)
-            await setScannerDirectoryAndRefresh(tempDir.path, for: panel)
+            applyArchiveOpenState(tempDir: tempDir, archiveURL: archiveURL, for: panel)
+            await activateArchiveDirectory(tempDir, for: panel)
             log.info("[AppState] Successfully entered archive: \(archiveURL.lastPathComponent)")
         } catch {
             await MainActor.run {
@@ -86,11 +82,46 @@ extension AppState {
         } catch {
             log.error("[AppState] Error closing archive: \(error.localizedDescription)")
         }
+        clearArchiveOpenState(for: panel)
+        await activateLocalDirectory(parentDirURL, for: panel)
+    }
+
+    // MARK: - Archive Open State
+    @MainActor
+    private func applyArchiveOpenState(tempDir: URL, archiveURL: URL, for panel: FavPanelSide) {
+        var state = archiveState(for: panel)
+        state.enterArchive(archiveURL: archiveURL, tempDir: tempDir)
+        setArchiveState(state, for: panel)
+        tabManager(for: panel).updateActiveTabForArchive(extractedURL: tempDir, archiveURL: archiveURL)
+        updatePath(tempDir, for: panel)
+    }
+
+    @MainActor
+    private func clearArchiveOpenState(for panel: FavPanelSide) {
         var newState = archiveState(for: panel)
         newState.exitArchive()
         setArchiveState(newState, for: panel)
-        updatePath(parentDirURL, for: panel)
-        await setScannerDirectoryAndRefresh(parentDirURL.path, for: panel)
+    }
+
+    private func activateArchiveDirectory(_ tempDir: URL, for panel: FavPanelSide) async {
+        log.info("[AppState] activateArchiveDirectory panel=\(panel) path=\(tempDir.path)")
+        await activateLocalDirectory(tempDir, for: panel)
+    }
+
+    private func activateLocalDirectory(_ directoryURL: URL, for panel: FavPanelSide) async {
+        await MainActor.run {
+            updatePath(directoryURL, for: panel)
+        }
+
+        switch panel {
+            case .left:
+                await scanner.setLeftDirectory(pathStr: directoryURL.path)
+            case .right:
+                await scanner.setRightDirectory(pathStr: directoryURL.path)
+        }
+
+        await scanner.forceRefreshAfterFileOp(side: panel)
+        await refreshFiles(for: panel)
     }
 
     // MARK: - Archive Error Alert
