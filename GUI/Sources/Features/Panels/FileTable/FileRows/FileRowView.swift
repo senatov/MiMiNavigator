@@ -61,13 +61,14 @@ struct FileRowView: View {
     // MARK: - Base content
     @ViewBuilder
     private func baseContent() -> some View {
+        let _ = log.debug(#function)
         if isParentEntry {
             ParentEntryStripView(
                 file: file,
                 isSelected: isSelected,
                 parentURL: file.urlValue,
                 onSelect: onSelect,
-                onDoubleClick: onDoubleClick
+                onActivate: onDoubleClick
             )
         } else {
             normalFileRow

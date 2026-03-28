@@ -209,9 +209,7 @@ final class RemoteConnectionManager {
 
     // MARK: - Remote operations
     func listDirectory(_ path: String) async throws -> [RemoteFileItem] {
-        log.debug("\(#function) path=\(path)")
         log.debug("\(#function) active=\(activeConnection?.displayName ?? "none")")
-
         let connection = try requireActiveConnection()
         let items = try await connection.provider.listDirectory(path)
         updateCurrentPath(path, for: connection.id)
@@ -224,6 +222,7 @@ final class RemoteConnectionManager {
     }
 
     func downloadFile(remotePath: String) async throws -> URL {
+        let _ = log.debug(#function + " active=\(activeConnection?.displayName ?? "none")")
         let connection = try requireActiveConnection()
         log.info("\(#function) '\(remotePath)'")
         return try await connection.provider.downloadFile(remotePath: remotePath)

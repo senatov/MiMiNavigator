@@ -19,6 +19,43 @@ struct FilePanelView: View {
     @Binding var leftPanelWidth: CGFloat
     let onPanelTap: (FavPanelSide) -> Void
 
+    private var panelURL: URL {
+        switch viewModel.panelSide {
+            case .left:
+                return appState.leftURL
+            case .right:
+                return appState.rightURL
+        }
+    }
+
+    private var isRemotePanel: Bool {
+        AppState.isRemotePath(panelURL)
+    }
+
+    private var currentMode: PanelViewMode {
+        viewModeStore.mode(for: viewModel.panelSide)
+    }
+
+    private var rawFiles: [CustomFile] {
+        viewModel.sortedFiles
+    }
+
+    private var files: [CustomFile] {
+        prependParentEntry(to: rawFiles, currentPath: panelURL.path)
+    }
+
+    private var fileContentKey: String {
+        makeFileContentKey(files: files, path: panelURL.path)
+    }
+
+    private var firstNonParentFile: CustomFile? {
+        files.first(where: { !$0.isParentEntry })
+    }
+
+    private var remoteConnectionManager: RemoteConnectionManager {
+        RemoteConnectionManager.shared
+    }
+
     // MARK: - Init
     init(
         selectedSide: FavPanelSide,
@@ -42,59 +79,10 @@ struct FilePanelView: View {
 
     // MARK: - View
     var body: some View {
-        let currentPath = appState.pathURL(for: viewModel.panelSide)
-        let rawFiles = viewModel.sortedFiles
-        let files = prependParentEntry(to: rawFiles, currentPath: currentPath?.path)
-
-        // Generate content-aware key for file table refresh
-        let fileContentKey = makeFileContentKey(files: files, path: currentPath?.path)
-
-        return VStack {
-            // Tab bar (hidden when single tab)
+        VStack {
             TabBarView(panelSide: viewModel.panelSide)
-
-            // Breadcrumb navigation
-            StableKeyView(currentPath?.path ?? "") {
-                PanelBreadcrumbSection(
-                    panelSide: viewModel.panelSide,
-                    currentPath: currentPath,
-                    onPathChange: { newValue in
-                        viewModel.handlePathChange(to: newValue)
-                    }
-                )
-            }
-
-            // File table or thumbnail grid
-            let currentMode = viewModeStore.mode(for: viewModel.panelSide)
-            if currentMode == .thumbnail {
-                ThumbnailGridView(
-                    files: files,
-                    selectedID: selectedIDBinding,
-                    panelSide: viewModel.panelSide,
-                    cellSize: viewModeStore.thumbSize(for: viewModel.panelSide),
-                    onSelect: { file in viewModel.select(file) },
-                    onDoubleClick: { file in handleDoubleClick(file) }
-                )
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else {
-                StableKeyView(fileContentKey) {
-                    PanelFileTableSection(
-                        files: files,
-                        selectedID: selectedIDBinding,
-                        panelSide: viewModel.panelSide,
-                        onPanelTap: onPanelTap,
-                        onSelect: { file in
-                            viewModel.select(file)
-                        },
-                        onDoubleClick: { file in
-                            handleDoubleClick(file)
-                        }
-                    )
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-            }
-
-            // Selection status bar (Total Commander style)
+            breadcrumbSection
+            contentSection
             SelectionStatusBar(panelSide: viewModel.panelSide)
         }
         .padding(.horizontal, DesignTokens.grid)
@@ -108,25 +96,7 @@ struct FilePanelView: View {
         }
         .background(DesignTokens.panelBg)
         .overlay(focusRingOverlay)
-        .overlay {
-            if appState.navigatingPanel == viewModel.panelSide {
-                ZStack {
-                    Color.black.opacity(0.15)
-                    VStack(spacing: 8) {
-                        ProgressView()
-                            .scaleEffect(1.2)
-                            .controlSize(.regular)
-                        Text("Loading…")
-                            .font(.system(size: 11))
-                            .foregroundStyle(.secondary)
-                    }
-                    .padding(16)
-                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 10))
-                }
-                .transition(.opacity)
-                .animation(.easeInOut(duration: 0.15), value: appState.navigatingPanel)
-            }
-        }
+        .overlay { navigationOverlay }
         .controlSize(.regular)
         .contentShape(Rectangle())
         .panelFocus(panelSide: viewModel.panelSide) {
@@ -134,26 +104,113 @@ struct FilePanelView: View {
         }
     }
 
+    // MARK: - View Sections
+    private var breadcrumbSection: some View {
+        StableKeyView(panelURL.path) {
+            PanelBreadcrumbSection(
+                panelSide: viewModel.panelSide,
+                currentPath: panelURL,
+                onPathChange: { newValue in
+                    viewModel.handlePathChange(to: newValue)
+                }
+            )
+        }
+    }
+
+    @ViewBuilder
+    private var contentSection: some View {
+        if currentMode == .thumbnail {
+            thumbnailSection
+        } else {
+            fileTableSection
+        }
+    }
+
+    private var thumbnailSection: some View {
+        ThumbnailGridView(
+            files: files,
+            selectedID: selectedIDBinding,
+            panelSide: viewModel.panelSide,
+            cellSize: viewModeStore.thumbSize(for: viewModel.panelSide),
+            onSelect: { file in viewModel.select(file) },
+            onDoubleClick: handleDoubleClick
+        )
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private var fileTableSection: some View {
+        StableKeyView(fileContentKey) {
+            PanelFileTableSection(
+                files: files,
+                selectedID: selectedIDBinding,
+                panelSide: viewModel.panelSide,
+                onPanelTap: onPanelTap,
+                onSelect: { file in
+                    viewModel.select(file)
+                },
+                onDoubleClick: handleDoubleClick
+            )
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+    }
+
+    @ViewBuilder
+    private var navigationOverlay: some View {
+        if appState.navigatingPanel == viewModel.panelSide {
+            ZStack {
+                Color.black.opacity(0.15)
+                VStack(spacing: 8) {
+                    ProgressView()
+                        .scaleEffect(1.2)
+                        .controlSize(.regular)
+                    Text("Loading…")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                }
+                .padding(16)
+                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 10))
+            }
+            .transition(.opacity)
+            .animation(.easeInOut(duration: 0.15), value: appState.navigatingPanel)
+        }
+    }
+
     // MARK: - Binding to selected file ID
     private var selectedIDBinding: Binding<CustomFile.ID?> {
         Binding<CustomFile.ID?>(
             get: {
-                switch viewModel.panelSide {
-                    case .left: return appState.selectedLeftFile?.id
-                    case .right: return appState.selectedRightFile?.id
-                }
+                selectedFile?.id
             },
             set: { newValue in
                 if newValue == nil {
-                    switch viewModel.panelSide {
-                        case .left: appState.selectedLeftFile = nil
-                        case .right: appState.selectedRightFile = nil
-                    }
+                    clearSelectedFile()
                     appState.selectedDir.selectedFSEntity = nil
                     appState.showFavTreePopup = false
                 }
             }
         )
+    }
+
+    private var selectedFile: CustomFile? {
+        switch viewModel.panelSide {
+            case .left:
+                return appState.selectedLeftFile
+            case .right:
+                return appState.selectedRightFile
+        }
+    }
+
+    private func setSelectedFile(_ file: CustomFile?) {
+        switch viewModel.panelSide {
+            case .left:
+                appState.selectedLeftFile = file
+            case .right:
+                appState.selectedRightFile = file
+        }
+    }
+
+    private func clearSelectedFile() {
+        setSelectedFile(nil)
     }
 
     // MARK: - View mode picker bar — removed (list/grid moved to toolbar, slider to status bar)
@@ -191,12 +248,27 @@ struct FilePanelView: View {
             : nil
     }
 
+    private func canEnterRemoteItem(_ file: CustomFile) -> Bool {
+        file.isDirectory || file.isParentEntry
+    }
+
     // MARK: - Handle double click (archive-aware)
+    private func logRemoteActivation(_ file: CustomFile) {
+        log.debug("[FilePanelView] remote activate name=\(file.nameStr)")
+        log.debug("[FilePanelView] remote activate path=\(file.pathStr)")
+        log.debug("[FilePanelView] remote activate isDir=\(file.isDirectory) isParent=\(file.isParentEntry)")
+    }
+
     private func handleDoubleClick(_ file: CustomFile) {
-        // Remote panels handled locally (no FS access for listing)
-        let panelURL = viewModel.panelSide == .left ? appState.leftURL : appState.rightURL
-        if AppState.isRemotePath(panelURL) {
-            if file.isDirectory { enterRemoteDirectory(file) }
+        let _ = log.debug(#function)
+        if isRemotePanel {
+            logRemoteActivation(file)
+
+            guard canEnterRemoteItem(file) else {
+                log.debug("[FilePanelView] remote activate ignored")
+                return
+            }
+            enterRemoteDirectory(file)
             return
         }
         // Delegate to shared activation logic (same as Enter key)
@@ -205,38 +277,66 @@ struct FilePanelView: View {
 
     // MARK: - Enter remote directory
     private func enterRemoteDirectory(_ file: CustomFile) {
-        let manager = RemoteConnectionManager.shared
-        guard let conn = manager.activeConnection else { return }
-        // file.pathStr for remote items is the full remote path (e.g. "/pub")
-        let newPath = file.pathStr
+        guard let connection = remoteConnectionManager.activeConnection else {
+            log.error("[FilePanelView] enterRemoteDirectory failed: no active remote connection")
+            return
+        }
+        let newPath = file.urlValue.path
+        log.debug("[FilePanelView] remote entry name=\(file.nameStr)")
+        log.debug("[FilePanelView] remote entry isParent=\(file.isParentEntry)")
         log.info("[FilePanelView] enterRemoteDirectory: \(newPath)")
         Task { @MainActor in
             // Update connection's current path and re-list
             do {
-                let items = try await manager.listDirectory(newPath)
-                let files = items.map { CustomFile(remoteItem: $0) }
-                let sorted = appState.applySorting(files)
-                // Build proper remote URL via URL(string:) — never fileURLWithPath for remote
-                let origin = AppState.remoteOrigin(from: conn.provider.mountPath)
+                let items = try await remoteConnectionManager.listDirectory(newPath)
+                let remoteFiles = items.map { CustomFile(remoteItem: $0) }
+                let sortedFiles = appState.applySorting(remoteFiles)
+                let origin = AppState.remoteOrigin(from: connection.provider.mountPath)
                 let sanitized = newPath.hasPrefix("/") ? newPath : "/\(newPath)"
-                let cleanURL = sanitized == "/" ? origin : origin + sanitized
-                appState.updatePath(cleanURL, for: viewModel.panelSide)
-                switch viewModel.panelSide {
-                    case .left:
-                        appState.displayedLeftFiles = sorted
-                        appState.selectedLeftFile = sorted.first(where: { !$0.isParentEntry })
-                    case .right:
-                        appState.displayedRightFiles = sorted
-                        appState.selectedRightFile = sorted.first(where: { !$0.isParentEntry })
+                let cleanURLString = sanitized == "/" ? origin + "/" : origin + sanitized
+                guard let cleanURL = URL(string: cleanURLString) else {
+                    log.error("[FilePanelView] invalid remote URL: \(cleanURLString)")
+                    return
                 }
+                appState.updatePath(cleanURL, for: viewModel.panelSide)
+                applyRemoteFiles(sortedFiles)
             } catch {
                 log.error("[FilePanelView] remote listing failed: \(error.localizedDescription)")
             }
         }
     }
 
+    private func applyRemoteFiles(_ files: [CustomFile]) {
+        let _ = log.debug(#function + ": \(files.count)")
+        let firstNonParent = files.first(where: { !$0.isParentEntry })
+        switch viewModel.panelSide {
+            case .left:
+                appState.displayedLeftFiles = files
+            case .right:
+                appState.displayedRightFiles = files
+        }
+        setSelectedFile(firstNonParent)
+    }
+
     // MARK: - Enter directory
+
+    private func refreshLocalDirectory(_ url: URL) async {
+        let _ = log.debug(#function + ": \(url.path)")
+        appState.updatePath(url, for: viewModel.panelSide)
+        switch viewModel.panelSide {
+            case .left:
+                await appState.scanner.setLeftDirectory(pathStr: url.path)
+                await appState.scanner.refreshFiles(currSide: .left)
+                await appState.refreshLeftFiles()
+            case .right:
+                await appState.scanner.setRightDirectory(pathStr: url.path)
+                await appState.scanner.refreshFiles(currSide: .right)
+                await appState.refreshRightFiles()
+        }
+    }
+
     private func enterDirectory(_ file: CustomFile) {
+        let _ = log.debug(#function)
         let newURL = file.urlValue.resolvingSymlinksInPath()
         let newPath = newURL.path
 
@@ -247,21 +347,13 @@ struct FilePanelView: View {
         }
 
         Task { @MainActor in
-            appState.updatePath(newURL, for: viewModel.panelSide)
-            if viewModel.panelSide == .left {
-                await appState.scanner.setLeftDirectory(pathStr: newURL.path)
-                await appState.scanner.refreshFiles(currSide: .left)
-                await appState.refreshLeftFiles()
-            } else {
-                await appState.scanner.setRightDirectory(pathStr: newURL.path)
-                await appState.scanner.refreshFiles(currSide: .right)
-                await appState.refreshRightFiles()
-            }
+            await refreshLocalDirectory(newURL)
         }
     }
 
     // MARK: - Open file with default app
     private func openFile(_ file: CustomFile) {
+        let _ = log.debug(#function + ": \(file.nameStr)")
         let configuration = NSWorkspace.OpenConfiguration()
         NSWorkspace.shared.open(file.urlValue, configuration: configuration) { app, error in
             if let error = error {
@@ -283,10 +375,10 @@ struct FilePanelView: View {
 
     // MARK: - Prepend ".." parent directory entry
     private func prependParentEntry(to files: [CustomFile], currentPath: String?) -> [CustomFile] {
-        guard let path = currentPath else { return files }
-        // Don't add ".." at the filesystem root
-        let url = URL(fileURLWithPath: path)
-        if url.path == "/" { return files }
+        guard let path = currentPath, path != "/" else {
+            return files
+        }
+
         let parentEntry = ParentDirectoryEntry.make(for: path)
         return [parentEntry] + files
     }
@@ -297,7 +389,7 @@ struct FilePanelView: View {
         components.append(path ?? "nil")
         components.append(String(files.count))
 
-        // Include first few file names to detect content changes
+        // Include first few file names to detect content changes.
         for file in files.prefix(3) {
             components.append(file.nameStr)
         }
