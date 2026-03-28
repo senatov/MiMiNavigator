@@ -38,6 +38,20 @@ enum ColumnWidthPolicy {
 
 
 
+    /// Minimum width for Size column when no real content is available.
+    /// Based on a typical formatted size string ("999,99 MB").
+    /// Prevents Size from collapsing to 24pt when all entries are directories
+    /// with deferred size calculation.
+    static func sizeColumnFallbackWidth() -> CGFloat {
+        let reference = "999,99 MB"
+        let font = NSFont.systemFont(ofSize: 12)
+        let attrs: [NSAttributedString.Key: Any] = [.font: font]
+        let textWidth = (reference as NSString).size(withAttributes: attrs).width
+        return ceil(textWidth + 2 * 5 + singleCharReserve(for: .size))
+    }
+
+
+
     // MARK: - Private
 
     /// Per-column multiplier on `ColumnID.maxWidth`.

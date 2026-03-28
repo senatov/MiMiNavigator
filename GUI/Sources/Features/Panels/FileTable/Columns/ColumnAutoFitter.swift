@@ -93,6 +93,12 @@ enum ColumnAutoFitter {
         let (texts, font) = textSamples(col, files: files)
         let meaningfulTexts = texts.filter(isRealContent)
         guard !meaningfulTexts.isEmpty else {
+            // Size column: use reference width ("999,99 MB") instead of collapsing to 24pt
+            if col == .size {
+                let fallback = ColumnWidthPolicy.sizeColumnFallbackWidth()
+                log.debug("[AutoFit] column=\(col.title) no data yet, fallback=\(pt(fallback))")
+                return fallback
+            }
             log.debug("[AutoFit] column=\(col.title) no meaningful content, width=\(pt(emptyColumnWidth))")
             return emptyColumnWidth
         }
