@@ -30,6 +30,12 @@ final class AppState {
     var leftFilesVersion: Int { leftPanel.filesVersion }
     var rightFilesVersion: Int { rightPanel.filesVersion }
 
+    /// Bump version without replacing the file array — triggers onChange observers.
+    /// Use when in-place mutations (e.g. deferred directory sizes) need to re-trigger autofit.
+    func bumpFilesVersion(for panel: FavPanelSide) {
+        if panel == .left { leftPanel.filesVersion &+= 1 } else { rightPanel.filesVersion &+= 1 }
+    }
+
     // MARK: - Tab Managers
     private(set) var leftTabManager: TabManager!
     private(set) var rightTabManager: TabManager!

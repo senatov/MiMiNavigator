@@ -65,6 +65,10 @@ extension FileRow {
             }
             for await _ in group {}
         }
+        // bump filesVersion so autofit re-triggers with real sizes
+        if file.sizeIsExact {
+            appState.bumpFilesVersion(for: panelSide)
+        }
     }
 
     // MARK: - Phase 1: shallow directory size (fast estimate)

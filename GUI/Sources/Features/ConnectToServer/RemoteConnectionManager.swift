@@ -34,13 +34,11 @@ final class RemoteConnectionManager {
     func connectOnStartIfNeeded() async {
         let servers = RemoteServerStore.shared.servers.filter { $0.connectOnStart }
         guard !servers.isEmpty else { return }
-
-        log.info("[RemoteManager] auto-connecting \(servers.count) server(s)")
-
+        log.info("\(#function) auto-connecting \(servers.count) server(s)")
         for server in servers {
             let password = RemoteServerKeychain.loadPassword(for: server)
             guard !password.isEmpty else {
-                log.warning("[RemoteManager] skip auto-connect '\(server.displayName)' — no saved password")
+                log.warning("\(#function) skip '\(server.displayName)' — no saved pwd")
                 continue
             }
             await connect(to: server, password: password)
@@ -49,10 +47,9 @@ final class RemoteConnectionManager {
 
     // MARK: - Connect
     func connect(to server: RemoteServer, password: String) async {
-        log.info("[RemoteManager] connecting to \(server.displayName) via \(server.remoteProtocol.rawValue)")
-
+        log.info("\(#function) \(server.displayName) via \(server.remoteProtocol.rawValue)")
         if let existing = connection(for: server) {
-            log.warning("[RemoteManager] already connected to \(server.displayName), reusing existing connection")
+            log.warning("\(#function) already connected, reusing")
             activeConnectionID = existing.id
             return
         }
@@ -108,7 +105,7 @@ final class RemoteConnectionManager {
             activeConnectionID = connections.first?.id
         }
 
-        log.info("[RemoteManager] disconnected: \(connection.displayName) id=\(connection.id) remaining=\(connections.count)")
+        log.info("\(#function) \(connection.displayName) remaining=\(connections.count)")
     }
 
     func disconnectAll() async {
@@ -117,7 +114,7 @@ final class RemoteConnectionManager {
         }
         connections.removeAll()
         activeConnectionID = nil
-        log.info("[RemoteManager] all connections closed")
+        log.info("\(#function) all closed")
     }
 
     // MARK: - Active connection
@@ -136,7 +133,7 @@ final class RemoteConnectionManager {
 
     // MARK: - Remote operations
     func listDirectory(_ path: String) async throws -> [RemoteFileItem] {
-        log.debug("[RemoteManager] listDirectory path=\(path) active=\(activeConnection?.displayName ?? "none")")
+        log.debug("\(#function) path=\(path) active=\(activeConnection?.displayName ?? "none")")
         guard let connection = activeConnection else {
             throw RemoteProviderError.notConnected
         }
@@ -152,7 +149,7 @@ final class RemoteConnectionManager {
         guard let connection = activeConnection else {
             throw RemoteProviderError.notConnected
         }
-        log.info("[RemoteManager] downloadFile '\(remotePath)'")
+        log.info("\(#function) '\(remotePath)'")
         return try await connection.provider.downloadFile(remotePath: remotePath)
     }
 

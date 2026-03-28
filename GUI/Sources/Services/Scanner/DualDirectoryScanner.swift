@@ -441,7 +441,7 @@ actor DualDirectoryScanner {
 
                 lastFullScan[currSide] = Date()
                 // populate LRU dir cache for instant re-visits
-                await DirectoryContentCache.shared.store(path: url.path, files: sorted)
+                await DirectoryContentCache.shared.store(path: url.path, files: sorted, showHidden: showHidden)
                 await updateScannedFiles(sorted, for: currSide)
                 await updateFileList(panelSide: currSide, with: sorted)
                 return

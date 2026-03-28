@@ -1,19 +1,9 @@
+// RemoteProviderError.swift
+// MiMiNavigator
 //
-//  RemoteProviderError.swift
-//  MiMiNavigator
-//
-//  Created by Iakov Senatov on 28.03.2026.
-//  Copyright © 2026 Senatov. All rights reserved.
-//
-
-
-//
-//  RemoteProviderError.swift
-//  MiMiNavigator
-//
-//  Created by Iakov Senatov on 28.03.2026.
-//  Copyright © 2026 Senatov. All rights reserved.
-//
+// Created by Iakov Senatov on 28.03.2026.
+// Copyright © 2026 Senatov. All rights reserved.
+// Description: Error types for remote file providers (SFTP, FTP, SMB, AFP).
 
 import Foundation
 
