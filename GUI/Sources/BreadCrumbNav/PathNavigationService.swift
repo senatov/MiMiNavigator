@@ -27,7 +27,6 @@ final class PathNavigationService {
             }
             return existing
         }
-
         let instance = PathNavigationService(appState: appState)
         _shared = instance
         return instance
@@ -44,7 +43,7 @@ final class PathNavigationService {
     }
 
     private func parseTarget(from input: String) -> NavigationTarget? {
-        let trimmed = input.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmed = parsedInput(input)
         guard !trimmed.isEmpty else { return nil }
 
         // Remote URLs: keep as URL(string:) and pass absoluteString to scanner.
@@ -83,33 +82,21 @@ final class PathNavigationService {
     }
 
     private func makeRemoteTarget(from remoteURL: URL) -> NavigationTarget {
-        NavigationTarget(urlForAppState: remoteURL, pathForScanner: remoteURL.absoluteString)
+        makeNavigationTarget(url: remoteURL, scannerPath: remoteURL.absoluteString)
     }
 
     private func localFileURL(from input: String) -> URL {
         let expanded = (input as NSString).expandingTildeInPath
-
         if let url = URL(string: expanded), url.isFileURL {
             return url
         }
-
         return URL(fileURLWithPath: expanded)
     }
 
     private func makeLocalTarget(from input: String) -> NavigationTarget {
         let fileURL = localFileURL(from: input)
         let normalizedDirURL = normalizeToDirectory(fileURL)
-        return NavigationTarget(urlForAppState: normalizedDirURL, pathForScanner: normalizedDirURL.path)
-    }
-
-    private func localFileURL(from input: String) -> URL {
-        let expanded = (input as NSString).expandingTildeInPath
-
-        if let url = URL(string: expanded), url.isFileURL {
-            return url
-        }
-
-        return URL(fileURLWithPath: expanded)
+        return makeNavigationTarget(url: normalizedDirURL, scannerPath: normalizedDirURL.path)
     }
 
     private func isRemoteTarget(_ target: NavigationTarget) -> Bool {
@@ -117,12 +104,20 @@ final class PathNavigationService {
         return isRemoteURL(url)
     }
 
+    private func parsedInput(_ input: String) -> String {
+        input.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private func makeNavigationTarget(url: URL, scannerPath: String) -> NavigationTarget {
+        NavigationTarget(urlForAppState: url, pathForScanner: scannerPath)
+    }
+
     // MARK: - Public API
 
     /// Navigate to a new path (used by breadcrumb, manual input, etc.)
     func navigate(to path: String, side: FavPanelSide) async {
         guard let target = parseTarget(from: path) else {
-            log.warning("[PathNav] invalid input: '\(path)'")
+            logInvalidInput(path)
             return
         }
         guard validate(target: target) else {
@@ -135,11 +130,12 @@ final class PathNavigationService {
             await navigateToRemoteTarget(target, side: side)
             return
         }
+        // Local: update AppState + scanner + refresh as before.
+        await applyLocalTarget(target, side: side)
+    }
 
-        // Local: update AppState + scanner + refresh as before
-        appState.updatePath(target.urlForAppState, for: side)
-        await setDirectory(path: target.pathForScanner, side: side)
-        await refresh(side: side)
+    private func logInvalidInput(_ path: String) {
+        log.warning("[PathNav] invalid input: '\(path)'")
     }
 
     private func navigateToRemoteTarget(_ target: NavigationTarget, side: FavPanelSide) async {
@@ -161,6 +157,12 @@ final class PathNavigationService {
         }
 
         return isValidLocalDirectoryPath(target.pathForScanner)
+    }
+
+    private func applyLocalTarget(_ target: NavigationTarget, side: FavPanelSide) async {
+        appState.updatePath(target.urlForAppState, for: side)
+        await setDirectory(path: target.pathForScanner, side: side)
+        await refresh(side: side)
     }
 
     // MARK: - Scanner integration
