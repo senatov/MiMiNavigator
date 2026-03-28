@@ -16,7 +16,7 @@ struct ParentEntryStripView: View {
     let isSelected: Bool
     let parentURL: URL
     let onSelect: (CustomFile) -> Void
-    let onDoubleClick: (CustomFile) -> Void
+    let onActivate: (CustomFile) -> Void
     private var label: String { "\(parentName)   (\(rowsCount) dirs)" }
     private let textColor = Color(#colorLiteral(red: 0.25, green: 0.25, blue: 0.27, alpha: 1))
     private let borderColor = Color(#colorLiteral(red: 0.55, green: 0.55, blue: 0.58, alpha: 1))
@@ -25,6 +25,10 @@ struct ParentEntryStripView: View {
 
     private var parentName: String {
         parentURL.path == "/" ? "/Root" : parentURL.path
+    }
+
+    private var countTaskID: String {
+        "\(parentURL.path)-\(showHidden)"
     }
 
     @State private var rowsCount: Int = 0
@@ -46,21 +50,45 @@ struct ParentEntryStripView: View {
     // MARK: - Body
     var body: some View {
         GeometryReader { geo in
-            ZStack(alignment: .leading) {
-                Color.white
-                pathLabel(geo: geo)
-                pebbleButton(geo: geo)
-                bottomBorder
-            }
+            stripContent(geo: geo)
         }
         .frame(maxWidth: .infinity)
         .frame(height: UI.stripHeight)
+        .contentShape(Rectangle())
         .zIndex(10)
-        .onHover { h in withAnimation(.easeInOut(duration: 0.10)) { isHovering = h } }
-        // Single tap on the strip itself = navigate to parent (same as double-click in TC)
-        // The pebble button also triggers onDoubleClick directly
-        .onTapGesture { onDoubleClick(file) }
-        .task(id: "\(parentURL.path)-\(showHidden)") { await loadParentCount() }
+        .onAppear { logRenderState() }
+        .onChange(of: isHovering) { _, _ in logRenderState() }
+        .onHover { handleHoverChange($0) }
+        .highPriorityGesture(
+            TapGesture().onEnded {
+                activateParentNavigation()
+            }
+        )
+        .task(id: countTaskID) {
+            await loadParentCount()
+        }
+    }
+
+
+    // MARK: - Strip Content
+    private func stripContent(geo: GeometryProxy) -> some View {
+        ZStack(alignment: .leading) {
+            Color.white
+            pathLabel(geo: geo)
+            pebbleButton(geo: geo)
+            bottomBorder
+        }
+    }
+
+    // MARK: - View State
+    private func logRenderState() {
+        log.debug("[ParentEntryStripView] render sel=\(isSelected) hov=\(isHovering)")
+    }
+
+    private func handleHoverChange(_ isHoveringNow: Bool) {
+        withAnimation(.easeInOut(duration: 0.10)) {
+            isHovering = isHoveringNow
+        }
     }
 
 
@@ -80,7 +108,7 @@ struct ParentEntryStripView: View {
         let btnStyle = LiquidGlassButtonStyle(isHighlighted: pebbleActive)
         return VStack(spacing: 0) {
             HStack(spacing: 0) {
-                Button(action: { onDoubleClick(file) }) {
+                Button(action: activateParentNavigation) {
                     Image(systemName: pebbleActive ? "arrowshape.turn.up.left.fill" : "arrowshape.turn.up.left")
                         .font(.system(size: 11, weight: .semibold))
                         .foregroundColor(btnStyle.iconColor)
@@ -119,6 +147,18 @@ struct ParentEntryStripView: View {
     }
 
 
+    // MARK: - Parent Navigation
+    private func activateParentNavigation() {
+        log.debug("[ParentEntryStripView] activate parent path=\(parentURL.path)")
+        onSelect(file)
+
+        Task { @MainActor in
+            log.debug("[ParentEntryStripView] navigate parent path=\(parentURL.path)")
+            onActivate(file)
+        }
+    }
+
+
     // MARK: - Load Parent Directory Count
     private func loadParentCount() async {
         let url = parentURL
@@ -126,7 +166,13 @@ struct ParentEntryStripView: View {
         let count = await Task.detached(priority: .utility) {
             Self.countSubdirectories(in: url, showHidden: hidden)
         }.value
-        await MainActor.run { rowsCount = count }
+        await updateRowsCount(count)
+    }
+
+    private func updateRowsCount(_ count: Int) async {
+        await MainActor.run {
+            rowsCount = count
+        }
     }
 
 

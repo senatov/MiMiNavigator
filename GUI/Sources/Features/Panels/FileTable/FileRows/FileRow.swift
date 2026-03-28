@@ -244,6 +244,7 @@ struct FileRow: View, Equatable {
 
     // MARK: - Event Handlers
     private func handleSingleClick() {
+        let _ = log.debug(#function)
         // Detect modifier keys from current NSEvent
         let modifiers = Self.currentClickModifiers()
         log.debug("[FileRow] single-click on '\(file.nameStr)' panel=\(panelSide) modifiers=\(modifiers)")
@@ -258,6 +259,7 @@ struct FileRow: View, Equatable {
         guard let flags = NSApp.currentEvent?.modifierFlags.intersection(.deviceIndependentFlagsMask) else {
             return .none
         }
+        let _ = log.debug(#function)
         if flags.contains(.command) { return .command }
         if flags.contains(.shift) { return .shift }
         return .none

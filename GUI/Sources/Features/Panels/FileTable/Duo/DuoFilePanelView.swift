@@ -23,6 +23,7 @@ struct DuoFilePanelView: View {
     private enum Layout {
         static let dividerHitAreaWidth: CGFloat = 24
         static let minPanelWidth: CGFloat = 80
+        static let defaultBackingScale: CGFloat = 2.0
     }
 
     // MARK: - Body
@@ -60,7 +61,8 @@ struct DuoFilePanelView: View {
     @ViewBuilder
     private var progressOverlay: some View {
         if BatchOperationManager.shared.showProgressDialog,
-           let state = BatchOperationManager.shared.currentOperation {
+            let state = BatchOperationManager.shared.currentOperation
+        {
             ZStack {
                 Color.black.opacity(0.3)
                     .ignoresSafeArea()
@@ -89,13 +91,21 @@ struct DuoFilePanelView: View {
                 fetchFiles: fetchFiles
             )
             .onAppear {
-                handleInitialLayout(containerWidth: geometry.size.width)
+                handleGeometryAppear(width: geometry.size.width)
             }
             .onChange(of: geometry.size.width) { oldWidth, newWidth in
-                handleResize(oldWidth: oldWidth, newWidth: newWidth)
+                handleGeometryWidthChange(oldWidth: oldWidth, newWidth: newWidth)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private func handleGeometryAppear(width: CGFloat) {
+        handleInitialLayout(containerWidth: width)
+    }
+
+    private func handleGeometryWidthChange(oldWidth: CGFloat, newWidth: CGFloat) {
+        handleResize(oldWidth: oldWidth, newWidth: newWidth)
     }
 
     private func onAppear() {
@@ -121,11 +131,25 @@ struct DuoFilePanelView: View {
         guard isInitialized, oldWidth > 0 else { return }
 
         let ratio = leftPanelWidth / oldWidth
-        let newLeftWidth = calculateConstrainedWidth(
+        leftPanelWidth = calculateConstrainedWidth(
             proposed: newWidth * ratio,
             containerWidth: newWidth
         )
-        leftPanelWidth = newLeftWidth
+    }
+
+    private var screenScale: CGFloat {
+        NSScreen.main?.backingScaleFactor ?? Layout.defaultBackingScale
+    }
+
+    private func persistedLeftPanelWidth() -> CGFloat? {
+        let savedWidth = MiMiDefaults.shared.double(forKey: "leftPanelWidth")
+        guard savedWidth > 0 else { return nil }
+        return CGFloat(savedWidth)
+    }
+
+    private func defaultInitialPanelWidth(containerWidth: CGFloat) -> CGFloat {
+        let halfCenter = (containerWidth / 2.0 * screenScale).rounded() / screenScale
+        return halfCenter - Layout.dividerHitAreaWidth / 2
     }
 
     // MARK: - Actions Helper
@@ -161,18 +185,15 @@ extension DuoFilePanelView {
             log.warning("\(#function) containerWidth is 0, deferring initialization")
             return
         }
-        let scale = NSScreen.main?.backingScaleFactor ?? 2.0
-        // Use persisted divider position if available
-        let proposed: CGFloat
-        let savedWidth = MiMiDefaults.shared.double(forKey: "leftPanelWidth")
-        if savedWidth > 0 {
-            proposed = CGFloat(savedWidth)
+
+        let proposed = persistedLeftPanelWidth() ?? defaultInitialPanelWidth(containerWidth: containerWidth)
+
+        if persistedLeftPanelWidth() != nil {
             log.info("\(#function) restoring saved divider from MiMiDefaults: \(Int(proposed))")
         } else {
-            let halfCenter = (containerWidth / 2.0 * scale).rounded() / scale
-            proposed = halfCenter - Layout.dividerHitAreaWidth / 2
             log.info("\(#function) no saved divider, using 50/50: \(Int(proposed))")
         }
+
         leftPanelWidth = calculateConstrainedWidth(
             proposed: proposed,
             containerWidth: containerWidth
@@ -182,8 +203,7 @@ extension DuoFilePanelView {
 
     private func calculateConstrainedWidth(proposed: CGFloat, containerWidth: CGFloat) -> CGFloat {
         let maxWidth = containerWidth - Layout.minPanelWidth - Layout.dividerHitAreaWidth
-        let scale = NSScreen.main?.backingScaleFactor ?? 2.0
-        let snapped = (proposed * scale).rounded() / scale
+        let snapped = (proposed * screenScale).rounded() / screenScale
         let result = min(max(snapped, Layout.minPanelWidth), maxWidth)
         log.debug("\(#function) proposed=\(Int(proposed)) max=\(Int(maxWidth)) → result=\(Int(result))")
         return result
@@ -194,6 +214,7 @@ extension DuoFilePanelView {
 extension DuoFilePanelView {
     private func setupKeyboardHandler() {
         log.debug("\(#function)")
+        let actions = actions
         let handler = DuoFilePanelKeyboardHandler(appState: appState)
         handler.onView = { actions.performView() }
         handler.onEdit = { actions.performEdit() }

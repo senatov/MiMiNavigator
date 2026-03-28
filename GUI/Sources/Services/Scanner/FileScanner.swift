@@ -47,18 +47,24 @@ enum FileScanner {
     /// Safe to call from any thread (no UI access).
     static func scan(url: URL, showHiddenFiles: Bool = false) throws -> [CustomFile] {
         let startTime = CFAbsoluteTimeGetCurrent()
+        log.debug("[FileScanner] scan: \(url.path)")
+
         let fileManager = FileManager.default
+
         // Hard stop for unreadable directories — do not attempt enumeration.
         if !fileManager.isReadableFile(atPath: url.path) {
             log.debug("[FileScanner] unreadable directory skipped: \(url.path)")
             return []
         }
+
         // Volume paths need hidden files visible (BSD UF_HIDDEN flag hides backup content)
         let isVolumePath = url.path.hasPrefix("/Volumes/") && url.path != "/Volumes"
         let effectiveShowHidden = showHiddenFiles || isVolumePath
         let options: FileManager.DirectoryEnumerationOptions = effectiveShowHidden ? [] : [.skipsHiddenFiles]
+
         var isDirectory: ObjCBool = false
         let exists = fileManager.fileExists(atPath: url.path, isDirectory: &isDirectory)
+
         guard exists else {
             log.error("[FileScanner] path disappeared before scan: \(url.path)")
             throw NSError(
@@ -69,6 +75,7 @@ enum FileScanner {
         }
 
         guard isDirectory.boolValue else {
+            log.error("[FileScanner] scan() expected directory but received file: \(url.path)")
             throw NSError(
                 domain: NSCocoaErrorDomain,
                 code: NSFileReadUnknownError,
@@ -93,14 +100,16 @@ enum FileScanner {
             log.error("[FileScanner] contentsOfDirectory FAILED: \(error.localizedDescription)")
             throw error
         }
+
         // Build CustomFile array using pre-fetched resource values (no extra stat per file)
         var result: [CustomFile] = []
         result.reserveCapacity(contents.count)
+
         for fileURL in contents {
             let file: CustomFile
 
             if let rv = try? fileURL.resourceValues(forKeys: prefetchKeySet),
-                rv.fileSecurity != nil || rv.contentModificationDate != nil
+               rv.fileSecurity != nil || rv.contentModificationDate != nil
             {
                 // Batch-prefetched resource values are valid — fast path
                 file = CustomFile(url: fileURL, resourceValues: rv)
@@ -113,6 +122,7 @@ enum FileScanner {
 
             result.append(file)
         }
+
         result.sort(by: groupedNameComparator)
         let elapsed = CFAbsoluteTimeGetCurrent() - startTime
         log.debug("[FileScanner] scan done: \(result.count) items in \(String(format: "%.3f", elapsed))s")
@@ -137,10 +147,10 @@ enum FileScanner {
             log.debug("[FileScanner] incremental unreadable skipped: \(url.path)")
             return
         }
+
         let isVolumePath = url.path.hasPrefix("/Volumes/") && url.path != "/Volumes"
         let effectiveShowHidden = showHiddenFiles || isVolumePath
-        let options: FileManager.DirectoryEnumerationOptions =
-            effectiveShowHidden
+        let options: FileManager.DirectoryEnumerationOptions = effectiveShowHidden
             ? [.skipsSubdirectoryDescendants, .skipsPackageDescendants]
             : [.skipsHiddenFiles, .skipsSubdirectoryDescendants, .skipsPackageDescendants]
 
@@ -165,7 +175,7 @@ enum FileScanner {
 
                 let file: CustomFile
                 if let rv = try? fileURL.resourceValues(forKeys: prefetchKeySet),
-                    rv.fileSecurity != nil || rv.contentModificationDate != nil
+                   rv.fileSecurity != nil || rv.contentModificationDate != nil
                 {
                     file = CustomFile(url: fileURL, resourceValues: rv)
                 } else {
@@ -204,13 +214,11 @@ enum FileScanner {
         // Fallback for filesystems that don't support directoryEntryCountKey
         let fm = FileManager()
         let options: FileManager.DirectoryEnumerationOptions = showHiddenFiles ? [] : [.skipsHiddenFiles]
-        return
-            (try? fm.contentsOfDirectory(
-                at: url,
-                includingPropertiesForKeys: nil,
-                options: options
-            )
-            .count) ?? 0
+        return (try? fm.contentsOfDirectory(
+            at: url,
+            includingPropertiesForKeys: nil,
+            options: options
+        ).count) ?? 0
     }
 
     /// Computes recursive size for an .app bundle or any directory URL.

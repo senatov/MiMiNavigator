@@ -92,11 +92,13 @@ final class DragDropManager {
             log.error("[DnD] executeTransfer called with no pending op")
             return
         }
+
         defer {
             pendingOperation = nil
             showConfirmationDialog = false
             endDrag()
         }
+
         switch action {
             case .abort:
                 log.debug("[DnD] transfer aborted")
@@ -108,24 +110,55 @@ final class DragDropManager {
     }
 
     // MARK: - Perform File Operation
+    private func sourceFilesAreRemote(_ files: [CustomFile]) -> Bool {
+        !files.isEmpty && files.allSatisfy { AppState.isRemotePath($0.urlValue) }
+    }
+
+    private func sourceFilesAreLocal(_ files: [CustomFile]) -> Bool {
+        !files.isEmpty && files.allSatisfy { !AppState.isRemotePath($0.urlValue) }
+    }
+
+    private func hasMixedSourceLocality(_ files: [CustomFile]) -> Bool {
+        !files.isEmpty && !sourceFilesAreRemote(files) && !sourceFilesAreLocal(files)
+    }
+
     private func performFileOp(
         _ kind: FileTransferAction,
         operation: FileTransferOperation,
         appState: AppState
     ) async {
-        let urls = operation.sourceFiles.map(\.urlValue)
+        let files = operation.sourceFiles
+        let urls = files.map(\.urlValue)
         let dest = operation.destinationPath
-        // Remote → local: download via RemoteConnectionManager
-        let sourceIsRemote = operation.sourceFiles.contains { AppState.isRemotePath($0.urlValue) }
+        let sourceIsRemote = sourceFilesAreRemote(files)
+        let sourceIsLocal = sourceFilesAreLocal(files)
         let destIsRemote = AppState.isRemotePath(dest)
+
+        if hasMixedSourceLocality(files) {
+            log.error("[DnD] mixed local/remote drag set is not supported")
+            return
+        }
+
         if sourceIsRemote && !destIsRemote {
             await performRemoteDownload(operation: operation, appState: appState)
             return
         }
-        if destIsRemote {
+
+        if sourceIsLocal && destIsRemote {
             log.warning("[DnD] upload to remote not yet implemented")
             return
         }
+
+        if sourceIsRemote && destIsRemote {
+            log.warning("[DnD] remote to remote transfer not yet implemented")
+            return
+        }
+
+        guard sourceIsLocal && !destIsRemote else {
+            log.error("[DnD] invalid transfer routing state")
+            return
+        }
+
         log.info("[DnD] \(kind) \(urls.count) item(s) → \(dest.lastPathComponent)")
         do {
             switch kind {

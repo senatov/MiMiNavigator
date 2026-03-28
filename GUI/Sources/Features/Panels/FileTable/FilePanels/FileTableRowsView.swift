@@ -19,47 +19,69 @@ struct FileTableRowsView: View {
     let handleDirectoryAction: (DirectoryAction, CustomFile) -> Void
     let handleMultiSelectionAction: (MultiSelectionAction) -> Void
 
+    // Centralized helpers for selection and display
+    private var currentSelectedID: CustomFile.ID? {
+        selectedID
+    }
+
+    private var displayRows: [CustomFile] {
+        makeDisplayRows(from: rows)
+    }
+
     var body: some View {
-        // Snapshot to avoid multiple binding reads during render
-        let currentSelectedID = selectedID
-        // Ensure a single visible parent row ("..")
-        let displayRows: [CustomFile] = {
-            var out: [CustomFile] = []
-            out.reserveCapacity(rows.count)
-            var seenParent = false
-            for f in rows {
-                let isParent = isParentRow(f)
-                if isParent {
-                    if seenParent {
-                        continue
-                    }
-                    seenParent = true
-                }
-                out.append(f)
-            }
-            return out
-        }()
         VStack(spacing: 0) {
-            LazyVStack(alignment: .leading, spacing: 0) {
-                ForEach(Array(displayRows.enumerated()), id: \.offset) { (i, file) in
-                    let isSelected = isRowSelected(file: file, currentSelectedID: currentSelectedID)
-                    let isParent = isParentRow(file)
-                    SizeAwareRow(
-                        id: file.id,
-                        isSelected: isSelected,
-                        layoutVersion: layout.layoutVersion,
-                        sizeVersion: file.sizeVersion,
-                        isParent: isParent
-                    ) {
-                        rowContent(index: i, file: file, isSelected: isSelected)
-                            .id(file.id)
-                    }
-                }
-            }
-            // Give the last row 1px breathing room inside scroll content so the bottom border won't be clipped.
-            Color.clear.frame(height: onePixel)
+            rowsStack
+            bottomBreathingSpace
         }
         .transaction { $0.disablesAnimations = true }
+    }
+    // MARK: - View Sections
+    private var rowsStack: some View {
+        LazyVStack(alignment: .leading, spacing: 0) {
+            ForEach(Array(displayRows.enumerated()), id: \.offset) { index, file in
+                sizeAwareRow(index: index, file: file)
+            }
+        }
+    }
+
+    private var bottomBreathingSpace: some View {
+        Color.clear.frame(height: onePixel)
+    }
+
+    @ViewBuilder
+    private func sizeAwareRow(index: Int, file: CustomFile) -> some View {
+        let isSelected = isRowSelected(file: file, currentSelectedID: currentSelectedID)
+        let isParent = isParentRow(file)
+
+        SizeAwareRow(
+            id: file.id,
+            isSelected: isSelected,
+            layoutVersion: layout.layoutVersion,
+            sizeVersion: file.sizeVersion,
+            isParent: isParent
+        ) {
+            rowContent(index: index, file: file, isSelected: isSelected)
+                .id(file.id)
+        }
+    }
+
+    private func makeDisplayRows(from rows: [CustomFile]) -> [CustomFile] {
+        var output: [CustomFile] = []
+        output.reserveCapacity(rows.count)
+        var seenParent = false
+
+        for file in rows {
+            let isParent = isParentRow(file)
+            if isParent && seenParent {
+                continue
+            }
+            if isParent {
+                seenParent = true
+            }
+            output.append(file)
+        }
+
+        return output
     }
 
     // MARK: - Selection Check
@@ -75,13 +97,16 @@ struct FileTableRowsView: View {
         // whether selectedID matches any real file. If not — parent is selected.
         // Parent entry ("..") — detect by exclusion (selectedID does not belong to any real file)
         if isParentRow(file) {
-            let isRealFileSelected = rows.contains { f in
-                !isParentRow(f) && f.id == currentSelectedID
-            }
-            return !isRealFileSelected
+            return !hasSelectedRealFile(currentSelectedID)
         }
 
         return false
+    }
+
+    private func hasSelectedRealFile(_ selectedID: CustomFile.ID) -> Bool {
+        rows.contains { file in
+            !isParentRow(file) && file.id == selectedID
+        }
     }
 
     // MARK: - Parent Row Detection
@@ -101,7 +126,7 @@ struct FileTableRowsView: View {
                 isSelected: isSelected,
                 parentURL: parentUrl,
                 onSelect: onSelect,
-                onDoubleClick: onDoubleClick
+                onActivate: onDoubleClick
             )
         } else {
             FileRow(
