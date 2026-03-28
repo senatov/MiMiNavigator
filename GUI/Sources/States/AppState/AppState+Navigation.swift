@@ -31,7 +31,8 @@ extension AppState {
         multiSelectionManager?.resetAnchor(for: panel)
 
         // --- Instant cache hit: show stale listing immediately, refresh in bg ---
-        if let cached = await DirectoryContentCache.shared.lookup(newPath) {
+        let showHidden = UserPreferences.shared.snapshot.showHiddenFiles
+        if let cached = await DirectoryContentCache.shared.lookup(newPath, showHidden: showHidden) {
             log.info("[Navigate] \(panel): cache HIT (\(cached.files.count) items, stale=\(cached.isStale))")
             if panel == .left { displayedLeftFiles = cached.files } else { displayedRightFiles = cached.files }
             if let f = firstRealFile(in: cached.files) { setSelectedFile(f, for: panel) }
@@ -43,7 +44,7 @@ extension AppState {
                 // store fresh data in cache
                 let fresh = self.displayedFiles(for: panel)
                 if !fresh.isEmpty {
-                    await DirectoryContentCache.shared.store(path: newPath, files: fresh)
+                    await DirectoryContentCache.shared.store(path: newPath, files: fresh, showHidden: showHidden)
                 }
             }
             return
@@ -66,14 +67,14 @@ extension AppState {
             let files = displayedFiles(for: panel)
             if !files.isEmpty && PathUtils.areEqual(path(for: panel), newPath) {
                 log.info("[Navigate] \(panel): SUCCESS on attempt \(attempt), \(files.count) files")
-                await DirectoryContentCache.shared.store(path: newPath, files: files)
+                await DirectoryContentCache.shared.store(path: newPath, files: files, showHidden: showHidden)
                 return
             }
             if PathUtils.areEqual(path(for: panel), newPath),
                Self.isReadableDirectory(newPath)
             {
                 log.info("[Navigate] \(panel): empty but readable dir accepted (attempt \(attempt))")
-                await DirectoryContentCache.shared.store(path: newPath, files: files)
+                await DirectoryContentCache.shared.store(path: newPath, files: files, showHidden: showHidden)
                 return
             }
             if attempt < maxAttempts {

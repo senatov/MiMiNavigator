@@ -17,6 +17,7 @@ extension AppState {
         UserPreferences.shared.snapshot.showHiddenFiles.toggle()
         UserPreferences.shared.save()
         log.info("[Settings] showHiddenFiles → \(UserPreferences.shared.snapshot.showHiddenFiles)")
+        Task { await DirectoryContentCache.shared.invalidateForHiddenToggle() }
         forceRefreshBothPanels()
     }
 

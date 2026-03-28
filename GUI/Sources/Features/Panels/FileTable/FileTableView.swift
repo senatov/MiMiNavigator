@@ -64,6 +64,8 @@ struct FileTableView: View {
     @State private var lastAutoFitPath: String = ""
     /// Container width at last autoFit — re-fit when delta > threshold
     @State private var lastAutoFitWidth: CGFloat = 0
+    /// Pending autofit task — waits for all sizes to settle before running
+    @State private var pendingAutoFitTask: Task<Void, Never>?
 
     /// Throttle for PgUp/PgDown — prevents overwhelming with rapid keypresses
     private let pageNavThrottle = KeypressThrottle(interval: 0.08)  // 80ms between page navigations
@@ -208,6 +210,7 @@ struct FileTableView: View {
             .onReceive(jumpToLastPublisher, perform: handleJumpToLast)
             .onDisappear {
                 spinnerTask?.cancel()
+                pendingAutoFitTask?.cancel()
             }
     }
 
@@ -334,28 +337,73 @@ struct FileTableView: View {
 
     private func handleFilesVersionChange(_: Int) {
         recomputeSortedCache()
-        autoFitColumnsIfEnabled()
+        scheduleAutoFitIfNeeded()
     }
 
-    /// Trigger content-aware column resize on directory change only.
-    private func autoFitColumnsIfEnabled() {
+    // MARK: - Deferred AutoFit: wait for background sizes, then fit
+
+    /// True when every directory in current panel has a resolved size.
+    /// Reads live from appState (not captured `files` snapshot).
+    private var allSizesResolved: Bool {
+        let liveFiles = appState.displayedFiles(for: panelSide)
+        return liveFiles.allSatisfy { file in
+            guard file.isDirectory else { return true }
+            if file.sizeIsExact { return true }
+            if file.securityState == .restricted { return true }
+            if file.cachedDirectorySize != nil { return true }
+            return false
+        }
+    }
+
+    /// Schedule a deferred autofit that waits until all dir sizes are resolved.
+    /// Cancels any previously pending autofit (new navigation supersedes old).
+    /// Runs up to 3 passes with ~2s delay between them for progressive refinement.
+    private func scheduleAutoFitIfNeeded() {
         guard UserPreferences.shared.snapshot.autoFitColumnsOnNavigate else { return }
         let currentPath = appState.path(for: panelSide)
+        // Already running or completed for this path — skip
         guard currentPath != lastAutoFitPath else { return }
+        // Cancel previous task if navigated to a new dir before it finished
+        if let existing = pendingAutoFitTask, !existing.isCancelled {
+            existing.cancel()
+        }
+        // Mark path immediately to prevent re-entry from subsequent bumps
         lastAutoFitPath = currentPath
-        lastAutoFitWidth = layout.containerWidth
-        ColumnAutoFitter.autoFitAll(layout: layout, files: files)
+        pendingAutoFitTask = Task { @MainActor in
+            // pass 1: wait until all sizes resolved (poll every 500ms, max 30s)
+            for _ in 0..<60 {
+                if Task.isCancelled { return }
+                if allSizesResolved { break }
+                try? await Task.sleep(for: .milliseconds(500))
+            }
+            if Task.isCancelled { return }
+            let liveFiles = appState.displayedFiles(for: panelSide)
+            lastAutoFitWidth = layout.containerWidth
+            ColumnAutoFitter.autoFitAll(layout: layout, files: liveFiles)
+            log.debug("[AutoFit] deferred pass=1 panel=\(panelSide) files=\(liveFiles.count)")
+            // pass 2: re-fit after 2s (late arrivals, app bundle sizes)
+            try? await Task.sleep(for: .seconds(2))
+            if Task.isCancelled { return }
+            ColumnAutoFitter.autoFitAll(layout: layout, files: appState.displayedFiles(for: panelSide))
+            log.debug("[AutoFit] deferred pass=2 panel=\(panelSide)")
+            // pass 3: final re-fit after another 2s (very slow dirs)
+            try? await Task.sleep(for: .seconds(2))
+            if Task.isCancelled { return }
+            ColumnAutoFitter.autoFitAll(layout: layout, files: appState.displayedFiles(for: panelSide))
+            log.debug("[AutoFit] deferred pass=3 panel=\(panelSide)")
+        }
     }
 
     /// Re-fit columns when panel width changes.
     /// Small jitter (<8pt) is ignored to avoid layout thrash.
     private func handleContainerWidthChange(_ newWidth: CGFloat) {
         guard UserPreferences.shared.snapshot.autoFitColumnsOnNavigate else { return }
-        guard !files.isEmpty else { return }
+        let liveFiles = appState.displayedFiles(for: panelSide)
+        guard !liveFiles.isEmpty else { return }
         let delta = abs(newWidth - lastAutoFitWidth)
         guard delta > 8 else { return }
         lastAutoFitWidth = newWidth
-        ColumnAutoFitter.autoFitAll(layout: layout, files: files)
+        ColumnAutoFitter.autoFitAll(layout: layout, files: liveFiles)
     }
 
     private func handleSortChange<T>(_: T) {
