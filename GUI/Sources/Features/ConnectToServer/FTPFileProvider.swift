@@ -154,6 +154,21 @@ final class FTPFileProvider: RemoteFileProvider, @unchecked Sendable {
         try await curlDownload(url: fileURL, to: localURL)
     }
 
+    @concurrent func uploadToRemote(localPath: String, remotePath: String, recursive: Bool) async throws {
+        log.warning("[FTP] upload not supported yet local='\(localPath)' remote='\(remotePath)' recursive=\(recursive)")
+        throw RemoteProviderError.notImplemented
+    }
+
+    @concurrent func createDirectory(at remotePath: String) async throws {
+        log.warning("[FTP] mkdir not supported yet path='\(remotePath)'")
+        throw RemoteProviderError.notImplemented
+    }
+
+    @concurrent func deleteItem(at remotePath: String, recursive: Bool) async throws {
+        log.warning("[FTP] delete not supported yet path='\(remotePath)' recursive=\(recursive)")
+        throw RemoteProviderError.notImplemented
+    }
+
     private func curlDownload(url: URL, to localURL: URL) async throws {
         try await withCheckedThrowingContinuation { (cont: CheckedContinuation<Void, Error>) in
             DispatchQueue.global(qos: .userInitiated)

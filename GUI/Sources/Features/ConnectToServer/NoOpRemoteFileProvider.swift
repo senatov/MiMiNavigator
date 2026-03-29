@@ -33,5 +33,17 @@ final class NoOpRemoteFileProvider: RemoteFileProvider, @unchecked Sendable {
         throw RemoteProviderError.notImplemented
     }
 
+    @concurrent func uploadToRemote(localPath: String, remotePath: String, recursive: Bool) async throws {
+        throw RemoteProviderError.notImplemented
+    }
+
+    @concurrent func createDirectory(at remotePath: String) async throws {
+        throw RemoteProviderError.notImplemented
+    }
+
+    @concurrent func deleteItem(at remotePath: String, recursive: Bool) async throws {
+        throw RemoteProviderError.notImplemented
+    }
+
     @concurrent func disconnect() async {}
 }

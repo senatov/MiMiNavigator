@@ -84,7 +84,7 @@ final class NetworkNeighborhoodCoordinator {
         PanelTitleHelper.applyIconTitle(to: panel, systemImage: "rectangle.connected.to.line.below", title: "Network Neighborhood")
         panel.toolbarStyle = .unified
         panel.animationBehavior = .utilityWindow
-        panel.isMovableByWindowBackground = true
+        panel.isMovableByWindowBackground = false
         panel.hidesOnDeactivate = false
         panel.level = .normal
         panel.tabbingMode = .disallowed

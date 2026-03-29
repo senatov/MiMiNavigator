@@ -20,5 +20,8 @@ protocol RemoteFileProvider: AnyObject, Sendable {
     @concurrent func downloadFile(remotePath: String) async throws -> URL
     /// Downloads file or directory to a specific local path. `recursive` enables dir tree copy.
     @concurrent func downloadToLocal(remotePath: String, localPath: String, recursive: Bool) async throws
+    @concurrent func uploadToRemote(localPath: String, remotePath: String, recursive: Bool) async throws
+    @concurrent func createDirectory(at remotePath: String) async throws
+    @concurrent func deleteItem(at remotePath: String, recursive: Bool) async throws
     @concurrent func disconnect() async
 }

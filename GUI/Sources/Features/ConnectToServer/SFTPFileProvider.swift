@@ -2,11 +2,12 @@
 // MiMiNavigator
 //
 // Copyright © 2026 Senatov. All rights reserved.
-// Description: SFTP via Citadel (NIOSSH) — connect, list, download, disconnect.
+// Description: SFTP via Citadel (NIOSSH) — connect, list, download, upload, mkdir, delete, disconnect.
 //   Extracted from RemoteFileProvider.swift for clean code / single responsibility.
 
 import FileModelKit
 import Foundation
+import NIOCore
 
 #if canImport(Citadel)
 import Citadel
@@ -33,6 +34,75 @@ final class SFTPFileProvider: RemoteFileProvider, @unchecked Sendable {
             throw RemoteProviderError.notConnected
         }
         return client
+    }
+
+    private func requireSSHClient(function: String = #function) throws -> SSHClient {
+        guard let client = sshClient, isConnected else {
+            log.warning("[SFTP] \(function) failed: SSH client not connected")
+            throw RemoteProviderError.notConnected
+        }
+        return client
+    }
+
+
+    // MARK: - Upload to Remote
+
+    @concurrent func uploadToRemote(localPath: String, remotePath: String, recursive: Bool) async throws {
+        let sftp = try requireSFTPClient()
+        let localURL = URL(fileURLWithPath: localPath)
+        let normalizedRemotePath = normalizeRemotePath(remotePath)
+
+        var isDirectory: ObjCBool = false
+        guard FileManager.default.fileExists(atPath: localURL.path, isDirectory: &isDirectory) else {
+            throw NSError(
+                domain: "SFTPFileProvider",
+                code: 1001,
+                userInfo: [NSLocalizedDescriptionKey: "Local path does not exist: \(localPath)"]
+            )
+        }
+
+        if isDirectory.boolValue {
+            guard recursive else {
+                throw NSError(
+                    domain: "SFTPFileProvider",
+                    code: 1002,
+                    userInfo: [NSLocalizedDescriptionKey: "Directory upload requires recursive=true"]
+                )
+            }
+            log.info("[SFTP] recursive upload '\(localPath)' → '\(normalizedRemotePath)'")
+            try await uploadDirectory(from: localURL, to: normalizedRemotePath, sftp: sftp)
+            return
+        }
+
+        log.info("[SFTP] upload '\(localPath)' → '\(normalizedRemotePath)'")
+        try await uploadRegularFile(from: localURL, to: normalizedRemotePath, sftp: sftp)
+    }
+
+
+
+    // MARK: - Create Directory
+
+    @concurrent func createDirectory(at remotePath: String) async throws {
+        let sftp = try requireSFTPClient()
+        let normalizedRemotePath = normalizeRemotePath(remotePath)
+
+        log.info("[SFTP] mkdir '\(normalizedRemotePath)'")
+        try await sftp.createDirectory(atPath: normalizedRemotePath)
+    }
+
+
+
+    // MARK: - Delete Remote Item
+
+    @concurrent func deleteItem(at remotePath: String, recursive: Bool = true) async throws {
+        _ = try requireSFTPClient()
+        let ssh = try requireSSHClient()
+        let normalizedRemotePath = normalizeRemotePath(remotePath)
+        let escapedPath = shellEscapedPath(normalizedRemotePath)
+
+        let command = recursive ? "rm -rf -- \(escapedPath)" : "rm -f -- \(escapedPath)"
+        log.info("[SFTP] delete '\(normalizedRemotePath)' recursive=\(recursive)")
+        _ = try await ssh.executeCommand(command, mergeStreams: true)
     }
 
     private func updateConnectedSession(sshClient: SSHClient, sftpClient: SFTPClient, mountPath: String) {
@@ -180,6 +250,11 @@ final class SFTPFileProvider: RemoteFileProvider, @unchecked Sendable {
 
     // MARK: - Private helpers
 
+    private func shellEscapedPath(_ path: String) -> String {
+        let escaped = path.replacingOccurrences(of: "'", with: "'\\''")
+        return "'\(escaped)'"
+    }
+
     private func normalizeRemotePath(_ path: String) -> String {
         let trimmedPath = path.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedPath.isEmpty else { return "/" }
@@ -240,6 +315,33 @@ final class SFTPFileProvider: RemoteFileProvider, @unchecked Sendable {
     }
 
 
+    private func ensureRemoteParentDirectoryExists(for remotePath: String, sftp: SFTPClient) async throws {
+        let normalizedRemotePath = normalizeRemotePath(remotePath)
+        let parentPath = (normalizedRemotePath as NSString).deletingLastPathComponent
+        let normalizedParentPath = normalizeRemotePath(parentPath)
+
+        guard normalizedParentPath != normalizedRemotePath, normalizedParentPath != "/" else { return }
+
+        let components = normalizedParentPath
+            .split(separator: "/")
+            .map(String.init)
+
+        var currentPath = ""
+        for component in components {
+            currentPath += "/\(component)"
+            do {
+                try await sftp.createDirectory(atPath: currentPath)
+            } catch {
+                // Ignore "already exists"-style failures; a later write will reveal real problems.
+            }
+        }
+    }
+
+    private func localFileData(at localURL: URL) throws -> Data {
+        try Data(contentsOf: localURL)
+    }
+
+
 
     private func downloadRegularFile(from remotePath: String, to localURL: URL, sftp: SFTPClient) async throws {
         try ensureParentDirectoryExists(for: localURL)
@@ -271,6 +373,7 @@ final class SFTPFileProvider: RemoteFileProvider, @unchecked Sendable {
     private func downloadDirectory(from remotePath: String, to localURL: URL, sftp: SFTPClient) async throws {
         try FileManager.default.createDirectory(at: localURL, withIntermediateDirectories: true)
         let entries = try await listDirectory(normalizeRemotePath(remotePath))
+
         for entry in entries {
             let childRemotePath = fullRemotePath(name: entry.name, in: remotePath)
             let childLocalURL = localURL.appendingPathComponent(entry.name, isDirectory: entry.isDirectory)
@@ -278,6 +381,48 @@ final class SFTPFileProvider: RemoteFileProvider, @unchecked Sendable {
                 try await downloadDirectory(from: childRemotePath, to: childLocalURL, sftp: sftp)
             } else {
                 try await downloadRegularFile(from: childRemotePath, to: childLocalURL, sftp: sftp)
+            }
+        }
+    }
+
+    private func uploadRegularFile(from localURL: URL, to remotePath: String, sftp: SFTPClient) async throws {
+        try await ensureRemoteParentDirectoryExists(for: remotePath, sftp: sftp)
+        let data = try localFileData(at: localURL)
+        let buffer = ByteBuffer(data: data)
+        let normalizedRemotePath = normalizeRemotePath(remotePath)
+
+        try await sftp.withFile(
+            filePath: normalizedRemotePath,
+            flags: [.read, .write, .forceCreate]
+        ) { file in
+            try await file.write(buffer, at: 0)
+        }
+    }
+
+    private func uploadDirectory(from localURL: URL, to remotePath: String, sftp: SFTPClient) async throws {
+        let normalizedRemotePath = normalizeRemotePath(remotePath)
+
+        do {
+            try await sftp.createDirectory(atPath: normalizedRemotePath)
+        } catch {
+            // Ignore if it already exists; subsequent uploads will fail if the path is unusable.
+        }
+
+        let childURLs = try FileManager.default.contentsOfDirectory(
+            at: localURL,
+            includingPropertiesForKeys: [.isDirectoryKey],
+            options: [.skipsHiddenFiles]
+        )
+
+        for childURL in childURLs {
+            let childName = childURL.lastPathComponent
+            let childRemotePath = appendRemoteComponent(childName, to: normalizedRemotePath)
+            let resourceValues = try childURL.resourceValues(forKeys: [.isDirectoryKey])
+
+            if resourceValues.isDirectory == true {
+                try await uploadDirectory(from: childURL, to: childRemotePath, sftp: sftp)
+            } else {
+                try await uploadRegularFile(from: childURL, to: childRemotePath, sftp: sftp)
             }
         }
     }
@@ -312,6 +457,18 @@ final class SFTPFileProvider: RemoteFileProvider, @unchecked Sendable {
     }
 
     @concurrent func downloadToLocal(remotePath: String, localPath: String, recursive: Bool) async throws {
+        throw RemoteProviderError.notImplemented
+    }
+
+    @concurrent func uploadToRemote(localPath: String, remotePath: String, recursive: Bool) async throws {
+        throw RemoteProviderError.notImplemented
+    }
+
+    @concurrent func createDirectory(at remotePath: String) async throws {
+        throw RemoteProviderError.notImplemented
+    }
+
+    @concurrent func deleteItem(at remotePath: String, recursive: Bool = true) async throws {
         throw RemoteProviderError.notImplemented
     }
 

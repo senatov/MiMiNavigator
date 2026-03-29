@@ -42,6 +42,7 @@ struct ConnectToServerView: View {
     @Namespace private var focusNamespace
     @State private var isDividerHovered: Bool = false
     @State private var isDividerDragging: Bool = false
+    @State private var isDividerCursorActive: Bool = false
 
     private enum FormField: Hashable {
         case name, host, port, remotePath, user, password, keyPath
@@ -120,9 +121,11 @@ struct ConnectToServerView: View {
             restoreSidebarWidth()
             selectFirst()
         }
-        .onKeyPress(.escape) {
+        .onDisappear {
+            releaseDividerCursorIfNeeded()
+        }
+        .onExitCommand {
             onDismiss?()
-            return .handled
         }
         .overlay { saveAlertOverlay }
     }
@@ -805,6 +808,18 @@ struct ConnectToServerView: View {
         }
     }
 
+    private func activateDividerCursorIfNeeded() {
+        guard !isDividerCursorActive else { return }
+        NSCursor.resizeLeftRight.push()
+        isDividerCursorActive = true
+    }
+
+    private func releaseDividerCursorIfNeeded() {
+        guard isDividerCursorActive else { return }
+        NSCursor.pop()
+        isDividerCursorActive = false
+    }
+
     // MARK: - Split Layout
     private func resolvedSidebarWidth(totalWidth: CGFloat) -> CGFloat {
         let maxAllowed = max(
@@ -836,21 +851,19 @@ struct ConnectToServerView: View {
                     .glassEffect()
             }
             .contentShape(Rectangle())
-            .onContinuousHover { phase in
-                switch phase {
-                    case .active:
-                        NSCursor.resizeLeftRight.push()
-                    case .ended:
-                        NSCursor.pop()
-                }
-            }
             .onHover { hovering in
                 isDividerHovered = hovering
+                if hovering {
+                    activateDividerCursorIfNeeded()
+                } else if !isDividerDragging {
+                    releaseDividerCursorIfNeeded()
+                }
             }
             .gesture(
                 DragGesture(minimumDistance: 0)
                     .onChanged { value in
                         isDividerDragging = true
+                        activateDividerCursorIfNeeded()
                         let maxAllowed = max(
                             Layout.minSidebarWidth,
                             min(Layout.maxSidebarWidth, totalWidth - Layout.minContentWidth - Layout.dividerVisualWidth)
@@ -865,6 +878,9 @@ struct ConnectToServerView: View {
                         sidebarWidth = resolvedSidebarWidth(totalWidth: totalWidth)
                         lastCommittedSidebarWidth = sidebarWidth
                         persistSidebarWidth(sidebarWidth)
+                        if !isDividerHovered {
+                            releaseDividerCursorIfNeeded()
+                        }
                     }
             )
             .onTapGesture(count: 2) {

@@ -52,6 +52,7 @@ struct DuoFilePanelView: View {
         .onChange(of: leftPanelWidth) { _, newValue in
             guard newValue > 0, isInitialized else { return }
             MiMiDefaults.shared.set(newValue, forKey: "leftPanelWidth")
+            MiMiDefaults.shared.set(savedLeftPanelRatio(for: newValue), forKey: "leftPanelWidthRatio")
         }
         .overlay {
             progressOverlay
@@ -130,9 +131,13 @@ struct DuoFilePanelView: View {
     private func handleResize(oldWidth: CGFloat, newWidth: CGFloat) {
         guard isInitialized, oldWidth > 0 else { return }
 
-        let ratio = leftPanelWidth / oldWidth
+        let oldAvailableWidth = availablePanelWidth(containerWidth: oldWidth)
+        let newAvailableWidth = availablePanelWidth(containerWidth: newWidth)
+        guard oldAvailableWidth > 0, newAvailableWidth > 0 else { return }
+
+        let ratio = min(max(leftPanelWidth / oldAvailableWidth, 0), 1)
         leftPanelWidth = calculateConstrainedWidth(
-            proposed: newWidth * ratio,
+            proposed: newAvailableWidth * ratio,
             containerWidth: newWidth
         )
     }
@@ -141,15 +146,35 @@ struct DuoFilePanelView: View {
         NSScreen.main?.backingScaleFactor ?? Layout.defaultBackingScale
     }
 
-    private func persistedLeftPanelWidth() -> CGFloat? {
+    private func availablePanelWidth(containerWidth: CGFloat) -> CGFloat {
+        max(containerWidth - Layout.dividerHitAreaWidth, Layout.minPanelWidth * 2)
+    }
+
+    private func savedLeftPanelRatio(for width: CGFloat) -> CGFloat {
+        let availableWidth = availablePanelWidth(containerWidth: max(width + Layout.dividerHitAreaWidth, 1))
+        guard availableWidth > 0 else { return 0.5 }
+        return min(max(width / availableWidth, 0), 1)
+    }
+
+    private func persistedLeftPanelRatio() -> CGFloat? {
+        let savedRatio = MiMiDefaults.shared.double(forKey: "leftPanelWidthRatio")
+        guard savedRatio > 0, savedRatio < 1 else { return nil }
+        return CGFloat(savedRatio)
+    }
+
+    private func persistedLeftPanelWidth(containerWidth: CGFloat) -> CGFloat? {
+        if let savedRatio = persistedLeftPanelRatio() {
+            return availablePanelWidth(containerWidth: containerWidth) * savedRatio
+        }
+
         let savedWidth = MiMiDefaults.shared.double(forKey: "leftPanelWidth")
         guard savedWidth > 0 else { return nil }
         return CGFloat(savedWidth)
     }
 
     private func defaultInitialPanelWidth(containerWidth: CGFloat) -> CGFloat {
-        let halfCenter = (containerWidth / 2.0 * screenScale).rounded() / screenScale
-        return halfCenter - Layout.dividerHitAreaWidth / 2
+        let halfCenter = (availablePanelWidth(containerWidth: containerWidth) / 2.0 * screenScale).rounded() / screenScale
+        return halfCenter
     }
 
     // MARK: - Actions Helper
@@ -186,9 +211,9 @@ extension DuoFilePanelView {
             return
         }
 
-        let proposed = persistedLeftPanelWidth() ?? defaultInitialPanelWidth(containerWidth: containerWidth)
+        let proposed = persistedLeftPanelWidth(containerWidth: containerWidth) ?? defaultInitialPanelWidth(containerWidth: containerWidth)
 
-        if persistedLeftPanelWidth() != nil {
+        if persistedLeftPanelWidth(containerWidth: containerWidth) != nil {
             log.info("\(#function) restoring saved divider from MiMiDefaults: \(Int(proposed))")
         } else {
             log.info("\(#function) no saved divider, using 50/50: \(Int(proposed))")

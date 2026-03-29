@@ -78,7 +78,7 @@ final class PanelDialogCoordinator: NSObject, NSWindowDelegate {
         PanelTitleHelper.applyIconTitle(to: newPanel, systemImage: windowImage, title: windowTitle)
         newPanel.toolbarStyle = .unified
         newPanel.animationBehavior = .default
-        newPanel.isMovableByWindowBackground = true
+        newPanel.isMovableByWindowBackground = false
         newPanel.hidesOnDeactivate = false
         newPanel.level = .normal
         newPanel.tabbingMode = .disallowed

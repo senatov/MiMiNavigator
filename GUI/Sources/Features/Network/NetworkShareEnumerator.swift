@@ -76,6 +76,35 @@ enum NetworkShareEnumerator {
         credentials.map { "\($0.user)@\($0.server)" }
     }
 
+    private static func logKeychainLookupStart(host: NetworkHost, serverVariants: [String]) {
+        log.info("[Keychain] lookup host='\(host.name)' variants=\(serverVariants)")
+    }
+
+    private static func logKeychainLookupMiss(server: String, status: OSStatus) {
+        log.debug("[Keychain] miss server='\(server)' status=\(status)")
+    }
+
+    private static func logKeychainLookupHit(server: String, itemCount: Int) {
+        log.debug("[Keychain] hit server='\(server)' items=\(itemCount)")
+    }
+
+
+    private static func logCredentialCandidates(_ credentials: [KeychainCred]) {
+        log.debug("[Keychain] resolved creds=\(credentialSummary(credentials))")
+    }
+
+    private static func logHostnameVariants(host: NetworkHost, variants: [String]) {
+        log.debug("[ShareEnum] hostnameVariants host='\(host.name)' -> \(variants)")
+    }
+
+    private static func logCredentialItemRejected(server: String, account: String, hasPassword: Bool) {
+        log.debug("[Keychain] reject server='\(server)' account='\(account)' hasPassword=\(hasPassword)")
+    }
+
+    private static func logDuplicateCredentialSkipped(server: String, account: String) {
+        log.debug("[Keychain] duplicate skipped server='\(server)' account='\(account)'")
+    }
+
     private static func logShareAttempt(hostname: String, user: String?) {
         let authLabel = diagnosticCredentialLabel(user: user, server: hostname)
         log.debug("[ShareEnum] trying \(authLabel)")
@@ -143,6 +172,7 @@ enum NetworkShareEnumerator {
     @concurrent static func shares(for host: NetworkHost) async -> [NetworkShare] {
         let scheme = host.serviceType.urlScheme
         let hostnameCandidates = hostnameVariants(host)
+        logHostnameVariants(host: host, variants: hostnameCandidates)
         let credentials = keychainCredentials(for: host)
 
         guard shouldUseSmbUtil(for: host) else {
@@ -153,6 +183,7 @@ enum NetworkShareEnumerator {
         log.info("[ShareEnum] host='\(host.name)' localhost=\(host.isLocalhost)")
         log.debug("[ShareEnum] candidates=\(hostnameCandidates)")
         log.debug("[ShareEnum] creds=\(credentialSummary(credentials))")
+        log.debug("[ShareEnum] candidateCount=\(hostnameCandidates.count) credentialCount=\(credentials.count)")
 
         guard !hostnameCandidates.isEmpty else {
             log.warning("[ShareEnum] no hostname candidates for '\(host.name)'")
@@ -256,6 +287,7 @@ enum NetworkShareEnumerator {
     // MARK: - Load all Keychain internet passwords for this host
     static func keychainCredentials(for host: NetworkHost) -> [KeychainCred] {
         let serverVariants = keychainServerVariants(for: host)
+        logKeychainLookupStart(host: host, serverVariants: serverVariants)
 
         var results: [KeychainCred] = []
         var seen = Set<String>()
@@ -273,8 +305,11 @@ enum NetworkShareEnumerator {
             guard status == errSecSuccess,
                   let array = items as? [[CFString: Any]]
             else {
+                logKeychainLookupMiss(server: server, status: status)
                 continue
             }
+
+            logKeychainLookupHit(server: server, itemCount: array.count)
 
             for item in array {
                 let account = item[kSecAttrAccount] as? String ?? ""
@@ -285,17 +320,22 @@ enum NetworkShareEnumerator {
                       account != "No user account",
                       !password.isEmpty
                 else {
+                    logCredentialItemRejected(server: server, account: account, hasPassword: !password.isEmpty)
                     continue
                 }
 
                 let key = "\(account.lowercased()):\(password):\(server.lowercased())"
-                guard seen.insert(key).inserted else { continue }
+                guard seen.insert(key).inserted else {
+                    logDuplicateCredentialSkipped(server: server, account: account)
+                    continue
+                }
 
                 results.append(KeychainCred(user: account, password: password, server: server))
                 log.debug("[Keychain] found \(account)@\(server)")
             }
         }
 
+        logCredentialCandidates(results)
         return results
     }
 
@@ -329,6 +369,7 @@ enum NetworkShareEnumerator {
                 let target = smbUtilTarget(hostname: hostname, user: user, password: password)
                 let maskedTarget = maskedSmbUtilTarget(hostname: hostname, user: user)
                 let credentialLabel = diagnosticCredentialLabel(user: user, server: hostname)
+                log.debug("[smbutil] begin auth=\(credentialLabel) target=\(maskedTarget)")
 
                 let process = Process()
                 process.executableURL = URL(fileURLWithPath: smbUtilPath)

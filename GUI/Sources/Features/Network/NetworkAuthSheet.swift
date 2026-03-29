@@ -18,6 +18,7 @@ struct NetworkAuthSheet: View {
     @State private var username: String = ""
     @State private var password: String = ""
     @State private var isSaving: Bool = false
+    @State private var isPasswordVisible: Bool = false
     @FocusState private var focusedField: Field?
 
     private var canConfirm: Bool {
@@ -32,15 +33,20 @@ struct NetworkAuthSheet: View {
 
     // MARK: - Layout
     private enum Layout {
-        static let dialogWidth: CGFloat = 360
-        static let cornerRadius: CGFloat = 12
+        static let dialogWidth: CGFloat = 380
+        static let cornerRadius: CGFloat = 14
         static let sectionPaddingH: CGFloat = 14
         static let sectionPaddingV: CGFloat = 14
         static let rowSpacing: CGFloat = 8
-        static let fieldLabelWidth: CGFloat = 64
+        static let fieldLabelWidth: CGFloat = 72
         static let sectionSpacing: CGFloat = 10
         static let hostIconSize: CGFloat = 32
         static let hostBadgeCornerRadius: CGFloat = 7
+        static let contentInset: CGFloat = 10
+        static let buttonSpacing: CGFloat = 10
+        static let passwordToggleWidth: CGFloat = 32
+        static let passwordFieldSpacing: CGFloat = 8
+        static let sectionVerticalPadding: CGFloat = 12
     }
     private enum Glass {
         static let cardCornerRadius: CGFloat = 14
@@ -48,6 +54,20 @@ struct NetworkAuthSheet: View {
         static let borderOpacity: Double = 0.12
         static let hoverTintOpacity: Double = 0.10
         static let sectionTintOpacity: Double = 0.06
+        static let accentTintOpacity: Double = 0.08
+        static let fieldTintOpacity: Double = 0.08
+    }
+
+    private var passwordPrompt: String {
+        "Required"
+    }
+
+    private var passwordToggleSymbol: String {
+        isPasswordVisible ? "eye.slash" : "eye"
+    }
+
+    private var passwordToggleAccessibilityLabel: String {
+        isPasswordVisible ? "Hide password" : "Show password"
     }
 
     // MARK: - Glass Styling
@@ -72,6 +92,19 @@ struct NetworkAuthSheet: View {
     }
 
     @ViewBuilder
+    private var passwordToggleBackground: some View {
+        RoundedRectangle(cornerRadius: Glass.controlCornerRadius, style: .continuous)
+            .fill(.clear)
+            .glassEffect(.regular.tint(Color.white.opacity(Glass.fieldTintOpacity)))
+    }
+
+    @ViewBuilder
+    private var passwordToggleBorder: some View {
+        RoundedRectangle(cornerRadius: Glass.controlCornerRadius, style: .continuous)
+            .strokeBorder(Color.white.opacity(Glass.borderOpacity), lineWidth: 0.8)
+    }
+
+    @ViewBuilder
     private func sectionBackground(tint: Color = Color.white.opacity(Glass.sectionTintOpacity)) -> some View {
         RoundedRectangle(cornerRadius: Glass.cardCornerRadius, style: .continuous)
             .fill(.clear)
@@ -88,7 +121,7 @@ struct NetworkAuthSheet: View {
     private var fieldBackground: some View {
         RoundedRectangle(cornerRadius: Glass.controlCornerRadius, style: .continuous)
             .fill(.clear)
-            .glassEffect(.regular.tint(Color.white.opacity(0.08)))
+            .glassEffect(.regular.tint(Color.white.opacity(Glass.fieldTintOpacity)))
     }
 
     @ViewBuilder
@@ -143,7 +176,7 @@ struct NetworkAuthSheet: View {
                 }
             VStack(alignment: .leading, spacing: 2) {
                 Text("Connect to \"\(host.name)\"")
-                    .font(.subheadline.weight(.light))
+                    .font(.headline.weight(.semibold))
                 Text(host.hostName)
                     .font(.caption2)
                     .foregroundStyle(.secondary)
@@ -155,7 +188,11 @@ struct NetworkAuthSheet: View {
                     .foregroundStyle(.secondary)
                     .padding(.horizontal, 7)
                     .padding(.vertical, 3)
-                    .background(hostBadgeBackground)
+                    .background {
+                        Capsule()
+                            .fill(.clear)
+                            .glassEffect(.regular.tint(Color.white.opacity(Glass.accentTintOpacity)))
+                    }
                     .overlay {
                         Capsule()
                             .strokeBorder(Color.white.opacity(Glass.borderOpacity), lineWidth: 0.8)
@@ -178,7 +215,7 @@ struct NetworkAuthSheet: View {
 
         func body(content: Content) -> some View {
             content
-                .padding(.horizontal, 10)
+                .padding(.horizontal, Layout.contentInset)
                 .padding(.top, topPadding)
                 .padding(.bottom, bottomPadding)
         }
@@ -187,22 +224,8 @@ struct NetworkAuthSheet: View {
     // MARK: - Input fields
     private var fieldsSection: some View {
         VStack(spacing: Layout.sectionSpacing) {
-            fieldRow(label: "Username", systemImage: "person") {
-                glassField {
-                    TextField("guest", text: $username)
-                        .textFieldStyle(.plain)
-                        .focused($focusedField, equals: .username)
-                        .onSubmit { focusedField = .password }
-                }
-            }
-            fieldRow(label: "Password", systemImage: "lock") {
-                glassField {
-                    SecureField("Required", text: $password)
-                        .textFieldStyle(.plain)
-                        .focused($focusedField, equals: .password)
-                        .onSubmit { confirm() }
-                }
-            }
+            usernameRow
+            passwordRow
         }
         .padding(.horizontal, Layout.sectionPaddingH)
         .padding(.vertical, Layout.sectionPaddingV)
@@ -214,6 +237,61 @@ struct NetworkAuthSheet: View {
         .modifier(HostCardContainer(topPadding: 0, bottomPadding: 0))
     }
 
+    private var usernameRow: some View {
+        fieldRow(label: "Username", systemImage: "person") {
+            glassField {
+                TextField("guest", text: $username)
+                    .textFieldStyle(.plain)
+                    .focused($focusedField, equals: .username)
+                    .onSubmit { focusedField = .password }
+            }
+        }
+    }
+
+    private var passwordRow: some View {
+        fieldRow(label: "Password", systemImage: "lock") {
+            HStack(spacing: Layout.passwordFieldSpacing) {
+                passwordInputField
+                passwordVisibilityButton
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var passwordInputField: some View {
+        glassField {
+            if isPasswordVisible {
+                TextField(passwordPrompt, text: $password)
+                    .textFieldStyle(.plain)
+                    .focused($focusedField, equals: .password)
+                    .onSubmit { confirm() }
+            } else {
+                SecureField(passwordPrompt, text: $password)
+                    .textFieldStyle(.plain)
+                    .focused($focusedField, equals: .password)
+                    .onSubmit { confirm() }
+            }
+        }
+    }
+
+    private var passwordVisibilityButton: some View {
+        Button {
+            isPasswordVisible.toggle()
+            focusedField = .password
+        } label: {
+            Image(systemName: passwordToggleSymbol)
+                .font(.system(size: 12, weight: .semibold))
+                .frame(width: Layout.passwordToggleWidth, height: 30)
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(.secondary)
+        .background(passwordToggleBackground)
+        .overlay(passwordToggleBorder)
+        .clipShape(RoundedRectangle(cornerRadius: Glass.controlCornerRadius, style: .continuous))
+        .help(passwordToggleAccessibilityLabel)
+        .accessibilityLabel(passwordToggleAccessibilityLabel)
+    }
+
     // MARK: - Single labeled field row
     @ViewBuilder
     private func fieldRow(label: String, systemImage: String, @ViewBuilder content: () -> some View) -> some View {
@@ -223,7 +301,7 @@ struct NetworkAuthSheet: View {
                 .foregroundStyle(.secondary)
                 .frame(width: 16)
             Text(label)
-                .font(.caption)
+                .font(.caption.weight(.medium))
                 .foregroundStyle(.secondary)
                 .frame(width: Layout.fieldLabelWidth, alignment: .trailing)
             content()
@@ -232,7 +310,7 @@ struct NetworkAuthSheet: View {
 
     // MARK: - Buttons
     private var buttonRow: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: Layout.buttonSpacing) {
             Button("Cancel", role: .cancel) { onCancel() }
                 .keyboardShortcut(.cancelAction)
                 .buttonStyle(.plain)
@@ -251,7 +329,7 @@ struct NetworkAuthSheet: View {
                 if isSaving {
                     HStack(spacing: 6) {
                         ProgressView().scaleEffect(0.7)
-                        Text("Connecting…")
+                        Text("Saving…")
                     }
                 } else {
                     Label("Sign In", systemImage: "key.fill")
@@ -292,6 +370,7 @@ struct NetworkAuthSheet: View {
             }
         }
 
+        isPasswordVisible = false
         focusedField = resolvedFocusField
     }
 
@@ -309,9 +388,12 @@ struct NetworkAuthSheet: View {
     }
 
     private func confirm() {
-        guard !username.isEmpty else { return }
+        let trimmedUsername = username.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedUsername.isEmpty else { return }
+
+        username = trimmedUsername
         isSaving = true
-        let creds = NetworkCredentials(user: username, password: password)
+        let creds = NetworkCredentials(user: trimmedUsername, password: password)
         NetworkAuthService.save(creds, for: host.hostName)
         log.info("[Auth] credentials confirmed for \(host.hostName)")
         scheduleAuthenticationCompletion()

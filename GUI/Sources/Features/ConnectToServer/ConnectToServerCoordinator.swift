@@ -67,7 +67,7 @@ final class ConnectToServerCoordinator {
         PanelTitleHelper.applyIconTitle(to: panel, systemImage: "link", title: panelTitle)
         panel.toolbarStyle = .unified
         panel.animationBehavior = .utilityWindow
-        panel.isMovableByWindowBackground = true
+        panel.isMovableByWindowBackground = false
         // Normal window level — not floating, not always-on-top
         panel.level = .normal
         panel.hidesOnDeactivate = false
