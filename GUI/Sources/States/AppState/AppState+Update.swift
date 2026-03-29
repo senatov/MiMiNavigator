@@ -58,6 +58,20 @@ extension AppState {
         tabManager(for: panel).updateActiveTabPath(url)
     }
 
+    private func displayedFileCount(for panel: FavPanelSide) -> Int {
+        displayedFiles(for: panel).count
+    }
+
+    private func displayedFilesBecameVisible(for panel: FavPanelSide, attempts: Int = 8) async -> Bool {
+        for _ in 0..<attempts {
+            if displayedFileCount(for: panel) > 0 {
+                return true
+            }
+            await Task.yield()
+        }
+        return displayedFileCount(for: panel) > 0
+    }
+
     func updatePath(_ pathString: String, for panel: FavPanelSide) {
         // remote strings must go through URL(string:) — not fileURLWithPath, that mangles them
         if pathString.hasPrefix("sftp://") || pathString.hasPrefix("ftp://") {
@@ -153,29 +167,35 @@ extension AppState {
 
     func restoreLocalPath(for panel: FavPanelSide) async {
         let localURL = resolvedRestoreLocalURL(for: panel)
-
         let localPath = localURL.path
+
         log.info("[AppState] restoring local path \(panel): \(localPath)")
 
-        // 1. Wipe stale remote file list immediately.
+        // 1. Clear stale remote rows first.
         clearDisplayedFiles(for: panel)
 
-        // 2. Set URL synchronously before any refresh so url(for:) returns local path.
+        // 2. Switch panel URL state back to local without re-entering remote-specific flow.
         setPanelURL(localURL, for: panel)
         updateTabPath(localURL, for: panel)
         clearSavedLocalURL(for: panel)
 
-        // 3. Scan local directory and, if needed, run one guarded fallback refresh.
+        // 3. Refresh scanner state for the restored local path.
         await scanner.clearCooldown(for: panel)
         await setScannerDirectoryAndRefresh(localPath, for: panel)
 
-        let restoredFileCount = displayedFiles(for: panel).count
+        var restoredFileCount = displayedFileCount(for: panel)
         if restoredFileCount == 0 {
-            log.warning("[AppState] restore produced 0 visible files for \(panel): \(localPath) — forcing fallback refresh")
-            await refreshFiles(for: panel, force: true)
+            let becameVisible = await displayedFilesBecameVisible(for: panel)
+            restoredFileCount = displayedFileCount(for: panel)
+
+            if !becameVisible {
+                log.warning("[AppState] restore produced 0 visible files for \(panel): \(localPath) — forcing local refresh")
+                await refreshFiles(for: panel, force: true)
+                _ = await displayedFilesBecameVisible(for: panel)
+                restoredFileCount = displayedFileCount(for: panel)
+            }
         }
 
-        let finalFileCount = displayedFiles(for: panel).count
-        log.info("[AppState] restore done \(panel): \(localPath), files=\(finalFileCount)")
+        log.info("[AppState] restore done \(panel): \(localPath), files=\(restoredFileCount)")
     }
 }

@@ -45,6 +45,7 @@ actor DualDirectoryScanner {
     // Prevent back‑to‑back full scans (navigation + timer firing)
     private var lastFullScan: [FavPanelSide: Date] = [:]
     private let scanCooldown: TimeInterval = 3
+    private let progressivePreviewThreshold = 150
 
     /// Refresh interval from centralized constants (safety net only)
     private var refreshInterval: Int {
@@ -294,60 +295,75 @@ actor DualDirectoryScanner {
         await refreshFiles(currSide: side, force: true)
     }
 
+    // MARK: - Scan refresh helpers
+    private func canStartRefresh(for side: FavPanelSide, force: Bool) -> Bool {
+        if scanInProgress[side] == true && !force {
+            log.warning("[Scan] ⏭️ refreshFiles SKIPPED: scanInProgress=true for \(side)")
+            return false
+        }
+
+        if !force,
+           let last = lastFullScan[side],
+           Date().timeIntervalSince(last) < scanCooldown
+        {
+            let elapsed = Date().timeIntervalSince(last)
+            let elapsedText = String(format: "%.1f", elapsed)
+            log.warning("[Scan] ⏭️ refreshFiles SKIPPED: scanCooldown (\(elapsedText)s < \(scanCooldown)s) for \(side)")
+            return false
+        }
+
+        return true
+    }
+
     // MARK: - Full refresh (used by timer safety net and explicit navigation)
     @Sendable
     func refreshFiles(currSide: FavPanelSide, force: Bool = false) async {
         if Task.isCancelled { return }
-        // Guard: skip if a scan is already running for this panel, unless force is true
-        if scanInProgress[currSide] == true && !force {
-            log.warning("[Scan] ⏭️ refreshFiles SKIPPED: scanInProgress=true for \(currSide)")
-            return
-        }
-
-        // Guard: skip if a full scan happened very recently (navigation + timer double trigger)
-        // BUT allow forced refresh (after file operations like delete/move/copy)
-        if !force,
-            let last = lastFullScan[currSide],
-            Date().timeIntervalSince(last) < scanCooldown
-        {
-            log.warning(
-                "[Scan] ⏭️ refreshFiles SKIPPED: scanCooldown (\(String(format: "%.1f", Date().timeIntervalSince(last)))s < \(scanCooldown)s) for \(currSide)"
-            )
-            return
-        }
+        guard canStartRefresh(for: currSide, force: force) else { return }
 
         if force {
             log.debug("[Scan] forced refresh requested (file op / navigation), bypassing cooldown and scan guards for \(currSide)")
         }
-        // cancel any previous scan for this panel
-        if let task = activeScanTask[currSide] {
-            task.cancel()
+
+        if let existingTask = activeScanTask[currSide] {
+            existingTask.cancel()
             activeScanTask.removeValue(forKey: currSide)
         }
 
-        // Increment generation so older scans cannot override newer navigation
         scanGeneration[currSide, default: 0] += 1
         let generation = scanGeneration[currSide] ?? 0
 
         scanInProgress[currSide] = true
-        log.debug("[Scan] Starting scan side=\(currSide)")
-        activeScanTask[currSide] = Task { [weak self] in
-            guard let self else { return }
-            defer {
-                Task { await self.finishScan(for: currSide) }
-            }
+        log.debug("[Scan] Starting scan side=\(currSide) gen=\(generation)")
 
+        let task = Task { [weak self] in
+            guard let self else { return }
             await self.performRefreshFiles(currSide: currSide, generation: generation)
         }
-        if let task = activeScanTask[currSide] {
-            await task.value
-        }
+
+        activeScanTask[currSide] = task
+        await task.value
+        finishScan(for: currSide)
     }
 
     private func finishScan(for side: FavPanelSide) {
         scanInProgress[side] = false
         activeScanTask.removeValue(forKey: side)
-        log.debug("[Scan] Finished scan side=\(side)")
+        log.debug("[Scan] Finished scan side=\(side) active=false")
+    }
+
+    private func isCurrentGeneration(_ generation: Int, for side: FavPanelSide) -> Bool {
+        scanGeneration[side] == generation
+    }
+
+    @MainActor
+    private func applyPreviewFiles(_ files: [CustomFile], for side: FavPanelSide) {
+        switch side {
+            case .left:
+                appState.displayedLeftFiles = files
+            case .right:
+                appState.displayedRightFiles = files
+        }
     }
 
     private func performRefreshFiles(currSide: FavPanelSide, generation: Int) async {
@@ -419,25 +435,31 @@ actor DualDirectoryScanner {
                     }
                     .value
 
-                // Progressive UI update for very large directories
-                if sorted.count > 150 {
-                    let preview = Array(sorted.prefix(150))
+                // Ignore stale scan results if a newer navigation started.
+                if !isCurrentGeneration(generation, for: currSide) {
+                    let currentGeneration = scanGeneration[currSide] ?? -1
+                    log.debug("[Scan] Ignoring stale scan result side=\(currSide) gen=\(generation) current=\(currentGeneration)")
+                    return
+                }
+
+                // Progressive UI update for very large directories.
+                // Only publish preview for the current generation.
+                if sorted.count > progressivePreviewThreshold {
+                    let preview = Array(sorted.prefix(progressivePreviewThreshold))
                     await MainActor.run {
-                        switch currSide {
-                            case .left: appState.displayedLeftFiles = preview
-                            case .right: appState.displayedRightFiles = preview
-                        }
+                        applyPreviewFiles(preview, for: currSide)
                     }
                 }
 
-                // Ignore stale scan results if a newer navigation started
-                if scanGeneration[currSide] != generation {
-                    log.debug("[Scan] Ignoring stale scan result side=\(currSide) gen=\(generation)")
+                // Re-check generation after preview publication so a newer navigation cannot be overwritten.
+                if !isCurrentGeneration(generation, for: currSide) {
+                    let currentGeneration = scanGeneration[currSide] ?? -1
+                    log.debug("[Scan] Ignoring post-preview stale result side=\(currSide) gen=\(generation) current=\(currentGeneration)")
                     return
                 }
 
                 let duration = Date().timeIntervalSince(scanStart)
-                log.info("[Scan] Succeeded for \(url.path): \(sorted.count) items in \(String(format: "%.3f", duration))s")
+                log.info("[Scan] Succeeded for \(url.path): \(sorted.count) items gen=\(generation) in \(String(format: "%.3f", duration))s")
 
                 lastFullScan[currSide] = Date()
                 // populate LRU dir cache for instant re-visits
@@ -455,7 +477,8 @@ actor DualDirectoryScanner {
             }
         }
         let duration = Date().timeIntervalSince(scanStart)
-        log.debug("[Scan] Scan finished without access side=\(currSide) path='\(url.path)' in \(String(format: "%.3f", duration))s")
+        let durationText = String(format: "%.3f", duration)
+        log.debug("[Scan] Scan finished without access side=\(currSide) path='\(url.path)' gen=\(generation) in \(durationText)s")
     }
 
     // MARK: - Permission helpers
@@ -512,6 +535,27 @@ actor DualDirectoryScanner {
     // files arrive pre-sorted from Task.detached — no sort on MainActor
     @MainActor private var lastUpdateTime: [FavPanelSide: Date] = [:]
     @MainActor private var lastContentHashOnMain: [FavPanelSide: Int] = [:]
+    @MainActor private var lastPublishedPathOnMain: [FavPanelSide: String] = [:]
+
+    @MainActor
+    private func currentPanelPath(for side: FavPanelSide) -> String {
+        switch side {
+            case .left:
+                return appState.leftURL.path
+            case .right:
+                return appState.rightURL.path
+        }
+    }
+
+    @MainActor
+    private func currentDisplayedFiles(for side: FavPanelSide) -> [CustomFile] {
+        switch side {
+            case .left:
+                return appState.displayedLeftFiles
+            case .right:
+                return appState.displayedRightFiles
+        }
+    }
 
     @MainActor
     private func updateScannedFiles(_ incomingFiles: [CustomFile], for side: FavPanelSide) {
@@ -533,18 +577,36 @@ actor DualDirectoryScanner {
         let now = Date()
         let isFirstUpdate = lastUpdateTime[side] == nil
         let sinceLastMs = isFirstUpdate ? "first update" : "\(Int(now.timeIntervalSince(lastUpdateTime[side]!) * 1000))ms since last"
+        let currentPath = currentPanelPath(for: side)
+        let currentDisplayedCount = currentDisplayedFiles(for: side).count
 
-        // Content hash: skip UI update if file list is identical (critical for 26K+ dirs)
+        // Content hash: skip UI update only when the same path is already showing the same content.
+        // This must not skip republishing after remote disconnect or panel clearing.
         var hasher = Hasher()
         hasher.combine(sortedFiles.count)
-        for f in sortedFiles { hasher.combine(f.id) }
+        for file in sortedFiles {
+            hasher.combine(file.id)
+        }
         let newHash = hasher.finalize()
-        if !isFirstUpdate && lastContentHashOnMain[side] == newHash {
+
+        let samePathAsLastPublish = lastPublishedPathOnMain[side] == currentPath
+        let sameHashAsLastPublish = lastContentHashOnMain[side] == newHash
+        let sameVisibleCount = currentDisplayedCount == sortedFiles.count
+
+        if !isFirstUpdate,
+           samePathAsLastPublish,
+           sameHashAsLastPublish,
+           sameVisibleCount,
+           currentDisplayedCount > 0
+        {
+            log.debug("[Scanner] Skip identical publish side=\(side) path='\(currentPath)' count=\(currentDisplayedCount)")
             // Re-seed FSEvents debounce so we don't keep polling every 3s after 120s expiry
             Task { await self.resetFSEventsDebounce(for: side) }
             return
         }
+
         lastContentHashOnMain[side] = newHash
+        lastPublishedPathOnMain[side] = currentPath
 
         lastUpdateTime[side] = now
         switch side {
