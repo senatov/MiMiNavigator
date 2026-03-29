@@ -12,38 +12,61 @@ import Foundation
 // MARK: - Refresh Operations
 extension AppState {
 
-    @Sendable
-    func refreshFiles() async {
+    private func currentDisplayedFiles(for panel: FavPanelSide) -> [CustomFile] {
+        panel == .left ? displayedLeftFiles : displayedRightFiles
+    }
+
+    private func autoSelectFirstRealFileIfNeeded(for panel: FavPanelSide) {
+        guard self[panel: panel].selectedFile == nil else { return }
+        guard let file = firstRealFile(in: currentDisplayedFiles(for: panel)) else { return }
+
+        setSelectedFile(file, for: panel)
+        log.debug("[REFRESH] auto-selected \(file.nameStr) panel=\(panel)")
+    }
+
+    private func setLoading(_ isLoading: Bool, for panel: FavPanelSide) {
+        setLoading(panel, isLoading)
+    }
+
+    private func refreshBothPanels() async {
         await refreshFiles(for: .left)
         await refreshFiles(for: .right)
     }
 
-    /// Refresh files for a specific panel
-    func refreshFiles(for panel: FavPanelSide, force: Bool = false) async {
-        log.debug("[REFRESH-FILES] ⏱ START panel=\(panel) force=\(force)")
-        setLoading(panel, true)
-        defer {
-            setLoading(panel, false)
-        }
-        let panelURL = url(for: panel)
-        if Self.isRemotePath(panelURL) {
-            log.debug("[REFRESH-FILES] remote path detected, calling refreshRemoteFiles")
-            await refreshRemoteFiles(for: panel)
-        } else {
-            log.debug("[REFRESH-FILES] local path, calling scanner.refreshFiles")
-            await scanner.refreshFiles(currSide: panel, force: force)
-            log.debug("[REFRESH-FILES] scanner.refreshFiles done")
-        }
-        if self[panel: panel].selectedFile == nil {
-            let files = panel == .left ? displayedLeftFiles : displayedRightFiles
-            if let f = firstRealFile(in: files) {
-                setSelectedFile(f, for: panel)
-                log.debug("[REFRESH-FILES] auto-selected \(f.nameStr) (\(panel))")
-            }
-        }
-        log.debug("[REFRESH-FILES] ⏱ END panel=\(panel) loading=false")
+    @Sendable
+    func refreshPanels() async {
+        await refreshBothPanels()
     }
 
-    func refreshLeftFiles() async { await refreshFiles(for: .left) }
-    func refreshRightFiles() async { await refreshFiles(for: .right) }
+    @Sendable
+    func refreshFiles() async {
+        await refreshPanels()
+    }
+
+    /// Refresh a panel using route detection.
+    /// Remote panels go through remote listing only. Local panels go through the scanner pipeline.
+    func refreshPanel(for panel: FavPanelSide, force: Bool = false) async {
+        log.debug("[REFRESH] start panel=\(panel) force=\(force)")
+        setLoading(true, for: panel)
+        defer {
+            setLoading(false, for: panel)
+            log.debug("[REFRESH] end panel=\(panel) loading=false")
+        }
+
+        await refreshDetectedFiles(for: panel, force: force)
+        autoSelectFirstRealFileIfNeeded(for: panel)
+    }
+
+    /// Backward-compatible wrapper.
+    func refreshFiles(for panel: FavPanelSide, force: Bool = false) async {
+        await refreshPanel(for: panel, force: force)
+    }
+
+    func refreshLeftFiles() async {
+        await refreshPanel(for: .left)
+    }
+
+    func refreshRightFiles() async {
+        await refreshPanel(for: .right)
+    }
 }

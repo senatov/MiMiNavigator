@@ -1,54 +1,53 @@
 // DualDirectoryScanner.swift
-//  MiMiNavigator
+// MiMiNavigator
 //
-//  Created by Iakov Senatov on 11.12.24.
-//  Copyright © 2024 Senatov. All rights reserved.
-//  Description: Actor-based dual-panel directory scanner.
-//    Local paths use FSEventsDirectoryWatcher for surgical per-file patch delivery.
-//    Polling timer provides a safety net for edge cases (network mounts, slow FSEvents).
-//    VNode DispatchSource removed — FSEvents is strictly superior for local directories.
+// Created by Iakov Senatov on 11.12.24.
+// Copyright © 2024 Senatov. All rights reserved.
+// Description: Core actor state and lifecycle for dual-panel directory scanning.
 
 import FileModelKit
 import Foundation
 import SwiftUI
 
-// MARK: - Actor for concurrent directory scanning
-
 actor DualDirectoryScanner {
     let appState: AppState
     var fileCache = FileCache.shared
 
-    // MARK: - Polling timers (safety net — fire every refreshInterval seconds)
-    private var leftTimer: DispatchSourceTimer?
-    private var rightTimer: DispatchSourceTimer?
+    // MARK: - Timers
 
-    // MARK: - FSEvents watchers (primary change detection — per-file events, no full scan)
-    private var leftFSEvents: FSEventsDirectoryWatcher?
-    private var rightFSEvents: FSEventsDirectoryWatcher?
-    // Track currently watched paths to avoid restarting identical watchers
-    private var leftWatchedPath: String?
-    private var rightWatchedPath: String?
+    var leftTimer: DispatchSourceTimer?
+    var rightTimer: DispatchSourceTimer?
 
-    // MARK: - Debounce: skip polling if FSEvents delivered changes recently
-    private var lastFSEventsPatch: [FavPanelSide: Date] = [:]
-    private let fsEventsDebounceInterval: TimeInterval = 120  // skip poll if FSEvents fired within 2 min
+    // MARK: - FSEvents watchers
 
-    // MARK: - Guard against overlapping scans (critical for 26K+ dirs)
-    private var scanInProgress: [FavPanelSide: Bool] = [.left: false, .right: false]
+    var leftFSEvents: FSEventsDirectoryWatcher?
+    var rightFSEvents: FSEventsDirectoryWatcher?
 
-    // MARK: - Scan task tracking for cancellation (navigation priority)
-    private var activeScanTask: [FavPanelSide: Task<Void, Never>] = [:]
+    var leftWatchedPath: String?
+    var rightWatchedPath: String?
 
-    // Generation token to prevent stale scans from overriding newer navigation
-    private var scanGeneration: [FavPanelSide: Int] = [.left: 0, .right: 0]
+    // MARK: - Debounce / scan state
 
-    // Prevent back‑to‑back full scans (navigation + timer firing)
-    private var lastFullScan: [FavPanelSide: Date] = [:]
-    private let scanCooldown: TimeInterval = 3
-    private let progressivePreviewThreshold = 150
+    var lastFSEventsPatch: [FavPanelSide: Date] = [:]
+    let fsEventsDebounceInterval: TimeInterval = 120
 
-    /// Refresh interval from centralized constants (safety net only)
-    private var refreshInterval: Int {
+    var scanInProgress: [FavPanelSide: Bool] = [.left: false, .right: false]
+    var activeScanTask: [FavPanelSide: Task<Void, Never>] = [:]
+    var scanGeneration: [FavPanelSide: Int] = [.left: 0, .right: 0]
+    var lastFullScan: [FavPanelSide: Date] = [:]
+
+    let scanCooldown: TimeInterval = 3
+    let progressivePreviewThreshold = 150
+
+    // MARK: - MainActor publish state
+
+    @MainActor var lastUpdateTime: [FavPanelSide: Date] = [:]
+    @MainActor var lastContentHashOnMain: [FavPanelSide: Int] = [:]
+    @MainActor var lastPublishedPathOnMain: [FavPanelSide: String] = [:]
+
+    // MARK: - Derived values
+
+    var refreshInterval: Int {
         Int(AppConstants.Scanning.refreshInterval)
     }
 
@@ -56,639 +55,70 @@ actor DualDirectoryScanner {
         self.appState = appState
     }
 
-    // MARK: - Start monitoring both panels
+    // MARK: - Lifecycle
+
     func startMonitoring() {
         setupTimer(for: .left)
         setupTimer(for: .right)
+
         if leftTimer == nil || rightTimer == nil {
             log.error("[DualDirectoryScanner] Failed to initialize directory timers")
         }
+
         Task { @MainActor in
-            let lURL = appState.leftURL
-            let rURL = appState.rightURL
-            await self.startFSEvents(for: .left, url: lURL)
-            await self.startFSEvents(for: .right, url: rURL)
+            let leftURL = appState.leftURL
+            let rightURL = appState.rightURL
+            await self.startFSEvents(for: .left, url: leftURL)
+            await self.startFSEvents(for: .right, url: rightURL)
         }
     }
 
-    // MARK: - Set directory for right panel
+    func stopMonitoring() {
+        leftTimer?.cancel()
+        leftTimer = nil
+
+        rightTimer?.cancel()
+        rightTimer = nil
+
+        stopFSEvents(for: .left)
+        stopFSEvents(for: .right)
+
+        log.info("[DualDirectoryScanner] stopMonitoring: all timers and FSEvents watchers stopped")
+    }
+
+    // MARK: - Panel directory updates
+
     func setRightDirectory(pathStr: String) {
         guard pathStr.hasPrefix("/") else {
             log.error("\(#function) rejected non-absolute path: '\(pathStr)'")
             return
         }
+
         log.info("\(#function) '\(pathStr)'")
+
         let url = URL(fileURLWithPath: pathStr)
-        // route through updatePath so TabManager + history stay in sync
-        Task { @MainActor in appState.updatePath(url, for: .right) }
+
+        Task { @MainActor in
+            appState.updatePath(url, for: .right)
+        }
+
         startFSEvents(for: .right, url: url)
     }
 
-    // MARK: - Set directory for left panel
     func setLeftDirectory(pathStr: String) {
         guard pathStr.hasPrefix("/") else {
             log.error("\(#function) rejected non-absolute path: '\(pathStr)'")
             return
         }
+
         log.info("\(#function) '\(pathStr)'")
+
         let url = URL(fileURLWithPath: pathStr)
-        // route through updatePath so TabManager + history stay in sync
-        Task { @MainActor in appState.updatePath(url, for: .left) }
+
+        Task { @MainActor in
+            appState.updatePath(url, for: .left)
+        }
+
         startFSEvents(for: .left, url: url)
-    }
-
-    // MARK: - FSEvents watcher setup
-    /// Starts FSEventsDirectoryWatcher for a panel.
-    /// Remote paths are skipped — FSEvents has no meaning for ftp:// / sftp://.
-    /// async because showHiddenFiles is @MainActor-isolated (read via appState hop).
-    private func startFSEvents(for side: FavPanelSide, url: URL) {
-        guard !AppState.isRemotePath(url) else {
-            log.debug("[FSEvents] Remote path — skip watcher: '\(url.path)' side=\(side)")
-            stopFSEvents(for: side)
-            return
-        }
-        // appState is @MainActor — read showHiddenFiles via async Task hop
-        Task {
-            let showHidden: Bool = await appState.showHiddenFilesSnapshot()
-            launchFSEventsWatcher(for: side, path: url.path, showHiddenFiles: showHidden)
-        }
-    }
-
-    private func launchFSEventsWatcher(for side: FavPanelSide, path: String, showHiddenFiles: Bool) {
-        // Avoid restarting watcher if it already watches the same path
-        switch side {
-            case .left:
-                if leftWatchedPath == path { return }
-            case .right:
-                if rightWatchedPath == path { return }
-        }
-        let watcher = FSEventsDirectoryWatcher { [weak self] patch in
-            guard let self else { return }
-            Task {
-                await self.applyPatch(patch, for: side)
-            }
-        }
-        watcher.watch(path: path, showHiddenFiles: showHiddenFiles)
-        switch side {
-            case .left:
-                leftFSEvents?.stop()
-                leftFSEvents = watcher
-                leftWatchedPath = path
-            case .right:
-                rightFSEvents?.stop()
-                rightFSEvents = watcher
-                rightWatchedPath = path
-        }
-        // Mark FSEvents as "active" so polling debounce kicks in for static dirs
-        lastFSEventsPatch[side] = Date()
-        log.info("[FSEvents] started for \(side) panel: '\(path)'")
-
-    }
-
-    private func stopFSEvents(for side: FavPanelSide) {
-        switch side {
-            case .left:
-                leftFSEvents?.stop()
-                leftFSEvents = nil
-            case .right:
-                rightFSEvents?.stop()
-                rightFSEvents = nil
-        }
-    }
-
-    // MARK: - Apply incremental patch from FSEvents
-    private func applyPatch(_ patch: FSEventsDirectoryWatcher.DirectoryPatch, for side: FavPanelSide) async {
-        lastFSEventsPatch[side] = Date()
-        // Dir-level FSEvents: full rescan needed (cannot determine removals incrementally)
-        if patch.needsFullRescan {
-            log.info("[FSEvents] needsFullRescan for \(side) panel")
-            await refreshFiles(currSide: side)
-            return
-        }
-        let childUpdates = patch.childCountUpdates
-        let removedPaths = patch.removedPaths
-        let addedOrModified = patch.addedOrModified
-
-        let (current, sortKey, sortAsc): ([CustomFile], SortKeysEnum, Bool) = await MainActor.run {
-            let files = side == .left ? appState.displayedLeftFiles : appState.displayedRightFiles
-            return (files, appState.sortKey, appState.bSortAscending)
-        }
-
-        let totalChanges = addedOrModified.count + removedPaths.count
-        let useIncremental = totalChanges <= 5 && totalChanges > 0
-
-        var merged = current
-
-        if !removedPaths.isEmpty {
-            let removedSet = Set(removedPaths)
-            merged.removeAll { removedSet.contains($0.pathStr) }
-        }
-
-        for updated in addedOrModified {
-            if let idx = merged.firstIndex(where: { $0.pathStr == updated.pathStr }) {
-                merged[idx] = updated
-            } else if useIncremental {
-                let insertIdx = Self.binarySearchInsertIndex(merged, file: updated, sortKey: sortKey, ascending: sortAsc)
-                merged.insert(updated, at: insertIdx)
-            } else {
-                merged.append(updated)
-            }
-        }
-
-        for (path, count) in childUpdates {
-            if let idx = merged.firstIndex(where: { $0.pathStr == path }) {
-                merged[idx].cachedChildCount = count
-            }
-        }
-
-        if !useIncremental && totalChanges > 0 {
-            merged = FileSortingService.sort(merged, by: sortKey, bDirection: sortAsc)
-        }
-
-        // Only log if something actually changed
-
-        await MainActor.run {
-            switch side {
-                case .left: appState.displayedLeftFiles = merged
-                case .right: appState.displayedRightFiles = merged
-            }
-        }
-    }
-
-    private static func binarySearchInsertIndex(_ list: [CustomFile], file: CustomFile, sortKey: SortKeysEnum, ascending: Bool) -> Int
-    {
-        var lo = 0
-        var hi = list.count
-        while lo < hi {
-            let mid = (lo + hi) / 2
-            let cmp = FileSortingService.compare(file, list[mid], by: sortKey, ascending: ascending)
-            if cmp {
-                hi = mid
-            } else {
-                lo = mid + 1
-            }
-        }
-        return lo
-    }
-
-    private func setupTimer(for side: FavPanelSide) {
-        let timer = DispatchSource.makeTimerSource(queue: DispatchQueue.global())
-        // Start after first interval — avoids double scan at startup (refreshFiles already called explicitly)
-        timer.schedule(deadline: .now() + .seconds(refreshInterval), repeating: .seconds(refreshInterval))
-        timer.setEventHandler { [weak self] in
-            guard let self else { return }
-            Task {
-                await self.timerFired(for: side)
-            }
-        }
-        timer.resume()
-        switch side {
-            case .left: leftTimer = timer
-            case .right: rightTimer = timer
-        }
-    }
-
-    // MARK: - Timer handler with smart skip
-    private func timerFired(for side: FavPanelSide) async {
-        // Remote panels: timer polls are wasteful — AppState.refreshRemoteFiles handles them
-        // when the user navigates. Skip periodic timer entirely for remote paths.
-        let isRemote: Bool = await MainActor.run {
-            let u = side == .left ? appState.leftURL : appState.rightURL
-            return AppState.isRemotePath(u)
-        }
-        if isRemote { return }
-
-        // Check if FSEvents delivered changes recently — skip redundant poll
-        if let lastPatch = lastFSEventsPatch[side] {
-            let elapsed = Date().timeIntervalSince(lastPatch)
-            if elapsed < fsEventsDebounceInterval {
-                return
-            }
-        }
-
-        await refreshFiles(currSide: side)
-    }
-
-    // MARK: - Cancel running scan (used by navigation like "..")
-    func cancelScan(for side: FavPanelSide) {
-        if let task = activeScanTask[side] {
-            task.cancel()
-            activeScanTask.removeValue(forKey: side)
-        }
-        scanInProgress[side] = false
-        log.debug("[Scanner] Cancelled scan for \(side)")
-    }
-
-    // MARK: - Force refresh after file operations (rename/delete/move)
-    func forceRefreshAfterFileOp(side: FavPanelSide) async {
-        log.debug("[Scan] forceRefreshAfterFileOp triggered for \(side)")
-
-        cancelScan(for: side)
-        lastFullScan[side] = nil
-
-        // invalidate dir cache — stale after file ops
-        let path: String = await MainActor.run {
-            side == .left ? appState.leftURL.path : appState.rightURL.path
-        }
-        await DirectoryContentCache.shared.invalidate(path)
-
-        await refreshFiles(currSide: side, force: true)
-    }
-
-    // MARK: - Scan refresh helpers
-    private func canStartRefresh(for side: FavPanelSide, force: Bool) -> Bool {
-        if scanInProgress[side] == true && !force {
-            log.warning("[Scan] ⏭️ refreshFiles SKIPPED: scanInProgress=true for \(side)")
-            return false
-        }
-
-        if !force,
-           let last = lastFullScan[side],
-           Date().timeIntervalSince(last) < scanCooldown
-        {
-            let elapsed = Date().timeIntervalSince(last)
-            let elapsedText = String(format: "%.1f", elapsed)
-            log.warning("[Scan] ⏭️ refreshFiles SKIPPED: scanCooldown (\(elapsedText)s < \(scanCooldown)s) for \(side)")
-            return false
-        }
-
-        return true
-    }
-
-    // MARK: - Full refresh (used by timer safety net and explicit navigation)
-    @Sendable
-    func refreshFiles(currSide: FavPanelSide, force: Bool = false) async {
-        if Task.isCancelled { return }
-        guard canStartRefresh(for: currSide, force: force) else { return }
-
-        if force {
-            log.debug("[Scan] forced refresh requested (file op / navigation), bypassing cooldown and scan guards for \(currSide)")
-        }
-
-        if let existingTask = activeScanTask[currSide] {
-            existingTask.cancel()
-            activeScanTask.removeValue(forKey: currSide)
-        }
-
-        scanGeneration[currSide, default: 0] += 1
-        let generation = scanGeneration[currSide] ?? 0
-
-        scanInProgress[currSide] = true
-        log.debug("[Scan] Starting scan side=\(currSide) gen=\(generation)")
-
-        let task = Task { [weak self] in
-            guard let self else { return }
-            await self.performRefreshFiles(currSide: currSide, generation: generation)
-        }
-
-        activeScanTask[currSide] = task
-        await task.value
-        finishScan(for: currSide)
-    }
-
-    private func finishScan(for side: FavPanelSide) {
-        scanInProgress[side] = false
-        activeScanTask.removeValue(forKey: side)
-        log.debug("[Scan] Finished scan side=\(side) active=false")
-    }
-
-    private func isCurrentGeneration(_ generation: Int, for side: FavPanelSide) -> Bool {
-        scanGeneration[side] == generation
-    }
-
-    @MainActor
-    private func applyPreviewFiles(_ files: [CustomFile], for side: FavPanelSide) {
-        switch side {
-            case .left:
-                appState.displayedLeftFiles = files
-            case .right:
-                appState.displayedRightFiles = files
-        }
-    }
-
-    private func performRefreshFiles(currSide: FavPanelSide, generation: Int) async {
-        let scanStart = Date()
-        let (url, showHidden, sortKey, sortAsc): (URL, Bool, SortKeysEnum, Bool) = await MainActor.run {
-            let u = currSide == .left ? appState.leftURL : appState.rightURL
-            let h = UserPreferences.shared.snapshot.showHiddenFiles
-            return (u, h, appState.sortKey, appState.bSortAscending)
-        }
-        if AppState.isRemotePath(url) {
-            await appState.refreshRemoteFiles(for: currSide)
-            return
-        }
-        let originalURL = url
-
-        let aliasResolvedURL: URL
-        do {
-            aliasResolvedURL = try URL(resolvingAliasFileAt: originalURL, options: [])
-            if aliasResolvedURL.path != originalURL.path {
-                log.debug("[Scan] Alias resolved: '\(originalURL.path)' → '\(aliasResolvedURL.path)'")
-            }
-        } catch {
-            aliasResolvedURL = originalURL
-        }
-
-        let resolvedURL = aliasResolvedURL.resolvingSymlinksInPath()
-        if aliasResolvedURL.path != resolvedURL.path {
-            log.debug("[Scan] Symlink resolved: '\(aliasResolvedURL.path)' → '\(resolvedURL.path)'")
-        }
-
-        let urlsToTry: [URL] = {
-            var seen = Set<String>()
-            var result: [URL] = []
-            for candidate in [originalURL, aliasResolvedURL, resolvedURL] {
-                let path = candidate.path
-                if seen.insert(path).inserted {
-                    result.append(candidate)
-                }
-            }
-            return result
-        }()
-        for (index, url) in urlsToTry.enumerated() {
-            log.info("[Scan] Attempt \(index + 1)/\(urlsToTry.count): \(url.path)")
-            // macOS-optimized: use URL resource values for directory validation
-            // Fallback to FileManager for firmlinks (/tmp, /var, /etc) where
-            // URL.resourceValues returns isDirectory==false despite being directories
-            do {
-                let values = try url.resourceValues(forKeys: [.isDirectoryKey])
-                if values.isDirectory != true {
-                    var isDir: ObjCBool = false
-                    if FileManager.default.fileExists(atPath: url.path, isDirectory: &isDir), isDir.boolValue {
-                        log.debug("[Scan] firmlink directory confirmed via FileManager: \(url.path)")
-                    } else {
-                        log.error("[Scan] not a directory: \(url.path)")
-                        continue
-                    }
-                }
-            } catch {
-                log.error("[Scan] cannot access path: \(url.path) error=\(error.localizedDescription)")
-                continue
-            }
-            do {
-                // Scan + sort in a single background task to reduce task overhead
-                let (_, sorted) =
-                    try await Task.detached(priority: .userInitiated) {
-                        let scanned = try FileScanner.scan(url: url, showHiddenFiles: showHidden)
-                        let sorted = FileSortingService.sort(scanned, by: sortKey, bDirection: sortAsc)
-                        return (scanned, sorted)
-                    }
-                    .value
-
-                // Ignore stale scan results if a newer navigation started.
-                if !isCurrentGeneration(generation, for: currSide) {
-                    let currentGeneration = scanGeneration[currSide] ?? -1
-                    log.debug("[Scan] Ignoring stale scan result side=\(currSide) gen=\(generation) current=\(currentGeneration)")
-                    return
-                }
-
-                // Progressive UI update for very large directories.
-                // Only publish preview for the current generation.
-                if sorted.count > progressivePreviewThreshold {
-                    let preview = Array(sorted.prefix(progressivePreviewThreshold))
-                    await MainActor.run {
-                        applyPreviewFiles(preview, for: currSide)
-                    }
-                }
-
-                // Re-check generation after preview publication so a newer navigation cannot be overwritten.
-                if !isCurrentGeneration(generation, for: currSide) {
-                    let currentGeneration = scanGeneration[currSide] ?? -1
-                    log.debug("[Scan] Ignoring post-preview stale result side=\(currSide) gen=\(generation) current=\(currentGeneration)")
-                    return
-                }
-
-                let duration = Date().timeIntervalSince(scanStart)
-                log.info("[Scan] Succeeded for \(url.path): \(sorted.count) items gen=\(generation) in \(String(format: "%.3f", duration))s")
-
-                lastFullScan[currSide] = Date()
-                // populate LRU dir cache for instant re-visits
-                await DirectoryContentCache.shared.store(path: url.path, files: sorted, showHidden: showHidden)
-                await updateScannedFiles(sorted, for: currSide)
-                await updateFileList(panelSide: currSide, with: sorted)
-                return
-            } catch let error as NSError {
-                if isPermissionDeniedError(error) {
-                    log.debug("[Scan] Permission denied, skipping directory: \(url.path)")
-                    // Do NOT retry, do NOT request access, just stop attempts.
-                    break
-                }
-                log.error("[Scan] Attempt \(index + 1) failed: \(error.localizedDescription)")
-            }
-        }
-        let duration = Date().timeIntervalSince(scanStart)
-        let durationText = String(format: "%.3f", duration)
-        log.debug("[Scan] Scan finished without access side=\(currSide) path='\(url.path)' gen=\(generation) in \(durationText)s")
-    }
-
-    // MARK: - Permission helpers
-    private func isPermissionDeniedError(_ error: NSError) -> Bool {
-        if error.domain == NSCocoaErrorDomain && error.code == 257 { return true }
-        if error.domain == NSPOSIXErrorDomain && error.code == 13 { return true }
-        if let underlying = error.userInfo[NSUnderlyingErrorKey] as? NSError {
-            return isPermissionDeniedError(underlying)
-        }
-        return false
-    }
-
-    private func requestAndRetryAccess(for url: URL, side: FavPanelSide) async -> Bool {
-        log.info("[Permissions] Checking bookmarks for path='\(url.path)'")
-
-        // 1. Try restoring all bookmarks first — maybe a parent bookmark covers this path
-        let restored = await BookmarkStore.shared.restoreAll()
-        if !restored.isEmpty {
-            log.info("[Permissions] Restored \(restored.count) bookmark(s), retrying scan")
-            do {
-                let showHidden = await MainActor.run { UserPreferences.shared.snapshot.showHiddenFiles }
-                let scanned = try FileScanner.scan(url: url, showHiddenFiles: showHidden)
-                log.info("[Permissions] Rescan succeeded: items=\(scanned.count) path='\(url.path)'")
-                await updateScannedFiles(scanned, for: side)
-                await updateFileList(panelSide: side, with: scanned)
-                return true
-            } catch {
-                log.warning("[Permissions] Rescan after bookmark restore failed: \(error.localizedDescription)")
-            }
-        }
-
-        // 2. No bookmark covers this path — fallback to Home instead of showing NSOpenPanel
-        log.warning("[Permissions] No bookmark for path='\(url.path)', falling back to Home directory")
-        let homeURL = URL(fileURLWithPath: NSHomeDirectory())
-        await MainActor.run {
-            log.debug(#function + ": setting Home as the current directory")
-            appState.setURL(homeURL, for: side)
-        }
-        do {
-            let showHidden = await MainActor.run { UserPreferences.shared.snapshot.showHiddenFiles }
-            let scanned = try FileScanner.scan(url: homeURL, showHiddenFiles: showHidden)
-            let sorted = FileSortingService.sort(
-                scanned, by: await MainActor.run { appState.sortKey }, bDirection: await MainActor.run { appState.bSortAscending })
-            await updateScannedFiles(sorted, for: side)
-            await updateFileList(panelSide: side, with: sorted)
-            log.info("[Permissions] Fallback to Home succeeded: items=\(sorted.count)")
-        } catch {
-            log.error("[Permissions] Home directory scan failed: \(error)")
-        }
-        return false
-    }
-
-    // MARK: - Update displayed files (full replace — used by polling timer)
-    // files arrive pre-sorted from Task.detached — no sort on MainActor
-    @MainActor private var lastUpdateTime: [FavPanelSide: Date] = [:]
-    @MainActor private var lastContentHashOnMain: [FavPanelSide: Int] = [:]
-    @MainActor private var lastPublishedPathOnMain: [FavPanelSide: String] = [:]
-
-    @MainActor
-    private func currentPanelPath(for side: FavPanelSide) -> String {
-        switch side {
-            case .left:
-                return appState.leftURL.path
-            case .right:
-                return appState.rightURL.path
-        }
-    }
-
-    @MainActor
-    private func currentDisplayedFiles(for side: FavPanelSide) -> [CustomFile] {
-        switch side {
-            case .left:
-                return appState.displayedLeftFiles
-            case .right:
-                return appState.displayedRightFiles
-        }
-    }
-
-    @MainActor
-    private func updateScannedFiles(_ incomingFiles: [CustomFile], for side: FavPanelSide) {
-        // Ensure only a single parent ("..") entry exists
-        var sortedFiles = incomingFiles
-        var seenParent = false
-        sortedFiles.removeAll { file in
-            if file.isParentEntry {
-                if seenParent { return true }
-                seenParent = true
-            }
-            return false
-        }
-        // Ensure parent entry is the first row so keyboard navigation (↓, Enter) works correctly
-        if let parentIndex = sortedFiles.firstIndex(where: { $0.isParentEntry }), parentIndex != 0 {
-            let parent = sortedFiles.remove(at: parentIndex)
-            sortedFiles.insert(parent, at: 0)
-        }
-        let now = Date()
-        let isFirstUpdate = lastUpdateTime[side] == nil
-        let sinceLastMs = isFirstUpdate ? "first update" : "\(Int(now.timeIntervalSince(lastUpdateTime[side]!) * 1000))ms since last"
-        let currentPath = currentPanelPath(for: side)
-        let currentDisplayedCount = currentDisplayedFiles(for: side).count
-
-        // Content hash: skip UI update only when the same path is already showing the same content.
-        // This must not skip republishing after remote disconnect or panel clearing.
-        var hasher = Hasher()
-        hasher.combine(sortedFiles.count)
-        for file in sortedFiles {
-            hasher.combine(file.id)
-        }
-        let newHash = hasher.finalize()
-
-        let samePathAsLastPublish = lastPublishedPathOnMain[side] == currentPath
-        let sameHashAsLastPublish = lastContentHashOnMain[side] == newHash
-        let sameVisibleCount = currentDisplayedCount == sortedFiles.count
-
-        if !isFirstUpdate,
-           samePathAsLastPublish,
-           sameHashAsLastPublish,
-           sameVisibleCount,
-           currentDisplayedCount > 0
-        {
-            log.debug("[Scanner] Skip identical publish side=\(side) path='\(currentPath)' count=\(currentDisplayedCount)")
-            // Re-seed FSEvents debounce so we don't keep polling every 3s after 120s expiry
-            Task { await self.resetFSEventsDebounce(for: side) }
-            return
-        }
-
-        lastContentHashOnMain[side] = newHash
-        lastPublishedPathOnMain[side] = currentPath
-
-        lastUpdateTime[side] = now
-        switch side {
-            case .left: appState.displayedLeftFiles = sortedFiles
-            case .right: appState.displayedRightFiles = sortedFiles
-        }
-        log.info("[Scanner] ✅ \(side) → \(sortedFiles.count) items (\(sinceLastMs))")
-        // On first load: if the panel has no selection yet, pick the topmost file
-        if isFirstUpdate {
-            appState.ensureSelectionOnFocusedPanel()
-            // Also seed selection on the non-focused panel — it gets ensureSelection on next focus
-            switch side {
-                case .left where appState.selectedLeftFile == nil:
-                    // Allow parent entry ("..") to be selectable via keyboard navigation
-                    appState.selectedLeftFile = sortedFiles.first
-                    log.debug("[Scanner] Auto-selected first left: \(sortedFiles.first?.nameStr ?? "-")")
-                case .right where appState.selectedRightFile == nil:
-                    appState.selectedRightFile = sortedFiles.first
-                    log.debug("[Scanner] Auto-selected first right: \(sortedFiles.first?.nameStr ?? "-")")
-                default: break
-            }
-        }
-    }
-
-    // MARK: - Re-seed FSEvents debounce (called when content unchanged after safety scan)
-    func resetFSEventsDebounce(for side: FavPanelSide) {
-        lastFSEventsPatch[side] = Date()
-    }
-
-    // MARK: - Clear scan cooldown (called by explicit navigation to avoid skipping)
-    func clearCooldown(for side: FavPanelSide) {
-        lastFullScan[side] = nil
-        scanInProgress[side] = false
-    }
-
-    // MARK: - Reset timer for a panel
-    func resetRefreshTimer(for side: FavPanelSide) {
-        switch side {
-            case .left:
-                leftTimer?.cancel()
-                leftTimer = nil
-                setupTimer(for: .left)
-            case .right:
-                rightTimer?.cancel()
-                rightTimer = nil
-                setupTimer(for: .right)
-        }
-    }
-
-    // MARK: - Restart FSEvents watchers (after toggle hidden files)
-    /// Forces both FSEvents watchers to restart with fresh showHiddenFiles value.
-    /// Must be called after toggling the hidden files preference.
-    func restartFSEventsWatchers() async {
-        let (leftURL, rightURL): (URL, URL) = await MainActor.run {
-            (appState.leftURL, appState.rightURL)
-        }
-        // force restart by clearing watched paths
-        leftWatchedPath = nil
-        rightWatchedPath = nil
-        startFSEvents(for: .left, url: leftURL)
-        startFSEvents(for: .right, url: rightURL)
-        log.info("[FSEvents] watchers restarted after hidden files toggle")
-    }
-
-
-    // MARK: - Stop all watchers
-    func stopMonitoring() {
-        leftTimer?.cancel()
-        leftTimer = nil
-        rightTimer?.cancel()
-        rightTimer = nil
-        stopFSEvents(for: .left)
-        stopFSEvents(for: .right)
-        log.info("[DualDirectoryScanner] stopMonitoring: all timers and FSEvents watchers stopped")
-    }
-
-    // MARK: - Update file list in storage
-    @MainActor
-    private func updateFileList(panelSide: FavPanelSide, with files: [CustomFile]) async {
-        switch panelSide {
-            case .left: await fileCache.updateLeftFiles(files)
-            case .right: await fileCache.updateRightFiles(files)
-        }
     }
 }
