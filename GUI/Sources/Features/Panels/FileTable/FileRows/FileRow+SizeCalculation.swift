@@ -55,6 +55,14 @@ extension FileRow {
             file.sizeCalculationStarted = false
             return
         }
+
+        if file.cachedDirectorySize == DirectorySizeService.unavailableSize {
+            log.debug("[FileRow] Skip - size unavailable already confirmed for '\(file.nameStr)'")
+            file.sizeIsExact = false
+            file.sizeCalculationStarted = false
+            return
+        }
+
         if file.sizeIsExact { return }
         if file.cachedDirectorySize == nil && file.cachedShallowSize == nil {
             file.sizeCalculationStarted = false
@@ -161,7 +169,16 @@ extension FileRow {
                     file.cachedDirectorySize = nil
                     file.sizeIsExact = false
                     file.securityState = .restricted
-                    log.warning("[FileRow] Phase 2 fallback failed for '\(file.nameStr)' and root path is unreadable → marking as restricted (🔒)")
+                    log.warning(
+                        "[FileRow] Phase 2 fallback failed for '\(file.nameStr)' and root path is unreadable → marking as restricted (🔒)"
+                    )
+                } else if file.isSymbolicDirectory || isLikelyVirtualDirectory(url) {
+                    file.cachedDirectorySize = DirectorySizeService.unavailableSize
+                    file.sizeIsExact = false
+                    file.securityState = .normal
+                    log.info(
+                        "[FileRow] Phase 2 could not determine size for cloud/symlink directory '\(file.nameStr)' — caching size as unavailable"
+                    )
                 } else {
                     file.cachedDirectorySize = 0
                     file.sizeIsExact = true
@@ -207,57 +224,60 @@ extension FileRow {
     private func fallbackDirectoryScanAsync(url: URL) async -> Int64 {
         let target = normalizedURLForSize(url)
 
-        return await Task.detached(priority: .utility) {
-            let fm = FileManager.default
-            var total: Int64 = 0
-            let keys: Set<URLResourceKey> = [
-                .isDirectoryKey,
-                .fileSizeKey,
-                .fileAllocatedSizeKey,
-                .totalFileAllocatedSizeKey,
-                .isReadableKey,
-            ]
+        return
+            await Task.detached(priority: .utility) {
+                let fm = FileManager.default
+                var total: Int64 = 0
+                let keys: Set<URLResourceKey> = [
+                    .isDirectoryKey,
+                    .fileSizeKey,
+                    .fileAllocatedSizeKey,
+                    .totalFileAllocatedSizeKey,
+                    .isReadableKey,
+                ]
 
-            let enumerator = fm.enumerator(
-                at: target,
-                includingPropertiesForKeys: Array(keys),
-                options: [.skipsPackageDescendants, .skipsHiddenFiles],
-                errorHandler: { failedURL, error in
-                    log.warning("[FileRow] Fallback scan skipping inaccessible path '\(failedURL.path)': \(error.localizedDescription)")
-                    return true
-                }
-            )
-
-            guard let enumerator else {
-                log.warning("[FileRow] Fallback scan could not start for '\(target.path)'")
-                return 0
-            }
-
-            while let next = enumerator.nextObject() as? URL {
-                guard let values = try? next.resourceValues(forKeys: keys) else {
-                    log.debug("[FileRow] Fallback scan skipping unreadable metadata for '\(next.path)'")
-                    continue
-                }
-
-                if values.isReadable == false {
-                    if values.isDirectory == true {
-                        enumerator.skipDescendants()
+                let enumerator = fm.enumerator(
+                    at: target,
+                    includingPropertiesForKeys: Array(keys),
+                    options: [.skipsPackageDescendants, .skipsHiddenFiles],
+                    errorHandler: { failedURL, error in
+                        log.warning(
+                            "[FileRow] Fallback scan skipping inaccessible path '\(failedURL.path)': \(error.localizedDescription)")
+                        return true
                     }
-                    log.debug("[FileRow] Fallback scan skipping unreadable path '\(next.path)'")
-                    continue
+                )
+
+                guard let enumerator else {
+                    log.warning("[FileRow] Fallback scan could not start for '\(target.path)'")
+                    return 0
                 }
 
-                if let alloc = values.totalFileAllocatedSize {
-                    total += Int64(alloc)
-                } else if let alloc = values.fileAllocatedSize {
-                    total += Int64(alloc)
-                } else if let size = values.fileSize {
-                    total += Int64(size)
+                while let next = enumerator.nextObject() as? URL {
+                    guard let values = try? next.resourceValues(forKeys: keys) else {
+                        log.debug("[FileRow] Fallback scan skipping unreadable metadata for '\(next.path)'")
+                        continue
+                    }
+
+                    if values.isReadable == false {
+                        if values.isDirectory == true {
+                            enumerator.skipDescendants()
+                        }
+                        log.debug("[FileRow] Fallback scan skipping unreadable path '\(next.path)'")
+                        continue
+                    }
+
+                    if let alloc = values.totalFileAllocatedSize {
+                        total += Int64(alloc)
+                    } else if let alloc = values.fileAllocatedSize {
+                        total += Int64(alloc)
+                    } else if let size = values.fileSize {
+                        total += Int64(size)
+                    }
                 }
+
+                return total
             }
-
-            return total
-        }.value
+            .value
     }
 
     // MARK: - Helpers
