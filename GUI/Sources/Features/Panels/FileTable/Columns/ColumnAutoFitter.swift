@@ -29,9 +29,7 @@ enum ColumnAutoFitter {
     static func autoFitAll(layout: ColumnLayoutModel, files: [CustomFile]) {
         guard let result = makeAutoFitResult(layout: layout, files: files) else { return }
         guard needsUpdate(layout: layout, fittedColumns: result.fittedColumns, nameWidth: result.nameWidth) else { return }
-
         apply(fittedColumns: result.fittedColumns, nameWidth: result.nameWidth, to: layout)
-        logAutoFit(layout: layout, fittedColumns: result.fittedColumns, nameWidth: result.nameWidth)
     }
 
     private struct AutoFitResult {
@@ -47,13 +45,7 @@ enum ColumnAutoFitter {
         var fittedColumns = measuredFixedWidths(for: visibleFixedColumns, files: files)
         var nameWidth = finalizedNameWidth(
             containerWidth: layout.containerWidth, fittedColumns: &fittedColumns, dividerTotal: dividerTotal)
-
-        let columnTitles = visibleFixedColumns.map { $0.id.title }.joined(separator: ", ")
-        log.debug("[AutoFit] pass=1")
-        log.debug("[AutoFit] panel=\(Int(layout.containerWidth)) fixed=\(Int(totalFixedWidth(fittedColumns))) name=\(Int(nameWidth))")
-        log.debug("[AutoFit] columns=\(columnTitles)")
-
-        for passIndex in 2...3 {
+        for _ in 2...3 {
             let requiresCorrection = needsCorrectivePass(
                 columns: visibleFixedColumns,
                 fittedColumns: fittedColumns,
@@ -62,18 +54,12 @@ enum ColumnAutoFitter {
                 nameWidth: nameWidth,
                 dividerTotal: dividerTotal
             )
-
             guard requiresCorrection else {
-                log.debug("[AutoFit] pass=\(passIndex) skipped")
-                log.debug("[AutoFit] stable after pass=\(passIndex - 1)")
                 break
             }
-
             applyCorrectivePass(columns: visibleFixedColumns, fittedColumns: &fittedColumns, files: files)
             nameWidth = finalizedNameWidth(
                 containerWidth: layout.containerWidth, fittedColumns: &fittedColumns, dividerTotal: dividerTotal)
-            log.debug("[AutoFit] pass=\(passIndex)")
-            log.debug("[AutoFit] fixed=\(Int(totalFixedWidth(fittedColumns))) name=\(Int(nameWidth))")
         }
 
         return AutoFitResult(fittedColumns: fittedColumns, nameWidth: nameWidth)
@@ -83,13 +69,6 @@ enum ColumnAutoFitter {
         layout.containerWidth > 0 && !files.isEmpty && !layout.fixedColumns.isEmpty
     }
 
-    private static func logAutoFit(layout: ColumnLayoutModel, fittedColumns: [FittedColumn], nameWidth: CGFloat) {
-        let detail = fittedColumns.map { "\($0.id.title)=\(Int($0.width))" }.joined(separator: " ")
-        log.debug(
-            "[AutoFit] panelWidth=\(Int(layout.containerWidth)) name=\(Int(nameWidth)) trailingInset=\(Int(trailingPanelInset)) \(detail)"
-        )
-    }
-
     private static func contentWidth(for col: ColumnID, files: [CustomFile]) -> CGFloat {
         let (texts, font) = textSamples(col, files: files)
         let meaningfulTexts = texts.filter(isRealContent)
@@ -97,22 +76,13 @@ enum ColumnAutoFitter {
             // Size column: use reference width ("999,99 MB") instead of collapsing to 24pt
             if col == .size {
                 let fallback = ColumnWidthPolicy.sizeColumnFallbackWidth()
-                log.debug("[AutoFit] column=\(col.title) no data yet, fallback=\(pt(fallback))")
                 return fallback
             }
-            log.debug("[AutoFit] column=\(col.title) no meaningful content, width=\(pt(emptyColumnWidth))")
             return emptyColumnWidth
         }
-
         let measuredWidths = measuredTextWidths(meaningfulTexts, font: font)
-        let weightedWidth = weightedAverageMeasuredWidth(measuredWidths)
         let fittedWidth = fittedContentWidth(for: col, measuredWidths: measuredWidths)
         let clampedWidth = fittedWidth.clamped(to: emptyColumnWidth...ColumnWidthPolicy.effectiveMaxWidth(for: col))
-
-        log.debug("[AutoFit] column=\(col.title)")
-        log.debug("[AutoFit] weightedAvg=\(pt(weightedWidth)) autoFit=\(pt(clampedWidth))")
-        log.debug("[AutoFit] raw=\(pt(fittedWidth)) max=\(pt(col.maxWidth)) samples=\(measuredWidths.count)")
-
         return clampedWidth
     }
 
@@ -148,12 +118,10 @@ enum ColumnAutoFitter {
 
     private static func measuredFixedWidths(for columns: [ColumnSpec], files: [CustomFile]) -> [FittedColumn] {
         var fittedColumns: [FittedColumn] = []
-
         for spec in columns.reversed() {
             let measuredWidth = contentWidth(for: spec.id, files: files)
             fittedColumns.append(FittedColumn(id: spec.id, width: measuredWidth))
         }
-
         return fittedColumns.reversed()
     }
 
@@ -161,12 +129,10 @@ enum ColumnAutoFitter {
         -> CGFloat
     {
         var nameWidth = proposedNameWidth(containerWidth: containerWidth, fittedColumns: fittedColumns, dividerTotal: dividerTotal)
-
         if nameWidth < minNameWidth {
             reclaimWidthFromRightColumns(fittedColumns: &fittedColumns, requiredWidth: minNameWidth - nameWidth)
             nameWidth = proposedNameWidth(containerWidth: containerWidth, fittedColumns: fittedColumns, dividerTotal: dividerTotal)
         }
-
         nameWidth = max(minNameWidth, min(maxNameWidth(for: containerWidth), nameWidth))
         alignTrailingEdge(
             fittedColumns: &fittedColumns, containerWidth: containerWidth, nameWidth: nameWidth, dividerTotal: dividerTotal)
@@ -185,21 +151,10 @@ enum ColumnAutoFitter {
         nameWidth: CGFloat,
         dividerTotal: CGFloat
     ) -> Bool {
-        let effectivePanelWidth = nameWidth + totalFixedWidth(fittedColumns) + dividerTotal + trailingPanelInset
-        if effectivePanelWidth > containerWidth + edgeAlignmentEpsilon {
-            log.debug(
-                "[AutoFit] corrective pass requested: panel overflow effective=\(Int(effectivePanelWidth)) container=\(Int(containerWidth))"
-            )
-            return true
-        }
-
         for column in columns {
             guard let fittedColumn = fittedColumns.first(where: { $0.id == column.id }) else { continue }
             let clippingRatio = measuredClippingRatio(for: column.id, files: files, fittedWidth: fittedColumn.width)
             if clippingRatio > correctiveClippingThreshold {
-                log.debug(
-                    "[AutoFit] corrective pass requested: column=\(column.id.title) clipped=\(Int(clippingRatio * 100))% width=\(Int(fittedColumn.width))"
-                )
                 return true
             }
         }
@@ -208,22 +163,12 @@ enum ColumnAutoFitter {
     }
 
     private static func applyCorrectivePass(columns: [ColumnSpec], fittedColumns: inout [FittedColumn], files: [CustomFile]) {
-        log.debug("[AutoFit] corrective pass started columns=\(fittedColumns.count) files=\(files.count)")
-
         for index in fittedColumns.indices {
             let columnID = fittedColumns[index].id
             guard columns.contains(where: { $0.id == columnID }) else { continue }
-
-            let oldWidth = fittedColumns[index].width
             let correctiveWidth = correctiveContentWidth(for: columnID, files: files)
-            guard correctiveWidth > oldWidth else {
-                //    log.debug("[AutoFit] corrective keep column=\(columnID.title) width=\(Int(oldWidth))")
-                continue
-            }
-
             let newWidth = min(correctiveWidth, columnID.maxWidth)
             fittedColumns[index].width = newWidth
-            //log.debug("[AutoFit] corrective widen column=\(columnID.title) old=\(Int(oldWidth)) new=\(Int(newWidth)) target=\(Int(correctiveWidth))")
         }
     }
 
@@ -231,7 +176,6 @@ enum ColumnAutoFitter {
         let (texts, font) = textSamples(column, files: files)
         let meaningfulTexts = texts.filter(isRealContent)
         guard !meaningfulTexts.isEmpty else { return emptyColumnWidth }
-
         let measuredWidths = measuredTextWidths(meaningfulTexts, font: font)
         let percentileWidth = clippingSafePercentileWidth(measuredWidths)
         let contentWidth = percentileFittedContentWidth(for: column, percentileWidth: percentileWidth)

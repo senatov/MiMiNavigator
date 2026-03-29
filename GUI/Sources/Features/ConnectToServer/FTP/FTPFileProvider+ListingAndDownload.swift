@@ -20,10 +20,19 @@ extension FTPFileProvider {
             throw RemoteProviderError.invalidURL
         }
 
+        let target = url.absoluteString
+
         return try await runCurlCaptureOutput(
-            arguments: ["-s", "--max-time", "15", url.absoluteString],
+            arguments: [
+                "-sS",
+                "--disable-epsv",
+                "--connect-timeout", "12",
+                "--max-time", "35",
+                target,
+            ],
             failure: { status, errorText in
-                log.warning("[FTP] curl exit=\(status): \(errorText.prefix(200))")
+                log.warning("[FTP] LIST failed url='\(target)' exit=\(status)")
+                log.warning("[FTP] LIST stderr=\(errorText.prefix(200))")
                 return RemoteProviderError.listingFailed
             }
         )
@@ -72,6 +81,36 @@ extension FTPFileProvider {
         )
     }
 
+    private func parseFTPModifiedDate(month: String, day: String, yearOrTime: String) -> Date? {
+        let calendar = Calendar.current
+        let currentYear = calendar.component(.year, from: Date())
+
+        let formatterWithYear = DateFormatter()
+        formatterWithYear.locale = Locale(identifier: "en_US_POSIX")
+        formatterWithYear.timeZone = TimeZone.current
+        formatterWithYear.dateFormat = "MMM d yyyy"
+
+        let formatterWithTime = DateFormatter()
+        formatterWithTime.locale = Locale(identifier: "en_US_POSIX")
+        formatterWithTime.timeZone = TimeZone.current
+        formatterWithTime.dateFormat = "MMM d yyyy HH:mm"
+
+        if yearOrTime.contains(":") {
+            let candidate = "\(month) \(day) \(currentYear) \(yearOrTime)"
+            if let parsed = formatterWithTime.date(from: candidate) {
+                if parsed > Date(),
+                   let adjusted = calendar.date(byAdding: .year, value: -1, to: parsed) {
+                    return adjusted
+                }
+                return parsed
+            }
+            return nil
+        }
+
+        let candidate = "\(month) \(day) \(yearOrTime)"
+        return formatterWithYear.date(from: candidate)
+    }
+
     // MARK: - Listing parser
 
     func parseFTPListing(_ raw: String, basePath: String) -> [RemoteFileItem] {
@@ -86,8 +125,13 @@ extension FTPFileProvider {
                 let name = parts[8...].joined(separator: " ")
                 guard name != "." && name != ".." else { return nil }
 
-                let isDirectory = parts[0].hasPrefix("d")
+                let permissions = parts[0]
+                let isDirectory = permissions.hasPrefix("d")
                 let size = Int64(parts[4]) ?? 0
+                let month = parts[5]
+                let day = parts[6]
+                let yearOrTime = parts[7]
+                let modified = parseFTPModifiedDate(month: month, day: day, yearOrTime: yearOrTime)
 
                 let path: String
                 if basePath.hasSuffix("/") {
@@ -101,7 +145,8 @@ extension FTPFileProvider {
                     path: path,
                     isDirectory: isDirectory,
                     size: size,
-                    permissions: parts[0]
+                    modified: modified,
+                    permissions: permissions
                 )
             }
     }

@@ -15,6 +15,7 @@ struct DuoFilePanelView: View {
     @State private var toolbarStore = ToolbarStore.shared  // tracks menuBarVisible changes
     @State private var leftPanelWidth: CGFloat = 0
     @State private var isInitialized = false
+    @State private var lastContainerWidth: CGFloat = 0
     @State private var keyboardHandler: DuoFilePanelKeyboardHandler?
 
     // MARK: - Persisted divider position (via MiMiDefaults JSON storage)
@@ -71,7 +72,7 @@ struct DuoFilePanelView: View {
                 BatchProgressDialog(
                     state: state,
                     onCancel: {
-                        BatchOperationCoordinator.shared.cancelCurrentOperation()
+                        BatchOpsCoord.shared.cancelCurrentOperation()
                     },
                     onDismiss: {
                         BatchOperationManager.shared.dismissProgressDialog()
@@ -121,25 +122,60 @@ struct DuoFilePanelView: View {
     }
 
     private func handleInitialLayout(containerWidth: CGFloat) {
+        guard containerWidth > 0 else { return }
+
         if !isInitialized {
             log.debug("\(#function) initializing with containerWidth=\(Int(containerWidth))")
             initializePanelWidth(containerWidth: containerWidth)
+            lastContainerWidth = containerWidth
             isInitialized = true
+            return
+        }
+
+        if lastContainerWidth <= 0 {
+            lastContainerWidth = containerWidth
         }
     }
 
     private func handleResize(oldWidth: CGFloat, newWidth: CGFloat) {
-        guard isInitialized, oldWidth > 0 else { return }
+        guard isInitialized, newWidth > 0 else { return }
 
-        let oldAvailableWidth = availablePanelWidth(containerWidth: oldWidth)
+        let trackedOldWidth = lastContainerWidth > 0 ? lastContainerWidth : oldWidth
+        guard trackedOldWidth > 0 else {
+            lastContainerWidth = newWidth
+            return
+        }
+
+        if abs(trackedOldWidth - newWidth) < 0.5 {
+            lastContainerWidth = newWidth
+            return
+        }
+
+        let oldAvailableWidth = availablePanelWidth(containerWidth: trackedOldWidth)
         let newAvailableWidth = availablePanelWidth(containerWidth: newWidth)
-        guard oldAvailableWidth > 0, newAvailableWidth > 0 else { return }
+        guard oldAvailableWidth > 0, newAvailableWidth > 0 else {
+            lastContainerWidth = newWidth
+            return
+        }
 
         let ratio = min(max(leftPanelWidth / oldAvailableWidth, 0), 1)
-        leftPanelWidth = calculateConstrainedWidth(
+        let resizedWidth = calculateConstrainedWidth(
             proposed: newAvailableWidth * ratio,
             containerWidth: newWidth
         )
+
+        let oldWidthText = Int(trackedOldWidth)
+        let newWidthText = Int(newWidth)
+        let ratioText = String(format: "%.3f", ratio)
+        let resizedWidthText = Int(resizedWidth)
+
+        log.debug("\(#function) old=\(oldWidthText)")
+        log.debug("\(#function) new=\(newWidthText)")
+        log.debug("\(#function) ratio=\(ratioText)")
+        log.debug("\(#function) left=\(resizedWidthText)")
+
+        leftPanelWidth = resizedWidth
+        lastContainerWidth = newWidth
     }
 
     private var screenScale: CGFloat {

@@ -9,7 +9,6 @@
 import FileModelKit
 import SwiftUI
 
-
 // MARK: - ParentEntryStripView
 struct ParentEntryStripView: View {
     let file: CustomFile
@@ -34,7 +33,6 @@ struct ParentEntryStripView: View {
     @State private var rowsCount: Int = 0
     @State private var isHovering = false
 
-
     private enum UI {
         static let stripHeight: CGFloat = 25
         static let pebbleWidth: CGFloat = 0.092
@@ -45,8 +43,6 @@ struct ParentEntryStripView: View {
         static let shadowY: CGFloat = -2.0
     }
 
-
-
     // MARK: - Body
     var body: some View {
         GeometryReader { geo in
@@ -56,19 +52,17 @@ struct ParentEntryStripView: View {
         .frame(height: UI.stripHeight)
         .contentShape(Rectangle())
         .zIndex(10)
-        .onAppear { logRenderState() }
-        .onChange(of: isHovering) { _, _ in logRenderState() }
         .onHover { handleHoverChange($0) }
         .highPriorityGesture(
-            TapGesture().onEnded {
-                activateParentNavigation()
-            }
+            TapGesture()
+                .onEnded {
+                    activateParentNavigation()
+                }
         )
         .task(id: countTaskID) {
             await loadParentCount()
         }
     }
-
 
     // MARK: - Strip Content
     private func stripContent(geo: GeometryProxy) -> some View {
@@ -80,17 +74,11 @@ struct ParentEntryStripView: View {
         }
     }
 
-    // MARK: - View State
-    private func logRenderState() {
-        log.debug("[ParentEntryStripView] render sel=\(isSelected) hov=\(isHovering)")
-    }
-
     private func handleHoverChange(_ isHoveringNow: Bool) {
         withAnimation(.easeInOut(duration: 0.10)) {
             isHovering = isHoveringNow
         }
     }
-
 
     // MARK: - Path Label
     private func pathLabel(geo: GeometryProxy) -> some View {
@@ -101,7 +89,6 @@ struct ParentEntryStripView: View {
             .truncationMode(.middle)
             .padding(.leading, geo.size.width * UI.textInset)
     }
-
 
     // MARK: - Pebble Button (corner triangle)
     private func pebbleButton(geo: GeometryProxy) -> some View {
@@ -135,7 +122,6 @@ struct ParentEntryStripView: View {
         }
     }
 
-
     // MARK: - Bottom Border (prominent, with upward shadow)
     private var bottomBorder: some View {
         VStack {
@@ -145,7 +131,6 @@ struct ParentEntryStripView: View {
                 .shadow(color: .black.opacity(0.30), radius: UI.shadowRadius, x: 0, y: UI.shadowY)
         }
     }
-
 
     // MARK: - Parent Navigation
     private func activateParentNavigation() {
@@ -158,14 +143,15 @@ struct ParentEntryStripView: View {
         }
     }
 
-
     // MARK: - Load Parent Directory Count
     private func loadParentCount() async {
         let url = parentURL
         let hidden = showHidden
-        let count = await Task.detached(priority: .utility) {
-            Self.countSubdirectories(in: url, showHidden: hidden)
-        }.value
+        let count =
+            await Task.detached(priority: .utility) {
+                Self.countSubdirectories(in: url, showHidden: hidden)
+            }
+            .value
         await updateRowsCount(count)
     }
 
@@ -175,20 +161,23 @@ struct ParentEntryStripView: View {
         }
     }
 
-
     // MARK: - Count Subdirectories (off MainActor)
     nonisolated static func countSubdirectories(in url: URL, showHidden: Bool) -> Int {
         let fm = FileManager.default
-        guard let items = try? fm.contentsOfDirectory(
-            at: url,
-            includingPropertiesForKeys: [.isDirectoryKey, .isHiddenKey],
-            options: []
-        ) else { return 0 }
-        return items.filter { item in
-            guard let vals = try? item.resourceValues(forKeys: [.isDirectoryKey, .isHiddenKey]) else { return false }
-            let isDir = vals.isDirectory ?? false
-            let isHid = vals.isHidden ?? false
-            return isDir && (showHidden || !isHid)
-        }.count
+        guard
+            let items = try? fm.contentsOfDirectory(
+                at: url,
+                includingPropertiesForKeys: [.isDirectoryKey, .isHiddenKey],
+                options: []
+            )
+        else { return 0 }
+        return
+            items.filter { item in
+                guard let vals = try? item.resourceValues(forKeys: [.isDirectoryKey, .isHiddenKey]) else { return false }
+                let isDir = vals.isDirectory ?? false
+                let isHid = vals.isHidden ?? false
+                return isDir && (showHidden || !isHid)
+            }
+            .count
     }
 }

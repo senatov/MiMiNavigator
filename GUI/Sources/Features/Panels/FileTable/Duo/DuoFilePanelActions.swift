@@ -66,7 +66,7 @@
             log.debug("performCopy - Copy button pressed")
 
             // Use batch coordinator for multi-selection support
-            BatchOperationCoordinator.shared.initiateCopy(appState: appState)
+            BatchOpsCoord.shared.initiateCopy(appState: appState)
         }
 
         // MARK: - F6 Move (supports batch operations)
@@ -74,7 +74,7 @@
             log.debug("performMove - Move button pressed")
 
             // Use batch coordinator for multi-selection support
-            BatchOperationCoordinator.shared.initiateMove(appState: appState)
+            BatchOpsCoord.shared.initiateMove(appState: appState)
         }
 
         // MARK: - F7 New Folder

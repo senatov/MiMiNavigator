@@ -197,7 +197,7 @@
                     destination: destination,
                     onConfirm: {
                         coordinator.dismissDialog()
-                        BatchOperationCoordinator.shared.executeCopy(
+                        BatchOpsCoord.shared.executeCopy(
                             files: files,
                             destination: destination,
                             sourcePanel: sourcePanel,
@@ -216,7 +216,7 @@
                     destination: destination,
                     onConfirm: {
                         coordinator.dismissDialog()
-                        BatchOperationCoordinator.shared.executeMove(
+                        BatchOpsCoord.shared.executeMove(
                             files: files,
                             destination: destination,
                             sourcePanel: sourcePanel,
@@ -235,7 +235,7 @@
                     destination: nil,
                     onConfirm: {
                         coordinator.dismissDialog()
-                        BatchOperationCoordinator.shared.executeDelete(
+                        BatchOpsCoord.shared.executeDelete(
                             files: files,
                             sourcePanel: sourcePanel,
                             appState: appState
@@ -253,7 +253,7 @@
                     sourcePanel: sourcePanel,
                     onPack: { archiveName, format, finalDestination, deleteSource, compressionLevel, password in
                         coordinator.dismissDialog()
-                        BatchOperationCoordinator.shared.initiatePack(
+                        BatchOpsCoord.shared.initiatePack(
                             appState: appState,
                             archiveName: archiveName,
                             format: format
@@ -269,7 +269,7 @@
                 BatchProgressDialog(
                     state: state,
                     onCancel: {
-                        BatchOperationCoordinator.shared.cancelCurrentOperation()
+                        BatchOpsCoord.shared.cancelCurrentOperation()
                     },
                     onDismiss: {
                         coordinator.dismissDialog()

@@ -37,6 +37,20 @@ final class DragDropManager {
         AppState.isRemotePath(destination)
     }
 
+    private func normalizedRemoteDestinationPath(_ destination: URL) -> String {
+        let path = destination.path
+        return path.isEmpty ? "/" : path
+    }
+
+    private func destinationDisplayName(_ destination: URL) -> String {
+        let normalizedPath = normalizedRemoteDestinationPath(destination)
+        if normalizedPath == "/" {
+            return "/"
+        }
+
+        return destination.lastPathComponent.isEmpty ? normalizedPath : destination.lastPathComponent
+    }
+
     // MARK: - Start Drag
     /// Register files being dragged. Called from SwiftUI .onDrag (grid mode) and DragNSView (list mode).
     func startDrag(files: [CustomFile], from panelSide: FavPanelSide) {
@@ -85,7 +99,7 @@ final class DragDropManager {
         to destination: URL,
         from sourcePanelSide: FavPanelSide?
     ) {
-        log.debug("[DnD] prepareTransfer: \(files.count) file(s) → \(destination.lastPathComponent)")
+        log.debug("[DnD] prepareTransfer: \(files.count) file(s) → \(destinationDisplayName(destination))")
         pendingOperation = makePendingOperation(
             files: files,
             destination: destination,
@@ -205,7 +219,10 @@ final class DragDropManager {
     }
 
     private func remoteDestinationPath(for file: CustomFile, in destination: URL) -> String {
-        destination.path + "/" + file.nameStr
+        let destinationPath = normalizedRemoteDestinationPath(destination)
+        return destinationPath == "/"
+            ? "/\(file.nameStr)"
+            : destinationPath + "/\(file.nameStr)"
     }
 
     private func moveLocalItemToTrash(_ url: URL) throws {
@@ -234,7 +251,7 @@ final class DragDropManager {
             icon: "arrow.up.doc.fill",
             title: uploadOperationTitle(for: files),
             itemCount: files.count,
-            destination: destination.path
+            destination: normalizedRemoteDestinationPath(destination)
         )
 
         var ok = 0
@@ -276,7 +293,7 @@ final class DragDropManager {
                 } else {
                     panel.appendLog("📄 \(file.nameStr)")
                 }
-                log.info("[DnD] uploaded '\(file.nameStr)' → '\(destination.lastPathComponent)'")
+                log.info("[DnD] uploaded '\(file.nameStr)' → '\(destinationDisplayName(destination))'")
                 ok += 1
             } catch {
                 log.error("[DnD] upload '\(file.nameStr)' failed: \(error.localizedDescription)")

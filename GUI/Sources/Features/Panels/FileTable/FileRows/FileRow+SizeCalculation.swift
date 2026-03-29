@@ -34,10 +34,21 @@ extension FileRow {
 
     // MARK: - Directory size task orchestration
     func runDirectorySizeTask() async {
+        let fileURL = file.urlValue
+
+        if AppState.isRemotePath(fileURL) {
+            log.debug("[FileRow] Skipping remote directory size calculation for '\(file.nameStr)' path='\(fileURL.path)'")
+            file.cachedDirectorySize = nil
+            file.cachedShallowSize = nil
+            file.sizeIsExact = false
+            file.sizeCalculationStarted = false
+            return
+        }
+
         log.info("[FileRow] Task started for directory '\(file.nameStr)' symDir=\(file.isSymbolicDirectory)")
         // Skip known special / virtual directories to avoid useless scans and permission errors
-        if shouldSkipSizeCalculation(file.urlValue) {
-            log.debug("[FileRow] Skipping size calculation for special directory '\(file.nameStr)' path='\(file.urlValue.path)'")
+        if shouldSkipSizeCalculation(fileURL) {
+            log.debug("[FileRow] Skipping size calculation for special directory '\(file.nameStr)' path='\(fileURL.path)'")
             file.cachedDirectorySize = DirectorySizeService.unavailableSize
             file.sizeIsExact = false
             file.securityState = .restricted
@@ -53,7 +64,7 @@ extension FileRow {
             return
         }
         file.sizeCalculationStarted = true
-        let targetURL = normalizedURLForSize(file.urlValue)
+        let targetURL = normalizedURLForSize(fileURL)
         await withTaskGroup(of: Void.self) { group in
             group.addTask(priority: .utility) { [fileName = file.nameStr] in
                 await self.performPhase1Shallow(for: targetURL)
@@ -128,13 +139,16 @@ extension FileRow {
         }
         let finalSize = await resolveZeroSizeIfNeeded(size, url: url)
         if finalSize == 0 {
+            let shallow = file.cachedShallowSize ?? 0
             let looksVirtual = file.isSymbolicDirectory || isLikelyVirtualDirectory(url)
             let provenEmpty = isTrulyEmptyDirectory(url)
+            let hasChildrenHint = hasNonZeroChildCountHint()
             // Treat system-like folders as suspicious (macOS lies with 0 sometimes)
             let isSystemLike = shouldSkipSizeCalculation(url)
+            let shouldFallback = (shallow > 0) || hasChildrenHint || looksVirtual || isSystemLike || !provenEmpty
 
-            if looksVirtual || !provenEmpty || isSystemLike {
-                log.warning("[FileRow] Phase 2 produced 0 for '\(file.nameStr)' — running fallback instead")
+            if shouldFallback {
+                log.warning("[FileRow] Phase 2 produced 0 for '\(file.nameStr)' — running fallback scan")
 
                 let fallback = await fallbackDirectoryScanAsync(url: url)
 
@@ -143,12 +157,16 @@ extension FileRow {
                     file.sizeIsExact = true
                     file.securityState = .normal
                     log.info("[FileRow] Phase 2 recovered via fallback: '\(file.nameStr)' size=\(fallback)")
-                } else {
-                    // Fallback also failed → treat as inaccessible (🔒)
+                } else if isDirectlyUnreadableDirectory(url) {
                     file.cachedDirectorySize = nil
                     file.sizeIsExact = false
                     file.securityState = .restricted
-                    log.warning("[FileRow] Phase 2 fallback failed for '\(file.nameStr)' → marking as restricted (🔒)")
+                    log.warning("[FileRow] Phase 2 fallback failed for '\(file.nameStr)' and root path is unreadable → marking as restricted (🔒)")
+                } else {
+                    file.cachedDirectorySize = 0
+                    file.sizeIsExact = true
+                    file.securityState = .normal
+                    log.info("[FileRow] Phase 2 confirmed zero size for '\(file.nameStr)' after fallback")
                 }
 
                 file.sizeCalculationStarted = false
@@ -165,12 +183,7 @@ extension FileRow {
     // MARK: - Suspicious zero handler
     private func resolveZeroSizeIfNeeded(_ size: Int64, url: URL) async -> Int64 {
         if size == DirectorySizeService.unavailableSize { return size }
-        guard size == 0 else { return size }
-        let shallow = file.cachedShallowSize ?? 0
-        let shouldFallback = (shallow > 0) || hasNonZeroChildCountHint() || file.isSymbolicDirectory || isLikelyVirtualDirectory(url)
-        guard shouldFallback else { return 0 }
-        log.warning("[FileRow] Phase2 returned 0 for '\(file.nameStr)' — running fallback scan")
-        return await fallbackDirectoryScanAsync(url: url)
+        return size
     }
 
     // MARK: - Shallow size with timeout
@@ -193,32 +206,58 @@ extension FileRow {
     // MARK: - Fallback directory scan (slow but reliable)
     private func fallbackDirectoryScanAsync(url: URL) async -> Int64 {
         let target = normalizedURLForSize(url)
-        return
-            await Task.detached(priority: .utility) {
-                let fm = FileManager.default
-                var total: Int64 = 0
-                let keys: Set<URLResourceKey> = [
-                    .isDirectoryKey, .fileSizeKey, .fileAllocatedSizeKey, .totalFileAllocatedSizeKey,
-                ]
-                if let enumerator = fm.enumerator(
-                    at: target, includingPropertiesForKeys: Array(keys),
-                    options: [.skipsPackageDescendants]
-                ) {
-                    while let next = enumerator.nextObject() as? URL {
-                        if let values = try? next.resourceValues(forKeys: keys) {
-                            if let alloc = values.totalFileAllocatedSize {
-                                total += Int64(alloc)
-                            } else if let alloc = values.fileAllocatedSize {
-                                total += Int64(alloc)
-                            } else if let s = values.fileSize {
-                                total += Int64(s)
-                            }
-                        }
-                    }
+
+        return await Task.detached(priority: .utility) {
+            let fm = FileManager.default
+            var total: Int64 = 0
+            let keys: Set<URLResourceKey> = [
+                .isDirectoryKey,
+                .fileSizeKey,
+                .fileAllocatedSizeKey,
+                .totalFileAllocatedSizeKey,
+                .isReadableKey,
+            ]
+
+            let enumerator = fm.enumerator(
+                at: target,
+                includingPropertiesForKeys: Array(keys),
+                options: [.skipsPackageDescendants, .skipsHiddenFiles],
+                errorHandler: { failedURL, error in
+                    log.warning("[FileRow] Fallback scan skipping inaccessible path '\(failedURL.path)': \(error.localizedDescription)")
+                    return true
                 }
-                return total
+            )
+
+            guard let enumerator else {
+                log.warning("[FileRow] Fallback scan could not start for '\(target.path)'")
+                return 0
             }
-            .value
+
+            while let next = enumerator.nextObject() as? URL {
+                guard let values = try? next.resourceValues(forKeys: keys) else {
+                    log.debug("[FileRow] Fallback scan skipping unreadable metadata for '\(next.path)'")
+                    continue
+                }
+
+                if values.isReadable == false {
+                    if values.isDirectory == true {
+                        enumerator.skipDescendants()
+                    }
+                    log.debug("[FileRow] Fallback scan skipping unreadable path '\(next.path)'")
+                    continue
+                }
+
+                if let alloc = values.totalFileAllocatedSize {
+                    total += Int64(alloc)
+                } else if let alloc = values.fileAllocatedSize {
+                    total += Int64(alloc)
+                } else if let size = values.fileSize {
+                    total += Int64(size)
+                }
+            }
+
+            return total
+        }.value
     }
 
     // MARK: - Helpers
@@ -262,6 +301,12 @@ extension FileRow {
         if p.contains("OneDrive") { return true }
         if p.contains("ProtonDrive") { return true }
         return false
+    }
+
+    func isDirectlyUnreadableDirectory(_ url: URL) -> Bool {
+        let target = normalizedURLForSize(url)
+        let path = target.path
+        return !FileManager.default.isReadableFile(atPath: path)
     }
 
     // MARK: - Detect directories where size calculation should be skipped (system / virtual / restricted)

@@ -173,9 +173,12 @@ struct FileTableView: View {
             }
             .focusable(true)
             .focusEffectDisabled()
-            .onGeometryChange(for: CGFloat.self, of: { geometry in
-                geometry.size.height
-            }) { newHeight in
+            .onGeometryChange(
+                for: CGFloat.self,
+                of: { geometry in
+                    geometry.size.height
+                }
+            ) { newHeight in
                 viewHeight = newHeight
             }
             .onChange(of: layout.containerWidth) { _, newWidth in
@@ -380,17 +383,14 @@ struct FileTableView: View {
             let liveFiles = appState.displayedFiles(for: panelSide)
             lastAutoFitWidth = layout.containerWidth
             ColumnAutoFitter.autoFitAll(layout: layout, files: liveFiles)
-            log.debug("[AutoFit] deferred pass=1 panel=\(panelSide) files=\(liveFiles.count)")
             // pass 2: re-fit after 2s (late arrivals, app bundle sizes)
             try? await Task.sleep(for: .seconds(2))
             if Task.isCancelled { return }
             ColumnAutoFitter.autoFitAll(layout: layout, files: appState.displayedFiles(for: panelSide))
-            log.debug("[AutoFit] deferred pass=2 panel=\(panelSide)")
             // pass 3: final re-fit after another 2s (very slow dirs)
             try? await Task.sleep(for: .seconds(2))
             if Task.isCancelled { return }
             ColumnAutoFitter.autoFitAll(layout: layout, files: appState.displayedFiles(for: panelSide))
-            log.debug("[AutoFit] deferred pass=3 panel=\(panelSide)")
         }
     }
 
