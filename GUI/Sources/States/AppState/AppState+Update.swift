@@ -12,6 +12,52 @@ import Foundation
 // MARK: - Path Updates
 extension AppState {
 
+    private func fallbackLocalRestoreURL() -> URL {
+        FileManager.default.homeDirectoryForCurrentUser
+    }
+
+    private func resolvedRestoreLocalURL(for panel: FavPanelSide) -> URL {
+        let fallbackURL = fallbackLocalRestoreURL()
+        let savedURL = self[panel: panel].savedLocalURL
+
+        guard let savedURL else {
+            log.warning("[AppState] savedLocalURL missing for \(panel), restoring to home")
+            return fallbackURL
+        }
+
+        let savedPath = savedURL.path
+        guard !savedPath.isEmpty, savedPath != "/", savedPath != "/private" else {
+            log.warning("[AppState] savedLocalURL invalid/root for \(panel), restoring to home")
+            return fallbackURL
+        }
+
+        return savedURL
+    }
+
+    private func clearDisplayedFiles(for panel: FavPanelSide) {
+        if panel == .left {
+            displayedLeftFiles = []
+        } else {
+            displayedRightFiles = []
+        }
+    }
+
+    private func setPanelURL(_ url: URL, for panel: FavPanelSide) {
+        if panel == .left {
+            leftURL = url
+        } else {
+            rightURL = url
+        }
+    }
+
+    private func clearSavedLocalURL(for panel: FavPanelSide) {
+        self[panel: panel].savedLocalURL = nil
+    }
+
+    private func updateTabPath(_ url: URL, for panel: FavPanelSide) {
+        tabManager(for: panel).updateActiveTabPath(url)
+    }
+
     func updatePath(_ pathString: String, for panel: FavPanelSide) {
         // remote strings must go through URL(string:) — not fileURLWithPath, that mangles them
         if pathString.hasPrefix("sftp://") || pathString.hasPrefix("ftp://") {
@@ -76,7 +122,7 @@ extension AppState {
     private func applyPathUpdate(_ normalizedURL: URL, isDir: Bool, for panel: FavPanelSide) {
         log.debug("\(#function) \(panel) → \(normalizedURL.path) isDir=\(isDir)")
         focusedPanel = panel
-        tabManager(for: panel).updateActiveTabPath(normalizedURL)
+        updateTabPath(normalizedURL, for: panel)
         if !isNavigatingFromHistory {
             // Remote paths are always directory-like — record regardless of isDir flag
             if isDir || Self.isRemotePath(normalizedURL) {
@@ -106,25 +152,30 @@ extension AppState {
     }
 
     func restoreLocalPath(for panel: FavPanelSide) async {
-        var localURL = self[panel: panel].savedLocalURL
-        // Guard: if saved path is root or nil, fall back to home
-        let home = FileManager.default.homeDirectoryForCurrentUser
-        if localURL == nil || localURL?.path == "/" || localURL?.path == "" {
-            localURL = home
-            log.warning("[AppState] savedLocalURL missing/root for \(panel), restoring to home")
-        }
-        guard let localURL else { return }
+        let localURL = resolvedRestoreLocalURL(for: panel)
+
         let localPath = localURL.path
         log.info("[AppState] restoring local path \(panel): \(localPath)")
-        // 1. Wipe stale remote file list immediately
-        if panel == .left { displayedLeftFiles = [] } else { displayedRightFiles = [] }
-        // 2. Set URL synchronously — must be before any refresh so url(for:) returns local path
-        if panel == .left { leftURL = localURL } else { rightURL = localURL }
-        tabManager(for: panel).updateActiveTabPath(localURL)
-        self[panel: panel].savedLocalURL = nil
-        // 3. Single scan — no double-scan, no gen-mismatch
+
+        // 1. Wipe stale remote file list immediately.
+        clearDisplayedFiles(for: panel)
+
+        // 2. Set URL synchronously before any refresh so url(for:) returns local path.
+        setPanelURL(localURL, for: panel)
+        updateTabPath(localURL, for: panel)
+        clearSavedLocalURL(for: panel)
+
+        // 3. Scan local directory and, if needed, run one guarded fallback refresh.
         await scanner.clearCooldown(for: panel)
         await setScannerDirectoryAndRefresh(localPath, for: panel)
-        log.info("[AppState] restore done \(panel): \(localPath), files=\(displayedFiles(for: panel).count)")
+
+        let restoredFileCount = displayedFiles(for: panel).count
+        if restoredFileCount == 0 {
+            log.warning("[AppState] restore produced 0 visible files for \(panel): \(localPath) — forcing fallback refresh")
+            await refreshFiles(for: panel, force: true)
+        }
+
+        let finalFileCount = displayedFiles(for: panel).count
+        log.info("[AppState] restore done \(panel): \(localPath), files=\(finalFileCount)")
     }
 }
