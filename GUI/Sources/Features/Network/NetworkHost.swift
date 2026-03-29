@@ -3,15 +3,14 @@
 //
 // Created by Iakov Senatov on 19.02.2026.
 // Copyright © 2026 Senatov. All rights reserved.
-// Description: Model representing a discovered network host (SMB/AFP/Bonjour/Mobile/MediaBox).
-//   NetworkDeviceClass: mac/windowsPC/linuxServer/nas/router/printer/iPhone/iPad/mediaBox/unknown
-//   mediaBox: Enigma2/OpenPLi/Kodi — isExpandable=false, no SMB, web UI only
-//   probedWebURL: first responding HTTP port found by WebUIProber (async, post-fingerprint)
+// Description: Model for a discovered network host and its shares.
+//   Covers Bonjour, SMB/AFP/SFTP/FTP, mobile devices, routers, printers,
+//   media devices, and post-fingerprint Web UI probing.
 
 import Foundation
 
 // MARK: - Network service type
-enum NetworkServiceType: String, CaseIterable {
+enum NetworkServiceType: String, CaseIterable, Sendable {
     case smb  = "_smb._tcp."
     case afp  = "_afpovertcp._tcp."
     case sftp = "_sftp-ssh._tcp."
@@ -34,18 +33,44 @@ enum NetworkServiceType: String, CaseIterable {
         case .ftp:  return 21
         }
     }
+
+    var urlScheme: String {
+        switch self {
+            case .smb:
+                return "smb"
+            case .afp:
+                return "afp"
+            case .sftp:
+                return "sftp"
+            case .ftp:
+                return "ftp"
+        }
+    }
 }
 
 // MARK: - Node type for tree display
-enum NetworkNodeType {
+enum NetworkNodeType: Sendable {
     case fileServer
     case printer
     case mobileDevice
     case generic
+
+    var displayName: String {
+        switch self {
+            case .fileServer:
+                return "File Server"
+            case .printer:
+                return "Printer"
+            case .mobileDevice:
+                return "Mobile"
+            case .generic:
+                return "Generic"
+        }
+    }
 }
 
 // MARK: - A single share/volume on a host
-struct NetworkShare: Identifiable, Hashable {
+struct NetworkShare: Identifiable, Hashable, Sendable {
     let id: UUID
     var name: String
     let url: URL
@@ -58,7 +83,7 @@ struct NetworkShare: Identifiable, Hashable {
 }
 
 // MARK: - Discovered network host
-struct NetworkHost: Identifiable, Hashable {
+struct NetworkHost: Identifiable, Hashable, Sendable {
     let id: UUID
     var name: String
     var hostName: String
@@ -66,7 +91,7 @@ struct NetworkHost: Identifiable, Hashable {
     let serviceType: NetworkServiceType
 
     var nodeType: NetworkNodeType
-    var deviceClass: NetworkDeviceClass
+    var deviceClass: NetworkDeviceXT
     var shares: [NetworkShare]
     var sharesLoaded: Bool
     var sharesLoading: Bool
@@ -83,7 +108,7 @@ struct NetworkHost: Identifiable, Hashable {
         port: Int,
         serviceType: NetworkServiceType,
         nodeType: NetworkNodeType = .fileServer,
-        deviceClass: NetworkDeviceClass = .unknown,
+        deviceClass: NetworkDeviceXT = .unknown,
         isLocalhost: Bool = false
     ) {
         self.id             = UUID()
@@ -103,15 +128,56 @@ struct NetworkHost: Identifiable, Hashable {
         self.probedWebURL   = nil
     }
 
+    // MARK: - Helpers
+    private var hasCustomPort: Bool {
+        port != serviceType.defaultPort
+    }
+
+    private var normalizedDashedIPv4Name: String? {
+        let parts = name.components(separatedBy: "-")
+        guard parts.count == 4 else { return nil }
+        guard parts.allSatisfy({ Int($0).map { (0...255).contains($0) } ?? false }) else { return nil }
+        return parts.joined(separator: ".")
+    }
+
+    private var isIPv4HostName: Bool {
+        let parts = hostName.components(separatedBy: ".")
+        return parts.count == 4 && parts.allSatisfy { Int($0).map { (0...255).contains($0) } ?? false }
+    }
+
+    private var isUnusableHostName: Bool {
+        hostName.isEmpty || hostName == "(nil)" || hostName.contains("@")
+    }
+
+    private var normalizedHostNameOrNil: String? {
+        guard !isUnusableHostName else { return nil }
+        return hostName
+    }
+
+    private var preferredDisplayName: String {
+        normalizedDashedIPv4Name ?? name
+    }
+
+    private var preferredConnectionHost: String? {
+        normalizedHostNameOrNil
+    }
+
+    private var preferredWebUIHost: String {
+        preferredConnectionHost ?? preferredDisplayName
+    }
+
     // MARK: - Root URL for this host
     var mountURL: URL? {
-        var c = URLComponents()
-        c.scheme = serviceType == .afp ? "afp" : serviceType == .sftp ? "sftp" :
-                   serviceType == .ftp  ? "ftp"  : "smb"
-        c.host   = hostName
-        if port != serviceType.defaultPort { c.port = port }
-        c.path   = "/"
-        return c.url
+        guard let mountHost = preferredConnectionHost else { return nil }
+
+        var components = URLComponents()
+        components.scheme = serviceType.urlScheme
+        components.host = mountHost
+        if hasCustomPort {
+            components.port = port
+        }
+        components.path = "/"
+        return components.url
     }
 
     // MARK: - SF Symbol
@@ -139,19 +205,24 @@ struct NetworkHost: Identifiable, Hashable {
 
     // MARK: - Human display name: 192-168-178-1 -> 192.168.178.1
     var hostDisplayName: String {
-        let parts = name.components(separatedBy: "-")
-        if parts.count == 4, parts.allSatisfy({ Int($0).map { (0...255).contains($0) } ?? false }) {
-            return parts.joined(separator: ".")
-        }
-        return name
+        preferredDisplayName
     }
 
     // MARK: - IP address (hostName when it's an IP, else empty)
     var hostIP: String {
-        // hostName is IP if it's all digits and dots
-        let parts = hostName.components(separatedBy: ".")
-        if parts.count == 4 && parts.allSatisfy({ Int($0) != nil }) { return hostName }
-        return ""
+        isIPv4HostName ? hostName : ""
+    }
+
+    // MARK: - Preferred addressing
+    // Display name for UI text (safe, human-readable)
+    // Host used for file protocol connections when available
+    var effectiveHostName: String {
+        preferredConnectionHost ?? preferredDisplayName
+    }
+
+    // MARK: - Host used for HTTP/Web UI fallback logic
+    var webUIHost: String {
+        preferredWebUIHost
     }
 
     // MARK: - MAC address from Bonjour _apple-mobdev2 name (AA:BB:CC:DD:EE:FF@ip)
@@ -166,7 +237,7 @@ struct NetworkHost: Identifiable, Hashable {
         return candidate.uppercased()
     }
 
-    // MARK: - Web UI URL
+    // MARK: - Web UI
     // Priority: probed URL (any device, async) > static known URL (router/printer)
     var webUIURL: URL? {
         if let probed = probedWebURL { return probed }
@@ -179,9 +250,7 @@ struct NetworkHost: Identifiable, Hashable {
         case .router:
             return URL(string: "http://" + routerDomain)
         case .printer:
-            let h = !hostName.isEmpty && hostName != "(nil)" && !hostName.contains("@")
-                ? hostName : hostDisplayName
-            return URL(string: "http://" + h + ":631")
+            return URL(string: "http://" + webUIHost + ":631")
         default: return nil
         }
     }
@@ -202,6 +271,6 @@ struct NetworkHost: Identifiable, Hashable {
         // Linksys
         if n.contains("linksys") { return "myrouter.local" }
         // Fallback to IP address
-        return hostDisplayName
+        return webUIHost
     }
 }

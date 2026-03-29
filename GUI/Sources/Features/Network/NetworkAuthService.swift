@@ -19,21 +19,75 @@ struct NetworkCredentials {
 // MARK: - Keychain wrapper for network credentials
 enum NetworkAuthService {
 
+    private static let knownHostSuffixes = [
+        "._smb._tcp.local",
+        "._afp._tcp.local",
+        ".local.",
+        ".local",
+        ".fritz.box"
+    ]
+
+    private static func saveQuery(_ creds: NetworkCredentials, host: String) -> [CFString: Any] {
+        [
+            kSecClass: kSecClassInternetPassword,
+            kSecAttrServer: host,
+            kSecAttrAccount: creds.user,
+            kSecValueData: Data(creds.password.utf8),
+            kSecAttrLabel: "MiMiNavigator: \(host)"
+        ]
+    }
+
+    private static func deleteQuery(host: String) -> [CFString: Any] {
+        [
+            kSecClass: kSecClassInternetPassword,
+            kSecAttrServer: host
+        ]
+    }
+
+    private static func normalizedHost(_ host: String) -> String {
+        host.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private static func usableHost(_ host: String) -> String? {
+        let normalized = normalizedHost(host)
+        guard !normalized.isEmpty, normalized != "(nil)" else { return nil }
+        return normalized
+    }
+
+    private static func saveExact(_ creds: NetworkCredentials, for host: String) -> OSStatus {
+        let query = saveQuery(creds, host: host)
+        SecItemDelete(query as CFDictionary)
+        return SecItemAdd(query as CFDictionary, nil)
+    }
+
     // MARK: - Save credentials to Keychain (MiMiNavigator's own entry)
     static func save(_ creds: NetworkCredentials, for host: String) {
-        let query: [CFString: Any] = [
-            kSecClass:       kSecClassInternetPassword,
-            kSecAttrServer:  host,
-            kSecAttrAccount: creds.user,
-            kSecValueData:   Data(creds.password.utf8),
-            kSecAttrLabel:   "MiMiNavigator: \(host)"
-        ]
-        SecItemDelete(query as CFDictionary)
-        let status = SecItemAdd(query as CFDictionary, nil)
-        if status == errSecSuccess {
-            log.info("[Auth] saved credentials for \(host) user=\(creds.user)")
+        let normalized = normalizedHost(host)
+        let keys = keychainKeys(for: normalized)
+
+        guard !keys.isEmpty else {
+            log.warning("[Auth] no usable Keychain keys for \(host)")
+            return
+        }
+
+        var savedKeys: [String] = []
+        var lastError: OSStatus = errSecSuccess
+
+        for key in keys {
+            let status = saveExact(creds, for: key)
+            if status == errSecSuccess {
+                savedKeys.append(key)
+            } else {
+                lastError = status
+                log.warning("[Auth] failed to save credentials for \(key): \(status)")
+            }
+        }
+
+        if !savedKeys.isEmpty {
+            log.info("[Auth] saved credentials for \(normalized) user=\(creds.user)")
+            log.debug("[Auth] saved keys=\(savedKeys)")
         } else {
-            log.warning("[Auth] failed to save credentials for \(host): \(status)")
+            log.warning("[Auth] failed to save credentials for \(normalized): \(lastError)")
         }
     }
 
@@ -44,7 +98,7 @@ enum NetworkAuthService {
     //   "kira-macpro._smb._tcp.local"      (Bonjour full)
     //   "kira-macpro.fritz.box"            (DHCP/DNS)
     static func load(for host: String) -> NetworkCredentials? {
-        for key in keychainKeys(for: host) {
+        for key in keychainKeys(for: normalizedHost(host)) {
             if let creds = loadExact(for: key) {
                 log.debug("[Auth] found credentials via key='\(key)' user=\(creds.user)")
                 return creds
@@ -56,11 +110,8 @@ enum NetworkAuthService {
 
     // MARK: - Delete all variants from Keychain
     static func delete(for host: String) {
-        for key in keychainKeys(for: host) {
-            let query: [CFString: Any] = [
-                kSecClass:      kSecClassInternetPassword,
-                kSecAttrServer: key
-            ]
+        for key in keychainKeys(for: normalizedHost(host)) {
+            let query = deleteQuery(host: key)
             SecItemDelete(query as CFDictionary)
         }
         log.info("[Auth] deleted credentials for \(host) (all variants)")
@@ -68,13 +119,16 @@ enum NetworkAuthService {
 
     // MARK: - Build authenticated smb URL
     static func authenticatedURL(host: NetworkHost) -> URL? {
-        guard let creds = load(for: host.hostName) else { return host.mountURL }
+        let lookupHost = usableHost(host.hostName) ?? host.effectiveHostName
+        guard let creds = load(for: lookupHost) else { return host.mountURL }
         var c = URLComponents()
-        c.scheme   = host.serviceType == .afp ? "afp" : "smb"
-        c.user     = creds.user
+        c.scheme = host.serviceType == .afp ? "afp" : "smb"
+        c.user = creds.user
         c.password = creds.password
-        c.host     = host.hostName
-        if host.port != host.serviceType.defaultPort { c.port = host.port }
+        c.host = host.hostName
+        if host.port != host.serviceType.defaultPort {
+            c.port = host.port
+        }
         c.path = "/"
         return c.url
     }
@@ -101,27 +155,47 @@ enum NetworkAuthService {
         return NetworkCredentials(user: account, password: password)
     }
 
-    // MARK: - Private: all Keychain key variants for a hostname
-    private static func keychainKeys(for host: String) -> [String] {
-        // Strip known suffixes to get base name
-        var base = host
-        for suffix in ["._smb._tcp.local", "._afp._tcp.local", ".local.", ".local", ".fritz.box"] {
+    private static func stripKnownSuffix(from host: String) -> String {
+        var base = normalizedHost(host)
+
+        for suffix in knownHostSuffixes {
             if base.hasSuffix(suffix) {
                 base = String(base.dropLast(suffix.count))
                 break
             }
         }
-        // Build all variants
-        let keys: [String] = [
-            host,                               // original as-is
-            base,                               // plain name e.g. "kira-macpro"
-            "\(base).local",                    // mDNS
-            "\(base)._smb._tcp.local",          // Bonjour full (what Finder stores)
-            "\(base)._afp._tcp.local",
-            "\(base).fritz.box",
+
+        return base
+    }
+
+    // MARK: - Private: all Keychain key variants for a hostname
+    private static func keychainKeys(for host: String) -> [String] {
+        guard let usableOriginal = usableHost(host) else { return [] }
+
+        let base = stripKnownSuffix(from: usableOriginal)
+        let rawKeys: [String?] = [
+            usableOriginal,
+            usableHost(base),
+            usableHost("\(base).local"),
+            usableHost("\(base).local."),
+            usableHost("\(base)._smb._tcp.local"),
+            usableHost("\(base)._afp._tcp.local"),
+            usableHost("\(base).fritz.box"),
         ]
-        // Deduplicate while preserving order
-        var seen = Set<String>()
-        return keys.filter { seen.insert($0).inserted }
+
+        var seen: [String] = []
+        var result: [String] = []
+
+        for rawKey in rawKeys {
+            guard let key = rawKey else { continue }
+            let normalizedKey = normalizedHost(key)
+            let lowercasedKey = normalizedKey.lowercased()
+            guard !seen.contains(lowercasedKey) else { continue }
+
+            seen.append(lowercasedKey)
+            result.append(normalizedKey)
+        }
+
+        return result
     }
 }

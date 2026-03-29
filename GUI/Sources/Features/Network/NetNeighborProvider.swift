@@ -22,7 +22,7 @@ final class NetworkNeighborhoodProvider: NSObject, ObservableObject {
     private var browsers: [NetServiceBrowser] = []
     // Keep NetService objects alive until resolved (otherwise delegate never fires)
     var pendingServices: [NetService] = []
-    var scanGeneration: Int = 0
+    private var scanGeneration: Int = 0
 
     // MARK: - Service types that indicate a printer
     nonisolated static let printerServiceTypes: Set<String> = [
@@ -81,78 +81,18 @@ final class NetworkNeighborhoodProvider: NSObject, ObservableObject {
 
     // MARK: - Merge FritzBox DHCP host list into discovered hosts
     func mergeFritzHosts(_ fritzHosts: [FritzBoxHost]) {
-        // Skip router IPs — already found via Bonjour as fritz-box / fritz.repeater
         let routerIPs: Set<String> = ["192.168.178.1", "192.168.178.46"]
-        // Build IP→index map for fast lookup (dedup BRW vs Brother by same IP)
-        // Include both raw hostName and stripped .local suffix
-        var ipToIdx = [String: Int]()
-        for (i, h) in hosts.enumerated() where !h.hostName.isEmpty && !h.hostName.contains("@") {
-            ipToIdx[h.hostName] = i
-            // Also index by stripped .local suffix (Bonjour: "kira-macpro.local" → FritzBox: "192.168.178.x")
-            let stripped = h.hostName
-                .replacingOccurrences(of: ".local.", with: "")
-                .replacingOccurrences(of: ".local", with: "")
-            if stripped != h.hostName { ipToIdx[stripped] = i }
-        }
+        let ipToIdx = buildHostIPIndex()
 
-        for fh in fritzHosts {
-            guard !fh.ip.isEmpty, !isLocalhostIP(fh.ip) else {
-                log.debug("[FritzBox] skip localhost: \(fh.name) (\(fh.ip))")
-                continue
-            }
-            // Skip secondary router entries — Bonjour already found fritz-box/fritz.repeater
-            if routerIPs.contains(fh.ip) {
-                log.debug("[FritzBox] skip router IP duplicate: \(fh.name) (\(fh.ip))")
-                continue
-            }
-            let fhNorm = normalizedName(fh.name)
-            let fhNameL = fh.name.lowercased()
-            let isFritzMobile = fhNameL == "ipad" || fhNameL.hasPrefix("iphone") || fhNameL.contains("-iphone")
+        for fritzHost in fritzHosts {
+            guard !shouldSkipFritzHost(fritzHost, routerIPs: routerIPs) else { continue }
 
-            // Try to find matching existing host (by name OR by IP)
-            if let idx = ipToIdx[fh.ip]
-                ?? hosts.firstIndex(where: {
-                    let norm = normalizedName($0.name)
-                    if norm == fhNorm { return true }
-                    // Mobile: match any unresolved "Apple Device (...)" placeholder
-                    if isFritzMobile {
-                        let n = $0.name.lowercased()
-                        return n.hasPrefix("apple device") || n.hasPrefix("iphone (") || n.hasPrefix("ipad (")
-                    }
-                    return false
-                })
-            {
-                // Update IP (hostName for mobile was MAC@addr — replace with real IP)
-                if hosts[idx].hostName.contains("@") || hosts[idx].hostName.isEmpty {
-                    hosts[idx].hostName = fh.ip
-                    log.debug("[FritzBox] updated IP \(hosts[idx].name) → \(fh.ip)")
-                }
-                // Store FritzBox MAC if not already saved
-                if hosts[idx].rawMAC == nil && !fh.mac.isEmpty {
-                    hosts[idx].rawMAC = fh.mac
-                }
-                // Mark inactive hosts
-                if !fh.isActive { hosts[idx].isOffline = true }
-                // Rename placeholder → real FritzBox name
-                let existing = hosts[idx].name
-                let isPlaceholder =
-                    existing.lowercased().hasPrefix("apple device")
-                    || existing.lowercased().hasPrefix("iphone (")
-                    || existing.lowercased().hasPrefix("ipad (")
-                if isPlaceholder && !fh.name.isEmpty {
-                    hosts[idx].name = fh.name
-                    log.info("[FritzBox] renamed '\(existing)' → '\(fh.name)' (\(fh.ip))")
-                }
+            if let existingIndex = findExistingHostIndex(for: fritzHost, ipToIdx: ipToIdx) {
+                updateExistingHost(at: existingIndex, with: fritzHost)
                 continue
             }
 
-            // New host — only known to FritzBox (Windows PC, NAS, unknown device)
-            addResolvedHost(
-                name: fh.name, hostName: fh.ip,
-                port: 445, serviceType: .smb,
-                isPrinter: false, bonjourType: nil,
-                fritzMAC: fh.mac, isOffline: !fh.isActive)
-            log.info("[FritzBox] added '\(fh.name)' ip=\(fh.ip) active=\(fh.isActive)")
+            appendNewFritzHost(fritzHost)
         }
     }
 
@@ -224,7 +164,7 @@ final class NetworkNeighborhoodProvider: NSObject, ObservableObject {
     }
 
     // MARK: - Add or update host (dedup by normalized name)
-    public func addResolvedHost(
+    func addResolvedHost(
         name: String, hostName: String, port: Int,
         serviceType: NetworkServiceType?,
         isPrinter: Bool,
@@ -396,4 +336,122 @@ final class NetworkNeighborhoodProvider: NSObject, ObservableObject {
     func removeHostByName(_ name: String) {
         hosts.removeAll { $0.name == name }
     }
+
+    private func buildHostIPIndex() -> [String: Int] {
+        var ipToIdx: [String: Int] = [:]
+
+        for (index, host) in hosts.enumerated() where !host.hostName.isEmpty && !host.hostName.contains("@") {
+            ipToIdx[host.hostName] = index
+
+            let stripped = host.hostName
+                .replacingOccurrences(of: ".local.", with: "")
+                .replacingOccurrences(of: ".local", with: "")
+
+            if stripped != host.hostName {
+                ipToIdx[stripped] = index
+            }
+        }
+
+        return ipToIdx
+    }
+
+    private func shouldSkipFritzHost(_ fritzHost: FritzBoxHost, routerIPs: Set<String>) -> Bool {
+        guard !fritzHost.ip.isEmpty, !isLocalhostIP(fritzHost.ip) else {
+            log.debug("[FritzBox] skip localhost: \(fritzHost.name) (\(fritzHost.ip))")
+            return true
+        }
+
+        if routerIPs.contains(fritzHost.ip) {
+            log.debug("[FritzBox] skip router IP duplicate: \(fritzHost.name) (\(fritzHost.ip))")
+            return true
+        }
+
+        return false
+    }
+
+    private func findExistingHostIndex(for fritzHost: FritzBoxHost, ipToIdx: [String: Int]) -> Int? {
+        let normalizedFritzName = normalizedName(fritzHost.name)
+        let fritzNameLowercased = fritzHost.name.lowercased()
+        let isFritzMobile = isLikelyMobileFritzHostName(fritzNameLowercased)
+
+        if let index = ipToIdx[fritzHost.ip] {
+            return index
+        }
+
+        return hosts.firstIndex { host in
+            let normalizedHostName = normalizedName(host.name)
+            if normalizedHostName == normalizedFritzName {
+                return true
+            }
+
+            if isFritzMobile {
+                return isMobilePlaceholderHostName(host.name)
+            }
+
+            return false
+        }
+    }
+
+    private func updateExistingHost(at index: Int, with fritzHost: FritzBoxHost) {
+        updateExistingHostAddress(at: index, with: fritzHost)
+        updateExistingHostMAC(at: index, with: fritzHost)
+        updateExistingHostOfflineState(at: index, with: fritzHost)
+        renameExistingPlaceholderIfNeeded(at: index, with: fritzHost)
+    }
+
+    private func updateExistingHostAddress(at index: Int, with fritzHost: FritzBoxHost) {
+        if hosts[index].hostName.contains("@") || hosts[index].hostName.isEmpty {
+            hosts[index].hostName = fritzHost.ip
+            log.debug("[FritzBox] updated IP \(hosts[index].name) → \(fritzHost.ip)")
+        }
+    }
+
+    private func updateExistingHostMAC(at index: Int, with fritzHost: FritzBoxHost) {
+        if hosts[index].rawMAC == nil && !fritzHost.mac.isEmpty {
+            hosts[index].rawMAC = fritzHost.mac
+        }
+    }
+
+    private func updateExistingHostOfflineState(at index: Int, with fritzHost: FritzBoxHost) {
+        if !fritzHost.isActive {
+            hosts[index].isOffline = true
+        }
+    }
+
+    private func renameExistingPlaceholderIfNeeded(at index: Int, with fritzHost: FritzBoxHost) {
+        let existingName = hosts[index].name
+        guard isMobilePlaceholderHostName(existingName) else { return }
+        guard !fritzHost.name.isEmpty else { return }
+
+        hosts[index].name = fritzHost.name
+        log.info("[FritzBox] renamed '\(existingName)' → '\(fritzHost.name)' (\(fritzHost.ip))")
+    }
+
+    private func appendNewFritzHost(_ fritzHost: FritzBoxHost) {
+        addResolvedHost(
+            name: fritzHost.name,
+            hostName: fritzHost.ip,
+            port: 445,
+            serviceType: .smb,
+            isPrinter: false,
+            bonjourType: nil,
+            fritzMAC: fritzHost.mac,
+            isOffline: !fritzHost.isActive
+        )
+        log.info("[FritzBox] added '\(fritzHost.name)' ip=\(fritzHost.ip) active=\(fritzHost.isActive)")
+    }
+
+    private func isLikelyMobileFritzHostName(_ lowercasedName: String) -> Bool {
+        lowercasedName == "ipad"
+            || lowercasedName.hasPrefix("iphone")
+            || lowercasedName.contains("-iphone")
+    }
+
+    private func isMobilePlaceholderHostName(_ name: String) -> Bool {
+        let lowercasedName = name.lowercased()
+        return lowercasedName.hasPrefix("apple device")
+            || lowercasedName.hasPrefix("iphone (")
+            || lowercasedName.hasPrefix("ipad (")
+    }
 }
+

@@ -3,7 +3,7 @@
 //
 // Created by Iakov Senatov on 23.02.2026.
 // Copyright © 2026 Senatov. All rights reserved.
-// Description: Manages Network Neighborhood as standalone NSPanel.
+// Description: Manages Network Neighborhood as a standalone NSPanel.
 //   - hidesOnDeactivate=false: stays visible when app loses focus
 //   - Rises to front via AppDelegate.applicationDidBecomeActive (only when MiMi is active)
 //   - Movable, resizable, persists position via frameAutosaveName
@@ -23,7 +23,7 @@ final class NetworkNeighborhoodCoordinator {
     private var window: NSPanel?
 
     private let frameAutosaveName = "MiMiNavigator.NetworkNeighborhoodWindow"
-    private let defaultWidth: CGFloat  = 500
+    private let defaultWidth: CGFloat = 500
     private let defaultHeight: CGFloat = 620
 
     var onNavigate: ((URL) -> Void)?
@@ -60,19 +60,9 @@ final class NetworkNeighborhoodCoordinator {
             backing: .buffered,
             defer: false
         )
-        panel.contentView = NSHostingView(rootView: contentView)
-        panel.isReleasedWhenClosed = false
-        panel.minSize = NSSize(width: 380, height: 400)
-        panel.titlebarAppearsTransparent = false
-        PanelTitleHelper.applyIconTitle(to: panel, systemImage: "rectangle.connected.to.line.below", title: "Network Neighborhood")
-        panel.toolbarStyle = .unified
-        panel.animationBehavior = .utilityWindow
-        panel.isMovableByWindowBackground = true
-        // Follow main window: hide when app deactivates, rise when app activates
-        panel.hidesOnDeactivate = false
-        panel.level = .normal
-        panel.tabbingMode = .disallowed
+        configurePanel(panel, contentView: contentView)
 
+        // Stay visible when app deactivates, but rise when the app activates again.
         if !panel.setFrameUsingName(frameAutosaveName) {
             panel.setFrame(computeDefaultFrame(), display: true)
         }
@@ -86,9 +76,28 @@ final class NetworkNeighborhoodCoordinator {
         log.info("[Network] panel opened")
     }
 
+    private func configurePanel<Content: View>(_ panel: NSPanel, contentView: Content) {
+        panel.contentView = NSHostingView(rootView: contentView)
+        panel.isReleasedWhenClosed = false
+        panel.minSize = NSSize(width: 380, height: 400)
+        panel.titlebarAppearsTransparent = false
+        PanelTitleHelper.applyIconTitle(to: panel, systemImage: "rectangle.connected.to.line.below", title: "Network Neighborhood")
+        panel.toolbarStyle = .unified
+        panel.animationBehavior = .utilityWindow
+        panel.isMovableByWindowBackground = true
+        panel.hidesOnDeactivate = false
+        panel.level = .normal
+        panel.tabbingMode = .disallowed
+    }
+
     // MARK: - Close
     func close() {
-        window?.close()
+        guard let window else {
+            isVisible = false
+            return
+        }
+
+        window.close()
         isVisible = false
         log.info("[Network] panel closed")
     }
@@ -96,6 +105,7 @@ final class NetworkNeighborhoodCoordinator {
     // MARK: - Called by delegate
     func windowDidClose() {
         isVisible = false
+        window = nil
     }
 
     // MARK: - Raise to front (called when main window becomes key)

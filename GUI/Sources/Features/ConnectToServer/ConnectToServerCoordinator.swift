@@ -22,11 +22,18 @@ final class ConnectToServerCoordinator {
     private let frameAutosaveName = "MiMiNavigator.ConnectToServerWindow"
     private let defaultWidth: CGFloat  = 640
     private let defaultHeight: CGFloat = 520
+    private let minWidth: CGFloat = 660
+    private let minHeight: CGFloat = 440
+    private let panelTitle = "Connect to Server"
 
     var onConnect: ((URL, String) -> Void)?
     var onDisconnect: (() -> Void)?
 
     private init() {}
+
+    private var minimumPanelSize: NSSize {
+        NSSize(width: minWidth, height: minHeight)
+    }
 
     // MARK: - Toggle
     func toggle() {
@@ -50,19 +57,14 @@ final class ConnectToServerCoordinator {
             },
             onDismiss: { [weak self] in self?.close() }
         )
-        .frame(minWidth: 660, minHeight: 440)
+        .frame(minWidth: minWidth, minHeight: minHeight)
 
-        let panel = NSPanel(
-            contentRect: .zero,
-            styleMask: [.titled, .closable, .resizable, .miniaturizable, .utilityWindow],
-            backing: .buffered,
-            defer: false
-        )
+        let panel = makePanel()
         panel.contentView = NSHostingView(rootView: contentView)
         panel.isReleasedWhenClosed = false
-        panel.minSize = NSSize(width: 660, height: 440)
+        panel.minSize = minimumPanelSize
         panel.titlebarAppearsTransparent = false
-        PanelTitleHelper.applyIconTitle(to: panel, systemImage: "link", title: "Connect to Server")
+        PanelTitleHelper.applyIconTitle(to: panel, systemImage: "link", title: panelTitle)
         panel.toolbarStyle = .unified
         panel.animationBehavior = .utilityWindow
         panel.isMovableByWindowBackground = true
@@ -85,6 +87,15 @@ final class ConnectToServerCoordinator {
         log.info("[ConnectToServer] panel opened")
     }
 
+    private func makePanel() -> NSPanel {
+        NSPanel(
+            contentRect: .zero,
+            styleMask: [.titled, .closable, .resizable, .miniaturizable, .utilityWindow],
+            backing: .buffered,
+            defer: false
+        )
+    }
+
     // MARK: - Close
     func close() {
         window?.close()
@@ -100,7 +111,7 @@ final class ConnectToServerCoordinator {
     // MARK: - Raise to front (called by AppDelegate.applicationDidBecomeActive)
     func bringToFront() {
         guard isVisible else { return }
-        window?.orderFront(nil)
+        window?.makeKeyAndOrderFront(nil)
     }
 
     // MARK: - Handle connect action from view
@@ -108,7 +119,9 @@ final class ConnectToServerCoordinator {
     /// This just forwards to MiMiNavigatorApp callback for panel path integration.
     /// Panel stays open — user closes it manually.
     private func handleConnect(url: URL, password: String) {
-        log.info("[ConnectCoordinator] handleConnect \(url.scheme ?? "")://\(url.host ?? "")")
+        let scheme = url.scheme ?? ""
+        let host = url.host ?? ""
+        log.info("[ConnectCoordinator] handleConnect \(scheme)://\(host)")
         onConnect?(url, password)
     }
 
@@ -129,7 +142,7 @@ final class ConnectToServerCoordinator {
     }
 }
 
-// MARK: - NSWindowDelegate
+// MARK: - Window Delegate
 private final class ConnectToServerWindowDelegate: NSObject, NSWindowDelegate {
     @MainActor static let shared = ConnectToServerWindowDelegate()
 

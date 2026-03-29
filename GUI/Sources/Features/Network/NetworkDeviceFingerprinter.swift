@@ -3,10 +3,9 @@
 //
 // Created by Iakov Senatov on 21.02.2026.
 // Copyright © 2026 Senatov. All rights reserved.
-// Description: Determines hardware type by Bonjour services + port probe + HTTP banner.
-//   Classification priority: Bonjour services -> name keywords -> port+banner probe
-//   mediaBoxKeywords: vuduo/openpli/enigma/dreambox/kodi/libreelec etc.
-//   Enigma2 HTTP banner detection: e2about / enigmaversion in response body
+// Description: Determines network device kind using Bonjour services, host naming,
+//   port probing, and lightweight HTTP banner detection.
+//   Classification priority: Bonjour services -> name keywords -> port+banner probe.
 
 import Foundation
 
@@ -17,7 +16,7 @@ enum NetworkAuthHint {
 
 // MARK: - Fingerprint result
 struct NetworkDeviceFingerprint {
-    let deviceClass: NetworkDeviceClass
+    let deviceClass: NetworkDeviceXT
     let openPorts: Set<Int>
     let httpBanner: String?
 }
@@ -59,54 +58,182 @@ enum NetworkDeviceFingerprinter {
         "openelec", "osmc", "batocera", "coreelec",
     ]
 
-    // MARK: - Fast classification by Bonjour service set (no network IO)
-    static func classifyByServices(_ serviceTypes: Set<String>) -> NetworkDeviceClass? {
-        let types = serviceTypes.map { $0.lowercased() }
+    private static let repeaterKeywords = [
+        "repeater", "mesh repeater", "fritzrepeater", "range extender", "extender",
+    ]
+    private static let switchKeywords = [
+        "switch", "netgear gs", "tp-link tl-sg", "unifi switch", "mikrotik css", "mikrotik crs",
+    ]
+    private static let smartTVKeywords = [
+        "bravia", "smarttv", "smart-tv", "webos", "tizen", "aquos", "philips tv",
+        "panasonic tv", "hisense", "sony tv", "lg tv", "samsung tv",
+    ]
+    private static let cameraKeywords = [
+        "camera", "cam", "ipcam", "webcam", "hikvision", "dahua", "reolink", "foscam",
+        "instar", "axis", "onvif",
+    ]
+    private static let gameConsoleKeywords = [
+        "playstation", "ps4", "ps5", "xbox", "nintendo", "switch console", "steamdeck", "steam deck",
+    ]
+    private static let androidPhoneKeywords = [
+        "galaxy", "pixel", "oneplus", "xiaomi", "redmi", "mi ", "oppo", "realme", "motorola",
+    ]
+    private static let androidTabletKeywords = [
+        "tablet", "galaxy tab", "pixel tablet", "xiaomi pad", "lenovo tab",
+    ]
 
-        // Mobile devices — _apple-mobdev2._tcp.
-        if types.contains(where: { $0.contains("mobdev") }) {
-            return .iPhone   // refined to iPad by name later
+    private static func containsAnyKeyword(_ keywords: [String], name: String, hostName: String, banner: String = "") -> Bool {
+        keywords.contains { keyword in
+            name.contains(keyword) || hostName.contains(keyword) || banner.contains(keyword)
         }
+    }
 
-        // Printers
-        let printerTypes = ["_ipp._tcp.", "_ipps._tcp.", "_printer._tcp.",
-                            "_pdl-datastream._tcp.", "_fax-ipp._tcp."]
-        if !Set(types).isDisjoint(with: printerTypes) { return .printer }
+    private static func isUUIDLikeName(_ value: String) -> Bool {
+        let parts = value.components(separatedBy: "-")
+        return parts.count == 5 && parts[0].count == 8 && parts[1].count == 4
+    }
 
-        // Mac = SMB + SFTP (macOS always advertises both)
-        let hasSMB  = types.contains { $0.contains("_smb._tcp.") }
-        let hasSFTP = types.contains { $0.contains("_sftp-ssh._tcp.") }
-        let hasFTP  = types.contains { $0.contains("_ftp._tcp.") }
-
-        if hasSMB && hasSFTP  { return .mac }
-        if (hasSFTP || hasFTP) && !hasSMB { return .linuxServer }
-        // SMB-only is ambiguous — could be Mac, PC, NAS or fritz-box
+    private static func classifyAppleMobileDevice(name: String, hostName: String) -> NetworkDeviceXT? {
+        if name.contains("ipad") || hostName.contains("ipad") {
+            return .iPad
+        }
+        if name.contains("iphone") || hostName.contains("iphone") || name.contains("s-iphone") {
+            return .iPhone
+        }
         return nil
     }
 
-    // MARK: - Name-based fast classification (before any probe)
-    static func classifyByName(_ name: String, hostName: String) -> NetworkDeviceClass? {
-        let n = name.lowercased()
-        let h = hostName.lowercased()
-
-        if routerKeywords.contains(where: { n.contains($0) || h.contains($0) }) { return .router }
-        if mediaBoxKeywords.contains(where: { n.contains($0) || h.contains($0) }) { return .mediaBox }
-        if nasKeywords.contains(where: { n.contains($0) || h.contains($0) }) { return .nas }
-
-        // iPhone / iPad by name
-        if n.contains("ipad") || h.contains("ipad") { return .iPad }
-        if n.contains("iphone") || h.contains("iphone") || n.contains("s-iphone") { return .iPhone }
-        // Mac by hostname pattern: kira-macpro, MacBook, iMac, mac-mini
-        if n.contains("macpro") || n.contains("macbook") || n.contains("imac")
-            || n.contains("mac-mini") || n.contains("macmini") { return .mac }
-        // Windows PC — typical patterns
-        if n.hasPrefix("sascha") || n.hasPrefix("pc-") || n.hasSuffix("-pc") { return .windowsPC }
-        // UUID name (e.g. c51e7c78-e72c-48c8-...) — likely Smart TV / media device
-        // UUID format: 8-4-4-4-12 hex chars separated by dashes
-        let uuidParts = n.components(separatedBy: "-")
-        if uuidParts.count == 5 && uuidParts[0].count == 8 && uuidParts[1].count == 4 {
-            return .nas  // .nas = generic unknown device (shows NAS icon)
+    private static func classifyAndroidDevice(name: String, hostName: String) -> NetworkDeviceXT? {
+        if containsAnyKeyword(androidTabletKeywords, name: name, hostName: hostName) {
+            return .androidTablet
         }
+        if containsAnyKeyword(androidPhoneKeywords, name: name, hostName: hostName) {
+            return .androidPhone
+        }
+        return nil
+    }
+
+    private struct ServiceClassificationCandidate {
+        let device: NetworkDeviceXT
+        let score: Int
+    }
+
+    private static func serviceScore(_ lowercasedTypes: [String]) -> [ServiceClassificationCandidate] {
+        let hasType: (String) -> Bool = { needle in
+            lowercasedTypes.contains { $0.contains(needle) }
+        }
+
+        let hasSMB = hasType("_smb._tcp.")
+        let hasSFTP = hasType("_sftp-ssh._tcp.")
+        let hasFTP = hasType("_ftp._tcp.")
+        let hasAirPlay = hasType("_airplay._tcp.")
+        let hasGoogleCast = hasType("_googlecast._tcp.")
+        let hasRAOP = hasType("_raop._tcp.")
+        let hasUPnP = hasType("_upnp") || hasType("_media")
+        let hasHTTP = hasType("_http._tcp.") || hasType("_https._tcp.")
+        let hasPrinter = lowercasedTypes.contains {
+            $0.contains("_ipp._tcp.")
+                || $0.contains("_ipps._tcp.")
+                || $0.contains("_printer._tcp.")
+                || $0.contains("_pdl-datastream._tcp.")
+                || $0.contains("_fax-ipp._tcp.")
+        }
+        let hasMobileService = lowercasedTypes.contains { $0.contains("mobdev") }
+
+        var candidates: [ServiceClassificationCandidate] = []
+
+        if hasMobileService {
+            candidates.append(.init(device: .iPhone, score: 100))
+        }
+        if hasPrinter {
+            candidates.append(.init(device: .printer, score: 100))
+        }
+        if hasSMB && hasSFTP {
+            candidates.append(.init(device: .mac, score: 95))
+        }
+        if (hasSFTP || hasFTP) && !hasSMB {
+            candidates.append(.init(device: .linuxServer, score: 90))
+        }
+        if hasAirPlay || hasGoogleCast || hasRAOP {
+            candidates.append(.init(device: .mediaBox, score: 70))
+        }
+        if hasUPnP && hasHTTP {
+            candidates.append(.init(device: .mediaBox, score: 55))
+        }
+        if hasHTTP {
+            candidates.append(.init(device: .router, score: 20))
+        }
+
+        return candidates
+    }
+
+    private static func bestServiceClassification(from candidates: [ServiceClassificationCandidate]) -> NetworkDeviceXT? {
+        candidates
+            .sorted { lhs, rhs in
+                if lhs.score == rhs.score {
+                    return String(describing: lhs.device) < String(describing: rhs.device)
+                }
+                return lhs.score > rhs.score
+            }
+            .first?
+            .device
+    }
+
+    // MARK: - Fast classification by Bonjour service set (no network IO)
+    static func classifyByServices(_ serviceTypes: Set<String>) -> NetworkDeviceXT? {
+        let lowercasedTypes = serviceTypes.map { $0.lowercased() }
+        let candidates = serviceScore(lowercasedTypes)
+        return bestServiceClassification(from: candidates)
+    }
+
+    // MARK: - Name-based fast classification (before any probe)
+    static func classifyByName(_ name: String, hostName: String) -> NetworkDeviceXT? {
+        let lowercasedName = name.lowercased()
+        let lowercasedHostName = hostName.lowercased()
+
+        if containsAnyKeyword(routerKeywords, name: lowercasedName, hostName: lowercasedHostName) {
+            return .router
+        }
+        if containsAnyKeyword(repeaterKeywords, name: lowercasedName, hostName: lowercasedHostName) {
+            return .repeater
+        }
+        if containsAnyKeyword(switchKeywords, name: lowercasedName, hostName: lowercasedHostName) {
+            return .networkSwitch
+        }
+        if containsAnyKeyword(cameraKeywords, name: lowercasedName, hostName: lowercasedHostName) {
+            return .camera
+        }
+        if containsAnyKeyword(gameConsoleKeywords, name: lowercasedName, hostName: lowercasedHostName) {
+            return .gameConsole
+        }
+        if containsAnyKeyword(smartTVKeywords, name: lowercasedName, hostName: lowercasedHostName) {
+            return .smartTV
+        }
+        if containsAnyKeyword(mediaBoxKeywords, name: lowercasedName, hostName: lowercasedHostName) {
+            return .mediaBox
+        }
+        if containsAnyKeyword(nasKeywords, name: lowercasedName, hostName: lowercasedHostName) {
+            return .nas
+        }
+
+        if let appleMobile = classifyAppleMobileDevice(name: lowercasedName, hostName: lowercasedHostName) {
+            return appleMobile
+        }
+        if let androidDevice = classifyAndroidDevice(name: lowercasedName, hostName: lowercasedHostName) {
+            return androidDevice
+        }
+
+        if lowercasedName.contains("macpro") || lowercasedName.contains("macbook") || lowercasedName.contains("imac")
+            || lowercasedName.contains("mac-mini") || lowercasedName.contains("macmini") {
+            return .mac
+        }
+        if lowercasedName.hasPrefix("sascha") || lowercasedName.hasPrefix("pc-") || lowercasedName.hasSuffix("-pc") {
+            return .windowsPC
+        }
+        if isUUIDLikeName(lowercasedName) {
+            return .mediaBox
+        }
+
         return nil
     }
 
@@ -121,10 +248,11 @@ enum NetworkDeviceFingerprinter {
             return NetworkDeviceFingerprint(deviceClass: quick, openPorts: [], httpBanner: nil)
         }
 
-        let portsToCheck = [22, 80, 443, 445, 548, 21, 631]
+        let portsToCheck = [21, 22, 80, 443, 445, 548, 554, 631, 8008, 8009, 8080]
         let openPorts = await probePortsConcurrently(host: hostName, ports: portsToCheck, timeout: 1.5)
         log.debug("[Fingerprint] \(hostName) open ports: \(openPorts.sorted())")
-        let httpBanner = openPorts.contains(80) ? await fetchHTTPTitle(host: hostName) : nil
+        let shouldFetchHTTPBanner = openPorts.contains(80) || openPorts.contains(8080)
+        let httpBanner = shouldFetchHTTPBanner ? await fetchHTTPTitle(host: hostName) : nil
         if let banner = httpBanner {
             log.debug("[Fingerprint] \(hostName) HTTP title: \(banner)")
         }
@@ -133,28 +261,86 @@ enum NetworkDeviceFingerprinter {
     }
 
     // MARK: - Port-based classification
-    private static func classify(name: String, hostName: String, ports: Set<Int>, banner: String?) -> NetworkDeviceClass {
-        let n = name.lowercased()
-        let h = hostName.lowercased()
-        let bannerLower = banner?.lowercased() ?? ""
+    private static func classify(name: String, hostName: String, ports: Set<Int>, banner: String?) -> NetworkDeviceXT {
+        let lowercasedName = name.lowercased()
+        let lowercasedHostName = hostName.lowercased()
+        let bannerLowercased = banner?.lowercased() ?? ""
 
-        if routerKeywords.contains(where: { bannerLower.contains($0) || n.contains($0) || h.contains($0) }) { return .router }
-        // Enigma2 banner: contains "e2about", "openpli", "enigmaversion" etc.
-        if mediaBoxKeywords.contains(where: { bannerLower.contains($0) || n.contains($0) || h.contains($0) })
-            || bannerLower.contains("e2about") || bannerLower.contains("enigma") { return .mediaBox }
-        if nasKeywords.contains(where: { bannerLower.contains($0) || n.contains($0) || h.contains($0) }) { return .nas }
+        if containsAnyKeyword(routerKeywords, name: lowercasedName, hostName: lowercasedHostName, banner: bannerLowercased) {
+            return .router
+        }
+        if containsAnyKeyword(repeaterKeywords, name: lowercasedName, hostName: lowercasedHostName, banner: bannerLowercased) {
+            return .repeater
+        }
+        if containsAnyKeyword(switchKeywords, name: lowercasedName, hostName: lowercasedHostName, banner: bannerLowercased) {
+            return .networkSwitch
+        }
+        if containsAnyKeyword(cameraKeywords, name: lowercasedName, hostName: lowercasedHostName, banner: bannerLowercased)
+            || ports.contains(554) {
+            return .camera
+        }
+        if containsAnyKeyword(gameConsoleKeywords, name: lowercasedName, hostName: lowercasedHostName, banner: bannerLowercased) {
+            return .gameConsole
+        }
+        if containsAnyKeyword(smartTVKeywords, name: lowercasedName, hostName: lowercasedHostName, banner: bannerLowercased) {
+            return .smartTV
+        }
+        if containsAnyKeyword(mediaBoxKeywords, name: lowercasedName, hostName: lowercasedHostName, banner: bannerLowercased)
+            || bannerLowercased.contains("e2about")
+            || bannerLowercased.contains("enigma") {
+            return .mediaBox
+        }
+        if containsAnyKeyword(nasKeywords, name: lowercasedName, hostName: lowercasedHostName, banner: bannerLowercased) {
+            return .nas
+        }
 
-        let has22  = ports.contains(22)
-        let has80  = ports.contains(80)
-        let has445 = ports.contains(445)
-        let has548 = ports.contains(548)  // AFP — macOS only
+        if let appleMobile = classifyAppleMobileDevice(name: lowercasedName, hostName: lowercasedHostName) {
+            return appleMobile
+        }
+        if let androidDevice = classifyAndroidDevice(name: lowercasedName, hostName: lowercasedHostName) {
+            return androidDevice
+        }
 
-        if has22 && has80 && has445 { return .nas }
-        if has548 { return .mac }
-        if has22 && has445 { return .mac }
-        if has445 && !has22 { return .windowsPC }
-        if has22 && !has445 { return .linuxServer }
-        if has80 || ports.contains(443) { return .router }
+        let hasSSH = ports.contains(22)
+        let hasHTTP = ports.contains(80) || ports.contains(443) || ports.contains(8080)
+        let hasSMB = ports.contains(445)
+        let hasAFP = ports.contains(548)
+        let hasFTP = ports.contains(21)
+        let hasPrinter = ports.contains(631)
+        let hasCast = ports.contains(8008) || ports.contains(8009)
+        let hasRTSP = ports.contains(554)
+
+        if hasPrinter {
+            return .printer
+        }
+        if hasAFP {
+            return .mac
+        }
+        if hasSSH && hasSMB {
+            return .mac
+        }
+        if hasSSH && hasHTTP && hasSMB {
+            return .nas
+        }
+        if hasSMB && !hasSSH {
+            return .windowsPC
+        }
+        if hasSSH && !hasSMB {
+            return .linuxServer
+        }
+        if hasRTSP {
+            return .camera
+        }
+        if hasCast {
+            return .mediaBox
+        }
+        if hasHTTP && hasFTP {
+            return .router
+        }
+        if hasHTTP || hasFTP {
+            return .unknown
+        }
+
         return .unknown
     }
 
@@ -206,18 +392,38 @@ enum NetworkDeviceFingerprinter {
 
     // MARK: - Fetch HTTP <title>
     @concurrent static func fetchHTTPTitle(host: String) async -> String? {
-        guard let url = URL(string: "http://\(host)") else { return nil }
-        var req = URLRequest(url: url, timeoutInterval: 2.5)
-        req.httpMethod = "GET"
-        guard let (data, _) = try? await URLSession.shared.data(for: req),
-              let html = String(data: data, encoding: .utf8) ?? String(data: data, encoding: .isoLatin1)
-        else { return nil }
-        if let r = html.range(of: #"<title[^>]*>(.*?)</title>"#,
-                               options: [.regularExpression, .caseInsensitive]) {
-            return String(html[r])
-                .replacingOccurrences(of: #"</?title[^>]*>"#, with: "", options: .regularExpression)
-                .trimmingCharacters(in: .whitespacesAndNewlines)
+        let candidates = [
+            "https://\(host)",
+            "http://\(host)",
+            "http://\(host):8080",
+        ]
+
+        for candidate in candidates {
+            guard let url = URL(string: candidate) else { continue }
+
+            var request = URLRequest(url: url, timeoutInterval: 2.5)
+            request.httpMethod = "GET"
+
+            guard let (data, _) = try? await URLSession.shared.data(for: request) else { continue }
+            guard let html = String(data: data, encoding: .utf8) ?? String(data: data, encoding: .isoLatin1) else { continue }
+
+            if let range = html.range(
+                of: #"<title[^>]*>(.*?)</title>"#,
+                options: [.regularExpression, .caseInsensitive]
+            ) {
+                let title = String(html[range])
+                    .replacingOccurrences(of: #"</?title[^>]*>"#, with: "", options: .regularExpression)
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
+                if !title.isEmpty {
+                    return title
+                }
+            }
+
+            if html.lowercased().contains("e2about") || html.lowercased().contains("enigmaversion") {
+                return "Enigma2 Web UI"
+            }
         }
+
         return nil
     }
 }

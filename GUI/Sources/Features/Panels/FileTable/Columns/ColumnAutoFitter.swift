@@ -8,7 +8,6 @@ import AppKit
 import FileModelKit
 import SwiftUI
 
-
 enum ColumnAutoFitter {
 
     private struct FittedColumn {
@@ -26,7 +25,6 @@ enum ColumnAutoFitter {
     private static let widthStabilityEpsilon: CGFloat = 1
     private static let edgeAlignmentEpsilon: CGFloat = 0.5
     private static let correctiveClippingThreshold: CGFloat = 0.15
-
 
     static func autoFitAll(layout: ColumnLayoutModel, files: [CustomFile]) {
         guard let result = makeAutoFitResult(layout: layout, files: files) else { return }
@@ -47,7 +45,8 @@ enum ColumnAutoFitter {
         let visibleFixedColumns = layout.fixedColumns
         let dividerTotal = totalDividerWidth(for: visibleFixedColumns.count)
         var fittedColumns = measuredFixedWidths(for: visibleFixedColumns, files: files)
-        var nameWidth = finalizedNameWidth(containerWidth: layout.containerWidth, fittedColumns: &fittedColumns, dividerTotal: dividerTotal)
+        var nameWidth = finalizedNameWidth(
+            containerWidth: layout.containerWidth, fittedColumns: &fittedColumns, dividerTotal: dividerTotal)
 
         let columnTitles = visibleFixedColumns.map { $0.id.title }.joined(separator: ", ")
         log.debug("[AutoFit] pass=1")
@@ -71,7 +70,8 @@ enum ColumnAutoFitter {
             }
 
             applyCorrectivePass(columns: visibleFixedColumns, fittedColumns: &fittedColumns, files: files)
-            nameWidth = finalizedNameWidth(containerWidth: layout.containerWidth, fittedColumns: &fittedColumns, dividerTotal: dividerTotal)
+            nameWidth = finalizedNameWidth(
+                containerWidth: layout.containerWidth, fittedColumns: &fittedColumns, dividerTotal: dividerTotal)
             log.debug("[AutoFit] pass=\(passIndex)")
             log.debug("[AutoFit] fixed=\(Int(totalFixedWidth(fittedColumns))) name=\(Int(nameWidth))")
         }
@@ -85,9 +85,10 @@ enum ColumnAutoFitter {
 
     private static func logAutoFit(layout: ColumnLayoutModel, fittedColumns: [FittedColumn], nameWidth: CGFloat) {
         let detail = fittedColumns.map { "\($0.id.title)=\(Int($0.width))" }.joined(separator: " ")
-        log.debug("[AutoFit] panelWidth=\(Int(layout.containerWidth)) name=\(Int(nameWidth)) trailingInset=\(Int(trailingPanelInset)) \(detail)")
+        log.debug(
+            "[AutoFit] panelWidth=\(Int(layout.containerWidth)) name=\(Int(nameWidth)) trailingInset=\(Int(trailingPanelInset)) \(detail)"
+        )
     }
-
 
     private static func contentWidth(for col: ColumnID, files: [CustomFile]) -> CGFloat {
         let (texts, font) = textSamples(col, files: files)
@@ -117,10 +118,10 @@ enum ColumnAutoFitter {
 
     private static func fittedContentWidth(for column: ColumnID, measuredWidths: [CGFloat]) -> CGFloat {
         switch column {
-        case .owner:
-            ownerContentWidth(measuredWidths)
-        default:
-            weightedAverageContentWidth(measuredWidths, for: column)
+            case .owner:
+                ownerContentWidth(measuredWidths)
+            default:
+                weightedAverageContentWidth(measuredWidths, for: column)
         }
     }
 
@@ -140,8 +141,6 @@ enum ColumnAutoFitter {
         return ceil(averageWidth + 2 * measuredContentInset + extraWidth)
     }
 
-
-
     private static func ownerContentWidth(_ measuredWidths: [CGFloat]) -> CGFloat {
         guard let maximumWidth = measuredWidths.max() else { return emptyColumnWidth }
         return ceil(maximumWidth + 2 * measuredContentInset + ownerColumnInsetBoost)
@@ -158,7 +157,9 @@ enum ColumnAutoFitter {
         return fittedColumns.reversed()
     }
 
-    private static func finalizedNameWidth(containerWidth: CGFloat, fittedColumns: inout [FittedColumn], dividerTotal: CGFloat) -> CGFloat {
+    private static func finalizedNameWidth(containerWidth: CGFloat, fittedColumns: inout [FittedColumn], dividerTotal: CGFloat)
+        -> CGFloat
+    {
         var nameWidth = proposedNameWidth(containerWidth: containerWidth, fittedColumns: fittedColumns, dividerTotal: dividerTotal)
 
         if nameWidth < minNameWidth {
@@ -167,7 +168,8 @@ enum ColumnAutoFitter {
         }
 
         nameWidth = max(minNameWidth, min(maxNameWidth(for: containerWidth), nameWidth))
-        alignTrailingEdge(fittedColumns: &fittedColumns, containerWidth: containerWidth, nameWidth: nameWidth, dividerTotal: dividerTotal)
+        alignTrailingEdge(
+            fittedColumns: &fittedColumns, containerWidth: containerWidth, nameWidth: nameWidth, dividerTotal: dividerTotal)
         return nameWidth
     }
 
@@ -185,7 +187,9 @@ enum ColumnAutoFitter {
     ) -> Bool {
         let effectivePanelWidth = nameWidth + totalFixedWidth(fittedColumns) + dividerTotal + trailingPanelInset
         if effectivePanelWidth > containerWidth + edgeAlignmentEpsilon {
-            log.debug("[AutoFit] corrective pass requested: panel overflow effective=\(Int(effectivePanelWidth)) container=\(Int(containerWidth))")
+            log.debug(
+                "[AutoFit] corrective pass requested: panel overflow effective=\(Int(effectivePanelWidth)) container=\(Int(containerWidth))"
+            )
             return true
         }
 
@@ -193,7 +197,9 @@ enum ColumnAutoFitter {
             guard let fittedColumn = fittedColumns.first(where: { $0.id == column.id }) else { continue }
             let clippingRatio = measuredClippingRatio(for: column.id, files: files, fittedWidth: fittedColumn.width)
             if clippingRatio > correctiveClippingThreshold {
-                log.debug("[AutoFit] corrective pass requested: column=\(column.id.title) clipped=\(Int(clippingRatio * 100))% width=\(Int(fittedColumn.width))")
+                log.debug(
+                    "[AutoFit] corrective pass requested: column=\(column.id.title) clipped=\(Int(clippingRatio * 100))% width=\(Int(fittedColumn.width))"
+                )
                 return true
             }
         }
@@ -211,13 +217,13 @@ enum ColumnAutoFitter {
             let oldWidth = fittedColumns[index].width
             let correctiveWidth = correctiveContentWidth(for: columnID, files: files)
             guard correctiveWidth > oldWidth else {
-                log.debug("[AutoFit] corrective keep column=\(columnID.title) width=\(Int(oldWidth))")
+                //    log.debug("[AutoFit] corrective keep column=\(columnID.title) width=\(Int(oldWidth))")
                 continue
             }
 
             let newWidth = min(correctiveWidth, columnID.maxWidth)
             fittedColumns[index].width = newWidth
-            log.debug("[AutoFit] corrective widen column=\(columnID.title) old=\(Int(oldWidth)) new=\(Int(newWidth)) target=\(Int(correctiveWidth))")
+            //log.debug("[AutoFit] corrective widen column=\(columnID.title) old=\(Int(oldWidth)) new=\(Int(newWidth)) target=\(Int(correctiveWidth))")
         }
     }
 
@@ -238,9 +244,11 @@ enum ColumnAutoFitter {
         guard !meaningfulTexts.isEmpty else { return .zero }
 
         let measuredWidths = measuredTextWidths(meaningfulTexts, font: font)
-        let clippedCount = measuredWidths.filter { measuredWidth in
-            requiredContentWidth(for: column, measuredWidth: measuredWidth) > fittedWidth + edgeAlignmentEpsilon
-        }.count
+        let clippedCount =
+            measuredWidths.filter { measuredWidth in
+                requiredContentWidth(for: column, measuredWidth: measuredWidth) > fittedWidth + edgeAlignmentEpsilon
+            }
+            .count
 
         return CGFloat(clippedCount) / CGFloat(measuredWidths.count)
     }
@@ -255,19 +263,19 @@ enum ColumnAutoFitter {
 
     private static func percentileFittedContentWidth(for column: ColumnID, percentileWidth: CGFloat) -> CGFloat {
         switch column {
-        case .owner:
-            return ceil(percentileWidth + 2 * measuredContentInset + ownerColumnInsetBoost)
-        default:
-            return ceil(percentileWidth + 2 * measuredContentInset + ColumnWidthPolicy.extraReserveWidth(for: column))
+            case .owner:
+                return ceil(percentileWidth + 2 * measuredContentInset + ownerColumnInsetBoost)
+            default:
+                return ceil(percentileWidth + 2 * measuredContentInset + ColumnWidthPolicy.extraReserveWidth(for: column))
         }
     }
 
     private static func requiredContentWidth(for column: ColumnID, measuredWidth: CGFloat) -> CGFloat {
         switch column {
-        case .owner:
-            return ceil(measuredWidth + 2 * measuredContentInset + ownerColumnInsetBoost)
-        default:
-            return ceil(measuredWidth + 2 * measuredContentInset + ColumnWidthPolicy.extraReserveWidth(for: column))
+            case .owner:
+                return ceil(measuredWidth + 2 * measuredContentInset + ownerColumnInsetBoost)
+            default:
+                return ceil(measuredWidth + 2 * measuredContentInset + ColumnWidthPolicy.extraReserveWidth(for: column))
         }
     }
 
@@ -292,7 +300,9 @@ enum ColumnAutoFitter {
         }
     }
 
-    private static func alignTrailingEdge(fittedColumns: inout [FittedColumn], containerWidth: CGFloat, nameWidth: CGFloat, dividerTotal: CGFloat) {
+    private static func alignTrailingEdge(
+        fittedColumns: inout [FittedColumn], containerWidth: CGFloat, nameWidth: CGFloat, dividerTotal: CGFloat
+    ) {
         guard let lastIndex = fittedColumns.indices.last else { return }
 
         let remainder = containerWidth - nameWidth - totalFixedWidth(fittedColumns) - dividerTotal - trailingPanelInset
@@ -328,7 +338,6 @@ enum ColumnAutoFitter {
         CGFloat(fixedColumnCount) * dividerWidth
     }
 
-
     private static func pt(_ value: CGFloat) -> String {
         String(format: "%.1fpt", value)
     }
@@ -341,27 +350,25 @@ enum ColumnAutoFitter {
         }
     }
 
-
     private static func textSamples(_ col: ColumnID, files: [CustomFile]) -> ([String], NSFont) {
         switch col {
-        case .size:           (files.map(\.displaySizeFormatted),   .systemFont(ofSize: 12))
-        case .dateModified:   (files.map(\.modifiedDateFormatted),  .systemFont(ofSize: 12))
-        case .kind:           (files.map(\.kindFormatted),          .systemFont(ofSize: 12))
-        case .permissions:    (files.map(\.permissionsFormatted),   .monospacedSystemFont(ofSize: 11, weight: .regular))
-        case .owner:          (files.map(\.ownerFormatted),         .systemFont(ofSize: 12, weight: .regular))
-        case .childCount:     (files.map(\.childCountFormatted),    .systemFont(ofSize: 12))
-        case .dateCreated:    (files.map(\.creationDateFormatted),  .systemFont(ofSize: 12))
-        case .dateLastOpened: (files.map(\.lastOpenedFormatted),    .systemFont(ofSize: 12))
-        case .dateAdded:      (files.map(\.dateAddedFormatted),     .systemFont(ofSize: 12))
-        case .group:          (files.map(\.groupNameFormatted),     .systemFont(ofSize: 12))
-        case .name:           ([], .systemFont(ofSize: 12))
+            case .size: (files.map(\.displaySizeFormatted), .systemFont(ofSize: 12))
+            case .dateModified: (files.map(\.modifiedDateFormatted), .systemFont(ofSize: 12))
+            case .kind: (files.map(\.kindFormatted), .systemFont(ofSize: 12))
+            case .permissions: (files.map(\.permissionsFormatted), .monospacedSystemFont(ofSize: 11, weight: .regular))
+            case .owner: (files.map(\.ownerFormatted), .systemFont(ofSize: 12, weight: .regular))
+            case .childCount: (files.map(\.childCountFormatted), .systemFont(ofSize: 12))
+            case .dateCreated: (files.map(\.creationDateFormatted), .systemFont(ofSize: 12))
+            case .dateLastOpened: (files.map(\.lastOpenedFormatted), .systemFont(ofSize: 12))
+            case .dateAdded: (files.map(\.dateAddedFormatted), .systemFont(ofSize: 12))
+            case .group: (files.map(\.groupNameFormatted), .systemFont(ofSize: 12))
+            case .name: ([], .systemFont(ofSize: 12))
         }
     }
 }
 
-
-private extension CGFloat {
-    func clamped(to range: ClosedRange<CGFloat>) -> CGFloat {
+extension CGFloat {
+    fileprivate func clamped(to range: ClosedRange<CGFloat>) -> CGFloat {
         Swift.max(range.lowerBound, Swift.min(self, range.upperBound))
     }
 }

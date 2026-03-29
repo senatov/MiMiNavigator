@@ -8,18 +8,14 @@
 
 import Foundation
 
-// MARK: - Host entry from FritzBox DHCP table
-struct FritzBoxHost {
-    let name: String
-    let ip: String
-    let mac: String
-    let isActive: Bool
-    let interfaceType: String   // "802.11" = WiFi, "Ethernet" = wired, "" = unknown
-}
-
 // MARK: - FritzBox TR-064 discovery
 enum FritzBoxDiscovery {
-    private static let upnpURL = "http://fritz.box:49000/upnp/control/hosts"
+    private static let upnpURLs = [
+        "http://fritz.box:49000/upnp/control/hosts",
+        "http://192.168.178.1:49000/upnp/control/hosts",
+        "http://192.168.1.1:49000/upnp/control/hosts",
+        "http://192.168.0.1:49000/upnp/control/hosts"
+    ]
 
     // MARK: - Check reachability via SOAP ping
     @concurrent static func isAvailable() async -> Bool {
@@ -29,9 +25,14 @@ enum FritzBoxDiscovery {
     // MARK: - Get count of DHCP entries
     @concurrent static func hostCount() async -> Int? {
         let body = soapEnvelope(action: "GetHostNumberOfEntries", params: "")
-        guard let xml = await postSOAP(body: body, action: "GetHostNumberOfEntries")
-        else { return nil }
-        return extractInt(xml, tag: "NewHostNumberOfEntries")
+        guard let xml = await postSOAP(body: body, action: "GetHostNumberOfEntries") else {
+            log.warning("[FritzBox] GetHostNumberOfEntries failed on all known endpoints")
+            return nil
+        }
+
+        let count = extractInt(xml, tag: "NewHostNumberOfEntries")
+        log.info("[FritzBox] hostCount=\(count.map(String.init) ?? "nil")")
+        return count
     }
 
     // MARK: - Get ALL hosts (active AND inactive)
@@ -43,7 +44,6 @@ enum FritzBoxDiscovery {
             return []
         }
         log.info("[FritzBox] fetching \(count) DHCP entries")
-
         var results: [FritzBoxHost] = []
         await withTaskGroup(of: FritzBoxHost?.self) { @concurrent group in
             for i in 0..<count {
@@ -55,7 +55,7 @@ enum FritzBoxDiscovery {
         }
 
         // Dedup: prefer active over inactive when same name or same IP
-        var byIP   = [String: FritzBoxHost]()
+        var byIP = [String: FritzBoxHost]()
         var byName = [String: FritzBoxHost]()
         for h in results {
             let key = h.name.lowercased()
@@ -90,15 +90,17 @@ enum FritzBoxDiscovery {
     // MARK: - Fetch single host entry by index
     @concurrent private static func fetchHost(index: Int) async -> FritzBoxHost? {
         let params = "<NewIndex>\(index)</NewIndex>"
-        let body   = soapEnvelope(action: "GetGenericHostEntry", params: params)
-        guard let xml = await postSOAP(body: body, action: "GetGenericHostEntry")
-        else { return nil }
+        let body = soapEnvelope(action: "GetGenericHostEntry", params: params)
+        guard let xml = await postSOAP(body: body, action: "GetGenericHostEntry") else {
+            log.debug("[FritzBox] host entry \(index) unavailable")
+            return nil
+        }
         guard let name = extractString(xml, tag: "NewHostName"), !name.isEmpty
         else { return nil }
-        let ip     = extractString(xml, tag: "NewIPAddress") ?? ""
-        let mac    = extractString(xml, tag: "NewMACAddress") ?? ""
+        let ip = extractString(xml, tag: "NewIPAddress") ?? ""
+        let mac = extractString(xml, tag: "NewMACAddress") ?? ""
         let active = extractString(xml, tag: "NewActive") == "1"
-        let itype  = extractString(xml, tag: "NewInterfaceType") ?? ""
+        let itype = extractString(xml, tag: "NewInterfaceType") ?? ""
         return FritzBoxHost(name: name, ip: ip, mac: mac, isActive: active, interfaceType: itype)
     }
 
@@ -116,23 +118,47 @@ enum FritzBoxDiscovery {
 
     // MARK: - POST SOAP — SOAPAction header is mandatory (without it FritzBox returns 404)
     @concurrent private static func postSOAP(body: String, action: String) async -> String? {
-        guard let url  = URL(string: upnpURL),
-              let data = body.data(using: .utf8) else { return nil }
-        var req = URLRequest(url: url, timeoutInterval: 5.0)
-        req.httpMethod = "POST"
-        req.httpBody   = data
-        req.setValue("text/xml; charset=utf-8", forHTTPHeaderField: "Content-Type")
-        req.setValue("urn:dslforum-org:service:Hosts:1#\(action)", forHTTPHeaderField: "SOAPAction")
-        guard let (respData, resp) = try? await URLSession.shared.data(for: req),
-              (resp as? HTTPURLResponse)?.statusCode == 200
-        else { return nil }
-        return String(data: respData, encoding: .utf8)
+        guard let data = body.data(using: .utf8) else { return nil }
+
+        for endpoint in upnpURLs {
+            guard let url = URL(string: endpoint) else { continue }
+
+            var req = URLRequest(url: url, timeoutInterval: 5.0)
+            req.httpMethod = "POST"
+            req.httpBody = data
+            req.setValue("text/xml; charset=utf-8", forHTTPHeaderField: "Content-Type")
+            req.setValue("urn:dslforum-org:service:Hosts:1#\(action)", forHTTPHeaderField: "SOAPAction")
+
+            do {
+                let (respData, resp) = try await URLSession.shared.data(for: req)
+                guard let http = resp as? HTTPURLResponse else {
+                    log.debug("[FritzBox] \(action) endpoint=\(endpoint) returned non-HTTP response")
+                    continue
+                }
+
+                guard http.statusCode == 200 else {
+                    log.debug("[FritzBox] \(action) endpoint=\(endpoint) status=\(http.statusCode)")
+                    continue
+                }
+
+                if let xml = String(data: respData, encoding: .utf8) {
+                    log.debug("[FritzBox] \(action) endpoint=\(endpoint) OK")
+                    return xml
+                }
+
+                log.debug("[FritzBox] \(action) endpoint=\(endpoint) invalid UTF-8")
+            } catch {
+                log.debug("[FritzBox] \(action) endpoint=\(endpoint) error=\(error.localizedDescription)")
+            }
+        }
+
+        return nil
     }
 
     // MARK: - XML helpers
     private static func extractString(_ xml: String, tag: String) -> String? {
         guard let r = xml.range(of: "<\(tag)>"),
-              let e = xml.range(of: "</\(tag)>", range: r.upperBound..<xml.endIndex)
+            let e = xml.range(of: "</\(tag)>", range: r.upperBound..<xml.endIndex)
         else { return nil }
         return String(xml[r.upperBound..<e.lowerBound])
     }

@@ -35,12 +35,38 @@ struct ConnectToServerView: View {
     @State private var saveAlertTitle: String = ""
     @State private var saveAlertMessage: String = ""
     @State private var nameWasManuallyEdited: Bool = false
+    @State private var sidebarWidth: CGFloat = Layout.idealSidebarWidth
+    @State private var lastCommittedSidebarWidth: CGFloat = Layout.idealSidebarWidth
 
     @FocusState private var focusedField: FormField?
     @Namespace private var focusNamespace
+    @State private var isDividerHovered: Bool = false
+    @State private var isDividerDragging: Bool = false
 
     private enum FormField: Hashable {
         case name, host, port, remotePath, user, password, keyPath
+    }
+
+    private enum Layout {
+        static let minSidebarWidth: CGFloat = 160
+        static let idealSidebarWidth: CGFloat = 260
+        static let maxSidebarWidth: CGFloat = 420
+        static let dividerVisualWidth: CGFloat = 10
+        static let dividerHitWidth: CGFloat = 18
+        static let dividerCapsuleWidth: CGFloat = 4
+        static let dividerCapsuleHeight: CGFloat = 72
+        static let minContentWidth: CGFloat = 320
+        static let windowMinWidth: CGFloat = 660
+        static let windowIdealWidth: CGFloat = 760
+        static let windowMinHeight: CGFloat = 440
+        static let windowIdealHeight: CGFloat = 520
+        static let sidebarWidthDefaultsKey = "ConnectToServerView.sidebarWidth"
+    }
+
+    private enum Glass {
+        static let dividerBorderOpacity: Double = 0.14
+        static let dividerIdleTintOpacity: Double = 0.05
+        static let dividerHoverTintOpacity: Double = 0.10
     }
 
     private var dialogBgColor: Color {
@@ -51,19 +77,49 @@ struct ConnectToServerView: View {
         return s.activeTheme.dialogBackground
     }
 
+    private var clampedSidebarWidth: CGFloat {
+        min(max(sidebarWidth, Layout.minSidebarWidth), Layout.maxSidebarWidth)
+    }
+
+    private var dividerActive: Bool {
+        isDividerHovered || isDividerDragging
+    }
+
+    private var dividerTintOpacity: Double {
+        dividerActive ? Glass.dividerHoverTintOpacity : Glass.dividerIdleTintOpacity
+    }
+
+    private var dividerBorderStrokeOpacity: Double {
+        dividerActive ? Glass.dividerBorderOpacity : Glass.dividerBorderOpacity * 0.7
+    }
+
     // MARK: - Body
     var body: some View {
-        HSplitView {
-            sidebar
-                .frame(minWidth: 120, idealWidth: 260, maxWidth: 500)
-            contentPane
-                .frame(minWidth: 320)
+        GeometryReader { geometry in
+            HStack(spacing: 0) {
+                sidebar
+                    .frame(width: resolvedSidebarWidth(totalWidth: geometry.size.width))
+
+                splitDivider(totalWidth: geometry.size.width)
+
+                contentPane
+                    .frame(minWidth: Layout.minContentWidth, maxWidth: .infinity)
+            }
+            .focusScope(focusNamespace)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .focusScope(focusNamespace)
-        .frame(minWidth: 660, idealWidth: 760, minHeight: 440, idealHeight: 520)
+        .frame(
+            minWidth: Layout.windowMinWidth,
+            idealWidth: Layout.windowIdealWidth,
+            minHeight: Layout.windowMinHeight,
+            idealHeight: Layout.windowIdealHeight
+        )
         .background(dialogBgColor.ignoresSafeArea())
         .glassEffect()
-        .onAppear { selectFirst() }
+        .onAppear {
+            restoreSidebarWidth()
+            selectFirst()
+        }
         .onKeyPress(.escape) {
             onDismiss?()
             return .handled
@@ -160,7 +216,7 @@ struct ConnectToServerView: View {
                 connectionError = ""
                 ConnectErrorPopupController.shared.hide()
                 guard let id = newID,
-                      let server = store.servers.first(where: { $0.id == id })
+                    let server = store.servers.first(where: { $0.id == id })
                 else { return }
                 applyServerToDraft(server)
                 log.debug("\(#function) switched to server '\(server.displayName)'")
@@ -172,6 +228,10 @@ struct ConnectToServerView: View {
             sidebarFooterToolbar
         }
         .background(DialogColors.base.opacity(0.72))
+        .overlay(alignment: .trailing) {
+            Divider()
+                .opacity(0.22)
+        }
         .glassEffect()
     }
 
@@ -250,13 +310,17 @@ struct ConnectToServerView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
                     sectionTitleBar
-                    Divider().padding(.horizontal, 24).padding(.bottom, 16)
+                    Divider()
+                        .padding(.horizontal, 24)
+                        .padding(.bottom, 16)
                     connectionFormContent
                         .padding(.horizontal, 24)
                         .padding(.bottom, 24)
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .glassEffect()
     }
 
@@ -739,5 +803,92 @@ struct ConnectToServerView: View {
             )
             log.error("[ConnectToServer] export failed: \(error.localizedDescription)")
         }
+    }
+
+    // MARK: - Split Layout
+    private func resolvedSidebarWidth(totalWidth: CGFloat) -> CGFloat {
+        let maxAllowed = max(
+            Layout.minSidebarWidth,
+            min(Layout.maxSidebarWidth, totalWidth - Layout.minContentWidth - Layout.dividerVisualWidth)
+        )
+        return min(max(clampedSidebarWidth, Layout.minSidebarWidth), maxAllowed)
+    }
+
+    @ViewBuilder
+    private func splitDivider(totalWidth: CGFloat) -> some View {
+        Rectangle()
+            .fill(.clear)
+            .frame(width: Layout.dividerHitWidth)
+            .overlay {
+                RoundedRectangle(cornerRadius: 3, style: .continuous)
+                    .fill(Color.white.opacity(dividerTintOpacity))
+                    .frame(
+                        width: Layout.dividerCapsuleWidth,
+                        height: Layout.dividerCapsuleHeight
+                    )
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 3, style: .continuous)
+                            .strokeBorder(
+                                Color.white.opacity(dividerBorderStrokeOpacity),
+                                lineWidth: 0.8
+                            )
+                    }
+                    .glassEffect()
+            }
+            .contentShape(Rectangle())
+            .onContinuousHover { phase in
+                switch phase {
+                    case .active:
+                        NSCursor.resizeLeftRight.push()
+                    case .ended:
+                        NSCursor.pop()
+                }
+            }
+            .onHover { hovering in
+                isDividerHovered = hovering
+            }
+            .gesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { value in
+                        isDividerDragging = true
+                        let maxAllowed = max(
+                            Layout.minSidebarWidth,
+                            min(Layout.maxSidebarWidth, totalWidth - Layout.minContentWidth - Layout.dividerVisualWidth)
+                        )
+                        sidebarWidth = min(
+                            max(lastCommittedSidebarWidth + value.translation.width, Layout.minSidebarWidth),
+                            maxAllowed
+                        )
+                    }
+                    .onEnded { _ in
+                        isDividerDragging = false
+                        sidebarWidth = resolvedSidebarWidth(totalWidth: totalWidth)
+                        lastCommittedSidebarWidth = sidebarWidth
+                        persistSidebarWidth(sidebarWidth)
+                    }
+            )
+            .onTapGesture(count: 2) {
+                sidebarWidth = Layout.idealSidebarWidth
+                lastCommittedSidebarWidth = Layout.idealSidebarWidth
+                persistSidebarWidth(Layout.idealSidebarWidth)
+            }
+            .help("Drag to resize sidebar")
+    }
+
+    private func restoreSidebarWidth() {
+        let storedWidth = UserDefaults.standard.double(forKey: Layout.sidebarWidthDefaultsKey)
+        guard storedWidth > 0 else {
+            sidebarWidth = Layout.idealSidebarWidth
+            lastCommittedSidebarWidth = Layout.idealSidebarWidth
+            return
+        }
+
+        let restoredWidth = CGFloat(storedWidth)
+        sidebarWidth = restoredWidth
+        lastCommittedSidebarWidth = restoredWidth
+    }
+
+    private func persistSidebarWidth(_ width: CGFloat) {
+        UserDefaults.standard.set(width, forKey: Layout.sidebarWidthDefaultsKey)
     }
 }

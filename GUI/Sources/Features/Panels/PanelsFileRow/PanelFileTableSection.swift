@@ -100,12 +100,17 @@ struct PanelFileTableSection: View {
 
     // MARK: - Selection handler
     private func handleSelection(_ file: CustomFile) {
+        if appState.focusedPanel != panelSide {
+            log.debug("[PanelFileTableSection] activating panel on selection: \(panelSide)")
+            onPanelTap(panelSide)
+        }
+
         log.debug("[PanelFileTableSection] handleSelection: \(file.nameStr)")
 
-        // Ensure panel focus is correct
         if appState.focusedPanel != panelSide {
             appState.focusedPanel = panelSide
         }
+
         // IMPORTANT: update selectedID immediately so SwiftUI highlight updates
         selectedID = file.id
         // Notify listeners

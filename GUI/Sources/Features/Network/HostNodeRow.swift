@@ -33,9 +33,12 @@ struct HostNodeRow: View {
             Spacer()
             actionButtons
         }
-        .padding(.horizontal, 10).padding(.vertical, 7)
-        .background(isHovered ? Color.accentColor.opacity(0.08) : Color.clear)
-        .contentShape(Rectangle())
+        .padding(.horizontal, 10)
+        .padding(.vertical, 7)
+        .background(rowBackground)
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .overlay(rowBorder)
+        .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         .onHover { isHovered = $0 }
         .onTapGesture {
             guard host.isExpandable else { return }
@@ -88,6 +91,25 @@ struct HostNodeRow: View {
     }
 
 
+    // MARK: - Row glass styling
+
+    @ViewBuilder
+    private var rowBackground: some View {
+        RoundedRectangle(cornerRadius: 12, style: .continuous)
+            .fill(.clear)
+            .glassEffect(.regular.tint(isHovered ? Color.accentColor.opacity(0.12) : Color.white.opacity(0.06)))
+    }
+
+    @ViewBuilder
+    private var rowBorder: some View {
+        RoundedRectangle(cornerRadius: 12, style: .continuous)
+            .strokeBorder(
+                isHovered ? Color.accentColor.opacity(0.22) : Color.white.opacity(0.10),
+                lineWidth: 0.8
+            )
+    }
+
+
 
     // MARK: - Right-side action buttons
 
@@ -105,15 +127,35 @@ struct HostNodeRow: View {
             }
             if host.webUIURL == nil && !host.deviceLabel.isEmpty {
                 Text(host.deviceLabel)
-                    .font(.caption2).foregroundStyle(.secondary)
-                    .padding(.horizontal, 6).padding(.vertical, 2)
-                    .background(Color.secondary.opacity(0.12))
-                    .clipShape(Capsule())
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 7)
+                    .padding(.vertical, 3)
+                    .background {
+                        Capsule()
+                            .fill(.clear)
+                            .glassEffect(.regular.tint(Color.white.opacity(0.10)))
+                    }
+                    .overlay {
+                        Capsule()
+                            .strokeBorder(Color.white.opacity(0.10), lineWidth: 0.8)
+                    }
             }
             if isHovered {
                 Button { showInfoPopup.toggle() } label: {
                     Image(systemName: "info.circle")
-                        .font(.system(size: 14)).foregroundStyle(.blue)
+                        .font(.system(size: 14))
+                        .foregroundStyle(.blue)
+                        .padding(5)
+                        .background {
+                            Circle()
+                                .fill(.clear)
+                                .glassEffect(.regular.tint(Color.blue.opacity(0.10)))
+                        }
+                        .overlay {
+                            Circle()
+                                .strokeBorder(Color.white.opacity(0.10), lineWidth: 0.8)
+                        }
                 }
                 .buttonStyle(.plain)
                 .help("Device info")

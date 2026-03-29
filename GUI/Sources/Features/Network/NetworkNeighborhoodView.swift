@@ -22,23 +22,171 @@ struct NetworkNeighborhoodView: View {
     @State private var expanded: Set<NetworkHost.ID> = []
     @State private var authTarget: NetworkHost? = nil
 
+    private enum Layout {
+        static let minWidth: CGFloat = 380
+        static let idealWidth: CGFloat = 460
+        static let minHeight: CGFloat = 280
+        static let outerCornerRadius: CGFloat = 14
+        static let sectionCornerRadius: CGFloat = 12
+        static let horizontalPadding: CGFloat = 12
+        static let compactHorizontalPadding: CGFloat = 10
+        static let rowDividerInset: CGFloat = 36
+        static let shareDividerInset: CGFloat = 56
+        static let sectionHeaderHorizontalPadding: CGFloat = 12
+        static let sectionHeaderTopPadding: CGFloat = 10
+        static let sectionHeaderBottomPadding: CGFloat = 4
+    }
+
+    private enum Glass {
+        static let borderOpacity: Double = 0.14
+        static let sectionTintOpacity: Double = 0.07
+        static let headerTintOpacity: Double = 0.09
+    }
+
+    private enum HostSection: Int, CaseIterable {
+        case infrastructure
+        case computersAndStorage
+        case mobileAndMedia
+        case other
+
+        var title: String {
+            switch self {
+                case .infrastructure:
+                    return "Infrastructure"
+                case .computersAndStorage:
+                    return "Computers & Storage"
+                case .mobileAndMedia:
+                    return "Mobile & Media"
+                case .other:
+                    return "Other"
+            }
+        }
+    }
+
     // MARK: - Only online hosts
     private var visibleHosts: [NetworkHost] {
-        provider.hosts.filter { !$0.isOffline }
+        sortedHosts(provider.hosts.filter { !$0.isOffline })
+    }
+
+    private var shouldShowEmptyState: Bool {
+        visibleHosts.isEmpty && !provider.isScanning
+    }
+
+    private var hostCountText: String {
+        let count = visibleHosts.count
+        return count == 1 ? "1 host" : "\(count) hosts"
+    }
+
+    private var groupedHosts: [(section: HostSection, hosts: [NetworkHost])] {
+        var buckets: [HostSection: [NetworkHost]] = [:]
+
+        for host in visibleHosts {
+            buckets[sectionForHost(host), default: []].append(host)
+        }
+
+        return HostSection.allCases.compactMap { section in
+            guard let hosts = buckets[section], !hosts.isEmpty else { return nil }
+            return (section, hosts)
+        }
+    }
+    private var scanningStatusText: String {
+        provider.isScanning ? "Scanning network…" : hostCountText
+    }
+// MARK: - Glass Styling
+
+    // MARK: - Host Organization
+    private func sectionForHost(_ host: NetworkHost) -> HostSection {
+        if host.deviceClass.isInfrastructure {
+            return .infrastructure
+        }
+        if host.deviceClass.isComputer || host.deviceClass.isStorage {
+            return .computersAndStorage
+        }
+        if host.deviceClass.isMobile || host.deviceClass.isMediaDevice || host.deviceClass.isIoT {
+            return .mobileAndMedia
+        }
+        return .other
+    }
+
+    private func sortRank(for host: NetworkHost) -> Int {
+        let device = host.deviceClass
+        if device.isInfrastructure { return 0 }
+        if device.isComputer { return 1 }
+        if device.isStorage { return 2 }
+        if device.isMobile { return 3 }
+        if device.isMediaDevice { return 4 }
+        if device.isIoT { return 5 }
+        return 6
+    }
+
+    private func sortedHosts(_ hosts: [NetworkHost]) -> [NetworkHost] {
+        hosts.sorted { lhs, rhs in
+            let lhsRank = sortRank(for: lhs)
+            let rhsRank = sortRank(for: rhs)
+            if lhsRank != rhsRank {
+                return lhsRank < rhsRank
+            }
+
+            let lhsName = lhs.hostDisplayName.lowercased()
+            let rhsName = rhs.hostDisplayName.lowercased()
+            if lhsName != rhsName {
+                return lhsName < rhsName
+            }
+
+            return lhs.id.uuidString < rhs.id.uuidString
+        }
+    }
+
+    // MARK: - Glass Styling
+    @ViewBuilder
+    private var panelBackground: some View {
+        RoundedRectangle(cornerRadius: Layout.outerCornerRadius, style: .continuous)
+            .fill(.clear)
+            .glassEffect(.regular.tint(Color.white.opacity(Glass.sectionTintOpacity)))
+    }
+
+    @ViewBuilder
+    private var panelBorder: some View {
+        RoundedRectangle(cornerRadius: Layout.outerCornerRadius, style: .continuous)
+            .strokeBorder(Color.white.opacity(Glass.borderOpacity), lineWidth: 0.8)
+    }
+
+    @ViewBuilder
+    private var headerBackground: some View {
+        RoundedRectangle(cornerRadius: Layout.sectionCornerRadius, style: .continuous)
+            .fill(.clear)
+            .glassEffect(.regular.tint(Color.white.opacity(Glass.headerTintOpacity)))
+    }
+
+    @ViewBuilder
+    private var sectionBackground: some View {
+        RoundedRectangle(cornerRadius: Layout.sectionCornerRadius, style: .continuous)
+            .fill(.clear)
+            .glassEffect(.regular.tint(Color.white.opacity(Glass.sectionTintOpacity)))
+    }
+
+    @ViewBuilder
+    private var sectionBorder: some View {
+        RoundedRectangle(cornerRadius: Layout.sectionCornerRadius, style: .continuous)
+            .strokeBorder(Color.white.opacity(Glass.borderOpacity), lineWidth: 0.8)
     }
 
     var body: some View {
-        VStack(spacing: 0) {
+        VStack(spacing: 10) {
             headerBar
-            Divider()
-            if visibleHosts.isEmpty && !provider.isScanning {
+
+            if shouldShowEmptyState {
                 emptyState
             } else {
                 hostTree
             }
         }
-        .frame(minWidth: 380, idealWidth: 460, minHeight: 280)
-        .background(DialogColors.base)
+        .frame(minWidth: Layout.minWidth, idealWidth: Layout.idealWidth, minHeight: Layout.minHeight)
+        .padding(.top, 10)
+        .background(panelBackground)
+        .overlay(panelBorder)
+        .clipShape(RoundedRectangle(cornerRadius: Layout.outerCornerRadius, style: .continuous))
+        .contentShape(RoundedRectangle(cornerRadius: Layout.outerCornerRadius, style: .continuous))
         .onAppear {
             Task { @MainActor in provider.startDiscovery() }
         }
@@ -54,22 +202,53 @@ struct NetworkNeighborhoodView: View {
 
     // MARK: - Header (action bar only — title is in titlebar accessory)
     private var headerBar: some View {
-        HStack(spacing: 6) {
+        HStack(spacing: 8) {
+            VStack(alignment: .leading, spacing: 1) {
+                Text("Network Neighborhood")
+                    .font(.headline)
+                Text(scanningStatusText)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
             Spacer()
+
             if provider.isScanning {
-                ProgressView().scaleEffect(0.6)
+                HStack(spacing: 6) {
+                    ProgressView()
+                        .scaleEffect(0.6)
+                    Text(hostCountText)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
             } else {
                 Button {
                     provider.startDiscovery()
                 } label: {
-                    Image(systemName: "arrow.clockwise").font(.caption)
+                    Image(systemName: "arrow.clockwise")
+                        .font(.caption)
+                        .padding(6)
+                        .background {
+                            Circle()
+                                .fill(.clear)
+                                .glassEffect(.regular.tint(Color.white.opacity(Glass.sectionTintOpacity)))
+                        }
+                        .overlay {
+                            Circle()
+                                .strokeBorder(Color.white.opacity(Glass.borderOpacity), lineWidth: 0.8)
+                        }
                 }
-                .buttonStyle(.plain).help("Rescan (⌘R)")
+                .buttonStyle(.plain)
+                .help("Rescan (⌘R)")
                 .keyboardShortcut("r", modifiers: .command)
             }
         }
-        .padding(.horizontal, 12).padding(.vertical, 6)
-        .background(DialogColors.stripe)
+        .padding(.horizontal, Layout.horizontalPadding)
+        .padding(.vertical, 8)
+        .background(headerBackground)
+        .overlay(sectionBorder)
+        .clipShape(RoundedRectangle(cornerRadius: Layout.sectionCornerRadius, style: .continuous))
+        .padding(.horizontal, Layout.compactHorizontalPadding)
     }
 
     // MARK: - Empty state
@@ -77,36 +256,74 @@ struct NetworkNeighborhoodView: View {
         VStack(spacing: 10) {
             Spacer()
             Image(systemName: provider.isScanning ? "network" : "network.slash")
-                .font(.largeTitle).foregroundStyle(.tertiary)
+                .font(.largeTitle)
+                .foregroundStyle(.tertiary)
                 .symbolEffect(.pulse, isActive: provider.isScanning)
             Text(provider.isScanning ? "Scanning…" : "No hosts found")
-                .font(.callout).foregroundStyle(.secondary)
+                .font(.callout)
+                .foregroundStyle(.secondary)
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(sectionBackground)
+        .overlay(sectionBorder)
+        .clipShape(RoundedRectangle(cornerRadius: Layout.sectionCornerRadius, style: .continuous))
+        .padding(.horizontal, Layout.compactHorizontalPadding)
+        .padding(.bottom, 10)
     }
 
     // MARK: - Host tree
     private var hostTree: some View {
         ScrollView {
             LazyVStack(spacing: 0) {
-                ForEach(visibleHosts) { host in
-                    hostRow(host)
-                    Divider().padding(.leading, 36)
-                    if expanded.contains(host.id) {
-                        sharesSection(for: host)
+                ForEach(groupedHosts, id: \.section) { group in
+                    sectionHeader(group.section.title)
+
+                    ForEach(Array(group.hosts.enumerated()), id: \.element.id) { index, host in
+                        hostRow(host)
+                        if expanded.contains(host.id) {
+                            sharesSection(for: host)
+                        }
+                        if index < group.hosts.count - 1 {
+                            Divider().padding(.leading, Layout.rowDividerInset)
+                        }
                     }
                 }
+
                 if provider.isScanning {
                     HStack(spacing: 6) {
                         ProgressView().scaleEffect(0.65)
-                        Text("Scanning…").font(.caption).foregroundStyle(.secondary)
+                        Text("Scanning…")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 14).padding(.vertical, 8)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 8)
                 }
             }
+            .padding(.vertical, 4)
         }
+        .background(sectionBackground)
+        .overlay(sectionBorder)
+        .clipShape(RoundedRectangle(cornerRadius: Layout.sectionCornerRadius, style: .continuous))
+        .padding(.horizontal, Layout.compactHorizontalPadding)
+        .padding(.bottom, 10)
+    }
+
+    private func sectionHeader(_ title: String) -> some View {
+        HStack(spacing: 8) {
+            Text(title)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .textCase(.uppercase)
+            Rectangle()
+                .fill(Color.white.opacity(0.08))
+                .frame(height: 0.8)
+        }
+        .padding(.horizontal, Layout.sectionHeaderHorizontalPadding)
+        .padding(.top, Layout.sectionHeaderTopPadding)
+        .padding(.bottom, Layout.sectionHeaderBottomPadding)
     }
 
     // MARK: - Shares section below host
@@ -117,9 +334,11 @@ struct NetworkNeighborhoodView: View {
         } else if host.sharesLoaded && host.shares.isEmpty {
             noSharesRow(for: host)
         } else {
-            ForEach(host.shares) { share in
+            ForEach(Array(host.shares.enumerated()), id: \.element.id) { index, share in
                 ShareRow(share: share) { onNavigate?(share.url) }
-                Divider().padding(.leading, 56)
+                if index < host.shares.count - 1 {
+                    Divider().padding(.leading, Layout.shareDividerInset)
+                }
             }
         }
     }
@@ -224,7 +443,8 @@ struct NetworkNeighborhoodView: View {
             ProgressView().scaleEffect(0.7)
             Text("Connecting…").font(.caption).foregroundStyle(.secondary)
         }
-        .padding(.leading, 40).padding(.vertical, 6)
+        .padding(.leading, 40)
+        .padding(.vertical, 6)
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
@@ -244,18 +464,26 @@ struct NetworkNeighborhoodView: View {
                 .buttonStyle(ThemedButtonStyle()).controlSize(.mini)
             }
         }
-        .padding(.leading, 40).padding(.trailing, 10).padding(.vertical, 6)
+        .padding(.leading, 40)
+        .padding(.trailing, 10)
+        .padding(.vertical, 6)
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func expandHost(_ host: NetworkHost) {
+        expanded.insert(host.id)
+        Task { await provider.fetchShares(for: host.id) }
     }
 
     // MARK: - Expand toggle
     private func toggle(_ host: NetworkHost) {
         guard host.isExpandable else { return }
+
         if expanded.contains(host.id) {
             expanded.remove(host.id)
-        } else {
-            expanded.insert(host.id)
-            Task { await provider.fetchShares(for: host.id) }
+            return
         }
+
+        expandHost(host)
     }
 }

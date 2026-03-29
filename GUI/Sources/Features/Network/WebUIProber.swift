@@ -3,18 +3,192 @@
 //
 // Created by Iakov Senatov on 23.02.2026.
 // Copyright © 2026 Senatov. All rights reserved.
-// Description: Probes a network host for a responding HTTP/HTTPS web interface.
-//   Tries 23 ports concurrently: device admin (80/443/8080/...) + dev servers (3000/5173/8000/...)
-//   First responding port wins — result stored in NetworkHost.probedWebURL.
-//   InsecureDelegate accepts self-signed SSL certs (common on LAN routers/NAS).
-//   Called by NetworkNeighborhoodProvider.runFingerprintPass() after device classification.
+// Description: Probes a network host for a reachable HTTP/HTTPS web interface.
+//   Tries common admin, device, and developer ports concurrently.
+//   The first responding endpoint wins and becomes NetworkHost.probedWebURL.
 
 import Foundation
 
-// MARK: - WebUIProber
+// MARK: - Web UI Prober
 enum WebUIProber {
 
-    // MARK: - Port list (in probe order — fastest/most common first)
+    private static let requestTimeoutSeconds: TimeInterval = 1.5
+    private static let httpsPorts: Set<Int> = [443, 8443, 5001]
+    private static let getFallbackRangeHeader = "bytes=0-0"
+    private static let logPreviewLength = 120
+    private static let staticURLVerificationLogPrefix = "[WebUI] static"
+    private static let probeLogPrefix = "[WebUI] probe"
+
+    private static func scheme(for port: Int) -> String {
+        httpsPorts.contains(port) ? "https" : "http"
+    }
+
+    private static func candidateURL(host: String, port: Int) -> URL? {
+        URL(string: "\(scheme(for: port))://\(host):\(port)")
+    }
+
+    private static func normalizedURLString(_ value: String) -> String {
+        value.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private static func isUsableAddress(_ value: String) -> Bool {
+        let normalizedValue = normalizedAddressCandidate(value)
+        return !normalizedValue.isEmpty && normalizedValue != "(nil)"
+    }
+
+    private static func normalizedAddressCandidate(_ value: String) -> String {
+        value.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private static func statusCode(from response: URLResponse) -> Int {
+        (response as? HTTPURLResponse)?.statusCode ?? 0
+    }
+
+    private static func headRequest(for url: URL) -> URLRequest {
+        var request = URLRequest(url: url, timeoutInterval: requestTimeoutSeconds)
+        request.httpMethod = "HEAD"
+        return request
+    }
+
+    private static func fallbackGetRequest(for url: URL) -> URLRequest {
+        var request = URLRequest(url: url, timeoutInterval: requestTimeoutSeconds)
+        request.httpMethod = "GET"
+        request.setValue(getFallbackRangeHeader, forHTTPHeaderField: "Range")
+        return request
+    }
+
+    private static let probeSession: URLSession = {
+        URLSession(
+            configuration: .ephemeral,
+            delegate: InsecureDelegate.shared,
+            delegateQueue: nil
+        )
+    }()
+
+    private static func shouldUseHostName(_ hostName: String) -> Bool {
+        let normalizedHostName = normalizedAddressCandidate(hostName)
+        return !normalizedHostName.isEmpty
+            && normalizedHostName != "(nil)"
+            && !normalizedHostName.contains("@")
+            && !normalizedHostName.contains(":")
+    }
+
+    private static func shouldUseDisplayName(_ displayName: String) -> Bool {
+        let normalizedDisplayName = normalizedAddressCandidate(displayName)
+        return isUsableAddress(normalizedDisplayName) && normalizedDisplayName.contains(".")
+    }
+
+    private static func isSuccessfulStatusCode(_ statusCode: Int) -> Bool {
+        (200...399).contains(statusCode)
+    }
+
+    private static func logStaticURLVerificationStart(_ url: URL) {
+        log.debug("\(staticURLVerificationLogPrefix) verify url=\(normalizedURLString(url.absoluteString))")
+    }
+
+    private static func logProbeStart(hostName: String, address: String) {
+        log.debug("\(probeLogPrefix) host='\(hostName)' address='\(address)'")
+    }
+
+    private static func logProbeSuccess(url: URL, method: String, statusCode: Int) {
+        log.debug("\(probeLogPrefix) success method=\(method) code=\(statusCode)")
+        log.debug("\(probeLogPrefix) url=\(normalizedURLString(url.absoluteString))")
+    }
+
+    private static func logProbeFailure(url: URL, details: String) {
+        let preview = details.prefix(logPreviewLength)
+        log.debug("\(probeLogPrefix) miss url=\(normalizedURLString(url.absoluteString))")
+        log.debug("\(probeLogPrefix) reason=\(preview)")
+    }
+
+    private static func bestAddress(_ host: NetworkHost) -> String {
+        let hostName = normalizedAddressCandidate(host.hostName)
+        if shouldUseHostName(hostName) {
+            return hostName
+        }
+
+        let hostIP = normalizedAddressCandidate(host.hostIP)
+        if isUsableAddress(hostIP) {
+            return hostIP
+        }
+
+        let displayName = normalizedAddressCandidate(host.hostDisplayName)
+        if shouldUseDisplayName(displayName) {
+            return displayName
+        }
+
+        return ""
+    }
+
+    private static func verifiedStaticWebURLOrNil(for host: NetworkHost) async -> URL? {
+        guard let staticURL = host.webUIURL else { return nil }
+        logStaticURLVerificationStart(staticURL)
+        return await responds(url: staticURL) ? staticURL : nil
+    }
+
+    // MARK: - Probe host — returns first responding URL or nil
+    // Fires all requests concurrently with a short timeout; returns first 2xx/3xx response.
+    @concurrent static func probe(host: NetworkHost) async -> URL? {
+        let address = bestAddress(host)
+        guard !address.isEmpty else { return nil }
+        logProbeStart(hostName: host.name, address: address)
+
+        // Already has a static web URL (router/printer) — just verify it responds
+        if let staticURL = await verifiedStaticWebURLOrNil(for: host) {
+            return staticURL
+        }
+
+        // Probe all candidate ports concurrently
+        return await withTaskGroup(of: URL?.self) { @concurrent group in
+            for port in candidatePorts {
+                guard let url = candidateURL(host: address, port: port) else { continue }
+                group.addTask { @concurrent in
+                    if await responds(url: url) {
+                        return url
+                    }
+                    return nil
+                }
+            }
+            // Return first non-nil result, cancel remaining tasks
+            for await result in group {
+                if let url = result {
+                    group.cancelAll()
+                    return url
+                }
+            }
+            return nil
+        }
+    }
+
+    // MARK: - Reachability Check
+    @concurrent static func responds(url: URL) async -> Bool {
+        let headRequest = headRequest(for: url)
+
+        if let (_, response) = try? await probeSession.data(for: headRequest) {
+            let statusCode = statusCode(from: response)
+            if isSuccessfulStatusCode(statusCode) {
+                logProbeSuccess(url: url, method: "HEAD", statusCode: statusCode)
+                return true
+            }
+        }
+
+        let getRequest = fallbackGetRequest(for: url)
+
+        if let (_, response) = try? await probeSession.data(for: getRequest) {
+            let statusCode = statusCode(from: response)
+            if isSuccessfulStatusCode(statusCode) {
+                logProbeSuccess(url: url, method: "GET", statusCode: statusCode)
+                return true
+            }
+            logProbeFailure(url: url, details: "GET status=\(statusCode)")
+            return false
+        }
+
+        logProbeFailure(url: url, details: "no HTTP response")
+        return false
+    }
+
+    // MARK: - Candidate Ports
     //
     // Tier 1 — device admin panels (routers, NAS, printers, switches)
     //   80    HTTP default
@@ -48,67 +222,10 @@ enum WebUIProber {
         3000, 3001, 4000, 4200, 5000, 5001, 5173,
         8000, 8008, 8083, 8123, 9000, 9090,
     ]
-
-    // MARK: - Probe host — returns first responding URL or nil
-    // Fires all requests concurrently with a short timeout; returns first 2xx/3xx response.
-    @concurrent static func probe(host: NetworkHost) async -> URL? {
-        let ip = bestAddress(host)
-        guard !ip.isEmpty else { return nil }
-
-        // Already has a static web URL (router/printer) — just verify it responds
-        if let staticURL = host.webUIURL {
-            if await responds(url: staticURL) { return staticURL }
-        }
-
-        // Probe all candidate ports concurrently
-        return await withTaskGroup(of: URL?.self) { @concurrent group in
-            for port in candidatePorts {
-                let scheme = (port == 443 || port == 8443 || port == 5001) ? "https" : "http"
-                guard let url = URL(string: "\(scheme)://\(ip):\(port)") else { continue }
-                group.addTask { @concurrent in await responds(url: url) ? url : nil }
-            }
-            // Return first non-nil result, cancel remaining tasks
-            for await result in group {
-                if let url = result {
-                    group.cancelAll()
-                    return url
-                }
-            }
-            return nil
-        }
-    }
-
-    // MARK: - Quick TCP/HTTP reachability check (1.5s timeout)
-    @concurrent static func responds(url: URL) async -> Bool {
-        var req = URLRequest(url: url, timeoutInterval: 1.5)
-        req.httpMethod = "HEAD"
-        // Ignore SSL errors for LAN devices with self-signed certs
-        let session = URLSession(configuration: .ephemeral,
-                                 delegate: InsecureDelegate.shared,
-                                 delegateQueue: nil)
-        guard let (_, resp) = try? await session.data(for: req) else { return false }
-        let code = (resp as? HTTPURLResponse)?.statusCode ?? 0
-        return (200...399).contains(code)
-    }
-
-    // MARK: - Best address to probe (prefer DNS name, fall back to IP)
-    private static func bestAddress(_ host: NetworkHost) -> String {
-        // Use hostName if it's a proper DNS name (not MAC@addr, not empty)
-        let hn = host.hostName
-        if !hn.isEmpty && hn != "(nil)" && !hn.contains("@") && !hn.contains(":") {
-            return hn
-        }
-        // Fall back to IP from FritzBox
-        if !host.hostIP.isEmpty { return host.hostIP }
-        // Last resort: try hostDisplayName (may be IP-like 192-168-x-x)
-        let d = host.hostDisplayName
-        if d.contains(".") { return d }
-        return ""
-    }
 }
 
-// MARK: - InsecureDelegate: accept self-signed certs on LAN devices
-// Many routers/NAS boxes use self-signed HTTPS — without this all HTTPS probes fail.
+// MARK: - InsecureDelegate
+// Accepts self-signed certificates for LAN device probing.
 private final class InsecureDelegate: NSObject, URLSessionDelegate {
     static let shared = InsecureDelegate()
     func urlSession(

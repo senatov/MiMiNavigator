@@ -20,32 +20,127 @@ struct NetworkAuthSheet: View {
     @State private var isSaving: Bool = false
     @FocusState private var focusedField: Field?
 
+    private var canConfirm: Bool {
+        !username.isEmpty && !isSaving
+    }
+
+    private var resolvedFocusField: Field {
+        username.isEmpty ? .username : .password
+    }
+
     private enum Field { case username, password }
 
-    // MARK: -
-    var body: some View {
-        VStack(spacing: 0) {
-            hostCard
-            Divider()
-            fieldsSection
-            Divider()
-            buttonRow
-        }
-        .frame(width: 360)
-        .background(DialogColors.base)
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .onAppear { prefill() }
+    // MARK: - Layout
+    private enum Layout {
+        static let dialogWidth: CGFloat = 360
+        static let cornerRadius: CGFloat = 12
+        static let sectionPaddingH: CGFloat = 14
+        static let sectionPaddingV: CGFloat = 14
+        static let rowSpacing: CGFloat = 8
+        static let fieldLabelWidth: CGFloat = 64
+        static let sectionSpacing: CGFloat = 10
+        static let hostIconSize: CGFloat = 32
+        static let hostBadgeCornerRadius: CGFloat = 7
+    }
+    private enum Glass {
+        static let cardCornerRadius: CGFloat = 14
+        static let controlCornerRadius: CGFloat = 10
+        static let borderOpacity: Double = 0.12
+        static let hoverTintOpacity: Double = 0.10
+        static let sectionTintOpacity: Double = 0.06
+    }
+
+    // MARK: - Glass Styling
+    @ViewBuilder
+    private var sheetBackground: some View {
+        RoundedRectangle(cornerRadius: Layout.cornerRadius, style: .continuous)
+            .fill(.clear)
+            .glassEffect(.regular.tint(Color.white.opacity(Glass.sectionTintOpacity)))
+    }
+
+    @ViewBuilder
+    private var sheetBorder: some View {
+        RoundedRectangle(cornerRadius: Layout.cornerRadius, style: .continuous)
+            .strokeBorder(Color.white.opacity(Glass.borderOpacity), lineWidth: 0.8)
+    }
+
+    @ViewBuilder
+    private var hostBadgeBackground: some View {
+        Capsule()
+            .fill(.clear)
+            .glassEffect(.regular.tint(Color.white.opacity(Glass.hoverTintOpacity)))
+    }
+
+    @ViewBuilder
+    private func sectionBackground(tint: Color = Color.white.opacity(Glass.sectionTintOpacity)) -> some View {
+        RoundedRectangle(cornerRadius: Glass.cardCornerRadius, style: .continuous)
+            .fill(.clear)
+            .glassEffect(.regular.tint(tint))
+    }
+
+    @ViewBuilder
+    private var sectionBorder: some View {
+        RoundedRectangle(cornerRadius: Glass.cardCornerRadius, style: .continuous)
+            .strokeBorder(Color.white.opacity(Glass.borderOpacity), lineWidth: 0.8)
+    }
+
+    @ViewBuilder
+    private var fieldBackground: some View {
+        RoundedRectangle(cornerRadius: Glass.controlCornerRadius, style: .continuous)
+            .fill(.clear)
+            .glassEffect(.regular.tint(Color.white.opacity(0.08)))
+    }
+
+    @ViewBuilder
+    private var fieldBorder: some View {
+        RoundedRectangle(cornerRadius: Glass.controlCornerRadius, style: .continuous)
+            .strokeBorder(Color.white.opacity(Glass.borderOpacity), lineWidth: 0.8)
+    }
+
+    @ViewBuilder
+    private var cancelButtonBackground: some View {
+        Capsule()
+            .fill(.clear)
+            .glassEffect(.regular.tint(Color.white.opacity(Glass.sectionTintOpacity)))
+    }
+
+    @ViewBuilder
+    private func sectionCard<Content: View>(
+        tint: Color = Color.white.opacity(Glass.sectionTintOpacity),
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        content()
+            .background(sectionBackground(tint: tint))
+            .overlay(sectionBorder)
+            .clipShape(RoundedRectangle(cornerRadius: Glass.cardCornerRadius, style: .continuous))
+    }
+
+    @ViewBuilder
+    private func glassField<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+        content()
+            .padding(.horizontal, 10)
+            .padding(.vertical, 7)
+            .background(fieldBackground)
+            .overlay(fieldBorder)
+            .clipShape(RoundedRectangle(cornerRadius: Glass.controlCornerRadius, style: .continuous))
     }
 
     // MARK: - Host card (matches HostNodeRow style)
     private var hostCard: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: Layout.rowSpacing + 2) {
             Image(systemName: host.systemIconName)
                 .font(.system(size: 22))
                 .foregroundStyle(.blue)
-                .frame(width: 32, height: 32)
-                .background(Color.blue.opacity(0.1))
-                .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
+                .frame(width: Layout.hostIconSize, height: Layout.hostIconSize)
+                .background {
+                    RoundedRectangle(cornerRadius: Layout.hostBadgeCornerRadius, style: .continuous)
+                        .fill(.clear)
+                        .glassEffect(.regular.tint(Color.blue.opacity(0.12)))
+                }
+                .overlay {
+                    RoundedRectangle(cornerRadius: Layout.hostBadgeCornerRadius, style: .continuous)
+                        .strokeBorder(Color.white.opacity(Glass.borderOpacity), lineWidth: 0.8)
+                }
             VStack(alignment: .leading, spacing: 2) {
                 Text("Connect to \"\(host.name)\"")
                     .font(.subheadline.weight(.light))
@@ -58,38 +153,71 @@ struct NetworkAuthSheet: View {
                 Text(host.deviceLabel)
                     .font(.caption2)
                     .foregroundStyle(.secondary)
-                    .padding(.horizontal, 6).padding(.vertical, 2)
-                    .background(Color.secondary.opacity(0.12))
-                    .clipShape(Capsule())
+                    .padding(.horizontal, 7)
+                    .padding(.vertical, 3)
+                    .background(hostBadgeBackground)
+                    .overlay {
+                        Capsule()
+                            .strokeBorder(Color.white.opacity(Glass.borderOpacity), lineWidth: 0.8)
+                    }
             }
         }
-        .padding(.horizontal, 14).padding(.vertical, 12)
-        .background(DialogColors.stripe)
+        .padding(.horizontal, Layout.sectionPaddingH)
+        .padding(.vertical, 12)
+        .background {
+            sectionCard(tint: Color.blue.opacity(0.05)) {
+                Color.clear
+            }
+        }
+        .modifier(HostCardContainer(topPadding: 10, bottomPadding: 0))
+    }
+
+    private struct HostCardContainer: ViewModifier {
+        let topPadding: CGFloat
+        let bottomPadding: CGFloat
+
+        func body(content: Content) -> some View {
+            content
+                .padding(.horizontal, 10)
+                .padding(.top, topPadding)
+                .padding(.bottom, bottomPadding)
+        }
     }
 
     // MARK: - Input fields
     private var fieldsSection: some View {
-        VStack(spacing: 10) {
+        VStack(spacing: Layout.sectionSpacing) {
             fieldRow(label: "Username", systemImage: "person") {
-                TextField("guest", text: $username)
-                    .textFieldStyle(.roundedBorder)
-                    .focused($focusedField, equals: .username)
-                    .onSubmit { focusedField = .password }
+                glassField {
+                    TextField("guest", text: $username)
+                        .textFieldStyle(.plain)
+                        .focused($focusedField, equals: .username)
+                        .onSubmit { focusedField = .password }
+                }
             }
             fieldRow(label: "Password", systemImage: "lock") {
-                SecureField("Required", text: $password)
-                    .textFieldStyle(.roundedBorder)
-                    .focused($focusedField, equals: .password)
-                    .onSubmit { confirm() }
+                glassField {
+                    SecureField("Required", text: $password)
+                        .textFieldStyle(.plain)
+                        .focused($focusedField, equals: .password)
+                        .onSubmit { confirm() }
+                }
             }
         }
-        .padding(.horizontal, 14).padding(.vertical, 14)
+        .padding(.horizontal, Layout.sectionPaddingH)
+        .padding(.vertical, Layout.sectionPaddingV)
+        .background {
+            sectionCard {
+                Color.clear
+            }
+        }
+        .modifier(HostCardContainer(topPadding: 0, bottomPadding: 0))
     }
 
     // MARK: - Single labeled field row
     @ViewBuilder
     private func fieldRow(label: String, systemImage: String, @ViewBuilder content: () -> some View) -> some View {
-        HStack(spacing: 8) {
+        HStack(spacing: Layout.rowSpacing) {
             Image(systemName: systemImage)
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -97,7 +225,7 @@ struct NetworkAuthSheet: View {
             Text(label)
                 .font(.caption)
                 .foregroundStyle(.secondary)
-                .frame(width: 64, alignment: .trailing)
+                .frame(width: Layout.fieldLabelWidth, alignment: .trailing)
             content()
         }
     }
@@ -109,6 +237,13 @@ struct NetworkAuthSheet: View {
                 .keyboardShortcut(.cancelAction)
                 .buttonStyle(.plain)
                 .foregroundStyle(.secondary)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 7)
+                .background(cancelButtonBackground)
+                .overlay {
+                    Capsule()
+                        .strokeBorder(Color.white.opacity(Glass.borderOpacity), lineWidth: 0.8)
+                }
             Spacer()
             Button {
                 confirm()
@@ -123,38 +258,78 @@ struct NetworkAuthSheet: View {
                 }
             }
             .keyboardShortcut(.defaultAction)
-            .disabled(username.isEmpty || isSaving)
+            .disabled(!canConfirm)
             .buttonStyle(ThemedButtonStyle())
             .controlSize(.regular)
         }
-        .padding(.horizontal, 14).padding(.vertical, 10)
-        .background(DialogColors.stripe)
+        .padding(.horizontal, Layout.sectionPaddingH)
+        .padding(.vertical, 10)
+        .background {
+            sectionCard {
+                Color.clear
+            }
+        }
+        .modifier(HostCardContainer(topPadding: 0, bottomPadding: 10))
     }
 
     // MARK: - Pre-fill from Keychain; purge stale "No user account" ghost entries
+    private func isStaleSavedCredentials(_ creds: NetworkCredentials) -> Bool {
+        creds.user.isEmpty || creds.user.lowercased().contains("no user")
+    }
+
+    private func applySavedCredentials(_ creds: NetworkCredentials) {
+        username = creds.user
+        password = creds.password
+    }
+
     private func prefill() {
         if let saved = NetworkAuthService.load(for: host.hostName) {
-            if saved.user.isEmpty || saved.user.lowercased().contains("no user") {
+            if isStaleSavedCredentials(saved) {
                 NetworkAuthService.delete(for: host.hostName)
                 log.info("[Auth] purged stale Keychain entry for \(host.hostName)")
             } else {
-                username = saved.user
-                password = saved.password
+                applySavedCredentials(saved)
             }
         }
-        focusedField = username.isEmpty ? .username : .password
+
+        focusedField = resolvedFocusField
     }
 
     // MARK: - Save + callback
+    private func scheduleAuthenticationCompletion() {
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 100_000_000)
+            completeAuthentication()
+        }
+    }
+
+    private func completeAuthentication() {
+        isSaving = false
+        onAuthenticated()
+    }
+
     private func confirm() {
         guard !username.isEmpty else { return }
         isSaving = true
         let creds = NetworkCredentials(user: username, password: password)
         NetworkAuthService.save(creds, for: host.hostName)
         log.info("[Auth] credentials confirmed for \(host.hostName)")
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            isSaving = false
-            onAuthenticated()
+        scheduleAuthenticationCompletion()
+    }
+
+    // MARK: -
+    var body: some View {
+        VStack(spacing: Layout.sectionSpacing) {
+            hostCard
+            fieldsSection
+            buttonRow
         }
+        .frame(width: Layout.dialogWidth)
+        .padding(.vertical, 2)
+        .background(sheetBackground)
+        .overlay(sheetBorder)
+        .clipShape(RoundedRectangle(cornerRadius: Layout.cornerRadius, style: .continuous))
+        .contentShape(RoundedRectangle(cornerRadius: Layout.cornerRadius, style: .continuous))
+        .onAppear { prefill() }
     }
 }
