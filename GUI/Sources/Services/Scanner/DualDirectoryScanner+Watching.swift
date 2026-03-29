@@ -10,7 +10,6 @@ import Foundation
 extension DualDirectoryScanner {
 
     // MARK: - FSEvents watcher setup
-
     /// Starts FSEventsDirectoryWatcher for a panel.
     /// Remote paths are skipped — FSEvents has no meaning for ftp:// / sftp://.
     /// async because showHiddenFiles is MainActor-isolated.
@@ -20,10 +19,9 @@ extension DualDirectoryScanner {
             stopFSEvents(for: side)
             return
         }
-
         Task {
             let showHidden = await appState.showHiddenFilesSnapshot()
-            await launchFSEventsWatcher(for: side, path: url.path, showHiddenFiles: showHidden)
+            launchFSEventsWatcher(for: side, path: url.path, showHiddenFiles: showHidden)
         }
     }
 
@@ -34,7 +32,6 @@ extension DualDirectoryScanner {
             case .right:
                 if rightWatchedPath == path { return }
         }
-
         let watcher = FSEventsDirectoryWatcher { [weak self] patch in
             guard let self else { return }
             Task {
@@ -49,7 +46,6 @@ extension DualDirectoryScanner {
                 leftFSEvents?.stop()
                 leftFSEvents = watcher
                 leftWatchedPath = path
-
             case .right:
                 rightFSEvents?.stop()
                 rightFSEvents = watcher
@@ -84,22 +80,17 @@ extension DualDirectoryScanner {
             await refreshFiles(currSide: side)
             return
         }
-
         let childUpdates = patch.childCountUpdates
         let removedPaths = patch.removedPaths
         let addedOrModified = patch.addedOrModified
-
         let state = await currentPatchState(for: side)
         let totalChanges = addedOrModified.count + removedPaths.count
         let useIncremental = totalChanges <= 5 && totalChanges > 0
-
         var merged = state.files
-
         if !removedPaths.isEmpty {
             let removedSet = Set(removedPaths)
             merged.removeAll { removedSet.contains($0.pathStr) }
         }
-
         mergeUpdatedFiles(
             into: &merged,
             updates: addedOrModified,
@@ -107,13 +98,10 @@ extension DualDirectoryScanner {
             sortKey: state.sortKey,
             sortAsc: state.sortAsc
         )
-
         applyChildCountUpdates(childUpdates, to: &merged)
-
         if !useIncremental && totalChanges > 0 {
             merged = FileSortingService.sort(merged, by: state.sortKey, bDirection: state.sortAsc)
         }
-
         await publishDisplayedFiles(merged, for: side)
     }
 
@@ -135,7 +123,6 @@ extension DualDirectoryScanner {
                 files[index] = updated
                 continue
             }
-
             if useIncremental {
                 let insertIndex = Self.binarySearchInsertIndex(
                     files,
@@ -177,7 +164,6 @@ extension DualDirectoryScanner {
                 low = mid + 1
             }
         }
-
         return low
     }
 
@@ -197,9 +183,7 @@ extension DualDirectoryScanner {
                 await self.timerFired(for: side)
             }
         }
-
         timer.resume()
-
         switch side {
             case .left:
                 leftTimer = timer
@@ -211,11 +195,9 @@ extension DualDirectoryScanner {
     func timerFired(for side: FavPanelSide) async {
         let isRemote = await isRemotePanelPath(for: side)
         if isRemote { return }
-
         if shouldSkipTimerRefresh(for: side) {
             return
         }
-
         await refreshFiles(currSide: side)
     }
 
@@ -256,8 +238,8 @@ extension DualDirectoryScanner {
         leftWatchedPath = nil
         rightWatchedPath = nil
 
-        await startFSEvents(for: .left, url: panelURLs.left)
-        await startFSEvents(for: .right, url: panelURLs.right)
+        startFSEvents(for: .left, url: panelURLs.left)
+        startFSEvents(for: .right, url: panelURLs.right)
 
         log.info("[FSEvents] watchers restarted after hidden files toggle")
     }

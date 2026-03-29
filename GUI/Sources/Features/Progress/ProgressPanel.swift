@@ -422,7 +422,7 @@ final class ProgressPanel: NSObject {
     }
     // MARK: - Refresh Appearance (call after Settings change)
     func refreshAppearance() {
-        guard let ct = container else { return }
+        guard container != nil else { return }
         let a = appearance
         configureContainerAppearance()
         titleLabel?.font = a.titleFont
