@@ -18,6 +18,10 @@ final class OpenWithService {
     static let shared = OpenWithService()
     private let workspace = NSWorkspace.shared
 
+    private enum Constants {
+        static let noExtensionKey = "__noext__"
+    }
+
     // MARK: - LRU recent apps (max 5, per-extension key)
     private let lruDefaultsKey = "openWithLRU"
     private let lruAppURLsKey = "openWithAppURLs"  // bundleID → app path, for "Other..." picks
@@ -27,57 +31,76 @@ final class OpenWithService {
     private static let appsCache = NSCache<NSString, NSArray>()
 
     private init() {
+        log.debug(#function)
         OpenWithService.appsCache.countLimit = 64
         log.debug("\(#function) OpenWithService initialized")
+    }
+
+    // MARK: - Key helpers
+
+    private func normalizedExtensionKey(for ext: String) -> String {
+        let normalized = ext.lowercased()
+        return normalized.isEmpty ? Constants.noExtensionKey : normalized
+    }
+
+    private func savedAppURLs() -> [String: String] {
+        MiMiDefaults.shared.dictionary(forKey: lruAppURLsKey) as? [String: String] ?? [:]
     }
 
     // MARK: - LRU helpers
 
     /// Returns bundle IDs of recently-used apps for a given file extension, newest first
     private func lruBundles(for ext: String) -> [String] {
+        log.debug(#function)
+        let key = normalizedExtensionKey(for: ext)
         let dict = MiMiDefaults.shared.dictionary(forKey: lruDefaultsKey) as? [String: [String]] ?? [:]
-        return dict[ext.lowercased()] ?? []
+        let list = dict[key] ?? []
+        log.debug("\(#function) key='\(key)' bundles=\(list)")
+        return list
     }
 
     /// Records that `bundleID` was used to open a file with `ext`
     private func recordLRU(bundleID: String, ext: String, appURL: URL? = nil) {
-        let key = ext.lowercased()
+        log.debug(#function)
+        let key = normalizedExtensionKey(for: ext)
         var dict = MiMiDefaults.shared.dictionary(forKey: lruDefaultsKey) as? [String: [String]] ?? [:]
         var list = dict[key] ?? []
-        list.removeAll { $0 == bundleID }  // deduplicate
-        list.insert(bundleID, at: 0)  // newest first
-        if list.count > lruMaxCount { list = Array(list.prefix(lruMaxCount)) }
+        list.removeAll { $0 == bundleID }
+        list.insert(bundleID, at: 0)
+        if list.count > lruMaxCount {
+            list = Array(list.prefix(lruMaxCount))
+        }
         dict[key] = list
         MiMiDefaults.shared.set(dict, forKey: lruDefaultsKey)
-        // Persist app URL so "Other..." picks can be restored in the list
         if let appURL {
-            var urls = MiMiDefaults.shared.dictionary(forKey: lruAppURLsKey) as? [String: String] ?? [:]
+            var urls = savedAppURLs()
             urls[bundleID] = appURL.path
             MiMiDefaults.shared.set(urls, forKey: lruAppURLsKey)
+            log.debug("\(#function) stored appURL='\(appURL.path)' for bundle='\(bundleID)'")
         }
-        // Invalidate cached app list so next context menu shows updated order
         invalidateCache(for: ext)
-        log.debug("\(#function) LRU updated ext='\(key)' list=\(list)")
+        log.info("\(#function) LRU updated key='\(key)' top='\(bundleID)' list=\(list)")
     }
     // MARK: - Cache Invalidation
     /// Notification posted when Open With LRU order changes; userInfo["ext"] contains the extension
     static let cacheInvalidatedNotification = Notification.Name("OpenWithService.cacheInvalidated")
     /// Removes cached app list for the given extension so it is rebuilt with fresh LRU order
     func invalidateCache(for ext: String) {
-        let normalizedExt = ext.lowercased().isEmpty ? "__noext__" : ext.lowercased()
+        let normalizedExt = normalizedExtensionKey(for: ext)
         OpenWithService.appsCache.removeObject(forKey: normalizedExt as NSString)
         NotificationCenter.default.post(name: Self.cacheInvalidatedNotification, object: nil, userInfo: ["ext": normalizedExt])
-        log.debug("\(#function) cache invalidated for ext='\(normalizedExt)')")
+        log.debug("\(#function) cache invalidated for ext='\(normalizedExt)'")
     }
 
     // MARK: - Get Applications for File
 
     /// Returns list of applications that can open the given file
     func getApplications(for fileURL: URL) -> [AppInfo] {
-        // Cache by file extension instead of full path to avoid thousands of LaunchServices calls
-        let ext = fileURL.pathExtension.lowercased()
-        let normalizedExt = ext.isEmpty ? "__noext__" : ext
+        log.debug(#function)
+        let ext = fileURL.pathExtension
+        let normalizedExt = normalizedExtensionKey(for: ext)
         let cacheKey = normalizedExt as NSString
+        log.debug("\(#function) file='\(fileURL.lastPathComponent)' ext='\(normalizedExt)'")
 
         if let cached = OpenWithService.appsCache.object(forKey: cacheKey) as? [AppInfo] {
             return cached
@@ -103,11 +126,12 @@ final class OpenWithService {
         }
 
         // Sort: default app first, then LRU recency, then alphabetically
-        let recentBundles = lruBundles(for: fileURL.pathExtension)
+        let recentBundles = lruBundles(for: ext)
+        log.debug("\(#function) recentBundles=\(recentBundles)")
 
         // Add LRU-picked apps that are missing from the LS list (e.g. picked via "Other...")
         let knownBundles = Set(apps.map(\.bundleIdentifier))
-        let savedURLs = MiMiDefaults.shared.dictionary(forKey: lruAppURLsKey) as? [String: String] ?? [:]
+        let savedURLs = savedAppURLs()
         for bundleID in recentBundles where !knownBundles.contains(bundleID) {
             if let path = savedURLs[bundleID], FileManager.default.fileExists(atPath: path) {
                 let url = URL(fileURLWithPath: path)
@@ -129,10 +153,9 @@ final class OpenWithService {
             if lhs.isDefault != rhs.isDefault { return lhs.isDefault }
             return lhs.name.localizedCaseInsensitiveCompare(rhs.name) == .orderedAscending
         }
-
-        log.info(
-            "\(#function) found \(apps.count) apps for ext='\(fileURL.pathExtension)' default='\(defaultApp?.lastPathComponent ?? "none")'"
-        )
+        let orderedBundles = apps.map(\.bundleIdentifier)
+        log.info("\(#function) found \(apps.count) apps for ext='\(normalizedExt)'")
+        log.info("\(#function) default='\(defaultApp?.lastPathComponent ?? "none")' ordered=\(orderedBundles)")
         OpenWithService.appsCache.setObject(apps as NSArray, forKey: cacheKey)
         return apps
     }
@@ -141,6 +164,7 @@ final class OpenWithService {
 
     /// Public alias for recordLRU — called from F3/F4 after opening with default app
     func recordUsage(bundleID: String, ext: String, appURL: URL) {
+        log.info("\(#function) bundle='\(bundleID)' ext='\(normalizedExtensionKey(for: ext))' app='\(appURL.lastPathComponent)'")
         recordLRU(bundleID: bundleID, ext: ext, appURL: appURL)
     }
 
@@ -148,17 +172,18 @@ final class OpenWithService {
     /// For remote files (sftp://) — downloads to tmp first.
     func openFile(_ fileURL: URL, with app: AppInfo) {
         log.info("\(#function) file='\(fileURL.lastPathComponent)' app='\(app.name)'")
-        recordLRU(bundleID: app.bundleIdentifier, ext: fileURL.pathExtension)
+        recordLRU(bundleID: app.bundleIdentifier, ext: fileURL.pathExtension, appURL: app.url)
         let config = NSWorkspace.OpenConfiguration()
         config.activates = true
-        // Remote URL — must download to tmp first
         if fileURL.scheme == "sftp" || fileURL.scheme == "ftp" {
             Task {
                 do {
                     let localURL = try await RemoteConnectionManager.shared.downloadFile(remotePath: fileURL.path)
                     await MainActor.run {
                         NSWorkspace.shared.open([localURL], withApplicationAt: app.url, configuration: config) { _, err in
-                            if let err { log.error("\(#function) open FAILED: \(err.localizedDescription)") }
+                            if let err {
+                                log.error("\(#function) open FAILED: \(err.localizedDescription)")
+                            }
                         }
                     }
                 } catch {
@@ -168,7 +193,7 @@ final class OpenWithService {
             return
         }
         workspace.open([fileURL], withApplicationAt: app.url, configuration: config) { runningApp, error in
-            if let error = error {
+            if let error {
                 log.error("\(#function) FAILED: \(error.localizedDescription)")
             } else {
                 log.debug("\(#function) SUCCESS pid=\(runningApp?.processIdentifier ?? -1)")
@@ -187,7 +212,6 @@ final class OpenWithService {
     /// Shows system "Open With" picker (Choose Application...)
     func showOpenWithPicker(for fileURL: URL) {
         log.debug("\(#function) file='\(fileURL.lastPathComponent)'")
-
         let panel = NSOpenPanel()
         panel.canChooseFiles = true
         panel.canChooseDirectories = false
@@ -202,7 +226,7 @@ final class OpenWithService {
                 log.info("\(#function) user selected app='\(appURL.lastPathComponent)'")
                 // Record in LRU with app URL so it appears in the list next time
                 if let bundleID = Bundle(url: appURL)?.bundleIdentifier {
-                    self?.recordLRU(bundleID: bundleID, ext: fileURL.pathExtension, appURL: appURL)
+                    self?.recordUsage(bundleID: bundleID, ext: fileURL.pathExtension, appURL: appURL)
                 }
                 let config = NSWorkspace.OpenConfiguration()
                 config.activates = true
@@ -225,6 +249,7 @@ final class OpenWithService {
         let name = FileManager.default.displayName(atPath: appURL.path)
         let icon = workspace.icon(forFile: appURL.path)
         icon.size = NSSize(width: 16, height: 16)
+        log.debug("\(#function) app='\(name)' bundle='\(bundleIdentifier)' default=\(isDefault)")
 
         return AppInfo(
             id: bundleIdentifier,
@@ -246,9 +271,12 @@ final class OpenWithService {
         ]
         let editors = editorPaths.compactMap { path -> AppInfo? in
             let url = URL(fileURLWithPath: path)
-            guard FileManager.default.fileExists(atPath: path) else { return nil }
+            guard FileManager.default.fileExists(atPath: path) else {
+                return nil
+            }
             return makeAppInfo(from: url, isDefault: false)
         }
+        log.debug("\(#function) editors=\(editors.map(\.name))")
         return editors
     }
 }
