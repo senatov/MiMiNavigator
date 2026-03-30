@@ -32,6 +32,22 @@ struct PanelFileTableSection: View {
         ColumnLayoutStore.shared.layout(for: panelSide)
     }
 
+    private var filesViewIdentity: Int {
+        var hasher = Hasher()
+        hasher.combine(panelSide)
+        hasher.combine(files.count)
+        hasher.combine(selectedID)
+        hasher.combine(panelSide == .left ? appState.leftFilesVersion : appState.rightFilesVersion)
+        for file in files {
+            hasher.combine(file.id)
+            hasher.combine(file.nameStr)
+            hasher.combine(file.pathStr)
+            hasher.combine(file.isDirectory)
+            hasher.combine(file.isParentEntry)
+        }
+        return hasher.finalize()
+    }
+
     // MARK: - Init
     init(
         files: [CustomFile],
@@ -62,6 +78,11 @@ struct PanelFileTableSection: View {
                     onSelect: handleSelection,
                     onDoubleClick: onDoubleClick
                 )
+                .id(filesViewIdentity)
+                .onAppear {
+                    log.debug(
+                        "[PanelFileTableSection] table appear side=\(panelSide) files=\(files.count) viewID=\(filesViewIdentity)")
+                }
             } else {
                 // Original SwiftUI implementation
                 FileTableView(
@@ -72,6 +93,11 @@ struct PanelFileTableSection: View {
                     onSelect: handleSelection,
                     onDoubleClick: onDoubleClick
                 )
+                .id(filesViewIdentity)
+                .onAppear {
+                    log.debug(
+                        "[PanelFileTableSection] table appear side=\(panelSide) files=\(files.count) viewID=\(filesViewIdentity)")
+                }
             }
         }
         .contentShape(Rectangle())
@@ -106,6 +132,7 @@ struct PanelFileTableSection: View {
         }
 
         log.debug("[PanelFileTableSection] handleSelection: \(file.nameStr)")
+        log.debug("[PanelFileTableSection] selectedID old=\(String(describing: selectedID)) new=\(file.id)")
 
         if appState.focusedPanel != panelSide {
             appState.focusedPanel = panelSide

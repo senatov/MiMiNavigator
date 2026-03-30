@@ -13,11 +13,13 @@ extension DualDirectoryScanner {
 
     @MainActor
     func applyPreviewFiles(_ files: [CustomFile], for side: FavPanelSide) {
+        log.debug("[Scanner] applyPreviewFiles side=\(side) incoming=\(files.count)")
         publishDisplayedFiles(files, for: side)
     }
 
     @MainActor
     func publishDisplayedFiles(_ files: [CustomFile], for side: FavPanelSide) {
+        log.debug("[Scanner] publishDisplayedFiles side=\(side) count=\(files.count)")
         switch side {
             case .left:
                 appState.displayedLeftFiles = files
@@ -30,19 +32,24 @@ extension DualDirectoryScanner {
 
     @MainActor
     func currentDisplayedFiles(for side: FavPanelSide) -> [CustomFile] {
+        let files: [CustomFile]
+
         switch side {
             case .left:
-                return appState.displayedLeftFiles
+                files = appState.displayedLeftFiles
             case .right:
-                return appState.displayedRightFiles
+                files = appState.displayedRightFiles
         }
+
+        log.debug("[Scanner] currentDisplayedFiles side=\(side) count=\(files.count)")
+        return files
     }
 
     @MainActor
     func sanitizedPublishedFiles(from files: [CustomFile]) -> [CustomFile] {
         var sanitized = files
+        let originalCount = files.count
         var seenParent = false
-
         sanitized.removeAll { file in
             if file.isParentEntry {
                 if seenParent { return true }
@@ -50,27 +57,29 @@ extension DualDirectoryScanner {
             }
             return false
         }
-
         if let parentIndex = sanitized.firstIndex(where: { $0.isParentEntry }), parentIndex != 0 {
             let parent = sanitized.remove(at: parentIndex)
             sanitized.insert(parent, at: 0)
         }
-
+        log.debug("[Scanner] sanitizedPublishedFiles original=\(originalCount) sanitized=\(sanitized.count)")
         return sanitized
     }
 
     // MARK: - Publish deduplication
-
     @MainActor
     func makeContentHash(for files: [CustomFile]) -> Int {
         var hasher = Hasher()
         hasher.combine(files.count)
-
         for file in files {
             hasher.combine(file.id)
+            hasher.combine(file.nameStr)
+            hasher.combine(file.pathStr)
+            hasher.combine(file.isDirectory)
+            hasher.combine(file.isParentEntry)
         }
-
-        return hasher.finalize()
+        let hash = hasher.finalize()
+        log.debug("[Scanner] makeContentHash count=\(files.count) hash=\(hash)")
+        return hash
     }
 
     @MainActor
@@ -82,12 +91,11 @@ extension DualDirectoryScanner {
         isFirstUpdate: Bool
     ) -> Bool {
         guard !isFirstUpdate else { return false }
-
         let currentDisplayedCount = currentDisplayedFiles(for: side).count
         let samePathAsLastPublish = lastPublishedPathOnMain[side] == path
         let sameHashAsLastPublish = lastContentHashOnMain[side] == contentHash
         let sameVisibleCount = currentDisplayedCount == files.count
-
+        log.debug("[Scanner] shouldSkipIdenticalPublish side=\(side) path='\(path)' first=\(isFirstUpdate) samePath=\(samePathAsLastPublish) sameHash=\(sameHashAsLastPublish) sameCount=\(sameVisibleCount)")
         guard samePathAsLastPublish,
               sameHashAsLastPublish,
               sameVisibleCount,
@@ -106,6 +114,7 @@ extension DualDirectoryScanner {
     @MainActor
     func seedInitialSelectionIfNeeded(for side: FavPanelSide, files: [CustomFile]) {
         appState.ensureSelectionOnFocusedPanel()
+        log.debug("[Scanner] seedInitialSelectionIfNeeded side=\(side) files=\(files.count)")
 
         let firstFile = files.first
         let firstName = firstFile?.nameStr ?? "-"
@@ -129,6 +138,7 @@ extension DualDirectoryScanner {
     @MainActor
     func updateScannedFiles(_ incomingFiles: [CustomFile], for side: FavPanelSide) {
         let publishedFiles = sanitizedPublishedFiles(from: incomingFiles)
+        log.debug("[Scanner] updateScannedFiles side=\(side) incoming=\(incomingFiles.count) published=\(publishedFiles.count)")
         let now = Date()
         let isFirstUpdate = lastUpdateTime[side] == nil
 
@@ -165,14 +175,22 @@ extension DualDirectoryScanner {
     }
 
     func publishSuccessfulScan(_ files: [CustomFile], scannedPath: String, for side: FavPanelSide) async {
-        await updateScannedFiles(files, for: side)
-        await updateFileList(panelSide: side, with: files)
-        log.debug("[Scan] published successful scan side=\(side) path='\(scannedPath)' count=\(files.count)")
+        let publishedFiles = await MainActor.run {
+            sanitizedPublishedFiles(from: files)
+        }
+
+        log.debug("[Scan] publishSuccessfulScan side=\(side) path='\(scannedPath)' raw=\(files.count) published=\(publishedFiles.count)")
+
+        await updateScannedFiles(publishedFiles, for: side)
+        await updateFileList(panelSide: side, with: publishedFiles)
+
+        log.debug("[Scan] published successful scan side=\(side) path='\(scannedPath)' count=\(publishedFiles.count)")
     }
 
     // MARK: - Permission helpers
 
     func isPermissionDeniedError(_ error: NSError) -> Bool {
+        log.debug("[Permissions] isPermissionDeniedError domain=\(error.domain) code=\(error.code)")
         if error.domain == NSCocoaErrorDomain && error.code == 257 { return true }
         if error.domain == NSPOSIXErrorDomain && error.code == 13 { return true }
 
@@ -180,10 +198,12 @@ extension DualDirectoryScanner {
             return isPermissionDeniedError(underlying)
         }
 
+        log.debug("[Permissions] isPermissionDeniedError -> false")
         return false
     }
 
     func rescanDirectoryAfterBookmarkRestore(_ url: URL, side: FavPanelSide) async -> Bool {
+        log.info("[Permissions] Rescan after bookmark restore start: side=\(side) path='\(url.path)'")
         do {
             let showHidden = await MainActor.run { UserPreferences.shared.snapshot.showHiddenFiles }
             let scanned = try FileScanner.scan(url: url, showHiddenFiles: showHidden)
@@ -198,6 +218,7 @@ extension DualDirectoryScanner {
     }
 
     func scanHomeDirectoryForFallback(_ homeURL: URL, side: FavPanelSide) async {
+        log.info("[Permissions] scanHomeDirectoryForFallback start: side=\(side) path='\(homeURL.path)'")
         do {
             let showHidden = await MainActor.run { UserPreferences.shared.snapshot.showHiddenFiles }
             let sortKey = await MainActor.run { appState.sortKey }
@@ -216,6 +237,7 @@ extension DualDirectoryScanner {
     }
 
     func requestAndRetryAccess(for url: URL, side: FavPanelSide) async -> Bool {
+        log.info("[Permissions] requestAndRetryAccess start: side=\(side) path='\(url.path)'")
         log.info("[Permissions] Checking bookmarks for path='\(url.path)'")
 
         let restored = await BookmarkStore.shared.restoreAll()
@@ -241,6 +263,7 @@ extension DualDirectoryScanner {
 
     @MainActor
     func updateFileList(panelSide: FavPanelSide, with files: [CustomFile]) async {
+        log.debug("[Scanner] updateFileList side=\(panelSide) count=\(files.count)")
         switch panelSide {
             case .left:
                 await fileCache.updateLeftFiles(files)

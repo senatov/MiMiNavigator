@@ -66,10 +66,10 @@ final class ClipboardManager {
     // MARK: - Paste files to destination with conflict handling
     func paste(to destination: URL, coordinator: ContextMenuCoordinator) async -> Result<[URL], Error> {
         guard hasContent else {
-            return .failure(FileOperationError.operationFailed("Clipboard is empty"))
+            return .failure(FileOpsError.operationFailed("Clipboard is empty"))
         }
 
-        let fileOps = FileOperationsService.shared
+        let fileOps = FileOpsService.shared
         var resultURLs: [URL] = []
         let applyToAll: ConflictResolution? = nil  // TODO: implement "Apply to all" checkbox
         var stopped = false
@@ -145,7 +145,7 @@ final class ClipboardManager {
     // MARK: - Legacy paste (auto keep-both)
     func paste(to destination: URL) async -> Result<[URL], Error> {
         guard hasContent else {
-            return .failure(FileOperationError.operationFailed("Clipboard is empty"))
+            return .failure(FileOpsError.operationFailed("Clipboard is empty"))
         }
 
         do {
@@ -153,12 +153,12 @@ final class ClipboardManager {
 
             switch operation {
                 case .copy:
-                    result = try await FileOperationsService.shared.copyFiles(files, to: destination)
+                    result = try await FileOpsService.shared.copyFiles(files, to: destination)
                 case .cut:
-                    result = try await FileOperationsService.shared.moveFiles(files, to: destination)
+                    result = try await FileOpsService.shared.moveFiles(files, to: destination)
                     clear()
                 case .none:
-                    return .failure(FileOperationError.operationFailed("No operation specified"))
+                    return .failure(FileOpsError.operationFailed("No operation specified"))
             }
 
             log.info("Clipboard: Pasted \(result.count) item(s) to \(destination.path)")

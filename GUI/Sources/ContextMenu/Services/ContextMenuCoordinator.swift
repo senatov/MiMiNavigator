@@ -29,7 +29,7 @@ final class ContextMenuCoordinator {
     var isProcessing = false
     
     // MARK: - Dependencies (internal for extensions)
-    let fileOps = FileOperationsService.shared
+    let fileOps = FileOpsService.shared
     let clipboard = ClipboardManager.shared
     let archiveService = ArchiveService.shared
     

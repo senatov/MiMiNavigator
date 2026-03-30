@@ -33,7 +33,7 @@ final class ArchiveService {
         }
         let archiveURL = destination.appendingPathComponent("\(archiveName).\(format.fileExtension)")
         guard !FileManager.default.fileExists(atPath: archiveURL.path) else {
-            throw FileOperationError.fileAlreadyExists(archiveURL.lastPathComponent)
+            throw FileOpsError.fileAlreadyExists(archiveURL.lastPathComponent)
         }
         let parentDirectories = Set(files.map { $0.deletingLastPathComponent().path })
         guard parentDirectories.count == 1, let workDirPath = parentDirectories.first else {

@@ -125,6 +125,21 @@ struct FileTableView: View {
         panelSide == .left ? appState.leftFilesVersion : appState.rightFilesVersion
     }
 
+    var filesRenderIdentity: Int {
+        var hasher = Hasher()
+        hasher.combine(panelSide)
+        hasher.combine(filesVersion)
+        hasher.combine(files.count)
+        for file in files {
+            hasher.combine(file.id)
+            hasher.combine(file.nameStr)
+            hasher.combine(file.pathStr)
+            hasher.combine(file.isDirectory)
+            hasher.combine(file.isParentEntry)
+        }
+        return hasher.finalize()
+    }
+
     var sortedRows: [CustomFile] { cachedSortedRows }
 
     private var contentView: some View {
@@ -219,6 +234,7 @@ struct FileTableView: View {
 
     var body: some View {
         styledContentView
+            .id(filesRenderIdentity)
             .onAppear(perform: onAppear)
     }
 
@@ -339,6 +355,7 @@ struct FileTableView: View {
     }
 
     private func handleFilesVersionChange(_: Int) {
+        log.debug("[FileTableView] filesVersion changed panel=\(panelSide) new=\(filesVersion) files=\(files.count)")
         recomputeSortedCache()
         scheduleAutoFitIfNeeded()
     }
