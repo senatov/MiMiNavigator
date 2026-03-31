@@ -85,7 +85,21 @@ extension DualDirectoryScanner {
         let addedOrModified = patch.addedOrModified
         let state = await currentPatchState(for: side)
         let totalChanges = addedOrModified.count + removedPaths.count
-        let useIncremental = totalChanges <= 5 && totalChanges > 0
+        // childCount-only patches: apply silently w/o triggering SwiftUI rebuild
+        if totalChanges == 0 {
+            if childUpdates.isEmpty { return }
+            // CustomFile is @Observable class — mutate in-place, SwiftUI picks up
+            // changes via observation. No publishDisplayedFiles needed.
+            let files = state.files
+            for (path, count) in childUpdates {
+                if let idx = files.firstIndex(where: { $0.pathStr == path }),
+                   files[idx].cachedChildCount != count {
+                    files[idx].cachedChildCount = count
+                }
+            }
+            return
+        }
+        let useIncremental = totalChanges <= 5
         var merged = state.files
         if !removedPaths.isEmpty {
             let removedSet = Set(removedPaths)
@@ -99,7 +113,7 @@ extension DualDirectoryScanner {
             sortAsc: state.sortAsc
         )
         applyChildCountUpdates(childUpdates, to: &merged)
-        if !useIncremental && totalChanges > 0 {
+        if !useIncremental {
             merged = FileSortingService.sort(merged, by: state.sortKey, bDirection: state.sortAsc)
         }
         await publishDisplayedFiles(merged, for: side)

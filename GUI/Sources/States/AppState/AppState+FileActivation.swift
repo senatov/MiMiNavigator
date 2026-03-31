@@ -17,6 +17,7 @@
 
         // MARK: - Activate item (double-click / Enter)
         func activateItem(_ file: CustomFile, on panel: FavPanelSide) {
+            log.debug("[Activate] '\(file.nameStr)' isDir=\(file.isDirectory) isSymDir=\(file.isSymbolicDirectory) isSymLink=\(file.isSymbolicLink) isAlias=\(file.isAlias) path=\(file.pathStr)")
             if ParentDirectoryEntry.isParentEntry(file) {
                 Task { await navigateToParent(on: panel) }
                 return
@@ -44,7 +45,9 @@
                 }
 
                 // --- Local directory handling ---
-                let resolvedURL = file.urlValue.resolvingSymlinksInPath()
+                // resolvingAliasFileAt handles both macOS Aliases AND symlinks
+                let resolvedURL = (try? URL(resolvingAliasFileAt: file.urlValue, options: [.withoutUI]))
+                    ?? file.urlValue.resolvingSymlinksInPath()
                 let newPath = resolvedURL.path
                 var isDir: ObjCBool = false
 

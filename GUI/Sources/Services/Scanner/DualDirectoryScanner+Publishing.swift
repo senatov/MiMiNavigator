@@ -64,7 +64,30 @@ extension DualDirectoryScanner {
     func publishDisplayedFiles(_ files: [CustomFile], for side: FavPanelSide) {
         log.debug("[Scanner] publishDisplayedFiles")
         log.debug("[Scanner] side=\(side) count=\(files.count)")
+        let current = displayedFilesBinding(for: side)
+        if filesAreIdentical(current, files) {
+            log.debug("[Scanner] publishDisplayedFiles SKIPPED — identical")
+            return
+        }
         setDisplayedFiles(files, for: side)
+    }
+
+
+
+    /// Cheap identity+size check to avoid triggering SwiftUI rebuild on no-op publishes.
+    /// Compares id, name, path, sizeVersion, cachedChildCount — the fields that affect row display.
+    @MainActor
+    private func filesAreIdentical(_ lhs: [CustomFile], _ rhs: [CustomFile]) -> Bool {
+        guard lhs.count == rhs.count else { return false }
+        for i in lhs.indices {
+            let a = lhs[i]
+            let b = rhs[i]
+            if a.id != b.id { return false }
+            if a.nameStr != b.nameStr { return false }
+            if a.sizeVersion != b.sizeVersion { return false }
+            if a.cachedChildCount != b.cachedChildCount { return false }
+        }
+        return true
     }
 
     // MARK: - Published files normalization
