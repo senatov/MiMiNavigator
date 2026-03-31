@@ -7,8 +7,6 @@
 
 import AppKit
 import Foundation
-import UniformTypeIdentifiers
-
 
 // MARK: - Application Info
 
@@ -21,11 +19,34 @@ struct AppInfo: Identifiable, Hashable {
     let url: URL
     let isDefault: Bool
 
+    init(
+        id: String? = nil,
+        name: String,
+        bundleIdentifier: String,
+        icon: NSImage,
+        url: URL,
+        isDefault: Bool
+    ) {
+        self.id = id ?? Self.makeStableID(url: url, bundleIdentifier: bundleIdentifier)
+        self.name = name
+        self.bundleIdentifier = bundleIdentifier
+        self.icon = icon
+        self.url = url
+        self.isDefault = isDefault
+    }
+
     func hash(into hasher: inout Hasher) {
-        hasher.combine(bundleIdentifier)
+        hasher.combine(id)
     }
 
     static func == (lhs: AppInfo, rhs: AppInfo) -> Bool {
-        lhs.bundleIdentifier == rhs.bundleIdentifier
+        lhs.id == rhs.id
+    }
+}
+
+private extension AppInfo {
+    static func makeStableID(url: URL, bundleIdentifier: String) -> String {
+        let normalizedPath = url.standardizedFileURL.path.lowercased()
+        return "\(bundleIdentifier)|\(normalizedPath)"
     }
 }

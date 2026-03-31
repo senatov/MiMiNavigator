@@ -66,6 +66,8 @@ struct FileTableView: View {
     @State private var lastAutoFitWidth: CGFloat = 0
     /// Pending autofit task — waits for all sizes to settle before running
     @State private var pendingAutoFitTask: Task<Void, Never>?
+    @State private var activeMenuTrackingCount: Int = 0
+    @State private var deferredFilesVersion: Int? = nil
 
     /// Throttle for PgUp/PgDown — prevents overwhelming with rapid keypresses
     private let pageNavThrottle = KeypressThrottle(interval: 0.08)  // 80ms between page navigations
@@ -125,22 +127,11 @@ struct FileTableView: View {
         panelSide == .left ? appState.leftFilesVersion : appState.rightFilesVersion
     }
 
-    var filesRenderIdentity: Int {
-        var hasher = Hasher()
-        hasher.combine(panelSide)
-        hasher.combine(filesVersion)
-        hasher.combine(files.count)
-        for file in files {
-            hasher.combine(file.id)
-            hasher.combine(file.nameStr)
-            hasher.combine(file.pathStr)
-            hasher.combine(file.isDirectory)
-            hasher.combine(file.isParentEntry)
-        }
-        return hasher.finalize()
-    }
-
     var sortedRows: [CustomFile] { cachedSortedRows }
+
+    private var isMenuTracking: Bool {
+        activeMenuTrackingCount > 0
+    }
 
     private var contentView: some View {
         ZStack {
@@ -202,6 +193,12 @@ struct FileTableView: View {
             .onChange(of: filesVersion) { _, newValue in
                 handleFilesVersionChange(newValue)
             }
+            .onReceive(NotificationCenter.default.publisher(for: NSMenu.didBeginTrackingNotification)) { _ in
+                handleMenuTrackingBegan()
+            }
+            .onReceive(NotificationCenter.default.publisher(for: NSMenu.didEndTrackingNotification)) { _ in
+                handleMenuTrackingEnded()
+            }
             .onChange(of: appState.sortKey) { _, newValue in
                 handleSortChange(newValue)
             }
@@ -229,12 +226,13 @@ struct FileTableView: View {
             .onDisappear {
                 spinnerTask?.cancel()
                 pendingAutoFitTask?.cancel()
+                deferredFilesVersion = nil
+                activeMenuTrackingCount = 0
             }
     }
 
     var body: some View {
         styledContentView
-            .id(filesRenderIdentity)
             .onAppear(perform: onAppear)
     }
 
@@ -287,6 +285,25 @@ struct FileTableView: View {
         log.debug("[Columns] panel=\(panelSide) column count=\(layout.columns.count)")
         recomputeSortedCache()
         registerNavigationCallbacks()
+    }
+
+    private func handleMenuTrackingBegan() {
+        activeMenuTrackingCount += 1
+        log.debug("[FileTableView] menu tracking began panel=\(panelSide) depth=\(activeMenuTrackingCount)")
+    }
+
+    private func handleMenuTrackingEnded() {
+        activeMenuTrackingCount = max(0, activeMenuTrackingCount - 1)
+        log.debug("[FileTableView] menu tracking ended panel=\(panelSide) depth=\(activeMenuTrackingCount)")
+
+        guard activeMenuTrackingCount == 0, let deferredVersion = deferredFilesVersion else {
+            return
+        }
+
+        deferredFilesVersion = nil
+        log.info("[FileTableView] applying deferred filesVersion panel=\(panelSide) version=\(deferredVersion)")
+        recomputeSortedCache()
+        scheduleAutoFitIfNeeded()
     }
 
     private func handleSelectionChange(_ newID: CustomFile.ID?) {
@@ -354,8 +371,17 @@ struct FileTableView: View {
         return KeyPress.Result.handled
     }
 
-    private func handleFilesVersionChange(_: Int) {
-        log.debug("[FileTableView] filesVersion changed panel=\(panelSide) new=\(filesVersion) files=\(files.count)")
+    private func handleFilesVersionChange(_ newValue: Int) {
+        log.debug(
+            "[FileTableView] filesVersion changed panel=\(panelSide) new=\(filesVersion) files=\(files.count) menuTracking=\(isMenuTracking)"
+        )
+
+        if isMenuTracking {
+            deferredFilesVersion = newValue
+            log.info("[FileTableView] deferring filesVersion update panel=\(panelSide) version=\(newValue) while menu is open")
+            return
+        }
+
         recomputeSortedCache()
         scheduleAutoFitIfNeeded()
     }

@@ -85,37 +85,37 @@ struct FileRowView: View {
                 switch file.securityState {
                     case .restricted:
                         Image(systemName: "lock.square.stack")
-                            .font(.system(size: 12, weight: .bold))
+                            .font(.system(size: 13, weight: .bold))
                             .foregroundStyle(
-                                Color(#colorLiteral(red: 0.3098039329, green: 0.01568627544, blue: 0.1294117719, alpha: 1))
+                                Color(#colorLiteral(red: 0.7254902124, green: 0.4784313738, blue: 0.09803921729, alpha: 1))
                             )
                             .offset(x: 2, y: 2)
                     case .systemProtected:
                         Image(systemName: "shield.lefthalf.filled")
-                            .font(.system(size: 12, weight: .bold))
+                            .font(.system(size: 13, weight: .bold))
                             .foregroundStyle(
-                                Color(#colorLiteral(red: 0.2745098174, green: 0.4862745106, blue: 0.1411764771, alpha: 1))
+                                Color(#colorLiteral(red: 0.2196078449, green: 0.007843137719, blue: 0.8549019694, alpha: 1))
                             )
                             .offset(x: 2, y: 2)
                     case .immutable:
                         Image(systemName: "lock.fill")
-                            .font(.system(size: 12, weight: .bold))
+                            .font(.system(size: 13, weight: .bold))
                             .foregroundStyle(
-                                Color(#colorLiteral(red: 0.4392156899, green: 0.01176470611, blue: 0.1921568662, alpha: 1))
+                                Color(#colorLiteral(red: 0.3411764801, green: 0.6235294342, blue: 0.1686274558, alpha: 1))
                             )
                             .offset(x: 2, y: 2)
                     case .brokenSymlink:
-                        Image(systemName: "exclamationmark.link")
-                            .font(.system(size: 12, weight: .bold))
+                        Image(systemName: "personalhotspot.slash")
+                            .font(.system(size: 13, weight: .bold))
                             .foregroundStyle(
                                 Color(#colorLiteral(red: 0.2549019754, green: 0.2745098174, blue: 0.3019607961, alpha: 1))
                             )
                             .offset(x: 2, y: 2)
                     case .specialDevice:
                         Image(systemName: "cpu.fill")
-                            .font(.system(size: 12, weight: .bold))
+                            .font(.system(size: 13, weight: .bold))
                             .foregroundStyle(
-                                Color(#colorLiteral(red: 0.1215686277, green: 0.01176470611, blue: 0.4235294163, alpha: 1))
+                                Color(#colorLiteral(red: 0.2392156869, green: 0.6745098233, blue: 0.9686274529, alpha: 1))
                             )
                             .offset(x: 2, y: 2)
                     case .normal:

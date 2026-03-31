@@ -18,9 +18,9 @@ extension AppState {
     func navigateToDirectory(_ newPath: String, on panel: FavPanelSide) async {
         let previousPath = path(for: panel)
         log.info("[Navigate] \(panel): '\(previousPath)' → '\(newPath)'")
-
         // --- Remote navigation handling ---
         if let remoteURL = URL(string: newPath), Self.isRemotePath(remoteURL) {
+            log.info("[Navigate] remote: \(remoteURL)")
             await navigateToRemoteDirectory(remoteURL, on: panel, previousPath: previousPath)
             return
         }
@@ -29,6 +29,38 @@ extension AppState {
         updatePath(newPath, for: panel)
         setSelectedFile(nil, for: panel)
         multiSelectionManager?.resetAnchor(for: panel)
+
+        if Self.isMountedVolumeRootPath(newPath) {
+            log.info("[Navigate] \(panel): mounted volume root → background refresh")
+
+            let spinnerTask = Task { @MainActor in
+                try? await Task.sleep(for: .milliseconds(200))
+                if !Task.isCancelled { navigatingPanel = panel }
+            }
+
+            Task { [weak self] in
+                guard let self else { return }
+                defer {
+                    spinnerTask.cancel()
+                    Task { @MainActor in
+                        if self.navigatingPanel == panel {
+                            self.navigatingPanel = nil
+                        }
+                    }
+                }
+
+                await self.scanner.clearCooldown(for: panel)
+                await self.setScannerDirectoryAndRefresh(newPath, for: panel)
+
+                let files = self.displayedFiles(for: panel)
+                if !files.isEmpty || Self.isReadableDirectory(newPath) {
+                    log.info("[Navigate] \(panel): mounted volume refresh completed, \(files.count) files")
+                    await DirectoryContentCache.shared.store(path: newPath, files: files, showHidden: UserPreferences.shared.snapshot.showHiddenFiles)
+                }
+            }
+
+            return
+        }
 
         // --- Instant cache hit: show stale listing immediately, refresh in bg ---
         let showHidden = UserPreferences.shared.snapshot.showHiddenFiles
@@ -71,7 +103,7 @@ extension AppState {
                 return
             }
             if PathUtils.areEqual(path(for: panel), newPath),
-               Self.isReadableDirectory(newPath)
+                Self.isReadableDirectory(newPath)
             {
                 log.info("[Navigate] \(panel): empty but readable dir accepted (attempt \(attempt))")
                 await DirectoryContentCache.shared.store(path: newPath, files: files, showHidden: showHidden)
@@ -98,13 +130,13 @@ extension AppState {
 
     // MARK: - Remote directory navigation (extracted for clean code)
     private func navigateToRemoteDirectory(_ remoteURL: URL, on panel: FavPanelSide, previousPath: String) async {
+        log.info("[Navigate] \(panel): remote: \(remoteURL.absoluteString)")
         let manager = RemoteConnectionManager.shared
         guard let conn = manager.activeConnection else {
             log.error("[Navigate] \(panel): remote nav requested but no active connection")
             return
         }
         let remotePath = remoteURL.path.isEmpty ? "/" : remoteURL.path
-        log.info("[Navigate] \(panel): remote enter '\(remotePath)'")
         do {
             let items = try await manager.listDirectory(remotePath)
             let files = items.map { CustomFile(remoteItem: $0) }
@@ -189,22 +221,30 @@ extension AppState {
         log.warning("\(#function) panel=\(panel) path='\(path)'")
         ErrorAlertService.show(
             title: "Can't Open Folder",
-            message: "Couldn't read contents of:\n\(path)\n\nPossible causes: no access permission, drive disconnected, or path no longer exists.",
+            message:
+                "Couldn't read contents of:\n\(path)\n\nPossible causes: no access permission, drive disconnected, or path no longer exists.",
             style: .warning
         )
+    }
+
+    nonisolated static func isMountedVolumeRootPath(_ path: String) -> Bool {
+        let normalized = NSString(string: path).standardizingPath
+        guard normalized.hasPrefix("/Volumes/"), normalized != "/Volumes" else { return false }
+        return normalized.split(separator: "/").count == 2
     }
 
     /// Extracts "scheme://user@host[:port]" from a full mountPath URL string.
     /// e.g. "sftp://demo@test.rebex.net/pub/docs" → "sftp://demo@test.rebex.net"
     nonisolated static func remoteOrigin(from mountPath: String) -> String {
         guard let url = URL(string: mountPath),
-              let scheme = url.scheme,
-              let host   = url.host
+            let scheme = url.scheme,
+            let host = url.host
         else { return mountPath }
         let userPart = url.user.map { "\($0)@" } ?? ""
         let portPart: String
         if let port = url.port,
-           !((scheme == "sftp" && port == 22) || (scheme == "ftp" && port == 21)) {
+            !((scheme == "sftp" && port == 22) || (scheme == "ftp" && port == 21))
+        {
             portPart = ":\(port)"
         } else {
             portPart = ""
@@ -216,7 +256,7 @@ extension AppState {
     nonisolated static func isReadableDirectory(_ path: String) -> Bool {
         var isDir: ObjCBool = false
         guard FileManager.default.fileExists(atPath: path, isDirectory: &isDir),
-              isDir.boolValue
+            isDir.boolValue
         else { return false }
         do {
             _ = try FileManager.default.contentsOfDirectory(atPath: path)

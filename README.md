@@ -28,7 +28,8 @@
 
 ---
 
-> **⚠️ Under active development.** APIs and UI may change without notice.
+> ** 🔨 Under active development 🔨.
+** APIs and UI may change without notice.
 
 ## Recent Changes (v0.9.7.1 — March 2026)
 

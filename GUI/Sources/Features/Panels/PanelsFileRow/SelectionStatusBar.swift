@@ -22,6 +22,14 @@ struct SelectionStatusBar: View {
 
     let panelSide: FavPanelSide
 
+    private var isLeftPanel: Bool {
+        panelSide == .left
+    }
+
+    private var currentPath: String {
+        currentURL.path
+    }
+
     // MARK: - State
 
     @State private var colorStore = ColorThemeStore.shared
@@ -48,7 +56,7 @@ struct SelectionStatusBar: View {
 
     /// Current URL for this panel
     private var currentURL: URL {
-        panelSide == .left ? appState.leftURL : appState.rightURL
+        isLeftPanel ? appState.leftURL : appState.rightURL
     }
 
     /// Selected file index (1‑based). 0 if nothing selected.
@@ -59,7 +67,7 @@ struct SelectionStatusBar: View {
 
     /// Formatted size of marked files
     private var formattedMarkedSize: String {
-        ByteCountFormatter.string(fromByteCount: markedSize, countStyle: .file)
+        formatFileSize(markedSize)
     }
 
     /// Active remote connection (if panel path is remote)
@@ -68,16 +76,22 @@ struct SelectionStatusBar: View {
         return RemoteConnectionManager.shared.activeConnection
     }
 
+    private var isMountedVolumeRoot: Bool {
+        let normalized = NSString(string: currentPath).standardizingPath
+        guard normalized.hasPrefix("/Volumes/"), normalized != "/Volumes" else { return false }
+        return normalized.split(separator: "/").count == 2
+    }
+
     /// Filter binding for the current panel
     private var filterQuery: Binding<String> {
         Binding(
             get: {
-                panelSide == .left
+                isLeftPanel
                     ? appState.leftFilterQuery
                     : appState.rightFilterQuery
             },
             set: { newValue in
-                if panelSide == .left {
+                if isLeftPanel {
                     appState.leftFilterQuery = newValue
                 } else {
                     appState.rightFilterQuery = newValue
@@ -90,46 +104,61 @@ struct SelectionStatusBar: View {
 
     /// Available disk space for the current path
     private var availableDiskSpace: String {
-
-        let url = currentURL
-
-        if let values = try? url.resourceValues(forKeys: [
-            .volumeAvailableCapacityForImportantUsageKey,
-            .volumeAvailableCapacityKey,
-        ]) {
-
-            if let important = values.volumeAvailableCapacityForImportantUsage,
-                important > 0
-            {
-                return ByteCountFormatter.string(
-                    fromByteCount: important,
-                    countStyle: .file
-                )
-            }
-
-            if let basic = values.volumeAvailableCapacity,
-                basic > 0
-            {
-                return ByteCountFormatter.string(
-                    fromByteCount: Int64(basic),
-                    countStyle: .file
-                )
-            }
+        if let capacity = availableCapacityFromResourceValues(for: currentURL) {
+            return formatFileSize(capacity)
         }
 
-        if let attrs = try? FileManager.default.attributesOfFileSystem(
-            forPath: currentURL.path
-        ),
-            let free = attrs[.systemFreeSize] as? Int64,
-            free > 0
-        {
-            return ByteCountFormatter.string(
-                fromByteCount: free,
-                countStyle: .file
-            )
+        if isMountedVolumeRoot {
+            return "—"
+        }
+
+        if let free = availableCapacityFromFileSystemAttributes(forPath: currentPath) {
+            return formatFileSize(free)
         }
 
         return "—"
+    }
+
+    private func formatFileSize(_ value: Int64) -> String {
+        ByteCountFormatter.string(fromByteCount: value, countStyle: .file)
+    }
+
+    private func availableCapacityFromResourceValues(for url: URL) -> Int64? {
+        guard
+            let values = try? url.resourceValues(forKeys: [
+                .volumeAvailableCapacityForImportantUsageKey,
+                .volumeAvailableCapacityKey,
+            ])
+        else {
+            return nil
+        }
+
+        if let important = values.volumeAvailableCapacityForImportantUsage, important > 0 {
+            return important
+        }
+
+        if let basic = values.volumeAvailableCapacity, basic > 0 {
+            return Int64(basic)
+        }
+
+        return nil
+    }
+
+    private func availableCapacityFromFileSystemAttributes(forPath path: String) -> Int64? {
+        guard let attrs = try? FileManager.default.attributesOfFileSystem(forPath: path),
+            let free = attrs[.systemFreeSize] as? Int64,
+            free > 0
+        else {
+            return nil
+        }
+
+        return free
+    }
+
+    private var diskSpaceLabel: String {
+        availableDiskSpace == "—"
+            ? "Free space unavailable"
+            : "\(availableDiskSpace) free"
     }
 
     // MARK: - Body
@@ -168,7 +197,7 @@ struct SelectionStatusBar: View {
 // MARK: - Sections
 extension SelectionStatusBar {
 
-    fileprivate var leftInfoSection: some View {
+    private var leftInfoSection: some View {
 
         Group {
             if markedCount > 0 {
@@ -197,7 +226,7 @@ extension SelectionStatusBar {
                         .font(.system(size: 10))
                         .foregroundStyle(.secondary)
 
-                    Text("\(availableDiskSpace) free")
+                    Text(diskSpaceLabel)
                         .font(.system(size: 11))
                         .foregroundStyle(.secondary)
                 }
@@ -205,7 +234,7 @@ extension SelectionStatusBar {
         }
     }
 
-    fileprivate var remoteBadgeSection: some View {
+    private var remoteBadgeSection: some View {
 
         Group {
             if let conn = remoteConnection {
@@ -242,13 +271,13 @@ extension SelectionStatusBar {
         }
     }
 
-    fileprivate var filterSection: some View {
+    private var filterSection: some View {
 
         PanelFilterBar(query: filterQuery, panelSide: panelSide)
             .frame(minWidth: 140, maxWidth: 220)
     }
 
-    fileprivate var thumbnailSliderSection: some View {
+    private var thumbnailSliderSection: some View {
 
         Group {
             if viewModeStore.mode(for: panelSide) == .thumbnail {
@@ -265,7 +294,7 @@ extension SelectionStatusBar {
         }
     }
 
-    fileprivate var positionIndicator: some View {
+    private var positionIndicator: some View {
 
         Group {
 
@@ -287,56 +316,9 @@ extension SelectionStatusBar {
 
 }
 
-// MARK: - Jump Button
-extension SelectionStatusBar {
-
-    fileprivate func jumpEdgeButton(
-        label: String,
-        icon: String,
-        help: String,
-        action: @escaping () -> Void
-    ) -> some View {
-
-        Button(action: action) {
-
-            HStack(spacing: 3) {
-
-                Image(systemName: icon)
-                    .font(.system(size: 9, weight: .bold))
-
-                Text(label)
-                    .font(.system(size: 10, weight: .light))
-            }
-            .foregroundStyle(Color(nsColor: .labelColor).opacity(0.75))
-            .padding(.horizontal, 6)
-            .padding(.vertical, 2)
-            .background(
-                RoundedRectangle(cornerRadius: 4, style: .continuous)
-                    .fill(Color(nsColor: .controlBackgroundColor))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 4, style: .continuous)
-                    .stroke(Color(nsColor: .separatorColor).opacity(0.8), lineWidth: 0.8)
-            )
-        }
-        .buttonStyle(.plain)
-        .help(help)
-    }
-}
-
 // MARK: - Jump Notifications
 extension Notification.Name {
 
     static let jumpToFirst = Notification.Name("MiMi.jumpToFirst")
     static let jumpToLast = Notification.Name("MiMi.jumpToLast")
-}
-
-// MARK: - Preview
-#Preview {
-
-    VStack {
-        SelectionStatusBar(panelSide: .left)
-    }
-    .frame(width: 500)
-    .environment(AppState())
 }

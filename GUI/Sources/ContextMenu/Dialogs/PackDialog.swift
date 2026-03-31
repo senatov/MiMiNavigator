@@ -6,8 +6,8 @@
 //  Copyright © 2026 Senatov. All rights reserved.
 //  Description: Enhanced pack dialog with destination selector, compression levels, passwords
 
-import SwiftUI
 import FileModelKit
+import SwiftUI
 
 // MARK: - Pack Dialog Mode
 
@@ -20,16 +20,16 @@ enum PackDialogMode {
 
 struct PackDialog: View {
     @Environment(AppState.self) var appState
-    
+
     let mode: PackDialogMode
     let files: [CustomFile]
     let sourcePanel: FavPanelSide
     /// Callback: (archiveName, format, destination, deleteSourceFiles, compressionLevel, password)
     let onPack: (String, ArchiveFormat, URL, Bool, CompressionLevel, String?) -> Void
     let onCancel: () -> Void
-    
+
     @StateObject private var prefs = ArchivePreferencesStore.shared
-    
+
     @State private var archiveName: String
     @State private var selectedFormat: ArchiveFormat
     @State private var destinationMode: ArchivePreferencesStore.DestinationMode
@@ -40,11 +40,11 @@ struct PackDialog: View {
     @State private var password: String = ""
     @State private var showPassword: Bool = false
     @State private var isAppearing: Bool = false
-    
+
     @FocusState private var isNameFieldFocused: Bool
-    
+
     // MARK: - Init
-    
+
     init(
         mode: PackDialogMode = .pack,
         files: [CustomFile],
@@ -57,7 +57,7 @@ struct PackDialog: View {
         self.sourcePanel = sourcePanel
         self.onPack = onPack
         self.onCancel = onCancel
-        
+
         // Default archive name: single file → filename, multiple → archive_DDmmYYYY_HH_MM_SS
         let defaultName: String
         if files.count == 1 {
@@ -67,7 +67,7 @@ struct PackDialog: View {
             df.dateFormat = "ddMMyyyy_HH_mm_ss"
             defaultName = "archive_\(df.string(from: Date()))"
         }
-        
+
         // Load saved preferences
         let savedFormat = ArchivePreferencesStore.shared.lastFormat
         let savedMode = ArchivePreferencesStore.shared.destinationMode
@@ -75,7 +75,7 @@ struct PackDialog: View {
         let savedLevel = ArchivePreferencesStore.shared.compressionLevel(for: savedFormat)
         let savedDeleteSource = ArchivePreferencesStore.shared.deleteSourceFiles
         let savedUsePassword = ArchivePreferencesStore.shared.usePassword
-        
+
         if mode == .compress {
             self._archiveName = State(initialValue: defaultName + "." + savedFormat.fileExtension)
         } else {
@@ -88,65 +88,72 @@ struct PackDialog: View {
         self._deleteSourceFiles = State(initialValue: savedDeleteSource)
         self._usePassword = State(initialValue: savedUsePassword)
     }
-    
+
     // MARK: - Computed Properties
-    
+
     private var isValidName: Bool {
         !archiveName.isEmpty && !archiveName.contains("/") && !archiveName.contains(":")
     }
-    
+
+    private var sourcePath: String {
+        appState.path(for: sourcePanel)
+    }
+
+    private var oppositePanel: FavPanelSide {
+        sourcePanel == .left ? .right : .left
+    }
+
     /// Resolved destination URL based on mode
     private var resolvedDestination: URL {
         switch destinationMode {
-        case .currentPanel:
-            return URL(fileURLWithPath: appState.path(for: sourcePanel))
-        case .oppositePanel:
-            let opposite: FavPanelSide = sourcePanel == .left ? .right : .left
-            return URL(fileURLWithPath: appState.path(for: opposite))
-        case .custom:
-            return URL(fileURLWithPath: customDestination)
+            case .currentPanel:
+                return URL(fileURLWithPath: sourcePath)
+            case .oppositePanel:
+                return URL(fileURLWithPath: appState.path(for: oppositePanel))
+            case .custom:
+                return URL(fileURLWithPath: customDestination)
         }
     }
-    
+
     private var isValidDestination: Bool {
         let path = resolvedDestination.path
         guard path.hasPrefix("/") else { return false }
         var isDir: ObjCBool = false
         return FileManager.default.fileExists(atPath: path, isDirectory: &isDir) && isDir.boolValue
     }
-    
+
     private var itemsDescription: String {
         files.count == 1 ? files[0].nameStr : L10n.Items.count(files.count)
     }
-    
+
     private var dialogTitle: String {
         switch mode {
-        case .pack:
-            return L10n.Dialog.Pack.title(itemsDescription)
-        case .compress:
-            return files.count == 1 ? "Compress \(itemsDescription)" : "Compress \(files.count) Items"
+            case .pack:
+                return L10n.Dialog.Pack.title(itemsDescription)
+            case .compress:
+                return files.count == 1 ? "Compress \(itemsDescription)" : "Compress \(files.count) Items"
         }
     }
-    
+
     private var confirmTitle: String {
         mode == .pack ? L10n.Button.create : "Compress"
     }
-    
+
     private var supportsCompression: Bool {
         prefs.supportsCompression(selectedFormat)
     }
-    
+
     private var supportsPassword: Bool {
         prefs.supportsPassword(selectedFormat)
     }
-    
+
     // MARK: - Body
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             HIGDialogHeader(dialogTitle)
                 .frame(maxWidth: .infinity)
-            
+
             // Archive name
             HIGTextField(
                 label: L10n.Dialog.Pack.archiveNameLabel,
@@ -155,23 +162,23 @@ struct PackDialog: View {
                 hasError: !isValidName && !archiveName.isEmpty
             )
             .focused($isNameFieldFocused)
-            
+
             // Destination selector — 3 buttons
             destinationSelector
-            
+
             // Format picker
             formatPicker
-            
+
             // Compression level (if supported)
             if supportsCompression {
                 compressionPicker
             }
-            
+
             // Password (if supported)
             if supportsPassword {
                 passwordSection
             }
-            
+
             // Delete source toggle
             Toggle(isOn: $deleteSourceFiles) {
                 Text(mode == .pack ? "Delete source files after packing" : "Move originals into archive")
@@ -181,7 +188,7 @@ struct PackDialog: View {
             .onChange(of: deleteSourceFiles) { _, newVal in
                 prefs.updateDeleteSourceFiles(newVal)
             }
-            
+
             HIGDialogButtons(
                 confirmTitle: confirmTitle,
                 isConfirmDisabled: !isValidName || !isValidDestination,
@@ -207,14 +214,14 @@ struct PackDialog: View {
             }
         }
     }
-    
+
     // MARK: - Destination Selector
-    
+
     private var destinationSelector: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(L10n.Dialog.Pack.saveToLabel)
                 .font(.system(size: 12, weight: .medium))
-            
+
             HStack(spacing: 8) {
                 // Current panel button
                 destinationButton(
@@ -223,7 +230,7 @@ struct PackDialog: View {
                     icon: "folder",
                     shortcut: "1"
                 )
-                
+
                 // Opposite panel button
                 destinationButton(
                     mode: .oppositePanel,
@@ -231,7 +238,7 @@ struct PackDialog: View {
                     icon: "arrow.left.arrow.right",
                     shortcut: "2"
                 )
-                
+
                 // Custom button + browse
                 HStack(spacing: 4) {
                     destinationButton(
@@ -240,7 +247,7 @@ struct PackDialog: View {
                         icon: "folder.badge.gearshape",
                         shortcut: "3"
                     )
-                    
+
                     if destinationMode == .custom {
                         Button(action: browseForFolder) {
                             Image(systemName: "folder.badge.plus")
@@ -250,7 +257,7 @@ struct PackDialog: View {
                     }
                 }
             }
-            
+
             // Show resolved path
             HStack(spacing: 4) {
                 Image(systemName: "arrow.right")
@@ -265,7 +272,7 @@ struct PackDialog: View {
             .padding(.leading, 4)
         }
     }
-    
+
     private func destinationButton(
         mode: ArchivePreferencesStore.DestinationMode,
         label: String,
@@ -298,14 +305,14 @@ struct PackDialog: View {
         .buttonStyle(.plain)
         .keyboardShortcut(KeyEquivalent(Character(shortcut)), modifiers: [])
     }
-    
+
     // MARK: - Format Picker
-    
+
     private var formatPicker: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(L10n.Dialog.Pack.formatLabel)
                 .font(.system(size: 12, weight: .medium))
-            
+
             Picker("", selection: $selectedFormat) {
                 ForEach(ArchiveFormat.availableFormats) { format in
                     HStack {
@@ -324,14 +331,14 @@ struct PackDialog: View {
             }
         }
     }
-    
+
     // MARK: - Compression Picker
-    
+
     private var compressionPicker: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text("Compression Level")
                 .font(.system(size: 12, weight: .medium))
-            
+
             Picker("", selection: $compressionLevel) {
                 ForEach(CompressionLevel.allCases) { level in
                     Text(level.displayName).tag(level)
@@ -345,9 +352,9 @@ struct PackDialog: View {
             }
         }
     }
-    
+
     // MARK: - Password Section
-    
+
     private var passwordSection: some View {
         VStack(alignment: .leading, spacing: 6) {
             Toggle(isOn: $usePassword) {
@@ -362,7 +369,7 @@ struct PackDialog: View {
             .onChange(of: usePassword) { _, newVal in
                 prefs.updateUsePassword(newVal)
             }
-            
+
             if usePassword {
                 HStack(spacing: 8) {
                     Group {
@@ -382,7 +389,7 @@ struct PackDialog: View {
                         RoundedRectangle(cornerRadius: 6, style: .continuous)
                             .strokeBorder(Color(nsColor: .separatorColor), lineWidth: 1)
                     )
-                    
+
                     Button {
                         showPassword.toggle()
                     } label: {
@@ -391,7 +398,7 @@ struct PackDialog: View {
                     .buttonStyle(.plain)
                     .foregroundStyle(.secondary)
                 }
-                
+
                 // Save to Keychain option — togglable in dialog
                 HStack(spacing: 4) {
                     Toggle(isOn: $prefs.useKeychainPasswords) {
@@ -416,9 +423,9 @@ struct PackDialog: View {
             }
         }
     }
-    
+
     // MARK: - Actions
-    
+
     private func browseForFolder() {
         let panel = NSOpenPanel()
         panel.canChooseFiles = false
@@ -426,13 +433,13 @@ struct PackDialog: View {
         panel.allowsMultipleSelection = false
         panel.canCreateDirectories = true
         panel.prompt = L10n.Button.select
-        
+
         // Start from current custom destination or source panel
-        let startPath = customDestination.isEmpty ? appState.path(for: sourcePanel) : customDestination
+        let startPath = customDestination.isEmpty ? sourcePath : customDestination
         if FileManager.default.fileExists(atPath: startPath) {
             panel.directoryURL = URL(fileURLWithPath: startPath)
         }
-        
+
         if panel.runModal() == .OK, let url = panel.url {
             customDestination = url.path
             destinationMode = .custom
@@ -440,32 +447,18 @@ struct PackDialog: View {
             prefs.updateDestinationMode(.custom)
         }
     }
-    
+
     private func performPack() {
         let dest = resolvedDestination
-        log.info("[PackDialog] \(#function) name='\(archiveName)' dest='\(dest.path)' format=\(selectedFormat) level=\(compressionLevel) encrypted=\(usePassword) deleteSource=\(deleteSourceFiles)")
-        
+        log.info("[PackDialog] \(#function) name='\(archiveName)' dest='\(dest.path)'")
+        log.info("[PackDialog] format=\(selectedFormat) level=\(compressionLevel) encrypted=\(usePassword) deleteSource=\(deleteSourceFiles)")
+
         // Save password to Keychain if option enabled
         if usePassword && prefs.useKeychainPasswords && !password.isEmpty {
             ArchivePasswordStore.shared.savePassword(password)
         }
-        
+
         let pwd: String? = usePassword && !password.isEmpty ? password : nil
         onPack(archiveName, selectedFormat, dest, deleteSourceFiles, compressionLevel, pwd)
     }
-}
-
-// MARK: - Preview
-
-#Preview {
-    PackDialog(
-        mode: .pack,
-        files: [CustomFile(path: "/Users/test/document.txt")],
-        sourcePanel: .left,
-        onPack: { _, _, _, _, _, _ in },
-        onCancel: {}
-    )
-    .environment(AppState())
-    .padding(40)
-    .background(Color.gray.opacity(0.3))
 }

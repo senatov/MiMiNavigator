@@ -13,6 +13,8 @@ extension AppState {
 
     /// Unified scanner directory setter — eliminates left/right branching at call sites.
     func setScannerDirectory(_ path: String, for panel: FavPanelSide) async {
+        log.info("[Refresh] setScannerDirectory panel=\(panel) path='\(path)'")
+
         if panel == .left {
             await scanner.setLeftDirectory(pathStr: path)
         } else {
@@ -23,7 +25,22 @@ extension AppState {
     /// Set scanner directory + refresh in one call.
     func setScannerDirectoryAndRefresh(_ path: String, for panel: FavPanelSide) async {
         await setScannerDirectory(path, for: panel)
-        await refreshFiles(for: panel)
-    }
-}
 
+        if Self.isMountedVolumeRootPath(path) {
+            log.info("[Refresh] mounted volume root → background refresh panel=\(panel) path='\(path)'")
+
+            Task { [weak self] in
+                guard let self else { return }
+                await self.refreshFiles(for: panel)
+                log.info("[Refresh] mounted volume background refresh completed panel=\(panel) path='\(path)'")
+            }
+
+            return
+        }
+
+        log.info("[Refresh] blocking refresh panel=\(panel) path='\(path)'")
+        await refreshFiles(for: panel)
+        log.info("[Refresh] blocking refresh completed panel=\(panel) path='\(path)'")
+    }
+
+}

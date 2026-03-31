@@ -12,7 +12,6 @@ import SwiftUI
 struct PathAutoCompleteField: View {
     @Binding var text: String
     @FocusState.Binding var isFocused: Bool
-    @State private var appState = AppState()
     let onSubmit: () -> Void
     let onCancel: () -> Void
 
@@ -158,7 +157,7 @@ struct PathAutoCompleteField: View {
     }
 
     private func buildSuggestions(from contents: [URL], prefix: String) -> [String] {
-        let showHidden = appState.showHiddenFilesSnapshot()
+        let showHidden = UserPreferences.shared.snapshot.showHiddenFiles
 
         var result =
             contents

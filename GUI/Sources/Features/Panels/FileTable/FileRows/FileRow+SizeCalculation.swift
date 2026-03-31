@@ -72,7 +72,8 @@ extension FileRow {
             return
         }
         file.sizeCalculationStarted = true
-        let targetURL = normalizedURLForSize(fileURL)
+        let targetURL = resolvedDirectorySizeTargetURL(from: fileURL)
+        log.info("[FileRow] sizeTarget '\(file.nameStr)' -> '\(targetURL.path)'")
         await withTaskGroup(of: Void.self) { group in
             group.addTask(priority: .utility) { [fileName = file.nameStr] in
                 await self.performPhase1Shallow(for: targetURL)
@@ -205,7 +206,7 @@ extension FileRow {
 
     // MARK: - Shallow size with timeout
     private func shallowSizeWithTimeout(url: URL, timeoutMs: UInt64) async -> Int64? {
-        let target = normalizedURLForSize(url)
+        let target = resolvedDirectorySizeTargetURL(from: url)
         return await withTaskGroup(of: Int64?.self) { group in
             group.addTask(priority: .utility) {
                 await DirectorySizeService.shared.shallowSize(for: target)
@@ -222,7 +223,7 @@ extension FileRow {
 
     // MARK: - Fallback directory scan (slow but reliable)
     private func fallbackDirectoryScanAsync(url: URL) async -> Int64 {
-        let target = normalizedURLForSize(url)
+        let target = resolvedDirectorySizeTargetURL(from: url)
 
         return
             await Task.detached(priority: .utility) {
@@ -281,19 +282,64 @@ extension FileRow {
     }
 
     // MARK: - Helpers
-    func normalizedURLForSize(_ url: URL) -> URL {
+    private func normalizedURLForSize(_ url: URL) -> URL {
         url.resolvingSymlinksInPath().standardizedFileURL
     }
 
+    private func resolvedDirectorySizeTargetURL(from rawURL: URL) -> URL {
+        let normalized = normalizedURLForSize(rawURL)
+        let fileName = trimmedDirectoryDisplayName()
+
+        guard !fileName.isEmpty else {
+            return normalized
+        }
+
+        if directoryDisplayNameMatchesURL(normalized, fileName: fileName) {
+            return normalized
+        }
+
+        guard let candidate = appendedDirectoryCandidate(baseURL: normalized, fileName: fileName) else {
+            log.warning("[FileRow] sizeTarget mismatch '\(file.nameStr)' raw='\(rawURL.path)' normalized='\(normalized.path)'")
+            return normalized
+        }
+
+        return normalizedURLForSize(candidate)
+    }
+
+    private func trimmedDirectoryDisplayName() -> String {
+        file.nameStr.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private func appendedDirectoryCandidate(baseURL: URL, fileName: String) -> URL? {
+        let candidate = baseURL.appendingPathComponent(fileName, isDirectory: true)
+        var isDirectory: ObjCBool = false
+
+        guard FileManager.default.fileExists(atPath: candidate.path, isDirectory: &isDirectory), isDirectory.boolValue else {
+            return nil
+        }
+
+        return candidate
+    }
+
+    private func directoryDisplayNameMatchesURL(_ url: URL, fileName: String) -> Bool {
+        guard !fileName.isEmpty else { return false }
+        if url.lastPathComponent == fileName { return true }
+
+        let keys: Set<URLResourceKey> = [.nameKey, .localizedNameKey, .volumeNameKey]
+        guard let values = try? url.resourceValues(forKeys: keys) else { return false }
+
+        let candidates = [values.name, values.localizedName, values.volumeName]
+        return candidates.contains(fileName)
+    }
+
     // MARK: -
-    func hasNonZeroChildCountHint() -> Bool {
-        // Strictly rely on numeric model data — never UI strings
+    private func hasNonZeroChildCountHint() -> Bool {
         guard let count = file.childCount else { return false }
         return count > 0
     }
 
     // MARK: -
-    func isTrulyEmptyDirectory(_ url: URL) -> Bool {
+    private func isTrulyEmptyDirectory(_ url: URL) -> Bool {
         let target = normalizedURLForSize(url)
         let fm = FileManager.default
         guard
@@ -314,7 +360,7 @@ extension FileRow {
     }
 
     // MARK: -
-    func isLikelyVirtualDirectory(_ url: URL) -> Bool {
+    private func isLikelyVirtualDirectory(_ url: URL) -> Bool {
         let p = url.path
         if p.contains("/Library/CloudStorage/") { return true }
         if p.contains("/Library/Mobile Documents/") { return true }
@@ -323,14 +369,14 @@ extension FileRow {
         return false
     }
 
-    func isDirectlyUnreadableDirectory(_ url: URL) -> Bool {
+    private func isDirectlyUnreadableDirectory(_ url: URL) -> Bool {
         let target = normalizedURLForSize(url)
         let path = target.path
         return !FileManager.default.isReadableFile(atPath: path)
     }
 
     // MARK: - Detect directories where size calculation should be skipped (system / virtual / restricted)
-    func shouldSkipSizeCalculation(_ url: URL) -> Bool {
+    private func shouldSkipSizeCalculation(_ url: URL) -> Bool {
         // Remote URLs (sftp:// ftp://) — FileManager can't resolve, skip immediately
         if AppState.isRemotePath(url) { return true }
         // Remote paths stored as local paths (e.g. "/pub", "/pub/docs") with no host prefix
@@ -341,6 +387,12 @@ extension FileRow {
         if path.hasSuffix("/.Trash") { return true }
         if path.contains("/.Trashes") { return true }
         if path.contains("/Cryptexes") { return true }
+
+        // Mounted volume roots under /Volumes are expensive and pointless to size-scan.
+        // Example: /Volumes/Harddisk should open instantly and must not trigger a root-size walk.
+        if isMountedVolumeRoot(path) {
+            return true
+        }
 
         // Protected / heavy system roots
         let systemRoots: [String] = [
@@ -361,5 +413,11 @@ extension FileRow {
             }
         }
         return false
+    }
+
+    private func isMountedVolumeRoot(_ path: String) -> Bool {
+        let normalized = NSString(string: path).standardizingPath
+        guard normalized.hasPrefix("/Volumes/"), normalized != "/Volumes" else { return false }
+        return normalized.split(separator: "/").count == 2
     }
 }

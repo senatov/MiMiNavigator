@@ -35,7 +35,6 @@ extension ContextMenuCoordinator {
         }
         let progressPanel = ProgressPanel.shared
         let handle = ActiveArchiveProcess()
-        let archiveURL = destination.appendingPathComponent(fullName)
 
         // show progress HUD
         await MainActor.run {

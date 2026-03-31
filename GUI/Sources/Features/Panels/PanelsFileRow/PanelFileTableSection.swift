@@ -36,8 +36,6 @@ struct PanelFileTableSection: View {
         var hasher = Hasher()
         hasher.combine(panelSide)
         hasher.combine(files.count)
-        hasher.combine(selectedID)
-        hasher.combine(panelSide == .left ? appState.leftFilesVersion : appState.rightFilesVersion)
         for file in files {
             hasher.combine(file.id)
             hasher.combine(file.nameStr)
@@ -79,10 +77,6 @@ struct PanelFileTableSection: View {
                     onDoubleClick: onDoubleClick
                 )
                 .id(filesViewIdentity)
-                .onAppear {
-                    log.debug(
-                        "[PanelFileTableSection] table appear side=\(panelSide) files=\(files.count) viewID=\(filesViewIdentity)")
-                }
             } else {
                 // Original SwiftUI implementation
                 FileTableView(
@@ -94,10 +88,6 @@ struct PanelFileTableSection: View {
                     onDoubleClick: onDoubleClick
                 )
                 .id(filesViewIdentity)
-                .onAppear {
-                    log.debug(
-                        "[PanelFileTableSection] table appear side=\(panelSide) files=\(files.count) viewID=\(filesViewIdentity)")
-                }
             }
         }
         .contentShape(Rectangle())
@@ -132,7 +122,6 @@ struct PanelFileTableSection: View {
         }
 
         log.debug("[PanelFileTableSection] handleSelection: \(file.nameStr)")
-        log.debug("[PanelFileTableSection] selectedID old=\(String(describing: selectedID)) new=\(file.id)")
 
         if appState.focusedPanel != panelSide {
             appState.focusedPanel = panelSide

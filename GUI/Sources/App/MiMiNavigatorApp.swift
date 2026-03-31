@@ -22,6 +22,10 @@ struct MiMiNavigatorApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @Environment(\.scenePhase) private var scenePhase
 
+    @State private var didRestoreMainWindowFrame = false
+    @State private var didBindAppState = false
+    @State private var didWireCoordinatorCallbacks = false
+
     /// App version from CFBundleShortVersionString (e.g. "0.9.4")
     static var appVersion: String {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.0"
@@ -122,6 +126,7 @@ struct MiMiNavigatorApp: App {
     }
 
     private func restoreMainWindowFrameIfNeeded() {
+        guard !didRestoreMainWindowFrame else { return }
         guard let win = NSApp.windows.first(where: { !($0 is NSPanel) }) else { return }
 
         if let savedFrame = StatePersistence.restoreWindowFrame() {
@@ -130,15 +135,21 @@ struct MiMiNavigatorApp: App {
         }
 
         win.setFrameAutosaveName("MiMiNavigator.MainWindow")
+        didRestoreMainWindowFrame = true
     }
 
     private func bindAppStateIfNeeded() {
+        guard !didBindAppState else { return }
+
         appDelegate.bind(appState)
         AppStateProvider.shared = appState
         showHiddenFiles = UserPreferences.shared.snapshot.showHiddenFiles
+        didBindAppState = true
     }
 
     private func wireCoordinatorCallbacks() {
+        guard !didWireCoordinatorCallbacks else { return }
+
         ConnectToServerCoordinator.shared.onDisconnect = {
             Task { @MainActor in
                 await handleRemoteDisconnect()
@@ -156,6 +167,8 @@ struct MiMiNavigatorApp: App {
                 await handleNetworkNavigate(shareURL)
             }
         }
+
+        didWireCoordinatorCallbacks = true
     }
 
     private func handleScenePhaseChange() {
