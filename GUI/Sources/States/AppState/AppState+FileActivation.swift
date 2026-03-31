@@ -1,94 +1,173 @@
-    // AppState+FileActivation.swift
-    // MiMiNavigator
-    //
-    // Created by Iakov Senatov on 15.03.2026.
-    // Copyright © 2025-2026 Senatov. All rights reserved.
-    // Description: File activation — open, enter directory, enter archive, launch app
+// AppState+FileActivation.swift
+// MiMiNavigator
+//
+// Created by Iakov Senatov on 15.03.2026.
+// Copyright © 2025-2026 Senatov. All rights reserved.
+// Description: File activation — open, enter directory, enter archive, launch app
 
-    import AppKit
-    import FileModelKit
-    import Foundation
+import AppKit
+import FileModelKit
+import Foundation
 
-    // MARK: - File Activation
-    extension AppState {
+// MARK: - File Activation
+extension AppState {
 
-        func selectionCopy() { fileActions?.copyToOppositePanel() }
-        func openSelectedItem() { fileActions?.openSelectedItem() }
+    private func resolvedActivationTarget(for file: CustomFile) -> (url: URL, isDirectory: Bool)? {
+        let originalURL = file.urlValue
 
-        // MARK: - Activate item (double-click / Enter)
-        func activateItem(_ file: CustomFile, on panel: FavPanelSide) {
-            log.debug("[Activate] '\(file.nameStr)' isDir=\(file.isDirectory) isSymDir=\(file.isSymbolicDirectory) isSymLink=\(file.isSymbolicLink) isAlias=\(file.isAlias) path=\(file.pathStr)")
-            if ParentDirectoryEntry.isParentEntry(file) {
-                Task { await navigateToParent(on: panel) }
-                return
-            }
-            if !file.isDirectory && ArchiveExtensions.isArchive(file.fileExtension) {
-                Task { await enterArchive(at: file.urlValue, on: panel) }
-                return
-            }
-            let ext = file.fileExtension.lowercased()
-            if ext == "app" {
-                NSWorkspace.shared.openApplication(at: file.urlValue, configuration: NSWorkspace.OpenConfiguration()) { _, error in
-                    if let error { log.error("[AppState] launch app failed: \(error.localizedDescription)") }
-                }
-                return
-            }
-            if file.isDirectory || file.isSymbolicDirectory {
-
-                // --- Remote directory handling ---
-                if !file.urlValue.isFileURL {
-                    log.info("[AppState] activateItem: remote directory '\(file.urlValue.absoluteString)'")
-                    Task { @MainActor in
-                        await navigateToDirectory(file.urlValue.absoluteString, on: panel)
-                    }
-                    return
-                }
-
-                // --- Local directory handling ---
-                // resolvingAliasFileAt handles both macOS Aliases AND symlinks
-                let resolvedURL = (try? URL(resolvingAliasFileAt: file.urlValue, options: [.withoutUI]))
-                    ?? file.urlValue.resolvingSymlinksInPath()
-                let newPath = resolvedURL.path
-                var isDir: ObjCBool = false
-
-                guard FileManager.default.fileExists(atPath: newPath, isDirectory: &isDir),
-                      isDir.boolValue else {
-                    log.warning("[AppState] activateItem: broken symlink: \(newPath)")
-                    return
-                }
-
-                Task { @MainActor in
-                    await navigateToDirectory(newPath, on: panel)
-                }
-                return
-            }
-            // --- Remote file: download to tmp, open locally ---
-            let panelURL = url(for: panel)
-            if AppState.isRemotePath(panelURL) {
-                let remotePath = file.pathStr
-                log.info("[AppState] activateItem: remote file '\(remotePath)' — downloading to tmp")
-                Task {
-                    do {
-                        let localURL = try await RemoteConnectionManager.shared.downloadFile(remotePath: remotePath)
-                        _ = await MainActor.run {
-                            NSWorkspace.shared.open(localURL)
-                        }
-                    } catch {
-                        log.error("[AppState] remote download failed '\(remotePath)': \(error.localizedDescription)")
-                    }
-                }
-                return
-            }
-
-            NSWorkspace.shared.open(
-                [file.urlValue],
-                withApplicationAt: NSWorkspace.shared.urlForApplication(toOpen: file.urlValue)
-                    ?? URL(fileURLWithPath: "/System/Library/CoreServices/Finder.app"),
-                configuration: NSWorkspace.OpenConfiguration()
-            ) { _, error in
-                if let error { log.error("[AppState] open file failed: \(error.localizedDescription)") }
-            }
+        guard originalURL.isFileURL else {
+            return (originalURL, file.isDirectory)
         }
 
-        func revealLogFileInFinder() { FinderIntegration.revealLogFile() }
+        if let aliasTarget = tryResolveAliasTarget(for: originalURL, file: file) {
+            return aliasTarget
+        }
+
+        if let symlinkTarget = resolveSymlinkTarget(for: originalURL, file: file) {
+            return symlinkTarget
+        }
+
+        return (originalURL, file.isDirectory)
     }
+
+
+
+    private func tryResolveAliasTarget(for url: URL, file: CustomFile) -> (url: URL, isDirectory: Bool)? {
+        guard shouldTryAliasResolution(for: url, file: file) else {
+            return nil
+        }
+
+        guard let resolvedURL = try? URL(resolvingAliasFileAt: url, options: [.withoutUI]) else {
+            if file.isAlias {
+                log.warning("[Activate] failed to resolve alias '\(file.nameStr)': \(file.pathStr)")
+            }
+            return nil
+        }
+
+        let isDirectory = (try? resolvedURL.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true
+        return (resolvedURL, isDirectory)
+    }
+
+
+
+
+    private func resolveSymlinkTarget(for url: URL, file: CustomFile) -> (url: URL, isDirectory: Bool)? {
+        guard file.isSymbolicLink || file.isSymbolicDirectory else {
+            return nil
+        }
+
+        let resolvedURL = url.resolvingSymlinksInPath()
+        let isDirectory = (try? resolvedURL.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true
+        return (resolvedURL, isDirectory)
+    }
+
+
+
+
+    private func shouldTryAliasResolution(for url: URL, file: CustomFile) -> Bool {
+        if file.isAlias {
+            return true
+        }
+
+        if file.isDirectory || file.isSymbolicLink || file.isSymbolicDirectory {
+            return false
+        }
+
+        if let values = try? url.resourceValues(forKeys: [.isAliasFileKey]), values.isAliasFile == true {
+            return true
+        }
+
+        if let fileType = try? url.resourceValues(forKeys: [.fileResourceTypeKey]).fileResourceType,
+           fileType == .regular {
+            return true
+        }
+
+        return false
+    }
+
+    private func activateResolvedDirectory(_ resolvedURL: URL, originalFile: CustomFile, on panel: FavPanelSide) {
+        let pathToOpen = resolvedURL.isFileURL ? resolvedURL.path : resolvedURL.absoluteString
+
+        log.info("[Activate] navigate directory '\(originalFile.nameStr)' -> \(pathToOpen)")
+
+        if !resolvedURL.isFileURL {
+            Task { @MainActor in
+                await navigateToDirectory(pathToOpen, on: panel)
+            }
+            return
+        }
+
+        let isDirectory = (try? resolvedURL.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true
+        guard isDirectory else {
+            if originalFile.isAlias {
+                log.warning("[Activate] alias target is not a directory: \(pathToOpen)")
+            } else if originalFile.isSymbolicLink || originalFile.isSymbolicDirectory {
+                log.warning("[Activate] symlink target is not a directory: \(pathToOpen)")
+            } else {
+                log.warning("[Activate] target is not a directory: \(pathToOpen)")
+            }
+            return
+        }
+
+        Task { @MainActor in
+            await navigateToDirectory(pathToOpen, on: panel)
+        }
+    }
+
+    func selectionCopy() { fileActions?.copyToOppositePanel() }
+    func openSelectedItem() { fileActions?.openSelectedItem() }
+
+    // MARK: - Activate item (double-click / Enter)
+    func activateItem(_ file: CustomFile, on panel: FavPanelSide) {
+        let resolvedTarget = resolvedActivationTarget(for: file)
+
+        if ParentDirectoryEntry.isParentEntry(file) {
+            Task { await navigateToParent(on: panel) }
+            return
+        }
+        if !file.isDirectory && ArchiveExtensions.isArchive(file.fileExtension) {
+            Task { await enterArchive(at: file.urlValue, on: panel) }
+            return
+        }
+        let ext = file.fileExtension.lowercased()
+        if ext == "app" {
+            NSWorkspace.shared.openApplication(at: file.urlValue, configuration: NSWorkspace.OpenConfiguration()) { _, error in
+                if let error { log.error("[AppState] launch app failed: \(error.localizedDescription)") }
+            }
+            return
+        }
+        if let resolvedTarget, resolvedTarget.isDirectory {
+            activateResolvedDirectory(resolvedTarget.url, originalFile: file, on: panel)
+            return
+        }
+        // --- Remote file: download to tmp, open locally ---
+        let panelURL = url(for: panel)
+        if AppState.isRemotePath(panelURL) {
+            let remotePath = file.pathStr
+            log.info("[AppState] activateItem: remote file '\(remotePath)' — downloading to tmp")
+            Task {
+                do {
+                    let localURL = try await RemoteConnectionManager.shared.downloadFile(remotePath: remotePath)
+                    _ = await MainActor.run {
+                        NSWorkspace.shared.open(localURL)
+                    }
+                } catch {
+                    log.error("[AppState] remote download failed '\(remotePath)': \(error.localizedDescription)")
+                }
+            }
+            return
+        }
+        let openURL = resolvedTarget?.url ?? file.urlValue
+
+        NSWorkspace.shared.open(
+            [openURL],
+            withApplicationAt: NSWorkspace.shared.urlForApplication(toOpen: openURL)
+                ?? URL(fileURLWithPath: "/System/Library/CoreServices/Finder.app"),
+            configuration: NSWorkspace.OpenConfiguration()
+        ) { _, error in
+            if let error { log.error("[AppState] open file failed: \(error.localizedDescription)") }
+        }
+    }
+
+    func revealLogFileInFinder() { FinderIntegration.revealLogFile() }
+}

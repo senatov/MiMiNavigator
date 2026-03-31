@@ -108,7 +108,7 @@ struct FileRowView: View {
                         Image(systemName: "personalhotspot.slash")
                             .font(.system(size: 13, weight: .bold))
                             .foregroundStyle(
-                                Color(#colorLiteral(red: 0.2549019754, green: 0.2745098174, blue: 0.3019607961, alpha: 1))
+                                Color(#colorLiteral(red: 0.8078431487, green: 0.02745098062, blue: 0.3333333433, alpha: 1))
                             )
                             .offset(x: 2, y: 2)
                     case .specialDevice:
