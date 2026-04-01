@@ -98,8 +98,16 @@ enum ColumnAutoFitter {
         let measuredWidths = measuredTextWidths(meaningfulTexts, font: font)
         let fittedWidth = fittedContentWidth(for: col, measuredWidths: measuredWidths)
         let maxW = ColumnWidthPolicy.effectiveMaxWidth(for: col)
-        let clampedWidth = fittedWidth.clamped(to: emptyColumnWidth...maxW)
-        log.debug("[AutoFit] contentWidth \(col.rawValue) samples=\(meaningfulTexts.count) fitted=\(pt(fittedWidth)) max=\(pt(maxW)) → \(pt(clampedWidth))")
+        var clampedWidth = fittedWidth.clamped(to: emptyColumnWidth...maxW)
+        // Size col: if not all dirs resolved yet, don't shrink below fallback
+        if col == .size && meaningfulTexts.count < texts.count {
+            let fallback = ColumnWidthPolicy.sizeColumnFallbackWidth()
+            if clampedWidth < fallback {
+                log.debug("[AutoFit] contentWidth size partial (\(meaningfulTexts.count)/\(texts.count)) — floor to fallback=\(pt(fallback))")
+                clampedWidth = fallback
+            }
+        }
+        log.debug("[AutoFit] contentWidth \(col.rawValue) samples=\(meaningfulTexts.count)/\(texts.count) fitted=\(pt(fittedWidth)) max=\(pt(maxW)) → \(pt(clampedWidth))")
         return clampedWidth
     }
 
