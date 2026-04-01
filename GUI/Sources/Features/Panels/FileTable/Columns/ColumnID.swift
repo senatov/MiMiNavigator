@@ -147,6 +147,36 @@ enum ColumnID: String, CaseIterable, Codable, Identifiable, Transferable {
         }
     }
 
+    /// per-column cell content padding (leading, trailing)
+    var contentPadding: (leading: CGFloat, trailing: CGFloat) {
+        switch self {
+        case .dateModified, .dateCreated, .dateLastOpened, .dateAdded:
+            return (3, 3)
+        case .size:
+            return (3, 6)
+        default:
+            return (TableColumnDefaults.cellPadding, TableColumnDefaults.cellPadding)
+        }
+    }
+
+    /// true for all date-type columns
+    var isDateColumn: Bool {
+        switch self {
+        case .dateModified, .dateCreated, .dateLastOpened, .dateAdded: true
+        default: false
+        }
+    }
+
+    /// per-column header padding (leading, trailing)
+    var headerPadding: (leading: CGFloat, trailing: CGFloat) {
+        switch self {
+        case .childCount:
+            return (10, 2)
+        default:
+            return (TableColumnDefaults.cellPadding, TableColumnDefaults.cellPadding)
+        }
+    }
+
     // MARK: - Theming
 
     func columnColor(from theme: ColorTheme) -> Color {

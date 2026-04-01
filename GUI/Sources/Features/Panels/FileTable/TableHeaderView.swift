@@ -110,6 +110,7 @@ struct TableHeaderView: View {
             sortKey: spec.id.sortKey,
             currentKey: sortKey,
             ascending: sortAscending,
+            compactSpacing: spec.id.isDateColumn,
             onSort: { toggleSort(spec.id) },
             onAutoFit: {
                 let w = autoFitWidth(for: spec.id)
@@ -117,7 +118,8 @@ struct TableHeaderView: View {
                 layout.saveWidths()
             }
         )
-        .padding(.horizontal, TableColumnDefaults.cellPadding)
+        .padding(.leading, spec.id.headerPadding.leading)
+        .padding(.trailing, spec.id.headerPadding.trailing)
         .frame(width: spec.width, alignment: spec.id.alignment)
         .background(dragTargetBackground(for: spec.id))
         .overlay(alignment: .leading) { dragTargetIndicator(for: spec.id) }

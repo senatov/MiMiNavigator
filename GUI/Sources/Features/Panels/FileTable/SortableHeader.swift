@@ -18,6 +18,8 @@ struct SortableHeader: View {
     let sortKey: SortKeysEnum?
     let currentKey: SortKeysEnum
     let ascending: Bool
+    /// shrink gap between title and sort arrow (e.g. narrow Date columns)
+    let compactSpacing: Bool
     /// Called when sort arrow is clicked
     let onSort: (() -> Void)?
     /// Called on double-click of the title area (auto-fit column width)
@@ -29,6 +31,7 @@ struct SortableHeader: View {
         sortKey: SortKeysEnum?,
         currentKey: SortKeysEnum,
         ascending: Bool,
+        compactSpacing: Bool = false,
         onSort: (() -> Void)? = nil,
         onAutoFit: (() -> Void)? = nil
     ) {
@@ -37,6 +40,7 @@ struct SortableHeader: View {
         self.sortKey = sortKey
         self.currentKey = currentKey
         self.ascending = ascending
+        self.compactSpacing = compactSpacing
         self.onSort = onSort
         self.onAutoFit = onAutoFit
     }
@@ -53,7 +57,11 @@ struct SortableHeader: View {
     var body: some View {
         HStack(spacing: 0) {
             titleArea
-            Spacer(minLength: 0)
+            if !compactSpacing {
+                Spacer(minLength: 0)
+            } else {
+                Spacer(minLength: 0).frame(maxWidth: 4)
+            }
             if sortKey != nil {
                 SortArrowButton(
                     isActive: isActive,

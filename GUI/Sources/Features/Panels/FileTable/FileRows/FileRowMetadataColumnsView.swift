@@ -47,7 +47,8 @@ struct FileRowMetadataColumnsView: View {
             .foregroundStyle(cellColor(for: spec.id))
             .lineLimit(1)
             .truncationMode(.tail)
-            .padding(.horizontal, TableColumnDefaults.cellPadding)
+            .padding(.leading, spec.id.contentPadding.leading)
+            .padding(.trailing, spec.id.contentPadding.trailing)
             .frame(width: spec.width, alignment: spec.id.alignment)
     }
 
