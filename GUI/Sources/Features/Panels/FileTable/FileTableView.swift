@@ -407,32 +407,40 @@ struct FileTableView: View {
     private func scheduleAutoFitIfNeeded() {
         guard UserPreferences.shared.snapshot.autoFitColumnsOnNavigate else { return }
         let currentPath = appState.path(for: panelSide)
-        // Already running or completed for this path — skip
-        guard currentPath != lastAutoFitPath else { return }
-        // Cancel previous task if navigated to a new dir before it finished
+        guard currentPath != lastAutoFitPath else {
+            log.debug("[AutoFit] schedule skip — same path panel=\(panelSide)")
+            return
+        }
         if let existing = pendingAutoFitTask, !existing.isCancelled {
+            log.debug("[AutoFit] cancelling previous deferred task panel=\(panelSide)")
             existing.cancel()
         }
-        // Mark path immediately to prevent re-entry from subsequent bumps
         lastAutoFitPath = currentPath
+        log.info("[AutoFit] schedule deferred autofit panel=\(panelSide) path=\(currentPath)")
         pendingAutoFitTask = Task { @MainActor in
             // pass 1: wait until all sizes resolved (poll every 500ms, max 30s)
+            var pollCount = 0
             for _ in 0..<60 {
                 if Task.isCancelled { return }
                 if allSizesResolved { break }
+                pollCount += 1
                 try? await Task.sleep(for: .milliseconds(500))
             }
             if Task.isCancelled { return }
+            let resolved = allSizesResolved
             let liveFiles = appState.displayedFiles(for: panelSide)
+            log.info("[AutoFit] deferred pass 1 panel=\(panelSide) polls=\(pollCount) resolved=\(resolved) files=\(liveFiles.count)")
             lastAutoFitWidth = layout.containerWidth
             ColumnAutoFitter.autoFitAll(layout: layout, files: liveFiles)
             // pass 2: re-fit after 2s (late arrivals, app bundle sizes)
             try? await Task.sleep(for: .seconds(2))
             if Task.isCancelled { return }
+            log.debug("[AutoFit] deferred pass 2 panel=\(panelSide)")
             ColumnAutoFitter.autoFitAll(layout: layout, files: appState.displayedFiles(for: panelSide))
             // pass 3: final re-fit after another 2s (very slow dirs)
             try? await Task.sleep(for: .seconds(2))
             if Task.isCancelled { return }
+            log.debug("[AutoFit] deferred pass 3 (final) panel=\(panelSide)")
             ColumnAutoFitter.autoFitAll(layout: layout, files: appState.displayedFiles(for: panelSide))
         }
     }
@@ -445,6 +453,7 @@ struct FileTableView: View {
         guard !liveFiles.isEmpty else { return }
         let delta = abs(newWidth - lastAutoFitWidth)
         guard delta > 8 else { return }
+        log.debug("[AutoFit] resize refit panel=\(panelSide) delta=\(Int(delta))pt new=\(Int(newWidth))")
         lastAutoFitWidth = newWidth
         ColumnAutoFitter.autoFitAll(layout: layout, files: liveFiles)
     }

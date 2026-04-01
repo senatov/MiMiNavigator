@@ -27,8 +27,17 @@ enum ColumnAutoFitter {
     private static let correctiveClippingThreshold: CGFloat = 0.15
 
     static func autoFitAll(layout: ColumnLayoutModel, files: [CustomFile]) {
-        guard let result = makeAutoFitResult(layout: layout, files: files) else { return }
-        guard needsUpdate(layout: layout, fittedColumns: result.fittedColumns, nameWidth: result.nameWidth) else { return }
+        log.debug("[AutoFit] autoFitAll start — container=\(pt(layout.containerWidth)) files=\(files.count) fixedCols=\(layout.fixedColumns.count)")
+        guard let result = makeAutoFitResult(layout: layout, files: files) else {
+            log.debug("[AutoFit] autoFitAll skip — no result (empty files or zero width)")
+            return
+        }
+        guard needsUpdate(layout: layout, fittedColumns: result.fittedColumns, nameWidth: result.nameWidth) else {
+            log.debug("[AutoFit] autoFitAll skip — widths stable (name=\(pt(result.nameWidth)))")
+            return
+        }
+        let colSummary = result.fittedColumns.map { "\($0.id.rawValue)=\(pt($0.width))" }.joined(separator: " ")
+        log.info("[AutoFit] APPLY name=\(pt(result.nameWidth)) \(colSummary)")
         apply(fittedColumns: result.fittedColumns, nameWidth: result.nameWidth, to: layout)
     }
 
@@ -43,9 +52,12 @@ enum ColumnAutoFitter {
         let visibleFixedColumns = layout.fixedColumns
         let dividerTotal = totalDividerWidth(for: visibleFixedColumns.count)
         var fittedColumns = measuredFixedWidths(for: visibleFixedColumns, files: files)
+        let measuredSummary = fittedColumns.map { "\($0.id.rawValue)=\(pt($0.width))" }.joined(separator: " ")
+        log.debug("[AutoFit] measured fixed: \(measuredSummary) dividers=\(pt(dividerTotal))")
         var nameWidth = finalizedNameWidth(
             containerWidth: layout.containerWidth, fittedColumns: &fittedColumns, dividerTotal: dividerTotal)
-        for _ in 2...3 {
+        log.debug("[AutoFit] pass 1 name=\(pt(nameWidth))")
+        for passNum in 2...3 {
             let requiresCorrection = needsCorrectivePass(
                 columns: visibleFixedColumns,
                 fittedColumns: fittedColumns,
@@ -55,11 +67,13 @@ enum ColumnAutoFitter {
                 dividerTotal: dividerTotal
             )
             guard requiresCorrection else {
+                log.debug("[AutoFit] pass \(passNum) — no correction needed, done")
                 break
             }
             applyCorrectivePass(columns: visibleFixedColumns, fittedColumns: &fittedColumns, files: files)
             nameWidth = finalizedNameWidth(
                 containerWidth: layout.containerWidth, fittedColumns: &fittedColumns, dividerTotal: dividerTotal)
+            log.debug("[AutoFit] pass \(passNum) corrective — name=\(pt(nameWidth))")
         }
 
         return AutoFitResult(fittedColumns: fittedColumns, nameWidth: nameWidth)
@@ -73,16 +87,19 @@ enum ColumnAutoFitter {
         let (texts, font) = textSamples(col, files: files)
         let meaningfulTexts = texts.filter(isRealContent)
         guard !meaningfulTexts.isEmpty else {
-            // Size column: use reference width ("999,99 MB") instead of collapsing to 24pt
             if col == .size {
                 let fallback = ColumnWidthPolicy.sizeColumnFallbackWidth()
+                log.debug("[AutoFit] contentWidth \(col.rawValue) — no real content, fallback=\(pt(fallback))")
                 return fallback
             }
+            log.debug("[AutoFit] contentWidth \(col.rawValue) — no real content, empty=\(pt(emptyColumnWidth))")
             return emptyColumnWidth
         }
         let measuredWidths = measuredTextWidths(meaningfulTexts, font: font)
         let fittedWidth = fittedContentWidth(for: col, measuredWidths: measuredWidths)
-        let clampedWidth = fittedWidth.clamped(to: emptyColumnWidth...ColumnWidthPolicy.effectiveMaxWidth(for: col))
+        let maxW = ColumnWidthPolicy.effectiveMaxWidth(for: col)
+        let clampedWidth = fittedWidth.clamped(to: emptyColumnWidth...maxW)
+        log.debug("[AutoFit] contentWidth \(col.rawValue) samples=\(meaningfulTexts.count) fitted=\(pt(fittedWidth)) max=\(pt(maxW)) → \(pt(clampedWidth))")
         return clampedWidth
     }
 
@@ -253,14 +270,25 @@ enum ColumnAutoFitter {
         guard abs(remainder) > edgeAlignmentEpsilon else { return }
 
         let adjustedWidth = fittedColumns[lastIndex].width + remainder
-        fittedColumns[lastIndex].width = max(emptyColumnWidth, adjustedWidth)
+        let finalWidth = max(emptyColumnWidth, adjustedWidth)
+        log.debug("[AutoFit] alignTrailing \(fittedColumns[lastIndex].id.rawValue) remainder=\(pt(remainder)) \(pt(fittedColumns[lastIndex].width))→\(pt(finalWidth))")
+        fittedColumns[lastIndex].width = finalWidth
     }
 
     private static func needsUpdate(layout: ColumnLayoutModel, fittedColumns: [FittedColumn], nameWidth: CGFloat) -> Bool {
-        let isNameStable = abs(layout.nameWidth - nameWidth) < widthStabilityEpsilon
+        let nameDelta = abs(layout.nameWidth - nameWidth)
+        let isNameStable = nameDelta < widthStabilityEpsilon
+        var unstableCols: [String] = []
         let areFixedColumnsStable = fittedColumns.allSatisfy { fittedColumn in
             guard let index = layout.columns.firstIndex(where: { $0.id == fittedColumn.id }) else { return true }
-            return abs(layout.columns[index].width - fittedColumn.width) < widthStabilityEpsilon
+            let colDelta = abs(layout.columns[index].width - fittedColumn.width)
+            if colDelta >= widthStabilityEpsilon {
+                unstableCols.append("\(fittedColumn.id.rawValue)Δ\(pt(colDelta))")
+            }
+            return colDelta < widthStabilityEpsilon
+        }
+        if !isNameStable || !areFixedColumnsStable {
+            log.debug("[AutoFit] needsUpdate=true nameΔ\(pt(nameDelta)) unstable=[\(unstableCols.joined(separator: ","))]")
         }
         return !isNameStable || !areFixedColumnsStable
     }
