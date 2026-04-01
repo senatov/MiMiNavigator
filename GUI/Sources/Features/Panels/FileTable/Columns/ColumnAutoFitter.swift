@@ -203,8 +203,13 @@ enum ColumnAutoFitter {
         guard !meaningfulTexts.isEmpty else { return emptyColumnWidth }
         let measuredWidths = measuredTextWidths(meaningfulTexts, font: font)
         let percentileWidth = clippingSafePercentileWidth(measuredWidths)
-        let contentWidth = percentileFittedContentWidth(for: column, percentileWidth: percentileWidth)
-        return ceil(contentWidth.clamped(to: emptyColumnWidth...ColumnWidthPolicy.effectiveMaxWidth(for: column)))
+        var result = percentileFittedContentWidth(for: column, percentileWidth: percentileWidth)
+        // Size col: don't shrink below fallback when dirs still resolving
+        if column == .size && meaningfulTexts.count < texts.count {
+            let fallback = ColumnWidthPolicy.sizeColumnFallbackWidth()
+            result = max(result, fallback)
+        }
+        return ceil(result.clamped(to: emptyColumnWidth...ColumnWidthPolicy.effectiveMaxWidth(for: column)))
     }
 
     private static func measuredClippingRatio(for column: ColumnID, files: [CustomFile], fittedWidth: CGFloat) -> CGFloat {
