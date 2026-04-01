@@ -72,8 +72,12 @@ echo "[2/10] Killing Xcode..."
 killall Xcode 2>/dev/null && sleep 2 || echo "   Xcode not running"
 
 # ── Step 2.5: Unlock keychain for codesign ────────────────────────────────────
-echo "[2.5/10] Unlocking login keychain (enter your Mac login password)..."
-security unlock-keychain ~/Library/Keychains/login.keychain-db
+if security show-keychain-info ~/Library/Keychains/login.keychain-db 2>/dev/null; then
+    echo "[2.5/10] Keychain already unlocked — skipping"
+else
+    echo "[2.5/10] Unlocking login keychain (enter your Mac login password)..."
+    security unlock-keychain ~/Library/Keychains/login.keychain-db
+fi
 
 # ── Step 3: Nuke DerivedData ──────────────────────────────────────────────────
 echo "[3/10] Removing DerivedData..."
