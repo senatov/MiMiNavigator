@@ -1,13 +1,15 @@
 #!/bin/zsh
-# git_cleanup.zsh — Clean up .git directory: prune, gc, compress
-# Run from:  ~/Develop/MiMiNavigator/Scripts/
-# All comments in English.
+# git_cleanup.zsh — pre-commit hygiene: prune, gc, check for junk.
+# Usage:  zsh Scripts/git_cleanup.zsh [-v]
+# -v = verbose (show large files, merged branches list)
 
 set -euo pipefail
 
-# Resolve project root (directory above Scripts/)
 SCRIPT_DIR="$(cd "$(dirname "${(%):-%N}")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+PACKAGES_DIR="${PROJECT_ROOT}/Packages"
+VERBOSE=false
+[[ "${1:-}" == "-v" ]] && VERBOSE=true
 
 cd "${PROJECT_ROOT}"
 
@@ -16,55 +18,78 @@ echo "  Git Cleanup — $(basename "${PROJECT_ROOT}")"
 echo "═══════════════════════════════════════════"
 echo ""
 
-# Verify we're in a git repo
-if [[ ! -d .git ]]; then
-    echo "❌ ERROR: No .git directory found in ${PROJECT_ROOT}"
-    exit 1
-fi
+[[ ! -d .git ]] && { echo "❌ No .git in ${PROJECT_ROOT}"; exit 1; }
 
-# Show current branch
 BRANCH=$(git branch --show-current 2>/dev/null || echo "detached")
 echo "📌 Branch: ${BRANCH}"
-
-# Size before
 SIZE_BEFORE=$(du -sh .git | cut -f1)
 echo "📦 .git size before: ${SIZE_BEFORE}"
 echo ""
+# ── Step 1: Warn about uncommitted changes ────────────────────────────────────
+echo "🔹 Step 1/7: Checking working tree..."
+DIRTY_COUNT=$(git status --porcelain | wc -l | tr -d ' ')
+if (( DIRTY_COUNT > 0 )); then
+    echo "   ⚠️  ${DIRTY_COUNT} uncommitted change(s) — will be preserved"
+    $VERBOSE && git status --short | head -15
+else
+    echo "   ✓ working tree clean"
+fi
 
-# Step 1: Remove stale remote tracking branches
-echo "🔹 Step 1/5: Pruning stale remote branches..."
-git remote prune origin 2>/dev/null || echo "   ⚠️  No remote 'origin' or nothing to prune"
+# ── Step 2: Prune stale remote branches ───────────────────────────────────────
+echo "🔹 Step 2/7: Pruning stale remote branches..."
+git remote prune origin 2>/dev/null || echo "   ⚠️  no remote 'origin'"
 
-# Step 2: Remove orphaned worktrees
-echo "🔹 Step 2/5: Pruning worktrees..."
+# ── Step 3: Delete merged local branches (except current + master/main) ───────
+echo "🔹 Step 3/7: Cleaning merged branches..."
+MERGED=$(git branch --merged HEAD 2>/dev/null \
+    | grep -vE '^\*|^\s*(master|main|develop)$' \
+    | tr -d ' ' || true)
+if [[ -n "${MERGED}" ]]; then
+    echo "   removing: ${MERGED}"
+    echo "${MERGED}" | xargs git branch -d 2>/dev/null || true
+else
+    echo "   ✓ no merged branches to remove"
+fi
+
+# ── Step 4: Prune worktrees + reflog ─────────────────────────────────────────
+echo "🔹 Step 4/7: Pruning worktrees + reflog (>30 days)..."
 git worktree prune 2>/dev/null || true
+git reflog expire --expire=30.days --all 2>/dev/null
 
-# Step 3: Expire reflog
-echo "🔹 Step 3/5: Expiring reflog (older than 30 days)..."
-git reflog expire --expire=30.days --all
+# ── Step 5: GC (aggressive already includes repack) ───────────────────────────
+echo "🔹 Step 5/7: Garbage collection..."
+git gc --aggressive --prune=now 2>&1 | grep -v "^$" || true
 
-# Step 4: Aggressive garbage collection
-echo "🔹 Step 4/5: Running aggressive garbage collection..."
-git gc --aggressive --prune=now
+# ── Step 6: Packages submodule cleanup ────────────────────────────────────────
+echo "🔹 Step 6/7: Packages submodule cleanup..."
+if [[ -d "${PACKAGES_DIR}/.git" ]]; then
+    (cd "${PACKAGES_DIR}" && git gc --prune=now 2>/dev/null && echo "   ✓ Packages gc done") || echo "   ⚠️  Packages gc skipped"
+else
+    echo "   ⚠️  Packages not a git repo — skipping"
+fi
 
-# Step 5: Repack for optimal compression
-echo "🔹 Step 5/5: Repacking objects..."
-git repack -a -d --depth=250 --window=250
+# ── Step 7: Large file check (verbose only) ──────────────────────────────────
+if $VERBOSE; then
+    echo "🔹 Step 7/7: Largest tracked files..."
+    git ls-files -z | xargs -0 -I{} du -sh {} 2>/dev/null \
+        | sort -rh | head -10
+    echo ""
+else
+    echo "🔹 Step 7/7: (use -v for large file report)"
+fi
 
 echo ""
-
-# Size after
 SIZE_AFTER=$(du -sh .git | cut -f1)
 echo "═══════════════════════════════════════════"
 echo "  📦 Before: ${SIZE_BEFORE}"
 echo "  📦 After:  ${SIZE_AFTER}"
 echo "═══════════════════════════════════════════"
 
-# Show stats
 echo ""
 echo "📊 Repository stats:"
-echo "   Objects: $(git count-objects -v 2>/dev/null | grep 'count:' | awk '{print $2}')"
-echo "   Packs:   $(git count-objects -v 2>/dev/null | grep 'in-pack:' | awk '{print $2}')"
-echo "   Loose:   $(git count-objects -v 2>/dev/null | grep 'size:' | head -1 | awk '{print $2}') KB"
+STATS=$(git count-objects -v 2>/dev/null)
+echo "   Objects: $(echo "${STATS}" | awk '/^count:/{print $2}')"
+echo "   Packs:   $(echo "${STATS}" | awk '/^in-pack:/{print $2}')"
+echo "   Loose:   $(echo "${STATS}" | awk '/^size:/{print $2; exit}') KB"
 echo ""
 echo "✅ Git cleanup complete."
