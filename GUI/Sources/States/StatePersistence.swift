@@ -14,6 +14,29 @@
     @MainActor
     enum StatePersistence {
 
+        /// cached window frame — updated on resize/move, used at exit
+        static var lastKnownWindowFrame: NSRect?
+
+        /// start observing window resize/move to keep frame cache fresh
+        static func startTrackingWindowFrame() {
+            let nc = NotificationCenter.default
+            nc.addObserver(
+                forName: NSWindow.didEndLiveResizeNotification,
+                object: nil, queue: .main
+            ) { note in
+                guard let win = note.object as? NSWindow, !(win is NSPanel) else { return }
+                lastKnownWindowFrame = win.frame
+            }
+            nc.addObserver(
+                forName: NSWindow.didMoveNotification,
+                object: nil, queue: .main
+            ) { note in
+                guard let win = note.object as? NSWindow, !(win is NSPanel) else { return }
+                lastKnownWindowFrame = win.frame
+            }
+            log.debug("[StatePersistence] window frame tracking started")
+        }
+
         private static let stateFileURL: URL = {
             let home = FileManager.default.homeDirectoryForCurrentUser
             let dir = home.appendingPathComponent(".mimi", isDirectory: true)
@@ -47,8 +70,9 @@
         static func saveBeforeExit(from state: AppState) {
             log.debug("[StatePersistence] saveBeforeExit")
 
-            // Capture main window frame
-            let mainFrame = NSApp.windows.first(where: { !($0 is NSPanel) })?.frame
+            // use cached frame — live window may already be closing
+            let mainFrame = lastKnownWindowFrame
+                ?? NSApp.windows.first(where: { !($0 is NSPanel) && $0.isVisible })?.frame
             let snapshot = PersistentState(
                 leftPath: state.leftPath,
                 rightPath: state.rightPath,

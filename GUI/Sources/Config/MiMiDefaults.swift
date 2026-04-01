@@ -229,7 +229,6 @@ final class MiMiDefaults {
     // MARK: - Private: Coalesced Save
     private func scheduleSave() {
         isDirty = true
-        log.debug("[MiMiDefaults] scheduleSave dirty=\(isDirty)")
         coalesceTimer?.invalidate()
         coalesceTimer = Timer.scheduledTimer(withTimeInterval: Constants.saveDelay, repeats: false) { [weak self] _ in
             Task { @MainActor [weak self] in

@@ -131,7 +131,10 @@ struct MiMiNavigatorApp: App {
 
         if let savedFrame = StatePersistence.restoreWindowFrame() {
             win.setFrame(savedFrame, display: true, animate: false)
+            StatePersistence.lastKnownWindowFrame = savedFrame
             log.info("[App] window frame restored: \(Int(savedFrame.width))x\(Int(savedFrame.height))")
+        } else {
+            StatePersistence.lastKnownWindowFrame = win.frame
         }
 
         win.setFrameAutosaveName("MiMiNavigator.MainWindow")

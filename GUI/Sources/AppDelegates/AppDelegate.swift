@@ -39,6 +39,7 @@ import AppKit
             let restored = await BookmarkStore.shared.restoreAll()
             log.info("Restored \(restored.count) bookmarks")
         }
+        StatePersistence.startTrackingWindowFrame()
         log.debug("starting toolbar right-click monitor")
         ToolbarRightClickMonitor.shared.start()
         log.debug("installing keyDown monitor for Tab/Backtab")

@@ -164,15 +164,7 @@ struct DuoFilePanelView: View {
             containerWidth: newWidth
         )
 
-        let oldWidthText = Int(trackedOldWidth)
-        let newWidthText = Int(newWidth)
-        let ratioText = String(format: "%.3f", ratio)
-        let resizedWidthText = Int(resizedWidth)
-
-        log.debug("\(#function) old=\(oldWidthText)")
-        log.debug("\(#function) new=\(newWidthText)")
-        log.debug("\(#function) ratio=\(ratioText)")
-        log.debug("\(#function) left=\(resizedWidthText)")
+        log.debug("\(#function) \(Int(trackedOldWidth))→\(Int(newWidth)) ratio=\(String(format: "%.3f", ratio)) left=\(Int(resizedWidth))")
 
         leftPanelWidth = resizedWidth
         lastContainerWidth = newWidth
