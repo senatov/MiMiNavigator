@@ -298,6 +298,7 @@ enum ColumnAutoFitter {
             layout.setWidth(fittedColumn.width, for: fittedColumn.id)
         }
         layout.nameWidth = nameWidth
+        layout.autoFitGeneration += 1
     }
 
     private static func totalFixedWidth(_ fittedColumns: [FittedColumn]) -> CGFloat {

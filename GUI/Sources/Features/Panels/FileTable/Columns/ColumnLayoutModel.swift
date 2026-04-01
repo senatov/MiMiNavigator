@@ -27,6 +27,10 @@ final class ColumnLayoutModel: Codable {
     private(set) var storedNameWidth: CGFloat = 200
     private let storageKey: String
 
+    /// tick bumped on every autofit apply — syncColumnWidths skips 1 render cycle after
+    var autoFitGeneration: Int = 0
+    var lastSyncedGeneration: Int = 0
+
     var visibleColumns: [ColumnSpec] { columns.filter { $0.isVisible } }
     var fixedColumns: [ColumnSpec] { visibleColumns.filter { $0.id != .name } }
 

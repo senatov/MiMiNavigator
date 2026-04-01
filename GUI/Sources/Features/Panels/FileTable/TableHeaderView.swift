@@ -173,6 +173,12 @@ struct TableHeaderView: View {
     }
 
     private func syncColumnWidths(from entries: [ColumnWidthEntry]) {
+        // skip geo-sync if autofit just applied — stale geo values would overwrite fresh widths
+        if layout.autoFitGeneration != layout.lastSyncedGeneration {
+            layout.lastSyncedGeneration = layout.autoFitGeneration
+            log.debug("[AutoFit] syncColumnWidths skipped — autofit gen \(layout.autoFitGeneration) just applied")
+            return
+        }
         for entry in entries {
             guard let idx = layout.columns.firstIndex(where: { $0.id == entry.id }) else { continue }
             let rounded = entry.width.rounded()
