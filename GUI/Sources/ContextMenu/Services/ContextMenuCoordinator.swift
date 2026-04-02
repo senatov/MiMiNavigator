@@ -35,13 +35,15 @@ final class ContextMenuCoordinator {
     
     private init() {
         log.debug("\(#function) ContextMenuCoordinator initialized")
-        // wire up conflict handler so batch file ops show the dialog
-        fileOps.conflictHandler = { [weak self] conflict, remainingCount in
+        // wire conflict handler to both FileOpsService and FileOpsEngine
+        let handler: (FileConflictInfo, Int) async -> BatchConflictDecision = { [weak self] conflict, remaining in
             guard let self else {
                 return BatchConflictDecision(resolution: .keepBoth, applyToAll: false)
             }
-            return await self.showConflictDialog(conflict: conflict, remainingCount: remainingCount)
+            return await self.showConflictDialog(conflict: conflict, remainingCount: remaining)
         }
+        fileOps.conflictHandler = handler
+        FileOpsEngine.shared.conflictHandler = handler
     }
     
     // MARK: - Path Helpers

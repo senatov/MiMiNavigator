@@ -19,20 +19,17 @@
 
         /// start observing window resize/move to keep frame cache fresh
         static func startTrackingWindowFrame() {
-            let nc = NotificationCenter.default
-            nc.addObserver(
-                forName: NSWindow.didEndLiveResizeNotification,
-                object: nil, queue: .main
-            ) { note in
-                guard let win = note.object as? NSWindow, !(win is NSPanel) else { return }
-                lastKnownWindowFrame = win.frame
+            Task { @MainActor in
+                for await note in NotificationCenter.default.notifications(named: NSWindow.didEndLiveResizeNotification) {
+                    guard let win = note.object as? NSWindow, !(win is NSPanel) else { continue }
+                    lastKnownWindowFrame = win.frame
+                }
             }
-            nc.addObserver(
-                forName: NSWindow.didMoveNotification,
-                object: nil, queue: .main
-            ) { note in
-                guard let win = note.object as? NSWindow, !(win is NSPanel) else { return }
-                lastKnownWindowFrame = win.frame
+            Task { @MainActor in
+                for await note in NotificationCenter.default.notifications(named: NSWindow.didMoveNotification) {
+                    guard let win = note.object as? NSWindow, !(win is NSPanel) else { continue }
+                    lastKnownWindowFrame = win.frame
+                }
             }
             log.debug("[StatePersistence] window frame tracking started")
         }
