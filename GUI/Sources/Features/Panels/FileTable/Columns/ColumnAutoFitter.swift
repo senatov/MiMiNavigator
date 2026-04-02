@@ -115,6 +115,10 @@ enum ColumnAutoFitter {
         switch column {
             case .owner:
                 ownerContentWidth(measuredWidths)
+            case .size:
+                // size col: use weighted-average so wide values (big files) pull
+                // the column wider — prevents "523,3 MB" clipping when most are "53 KB"
+                sizeColumnContentWidth(measuredWidths)
             default:
                 weightedAverageContentWidth(measuredWidths, for: column)
         }
@@ -125,15 +129,28 @@ enum ColumnAutoFitter {
         return texts.map { ($0 as NSString).size(withAttributes: attributes).width }
     }
 
-    private static func weightedAverageMeasuredWidth(_ measuredWidths: [CGFloat]) -> CGFloat {
-        guard !measuredWidths.isEmpty else { return .zero }
-        return measuredWidths.reduce(0, +) / CGFloat(measuredWidths.count)
+    /// Statistical weighted average: each sample's weight = its own width.
+    /// Wider strings contribute more → result biased toward the widest entries.
+    /// Formula: Σ(w_i²) / Σ(w_i) — gives ~85th percentile behavior naturally.
+    private static func weightedAverageContentWidth(_ measuredWidths: [CGFloat], for column: ColumnID) -> CGFloat {
+        guard !measuredWidths.isEmpty else { return emptyColumnWidth }
+        let sumW = measuredWidths.reduce(0, +)
+        guard sumW > 0 else { return emptyColumnWidth }
+        let sumWW = measuredWidths.reduce(0) { $0 + $1 * $1 }
+        let weighted = sumWW / sumW
+        let extraWidth = ColumnWidthPolicy.extraReserveWidth(for: column)
+        return ceil(weighted + 2 * measuredContentInset + extraWidth)
     }
 
-    private static func weightedAverageContentWidth(_ measuredWidths: [CGFloat], for column: ColumnID) -> CGFloat {
-        let averageWidth = measuredWidths.reduce(0, +) / CGFloat(measuredWidths.count)
-        let extraWidth = ColumnWidthPolicy.extraReserveWidth(for: column)
-        return ceil(averageWidth + 2 * measuredContentInset + extraWidth)
+    /// Size column: use high percentile (P85) so the widest formatted values
+    /// ("523,3 MB") aren't clipped by shorter ones ("53 KB").
+    private static func sizeColumnContentWidth(_ measuredWidths: [CGFloat]) -> CGFloat {
+        guard !measuredWidths.isEmpty else { return emptyColumnWidth }
+        let sorted = measuredWidths.sorted()
+        let p85Index = min(Int(ceil(Double(sorted.count) * 0.85)) - 1, sorted.count - 1)
+        let percentileWidth = sorted[max(0, p85Index)]
+        let extraWidth = ColumnWidthPolicy.extraReserveWidth(for: .size)
+        return ceil(percentileWidth + 2 * measuredContentInset + extraWidth)
     }
 
     private static func ownerContentWidth(_ measuredWidths: [CGFloat]) -> CGFloat {
@@ -200,7 +217,13 @@ enum ColumnAutoFitter {
     private static func correctiveContentWidth(for column: ColumnID, files: [CustomFile]) -> CGFloat {
         let (texts, font) = textSamples(column, files: files)
         let meaningfulTexts = texts.filter(isRealContent)
-        guard !meaningfulTexts.isEmpty else { return emptyColumnWidth }
+        guard !meaningfulTexts.isEmpty else {
+            // size col: don't collapse to 24pt when dirs haven't resolved yet
+            if column == .size {
+                return ColumnWidthPolicy.sizeColumnFallbackWidth()
+            }
+            return emptyColumnWidth
+        }
         let measuredWidths = measuredTextWidths(meaningfulTexts, font: font)
         let percentileWidth = clippingSafePercentileWidth(measuredWidths)
         var result = percentileFittedContentWidth(for: column, percentileWidth: percentileWidth)

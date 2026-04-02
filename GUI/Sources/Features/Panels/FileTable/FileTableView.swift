@@ -390,12 +390,14 @@ struct FileTableView: View {
 
     /// True when every directory in current panel has a resolved size.
     /// Reads live from appState (not captured `files` snapshot).
+    /// Any terminal security state counts as "resolved" — no point waiting
+    /// for sizes that will never arrive (.systemProtected, .restricted, etc.)
     private var allSizesResolved: Bool {
         let liveFiles = appState.displayedFiles(for: panelSide)
         return liveFiles.allSatisfy { file in
             guard file.isDirectory else { return true }
             if file.sizeIsExact { return true }
-            if file.securityState == .restricted { return true }
+            if file.securityState != .normal { return true }
             if file.cachedDirectorySize != nil { return true }
             return false
         }

@@ -62,14 +62,50 @@ extension DualDirectoryScanner {
 
     @MainActor
     func publishDisplayedFiles(_ files: [CustomFile], for side: FavPanelSide) {
-        log.debug("[Scanner] publishDisplayedFiles")
-        log.debug("[Scanner] side=\(side) count=\(files.count)")
         let current = displayedFilesBinding(for: side)
         if filesAreIdentical(current, files) {
-            log.debug("[Scanner] publishDisplayedFiles SKIPPED — identical")
             return
         }
+        // carry over cached sizes from old objects — scanner creates fresh
+        // CustomFile instances that don't have size data computed by FileRow
+        transferCachedSizes(from: current, to: files)
         setDisplayedFiles(files, for: side)
+    }
+
+
+    /// Transfer cached directory/shallow sizes + security state from old CustomFile
+    /// instances to new ones created by FileScanner. Keyed by pathStr (stable identity).
+    /// Without this, every scanner republish wipes out sizes that FileRow already computed.
+    @MainActor
+    private func transferCachedSizes(from oldFiles: [CustomFile], to newFiles: [CustomFile]) {
+        guard !oldFiles.isEmpty else { return }
+        let lookup = Dictionary(oldFiles.map { ($0.pathStr, $0) }, uniquingKeysWith: { $1 })
+        var transferred = 0
+        for file in newFiles {
+            guard file.isDirectory, let old = lookup[file.pathStr] else { continue }
+            if file.cachedDirectorySize == nil, let oldSize = old.cachedDirectorySize {
+                file.cachedDirectorySize = oldSize
+                transferred += 1
+            }
+            if file.cachedShallowSize == nil, let oldShallow = old.cachedShallowSize {
+                file.cachedShallowSize = oldShallow
+            }
+            if old.sizeIsExact && !file.sizeIsExact {
+                file.sizeIsExact = old.sizeIsExact
+            }
+            if old.securityState != .normal && file.securityState == .normal {
+                file.securityState = old.securityState
+            }
+            if old.sizeCalculationStarted {
+                file.sizeCalculationStarted = old.sizeCalculationStarted
+            }
+            if let oldAppSize = old.cachedAppSize, file.cachedAppSize == nil {
+                file.cachedAppSize = oldAppSize
+            }
+        }
+        if transferred > 0 {
+            log.debug("[Scanner] transferred \(transferred) cached sizes to new file objects")
+        }
     }
 
 
@@ -94,10 +130,7 @@ extension DualDirectoryScanner {
 
     @MainActor
     func currentDisplayedFiles(for side: FavPanelSide) -> [CustomFile] {
-        let files = displayedFilesBinding(for: side)
-        log.debug("[Scanner] currentDisplayedFiles")
-        log.debug("[Scanner] side=\(side) count=\(files.count)")
-        return files
+        return displayedFilesBinding(for: side)
     }
 
     @MainActor
@@ -116,8 +149,7 @@ extension DualDirectoryScanner {
             let parent = sanitized.remove(at: parentIndex)
             sanitized.insert(parent, at: 0)
         }
-        log.debug("[Scanner] sanitizedPublishedFiles")
-        log.debug("[Scanner] original=\(originalCount) sanitized=\(sanitized.count)")
+        log.verbose("[Scanner] sanitizedPublishedFiles original=\(originalCount) sanitized=\(sanitized.count)")
         return sanitized
     }
 
@@ -134,8 +166,6 @@ extension DualDirectoryScanner {
             hasher.combine(file.isParentEntry)
         }
         let hash = hasher.finalize()
-        log.debug("[Scanner] makeContentHash")
-        log.debug("[Scanner] count=\(files.count) hash=\(hash)")
         return hash
     }
 
@@ -172,11 +202,6 @@ extension DualDirectoryScanner {
             contentHash: contentHash
         )
 
-        log.debug("[Scanner] shouldSkipIdenticalPublish")
-        log.debug("[Scanner] side=\(side) path='\(path)'")
-        log.debug("[Scanner] samePath=\(state.samePath) sameHash=\(state.sameHash) sameCount=\(state.sameVisibleCount)")
-        log.debug("[Scanner] currentDisplayedCount=\(state.currentDisplayedCount) incomingCount=\(files.count)")
-
         guard state.samePath,
               state.sameHash,
               state.sameVisibleCount,
@@ -185,8 +210,7 @@ extension DualDirectoryScanner {
             return false
         }
 
-        log.debug("[Scanner] skip identical publish")
-        log.debug("[Scanner] side=\(side) path='\(path)' count=\(state.currentDisplayedCount)")
+        log.verbose("[Scanner] skip identical publish side=\(side) path='\(path)' count=\(state.currentDisplayedCount)")
         Task { await self.resetFSEventsDebounce(for: side) }
         return true
     }
@@ -216,17 +240,8 @@ extension DualDirectoryScanner {
     @MainActor
     func updateScannedFiles(_ incomingFiles: [CustomFile], for side: FavPanelSide) {
         let publishedFiles = sanitizedPublishedFiles(from: incomingFiles)
-        log.debug("[Scanner] updateScannedFiles")
-        log.debug("[Scanner] side=\(side) incoming=\(incomingFiles.count) published=\(publishedFiles.count)")
         let now = Date()
         let isFirstUpdate = lastUpdateTime[side] == nil
-
-        let sinceLastMs: String
-        if let lastUpdate = lastUpdateTime[side] {
-            sinceLastMs = "\(Int(now.timeIntervalSince(lastUpdate) * 1000))ms since last"
-        } else {
-            sinceLastMs = "first update"
-        }
 
         let currentPath = currentPanelPathOnMain(for: side)
         let contentHash = makeContentHash(for: publishedFiles)
@@ -246,8 +261,7 @@ extension DualDirectoryScanner {
         lastUpdateTime[side] = now
 
         publishDisplayedFiles(publishedFiles, for: side)
-        log.info("[Scanner] publish applied")
-        log.info("[Scanner] side=\(side) items=\(publishedFiles.count) time=\(sinceLastMs)")
+        log.info("[Scanner] published side=\(side) items=\(publishedFiles.count)")
 
         if isFirstUpdate {
             seedInitialSelectionIfNeeded(for: side, files: publishedFiles)
@@ -259,14 +273,10 @@ extension DualDirectoryScanner {
             sanitizedPublishedFiles(from: files)
         }
 
-        log.debug("[Scan] publishSuccessfulScan")
-        log.debug("[Scan] side=\(side) path='\(scannedPath)' raw=\(files.count) published=\(publishedFiles.count)")
+        log.debug("[Scan] publish side=\(side) path='\(scannedPath)' raw=\(files.count) sanitized=\(publishedFiles.count)")
 
         await updateScannedFiles(publishedFiles, for: side)
         await updateFileList(panelSide: side, with: publishedFiles)
-
-        log.debug("[Scan] published successful scan")
-        log.debug("[Scan] side=\(side) path='\(scannedPath)' count=\(publishedFiles.count)")
     }
 
     // MARK: - Permission helpers
@@ -349,8 +359,6 @@ extension DualDirectoryScanner {
 
     @MainActor
     func updateFileList(panelSide: FavPanelSide, with files: [CustomFile]) async {
-        log.debug("[Scanner] updateFileList")
-        log.debug("[Scanner] side=\(panelSide) count=\(files.count)")
         switch panelSide {
             case .left:
                 await fileCache.updateLeftFiles(files)
