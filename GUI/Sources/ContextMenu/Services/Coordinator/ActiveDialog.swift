@@ -17,7 +17,7 @@ enum ActiveDialog: Identifiable {
     case compress(files: [CustomFile], destination: URL, sourcePanel: FavPanelSide)
     case createLink(file: CustomFile, destination: URL)
     case createFolder(parentURL: URL)
-    case fileConflict(conflict: FileConflictInfo, continuation: CheckedContinuation<ConflictResolution, Never>)
+    case fileConflict(conflict: FileConflictInfo, remainingCount: Int, continuation: CheckedContinuation<BatchConflictDecision, Never>)
     case error(title: String, message: String)
     case success(title: String, message: String)
 

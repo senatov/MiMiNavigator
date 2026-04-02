@@ -35,6 +35,13 @@ final class ContextMenuCoordinator {
     
     private init() {
         log.debug("\(#function) ContextMenuCoordinator initialized")
+        // wire up conflict handler so batch file ops show the dialog
+        fileOps.conflictHandler = { [weak self] conflict, remainingCount in
+            guard let self else {
+                return BatchConflictDecision(resolution: .keepBoth, applyToAll: false)
+            }
+            return await self.showConflictDialog(conflict: conflict, remainingCount: remainingCount)
+        }
     }
     
     // MARK: - Path Helpers
@@ -90,20 +97,20 @@ final class ContextMenuCoordinator {
     
     // MARK: - Conflict Dialog
     
-    /// Show file conflict resolution dialog
-    func showConflictDialog(conflict: FileConflictInfo) async -> ConflictResolution {
-        log.debug("\(#function) source='\(conflict.sourceName)' target='\(conflict.targetName)'")
+    /// Show file conflict resolution dialog — returns BatchConflictDecision with applyToAll flag
+    func showConflictDialog(conflict: FileConflictInfo, remainingCount: Int = 1) async -> BatchConflictDecision {
+        log.debug("\(#function) source='\(conflict.sourceName)' target='\(conflict.targetName)' remaining=\(remainingCount)")
         return await withCheckedContinuation { continuation in
-            activeDialog = .fileConflict(conflict: conflict, continuation: continuation)
+            activeDialog = .fileConflict(conflict: conflict, remainingCount: remainingCount, continuation: continuation)
         }
     }
     
     /// Resolve conflict from UI callback
-    func resolveConflict(_ resolution: ConflictResolution) {
-        log.debug("\(#function) resolution=\(resolution)")
-        if case .fileConflict(_, let continuation) = activeDialog {
+    func resolveConflict(_ decision: BatchConflictDecision) {
+        log.debug("\(#function) resolution=\(decision.resolution) applyToAll=\(decision.applyToAll)")
+        if case .fileConflict(_, _, let continuation) = activeDialog {
             activeDialog = nil
-            continuation.resume(returning: resolution)
+            continuation.resume(returning: decision)
         }
     }
     

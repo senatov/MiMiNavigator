@@ -158,11 +158,12 @@
                     }
                 )
 
-            case .fileConflict(let conflict, _):
+            case .fileConflict(let conflict, let remainingCount, _):
                 FileConflictDialog(
                     conflict: conflict,
-                    onResolve: { resolution in
-                        coordinator.resolveConflict(resolution)
+                    remainingCount: remainingCount,
+                    onResolve: { decision in
+                        coordinator.resolveConflict(decision)
                     }
                 )
 

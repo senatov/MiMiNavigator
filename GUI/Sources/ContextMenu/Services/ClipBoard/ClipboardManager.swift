@@ -71,24 +71,24 @@ final class ClipboardManager {
 
         let fileOps = FileOpsService.shared
         var resultURLs: [URL] = []
-        let applyToAll: ConflictResolution? = nil  // TODO: implement "Apply to all" checkbox
+        var memorizedResolution: ConflictResolution? = nil
         var stopped = false
 
-        for file in files {
+        for (index, file) in files.enumerated() {
             if stopped { break }
+            let remaining = files.count - index
 
-            // Check for conflict
             if let conflict = fileOps.checkConflict(source: file, destination: destination) {
                 let resolution: ConflictResolution
 
-                if let cached = applyToAll {
+                if let cached = memorizedResolution {
                     resolution = cached
                 } else {
-                    // Show conflict dialog and wait for user decision
-                    resolution = await coordinator.showConflictDialog(conflict: conflict)
-
-                    // TODO: Add "Apply to all" checkbox to dialog
-                    // For now, ask for each file
+                    let decision = await coordinator.showConflictDialog(conflict: conflict, remainingCount: remaining)
+                    resolution = decision.resolution
+                    if decision.applyToAll {
+                        memorizedResolution = resolution
+                    }
                 }
 
                 switch resolution {
