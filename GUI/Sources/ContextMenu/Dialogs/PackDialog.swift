@@ -453,6 +453,16 @@ struct PackDialog: View {
         log.info("[PackDialog] \(#function) name='\(archiveName)' dest='\(dest.path)'")
         log.info("[PackDialog] format=\(selectedFormat) level=\(compressionLevel) encrypted=\(usePassword) deleteSource=\(deleteSourceFiles)")
 
+        // persist all current dialog options for next session
+        prefs.updateLastFormat(selectedFormat)
+        prefs.setCompressionLevel(compressionLevel, for: selectedFormat)
+        prefs.updateDestinationMode(destinationMode)
+        prefs.updateDeleteSourceFiles(deleteSourceFiles)
+        prefs.updateUsePassword(usePassword)
+        if destinationMode == .custom {
+            prefs.updateCustomDestination(customDestination)
+        }
+
         // Save password to Keychain if option enabled
         if usePassword && prefs.useKeychainPasswords && !password.isEmpty {
             ArchivePasswordStore.shared.savePassword(password)
