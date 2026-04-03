@@ -56,7 +56,7 @@ enum ColumnAutoFitter {
         var nameWidth = finalizedNameWidth(
             containerWidth: layout.containerWidth, fittedColumns: &fittedColumns, dividerTotal: dividerTotal)
 
-        for passNum in 2...3 {
+        for _ in 2...3 {
             let requiresCorrection = needsCorrectivePass(
                 columns: visibleFixedColumns,
                 fittedColumns: fittedColumns,

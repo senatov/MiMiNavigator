@@ -19,7 +19,7 @@ extension FileTableView {
     }
 
     var mainScrollView: some View {
-        ScrollViewReader { _ in
+        ScrollViewReader { proxy in
             ScrollView {
                 VStack(spacing: 0) {
                     LazyVStack(alignment: .leading, spacing: 0, pinnedViews: [.sectionHeaders]) {
@@ -59,6 +59,10 @@ extension FileTableView {
                 Color.clear.frame(height: 4)
             }
             .contextMenu { panelBackgroundMenu }
+            .onChange(of: scrollAnchorID) { _, newID in
+                guard let id = newID else { return }
+                proxy.scrollTo(id)
+            }
         }
     }
 

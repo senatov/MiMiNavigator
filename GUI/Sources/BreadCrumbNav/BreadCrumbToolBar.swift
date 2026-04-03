@@ -29,8 +29,8 @@ struct BreadCrumbToolBar: View {
     }
 
     private enum Palette {
-        static let activeIcon = Color(nsColor: .labelColor).opacity(0.75)
-        static let inactiveIcon = Color(nsColor: .labelColor).opacity(0.4)
+        static let activeIcon = Color(nsColor: .labelColor)
+        static let inactiveIcon = Color(nsColor: .labelColor).opacity(0.45)
         static let utilityIcon = Color(nsColor: NSColor(calibratedRed: 0.0, green: 0.42, blue: 0.55, alpha: 1.0))
         static let hoverFill = Color.blue.opacity(0.25)
         static let topHighlight = Color.white.opacity(0.35)
@@ -98,22 +98,21 @@ struct BreadCrumbToolBar: View {
     private func backButton() -> some View {
         let canGoBack = appState.navigationHistory(for: panelSide).canGoBack
 
-        return navIcon("arrowshape.backward")
-            .contentShape(Rectangle())
-            .opacity(canGoBack ? 1.0 : 0.4)
-            .onTapGesture {
-                handleBackTap(canGoBack: canGoBack)
-            }
-            .gesture(
-                TapGesture(count: 1)
-                    .modifiers(.control)
-                    .onEnded { _ in openHistoryWindow() }
-            )
-            .focusable(false)
-            .allowsHitTesting(true)
-            .background(Color.clear)
-            .help("Click: go back | Ctrl+click: show history")
-            .accessibilityLabel("Back button")
+        return NavArrowButton(
+            iconName: "arrowshape.backward",
+            iconColor: iconColor,
+            isEnabled: canGoBack,
+            action: { handleBackTap(canGoBack: canGoBack) }
+        )
+        .gesture(
+            TapGesture(count: 1)
+                .modifiers(.control)
+                .onEnded { _ in openHistoryWindow() }
+        )
+        .focusable(false)
+        .allowsHitTesting(true)
+        .help("Click: go back | Ctrl+click: show history")
+        .accessibilityLabel("Back button")
     }
 
     // MARK: - Up Button
@@ -130,22 +129,21 @@ struct BreadCrumbToolBar: View {
     private func forwardButton() -> some View {
         let canGoForward = appState.navigationHistory(for: panelSide).canGoForward
 
-        return navIcon("arrowshape.right")
-            .contentShape(Rectangle())
-            .opacity(canGoForward ? 1.0 : 0.4)
-            .onTapGesture {
-                handleForwardTap(canGoForward: canGoForward)
-            }
-            .gesture(
-                TapGesture(count: 1)
-                    .modifiers(.control)
-                    .onEnded { _ in openHistoryWindow() }
-            )
-            .focusable(false)
-            .allowsHitTesting(true)
-            .background(Color.clear)
-            .help("Click: go forward | Ctrl+click: show history")
-            .accessibilityLabel("Forward button")
+        return NavArrowButton(
+            iconName: "arrowshape.right",
+            iconColor: iconColor,
+            isEnabled: canGoForward,
+            action: { handleForwardTap(canGoForward: canGoForward) }
+        )
+        .gesture(
+            TapGesture(count: 1)
+                .modifiers(.control)
+                .onEnded { _ in openHistoryWindow() }
+        )
+        .focusable(false)
+        .allowsHitTesting(true)
+        .help("Click: go forward | Ctrl+click: show history")
+        .accessibilityLabel("Forward button")
     }
 
     // MARK: - History Button
@@ -250,6 +248,70 @@ struct BreadCrumbToolBar: View {
         log.info("[Favorites] open panel=\(panelSide) items=\(store.userFavorites.count)")
         PanelDialogCoordinator.favorites.open(content: content)
     }
+
+    // MARK: - NavArrowButton — styled nav button (Back / Forward)
+    private struct NavArrowButton: View {
+        let iconName: String
+        let iconColor: Color
+        let isEnabled: Bool
+        let action: () -> Void
+
+        @State private var isHovered = false
+
+        var body: some View {
+            Button(action: action) {
+                Image(systemName: iconName)
+                    .font(.system(size: Metrics.iconSize, weight: .medium))
+                    .symbolRenderingMode(.hierarchical)
+                    .foregroundStyle(isHovered ? Color.white : iconColor)
+                    .frame(width: Metrics.buttonSize, height: Metrics.buttonSize)
+                    .background(buttonBackground)
+                    .overlay(buttonBorder)
+                    .scaleEffect(isHovered ? Metrics.hoverScale : 1.0)
+                    .animation(.spring(response: 0.25, dampingFraction: 0.6), value: isHovered)
+            }
+            .buttonStyle(.plain)
+            .disabled(!isEnabled)
+            .opacity(isEnabled ? 1.0 : 0.4)
+            .onHover { hovering in
+                isHovered = hovering && isEnabled
+            }
+        }
+
+        private var buttonBackground: some View {
+            ZStack {
+                RoundedRectangle(cornerRadius: Metrics.cornerRadius, style: .continuous)
+                    .fill(.ultraThinMaterial)
+
+                RoundedRectangle(cornerRadius: Metrics.cornerRadius)
+                    .stroke(Palette.topHighlight, lineWidth: 1)
+                    .blur(radius: 0.5)
+                    .offset(x: -0.5, y: -0.5)
+                    .mask(
+                        LinearGradient(colors: [.white, .clear], startPoint: .top, endPoint: .bottom)
+                    )
+
+                RoundedRectangle(cornerRadius: Metrics.cornerRadius)
+                    .stroke(Palette.bottomShadow, lineWidth: 1)
+                    .blur(radius: 0.5)
+                    .offset(x: 0.5, y: 0.5)
+                    .mask(
+                        LinearGradient(colors: [.clear, .black], startPoint: .top, endPoint: .bottom)
+                    )
+
+                if isHovered {
+                    RoundedRectangle(cornerRadius: Metrics.cornerRadius)
+                        .fill(Palette.hoverFill)
+                }
+            }
+        }
+
+        private var buttonBorder: some View {
+            RoundedRectangle(cornerRadius: Metrics.cornerRadius)
+                .stroke(Palette.hoverBorder.opacity(isHovered ? 0.7 : 0.3), lineWidth: Metrics.borderLineWidth)
+        }
+    }
+
 
     private struct UpNavigationButton: View {
         let iconColor: Color

@@ -102,11 +102,18 @@ extension AppState {
             return
         }
 
-        // Local paths: fileExists/isDirectory can block on NAS/SMB — run off MainActor
+        // Local paths: fileExists/isDirectory can block on NAS/SMB — run off MainActor.
+        // IMPORTANT: capture isNavigatingFromHistory NOW — the flag may be cleared
+        // by the caller's defer before this fire-and-forget Task executes,
+        // causing forward history to be truncated on Back/Forward nav.
+        let historyNav = isNavigatingFromHistory
         Task {
             let (normalizedURL, isDir) = await Self.resolveURLOffMainActor(newURL)
             await MainActor.run {
+                let saved = self.isNavigatingFromHistory
+                self.isNavigatingFromHistory = historyNav
                 self.applyPathUpdate(normalizedURL, isDir: isDir, for: panel)
+                self.isNavigatingFromHistory = saved
             }
         }
     }

@@ -32,6 +32,47 @@ extension AppState {
         selectFileByName(name, on: panel)
     }
 
+
+    /// After rename: update file in-place, re-sort, select — no full rescan needed.
+    /// This preserves scroll position because the displayed array is mutated, not replaced.
+    func selectAfterRename(oldFile: CustomFile, newName: String, newURL: URL, on panel: FavPanelSide) {
+        log.info("[Selection] selectAfterRename: '\(oldFile.nameStr)' → '\(newName)' panel=\(panel)")
+        var files = displayedFiles(for: panel)
+        if let idx = files.firstIndex(where: { $0.id == oldFile.id || $0.pathStr == oldFile.pathStr }) {
+            // create updated file entry from filesystem
+            let keys: Set<URLResourceKey> = [
+                .isDirectoryKey, .isSymbolicLinkKey,
+                .fileSizeKey, .contentModificationDateKey, .fileSecurityKey,
+                .directoryEntryCountKey
+            ]
+            if let rv = try? newURL.resourceValues(forKeys: keys) {
+                let updated = CustomFile(url: newURL, resourceValues: rv)
+                // carry over cached sizes from old object
+                updated.cachedDirectorySize = files[idx].cachedDirectorySize
+                updated.cachedShallowSize = files[idx].cachedShallowSize
+                updated.sizeIsExact = files[idx].sizeIsExact
+                updated.cachedAppSize = files[idx].cachedAppSize
+                updated.sizeVersion = files[idx].sizeVersion
+                files[idx] = updated
+            } else {
+                files.remove(at: idx)
+            }
+            // re-sort and publish
+            let sorted = FileSortingService.sort(files, by: sortKey, bDirection: bSortAscending)
+            if panel == .left {
+                displayedLeftFiles = sorted
+            } else {
+                displayedRightFiles = sorted
+            }
+            // select the renamed file
+            selectFileByName(newName, on: panel)
+            log.info("[Selection] selectAfterRename done — in-place update, no rescan")
+        } else {
+            log.warning("[Selection] selectAfterRename: old file not found, falling back to full refresh")
+            Task { await refreshAndSelect(name: newName, on: panel) }
+        }
+    }
+
     func refreshAndSelectAfterRemoval(removedFiles: [CustomFile], on panel: FavPanelSide) async {
         log.debug("[REFRESH] ⏱ START refreshAndSelectAfterRemoval panel=\(panel), removedFiles=\(removedFiles.map(\.nameStr))")
         

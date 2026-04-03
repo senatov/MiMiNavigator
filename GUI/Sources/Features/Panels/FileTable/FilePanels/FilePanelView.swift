@@ -157,19 +157,18 @@ struct FilePanelView: View {
     @ViewBuilder
     private var navigationOverlay: some View {
         if appState.navigatingPanel == viewModel.panelSide {
-            ZStack {
-                Color.black.opacity(0.15)
-                VStack(spacing: 8) {
-                    ProgressView()
-                        .scaleEffect(1.2)
-                        .controlSize(.regular)
-                    Text("Loading…")
-                        .font(.system(size: 11))
-                        .foregroundStyle(.secondary)
-                }
-                .padding(16)
-                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 10))
+            VStack(spacing: 8) {
+                ProgressView()
+                    .scaleEffect(1.2)
+                    .controlSize(.regular)
+                Text("Loading…")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
             }
+            .padding(16)
+            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 10))
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .allowsHitTesting(false)
             .transition(.opacity)
             .animation(.easeInOut(duration: 0.15), value: appState.navigatingPanel)
         }

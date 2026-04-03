@@ -81,8 +81,8 @@ extension ContextMenuCoordinator {
 
             alignPanelPathAfterRename(panel: panel, renamedURL: newURL, appState: appState)
 
-            log.info("[Rename] panel=\(panel) → refreshAndSelect('\(newName)')")
-            await appState.refreshAndSelect(name: newName, on: panel)
+            log.info("[Rename] panel=\(panel) → selectAfterRename('\(newName)')")
+            appState.selectAfterRename(oldFile: file, newName: newName, newURL: newURL, on: panel)
             refreshOppositePanel(of: panel, appState: appState)
             log.info("[Rename] 🏁 END SUCCESS")
         } catch {
