@@ -55,8 +55,14 @@ extension DualDirectoryScanner {
 
     @MainActor
     func applyPreviewFiles(_ files: [CustomFile], for side: FavPanelSide) {
-        log.debug("[Scanner] applyPreviewFiles")
-        log.debug("[Scanner] side=\(side) incoming=\(files.count)")
+        // skip preview if full list is already displayed — avoids replacing
+        // 185 items with 150-item preview, which causes SwiftUI view recreation
+        // and scroll position reset
+        let currentCount = displayedFilesBinding(for: side).count
+        if currentCount >= files.count {
+            log.debug("[Scanner] preview skip — already have \(currentCount) items (preview=\(files.count))")
+            return
+        }
         publishDisplayedFiles(files, for: side)
     }
 
@@ -101,6 +107,12 @@ extension DualDirectoryScanner {
             }
             if let oldAppSize = old.cachedAppSize, file.cachedAppSize == nil {
                 file.cachedAppSize = oldAppSize
+            }
+            // sync sizeVersion so filesAreIdentical doesn't see a diff
+            // (setting cachedDirectorySize above bumps sizeVersion via didSet,
+            // but the old object may have been bumped multiple times)
+            if old.sizeVersion != file.sizeVersion {
+                file.sizeVersion = old.sizeVersion
             }
         }
         if transferred > 0 {
