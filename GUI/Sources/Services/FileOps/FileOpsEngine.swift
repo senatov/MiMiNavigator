@@ -132,7 +132,7 @@ private extension FileOpsEngine {
                 source: item, destination: destination, remaining: remaining, memorized: &memorized)
             if stop { break }
             if skip {
-                progress.fileCompleted(name: item.lastPathComponent, success: true)
+                progress.fileSkipped(name: item.lastPathComponent)
                 continue
             }
 
@@ -270,7 +270,7 @@ private extension FileOpsEngine {
                 source: item, destination: plan.destination, remaining: remaining, memorized: &memorized)
             if stop { break }
             if skip {
-                progress.fileCompleted(name: item.lastPathComponent, success: true)
+                progress.fileSkipped(name: item.lastPathComponent)
                 continue
             }
 
@@ -335,7 +335,7 @@ private extension FileOpsEngine {
                 let (finalTarget, skip, stop) = try await resolveConflictIfNeeded(
                     source: entry.url, destination: targetDir, remaining: remaining, memorized: &memorized)
                 if stop { break }
-                if skip { continue }
+                if skip { progress.fileSkipped(name: entry.url.lastPathComponent); continue }
                 resolved.append(ResolvedEntry(source: entry.url, target: finalTarget, size: entry.size))
             } else {
                 resolved.append(ResolvedEntry(source: entry.url, target: targetURL, size: entry.size))
@@ -400,7 +400,7 @@ private extension FileOpsEngine {
                 let (resolved, skip, stop) = try await resolveConflictIfNeeded(
                     source: entry.url, destination: targetDir, remaining: remaining, memorized: &memorized)
                 if stop { break }
-                if skip { continue }
+                if skip { progress.fileSkipped(name: entry.url.lastPathComponent); continue }
                 finalTarget = resolved
             } else {
                 finalTarget = targetURL

@@ -28,6 +28,8 @@ final class FileOpProgressPanel {
     private var progress: FileOpProgress?
     private var updateTimer: Timer?
     private var waitingForOK = false
+    private var pulseTimer: Timer?
+    private var pulseGrowing = true
 
     private init() {}
 
@@ -67,7 +69,9 @@ final class FileOpProgressPanel {
     func hide() {
         updateTimer?.invalidate()
         updateTimer = nil
+        stopOKPulse()
         progressBar?.stopAnimation(nil)
+        waitingForOK = false
         if let p = panel, let parent = p.parent {
             parent.removeChildWindow(p)
         }
@@ -84,20 +88,65 @@ final class FileOpProgressPanel {
         bytesLabel?.stringValue = progress.bytesText
         progressBar?.doubleValue = progress.fraction * 100.0
 
-        if progress.isCompleted || progress.isCancelled {
-            // Show OK button, hide Stop button
+        if (progress.isCompleted || progress.isCancelled) && !waitingForOK {
             stopButton?.isHidden = true
             okButton?.isHidden = false
             waitingForOK = true
-            
-            // Update title to show completion
+
             if progress.isCancelled {
                 titleLabel?.stringValue = "❌ Cancelled"
+                fileLabel?.stringValue = progress.completionSummary
             } else if !progress.errors.isEmpty {
-                titleLabel?.stringValue = "⚠️ Completed with \(progress.errors.count) error(s)"
+                titleLabel?.stringValue = "⚠️ Completed with errors"
+                fileLabel?.stringValue = progress.completionSummary
             } else {
-                titleLabel?.stringValue = "✅ Completed: \(progress.processedFiles) files"
+                titleLabel?.stringValue = "✅ Done"
+                fileLabel?.stringValue = progress.completionSummary
             }
+
+            // green border + pulse animation on OK button
+            startOKPulse()
+
+            // stop the 10/sec timer — no more updates needed
+            updateTimer?.invalidate()
+            updateTimer = nil
+        }
+    }
+
+
+    // MARK: - Green pulse animation
+
+    private func startOKPulse() {
+        guard let okBtn = okButton else { return }
+        okBtn.wantsLayer = true
+        guard let layer = okBtn.layer else { return }
+
+        layer.borderColor = NSColor.systemGreen.cgColor
+        layer.borderWidth = 2.5
+        layer.cornerRadius = 5
+
+        pulseGrowing = true
+        pulseTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
+            Task { @MainActor in
+                guard let self, let btn = self.okButton, let layer = btn.layer else { return }
+                NSAnimationContext.runAnimationGroup { ctx in
+                    ctx.duration = 0.45
+                    ctx.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+                    let scale: CGFloat = self.pulseGrowing ? 1.08 : 1.0
+                    layer.setAffineTransform(CGAffineTransform(scaleX: scale, y: scale))
+                }
+                self.pulseGrowing.toggle()
+            }
+        }
+    }
+
+
+    private func stopOKPulse() {
+        pulseTimer?.invalidate()
+        pulseTimer = nil
+        if let layer = okButton?.layer {
+            layer.borderWidth = 0
+            layer.setAffineTransform(.identity)
         }
     }
 

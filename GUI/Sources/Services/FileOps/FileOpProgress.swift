@@ -22,6 +22,7 @@ final class FileOpProgress {
 
     // MARK: - Live state
     var processedFiles: Int = 0
+    var skippedFiles: Int = 0
     var processedBytes: Int64 = 0
     var currentFileName: String = ""
     var isCancelled: Bool = false
@@ -44,14 +45,18 @@ final class FileOpProgress {
 
     var statusText: String {
         if isCancelled { return "Cancelled" }
-        if isCompleted {
-            let ok = processedFiles - errors.count
-            if errors.isEmpty {
-                return "\(operationType.pastTense) \(ok) item(s)"
-            }
-            return "\(ok) succeeded, \(errors.count) failed"
-        }
+        if isCompleted { return completionSummary }
         return "\(operationType.title) \(processedFiles + 1) / \(totalFiles)"
+    }
+
+    /// Detailed summary for completed operations
+    var completionSummary: String {
+        let ok = processedFiles - errors.count
+        var parts: [String] = []
+        if ok > 0 { parts.append("\(ok) \(operationType.pastTense)") }
+        if skippedFiles > 0 { parts.append("\(skippedFiles) skipped") }
+        if errors.count > 0 { parts.append("\(errors.count) failed") }
+        return parts.isEmpty ? "Nothing to do" : parts.joined(separator: ", ")
     }
 
     var bytesText: String {
@@ -97,6 +102,10 @@ final class FileOpProgress {
         }
     }
 
+    func fileSkipped(name: String) {
+        skippedFiles += 1
+    }
+
     func cancel() {
         isCancelled = true
         endTime = Date()
@@ -106,7 +115,7 @@ final class FileOpProgress {
     func complete() {
         isCompleted = true
         endTime = Date()
-        log.info("[FileOpProgress] done: \(processedFiles) files, \(errors.count) errs, \(String(format: "%.1f", elapsed))s")
+        log.info("[FileOpProgress] done: \(processedFiles) ok, \(skippedFiles) skipped, \(errors.count) errs, \(String(format: "%.1f", elapsed))s")
     }
 }
 
