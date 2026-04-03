@@ -48,7 +48,7 @@ enum ColumnWidthPolicy {
         let attrs: [NSAttributedString.Key: Any] = [.font: font]
         let textWidth = (reference as NSString).size(withAttributes: attrs).width
         let result = ceil(textWidth + 2 * 5 + singleCharReserve(for: .size))
-        log.debug("[AutoFit] sizeColumnFallbackWidth=\(String(format: "%.1f", result))pt (text=\(String(format: "%.1f", textWidth)))")
+        log.verbose("[AutoFit] sizeColumnFallbackWidth=\(String(format: "%.1f", result))pt")
         return result
     }
 

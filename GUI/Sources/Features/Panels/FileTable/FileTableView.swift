@@ -448,14 +448,21 @@ struct FileTableView: View {
     }
 
     /// Re-fit columns when panel width changes.
-    /// Small jitter (<8pt) is ignored to avoid layout thrash.
+    /// Ignores jitter <12pt and enforces 2s cooldown to break feedback loop:
+    /// autofit → layout change → containerWidth change → autofit.
+    @State private var lastContainerWidthFitTime: Date = .distantPast
+
     private func handleContainerWidthChange(_ newWidth: CGFloat) {
         guard UserPreferences.shared.snapshot.autoFitColumnsOnNavigate else { return }
         let liveFiles = appState.displayedFiles(for: panelSide)
         guard !liveFiles.isEmpty else { return }
         let delta = abs(newWidth - lastAutoFitWidth)
-        guard delta > 8 else { return }
-        log.debug("[AutoFit] resize refit panel=\(panelSide) delta=\(Int(delta))pt new=\(Int(newWidth))")
+        guard delta > 12 else { return }
+        // cooldown: don't re-fit more than once per 2s via container width changes
+        let now = Date()
+        guard now.timeIntervalSince(lastContainerWidthFitTime) > 2.0 else { return }
+        lastContainerWidthFitTime = now
+        log.debug("[AutoFit] resize refit panel=\(panelSide) delta=\(Int(delta))pt")
         lastAutoFitWidth = newWidth
         ColumnAutoFitter.autoFitAll(layout: layout, files: liveFiles)
     }
