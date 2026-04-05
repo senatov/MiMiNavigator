@@ -18,22 +18,20 @@ final class UpdateCoordinator {
     private init() {}
     
     func checkForUpdates() {
+        log.debug(#function + "()")
         // If already open, bring to front
         if let existing = panel, existing.isVisible {
             existing.makeKeyAndOrderFront(nil)
             return
         }
-        
         let updateView = UpdateView()
         let hostingView = NSHostingView(rootView: updateView)
-        
         let p = NSPanel(
             contentRect: NSRect(x: 0, y: 0, width: 480, height: 400),
             styleMask: [.titled, .closable],
             backing: .buffered,
             defer: false
         )
-        
         p.title = "Software Update"
         p.contentView = hostingView
         p.isMovableByWindowBackground = false
@@ -42,22 +40,17 @@ final class UpdateCoordinator {
         p.level = .normal
         p.hidesOnDeactivate = false
         p.tabbingMode = .disallowed
-        
         if !p.setFrameUsingName(frameAutosaveName) {
             p.center()
         }
         p.setFrameAutosaveName(frameAutosaveName)
-        
         p.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
-        
         self.panel = p
-        
         // Start checking
         Task {
             await UpdateChecker.shared.checkForUpdates()
         }
-        
         log.debug("[UpdateCoordinator] Update panel shown")
     }
     

@@ -18,16 +18,12 @@ import SwiftUI
 final class NetworkNeighborhoodCoordinator {
 
     static let shared = NetworkNeighborhoodCoordinator()
-
     private(set) var isVisible = false
     private var window: NSPanel?
-
     private let frameAutosaveName = "MiMiNavigator.NetworkNeighborhoodWindow"
     private let defaultWidth: CGFloat = 500
     private let defaultHeight: CGFloat = 620
-
     var onNavigate: ((URL) -> Void)?
-
     private init() {}
 
     // MARK: - Toggle
@@ -37,12 +33,12 @@ final class NetworkNeighborhoodCoordinator {
 
     // MARK: - Open
     func open() {
+        log.debug(#function)
         if let existing = window, existing.isVisible {
             existing.makeKeyAndOrderFront(nil)
             isVisible = true
             return
         }
-
         let contentView = NetworkNeighborhoodView(
             onNavigate: { [weak self] url in
                 // Close only for file:// URLs (already mounted / local path)
@@ -53,7 +49,6 @@ final class NetworkNeighborhoodCoordinator {
             onDismiss: { [weak self] in self?.close() }
         )
         .frame(minWidth: 380, minHeight: 400)
-
         let panel = NSPanel(
             contentRect: .zero,
             styleMask: [.titled, .closable, .resizable, .miniaturizable, .utilityWindow],
@@ -61,22 +56,20 @@ final class NetworkNeighborhoodCoordinator {
             defer: false
         )
         configurePanel(panel, contentView: contentView)
-
         // Stay visible when app deactivates, but rise when the app activates again.
         if !panel.setFrameUsingName(frameAutosaveName) {
             panel.setFrame(computeDefaultFrame(), display: true)
         }
         panel.setFrameAutosaveName(frameAutosaveName)
-
         panel.delegate = NetworkWindowDelegate.shared
         panel.makeKeyAndOrderFront(nil)
-
         window = panel
         isVisible = true
         log.info("[Network] panel opened")
     }
 
     private func configurePanel<Content: View>(_ panel: NSPanel, contentView: Content) {
+        log.debug(#function)
         panel.contentView = NSHostingView(rootView: contentView)
         panel.isReleasedWhenClosed = false
         panel.minSize = NSSize(width: 380, height: 400)

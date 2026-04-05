@@ -6,11 +6,10 @@
 //  Copyright © 2026 Senatov. All rights reserved.
 //  Descr: media info floating panel — info + preview + prev/next navigation
 
-import AppKit
 import AVFoundation
-import UniformTypeIdentifiers
+import AppKit
 import SwiftyBeaver
-
+import UniformTypeIdentifiers
 
 // MARK: - MediaInfoPanel
 @MainActor
@@ -47,15 +46,19 @@ final class MediaInfoPanel {
         static let textWidthMultiplier: CGFloat = 0.48
     }
 
-    private static let supportedImageExtensions: Set<String> = ["jpg", "jpeg", "png", "gif", "bmp", "tiff", "tif", "heic", "heif", "webp", "ico", "svg"]
+    private static let supportedImageExtensions: Set<String> = [
+        "jpg", "jpeg", "png", "gif", "bmp", "tiff", "tif", "heic", "heif", "webp", "ico", "svg",
+    ]
     private static let supportedVideoExtensions: Set<String> = ["mp4", "mov", "avi", "mkv", "m4v", "wmv", "flv", "ts", "webm"]
     private static let supportedAudioExtensions: Set<String> = ["mp3", "aac", "flac", "wav", "m4a", "ogg", "wma", "aiff", "alac"]
-    private static let supportedMediaExtensions: Set<String> = supportedImageExtensions
+    private static let supportedMediaExtensions: Set<String> =
+        supportedImageExtensions
         .union(supportedVideoExtensions)
         .union(supportedAudioExtensions)
 
     // MARK: - show (first open only positions window)
     func show(title: String, text: String, url: URL? = nil, coordinates: (Double, Double)? = nil) {
+        log.debug(#function)
         ensurePanelExists()
         currentURL = url
         currentCoordinates = coordinates ?? extractCoordinates(from: text)
@@ -64,7 +67,6 @@ final class MediaInfoPanel {
             loadMediaSiblings(for: url)
             updatePreview(for: url)
         }
-
         log.debug("[MediaInfoPanel] show url=\(url?.path ?? "nil")")
         refreshText(title: title, text: text)
         positionPanelIfNeeded()
@@ -96,10 +98,11 @@ final class MediaInfoPanel {
         panelCreated = true
 
         if let main = NSApp.mainWindow {
-            panel.setFrameOrigin(NSPoint(
-                x: main.frame.midX - panel.frame.width / 2,
-                y: main.frame.midY - panel.frame.height / 2
-            ))
+            panel.setFrameOrigin(
+                NSPoint(
+                    x: main.frame.midX - panel.frame.width / 2,
+                    y: main.frame.midY - panel.frame.height / 2
+                ))
         }
     }
 
@@ -121,7 +124,8 @@ final class MediaInfoPanel {
                 includingPropertiesForKeys: nil,
                 options: [.skipsHiddenFiles]
             )
-            mediaFiles = items
+            mediaFiles =
+                items
                 .filter { Self.supportedMediaExtensions.contains($0.pathExtension.lowercased()) }
                 .sorted { $0.lastPathComponent.localizedStandardCompare($1.lastPathComponent) == .orderedAscending }
             currentIndex = mediaFiles.firstIndex(of: url) ?? 0
@@ -224,11 +228,13 @@ final class MediaInfoPanel {
                 if let image {
                     continuation.resume(returning: image)
                 } else {
-                    continuation.resume(throwing: error ?? NSError(
-                        domain: "MediaInfoPanel",
-                        code: -1,
-                        userInfo: [NSLocalizedDescriptionKey: "AVAssetImageGenerator returned no image"]
-                    ))
+                    continuation.resume(
+                        throwing: error
+                            ?? NSError(
+                                domain: "MediaInfoPanel",
+                                code: -1,
+                                userInfo: [NSLocalizedDescriptionKey: "AVAssetImageGenerator returned no image"]
+                            ))
                 }
             }
         }
@@ -273,12 +279,18 @@ final class MediaInfoPanel {
         scrollView.translatesAutoresizingMaskIntoConstraints = false
 
         let tv = MediaTextView(frame: .zero)
-        tv.isEditable = false; tv.isSelectable = true; tv.isRichText = true
-        tv.importsGraphics = false; tv.usesFindPanel = true
+        tv.isEditable = false
+        tv.isSelectable = true
+        tv.isRichText = true
+        tv.importsGraphics = false
+        tv.usesFindPanel = true
         tv.isAutomaticLinkDetectionEnabled = false
-        tv.linkTextAttributes = [.foregroundColor: NSColor(calibratedRed: 0.0, green: 0.2, blue: 0.5, alpha: 1.0), .cursor: NSCursor.pointingHand]
+        tv.linkTextAttributes = [
+            .foregroundColor: NSColor(calibratedRed: 0.0, green: 0.2, blue: 0.5, alpha: 1.0), .cursor: NSCursor.pointingHand,
+        ]
         tv.font = NSFont.monospacedSystemFont(ofSize: 12, weight: .regular)
-        tv.textColor = .labelColor; tv.backgroundColor = warmBg
+        tv.textColor = .labelColor
+        tv.backgroundColor = warmBg
         tv.textContainerInset = NSSize(width: 12, height: 12)
         let menu = NSMenu()
         menu.addItem(withTitle: "Copy", action: #selector(NSText.copy(_:)), keyEquivalent: "")
@@ -289,21 +301,24 @@ final class MediaInfoPanel {
 
         // image preview — NEVER changes window size
         let iv = NSImageView()
-        iv.imageScaling = .scaleProportionallyDown   // only shrink, never enlarge
+        iv.imageScaling = .scaleProportionallyDown  // only shrink, never enlarge
         iv.imageAlignment = .alignCenter
         iv.setContentHuggingPriority(.defaultLow, for: .horizontal)
         iv.setContentHuggingPriority(.defaultLow, for: .vertical)
         iv.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         iv.setContentCompressionResistancePriority(.defaultLow, for: .vertical)
         iv.wantsLayer = true
-        iv.layer?.cornerRadius = 6; iv.layer?.masksToBounds = true
-        iv.layer?.borderWidth = 0.5; iv.layer?.borderColor = NSColor.separatorColor.cgColor
+        iv.layer?.cornerRadius = 6
+        iv.layer?.masksToBounds = true
+        iv.layer?.borderWidth = 0.5
+        iv.layer?.borderColor = NSColor.separatorColor.cgColor
         iv.translatesAutoresizingMaskIntoConstraints = false
         iv.isHidden = true
         container.addSubview(iv)
 
         // separator + buttons
-        let separator = NSBox(); separator.boxType = .separator
+        let separator = NSBox()
+        separator.boxType = .separator
         separator.translatesAutoresizingMaskIntoConstraints = false
         container.addSubview(separator)
 
@@ -312,14 +327,21 @@ final class MediaInfoPanel {
         let copyBtn = NSButton(title: "Copy All", target: self, action: #selector(copyAllAction))
         let pathBtn = NSButton(title: "Copy Path", target: self, action: #selector(copyPathAction))
         [closeBtn, revealBtn, copyBtn, pathBtn].forEach { $0.bezelStyle = .rounded }
-        pathBtn.toolTip = "Copy file path"; copyBtn.toolTip = "Copy full info"
-        revealBtn.toolTip = "Reveal in Finder"; closeBtn.toolTip = "Close panel"
-        copyBtn.keyEquivalent = "c"; copyBtn.keyEquivalentModifierMask = [.command, .shift]
-        pathBtn.keyEquivalent = "c"; pathBtn.keyEquivalentModifierMask = [.command, .option]
-        revealBtn.keyEquivalent = "r"; revealBtn.keyEquivalentModifierMask = [.command]
+        pathBtn.toolTip = "Copy file path"
+        copyBtn.toolTip = "Copy full info"
+        revealBtn.toolTip = "Reveal in Finder"
+        closeBtn.toolTip = "Close panel"
+        copyBtn.keyEquivalent = "c"
+        copyBtn.keyEquivalentModifierMask = [.command, .shift]
+        pathBtn.keyEquivalent = "c"
+        pathBtn.keyEquivalentModifierMask = [.command, .option]
+        revealBtn.keyEquivalent = "r"
+        revealBtn.keyEquivalentModifierMask = [.command]
 
         let stack = NSStackView(views: [pathBtn, copyBtn, revealBtn, closeBtn])
-        stack.orientation = .horizontal; stack.alignment = .centerY; stack.spacing = 8
+        stack.orientation = .horizontal
+        stack.alignment = .centerY
+        stack.spacing = 8
         stack.edgeInsets = NSEdgeInsets(top: 0, left: 12, bottom: 0, right: 12)
         stack.distribution = .gravityAreas
         stack.setHuggingPriority(.required, for: .horizontal)
@@ -337,7 +359,8 @@ final class MediaInfoPanel {
             scrollView.leadingAnchor.constraint(equalTo: prevBtn.trailingAnchor),
             scrollView.topAnchor.constraint(equalTo: container.topAnchor),
             scrollView.bottomAnchor.constraint(equalTo: separator.topAnchor),
-            scrollView.widthAnchor.constraint(equalTo: container.widthAnchor, multiplier: LayoutConstants.textWidthMultiplier, constant: -aw),
+            scrollView.widthAnchor.constraint(
+                equalTo: container.widthAnchor, multiplier: LayoutConstants.textWidthMultiplier, constant: -aw),
 
             iv.leadingAnchor.constraint(equalTo: scrollView.trailingAnchor, constant: LayoutConstants.previewSpacing),
             iv.topAnchor.constraint(equalTo: container.topAnchor, constant: LayoutConstants.previewInsets),
@@ -356,7 +379,7 @@ final class MediaInfoPanel {
             stack.leadingAnchor.constraint(greaterThanOrEqualTo: container.leadingAnchor, constant: 12),
             stack.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -12),
             stack.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -LayoutConstants.stackBottomInset),
-            stack.heightAnchor.constraint(equalToConstant: LayoutConstants.stackHeight)
+            stack.heightAnchor.constraint(equalToConstant: LayoutConstants.stackHeight),
         ])
 
         p.contentView = container
@@ -390,7 +413,8 @@ final class MediaInfoPanel {
             .withSymbolConfiguration(config)
         btn.contentTintColor = .systemBlue
         btn.imageScaling = .scaleProportionallyDown
-        btn.target = self; btn.action = action
+        btn.target = self
+        btn.action = action
         btn.wantsLayer = true
         btn.layer?.backgroundColor = .clear
         btn.shadow = NSShadow()
@@ -404,7 +428,8 @@ final class MediaInfoPanel {
     private func makeIconAttachment(systemName: String) -> NSAttributedString {
         let config = NSImage.SymbolConfiguration(pointSize: 16, weight: .regular)
         let image = NSImage(systemSymbolName: systemName, accessibilityDescription: nil)?.withSymbolConfiguration(config)
-        let att = NSTextAttachment(); att.image = image
+        let att = NSTextAttachment()
+        att.image = image
         att.bounds = NSRect(x: 0, y: -2, width: 16, height: 16)
         return NSAttributedString(attachment: att)
     }
@@ -429,21 +454,29 @@ final class MediaInfoPanel {
         result.append(NSAttributedString(string: "\nMaps\n", attributes: headerA))
         appendMapLink(into: result, icon: "globe", title: "Google", urlString: "https://www.google.com/maps?q=\(lat),\(lon)")
         appendMapLink(into: result, icon: "applelogo", title: "Apple", urlString: "https://maps.apple.com/?ll=\(lat),\(lon)")
-        appendMapLink(into: result, icon: "map", title: "OSM", urlString: "https://www.openstreetmap.org/?mlat=\(lat)&mlon=\(lon)#map=15/\(lat)/\(lon)")
-        appendMapLink(into: result, icon: "location.circle", title: "HERE", urlString: "https://wego.here.com/?map=\(lat),\(lon),15,normal")
+        appendMapLink(
+            into: result, icon: "map", title: "OSM",
+            urlString: "https://www.openstreetmap.org/?mlat=\(lat)&mlon=\(lon)#map=15/\(lat)/\(lon)")
+        appendMapLink(
+            into: result, icon: "location.circle", title: "HERE", urlString: "https://wego.here.com/?map=\(lat),\(lon),15,normal")
         return result
     }
 
     private func appendMapLink(into result: NSMutableAttributedString, icon: String, title: String, urlString: String) {
         guard let url = URL(string: urlString) else { return }
-        let ps = NSMutableParagraphStyle(); ps.lineSpacing = 4; ps.paragraphSpacing = 4
+        let ps = NSMutableParagraphStyle()
+        ps.lineSpacing = 4
+        ps.paragraphSpacing = 4
         let line = NSMutableAttributedString()
         line.append(makeIconAttachment(systemName: icon))
         line.append(NSAttributedString(string: "   "))
-        line.append(NSAttributedString(string: title + "\n", attributes: [
-            .font: NSFont.systemFont(ofSize: 13, weight: .light),
-            .foregroundColor: NSColor.linkColor, .link: url, .paragraphStyle: ps
-        ]))
+        line.append(
+            NSAttributedString(
+                string: title + "\n",
+                attributes: [
+                    .font: NSFont.systemFont(ofSize: 13, weight: .light),
+                    .foregroundColor: NSColor.linkColor, .link: url, .paragraphStyle: ps,
+                ]))
         result.append(line)
     }
 
@@ -453,13 +486,19 @@ final class MediaInfoPanel {
             let p = String(t.split(whereSeparator: { $0 == "\n" || $0 == "&" }).first ?? "")
             let c = p.split(separator: ",")
             if c.count == 2, let la = Double(c[0].trimmingCharacters(in: .whitespaces)),
-               let lo = Double(c[1].trimmingCharacters(in: .whitespaces)) { return (la, lo) }
+                let lo = Double(c[1].trimmingCharacters(in: .whitespaces))
+            {
+                return (la, lo)
+            }
         }
         if let r = text.range(of: "GPS:") {
             let ln = String(text[r.lowerBound...].split(separator: "\n").first ?? "")
             let n = ln.split(whereSeparator: { !$0.isNumber && $0 != "." && $0 != "-" })
             if n.count >= 2, let la = Double(n[0].trimmingCharacters(in: .whitespaces)),
-               let lo = Double(n[1].trimmingCharacters(in: .whitespaces)) { return (la, lo) }
+                let lo = Double(n[1].trimmingCharacters(in: .whitespaces))
+            {
+                return (la, lo)
+            }
         }
         return nil
     }

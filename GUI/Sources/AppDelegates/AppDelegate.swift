@@ -19,6 +19,14 @@ import AppKit
     weak var appState: AppState?
     private var keyMonitor: Any?
     private let tabKeyCode: UInt16 = 48
+    private let startupDate = CFAbsoluteTimeGetCurrent()
+    private var didLogStartupCompletion = false
+
+    private func logStartupStep(_ message: String) {
+        let elapsed = CFAbsoluteTimeGetCurrent() - startupDate
+        let threadLabel = Thread.isMainThread ? "main" : "background"
+        log.info("[StartupTrace] +\(String(format: "%.3f", elapsed))s [\(threadLabel)] \(message)")
+    }
 
     // MARK: - Bind
 
@@ -26,23 +34,55 @@ import AppKit
         self.appState = appState
     }
 
-    // MARK: - Launch
-
     func applicationDidFinishLaunching(_ notification: Notification) {
+        logStartupStep("applicationDidFinishLaunching begin")
+
         UserPreferences.shared.load()
         log.debug("prefs loaded, autoFit=\(UserPreferences.shared.snapshot.autoFitColumnsOnNavigate)")
+        logStartupStep("UserPreferences loaded")
+
         log.debug("restoring security-scoped bookmarks")
-        Task {
-            // Сначала создаём bookmarks для стандартных папок (если их нет)
-            await BookmarkStore.shared.ensureStandardDirectoryAccess()
-            // Потом восстанавливаем все bookmarks
-            let restored = await BookmarkStore.shared.restoreAll()
-            log.info("Restored \(restored.count) bookmarks")
-        }
+        scheduleBookmarkRestore()
+        logStartupStep("bookmark restore scheduled")
+
         StatePersistence.startTrackingWindowFrame()
+        logStartupStep("window frame tracking started")
+
         log.debug("starting toolbar right-click monitor")
         ToolbarRightClickMonitor.shared.start()
+        logStartupStep("toolbar right-click monitor started")
+
         log.debug("installing keyDown monitor for Tab/Backtab")
+        installKeyMonitor()
+        logStartupStep("key monitor installed")
+
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            self.logStartupCompletionIfNeeded(reason: "next main-turn after applicationDidFinishLaunching")
+        }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
+            guard let self else { return }
+            self.logStartupCompletionIfNeeded(reason: "1.0s delayed checkpoint")
+        }
+    }
+
+    private func scheduleBookmarkRestore() {
+        Task(priority: .utility) { [weak self] in
+            self?.logStartupStep("bookmark restore task begin")
+
+            // First create bookmarks for standard folders if they are missing.
+            await BookmarkStore.shared.ensureStandardDirectoryAccess()
+            self?.logStartupStep("ensureStandardDirectoryAccess finished")
+
+            // Then restore all persisted bookmarks.
+            let restored = await BookmarkStore.shared.restoreAll()
+            self?.logStartupStep("restoreAll finished count=\(restored.count)")
+            log.info("Restored \(restored.count) bookmarks")
+        }
+    }
+
+    private func installKeyMonitor() {
         keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
             guard let self, let appState = self.appState else { return event }
             if ContextMenuCoordinator.shared.activeDialog != nil { return event }
@@ -50,7 +90,7 @@ import AppKit
             guard !flags.contains(.command), !flags.contains(.option), !flags.contains(.control) else {
                 return event
             }
-            let isTab = event.keyCode == tabKeyCode || event.charactersIgnoringModifiers == "\t"
+            let isTab = event.keyCode == self.tabKeyCode || event.charactersIgnoringModifiers == "\t"
             if isTab {
                 if flags.contains(.shift) {
                     log.debug("intercepted Shift+Tab → toggle panel")
@@ -62,6 +102,12 @@ import AppKit
             }
             return event
         }
+    }
+
+    private func logStartupCompletionIfNeeded(reason: String) {
+        guard !didLogStartupCompletion else { return }
+        didLogStartupCompletion = true
+        logStartupStep("startup checkpoint reached: \(reason)")
     }
 
     // MARK: - Focus

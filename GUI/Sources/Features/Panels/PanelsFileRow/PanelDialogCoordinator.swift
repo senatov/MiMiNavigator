@@ -53,16 +53,15 @@ final class PanelDialogCoordinator: NSObject, NSWindowDelegate {
 
     // MARK: - Open
     func open<Content: View>(content: Content) {
+        log.debug(#function)
         if let existing = panel, existing.isVisible {
             existing.makeKeyAndOrderFront(nil)
             isVisible = true
             return
         }
-
         let hostingView = NSHostingView(
             rootView: content
         )
-
         let newPanel = NSPanel(
             contentRect: .zero,
             styleMask: [.titled, .closable, .resizable],

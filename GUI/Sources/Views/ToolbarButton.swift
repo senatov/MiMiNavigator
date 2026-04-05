@@ -152,8 +152,8 @@ private struct TooltipFrameKey: PreferenceKey {
     }
 }
 
-private extension View {
-    func fastTooltip(_ text: String) -> some View {
+extension View {
+    fileprivate func fastTooltip(_ text: String) -> some View {
         modifier(FastTooltip(text: text))
     }
 }
@@ -165,7 +165,8 @@ struct ToolbarButton: View {
     let action: () -> Void
 
     var body: some View {
-        Button(action: action) {
+        log.debug(#function)
+        return Button(action: action) {
             ToolbarIcon(name: systemImage)
         }
         .buttonStyle(.borderless)
@@ -179,11 +180,13 @@ struct ToolbarToggleButton: View {
     let activeImage: String
     let helpActive: String
     let helpInactive: String
+
     @Binding var isActive: Bool
     let action: () -> Void
 
     var body: some View {
-        Button(action: action) {
+        log.debug(#function)
+        return Button(action: action) {
             ToolbarIcon(name: isActive ? activeImage : systemImage, active: isActive)
         }
         .buttonStyle(.borderless)

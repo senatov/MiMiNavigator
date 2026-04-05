@@ -26,6 +26,7 @@ final class RemoteTransferConsole {
     // MARK: - open
 
     func open(progress: RemoteTransferProgress) {
+        log.debug(#function)
         if let w = window, w.isVisible {
             w.contentView = NSHostingView(rootView: TransferConsoleView(progress: progress))
             w.title = windowTitle(progress)

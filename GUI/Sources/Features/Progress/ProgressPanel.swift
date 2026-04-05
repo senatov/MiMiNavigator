@@ -218,6 +218,7 @@ final class ProgressPanel: NSObject {
     }
 
     private func animatePanelIn(_ panel: NSPanel) {
+        log.debug(#function)
         panel.alphaValue = 0
         panel.makeKeyAndOrderFront(nil)
         NSAnimationContext.runAnimationGroup { ctx in

@@ -31,20 +31,16 @@ final class ToolbarCustomizeCoordinator {
     // MARK: - Show
     func show() {
         log.debug("[ToolbarCustomize] show() invoked")
-
         guard panel == nil || panel?.isVisible == false else {
             log.debug("[ToolbarCustomize] already visible — skip")
             return
         }
-
         let p = makePanel()
-
         restoreOrApplyDefaultFrame(for: p)
         p.setFrameAutosaveName(frameAutosaveName)
-
+        log.debug(#function)
         p.makeKeyAndOrderFront(nil)
         self.panel = p
-
         log.info("[ToolbarCustomize] opened ✓")
     }
 
@@ -57,7 +53,6 @@ final class ToolbarCustomizeCoordinator {
             backing: .buffered,
             defer: false
         )
-
         configure(panel: p)
         return p
     }

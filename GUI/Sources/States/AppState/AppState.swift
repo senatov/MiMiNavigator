@@ -63,15 +63,12 @@ final class AppState {
     }
 
     func setLoading(_ side: FavPanelSide, _ value: Bool) {
-        switch side {
-            case .left:
-                isLeftLoading = value
-            case .right:
-                isRightLoading = value
+        if side == .left {
+            isLeftLoading = value
+        } else {
+            isRightLoading = value
         }
     }
-
-
 
     // MARK: - Filter (bridge)
     var leftFilterQuery: String {
@@ -165,6 +162,7 @@ final class AppState {
         self.multiSelectionManager = MultiSelectionManager(appState: self)
         self.fileActions = FileOperationActions(appState: self)
         self.scanner = DualDirectoryScanner(appState: self)
+        applyPreferencesFromSnapshot()
     }
 
     func setURL(_ url: URL, for panel: FavPanelSide) {
@@ -178,9 +176,12 @@ final class AppState {
             log.error("[AppState] Failed to inspect URL: \(url.path) error=\(error.localizedDescription)")
             return
         }
-        if panel == .left { leftURL = url } else { rightURL = url }
+        if panel == .left {
+            leftURL = url
+        } else {
+            rightURL = url
+        }
     }
-
 
     // MARK: - Archive State (bridge)
     var leftArchiveState: ArchiveNavigationState {
@@ -207,6 +208,108 @@ final class AppState {
     // MARK: - Sorting
     var sortKey: SortKeysEnum = .name
     var bSortAscending: Bool = true
+
+    // MARK: - User Preference Flags
+    private var suppressPreferencesWriteback = false
+
+    var showHiddenFiles: Bool = UserPreferences.shared.snapshot.showHiddenFiles {
+        didSet { persistPreferenceChange { $0.showHiddenFiles = showHiddenFiles } }
+    }
+    var showExtensions: Bool = UserPreferences.shared.snapshot.showExtensions {
+        didSet { persistPreferenceChange { $0.showExtensions = showExtensions } }
+    }
+    var autoFitColumnsOnNavigate: Bool = UserPreferences.shared.snapshot.autoFitColumnsOnNavigate {
+        didSet { persistPreferenceChange { $0.autoFitColumnsOnNavigate = autoFitColumnsOnNavigate } }
+    }
+    var showIcons: Bool = UserPreferences.shared.snapshot.showIcons {
+        didSet { persistPreferenceChange { $0.showIcons = showIcons } }
+    }
+    var calculateSizes: Bool = UserPreferences.shared.snapshot.calculateSizes {
+        didSet { persistPreferenceChange { $0.calculateSizes = calculateSizes } }
+    }
+    var highlightBorder: Bool = UserPreferences.shared.snapshot.highlightBorder {
+        didSet { persistPreferenceChange { $0.highlightBorder = highlightBorder } }
+    }
+    var showSizeInKB: Bool = UserPreferences.shared.snapshot.showSizeInKB {
+        didSet { persistPreferenceChange { $0.showSizeInKB = showSizeInKB } }
+    }
+    var openOnSingleClick: Bool = UserPreferences.shared.snapshot.openOnSingleClick {
+        didSet { persistPreferenceChange { $0.openOnSingleClick = openOnSingleClick } }
+    }
+    var tabsRestoreOnLaunch: Bool = UserPreferences.shared.snapshot.tabsRestoreOnLaunch {
+        didSet { persistPreferenceChange { $0.tabsRestoreOnLaunch = tabsRestoreOnLaunch } }
+    }
+    var tabsOpenFolderInNewTab: Bool = UserPreferences.shared.snapshot.tabsOpenFolderInNewTab {
+        didSet { persistPreferenceChange { $0.tabsOpenFolderInNewTab = tabsOpenFolderInNewTab } }
+    }
+    var tabsCloseLastKeepsPanel: Bool = UserPreferences.shared.snapshot.tabsCloseLastKeepsPanel {
+        didSet { persistPreferenceChange { $0.tabsCloseLastKeepsPanel = tabsCloseLastKeepsPanel } }
+    }
+    var tabsShowCloseButton: Bool = UserPreferences.shared.snapshot.tabsShowCloseButton {
+        didSet { persistPreferenceChange { $0.tabsShowCloseButton = tabsShowCloseButton } }
+    }
+    var tabsSortByName: Bool = UserPreferences.shared.snapshot.tabsSortByName {
+        didSet { persistPreferenceChange { $0.tabsSortByName = tabsSortByName } }
+    }
+    var archiveExtractToSubfolder: Bool = UserPreferences.shared.snapshot.archiveExtractToSubfolder {
+        didSet { persistPreferenceChange { $0.archiveExtractToSubfolder = archiveExtractToSubfolder } }
+    }
+    var archiveShowExtractProgress: Bool = UserPreferences.shared.snapshot.archiveShowExtractProgress {
+        didSet { persistPreferenceChange { $0.archiveShowExtractProgress = archiveShowExtractProgress } }
+    }
+    var archiveOpenOnDoubleClick: Bool = UserPreferences.shared.snapshot.archiveOpenOnDoubleClick {
+        didSet { persistPreferenceChange { $0.archiveOpenOnDoubleClick = archiveOpenOnDoubleClick } }
+    }
+    var archiveConfirmOnModified: Bool = UserPreferences.shared.snapshot.archiveConfirmOnModified {
+        didSet { persistPreferenceChange { $0.archiveConfirmOnModified = archiveConfirmOnModified } }
+    }
+    var archiveAutoRepack: Bool = UserPreferences.shared.snapshot.archiveAutoRepack {
+        didSet { persistPreferenceChange { $0.archiveAutoRepack = archiveAutoRepack } }
+    }
+    var networkSavePasswords: Bool = UserPreferences.shared.snapshot.networkSavePasswords {
+        didSet { persistPreferenceChange { $0.networkSavePasswords = networkSavePasswords } }
+    }
+    var networkShowInSidebar: Bool = UserPreferences.shared.snapshot.networkShowInSidebar {
+        didSet { persistPreferenceChange { $0.networkShowInSidebar = networkShowInSidebar } }
+    }
+    var networkAutoReconnect: Bool = UserPreferences.shared.snapshot.networkAutoReconnect {
+        didSet { persistPreferenceChange { $0.networkAutoReconnect = networkAutoReconnect } }
+    }
+
+    // MARK: - Preference Sync
+    func applyPreferencesFromSnapshot() {
+        let snapshot = UserPreferences.shared.snapshot
+        suppressPreferencesWriteback = true
+        showHiddenFiles = snapshot.showHiddenFiles
+        showExtensions = snapshot.showExtensions
+        autoFitColumnsOnNavigate = snapshot.autoFitColumnsOnNavigate
+        showIcons = snapshot.showIcons
+        calculateSizes = snapshot.calculateSizes
+        highlightBorder = snapshot.highlightBorder
+        showSizeInKB = snapshot.showSizeInKB
+        openOnSingleClick = snapshot.openOnSingleClick
+        tabsRestoreOnLaunch = snapshot.tabsRestoreOnLaunch
+        tabsOpenFolderInNewTab = snapshot.tabsOpenFolderInNewTab
+        tabsCloseLastKeepsPanel = snapshot.tabsCloseLastKeepsPanel
+        tabsShowCloseButton = snapshot.tabsShowCloseButton
+        tabsSortByName = snapshot.tabsSortByName
+        archiveExtractToSubfolder = snapshot.archiveExtractToSubfolder
+        archiveShowExtractProgress = snapshot.archiveShowExtractProgress
+        archiveOpenOnDoubleClick = snapshot.archiveOpenOnDoubleClick
+        archiveConfirmOnModified = snapshot.archiveConfirmOnModified
+        archiveAutoRepack = snapshot.archiveAutoRepack
+        networkSavePasswords = snapshot.networkSavePasswords
+        networkShowInSidebar = snapshot.networkShowInSidebar
+        networkAutoReconnect = snapshot.networkAutoReconnect
+        suppressPreferencesWriteback = false
+    }
+
+    private func persistPreferenceChange(_ update: (inout PreferencesSnapshot) -> Void) {
+        guard !suppressPreferencesWriteback else { return }
+        var snapshot = UserPreferences.shared.snapshot
+        update(&snapshot)
+        UserPreferences.shared.snapshot = snapshot
+    }
 
     // MARK: - Flags
     var isNavigatingFromHistory = false
@@ -256,10 +359,6 @@ final class AppState {
         set { rightPanel.visibleIndex = newValue }
     }
 
-
-
-
-
     // MARK: - Helpers
     func firstRealFile(in files: [CustomFile]) -> CustomFile? {
         files.first { !$0.isParentEntry }
@@ -285,5 +384,3 @@ final class AppState {
         if panel == .left { leftVisibleIndex = index } else { rightVisibleIndex = index }
     }
 }
-
-

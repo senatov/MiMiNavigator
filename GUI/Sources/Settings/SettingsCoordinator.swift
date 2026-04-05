@@ -21,7 +21,7 @@ final class SettingsCoordinator {
     private var window: NSPanel?
 
     private let frameAutosaveName = "MiMiNavigator.SettingsWindow"
-    private let defaultWidth: CGFloat  = 720
+    private let defaultWidth: CGFloat = 720
     private let defaultHeight: CGFloat = 540
 
     private init() {}
@@ -47,10 +47,8 @@ final class SettingsCoordinator {
             isVisible = true
             return
         }
-
         let contentView = SettingsWindowView(onDismiss: { [weak self] in self?.close() })
             .frame(minWidth: 600, minHeight: 440)
-
         let panel = NSPanel(
             contentRect: .zero,
             styleMask: [.titled, .closable, .resizable, .miniaturizable, .utilityWindow],
@@ -74,9 +72,9 @@ final class SettingsCoordinator {
         }
         panel.setFrameAutosaveName(frameAutosaveName)
         panel.delegate = SettingsWindowDelegate.shared
+        log.debug(#function)
         panel.makeKeyAndOrderFront(nil)
         panel.makeFirstResponder(panel.contentView)
-
         window = panel
         isVisible = true
         log.info("[Settings] panel opened")

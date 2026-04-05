@@ -35,8 +35,23 @@ final class SelectionsHistory {
         var current: String?
         var recentSelections: [String]
     }
+
+    // MARK: - Path helpers
+    private static func ensureHistoryDirectoryExists() {
+        let directoryURL = historyFileURL.deletingLastPathComponent()
+        do {
+            try FileManager.default.createDirectory(at: directoryURL, withIntermediateDirectories: true)
+        } catch {
+            log.error("[SelectionsHistory] failed to create history directory: \(error.localizedDescription)")
+        }
+    }
+
+    private static func makeFileURL(from path: String) -> URL {
+        URL(filePath: path, directoryHint: .inferFromPath, relativeTo: nil)
+    }
     // MARK: - Init
     init() {
+        Self.ensureHistoryDirectoryExists()
         loadFromDisk()
         log.info("[SelectionsHistory] loaded \(recentSelections.count) recent, back=\(backStack.count), fwd=\(forwardStack.count)")
     }
@@ -129,6 +144,7 @@ final class SelectionsHistory {
     }
     // MARK: - Save to JSON
     private func saveToDisk() {
+        Self.ensureHistoryDirectoryExists()
         let dto = HistoryDTO(
             backStack: backStack.map(\.path),
             forwardStack: forwardStack.map(\.path),
@@ -146,18 +162,27 @@ final class SelectionsHistory {
     }
     // MARK: - Load from JSON
     private func loadFromDisk() {
+        Self.ensureHistoryDirectoryExists()
+
         let fileURL = Self.historyFileURL
-        guard FileManager.default.fileExists(atPath: fileURL.path) else { return }
         do {
             let data = try Data(contentsOf: fileURL)
             let dto = try JSONDecoder().decode(HistoryDTO.self, from: data)
-            backStack = dto.backStack.map { URL(fileURLWithPath: $0) }
-            forwardStack = dto.forwardStack.map { URL(fileURLWithPath: $0) }
-            current = dto.current.map { URL(fileURLWithPath: $0) }
-            recentSelections = dto.recentSelections.map { URL(fileURLWithPath: $0) }
+            backStack = dto.backStack.map(Self.makeFileURL(from:))
+            forwardStack = dto.forwardStack.map(Self.makeFileURL(from:))
+            current = dto.current.map(Self.makeFileURL(from:))
+            recentSelections = dto.recentSelections.map(Self.makeFileURL(from:))
             updateNavigationState()
+        } catch let error as CocoaError where error.code == .fileReadNoSuchFile {
+            saveToDisk()
         } catch {
             log.error("[SelectionsHistory] load failed: \(error.localizedDescription)")
+            backStack.removeAll()
+            forwardStack.removeAll()
+            recentSelections.removeAll()
+            current = nil
+            updateNavigationState()
+            saveToDisk()
         }
     }
 }

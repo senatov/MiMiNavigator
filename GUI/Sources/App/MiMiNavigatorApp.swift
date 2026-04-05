@@ -34,10 +34,6 @@ struct MiMiNavigatorApp: App {
     // MARK: -
     init() {
         AppLogger.initialize()
-        log.debug("---- Logger initialized ------")
-        // BookmarkStore.restoreAll() is called in AppDelegate.applicationDidFinishLaunching
-        // to ensure NSApplication is fully initialized before sandbox token requests.
-        Task { await RemoteConnectionManager.shared.connectOnStartIfNeeded() }
     }
 
     var appToolbarContent: some ToolbarContent {
@@ -51,6 +47,7 @@ struct MiMiNavigatorApp: App {
 
     @ViewBuilder
     var batchProgressOverlay: some View {
+        let _ = log.debug(#function)
         if BatchOperationManager.shared.showProgressDialog,
             let state = BatchOperationManager.shared.currentOperation
         {
@@ -74,12 +71,14 @@ struct MiMiNavigatorApp: App {
 
     // MARK: - App Lifecycle Helpers
     func handleMainWindowAppear() {
+        log.debug(#function)
         restoreMainWindowFrameIfNeeded()
         bindAppStateIfNeeded()
         wireCoordinatorCallbacks()
     }
 
     private func restoreMainWindowFrameIfNeeded() {
+        log.debug(#function)
         guard !didRestoreMainWindowFrame else { return }
         guard let win = NSApp.windows.first(where: { !($0 is NSPanel) }) else { return }
 
@@ -97,7 +96,6 @@ struct MiMiNavigatorApp: App {
 
     private func bindAppStateIfNeeded() {
         guard !didBindAppState else { return }
-
         appDelegate.bind(appState)
         AppStateProvider.shared = appState
         showHiddenFiles = UserPreferences.shared.snapshot.showHiddenFiles
@@ -105,8 +103,8 @@ struct MiMiNavigatorApp: App {
     }
 
     private func wireCoordinatorCallbacks() {
+        let _ = log.debug(#function)
         guard !didWireCoordinatorCallbacks else { return }
-
         ConnectToServerCoordinator.shared.onDisconnect = {
             Task { @MainActor in
                 await handleRemoteDisconnect()
@@ -129,6 +127,7 @@ struct MiMiNavigatorApp: App {
     }
 
     func handleScenePhaseChange() {
+        let _ = log.debug(#function)
         if scenePhase == .background {
             Task {
                 await BookmarkStore.shared.stopAll()
@@ -147,23 +146,22 @@ struct MiMiNavigatorApp: App {
     }
 
     func handleRemoteConnect(url: URL, password: String) async {
+        let _ = log.debug(#function)
         let side = appState.focusedPanel
         let connectURL = buildAuthenticatedConnectURL(from: url, password: password)
         let scheme = url.scheme ?? ""
-
         log.info("[ConnectToServer] connecting \(scheme)://\(url.host ?? "")")
-
         if scheme == "smb" || scheme == "afp" {
             await connectMountedShare(connectURL, for: side)
             return
         }
-
         if scheme == "sftp" || scheme == "ftp" {
             await connectRemoteProvider(for: side)
         }
     }
 
     private func buildAuthenticatedConnectURL(from url: URL, password: String) -> URL {
+        let _ = log.debug(#function)
         guard !password.isEmpty,
             var components = URLComponents(url: url, resolvingAgainstBaseURL: false)
         else {
@@ -241,6 +239,7 @@ struct MiMiNavigatorApp: App {
     /// Creates a ToolbarToggleButton for specific known toggle items.
     @ViewBuilder
     func makeToolbarToggle(_ id: ToolbarItemID) -> some View {
+        let _ = log.debug(#function)
         switch id {
             case .hiddenFiles:
                 ToolbarToggleButton(

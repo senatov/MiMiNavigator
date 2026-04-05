@@ -42,6 +42,7 @@ final class ConnectToServerCoordinator {
 
     // MARK: - Open
     func open() {
+        log.debug(#function)
         if let existing = window, existing.isVisible {
             existing.makeKeyAndOrderFront(nil)
             isVisible = true

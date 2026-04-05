@@ -25,7 +25,8 @@ extension MiMiNavigatorApp {
 
     // MARK: - Main Window Content
     var mainWindowContent: some View {
-        DuoFilePanelView()
+        log.debug(#function)
+        return DuoFilePanelView()
             .environment(appState)
             .environment(dragDropManager)
             .contextMenuDialogs(coordinator: contextMenuCoordinator, appState: appState)

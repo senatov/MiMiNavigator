@@ -49,18 +49,15 @@ final class FindFilesCoordinator {
 
     func open(searchPath: String, selectedFile: CustomFile? = nil) {
         viewModel.configure(searchPath: searchPath, selectedFile: selectedFile)
-
+        log.debug(#function)
         if let existing = findWindow, existing.isVisible {
             existing.makeKeyAndOrderFront(nil)
             isVisible = true
             return
         }
-
         let contentView = FindFilesWindowContent(viewModel: viewModel, appState: appState)
             .frame(minWidth: 520, minHeight: 400)
-
         let hostingView = NSHostingView(rootView: contentView)
-
         let window = NSPanel(
             contentRect: .zero,
             styleMask: [.titled, .closable, .resizable, .miniaturizable, .utilityWindow],
@@ -87,11 +84,9 @@ final class FindFilesCoordinator {
             window.setFrame(frame, display: true)
         }
         window.setFrameAutosaveName(frameAutosaveName)
-
         window.delegate = FindFilesWindowDelegate.shared
         window.makeKeyAndOrderFront(nil)
         window.makeFirstResponder(window.contentView)
-
         findWindow = window
         isVisible = true
         log.info("[FindFiles] Window opened")
