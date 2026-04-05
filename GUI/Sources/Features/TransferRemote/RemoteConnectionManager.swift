@@ -53,13 +53,12 @@ final class RemoteConnectionManager {
     // MARK: - Auto-connect
     func connectOnStartIfNeeded() async {
         let servers = RemoteServerStore.shared.servers.filter { $0.connectOnStart }
-        guard !servers.isEmpty else { return }
-
         log.info("\(#function) auto-connecting \(servers.count) server(s)")
-
+        guard !servers.isEmpty else { return }
         for server in servers {
             await connectOnStartIfPossible(server: server)
         }
+        log.info(#function + " done")
     }
 
     private func connectOnStartIfPossible(server: RemoteServer) async {
@@ -81,7 +80,6 @@ final class RemoteConnectionManager {
             reuseConnection(existing)
             return
         }
-
         let provider = createProvider(for: server.remoteProtocol)
         await connectWithNewProvider(provider, to: server, password: password)
     }

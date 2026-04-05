@@ -42,6 +42,8 @@ build/
 
 .build/
 .swiftpm/xcode/xcuserdata/
+*.xcworkspace/xcuserdata/
+*.xcodeproj/xcuserdata/
 
 # Keep resolved versions for reproducible builds
 !**/Package.resolved

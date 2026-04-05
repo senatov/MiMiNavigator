@@ -15,12 +15,12 @@ import SwiftUI
 
 @main
 struct MiMiNavigatorApp: App {
-    @State private var appState = AppState()
-    @State private var dragDropManager = DragDropManager()
-    @State private var contextMenuCoordinator = ContextMenuCoordinator.shared
-    @State private var showHiddenFiles = UserPreferences.shared.snapshot.showHiddenFiles
-    @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
-    @Environment(\.scenePhase) private var scenePhase
+    @State var appState = AppState()
+    @State var dragDropManager = DragDropManager()
+    @State var contextMenuCoordinator = ContextMenuCoordinator.shared
+    @State var showHiddenFiles = UserPreferences.shared.snapshot.showHiddenFiles
+    @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+    @Environment(\.scenePhase) var scenePhase
 
     @State private var didRestoreMainWindowFrame = false
     @State private var didBindAppState = false
@@ -40,53 +40,7 @@ struct MiMiNavigatorApp: App {
         Task { await RemoteConnectionManager.shared.connectOnStartIfNeeded() }
     }
 
-    // MARK: -
-    var body: some Scene {
-        WindowGroup {
-            mainWindowContent
-        }
-        .defaultSize(width: 1200, height: 700)
-        .defaultPosition(.center)
-        .windowToolbarStyle(.unifiedCompact)
-        .commands {
-            AppCommands(appState: appState)
-            SettingsCommands()
-        }
-    }
-
-    // MARK: - Main Window Content
-    private var mainWindowContent: some View {
-        DuoFilePanelView()
-            .environment(appState)
-            .environment(dragDropManager)
-            .contextMenuDialogs(coordinator: contextMenuCoordinator, appState: appState)
-            .navigationTitle("MiMiNavigator V \(Self.appVersion)")
-            .onAppear {
-                handleMainWindowAppear()
-            }
-            .onChange(of: scenePhase) {
-                handleScenePhaseChange()
-            }
-            .toolbar {
-                appToolbarContent
-            }
-            .glassEffect(Glass.identity)
-            .sheet(
-                isPresented: Binding(
-                    get: { dragDropManager.showConfirmationDialog },
-                    set: { dragDropManager.showConfirmationDialog = $0 }
-                )
-            ) {
-                if let operation = dragDropManager.pendingOperation {
-                    transferConfirmationDialog(for: operation)
-                }
-            }
-            .overlay {
-                batchProgressOverlay
-            }
-    }
-
-    private var appToolbarContent: some ToolbarContent {
+    var appToolbarContent: some ToolbarContent {
         Group {
             AppToolbarContent(app: self, appState: appState)
                 .sharedBackgroundVisibility(.hidden)
@@ -96,7 +50,7 @@ struct MiMiNavigatorApp: App {
     }
 
     @ViewBuilder
-    private var batchProgressOverlay: some View {
+    var batchProgressOverlay: some View {
         if BatchOperationManager.shared.showProgressDialog,
             let state = BatchOperationManager.shared.currentOperation
         {
@@ -119,7 +73,7 @@ struct MiMiNavigatorApp: App {
     }
 
     // MARK: - App Lifecycle Helpers
-    private func handleMainWindowAppear() {
+    func handleMainWindowAppear() {
         restoreMainWindowFrameIfNeeded()
         bindAppStateIfNeeded()
         wireCoordinatorCallbacks()
@@ -174,7 +128,7 @@ struct MiMiNavigatorApp: App {
         didWireCoordinatorCallbacks = true
     }
 
-    private func handleScenePhaseChange() {
+    func handleScenePhaseChange() {
         if scenePhase == .background {
             Task {
                 await BookmarkStore.shared.stopAll()
@@ -182,7 +136,7 @@ struct MiMiNavigatorApp: App {
         }
     }
 
-    private func handleRemoteDisconnect() async {
+    func handleRemoteDisconnect() async {
         if AppState.isRemotePath(appState.leftURL) {
             await appState.restoreLocalPath(for: FavPanelSide.left)
         }
@@ -192,7 +146,7 @@ struct MiMiNavigatorApp: App {
         }
     }
 
-    private func handleRemoteConnect(url: URL, password: String) async {
+    func handleRemoteConnect(url: URL, password: String) async {
         let side = appState.focusedPanel
         let connectURL = buildAuthenticatedConnectURL(from: url, password: password)
         let scheme = url.scheme ?? ""
@@ -260,7 +214,7 @@ struct MiMiNavigatorApp: App {
 
     // MARK: - Transfer Confirmation Helpers
     @ViewBuilder
-    private func transferConfirmationDialog(for operation: FileTransferOperation) -> some View {
+    func transferConfirmationDialog(for operation: FileTransferOperation) -> some View {
         FileTransferConfirmationDialog(operation: operation) { action in
             executePendingTransfer(action)
         }
