@@ -16,15 +16,43 @@ final class RemoteServerStore {
 
     private(set) var servers: [RemoteServer] = []
 
-    private let fileURL: URL = {
-        let dir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+    private let storageDirectoryURL: URL = {
+        FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
             .appendingPathComponent("MiMiNavigator", isDirectory: true)
-        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        return dir.appendingPathComponent("remote_servers.json")
     }()
 
+    private let fileURL: URL
+
+    private func ensureStorageExists() {
+        do {
+            try FileManager.default.createDirectory(at: storageDirectoryURL, withIntermediateDirectories: true)
+        } catch {
+            log.error("[RemoteStore] failed to create storage directory: \(error.localizedDescription)")
+        }
+    }
+
     private init() {
+        fileURL = storageDirectoryURL.appendingPathComponent("remote_servers.json")
+        ensureStorageExists()
         load()
+    }
+
+    // MARK: - Storage Helpers
+    private func writeServersToDisk(_ servers: [RemoteServer]) {
+        ensureStorageExists()
+        do {
+            let data = try JSONEncoder().encode(servers)
+            try data.write(to: fileURL, options: .atomic)
+        } catch {
+            log.error("[RemoteStore] save failed: \(error.localizedDescription)")
+        }
+    }
+
+    private func ensureStoreFileExists() {
+        ensureStorageExists()
+        guard !FileManager.default.fileExists(atPath: fileURL.path) else { return }
+        writeServersToDisk([])
+        log.info("[RemoteStore] created default remote_servers.json")
     }
 
     // MARK: - CRUD
@@ -51,8 +79,8 @@ final class RemoteServerStore {
     }
 
     func remove(at offsets: IndexSet) {
-        for idx in offsets {
-            RemoteServerKeychain.deletePassword(for: servers[idx])
+        for index in offsets {
+            RemoteServerKeychain.deletePassword(for: servers[index])
         }
         servers.remove(atOffsets: offsets)
         save()
@@ -61,22 +89,21 @@ final class RemoteServerStore {
     // MARK: - Persistence
 
     private func load() {
-        guard FileManager.default.fileExists(atPath: fileURL.path) else { return }
+        ensureStoreFileExists()
+
         do {
             let data = try Data(contentsOf: fileURL)
             servers = try JSONDecoder().decode([RemoteServer].self, from: data)
             log.info("[RemoteStore] loaded \(servers.count) servers")
         } catch {
             log.error("[RemoteStore] load failed: \(error.localizedDescription)")
+            servers = []
+            writeServersToDisk([])
+            log.info("[RemoteStore] reset remote_servers.json to defaults")
         }
     }
 
     private func save() {
-        do {
-            let data = try JSONEncoder().encode(servers)
-            try data.write(to: fileURL, options: .atomic)
-        } catch {
-            log.error("[RemoteStore] save failed: \(error.localizedDescription)")
-        }
+        writeServersToDisk(servers)
     }
 }

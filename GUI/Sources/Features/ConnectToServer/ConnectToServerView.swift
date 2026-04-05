@@ -23,8 +23,6 @@ struct ConnectToServerView: View {
     @State private var draft = RemoteServer()
     @State private var password: String = ""
     @State private var keepPassword: Bool = true
-    // @Observable singleton — accessed directly, SwiftUI tracks changes automatically
-    private var connectionManager: RemoteConnectionManager { .shared }
     @State private var isConnecting: Bool = false
     @State private var sessionLayout = SessionColumnLayout()
     @State private var showPassword: Bool = false
@@ -70,12 +68,18 @@ struct ConnectToServerView: View {
         static let dividerHoverTintOpacity: Double = 0.10
     }
 
+    // MARK: - Derived State
+    // @Observable singleton — accessed directly, SwiftUI tracks changes automatically
+    private var connectionManager: RemoteConnectionManager { .shared }
+
     private var dialogBgColor: Color {
-        let s = ColorThemeStore.shared
-        if !s.hexDialogBackground.isEmpty, let c = Color(hex: s.hexDialogBackground) {
-            return c
+        let store = ColorThemeStore.shared
+        if !store.hexDialogBackground.isEmpty,
+           let color = Color(hex: store.hexDialogBackground)
+        {
+            return color
         }
-        return s.activeTheme.dialogBackground
+        return store.activeTheme.dialogBackground
     }
 
     private var clampedSidebarWidth: CGFloat {
@@ -92,6 +96,14 @@ struct ConnectToServerView: View {
 
     private var dividerBorderStrokeOpacity: Double {
         dividerActive ? Glass.dividerBorderOpacity : Glass.dividerBorderOpacity * 0.7
+    }
+
+    private var currentDraftConnectionAvailable: Bool {
+        connectionManager.isConnected(to: draft)
+    }
+
+    private var canDisconnectCurrentDraft: Bool {
+        currentDraftConnectionAvailable && !isConnecting
     }
 
     // MARK: - Body
@@ -473,6 +485,13 @@ struct ConnectToServerView: View {
                             .help(showPassword ? "Hide password" : "Show password")
                             Toggle("Keep", isOn: $keepPassword)
                                 .toggleStyle(.checkbox)
+
+                            #if DEBUG
+                            Text("Saved only for current session in Debug build")
+                                .font(.system(size: 11))
+                                .foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                            #endif
                         }
                     }
                     Divider()
@@ -558,15 +577,6 @@ struct ConnectToServerView: View {
 
     // MARK: - Actions
 
-    // MARK: - Disconnect availability
-    private var currentDraftConnectionAvailable: Bool {
-        connectionManager.isConnected(to: draft)
-    }
-
-    private var canDisconnectCurrentDraft: Bool {
-        currentDraftConnectionAvailable && !isConnecting
-    }
-
     // MARK: - connectAction
     private func connectAction() {
         saveAction()
@@ -623,8 +633,10 @@ struct ConnectToServerView: View {
 
     // MARK: - saveAction
     private func saveAction() {
-        log.debug("[ConnectToServer] saveAction for host=\(draft.host) id=\(draft.id)")
-        if draft.name.isEmpty { draft.name = draft.host }
+        log.debug("[ConnectToServer] saveAction host=\(draft.host) id=\(draft.id)")
+        if draft.name.isEmpty {
+            draft.name = draft.host
+        }
         if keepPassword && !password.isEmpty {
             RemoteServerKeychain.savePassword(password, for: draft)
         } else if !keepPassword {
@@ -635,8 +647,8 @@ struct ConnectToServerView: View {
         } else {
             store.add(draft)
         }
-        log.info("[ConnectToServer] bookmark saved host=\(draft.host)")
         selectedID = draft.id
+        log.info("[ConnectToServer] bookmark saved host=\(draft.host) id=\(draft.id)")
     }
 
     // MARK: - disconnectAction
@@ -647,7 +659,7 @@ struct ConnectToServerView: View {
             return
         }
 
-        guard let conn = connectionManager.connection(for: draft) else {
+        guard let connection = connectionManager.connection(for: draft) else {
             log.debug("[ConnectToServer] disconnect ignored")
             log.debug("[ConnectToServer] no connection object for current draft")
             return
@@ -655,15 +667,17 @@ struct ConnectToServerView: View {
 
         log.info("[ConnectToServer] disconnecting from \(draft.host)")
         Task {
-            await connectionManager.disconnect(id: conn.id)
+            await connectionManager.disconnect(id: connection.id)
             onDisconnect?()
         }
     }
 
     // MARK: - deleteServerAction
     private func deleteServerAction(server: RemoteServer) {
-        if let conn = connectionManager.connection(for: server) {
-            Task { await connectionManager.disconnect(id: conn.id) }
+        if let connection = connectionManager.connection(for: server) {
+            Task {
+                await connectionManager.disconnect(id: connection.id)
+            }
         }
         RemoteServerKeychain.deletePassword(for: server)
         store.remove(server)
@@ -687,14 +701,14 @@ struct ConnectToServerView: View {
             return
         }
 
-        guard let conn = connectionManager.connection(for: server) else {
+        guard let connection = connectionManager.connection(for: server) else {
             log.debug("[ConnectToServer] server disconnect ignored")
             log.debug("[ConnectToServer] no connection object for server: \(server.displayName)")
             return
         }
 
         Task {
-            await connectionManager.disconnect(id: conn.id)
+            await connectionManager.disconnect(id: connection.id)
             onDisconnect?()
         }
     }
@@ -709,10 +723,11 @@ struct ConnectToServerView: View {
     // MARK: - removeSelected
     private func removeSelected() {
         guard let id = selectedID,
-            let server = store.servers.first(where: { $0.id == id })
-        else { return }
-        store.remove(server)
-        selectFirst()
+              let server = store.servers.first(where: { $0.id == id })
+        else {
+            return
+        }
+        deleteServerAction(server: server)
     }
 
     // MARK: - selectFirst

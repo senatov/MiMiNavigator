@@ -32,6 +32,15 @@ final class RemoteConnectionManager {
 
     private init() {}
 
+    // MARK: - Password Lookup
+    private func loadSavedPassword(for server: RemoteServer) -> String {
+        RemoteServerKeychain.loadPassword(for: server)
+    }
+
+    private func hasSavedPassword(for server: RemoteServer) -> Bool {
+        !loadSavedPassword(for: server).isEmpty
+    }
+
     // MARK: - Connection Lookup
     private func indexOfConnection(id: UUID) -> Int? {
         connections.firstIndex { $0.id == id }
@@ -52,23 +61,25 @@ final class RemoteConnectionManager {
 
     // MARK: - Auto-connect
     func connectOnStartIfNeeded() async {
-        let servers = RemoteServerStore.shared.servers.filter { $0.connectOnStart }
-        log.info("\(#function) auto-connecting \(servers.count) server(s)")
-        guard !servers.isEmpty else { return }
-        for server in servers {
+        let serversToConnect = RemoteServerStore.shared.servers.filter { $0.connectOnStart }
+        log.info("\(#function) auto-connecting \(serversToConnect.count) server(s)")
+        guard !serversToConnect.isEmpty else { return }
+
+        for server in serversToConnect {
             await connectOnStartIfPossible(server: server)
         }
+
         log.info(#function + " done")
     }
 
     private func connectOnStartIfPossible(server: RemoteServer) async {
-        let password = RemoteServerKeychain.loadPassword(for: server)
-        guard !password.isEmpty else {
+        guard hasSavedPassword(for: server) else {
             log.warning("\(#function) skip '\(server.displayName)'")
             log.warning("\(#function) no saved password")
             return
         }
 
+        let password = loadSavedPassword(for: server)
         await connect(to: server, password: password)
     }
 
@@ -76,10 +87,11 @@ final class RemoteConnectionManager {
     func connect(to server: RemoteServer, password: String) async {
         log.info("\(#function) \(server.displayName) via \(server.remoteProtocol.rawValue)")
 
-        if let existing = connection(for: server) {
-            reuseConnection(existing)
+        if let existingConnection = connection(for: server) {
+            reuseConnection(existingConnection)
             return
         }
+
         let provider = createProvider(for: server.remoteProtocol)
         await connectWithNewProvider(provider, to: server, password: password)
     }
@@ -141,11 +153,11 @@ final class RemoteConnectionManager {
 
     // MARK: - Disconnect
     func disconnect(id: UUID) async {
-        guard let idx = indexOfConnection(id: id) else { return }
+        guard let connectionIndex = indexOfConnection(id: id) else { return }
 
-        let connection = connections[idx]
+        let connection = connections[connectionIndex]
         await disconnectConnection(connection)
-        removeConnection(at: idx)
+        removeConnection(at: connectionIndex)
         updateActiveConnectionAfterDisconnect(id: id)
 
         log.info("\(#function) \(connection.displayName)")
@@ -190,18 +202,18 @@ final class RemoteConnectionManager {
     }
 
     func connection(for server: RemoteServer) -> RemoteConnection? {
-        let normalizedHost = Self.normalizeHost(server.host)
-        let normalizedPath = Self.normalizeRemotePath(server.remotePath)
+        let normalizedServerHost = Self.normalizeHost(server.host)
+        let normalizedServerPath = Self.normalizeRemotePath(server.remotePath)
 
-        return connections.first {
-            let candidateHost = Self.normalizeHost($0.server.host)
-            let candidatePath = Self.normalizeRemotePath($0.server.remotePath)
+        return connections.first { connection in
+            let normalizedConnectionHost = Self.normalizeHost(connection.server.host)
+            let normalizedConnectionPath = Self.normalizeRemotePath(connection.server.remotePath)
 
-            return candidateHost == normalizedHost
-                && $0.server.port == server.port
-                && $0.server.remoteProtocol == server.remoteProtocol
-                && $0.server.user == server.user
-                && candidatePath == normalizedPath
+            return normalizedConnectionHost == normalizedServerHost
+                && connection.server.port == server.port
+                && connection.server.remoteProtocol == server.remoteProtocol
+                && connection.server.user == server.user
+                && normalizedConnectionPath == normalizedServerPath
         }
     }
 
@@ -220,7 +232,7 @@ final class RemoteConnectionManager {
     }
 
     func downloadFile(remotePath: String) async throws -> URL {
-        let _ = log.debug(#function + " active=\(activeConnection?.displayName ?? "none")")
+        log.debug(#function + " active=\(activeConnection?.displayName ?? "none")")
         let connection = try requireActiveConnection()
         log.info("\(#function) '\(remotePath)'")
         return try await connection.provider.downloadFile(remotePath: remotePath)
@@ -252,12 +264,12 @@ final class RemoteConnectionManager {
         log.debug("\(#function)(\(proto))")
 
         switch proto {
-            case .sftp:
-                return SFTPFileProvider()
-            case .ftp:
-                return FTPFileProvider()
-            default:
-                return fallbackProvider(for: proto)
+        case .sftp:
+            return SFTPFileProvider()
+        case .ftp:
+            return FTPFileProvider()
+        default:
+            return fallbackProvider(for: proto)
         }
     }
 
