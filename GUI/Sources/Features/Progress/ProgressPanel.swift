@@ -54,6 +54,26 @@ final class ProgressPanel: NSObject {
     private var onCancel: (() -> Void)?
     private override init() { super.init() }
     private var appearance: ProgressPanelAppearance { .shared }
+
+    // MARK: - Compatibility Helpers
+    func reset(title: String, message: String, icon: String = "archivebox.fill") {
+        if panel == nil { createPanel() }
+        isCancelled = false
+        lineCount = 0
+        resetContent(icon: icon, title: title, status: message)
+    }
+
+    func setCancelHandler(_ handler: (() -> Void)?) {
+        onCancel = handler
+        actionButton?.isEnabled = true
+        if actionButton?.title != "OK" {
+            actionButton?.title = "Cancel"
+        }
+    }
+
+    func appendLine(_ line: String) {
+        appendLog(line)
+    }
     // MARK: - Show
     func show(
         icon: String = "archivebox.fill",
@@ -134,6 +154,10 @@ final class ProgressPanel: NSObject {
         actionButton?.isEnabled = true
         onCancel = nil
         log.debug("[ProgressPanel] \(#function) success=\(success) lines=\(lineCount)")
+    }
+
+    func finish(success: Bool, details: String?) {
+        finish(success: success, message: details)
     }
     // MARK: - Hide
     func hide() {

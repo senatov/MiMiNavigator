@@ -10,6 +10,14 @@ import Foundation
 // MARK: - Archive Format
 enum ArchiveFormat: String, CaseIterable, Identifiable, Sendable {
     case zip          = "zip"
+    case gzip         = "gz"
+    case bzip2        = "bz2"
+    case xz           = "xz"
+    case lzma         = "lzma"
+    case zstd         = "zst"
+    case lz4          = "lz4"
+    case lzo          = "lzo"
+    case lzip         = "lz"
     case tarGz        = "tar.gz"
     case tarBz2       = "tar.bz2"
     case tarXz        = "tar.xz"
@@ -29,6 +37,14 @@ enum ArchiveFormat: String, CaseIterable, Identifiable, Sendable {
     var displayName: String {
         switch self {
         case .zip:              return "ZIP Archive"
+        case .gzip:             return "Gzip Compressed File"
+        case .bzip2:            return "Bzip2 Compressed File"
+        case .xz:               return "XZ Compressed File"
+        case .lzma:             return "LZMA Compressed File"
+        case .zstd:             return "Zstandard Compressed File"
+        case .lz4:              return "LZ4 Compressed File"
+        case .lzo:              return "LZO Compressed File"
+        case .lzip:             return "Lzip Compressed File"
         case .tarGz:            return "TAR.GZ (gzip)"
         case .tarBz2:           return "TAR.BZ2 (bzip2)"
         case .tarXz:            return "TAR.XZ (xz)"
@@ -46,15 +62,22 @@ enum ArchiveFormat: String, CaseIterable, Identifiable, Sendable {
 
     var icon: String {
         switch self {
-        case .zip:              return "doc.zipper"
-        case .sevenZip, .sevenZipGeneric: return "archivebox.fill"
-        default:                return "archivebox"
+        case .zip:
+            return "doc.zipper"
+        case .sevenZip, .sevenZipGeneric:
+            return "archivebox.fill"
+        case .gzip, .bzip2, .xz, .lzma, .zstd, .lz4, .lzo, .lzip, .compressZ:
+            return "doc.badge.gearshape"
+        default:
+            return "archivebox"
         }
     }
 
     var isAvailable: Bool {
         switch self {
-        case .zip, .tar, .tarGz, .tarBz2, .tarXz, .compressZ,
+        case .zip,
+             .gzip, .bzip2, .xz, .lzma, .zstd, .lz4, .lzo, .lzip,
+             .tar, .tarGz, .tarBz2, .tarXz, .compressZ,
              .tarLzma, .tarZst, .tarLz4, .tarLzo, .tarLz:
             return true
         case .sevenZip, .sevenZipGeneric:
@@ -62,6 +85,17 @@ enum ArchiveFormat: String, CaseIterable, Identifiable, Sendable {
                 .contains { FileManager.default.fileExists(atPath: $0) }
         }
     }
+
+    var isSingleCompressedFile: Bool {
+        switch self {
+        case .gzip, .bzip2, .xz, .lzma, .zstd, .lz4, .lzo, .lzip, .compressZ:
+            return true
+        default:
+            return false
+        }
+    }
+
+    var isArchiveContainer: Bool { !isSingleCompressedFile }
 
     static var availableFormats: [ArchiveFormat] { allCases.filter(\.isAvailable) }
 }

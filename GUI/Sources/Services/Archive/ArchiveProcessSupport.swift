@@ -45,12 +45,66 @@ final class ActiveArchiveProcess: @unchecked Sendable {
     }
 }
 
+
+private final class _RecentLinesBuffer: @unchecked Sendable {
+    private let lock = NSLock()
+    private var lines: [String] = []
+
+    func append(_ line: String) {
+        lock.lock()
+        lines.append(line)
+        if lines.count > 40 {
+            lines.removeFirst(lines.count - 40)
+        }
+        lock.unlock()
+    }
+
+    func snapshot() -> [String] {
+        lock.lock()
+        defer { lock.unlock() }
+        return lines
+    }
+}
+
 // MARK: - Process Runner
 
 enum ArchiveProcessRunner {
 
     private static let nonFatalExitCodes: Set<Int32> = [1, 50]
     private static let timeoutSeconds: Double = 300
+
+    private static func classifyFailure(toolName: String, exitCode: Int32, recentLines: [String]) -> Error {
+        let joined = recentLines.joined(separator: "\n").lowercased()
+
+        if joined.contains("wrong password")
+            || joined.contains("incorrect password")
+            || joined.contains("bad password")
+            || joined.contains("password is incorrect")
+            || joined.contains("can not open encrypted archive")
+        {
+            return ArchiveManagerError.wrongPassword
+        }
+
+        if joined.contains("password required")
+            || joined.contains("enter password")
+            || joined.contains("encrypted")
+            || joined.contains("cannot find password")
+        {
+            return ArchiveManagerError.passwordRequired
+        }
+
+        if joined.contains("not an archive")
+            || joined.contains("unsupported archive")
+            || joined.contains("can not open the file as archive")
+            || joined.contains("unexpected end of archive")
+            || joined.contains("end-of-central-directory signature not found")
+            || joined.contains("error is not recoverable")
+        {
+            return ArchiveManagerError.invalidArchive("\(toolName) exit=\(exitCode)")
+        }
+
+        return ArchiveManagerError.extractionFailed("\(toolName) exit=\(exitCode)")
+    }
 
     // MARK: - Simple run (legacy)
     @concurrent static func run(_ process: Process, errorPipe: Pipe) async throws {
@@ -66,6 +120,17 @@ enum ArchiveProcessRunner {
         processHandle: ActiveArchiveProcess? = nil
     ) async throws {
         let toolName = process.executableURL?.lastPathComponent ?? "?"
+
+        let recentLinesBuffer = _RecentLinesBuffer()
+
+        func rememberLine(_ line: String) {
+            recentLinesBuffer.append(line)
+        }
+
+        @Sendable func snapshotRecentLines() -> [String] {
+            recentLinesBuffer.snapshot()
+        }
+
         log.debug("[ProcessRunner] starting \(toolName) args=\(process.arguments?.prefix(4).joined(separator: " ") ?? "?")")
 
         // Read lines from a pipe in background — UTF-8 w/ Latin1 fallback
@@ -81,21 +146,25 @@ enum ArchiveProcessRunner {
                         let lineData = buffer.subdata(in: buffer.startIndex..<range.lowerBound)
                         buffer.removeSubrange(buffer.startIndex...range.lowerBound)
                         // try UTF-8 first, fallback to Latin1 (never nil)
-                        let line = (String(data: lineData, encoding: .utf8)
+                        let line =
+                            (String(data: lineData, encoding: .utf8)
                             ?? String(data: lineData, encoding: .isoLatin1)
                             ?? String(describing: lineData))
                             .trimmingCharacters(in: .whitespacesAndNewlines)
                         if !line.isEmpty {
+                            rememberLine(line)
                             callback(line)
                         }
                     }
                 }
                 if !buffer.isEmpty {
-                    let line = (String(data: buffer, encoding: .utf8)
+                    let line =
+                        (String(data: buffer, encoding: .utf8)
                         ?? String(data: buffer, encoding: .isoLatin1)
                         ?? String(describing: buffer))
                         .trimmingCharacters(in: .whitespacesAndNewlines)
                     if !line.isEmpty {
+                        rememberLine(line)
                         callback(line)
                     }
                 }
@@ -105,6 +174,7 @@ enum ArchiveProcessRunner {
         // Stream both stdout AND stderr — tar outputs filenames to stdout,
         // unzip to stdout, 7z to stdout, but warnings/errors go to stderr
         var readers: [Task<Void, Never>] = []
+        processHandle?.set(process)
         if let callback = onLine {
             if let outPipe = outputPipe {
                 readers.append(startLineReader(for: outPipe, callback: callback))
@@ -125,9 +195,10 @@ enum ArchiveProcessRunner {
                     }
                     gate.resume(with: .success(()))
                 } else {
-                    let reason = "exit=\(status)"
-                    log.error("[ProcessRunner] \(reason)")
-                    gate.resume(with: .failure(ArchiveManagerError.extractionFailed(reason)))
+                    let lines = snapshotRecentLines()
+                    let classifiedError = classifyFailure(toolName: toolName, exitCode: status, recentLines: lines)
+                    log.error("[ProcessRunner] classified failure: \(classifiedError.localizedDescription)")
+                    gate.resume(with: .failure(classifiedError))
                 }
             }
 
@@ -136,7 +207,7 @@ enum ArchiveProcessRunner {
                 log.debug("[ProcessRunner] \(toolName) launched pid=\(process.processIdentifier)")
             } catch {
                 log.error("[ProcessRunner] failed to launch \(toolName): \(error)")
-                gate.resume(with: .failure(error))
+                gate.resume(with: .failure(ArchiveManagerError.extractionFailed(error.localizedDescription)))
                 return
             }
 
@@ -148,13 +219,14 @@ enum ArchiveProcessRunner {
                         process.terminate()
                         gate.resume(
                             with: .failure(
-                                ArchiveManagerError.extractionFailed("Timeout after \(Int(Self.timeoutSeconds))s")
+                                ArchiveManagerError.operationTimedOut("Timeout after \(Int(Self.timeoutSeconds))s")
                             ))
                     }
                 }
         }
 
         readers.forEach { $0.cancel() }
+        processHandle?.set(Process())
     }
 }
 

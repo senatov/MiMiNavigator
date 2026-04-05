@@ -15,6 +15,31 @@ final class ArchiveService {
     static let shared = ArchiveService()
     private init() {}
 
+    // MARK: - Validation Helpers
+    private func validateCreateArchiveRequest(files: [URL], archiveURL: URL) throws -> URL {
+        guard !files.isEmpty else {
+            throw ArchiveManagerError.repackFailed("No files provided")
+        }
+        guard !FileManager.default.fileExists(atPath: archiveURL.path) else {
+            throw FileOpsError.fileAlreadyExists(archiveURL.lastPathComponent)
+        }
+        let parentDirectories = Set(files.map { $0.deletingLastPathComponent().path })
+        guard parentDirectories.count == 1, let workDirPath = parentDirectories.first else {
+            throw ArchiveManagerError.repackFailed("All files must be in the same directory")
+        }
+        return URL(fileURLWithPath: workDirPath, isDirectory: true)
+    }
+
+    private func validateSingleCompressedInput(files: [URL], format: ArchiveFormat) throws {
+        guard format.isSingleCompressedFile else { return }
+        guard files.count == 1 else {
+            throw ArchiveManagerError.repackFailed("\(format.displayName) requires exactly one input file")
+        }
+        guard !files[0].hasDirectoryPath else {
+            throw ArchiveManagerError.repackFailed("\(format.displayName) cannot be created from a directory")
+        }
+    }
+
     // MARK: - Create Archive
 
     /// Creates an archive from given files in the specified destination directory.
@@ -28,32 +53,43 @@ final class ArchiveService {
         onProgress: (@Sendable (String) -> Void)? = nil,
         processHandle: ActiveArchiveProcess? = nil
     ) async throws -> URL {
-        guard !files.isEmpty else {
-            throw ArchiveManagerError.repackFailed("No files provided")
-        }
         let archiveURL = destination.appendingPathComponent("\(archiveName).\(format.fileExtension)")
-        guard !FileManager.default.fileExists(atPath: archiveURL.path) else {
-            throw FileOpsError.fileAlreadyExists(archiveURL.lastPathComponent)
-        }
-        let parentDirectories = Set(files.map { $0.deletingLastPathComponent().path })
-        guard parentDirectories.count == 1, let workDirPath = parentDirectories.first else {
-            throw ArchiveManagerError.repackFailed("All files must be in the same directory")
-        }
-        let workDir = URL(fileURLWithPath: workDirPath, isDirectory: true)
-        try await pack(files: files, to: archiveURL, format: format, workDir: workDir, compressionLevel: compressionLevel, password: password, onProgress: onProgress, processHandle: processHandle)
+        let workDir = try validateCreateArchiveRequest(files: files, archiveURL: archiveURL)
+        try validateSingleCompressedInput(files: files, format: format)
+
+        try await pack(
+            files: files,
+            to: archiveURL,
+            format: format,
+            workDir: workDir,
+            compressionLevel: compressionLevel,
+            password: password,
+            onProgress: onProgress,
+            processHandle: processHandle
+        )
+
         log.info("[ArchiveService] Created: \(archiveURL.lastPathComponent) level=\(compressionLevel)")
         return archiveURL
     }
 
     // MARK: - Private
 
-    private func pack(files: [URL], to archiveURL: URL, format: ArchiveFormat, workDir: URL, compressionLevel: CompressionLevel = .normal, password: String? = nil, onProgress: (@Sendable (String) -> Void)? = nil, processHandle: ActiveArchiveProcess? = nil) async throws {
+    private func pack(
+        files: [URL],
+        to archiveURL: URL,
+        format: ArchiveFormat,
+        workDir: URL,
+        compressionLevel: CompressionLevel = .normal,
+        password: String? = nil,
+        onProgress: (@Sendable (String) -> Void)? = nil,
+        processHandle: ActiveArchiveProcess? = nil
+    ) async throws {
         let names = files.map(\.lastPathComponent)
         let errorPipe = Pipe()
+        let outputPipe = Pipe()
         let process = Process()
         process.currentDirectoryURL = workDir
 
-        // force UTF-8 output from CLI tools — prevents garbled Cyrillic/CJK filenames
         var baseEnv = ProcessInfo.processInfo.environment
         baseEnv["LANG"] = "en_US.UTF-8"
         baseEnv["LC_ALL"] = "en_US.UTF-8"
@@ -99,6 +135,10 @@ final class ArchiveService {
             process.executableURL = URL(fileURLWithPath: "/usr/bin/tar")
             process.arguments = ["-c", "-f", archiveURL.path] + names
 
+        case .gzip, .bzip2, .xz, .lzma, .zstd, .lz4, .lzo, .lzip:
+            process.executableURL = URL(fileURLWithPath: try ArchiveToolLocator.find7z())
+            process.arguments = ["a", "-mx=\(level)", archiveURL.path, names[0]]
+
         case .sevenZip, .sevenZipGeneric:
             process.executableURL = URL(fileURLWithPath: try ArchiveToolLocator.find7z())
             var args = ["a", "-mx=\(level)"]
@@ -109,15 +149,22 @@ final class ArchiveService {
             process.arguments = args
         }
 
-        let outputPipe = Pipe()
-        // ensure UTF-8 env for all branches (tarGz/tarBz2/tarXz set their own env from baseEnv)
         if process.environment == nil {
             process.environment = baseEnv
         }
+
         process.standardOutput = onProgress != nil ? outputPipe : nil
         process.standardError = errorPipe
+
         log.debug("[ArchiveService] \(#function) tool=\(process.executableURL?.path ?? "?") args=\(process.arguments ?? []) workDir=\(workDir.path)")
+
         processHandle?.set(process)
-        try await ArchiveProcessRunner.runWithProgress(process, errorPipe: errorPipe, outputPipe: onProgress != nil ? outputPipe : nil, onLine: onProgress, processHandle: processHandle)
+        try await ArchiveProcessRunner.runWithProgress(
+            process,
+            errorPipe: errorPipe,
+            outputPipe: onProgress != nil ? outputPipe : nil,
+            onLine: onProgress,
+            processHandle: processHandle
+        )
     }
 }

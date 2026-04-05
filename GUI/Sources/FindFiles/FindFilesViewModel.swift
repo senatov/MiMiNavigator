@@ -315,6 +315,34 @@ final class FindFilesViewModel {
         passwordContinuation = nil
     }
 
+    // MARK: - Archive Progress Helpers
+    private func showArchiveProgress(for archiveURL: URL) -> (ProgressPanel, ActiveArchiveProcess) {
+        let progressPanel = ProgressPanel.shared
+        let handle = ActiveArchiveProcess()
+        progressPanel.show(
+            archiveName: archiveURL.lastPathComponent,
+            destinationPath: archiveURL.deletingLastPathComponent().path
+        )
+        progressPanel.appendLine("Extracting archive: \(archiveURL.lastPathComponent)")
+        return (progressPanel, handle)
+    }
+
+    private func openArchiveWithProgress(
+        _ archiveURL: URL,
+        progressPanel: ProgressPanel,
+        handle: ActiveArchiveProcess
+    ) async throws -> URL {
+        try await ArchiveManager.shared.openArchive(
+            at: archiveURL,
+            onProgress: { line in
+                Task { @MainActor in
+                    progressPanel.appendLine(line)
+                }
+            },
+            processHandle: handle
+        )
+    }
+
     // MARK: - Actions on Results
 
     /// Navigate to result file in the active panel.
@@ -322,74 +350,79 @@ final class FindFilesViewModel {
     func goToFile(result: FindFilesResult, appState: AppState) {
         let panel = appState.focusedPanel
 
-        if result.isInsideArchive, let archivePath = result.archivePath {
-            // Archive result: extract archive and navigate to the file inside it
-            let archiveURL = URL(fileURLWithPath: archivePath)
+        func selectFile(named fileName: String) {
+            let files = appState.displayedFiles(for: panel)
+            if let match = files.first(where: { $0.nameStr == fileName }) {
+                appState.select(match, on: panel)
+            }
+        }
 
+
+        func archiveTargetFileURL(for result: FindFilesResult, archivePath: String, tempDir: URL) -> URL {
+            let internalPath = result.fileURL.path
+                .replacingOccurrences(of: archivePath, with: "")
+                .trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+            return tempDir.appendingPathComponent(internalPath)
+        }
+
+        func refreshPanel(at path: String) async {
+            appState.updatePath(path, for: panel)
+            if panel == .left {
+                await appState.scanner.setLeftDirectory(pathStr: path)
+                await appState.scanner.refreshFiles(currSide: .left)
+                await appState.refreshLeftFiles()
+            } else {
+                await appState.scanner.setRightDirectory(pathStr: path)
+                await appState.scanner.refreshFiles(currSide: .right)
+                await appState.refreshRightFiles()
+            }
+        }
+
+        func fallbackToArchiveLocation(_ archiveURL: URL) async {
+            let archiveDirPath = archiveURL.deletingLastPathComponent().path
+            await refreshPanel(at: archiveDirPath)
+            selectFile(named: archiveURL.lastPathComponent)
+        }
+
+        if result.isInsideArchive, let archivePath = result.archivePath {
+            let archiveURL = URL(fileURLWithPath: archivePath)
             Task { @MainActor in
                 log.info("[FindFiles] goToFile: extracting archive \(archiveURL.lastPathComponent) for result \(result.fileName)")
 
-                do {
-                    let tempDir = try await ArchiveManager.shared.openArchive(at: archiveURL)
+                let (progressPanel, handle) = showArchiveProgress(for: archiveURL)
 
-                    // Update archive state on the panel
+                do {
+                    let tempDir = try await openArchiveWithProgress(
+                        archiveURL,
+                        progressPanel: progressPanel,
+                        handle: handle
+                    )
+
+                    progressPanel.finish(success: true)
+
                     var archState = appState.archiveState(for: panel)
                     archState.enterArchive(archiveURL: archiveURL, tempDir: tempDir)
                     appState.setArchiveState(archState, for: panel)
 
-                    // result.fileURL is like: /path/to/archive.zip/internal/path/file.txt
-                    // Compute the actual path inside the temp dir
-                    let internalPath = result.fileURL.path
-                        .replacingOccurrences(of: archivePath, with: "")
-                        .trimmingCharacters(in: CharacterSet(charactersIn: "/"))
-
-                    let targetFileURL = tempDir.appendingPathComponent(internalPath)
+                    let targetFileURL = archiveTargetFileURL(for: result, archivePath: archivePath, tempDir: tempDir)
                     let targetDir = targetFileURL.deletingLastPathComponent().path
                     let targetFileName = targetFileURL.lastPathComponent
 
-                    appState.updatePath(targetDir, for: panel)
-
-                    if panel == .left {
-                        await appState.scanner.setLeftDirectory(pathStr: targetDir)
-                        await appState.scanner.refreshFiles(currSide: .left)
-                        await appState.refreshLeftFiles()
-                    } else {
-                        await appState.scanner.setRightDirectory(pathStr: targetDir)
-                        await appState.scanner.refreshFiles(currSide: .right)
-                        await appState.refreshRightFiles()
-                    }
-
-                    // Try to select the target file
-                    let files = appState.displayedFiles(for: panel)
-                    if let match = files.first(where: { $0.nameStr == targetFileName }) {
-                        appState.select(match, on: panel)
-                    }
+                    await refreshPanel(at: targetDir)
+                    selectFile(named: targetFileName)
 
                     log.info("[FindFiles] goToFile: navigated to \(targetDir) and selected \(targetFileName)")
                 } catch {
+                    progressPanel.finish(success: false, details: error.localizedDescription)
                     log.error("[FindFiles] goToFile: failed to extract archive: \(error.localizedDescription)")
-                    // Fallback: reveal the archive in panel
-                    let archiveDir = archiveURL.deletingLastPathComponent()
-                    appState.updatePath(archiveDir, for: panel)
-                    Task {
-                        await appState.scanner.refreshFiles(currSide: panel)
-                        let files = appState.displayedFiles(for: panel)
-                        if let match = files.first(where: { $0.nameStr == archiveURL.lastPathComponent }) {
-                            appState.select(match, on: panel)
-                        }
-                    }
+                    await fallbackToArchiveLocation(archiveURL)
                 }
             }
         } else {
-            // Normal file result: navigate to containing directory and select
             let targetDir = result.fileURL.deletingLastPathComponent().path
-            appState.updatePath(targetDir, for: panel)
-            Task {
-                await appState.scanner.refreshFiles(currSide: panel)
-                let files = appState.displayedFiles(for: panel)
-                if let match = files.first(where: { $0.nameStr == result.fileName }) {
-                    appState.select(match, on: panel)
-                }
+            Task { @MainActor in
+                await refreshPanel(at: targetDir)
+                selectFile(named: result.fileName)
             }
         }
     }
@@ -459,6 +492,15 @@ final class FindFilesViewModel {
         }
     }
 
+    // MARK: - Archive Result Helpers
+    private func archiveInternalPath(for result: FindFilesResult, archivePath: String) -> String {
+        if result.filePath.hasPrefix(archivePath) {
+            return String(result.filePath.dropFirst(archivePath.count))
+                .trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+        }
+        return result.fileName
+    }
+
     // MARK: - Show in Panel
 
     /// Convert search results to CustomFile list and inject into the focused panel.
@@ -469,40 +511,55 @@ final class FindFilesViewModel {
         guard !results.isEmpty else { return }
         let panel = appState.focusedPanel
         let capturedResults = results
+
+
         Task { @MainActor in
             var customFiles: [CustomFile] = []
             var openedArchives: Set<String> = []
+            var extractedArchiveDirectories: [String: URL] = [:]
+            let progressPanel = ProgressPanel.shared
+
             for result in capturedResults {
                 if result.isInsideArchive, let archivePath = result.archivePath {
                     let archiveURL = URL(fileURLWithPath: archivePath)
-                    do {
-                        let tempDir = try await ArchiveManager.shared.openArchive(at: archiveURL)
-                        openedArchives.insert(archivePath)
-                        // Compute internal path: result.filePath relative to archivePath
-                        let internalPath: String
-                        if result.filePath.hasPrefix(archivePath) {
-                            internalPath = String(result.filePath.dropFirst(archivePath.count))
-                                .trimmingCharacters(in: CharacterSet(charactersIn: "/"))
-                        } else {
-                            internalPath = result.fileName
-                        }
-                        let extractedURL = tempDir.appendingPathComponent(internalPath)
-                        if FileManager.default.fileExists(atPath: extractedURL.path) {
-                            let cf = CustomFile(
-                                extractedPath: extractedURL.path,
-                                archiveSourcePath: archivePath,
-                                archiveInternalPath: internalPath
+                    let tempDir: URL
+
+                    if let existingTempDir = extractedArchiveDirectories[archivePath] {
+                        tempDir = existingTempDir
+                    } else {
+                        do {
+                            let (panelView, handle) = showArchiveProgress(for: archiveURL)
+                            tempDir = try await openArchiveWithProgress(
+                                archiveURL,
+                                progressPanel: panelView,
+                                handle: handle
                             )
-                            customFiles.append(cf)
-                        } else {
-                            log.warning("[FindFiles] showInPanel: extracted file not found: \(extractedURL.path)")
+                            panelView.finish(success: true)
+                            extractedArchiveDirectories[archivePath] = tempDir
+                            openedArchives.insert(archivePath)
+                        } catch {
+                            progressPanel.finish(success: false, details: error.localizedDescription)
+                            log.error("[FindFiles] showInPanel: archive extract failed: \(error.localizedDescription)")
                             let cf = CustomFile(name: result.fileName, path: archivePath)
                             if !customFiles.contains(where: { $0.id == cf.id }) {
                                 customFiles.append(cf)
                             }
+                            continue
                         }
-                    } catch {
-                        log.error("[FindFiles] showInPanel: archive extract failed: \(error.localizedDescription)")
+                    }
+
+                    let internalPath = archiveInternalPath(for: result, archivePath: archivePath)
+                    let extractedURL = tempDir.appendingPathComponent(internalPath)
+
+                    if FileManager.default.fileExists(atPath: extractedURL.path) {
+                        let cf = CustomFile(
+                            extractedPath: extractedURL.path,
+                            archiveSourcePath: archivePath,
+                            archiveInternalPath: internalPath
+                        )
+                        customFiles.append(cf)
+                    } else {
+                        log.warning("[FindFiles] showInPanel: extracted file not found: \(extractedURL.path)")
                         let cf = CustomFile(name: result.fileName, path: archivePath)
                         if !customFiles.contains(where: { $0.id == cf.id }) {
                             customFiles.append(cf)
@@ -513,6 +570,7 @@ final class FindFilesViewModel {
                     customFiles.append(cf)
                 }
             }
+
             appState.searchResultArchives[panel] = openedArchives
             let virtualPath = "\u{1F50D} Search Results"
             appState.showSearchResults(customFiles, virtualPath: virtualPath, on: panel)

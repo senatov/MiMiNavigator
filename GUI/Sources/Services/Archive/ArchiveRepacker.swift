@@ -10,6 +10,26 @@ import Foundation
 // MARK: - Archive Repacker
 enum ArchiveRepacker {
 
+    // MARK: - Entry Names
+    private static func archiveEntryNames(from contents: [URL], workDir: URL) -> [String] {
+        contents.map { url in
+            let standardizedURL = url.standardizedFileURL
+            let standardizedWorkDir = workDir.standardizedFileURL
+
+            if standardizedURL.deletingLastPathComponent() == standardizedWorkDir {
+                return standardizedURL.lastPathComponent
+            }
+
+            let path = standardizedURL.path
+            let workDirPath = standardizedWorkDir.path
+            if path.hasPrefix(workDirPath + "/") {
+                return String(path.dropFirst(workDirPath.count + 1))
+            }
+
+            return standardizedURL.lastPathComponent
+        }
+    }
+
     @concurrent static func repack(session: ArchiveSession) async throws {
         let archiveURL = session.archiveURL
         let tempDir = session.tempDirectory
@@ -26,14 +46,18 @@ enum ArchiveRepacker {
             at: tempDir, includingPropertiesForKeys: nil, options: .skipsHiddenFiles
         )) ?? []
 
+        let entryNames = archiveEntryNames(from: topLevel, workDir: tempDir)
+
         do {
             switch session.format {
             case .zip:
-                try await repackZip(contents: topLevel, to: archiveURL, workDir: tempDir)
+                try await repackZip(entryNames: entryNames, to: archiveURL, workDir: tempDir)
             case .tar, .tarGz, .tarBz2, .tarXz, .tarLzma, .tarZst, .tarLz4, .tarLzo, .tarLz, .compressZ:
-                try await repackTar(contents: topLevel, to: archiveURL, format: session.format, workDir: tempDir)
+                try await repackTar(entryNames: entryNames, to: archiveURL, format: session.format, workDir: tempDir)
             case .sevenZip, .sevenZipGeneric:
-                try await repack7z(contents: topLevel, to: archiveURL, workDir: tempDir)
+                try await repack7z(entryNames: entryNames, to: archiveURL, workDir: tempDir)
+            case .gzip, .bzip2, .xz, .lzma, .zstd, .lz4, .lzo, .lzip:
+                throw ArchiveManagerError.repackFailed("Unsupported repack format: \(session.format.displayName)")
             }
         } catch {
             // Restore backup on failure
@@ -56,12 +80,12 @@ enum ArchiveRepacker {
 
     // MARK: - ZIP
 
-    @concurrent private static func repackZip(contents: [URL], to archiveURL: URL, workDir: URL) async throws {
+    @concurrent private static func repackZip(entryNames: [String], to archiveURL: URL, workDir: URL) async throws {
         let pipe = Pipe()
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/zip")
         process.currentDirectoryURL = workDir
-        process.arguments = ["-r", archiveURL.path] + contents.map(\.lastPathComponent)
+        process.arguments = ["-r", archiveURL.path] + entryNames
         process.standardOutput = Pipe()
         process.standardError = pipe
         try await ArchiveProcessRunner.run(process, errorPipe: pipe)
@@ -69,7 +93,7 @@ enum ArchiveRepacker {
 
     // MARK: - TAR family
 
-    @concurrent private static func repackTar(contents: [URL], to archiveURL: URL, format: ArchiveFormat, workDir: URL) async throws {
+    @concurrent private static func repackTar(entryNames: [String], to archiveURL: URL, format: ArchiveFormat, workDir: URL) async throws {
         let pipe = Pipe()
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/tar")
@@ -82,7 +106,7 @@ enum ArchiveRepacker {
         case .compressZ: args.append("-Z")
         default:         break
         }
-        args += ["-f", archiveURL.path] + contents.map(\.lastPathComponent)
+        args += ["-f", archiveURL.path] + entryNames
         process.arguments = args
         process.standardOutput = Pipe()
         process.standardError = pipe
@@ -90,18 +114,18 @@ enum ArchiveRepacker {
             try await ArchiveProcessRunner.run(process, errorPipe: pipe)
         } catch {
             log.warning("[Repacker] tar failed, retrying with 7z")
-            try await repack7z(contents: contents, to: archiveURL, workDir: workDir)
+            try await repack7z(entryNames: entryNames, to: archiveURL, workDir: workDir)
         }
     }
 
     // MARK: - 7z
 
-    @concurrent private static func repack7z(contents: [URL], to archiveURL: URL, workDir: URL) async throws {
+    @concurrent private static func repack7z(entryNames: [String], to archiveURL: URL, workDir: URL) async throws {
         let pipe = Pipe()
         let process = Process()
         process.executableURL = URL(fileURLWithPath: try ArchiveToolLocator.find7z())
         process.currentDirectoryURL = workDir
-        process.arguments = ["a", archiveURL.path] + contents.map(\.lastPathComponent)
+        process.arguments = ["a", archiveURL.path] + entryNames
         process.standardOutput = Pipe()
         process.standardError = pipe
         try await ArchiveProcessRunner.run(process, errorPipe: pipe)

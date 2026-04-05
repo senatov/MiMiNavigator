@@ -31,16 +31,63 @@ enum ArchiveExtractor {
     ) async throws {
         switch format {
         case .zip:
-            try await extractZip(archiveURL: archiveURL, to: destination, password: password,
-                                 onProgress: onProgress, handle: processHandle)
-        case .tar, .tarGz, .tarBz2, .tarXz, .tarLzma, .tarZst, .tarLz4, .tarLzo, .tarLz, .compressZ:
-            try await extractTar(archiveURL: archiveURL, format: format, to: destination, password: password,
-                                 onProgress: onProgress, handle: processHandle)
+            try await extractZip(
+                archiveURL: archiveURL,
+                to: destination,
+                password: password,
+                onProgress: onProgress,
+                handle: processHandle
+            )
+        case .tar, .tarGz, .tarBz2, .tarXz, .tarLzma, .tarZst, .tarLz4, .tarLzo, .tarLz:
+            try await extractTar(
+                archiveURL: archiveURL,
+                format: format,
+                to: destination,
+                onProgress: onProgress,
+                handle: processHandle
+            )
+        case .gzip, .bzip2, .xz, .lzma, .zstd, .lz4, .lzo, .lzip, .compressZ:
+            try await extractSingleCompressedFile(
+                archiveURL: archiveURL,
+                format: format,
+                to: destination,
+                onProgress: onProgress,
+                handle: processHandle
+            )
         case .sevenZip, .sevenZipGeneric:
-            try await extract7z(archiveURL: archiveURL, to: destination, password: password,
-                                onProgress: onProgress, handle: processHandle)
+            try await extract7z(
+                archiveURL: archiveURL,
+                to: destination,
+                password: password,
+                onProgress: onProgress,
+                handle: processHandle
+            )
         }
+
         log.info("[Extractor] Done: \(archiveURL.lastPathComponent)")
+    }
+
+    // MARK: - Process Helpers
+    private static func makeProcess(executablePath: String) -> Process {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: executablePath)
+        process.environment = utf8Env()
+        process.standardInput = FileHandle(forReadingAtPath: "/dev/null")
+        return process
+    }
+
+    @concurrent private static func runProcess(
+        _ process: Process,
+        errorPipe: Pipe,
+        outputPipe: Pipe,
+        onProgress: ProgressLine?
+    ) async throws {
+        try await ArchiveProcessRunner.runWithProgress(
+            process,
+            errorPipe: errorPipe,
+            outputPipe: outputPipe,
+            onLine: onProgress
+        )
     }
 
     // MARK: - ZIP
@@ -51,57 +98,98 @@ enum ArchiveExtractor {
     ) async throws {
         let errPipe = Pipe()
         let outPipe = Pipe()
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/unzip")
-        process.environment = utf8Env()
+        let process = makeProcess(executablePath: "/usr/bin/unzip")
         var args = ["-o", "-DD"]
-        if let pwd = password, !pwd.isEmpty { args += ["-P", pwd] }
+
+        if let pwd = password, !pwd.isEmpty {
+            args += ["-P", pwd]
+        }
+
         args += [archiveURL.path, "-d", destination.path]
         process.arguments = args
         process.standardOutput = outPipe
         process.standardError = errPipe
-        process.standardInput = FileHandle(forReadingAtPath: "/dev/null")
         handle?.set(process)
 
-        try await ArchiveProcessRunner.runWithProgress(
-            process, errorPipe: errPipe, outputPipe: outPipe, onLine: onProgress
-        )
+        try await runProcess(process, errorPipe: errPipe, outputPipe: outPipe, onProgress: onProgress)
     }
 
     // MARK: - TAR family
 
     @concurrent private static func extractTar(
         archiveURL: URL, format: ArchiveFormat, to destination: URL,
-        password: String?, onProgress: ProgressLine?, handle: ActiveArchiveProcess?
+        onProgress: ProgressLine?, handle: ActiveArchiveProcess?
     ) async throws {
         let errPipe = Pipe()
         let outPipe = Pipe()
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/tar")
-        process.environment = utf8Env()
+        let process = makeProcess(executablePath: "/usr/bin/tar")
         var args = ["-xv"]
+
         switch format {
-        case .tarGz:     args.append("-z")
-        case .tarBz2:    args.append("-j")
-        case .tarXz:     args.append("-J")
-        case .compressZ: args.append("-Z")
-        default:         break
+        case .tarGz:
+            args.append("-z")
+        case .tarBz2:
+            args.append("-j")
+        case .tarXz:
+            args.append("-J")
+        default:
+            break
         }
+
         args += ["-f", archiveURL.path, "-C", destination.path]
         process.arguments = args
         process.standardOutput = outPipe
         process.standardError = errPipe
-        process.standardInput = FileHandle(forReadingAtPath: "/dev/null")
         handle?.set(process)
 
         do {
-            try await ArchiveProcessRunner.runWithProgress(
-                process, errorPipe: errPipe, outputPipe: outPipe, onLine: onProgress
-            )
+            try await runProcess(process, errorPipe: errPipe, outputPipe: outPipe, onProgress: onProgress)
         } catch {
             log.warning("[Extractor] tar failed for \(archiveURL.lastPathComponent), trying 7z: \(error)")
-            try await extract7z(archiveURL: archiveURL, to: destination, password: password,
-                                onProgress: onProgress, handle: handle)
+            try await extract7z(
+                archiveURL: archiveURL,
+                to: destination,
+                password: nil,
+                onProgress: onProgress,
+                handle: handle
+            )
+        }
+    }
+
+    // MARK: - Single-file compressed formats
+    @concurrent private static func extractSingleCompressedFile(
+        archiveURL: URL,
+        format: ArchiveFormat,
+        to destination: URL,
+        onProgress: ProgressLine?,
+        handle: ActiveArchiveProcess?
+    ) async throws {
+        let errPipe = Pipe()
+        let outPipe = Pipe()
+        let process = makeProcess(executablePath: try ArchiveToolLocator.find7z())
+        let outputName = archiveURL.deletingPathExtension().lastPathComponent
+        let outputPath = destination.appendingPathComponent(outputName).path
+
+        var args = ["x", archiveURL.path, "-o\(destination.path)", "-y", "-bb1"]
+        process.arguments = args
+        process.standardOutput = outPipe
+        process.standardError = errPipe
+        handle?.set(process)
+
+        do {
+            try await runProcess(process, errorPipe: errPipe, outputPipe: outPipe, onProgress: onProgress)
+        } catch {
+            log.warning("[Extractor] single-file extraction failed for \(archiveURL.lastPathComponent): \(error)")
+            throw error
+        }
+
+        switch format {
+        case .gzip, .bzip2, .xz, .lzma, .zstd, .lz4, .lzo, .lzip, .compressZ:
+            if !FileManager.default.fileExists(atPath: outputPath) {
+                log.debug("[Extractor] expected single-file output not found: \(outputPath)")
+            }
+        default:
+            break
         }
     }
 
@@ -113,19 +201,18 @@ enum ArchiveExtractor {
     ) async throws {
         let errPipe = Pipe()
         let outPipe = Pipe()
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: try ArchiveToolLocator.find7z())
-        process.environment = utf8Env()
+        let process = makeProcess(executablePath: try ArchiveToolLocator.find7z())
         var args = ["x", archiveURL.path, "-o\(destination.path)", "-y", "-bb1"]
-        if let pwd = password, !pwd.isEmpty { args.append("-p\(pwd)") }
+
+        if let pwd = password, !pwd.isEmpty {
+            args.append("-p\(pwd)")
+        }
+
         process.arguments = args
         process.standardOutput = outPipe
         process.standardError = errPipe
-        process.standardInput = FileHandle(forReadingAtPath: "/dev/null")
         handle?.set(process)
 
-        try await ArchiveProcessRunner.runWithProgress(
-            process, errorPipe: errPipe, outputPipe: outPipe, onLine: onProgress
-        )
+        try await runProcess(process, errorPipe: errPipe, outputPipe: outPipe, onProgress: onProgress)
     }
 }

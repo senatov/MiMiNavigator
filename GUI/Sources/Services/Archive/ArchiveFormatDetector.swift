@@ -28,33 +28,51 @@ enum ArchiveFormatDetector {
         if name.hasSuffix(".tar.lz") { return .tarLz }
 
         switch ext {
-        // Native macOS tools
-        case "zip": return .zip
-        case "tar": return .tar
-        case "gz", "gzip": return .tarGz
-        case "bz2", "bzip2": return .tarBz2
-        case "xz": return .tarXz
-        case "lzma": return .tarLzma
-        case "z": return .compressZ
+        // Native macOS tools and direct archive containers
+        case "zip":
+            return .zip
+        case "tar":
+            return .tar
+
+        // Single-file compressed formats
+        case "gz", "gzip":
+            return .gzip
+        case "bz2", "bzip2":
+            return .bzip2
+        case "xz":
+            return .xz
+        case "lzma":
+            return .lzma
+        case "z":
+            return .compressZ
+        case "zst", "zstd":
+            return .zstd
+        case "lz4":
+            return .lz4
+        case "lz":
+            return .lzip
+        case "lzo":
+            return .lzo
 
         // 7z native
-        case "7z": return .sevenZip
+        case "7z":
+            return .sevenZip
 
-        // 7z handles all of these
+        // 7z handles these archive/container formats
         case "rar", "cab", "arj", "lha", "lzh",
              "rpm", "deb", "cpio", "xar",
              "iso", "img", "vhd", "vmdk",
              "wim", "swm",
              "dmg", "pkg",
              "jar", "war", "ear", "aar", "apk",
-             "lz4", "zst", "zstd",
              "ace", "sit", "sitx",
-             "squashfs", "cramfs",
-             "lz", "lzo":
+             "squashfs", "cramfs":
             return .sevenZipGeneric
 
         default:
-            if ArchiveExtensions.isArchive(ext) { return .sevenZipGeneric }
+            if ArchiveExtensions.isArchive(ext) {
+                return .sevenZipGeneric
+            }
             return nil
         }
     }
