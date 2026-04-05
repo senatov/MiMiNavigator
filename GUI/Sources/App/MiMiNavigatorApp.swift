@@ -79,6 +79,7 @@ struct MiMiNavigatorApp: App {
 
     private func restoreMainWindowFrameIfNeeded() {
         log.debug(#function)
+        NSApp.setActivationPolicy(.regular)
         guard !didRestoreMainWindowFrame else { return }
         guard let win = NSApp.windows.first(where: { !($0 is NSPanel) }) else { return }
 
