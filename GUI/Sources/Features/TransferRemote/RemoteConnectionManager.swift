@@ -74,8 +74,8 @@ final class RemoteConnectionManager {
 
     private func connectOnStartIfPossible(server: RemoteServer) async {
         guard hasSavedPassword(for: server) else {
-            log.warning("\(#function) skip '\(server.displayName)'")
-            log.warning("\(#function) no saved password")
+            log.warning("\(#function) skip '\(server.displayName)' — no saved password, opening dialog")
+            ConnectToServerCoordinator.shared.openWithFocus(serverID: server.id, field: "password")
             return
         }
 

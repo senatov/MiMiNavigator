@@ -86,18 +86,21 @@ struct DuoFilePanelView: View {
 
     private var geometrySection: some View {
         GeometryReader { geometry in
-            DuoPanelFilePanelsSection(
-                leftPanelWidth: $leftPanelWidth,
-                containerWidth: geometry.size.width,
-                containerHeight: geometry.size.height,
-                fetchFiles: fetchFiles
-            )
-            .onAppear {
-                handleGeometryAppear(width: geometry.size.width)
+            if leftPanelWidth > 0, geometry.size.width > 0 {
+                DuoPanelFilePanelsSection(
+                    leftPanelWidth: $leftPanelWidth,
+                    containerWidth: geometry.size.width,
+                    containerHeight: geometry.size.height,
+                    fetchFiles: fetchFiles
+                )
             }
-            .onChange(of: geometry.size.width) { oldWidth, newWidth in
-                handleGeometryWidthChange(oldWidth: oldWidth, newWidth: newWidth)
-            }
+            Color.clear
+                .onAppear {
+                    handleGeometryAppear(width: geometry.size.width)
+                }
+                .onChange(of: geometry.size.width) { oldWidth, newWidth in
+                    handleGeometryWidthChange(oldWidth: oldWidth, newWidth: newWidth)
+                }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -130,6 +133,13 @@ struct DuoFilePanelView: View {
             lastContainerWidth = containerWidth
             isInitialized = true
             return
+        }
+
+        // Safety: if leftPanelWidth is still 0 after init, re-init
+        if leftPanelWidth <= 0 {
+            log.warning("\(#function) leftPanelWidth is 0 after init — re-initializing")
+            initializePanelWidth(containerWidth: containerWidth)
+            lastContainerWidth = containerWidth
         }
 
         if lastContainerWidth <= 0 {

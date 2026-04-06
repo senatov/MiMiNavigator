@@ -27,11 +27,9 @@ struct ConnectToServerView: View {
     @State private var sessionLayout = SessionColumnLayout()
     @State private var showPassword: Bool = false
     @State private var connectionError: String = ""
-    @State private var showSaveAlert: Bool = false
-    @State private var saveAlertIcon: String = "checkmark.circle.fill"
-    @State private var saveAlertColor: Color = .green
-    @State private var saveAlertTitle: String = ""
-    @State private var saveAlertMessage: String = ""
+    @State private var showSaveFlash: Bool = false
+    @State private var saveFlashIcon: String = "checkmark.circle.fill"
+    @State private var saveFlashColor: Color = .green
     @State private var nameWasManuallyEdited: Bool = false
     @State private var sidebarWidth: CGFloat = Layout.idealSidebarWidth
     @State private var lastCommittedSidebarWidth: CGFloat = Layout.idealSidebarWidth
@@ -54,9 +52,9 @@ struct ConnectToServerView: View {
         static let dividerHitWidth: CGFloat = 18
         static let dividerCapsuleWidth: CGFloat = 4
         static let dividerCapsuleHeight: CGFloat = 72
-        static let minContentWidth: CGFloat = 320
-        static let windowMinWidth: CGFloat = 660
-        static let windowIdealWidth: CGFloat = 760
+        static let minContentWidth: CGFloat = 260
+        static let windowMinWidth: CGFloat = 540
+        static let windowIdealWidth: CGFloat = 620
         static let windowMinHeight: CGFloat = 440
         static let windowIdealHeight: CGFloat = 520
         static let sidebarWidthDefaultsKey = "ConnectToServerView.sidebarWidth"
@@ -131,35 +129,13 @@ struct ConnectToServerView: View {
         .glassEffect()
         .onAppear {
             restoreSidebarWidth()
-            selectFirst()
+            applyPendingFocusOrSelectFirst()
         }
         .onDisappear {
             releaseDividerCursorIfNeeded()
         }
         .onExitCommand {
             onDismiss?()
-        }
-        .overlay { saveAlertOverlay }
-    }
-
-    // MARK: - Save Alert Overlay
-    @ViewBuilder
-    private var saveAlertOverlay: some View {
-        if showSaveAlert {
-            ZStack {
-                Color.black.opacity(0.3)
-                    .ignoresSafeArea()
-                    .onTapGesture { showSaveAlert = false }
-                HIGAlertDialog(
-                    icon: saveAlertIcon,
-                    iconColor: saveAlertColor,
-                    title: saveAlertTitle,
-                    message: saveAlertMessage,
-                    onDismiss: { showSaveAlert = false }
-                )
-                .transition(.scale(scale: 0.95).combined(with: .opacity))
-            }
-            .animation(.easeOut(duration: 0.15), value: showSaveAlert)
         }
     }
 
@@ -535,9 +511,8 @@ struct ConnectToServerView: View {
                 Button("Disconnect") { disconnectAction() }
                     .disabled(!canDisconnectCurrentDraft)
                     .buttonStyle(AnimatedDialogButtonStyle(role: .destructive))
-                Button("Save") { saveActionWithFeedback() }
+                saveButton
                     .disabled(draft.host.isEmpty)
-                    .buttonStyle(AnimatedDialogButtonStyle())
                 Button("Connect") { connectAction() }
                     .disabled(draft.host.isEmpty || isConnecting)
                     .buttonStyle(AnimatedDialogButtonStyle(role: .confirm))
@@ -546,6 +521,26 @@ struct ConnectToServerView: View {
             .glassEffect()
         }
     }
+
+    // MARK: - Save Button with flash icon
+    private var saveButton: some View {
+        Button {
+            saveActionWithFeedback()
+        } label: {
+            ZStack {
+                Text("Save")
+                if showSaveFlash {
+                    Image(systemName: saveFlashIcon)
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundStyle(saveFlashColor)
+                        .transition(.scale(scale: 0.5).combined(with: .opacity))
+                }
+            }
+        }
+        .buttonStyle(AnimatedDialogButtonStyle())
+        .animation(.easeOut(duration: 0.2), value: showSaveFlash)
+    }
+
 
     // MARK: - Draft State Helpers
     private func applyServerToDraft(_ server: RemoteServer) {
@@ -567,12 +562,14 @@ struct ConnectToServerView: View {
         draft = fresh
     }
 
-    private func presentSaveFeedback(title: String, message: String, icon: String, color: Color) {
-        saveAlertTitle = title
-        saveAlertMessage = message
-        saveAlertIcon = icon
-        saveAlertColor = color
-        showSaveAlert = true
+    private func flashSaveIcon(success: Bool) {
+        saveFlashIcon = success ? "checkmark.circle.fill" : "xmark.circle.fill"
+        saveFlashColor = success ? .green : .red
+        showSaveFlash = true
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(1))
+            showSaveFlash = false
+        }
     }
 
     // MARK: - Actions
@@ -580,6 +577,8 @@ struct ConnectToServerView: View {
     // MARK: - connectAction
     private func connectAction() {
         saveAction()
+        ensurePasswordSaved()
+        silentExport()
         connectionError = ""
         guard let url = draft.connectionURL else {
             connectionError = "Invalid URL"
@@ -623,12 +622,27 @@ struct ConnectToServerView: View {
         }
 
         refreshDraftFromStore()
-        let reason = draft.lastResult.rawValue
+        let result = draft.lastResult
+        let reason = result.rawValue
         log.warning("[ConnectToServer] connect failed host=\(draft.host)")
         log.warning("[ConnectToServer] result=\(reason)")
         log.warning("[ConnectToServer] detail=\(draft.lastErrorDetail ?? "—")")
         connectionError = reason
         isConnecting = false
+        focusFieldForError(result)
+    }
+
+
+    // MARK: - Focus field matching error type
+    private func focusFieldForError(_ result: ConnectionResult) {
+        switch result {
+            case .authFailed:
+                focusedField = .password
+            case .refused, .timeout:
+                focusedField = .host
+            default:
+                break
+        }
     }
 
     // MARK: - saveAction
@@ -744,6 +758,40 @@ struct ConnectToServerView: View {
         log.info("[ConnectToServer] no saved servers, created empty draft")
     }
 
+
+    // MARK: - applyPendingFocusOrSelectFirst
+    private func applyPendingFocusOrSelectFirst() {
+        let coord = ConnectToServerCoordinator.shared
+        if let pendingID = coord.pendingServerID,
+           let server = store.servers.first(where: { $0.id == pendingID })
+        {
+            selectedID = server.id
+            applyServerToDraft(server)
+            if let field = coord.pendingFocusField {
+                focusedField = mapFieldName(field)
+            }
+            coord.pendingServerID = nil
+            coord.pendingFocusField = nil
+            log.info("[ConnectToServer] focused on pending server=\(server.displayName)")
+        } else {
+            selectFirst()
+        }
+    }
+
+
+    // MARK: - mapFieldName
+    private func mapFieldName(_ name: String) -> FormField? {
+        switch name {
+            case "password": return .password
+            case "host":     return .host
+            case "user":     return .user
+            case "name":     return .name
+            case "port":     return .port
+            case "keyPath":  return .keyPath
+            default:         return nil
+        }
+    }
+
     // MARK: - chooseKeyFile
     private func chooseKeyFile() {
         let panel = NSOpenPanel()
@@ -804,23 +852,31 @@ struct ConnectToServerView: View {
     private func saveActionWithFeedback() {
         saveAction()
         do {
-            let filePath = try Self.exportToExternalSFTP(store: store)
-            presentSaveFeedback(
-                title: "Saved",
-                message: "Configuration written to\n\(filePath)",
-                icon: "checkmark.circle.fill",
-                color: .green
-            )
-            log.info("[ConnectToServer] exported to \(filePath)")
+            try Self.exportToExternalSFTP(store: store)
+            flashSaveIcon(success: true)
+            log.info("[ConnectToServer] saved + exported OK")
         } catch {
-            presentSaveFeedback(
-                title: "Save Failed",
-                message: Self.describeError(error),
-                icon: "xmark.circle.fill",
-                color: .red
-            )
+            flashSaveIcon(success: false)
             log.error("[ConnectToServer] export failed: \(error.localizedDescription)")
         }
+    }
+
+
+    // MARK: - silentExport (no UI feedback — used by connectAction)
+    private func silentExport() {
+        do {
+            try Self.exportToExternalSFTP(store: store)
+        } catch {
+            log.error("[ConnectToServer] silent export failed: \(error.localizedDescription)")
+        }
+    }
+
+
+    // MARK: - ensurePasswordSaved (always save pwd on Connect for auto-connect)
+    private func ensurePasswordSaved() {
+        guard !password.isEmpty else { return }
+        RemoteServerKeychain.savePassword(password, for: draft)
+        log.debug("[ConnectToServer] password saved to keychain for \(draft.displayName)")
     }
 
     private func activateDividerCursorIfNeeded() {

@@ -4,6 +4,7 @@
     // Created by Iakov Senatov on 15.03.2026.
     // Copyright © 2025-2026 Senatov. All rights reserved.
     // Description: App lifecycle — initialize, saveBeforeExit, spinner watchdog.
+    //   Guard against double-initialization from SwiftUI onAppear re-entry.
 
     import AppKit
     import FileModelKit
@@ -12,6 +13,8 @@
     // MARK: - Lifecycle
     extension AppState {
 
+        private static var didInitialize = false
+
         private func setupSpinnerWatchdog() {
             let watchdog = SpinnerWatchdog.shared
             watchdog.addSource(name: "BatchOperation") { BatchOperationManager.shared.showProgressDialog }
@@ -19,6 +22,13 @@
         }
 
         func initialize() {
+            guard !Self.didInitialize else {
+                log.debug("[AppState] initialize() skipped — already done")
+                return
+            }
+            Self.didInitialize = true
+            log.info("[AppState] initialize() starting")
+
             setupSpinnerWatchdog()
             StatePersistence.restoreTabs(into: self)
             StatePersistence.restoreSorting(into: self)
@@ -28,6 +38,7 @@
                 displayedRightFiles = cached.right
                 setSelectedFile(firstRealFile(in: cached.left), for: .left)
                 setSelectedFile(firstRealFile(in: cached.right), for: .right)
+                log.info("[AppState] startup cache applied: L=\(cached.left.count) R=\(cached.right.count)")
             }
             Task { @MainActor in
                 await setScannerDirectory(leftPath, for: .left)
@@ -46,6 +57,7 @@
                     leftFiles: displayedLeftFiles,
                     rightFiles: displayedRightFiles
                 )
+                log.info("[AppState] initialize() async scan complete")
             }
         }
 

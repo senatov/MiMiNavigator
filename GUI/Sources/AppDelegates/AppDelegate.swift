@@ -56,6 +56,9 @@ import AppKit
         installKeyMonitor()
         logStartupStep("key monitor installed")
 
+        scheduleAutoConnectServers()
+        logStartupStep("auto-connect scheduled")
+
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
             self.logStartupCompletionIfNeeded(reason: "next main-turn after applicationDidFinishLaunching")
@@ -66,6 +69,15 @@ import AppKit
             self.logStartupCompletionIfNeeded(reason: "1.0s delayed checkpoint")
         }
     }
+
+    private func scheduleAutoConnectServers() {
+        Task(priority: .utility) { [weak self] in
+            self?.logStartupStep("auto-connect servers begin")
+            await RemoteConnectionManager.shared.connectOnStartIfNeeded()
+            self?.logStartupStep("auto-connect servers done")
+        }
+    }
+
 
     private func scheduleBookmarkRestore() {
         Task(priority: .utility) { [weak self] in

@@ -4,13 +4,7 @@
 // Description: Column identity — titles, icons, widths, alignment, sort keys.
 //
 // Width policy — char count × glyph "0" width at column font + 5pt margin:
-//   Date*        : min 6,  max  50  chars @ 12pt system
-//   Size         : min 6,  max  50  chars @ 12pt system
-//   Kind         : min 6,  max  40  chars @ 12pt system
-//   Permissions  : min 6,  max  20  chars @ 11pt mono
-//   Owner/Group  : min 5,  max  40  chars @ 12pt system
-//   childCount   : min 2,  max  50  chars @ 12pt system
-//   Name         : min 6,  max 512  chars @ 12pt system (no ceiling in practice)
+
 //   minDragWidth : 4pt hard floor for all columns
 
 import FileModelKit
@@ -65,7 +59,7 @@ enum ColumnID: String, CaseIterable, Codable, Identifiable, Transferable {
 
     var defaultWidth: CGFloat {
         switch self {
-        case .name:                                                      0   // flexible
+        case .name:                                                    0   // flexible
         case .dateModified, .dateCreated, .dateLastOpened, .dateAdded: 130
         case .size:          75
         case .kind:          64
@@ -91,19 +85,19 @@ enum ColumnID: String, CaseIterable, Codable, Identifiable, Transferable {
     var minWidth: CGFloat {
         switch self {
         case .name:
-            cw(6,  .systemFont(ofSize: 12))
+            cw(16, .systemFont(ofSize: 12))
         case .dateModified, .dateCreated, .dateLastOpened, .dateAdded:
-            cw(6,  .systemFont(ofSize: 12))
+            cw(6,  .systemFont(ofSize: 8))
         case .size:
-            cw(6,  .systemFont(ofSize: 12))
+            cw(6,  .systemFont(ofSize: 8))
         case .kind:
-            cw(6,  .systemFont(ofSize: 12))
+            cw(6,  .systemFont(ofSize: 8))
         case .permissions:
             cw(6,  .monospacedSystemFont(ofSize: 11, weight: .regular))
         case .owner, .group:
-            cw(5,  .systemFont(ofSize: 12))
+            cw(5,  .systemFont(ofSize: 8))
         case .childCount:
-            cw(2,  .systemFont(ofSize: 12))
+            cw(2,  .systemFont(ofSize: 8))
         }
     }
 

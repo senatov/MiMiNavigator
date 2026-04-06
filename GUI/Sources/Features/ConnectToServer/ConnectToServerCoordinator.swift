@@ -20,19 +20,31 @@ final class ConnectToServerCoordinator {
     private var window: NSPanel?
 
     private let frameAutosaveName = "MiMiNavigator.ConnectToServerWindow"
-    private let defaultWidth: CGFloat  = 640
+    private let defaultWidth: CGFloat  = 520
     private let defaultHeight: CGFloat = 520
-    private let minWidth: CGFloat = 660
+    private let minWidth: CGFloat = 540
     private let minHeight: CGFloat = 440
     private let panelTitle = "Connect to Server"
 
     var onConnect: ((URL, String) -> Void)?
     var onDisconnect: (() -> Void)?
 
+    /// Set by openWithFocus — ConnectToServerView reads on appear
+    var pendingServerID: RemoteServer.ID?
+    var pendingFocusField: String?
+
     private init() {}
 
     private var minimumPanelSize: NSSize {
         NSSize(width: minWidth, height: minHeight)
+    }
+
+    // MARK: - Open with focus on specific server + field
+    func openWithFocus(serverID: RemoteServer.ID, field: String) {
+        pendingServerID = serverID
+        pendingFocusField = field
+        open()
+        log.info("[ConnectToServer] openWithFocus server=\(serverID) field=\(field)")
     }
 
     // MARK: - Toggle

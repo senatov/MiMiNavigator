@@ -77,6 +77,8 @@ struct TopMenuBarView: View {
                 ForEach(menuData.dropLast()) { menu in
                     menuView(for: menu)
                 }
+                RemoteConnectionsDropdown(appState: appState)
+                    .padding(.leading, 16)
                 Spacer(minLength: 12)
                 if let helpMenu = menuData.last {
                     menuView(for: helpMenu)
