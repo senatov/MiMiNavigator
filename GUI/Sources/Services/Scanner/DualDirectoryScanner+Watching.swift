@@ -74,7 +74,6 @@ extension DualDirectoryScanner {
 
     func applyPatch(_ patch: FSEventsDirectoryWatcher.DirectoryPatch, for side: FavPanelSide) async {
         lastFSEventsPatch[side] = Date()
-
         if patch.needsFullRescan {
             log.info("[FSEvents] needsFullRescan for \(side) panel")
             await refreshFiles(currSide: side)

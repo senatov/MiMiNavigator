@@ -170,7 +170,7 @@ enum ArchiveExtractor {
         let outputName = archiveURL.deletingPathExtension().lastPathComponent
         let outputPath = destination.appendingPathComponent(outputName).path
 
-        var args = ["x", archiveURL.path, "-o\(destination.path)", "-y", "-bb1"]
+        let args = ["x", archiveURL.path, "-o\(destination.path)", "-y", "-bb1"]
         process.arguments = args
         process.standardOutput = outPipe
         process.standardError = errPipe

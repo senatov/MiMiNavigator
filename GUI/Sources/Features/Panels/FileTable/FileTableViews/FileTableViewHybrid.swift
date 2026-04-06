@@ -18,7 +18,7 @@ struct FileTableViewHybrid: View {
 
     let panelSide: FavPanelSide
     let files: [CustomFile]
-    let filesVersion: Int  // Version number for efficient change detection
+    let filesVersion: Int
     @Binding var selectedID: CustomFile.ID?
     let layout: ColumnLayoutModel
     let onSelect: (CustomFile) -> Void
@@ -29,9 +29,12 @@ struct FileTableViewHybrid: View {
 
     private var isFocused: Bool { appState.focusedPanel == panelSide }
 
+    private var jumpButtonsShouldBeVisible: Bool {
+        files.count > 30
+    }
+
     /// Background color for entire panel
     private var panelBackgroundColor: Color {
-        log.debug(#function + ": isFocused: \(isFocused)")
         return isFocused ? colorStore.activeTheme.warmWhite : Color(nsColor: .controlBackgroundColor)
     }
 
@@ -61,10 +64,9 @@ struct FileTableViewHybrid: View {
                     onDoubleClick: onDoubleClick
                 )
 
-                // Glass-style jump buttons (show when > 30 files)
-                if files.count > 30 {
+                if jumpButtonsShouldBeVisible {
                     glassJumpButtons
-                    .padding(.trailing, 4)
+                        .padding(.trailing, 4)
                 }
             }
         }
@@ -121,22 +123,21 @@ struct FileTableViewHybrid: View {
         }
     }
 
+    // MARK: - View State
     // MARK: - Panel Border
     private var panelBorder: some View {
-        log.debug(#function + ": Re-rendering panel border")
         return RoundedRectangle(cornerRadius: 8, style: .continuous)
-        .stroke(
-            isPanelDropTargeted ? Color.accentColor.opacity(0.8) : Color.clear,
-            lineWidth: isPanelDropTargeted ? 2 : 1
-        )
-        .allowsHitTesting(false)
+            .stroke(
+                isPanelDropTargeted ? Color.accentColor.opacity(0.8) : Color.clear,
+                lineWidth: isPanelDropTargeted ? 2 : 1
+            )
+            .allowsHitTesting(false)
     }
 
     // MARK: - Keyboard Navigation
 
     private func moveSelection(by delta: Int) {
         guard !files.isEmpty else { return }
-        log.debug(#function + ": Moving selection by \(delta)")
         let currentIdx: Int
         if let id = selectedID, let idx = files.firstIndex(where: { $0.id == id }) {
             currentIdx = idx
@@ -165,10 +166,10 @@ struct FileTableViewHybrid: View {
     // MARK: - Selection Handler
 
     private func handleSelect(_ file: CustomFile) {
-        log.debug(#function + ": Selecting file with ID \(file.id)")
         onSelect(file)
     }
 
+    // MARK: - Jump Controls
     // MARK: - Glass Jump Buttons
 
     /// Frosted glass style buttons for jumping to start/end of list
@@ -194,27 +195,26 @@ struct FileTableViewHybrid: View {
     private func glassButton(icon: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: icon)
-            .font(.system(size: 9, weight: .bold))
-            .foregroundStyle(.secondary)
-            .frame(width: 20, height: 20)
-            .background {
-                Capsule()
-                .fill(.white.opacity(0.85))
-                .shadow(color: .black.opacity(0.12), radius: 1.5, x: 0, y: 0.5)
-            }
-            .overlay {
-                Capsule()
-                .stroke(
-                    LinearGradient(
-                        colors: [.white.opacity(0.6), .white.opacity(0.2)],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    ),
-                    lineWidth: 0.5
-                )
-            }
+                .font(.system(size: 9, weight: .bold))
+                .foregroundStyle(.secondary)
+                .frame(width: 20, height: 20)
+                .background {
+                    Capsule()
+                        .fill(.white.opacity(0.85))
+                        .shadow(color: .black.opacity(0.12), radius: 1.5, x: 0, y: 0.5)
+                }
+                .overlay {
+                    Capsule()
+                        .stroke(
+                            LinearGradient(
+                                colors: [.white.opacity(0.6), .white.opacity(0.2)],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            ),
+                            lineWidth: 0.5
+                        )
+                }
         }
         .buttonStyle(.plain)
     }
-
 }

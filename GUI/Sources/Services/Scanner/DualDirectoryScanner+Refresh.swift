@@ -17,15 +17,34 @@ extension DualDirectoryScanner {
             return false
         }
 
+        if !force, consumeRecentFSEventsSignal(for: side) {
+            return true
+        }
+
         if !force, let last = lastFullScan[side] {
             let elapsed = Date().timeIntervalSince(last)
             if elapsed < scanCooldown {
                 let elapsedText = String(format: "%.1f", elapsed)
-                log.warning("[Scan] ⏭️ refreshFiles SKIPPED: scanCooldown (\(elapsedText)s < \(scanCooldown)s) for \(side)")
+                log.warning("[Scan] ⏭️ refreshFiles SKIPPED: scanCooldown (\(elapsedText)s < \(scanCooldown)s) for \(side) without recent FSEvents signal")
                 return false
             }
         }
 
+        return true
+    }
+
+    private func consumeRecentFSEventsSignal(for side: FavPanelSide) -> Bool {
+        guard let lastPatch = lastFSEventsPatch[side] else { return false }
+
+        let elapsed = Date().timeIntervalSince(lastPatch)
+        guard elapsed < scanCooldown else {
+            lastFSEventsPatch[side] = nil
+            return false
+        }
+
+        lastFSEventsPatch[side] = nil
+        let elapsedText = String(format: "%.1f", elapsed)
+        log.info("[Scan] consuming recent FSEvents signal (\n            \(elapsedText)s) and bypassing cooldown for \(side)")
         return true
     }
 
@@ -103,6 +122,8 @@ extension DualDirectoryScanner {
     func isCurrentGeneration(_ generation: Int, for side: FavPanelSide) -> Bool {
         scanGeneration[side] == generation
     }
+
+    // MARK: - Panel State Helpers
 
     // MARK: - URL / panel state helpers
 
@@ -272,7 +293,7 @@ extension DualDirectoryScanner {
         .value
     }
 
-    // MARK: - Debounce helpers
+    // MARK: - Watcher Signals
 
     func resetFSEventsDebounce(for side: FavPanelSide) {
         lastFSEventsPatch[side] = Date()

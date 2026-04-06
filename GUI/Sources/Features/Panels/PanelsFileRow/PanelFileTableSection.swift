@@ -25,16 +25,19 @@ struct PanelFileTableSection: View {
     let onSelect: (CustomFile) -> Void
     let onDoubleClick: (CustomFile) -> Void
 
-    @State private var rowRects: [CustomFile.ID: CGRect] = [:]
-
     // Use singleton ColumnLayoutStore — avoids recreating ColumnLayoutModel on every SwiftUI rebuild
     private var columnLayout: ColumnLayoutModel {
         ColumnLayoutStore.shared.layout(for: panelSide)
     }
 
+    private var currentFilesVersion: Int {
+        panelSide == .left ? appState.leftFilesVersion : appState.rightFilesVersion
+    }
+
     private var filesViewIdentity: Int {
         var hasher = Hasher()
         hasher.combine(panelSide)
+        hasher.combine(currentFilesVersion)
         hasher.combine(files.count)
         for file in files {
             hasher.combine(file.id)
@@ -42,27 +45,16 @@ struct PanelFileTableSection: View {
             hasher.combine(file.pathStr)
             hasher.combine(file.isDirectory)
             hasher.combine(file.isParentEntry)
+            hasher.combine(file.cachedDirectorySize)
+            hasher.combine(file.sizeInBytes)
+            hasher.combine(file.sizeIsExact)
+            hasher.combine(file.modifiedDate?.timeIntervalSince1970 ?? 0)
+            hasher.combine(String(describing: file.securityState))
         }
         return hasher.finalize()
     }
 
-    // MARK: - Init
-    init(
-        files: [CustomFile],
-        selectedID: Binding<CustomFile.ID?>,
-        panelSide: FavPanelSide,
-        onPanelTap: @escaping (FavPanelSide) -> Void,
-        onSelect: @escaping (CustomFile) -> Void,
-        onDoubleClick: @escaping (CustomFile) -> Void
-    ) {
-        self.files = files
-        self._selectedID = selectedID
-        self.panelSide = panelSide
-        self.onPanelTap = onPanelTap
-        self.onSelect = onSelect
-        self.onDoubleClick = onDoubleClick
-    }
-
+    // MARK: - Body
     var body: some View {
         Group {
             if useNSTableView {
@@ -70,7 +62,7 @@ struct PanelFileTableSection: View {
                 FileTableViewHybrid(
                     panelSide: panelSide,
                     files: files,
-                    filesVersion: panelSide == .left ? appState.leftFilesVersion : appState.rightFilesVersion,
+                    filesVersion: currentFilesVersion,
                     selectedID: $selectedID,
                     layout: columnLayout,
                     onSelect: handleSelection,
@@ -135,6 +127,7 @@ struct PanelFileTableSection: View {
         onSelect(file)
     }
 
+    // MARK: - Notifications
     private func notifyWillSelect(_ file: CustomFile) {
         log.debug(#function)
         NotificationCenter.default.post(

@@ -51,7 +51,7 @@ extension DualDirectoryScanner {
         }
     }
 
-    // MARK: - MainActor publish helpers
+    // MARK: - Publish entry points
 
     @MainActor
     func applyPreviewFiles(_ files: [CustomFile], for side: FavPanelSide) {
@@ -78,6 +78,8 @@ extension DualDirectoryScanner {
         setDisplayedFiles(files, for: side)
     }
 
+
+    // MARK: - Cached metadata transfer
 
     /// Transfer cached directory/shallow sizes + security state from old CustomFile
     /// instances to new ones created by FileScanner. Keyed by pathStr (stable identity).
@@ -122,8 +124,8 @@ extension DualDirectoryScanner {
 
 
 
-    /// Cheap identity+size check to avoid triggering SwiftUI rebuild on no-op publishes.
-    /// Compares id, name, path, sizeVersion, cachedChildCount — the fields that affect row display.
+    /// Cheap identity + metadata equality check to avoid triggering SwiftUI rebuilds on no-op publishes.
+    /// Includes row fields that affect visible rendering for externally changed files.
     @MainActor
     private func filesAreIdentical(_ lhs: [CustomFile], _ rhs: [CustomFile]) -> Bool {
         guard lhs.count == rhs.count else { return false }
@@ -132,13 +134,23 @@ extension DualDirectoryScanner {
             let b = rhs[i]
             if a.id != b.id { return false }
             if a.nameStr != b.nameStr { return false }
+            if a.pathStr != b.pathStr { return false }
+            if a.isDirectory != b.isDirectory { return false }
+            if a.isParentEntry != b.isParentEntry { return false }
             if a.sizeVersion != b.sizeVersion { return false }
             if a.cachedChildCount != b.cachedChildCount { return false }
+            if a.cachedDirectorySize != b.cachedDirectorySize { return false }
+            if a.cachedShallowSize != b.cachedShallowSize { return false }
+            if a.sizeInBytes != b.sizeInBytes { return false }
+            if a.sizeIsExact != b.sizeIsExact { return false }
+            if a.modifiedDate?.timeIntervalSince1970 != b.modifiedDate?.timeIntervalSince1970 { return false }
+            if String(describing: a.securityState) != String(describing: b.securityState) { return false }
         }
         return true
     }
 
     // MARK: - Published files normalization
+    // MARK: - Publish deduplication
 
     @MainActor
     func currentDisplayedFiles(for side: FavPanelSide) -> [CustomFile] {
@@ -165,7 +177,6 @@ extension DualDirectoryScanner {
         return sanitized
     }
 
-    // MARK: - Publish deduplication
     @MainActor
     func makeContentHash(for files: [CustomFile]) -> Int {
         var hasher = Hasher()
@@ -176,9 +187,15 @@ extension DualDirectoryScanner {
             hasher.combine(file.pathStr)
             hasher.combine(file.isDirectory)
             hasher.combine(file.isParentEntry)
+            hasher.combine(file.cachedChildCount)
+            hasher.combine(file.cachedDirectorySize)
+            hasher.combine(file.cachedShallowSize)
+            hasher.combine(file.sizeInBytes)
+            hasher.combine(file.sizeIsExact)
+            hasher.combine(file.modifiedDate?.timeIntervalSince1970 ?? 0)
+            hasher.combine(String(describing: file.securityState))
         }
-        let hash = hasher.finalize()
-        return hash
+        return hasher.finalize()
     }
 
     @MainActor
@@ -194,6 +211,8 @@ extension DualDirectoryScanner {
         let sameVisibleCount = currentDisplayedCount == files.count
         return (samePath, sameHash, sameVisibleCount, currentDisplayedCount)
     }
+
+    // MARK: - Publish deduplication
 
     @MainActor
     func shouldSkipIdenticalPublish(
@@ -222,7 +241,7 @@ extension DualDirectoryScanner {
             return false
         }
 
-        log.verbose("[Scanner] skip identical publish side=\(side) path='\(path)' count=\(state.currentDisplayedCount)")
+        log.verbose("[Scanner] skip identical publish side=\(side) path='\(path)' count=\(state.currentDisplayedCount) hash=\(contentHash)")
         Task { await self.resetFSEventsDebounce(for: side) }
         return true
     }
