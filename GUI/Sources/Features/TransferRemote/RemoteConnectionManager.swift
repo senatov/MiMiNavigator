@@ -56,7 +56,8 @@ final class RemoteConnectionManager {
     private func finishConnectAttempt(for server: RemoteServer, source: String) {
         let key = connectionKey(for: server)
         let removed = connectInFlightKeys.remove(key) != nil
-        log.debug("[RemoteConnectionManager] finish connect source=\(source) server=\(server.displayName) removed=\(removed) key=\(key)")
+        log.debug(
+            "[RemoteConnectionManager] finish connect source=\(source) server=\(server.displayName) removed=\(removed) key=\(key)")
     }
 
     // MARK: - Password Lookup
@@ -109,14 +110,45 @@ final class RemoteConnectionManager {
     }
 
     private func connectOnStartIfPossible(server: RemoteServer) async {
+        guard supportsAutoConnectOnStart(for: server.remoteProtocol) else {
+            let detail = unsupportedProtocolDetail(for: server)
+            log.warning(
+                "[RemoteConnectionManager] auto-connect skipped for \(server.displayName): unsupported protocol=\(server.remoteProtocol.rawValue)"
+            )
+            log.warning("[RemoteConnectionManager] diagnostic: \(detail)")
+            updateServerResult(server, result: .error, errorDetail: detail)
+            return
+        }
+
+        guard !requiresDeferredStartupConnect(for: server) else {
+            log.info("[RemoteConnectionManager] auto-connect deferred for \(server.displayName): startup password access disabled")
+            return
+        }
+
         let password = loadSavedPassword(for: server)
         guard !password.isEmpty else {
-            log.warning("\(#function) skip '\(server.displayName)' — no saved password, opening dialog once")
-            ConnectToServerCoordinator.shared.openWithFocus(serverID: server.id, field: "password")
+            log.info("[RemoteConnectionManager] auto-connect deferred for \(server.displayName): no saved password loaded at startup")
             return
         }
 
         await connect(to: server, password: password)
+    }
+
+    private func supportsAutoConnectOnStart(for proto: RemoteProtocol) -> Bool {
+        switch proto {
+            case .sftp, .ftp:
+                return true
+            default:
+                return false
+        }
+    }
+
+    private func requiresDeferredStartupConnect(for server: RemoteServer) -> Bool {
+        supportsAutoConnectOnStart(for: server.remoteProtocol)
+    }
+
+    private func unsupportedProtocolDetail(for server: RemoteServer) -> String {
+        "SMB is not implemented in this build. host=\(server.host) port=\(server.port) user=\(server.user) path=\(server.remotePath.isEmpty ? "/" : server.remotePath)"
     }
 
     // MARK: - Connect
@@ -135,7 +167,14 @@ final class RemoteConnectionManager {
             log.warning("[RemoteConnectionManager] connect requested with empty password for \(server.displayName)")
         }
 
-        let provider = createProvider(for: server.remoteProtocol)
+        guard let provider = createProvider(for: server.remoteProtocol) else {
+            let detail = unsupportedProtocolDetail(for: server)
+            log.warning("[RemoteConnectionManager] connect skipped for \(server.displayName): unsupported protocol=\(server.remoteProtocol.rawValue)")
+            log.warning("[RemoteConnectionManager] diagnostic: \(detail)")
+            updateServerResult(server, result: .error, errorDetail: detail)
+            return
+        }
+
         await connectWithNewProvider(provider, to: server, password: password)
     }
 
@@ -147,7 +186,9 @@ final class RemoteConnectionManager {
 
     private func connectWithNewProvider(_ provider: any RemoteFileProvider, to server: RemoteServer, password: String) async {
         do {
-            log.debug("[RemoteConnectionManager] provider.connect host=\(server.host) port=\(server.port) user=\(server.user) proto=\(server.remoteProtocol.rawValue)")
+            log.debug(
+                "[RemoteConnectionManager] provider.connect host=\(server.host) port=\(server.port) user=\(server.user) proto=\(server.remoteProtocol.rawValue)"
+            )
             try await provider.connect(
                 host: server.host,
                 port: server.port,
@@ -189,7 +230,8 @@ final class RemoteConnectionManager {
         updateServerResult(server, result: result, errorDetail: error.localizedDescription)
 
         if result == .authFailed {
-            log.warning("[RemoteConnectionManager] authentication failed for \(server.displayName); stored password may be missing or invalid")
+            log.warning(
+                "[RemoteConnectionManager] authentication failed for \(server.displayName); stored password may be missing or invalid")
         }
 
         log.error("[RemoteConnectionManager] connect FAILED host=\(server.host):\(server.port)")
@@ -308,23 +350,19 @@ final class RemoteConnectionManager {
         return trimmed
     }
 
-    private func createProvider(for proto: RemoteProtocol) -> any RemoteFileProvider {
+    private func createProvider(for proto: RemoteProtocol) -> (any RemoteFileProvider)? {
         log.debug("\(#function)(\(proto))")
 
         switch proto {
-        case .sftp:
-            return SFTPFileProvider()
-        case .ftp:
-            return FTPFileProvider()
-        default:
-            return fallbackProvider(for: proto)
+            case .sftp:
+                return SFTPFileProvider()
+            case .ftp:
+                return FTPFileProvider()
+            default:
+                log.warning("[RemoteConnectionManager] provider unavailable for protocol=\(proto.rawValue)")
+                log.warning("[RemoteConnectionManager] only FTP and SFTP providers are currently implemented")
+                return nil
         }
-    }
-
-    private func fallbackProvider(for proto: RemoteProtocol) -> any RemoteFileProvider {
-        log.warning("\(#function) unsupported remote protocol=\(proto.rawValue)")
-        log.warning("\(#function) falling back to FTP provider")
-        return FTPFileProvider()
     }
 
     private func updateServerResult(_ server: RemoteServer, result: ConnectionResult, errorDetail: String?) {

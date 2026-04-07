@@ -290,7 +290,7 @@ struct TableHeaderView: View {
                 ColumnAutoFitter.autoFitAll(layout: layout, files: files)
             }
         } label: {
-            Label("Auto-fit columns on navigate", systemImage: autoFitOn ? "checkmark" : "")
+            Label("Auto-fit cols", systemImage: autoFitOn ? "checkmark" : "")
         }
 
         Divider()

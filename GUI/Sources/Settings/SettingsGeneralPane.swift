@@ -198,10 +198,10 @@ struct SettingsGeneralPane: View {
             SettingsGroupBox {
                 VStack(spacing: 0) {
                     SettingsRow(
-                        label: "Auto-fit columns:",
+                        label: "Auto-fit cols:",
                         help: "Shrink data columns to fit their content when navigating. Empty columns collapse to minimum width. Recovered space goes to the Name column."
                     ) {
-                        Toggle("Auto-fit column widths on navigate", isOn: prefBinding(\.autoFitColumnsOnNavigate))
+                        Toggle("Auto-fit cols", isOn: prefBinding(\.autoFitColumnsOnNavigate))
                             .toggleStyle(.checkbox)
                     }
                 }
