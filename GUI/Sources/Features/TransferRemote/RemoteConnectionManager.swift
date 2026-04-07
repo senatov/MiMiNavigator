@@ -21,6 +21,9 @@ final class RemoteConnectionManager {
     private(set) var connections: [RemoteConnection] = []
     private(set) var activeConnectionID: UUID?
 
+    private var autoConnectAttemptedServerIDs: Set<UUID> = []
+    private var connectInFlightKeys: Set<String> = []
+
     var isConnected: Bool {
         !connections.isEmpty
     }
@@ -32,9 +35,36 @@ final class RemoteConnectionManager {
 
     private init() {}
 
+    private func connectionKey(for server: RemoteServer) -> String {
+        let normalizedHost = Self.normalizeHost(server.host)
+        let normalizedPath = Self.normalizeRemotePath(server.remotePath)
+        return "\(server.remoteProtocol.rawValue)|\(normalizedHost)|\(server.port)|\(server.user)|\(normalizedPath)"
+    }
+
+    private func beginConnectAttempt(for server: RemoteServer, source: String) -> Bool {
+        let key = connectionKey(for: server)
+        guard !connectInFlightKeys.contains(key) else {
+            log.warning("[RemoteConnectionManager] skip duplicate connect source=\(source) server=\(server.displayName) key=\(key)")
+            return false
+        }
+
+        connectInFlightKeys.insert(key)
+        log.debug("[RemoteConnectionManager] begin connect source=\(source) server=\(server.displayName) key=\(key)")
+        return true
+    }
+
+    private func finishConnectAttempt(for server: RemoteServer, source: String) {
+        let key = connectionKey(for: server)
+        let removed = connectInFlightKeys.remove(key) != nil
+        log.debug("[RemoteConnectionManager] finish connect source=\(source) server=\(server.displayName) removed=\(removed) key=\(key)")
+    }
+
     // MARK: - Password Lookup
     private func loadSavedPassword(for server: RemoteServer) -> String {
-        RemoteServerKeychain.loadPassword(for: server)
+        let password = RemoteServerKeychain.loadPassword(for: server)
+        let hasPassword = !password.isEmpty
+        log.debug("[RemoteConnectionManager] keychain lookup server=\(server.displayName) hasPassword=\(hasPassword)")
+        return password
     }
 
     private func hasSavedPassword(for server: RemoteServer) -> Bool {
@@ -66,6 +96,12 @@ final class RemoteConnectionManager {
         guard !serversToConnect.isEmpty else { return }
 
         for server in serversToConnect {
+            if autoConnectAttemptedServerIDs.contains(server.id) {
+                log.debug("[RemoteConnectionManager] auto-connect already processed for \(server.displayName)")
+                continue
+            }
+
+            autoConnectAttemptedServerIDs.insert(server.id)
             await connectOnStartIfPossible(server: server)
         }
 
@@ -73,13 +109,13 @@ final class RemoteConnectionManager {
     }
 
     private func connectOnStartIfPossible(server: RemoteServer) async {
-        guard hasSavedPassword(for: server) else {
-            log.warning("\(#function) skip '\(server.displayName)' — no saved password, opening dialog")
+        let password = loadSavedPassword(for: server)
+        guard !password.isEmpty else {
+            log.warning("\(#function) skip '\(server.displayName)' — no saved password, opening dialog once")
             ConnectToServerCoordinator.shared.openWithFocus(serverID: server.id, field: "password")
             return
         }
 
-        let password = loadSavedPassword(for: server)
         await connect(to: server, password: password)
     }
 
@@ -87,9 +123,16 @@ final class RemoteConnectionManager {
     func connect(to server: RemoteServer, password: String) async {
         log.info("\(#function) \(server.displayName) via \(server.remoteProtocol.rawValue)")
 
+        guard beginConnectAttempt(for: server, source: #function) else { return }
+        defer { finishConnectAttempt(for: server, source: #function) }
+
         if let existingConnection = connection(for: server) {
             reuseConnection(existingConnection)
             return
+        }
+
+        if password.isEmpty {
+            log.warning("[RemoteConnectionManager] connect requested with empty password for \(server.displayName)")
         }
 
         let provider = createProvider(for: server.remoteProtocol)
@@ -104,6 +147,7 @@ final class RemoteConnectionManager {
 
     private func connectWithNewProvider(_ provider: any RemoteFileProvider, to server: RemoteServer, password: String) async {
         do {
+            log.debug("[RemoteConnectionManager] provider.connect host=\(server.host) port=\(server.port) user=\(server.user) proto=\(server.remoteProtocol.rawValue)")
             try await provider.connect(
                 host: server.host,
                 port: server.port,
@@ -143,6 +187,10 @@ final class RemoteConnectionManager {
         let nsError = error as NSError
         let result = classifyError(error)
         updateServerResult(server, result: result, errorDetail: error.localizedDescription)
+
+        if result == .authFailed {
+            log.warning("[RemoteConnectionManager] authentication failed for \(server.displayName); stored password may be missing or invalid")
+        }
 
         log.error("[RemoteConnectionManager] connect FAILED host=\(server.host):\(server.port)")
         log.error("[RemoteConnectionManager] proto=\(server.remoteProtocol.rawValue)")

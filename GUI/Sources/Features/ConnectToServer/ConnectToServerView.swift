@@ -462,12 +462,6 @@ struct ConnectToServerView: View {
                             Toggle("Keep", isOn: $keepPassword)
                                 .toggleStyle(.checkbox)
 
-                            #if DEBUG
-                            Text("Saved only for current session in Debug build")
-                                .font(.system(size: 11))
-                                .foregroundStyle(.secondary)
-                                .fixedSize(horizontal: false, vertical: true)
-                            #endif
                         }
                     }
                     Divider()
@@ -546,7 +540,9 @@ struct ConnectToServerView: View {
     private func applyServerToDraft(_ server: RemoteServer) {
         draft = server
         password = RemoteServerKeychain.loadPassword(for: server)
-        keepPassword = !password.isEmpty
+        let hasSavedPassword = !password.isEmpty
+        keepPassword = hasSavedPassword
+        log.debug("[ConnectToServer] applyServerToDraft host=\(server.host) hasSavedPassword=\(hasSavedPassword)")
         nameWasManuallyEdited = !server.name.isEmpty && server.name != server.host
     }
 
@@ -554,6 +550,7 @@ struct ConnectToServerView: View {
         draft = RemoteServer()
         password = ""
         keepPassword = true
+        log.debug("[ConnectToServer] reset draft state")
         nameWasManuallyEdited = false
     }
 
@@ -577,7 +574,6 @@ struct ConnectToServerView: View {
     // MARK: - connectAction
     private func connectAction() {
         saveAction()
-        ensurePasswordSaved()
         silentExport()
         connectionError = ""
         guard let url = draft.connectionURL else {
@@ -651,10 +647,15 @@ struct ConnectToServerView: View {
         if draft.name.isEmpty {
             draft.name = draft.host
         }
-        if keepPassword && !password.isEmpty {
-            RemoteServerKeychain.savePassword(password, for: draft)
-        } else if !keepPassword {
+        if keepPassword {
+            if password.isEmpty {
+                log.info("[ConnectToServer] keepPassword enabled but password is empty for \(draft.displayName)")
+            } else {
+                RemoteServerKeychain.savePassword(password, for: draft)
+            }
+        } else {
             RemoteServerKeychain.deletePassword(for: draft)
+            log.debug("[ConnectToServer] keepPassword disabled, removed stored password for \(draft.displayName)")
         }
         if store.servers.contains(where: { $0.id == draft.id }) {
             store.update(draft)
@@ -871,13 +872,6 @@ struct ConnectToServerView: View {
         }
     }
 
-
-    // MARK: - ensurePasswordSaved (always save pwd on Connect for auto-connect)
-    private func ensurePasswordSaved() {
-        guard !password.isEmpty else { return }
-        RemoteServerKeychain.savePassword(password, for: draft)
-        log.debug("[ConnectToServer] password saved to keychain for \(draft.displayName)")
-    }
 
     private func activateDividerCursorIfNeeded() {
         guard !isDividerCursorActive else { return }
