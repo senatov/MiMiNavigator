@@ -34,23 +34,13 @@ struct PanelFileTableSection: View {
         panelSide == .left ? appState.leftFilesVersion : appState.rightFilesVersion
     }
 
+    /// Stable identity — changes only on directory switch or file-list mutation.
+    /// Metadata updates (sizes, dates) must NOT trigger view recreation
+    /// because .id() change destroys scroll position.
     private var filesViewIdentity: Int {
         var hasher = Hasher()
         hasher.combine(panelSide)
-        hasher.combine(currentFilesVersion)
-        hasher.combine(files.count)
-        for file in files {
-            hasher.combine(file.id)
-            hasher.combine(file.nameStr)
-            hasher.combine(file.pathStr)
-            hasher.combine(file.isDirectory)
-            hasher.combine(file.isParentEntry)
-            hasher.combine(file.cachedDirectorySize)
-            hasher.combine(file.sizeInBytes)
-            hasher.combine(file.sizeIsExact)
-            hasher.combine(file.modifiedDate?.timeIntervalSince1970 ?? 0)
-            hasher.combine(String(describing: file.securityState))
-        }
+        hasher.combine(appState.path(for: panelSide))
         return hasher.finalize()
     }
 
