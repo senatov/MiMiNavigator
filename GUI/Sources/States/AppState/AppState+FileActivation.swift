@@ -44,7 +44,8 @@ extension AppState {
             return nil
         }
 
-        let isDirectory = (try? resolvedURL.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true
+        var aliasDirFlag = ObjCBool(false)
+        let isDirectory = FileManager.default.fileExists(atPath: resolvedURL.path, isDirectory: &aliasDirFlag) && aliasDirFlag.boolValue
         return (resolvedURL, isDirectory)
     }
 
@@ -56,9 +57,20 @@ extension AppState {
             return nil
         }
 
+        // resolvingSymlinksInPath() fails on macOS firmlinks (/var, /tmp, /etc)
+        // — returns the same URL and resourceValues reports isDirectory=false.
+        // FileManager.fileExists resolves symlinks/firmlinks correctly.
+        let path = url.path
+        var isDirFlag = ObjCBool(false)
+        let exists = FileManager.default.fileExists(atPath: path, isDirectory: &isDirFlag)
+        if exists, isDirFlag.boolValue {
+            return (url, true)
+        }
+
         let resolvedURL = url.resolvingSymlinksInPath()
-        let isDirectory = (try? resolvedURL.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true
-        return (resolvedURL, isDirectory)
+        var resolvedDirFlag = ObjCBool(false)
+        let isDir = FileManager.default.fileExists(atPath: resolvedURL.path, isDirectory: &resolvedDirFlag) && resolvedDirFlag.boolValue
+        return (resolvedURL, isDir)
     }
 
 
@@ -97,7 +109,10 @@ extension AppState {
             return
         }
 
-        let isDirectory = (try? resolvedURL.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true
+        // resourceValues(.isDirectoryKey) lies about firmlinks (/var, /tmp, /etc).
+        // FileManager.fileExists resolves symlinks/firmlinks correctly.
+        var isDirFlag = ObjCBool(false)
+        let isDirectory = FileManager.default.fileExists(atPath: resolvedURL.path, isDirectory: &isDirFlag) && isDirFlag.boolValue
         guard isDirectory else {
             if originalFile.isAlias {
                 log.warning("[Activate] alias target is not a directory: \(pathToOpen)")
