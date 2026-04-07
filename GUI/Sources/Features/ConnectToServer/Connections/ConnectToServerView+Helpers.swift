@@ -1,4 +1,4 @@
-// ConnectToServerView+Helpers.swift
+// ConnToSrvrView+Helpers.swift
 // MiMiNavigator
 //
 // Copyright © 2026 Senatov. All rights reserved.
@@ -12,7 +12,7 @@
 import AppKit
 import SwiftUI
 
-extension ConnectToServerView {
+extension ConnToSrvrView {
 
     // MARK: - portFormatter
     /// Plain integer, no grouping separator — avoids "5.466" on European locales.

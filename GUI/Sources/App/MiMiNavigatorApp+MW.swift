@@ -40,7 +40,7 @@ extension MiMiNavigatorApp {
             .toolbar {
                 appToolbarContent
             }
-            .glassEffect(Glass.identity)
+            .glassEffect( .identity)
             .sheet(
                 isPresented: Binding(
                     get: { dragDropManager.showConfirmationDialog },

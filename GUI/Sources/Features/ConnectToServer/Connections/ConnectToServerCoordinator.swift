@@ -61,7 +61,7 @@ final class ConnectToServerCoordinator {
             return
         }
 
-        let contentView = ConnectToServerView(
+        let contentView = ConnToSrvrView(
             onConnect: { [weak self] url, password in
                 self?.handleConnect(url: url, password: password)
             },

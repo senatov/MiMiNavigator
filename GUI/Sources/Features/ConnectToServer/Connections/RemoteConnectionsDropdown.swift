@@ -134,9 +134,7 @@ struct RemoteConnectionsDropdown: View {
             ConnectToServerCoordinator.shared.openWithFocus(serverID: server.id, field: "password")
             return
         }
-
         showConnectProgress(server: server)
-
         Task {
             await manager.connect(to: server, password: password)
             if manager.isConnected(to: server) {
