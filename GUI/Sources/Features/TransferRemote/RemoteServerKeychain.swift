@@ -52,6 +52,25 @@ enum RemoteServerKeychain {
         passwordIndexDirectoryURL().appendingPathComponent(passwordIndexFileName, isDirectory: false)
     }
 
+    private static func bootstrapPasswordIndexFileIfNeeded() {
+        ensurePasswordIndexDirectoryExists()
+
+        let fileURL = passwordIndexFileURL()
+        guard !FileManager.default.fileExists(atPath: fileURL.path) else { return }
+
+        let emptyFile = PasswordIndexFile(version: passwordIndexVersion, entries: [:])
+        do {
+            let encoder = JSONEncoder()
+            encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+            encoder.dateEncodingStrategy = .iso8601
+            let data = try encoder.encode(emptyFile)
+            try data.write(to: fileURL, options: .atomic)
+            log.info("[Keychain] created password index at '\(fileURL.path)'")
+        } catch {
+            log.error("[Keychain] failed to bootstrap password index at '\(fileURL.path)': \(error.localizedDescription)")
+        }
+    }
+
     private static func ensurePasswordIndexDirectoryExists() {
         let directoryURL = passwordIndexDirectoryURL()
         do {
@@ -62,6 +81,7 @@ enum RemoteServerKeychain {
     }
 
     private static func loadPasswordIndexFile() -> PasswordIndexFile {
+        bootstrapPasswordIndexFileIfNeeded()
         let fileURL = passwordIndexFileURL()
         guard FileManager.default.fileExists(atPath: fileURL.path) else {
             return PasswordIndexFile(version: passwordIndexVersion, entries: [:])
@@ -80,6 +100,7 @@ enum RemoteServerKeychain {
     }
 
     private static func savePasswordIndexFile(_ file: PasswordIndexFile) {
+        bootstrapPasswordIndexFileIfNeeded()
         ensurePasswordIndexDirectoryExists()
         let fileURL = passwordIndexFileURL()
 
@@ -150,6 +171,7 @@ enum RemoteServerKeychain {
             log.warning("[Keychain] save skipped for \(endpointDescription(for: server)) because password is empty")
             return
         }
+        bootstrapPasswordIndexFileIfNeeded()
 
         let query: [CFString: Any] = [
             kSecClass: kSecClassInternetPassword,
@@ -178,6 +200,7 @@ enum RemoteServerKeychain {
     }
 
     static func loadPassword(for server: RemoteServer) -> String {
+        bootstrapPasswordIndexFileIfNeeded()
         if let cachedPassword = cachedPassword(for: server) {
             log.debug("[Keychain] loaded password from runtime cache for \(endpointDescription(for: server))")
             return cachedPassword
@@ -237,6 +260,7 @@ enum RemoteServerKeychain {
     }
 
     static func deletePassword(for server: RemoteServer) {
+        bootstrapPasswordIndexFileIfNeeded()
         let query: [CFString: Any] = [
             kSecClass: kSecClassInternetPassword,
             kSecAttrServer: server.host,
