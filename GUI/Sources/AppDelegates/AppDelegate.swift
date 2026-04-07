@@ -37,6 +37,9 @@ import AppKit
     func applicationDidFinishLaunching(_ notification: Notification) {
         logStartupStep("applicationDidFinishLaunching begin")
 
+        // Ensure app is a regular Dock citizen from the very start
+        NSApp.setActivationPolicy(.regular)
+
         UserPreferences.shared.load()
         log.debug("prefs loaded, autoFit=\(UserPreferences.shared.snapshot.autoFitColumnsOnNavigate)")
         logStartupStep("UserPreferences loaded")
