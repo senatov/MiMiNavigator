@@ -15,16 +15,24 @@ import SwiftUI
 
 @main
 struct MiMiNavigatorApp: App {
-    @State var appState = AppState()
-    @State var dragDropManager = DragDropManager()
-    @State var contextMenuCoordinator = ContextMenuCoordinator.shared
-    @State var showHiddenFiles = UserPreferences.shared.snapshot.showHiddenFiles
-    @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
-    @Environment(\.scenePhase) var scenePhase
+    // MARK: - State
+
+    @State private var appState = AppState()
+    @State private var dragDropManager = DragDropManager()
+    @State private var contextMenuCoordinator = ContextMenuCoordinator.shared
+    @State private var showHiddenFiles = UserPreferences.shared.snapshot.showHiddenFiles
+    @State private var showAutomationOnboarding = false
+
+    // MARK: - Lifecycle State
 
     @State private var didRestoreMainWindowFrame = false
     @State private var didBindAppState = false
     @State private var didWireCoordinatorCallbacks = false
+
+    // MARK: - Environment
+
+    @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
+    @Environment(\.scenePhase) private var scenePhase
 
     /// App version from CFBundleShortVersionString (e.g. "0.9.4")
     static var appVersion: String {
@@ -36,6 +44,7 @@ struct MiMiNavigatorApp: App {
         AppLogger.initialize()
     }
 
+    // MARK: - Toolbar
     var appToolbarContent: some ToolbarContent {
         Group {
             AppToolbarContent(app: self, appState: appState)
@@ -45,9 +54,10 @@ struct MiMiNavigatorApp: App {
         }
     }
 
+    // MARK: - Overlay
     @ViewBuilder
     var batchProgressOverlay: some View {
-        let _ = log.debug(#function)
+        log.debug(#function)
         if BatchOperationManager.shared.showProgressDialog,
             let state = BatchOperationManager.shared.currentOperation
         {
@@ -103,7 +113,7 @@ struct MiMiNavigatorApp: App {
     }
 
     private func wireCoordinatorCallbacks() {
-        let _ = log.debug(#function)
+        log.debug(#function)
         guard !didWireCoordinatorCallbacks else { return }
         ConnectToServerCoordinator.shared.onDisconnect = {
             Task { @MainActor in
@@ -126,8 +136,8 @@ struct MiMiNavigatorApp: App {
         didWireCoordinatorCallbacks = true
     }
 
-    func handleScenePhaseChange() {
-        let _ = log.debug(#function)
+    private func handleScenePhaseChange() {
+        log.debug(#function)
         if scenePhase == .background {
             Task {
                 await BookmarkStore.shared.stopAll()
@@ -135,7 +145,7 @@ struct MiMiNavigatorApp: App {
         }
     }
 
-    func handleRemoteDisconnect() async {
+    private func handleRemoteDisconnect() async {
         if AppState.isRemotePath(appState.leftURL) {
             await appState.restoreLocalPath(for: FavPanelSide.left)
         }
@@ -145,8 +155,8 @@ struct MiMiNavigatorApp: App {
         }
     }
 
-    func handleRemoteConnect(url: URL, password: String) async {
-        let _ = log.debug(#function)
+    private func handleRemoteConnect(url: URL, password: String) async {
+        log.debug(#function)
         let side = appState.focusedPanel
         let connectURL = buildAuthenticatedConnectURL(from: url, password: password)
         let scheme = url.scheme ?? ""
@@ -161,7 +171,7 @@ struct MiMiNavigatorApp: App {
     }
 
     private func buildAuthenticatedConnectURL(from url: URL, password: String) -> URL {
-        let _ = log.debug(#function)
+        log.debug(#function)
         guard !password.isEmpty,
             var components = URLComponents(url: url, resolvingAgainstBaseURL: false)
         else {
@@ -232,14 +242,14 @@ struct MiMiNavigatorApp: App {
     // MARK: - ═══════════════════════════════════════
 
     /// Creates a ToolbarButton for a given ToolbarItemID with action closure.
-    func makeToolbarIcon(_ id: ToolbarItemID, action: @escaping () -> Void) -> some View {
+    private func makeToolbarIcon(_ id: ToolbarItemID, action: @escaping () -> Void) -> some View {
         ToolbarButton(systemImage: id.systemImage, help: id.helpText, action: action)
     }
 
     /// Creates a ToolbarToggleButton for specific known toggle items.
     @ViewBuilder
-    func makeToolbarToggle(_ id: ToolbarItemID) -> some View {
-        let _ = log.debug(#function)
+    private func makeToolbarToggle(_ id: ToolbarItemID) -> some View {
+        log.debug(#function)
         switch id {
             case .hiddenFiles:
                 ToolbarToggleButton(
@@ -270,29 +280,29 @@ struct MiMiNavigatorApp: App {
     // MARK:   Toolbar Actions (called from AppToolbarContent)
     // MARK: - ═══════════════════════════════════════
 
-    func performRefresh() {
+    private func performRefresh() {
         log.debug("Refresh button clicked")
         appState.forceRefreshBothPanels()
     }
 
-    func performToggleHidden() {
+    private func performToggleHidden() {
         log.debug("Hidden toggle clicked")
         appState.toggleShowHiddenFiles()
         showHiddenFiles = UserPreferences.shared.snapshot.showHiddenFiles
     }
 
-    func performOpenWith() {
+    private func performOpenWith() {
         log.debug("OpenWith button clicked")
         appState.openSelectedItem()
     }
 
-    func performSwapPanels() {
+    private func performSwapPanels() {
         log.debug("Swap panels button clicked")
         appState.swapPanels()
     }
 
     // MARK: - performCompare
-    func performCompare() {
+    private func performCompare() {
         log.debug("Compare button clicked")
         let panel = appState.focusedPanel
         let left = appState.leftPath
@@ -315,17 +325,17 @@ struct MiMiNavigatorApp: App {
         DiffToolLauncher.launch(left: lp, right: rp)
     }
 
-    func performNetwork() {
+    private func performNetwork() {
         log.debug("Network Neighborhood button clicked")
         NetworkNeighborhoodCoordinator.shared.toggle()
     }
 
-    func performConnectServer() {
+    private func performConnectServer() {
         log.debug("Connect to Server button clicked")
         ConnectToServerCoordinator.shared.toggle()
     }
 
-    func performFindFiles() {
+    private func performFindFiles() {
         log.debug("Search button clicked")
         let panel = appState.focusedPanel
         let path = appState.path(for: panel)
@@ -333,7 +343,7 @@ struct MiMiNavigatorApp: App {
         FindFilesCoordinator.shared.toggle(searchPath: path, selectedFile: selectedFile, appState: appState)
     }
 
-    func performSettings() {
+    private func performSettings() {
         log.debug("Settings button clicked")
         SettingsCoordinator.shared.toggle()
     }

@@ -27,32 +27,54 @@ extension MiMiNavigatorApp {
     var mainWindowContent: some View {
         log.debug(#function)
         return DuoFilePanelView()
+            // MARK: - Environment
             .environment(appState)
             .environment(dragDropManager)
-            .contextMenuDialogs(coordinator: contextMenuCoordinator, appState: appState)
+
+            // MARK: - Navigation & UI
             .navigationTitle("MiMiNavigator V \(Self.appVersion)")
-            .onAppear {
-                handleMainWindowAppear()
-            }
-            .onChange(of: scenePhase) {
-                handleScenePhaseChange()
-            }
-            .toolbar {
-                appToolbarContent
-            }
-            .glassEffect( .identity)
-            .sheet(
-                isPresented: Binding(
-                    get: { dragDropManager.showConfirmationDialog },
-                    set: { dragDropManager.showConfirmationDialog = $0 }
-                )
-            ) {
+            .toolbar { appToolbarContent }
+            .glassEffect(.identity)
+
+            // MARK: - Context Menu
+            .contextMenuDialogs(coordinator: contextMenuCoordinator, appState: appState)
+
+            // MARK: - Lifecycle
+            .onAppear { handleOnAppear() }
+            .onChange(of: scenePhase) { handleScenePhaseChange() }
+
+            // MARK: - Sheets
+            .sheet(isPresented: confirmationDialogBinding) {
                 if let operation = dragDropManager.pendingOperation {
                     transferConfirmationDialog(for: operation)
                 }
             }
-            .overlay {
-                batchProgressOverlay
+            .sheet(isPresented: $showAutomationOnboarding) {
+                AutomationPermissionOnboarding(isPresented: $showAutomationOnboarding)
             }
+
+            // MARK: - Overlay
+            .overlay { batchProgressOverlay }
+    }
+    
+    // MARK: - Bindings
+
+    private var confirmationDialogBinding: Binding<Bool> {
+        Binding(
+            get: { dragDropManager.showConfirmationDialog },
+            set: { dragDropManager.showConfirmationDialog = $0 }
+        )
+    }
+
+    // MARK: - Lifecycle Helpers
+
+    private func handleOnAppear() {
+        handleMainWindowAppear()
+
+        if AutomationPermissionOnboarding.needsOnboarding {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                showAutomationOnboarding = true
+            }
+        }
     }
 }
