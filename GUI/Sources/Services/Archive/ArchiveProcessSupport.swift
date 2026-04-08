@@ -11,9 +11,8 @@ import Foundation
 
 enum ArchiveToolLocator {
     static func find7z() throws -> String {
-        let candidates = ["/opt/homebrew/bin/7z", "/usr/local/bin/7z", "/usr/bin/7z"]
-        guard let path = candidates.first(where: { FileManager.default.fileExists(atPath: $0) }) else {
-            throw ArchiveManagerError.toolNotFound("7z not found. Install with: brew install p7zip")
+        guard let path = ExternalToolCatalog.sevenZip.resolvedPath else {
+            throw ArchiveManagerError.toolNotFound("7z not found. \(ExternalToolCatalog.sevenZip.installHint)")
         }
         return path
     }

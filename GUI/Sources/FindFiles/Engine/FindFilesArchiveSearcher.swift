@@ -431,7 +431,7 @@ enum FindFilesArchiveSearcher {
         passwordCallback: ArchivePasswordCallback?,
         recursionDepth: Int = 0
     ) async -> ArchiveSearchDelta {
-        let szPaths = ["/opt/homebrew/bin/7z", "/usr/local/bin/7z", "/usr/bin/7z"]
+        let szPaths = ExternalToolCatalog.sevenZip.binaryCandidates
         guard let szPath = szPaths.first(where: { FileManager.default.fileExists(atPath: $0) }) else {
             log.warning("[ArchiveSearcher] 7z not found — skipping \(archiveURL.lastPathComponent)")
             return ArchiveSearchDelta()
@@ -622,7 +622,7 @@ enum FindFilesArchiveSearcher {
             try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
             registerTempDir(tempDir)
             // Try extracting with 7z first (handles most formats)
-            let szPaths = ["/opt/homebrew/bin/7z", "/usr/local/bin/7z", "/usr/bin/7z"]
+            let szPaths = ExternalToolCatalog.sevenZip.binaryCandidates
             if let szPath = szPaths.first(where: { FileManager.default.fileExists(atPath: $0) }) {
                 let process = Process()
                 process.executableURL = URL(fileURLWithPath: szPath)

@@ -15,6 +15,7 @@ struct SettingsArchivesPane: View {
     @State private var prefs = UserPreferences.shared
     @State private var archivePassword: String = ArchivePasswordStore.shared.loadPassword() ?? ""
     @State private var showPassword: Bool = false
+    @State private var registry = ExternalToolRegistry.shared
 
     private func prefBinding<T>(_ keyPath: WritableKeyPath<PreferencesSnapshot, T>) -> Binding<T> {
         Binding(
@@ -33,20 +34,53 @@ struct SettingsArchivesPane: View {
         ("7z",      "7-Zip Archive (.7z)"),
     ]
 
+    private var sevenZipAvailable: Bool {
+        registry.isAvailable("7z")
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
+
+            // ── 7z availability banner ────────────────────────
+            if !sevenZipAvailable {
+                HStack(spacing: 8) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundStyle(.orange)
+                        .font(.system(size: 12))
+                    Text("7-Zip is not installed — .7z format disabled.")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(.primary)
+                    Spacer()
+                    ExternalToolInfoButton(tool: ExternalToolCatalog.sevenZip)
+                }
+                .padding(10)
+                .background(Color.orange.opacity(0.10))
+                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .stroke(Color.orange.opacity(0.3), lineWidth: 0.5))
+            }
 
             // ── Create ────────────────────────────────────────
             SettingsGroupBox {
                 VStack(spacing: 0) {
                     SettingsRow(label: "Default format:", help: "Format used when creating a new archive") {
-                        Picker("", selection: prefBinding(\.archiveDefaultFormat)) {
-                            ForEach(formatOptions, id: \.tag) { opt in
-                                Text(opt.label).tag(opt.tag)
+                        HStack(spacing: 6) {
+                            Picker("", selection: prefBinding(\.archiveDefaultFormat)) {
+                                ForEach(formatOptions, id: \.tag) { opt in
+                                    Text(opt.label)
+                                        .tag(opt.tag)
+                                        .foregroundStyle(opt.tag == "7z" && !sevenZipAvailable ? .secondary : .primary)
+                                }
+                            }
+                            .labelsHidden()
+                            .frame(width: 240)
+                            .onChange(of: prefs.snapshot.archiveDefaultFormat) { _, newVal in
+                                if newVal == "7z" && !sevenZipAvailable {
+                                    prefs.snapshot.archiveDefaultFormat = "zip"
+                                    prefs.save()
+                                }
                             }
                         }
-                        .labelsHidden()
-                        .frame(width: 240)
                     }
                     Divider()
                     SettingsRow(label: "Compression:", help: "Compression level: 1 = fastest, 9 = smallest file") {

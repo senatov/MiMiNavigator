@@ -408,9 +408,7 @@ struct SettingsPermissionsPane: View {
     }
 
     private func openFullDiskAccessSettings() {
-        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles") {
-            NSWorkspace.shared.open(url)
-        }
+        SystemSettingsHelper.openFullDiskAccess()
     }
 }
 

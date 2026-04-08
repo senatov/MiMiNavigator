@@ -61,7 +61,7 @@ struct RemoteConnectionsDropdown: View {
                 .foregroundStyle(activeCount > 0 ? .green : .secondary)
             Text(activeCount > 0 ? "\(activeCount) active" : "Connections")
                 .font(.system(size: 10, weight: .medium, design: .monospaced))
-                .foregroundStyle(.primary)
+                .foregroundStyle(activeCount > 0 ? Color(nsColor: .systemGreen) : .primary)
                 .lineLimit(1)
         }
     }
@@ -154,6 +154,7 @@ struct RemoteConnectionsDropdown: View {
         pp.appendLog("Remote path: \(server.remotePath.isEmpty ? "/" : server.remotePath)")
         pp.finish(success: true, message: "Connected — \(server.displayName)")
         log.info("[DropdownConnect] success \(server.displayName)")
+        navigateActivePanel(to: server)
     }
 
 

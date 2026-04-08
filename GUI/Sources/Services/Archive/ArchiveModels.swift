@@ -81,8 +81,7 @@ enum ArchiveFormat: String, CaseIterable, Identifiable, Sendable {
              .tarLzma, .tarZst, .tarLz4, .tarLzo, .tarLz:
             return true
         case .sevenZip, .sevenZipGeneric:
-            return ["/usr/local/bin/7z", "/opt/homebrew/bin/7z", "/usr/bin/7z"]
-                .contains { FileManager.default.fileExists(atPath: $0) }
+            return ExternalToolCatalog.sevenZip.isInstalled
         }
     }
 
