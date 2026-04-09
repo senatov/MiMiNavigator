@@ -22,10 +22,10 @@ struct MiMiNavigatorApp: App {
     @State var contextMenuCoordinator = ContextMenuCoordinator.shared
     @State var showHiddenFiles = UserPreferences.shared.snapshot.showHiddenFiles
     @State var showAutomationOnboarding = false
+    @State var showFullDiskOnboarding = false
 
     // MARK: - Lifecycle State
 
-    @State var didRestoreMainWindowFrame = false
     @State var didBindAppState = false
     @State var didWireCoordinatorCallbacks = false
 
@@ -81,26 +81,9 @@ struct MiMiNavigatorApp: App {
     // MARK: - App Lifecycle Helpers
     func handleMainWindowAppear() {
         log.debug(#function)
-        restoreMainWindowFrameIfNeeded()
+        WindowFrameRestorer.shared.scheduleRestore()
         bindAppStateIfNeeded()
         wireCoordinatorCallbacks()
-    }
-
-    func restoreMainWindowFrameIfNeeded() {
-        log.debug(#function)
-        guard !didRestoreMainWindowFrame else { return }
-        guard let win = NSApp.windows.first(where: { !($0 is NSPanel) }) else { return }
-
-        if let savedFrame = StatePersistence.restoreWindowFrame() {
-            win.setFrame(savedFrame, display: true, animate: false)
-            StatePersistence.lastKnownWindowFrame = savedFrame
-            log.info("[App] window frame restored: \(Int(savedFrame.width))x\(Int(savedFrame.height))")
-        } else {
-            StatePersistence.lastKnownWindowFrame = win.frame
-        }
-
-        win.setFrameAutosaveName("MiMiNavigator.MainWindow")
-        didRestoreMainWindowFrame = true
     }
 
     func bindAppStateIfNeeded() {

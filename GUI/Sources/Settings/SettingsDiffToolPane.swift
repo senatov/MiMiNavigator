@@ -16,6 +16,7 @@ struct SettingsDiffToolPane: View {
     @State private var selectedID: String? = nil
     @State private var showAddSheet  = false
     @State private var editingTool: DiffTool? = nil
+    @State private var infoPopoverID: String? = nil
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -180,11 +181,30 @@ struct SettingsDiffToolPane: View {
 
             Spacer()
 
+            // ⓘ info popover button
+            Button {
+                infoPopoverID = infoPopoverID == tool.id ? nil : tool.id
+            } label: {
+                Image(systemName: "info.circle")
+                    .font(.system(size: 13))
+                    .foregroundStyle(isSel ? .white.opacity(0.7) : .secondary)
+            }
+            .buttonStyle(.plain)
+            .help("Show tool details")
+            .popover(isPresented: Binding(
+                get: { infoPopoverID == tool.id },
+                set: { if !$0 { infoPopoverID = nil } }
+            ), arrowEdge: .trailing) {
+                toolInfoPopover(tool)
+            }
+
             Toggle("", isOn: Binding(
                 get: { tool.isEnabled },
                 set: { _ in registry.toggleEnabled(id: tool.id) }
             ))
             .labelsHidden().toggleStyle(.checkbox)
+            .disabled(!tool.isInstalled)
+            .opacity(tool.isInstalled ? 1.0 : 0.4)
             .padding(.trailing, 8)
         }
         .padding(.vertical, 7)
@@ -194,6 +214,37 @@ struct SettingsDiffToolPane: View {
     }
 
     // MARK: - Helpers
+
+    private func toolInfoPopover(_ tool: DiffTool) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(tool.name)
+                .font(.system(size: 13, weight: .medium))
+            Divider()
+            infoLine("Path:", tool.appPath)
+            infoLine("Arguments:", tool.arguments)
+            infoLine("Scope:", tool.scope.label)
+            infoLine("Status:", tool.isInstalled ? "Installed ✓" : "Not found ✗")
+            if tool.isBuiltIn {
+                infoLine("Type:", "Built-in preset")
+            }
+        }
+        .padding(12)
+        .frame(width: 320, alignment: .leading)
+    }
+
+
+    private func infoLine(_ label: String, _ value: String) -> some View {
+        HStack(alignment: .top, spacing: 6) {
+            Text(label)
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(.secondary)
+                .frame(width: 70, alignment: .trailing)
+            Text(value)
+                .font(.system(size: 11, design: .monospaced))
+                .foregroundStyle(.primary)
+                .textSelection(.enabled)
+        }
+    }
 
     private var cannotRemove: Bool {
         guard let id = selectedID,

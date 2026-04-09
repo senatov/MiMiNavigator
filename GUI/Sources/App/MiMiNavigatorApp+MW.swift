@@ -52,6 +52,9 @@ extension MiMiNavigatorApp {
             .sheet(isPresented: $showAutomationOnboarding) {
                 AutomationPermissionOnboarding(isPresented: $showAutomationOnboarding)
             }
+            .sheet(isPresented: $showFullDiskOnboarding) {
+                FullDiskAccessOnboarding(isPresented: $showFullDiskOnboarding)
+            }
 
             // MARK: - Overlay
             .overlay { batchProgressOverlay }
@@ -71,7 +74,13 @@ extension MiMiNavigatorApp {
     private func handleOnAppear() {
         handleMainWindowAppear()
 
-        if AutomationPermissionOnboarding.needsOnboarding {
+        // full-disk access first — most critical for a file manager
+        if FullDiskAccessOnboarding.needsOnboarding {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+                showFullDiskOnboarding = true
+            }
+        } else if AutomationPermissionOnboarding.needsOnboarding {
+            // automation only if disk access already granted
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
                 showAutomationOnboarding = true
             }

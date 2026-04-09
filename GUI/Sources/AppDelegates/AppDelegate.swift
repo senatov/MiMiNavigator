@@ -48,9 +48,6 @@ import AppKit
         scheduleBookmarkRestore()
         logStartupStep("bookmark restore scheduled")
 
-        StatePersistence.startTrackingWindowFrame()
-        logStartupStep("window frame tracking started")
-
         log.debug("starting toolbar right-click monitor")
         ToolbarRightClickMonitor.shared.start()
         logStartupStep("toolbar right-click monitor started")
@@ -86,11 +83,7 @@ import AppKit
         Task(priority: .utility) { [weak self] in
             self?.logStartupStep("bookmark restore task begin")
 
-            // First create bookmarks for standard folders if they are missing.
-            await BookmarkStore.shared.ensureStandardDirectoryAccess()
-            self?.logStartupStep("ensureStandardDirectoryAccess finished")
-
-            // Then restore all persisted bookmarks.
+            // Restore all persisted bookmarks (no popup — uses saved data only).
             let restored = await BookmarkStore.shared.restoreAll()
             self?.logStartupStep("restoreAll finished count=\(restored.count)")
             log.info("Restored \(restored.count) bookmarks")

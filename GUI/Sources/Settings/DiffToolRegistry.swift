@@ -245,6 +245,10 @@ final class DiffToolRegistry {
         } else {
             tools = DiffTool.allBuiltIns
         }
+        // auto-disable not-installed tools so checkboxes don't mislead
+        for i in tools.indices where !tools[i].isInstalled {
+            tools[i].isEnabled = false
+        }
         log.info("[DiffToolRegistry] loaded \(tools.count) tools, active='\(activeToolID)'")
     }
 
