@@ -220,22 +220,24 @@ struct FileRow: View, Equatable {
 
     @ViewBuilder
     private var contextMenuContent: some View {
+        let optionHeld = NSEvent.modifierFlags.contains(.option)
         if hasMarkedFiles {
             // Group context menu for marked files
             MultiSelectionContextMenu(
                 markedCount: appState.markedCount(for: panelSide),
-                panelSide: panelSide
+                panelSide: panelSide,
+                isOptionHeld: optionHeld
             ) { action in
                 log.debug("[FileRow] multi-selection action=\(action.rawValue) count=\(appState.markedCount(for: panelSide))")
                 onMultiSelectionAction(action)
             }
         } else if file.isDirectory {
-            DirectoryContextMenu(file: file, panelSide: panelSide) { action in
+            DirectoryContextMenu(file: file, panelSide: panelSide, isOptionHeld: optionHeld) { action in
                 logContextMenuAction(action, isDirectory: true)
                 onDirectoryAction(action, file)
             }
         } else {
-            FileContextMenu(file: file, panelSide: panelSide) { action in
+            FileContextMenu(file: file, panelSide: panelSide, isOptionHeld: optionHeld) { action in
                 logContextMenuAction(action, isDirectory: false)
                 onFileAction(action, file)
             }

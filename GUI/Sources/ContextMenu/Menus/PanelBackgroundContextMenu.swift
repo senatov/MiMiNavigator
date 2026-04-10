@@ -15,15 +15,16 @@ struct PanelBackgroundContextMenu: View {
     let onAction: (PanelBackgroundAction) -> Void
     var canGoBack: Bool = false
     var canGoForward: Bool = false
-    /// True when marked files contain at least one directory
     var hasMarkedDirectories: Bool = false
+    var isOptionHeld: Bool = false
     
-    init(panelSide: FavPanelSide, currentPath: URL, canGoBack: Bool = false, canGoForward: Bool = false, hasMarkedDirectories: Bool = false, onAction: @escaping (PanelBackgroundAction) -> Void) {
+    init(panelSide: FavPanelSide, currentPath: URL, canGoBack: Bool = false, canGoForward: Bool = false, hasMarkedDirectories: Bool = false, isOptionHeld: Bool = false, onAction: @escaping (PanelBackgroundAction) -> Void) {
         self.panelSide = panelSide
         self.currentPath = currentPath
         self.canGoBack = canGoBack
         self.canGoForward = canGoForward
         self.hasMarkedDirectories = hasMarkedDirectories
+        self.isOptionHeld = isOptionHeld
         self.onAction = onAction
     }
     
@@ -40,12 +41,14 @@ struct PanelBackgroundContextMenu: View {
             Divider()
             
             // ═══════════════════════════════════════════
-            // SECTION 2: Create
+            // SECTION 2: Create (⌥ Option only)
             // ═══════════════════════════════════════════
-            menuButton(.newFolder)
-            menuButton(.newFile)
-            
-            Divider()
+            if isOptionHeld {
+                menuButton(.newFolder)
+                menuButton(.newFile)
+                
+                Divider()
+            }
             
             // ═══════════════════════════════════════════
             // SECTION 3: Clipboard
@@ -90,6 +93,16 @@ struct PanelBackgroundContextMenu: View {
             // SECTION 7: Info
             // ═══════════════════════════════════════════
             menuButton(.getInfo)
+
+            // ═══════════════════════════════════════════
+            // Option hint
+            // ═══════════════════════════════════════════
+            if !isOptionHeld {
+                Divider()
+                Text("⌥ for more…")
+                    .font(.system(size: 12, weight: .semibold, design: .rounded))
+                    .foregroundStyle(.blue)
+            }
         }
     }
     
@@ -147,6 +160,7 @@ struct PanelBackgroundContextMenu: View {
         PanelBackgroundContextMenu(
             panelSide: .left,
             currentPath: URL(fileURLWithPath: "/Users"),
+            isOptionHeld: false,
             onAction: { action in
                 log.debug("Action: \(action)")
             }

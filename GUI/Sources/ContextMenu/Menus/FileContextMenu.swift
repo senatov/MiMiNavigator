@@ -75,6 +75,7 @@ struct FileContextMenu: View {
 
     private let instanceID: Int
     private let file: CustomFile
+    private let isOptionHeld: Bool
     private let onAction: (FileAction) -> Void
 
     private let sectionOrder: [SectionKind] = [
@@ -142,11 +143,12 @@ struct FileContextMenu: View {
         Self.isMediaFile(file)
     }
 
-    init(file: CustomFile, panelSide _: FavPanelSide, onAction: @escaping (FileAction) -> Void) {
+    init(file: CustomFile, panelSide _: FavPanelSide, isOptionHeld: Bool = false, onAction: @escaping (FileAction) -> Void) {
         _ = Self.cacheObserver
         let instanceID = Self.makeNextDebugID()
         self.instanceID = instanceID
         self.file = file
+        self.isOptionHeld = isOptionHeld
         self.onAction = onAction
         // openWithApps/openWithMenuID stay nil — loaded lazily in body
     }
@@ -241,7 +243,9 @@ struct FileContextMenu: View {
         switch section {
             case .media:
                 return isMediaFile
-            case .open, .edit, .operations, .navigation, .danger, .info:
+            case .danger:
+                return isOptionHeld
+            case .open, .edit, .operations, .navigation, .info:
                 return true
             case .favorites:
                 return file.isDirectory
@@ -309,8 +313,10 @@ struct FileContextMenu: View {
 
     @ViewBuilder
     private var dangerSection: some View {
-        menuButton(.rename)
-        menuButton(.delete)
+        if isOptionHeld {
+            menuButton(.rename)
+            menuButton(.delete)
+        }
 
         sectionDivider(after: .danger)
     }
@@ -327,6 +333,17 @@ struct FileContextMenu: View {
         if file.isDirectory {
             favoritesToggleButton
         }
+        if !isOptionHeld {
+            optionHint
+        }
+    }
+
+    @ViewBuilder
+    private var optionHint: some View {
+        Divider()
+        Text("⌥ for more…")
+            .font(.system(size: 12, weight: .semibold, design: .rounded))
+            .foregroundStyle(.blue)
     }
 
     @ViewBuilder

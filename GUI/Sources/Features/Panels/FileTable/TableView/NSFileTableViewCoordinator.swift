@@ -195,16 +195,23 @@ class Coordinator: NSObject, NSTableViewDelegate, NSTableViewDataSource, NSMenuD
 
     func menuNeedsUpdate(_ menu: NSMenu) {
         menu.removeAllItems()
+        let optionHeld = NSEvent.modifierFlags.contains(.option)
 
         guard let tv = tableView else { return }
         let clickedRow = tv.clickedRow
 
         guard clickedRow >= 0 && clickedRow < files.count else {
             // Click on empty area - panel background menu
-            addMenuItem(menu, title: "New Folder", action: #selector(menuNewFolder), key: "N")
+            if optionHeld {
+                addMenuItem(menu, title: "New Folder", action: #selector(menuNewFolder), key: "N")
+            }
             addMenuItem(menu, title: "Refresh", action: #selector(menuRefresh), key: "r")
             menu.addItem(NSMenuItem.separator())
             addMenuItem(menu, title: "Paste", action: #selector(menuPaste), key: "v")
+            if !optionHeld {
+                menu.addItem(NSMenuItem.separator())
+                addOptionHint(menu)
+            }
             return
         }
 
@@ -216,13 +223,13 @@ class Coordinator: NSObject, NSTableViewDelegate, NSTableViewDataSource, NSMenuD
         }
 
         if file.isDirectory {
-            buildDirectoryMenu(menu, file: file)
+            buildDirectoryMenu(menu, file: file, optionHeld: optionHeld)
         } else {
-            buildFileMenu(menu, file: file)
+            buildFileMenu(menu, file: file, optionHeld: optionHeld)
         }
     }
 
-    private func buildFileMenu(_ menu: NSMenu, file: CustomFile) {
+    private func buildFileMenu(_ menu: NSMenu, file: CustomFile, optionHeld: Bool) {
         // SECTION 1: Open
         addMenuItem(menu, title: "Open", action: #selector(menuOpen), key: "", icon: "arrow.up.doc")
         addMenuItem(menu, title: "Open With...", action: #selector(menuOpenWith), key: "", icon: "arrow.up.right.square")
@@ -246,9 +253,11 @@ class Coordinator: NSObject, NSTableViewDelegate, NSTableViewDataSource, NSMenuD
         addMenuItem(menu, title: "Show in Finder", action: #selector(menuRevealInFinder), key: "", icon: "folder")
         menu.addItem(NSMenuItem.separator())
 
-        // SECTION 5: Rename & Delete
-        addMenuItem(menu, title: "Rename...", action: #selector(menuRename), key: "", icon: "pencil")
-        addMenuItem(menu, title: "Move to Trash", action: #selector(menuTrash), key: "", icon: "trash")
+        // SECTION 5: Rename & Delete (⌥ Option only)
+        if optionHeld {
+            addMenuItem(menu, title: "Rename...", action: #selector(menuRename), key: "", icon: "pencil")
+            addMenuItem(menu, title: "Move to Trash", action: #selector(menuTrash), key: "", icon: "trash")
+        }
         menu.addItem(NSMenuItem.separator())
 
         // SECTION 6: Info
@@ -257,9 +266,14 @@ class Coordinator: NSObject, NSTableViewDelegate, NSTableViewDataSource, NSMenuD
 
         // SECTION 7: Favorites
         addMenuItem(menu, title: "Add to Favorites", action: #selector(menuAddToFavorites), key: "", icon: "star")
+
+        if !optionHeld {
+            menu.addItem(NSMenuItem.separator())
+            addOptionHint(menu)
+        }
     }
 
-    private func buildDirectoryMenu(_ menu: NSMenu, file: CustomFile) {
+    private func buildDirectoryMenu(_ menu: NSMenu, file: CustomFile, optionHeld: Bool) {
         // SECTION 1: Navigation
         addMenuItem(menu, title: "Open", action: #selector(menuOpen), key: "", icon: "folder")
         addMenuItem(menu, title: "Open in New Tab", action: #selector(menuOpenInNewTab), key: "t", icon: "plus.square.on.square")
@@ -280,9 +294,11 @@ class Coordinator: NSObject, NSTableViewDelegate, NSTableViewDataSource, NSMenuD
         addMenuItem(menu, title: "Share...", action: #selector(menuShare), key: "", icon: "square.and.arrow.up")
         menu.addItem(NSMenuItem.separator())
 
-        // SECTION 4: Rename & Delete
-        addMenuItem(menu, title: "Rename...", action: #selector(menuRename), key: "", icon: "pencil")
-        addMenuItem(menu, title: "Move to Trash", action: #selector(menuTrash), key: "", icon: "trash")
+        // SECTION 4: Rename & Delete (⌥ Option only)
+        if optionHeld {
+            addMenuItem(menu, title: "Rename...", action: #selector(menuRename), key: "", icon: "pencil")
+            addMenuItem(menu, title: "Move to Trash", action: #selector(menuTrash), key: "", icon: "trash")
+        }
         menu.addItem(NSMenuItem.separator())
 
         // SECTION 5: Info
@@ -296,6 +312,11 @@ class Coordinator: NSObject, NSTableViewDelegate, NSTableViewDataSource, NSMenuD
 
         // SECTION 7: Favorites
         addMenuItem(menu, title: "Add to Favorites", action: #selector(menuAddToFavorites), key: "", icon: "star")
+
+        if !optionHeld {
+            menu.addItem(NSMenuItem.separator())
+            addOptionHint(menu)
+        }
     }
 
     private func addMenuItem(_ menu: NSMenu, title: String, action: Selector, key: String, icon: String? = nil) {
@@ -305,6 +326,18 @@ class Coordinator: NSObject, NSTableViewDelegate, NSTableViewDataSource, NSMenuD
             item.image = img
         }
         menu.addItem(item)
+    }
+
+
+    private func addOptionHint(_ menu: NSMenu) {
+        let hint = NSMenuItem(title: "⌥ for more…", action: nil, keyEquivalent: "")
+        hint.isEnabled = false
+        let attrs: [NSAttributedString.Key: Any] = [
+            .font: NSFont.systemFont(ofSize: 12, weight: .semibold),
+            .foregroundColor: NSColor.systemBlue
+        ]
+        hint.attributedTitle = NSAttributedString(string: "⌥ for more…", attributes: attrs)
+        menu.addItem(hint)
     }
 
     private var clickedFile: CustomFile? {

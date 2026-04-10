@@ -41,8 +41,6 @@ struct DuoFilePanelView: View {
                 onEdit: { actions.performEdit() },
                 onCopy: { actions.performCopy() },
                 onMove: { actions.performMove() },
-                onNewFolder: { actions.performNewFolder() },
-                onDelete: { actions.performDelete() },
                 onSettings: { actions.performSettings() },
                 onConsole: { actions.performConsole() },
                 onExit: { actions.performExit() }

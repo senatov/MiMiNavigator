@@ -14,6 +14,7 @@ import FileModelKit
 struct MultiSelectionContextMenu: View {
     let markedCount: Int
     let panelSide: FavPanelSide
+    let isOptionHeld: Bool
     let onAction: (MultiSelectionAction) -> Void
 
     var body: some View {
@@ -51,9 +52,16 @@ struct MultiSelectionContextMenu: View {
             Divider()
 
             // ═══════════════════════════════════════════
-            // SECTION 4: Danger zone
+            // SECTION 4: Danger zone (⌥ Option only)
             // ═══════════════════════════════════════════
-            menuButton(.delete)
+            if isOptionHeld {
+                menuButton(.delete)
+            } else {
+                Divider()
+                Text("⌥ for more…")
+                    .font(.system(size: 12, weight: .semibold, design: .rounded))
+                    .foregroundStyle(.blue)
+            }
         }
     }
 
@@ -106,6 +114,7 @@ struct MultiSelectionContextMenu: View {
         MultiSelectionContextMenu(
             markedCount: 5,
             panelSide: .left,
+            isOptionHeld: false,
             onAction: { action in
                 log.debug("Multi action: \(action)")
             }
