@@ -32,10 +32,6 @@ final class ProgressPanel: NSObject {
         static let borderWidth: CGFloat = 0.5
     }
 
-    private enum Glass {
-        static let containerAlpha: CGFloat = 0.92
-        static let logAlpha: CGFloat = 0.72
-    }
 
     // MARK: - UI
     private var panel: NSPanel?
@@ -213,7 +209,7 @@ final class ProgressPanel: NSObject {
 
     private func configureContainerAppearance() {
         let a = appearance
-        container?.layer?.backgroundColor = a.bgColor.withAlphaComponent(Glass.containerAlpha).cgColor
+        container?.layer?.backgroundColor = a.bgColor.withAlphaComponent(0.92).cgColor
         container?.layer?.borderColor = a.borderColor.cgColor
         backgroundEffectView?.alphaValue = 1
     }
@@ -223,7 +219,7 @@ final class ProgressPanel: NSObject {
         scrollView?.layer?.cornerRadius = Layout.logCornerRadius
         scrollView?.layer?.borderColor = a.borderColor.cgColor
         scrollView?.layer?.borderWidth = Layout.borderWidth
-        logBackgroundEffectView?.alphaValue = Glass.logAlpha
+        logBackgroundEffectView?.alphaValue = 0.72
     }
 
     private func resetContent(icon: String, title: String, status: String) {

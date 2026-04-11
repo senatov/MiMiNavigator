@@ -66,7 +66,7 @@ extension CntMenuCoord {
             case .share:
                 share(batchFiles)
             case .convertMedia:
-                activeDialog = .convertMedia(file: file, panel: panel)
+                ConvertMediaCoord.shared.open(file: file, panel: panel, appState: appState)
             case .revealInFinder:
                 revealInFinder(batchFiles)
             case .delete:

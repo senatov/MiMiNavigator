@@ -9,10 +9,41 @@
 import AppKit
 import Foundation
 
+// MediaConversionService.swift
+// MiMiNavigator
+//
+// Created by Iakov Senatov on 12.04.2026.
+// Copyright © 2026 Senatov. All rights reserved.
+// Description: Runs media conversions via ffmpeg / ImageIO.
+//   Reports progress line-by-line through ProgressPanel.
+
 @MainActor
 final class MediaConversionService {
     static let shared = MediaConversionService()
+
+    private static let ffmpegBannerArguments = ["-hide_banner", "-y"]
+    private static let lottieFrameRate = "15"
+    private static let gifScaleFilter = "fps=15,scale=640:-1:flags=lanczos"
+    private static let lottiePreviewScaleFilter = "fps=15,scale=512:-1:flags=lanczos"
+    private static let webpQuality = "85"
+    private static let aacBitrate = "192k"
+    private static let opusBitrate = "128k"
+    private static let vorbisQuality = "5"
+    private static let mp3Quality = "2"
+    private static let x264Crf = "23"
+    private static let vp9Crf = "30"
+    private static let mpeg4Quality = "5"
+    private static let gifskiQuality = "90"
+    private static let lottieFramesDirectoryName = "frames"
+    private static let lottieJSONFileName = "sticker.json"
+    private static let lottieFramePattern = "f_%04d.png"
+    private static let lottieFrameWildcard = "f_*.png"
+
+    private var activeProcess: Process?
+
     private init() {}
+
+    // MARK: - Public API
 
     /// Main entry — dispatches to correct converter.
     /// Progress reported through ProgressPanel.
@@ -24,193 +55,30 @@ final class MediaConversionService {
         onCancel: @escaping () -> Void
     ) async throws {
         let tool = MediaFormat.requiredTool(from: sourceFormat, to: targetFormat)
-        log.info("[MediaConvert] \(sourceFormat.rawValue)→\(targetFormat.rawValue) tool=\(tool.rawValue) src='\(source.lastPathComponent)'")
+        logStart(source: source, sourceFormat: sourceFormat, targetFormat: targetFormat, tool: tool)
 
         guard tool.isAvailable else {
             throw ConversionError.toolMissing(tool.rawValue)
         }
 
         let panel = ProgressPanel.shared
-        panel.show(
-            icon: "arrow.triangle.2.circlepath",
-            title: "🔄 Convert: \(source.lastPathComponent)",
-            status: "→ \(targetFormat.displayName)",
-            cancelHandler: onCancel
-        )
+        showProgressPanel(panel, source: source, targetFormat: targetFormat, onCancel: onCancel)
 
         do {
-            switch tool {
-            case .ffmpeg:
-                try await runFFmpeg(source: source, target: target, sourceFormat: sourceFormat, targetFormat: targetFormat, panel: panel)
-            case .imageIO:
-                try await runImageIO(source: source, target: target, targetFormat: targetFormat, panel: panel)
-            case .lottieAndFFmpeg:
-                try await runLottieConvert(source: source, target: target, targetFormat: targetFormat, panel: panel)
-            }
-            panel.finish(success: true, message: "✅ Done → \(target.lastPathComponent)")
-            log.info("[MediaConvert] success → '\(target.lastPathComponent)'")
+            try await runConversion(
+                tool: tool,
+                source: source,
+                target: target,
+                sourceFormat: sourceFormat,
+                targetFormat: targetFormat,
+                panel: panel
+            )
+            finishSuccess(panel: panel, target: target)
         } catch {
-            panel.finish(success: false, message: "❌ \(error.localizedDescription)")
+            finishFailure(panel: panel, error: error)
             throw error
         }
     }
-
-    // MARK: - FFmpeg
-
-    private func runFFmpeg(
-        source: URL, target: URL,
-        sourceFormat: MediaFormat, targetFormat: MediaFormat,
-        panel: ProgressPanel
-    ) async throws {
-        var args = ["-hide_banner", "-y", "-i", source.path]
-        switch targetFormat {
-        case .mp4:
-            args += ["-c:v", "libx264", "-preset", "fast", "-crf", "23",
-                     "-c:a", "aac", "-b:a", "192k", "-movflags", "+faststart"]
-        case .mov:
-            args += ["-c:v", "prores_ks", "-profile:v", "1", "-c:a", "pcm_s16le"]
-        case .mkv:
-            args += ["-c:v", "libx264", "-crf", "23", "-c:a", "aac"]
-        case .webm:
-            args += ["-c:v", "libvpx-vp9", "-crf", "30", "-b:v", "0",
-                     "-c:a", "libopus", "-b:a", "128k"]
-        case .gif:
-            args += ["-vf", "fps=15,scale=640:-1:flags=lanczos",
-                     "-loop", "0"]
-        case .mp3:
-            args += ["-vn", "-c:a", "libmp3lame", "-q:a", "2"]
-        case .aac, .m4a:
-            args += ["-vn", "-c:a", "aac", "-b:a", "192k"]
-        case .flac:
-            args += ["-vn", "-c:a", "flac"]
-        case .wav:
-            args += ["-vn", "-c:a", "pcm_s16le"]
-        case .ogg:
-            args += ["-vn", "-c:a", "libvorbis", "-q:a", "5"]
-        case .png:
-            args += ["-frames:v", "1"]
-        case .jpg:
-            args += ["-frames:v", "1", "-q:v", "2"]
-        case .webp:
-            args += ["-c:v", "libwebp", "-quality", "85"]
-        case .avi:
-            args += ["-c:v", "mpeg4", "-q:v", "5", "-c:a", "mp3"]
-        default:
-            break
-        }
-        args.append(target.path)
-        try await runProcess(
-            executablePath: ConversionTool.ffmpegPath,
-            arguments: args, panel: panel)
-    }
-
-    // MARK: - ImageIO (native macOS)
-
-    private func runImageIO(
-        source: URL, target: URL,
-        targetFormat: MediaFormat, panel: ProgressPanel
-    ) async throws {
-        panel.appendLine("Loading image via ImageIO…")
-        guard let src = CGImageSourceCreateWithURL(source as CFURL, nil),
-              let image = CGImageSourceCreateImageAtIndex(src, 0, nil) else {
-            throw ConversionError.readFailed(source.lastPathComponent)
-        }
-        let uti = utiForFormat(targetFormat)
-        guard let dest = CGImageDestinationCreateWithURL(
-            target as CFURL, uti as CFString, 1, nil) else {
-            throw ConversionError.writeFailed(target.lastPathComponent)
-        }
-        CGImageDestinationAddImage(dest, image, nil)
-        guard CGImageDestinationFinalize(dest) else {
-            throw ConversionError.writeFailed(target.lastPathComponent)
-        }
-        panel.appendLine("✅ Image written: \(target.lastPathComponent)")
-    }
-
-    private func utiForFormat(_ fmt: MediaFormat) -> String {
-        switch fmt {
-        case .png:  return "public.png"
-        case .jpg:  return "public.jpeg"
-        case .tiff: return "public.tiff"
-        case .bmp:  return "com.microsoft.bmp"
-        case .heic: return "public.heic"
-        case .gif:  return "com.compuserve.gif"
-        case .webp: return "org.webmproject.webp"
-        default:    return "public.png"
-        }
-    }
-
-    // MARK: - Lottie / TGS
-
-    private func runLottieConvert(
-        source: URL, target: URL,
-        targetFormat: MediaFormat, panel: ProgressPanel
-    ) async throws {
-        // TGS = gzipped Lottie JSON
-        // step 1: decompress .tgs → .json in /tmp
-        let tmpDir = FileManager.default.temporaryDirectory
-            .appendingPathComponent("mimi_tgs_\(UUID().uuidString)")
-        try FileManager.default.createDirectory(at: tmpDir, withIntermediateDirectories: true)
-        defer { try? FileManager.default.removeItem(at: tmpDir) }
-
-        let jsonFile = tmpDir.appendingPathComponent("sticker.json")
-        if source.pathExtension.lowercased() == "tgs" {
-            panel.appendLine("Decompressing TGS → JSON…")
-            let compressed = try Data(contentsOf: source)
-            let decompressed = try (compressed as NSData).decompressed(using: .zlib) as Data
-            try decompressed.write(to: jsonFile)
-        } else {
-            try FileManager.default.copyItem(at: source, to: jsonFile)
-        }
-
-        // step 2: render frames via lottie_to_gif.sh or ffmpeg
-        panel.appendLine("Rendering Lottie frames…")
-        if targetFormat == .gif {
-            // use gifski path if available for better quality
-            let gifskiAvail = FileManager.default.isExecutableFile(
-                atPath: ConversionTool.gifskiPath)
-            if gifskiAvail {
-                let framesDir = tmpDir.appendingPathComponent("frames")
-                try FileManager.default.createDirectory(
-                    at: framesDir, withIntermediateDirectories: true)
-                // render JSON → PNG frames via ffmpeg
-                try await runProcess(
-                    executablePath: ConversionTool.ffmpegPath,
-                    arguments: ["-hide_banner", "-y",
-                                "-i", jsonFile.path,
-                                "-vf", "fps=15",
-                                framesDir.appendingPathComponent("f_%04d.png").path],
-                    panel: panel)
-                // gifski → high-quality GIF
-                try await runProcess(
-                    executablePath: ConversionTool.gifskiPath,
-                    arguments: ["--fps", "15", "--quality", "90",
-                                "-o", target.path,
-                                framesDir.appendingPathComponent("f_*.png").path],
-                    panel: panel)
-            } else {
-                // fallback: ffmpeg direct
-                try await runProcess(
-                    executablePath: ConversionTool.ffmpegPath,
-                    arguments: ["-hide_banner", "-y",
-                                "-i", jsonFile.path,
-                                "-vf", "fps=15,scale=512:-1:flags=lanczos",
-                                "-loop", "0", target.path],
-                    panel: panel)
-            }
-        } else {
-            // mp4 / png / webp
-            try await runProcess(
-                executablePath: ConversionTool.ffmpegPath,
-                arguments: ["-hide_banner", "-y",
-                            "-i", jsonFile.path, target.path],
-                panel: panel)
-        }
-    }
-
-    // MARK: - Process Runner
-
-    private var activeProcess: Process?
 
     func cancelActiveConversion() {
         activeProcess?.terminate()
@@ -219,78 +87,503 @@ final class MediaConversionService {
         log.info("[MediaConvert] cancelled by user")
     }
 
+    // MARK: - Conversion Routing
+
+    private func runConversion(
+        tool: ConversionTool,
+        source: URL,
+        target: URL,
+        sourceFormat: MediaFormat,
+        targetFormat: MediaFormat,
+        panel: ProgressPanel
+    ) async throws {
+        switch tool {
+            case .ffmpeg:
+                try await runFFmpeg(
+                    source: source,
+                    target: target,
+                    sourceFormat: sourceFormat,
+                    targetFormat: targetFormat,
+                    panel: panel
+                )
+            case .imageIO:
+                try await runImageIO(source: source, target: target, targetFormat: targetFormat, panel: panel)
+            case .lottieAndFFmpeg:
+                try await runLottieConvert(source: source, target: target, targetFormat: targetFormat, panel: panel)
+        }
+    }
+
+    private func logStart(
+        source: URL,
+        sourceFormat: MediaFormat,
+        targetFormat: MediaFormat,
+        tool: ConversionTool
+    ) {
+        log.info(
+            "[MediaConvert] \(sourceFormat.rawValue)→\(targetFormat.rawValue) "
+                + "tool=\(tool.rawValue) src='\(source.lastPathComponent)'"
+        )
+    }
+
+    private func showProgressPanel(
+        _ panel: ProgressPanel,
+        source: URL,
+        targetFormat: MediaFormat,
+        onCancel: @escaping () -> Void
+    ) {
+        panel.show(
+            icon: "arrow.triangle.2.circlepath",
+            title: "🔄 Convert: \(source.lastPathComponent)",
+            status: "→ \(targetFormat.displayName)",
+            cancelHandler: onCancel
+        )
+    }
+
+    private func finishSuccess(panel: ProgressPanel, target: URL) {
+        panel.finish(success: true, message: "✅ Done → \(target.lastPathComponent)")
+        log.info("[MediaConvert] success → '\(target.lastPathComponent)'")
+    }
+
+    private func finishFailure(panel: ProgressPanel, error: Error) {
+        panel.finish(success: false, message: "❌ \(error.localizedDescription)")
+        log.error("[MediaConvert] failed: \(error.localizedDescription)")
+    }
+
+    // MARK: - FFmpeg
+
+    private func runFFmpeg(
+        source: URL,
+        target: URL,
+        sourceFormat: MediaFormat,
+        targetFormat: MediaFormat,
+        panel: ProgressPanel
+    ) async throws {
+        let arguments = makeFFmpegArguments(
+            source: source,
+            target: target,
+            sourceFormat: sourceFormat,
+            targetFormat: targetFormat
+        )
+
+        try await runProcess(
+            executablePath: ConversionTool.ffmpegPath,
+            arguments: arguments,
+            panel: panel
+        )
+    }
+
+    private func makeFFmpegArguments(
+        source: URL,
+        target: URL,
+        sourceFormat: MediaFormat,
+        targetFormat: MediaFormat
+    ) -> [String] {
+        var arguments = Self.ffmpegBannerArguments
+        arguments += ["-i", source.path]
+        arguments += ffmpegOutputArguments(sourceFormat: sourceFormat, targetFormat: targetFormat)
+        arguments.append(target.path)
+        return arguments
+    }
+
+    private func ffmpegOutputArguments(
+        sourceFormat: MediaFormat,
+        targetFormat: MediaFormat
+    ) -> [String] {
+        switch targetFormat {
+            case .mp4:
+                return [
+                    "-c:v", "libx264",
+                    "-preset", "fast",
+                    "-crf", Self.x264Crf,
+                    "-c:a", "aac",
+                    "-b:a", Self.aacBitrate,
+                    "-movflags", "+faststart",
+                ]
+
+            case .mov:
+                return ["-c:v", "prores_ks", "-profile:v", "1", "-c:a", "pcm_s16le"]
+
+            case .mkv:
+                return ["-c:v", "libx264", "-crf", Self.x264Crf, "-c:a", "aac"]
+
+            case .webm:
+                return [
+                    "-c:v", "libvpx-vp9",
+                    "-crf", Self.vp9Crf,
+                    "-b:v", "0",
+                    "-c:a", "libopus",
+                    "-b:a", Self.opusBitrate,
+                ]
+
+            case .gif:
+                return ["-vf", Self.gifScaleFilter, "-loop", "0"]
+
+            case .mp3:
+                return ["-vn", "-c:a", "libmp3lame", "-q:a", Self.mp3Quality]
+
+            case .aac, .m4a:
+                return ["-vn", "-c:a", "aac", "-b:a", Self.aacBitrate]
+
+            case .flac:
+                return ["-vn", "-c:a", "flac"]
+
+            case .wav:
+                return ["-vn", "-c:a", "pcm_s16le"]
+
+            case .ogg:
+                return ["-vn", "-c:a", "libvorbis", "-q:a", Self.vorbisQuality]
+
+            case .png:
+                return ["-frames:v", "1"]
+
+            case .jpg:
+                return ["-frames:v", "1", "-q:v", "2"]
+
+            case .webp:
+                return ["-c:v", "libwebp", "-quality", Self.webpQuality]
+
+            case .avi:
+                return ["-c:v", "mpeg4", "-q:v", Self.mpeg4Quality, "-c:a", "mp3"]
+
+            default:
+                if sourceFormat == targetFormat {
+                    return []
+                }
+                return []
+        }
+    }
+
+    // MARK: - ImageIO
+
+    private func runImageIO(
+        source: URL,
+        target: URL,
+        targetFormat: MediaFormat,
+        panel: ProgressPanel
+    ) async throws {
+        panel.appendLine("Loading image via ImageIO…")
+
+        let image = try loadImage(from: source)
+        let uti = utiForFormat(targetFormat)
+        let destination = try makeImageDestination(target: target, uti: uti)
+
+        CGImageDestinationAddImage(destination, image, nil)
+        guard CGImageDestinationFinalize(destination) else {
+            throw ConversionError.writeFailed(target.lastPathComponent)
+        }
+
+        panel.appendLine("✅ Image written: \(target.lastPathComponent)")
+    }
+
+    private func loadImage(from source: URL) throws -> CGImage {
+        guard let imageSource = CGImageSourceCreateWithURL(source as CFURL, nil),
+            let image = CGImageSourceCreateImageAtIndex(imageSource, 0, nil)
+        else {
+            throw ConversionError.readFailed(source.lastPathComponent)
+        }
+
+        return image
+    }
+
+    private func makeImageDestination(target: URL, uti: String) throws -> CGImageDestination {
+        guard
+            let destination = CGImageDestinationCreateWithURL(
+                target as CFURL,
+                uti as CFString,
+                1,
+                nil
+            )
+        else {
+            throw ConversionError.writeFailed(target.lastPathComponent)
+        }
+
+        return destination
+    }
+
+    private func utiForFormat(_ format: MediaFormat) -> String {
+        switch format {
+            case .png:
+                return "public.png"
+            case .jpg:
+                return "public.jpeg"
+            case .tiff:
+                return "public.tiff"
+            case .bmp:
+                return "com.microsoft.bmp"
+            case .heic:
+                return "public.heic"
+            case .gif:
+                return "com.compuserve.gif"
+            case .webp:
+                return "org.webmproject.webp"
+            default:
+                return "public.png"
+        }
+    }
+
+    // MARK: - Lottie / TGS
+
+    private func runLottieConvert(
+        source: URL,
+        target: URL,
+        targetFormat: MediaFormat,
+        panel: ProgressPanel
+    ) async throws {
+        let temporaryDirectory = try makeTemporaryLottieDirectory()
+        defer { try? FileManager.default.removeItem(at: temporaryDirectory) }
+
+        let jsonFile = temporaryDirectory.appendingPathComponent(Self.lottieJSONFileName)
+        try prepareLottieJSON(source: source, destination: jsonFile, panel: panel)
+
+        panel.appendLine("Rendering Lottie frames…")
+
+        if targetFormat == .gif {
+            try await runLottieToGIF(jsonFile: jsonFile, target: target, temporaryDirectory: temporaryDirectory, panel: panel)
+            return
+        }
+
+        try await runGenericLottieExport(jsonFile: jsonFile, target: target, panel: panel)
+    }
+
+    private func makeTemporaryLottieDirectory() throws -> URL {
+        let temporaryDirectory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("mimi_tgs_\(UUID().uuidString)")
+
+        try FileManager.default.createDirectory(
+            at: temporaryDirectory,
+            withIntermediateDirectories: true
+        )
+
+        return temporaryDirectory
+    }
+
+    private func prepareLottieJSON(
+        source: URL,
+        destination: URL,
+        panel: ProgressPanel
+    ) throws {
+        if source.pathExtension.lowercased() == "tgs" {
+            panel.appendLine("Decompressing TGS → JSON…")
+            try decompressTGS(source: source, destination: destination)
+            return
+        }
+
+        try FileManager.default.copyItem(at: source, to: destination)
+    }
+
+    private func decompressTGS(source: URL, destination: URL) throws {
+        let compressedData = try Data(contentsOf: source)
+        let decompressedData = try (compressedData as NSData).decompressed(using: .zlib) as Data
+        try decompressedData.write(to: destination)
+    }
+
+    private func runLottieToGIF(
+        jsonFile: URL,
+        target: URL,
+        temporaryDirectory: URL,
+        panel: ProgressPanel
+    ) async throws {
+        if isGifskiAvailable() {
+            try await runLottieToGIFViaGifski(
+                jsonFile: jsonFile,
+                target: target,
+                temporaryDirectory: temporaryDirectory,
+                panel: panel
+            )
+            return
+        }
+
+        try await runLottieToGIFFallback(jsonFile: jsonFile, target: target, panel: panel)
+    }
+
+    private func isGifskiAvailable() -> Bool {
+        FileManager.default.isExecutableFile(atPath: ConversionTool.gifskiPath)
+    }
+
+    private func runLottieToGIFViaGifski(
+        jsonFile: URL,
+        target: URL,
+        temporaryDirectory: URL,
+        panel: ProgressPanel
+    ) async throws {
+        let framesDirectory = temporaryDirectory.appendingPathComponent(Self.lottieFramesDirectoryName)
+        let framePattern = framesDirectory.appendingPathComponent(Self.lottieFramePattern)
+        let frameWildcard = framesDirectory.appendingPathComponent(Self.lottieFrameWildcard)
+
+        try FileManager.default.createDirectory(at: framesDirectory, withIntermediateDirectories: true)
+
+        try await runProcess(
+            executablePath: ConversionTool.ffmpegPath,
+            arguments: makeLottieFrameRenderArguments(jsonFile: jsonFile, framePattern: framePattern),
+            panel: panel
+        )
+
+        try await runProcess(
+            executablePath: ConversionTool.gifskiPath,
+            arguments: makeGifskiArguments(target: target, frameWildcard: frameWildcard),
+            panel: panel
+        )
+    }
+
+    private func runLottieToGIFFallback(
+        jsonFile: URL,
+        target: URL,
+        panel: ProgressPanel
+    ) async throws {
+        try await runProcess(
+            executablePath: ConversionTool.ffmpegPath,
+            arguments: makeLottieGIFFallbackArguments(jsonFile: jsonFile, target: target),
+            panel: panel
+        )
+    }
+
+    private func runGenericLottieExport(
+        jsonFile: URL,
+        target: URL,
+        panel: ProgressPanel
+    ) async throws {
+        try await runProcess(
+            executablePath: ConversionTool.ffmpegPath,
+            arguments: Self.ffmpegBannerArguments + ["-i", jsonFile.path, target.path],
+            panel: panel
+        )
+    }
+
+    private func makeLottieFrameRenderArguments(jsonFile: URL, framePattern: URL) -> [String] {
+        Self.ffmpegBannerArguments + [
+            "-i", jsonFile.path,
+            "-vf", "fps=\(Self.lottieFrameRate)",
+            framePattern.path,
+        ]
+    }
+
+    private func makeGifskiArguments(target: URL, frameWildcard: URL) -> [String] {
+        [
+            "--fps", Self.lottieFrameRate,
+            "--quality", Self.gifskiQuality,
+            "-o", target.path,
+            frameWildcard.path,
+        ]
+    }
+
+    private func makeLottieGIFFallbackArguments(jsonFile: URL, target: URL) -> [String] {
+        Self.ffmpegBannerArguments + [
+            "-i", jsonFile.path,
+            "-vf", Self.lottiePreviewScaleFilter,
+            "-loop", "0",
+            target.path,
+        ]
+    }
+
+    // MARK: - Process Runner
+
     private func runProcess(
         executablePath: String,
         arguments: [String],
         panel: ProgressPanel
     ) async throws {
-        try await withCheckedThrowingContinuation { (cont: CheckedContinuation<Void, Error>) in
-            let process = Process()
-            process.executableURL = URL(fileURLWithPath: executablePath)
-            process.arguments = arguments
-            process.environment = ProcessInfo.processInfo.environment
-
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            let process = makeProcess(executablePath: executablePath, arguments: arguments)
             let stderr = Pipe()
-            process.standardError = stderr
-            process.standardOutput = Pipe() // discard stdout
+            let stdout = Pipe()
 
-            let handle = stderr.fileHandleForReading
-            handle.readabilityHandler = { fh in
-                guard let line = String(data: fh.availableData, encoding: .utf8),
-                      !line.isEmpty else { return }
-                Task { @MainActor in
-                    for l in line.split(separator: "\n") {
-                        panel.appendLine(String(l))
-                    }
-                }
-            }
-
-            process.terminationHandler = { proc in
-                handle.readabilityHandler = nil
-                Task { @MainActor in
-                    self.activeProcess = nil
-                    if proc.terminationStatus == 0 {
-                        cont.resume()
-                    } else {
-                        cont.resume(throwing: ConversionError.processFailed(
-                            Int(proc.terminationStatus)))
-                    }
-                }
-            }
+            configureProcess(process, stderr: stderr, stdout: stdout)
+            installReadabilityHandler(for: stderr.fileHandleForReading, panel: panel)
+            installTerminationHandler(for: process, handle: stderr.fileHandleForReading, continuation: continuation)
 
             do {
                 activeProcess = process
                 try process.run()
-                panel.appendLine("⚙ \(URL(fileURLWithPath: executablePath).lastPathComponent) \(arguments.joined(separator: " "))")
+                appendLaunchCommand(executablePath: executablePath, arguments: arguments, panel: panel)
             } catch {
-                activeProcess = nil
-                cont.resume(throwing: error)
+                cleanupAfterLaunchFailure(handle: stderr.fileHandleForReading, error: error, continuation: continuation)
             }
         }
     }
-}
 
-// MARK: - ConversionError
+    private func makeProcess(executablePath: String, arguments: [String]) -> Process {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: executablePath)
+        process.arguments = arguments
+        process.environment = ProcessInfo.processInfo.environment
+        return process
+    }
 
-enum ConversionError: LocalizedError {
-    case toolMissing(String)
-    case readFailed(String)
-    case writeFailed(String)
-    case processFailed(Int)
-    case unsupportedConversion(String, String)
+    private func configureProcess(_ process: Process, stderr: Pipe, stdout: Pipe) {
+        process.standardError = stderr
+        process.standardOutput = stdout
+    }
 
-    var errorDescription: String? {
-        switch self {
-        case .toolMissing(let tool):
-            return "Required tool not found: \(tool). Install via: brew install ffmpeg"
-        case .readFailed(let name):
-            return "Failed to read: \(name)"
-        case .writeFailed(let name):
-            return "Failed to write: \(name)"
-        case .processFailed(let code):
-            return "Process exited with code \(code)"
-        case .unsupportedConversion(let from, let to):
-            return "Conversion \(from) → \(to) is not supported"
+    private func installReadabilityHandler(for handle: FileHandle, panel: ProgressPanel) {
+        handle.readabilityHandler = { fileHandle in
+            let data = fileHandle.availableData
+            guard !data.isEmpty,
+                let chunk = String(data: data, encoding: .utf8)
+            else {
+                return
+            }
+
+            Task { @MainActor in
+                self.appendProcessOutput(chunk, panel: panel)
+            }
         }
     }
+
+    private func appendProcessOutput(_ chunk: String, panel: ProgressPanel) {
+        for line in chunk.split(separator: "\n") {
+            panel.appendLine(String(line))
+        }
+    }
+
+    private func installTerminationHandler(
+        for process: Process,
+        handle: FileHandle,
+        continuation: CheckedContinuation<Void, Error>
+    ) {
+        process.terminationHandler = { process in
+            handle.readabilityHandler = nil
+
+            Task { @MainActor in
+                self.activeProcess = nil
+
+                if process.terminationReason == .uncaughtSignal,
+                    process.terminationStatus == SIGTERM
+                {
+                    continuation.resume(throwing: CancellationError())
+                    return
+                }
+
+                if process.terminationStatus == 0 {
+                    continuation.resume()
+                    return
+                }
+
+                continuation.resume(
+                    throwing: ConversionError.processFailed(Int(process.terminationStatus))
+                )
+            }
+        }
+    }
+
+    private func appendLaunchCommand(
+        executablePath: String,
+        arguments: [String],
+        panel: ProgressPanel
+    ) {
+        let executableName = URL(fileURLWithPath: executablePath).lastPathComponent
+        let commandLine = arguments.joined(separator: " ")
+        panel.appendLine("⚙ \(executableName) \(commandLine)")
+    }
+
+    private func cleanupAfterLaunchFailure(
+        handle: FileHandle,
+        error: Error,
+        continuation: CheckedContinuation<Void, Error>
+    ) {
+        handle.readabilityHandler = nil
+        activeProcess = nil
+        continuation.resume(throwing: error)
+    }
 }
+
+

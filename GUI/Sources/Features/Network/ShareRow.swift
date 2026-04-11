@@ -9,9 +9,7 @@
 import AppKit
 import SwiftUI
 
-
 // MARK: - Share row
-
 struct ShareRow: View {
     let share: NetworkShare
     let onSelect: () -> Void
@@ -30,26 +28,24 @@ struct ShareRow: View {
         static let pressedScale: CGFloat = 0.992
     }
 
-    private enum Glass {
-        static let borderOpacity: Double = 0.10
-        static let hoverTintOpacity: Double = 0.08
-        static let idleTintOpacity: Double = 0.02
-        static let pressedTintOpacity: Double = 0.11
-        static let idleIndicatorOpacity: Double = 0.22
-    }
+    private static let activeBorderOpacity: Double = 0.10
+    private static let hoverTintOpacity: Double = 0.08
+    private static let idleTintOpacity: Double = 0.02
+    private static let pressedTintOpacity: Double = 0.11
+    private static let idleIndicatorOpacity: Double = 0.22
 
     private var backgroundTintOpacity: Double {
         if isPressed {
-            return Glass.pressedTintOpacity
+            return Self.pressedTintOpacity
         }
-        return isHovered ? Glass.hoverTintOpacity : Glass.idleTintOpacity
+        return isHovered ? Self.hoverTintOpacity : Self.idleTintOpacity
     }
 
     private var borderOpacity: Double {
         if isHovered || isPressed {
-            return Glass.borderOpacity
+            return Self.activeBorderOpacity
         }
-        return Glass.borderOpacity * 0.45
+        return Self.activeBorderOpacity * 0.45
     }
 
     @ViewBuilder
@@ -77,7 +73,7 @@ struct ShareRow: View {
         Image(systemName: "arrow.right.circle")
             .font(.system(size: Layout.trailingIndicatorSize))
             .foregroundStyle(isHovered || isPressed ? Color.accentColor : .secondary)
-            .opacity(isHovered || isPressed ? 1 : Glass.idleIndicatorOpacity)
+            .opacity(isHovered || isPressed ? 1 : Self.idleIndicatorOpacity)
     }
 
     private func copyToPasteboard(_ value: String) {

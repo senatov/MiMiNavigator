@@ -52,8 +52,7 @@ struct ContextMenuDialogModifier: ViewModifier {
                  .compress,
                  .createFolder,
                  .createLink,
-                 .fileConflict,
-                 .convertMedia:
+                 .fileConflict:
                 primaryDialogContent(for: dialog)
             case .error,
                  .success:

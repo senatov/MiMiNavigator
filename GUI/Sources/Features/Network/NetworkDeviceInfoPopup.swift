@@ -38,44 +38,35 @@ struct NetworkDeviceInfoPopup: View {
         static let dividerInset: CGFloat = 102
     }
 
-    private enum Glass {
-        static let borderOpacity: Double = 0.14
-        static let sectionTintOpacity: Double = 0.07
-        static let headerTintOpacity: Double = 0.09
-    }
-
     // MARK: - Glass Styling
     @ViewBuilder
     private var popupBackground: some View {
         RoundedRectangle(cornerRadius: Layout.cornerRadius, style: .continuous)
             .fill(.clear)
-            .glassEffect(.regular.tint(Color.white.opacity(Glass.sectionTintOpacity)))
     }
 
     @ViewBuilder
     private var popupBorder: some View {
         RoundedRectangle(cornerRadius: Layout.cornerRadius, style: .continuous)
-            .strokeBorder(Color.white.opacity(Glass.borderOpacity), lineWidth: 0.8)
+            .strokeBorder(.quaternary, lineWidth: 0.8)
     }
 
     @ViewBuilder
     private var headerBackground: some View {
         RoundedRectangle(cornerRadius: Layout.sectionCornerRadius, style: .continuous)
             .fill(.clear)
-            .glassEffect(.regular.tint(iconColor.opacity(Glass.headerTintOpacity)))
     }
 
     @ViewBuilder
     private var sectionBackground: some View {
         RoundedRectangle(cornerRadius: Layout.sectionCornerRadius, style: .continuous)
             .fill(.clear)
-            .glassEffect(.regular.tint(Color.white.opacity(Glass.sectionTintOpacity)))
     }
 
     @ViewBuilder
     private var sectionBorder: some View {
         RoundedRectangle(cornerRadius: Layout.sectionCornerRadius, style: .continuous)
-            .strokeBorder(Color.white.opacity(Glass.borderOpacity), lineWidth: 0.8)
+            .strokeBorder(.quaternary, lineWidth: 0.8)
     }
 
     @ViewBuilder
@@ -94,8 +85,7 @@ struct NetworkDeviceInfoPopup: View {
         content()
             .background(
                 RoundedRectangle(cornerRadius: Layout.sectionCornerRadius, style: .continuous)
-                    .fill(.clear)
-                    .glassEffect(.regular.tint(tint.opacity(Glass.headerTintOpacity)))
+                    .fill(tint.opacity(0.10))
             )
             .overlay(sectionBorder)
             .clipShape(RoundedRectangle(cornerRadius: Layout.sectionCornerRadius, style: .continuous))
@@ -125,6 +115,7 @@ struct NetworkDeviceInfoPopup: View {
         .frame(width: Layout.popupWidth)
         .padding(.top, 10)
         .background(popupBackground)
+        .glassEffect(.regular)
         .overlay(popupBorder)
         .clipShape(RoundedRectangle(cornerRadius: Layout.cornerRadius, style: .continuous))
         .shadow(color: .black.opacity(0.18), radius: 12, x: 0, y: 4)

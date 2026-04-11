@@ -48,15 +48,6 @@ struct NetworkAuthSheet: View {
         static let passwordFieldSpacing: CGFloat = 8
         static let sectionVerticalPadding: CGFloat = 12
     }
-    private enum Glass {
-        static let cardCornerRadius: CGFloat = 14
-        static let controlCornerRadius: CGFloat = 10
-        static let borderOpacity: Double = 0.12
-        static let hoverTintOpacity: Double = 0.10
-        static let sectionTintOpacity: Double = 0.06
-        static let accentTintOpacity: Double = 0.08
-        static let fieldTintOpacity: Double = 0.08
-    }
 
     private var passwordPrompt: String {
         "Required"
@@ -75,77 +66,71 @@ struct NetworkAuthSheet: View {
     private var sheetBackground: some View {
         RoundedRectangle(cornerRadius: Layout.cornerRadius, style: .continuous)
             .fill(.clear)
-            .glassEffect(.regular.tint(Color.white.opacity(Glass.sectionTintOpacity)))
     }
 
     @ViewBuilder
     private var sheetBorder: some View {
         RoundedRectangle(cornerRadius: Layout.cornerRadius, style: .continuous)
-            .strokeBorder(Color.white.opacity(Glass.borderOpacity), lineWidth: 0.8)
+            .strokeBorder(.quaternary, lineWidth: 0.8)
     }
 
     @ViewBuilder
     private var hostBadgeBackground: some View {
         Capsule()
-            .fill(.clear)
-            .glassEffect(.regular.tint(Color.white.opacity(Glass.hoverTintOpacity)))
+            .fill(.quaternary.opacity(0.9))
     }
 
     @ViewBuilder
     private var passwordToggleBackground: some View {
-        RoundedRectangle(cornerRadius: Glass.controlCornerRadius, style: .continuous)
-            .fill(.clear)
-            .glassEffect(.regular.tint(Color.white.opacity(Glass.fieldTintOpacity)))
+        RoundedRectangle(cornerRadius: 10, style: .continuous)
+            .fill(.quaternary.opacity(0.9))
     }
 
     @ViewBuilder
     private var passwordToggleBorder: some View {
-        RoundedRectangle(cornerRadius: Glass.controlCornerRadius, style: .continuous)
-            .strokeBorder(Color.white.opacity(Glass.borderOpacity), lineWidth: 0.8)
+        RoundedRectangle(cornerRadius: 10, style: .continuous)
+            .strokeBorder(.quaternary, lineWidth: 0.8)
     }
 
     @ViewBuilder
-    private func sectionBackground(tint: Color = Color.white.opacity(Glass.sectionTintOpacity)) -> some View {
-        RoundedRectangle(cornerRadius: Glass.cardCornerRadius, style: .continuous)
-            .fill(.clear)
-            .glassEffect(.regular.tint(tint))
+    private func sectionBackground(tint: Color = .clear) -> some View {
+        RoundedRectangle(cornerRadius: Layout.cornerRadius, style: .continuous)
+            .fill(tint)
     }
 
     @ViewBuilder
     private var sectionBorder: some View {
-        RoundedRectangle(cornerRadius: Glass.cardCornerRadius, style: .continuous)
-            .strokeBorder(Color.white.opacity(Glass.borderOpacity), lineWidth: 0.8)
+        RoundedRectangle(cornerRadius: Layout.cornerRadius, style: .continuous)
+            .strokeBorder(.quaternary, lineWidth: 0.8)
     }
 
     @ViewBuilder
     private var fieldBackground: some View {
-        RoundedRectangle(cornerRadius: Glass.controlCornerRadius, style: .continuous)
-            .fill(.clear)
-            .glassEffect(.regular.tint(Color.white.opacity(Glass.fieldTintOpacity)))
+        RoundedRectangle(cornerRadius: 10, style: .continuous)
+            .fill(.quaternary.opacity(0.9))
     }
 
     @ViewBuilder
     private var fieldBorder: some View {
-        RoundedRectangle(cornerRadius: Glass.controlCornerRadius, style: .continuous)
-            .strokeBorder(Color.white.opacity(Glass.borderOpacity), lineWidth: 0.8)
+        RoundedRectangle(cornerRadius: 10, style: .continuous)
+            .strokeBorder(.quaternary, lineWidth: 0.8)
     }
 
     @ViewBuilder
     private var cancelButtonBackground: some View {
         Capsule()
-            .fill(.clear)
-            .glassEffect(.regular.tint(Color.white.opacity(Glass.sectionTintOpacity)))
+            .fill(.quaternary.opacity(0.9))
     }
 
     @ViewBuilder
     private func sectionCard<Content: View>(
-        tint: Color = Color.white.opacity(Glass.sectionTintOpacity),
+        tint: Color = .clear,
         @ViewBuilder content: () -> Content
     ) -> some View {
         content()
             .background(sectionBackground(tint: tint))
             .overlay(sectionBorder)
-            .clipShape(RoundedRectangle(cornerRadius: Glass.cardCornerRadius, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: Layout.cornerRadius, style: .continuous))
     }
 
     @ViewBuilder
@@ -155,7 +140,7 @@ struct NetworkAuthSheet: View {
             .padding(.vertical, 7)
             .background(fieldBackground)
             .overlay(fieldBorder)
-            .clipShape(RoundedRectangle(cornerRadius: Glass.controlCornerRadius, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
 
     // MARK: - Host card (matches HostNodeRow style)
@@ -167,12 +152,11 @@ struct NetworkAuthSheet: View {
                 .frame(width: Layout.hostIconSize, height: Layout.hostIconSize)
                 .background {
                     RoundedRectangle(cornerRadius: Layout.hostBadgeCornerRadius, style: .continuous)
-                        .fill(.clear)
-                        .glassEffect(.regular.tint(Color.blue.opacity(0.12)))
+                        .fill(Color.blue.opacity(0.10))
                 }
                 .overlay {
                     RoundedRectangle(cornerRadius: Layout.hostBadgeCornerRadius, style: .continuous)
-                        .strokeBorder(Color.white.opacity(Glass.borderOpacity), lineWidth: 0.8)
+                        .strokeBorder(.quaternary, lineWidth: 0.8)
                 }
             VStack(alignment: .leading, spacing: 2) {
                 Text("Connect to \"\(host.name)\"")
@@ -190,12 +174,11 @@ struct NetworkAuthSheet: View {
                     .padding(.vertical, 3)
                     .background {
                         Capsule()
-                            .fill(.clear)
-                            .glassEffect(.regular.tint(Color.white.opacity(Glass.accentTintOpacity)))
+                            .fill(.quaternary.opacity(0.9))
                     }
                     .overlay {
                         Capsule()
-                            .strokeBorder(Color.white.opacity(Glass.borderOpacity), lineWidth: 0.8)
+                            .strokeBorder(.quaternary, lineWidth: 0.8)
                     }
             }
         }
@@ -287,7 +270,7 @@ struct NetworkAuthSheet: View {
         .foregroundStyle(.secondary)
         .background(passwordToggleBackground)
         .overlay(passwordToggleBorder)
-        .clipShape(RoundedRectangle(cornerRadius: Glass.controlCornerRadius, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
         .help(passwordToggleAccessibilityLabel)
         .accessibilityLabel(passwordToggleAccessibilityLabel)
     }
@@ -320,7 +303,7 @@ struct NetworkAuthSheet: View {
                 .background(cancelButtonBackground)
                 .overlay {
                     Capsule()
-                        .strokeBorder(Color.white.opacity(Glass.borderOpacity), lineWidth: 0.8)
+                        .strokeBorder(.quaternary, lineWidth: 0.8)
                 }
             Spacer()
             Button {
@@ -409,6 +392,7 @@ struct NetworkAuthSheet: View {
         .frame(width: Layout.dialogWidth)
         .padding(.vertical, 2)
         .background(sheetBackground)
+        .glassEffect(.regular)
         .overlay(sheetBorder)
         .clipShape(RoundedRectangle(cornerRadius: Layout.cornerRadius, style: .continuous))
         .contentShape(RoundedRectangle(cornerRadius: Layout.cornerRadius, style: .continuous))

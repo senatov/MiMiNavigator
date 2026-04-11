@@ -45,6 +45,10 @@ struct ConnToSrvrView: View {
         case name, host, port, remotePath, user, password, keyPath
     }
 
+    private static let dividerHoverTintOpacity: Double = 0.10
+    private static let dividerIdleTintOpacity: Double = 0.04
+    private static let dividerBorderOpacity: Double = 0.18
+
     // MARK: - Derived State
 
     var connectionManager: RemoteConnectionManager { .shared }
@@ -68,11 +72,11 @@ struct ConnToSrvrView: View {
     }
 
     var dividerTintOpacity: Double {
-        dividerActive ? Glass.dividerHoverTintOpacity : Glass.dividerIdleTintOpacity
+        dividerActive ? Self.dividerHoverTintOpacity : Self.dividerIdleTintOpacity
     }
 
     var dividerBorderStrokeOpacity: Double {
-        dividerActive ? Glass.dividerBorderOpacity : Glass.dividerBorderOpacity * 0.7
+        dividerActive ? Self.dividerBorderOpacity : Self.dividerBorderOpacity * 0.7
     }
 
     var currentDraftConnectionAvailable: Bool {

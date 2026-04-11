@@ -37,11 +37,6 @@ struct NetworkNeighborhoodView: View {
         static let sectionHeaderBottomPadding: CGFloat = 4
     }
 
-    private enum Glass {
-        static let borderOpacity: Double = 0.14
-        static let sectionTintOpacity: Double = 0.07
-        static let headerTintOpacity: Double = 0.09
-    }
 
     private enum HostSection: Int, CaseIterable {
         case infrastructure
@@ -142,33 +137,30 @@ struct NetworkNeighborhoodView: View {
     private var panelBackground: some View {
         RoundedRectangle(cornerRadius: Layout.outerCornerRadius, style: .continuous)
             .fill(.clear)
-            .glassEffect(.regular.tint(Color.white.opacity(Glass.sectionTintOpacity)))
     }
 
     @ViewBuilder
     private var panelBorder: some View {
         RoundedRectangle(cornerRadius: Layout.outerCornerRadius, style: .continuous)
-            .strokeBorder(Color.white.opacity(Glass.borderOpacity), lineWidth: 0.8)
+            .strokeBorder(.quaternary, lineWidth: 0.8)
     }
 
     @ViewBuilder
     private var headerBackground: some View {
         RoundedRectangle(cornerRadius: Layout.sectionCornerRadius, style: .continuous)
             .fill(.clear)
-            .glassEffect(.regular.tint(Color.white.opacity(Glass.headerTintOpacity)))
     }
 
     @ViewBuilder
     private var sectionBackground: some View {
         RoundedRectangle(cornerRadius: Layout.sectionCornerRadius, style: .continuous)
             .fill(.clear)
-            .glassEffect(.regular.tint(Color.white.opacity(Glass.sectionTintOpacity)))
     }
 
     @ViewBuilder
     private var sectionBorder: some View {
         RoundedRectangle(cornerRadius: Layout.sectionCornerRadius, style: .continuous)
-            .strokeBorder(Color.white.opacity(Glass.borderOpacity), lineWidth: 0.8)
+            .strokeBorder(.quaternary, lineWidth: 0.8)
     }
 
     var body: some View {
@@ -184,6 +176,7 @@ struct NetworkNeighborhoodView: View {
         .frame(minWidth: Layout.minWidth, idealWidth: Layout.idealWidth, minHeight: Layout.minHeight)
         .padding(.top, 10)
         .background(panelBackground)
+        .glassEffect(.regular)
         .overlay(panelBorder)
         .clipShape(RoundedRectangle(cornerRadius: Layout.outerCornerRadius, style: .continuous))
         .contentShape(RoundedRectangle(cornerRadius: Layout.outerCornerRadius, style: .continuous))
@@ -230,12 +223,11 @@ struct NetworkNeighborhoodView: View {
                         .padding(6)
                         .background {
                             Circle()
-                                .fill(.clear)
-                                .glassEffect(.regular.tint(Color.white.opacity(Glass.sectionTintOpacity)))
+                                .fill(.quaternary.opacity(0.9))
                         }
                         .overlay {
                             Circle()
-                                .strokeBorder(Color.white.opacity(Glass.borderOpacity), lineWidth: 0.8)
+                                .strokeBorder(.quaternary, lineWidth: 0.8)
                         }
                 }
                 .buttonStyle(.plain)

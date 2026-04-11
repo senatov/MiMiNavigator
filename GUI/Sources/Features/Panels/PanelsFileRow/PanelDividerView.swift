@@ -15,25 +15,36 @@ struct PanelDividerView: View {
     let containerWidth: CGFloat
     let containerHeight: CGFloat
     @State private var colorStore = ColorThemeStore.shared
+    @State private var isHovered = false
 
     var body: some View {
+        let isHighlighted = divider.isDragging || isHovered
         let lineWidth = divider.isDragging ? PanelDividerMetrics.activeWidth : PanelDividerMetrics.normalWidth
-        let lineColor = divider.isDragging ? colorStore.activeTheme.dividerActiveColor : colorStore.activeTheme.dividerNormalColor
+        let lineColor = isHighlighted ? colorStore.activeTheme.dividerActiveColor : colorStore.activeTheme.dividerNormalColor
 
         ZStack {
-            if divider.isDragging {
+            if isHighlighted {
                 activeDivider(height: containerHeight, lineWidth: lineWidth, color: lineColor)
             } else {
                 inactiveGroove(height: containerHeight)
+            }
+
+            if divider.isTooltipVisible {
+                tooltipLayer
+                    .zIndex(30)
+                    .allowsHitTesting(false)
             }
 
             // Invisible hit area for comfortable grabbing
             Color.clear
                 .frame(width: PanelDividerMetrics.hitAreaWidth, height: containerHeight)
                 .contentShape(Rectangle())
-                .gesture(makeDragGesture())
-                .simultaneousGesture(makeDoubleTapGesture())
-                .simultaneousGesture(makeOptionTapGesture())
+                .highPriorityGesture(makeDragGesture())
+                .highPriorityGesture(makeDoubleTapGesture())
+                .highPriorityGesture(makeOptionTapGesture())
+                .onTapGesture {
+                    // Consume divider-area taps so they do not fall through to file rows.
+                }
         }
         .frame(width: PanelDividerMetrics.hitAreaWidth, height: containerHeight)
         .background(Color.black.opacity(0.001))
@@ -42,10 +53,11 @@ struct PanelDividerView: View {
             updateCursor(inside)
         }
         .allowsHitTesting(true)
-        .zIndex(10)
+        .zIndex(divider.isTooltipVisible || divider.isDragging || isHovered ? 1000 : 10)
     }
 
     private func updateCursor(_ inside: Bool) {
+        isHovered = inside
         inside ? NSCursor.resizeLeftRight.set() : NSCursor.arrow.set()
     }
 
@@ -108,10 +120,12 @@ struct PanelDividerView: View {
         let halfLeft = halfCenter - PanelDividerMetrics.hitAreaWidth / 2
         divider.lastAppliedWidth = halfLeft
         leftPanelWidth = halfLeft
-        showTooltip(text: "50%", at: CGPoint(x: halfCenter, y: 46))
+        showTooltip(text: ratioText(forDividerCenterX: halfCenter), at: CGPoint(x: halfCenter, y: 46))
+        divider.isDragging = false
 
         Task {
             try? await Task.sleep(for: .milliseconds(800))
+            log.debug("[Divider] tooltip hide after snap")
             divider.isTooltipVisible = false
         }
     }
@@ -133,10 +147,17 @@ struct PanelDividerView: View {
             }
             divider.dragGrabOffset = 0
             divider.dragStartWidth = .nan
-            divider.isTooltipVisible = false
+            let finalCenterX = (divider.lastAppliedWidth.isNaN ? leftPanelWidth : divider.lastAppliedWidth) + PanelDividerMetrics.hitAreaWidth / 2
+            showTooltip(text: ratioText(forDividerCenterX: finalCenterX), at: CGPoint(x: finalCenterX, y: 46))
             divider.isDragging = false
             divider.lastTooltipLeft = .nan
             divider.dragPreviewLeft = nil
+        }
+
+        Task {
+            try? await Task.sleep(for: .milliseconds(900))
+            log.debug("[Divider] tooltip hide after commit")
+            divider.isTooltipVisible = false
         }
 
         log.debug("[Divider] Commit → leftPanelWidth=\(Int(leftPanelWidth))")
@@ -144,24 +165,94 @@ struct PanelDividerView: View {
 
     // MARK: - Tooltip
 
+    private var tooltipHorizontalInset: CGFloat {
+        24
+    }
+
+
+    private var tooltipMaxWidth: CGFloat {
+        max(120, min(220, containerWidth - 32))
+    }
+
+
+    @ViewBuilder
+    private var tooltipLayer: some View {
+        tooltipBubble
+            .fixedSize(horizontal: true, vertical: true)
+            .position(x: tooltipCenterX, y: tooltipCenterY)
+    }
+
+
+    private var tooltipCenterX: CGFloat {
+        let localCursorX = PanelDividerMetrics.hitAreaWidth / 2
+        let preferredX = localCursorX + tooltipHorizontalInset
+        let maxX = max(tooltipHorizontalInset, PanelDividerMetrics.hitAreaWidth - tooltipHorizontalInset)
+        return min(max(preferredX, tooltipHorizontalInset), maxX)
+    }
+
+
+    private var tooltipCenterY: CGFloat {
+        let preferredY = divider.tooltipPosition.y - 16
+        return max(26, min(containerHeight - 26, preferredY))
+    }
+
+
+    private var clampedTooltipY: CGFloat {
+        max(26, min(containerHeight - 26, divider.tooltipPosition.y))
+    }
+
+
+    @ViewBuilder
+    private var tooltipBubble: some View {
+        Text(divider.tooltipText)
+            .font(.system(size: 18))
+            .foregroundStyle(.primary)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 5)
+            .background(tooltipBackground)
+            .overlay(tooltipBorder)
+            .shadow(color: Color.black.opacity(0.18), radius: 10, x: 0, y: 3)
+            .fixedSize(horizontal: true, vertical: true)
+    }
+
+
+    @ViewBuilder
+    private var tooltipBackground: some View {
+        Capsule(style: .continuous)
+            .fill(.regularMaterial)
+    }
+
+
+    @ViewBuilder
+    private var tooltipBorder: some View {
+        Capsule(style: .continuous)
+            .stroke(Color.white.opacity(0.22), lineWidth: 0.8)
+    }
+
     private func updateTooltip(snapped: CGFloat, locationY: CGFloat) {
         let delta = abs((divider.lastTooltipLeft.isNaN ? -9999 : divider.lastTooltipLeft) - snapped)
         guard delta >= 2 else { return }
-
         divider.lastTooltipLeft = snapped
         let centerX = snapped + PanelDividerMetrics.hitAreaWidth / 2
-        let percent = Int(((centerX / max(containerWidth, 1)) * 100.0).rounded()).clamped(to: 0...100)
-
-        showTooltip(text: "\(percent)%", at: CGPoint(x: centerX, y: max(34, locationY - 70)))
+        let tooltipText = ratioText(forDividerCenterX: centerX)
+        showTooltip(text: tooltipText, at: CGPoint(x: centerX, y: max(34, locationY - 70)))
     }
 
     private func showTooltip(text: String, at position: CGPoint) {
         divider.tooltipText = text
         divider.tooltipPosition = position
         divider.isTooltipVisible = true
+        log.debug("[Divider] tooltip show text='\(text)' x=\(Int(position.x)) y=\(Int(position.y))")
     }
 
     // MARK: - Pixel Grid
+
+    private func ratioText(forDividerCenterX centerX: CGFloat) -> String {
+        let safeWidth = max(containerWidth, 1)
+        let leftPercent = Int(((centerX / safeWidth) * 100.0).rounded()).clamped(to: 0...100)
+        let rightPercent = max(0, 100 - leftPercent)
+        return "\(leftPercent)/\(rightPercent)"
+    }
 
     private func snapToPixelGrid(_ value: CGFloat) -> CGFloat {
         let scale = NSScreen.main?.backingScaleFactor ?? 2.0

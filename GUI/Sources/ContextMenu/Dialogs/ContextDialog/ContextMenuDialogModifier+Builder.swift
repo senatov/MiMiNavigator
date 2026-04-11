@@ -127,21 +127,6 @@ extension ContextMenuDialogModifier {
                         coordinator.resolveConflict(decision)
                     }
                 )
-            case .convertMedia(let file, let panel):
-                ConvertMediaDialog(
-                    file: file,
-                    onConvert: { targetFormat, outputURL in
-                        coordinator.dismissDialog()
-                        Task {
-                            await coordinator.performMediaConversion(
-                                file: file, targetFormat: targetFormat,
-                                outputURL: outputURL, panel: panel, appState: appState)
-                        }
-                    },
-                    onCancel: {
-                        coordinator.dismissDialog()
-                    }
-                )
             default:
                 EmptyView()
         }

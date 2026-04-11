@@ -18,6 +18,7 @@ enum MediaFormat: String, CaseIterable, Identifiable, Hashable {
     case avi
     case webm
     case gif
+
     // Image
     case png
     case jpg
@@ -25,6 +26,7 @@ enum MediaFormat: String, CaseIterable, Identifiable, Hashable {
     case heic
     case tiff
     case bmp
+
     // Audio
     case mp3
     case aac
@@ -32,12 +34,20 @@ enum MediaFormat: String, CaseIterable, Identifiable, Hashable {
     case wav
     case ogg
     case m4a
+
     // Sticker / animation
     case tgs
+
     // Lottie
     case json
 
+    private static let videoFormats: Set<MediaFormat> = [.mp4, .mov, .mkv, .avi, .webm]
+    private static let imageFormats: Set<MediaFormat> = [.png, .jpg, .webp, .heic, .tiff, .bmp]
+    private static let audioFormats: Set<MediaFormat> = [.mp3, .aac, .flac, .wav, .ogg, .m4a]
+    private static let animationFormats: Set<MediaFormat> = [.gif, .tgs, .json]
+
     var id: String { rawValue }
+    var fileExtension: String { rawValue }
 
     var displayName: String {
         switch self {
@@ -64,25 +74,23 @@ enum MediaFormat: String, CaseIterable, Identifiable, Hashable {
         }
     }
 
-    var fileExtension: String { rawValue }
-
     var isVideo: Bool {
-        [.mp4, .mov, .mkv, .avi, .webm].contains(self)
+        Self.videoFormats.contains(self)
     }
 
     var isImage: Bool {
-        [.png, .jpg, .webp, .heic, .tiff, .bmp].contains(self)
+        Self.imageFormats.contains(self)
     }
 
     var isAudio: Bool {
-        [.mp3, .aac, .flac, .wav, .ogg, .m4a].contains(self)
+        Self.audioFormats.contains(self)
     }
 
     var isAnimation: Bool {
-        [.gif, .tgs, .json].contains(self)
+        Self.animationFormats.contains(self)
     }
 
-    /// Icon for Picker display
+    // Icon for Picker display
     var systemImage: String {
         if isVideo { return "film" }
         if isImage { return "photo" }
@@ -91,47 +99,50 @@ enum MediaFormat: String, CaseIterable, Identifiable, Hashable {
         return "doc"
     }
 
-    /// Resolve format from file extension
+    // Resolve format from file extension
     static func from(extension ext: String) -> MediaFormat? {
-        let lower = ext.lowercased()
-        if lower == "jpeg" { return .jpg }
-        return MediaFormat(rawValue: lower)
+        let normalizedExtension = ext.lowercased()
+        if normalizedExtension == "jpeg" { return .jpg }
+        return MediaFormat(rawValue: normalizedExtension)
     }
 
-    /// Available target formats for a given source format
+    // Available target formats for a given source format
     static func targets(for source: MediaFormat) -> [MediaFormat] {
+        let targets: [MediaFormat]
+
         switch source {
-        // Video → video/gif/audio
         case .mp4, .mov, .mkv, .avi:
-            return [.mp4, .mov, .mkv, .webm, .gif, .mp3, .aac, .flac, .wav, .m4a]
-                .filter { $0 != source }
+            targets = [.mp4, .mov, .mkv, .webm, .gif, .mp3, .aac, .flac, .wav, .m4a]
+
         case .webm:
-            return [.mp4, .mov, .gif, .mp3, .aac, .wav]
-        // Image → image/pdf
+            targets = [.mp4, .mov, .gif, .mp3, .aac, .wav]
+
         case .png, .jpg, .bmp, .tiff:
-            return [.png, .jpg, .webp, .heic, .tiff, .bmp, .gif]
-                .filter { $0 != source }
+            targets = [.png, .jpg, .webp, .heic, .tiff, .bmp, .gif]
+
         case .webp:
-            return [.png, .jpg, .gif, .mp4, .heic, .tiff]
+            targets = [.png, .jpg, .gif, .mp4, .heic, .tiff]
+
         case .heic:
-            return [.png, .jpg, .webp, .tiff]
-        // GIF → video/image
+            targets = [.png, .jpg, .webp, .tiff]
+
         case .gif:
-            return [.mp4, .mov, .webm, .png]
-        // Audio → audio
+            targets = [.mp4, .mov, .webm, .png]
+
         case .mp3, .aac, .flac, .wav, .ogg, .m4a:
-            return [.mp3, .aac, .flac, .wav, .ogg, .m4a]
-                .filter { $0 != source }
-        // Sticker / Lottie
+            targets = [.mp3, .aac, .flac, .wav, .ogg, .m4a]
+
         case .tgs:
-            return [.gif, .mp4, .png, .webp]
+            targets = [.gif, .mp4, .png, .webp]
+
         case .json:
-            return [.gif, .mp4, .png]
+            targets = [.gif, .mp4, .png]
         }
+
+        return targets.filter { $0 != source }
     }
 
-
-    /// Required CLI tool for this conversion
+    // Required CLI tool for this conversion
     static func requiredTool(from source: MediaFormat, to target: MediaFormat) -> ConversionTool {
         if source == .tgs { return .lottieAndFFmpeg }
         if source == .json && target != .json { return .lottieAndFFmpeg }
@@ -141,7 +152,6 @@ enum MediaFormat: String, CaseIterable, Identifiable, Hashable {
     }
 }
 
-
 // MARK: - ConversionTool
 
 enum ConversionTool: String {
@@ -149,29 +159,35 @@ enum ConversionTool: String {
     case imageIO = "ImageIO (native)"
     case lottieAndFFmpeg = "Lottie + ffmpeg"
 
+    private static let ffmpegCandidates = [
+        "/opt/homebrew/bin/ffmpeg",
+        "/usr/local/bin/ffmpeg",
+        "/usr/bin/ffmpeg",
+    ]
+
+    private static let gifskiCandidates = [
+        "/opt/homebrew/bin/gifski",
+        "/usr/local/bin/gifski",
+    ]
+
     var isAvailable: Bool {
         switch self {
-        case .imageIO: return true
-        case .ffmpeg: return FileManager.default.isExecutableFile(atPath: Self.ffmpegPath)
-        case .lottieAndFFmpeg:
+        case .imageIO:
+            return true
+        case .ffmpeg, .lottieAndFFmpeg:
             return FileManager.default.isExecutableFile(atPath: Self.ffmpegPath)
         }
     }
 
     static let ffmpegPath: String = {
-        let candidates = [
-            "/opt/homebrew/bin/ffmpeg",
-            "/usr/local/bin/ffmpeg",
-            "/usr/bin/ffmpeg",
-        ]
-        return candidates.first { FileManager.default.isExecutableFile(atPath: $0) } ?? "/opt/homebrew/bin/ffmpeg"
+        Self.ffmpegCandidates.first {
+            FileManager.default.isExecutableFile(atPath: $0)
+        } ?? "/opt/homebrew/bin/ffmpeg"
     }()
 
     static let gifskiPath: String = {
-        let candidates = [
-            "/opt/homebrew/bin/gifski",
-            "/usr/local/bin/gifski",
-        ]
-        return candidates.first { FileManager.default.isExecutableFile(atPath: $0) } ?? "/opt/homebrew/bin/gifski"
+        Self.gifskiCandidates.first {
+            FileManager.default.isExecutableFile(atPath: $0)
+        } ?? "/opt/homebrew/bin/gifski"
     }()
 }

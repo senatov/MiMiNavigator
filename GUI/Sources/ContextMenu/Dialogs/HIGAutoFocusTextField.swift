@@ -15,25 +15,7 @@ import SwiftUI
 struct HIGAutoFocusTextField: ViewModifier {
     func body(content: Content) -> some View {
         content.onAppear {
-            Task { @MainActor in
-                for attempt in 1...3 {
-                    let delay = Duration.milliseconds(80 * attempt)
-                    try? await Task.sleep(for: delay)
-                    guard let window = NSApp.keyWindow else { continue }
-                    if let textField = Self.firstEditableTextField(in: window.contentView) {
-                        window.makeFirstResponder(textField)
-                        textField.selectText(nil)
-                        log.debug("[HIGAutoFocus] focused text field on attempt \(attempt)")
-                        return
-                    }
-                }
-                // fallback: focus rightmost button if no text field found
-                if let window = NSApp.keyWindow,
-                   let button = Self.rightmostButton(in: window.contentView) {
-                    window.makeFirstResponder(button)
-                    log.debug("[HIGAutoFocus] fallback: focused rightmost button")
-                }
-            }
+            Self.scheduleFocusAttempt(attempt: 1)
         }
     }
 
@@ -66,6 +48,76 @@ struct HIGAutoFocusTextField: ViewModifier {
         }
         for subview in view.subviews {
             collectButtons(in: subview, into: &buttons)
+        }
+    }
+
+    private static let maxAttempts = 3
+    private static let retryDelayStep: TimeInterval = 0.08
+
+
+    @MainActor
+    private static func scheduleFocusAttempt(attempt: Int) {
+        let delay = retryDelayStep * Double(attempt)
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+            Self.performFocusAttempt(attempt: attempt)
+        }
+    }
+
+
+    @MainActor
+    private static func performFocusAttempt(attempt: Int) {
+        guard let window = NSApp.keyWindow else {
+            retryFocusIfNeeded(after: attempt)
+            return
+        }
+
+        if let textField = firstEditableTextField(in: window.contentView) {
+            focus(textField: textField, in: window, attempt: attempt)
+            return
+        }
+
+        if attempt < maxAttempts {
+            scheduleFocusAttempt(attempt: attempt + 1)
+            return
+        }
+
+        focusFallbackButton(in: window)
+    }
+
+
+    @MainActor
+    private static func retryFocusIfNeeded(after attempt: Int) {
+        guard attempt < maxAttempts else { return }
+        scheduleFocusAttempt(attempt: attempt + 1)
+    }
+
+
+    @MainActor
+    private static func focus(textField: NSTextField, in window: NSWindow, attempt: Int) {
+        let didFocus = window.makeFirstResponder(textField)
+        guard didFocus else {
+            log.debug("[HIGAutoFocus] failed to focus text field on attempt \(attempt)")
+            retryFocusIfNeeded(after: attempt)
+            return
+        }
+
+        textField.selectText(nil)
+        log.debug("[HIGAutoFocus] focused text field on attempt \(attempt)")
+    }
+
+
+    @MainActor
+    private static func focusFallbackButton(in window: NSWindow) {
+        guard let button = rightmostButton(in: window.contentView) else {
+            log.debug("[HIGAutoFocus] fallback failed: no enabled button found")
+            return
+        }
+
+        let didFocus = window.makeFirstResponder(button)
+        if didFocus {
+            log.debug("[HIGAutoFocus] fallback: focused rightmost button")
+        } else {
+            log.debug("[HIGAutoFocus] fallback failed: could not focus rightmost button")
         }
     }
 }
