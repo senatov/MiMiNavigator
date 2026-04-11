@@ -65,15 +65,6 @@ struct FileTableView: View {
     @State var showSpinner: Bool = false
     @State var spinnerTask: Task<Void, Never>? = nil
 
-    /// Path for which autoFit already ran — prevents re-fitting on FSEvents refreshes
-    @State var lastAutoFitPath: String = ""
-
-    /// Container width at last autoFit — re-fit when delta > threshold
-    @State var lastAutoFitWidth: CGFloat = 0
-
-    /// Pending autofit task — waits for all sizes to settle before running
-    @State var pendingAutoFitTask: Task<Void, Never>?
-
     @State var activeMenuTrackingCount: Int = 0
     @State var deferredFilesVersion: Int? = nil
 

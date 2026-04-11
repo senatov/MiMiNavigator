@@ -54,6 +54,7 @@ struct PanelBackgroundContextMenu: View {
             // SECTION 3: Clipboard
             // ═══════════════════════════════════════════
             menuButton(.paste)
+            menuButton(.copyAsPathname)
             
             Divider()
             
@@ -90,9 +91,10 @@ struct PanelBackgroundContextMenu: View {
             Divider()
             
             // ═══════════════════════════════════════════
-            // SECTION 7: Info
+            // SECTION 7: Info & Favorites
             // ═══════════════════════════════════════════
             menuButton(.getInfo)
+            menuButton(.addToFavorites)
 
         }
     }

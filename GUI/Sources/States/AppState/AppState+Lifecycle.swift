@@ -57,6 +57,7 @@
                     leftFiles: displayedLeftFiles,
                     rightFiles: displayedRightFiles
                 )
+                AutoFitScheduler.shared.scheduleInitialFit(appState: self)
                 log.info("[AppState] initialize() async scan complete")
             }
         }

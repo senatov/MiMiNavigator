@@ -14,33 +14,37 @@ enum PanelBackgroundAction: String, CaseIterable, Identifiable {
     case goBack
     case goForward
     case refresh
-    
+
     // Create
     case newFolder
     case newFile
-    
+
     // Clipboard
     case paste
-    
+    case copyAsPathname
+
     // View options
     case sortByName
     case sortByDate
     case sortBySize
     case sortByType
-    
+
     // Navigation helpers
     case openInFinder
     case openInTerminal
-    
+
     // Cross-panel
     case mirrorPath
     case openMarkedOnOtherPanel
 
     // Info
     case getInfo
-    
+
+    // Favorites
+    case addToFavorites
+
     var id: String { rawValue }
-    
+
     var title: String {
         switch self {
         case .goUp: return "Go Up"
@@ -50,6 +54,7 @@ enum PanelBackgroundAction: String, CaseIterable, Identifiable {
         case .newFolder: return "New Folder"
         case .newFile: return "New File"
         case .paste: return "Paste"
+        case .copyAsPathname: return "Copy as Pathname"
         case .sortByName: return "Sort by Name"
         case .sortByDate: return "Sort by Date"
         case .sortBySize: return "Sort by Size"
@@ -59,9 +64,10 @@ enum PanelBackgroundAction: String, CaseIterable, Identifiable {
         case .mirrorPath: return "Mirror Panel"
         case .openMarkedOnOtherPanel: return "Open Marked Dir on Other Panel"
         case .getInfo: return "Get Info"
+        case .addToFavorites: return "Add to Favorites"
         }
     }
-    
+
     var systemImage: String {
         switch self {
         case .goUp: return "arrow.up"
@@ -71,6 +77,7 @@ enum PanelBackgroundAction: String, CaseIterable, Identifiable {
         case .newFolder: return "folder.badge.plus"
         case .newFile: return "doc.badge.plus"
         case .paste: return "doc.on.clipboard"
+        case .copyAsPathname: return "link.circle.fill"
         case .sortByName: return "textformat.abc"
         case .sortByDate: return "calendar"
         case .sortBySize: return "internaldrive"
@@ -80,9 +87,10 @@ enum PanelBackgroundAction: String, CaseIterable, Identifiable {
         case .mirrorPath: return "arrow.left.arrow.right.square"
         case .openMarkedOnOtherPanel: return "folder.badge.arrow.right"
         case .getInfo: return "info.circle"
+        case .addToFavorites: return "star.fill"
         }
     }
-    
+
     var shortcutHint: String? {
         switch self {
         case .goUp: return "⌘↑"
@@ -91,6 +99,7 @@ enum PanelBackgroundAction: String, CaseIterable, Identifiable {
         case .refresh: return "⌘R"
         case .newFolder: return "⇧⌘N"
         case .paste: return "⌘V"
+        case .copyAsPathname: return "⌥⌘C"
         case .mirrorPath: return "⌘="
         case .getInfo: return "⌘I"
         default: return nil

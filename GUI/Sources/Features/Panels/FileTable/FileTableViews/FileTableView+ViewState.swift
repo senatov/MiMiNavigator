@@ -145,7 +145,6 @@ extension FileTableView {
             .onReceive(jumpToLastPublisher, perform: handleJumpToLast)
             .onDisappear {
                 spinnerTask?.cancel()
-                pendingAutoFitTask?.cancel()
                 deferredFilesVersion = nil
                 activeMenuTrackingCount = 0
             }
