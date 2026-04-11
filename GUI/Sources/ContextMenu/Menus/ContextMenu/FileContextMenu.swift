@@ -144,18 +144,6 @@ struct FileContextMenu: View {
         Self.isMediaFile(file)
     }
 
-
-
-    private var isConvertibleMediaFile: Bool {
-        guard isMediaFile else { return false }
-        switch fileExtension {
-            case "jpg", "jpeg", "png", "gif":
-                return false
-            default:
-                return true
-        }
-    }
-
     init(file: CustomFile, panelSide _: FavPanelSide, isOptionHeld: Bool = false, onAction: @escaping (FileAction) -> Void) {
         _ = Self.cacheObserver
         let instanceID = Self.makeNextDebugID()
@@ -271,13 +259,7 @@ struct FileContextMenu: View {
     @ViewBuilder
     private var mediaSection: some View {
         if isMediaFile {
-            if isConvertibleMediaFile {
-                Button {
-                } label: {
-                    Label("Convert Media 􀍓 􁔘...", systemImage: "arrow.triangle.2.circlepath")
-                }
-                .disabled(true)
-            }
+            menuButton(.convertMedia)
             Button {
                 FileContextMenuLog.logMediaInfo(fileName: file.nameStr, path: filePath)
                 MediaInfoGetter().getMediaInfoToFile(url: file.urlValue)

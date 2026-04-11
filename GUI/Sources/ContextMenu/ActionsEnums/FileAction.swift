@@ -30,6 +30,7 @@ enum FileAction: String, CaseIterable, Identifiable {
     case pack
     case createLink
     case share
+    case convertMedia
     // Navigation
     case revealInFinder
     // Danger zone
@@ -61,6 +62,7 @@ enum FileAction: String, CaseIterable, Identifiable {
         case .pack: return "Pack..."
         case .createLink: return "Make Alias"
         case .share: return "Share..."
+        case .convertMedia: return "Convert Media..."
         case .revealInFinder: return "Show in Finder"
         case .rename: return "Rename..."
         case .delete: return "Move to Trash"
@@ -87,6 +89,7 @@ enum FileAction: String, CaseIterable, Identifiable {
         case .pack: return "doc.zipper"
         case .createLink: return "link"
         case .share: return "square.and.arrow.up"
+        case .convertMedia: return "arrow.triangle.2.circlepath"
         case .revealInFinder: return "folder"
         case .rename: return "pencil"
         case .delete: return "trash"

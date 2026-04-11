@@ -40,6 +40,7 @@ enum ContextMenuNSMenuBuilder {
         menu.addItem(item(.compress, onAction: onAction))
         menu.addItem(item(.pack, onAction: onAction))
         menu.addItem(item(.share, onAction: onAction))
+        menu.addItem(item(.convertMedia, onAction: onAction))
         menu.addItem(item(.revealInFinder, onAction: onAction))
         menu.addItem(.separator())
         menu.addItem(item(.mirrorPanel, onAction: onAction))

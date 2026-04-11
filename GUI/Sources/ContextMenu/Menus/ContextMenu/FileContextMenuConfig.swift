@@ -21,6 +21,10 @@ enum FileContextMenuConfig {
         "jpg", "jpeg", "png", "gif", "heic", "heif", "bmp", "tiff", "webp", "ico",
     ]
 
+    static let animationExtensions: Set<String> = [
+        "tgs",
+    ]
+
     static let mediaConformingTypes: [UTType] = [.image, .movie, .audio]
 
     static func isKnownMediaExtension(_ ext: String) -> Bool {
@@ -28,5 +32,6 @@ enum FileContextMenuConfig {
         return videoExtensions.contains(normalized)
             || audioExtensions.contains(normalized)
             || imageExtensions.contains(normalized)
+            || animationExtensions.contains(normalized)
     }
 }
