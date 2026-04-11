@@ -262,7 +262,7 @@ struct FileContextMenu: View {
             case .open, .edit, .operations, .navigation, .info:
                 return true
             case .favorites:
-                return file.isDirectory
+                return true
         }
     }
 
@@ -307,11 +307,7 @@ struct FileContextMenu: View {
 
     @ViewBuilder
     private var editSection: some View {
-        menuButton(.cut)
-        menuButton(.copy)
         menuButton(.copyAsPathname)
-        menuButton(.paste)
-        menuButton(.duplicate)
 
         sectionDivider(after: .edit)
     }
@@ -342,11 +338,15 @@ struct FileContextMenu: View {
     @ViewBuilder
     private var moreFileOperationsMenu: some View {
         Menu {
+            menuButton(.cut)
+            menuButton(.copy)
+            menuButton(.paste)
+            menuButton(.duplicate)
+            Divider()
             menuButton(.createLink)
             menuButton(.rename)
             menuButton(.delete)
             menuButton(.getInfo)
-            menuButton(.addToFavorites)
         } label: {
             Label {
                 Text("􀉒 File Operations")
@@ -365,9 +365,8 @@ struct FileContextMenu: View {
 
     @ViewBuilder
     private var favoritesSection: some View {
-        if file.isDirectory {
-            favoritesToggleButton
-        }
+        menuButton(.mirrorPanel)
+        menuButton(.addToFavorites)
     }
 
 
@@ -570,7 +569,12 @@ struct FileContextMenu: View {
     }
 
     private func canAddToFavorites() -> Bool {
-        file.isDirectory && !isFavoriteDirectory
+        // For files: always enabled (adds parent dir to favorites)
+        // For directories: enabled unless already in favorites
+        if file.isDirectory {
+            return !isFavoriteDirectory
+        }
+        return true
     }
 
     // MARK: - Action State

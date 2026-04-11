@@ -65,6 +65,8 @@ extension CntMenuCoord {
                 activeDialog = .deleteConfirmation(files: batchFiles)
             case .openOnOtherPanel:
                 openDirectoryOnOtherPanel(file, panel: panel, appState: appState)
+            case .mirrorPanel:
+                mirrorPathToOtherPanel(panel, appState: appState)
             case .addToFavorites:
                 addToFavorites(file)
         }

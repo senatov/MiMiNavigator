@@ -35,23 +35,33 @@ enum ContextMenuNSMenuBuilder {
         menu.addItem(item(.openInNewTab, onAction: onAction))
         menu.addItem(item(.viewLister, onAction: onAction))
         menu.addItem(.separator())
-        menu.addItem(item(.cut, onAction: onAction))
-        menu.addItem(item(.copy, onAction: onAction))
         menu.addItem(item(.copyAsPathname, onAction: onAction))
-        menu.addItem(item(.paste, onAction: onAction, isEnabled: ClipboardManager.shared.hasContent))
-        menu.addItem(item(.duplicate, onAction: onAction))
         menu.addItem(.separator())
         menu.addItem(item(.compress, onAction: onAction))
         menu.addItem(item(.pack, onAction: onAction))
         menu.addItem(item(.share, onAction: onAction))
         menu.addItem(item(.revealInFinder, onAction: onAction))
+        menu.addItem(.separator())
+        menu.addItem(item(.mirrorPanel, onAction: onAction))
+        menu.addItem(item(.addToFavorites, onAction: onAction))
+        menu.addItem(.separator())
+        let fileOpsSubmenu = NSMenu()
+        fileOpsSubmenu.addItem(item(.cut, onAction: onAction))
+        fileOpsSubmenu.addItem(item(.copy, onAction: onAction))
+        fileOpsSubmenu.addItem(item(.paste, onAction: onAction, isEnabled: ClipboardManager.shared.hasContent))
+        fileOpsSubmenu.addItem(item(.duplicate, onAction: onAction))
+        fileOpsSubmenu.addItem(.separator())
+        fileOpsSubmenu.addItem(item(.createLink, onAction: onAction))
+        fileOpsSubmenu.addItem(item(.rename, onAction: onAction))
+        fileOpsSubmenu.addItem(item(.delete, onAction: onAction))
+        fileOpsSubmenu.addItem(item(.getInfo, onAction: onAction))
+        let fileOpsItem = NSMenuItem(title: "􀉒 File Operations", action: nil, keyEquivalent: "")
+        if let img = NSImage(systemSymbolName: "ellipsis.circle", accessibilityDescription: nil) {
+            fileOpsItem.image = img
+        }
+        fileOpsItem.submenu = fileOpsSubmenu
+        menu.addItem(fileOpsItem)
         if optionHeld {
-            menu.addItem(.separator())
-            menu.addItem(item(.createLink, onAction: onAction))
-            menu.addItem(item(.rename, onAction: onAction))
-            menu.addItem(item(.delete, onAction: onAction))
-            menu.addItem(item(.getInfo, onAction: onAction))
-            menu.addItem(item(.addToFavorites, onAction: onAction))
             if let onBackgroundAction {
                 menu.addItem(.separator())
                 menu.addItem(item(.newFolder, onAction: onBackgroundAction))
@@ -75,25 +85,32 @@ enum ContextMenuNSMenuBuilder {
         menu.addItem(item(.openInTerminal, onAction: onAction))
         menu.addItem(item(.viewLister, onAction: onAction))
         menu.addItem(.separator())
-        menu.addItem(item(.cut, onAction: onAction))
-        menu.addItem(item(.copy, onAction: onAction))
         menu.addItem(item(.copyAsPathname, onAction: onAction))
-        menu.addItem(item(.paste, onAction: onAction, isEnabled: ClipboardManager.shared.hasContent))
-        menu.addItem(item(.duplicate, onAction: onAction))
         menu.addItem(.separator())
         menu.addItem(item(.compress, onAction: onAction))
         menu.addItem(item(.share, onAction: onAction))
-        if optionHeld {
-            menu.addItem(.separator())
-            menu.addItem(item(.createLink, onAction: onAction))
-            menu.addItem(item(.rename, onAction: onAction))
-            menu.addItem(item(.delete, onAction: onAction))
-        }
         menu.addItem(.separator())
         menu.addItem(item(.getInfo, onAction: onAction))
         menu.addItem(.separator())
         menu.addItem(item(.openOnOtherPanel, onAction: onAction))
+        menu.addItem(item(.mirrorPanel, onAction: onAction))
         menu.addItem(item(.addToFavorites, onAction: onAction))
+        menu.addItem(.separator())
+        let folderOpsSubmenu = NSMenu()
+        folderOpsSubmenu.addItem(item(.cut, onAction: onAction))
+        folderOpsSubmenu.addItem(item(.copy, onAction: onAction))
+        folderOpsSubmenu.addItem(item(.paste, onAction: onAction, isEnabled: ClipboardManager.shared.hasContent))
+        folderOpsSubmenu.addItem(item(.duplicate, onAction: onAction))
+        folderOpsSubmenu.addItem(.separator())
+        folderOpsSubmenu.addItem(item(.createLink, onAction: onAction))
+        folderOpsSubmenu.addItem(item(.rename, onAction: onAction))
+        folderOpsSubmenu.addItem(item(.delete, onAction: onAction))
+        let folderOpsItem = NSMenuItem(title: "􀉒 Folder Operations", action: nil, keyEquivalent: "")
+        if let img = NSImage(systemSymbolName: "ellipsis.circle", accessibilityDescription: nil) {
+            folderOpsItem.image = img
+        }
+        folderOpsItem.submenu = folderOpsSubmenu
+        menu.addItem(folderOpsItem)
         if !optionHeld {
             appendHintIfNeeded(menu)
         }
@@ -110,19 +127,29 @@ enum ContextMenuNSMenuBuilder {
         onAction: @escaping (MultiSelectionAction) -> Void
     ) -> NSMenu {
         let menu = NSMenu()
-        menu.addItem(item(.cut, onAction: onAction))
-        menu.addItem(item(.copy, onAction: onAction))
         menu.addItem(item(.copyAsPathname, onAction: onAction))
-        menu.addItem(item(.paste, onAction: onAction, isEnabled: ClipboardManager.shared.hasContent))
         menu.addItem(.separator())
         menu.addItem(item(.compress, onAction: onAction))
         menu.addItem(item(.share, onAction: onAction))
         menu.addItem(.separator())
         menu.addItem(item(.revealInFinder, onAction: onAction))
-        if optionHeld {
-            menu.addItem(.separator())
-            menu.addItem(item(.delete, onAction: onAction))
-        } else {
+        menu.addItem(.separator())
+        menu.addItem(item(.mirrorPanel, onAction: onAction))
+        menu.addItem(item(.addToFavorites, onAction: onAction))
+        menu.addItem(.separator())
+        let selOpsSubmenu = NSMenu()
+        selOpsSubmenu.addItem(item(.cut, onAction: onAction))
+        selOpsSubmenu.addItem(item(.copy, onAction: onAction))
+        selOpsSubmenu.addItem(item(.paste, onAction: onAction, isEnabled: ClipboardManager.shared.hasContent))
+        selOpsSubmenu.addItem(.separator())
+        selOpsSubmenu.addItem(item(.delete, onAction: onAction))
+        let selOpsItem = NSMenuItem(title: "􀉒 File Operations", action: nil, keyEquivalent: "")
+        if let img = NSImage(systemSymbolName: "ellipsis.circle", accessibilityDescription: nil) {
+            selOpsItem.image = img
+        }
+        selOpsItem.submenu = selOpsSubmenu
+        menu.addItem(selOpsItem)
+        if !optionHeld {
             appendHintIfNeeded(menu)
         }
         return menu
@@ -142,12 +169,13 @@ enum ContextMenuNSMenuBuilder {
         menu.addItem(item(.openInFinder, onAction: onAction))
         menu.addItem(item(.openInTerminal, onAction: onAction))
         menu.addItem(item(.getInfo, onAction: onAction))
+        menu.addItem(.separator())
+        menu.addItem(item(.mirrorPath, onAction: onAction))
+        menu.addItem(item(.openMarkedOnOtherPanel, onAction: onAction))
         if optionHeld {
             menu.addItem(.separator())
             menu.addItem(item(.newFolder, onAction: onAction))
             menu.addItem(item(.newFile, onAction: onAction))
-            menu.addItem(item(.mirrorPath, onAction: onAction))
-            menu.addItem(item(.openMarkedOnOtherPanel, onAction: onAction))
         } else {
             appendHintIfNeeded(menu)
         }

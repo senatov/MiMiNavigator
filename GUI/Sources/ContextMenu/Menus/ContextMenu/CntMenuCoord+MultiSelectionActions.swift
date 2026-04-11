@@ -6,6 +6,7 @@
 // Description: Handles MultiSelectionAction dispatching for batch operations
 
 import AppKit
+import FavoritesKit
 import FileModelKit
 import Foundation
 
@@ -43,6 +44,10 @@ extension CntMenuCoord {
                 revealInFinder(files)
             case .delete:
                 activeDialog = .deleteConfirmation(files: files)
+            case .mirrorPanel:
+                mirrorPathToOtherPanel(panel, appState: appState)
+            case .addToFavorites:
+                addFirstFileDirToFavorites(files: files)
         }
     }
 
@@ -67,5 +72,15 @@ extension CntMenuCoord {
     func revealInFinder(_ files: [CustomFile]) {
         let urls = files.map { $0.urlValue }
         NSWorkspace.shared.activateFileViewerSelecting(urls)
+    }
+
+
+    /// For multi-selection: add containing directory of first file to favorites.
+    /// If first item is a directory — add it directly, otherwise add its parent.
+    private func addFirstFileDirToFavorites(files: [CustomFile]) {
+        guard let first = files.first else { return }
+        let dirURL = first.isDirectory ? first.urlValue : first.urlValue.deletingLastPathComponent()
+        UserFavoritesStore.shared.add(url: dirURL)
+        log.info("[Favorites] multi-sel: added dir '\(dirURL.lastPathComponent)' from \(files.count) items")
     }
 }

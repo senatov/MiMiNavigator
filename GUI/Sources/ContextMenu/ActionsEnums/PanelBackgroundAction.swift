@@ -56,7 +56,7 @@ enum PanelBackgroundAction: String, CaseIterable, Identifiable {
         case .sortByType: return "Sort by Type"
         case .openInFinder: return "Open in Finder"
         case .openInTerminal: return "Open in Terminal"
-        case .mirrorPath: return "Mirror Path to Other Panel"
+        case .mirrorPath: return "Mirror Panel"
         case .openMarkedOnOtherPanel: return "Open Marked Dir on Other Panel"
         case .getInfo: return "Get Info"
         }

@@ -70,7 +70,9 @@ extension CntMenuCoord {
             case .delete:
                 activeDialog = .deleteConfirmation(files: batchFiles)
             case .addToFavorites:
-                addToFavorites(file)
+                addParentToFavorites(file)
+            case .mirrorPanel:
+                mirrorPathToOtherPanel(panel, appState: appState)
         }
     }
 
@@ -132,11 +134,12 @@ extension CntMenuCoord {
         activeDialog = .pack(files: batchFiles, destination: destination, sourcePanel: panel)
     }
 
-    private func addToFavorites(_ file: CustomFile) {
+    /// For files: add parent directory to favorites, not the file itself
+    private func addParentToFavorites(_ file: CustomFile) {
         performAsyncMain {
-            let url = file.urlValue
-            UserFavoritesStore.shared.add(url: url)
-            log.info("[Favorites] file added: \(url.path)")
+            let dirURL = file.urlValue.deletingLastPathComponent()
+            UserFavoritesStore.shared.add(url: dirURL)
+            log.info("[Favorites] parent dir added for file '\(file.nameStr)': \(dirURL.path)")
         }
     }
 

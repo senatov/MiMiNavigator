@@ -37,6 +37,8 @@ enum FileAction: String, CaseIterable, Identifiable {
     case delete
     // Info section
     case getInfo
+    // Cross-panel
+    case mirrorPanel
     // Favorites
     case addToFavorites
 
@@ -63,6 +65,7 @@ enum FileAction: String, CaseIterable, Identifiable {
         case .rename: return "Rename..."
         case .delete: return "Move to Trash"
         case .getInfo: return "Get Info"
+        case .mirrorPanel: return "Mirror Panel"
         case .addToFavorites: return "Add to Favorites"
         }
     }
@@ -88,6 +91,7 @@ enum FileAction: String, CaseIterable, Identifiable {
         case .rename: return "pencil"
         case .delete: return "trash"
         case .getInfo: return "info.circle"
+        case .mirrorPanel: return "arrow.left.arrow.right.square"
         case .addToFavorites: return "star.fill"
         }
     }
@@ -105,6 +109,7 @@ enum FileAction: String, CaseIterable, Identifiable {
         case .rename: return "↵"
         case .getInfo: return "⌘I"
         case .viewLister: return "Space"
+        case .mirrorPanel: return "⌘="
         default: return nil
         }
     }
@@ -142,20 +147,18 @@ enum FileAction: String, CaseIterable, Identifiable {
             .openInNewTab,
             .viewLister,
             // divider
-            .cut,
-            .copy,
-            .paste,
-            .duplicate,
+            .copyAsPathname,
             // divider
             .compress,
             .share,
             // divider
             .revealInFinder,
+            // divider — File Operations submenu: cut, copy, paste, duplicate, createLink, rename, delete, getInfo
             // divider
-            .rename,
-            .delete,
+            .getInfo,
             // divider
-            .getInfo
+            .mirrorPanel,
+            .addToFavorites,
         ]
     }
 }

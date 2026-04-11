@@ -22,10 +22,14 @@ struct MultiSelectionContextMenu: View {
     @ViewBuilder
     private var moreSelectionOperationsMenu: some View {
         Menu {
+            menuButton(.cut)
+            menuButton(.copy)
+            menuButton(.paste)
+            Divider()
             menuButton(.delete)
         } label: {
             Label {
-                Text("􀉒 Selection Operations")
+                Text("􀉒 File Operations")
             } icon: {
                 Image(systemName: "ellipsis.circle")
             }
@@ -38,15 +42,15 @@ struct MultiSelectionContextMenu: View {
             .font(.caption)
             .foregroundStyle(.secondary)
         Divider()
-        menuButton(.cut)
-        menuButton(.copy)
         menuButton(.copyAsPathname)
-        menuButton(.paste)
         Divider()
         menuButton(.compress)
         menuButton(.share)
         Divider()
         menuButton(.revealInFinder)
+        Divider()
+        menuButton(.mirrorPanel)
+        menuButton(.addToFavorites)
         Divider()
         moreSelectionOperationsMenu
     }
