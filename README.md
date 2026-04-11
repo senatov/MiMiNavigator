@@ -11,8 +11,11 @@
 <p align="center">
   <img src="https://img.shields.io/badge/macOS-26.0+-black?logo=apple&logoColor=white" alt="macOS 26+" />
   <img src="https://img.shields.io/badge/Swift-6.2-F05138?logo=swift&logoColor=white" alt="Swift 6.2" />
-  <img src="https://img.shields.io/badge/SwiftUI-blue?logo=swift&logoColor=white" alt="SwiftUI" />
+  <img src="https://img.shields.io/badge/SwiftUI-Context_Menus-blue?logo=swift&logoColor=white" alt="SwiftUI Context Menus" />
   <img src="https://img.shields.io/badge/Concurrency-Strict-2ea44f" alt="Strict Concurrency" />
+  <img src="https://img.shields.io/badge/SFTP-Citadel-0a7bbb" alt="SFTP via Citadel" />
+  <img src="https://img.shields.io/badge/Archives-50%2B_Formats-6f42c1" alt="50+ archive formats" />
+  <img src="https://img.shields.io/badge/Media-Preview_%26_Conversion_Placeholders-ff8c00" alt="Media preview and conversion placeholders" />
   <img src="https://img.shields.io/badge/License-AGPL--3.0-blue" alt="AGPL-3.0" />
   <img src="https://img.shields.io/badge/v0.9.7.3-Active_Development-orange" alt="Active Development" />
 </p>
@@ -31,25 +34,22 @@
 > ** 🔨 Under active development 🔨.
 ** APIs and UI may change without notice.
 
-## Recent Changes (v0.9.7.1 — March 2026)
 
-**Drag & Drop overhaul** — full DnD support with drop-onto-subdirectory targeting via coordinate lookup and pulsing highlight on target folders.
+## Recent Changes (v0.9.7.3 — April 2026)
 
-**Media Preview** — new native media info window with multi-map support, UTType-based media detection, and streaming progress extraction (replaced Python pipeline with native Swift).
+**Context menu cleanup** — file, folder, and multi-selection menus were simplified and aligned; old duplicated `For More` hints were removed and advanced actions were moved into stable submenu-based layouts.
 
-**Glass UI polish** — glass scroll bars, glass "go to parent" button, pebble-shaped info button with spring rotation animation, softer violet accents, and refined divider styling.
+**Advanced submenus** — new top-level submenu entries now group less-frequent actions: `􀉒 File Operations`, `􀉒 Folder Operations`, and `􀉒 Selection Operations`.
 
-**Column auto-fit** — columns auto-resize on navigate: content-only sizing, right-to-left shrink, Name column gets leftover space; header labels guaranteed never clipped; auto-fit toggle in table header context menu.
+**Media actions** — media-aware file menu now shows a new placeholder entry `Convert Media 􀍓 􁔘...` for convertible media files; it is currently disabled and reserved for the upcoming conversion dialog and scripts.
 
-**Settings migration** — all settings panes (General, Panels, Tabs, Archives, Network) migrated from `@AppStorage` to `~/.mimi/preferences.json` for portability across machines.
+**Directory operations prep** — folder menus are now ready for future alias/link expansion, with placeholder submenu entries for `Make Finder Alias` and `Make Symbolic Link`.
 
-**Keyboard navigation fixes** — parent row (`..`) selection now correctly reflects keyboard navigation; restored line cursor highlighting; branch merge for keyboard repair.
+**Dialog builder cleanup** — context-menu dialog routing was split into smaller builder groups for primary dialogs, alerts, and batch dialogs, making the dialog layer easier to maintain.
 
-**File operations** — batch rename/mass fix, async path resolution, unified navigation via `PathNavigationService` (removed `NavigationAdapter`), UTType-based file kind detection with alias support.
+**Coordinator cleanup** — context-menu coordinator extensions were renamed and normalized, with cleaner action dispatch and helper extraction across file, directory, background, and multi-selection flows.
 
-**Breadcrumb & panels** — default font size 14pt across panel/breadcrumb/help, breadcrumb layout split into section methods, firmlink path resolution for `/tmp`/`var`/`etc`.
-
-**Progress panel** — resizable, appearance settings, non-modal floating window, stays visible until explicit OK click.
+**README and menu polish** — duplicate passive hint text was removed from multiple menu classes, top-level menu ordering was cleaned up, and menu structure is now more consistent across content types.
 
 ---
 
@@ -66,7 +66,7 @@ MiMiNavigator is a dual-panel file manager inspired by **Total Commander** and *
 
 ## Screenshots
 
-[Watch demo](https://www.youtube.com/watch?v=rgPYIAMx0p0) 
+[Watch demo](https://www.youtube.com/watch?v=rgPYIAMx0p0)
 
 
 <table>
@@ -115,7 +115,7 @@ MiMiNavigator is a dual-panel file manager inspired by **Total Commander** and *
 | **Multi-Selection** | Cmd+Click toggle, Shift+Click range, Insert mark+next, pattern matching, Ctrl+A |
 | **Group Operations** | Batch Cut/Copy/Compress/Share/Delete on marked files; group context menu |
 | **Multi-File Drag & Drop** | Drag all marked files together; badge preview with count; Finder-compatible; works in both list and thumbnail views |
-| **Open With** | Per-extension LRU (max 5) — recently used apps float to top; "Other..." picks persisted and restored |
+| **Media Actions** | Native media info command plus a new placeholder `Convert Media 􀍓 􁔘...` entry for convertible media files (currently disabled, planned for future conversion workflows) |
 | **Find Files** | Advanced search: by name (wildcards), content, size, date — with archive search |
 | **Archive VFS** | Open archives as virtual directories, navigate inside, auto-repack on exit |
 | **Parent Directory** | `...` entry pinned to top of every panel, archive-aware navigation |
@@ -148,6 +148,7 @@ Eight menu categories matching Total Commander conventions: **Files** (F6 Rename
 ### UI & Design
 
 - **macOS 26 Liquid-Glass** menu bar with ultra-thin material, gradient borders, and multi-layered shadows
+- Context menus reorganized around stable submenu groups instead of fragile Option-only branches
 - Pixel-perfect Retina rendering via `backingScaleFactor`
 - Sticky column headers, zebra-striped rows with themed colors (active/inactive panel)
 - Zebra background fill extends below file rows to fill empty panel space
@@ -261,14 +262,17 @@ MiMiNavigator/
 │   │   ├── ActionsEnums/   # FileAction, DirectoryAction, MultiSelectionAction,
 │   │   │                   # PanelBackgroundAction
 │   │   ├── Menus/          # FileContextMenu, DirectoryContextMenu,
-│   │   │                   # MultiSelectionContextMenu, OpenWithSubmenu
+│   │   │                   # MultiSelectionContextMenu, OpenWithSubmenu,
+│   │   │                   # submenu-based advanced operations
 │   │   ├── Dialogs/        # ConfirmationDialog, RenameDialog, PackDialog,
-│   │   │   │               # BatchConfirmation/Progress, CreateLinkDialog
+│   │   │   │               # BatchConfirmation/Progress, CreateLinkDialog,
+│   │   │   │               # ContextMenuDialogModifier+Builder
 │   │   │   └── FileConflict/  # FileConflictDialog, ConflictResolution
 │   │   └── Services/       # CntMenuCoord, ClipboardManager,
 │   │       │               # CompressService, QuickLookService
-│   │       ├── Coordinator/   # FileActionsHandler, DirectoryActionsHandler,
-│   │       │                  # MultiSelectionActionsHandler, ActiveDialog
+│   │       ├── Coordinator/   # CntMenuCoord+FileActions,
+│   │       │                  # +DirectoryActions, +BackgroundActions,
+│   │       │                  # +MultiSelectionActions, ActiveDialog
 │   │       └── FileOperations/ # FileOperationsService (core: copy/move/conflict),
 │   │                          # FileOpsService+Delete, +Rename, +SymLink,
 │   │                          # BatchOperationCoordinator, DirectorySizeCalculator
@@ -309,6 +313,7 @@ MiMiNavigator/
 │   ├── NetworkKit/         # Network neighborhood discovery (SMB/AFP)
 │   └── ScannerKit/         # File scanning utilities
 └── GUI/Docs/               # Architecture docs, screenshots
+
 ```
 
 ### Key Patterns
@@ -367,7 +372,8 @@ Log files:
 - [x] Column width persistence
 - [x] Hotkey customization
 - [x] Tabbed interface (multiple tabs per panel, context menu, persistence)
-- [x] Archive Open → TC-style virtual directory (not Finder/Archive Utility) NOT READY YET!
+- [x] Archive Open → TC-style virtual directory (not Finder/Archive Utility)
+- [ ] Media conversion dialog and scripts for `Convert Media...`
 - [x] Zebra-striped background fill for empty panel space
 - [x] Autocomplete popup: click-outside / ESC dismiss, slide animation, NSVisualEffectView
 - [x] FileOperationsService split into modular extensions (Delete, Rename, SymLink)
