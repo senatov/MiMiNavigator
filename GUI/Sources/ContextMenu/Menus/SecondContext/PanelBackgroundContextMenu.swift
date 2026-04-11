@@ -94,15 +94,6 @@ struct PanelBackgroundContextMenu: View {
             // ═══════════════════════════════════════════
             menuButton(.getInfo)
 
-            // ═══════════════════════════════════════════
-            // Option hint
-            // ═══════════════════════════════════════════
-            if !isOptionHeld {
-                Divider()
-                Text("⌥ for more…")
-                    .font(.system(size: 12, weight: .semibold, design: .rounded))
-                    .foregroundStyle(.blue)
-            }
         }
     }
     

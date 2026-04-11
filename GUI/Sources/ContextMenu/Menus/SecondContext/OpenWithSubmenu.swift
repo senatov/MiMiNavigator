@@ -13,8 +13,8 @@ import FileModelKit
 /// Applications are snapshotted during initialization to keep the submenu stable.
 @MainActor
 struct OpenWithSubmenu: View {
-    private let snapshot: Snapshot
-    private let menuID: String
+    let snapshot: Snapshot
+    let menuID: String
 
     init(file: CustomFile, apps: [AppInfo]) {
         snapshot = Snapshot(file: file, apps: apps)
@@ -178,46 +178,5 @@ struct OpenWithSubmenu: View {
         }
 
         NSWorkspace.shared.open(appStoreURL)
-    }
-}
-
-// MARK: - Snapshot
-private extension OpenWithSubmenu {
-    struct Snapshot {
-        let fileName: String
-        let fileURL: URL
-        let fileExtension: String
-        let apps: [AppInfo]
-        let menuID: String
-        let debugSignature: String
-
-        init(file: CustomFile, apps: [AppInfo]) {
-            fileName = file.nameStr
-            fileURL = file.urlValue
-            fileExtension = file.fileExtension
-            self.apps = apps
-            menuID = Self.makeMenuID(fileURL: fileURL, apps: apps)
-            debugSignature = Self.makeDebugSignature(fileName: fileName, menuID: menuID, apps: apps)
-        }
-
-        private static func makeMenuID(fileURL: URL, apps: [AppInfo]) -> String {
-            let bundles = apps.map(\.bundleIdentifier).joined(separator: ",")
-            return "openwith|\(fileURL.path)|\(bundles)"
-        }
-
-        private static func makeDebugSignature(fileName: String, menuID: String, apps: [AppInfo]) -> String {
-            "menuID='\(menuID)' file='\(fileName)' apps=\(apps.count)"
-        }
-    }
-}
-
-// MARK: - Preview
-#Preview {
-    VStack {
-        Text("Right-click for Open With submenu")
-    }
-    .frame(width: 300, height: 200)
-    .contextMenu {
-        OpenWithSubmenu(file: CustomFile(path: "/Users/senat/test.txt"), apps: [])
     }
 }

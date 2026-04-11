@@ -37,7 +37,7 @@ extension MiMiNavigatorApp {
             .glassEffect(.identity)
 
             // MARK: - Context Menu
-            .contextMenuDialogs(coordinator: contextMenuCoordinator, appState: appState)
+            .contextMenuDialogs(coordinator: cntMenuCoord, appState: appState)
 
             // MARK: - Lifecycle
             .onAppear { handleOnAppear() }

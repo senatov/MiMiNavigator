@@ -59,7 +59,7 @@ final class DuoFilePanelKeyboardHandler {
         // When a modal dialog is active, pass ALL events to SwiftUI
         // so that TextField, buttons (.keyboardShortcut(.defaultAction)),
         // and Esc (.cancelAction) work correctly.
-        if ContextMenuCoordinator.shared.activeDialog != nil {
+        if CntMenuCoord.shared.activeDialog != nil {
             return event
         }
 
@@ -167,7 +167,7 @@ final class DuoFilePanelKeyboardHandler {
                 log.info("[KEY] → Clipboard Paste")
                 let panel = appState.focusedPanel
                 Task {
-                    await ContextMenuCoordinator.shared.performPaste(to: panel, appState: appState)
+                    await CntMenuCoord.shared.performPaste(to: panel, appState: appState)
                 }
                 return nil
 
@@ -332,7 +332,7 @@ final class DuoFilePanelKeyboardHandler {
             } else if file.isArchiveFile {
                 // Archive — delegate to context menu handler for archive opening
                 log.info("[KEY] newTab on archive: '\(file.nameStr)'")
-                ContextMenuCoordinator.shared.openFileInNewTab(file, panel: panel, appState: appState)
+                CntMenuCoord.shared.openFileInNewTab(file, panel: panel, appState: appState)
                 return
             } else {
                 // Regular file — open containing directory

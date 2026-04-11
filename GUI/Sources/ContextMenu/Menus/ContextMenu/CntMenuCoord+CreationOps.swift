@@ -10,7 +10,7 @@ import AppKit
 import FileModelKit
 import Foundation
 
-extension ContextMenuCoordinator {
+extension CntMenuCoord {
 
     // MARK: - Create Folder
     /// Create new folder, then select it in the panel
@@ -42,6 +42,7 @@ extension ContextMenuCoordinator {
         }
     }
 
+    // MARK: - Paste
     /// Paste from clipboard
     func performPaste(to panel: FavPanelSide, appState: AppState) async {
         log.debug("\(#function) panel=\(panel) clipboardHasContent=\(clipboard.hasContent)")
@@ -51,17 +52,13 @@ extension ContextMenuCoordinator {
         }
         isProcessing = true
         defer { isProcessing = false }
-
         let destination = getDestinationPath(for: panel, appState: appState)
         log.debug("\(#function) destination='\(destination.path)'")
-
         let result = await clipboard.paste(to: destination, coordinator: self)
-
         switch result {
             case .success(let urls):
                 log.info("\(#function) SUCCESS pasted \(urls.count) item(s)")
                 refreshPanels(appState: appState)
-
             case .failure(let error):
                 if case FileOpsError.operationCancelled = error {
                     log.info("\(#function) cancelled by user")

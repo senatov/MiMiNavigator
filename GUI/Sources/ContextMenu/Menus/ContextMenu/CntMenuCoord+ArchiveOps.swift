@@ -11,7 +11,7 @@ import AppKit
 import FileModelKit
 import Foundation
 
-extension ContextMenuCoordinator {
+extension CntMenuCoord {
 
     // MARK: - Pack (Archive with options)
     /// Pack files into archive — shows ProgressPanel, supports cancel + rollback.

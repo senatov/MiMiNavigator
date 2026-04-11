@@ -1,51 +1,19 @@
-    // ContextMenuDialogModifier.swift
-    //  MiMiNavigator
-    //
-    //  Created by Iakov Senatov on 22.01.2026.
-    //  Copyright © 2026 Senatov. All rights reserved.
+//
+//  ContextMenuDialogModifier+Builder.swift
+//  MiMiNavigator
+//
+//  Created by Iakov Senatov on 11.04.2026.
+//  Copyright © 2026 Senatov. All rights reserved.
+//
 
-    import SwiftUI
+import SwiftUI
 
-    // MARK: - Context Menu Dialog Modifier
-    /// Adds modal dialog support for context menu actions
-    struct ContextMenuDialogModifier: ViewModifier {
-        let appState: AppState
-        @Bindable var coordinator: ContextMenuCoordinator
+// MARK: - Dialog Content Builders
+extension ContextMenuDialogModifier {
 
-        func body(content: Content) -> some View {
-            content
-                .overlay {
-                    if coordinator.activeDialog != nil {
-                        dialogOverlay
-                    }
-                }
-        }
-
-        @ViewBuilder
-        private var dialogOverlay: some View {
-            ZStack {
-                // Dimmed background
-                Color.black.opacity(0.3)
-                    .ignoresSafeArea()
-                    .onTapGesture {
-                        // Don't dismiss on background tap while processing
-                        if !coordinator.isProcessing {
-                            coordinator.dismissDialog()
-                        }
-                    }
-
-                // Dialog content
-                if let dialog = coordinator.activeDialog {
-                    dialogContent(for: dialog)
-                        .transition(.scale(scale: 0.95).combined(with: .opacity))
-                }
-            }
-            .animation(.easeOut(duration: 0.15), value: coordinator.activeDialog?.id)
-        }
-
-        @ViewBuilder
-        private func dialogContent(for dialog: ActiveDialog) -> some View {
-            switch dialog {
+    @ViewBuilder
+    func primaryDialogContent(for dialog: ActiveDialog) -> some View {
+        switch dialog {
             case .deleteConfirmation(let files):
                 DeleteConfirmationDialog(
                     files: files,
@@ -58,7 +26,6 @@
                         coordinator.dismissDialog()
                     }
                 )
-
             case .rename(let file, let panel):
                 RenameDialog(
                     file: file,
@@ -71,7 +38,6 @@
                         coordinator.dismissDialog()
                     }
                 )
-
             case .pack(let files, _, let sourcePanel):
                 PackDialog(
                     mode: .pack,
@@ -96,7 +62,6 @@
                     }
                 )
                 .environment(appState)
-
             case .compress(let files, _, let sourcePanel):
                 PackDialog(
                     mode: .compress,
@@ -113,7 +78,6 @@
                                 password: password,
                                 appState: appState
                             )
-
                             await MainActor.run {
                                 coordinator.dismissDialog()
                             }
@@ -124,7 +88,6 @@
                     }
                 )
                 .environment(appState)
-
             case .createFolder(let parentURL):
                 CreateFolderDialog(
                     parentURL: parentURL,
@@ -137,7 +100,6 @@
                         coordinator.dismissDialog()
                     }
                 )
-
             case .createLink(let file, let destination):
                 CreateLinkDialog(
                     file: file,
@@ -157,7 +119,6 @@
                         coordinator.dismissDialog()
                     }
                 )
-
             case .fileConflict(let conflict, let remainingCount, _):
                 FileConflictDialog(
                     conflict: conflict,
@@ -166,7 +127,14 @@
                         coordinator.resolveConflict(decision)
                     }
                 )
+            default:
+                EmptyView()
+        }
+    }
 
+    @ViewBuilder
+    func alertDialogContent(for dialog: ActiveDialog) -> some View {
+        switch dialog {
             case .error(let title, let message):
                 HIGAlertDialog(
                     icon: "xmark.circle.fill",
@@ -177,7 +145,6 @@
                         coordinator.dismissDialog()
                     }
                 )
-
             case .success(let title, let message):
                 HIGAlertDialog(
                     icon: "checkmark.circle.fill",
@@ -188,9 +155,14 @@
                         coordinator.dismissDialog()
                     }
                 )
+            default:
+                EmptyView()
+        }
+    }
 
-            // MARK: - Batch Operation Dialogs
-
+    @ViewBuilder
+    func batchDialogContent(for dialog: ActiveDialog) -> some View {
+        switch dialog {
             case .batchCopyConfirmation(let files, let destination, let sourcePanel):
                 BatchConfirmationDialog(
                     operationType: .copy,
@@ -209,7 +181,6 @@
                         coordinator.dismissDialog()
                     }
                 )
-
             case .batchMoveConfirmation(let files, let destination, let sourcePanel):
                 BatchConfirmationDialog(
                     operationType: .move,
@@ -228,7 +199,6 @@
                         coordinator.dismissDialog()
                     }
                 )
-
             case .batchDeleteConfirmation(let files, let sourcePanel):
                 BatchConfirmationDialog(
                     operationType: .delete,
@@ -246,7 +216,6 @@
                         coordinator.dismissDialog()
                     }
                 )
-
             case .batchPackConfirmation(let files, _, let sourcePanel):
                 PackDialog(
                     mode: .pack,
@@ -265,7 +234,6 @@
                     }
                 )
                 .environment(appState)
-
             case .batchProgress(let state):
                 BatchProgressDialog(
                     state: state,
@@ -277,13 +245,8 @@
                         BatchOperationManager.shared.dismissProgressDialog()
                     }
                 )
-            }
+            default:
+                EmptyView()
         }
     }
-
-    // MARK: - View Extension
-    extension View {
-        func contextMenuDialogs(coordinator: ContextMenuCoordinator, appState: AppState) -> some View {
-            modifier(ContextMenuDialogModifier(appState: appState, coordinator: coordinator))
-        }
-    }
+}

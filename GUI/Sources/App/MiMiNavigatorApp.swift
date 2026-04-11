@@ -19,7 +19,7 @@ struct MiMiNavigatorApp: App {
 
     @State var appState = AppState()
     @State var dragDropManager = DragDropManager()
-    @State var contextMenuCoordinator = ContextMenuCoordinator.shared
+    @State var cntMenuCoord = CntMenuCoord.shared
     @State var showHiddenFiles = UserPreferences.shared.snapshot.showHiddenFiles
     @State var showAutomationOnboarding = false
     @State var showFullDiskOnboarding = false

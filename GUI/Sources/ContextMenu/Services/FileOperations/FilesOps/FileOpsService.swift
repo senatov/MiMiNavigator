@@ -19,7 +19,7 @@ final class FileOpsService {
     let fileManager = FileManager.default
 
     /// Callback to present the conflict dialog and await user's decision.
-    /// Set by ContextMenuCoordinator at init time.
+    /// Set by CntMenuCoord at init time.
     var conflictHandler: ((FileConflictInfo, Int) async -> BatchConflictDecision)?
 
     private init() {

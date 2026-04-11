@@ -26,7 +26,7 @@ import Foundation
                     guard !files.isEmpty else { stub("Pack…: select or mark files first")(); return }
                     Task {
                         let destinationURL = appState.url(for: panel)
-                        await ContextMenuCoordinator.shared.performCompress(
+                        await CntMenuCoord.shared.performCompress(
                             files: files,
                             archiveName: "",
                             destination: destinationURL,

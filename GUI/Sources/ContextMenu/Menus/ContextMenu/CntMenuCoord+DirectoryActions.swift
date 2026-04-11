@@ -1,4 +1,4 @@
-// DirectoryActionsHandler.swift
+// CntMenuCoord+DirectoryActions.swift
 // MiMiNavigator
 //
 // Created by Iakov Senatov on 04.02.2026.
@@ -12,7 +12,7 @@ import Foundation
 
 // MARK: - Directory Actions Handler
 /// Extension handling DirectoryAction dispatching
-extension ContextMenuCoordinator {
+extension CntMenuCoord {
 
     /// Handles directory context menu actions.
     /// Batch-compatible actions (cut/copy/compress/pack/share/delete)
@@ -20,87 +20,53 @@ extension ContextMenuCoordinator {
     /// Single-file actions (open/openInNewTab/openInFinder/openInTerminal/viewLister/
     /// rename/getInfo/duplicate/createLink) always operate on the clicked directory only.
     func handleDirectoryAction(_ action: DirectoryAction, for file: CustomFile, panel: FavPanelSide, appState: AppState) {
-        // For batch-compatible actions, use marked files if any, otherwise single file
         let batchFiles = appState.filesForOperation(on: panel)
         log.debug("\(#function) action=\(action.rawValue) dir='\(file.nameStr)' panel=\(panel) batchCount=\(batchFiles.count)")
-
         switch action {
-            // ── Single-file actions (always use clicked directory) ──
             case .open:
                 openDirectoryInPlace(file, panel: panel, appState: appState)
-
             case .openInNewTab:
                 openDirectoryInNewTab(file, panel: panel, appState: appState)
-
             case .openInFinder:
                 openInFinder(file)
-
             case .openInTerminal:
                 openInTerminal(file)
-
             case .viewLister:
                 openQuickLook(file)
-
             case .duplicate:
-                Task {
-                    await performDuplicate(file: file, appState: appState)
+                performAsync { [weak self] in
+                    guard let self = self else { return }
+                    await self.performDuplicate(file: file, appState: appState)
                 }
-
             case .createLink:
-                let destination = getOppositeDestinationPath(for: panel, appState: appState)
-                log.debug("\(#function) createLink destination='\(destination.path)'")
-                activeDialog = .createLink(file: file, destination: destination)
-
+                presentCreateLinkDialog(for: file, panel: panel, appState: appState)
             case .rename:
                 activeDialog = .rename(file: file, panel: panel)
-
             case .getInfo:
                 GetInfoService.shared.showGetInfo(for: file.urlValue)
-
-            // ── Batch-compatible actions (use all marked files) ──
             case .cut:
                 clipboard.cut(files: batchFiles, from: panel)
-
             case .copy:
                 clipboard.copy(files: batchFiles, from: panel)
-
             case .copyAsPathname:
-                let paths = batchFiles.map { $0.urlValue.path }
-                let pasteboard = NSPasteboard.general
-                pasteboard.clearContents()
-                pasteboard.setString(paths.joined(separator: "\n"), forType: .string)
-                log.info("[DirectoryActions] copied \(paths.count) pathname(s) to clipboard")
-
+                copyPathsToPasteboard(batchFiles)
             case .paste:
-                Task {
-                    await performPaste(to: panel, appState: appState)
+                performAsync { [weak self] in
+                    guard let self = self else { return }
+                    await self.performPaste(to: panel, appState: appState)
                 }
-
             case .compress:
-                let sourceDir = file.urlValue.deletingLastPathComponent()
-                log.debug("\(#function) compress → PackDialog destination='\(sourceDir.path)'")
-                activeDialog = .pack(files: batchFiles, destination: sourceDir, sourcePanel: panel)
-
+                presentCompressDialog(for: file, batchFiles: batchFiles, panel: panel)
             case .pack:
-                let destination = getOppositeDestinationPath(for: panel, appState: appState)
-                log.debug("\(#function) pack destination='\(destination.path)'")
-                activeDialog = .pack(files: batchFiles, destination: destination, sourcePanel: panel)
-
+                presentPackDialog(for: batchFiles, panel: panel, appState: appState)
             case .share:
-                let urls = batchFiles.map { $0.urlValue }
-                ShareService.shared.showSharePicker(for: urls)
-
+                share(batchFiles)
             case .delete:
                 activeDialog = .deleteConfirmation(files: batchFiles)
-
             case .openOnOtherPanel:
                 openDirectoryOnOtherPanel(file, panel: panel, appState: appState)
-
             case .addToFavorites:
-                Task { @MainActor in
-                    UserFavoritesStore.shared.add(url: file.urlValue)
-                    log.info("[Favorites] directory added: \(file.urlValue.path)")
-                }
+                addToFavorites(file)
         }
     }
 
@@ -120,10 +86,35 @@ extension ContextMenuCoordinator {
         }
     }
 
+    private func presentCreateLinkDialog(for file: CustomFile, panel: FavPanelSide, appState: AppState) {
+        let destination = getOppositeDestinationPath(for: panel, appState: appState)
+        log.debug("\(#function) destination='\(destination.path)'")
+        activeDialog = .createLink(file: file, destination: destination)
+    }
+
+    private func presentCompressDialog(for file: CustomFile, batchFiles: [CustomFile], panel: FavPanelSide) {
+        let sourceDir = file.urlValue.deletingLastPathComponent()
+        log.debug("\(#function) destination='\(sourceDir.path)' panel=\(panel) batch=\(batchFiles.count)")
+        activeDialog = .pack(files: batchFiles, destination: sourceDir, sourcePanel: panel)
+    }
+
+    private func presentPackDialog(for batchFiles: [CustomFile], panel: FavPanelSide, appState: AppState) {
+        let destination = getOppositeDestinationPath(for: panel, appState: appState)
+        log.debug("\(#function) destination='\(destination.path)' panel=\(panel) batch=\(batchFiles.count)")
+        activeDialog = .pack(files: batchFiles, destination: destination, sourcePanel: panel)
+    }
+
+    private func addToFavorites(_ file: CustomFile) {
+        performAsyncMain {
+            UserFavoritesStore.shared.add(url: file.urlValue)
+            log.info("[Favorites] directory added: \(file.urlValue.path)")
+        }
+    }
+
     // MARK: - Open Directory in Place
 
     /// Opens a directory in the current tab (same as double-click behavior)
-    func openDirectoryInPlace(_ file: CustomFile, panel: FavPanelSide, appState: AppState) {
+    private func openDirectoryInPlace(_ file: CustomFile, panel: FavPanelSide, appState: AppState) {
         let resolvedURL = file.urlValue.resolvingSymlinksInPath()
         let targetPath = resolvedURL.path
 
@@ -142,7 +133,7 @@ extension ContextMenuCoordinator {
     // MARK: - Open in New Tab
 
     /// Opens a directory in a new tab on the same panel
-    func openDirectoryInNewTab(_ file: CustomFile, panel: FavPanelSide, appState: AppState) {
+    private func openDirectoryInNewTab(_ file: CustomFile, panel: FavPanelSide, appState: AppState) {
         let resolvedURL = file.urlValue.resolvingSymlinksInPath()
         let targetPath = resolvedURL.path
 
@@ -214,7 +205,7 @@ extension ContextMenuCoordinator {
     // MARK: - Open Directory on Other Panel
 
     /// Opens a directory on the opposite panel
-    func openDirectoryOnOtherPanel(_ file: CustomFile, panel: FavPanelSide, appState: AppState) {
+    private func openDirectoryOnOtherPanel(_ file: CustomFile, panel: FavPanelSide, appState: AppState) {
         let resolvedURL = file.urlValue.resolvingSymlinksInPath()
         let targetPath = resolvedURL.path
 
@@ -232,7 +223,7 @@ extension ContextMenuCoordinator {
     }
 
     /// Opens Terminal at directory path
-    func openInTerminal(_ file: CustomFile) {
+    private func openInTerminal(_ file: CustomFile) {
         let path = file.isDirectory ? file.urlValue.path : file.urlValue.deletingLastPathComponent().path
         log.debug("\(#function) path='\(path)'")
 

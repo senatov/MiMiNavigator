@@ -79,12 +79,12 @@ struct FileContextMenu: View {
     private let onAction: (FileAction) -> Void
 
     private let sectionOrder: [SectionKind] = [
+        .danger,
         .media,
         .open,
         .edit,
         .operations,
         .navigation,
-        .danger,
         .info,
         .favorites,
     ]
@@ -98,6 +98,7 @@ struct FileContextMenu: View {
     // when SwiftUI diffs 1500+ rows in large directories.
     @State private var openWithApps: [AppInfo]?
     @State private var openWithMenuID: String?
+    @State private var lastOptionState: Bool = false
 
     struct DebugSnapshot {
         let fileName: String
@@ -143,6 +144,18 @@ struct FileContextMenu: View {
         Self.isMediaFile(file)
     }
 
+
+
+    private var isConvertibleMediaFile: Bool {
+        guard isMediaFile else { return false }
+        switch fileExtension {
+            case "jpg", "jpeg", "png", "gif":
+                return false
+            default:
+                return true
+        }
+    }
+
     init(file: CustomFile, panelSide _: FavPanelSide, isOptionHeld: Bool = false, onAction: @escaping (FileAction) -> Void) {
         _ = Self.cacheObserver
         let instanceID = Self.makeNextDebugID()
@@ -154,9 +167,16 @@ struct FileContextMenu: View {
     }
 
     var body: some View {
-        menuBody
-            .onAppear(perform: ensureOpenWithLoaded)
-            .onAppear(perform: logBodyAppearance)
+        menuContent
+            .onAppear {
+                lastOptionState = isOptionHeld
+                ensureOpenWithLoaded()
+                logBodyAppearance()
+            }
+            .onChange(of: isOptionHeld) { oldValue, newValue in
+                log.debug("[FileContextMenu] option key changed file='\(file.nameStr)' old=\(oldValue) new=\(newValue)")
+                lastOptionState = newValue
+            }
     }
 
     // MARK: - Lazy OpenWith Loading
@@ -186,12 +206,6 @@ struct FileContextMenu: View {
 
     // MARK: - Snapshot Helpers
 
-    @ViewBuilder
-    private var menuBody: some View {
-        Group {
-            menuContent
-        }
-    }
 
     @ViewBuilder
     private var menuContent: some View {
@@ -244,7 +258,7 @@ struct FileContextMenu: View {
             case .media:
                 return isMediaFile
             case .danger:
-                return isOptionHeld
+                return true
             case .open, .edit, .operations, .navigation, .info:
                 return true
             case .favorites:
@@ -257,13 +271,19 @@ struct FileContextMenu: View {
     @ViewBuilder
     private var mediaSection: some View {
         if isMediaFile {
+            if isConvertibleMediaFile {
+                Button {
+                } label: {
+                    Label("Convert Media 􀍓 􁔘...", systemImage: "arrow.triangle.2.circlepath")
+                }
+                .disabled(true)
+            }
             Button {
                 FileContextMenuLog.logMediaInfo(fileName: file.nameStr, path: filePath)
                 MediaInfoGetter().getMediaInfoToFile(url: file.urlValue)
             } label: {
                 Label("Get Media Info", systemImage: "info.circle")
             }
-
             sectionDivider(after: .media)
         }
     }
@@ -313,12 +333,27 @@ struct FileContextMenu: View {
 
     @ViewBuilder
     private var dangerSection: some View {
-        if isOptionHeld {
+        moreFileOperationsMenu
+        sectionDivider(after: .danger)
+    }
+
+
+
+    @ViewBuilder
+    private var moreFileOperationsMenu: some View {
+        Menu {
+            menuButton(.createLink)
             menuButton(.rename)
             menuButton(.delete)
+            menuButton(.getInfo)
+            menuButton(.addToFavorites)
+        } label: {
+            Label {
+                Text("􀉒 File Operations")
+            } icon: {
+                Image(systemName: "ellipsis.circle")
+            }
         }
-
-        sectionDivider(after: .danger)
     }
 
     @ViewBuilder
@@ -333,18 +368,8 @@ struct FileContextMenu: View {
         if file.isDirectory {
             favoritesToggleButton
         }
-        if !isOptionHeld {
-            optionHint
-        }
     }
 
-    @ViewBuilder
-    private var optionHint: some View {
-        Divider()
-        Text("⌥ for more…")
-            .font(.system(size: 12, weight: .semibold, design: .rounded))
-            .foregroundStyle(.blue)
-    }
 
     @ViewBuilder
     private func sectionDivider(after section: SectionKind) -> some View {
@@ -454,14 +479,10 @@ struct FileContextMenu: View {
         FileContextMenuLog.logBody(prefix: debugPrefix, snapshot: snapshot)
     }
 
-    private func handleAction(_ action: FileAction) {
+    private func performAction(_ action: FileAction) {
         let snapshot = makeSnapshot()
         logAction(action, snapshot: snapshot)
         onAction(action)
-    }
-
-    private func performAction(_ action: FileAction) {
-        handleAction(action)
     }
 
     private func logAction(_ action: FileAction, snapshot: DebugSnapshot) {
@@ -561,11 +582,13 @@ struct FileContextMenu: View {
     private func isActionDisabled(_ action: FileAction) -> Bool {
         switch action {
             case .paste:
-                !ClipboardManager.shared.hasContent
+                let disabled = !ClipboardManager.shared.hasContent
+                log.debug("[FileContextMenu] paste availability file='\(file.nameStr)' hasContent=\(!disabled)")
+                return disabled
             case .addToFavorites:
-                isAddToFavoritesDisabled
+                return isAddToFavoritesDisabled
             default:
-                false
+                return false
         }
     }
 }

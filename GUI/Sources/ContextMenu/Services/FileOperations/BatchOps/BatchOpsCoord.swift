@@ -71,7 +71,7 @@ final class BatchOpsCoord {
         }
         // Local → local: confirm then copy
         log.info("[BatchOperationCoordinator] initiateCopy: \(files.count) files to \(destination.path)")
-        ContextMenuCoordinator.shared.activeDialog = .batchCopyConfirmation(
+        CntMenuCoord.shared.activeDialog = .batchCopyConfirmation(
             files: files, destination: destination, sourcePanel: sourcePanel
         )
     }
@@ -111,7 +111,7 @@ final class BatchOpsCoord {
             return
         }
         log.info("[BatchOperationCoordinator] initiateMove: \(files.count) files to \(destination.path)")
-        ContextMenuCoordinator.shared.activeDialog = .batchMoveConfirmation(
+        CntMenuCoord.shared.activeDialog = .batchMoveConfirmation(
             files: files, destination: destination, sourcePanel: sourcePanel
         )
     }
@@ -139,7 +139,7 @@ final class BatchOpsCoord {
 
         log.info("[BatchOperationCoordinator] initiateDelete: \(files.count) files")
 
-        ContextMenuCoordinator.shared.activeDialog = .batchDeleteConfirmation(
+        CntMenuCoord.shared.activeDialog = .batchDeleteConfirmation(
             files: files,
             sourcePanel: sourcePanel
         )
@@ -190,7 +190,7 @@ final class BatchOpsCoord {
     // MARK: - Dismiss Dialog
 
     func dismissDialog() {
-        ContextMenuCoordinator.shared.dismissDialog()
+        CntMenuCoord.shared.dismissDialog()
         batchManager.dismissProgressDialog()
     }
 

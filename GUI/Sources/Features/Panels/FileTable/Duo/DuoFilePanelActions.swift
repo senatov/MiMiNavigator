@@ -87,7 +87,7 @@
             }
 
             // Show SwiftUI HIG-style dialog via coordinator (same style as Copy/Move/Pack)
-            ContextMenuCoordinator.shared.activeDialog = .createFolder(parentURL: currentURL)
+            CntMenuCoord.shared.activeDialog = .createFolder(parentURL: currentURL)
         }
 
         // MARK: - Delete (Fwd-Delete / F8) — Trash for real files, removeItem inside archives

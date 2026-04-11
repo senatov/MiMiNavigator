@@ -9,7 +9,7 @@ import AppKit
 import FileModelKit
 import Foundation
 
-extension ContextMenuCoordinator {
+extension CntMenuCoord {
 
     // MARK: - Panel Helpers
 

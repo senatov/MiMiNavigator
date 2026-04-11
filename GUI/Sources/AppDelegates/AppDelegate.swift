@@ -93,7 +93,7 @@ import AppKit
     private func installKeyMonitor() {
         keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
             guard let self, let appState = self.appState else { return event }
-            if ContextMenuCoordinator.shared.activeDialog != nil { return event }
+            if CntMenuCoord.shared.activeDialog != nil { return event }
             let flags = event.modifierFlags
             guard !flags.contains(.command), !flags.contains(.option), !flags.contains(.control) else {
                 return event

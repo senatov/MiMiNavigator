@@ -90,10 +90,10 @@ struct ThumbnailGridView: View {
                         },
                         onDoubleClick: { onDoubleClick(file) },
                         onFileAction: { action in
-                            ContextMenuCoordinator.shared.handleFileAction(action, for: file, panel: panelSide, appState: appState)
+                            CntMenuCoord.shared.handleFileAction(action, for: file, panel: panelSide, appState: appState)
                         },
                         onDirectoryAction: { action in
-                            ContextMenuCoordinator.shared.handleDirectoryAction(
+                            CntMenuCoord.shared.handleDirectoryAction(
                                 action, for: file, panel: panelSide, appState: appState)
                         }
                     )
@@ -280,11 +280,11 @@ private struct ThumbnailCellView: View {
     @ViewBuilder
     private var contextMenuContent: some View {
         if file.isDirectory {
-            DirectoryContextMenu(file: file, panelSide: panelSide) { action in
+            DirectoryContextMenu(file: file, panelSide: panelSide, isOptionHeld: NSEvent.modifierFlags.contains(.option)) { action in
                 onDirectoryAction(action)
             }
         } else {
-            FileContextMenu(file: file, panelSide: panelSide) { action in
+            FileContextMenu(file: file, panelSide: panelSide, isOptionHeld: NSEvent.modifierFlags.contains(.option)) { action in
                 onFileAction(action)
             }
         }

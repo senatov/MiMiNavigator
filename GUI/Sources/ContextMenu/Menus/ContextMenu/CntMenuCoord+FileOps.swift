@@ -3,15 +3,15 @@
 //
 // Created by Claude AI on 04.02.2026.
 // Copyright © 2026 Senatov. All rights reserved.
-// Description: ContextMenuCoordinator file operations (delete, rename, duplicate, compress, pack, create folder, links, paste)
+// Description: CntMenuCoord file operations (delete, rename, duplicate, compress, pack, create folder, links, paste)
 
 import AppKit
 import FileModelKit
 import Foundation
 
-// MARK: - ContextMenuCoordinator + File Operations
+// MARK: - CntMenuCoord + File Operations
 /// Extension containing async file operation executors
-extension ContextMenuCoordinator {
+extension CntMenuCoord {
 
     // MARK: - Panel Helpers
 

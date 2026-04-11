@@ -6,9 +6,6 @@
 //  Copyright © 2026 Senatov. All rights reserved.
 //
 
-import FavoritesKit
-import FileModelKit
-import SwiftUI
 import UniformTypeIdentifiers
 
 enum FileContextMenuConfig {
@@ -27,8 +24,9 @@ enum FileContextMenuConfig {
     static let mediaConformingTypes: [UTType] = [.image, .movie, .audio]
 
     static func isKnownMediaExtension(_ ext: String) -> Bool {
-        videoExtensions.contains(ext)
-            || audioExtensions.contains(ext)
-            || imageExtensions.contains(ext)
+        let normalized = ext.lowercased()
+        return videoExtensions.contains(normalized)
+            || audioExtensions.contains(normalized)
+            || imageExtensions.contains(normalized)
     }
 }

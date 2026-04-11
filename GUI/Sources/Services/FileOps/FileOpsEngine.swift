@@ -27,7 +27,7 @@ final class FileOpsEngine {
     private let fm = FileManager.default
     private let maxConcurrency = 5
 
-    /// conflict handler — set by ContextMenuCoordinator at init.
+    /// conflict handler — set by CntMenuCoord at init.
     /// Called on MainActor when destination file already exists.
     /// Returns BatchConflictDecision (resolution + applyToAll flag).
     var conflictHandler: ((FileConflictInfo, Int) async -> BatchConflictDecision)?

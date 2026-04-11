@@ -36,7 +36,7 @@ import Foundation
                     let panel = appState.focusedPanel
                     let path = appState.path(for: panel)
                     let url = URL(fileURLWithPath: path)
-                    ContextMenuCoordinator.shared.openTerminal(at: url)
+                    CntMenuCoord.shared.openTerminal(at: url)
                 },
                 shortcut: nil
             ),
@@ -49,7 +49,7 @@ import Foundation
                     let path = appState.path(for: panel)
                     let file = panel == .left ? appState.selectedLeftFile : appState.selectedRightFile
                     if let f = file {
-                        ContextMenuCoordinator.shared.openInFinder(f)
+                        CntMenuCoord.shared.openInFinder(f)
                     } else {
                         NSWorkspace.shared.open(URL(fileURLWithPath: path))
                     }

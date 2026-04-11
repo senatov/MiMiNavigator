@@ -195,33 +195,18 @@ class Coordinator: NSObject, NSTableViewDelegate, NSTableViewDataSource, NSMenuD
 
     func menuNeedsUpdate(_ menu: NSMenu) {
         menu.removeAllItems()
+        log.debug("[NSFileTableViewCoordinator] menuNeedsUpdate")
         let optionHeld = NSEvent.modifierFlags.contains(.option)
-
         guard let tv = tableView else { return }
         let clickedRow = tv.clickedRow
-
         guard clickedRow >= 0 && clickedRow < files.count else {
-            // Click on empty area - panel background menu
-            if optionHeld {
-                addMenuItem(menu, title: "New Folder", action: #selector(menuNewFolder), key: "N")
-            }
-            addMenuItem(menu, title: "Refresh", action: #selector(menuRefresh), key: "r")
-            menu.addItem(NSMenuItem.separator())
-            addMenuItem(menu, title: "Paste", action: #selector(menuPaste), key: "v")
-            if !optionHeld {
-                menu.addItem(NSMenuItem.separator())
-                addOptionHint(menu)
-            }
+            buildBackgroundMenu(menu, optionHeld: optionHeld)
             return
         }
-
         let file = files[clickedRow]
-
-        // Select row if not selected
         if !tv.selectedRowIndexes.contains(clickedRow) {
             tv.selectRowIndexes(IndexSet(integer: clickedRow), byExtendingSelection: false)
         }
-
         if file.isDirectory {
             buildDirectoryMenu(menu, file: file, optionHeld: optionHeld)
         } else {
@@ -230,6 +215,10 @@ class Coordinator: NSObject, NSTableViewDelegate, NSTableViewDataSource, NSMenuD
     }
 
     private func buildFileMenu(_ menu: NSMenu, file: CustomFile, optionHeld: Bool) {
+        if !optionHeld {
+            addMoreMenuItem(menu, action: #selector(menuShowMoreForClickedItem))
+            menu.addItem(NSMenuItem.separator())
+        }
         // SECTION 1: Open
         addMenuItem(menu, title: "Open", action: #selector(menuOpen), key: "", icon: "arrow.up.doc")
         addMenuItem(menu, title: "Open With...", action: #selector(menuOpenWith), key: "", icon: "arrow.up.right.square")
@@ -267,13 +256,28 @@ class Coordinator: NSObject, NSTableViewDelegate, NSTableViewDataSource, NSMenuD
         // SECTION 7: Favorites
         addMenuItem(menu, title: "Add to Favorites", action: #selector(menuAddToFavorites), key: "", icon: "star")
 
+        // (Removed passive hint at end)
+    }
+
+    private func buildBackgroundMenu(_ menu: NSMenu, optionHeld: Bool) {
+        if optionHeld {
+            addMenuItem(menu, title: "New Folder", action: #selector(menuNewFolder), key: "N")
+        }
+        addMenuItem(menu, title: "Refresh", action: #selector(menuRefresh), key: "r")
+        menu.addItem(NSMenuItem.separator())
+        addMenuItem(menu, title: "Paste", action: #selector(menuPaste), key: "v")
         if !optionHeld {
             menu.addItem(NSMenuItem.separator())
-            addOptionHint(menu)
+            addMoreMenuItem(menu, action: #selector(menuShowMoreBackground))
         }
     }
 
+
     private func buildDirectoryMenu(_ menu: NSMenu, file: CustomFile, optionHeld: Bool) {
+        if !optionHeld {
+            addMoreMenuItem(menu, action: #selector(menuShowMoreForClickedItem))
+            menu.addItem(NSMenuItem.separator())
+        }
         // SECTION 1: Navigation
         addMenuItem(menu, title: "Open", action: #selector(menuOpen), key: "", icon: "folder")
         addMenuItem(menu, title: "Open in New Tab", action: #selector(menuOpenInNewTab), key: "t", icon: "plus.square.on.square")
@@ -306,17 +310,11 @@ class Coordinator: NSObject, NSTableViewDelegate, NSTableViewDataSource, NSMenuD
         menu.addItem(NSMenuItem.separator())
 
         // SECTION 6: Cross-panel
-        addMenuItem(
-            menu, title: "Open on Other Panel", action: #selector(menuOpenOnOtherPanel), key: "", icon: "rectangle.split.2x1")
+        addMenuItem(menu, title: "Open on Other Panel", action: #selector(menuOpenOnOtherPanel), key: "", icon: "rectangle.split.2x1")
         menu.addItem(NSMenuItem.separator())
 
         // SECTION 7: Favorites
         addMenuItem(menu, title: "Add to Favorites", action: #selector(menuAddToFavorites), key: "", icon: "star")
-
-        if !optionHeld {
-            menu.addItem(NSMenuItem.separator())
-            addOptionHint(menu)
-        }
     }
 
     private func addMenuItem(_ menu: NSMenu, title: String, action: Selector, key: String, icon: String? = nil) {
@@ -328,16 +326,48 @@ class Coordinator: NSObject, NSTableViewDelegate, NSTableViewDataSource, NSMenuD
         menu.addItem(item)
     }
 
+    private func addMoreMenuItem(_ menu: NSMenu, action: Selector) {
+        log.debug("[NSFileTableViewCoordinator] addMoreMenuItem")
+        let item = NSMenuItem(title: "For More 􀉒…", action: action, keyEquivalent: "")
+        item.target = self
+        if let image = NSImage(systemSymbolName: "ellipsis.circle", accessibilityDescription: nil) {
+            item.image = image
+        }
+        item.attributedTitle = NSAttributedString(
+            string: "For More 􀉒…",
+            attributes: [
+                .foregroundColor: NSColor.systemBlue
+            ]
+        )
+        menu.addItem(item)
+    }
 
-    private func addOptionHint(_ menu: NSMenu) {
-        let hint = NSMenuItem(title: "⌥ for more…", action: nil, keyEquivalent: "")
-        hint.isEnabled = false
-        let attrs: [NSAttributedString.Key: Any] = [
-            .font: NSFont.systemFont(ofSize: 12, weight: .semibold),
-            .foregroundColor: NSColor.systemBlue
-        ]
-        hint.attributedTitle = NSAttributedString(string: "⌥ for more…", attributes: attrs)
-        menu.addItem(hint)
+    private func currentMenuPoint(in tableView: NSTableView) -> NSPoint {
+        tableView.convert(NSApp.currentEvent?.locationInWindow ?? .zero, from: nil)
+    }
+
+    private func popUpTransientMenu(_ menu: NSMenu, in tableView: NSTableView) {
+        let point = currentMenuPoint(in: tableView)
+        menu.popUp(positioning: nil, at: point, in: tableView)
+    }
+
+
+    @objc private func menuShowMoreForClickedItem() {
+        guard let tv = tableView, let file = clickedFile else { return }
+        let menu = NSMenu()
+        if file.isDirectory {
+            buildDirectoryMenu(menu, file: file, optionHeld: true)
+        } else {
+            buildFileMenu(menu, file: file, optionHeld: true)
+        }
+        popUpTransientMenu(menu, in: tv)
+    }
+
+    @objc private func menuShowMoreBackground() {
+        guard let tv = tableView else { return }
+        let menu = NSMenu()
+        buildBackgroundMenu(menu, optionHeld: true)
+        popUpTransientMenu(menu, in: tv)
     }
 
     private var clickedFile: CustomFile? {

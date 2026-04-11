@@ -265,7 +265,7 @@ MiMiNavigator/
 │   │   ├── Dialogs/        # ConfirmationDialog, RenameDialog, PackDialog,
 │   │   │   │               # BatchConfirmation/Progress, CreateLinkDialog
 │   │   │   └── FileConflict/  # FileConflictDialog, ConflictResolution
-│   │   └── Services/       # ContextMenuCoordinator, ClipboardManager,
+│   │   └── Services/       # CntMenuCoord, ClipboardManager,
 │   │       │               # CompressService, QuickLookService
 │   │       ├── Coordinator/   # FileActionsHandler, DirectoryActionsHandler,
 │   │       │                  # MultiSelectionActionsHandler, ActiveDialog
@@ -318,7 +318,7 @@ MiMiNavigator/
 | `@Observable` + `@MainActor` | `AppState` — global app state, panels, archive states |
 | `@Observable` + `@MainActor` | `MultiSelectionManager` — Cmd/Shift click, Insert mark, pattern match |
 | `@Observable` + `@MainActor` | `TabManager` — per-panel tab collection, persistence, navigation |
-| `@Observable` + `@MainActor` | `ContextMenuCoordinator` — singleton handling all context menu actions |
+| `@Observable` + `@MainActor` | `CntMenuCoord` — singleton handling all context menu actions |
 | `actor` | `DualDirectoryScanner` — thread-safe file scanning |
 | `actor` | `ArchiveManager` — session lifecycle, dirty tracking, extraction, repacking |
 | `AsyncStream` | `FindFilesEngine` — streaming search results with cancellation |
