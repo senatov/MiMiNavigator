@@ -58,30 +58,45 @@ final class AutoFitScheduler {
             try? await Task.sleep(for: self.initialSettleDelay)
             if Task.isCancelled { return }
 
-            // wait for dir sizes
+            // wait for dir sizes — left first, then right
             await self.waitForSizesResolved(appState: appState, panel: .left)
+            if Task.isCancelled { return }
+
+            // --- LEFT panel: 3 passes ---
+            log.info("[AutoFit] initial fit: starting LEFT panel")
+            self.runAutoFit(panel: .left, appState: appState)
+
+            try? await Task.sleep(for: self.passInterval)
+            if Task.isCancelled { return }
+            self.runAutoFit(panel: .left, appState: appState)
+
+            try? await Task.sleep(for: self.passInterval)
+            if Task.isCancelled { return }
+            self.runAutoFit(panel: .left, appState: appState)
+            self.lastAutoFitPath[.left] = appState.leftPath
+            log.info("[AutoFit] initial fit: LEFT panel done")
+
+            // small gap before right panel
+            try? await Task.sleep(for: .milliseconds(500))
+            if Task.isCancelled { return }
+
+            // --- RIGHT panel: 3 passes ---
             await self.waitForSizesResolved(appState: appState, panel: .right)
             if Task.isCancelled { return }
 
-            // run autofit for both panels
-            self.runAutoFit(panel: .left, appState: appState)
+            log.info("[AutoFit] initial fit: starting RIGHT panel")
             self.runAutoFit(panel: .right, appState: appState)
 
-            // pass 2 after interval
             try? await Task.sleep(for: self.passInterval)
             if Task.isCancelled { return }
-            self.runAutoFit(panel: .left, appState: appState)
             self.runAutoFit(panel: .right, appState: appState)
 
-            // pass 3 (final)
             try? await Task.sleep(for: self.passInterval)
             if Task.isCancelled { return }
-            self.runAutoFit(panel: .left, appState: appState)
             self.runAutoFit(panel: .right, appState: appState)
+            self.lastAutoFitPath[.right] = appState.rightPath
 
             self.initialFitDone = true
-            self.lastAutoFitPath[.left] = appState.leftPath
-            self.lastAutoFitPath[.right] = appState.rightPath
             log.info("[AutoFit] initial fit complete for both panels")
         }
     }
