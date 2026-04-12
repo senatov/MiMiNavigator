@@ -329,8 +329,8 @@ final class DuoFilePanelKeyboardHandler {
         if let file = selectedFile {
             if file.isDirectory || file.isSymbolicDirectory {
                 targetURL = file.urlValue.resolvingSymlinksInPath()
-            } else if file.isArchiveFile {
-                // Archive — delegate to context menu handler for archive opening
+            } else if file.isBrowsableArchive {
+                // Browsable archive — open as virtual directory in new tab
                 log.info("[KEY] newTab on archive: '\(file.nameStr)'")
                 CntMenuCoord.shared.openFileInNewTab(file, panel: panel, appState: appState)
                 return

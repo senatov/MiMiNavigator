@@ -156,8 +156,9 @@ extension CntMenuCoord {
 
     /// Opens a file's containing directory (or archive as directory) in a new tab
     func openFileInNewTab(_ file: CustomFile, panel: FavPanelSide, appState: AppState) {
-        // Archive files — open archive as virtual directory in new tab
-        if file.isArchiveFile {
+        // Browsable archives — open as virtual directory in new tab
+        // Opaque archives (dmg, pkg, iso…) fall through to regular file handling
+        if file.isBrowsableArchive {
             log.info("[OpenInNewTab] opening archive in new tab: '\(file.nameStr)'")
             let mgr = appState.tabManager(for: panel)
 

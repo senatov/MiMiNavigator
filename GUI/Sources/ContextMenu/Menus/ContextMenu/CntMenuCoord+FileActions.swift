@@ -105,8 +105,9 @@ extension CntMenuCoord {
     /// regular files open with default application via NSWorkspace.
     private func openFileOrArchive(_ file: CustomFile, panel: FavPanelSide, appState: AppState) {
         log.debug(#function + "(\(file.nameStr))")
-        // Archive files — open as virtual directory in current tab (Total Commander behavior)
-        if file.isArchiveFile {
+        // Browsable archive files — open as virtual directory (Total Commander behavior)
+        // Opaque archives (dmg, pkg, iso, jar…) fall through to NSWorkspace.open
+        if file.isBrowsableArchive {
             log.info("[FileActions] open archive: name='\(file.nameStr)' path='\(file.urlValue.path)'")
             Task { @MainActor in
                 await appState.enterArchive(at: file.urlValue, on: panel)
