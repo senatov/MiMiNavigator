@@ -87,16 +87,20 @@ extension ConvertMediaCoord {
             object: nil,
             queue: .main
         ) { [weak self] notification in
-            guard let self,
-                  let observedWindow = notification.object as? NSWindow,
-                  observedWindow != self.window,
-                  observedWindow.className != "NSStatusBarWindow",
-                  observedWindow.isVisible,
-                  observedWindow.isMainWindow,
-                  observedWindow.isKeyWindow else {
+            guard let observedWindow = notification.object as? NSWindow else {
                 return
             }
-            self.bringPanelInFrontOfMainWindowIfNeeded(relativeTo: observedWindow)
+            Task { @MainActor [weak self] in
+                guard let self,
+                      observedWindow != self.window,
+                      observedWindow.className != "NSStatusBarWindow",
+                      observedWindow.isVisible,
+                      observedWindow.isMainWindow,
+                      observedWindow.isKeyWindow else {
+                    return
+                }
+                self.bringPanelInFrontOfMainWindowIfNeeded(relativeTo: observedWindow)
+            }
         }
     }
 

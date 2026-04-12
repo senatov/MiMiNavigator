@@ -1,5 +1,5 @@
 {
-  "originHash" : "48760664496b2ae4dd4b67e5d2f61b0b97da294400280a5f38bfba3699e83f9d",
+  "originHash" : "36f84766a0e9d2f254ef9f5b544bdc8bf13bf9de82f84d312789869773b874d9",
   "pins" : [
     {
       "identity" : "bigint",
@@ -107,6 +107,15 @@
       "state" : {
         "revision" : "8cba041db09596183331d123f337d0eb2e6e8e91",
         "version" : "2.1.1"
+      }
+    },
+    {
+      "identity" : "vlc",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/omaralbeik/VLC.git",
+      "state" : {
+        "revision" : "9ff95718f4edce0368cc095a8e44fd31ddedb71a",
+        "version" : "3.6.0"
       }
     }
   ],
