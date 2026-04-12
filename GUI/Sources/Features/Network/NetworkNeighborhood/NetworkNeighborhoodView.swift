@@ -87,8 +87,9 @@ struct NetworkNeighborhoodView: View {
     private var scanningStatusText: String {
         provider.isScanning ? "Scanning network…" : hostCountText
     }
-// MARK: - Glass Styling
 
+
+    // MARK: - Glass Styling
     // MARK: - Host Organization
     private func sectionForHost(_ host: NetworkHost) -> HostSection {
         if host.deviceClass.isInfrastructure {
@@ -121,13 +122,11 @@ struct NetworkNeighborhoodView: View {
             if lhsRank != rhsRank {
                 return lhsRank < rhsRank
             }
-
             let lhsName = lhs.hostDisplayName.lowercased()
             let rhsName = rhs.hostDisplayName.lowercased()
             if lhsName != rhsName {
                 return lhsName < rhsName
             }
-
             return lhs.id.uuidString < rhs.id.uuidString
         }
     }
