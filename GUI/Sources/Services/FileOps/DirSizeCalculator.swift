@@ -53,17 +53,32 @@ enum DirSizeCalculator {
             guard fm.fileExists(atPath: item.path, isDirectory: &isDir) else { continue }
 
             if isDir.boolValue {
-                scanDirectory(
-                    at: item,
-                    baseURL: item.deletingLastPathComponent(),
-                    depth: 0,
-                    fm: fm,
-                    totalBytes: &totalBytes,
-                    fileCount: &fileCount,
-                    maxDepth: &maxDepth,
-                    maxFileSize: &maxFileSize,
-                    flatList: &flatList
-                )
+                // .app / .framework / .bundle — treat as opaque file, don't recurse
+                if isPackage(at: item, fm: fm) {
+                    let size = directoryTotalSize(at: item, fm: fm)
+                    totalBytes += size
+                    fileCount += 1
+                    maxFileSize = max(maxFileSize, size)
+                    flatList.append(
+                        .init(
+                            url: item,
+                            relativePath: item.lastPathComponent,
+                            size: size,
+                            isDirectory: false
+                        ))
+                } else {
+                    scanDirectory(
+                        at: item,
+                        baseURL: item.deletingLastPathComponent(),
+                        depth: 0,
+                        fm: fm,
+                        totalBytes: &totalBytes,
+                        fileCount: &fileCount,
+                        maxDepth: &maxDepth,
+                        maxFileSize: &maxFileSize,
+                        flatList: &flatList
+                    )
+                }
             } else {
                 let size = fileSize(at: item, fm: fm)
                 totalBytes += size
@@ -117,10 +132,20 @@ enum DirSizeCalculator {
 
         for case let fileURL as URL in enumerator {
             do {
-                let vals = try fileURL.resourceValues(forKeys: [.fileSizeKey, .isDirectoryKey])
+                let vals = try fileURL.resourceValues(forKeys: [.fileSizeKey, .isDirectoryKey, .isPackageKey])
                 let isDir = vals.isDirectory ?? false
+                let isPkg = vals.isPackage ?? false
 
-                if isDir {
+                if isDir && isPkg {
+                    // Package (.app, .framework, .bundle) — opaque, don't recurse
+                    enumerator.skipDescendants()
+                    let size = directoryTotalSize(at: fileURL, fm: fm)
+                    totalBytes += size
+                    fileCount += 1
+                    maxFileSize = max(maxFileSize, size)
+                    let relPath = relativePath(of: fileURL, base: baseURL)
+                    flatList.append(.init(url: fileURL, relativePath: relPath, size: size, isDirectory: false))
+                } else if isDir {
                     let relPath = relativePath(of: fileURL, base: baseURL)
                     flatList.append(.init(url: fileURL, relativePath: relPath, size: 0, isDirectory: true))
                 } else {
@@ -140,6 +165,27 @@ enum DirSizeCalculator {
 
     private static func fileSize(at url: URL, fm: FileManager) -> Int64 {
         (try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize).map(Int64.init) ?? 0
+    }
+
+
+    private static func isPackage(at url: URL, fm: FileManager) -> Bool {
+        (try? url.resourceValues(forKeys: [.isPackageKey]).isPackage) ?? false
+    }
+
+
+    /// Total size of all files inside a package/directory (for progress estimation)
+    private static func directoryTotalSize(at dirURL: URL, fm: FileManager) -> Int64 {
+        guard let enumerator = fm.enumerator(
+            at: dirURL,
+            includingPropertiesForKeys: [.fileSizeKey, .isDirectoryKey],
+            options: [.skipsHiddenFiles]
+        ) else { return 0 }
+        var total: Int64 = 0
+        for case let fileURL as URL in enumerator {
+            let size = (try? fileURL.resourceValues(forKeys: [.fileSizeKey]).fileSize).map(Int64.init) ?? 0
+            total += size
+        }
+        return total
     }
 
     private static func relativePath(of url: URL, base: URL) -> String {
