@@ -28,9 +28,9 @@ struct ConvertMediaDialog: View {
     let sourceFormat: MediaFormat?
 
     enum Layout {
-        static let minWidth: CGFloat = 380
-        static let idealWidth: CGFloat = 420
-        static let minHeight: CGFloat = 250
+        static let minWidth: CGFloat = 400
+        static let idealWidth: CGFloat = 460
+        static let minHeight: CGFloat = 300
         static let outerCornerRadius: CGFloat = 14
         static let sectionCornerRadius: CGFloat = 12
         static let hPad: CGFloat = 12

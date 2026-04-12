@@ -124,8 +124,8 @@ final class MediaInfoPanel: NSObject {
 }
 
 
-extension MediaInfoPanel: @preconcurrency VLCMediaPlayerDelegate {
-    nonisolated func mediaPlayerStateChanged(_ aNotification: Notification!) {
+extension MediaInfoPanel: VLCMediaPlayerDelegate {
+    nonisolated func mediaPlayerStateChanged(_ aNotification: Notification) {
         Task { @MainActor [weak self] in
             guard let self, let player = self.player else { return }
             switch player.state {

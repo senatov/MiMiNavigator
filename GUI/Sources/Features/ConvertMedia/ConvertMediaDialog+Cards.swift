@@ -16,7 +16,8 @@ extension ConvertMediaDialog {
         HStack(spacing: 8) {
             VStack(alignment: .leading, spacing: 1) {
                 Text("Convert Media")
-                    .font(.headline)
+                    .font(.system(size: 16, weight: .light))
+                    .foregroundStyle(.black)
                 Text("Select target format and output location.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -31,33 +32,32 @@ extension ConvertMediaDialog {
         .padding(.horizontal, Layout.compactHPad)
     }
 
-
-
     var sourceCard: some View {
         HStack(spacing: 10) {
             Image(systemName: sourceFormat?.systemImage ?? "doc")
                 .font(.title3)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.indigo)
                 .frame(width: 28)
             VStack(alignment: .leading, spacing: 2) {
                 Text("Source")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.secondary)
+                    .font(.system(size: 14, weight: .light))
+                    .foregroundStyle(.blue)
                     .textCase(.uppercase)
                 Text(file.nameStr)
-                    .font(.system(.body, design: .monospaced))
+                    .font(.system(size: 14, weight: .light))
                     .lineLimit(1)
                     .truncationMode(.middle)
                 Text(file.urlValue.deletingLastPathComponent().path)
-                    .font(.caption2)
-                    .foregroundStyle(.tertiary)
+                    .font(.system(size: 14, weight: .light))
+                    .foregroundStyle(.brown)
                     .lineLimit(1)
                     .truncationMode(.head)
             }
             Spacer()
             if let sourceFormat {
                 Text(sourceFormat.displayName)
-                    .font(.caption2.weight(.semibold))
+                    .font(.system(size: 14, weight: .light))
+                    .foregroundStyle(.brown)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 3)
                     .background(sourceFormatBadgeBackground)
@@ -71,7 +71,6 @@ extension ConvertMediaDialog {
         .padding(.horizontal, Layout.compactHPad)
     }
 
-
     var targetCard: some View {
         HStack(spacing: 10) {
             Image(systemName: targetFormat.systemImage)
@@ -80,8 +79,8 @@ extension ConvertMediaDialog {
                 .frame(width: 28)
             VStack(alignment: .leading, spacing: 2) {
                 Text("Convert to")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.secondary)
+                    .font(.system(size: 14, weight: .light))
+                    .foregroundStyle(.blue)
                     .textCase(.uppercase)
                 Picker("", selection: $targetFormat) {
                     ForEach(availableFormats) { format in
@@ -102,7 +101,6 @@ extension ConvertMediaDialog {
         .padding(.horizontal, Layout.compactHPad)
     }
 
-
     var outputCard: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 10) {
@@ -112,8 +110,8 @@ extension ConvertMediaDialog {
                     .frame(width: 28)
                 VStack(alignment: .leading, spacing: 4) {
                     Text("OUTPUT")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.secondary)
+                        .font(.system(size: 14, weight: .light))
+                        .foregroundStyle(.blue)
                     HStack(spacing: 4) {
                         TextField("Filename", text: $outputName)
                             .textFieldStyle(.roundedBorder)
@@ -132,12 +130,12 @@ extension ConvertMediaDialog {
             }
             HStack(spacing: 10) {
                 Image(systemName: "folder")
-                    .font(.caption)
+                    .font(.system(size: 14, weight: .light))
                     .foregroundStyle(.secondary)
                     .frame(width: 28)
                 Text(outputDir)
-                    .font(.system(size: 11, design: .monospaced))
-                    .foregroundStyle(.tertiary)
+                    .font(.system(size: 14, design: .default))
+                    .foregroundStyle(.black)
                     .lineLimit(1)
                     .truncationMode(.head)
                 Spacer()
@@ -145,7 +143,7 @@ extension ConvertMediaDialog {
                     chooseOutputDir()
                 } label: {
                     Text("Choose…")
-                        .font(.caption)
+                        .font(.system(size: 14, design: .default))
                         .padding(.horizontal, 8)
                         .padding(.vertical, 3)
                 }
@@ -162,20 +160,18 @@ extension ConvertMediaDialog {
         .padding(.horizontal, Layout.compactHPad)
     }
 
-
     var toolStatusBar: some View {
         HStack(spacing: 6) {
             Image(systemName: "wrench.and.screwdriver")
-                .font(.caption)
+                .font(.system(size: 14, weight: .light))
                 .foregroundStyle(.tertiary)
             Text(toolInfo)
-                .font(.caption)
+                .font(.system(size: 14, weight: .light))
                 .foregroundStyle(.tertiary)
             Spacer()
         }
         .padding(.horizontal, Layout.hPad + 4)
     }
-
 
     var buttonBar: some View {
         HStack(spacing: 10) {
@@ -191,21 +187,17 @@ extension ConvertMediaDialog {
             }
             .keyboardShortcut(.defaultAction)
             .buttonStyle(ThemedButtonStyle())
-            .controlSize(.large)
+            .controlSize(.regular)
             .disabled(!isValid)
         }
         .padding(.horizontal, Layout.compactHPad)
         .padding(.bottom, 10)
     }
 
-
-
     var sourceFormatBadgeBackground: some View {
         RoundedRectangle(cornerRadius: Layout.chipCornerRadius, style: .continuous)
             .fill(Color.accentColor.opacity(0.12))
     }
-
-
 
     var choiceButtonBackground: some View {
         RoundedRectangle(cornerRadius: Layout.chipCornerRadius, style: .continuous)
@@ -213,13 +205,10 @@ extension ConvertMediaDialog {
             .glassEffect(.regular.tint(Color.white.opacity(Layout.sectionTintOpacity)))
     }
 
-
-
     var choiceButtonBorder: some View {
         RoundedRectangle(cornerRadius: Layout.chipCornerRadius, style: .continuous)
             .strokeBorder(Color.white.opacity(Layout.borderOpacity), lineWidth: Layout.borderLineWidth)
     }
-
 
     var panelBackground: some View {
         RoundedRectangle(cornerRadius: Layout.outerCornerRadius, style: .continuous)
@@ -227,12 +216,10 @@ extension ConvertMediaDialog {
             .glassEffect(.regular.tint(Color.white.opacity(Layout.panelTintOpacity)))
     }
 
-
     var panelBorder: some View {
         RoundedRectangle(cornerRadius: Layout.outerCornerRadius, style: .continuous)
             .strokeBorder(Color.white.opacity(Layout.borderOpacity), lineWidth: Layout.borderLineWidth)
     }
-
 
     var headerBackground: some View {
         RoundedRectangle(cornerRadius: Layout.sectionCornerRadius, style: .continuous)
@@ -240,20 +227,16 @@ extension ConvertMediaDialog {
             .glassEffect(.regular.tint(Color.white.opacity(Layout.headerTintOpacity)))
     }
 
-
     var sectionBackground: some View {
         RoundedRectangle(cornerRadius: Layout.sectionCornerRadius, style: .continuous)
             .fill(.clear)
             .glassEffect(.regular.tint(Color.white.opacity(Layout.sectionTintOpacity)))
     }
 
-
-
     var sectionBorder: some View {
         RoundedRectangle(cornerRadius: Layout.sectionCornerRadius, style: .continuous)
             .strokeBorder(Color.white.opacity(Layout.borderOpacity), lineWidth: Layout.borderLineWidth)
     }
-
 
     var windowConfigurator: some View {
         Color.clear
