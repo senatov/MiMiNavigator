@@ -659,3 +659,38 @@ specific requirements.
 if any, to sign a "copyright disclaimer" for the program, if necessary.
 For more information on this, and how to apply and follow the GNU AGPL, see
 <https://www.gnu.org/licenses/>.
+
+Third-Party Libraries and Licenses
+==================================
+
+MiMiNavigator includes or depends on third-party components.
+
+1. SwiftyBeaver
+   Repository: https://github.com/SwiftyBeaver/SwiftyBeaver
+   License: MIT
+
+2. Citadel
+   Repository: https://github.com/orlandos-nl/Citadel
+   License: MIT
+
+3. ZIPFoundation
+   Repository: https://github.com/weichsel/ZIPFoundation
+   License: MIT
+
+4. nmap
+   Repository: https://nmap.org
+   License: GPLv2
+
+5. Apple frameworks and system technologies
+   Components: SwiftNIO, SwiftUI, kqueue, NetServiceBrowser
+   License: Apple licenses / platform terms
+
+6. omaralbeik/VLC
+   Repository: https://github.com/omaralbeik/VLC
+   License: MIT
+
+7. VideoLAN libVLC / VLC
+   Project: https://www.videolan.org
+   License: LGPL v2 or later
+
+Full third-party license texts and notices should also be provided in the application bundle, About/Credits section, or in a dedicated Licenses / ThirdPartyNotices folder.

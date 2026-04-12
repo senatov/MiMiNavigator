@@ -35,21 +35,17 @@
 ** APIs and UI may change without notice.
 
 
+
 ## Recent Changes (v0.9.7.3 — April 2026)
 
-**Context menu cleanup** — file, folder, and multi-selection menus were simplified and aligned; old duplicated `For More` hints were removed and advanced actions were moved into stable submenu-based layouts.
-
-**Advanced submenus** — new top-level submenu entries now group less-frequent actions: `􀉒 File Operations`, `􀉒 Folder Operations`, and `􀉒 Selection Operations`.
-
-**Media actions** — media-aware file menu now shows a new placeholder entry `Convert Media 􀍓 􁔘...` for convertible media files; it is currently disabled and reserved for the upcoming conversion dialog and scripts.
-
-**Directory operations prep** — folder menus are now ready for future alias/link expansion, with placeholder submenu entries for `Make Finder Alias` and `Make Symbolic Link`.
-
-**Dialog builder cleanup** — context-menu dialog routing was split into smaller builder groups for primary dialogs, alerts, and batch dialogs, making the dialog layer easier to maintain.
-
-**Coordinator cleanup** — context-menu coordinator extensions were renamed and normalized, with cleaner action dispatch and helper extraction across file, directory, background, and multi-selection flows.
-
-**README and menu polish** — duplicate passive hint text was removed from multiple menu classes, top-level menu ordering was cleaned up, and menu structure is now more consistent across content types.
+- Refactored the Convert Media panel into a cleaner coordinator-based structure.
+- Kept the Convert Media panel nonmodal while preserving its frame between launches.
+- Improved Convert Media window behavior so it reappears above MiMiNavigator main windows when the main window becomes active.
+- Allowed other applications to cover the Convert Media panel normally.
+- Refactored the Media Info panel into smaller logical sections/extensions for preview, panel creation, text formatting, and actions.
+- Started migrating Media Info video preview from AVPlayer/AVPlayerView to VLC.
+- Added a VLCVideoView / VLCMediaPlayer-based preview path with fallback to the file icon when playback fails.
+- Fixed multiple actor-isolation and observer-callback issues in Convert Media and Media Info code.
 
 ---
 
@@ -440,88 +436,32 @@ Looking for a way to start? Here are areas where help is especially appreciated:
 
 ---
 
-## Third-Party Libraries
 
-MiMiNavigator uses the following open-source libraries. We are grateful to their authors.
+## Third-Party Libraries and Licenses
 
-### SwiftyBeaver -- Structured Logging
-- **Author:** Sebastian Kreutzberger and contributors
-- **License:** MIT
-- **Repository:** https://github.com/SwiftyBeaver/SwiftyBeaver
-- **Usage in project:** All application logging -- console output and persistent log file at `~/Library/Logs/MiMiNavigator.log`. Bootstrapped in `LogKit` package, re-exported as global `log` across all source files so every module can use `log.debug / log.info / log.error` without additional imports.
+Sincere thanks to the open-source community:
 
-### Citadel -- SSH / SFTP Client
-- **Author:** Joannis Orlandos (Orlandos BV) and contributors
-- **License:** MIT
-- **Repository:** https://github.com/orlandos-nl/Citadel
-- **Usage in project:** `SFTPFileProvider` -- full SFTP connectivity in the Connect to Server feature. Provides `SSHClient`, `SFTPClient`, and OpenSSH private-key parsing. Replaces what would otherwise require spawning ssh/sftp CLI processes or linking against libssh2.
+| Author | Project | License | Why it matters |
+|--------|---------|---------|----------------|
+| Sebastian Kreutzberger | [SwiftyBeaver](https://github.com/SwiftyBeaver/SwiftyBeaver) | MIT | Clean, fast, low-friction logging that simply works |
+| Joannis Orlandos | [Citadel](https://github.com/orlandos-nl/Citadel) | MIT | An excellent SSH/SFTP library that fills an important gap not covered by SwiftNIO SSH |
+| Thomas Zoechling | [ZIPFoundation](https://github.com/weichsel/ZIPFoundation) | MIT | A strong example of clean Swift API design and a likely future dependency |
+| The Nmap Project | [nmap](https://nmap.org) | GPLv2 | The gold standard in network diagnostics, invaluable during LAN discovery development |
+| Apple | SwiftNIO, SwiftUI, kqueue, NetServiceBrowser | Apple licenses | Making macOS-native development a genuine pleasure |
+| Omar Albeik | [VLC](https://github.com/omaralbeik/VLC) | MIT | Swift package wrapper used for extended media playback integration |
+| VideoLAN | libVLC / VLC | LGPL v2 or later | Underlying playback engine for media formats not reliably handled by the native macOS media stack |
 
----
+Full third-party license texts and notices should also be provided in the application bundle, About/Credits section, or in a dedicated `Licenses` / `ThirdPartyNotices` folder.
 
-## Where Open-Source Libraries Could Further Help
-
-Several areas in MiMiNavigator use custom implementations that could be simplified or replaced by existing open-source libraries.
-
-### 1. Archive handling -- ZIPFoundation
-
-**Files:** `NativeZipReader.swift` (~350 lines), ZIP branch of `FindFilesArchiveSearcher.swift`
-
-**Current approach:** Custom binary ZIP central-directory parser + `Process()` wrappers around `/usr/bin/unzip`, `/usr/bin/tar`, `7z`.
-
-**Candidate:** [ZIPFoundation](https://github.com/weichsel/ZIPFoundation) (MIT, Thomas Zoechling)
-- Pure Swift, no `Process()` spawning for ZIP/GZIP
-- Streaming extraction, password-protected archives, in-memory entries
-- Would eliminate `NativeZipReader` and its error-prone manual byte-offset arithmetic
-- TAR/7z/RAR still require CLI fallback (no pure-Swift lib covers all 50+ formats)
-
-### 2. FTP file listing -- curl
-
-**File:** `FTPFileProvider.swift` -- `parseFTPListing()` method
-
-**Current approach:** URLSession FTP + hand-written Unix-style `LIST` output parser. Fragile: breaks on IIS FTP, DOS-style listings, localized dates. URLSession FTP is deprecated by Apple.
-
-**Candidate:** `curl` via `Process()` -- already present on every Mac
-- `curl -l ftp://host/path` gives clean filename-per-line output, no parsing needed
-- `curl --ftp-ssl` adds FTPS for free
-- Handles MLSD, active/passive mode, AUTH TLS automatically
-
-### 3. Network device fingerprinting -- nmap
-
-**Files:** `NetworkDeviceFingerprinter.swift` (~200 lines), `WebUIProber.swift`
-
-**Current approach:** Custom async TCP port prober via POSIX `connect()`, checks 20+ ports per host in parallel, classifies device type by open-port combination.
-
-**Candidate:** [nmap](https://nmap.org) (GPLv2) via `Process()`
-- Already used manually during development for Vuduo2 diagnostics -- proven reliable
-- `nmap -sV --open -p <ports> <host>` returns service names in machine-parseable format
-- Would eliminate ~200 lines of custom probing logic
-- **Caveat:** requires `brew install nmap`; must remain optional with graceful fallback
-
-### 4. SSH private-key auth -- Citadel (already resolved)
-
-**Status:** Resolved -- Citadel (already a SPM dependency) provides `Insecure.RSA.PrivateKey(sshRsa:)` and `Curve25519.Signing.PrivateKey` for OpenSSH private key parsing.
-
-### 5. Glob / wildcard matching (low priority -- current code is adequate)
-
-**File:** `FindFilesNameMatcher.swift` -- ~30-line wildcard-to-regex converter. Works correctly for current feature set; worth revisiting only if `{a,b}` alternation or `**` recursive matching is needed.
-
----
+Special thanks to **Anthropic / Claude** for pair-programming support throughout this project, including architecture decisions, refactoring, debugging, and documentation.
 
 ## Acknowledgements
 
 **MiMiNavigator** is developed by **Iakov Senatov** -- Diplom-Ingenieur (Chemical Process Engineering), 35 years of programming experience.
 
-Sincere thanks to the open-source community:
 
-| Author | Project | Why it matters |
-|--------|---------|----------------|
-| Sebastian Kreutzberger | [SwiftyBeaver](https://github.com/SwiftyBeaver/SwiftyBeaver) | Clean, fast, zero-ceremony logging that just works |
-| Joannis Orlandos | [Citadel](https://github.com/orlandos-nl/Citadel) | Excellent SSH/SFTP library, bridges the gap SwiftNIO SSH leaves open |
-| Thomas Zoechling | [ZIPFoundation](https://github.com/weichsel/ZIPFoundation) | Model of clean Swift API design, earmarked for adoption |
-| The nmap Project | [nmap](https://nmap.org) | Gold standard in network diagnostics, invaluable during LAN discovery development |
-| Apple | SwiftNIO, SwiftUI, kqueue, NetServiceBrowser | Making macOS-native development a genuine pleasure |
 
-Special thanks to **Anthropic / Claude** for pair-programming throughout this project -- architecture decisions, refactoring, debugging, and documentation.
+
 
 
 ## License

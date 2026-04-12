@@ -189,6 +189,30 @@ struct AboutView: View {
                     license: "MIT"
                 )
                 libraryRow(
+                    name: "ZIPFoundation",
+                    description: "ZIP archive handling library",
+                    url: "https://github.com/weichsel/ZIPFoundation",
+                    license: "MIT"
+                )
+                libraryRow(
+                    name: "VLC",
+                    description: "Swift package wrapper for libVLC",
+                    url: "https://github.com/omaralbeik/VLC",
+                    license: "MIT"
+                )
+                libraryRow(
+                    name: "libVLC / VLC",
+                    description: "Playback engine for extended media format support",
+                    url: "https://www.videolan.org",
+                    license: "LGPL v2+"
+                )
+                libraryRow(
+                    name: "nmap",
+                    description: "Network diagnostics and discovery reference tool",
+                    url: "https://nmap.org",
+                    license: "GPLv2"
+                )
+                libraryRow(
                     name: "Swift System",
                     description: "Low-level system interfaces",
                     url: "https://github.com/apple/swift-system",
