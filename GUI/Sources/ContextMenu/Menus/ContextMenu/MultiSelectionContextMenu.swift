@@ -42,6 +42,8 @@ struct MultiSelectionContextMenu: View {
             .font(.caption)
             .foregroundStyle(.secondary)
         Divider()
+        moreSelectionOperationsMenu
+        Divider()
         menuButton(.copyAsPathname)
         Divider()
         menuButton(.compress)
@@ -51,8 +53,6 @@ struct MultiSelectionContextMenu: View {
         Divider()
         menuButton(.mirrorPanel)
         menuButton(.addToFavorites)
-        Divider()
-        moreSelectionOperationsMenu
     }
 
     // MARK: - Menu Button Builder

@@ -128,16 +128,6 @@ enum ContextMenuNSMenuBuilder {
         onAction: @escaping (MultiSelectionAction) -> Void
     ) -> NSMenu {
         let menu = NSMenu()
-        menu.addItem(item(.copyAsPathname, onAction: onAction))
-        menu.addItem(.separator())
-        menu.addItem(item(.compress, onAction: onAction))
-        menu.addItem(item(.share, onAction: onAction))
-        menu.addItem(.separator())
-        menu.addItem(item(.revealInFinder, onAction: onAction))
-        menu.addItem(.separator())
-        menu.addItem(item(.mirrorPanel, onAction: onAction))
-        menu.addItem(item(.addToFavorites, onAction: onAction))
-        menu.addItem(.separator())
         let selOpsSubmenu = NSMenu()
         selOpsSubmenu.addItem(item(.cut, onAction: onAction))
         selOpsSubmenu.addItem(item(.copy, onAction: onAction))
@@ -150,6 +140,16 @@ enum ContextMenuNSMenuBuilder {
         }
         selOpsItem.submenu = selOpsSubmenu
         menu.addItem(selOpsItem)
+        menu.addItem(.separator())
+        menu.addItem(item(.copyAsPathname, onAction: onAction))
+        menu.addItem(.separator())
+        menu.addItem(item(.compress, onAction: onAction))
+        menu.addItem(item(.share, onAction: onAction))
+        menu.addItem(.separator())
+        menu.addItem(item(.revealInFinder, onAction: onAction))
+        menu.addItem(.separator())
+        menu.addItem(item(.mirrorPanel, onAction: onAction))
+        menu.addItem(item(.addToFavorites, onAction: onAction))
         if !optionHeld {
             appendHintIfNeeded(menu)
         }
@@ -161,6 +161,19 @@ enum ContextMenuNSMenuBuilder {
         onAction: @escaping (PanelBackgroundAction) -> Void
     ) -> NSMenu {
         let menu = NSMenu()
+        // File Operations submenu (always at top)
+        let bgOpsSubmenu = NSMenu()
+        bgOpsSubmenu.addItem(item(.paste, onAction: onAction, isEnabled: ClipboardManager.shared.hasContent))
+        bgOpsSubmenu.addItem(.separator())
+        bgOpsSubmenu.addItem(item(.newFolder, onAction: onAction))
+        bgOpsSubmenu.addItem(item(.newFile, onAction: onAction))
+        let bgOpsItem = NSMenuItem(title: "􀉒 File Operations", action: nil, keyEquivalent: "")
+        if let img = NSImage(systemSymbolName: "ellipsis.circle", accessibilityDescription: nil) {
+            bgOpsItem.image = img
+        }
+        bgOpsItem.submenu = bgOpsSubmenu
+        menu.addItem(bgOpsItem)
+        menu.addItem(.separator())
         menu.addItem(item(.goUp, onAction: onAction))
         menu.addItem(item(.goBack, onAction: onAction))
         menu.addItem(item(.goForward, onAction: onAction))
@@ -175,11 +188,7 @@ enum ContextMenuNSMenuBuilder {
         menu.addItem(.separator())
         menu.addItem(item(.mirrorPath, onAction: onAction))
         menu.addItem(item(.openMarkedOnOtherPanel, onAction: onAction))
-        if optionHeld {
-            menu.addItem(.separator())
-            menu.addItem(item(.newFolder, onAction: onAction))
-            menu.addItem(item(.newFile, onAction: onAction))
-        } else {
+        if !optionHeld {
             appendHintIfNeeded(menu)
         }
         return menu

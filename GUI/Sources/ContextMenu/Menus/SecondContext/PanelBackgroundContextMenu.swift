@@ -31,6 +31,13 @@ struct PanelBackgroundContextMenu: View {
     var body: some View {
         Group {
             // ═══════════════════════════════════════════
+            // SECTION 0: File Operations submenu (always visible)
+            // ═══════════════════════════════════════════
+            backgroundFileOpsMenu
+            
+            Divider()
+            
+            // ═══════════════════════════════════════════
             // SECTION 1: Navigation
             // ═══════════════════════════════════════════
             menuButton(.goUp)
@@ -41,17 +48,7 @@ struct PanelBackgroundContextMenu: View {
             Divider()
             
             // ═══════════════════════════════════════════
-            // SECTION 2: Create (⌥ Option only)
-            // ═══════════════════════════════════════════
-            if isOptionHeld {
-                menuButton(.newFolder)
-                menuButton(.newFile)
-                
-                Divider()
-            }
-            
-            // ═══════════════════════════════════════════
-            // SECTION 3: Clipboard
+            // SECTION 2: Clipboard
             // ═══════════════════════════════════════════
             menuButton(.paste)
             menuButton(.copyAsPathname)
@@ -59,7 +56,7 @@ struct PanelBackgroundContextMenu: View {
             Divider()
             
             // ═══════════════════════════════════════════
-            // SECTION 4: Sort submenu
+            // SECTION 3: Sort submenu
             // ═══════════════════════════════════════════
             Menu {
                 menuButton(.sortByName)
@@ -73,7 +70,7 @@ struct PanelBackgroundContextMenu: View {
             Divider()
             
             // ═══════════════════════════════════════════
-            // SECTION 5: Open in external apps
+            // SECTION 4: Open in external apps
             // ═══════════════════════════════════════════
             menuButton(.openInFinder)
             menuButton(.openInTerminal)
@@ -81,7 +78,7 @@ struct PanelBackgroundContextMenu: View {
             Divider()
             
             // ═══════════════════════════════════════════
-            // SECTION 6: Cross-panel
+            // SECTION 5: Cross-panel
             // ═══════════════════════════════════════════
             menuButton(.mirrorPath)
             if hasMarkedDirectories {
@@ -91,11 +88,29 @@ struct PanelBackgroundContextMenu: View {
             Divider()
             
             // ═══════════════════════════════════════════
-            // SECTION 7: Info & Favorites
+            // SECTION 6: Info & Favorites
             // ═══════════════════════════════════════════
             menuButton(.getInfo)
             menuButton(.addToFavorites)
 
+        }
+    }
+    
+    // MARK: - File Operations Submenu
+    
+    @ViewBuilder
+    private var backgroundFileOpsMenu: some View {
+        Menu {
+            menuButton(.paste)
+            Divider()
+            menuButton(.newFolder)
+            menuButton(.newFile)
+        } label: {
+            Label {
+                Text("􀉒 File Operations")
+            } icon: {
+                Image(systemName: "ellipsis.circle")
+            }
         }
     }
     
