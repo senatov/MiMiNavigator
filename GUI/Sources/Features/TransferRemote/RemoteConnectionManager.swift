@@ -92,7 +92,7 @@ final class RemoteConnectionManager {
 
     // MARK: - Auto-connect
     func connectOnStartIfNeeded() async {
-        let serversToConnect = RemoteServerStore.shared.servers.filter { $0.connectOnStart }
+        let serversToConnect = RemoteServerStore.shared.servers.filter { shouldAutoConnectOnStart($0) }
         log.info("\(#function) auto-connecting \(serversToConnect.count) server(s)")
         guard !serversToConnect.isEmpty else { return }
 
@@ -144,6 +144,19 @@ final class RemoteConnectionManager {
         }
     }
 
+    private func shouldAutoConnectOnStart(_ server: RemoteServer) -> Bool {
+        guard server.connectOnStart else { return false }
+        guard !connectionIsActive(for: server) else {
+            log.debug("[RemoteConnectionManager] auto-connect skipped for \(server.displayName): already connected")
+            return false
+        }
+        return true
+    }
+
+    private func connectionIsActive(for server: RemoteServer) -> Bool {
+        connection(for: server) != nil
+    }
+
     private func requiresDeferredStartupConnect(for server: RemoteServer) -> Bool {
         false
     }
@@ -180,8 +193,7 @@ final class RemoteConnectionManager {
     }
 
     private func reuseConnection(_ connection: RemoteConnection) {
-        log.warning("\(#function) already connected")
-        log.warning("\(#function) reusing existing connection")
+        log.info("[RemoteConnectionManager] reusing existing connection for \(connection.displayName)")
         activeConnectionID = connection.id
     }
 
@@ -250,6 +262,7 @@ final class RemoteConnectionManager {
         await disconnectConnection(connection)
         removeConnection(at: connectionIndex)
         updateActiveConnectionAfterDisconnect(id: id)
+        disableConnectOnStartAfterManualDisconnect(for: connection.server)
 
         log.info("\(#function) \(connection.displayName)")
         log.info("\(#function) remaining=\(connections.count)")
@@ -266,6 +279,19 @@ final class RemoteConnectionManager {
     private func updateActiveConnectionAfterDisconnect(id: UUID) {
         guard activeConnectionID == id else { return }
         activeConnectionID = connections.first?.id
+    }
+
+    private func disableConnectOnStartAfterManualDisconnect(for server: RemoteServer) {
+        guard server.connectOnStart else {
+            log.debug("[RemoteConnectionManager] manual disconnect keeps connectOnStart=false for \(server.displayName)")
+            return
+        }
+
+        var updated = server
+        updated.connectOnStart = false
+        updated.lastErrorDetail = nil
+        RemoteServerStore.shared.update(updated)
+        log.info("[RemoteConnectionManager] manual disconnect disabled reconnect on start for \(server.displayName)")
     }
 
     func disconnectAll() async {
