@@ -21,13 +21,6 @@ enum ArchiveExtractor {
         return env
     }
 
-    private static func makeProcess(executablePath: String) -> Process {
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: executablePath)
-        process.environment = utf8Env()
-        process.standardInput = FileHandle(forReadingAtPath: "/dev/null")
-        return process
-    }
 
     private static func zipArgs(
         archiveURL: URL,
