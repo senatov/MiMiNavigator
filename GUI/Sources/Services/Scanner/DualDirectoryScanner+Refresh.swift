@@ -52,6 +52,11 @@ extension DualDirectoryScanner {
 
     func refreshFiles(currSide: FavPanelSide, force: Bool = false) async {
         if Task.isCancelled { return }
+        let isTerminating = await MainActor.run { appState.isTerminating }
+        guard !isTerminating else {
+            log.info("[Scan] refreshFiles skipped: app is terminating for \(currSide)")
+            return
+        }
         guard canStartRefresh(for: currSide, force: force) else { return }
 
         if force {
@@ -203,6 +208,11 @@ extension DualDirectoryScanner {
     func performRefreshFiles(currSide: FavPanelSide, generation: Int) async {
         let scanStart = Date()
         let panelState = await MainActor.run { currentPanelState(for: currSide) }
+        let isTerminatingAtStart = await MainActor.run { appState.isTerminating }
+        guard !isTerminatingAtStart else {
+            log.info("[Scan] performRefreshFiles skipped before scan: app is terminating for \(currSide)")
+            return
+        }
         let originalURL = panelState.url
         let showHidden = panelState.showHidden
         let sortKey = panelState.sortKey
@@ -255,6 +265,12 @@ extension DualDirectoryScanner {
                 let duration = Date().timeIntervalSince(scanStart)
                 let durationText = String(format: "%.3f", duration)
                 log.info("[Scan] Succeeded for \(url.path): \(sorted.count) items gen=\(generation) in \(durationText)s")
+
+                let isTerminatingBeforePublish = await MainActor.run { appState.isTerminating }
+                guard !isTerminatingBeforePublish else {
+                    log.info("[Scan] publish skipped: app is terminating for \(currSide) gen=\(generation)")
+                    return
+                }
 
                 lastFullScan[currSide] = Date()
                 await DirectoryContentCache.shared.store(path: url.path, files: sorted, showHidden: showHidden)

@@ -16,6 +16,8 @@ struct DuoFilePanelView: View {
     @State private var leftPanelWidth: CGFloat = 0
     @State private var isInitialized = false
     @State private var lastContainerWidth: CGFloat = 0
+    @State private var pendingContainerWidth: CGFloat = 0
+    @State private var isGeometryUpdateScheduled = false
     @State private var keyboardHandler: DuoFilePanelKeyboardHandler?
 
     // MARK: - Persisted divider position (via MiMiDefaults JSON storage)
@@ -94,21 +96,39 @@ struct DuoFilePanelView: View {
             }
             Color.clear
                 .onAppear {
-                    handleGeometryAppear(width: geometry.size.width)
+                    scheduleGeometryWidthUpdate(geometry.size.width)
                 }
-                .onChange(of: geometry.size.width) { oldWidth, newWidth in
-                    handleGeometryWidthChange(oldWidth: oldWidth, newWidth: newWidth)
+                .onChange(of: geometry.size.width) { _, newWidth in
+                    scheduleGeometryWidthUpdate(newWidth)
                 }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    private func handleGeometryAppear(width: CGFloat) {
-        handleInitialLayout(containerWidth: width)
+    private func scheduleGeometryWidthUpdate(_ width: CGFloat) {
+        guard width > 0 else { return }
+
+        pendingContainerWidth = width
+        guard !isGeometryUpdateScheduled else { return }
+        isGeometryUpdateScheduled = true
+
+        DispatchQueue.main.async {
+            let resolvedWidth = pendingContainerWidth
+            pendingContainerWidth = 0
+            isGeometryUpdateScheduled = false
+            applyGeometryWidthUpdate(resolvedWidth)
+        }
     }
 
-    private func handleGeometryWidthChange(oldWidth: CGFloat, newWidth: CGFloat) {
-        handleResize(oldWidth: oldWidth, newWidth: newWidth)
+    private func applyGeometryWidthUpdate(_ width: CGFloat) {
+        guard width > 0 else { return }
+
+        if !isInitialized {
+            handleInitialLayout(containerWidth: width)
+            return
+        }
+
+        handleResize(oldWidth: lastContainerWidth, newWidth: width)
     }
 
     private func onAppear() {
@@ -174,7 +194,9 @@ struct DuoFilePanelView: View {
 
         log.debug("\(#function) \(Int(trackedOldWidth))→\(Int(newWidth)) ratio=\(String(format: "%.3f", ratio)) left=\(Int(resizedWidth))")
 
-        leftPanelWidth = resizedWidth
+        if abs(leftPanelWidth - resizedWidth) >= 0.5 {
+            leftPanelWidth = resizedWidth
+        }
         lastContainerWidth = newWidth
     }
 
@@ -255,11 +277,14 @@ extension DuoFilePanelView {
             log.info("\(#function) no saved divider, using 50/50: \(Int(proposed))")
         }
 
-        leftPanelWidth = calculateConstrainedWidth(
+        let resolvedWidth = calculateConstrainedWidth(
             proposed: proposed,
             containerWidth: containerWidth
         )
-        log.info("\(#function) → leftPanelWidth=\(Int(leftPanelWidth))")
+        if abs(leftPanelWidth - resolvedWidth) >= 0.5 {
+            leftPanelWidth = resolvedWidth
+        }
+        log.info("\(#function) → leftPanelWidth=\(Int(resolvedWidth))")
     }
 
     private func calculateConstrainedWidth(proposed: CGFloat, containerWidth: CGFloat) -> CGFloat {

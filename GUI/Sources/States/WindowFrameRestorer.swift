@@ -60,28 +60,86 @@ final class WindowFrameRestorer {
 
 
     private func findMainWindow() -> NSWindow? {
-        NSApp.windows.first { win in
-            !(win is NSPanel) && win.contentView != nil
+        let candidateWindows = NSApp.windows.filter { win in
+            !(win is NSPanel) && win.contentView != nil && win.isVisible
         }
+
+        if let mainWindow = candidateWindows.first(where: { $0.isMainWindow }) {
+            return mainWindow
+        }
+
+        if let keyWindow = candidateWindows.first(where: { $0.isKeyWindow }) {
+            return keyWindow
+        }
+
+        return candidateWindows.first
     }
 
 
     private func applyFrame(to win: NSWindow) {
         didRestore = true
-        if let savedFrame = StatePersistence.restoreWindowFrame(),
-           isUsable(savedFrame) {
-            win.setFrame(savedFrame, display: true, animate: false)
-            StatePersistence.lastKnownWindowFrame = savedFrame
-            log.info("[WindowFrameRestorer] restored saved frame \(fmtRect(savedFrame))")
+
+        if let savedFrame = StatePersistence.restoreWindowFrame() {
+            if isUsable(savedFrame) {
+                win.setFrame(savedFrame, display: true, animate: false)
+                StatePersistence.lastKnownWindowFrame = savedFrame
+                log.info("[WindowFrameRestorer] restored saved frame \(fmtRect(savedFrame))")
+                StatePersistence.startTrackingWindowFrame()
+                return
+            }
+
+            if let adjustedFrame = adjustedFrameIfPossible(savedFrame) {
+                win.setFrame(adjustedFrame, display: true, animate: false)
+                StatePersistence.lastKnownWindowFrame = adjustedFrame
+                log.warning("[WindowFrameRestorer] adjusted unusable saved frame \(fmtRect(savedFrame)) -> \(fmtRect(adjustedFrame))")
+                StatePersistence.startTrackingWindowFrame()
+                return
+            }
+
+            log.warning("[WindowFrameRestorer] saved frame rejected as unusable: \(fmtRect(savedFrame))")
         } else {
-            let fallback = centeredDefault()
-            win.setFrame(fallback, display: true, animate: false)
-            StatePersistence.lastKnownWindowFrame = fallback
-            log.info("[WindowFrameRestorer] applied default frame \(fmtRect(fallback))")
+            log.info("[WindowFrameRestorer] no saved frame found — using default frame")
         }
+
+        let fallback = centeredDefault()
+        win.setFrame(fallback, display: true, animate: false)
+        StatePersistence.lastKnownWindowFrame = fallback
+        log.info("[WindowFrameRestorer] applied default frame \(fmtRect(fallback))")
+
         // no setFrameAutosaveName — we own frame persistence via state.json;
         // autosave races with our setFrame and can overwrite it silently
         StatePersistence.startTrackingWindowFrame()
+    }
+
+    private func adjustedFrameIfPossible(_ rect: NSRect) -> NSRect? {
+        guard let targetScreen = preferredScreen(for: rect) else { return nil }
+
+        let visibleFrame = targetScreen.visibleFrame
+        let width = min(max(rect.width, Self.minWidth), visibleFrame.width)
+        let height = min(max(rect.height, Self.minHeight), visibleFrame.height)
+        let maxX = visibleFrame.maxX - width
+        let maxY = visibleFrame.maxY - height
+        let originX = min(max(rect.origin.x, visibleFrame.minX), maxX)
+        let originY = min(max(rect.origin.y, visibleFrame.minY), maxY)
+        let adjusted = NSRect(x: originX, y: originY, width: width, height: height)
+
+        return isUsable(adjusted) ? adjusted : nil
+    }
+
+    private func preferredScreen(for rect: NSRect) -> NSScreen? {
+        if let intersectingScreen = NSScreen.screens.first(where: { $0.visibleFrame.intersects(rect) }) {
+            return intersectingScreen
+        }
+
+        if let containingScreen = NSScreen.screens.first(where: { screen in
+            let visibleFrame = screen.visibleFrame
+            return rect.midX >= visibleFrame.minX && rect.midX <= visibleFrame.maxX
+                && rect.midY >= visibleFrame.minY && rect.midY <= visibleFrame.maxY
+        }) {
+            return containingScreen
+        }
+
+        return NSScreen.main ?? NSScreen.screens.first
     }
 
 

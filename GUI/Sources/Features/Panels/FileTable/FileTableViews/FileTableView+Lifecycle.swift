@@ -64,6 +64,10 @@ extension FileTableView {
     }
 
     func handleAppDidBecomeActive() {
+        guard !appState.isTerminating else {
+            log.info("[FileTableView] app-activation refresh skipped panel=\(panelSide) — app is terminating")
+            return
+        }
         guard !isMenuTracking else {
             log.debug("[FileTableView] app-activation refresh skipped panel=\(panelSide) while menu is open")
             return
@@ -76,6 +80,10 @@ extension FileTableView {
 
         log.info("[FileTableView] app became active — refreshing panel=\(panelSide) path='\(currentPanelPath)'")
         Task {
+            guard !appState.isTerminating else {
+                log.info("[FileTableView] app-activation refresh task cancelled panel=\(panelSide) — app is terminating")
+                return
+            }
             await appState.scanner.refreshFiles(currSide: panelSide)
         }
     }

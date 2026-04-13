@@ -21,6 +21,8 @@ import AppKit
     private let tabKeyCode: UInt16 = 48
     private let startupDate = CFAbsoluteTimeGetCurrent()
     private var didLogStartupCompletion = false
+    private var isTerminationCleanupRunning = false
+    private let terminationSaveDebounceInterval: TimeInterval = 1.0
 
     private func logStartupStep(_ message: String) {
         let elapsed = CFAbsoluteTimeGetCurrent() - startupDate
@@ -121,6 +123,11 @@ import AppKit
     // MARK: - Focus
 
     func applicationDidBecomeActive(_ notification: Notification) {
+        if isTerminationCleanupRunning || appState?.isTerminating == true {
+            log.info("[AppDelegate] applicationDidBecomeActive ignored — app is terminating")
+            return
+        }
+
         NetworkNeighborhoodCoordinator.shared.bringToFront()
         ConnectToServerCoordinator.shared.bringToFront()
         FindFilesCoordinator.shared.bringToFront()
@@ -132,8 +139,22 @@ import AppKit
     /// Returns .terminateLater so we can do async cleanup before exit.
     /// All work must complete and call reply(.now) within the OS timeout (~5 s).
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        if isTerminationCleanupRunning {
+            log.info("[AppDelegate] applicationShouldTerminate — cleanup already running")
+            return .terminateLater
+        }
+
+        isTerminationCleanupRunning = true
+        appState?.beginTermination()
+        NSApp.deactivate()
         log.info("[AppDelegate] applicationShouldTerminate — starting async cleanup")
-        Task {
+
+        Task { [weak self] in
+            guard let self else {
+                NSApplication.shared.reply(toApplicationShouldTerminate: true)
+                return
+            }
+
             await performCleanupBeforeExit()
             log.info("[AppDelegate] cleanup done — replying .now")
             NSApplication.shared.reply(toApplicationShouldTerminate: true)
@@ -145,7 +166,11 @@ import AppKit
     /// Must finish in well under 5 s to avoid macOS force-killing the process.
     private func performCleanupBeforeExit() async {
         // 1. Save panel state and cache — synchronous, fast
-        appState?.saveBeforeExit()
+        if shouldSkipTerminationStateSave() {
+            log.info("[AppDelegate] performCleanupBeforeExit — skipping duplicate saveBeforeExit")
+        } else {
+            appState?.saveBeforeExit()
+        }
         // 2. Stop scanner timers and FSEvents streams — synchronous actor work
         if let scanner = appState?.scanner {
             await scanner.stopMonitoring()
@@ -157,6 +182,28 @@ import AppKit
         // 5. Release security-scoped bookmarks — actor hop, fast
         await BookmarkStore.shared.stopAll()
         log.info("[AppDelegate] performCleanupBeforeExit complete")
+    }
+
+    private func shouldSkipTerminationStateSave() -> Bool {
+        let urls = [
+            FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".mimi/state.json"),
+            FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".mimi/panel_startup_cache.json")
+        ]
+
+        let now = Date()
+        let recentlySaved = urls.contains { url in
+            guard let modificationDate = try? FileManager.default.attributesOfItem(atPath: url.path)[.modificationDate] as? Date else {
+                return false
+            }
+
+            return now.timeIntervalSince(modificationDate) <= terminationSaveDebounceInterval
+        }
+
+        if recentlySaved {
+            log.debug("[AppDelegate] recent state file modification detected — debounce active")
+        }
+
+        return recentlySaved
     }
 
     // MARK: - applicationWillTerminate — key monitor cleanup only

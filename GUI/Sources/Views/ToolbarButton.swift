@@ -165,8 +165,7 @@ struct ToolbarButton: View {
     let action: () -> Void
 
     var body: some View {
-        log.debug(#function)
-        return Button(action: action) {
+        Button(action: action) {
             ToolbarIcon(name: systemImage)
         }
         .buttonStyle(.borderless)
@@ -185,8 +184,7 @@ struct ToolbarToggleButton: View {
     let action: () -> Void
 
     var body: some View {
-        log.debug(#function)
-        return Button(action: action) {
+        Button(action: action) {
             ToolbarIcon(name: isActive ? activeImage : systemImage, active: isActive)
         }
         .buttonStyle(.borderless)

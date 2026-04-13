@@ -46,6 +46,11 @@ extension AppState {
     /// Refresh a panel using route detection.
     /// Remote panels go through remote listing only. Local panels go through the scanner pipeline.
     func refreshPanel(for panel: FavPanelSide, force: Bool = false) async {
+        guard !isTerminating else {
+            log.info("[REFRESH] skip panel=\(panel) force=\(force) — app is terminating")
+            return
+        }
+
         log.debug("[REFRESH] start panel=\(panel) force=\(force)")
         setLoading(true, for: panel)
         defer {

@@ -52,6 +52,7 @@ final class AppState {
     var selectedDir: DirectorySelection = .init()
     var showFavTreePopup: Bool = false
     var showNetworkNeighborhood: Bool = false
+    var isTerminating: Bool = false
 
     // MARK: - Loading State
     /// Explicit loading flags for panels (used by UI instead of guessing from scanner)
@@ -135,6 +136,12 @@ final class AppState {
         } else {
             rightURL = URL(fileURLWithPath: path)
         }
+    }
+
+    func beginTermination() {
+        guard !isTerminating else { return }
+        isTerminating = true
+        log.info("[AppState] beginTermination")
     }
 
     // MARK: - Init

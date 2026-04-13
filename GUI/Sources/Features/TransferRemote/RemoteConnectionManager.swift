@@ -103,6 +103,16 @@ final class RemoteConnectionManager {
             }
 
             autoConnectAttemptedServerIDs.insert(server.id)
+
+            guard supportsAutoConnectOnStart(for: server.remoteProtocol) else {
+                let detail = unsupportedProtocolDetail(for: server)
+                log.info(
+                    "[RemoteConnectionManager] auto-connect disabled for \(server.displayName): protocol=\(server.remoteProtocol.rawValue) is not supported in this build"
+                )
+                updateServerResult(server, result: .error, errorDetail: detail)
+                continue
+            }
+
             await connectOnStartIfPossible(server: server)
         }
 
@@ -110,15 +120,6 @@ final class RemoteConnectionManager {
     }
 
     private func connectOnStartIfPossible(server: RemoteServer) async {
-        guard supportsAutoConnectOnStart(for: server.remoteProtocol) else {
-            let detail = unsupportedProtocolDetail(for: server)
-            log.warning(
-                "[RemoteConnectionManager] auto-connect skipped for \(server.displayName): unsupported protocol=\(server.remoteProtocol.rawValue)"
-            )
-            log.warning("[RemoteConnectionManager] diagnostic: \(detail)")
-            updateServerResult(server, result: .error, errorDetail: detail)
-            return
-        }
 
         guard !requiresDeferredStartupConnect(for: server) else {
             log.info("[RemoteConnectionManager] auto-connect deferred for \(server.displayName): startup password access disabled")
@@ -144,11 +145,11 @@ final class RemoteConnectionManager {
     }
 
     private func requiresDeferredStartupConnect(for server: RemoteServer) -> Bool {
-        supportsAutoConnectOnStart(for: server.remoteProtocol)
+        false
     }
 
     private func unsupportedProtocolDetail(for server: RemoteServer) -> String {
-        "SMB is not implemented in this build. host=\(server.host) port=\(server.port) user=\(server.user) path=\(server.remotePath.isEmpty ? "/" : server.remotePath)"
+        "Protocol \(server.remoteProtocol.rawValue) is not implemented in this build. host=\(server.host) port=\(server.port) user=\(server.user) path=\(server.remotePath.isEmpty ? "/" : server.remotePath)"
     }
 
     // MARK: - Connect
