@@ -20,15 +20,6 @@ final class DragNSView: NSView, NSDraggingSource {
     private var mouseMonitor: Any?
     private var dragMonitor: Any?
 
-    private enum UI {
-        static let dragThreshold: CGFloat = 5.0
-        static let dragStartTolerance: CGFloat = 10.0
-        static let dropTargetProbeYOffset: CGFloat = 14.0
-        static let dropPreviewSize = NSSize(width: 36, height: 36)
-        static let dropPreviewFadeDuration: TimeInterval = 0.16
-        static let dropPreviewEndScale: CGFloat = 0.92
-    }
-
     init(appState: AppState) {
         self.appState = appState
         super.init(frame: .zero)
@@ -108,7 +99,7 @@ final class DragNSView: NSView, NSDraggingSource {
         guard hasDragDependencies() else { return false }
         let currentWindowPoint = event.locationInWindow
         let currentPoint = convert(currentWindowPoint, from: nil)
-        guard expandedBounds(tolerance: UI.dragStartTolerance).contains(currentPoint) else { return false }
+        guard expandedBounds(tolerance: DragNSViewUI.dragStartTolerance).contains(currentPoint) else { return false }
         guard passedDragThreshold(from: mouseDownPoint, to: currentWindowPoint) else { return false }
         guard !cachedSelection.isEmpty else { return false }
         beginDrag(with: cachedSelection, event: event)
@@ -177,11 +168,6 @@ final class DragNSView: NSView, NSDraggingSource {
 
         handleInternalDragEnd(screenPoint: screenPoint)
     }
-    private struct DragLocationContext {
-        let cursorScreenPoint: NSPoint
-        let probeScreenPoint: NSPoint
-        let windowPoint: NSPoint
-    }
 
     private func hasWindowContext(for event: NSEvent) -> Bool {
         guard let window = self.window else { return false }
@@ -234,6 +220,32 @@ final class DragNSView: NSView, NSDraggingSource {
         targetURL ?? appState.url(for: side)
     }
 
+    private func shouldIgnoreInternalDrop(
+        from sourceSide: FavPanelSide,
+        to destinationSide: FavPanelSide,
+        targetURL: URL?,
+        screenPoint: NSPoint,
+        window: NSWindow
+    ) -> Bool {
+        guard sourceSide == destinationSide else { return false }
+        guard targetURL == nil else { return false }
+        return isDropNearDragStart(screenPoint: screenPoint, window: window)
+            || isDropInsideSourcePanel(screenPoint: screenPoint, window: window)
+    }
+
+    private func isDropNearDragStart(screenPoint: NSPoint, window: NSWindow) -> Bool {
+        guard let startWindowPoint = dragState.startPoint else { return false }
+        let endWindowPoint = window.convertPoint(fromScreen: screenPoint)
+        let distance = hypot(endWindowPoint.x - startWindowPoint.x, endWindowPoint.y - startWindowPoint.y)
+        return distance <= DragNSViewUI.samePanelDropReturnTolerance
+    }
+
+    private func isDropInsideSourcePanel(screenPoint: NSPoint, window: NSWindow) -> Bool {
+        let endWindowPoint = window.convertPoint(fromScreen: screenPoint)
+        let panelFrame = panelFrameInWindowCoordinates()
+        return panelFrame.contains(endWindowPoint)
+    }
+
     private func handleExternalDragEnd(screenPoint: NSPoint, operation: NSDragOperation) -> Bool {
         guard operation != [] else { return false }
 
@@ -267,6 +279,19 @@ final class DragNSView: NSView, NSDraggingSource {
         )
         let dropSide = dropContext.side
         let dirUnderCursor = dropContext.target
+
+        if shouldIgnoreInternalDrop(
+            from: panelSide,
+            to: dropSide,
+            targetURL: dirUnderCursor,
+            screenPoint: screenPoint,
+            window: window
+        ) {
+            dragDropManager.endDrag()
+            log.info("[DragNSView] internal drop ignored: returned to origin panel without valid target")
+            return
+        }
+
         let destination = resolveDropDestination(side: dropSide, targetURL: dirUnderCursor, appState: appState)
         log.info(
             "[DragNSView] internal drop: \(files.count) file(s) → \(dropSide) (\(destination.lastPathComponent)) subdir=\(dirUnderCursor != nil)"
@@ -352,7 +377,7 @@ final class DragNSView: NSView, NSDraggingSource {
         log.debug("[DragNSView] drop preview fade-out started at \(overlayPoint)")
 
         NSAnimationContext.runAnimationGroup { context in
-            context.duration = UI.dropPreviewFadeDuration
+            context.duration = DragNSViewUI.dropPreviewFadeDuration
             context.timingFunction = CAMediaTimingFunction(name: .easeOut)
             previewView.animator().alphaValue = 0.0
             previewView.animator().frame = dropPreviewScaledFrame(from: previewFrame)
@@ -365,22 +390,22 @@ final class DragNSView: NSView, NSDraggingSource {
 
     private func makeDropPreviewImage(from files: [CustomFile]) -> NSImage? {
         let image = NSImage(systemSymbolName: "doc.fill", accessibilityDescription: "Dragged file")
-        image?.size = UI.dropPreviewSize
+        image?.size = DragNSViewUI.dropPreviewSize
         return image
     }
 
     private func dropPreviewFrame(centeredAt point: NSPoint) -> NSRect {
         NSRect(
-            x: point.x - (UI.dropPreviewSize.width / 2),
-            y: point.y - (UI.dropPreviewSize.height / 2),
-            width: UI.dropPreviewSize.width,
-            height: UI.dropPreviewSize.height
+            x: point.x - (DragNSViewUI.dropPreviewSize.width / 2),
+            y: point.y - (DragNSViewUI.dropPreviewSize.height / 2),
+            width: DragNSViewUI.dropPreviewSize.width,
+            height: DragNSViewUI.dropPreviewSize.height
         )
     }
 
     private func dropPreviewScaledFrame(from frame: NSRect) -> NSRect {
-        let scaledWidth = frame.width * UI.dropPreviewEndScale
-        let scaledHeight = frame.height * UI.dropPreviewEndScale
+        let scaledWidth = frame.width * DragNSViewUI.dropPreviewEndScale
+        let scaledHeight = frame.height * DragNSViewUI.dropPreviewEndScale
         return NSRect(
             x: frame.midX - (scaledWidth / 2),
             y: frame.midY - (scaledHeight / 2),
@@ -405,7 +430,7 @@ final class DragNSView: NSView, NSDraggingSource {
     private func dropTargetProbeScreenPoint(from cursorScreenPoint: NSPoint) -> NSPoint {
         NSPoint(
             x: cursorScreenPoint.x,
-            y: cursorScreenPoint.y + UI.dropTargetProbeYOffset
+            y: cursorScreenPoint.y + DragNSViewUI.dropTargetProbeYOffset
         )
     }
 
@@ -425,6 +450,6 @@ final class DragNSView: NSView, NSDraggingSource {
     }
 
     private func passedDragThreshold(from start: NSPoint, to current: NSPoint) -> Bool {
-        hypot(current.x - start.x, current.y - start.y) >= UI.dragThreshold
+        hypot(current.x - start.x, current.y - start.y) >= DragNSViewUI.dragThreshold
     }
 }
