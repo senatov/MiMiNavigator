@@ -37,22 +37,14 @@ private final class TooltipWindow {
 
     func show(text: String, near screenPoint: NSPoint) {
         hide()
-
         let label = AnyView(
             Text(text)
                 .font(.system(size: 11))
-                .foregroundStyle(Color.primary)
+                .foregroundStyle(Color.blue)
                 .padding(.horizontal, 8)
                 .padding(.vertical, 5)
-                .background(
-                    RoundedRectangle(cornerRadius: 5, style: .continuous)
-                        .fill(Color(nsColor: .windowBackgroundColor))
-                        .shadow(color: .black.opacity(0.18), radius: 4, y: 2)
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 5, style: .continuous)
-                        .stroke(Color(nsColor: .separatorColor), lineWidth: 0.5)
-                )
+                .glassEffect(in: .rect(cornerRadius: 16.0))
+                .buttonStyle(.glass)
         )
 
         let hosting = NSHostingView(rootView: label)
@@ -68,7 +60,7 @@ private final class TooltipWindow {
         p.isOpaque = false
         p.backgroundColor = .clear
         p.level = .floating
-        p.hasShadow = false
+        p.hasShadow = true
         p.contentView = hosting
         p.isReleasedWhenClosed = false
         p.animationBehavior = .utilityWindow
