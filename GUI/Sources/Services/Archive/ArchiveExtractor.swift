@@ -21,6 +21,65 @@ enum ArchiveExtractor {
         return env
     }
 
+    private static func makeProcess(executablePath: String) -> Process {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: executablePath)
+        process.environment = utf8Env()
+        process.standardInput = FileHandle(forReadingAtPath: "/dev/null")
+        return process
+    }
+
+    private static func zipArgs(
+        archiveURL: URL,
+        destination: URL,
+        password: String?
+    ) -> [String] {
+        var args = ["-o"]
+
+        if let pwd = password, !pwd.isEmpty {
+            args += ["-P", pwd]
+        }
+
+        args += [archiveURL.path, "-d", destination.path]
+        return args
+    }
+
+    private static func tarArgs(
+        archiveURL: URL,
+        format: ArchiveFormat,
+        destination: URL
+    ) -> [String] {
+        var args = ["-xv", "--delay-directory-restore"]
+
+        switch format {
+        case .tarGz:
+            args.append("-z")
+        case .tarBz2:
+            args.append("-j")
+        case .tarXz:
+            args.append("-J")
+        default:
+            break
+        }
+
+        args += ["-f", archiveURL.path, "-C", destination.path]
+        return args
+    }
+
+    private static func sevenZipArgs(
+        archiveURL: URL,
+        destination: URL,
+        password: String?
+    ) -> [String] {
+        var args = ["x", archiveURL.path, "-o\(destination.path)", "-y", "-bb1"]
+
+        if let pwd = password, !pwd.isEmpty {
+            args.append("-p\(pwd)")
+        }
+
+        return args
+    }
+
     @concurrent static func extract(
         archiveURL: URL,
         format: ArchiveFormat,
@@ -99,14 +158,11 @@ enum ArchiveExtractor {
         let errPipe = Pipe()
         let outPipe = Pipe()
         let process = makeProcess(executablePath: "/usr/bin/unzip")
-        var args = ["-o", "-DD"]
-
-        if let pwd = password, !pwd.isEmpty {
-            args += ["-P", pwd]
-        }
-
-        args += [archiveURL.path, "-d", destination.path]
-        process.arguments = args
+        process.arguments = zipArgs(
+            archiveURL: archiveURL,
+            destination: destination,
+            password: password
+        )
         process.standardOutput = outPipe
         process.standardError = errPipe
         handle?.set(process)
@@ -123,21 +179,11 @@ enum ArchiveExtractor {
         let errPipe = Pipe()
         let outPipe = Pipe()
         let process = makeProcess(executablePath: "/usr/bin/tar")
-        var args = ["-xv"]
-
-        switch format {
-        case .tarGz:
-            args.append("-z")
-        case .tarBz2:
-            args.append("-j")
-        case .tarXz:
-            args.append("-J")
-        default:
-            break
-        }
-
-        args += ["-f", archiveURL.path, "-C", destination.path]
-        process.arguments = args
+        process.arguments = tarArgs(
+            archiveURL: archiveURL,
+            format: format,
+            destination: destination
+        )
         process.standardOutput = outPipe
         process.standardError = errPipe
         handle?.set(process)
@@ -202,13 +248,11 @@ enum ArchiveExtractor {
         let errPipe = Pipe()
         let outPipe = Pipe()
         let process = makeProcess(executablePath: try ArchiveToolLocator.find7z())
-        var args = ["x", archiveURL.path, "-o\(destination.path)", "-y", "-bb1"]
-
-        if let pwd = password, !pwd.isEmpty {
-            args.append("-p\(pwd)")
-        }
-
-        process.arguments = args
+        process.arguments = sevenZipArgs(
+            archiveURL: archiveURL,
+            destination: destination,
+            password: password
+        )
         process.standardOutput = outPipe
         process.standardError = errPipe
         handle?.set(process)
