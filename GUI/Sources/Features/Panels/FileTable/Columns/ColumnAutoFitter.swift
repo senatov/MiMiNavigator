@@ -128,24 +128,28 @@ enum ColumnAutoFitter {
         return texts.map { ($0 as NSString).size(withAttributes: attributes).width }
     }
 
-    /// Statistical weighted average: each sample's weight = its own width.
-    /// Wider strings contribute more → result biased toward the widest entries.
-    /// Formula: Σ(w_i²) / Σ(w_i) — gives ~85th percentile behavior naturally.
+    /// Trimmed weighted average: discard 10% smallest and 10% largest widths,
+    /// then compute weighted average on the remaining 80% (weight = width itself).
+    /// Formula on trimmed set: Σ(w_i²) / Σ(w_i)
     private static func weightedAverageContentWidth(_ measuredWidths: [CGFloat], for column: ColumnID) -> CGFloat {
         guard !measuredWidths.isEmpty else { return emptyColumnWidth }
-        let sumW = measuredWidths.reduce(0, +)
+        let trimmed = trimmedWidths(measuredWidths, trimFraction: 0.10)
+        guard !trimmed.isEmpty else { return emptyColumnWidth }
+        let sumW = trimmed.reduce(0, +)
         guard sumW > 0 else { return emptyColumnWidth }
-        let sumWW = measuredWidths.reduce(0) { $0 + $1 * $1 }
+        let sumWW = trimmed.reduce(0) { $0 + $1 * $1 }
         let weighted = sumWW / sumW
         let extraWidth = ColumnWidthPolicy.extraReserveWidth(for: column)
         return ceil(weighted + 2 * measuredContentInset + extraWidth)
     }
 
-    /// Size column: use high percentile (P85) so the widest formatted values
-    /// ("523,3 MB") aren't clipped by shorter ones ("53 KB").
+    /// Size column: trim 10% extremes, then use P85 of the remaining set
+    /// so the widest formatted values ("523,3 MB") aren't clipped by shorter ones ("53 KB").
     private static func sizeColumnContentWidth(_ measuredWidths: [CGFloat]) -> CGFloat {
         guard !measuredWidths.isEmpty else { return emptyColumnWidth }
-        let sorted = measuredWidths.sorted()
+        let trimmed = trimmedWidths(measuredWidths, trimFraction: 0.10)
+        guard !trimmed.isEmpty else { return emptyColumnWidth }
+        let sorted = trimmed.sorted()
         let p85Index = min(Int(ceil(Double(sorted.count) * 0.85)) - 1, sorted.count - 1)
         let percentileWidth = sorted[max(0, p85Index)]
         let extraWidth = ColumnWidthPolicy.extraReserveWidth(for: .size)
@@ -371,7 +375,22 @@ enum ColumnAutoFitter {
             case .name: ([], .systemFont(ofSize: 12))
         }
     }
+
+
+    /// Discard `trimFraction` from each end of the sorted widths array.
+    /// E.g. trimFraction=0.10 drops 10% smallest + 10% largest = 20% total.
+    /// For small arrays (< 5 elements), returns the full array untrimmed.
+    private static func trimmedWidths(_ widths: [CGFloat], trimFraction: Double) -> [CGFloat] {
+        guard widths.count >= 5 else { return widths }
+        let sorted = widths.sorted()
+        let trimCount = max(1, Int(floor(Double(sorted.count) * trimFraction)))
+        let lo = trimCount
+        let hi = sorted.count - trimCount
+        guard lo < hi else { return widths }
+        return Array(sorted[lo..<hi])
+    }
 }
+
 
 extension CGFloat {
     fileprivate func clamped(to range: ClosedRange<CGFloat>) -> CGFloat {
