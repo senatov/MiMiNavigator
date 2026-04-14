@@ -56,8 +56,26 @@ extension CntMenuCoord {
 
 
     func presentCompressDialog(for files: [CustomFile], panel: FavPanelSide, appState: AppState) {
-        let destination = appState.url(for: panel == .left ? .right : .left)
-        activeDialog = .compress(files: files, destination: destination, sourcePanel: panel)
+        log.debug("\(#function) panel=\(panel) batch=\(files.count)")
+        PackDialogCoordinator.shared.open(
+            mode: .compress,
+            files: files,
+            sourcePanel: panel,
+            appState: appState
+        ) { [weak self] archiveName, format, destination, deleteSource, compressionLevel, password in
+            guard let self else { return }
+            Task {
+                await self.performCompress(
+                    files: files,
+                    archiveName: archiveName,
+                    destination: destination,
+                    moveToArchive: deleteSource,
+                    compressionLevel: compressionLevel,
+                    password: password,
+                    appState: appState
+                )
+            }
+        }
     }
 
 

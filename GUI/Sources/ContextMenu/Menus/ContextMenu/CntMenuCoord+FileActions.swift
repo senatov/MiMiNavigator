@@ -60,7 +60,7 @@ extension CntMenuCoord {
                     await self.performPaste(to: panel, appState: appState)
                 }
             case .compress:
-                presentCompressDialog(for: file, batchFiles: batchFiles, panel: panel)
+                presentCompressDialog(for: file, batchFiles: batchFiles, panel: panel, appState: appState)
             case .pack:
                 presentPackDialog(for: batchFiles, panel: panel, appState: appState)
             case .share:
@@ -125,16 +125,52 @@ extension CntMenuCoord {
         activeDialog = .createLink(file: file, destination: destination)
     }
 
-    private func presentCompressDialog(for file: CustomFile, batchFiles: [CustomFile], panel: FavPanelSide) {
-        let sourceDir = file.urlValue.deletingLastPathComponent()
-        log.debug("\(#function) destination='\(sourceDir.path)' panel=\(panel) batch=\(batchFiles.count)")
-        activeDialog = .pack(files: batchFiles, destination: sourceDir, sourcePanel: panel)
+    private func presentCompressDialog(for file: CustomFile, batchFiles: [CustomFile], panel: FavPanelSide, appState: AppState) {
+        log.debug("\(#function) panel=\(panel) batch=\(batchFiles.count)")
+        PackDialogCoordinator.shared.open(
+            mode: .compress,
+            files: batchFiles,
+            sourcePanel: panel,
+            appState: appState
+        ) { [weak self] archiveName, format, destination, deleteSource, compressionLevel, password in
+            guard let self else { return }
+            Task {
+                await self.performCompress(
+                    files: batchFiles,
+                    archiveName: archiveName,
+                    destination: destination,
+                    moveToArchive: deleteSource,
+                    compressionLevel: compressionLevel,
+                    password: password,
+                    appState: appState
+                )
+            }
+        }
     }
 
+
     private func presentPackDialog(for batchFiles: [CustomFile], panel: FavPanelSide, appState: AppState) {
-        let destination = getOppositeDestinationPath(for: panel, appState: appState)
-        log.debug("\(#function) destination='\(destination.path)' panel=\(panel) batch=\(batchFiles.count)")
-        activeDialog = .pack(files: batchFiles, destination: destination, sourcePanel: panel)
+        log.debug("\(#function) panel=\(panel) batch=\(batchFiles.count)")
+        PackDialogCoordinator.shared.open(
+            mode: .pack,
+            files: batchFiles,
+            sourcePanel: panel,
+            appState: appState
+        ) { [weak self] archiveName, format, destination, deleteSource, compressionLevel, password in
+            guard let self else { return }
+            Task {
+                await self.performPack(
+                    files: batchFiles,
+                    archiveName: archiveName,
+                    format: format,
+                    destination: destination,
+                    deleteSource: deleteSource,
+                    compressionLevel: compressionLevel,
+                    password: password,
+                    appState: appState
+                )
+            }
+        }
     }
 
     /// For files: add parent directory to favorites, not the file itself

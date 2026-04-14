@@ -37,7 +37,7 @@ final class ArchivePreferencesStore: ObservableObject {
     /// Delete source files after archiving
     @Published var deleteSourceFiles: Bool = false
 
-    /// Use password encryption (per-session, not saved for security)
+    /// Use password encryption — persisted in archive_prefs.json
     @Published var usePassword: Bool = false
 
     /// Last used archive name prefix (optional)

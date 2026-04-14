@@ -39,7 +39,6 @@ struct PackDialog: View {
     @State private var usePassword: Bool = false
     @State private var password: String = ""
     @State private var showPassword: Bool = false
-    @State private var isAppearing: Bool = false
 
     @FocusState private var isNameFieldFocused: Bool
 
@@ -147,13 +146,35 @@ struct PackDialog: View {
         prefs.supportsPassword(selectedFormat)
     }
 
+    // MARK: - Layout
+
+    private enum Layout {
+        static let outerCornerRadius: CGFloat = 14
+        static let sectionCornerRadius: CGFloat = 12
+        static let horizontalPadding: CGFloat = 12
+    }
+
+
+    // MARK: - Glass backgrounds
+
+    @ViewBuilder
+    private var panelBackground: some View {
+        RoundedRectangle(cornerRadius: Layout.outerCornerRadius, style: .continuous)
+            .fill(.clear)
+    }
+
+
+    @ViewBuilder
+    private var panelBorder: some View {
+        RoundedRectangle(cornerRadius: Layout.outerCornerRadius, style: .continuous)
+            .strokeBorder(.quaternary, lineWidth: 0.8)
+    }
+
+
     // MARK: - Body
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            HIGDialogHeader(dialogTitle)
-                .frame(maxWidth: .infinity)
-
+        VStack(alignment: .leading, spacing: 14) {
             // Archive name
             HIGTextField(
                 label: L10n.Dialog.Pack.archiveNameLabel,
@@ -196,23 +217,20 @@ struct PackDialog: View {
                 onConfirm: performPack
             )
         }
-        .higDialogStyle()
-        .higAutoFocusTextField()
-        .frame(minWidth: 420)
-        .scaleEffect(isAppearing ? 1.0 : 0.9)
-        .opacity(isAppearing ? 1.0 : 0.0)
+        .padding(16)
+        .frame(minWidth: 400)
+        .background(panelBackground)
+        .overlay(panelBorder)
+        .clipShape(RoundedRectangle(cornerRadius: Layout.outerCornerRadius, style: .continuous))
+        .contentShape(RoundedRectangle(cornerRadius: Layout.outerCornerRadius, style: .continuous))
         .onAppear {
             isNameFieldFocused = true
-            // Load password from Keychain if enabled
+            // Load password from Keychain if enabled — but DON'T override encrypt flag
             if prefs.useKeychainPasswords, let saved = ArchivePasswordStore.shared.loadPassword() {
                 password = saved
-                usePassword = !saved.isEmpty
-            }
-            // Spring animation on appear
-            withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
-                isAppearing = true
             }
         }
+        .onKeyPress(.escape) { onCancel(); return .handled }
     }
 
     // MARK: - Destination Selector

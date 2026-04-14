@@ -55,7 +55,7 @@ struct DownToolbarGlassButtonStyle: ButtonStyle {
         let bottomEdgeOpacity = isPressed ? 0.20 : (isHovered ? 0.28 : 0.18)
 
         return configuration.label
-            .font(.system(size: 13, weight: .semibold))
+            .font(.system(size: 13, weight: .medium))
             .foregroundStyle(Color.primary.opacity(isPressed ? 0.96 : 0.90))
             .padding(.horizontal, 14)
             .padding(.vertical, 9)
@@ -71,7 +71,7 @@ struct DownToolbarGlassButtonStyle: ButtonStyle {
                                     Color.white.opacity(topGlowOpacity),
                                     Color.white.opacity(0.08),
                                     Color.clear,
-                                    Color.black.opacity(0.05)
+                                    Color.gray.opacity(0.09)
                                 ],
                                 startPoint: .top,
                                 endPoint: .bottom
@@ -124,10 +124,4 @@ struct DownToolbarGlassButtonStyle: ButtonStyle {
             .animation(.spring(response: 0.24, dampingFraction: 0.74), value: isHovered)
             .contentShape(RoundedRectangle(cornerRadius: 13, style: .continuous))
     }
-}
-
-// MARK: - Preview
-#Preview("Primary Button") {
-    DownToolbarButtonView(title: "Test Test", systemImage: "icloud", action: {})
-        .padding()
 }

@@ -38,56 +38,8 @@ extension ContextMenuDialogModifier {
                         coordinator.dismissDialog()
                     }
                 )
-            case .pack(let files, _, let sourcePanel):
-                PackDialog(
-                    mode: .pack,
-                    files: files,
-                    sourcePanel: sourcePanel,
-                    onPack: { archiveName, format, finalDestination, deleteSource, compressionLevel, password in
-                        Task {
-                            await coordinator.performPack(
-                                files: files,
-                                archiveName: archiveName,
-                                format: format,
-                                destination: finalDestination,
-                                deleteSource: deleteSource,
-                                compressionLevel: compressionLevel,
-                                password: password,
-                                appState: appState
-                            )
-                        }
-                    },
-                    onCancel: {
-                        coordinator.dismissDialog()
-                    }
-                )
-                .environment(appState)
-            case .compress(let files, _, let sourcePanel):
-                PackDialog(
-                    mode: .compress,
-                    files: files,
-                    sourcePanel: sourcePanel,
-                    onPack: { archiveName, format, finalDestination, deleteSource, compressionLevel, password in
-                        Task {
-                            await coordinator.performCompress(
-                                files: files,
-                                archiveName: archiveName,
-                                destination: finalDestination,
-                                moveToArchive: deleteSource,
-                                compressionLevel: compressionLevel,
-                                password: password,
-                                appState: appState
-                            )
-                            await MainActor.run {
-                                coordinator.dismissDialog()
-                            }
-                        }
-                    },
-                    onCancel: {
-                        coordinator.dismissDialog()
-                    }
-                )
-                .environment(appState)
+            case .pack, .compress:
+                EmptyView()
             case .createFolder(let parentURL):
                 CreateFolderDialog(
                     parentURL: parentURL,
@@ -216,24 +168,8 @@ extension ContextMenuDialogModifier {
                         coordinator.dismissDialog()
                     }
                 )
-            case .batchPackConfirmation(let files, _, let sourcePanel):
-                PackDialog(
-                    mode: .pack,
-                    files: files,
-                    sourcePanel: sourcePanel,
-                    onPack: { archiveName, format, finalDestination, deleteSource, compressionLevel, password in
-                        coordinator.dismissDialog()
-                        BatchOpsCoord.shared.initiatePack(
-                            appState: appState,
-                            archiveName: archiveName,
-                            format: format
-                        )
-                    },
-                    onCancel: {
-                        coordinator.dismissDialog()
-                    }
-                )
-                .environment(appState)
+            case .batchPackConfirmation:
+                EmptyView()
             case .batchProgress(let state):
                 BatchProgressDialog(
                     state: state,

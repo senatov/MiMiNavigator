@@ -12,10 +12,22 @@ struct ContextMenuDialogModifier: ViewModifier {
     let appState: AppState
     @Bindable var coordinator: CntMenuCoord
 
+    /// Pack/compress now live in their own NSPanel — skip overlay for them
+    private var shouldShowOverlay: Bool {
+        guard let dialog = coordinator.activeDialog else { return false }
+        switch dialog {
+            case .pack, .compress, .batchPackConfirmation:
+                return false
+            default:
+                return true
+        }
+    }
+
+
     func body(content: Content) -> some View {
         content
             .overlay {
-                if coordinator.activeDialog != nil {
+                if shouldShowOverlay {
                     dialogOverlay
                 }
             }

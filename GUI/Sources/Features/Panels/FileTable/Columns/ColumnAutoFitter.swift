@@ -175,7 +175,7 @@ enum ColumnAutoFitter {
             nameWidth = proposedNameWidth(containerWidth: containerWidth, fittedColumns: fittedColumns, dividerTotal: dividerTotal)
         }
         nameWidth = max(minNameWidth, min(maxNameWidth(for: containerWidth), nameWidth))
-        alignTrailingEdge(
+        nameWidth = alignTrailingEdge(
             fittedColumns: &fittedColumns, containerWidth: containerWidth, nameWidth: nameWidth, dividerTotal: dividerTotal)
         return nameWidth
     }
@@ -296,18 +296,16 @@ enum ColumnAutoFitter {
         }
     }
 
+    /// Give any sub-pixel remainder to Name column (leftmost), not to the last fixed column.
+    /// This ensures Name always gets the surplus width after fixed columns are sized.
     private static func alignTrailingEdge(
         fittedColumns: inout [FittedColumn], containerWidth: CGFloat, nameWidth: CGFloat, dividerTotal: CGFloat
-    ) {
-        guard let lastIndex = fittedColumns.indices.last else { return }
-
+    ) -> CGFloat {
         let remainder = containerWidth - nameWidth - totalFixedWidth(fittedColumns) - dividerTotal - trailingPanelInset
-        guard abs(remainder) > edgeAlignmentEpsilon else { return }
-
-        let adjustedWidth = fittedColumns[lastIndex].width + remainder
-        let finalWidth = max(emptyColumnWidth, adjustedWidth)
-        log.verbose("[AutoFit] alignTrailing \(fittedColumns[lastIndex].id.rawValue) remainder=\(pt(remainder))")
-        fittedColumns[lastIndex].width = finalWidth
+        guard abs(remainder) > edgeAlignmentEpsilon else { return nameWidth }
+        let adjusted = max(minNameWidth, nameWidth + remainder)
+        log.verbose("[AutoFit] alignTrailing remainder=\(pt(remainder)) → Name")
+        return adjusted
     }
 
     private static func needsUpdate(layout: ColumnLayoutModel, fittedColumns: [FittedColumn], nameWidth: CGFloat) -> Bool {

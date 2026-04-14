@@ -129,6 +129,7 @@ import AppKit
         }
 
         NetworkNeighborhoodCoordinator.shared.bringToFront()
+        PackDialogCoordinator.shared.bringToFront()
         ConnectToServerCoordinator.shared.bringToFront()
         FindFilesCoordinator.shared.bringToFront()
         SettingsCoordinator.shared.bringToFront()
