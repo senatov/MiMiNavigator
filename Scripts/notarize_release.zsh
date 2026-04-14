@@ -112,6 +112,7 @@ xcodebuild clean build \
     -scheme "${SCHEME}" \
     -configuration "${CONFIG}" \
     -derivedDataPath "${BUILD_DIR}" \
+    -clonedSourcePackagesDirPath "${PROJECT_DIR}/.spm-checkouts" \
     CODE_SIGN_IDENTITY="${SIGN_IDENTITY}" \
     CODE_SIGN_STYLE=Manual \
     DEVELOPMENT_TEAM="${TEAM_ID}" \
