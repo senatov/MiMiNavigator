@@ -52,8 +52,9 @@ struct DragSelectionResolver {
     }
 
 
-    /// Row hit-test — same geometry as DragDropManager.resolveDirectoryUnderCursor
-    /// but returns any file, not just directories.
+    /// Row hit-test — determines which file is under the mouse cursor.
+    /// panelFrame = DragNSView bounds in window coords.
+    /// headerHeight accounts for the column header row above the file list.
     @MainActor
     private static func fileUnderCursor(
         windowPoint: NSPoint,
@@ -61,14 +62,16 @@ struct DragSelectionResolver {
         appState: AppState,
         panelFrame: NSRect
     ) -> CustomFile? {
-        let headerHeight: CGFloat = 26
         let rowHeight = FilePanelStyle.rowHeight
-        let yInPanel = panelFrame.maxY - windowPoint.y
-        let rowY = yInPanel - headerHeight
-        guard rowY >= 0 else { return nil }
-        let rowIndex = Int(floor(rowY / rowHeight))
+        let yFromTop = panelFrame.maxY - windowPoint.y
+        guard yFromTop >= 0 else { return nil }
+        let rowIndex = Int(floor(yFromTop / rowHeight))
         let files = appState.displayedFiles(for: panelSide)
-        guard rowIndex >= 0, rowIndex < files.count else { return nil }
+        guard rowIndex >= 0, rowIndex < files.count else {
+            log.debug("[DragResolver] hit-test miss: yFromTop=\(yFromTop) rowIdx=\(rowIndex) count=\(files.count)")
+            return nil
+        }
+        log.debug("[DragResolver] hit-test: y=\(windowPoint.y) panelMaxY=\(panelFrame.maxY) yFromTop=\(yFromTop) rowIdx=\(rowIndex) → '\(files[rowIndex].nameStr)'")
         return files[rowIndex]
     }
 }
