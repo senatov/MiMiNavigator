@@ -34,15 +34,7 @@ final class ClipboardManager {
         self.files = files.map { $0.urlValue }
         self.operation = .copy
         self.sourcePanel = panel
-
-        // Write ONLY text to ensure proper paste into text editors
-        let pb = NSPasteboard.general
-        pb.clearContents()
-        let text = self.files
-            .map { "• \($0.path)" }
-            .joined(separator: "\n")
-        pb.setString(text, forType: .string)
-
+        writeToPasteboard(self.files)
         log.info("Clipboard: Copied \(files.count) item(s) from \(String(describing: panel))")
     }
 
@@ -51,16 +43,22 @@ final class ClipboardManager {
         self.files = files.map { $0.urlValue }
         self.operation = .cut
         self.sourcePanel = panel
+        writeToPasteboard(self.files)
+        log.info("Clipboard: Cut \(files.count) item(s) from \(String(describing: panel))")
+    }
 
-        // Write ONLY text to ensure proper paste into text editors
+
+    // MARK: - Write URLs to system pasteboard (Finder-compatible)
+    /// Writes file URLs + text fallback so both Finder and text editors can paste.
+    private func writeToPasteboard(_ urls: [URL]) {
         let pb = NSPasteboard.general
         pb.clearContents()
-        let text = self.files
-            .map { "• \($0.path)" }
-            .joined(separator: "\n")
+        // writeObjects with NSURL — Finder reads this for file paste
+        pb.writeObjects(urls.map { $0 as NSURL })
+        // also add plain text fallback for text editors
+        let text = urls.map { $0.path }.joined(separator: "\n")
+        pb.addTypes([.string], owner: nil)
         pb.setString(text, forType: .string)
-
-        log.info("Clipboard: Cut \(files.count) item(s) from \(String(describing: panel))")
     }
 
     // MARK: - Paste files to destination with conflict handling
