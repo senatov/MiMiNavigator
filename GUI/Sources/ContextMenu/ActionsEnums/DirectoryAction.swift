@@ -35,6 +35,9 @@ enum DirectoryAction: String, CaseIterable, Identifiable {
     
     // Info section
     case getInfo
+    // Create
+    case newFolder
+    case newFile
 
     // Cross-panel
     case openOnOtherPanel
@@ -65,6 +68,8 @@ enum DirectoryAction: String, CaseIterable, Identifiable {
         case .rename: return "Rename..."
         case .delete: return "Move to Trash"
         case .getInfo: return "Get Info"
+        case .newFolder: return "New Folder"
+        case .newFile: return "New File"
         case .openOnOtherPanel: return "Open on Other Panel"
         case .mirrorPanel: return "Mirror Panel"
         case .addToFavorites: return "Add to Favorites"
@@ -91,6 +96,8 @@ enum DirectoryAction: String, CaseIterable, Identifiable {
         case .rename: return "pencil"
         case .delete: return "trash"
         case .getInfo: return "info.circle"
+        case .newFolder: return "folder.badge.plus"
+        case .newFile: return "doc.badge.plus"
         case .openOnOtherPanel: return "arrow.left.arrow.right.square"
         case .mirrorPanel: return "arrow.left.arrow.right.square"
         case .addToFavorites: return "star.fill"
@@ -110,6 +117,7 @@ enum DirectoryAction: String, CaseIterable, Identifiable {
         case .delete: return "⌘⌫"
         case .rename: return "↵"
         case .getInfo: return "⌘I"
+        case .newFolder: return "⇧⌘N"
         case .mirrorPanel: return "⌘="
         default: return nil
         }

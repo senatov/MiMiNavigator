@@ -85,7 +85,6 @@ struct FileContextMenu: View {
         .edit,
         .operations,
         .navigation,
-        .info,
         .favorites,
     ]
 
@@ -320,6 +319,9 @@ struct FileContextMenu: View {
     @ViewBuilder
     private var moreFileOperationsMenu: some View {
         Menu {
+            menuButton(.newFolder)
+            menuButton(.newFile)
+            Divider()
             menuButton(.cut)
             menuButton(.copy)
             menuButton(.paste)
@@ -328,6 +330,7 @@ struct FileContextMenu: View {
             menuButton(.createLink)
             menuButton(.rename)
             menuButton(.delete)
+            Divider()
             menuButton(.getInfo)
         } label: {
             Label {
@@ -340,9 +343,7 @@ struct FileContextMenu: View {
 
     @ViewBuilder
     private var infoSection: some View {
-        menuButton(.getInfo)
-
-        sectionDivider(after: .info)
+        EmptyView()
     }
 
     @ViewBuilder

@@ -75,6 +75,12 @@ extension CntMenuCoord {
                 addParentToFavorites(file)
             case .mirrorPanel:
                 mirrorPathToOtherPanel(panel, appState: appState)
+            case .newFolder:
+                let dir = getDestinationPath(for: panel, appState: appState)
+                performNewFolder(in: dir, appState: appState)
+            case .newFile:
+                let dir = getDestinationPath(for: panel, appState: appState)
+                performNewFile(in: dir, appState: appState)
         }
     }
 

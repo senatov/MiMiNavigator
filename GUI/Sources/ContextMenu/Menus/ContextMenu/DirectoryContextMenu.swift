@@ -27,8 +27,6 @@ struct DirectoryContextMenu: View {
         Divider()
         operationsSection
         Divider()
-        infoSection
-        Divider()
         crossPanelSection
         Divider()
         favoritesSection
@@ -118,6 +116,9 @@ struct DirectoryContextMenu: View {
     @ViewBuilder
     private var moreFolderOperationsMenu: some View {
         Menu {
+            menuButton(.newFolder)
+            menuButton(.newFile)
+            Divider()
             menuButton(.cut)
             menuButton(.copy)
             menuButton(.paste)
@@ -138,6 +139,8 @@ struct DirectoryContextMenu: View {
             Divider()
             menuButton(.rename)
             menuButton(.delete)
+            Divider()
+            menuButton(.getInfo)
         } label: {
             Label {
                 Text("􀉒 Folder Operations")
@@ -149,7 +152,7 @@ struct DirectoryContextMenu: View {
 
     @ViewBuilder
     private var infoSection: some View {
-        menuButton(.getInfo)
+        EmptyView()
     }
 
     @ViewBuilder
