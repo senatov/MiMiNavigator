@@ -14,6 +14,7 @@ import UniformTypeIdentifiers
 @MainActor
 @Observable
 final class DragDropManager {
+    private static let tableHeaderHeight: CGFloat = 24
 
     static let shared = DragDropManager()
 
@@ -78,15 +79,15 @@ final class DragDropManager {
         appState: AppState,
         panelFrame: NSRect
     ) -> URL? {
-        let headerHeight: CGFloat = 26
         let rowHeight = FilePanelStyle.rowHeight
         let yInPanel = panelFrame.maxY - windowPoint.y
-        let rowY = yInPanel - headerHeight
+        let rowY = yInPanel - Self.tableHeaderHeight
         guard rowY >= 0 else { return nil }
         let rowIndex = Int(floor(rowY / rowHeight))
-        let files = panelSide == .left ? appState.displayedLeftFiles : appState.displayedRightFiles
+        let files = appState.displayedRows(for: panelSide)
         guard rowIndex >= 0, rowIndex < files.count else { return nil }
         let file = files[rowIndex]
+        guard !ParentDirectoryEntry.isParentEntry(file) else { return nil }
         guard file.isDirectory || file.isSymbolicDirectory else { return nil }
         return file.urlValue
     }

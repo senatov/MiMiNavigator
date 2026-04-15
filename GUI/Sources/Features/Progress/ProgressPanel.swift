@@ -25,11 +25,12 @@ final class ProgressPanel: NSObject {
         static let statusTopSpacing: CGFloat = 6
         static let logTopSpacing: CGFloat = 8
         static let buttonBottomInset: CGFloat = 10
-        static let buttonMinWidth: CGFloat = 60
         static let logCornerRadius: CGFloat = 6
         static let logInset = NSSize(width: 4, height: 4)
         static let logLinePadding: CGFloat = 0
         static let borderWidth: CGFloat = 0.5
+        static let buttonMinWidth: CGFloat = 92
+        static let buttonHeight: CGFloat = 30
     }
 
 
@@ -64,6 +65,7 @@ final class ProgressPanel: NSObject {
         actionButton?.isEnabled = true
         if actionButton?.title != "OK" {
             actionButton?.title = "Cancel"
+            applyActionButtonStyle(.cancel)
         }
     }
 
@@ -148,6 +150,7 @@ final class ProgressPanel: NSObject {
         }
         actionButton?.title = "OK"
         actionButton?.isEnabled = true
+        applyActionButtonStyle(.confirm)
         onCancel = nil
         log.debug("[ProgressPanel] \(#function) success=\(success) lines=\(lineCount)")
     }
@@ -229,6 +232,7 @@ final class ProgressPanel: NSObject {
         logTextView?.string = ""
         actionButton?.title = "Cancel"
         actionButton?.isEnabled = true
+        applyActionButtonStyle(.cancel)
     }
 
     private func attachPanelToMainWindow(_ panel: NSPanel) {
@@ -351,15 +355,14 @@ final class ProgressPanel: NSObject {
             logEffectView.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor),
         ])
 
-        let button = NSButton()
+        let button = ProgressActionButton()
         button.translatesAutoresizingMaskIntoConstraints = false
         button.title = "Cancel"
-        button.bezelStyle = .rounded
-        button.controlSize = .small
         button.target = self
         button.action = #selector(actionButtonTapped)
         containerView.addSubview(button)
         actionButton = button
+        applyActionButtonStyle(.cancel)
 
         NSLayoutConstraint.activate([
             icon.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: Layout.outerPadding),
@@ -383,6 +386,7 @@ final class ProgressPanel: NSObject {
             button.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -Layout.outerPadding),
             button.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -Layout.buttonBottomInset),
             button.widthAnchor.constraint(greaterThanOrEqualToConstant: Layout.buttonMinWidth),
+            button.heightAnchor.constraint(equalToConstant: Layout.buttonHeight),
         ])
 
         self.panel = panel
@@ -433,6 +437,11 @@ final class ProgressPanel: NSObject {
         lbl.cell?.truncatesLastVisibleLine = true
         return lbl
     }
+
+    private func applyActionButtonStyle(_ semantic: ProgressActionButton.Semantic) {
+        guard let button = actionButton as? ProgressActionButton else { return }
+        button.semantic = semantic
+    }
     // MARK: - Abbreviate Path
     private func abbreviatePath(_ path: String) -> String {
         let home = FileManager.default.homeDirectoryForCurrentUser.path
@@ -452,6 +461,180 @@ final class ProgressPanel: NSObject {
         statusLabel?.textColor = a.statusColor
         configureLogContainerAppearance()
         log.debug("[ProgressPanel] appearance refreshed")
+    }
+}
+
+final class ProgressActionButton: NSButton {
+    enum Semantic {
+        case cancel
+        case confirm
+
+        var borderColor: NSColor {
+            switch self {
+            case .cancel: return NSColor.systemRed.withAlphaComponent(0.9)
+            case .confirm: return NSColor.systemGreen.withAlphaComponent(0.9)
+            }
+        }
+
+        var titleColor: NSColor {
+            switch self {
+            case .cancel: return NSColor.systemRed.blended(withFraction: 0.35, of: .labelColor) ?? .labelColor
+            case .confirm: return NSColor.systemGreen.blended(withFraction: 0.35, of: .labelColor) ?? .labelColor
+            }
+        }
+
+        var glowColor: NSColor {
+            switch self {
+            case .cancel: return NSColor.systemRed.withAlphaComponent(0.25)
+            case .confirm: return NSColor.systemGreen.withAlphaComponent(0.25)
+            }
+        }
+    }
+
+    var semantic: Semantic = .cancel {
+        didSet {
+            needsLayout = true
+            updateAppearance()
+        }
+    }
+
+    private let baseGradient = CAGradientLayer()
+    private let glossGradient = CAGradientLayer()
+    private let borderLayer = CAShapeLayer()
+    private let innerShadowLayer = CAShapeLayer()
+
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        configure()
+    }
+
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        configure()
+    }
+
+    override func layout() {
+        super.layout()
+        guard let layer else { return }
+
+        let buttonBounds = bounds.insetBy(dx: 0.5, dy: 0.5)
+        let shapePath = CGPath(
+            roundedRect: buttonBounds,
+            cornerWidth: 9,
+            cornerHeight: 9,
+            transform: nil
+        )
+
+        baseGradient.frame = bounds
+        glossGradient.frame = bounds
+        borderLayer.frame = bounds
+        borderLayer.path = shapePath
+        innerShadowLayer.frame = bounds
+        innerShadowLayer.path = shapePath
+
+        layer.shadowPath = shapePath
+        updateAppearance()
+    }
+
+    override func setButtonType(_ buttonType: NSButton.ButtonType) {
+        super.setButtonType(buttonType)
+        updateAppearance()
+    }
+
+    override func updateLayer() {
+        super.updateLayer()
+        updateAppearance()
+    }
+
+    private func configure() {
+        isBordered = false
+        bezelStyle = .regularSquare
+        setButtonType(.momentaryPushIn)
+        focusRingType = .none
+        wantsLayer = true
+        layerContentsRedrawPolicy = .onSetNeedsDisplay
+        imagePosition = .noImage
+        font = .systemFont(ofSize: 12.5, weight: .semibold)
+        contentTintColor = semantic.titleColor
+
+        guard let layer else { return }
+        layer.cornerRadius = 9
+        layer.masksToBounds = false
+        layer.backgroundColor = NSColor.clear.cgColor
+        layer.shadowOpacity = 1
+        layer.shadowRadius = 4
+        layer.shadowOffset = CGSize(width: 0, height: -2)
+
+        baseGradient.colors = [
+            NSColor.white.withAlphaComponent(0.62).cgColor,
+            NSColor(calibratedWhite: 0.92, alpha: 0.76).cgColor,
+            NSColor(calibratedWhite: 0.82, alpha: 0.92).cgColor
+        ]
+        baseGradient.locations = [0, 0.42, 1]
+        baseGradient.startPoint = CGPoint(x: 0.5, y: 1)
+        baseGradient.endPoint = CGPoint(x: 0.5, y: 0)
+        baseGradient.cornerRadius = 9
+
+        glossGradient.colors = [
+            NSColor.white.withAlphaComponent(0.52).cgColor,
+            NSColor.white.withAlphaComponent(0.12).cgColor,
+            NSColor.clear.cgColor
+        ]
+        glossGradient.locations = [0, 0.22, 0.8]
+        glossGradient.startPoint = CGPoint(x: 0.5, y: 1)
+        glossGradient.endPoint = CGPoint(x: 0.5, y: 0)
+        glossGradient.cornerRadius = 9
+
+        borderLayer.fillColor = NSColor.clear.cgColor
+        borderLayer.lineWidth = 1
+
+        innerShadowLayer.fillColor = NSColor.clear.cgColor
+        innerShadowLayer.strokeColor = NSColor.white.withAlphaComponent(0.35).cgColor
+        innerShadowLayer.lineWidth = 1
+        innerShadowLayer.opacity = 0.95
+
+        layer.addSublayer(baseGradient)
+        layer.addSublayer(glossGradient)
+        layer.addSublayer(innerShadowLayer)
+        layer.addSublayer(borderLayer)
+
+        updateAppearance()
+    }
+
+    private func updateAppearance() {
+        let isPressed = cell?.isHighlighted ?? false
+        let scale: CGFloat = isPressed ? 0.965 : 1
+
+        layer?.setAffineTransform(CGAffineTransform(scaleX: scale, y: scale))
+        layer?.shadowColor = semantic.glowColor.cgColor
+        layer?.shadowOpacity = isPressed ? 0.18 : 0.34
+        layer?.shadowRadius = isPressed ? 2 : 4
+        layer?.shadowOffset = CGSize(width: 0, height: isPressed ? -1 : -2)
+
+        borderLayer.strokeColor = semantic.borderColor.cgColor
+        innerShadowLayer.opacity = isEnabled ? 0.95 : 0.45
+
+        let topAlpha: CGFloat = isEnabled ? (isPressed ? 0.48 : 0.62) : 0.28
+        let midAlpha: CGFloat = isEnabled ? (isPressed ? 0.62 : 0.76) : 0.36
+        let bottomAlpha: CGFloat = isEnabled ? (isPressed ? 0.78 : 0.92) : 0.48
+        baseGradient.colors = [
+            NSColor.white.withAlphaComponent(topAlpha).cgColor,
+            NSColor(calibratedWhite: 0.92, alpha: midAlpha).cgColor,
+            NSColor(calibratedWhite: 0.82, alpha: bottomAlpha).cgColor
+        ]
+        glossGradient.opacity = isPressed ? 0.55 : 1
+
+        let paragraph = NSMutableParagraphStyle()
+        paragraph.alignment = .center
+        attributedTitle = NSAttributedString(
+            string: title,
+            attributes: [
+                .font: font ?? NSFont.systemFont(ofSize: 12.5, weight: .semibold),
+                .foregroundColor: isEnabled ? semantic.titleColor : NSColor.disabledControlTextColor,
+                .paragraphStyle: paragraph,
+                .kern: 0.15
+            ]
+        )
     }
 }
 

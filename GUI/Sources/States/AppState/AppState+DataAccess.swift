@@ -19,6 +19,16 @@ extension AppState {
         return raw.filter { $0.nameStr.lowercased().contains(lower) }
     }
 
+    /// Visible rows in the list/table UI, including the synthetic ".." entry when applicable.
+    func displayedRows(for panel: FavPanelSide) -> [CustomFile] {
+        let files = displayedFiles(for: panel)
+        let currentURL = url(for: panel)
+        guard currentURL.path != "/" else {
+            return files
+        }
+        return [ParentDirectoryEntry.make(for: currentURL.path)] + files
+    }
+
     func pathURL(for panel: FavPanelSide) -> URL? {
         url(for: panel)
     }

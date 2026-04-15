@@ -12,6 +12,7 @@ import AppKit
 import FileModelKit
 
 struct DragSelectionResolver {
+    private static let tableHeaderHeight: CGFloat = 24
 
     @MainActor
     static func resolve(from appState: AppState, side: FavPanelSide) -> [CustomFile] {
@@ -64,14 +65,20 @@ struct DragSelectionResolver {
     ) -> CustomFile? {
         let rowHeight = FilePanelStyle.rowHeight
         let yFromTop = panelFrame.maxY - windowPoint.y
-        guard yFromTop >= 0 else { return nil }
-        let rowIndex = Int(floor(yFromTop / rowHeight))
-        let files = appState.displayedFiles(for: panelSide)
+        let rowY = yFromTop - tableHeaderHeight
+        guard rowY >= 0 else { return nil }
+        let rowIndex = Int(floor(rowY / rowHeight))
+        let files = appState.displayedRows(for: panelSide)
         guard rowIndex >= 0, rowIndex < files.count else {
-            log.debug("[DragResolver] hit-test miss: yFromTop=\(yFromTop) rowIdx=\(rowIndex) count=\(files.count)")
+            log.debug(
+                "[DragResolver] hit-test miss: yFromTop=\(yFromTop) rowY=\(rowY) rowIdx=\(rowIndex) count=\(files.count)"
+            )
             return nil
         }
-        log.debug("[DragResolver] hit-test: y=\(windowPoint.y) panelMaxY=\(panelFrame.maxY) yFromTop=\(yFromTop) rowIdx=\(rowIndex) → '\(files[rowIndex].nameStr)'")
+        log.debug(
+            "[DragResolver] hit-test: y=\(windowPoint.y) panelMaxY=\(panelFrame.maxY) "
+                + "yFromTop=\(yFromTop) rowY=\(rowY) rowIdx=\(rowIndex) → '\(files[rowIndex].nameStr)'"
+        )
         return files[rowIndex]
     }
 }
