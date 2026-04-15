@@ -5,6 +5,21 @@ All notable changes to MiMiNavigator will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.7.4.1] — 2026-04-15
+
+> **Release notes**
+> Hotfix: unified dialog buttons (glass style), Finder-compatible clipboard.
+> Copy/Paste from MiMi to Finder and other apps now works correctly for all file types including `.app` bundles.
+
+### Fixed
+- **Clipboard copy/paste to Finder** — pasteboard was writing only `.string` type; Finder and other apps couldn't paste files copied in MiMi. Now writes `public.file-url` via `writeObjects` + text fallback
+- **`.app` bundle paste** — application bundles now correctly paste to Finder, other file managers, and between MiMi panels
+
+### Changed
+- **Dialog buttons → `DownToolbarButtonView`** — unified glass-style buttons in TransferConfirmDialog, FullDiskAccessOnboarding, AboutView, ToolbarCustomizeView (10 buttons replaced)
+
+---
+
 ## [0.9.7.4] — 2026-04-15
 
 > **Release notes**

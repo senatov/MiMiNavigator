@@ -17,7 +17,7 @@
   <img src="https://img.shields.io/badge/Archives-50%2B_Formats-6f42c1" alt="50+ archive formats" />
   <img src="https://img.shields.io/badge/Media-Preview_%26_Conversion_Placeholders-ff8c00" alt="Media preview and conversion placeholders" />
   <img src="https://img.shields.io/badge/License-AGPL--3.0-blue" alt="AGPL-3.0" />
-  <img src="https://img.shields.io/badge/v0.9.7.4-Active_Development-orange" alt="Active Development" />
+  <img src="https://img.shields.io/badge/v0.9.7.4.1-Active_Development-orange" alt="Active Development" />
 </p>
 
 <p align="center">
@@ -36,15 +36,14 @@
 
 
 
-## Recent Changes (v0.9.7.4 — April 2026)
+## Recent Changes (v0.9.7.4.1 — April 2026)
 
-- **First notarized release** — fancy DMG installer with drag-to-Applications UX, no `xattr -cr` needed.
-- Convert Media feature: dialog + service with ffmpeg/ImageIO/Lottie for 20+ formats, wired to context menu.
+- **Finder-compatible clipboard** — Copy/Paste from MiMi to Finder now works for all file types including `.app` bundles.
+- **Unified dialog buttons** — glass-style `DownToolbarButtonView` across all dialogs (Transfer, Onboarding, About, Toolbar Customize).
+- First notarized release — fancy DMG installer with drag-to-Applications UX.
+- Convert Media feature: dialog + service with ffmpeg/ImageIO/Lottie for 20+ formats.
 - External Tools registry with install popover, Settings pane, and system permission onboarding.
-- Context menu overhaul: "File Ops" submenu, `⌥ R-Menu` for file type operations, background panel menu.
-- AutoFitScheduler singleton eliminates per-view column autofit race conditions.
-- VLC-based media preview (migration from AVPlayer), PackDialog as non-modal NSPanel.
-- DMG/PKG/ISO/JAR files now open with system on double-click; archive extraction via R-Menu only.
+- Context menu overhaul: "File Ops" submenu, `⌥ R-Menu` for file type operations.
 - Fixed APFS firmlink double-click, archive timestamp preservation, drag-drop same-panel drops.
 
 ---
