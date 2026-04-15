@@ -105,35 +105,27 @@ struct FullDiskAccessOnboarding: View {
 
     private var buttons: some View {
         HStack(spacing: 12) {
-            Button("Open System Settings") {
+            DownToolbarButtonView(title: "System Settings", systemImage: "gearshape") {
                 openFullDiskAccessSettings()
             }
-            .buttonStyle(.bordered)
-            .controlSize(.regular)
             .help("Open Privacy → Full Disk Access in System Settings")
             Spacer()
             if accessGranted {
-                Button("Done") {
+                DownToolbarButtonView(title: "Done", systemImage: "checkmark.circle") {
                     markComplete()
                     isPresented = false
                 }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.regular)
                 .keyboardShortcut(.return)
             } else {
-                Button("Grant Access…") {
+                DownToolbarButtonView(title: "Grant Access…", systemImage: "lock.open") {
                     requestFullDiskAccess()
                 }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.regular)
                 .keyboardShortcut(.return)
             }
-            Button("Skip") {
+            DownToolbarButtonView(title: "Skip", systemImage: "forward") {
                 markComplete()
                 isPresented = false
             }
-            .buttonStyle(.bordered)
-            .controlSize(.regular)
             .keyboardShortcut(.escape)
         }
     }

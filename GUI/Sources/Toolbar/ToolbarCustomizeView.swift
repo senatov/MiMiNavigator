@@ -323,11 +323,9 @@ private struct TCV_Footer: View {
 
     var body: some View {
         HStack {
-            Button { showReset = true } label: {
-                Label("Reset", systemImage: "arrow.counterclockwise")
-                    .font(.system(size: 12))
+            DownToolbarButtonView(title: "Reset", systemImage: "arrow.counterclockwise") {
+                showReset = true
             }
-            .controlSize(.small)
             Spacer()
             Text("\(store.visibleItems.count) of \(store.orderedIDs.count) shown")
                 .font(.system(size: 11))

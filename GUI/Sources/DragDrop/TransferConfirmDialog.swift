@@ -119,18 +119,12 @@ struct FileTransferConfirmationDialog: View {
     // MARK: - Buttons
     private var buttonSection: some View {
         HStack(spacing: 8) {
-            Button("Cancel") { handleAction(.abort) }
+            DownToolbarButtonView(title: "Cancel", systemImage: "xmark") { handleAction(.abort) }
                 .keyboardShortcut(.cancelAction)
-                .buttonStyle(ThemedButtonStyle())
-                .controlSize(.large)
             Spacer()
-            Button("Copy") { handleAction(.copy) }
+            DownToolbarButtonView(title: "Copy", systemImage: "doc.on.doc") { handleAction(.copy) }
                 .keyboardShortcut(.defaultAction)
-                .buttonStyle(ThemedButtonStyle())
-                .controlSize(.large)
-            Button("Move") { handleAction(.move) }
-                .buttonStyle(ThemedButtonStyle())
-                .controlSize(.large)
+            DownToolbarButtonView(title: "Move", systemImage: "arrow.right") { handleAction(.move) }
         }
     }
 

@@ -304,7 +304,7 @@ struct AboutView: View {
     private var closeButton: some View {
         HStack {
             Spacer()
-            Button("Close") {
+            DownToolbarButtonView(title: "Close", systemImage: "xmark") {
                 dismiss()
             }
             .keyboardShortcut(.defaultAction)
