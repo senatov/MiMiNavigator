@@ -15,8 +15,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/orlandos-nl/Citadel.git",
       "state" : {
-        "revision" : "a054a77eff9f2ef03051022a096377794dc16140",
-        "version" : "0.12.0"
+        "revision" : "ae8562f895de06ccb86fdb1cbb65fd99c8976e12",
+        "version" : "0.12.1"
       }
     },
     {
@@ -69,8 +69,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-log.git",
       "state" : {
-        "revision" : "bbd81b6725ae874c69e9b8c8804d462356b55523",
-        "version" : "1.10.1"
+        "revision" : "5073617dac96330a486245e4c0179cb0a6fd2256",
+        "version" : "1.12.0"
       }
     },
     {
@@ -78,17 +78,17 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-nio.git",
       "state" : {
-        "revision" : "b31565862a8f39866af50bc6676160d8dda7de35",
-        "version" : "2.96.0"
+        "revision" : "558f24a4647193b5a0e2104031b71c55d31ff83a",
+        "version" : "2.97.1"
       }
     },
     {
       "identity" : "swift-nio-ssh",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/Joannis/swift-nio-ssh.git",
+      "location" : "https://github.com/Wellz26/swift-nio-ssh.git",
       "state" : {
-        "revision" : "791437a67f5394b13060314c778c0f63124803b1",
-        "version" : "0.3.5"
+        "revision" : "a05e6bbe6b141ee68da3030e00275504c0595d4d",
+        "version" : "0.3.6"
       }
     },
     {

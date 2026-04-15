@@ -81,9 +81,14 @@ final class DragNSView: NSView, NSDraggingSource {
         dragState.didStart = false
         dragState.isResize = isResizeCursor
         if let panelSide, let appState {
-            // Resolve real CustomFile objects — preserves remote urlValue (ftp://host/path)
-            // Never use fileURLWithPath on remote paths — it mangles them to file:///path
-            cachedSelection = DragSelectionResolver.resolve(from: appState, side: panelSide)
+            // Finder-style: resolve file under cursor, not stale selection
+            let panelFrame = panelFrameInWindowCoordinates()
+            cachedSelection = DragSelectionResolver.resolveForDrag(
+                from: appState,
+                side: panelSide,
+                windowPoint: locWindow,
+                panelFrame: panelFrame
+            )
         } else {
             cachedSelection = []
         }
