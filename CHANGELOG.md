@@ -5,6 +5,46 @@ All notable changes to MiMiNavigator will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.7.4] — 2026-04-15
+
+> **Release notes**
+> First notarized release with a fancy DMG installer (drag-to-Applications).
+> Major feature: Convert Media panel, External Tools registry, context menu overhaul,
+> autofit rework, archive timestamp fixes, VLC preview migration.
+> 30 commits since v0.9.7.3.
+
+### Added
+- **Convert Media feature** — dialog + service with ffmpeg/ImageIO/Lottie support for 20+ formats, wired to context menu
+- **Convert Media panel** — non-modal NSPanel (like Network Neighborhood), glass sections, coordinator-based structure
+- **VLC video preview** — started migrating Media Info preview from AVPlayer to VLC (`VLCVideoView` / `VLCMediaPlayer`), fallback to file icon
+- **External Tools registry** — `ExternalToolRegistry`, `(i)` install popover, Settings pane, `SystemSettingsHelper` deeplinks; killed hardcoded 7z paths
+- **System permissions checker** — automatic Full Disk Access / Automation permission detection and onboarding
+- **"File Ops" submenu** — cut/copy/paste/duplicate grouped into submenu; added to multi-selection, directory, and background panel menus
+- **Background panel menu** — paste, new folder, new file, copy path, add to favorites
+- **Fancy DMG installer** — notarized DMG with background image, arrow, and `/Applications` symlink (drag-to-install UX)
+
+### Changed
+- **Context menu overhaul** — refactored coordinator extensions, clean menu integration, `⌥ R-Menu` shows File Operations vs. File Type operations
+- **Autofit rework** — `AutoFitScheduler` singleton eliminates per-view race conditions; sequential L→R with gap; surplus width → Name column
+- **PackDialog** — non-modal NSPanel, autofit surplus→Name, trimmed weighted avg `Σ(w_i²) / Σ(w_i)`
+- **DMG/PKG/ISO/JAR** — double-click opens with system, not as archive; extract via R-Menu only
+- **`.app` bundle copy** — treat packages as opaque files, no recursion into bundle contents
+- **WindowFrameRestorer** — poll-based approach instead of notification-based
+- **HIGAutoFocus** — retry 3× with fallback to rightmost button
+- **Glass style** — bottom toolbar buttons with glass hover styling
+- **Media Info panel** — refactored into smaller logical sections/extensions
+- **License updates** — added omaralbeik/VLC and other third-party licenses
+
+### Fixed
+- **APFS firmlink double-click** — `URL.resourceValues` lies on `/tmp`, `/var`, `/etc`; now uses `FileManager.fileExists(atPath:isDirectory:)`
+- **Archive timestamps** — better ZIP and TAR timestamp preservation during extraction
+- **Drag-and-drop** — refactored `DragNSView` helpers, ignore same-panel return drops
+- **Reconnect-on-start** — disabled auto-reconnect after manual remote disconnect
+- **Startup state restore** — improved restore flow, cleanup noisy logs, block refresh during termination
+- **Compilation errors** — fixed function access levels, exhaustive switch for `.convertMedia`
+
+---
+
 ## [0.9.7] — 2026-03-17
 
 > **Release notes**  
@@ -485,7 +525,8 @@ Each release should include:
 
 ---
 
-[Unreleased]: https://github.com/senatov/MiMiNavigator/compare/v0.9.7...HEAD
+[Unreleased]: https://github.com/senatov/MiMiNavigator/compare/v0.9.7.4...HEAD
+[0.9.7.4]: https://github.com/senatov/MiMiNavigator/compare/v0.9.7.3...v0.9.7.4
 [0.9.7]: https://github.com/senatov/MiMiNavigator/compare/v0.9.6...v0.9.7
 [0.9.6]: https://github.com/senatov/MiMiNavigator/compare/v0.9.4...v0.9.6
 [0.9.4]: https://github.com/senatov/MiMiNavigator/compare/v0.9.3.2...v0.9.4

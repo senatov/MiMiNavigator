@@ -81,7 +81,7 @@ fi
 
 # ── Step 3: Nuke DerivedData ──────────────────────────────────────────────────
 echo "[3/10] Removing DerivedData..."
-for dd in "${DERIVED_DATA_ROOT}"/MiMiNavigator-*; do
+for dd in "${DERIVED_DATA_ROOT}"/MiMiNavigator-*(N); do
     [[ -d "$dd" ]] && rm -rf "$dd" && echo "   Removed: $(basename $dd)"
 done
 rm -rf "${BUILD_DIR}" && echo "   Removed: ${BUILD_DIR}"
@@ -118,7 +118,7 @@ xcodebuild clean build \
     DEVELOPMENT_TEAM="${TEAM_ID}" \
     OTHER_CODE_SIGN_FLAGS="--timestamp --options runtime" \
     CODE_SIGNING_ALLOWED=YES \
-    2>&1 | tee "${BUILD_LOG}" | grep -E "(error:|warning:|BUILD|CLEAN|Signing)" | tail -30
+    2>&1 | tee "${BUILD_LOG}" | grep -E "(error:|warning:|BUILD|CLEAN|Signing|CompileSwift)" | tail -40
 
 BUILD_EXIT=${pipestatus[1]}
 if [[ ${BUILD_EXIT} -ne 0 ]]; then
@@ -142,20 +142,76 @@ codesign --verify --deep --strict "${APP}" 2>&1 && echo "   ✅ Signature valid"
 }
 xattr -cr "${APP}"
 
-# ── Step 8: Create DMG ───────────────────────────────────────────────────────
-echo "[8/10] Creating DMG..."
+# ── Step 8: Create fancy DMG with background + Applications symlink ──────────
+echo "[8/10] Creating fancy DMG installer..."
+DMG_BG="${PROJECT_DIR}/Scripts/dmg_background.png"
+DMG_RW="/tmp/MiMiNavigator-${VERSION}-rw.dmg"
+DMG_VOL="MiMiNavigator"
+
+# generate background if missing
+if [[ ! -f "${DMG_BG}" ]]; then
+    echo "   Generating DMG background..."
+    zsh "${PROJECT_DIR}/Scripts/generate_dmg_background.zsh"
+fi
+
+# prepare staging folder
 rm -rf "${DMG_STAGE}"
 mkdir -p "${DMG_STAGE}"
 cp -R "${APP}" "${DMG_STAGE}/"
 xattr -cr "${DMG_STAGE}/MiMiNavigator.app"
+ln -s /Applications "${DMG_STAGE}/Applications"
 
-rm -f "${DMG}"
+# create read-write DMG first
+rm -f "${DMG_RW}" "${DMG}"
 hdiutil create \
-    -volname "MiMiNavigator" \
+    -volname "${DMG_VOL}" \
     -srcfolder "${DMG_STAGE}" \
     -ov \
-    -format UDZO \
-    "${DMG}"
+    -format UDRW \
+    "${DMG_RW}"
+
+# mount r/w, style with AppleScript
+MOUNT_OUT=$(hdiutil attach -readwrite -noverify "${DMG_RW}" | grep '/Volumes/')
+DEVICE=$(echo "${MOUNT_OUT}" | head -1 | awk '{print $1}')
+MOUNT_PT=$(echo "${MOUNT_OUT}" | head -1 | sed 's|.*\(/Volumes/.*\)|\1|')
+sleep 2
+
+# copy background into hidden .background dir
+mkdir -p "${MOUNT_PT}/.background"
+cp "${DMG_BG}" "${MOUNT_PT}/.background/background.png"
+
+# style the Finder window via AppleScript
+echo "   Styling DMG window..."
+osascript << APPLESCRIPT
+tell application "Finder"
+    tell disk "${DMG_VOL}"
+        open
+        set current view of container window to icon view
+        set toolbar visible of container window to false
+        set statusbar visible of container window to false
+        set bounds of container window to {200, 120, 860, 520}
+        set viewOptions to the icon view options of container window
+        set arrangement of viewOptions to not arranged
+        set icon size of viewOptions to 128
+        set background picture of viewOptions to file ".background:background.png"
+        set position of item "MiMiNavigator.app" of container window to {170, 190}
+        set position of item "Applications" of container window to {490, 190}
+        close
+        open
+        update without registering applications
+        delay 2
+    end tell
+end tell
+APPLESCRIPT
+
+sync
+sleep 2
+hdiutil detach "${DEVICE}"
+sleep 1
+
+# convert to compressed read-only DMG
+hdiutil convert "${DMG_RW}" -format UDZO -o "${DMG}"
+rm -f "${DMG_RW}"
 echo "   DMG: ${DMG} ($(du -sh "${DMG}" | cut -f1))"
 
 # ── Step 9: Notarize ─────────────────────────────────────────────────────────

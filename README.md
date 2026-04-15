@@ -17,7 +17,7 @@
   <img src="https://img.shields.io/badge/Archives-50%2B_Formats-6f42c1" alt="50+ archive formats" />
   <img src="https://img.shields.io/badge/Media-Preview_%26_Conversion_Placeholders-ff8c00" alt="Media preview and conversion placeholders" />
   <img src="https://img.shields.io/badge/License-AGPL--3.0-blue" alt="AGPL-3.0" />
-  <img src="https://img.shields.io/badge/v0.9.7.3-Active_Development-orange" alt="Active Development" />
+  <img src="https://img.shields.io/badge/v0.9.7.4-Active_Development-orange" alt="Active Development" />
 </p>
 
 <p align="center">
@@ -36,16 +36,16 @@
 
 
 
-## Recent Changes (v0.9.7.3 — April 2026)
+## Recent Changes (v0.9.7.4 — April 2026)
 
-- Refactored the Convert Media panel into a cleaner coordinator-based structure.
-- Kept the Convert Media panel nonmodal while preserving its frame between launches.
-- Improved Convert Media window behavior so it reappears above MiMiNavigator main windows when the main window becomes active.
-- Allowed other applications to cover the Convert Media panel normally.
-- Refactored the Media Info panel into smaller logical sections/extensions for preview, panel creation, text formatting, and actions.
-- Started migrating Media Info video preview from AVPlayer/AVPlayerView to VLC.
-- Added a VLCVideoView / VLCMediaPlayer-based preview path with fallback to the file icon when playback fails.
-- Fixed multiple actor-isolation and observer-callback issues in Convert Media and Media Info code.
+- **First notarized release** — fancy DMG installer with drag-to-Applications UX, no `xattr -cr` needed.
+- Convert Media feature: dialog + service with ffmpeg/ImageIO/Lottie for 20+ formats, wired to context menu.
+- External Tools registry with install popover, Settings pane, and system permission onboarding.
+- Context menu overhaul: "File Ops" submenu, `⌥ R-Menu` for file type operations, background panel menu.
+- AutoFitScheduler singleton eliminates per-view column autofit race conditions.
+- VLC-based media preview (migration from AVPlayer), PackDialog as non-modal NSPanel.
+- DMG/PKG/ISO/JAR files now open with system on double-click; archive extraction via R-Menu only.
+- Fixed APFS firmlink double-click, archive timestamp preservation, drag-drop same-panel drops.
 
 ---
 
@@ -175,18 +175,18 @@ MiMiNavigator can browse archives as virtual directories. Double-click opens the
 
 ## Getting Started
 
-### ⚠️ Download & Run (Pre-Built Binary)
+### ⬇️ Download & Run (Pre-Built Binary)
 
-> **The app is not notarized.** macOS Gatekeeper will block it on first launch.
-> You **must** run this command after downloading:
+> **The app is notarized by Apple.** Starting from v0.9.7.4, macOS Gatekeeper will allow it to run without workarounds.
 
-```bash
-xattr -cr ~/Downloads/MiMiNavigator.app
-```
+1. Download the DMG from the link below
+2. Open the DMG, drag MiMiNavigator to Applications
+3. Launch MiMiNavigator from Applications
 
-Then double-click `MiMiNavigator.app` as usual.
-
-Alternatively: right-click the app → Open → click **Open** in the dialog.
+> For older releases (before v0.9.7.4) you may need to run:
+> ```bash
+> xattr -cr ~/Downloads/MiMiNavigator.app
+> ```
 
 **[Download latest release →](https://github.com/senatov/MiMiNavigator/releases/latest)**
 
