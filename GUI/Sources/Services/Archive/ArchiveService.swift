@@ -57,6 +57,16 @@ final class ArchiveService {
         let workDir = try validateCreateArchiveRequest(files: files, archiveURL: archiveURL)
         try validateSingleCompressedInput(files: files, format: format)
 
+        onProgress?("Preparing archive creation…")
+        onProgress?("Format: .\(format.fileExtension) — \(format.displayName)")
+        onProgress?("Destination: \(archiveURL.path)")
+        onProgress?("Working directory: \(workDir.path)")
+        onProgress?("Items: \(files.count)")
+        for (index, file) in files.enumerated() {
+            let kind = file.hasDirectoryPath ? "📁" : "📄"
+            onProgress?("\(kind) [\(index + 1)/\(files.count)] \(file.lastPathComponent)")
+        }
+
         try await pack(
             files: files,
             to: archiveURL,
@@ -67,6 +77,9 @@ final class ArchiveService {
             onProgress: onProgress,
             processHandle: processHandle
         )
+
+        let finalSize = try await waitForArchiveMaterialization(at: archiveURL)
+        onProgress?("Created archive size: \(finalSize) bytes")
 
         log.info("[ArchiveService] Created: \(archiveURL.lastPathComponent) level=\(compressionLevel)")
         return archiveURL
@@ -108,40 +121,42 @@ final class ArchiveService {
 
         case .tar:
             process.executableURL = URL(fileURLWithPath: "/usr/bin/tar")
-            process.arguments = ["-c", "-f", archiveURL.path] + names
+            process.arguments = ["-c", "-v", "-f", archiveURL.path] + names
 
         case .tarGz:
             process.executableURL = URL(fileURLWithPath: "/usr/bin/tar")
             var env = baseEnv
             env["GZIP"] = "-\(level)"
             process.environment = env
-            process.arguments = ["-c", "-z", "-f", archiveURL.path] + names
+            process.arguments = ["-c", "-z", "-v", "-f", archiveURL.path] + names
 
         case .tarBz2:
             process.executableURL = URL(fileURLWithPath: "/usr/bin/tar")
             var env = baseEnv
             env["BZIP2"] = "-\(level)"
             process.environment = env
-            process.arguments = ["-c", "-j", "-f", archiveURL.path] + names
+            process.arguments = ["-c", "-j", "-v", "-f", archiveURL.path] + names
 
         case .tarXz:
             process.executableURL = URL(fileURLWithPath: "/usr/bin/tar")
             var env = baseEnv
             env["XZ_OPT"] = "-\(level)"
             process.environment = env
-            process.arguments = ["-c", "-J", "-f", archiveURL.path] + names
+            process.arguments = ["-c", "-J", "-v", "-f", archiveURL.path] + names
 
         case .tarLzma, .tarZst, .tarLz4, .tarLzo, .tarLz, .compressZ:
             process.executableURL = URL(fileURLWithPath: "/usr/bin/tar")
-            process.arguments = ["-c", "-f", archiveURL.path] + names
+            process.arguments = ["-c", "-v", "-f", archiveURL.path] + names
 
         case .gzip, .bzip2, .xz, .lzma, .zstd, .lz4, .lzo, .lzip:
             process.executableURL = URL(fileURLWithPath: try ArchiveToolLocator.find7z())
-            process.arguments = ["a", "-mx=\(level)", archiveURL.path, names[0]]
+            process.arguments = [
+                "a", "-mx=\(level)", "-bb3", "-bso1", "-bsp1", "-bse1", archiveURL.path, names[0],
+            ]
 
         case .sevenZip, .sevenZipGeneric:
             process.executableURL = URL(fileURLWithPath: try ArchiveToolLocator.find7z())
-            var args = ["a", "-mx=\(level)"]
+            var args = ["a", "-mx=\(level)", "-bb3", "-bso1", "-bsp1", "-bse1"]
             if let pwd = password, !pwd.isEmpty {
                 args.append("-p\(pwd)")
             }
@@ -157,6 +172,11 @@ final class ArchiveService {
         process.standardError = errorPipe
 
         log.debug("[ArchiveService] \(#function) tool=\(process.executableURL?.path ?? "?") args=\(process.arguments ?? []) workDir=\(workDir.path)")
+        if let onProgress {
+            onProgress("Tool: \(process.executableURL?.lastPathComponent ?? "?")")
+            onProgress("Command: \((process.executableURL?.lastPathComponent ?? "?")) \((process.arguments ?? []).joined(separator: " "))")
+            onProgress("Starting process…")
+        }
 
         processHandle?.set(process)
         try await ArchiveProcessRunner.runWithProgress(
@@ -166,5 +186,30 @@ final class ArchiveService {
             onLine: onProgress,
             processHandle: processHandle
         )
+    }
+
+    private func waitForArchiveMaterialization(at archiveURL: URL) async throws -> Int64 {
+        let fm = FileManager.default
+        var lastObservedSize: Int64 = -1
+
+        for attempt in 1...20 {
+            if let attrs = try? fm.attributesOfItem(atPath: archiveURL.path),
+               let number = attrs[.size] as? NSNumber
+            {
+                let size = number.int64Value
+                lastObservedSize = size
+                if size > 0 {
+                    if attempt > 1 {
+                        log.info("[ArchiveService] archive size became visible on attempt \(attempt): \(size) bytes")
+                    }
+                    return size
+                }
+            }
+
+            try await Task.sleep(for: .milliseconds(100))
+        }
+
+        log.warning("[ArchiveService] archive size still \(lastObservedSize) after wait: \(archiveURL.lastPathComponent)")
+        return max(lastObservedSize, 0)
     }
 }

@@ -137,35 +137,39 @@ enum ArchiveProcessRunner {
             Task.detached {
                 let fh = pipe.fileHandleForReading
                 var buffer = Data()
-                while true {
-                    let chunk = fh.availableData
-                    if chunk.isEmpty { break }
-                    buffer.append(chunk)
-                    while let range = buffer.range(of: Data([0x0A])) {
-                        let lineData = buffer.subdata(in: buffer.startIndex..<range.lowerBound)
-                        buffer.removeSubrange(buffer.startIndex...range.lowerBound)
-                        // try UTF-8 first, fallback to Latin1 (never nil)
-                        let line =
-                            (String(data: lineData, encoding: .utf8)
-                            ?? String(data: lineData, encoding: .isoLatin1)
-                            ?? String(describing: lineData))
-                            .trimmingCharacters(in: .whitespacesAndNewlines)
-                        if !line.isEmpty {
-                            rememberLine(line)
-                            callback(line)
-                        }
-                    }
-                }
-                if !buffer.isEmpty {
+
+                func flushLine(_ lineData: Data) {
                     let line =
-                        (String(data: buffer, encoding: .utf8)
-                        ?? String(data: buffer, encoding: .isoLatin1)
-                        ?? String(describing: buffer))
+                        (String(data: lineData, encoding: .utf8)
+                        ?? String(data: lineData, encoding: .isoLatin1)
+                        ?? String(describing: lineData))
                         .trimmingCharacters(in: .whitespacesAndNewlines)
                     if !line.isEmpty {
                         rememberLine(line)
                         callback(line)
                     }
+                }
+
+                while true {
+                    let chunk = fh.availableData
+                    if chunk.isEmpty { break }
+                    buffer.append(chunk)
+                    while let separatorIndex = buffer.firstIndex(where: { $0 == 0x0A || $0 == 0x0D }) {
+                        let lineData = buffer.subdata(in: buffer.startIndex..<separatorIndex)
+                        let separator = buffer[separatorIndex]
+                        let removeEnd = buffer.index(after: separatorIndex)
+                        buffer.removeSubrange(buffer.startIndex..<removeEnd)
+
+                        // Collapse CRLF into a single line break.
+                        if separator == 0x0D, buffer.first == 0x0A {
+                            buffer.removeFirst()
+                        }
+
+                        flushLine(lineData)
+                    }
+                }
+                if !buffer.isEmpty {
+                    flushLine(buffer)
                 }
             }
         }

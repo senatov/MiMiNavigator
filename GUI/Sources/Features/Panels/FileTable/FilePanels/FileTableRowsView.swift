@@ -38,7 +38,7 @@ struct FileTableRowsView: View {
     // MARK: - View Sections
     private var rowsStack: some View {
         LazyVStack(alignment: .leading, spacing: 0) {
-            ForEach(Array(displayRows.enumerated()), id: \.offset) { index, file in
+            ForEach(Array(displayRows.enumerated()), id: \.element.id) { index, file in
                 sizeAwareRow(index: index, file: file)
             }
         }
@@ -58,10 +58,12 @@ struct FileTableRowsView: View {
             isSelected: isSelected,
             layoutVersion: layout.layoutVersion,
             sizeVersion: file.sizeVersion,
+            byteSize: file.sizeInBytes,
+            modifiedTimestamp: file.modifiedDate?.timeIntervalSince1970 ?? 0,
             isParent: isParent
         ) {
             rowContent(index: index, file: file, isSelected: isSelected)
-                .id(file.id)
+                .id("\(file.id)#\(file.sizeVersion)#\(file.sizeInBytes)#\(file.modifiedDate?.timeIntervalSince1970 ?? 0)")
         }
     }
 
@@ -156,6 +158,8 @@ struct SizeAwareRow<Content: View>: View, Equatable {
     let isSelected: Bool
     let layoutVersion: Int
     let sizeVersion: Int
+    let byteSize: Int64
+    let modifiedTimestamp: TimeInterval
     let isParent: Bool
     @ViewBuilder let content: () -> Content
     nonisolated static func == (lhs: Self, rhs: Self) -> Bool {
@@ -163,6 +167,8 @@ struct SizeAwareRow<Content: View>: View, Equatable {
             && lhs.isSelected == rhs.isSelected
             && lhs.layoutVersion == rhs.layoutVersion
             && lhs.sizeVersion == rhs.sizeVersion
+            && lhs.byteSize == rhs.byteSize
+            && lhs.modifiedTimestamp == rhs.modifiedTimestamp
             && lhs.isParent == rhs.isParent
     }
     var body: some View {

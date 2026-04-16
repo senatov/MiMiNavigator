@@ -79,10 +79,10 @@ extension FileTableView {
     /// Track last files reference to skip redundant rebuilds
     private static var lastFilesHash: [FavPanelSide: Int] = [:]
 
-    func recomputeSortedCache() {
+    func recomputeSortedCache(force: Bool = false) {
         let snapshot = makeFilesSnapshot()
 
-        if shouldSkipSortedCacheRebuild(snapshot: snapshot) {
+        if !force, shouldSkipSortedCacheRebuild(snapshot: snapshot) {
             Self.log.debug(
                 "[FileTableState] skip cache rebuild panel=\(panelSide.rawValue) count=\(snapshot.count) hash=\(snapshot.combinedHash)"
             )
@@ -94,7 +94,7 @@ extension FileTableView {
         rebuildIndexByID()
 
         Self.log.debug(
-            "[FileTableState] rebuilt cache panel=\(panelSide.rawValue) count=\(snapshot.count) hash=\(snapshot.combinedHash)")
+            "[FileTableState] rebuilt cache panel=\(panelSide.rawValue) count=\(snapshot.count) hash=\(snapshot.combinedHash) force=\(force)")
     }
 
     /// Called only when sort parameters change — re-sort needed.

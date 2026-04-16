@@ -23,6 +23,8 @@ final class ProgressPanel: NSObject {
         static let iconSize: CGFloat = 22
         static let titleSpacing: CGFloat = 8
         static let statusTopSpacing: CGFloat = 6
+        static let progressTopSpacing: CGFloat = 8
+        static let progressHeight: CGFloat = 10
         static let logTopSpacing: CGFloat = 8
         static let buttonBottomInset: CGFloat = 10
         static let logCornerRadius: CGFloat = 6
@@ -40,6 +42,8 @@ final class ProgressPanel: NSObject {
     private var iconView: NSImageView?
     private var titleLabel: NSTextField?
     private var statusLabel: NSTextField?
+    private var progressIndicator: NSProgressIndicator?
+    private var progressHeightConstraint: NSLayoutConstraint?
     private var logTextView: NSTextView?
     private var scrollView: NSScrollView?
     private var actionButton: NSButton?
@@ -133,6 +137,21 @@ final class ProgressPanel: NSObject {
         statusLabel?.stringValue = text
     }
 
+    func updateProgress(_ fraction: Double?) {
+        guard let indicator = progressIndicator else { return }
+        setProgressVisible(true)
+        if let fraction {
+            indicator.stopAnimation(nil)
+            indicator.isIndeterminate = false
+            indicator.minValue = 0
+            indicator.maxValue = 1
+            indicator.doubleValue = min(max(fraction, 0), 1)
+        } else {
+            indicator.isIndeterminate = true
+            indicator.startAnimation(nil)
+        }
+    }
+
     // MARK: - Update (preferred for live progress)
     func update(text: String) {
         guard panel?.isVisible == true else { return }
@@ -151,6 +170,11 @@ final class ProgressPanel: NSObject {
         actionButton?.title = "OK"
         actionButton?.isEnabled = true
         applyActionButtonStyle(.confirm)
+        if success {
+            updateProgress(1)
+        } else {
+            progressIndicator?.stopAnimation(nil)
+        }
         onCancel = nil
         log.debug("[ProgressPanel] \(#function) success=\(success) lines=\(lineCount)")
     }
@@ -229,6 +253,10 @@ final class ProgressPanel: NSObject {
         iconView?.image = NSImage(systemSymbolName: icon, accessibilityDescription: nil)
         titleLabel?.stringValue = title
         statusLabel?.stringValue = status
+        progressIndicator?.stopAnimation(nil)
+        progressIndicator?.isIndeterminate = false
+        progressIndicator?.doubleValue = 0
+        setProgressVisible(false)
         logTextView?.string = ""
         actionButton?.title = "Cancel"
         actionButton?.isEnabled = true
@@ -316,6 +344,18 @@ final class ProgressPanel: NSObject {
         containerView.addSubview(status)
         statusLabel = status
 
+        let progress = NSProgressIndicator()
+        progress.translatesAutoresizingMaskIntoConstraints = false
+        progress.isIndeterminate = false
+        progress.minValue = 0
+        progress.maxValue = 1
+        progress.doubleValue = 0
+        progress.controlSize = .small
+        progress.style = .bar
+        progress.isDisplayedWhenStopped = false
+        containerView.addSubview(progress)
+        progressIndicator = progress
+
         let scrollView = NSScrollView()
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         scrollView.hasVerticalScroller = true
@@ -378,9 +418,13 @@ final class ProgressPanel: NSObject {
             status.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -Layout.outerPadding),
             status.topAnchor.constraint(equalTo: title.bottomAnchor, constant: Layout.statusTopSpacing),
 
+            progress.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: Layout.outerPadding),
+            progress.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -Layout.outerPadding),
+            progress.topAnchor.constraint(equalTo: status.bottomAnchor, constant: Layout.progressTopSpacing),
+
             scrollView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: Layout.outerPadding),
             scrollView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -Layout.outerPadding),
-            scrollView.topAnchor.constraint(equalTo: status.bottomAnchor, constant: Layout.logTopSpacing),
+            scrollView.topAnchor.constraint(equalTo: progress.bottomAnchor, constant: Layout.logTopSpacing),
             scrollView.bottomAnchor.constraint(equalTo: button.topAnchor, constant: -Layout.logTopSpacing),
 
             button.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -Layout.outerPadding),
@@ -388,6 +432,9 @@ final class ProgressPanel: NSObject {
             button.widthAnchor.constraint(greaterThanOrEqualToConstant: Layout.buttonMinWidth),
             button.heightAnchor.constraint(equalToConstant: Layout.buttonHeight),
         ])
+        let progressHeightConstraint = progress.heightAnchor.constraint(equalToConstant: 0)
+        progressHeightConstraint.isActive = true
+        self.progressHeightConstraint = progressHeightConstraint
 
         self.panel = panel
         configureContainerAppearance()
@@ -441,6 +488,11 @@ final class ProgressPanel: NSObject {
     private func applyActionButtonStyle(_ semantic: ProgressActionButton.Semantic) {
         guard let button = actionButton as? ProgressActionButton else { return }
         button.semantic = semantic
+    }
+
+    private func setProgressVisible(_ visible: Bool) {
+        progressIndicator?.isHidden = !visible
+        progressHeightConstraint?.constant = visible ? Layout.progressHeight : 0
     }
     // MARK: - Abbreviate Path
     private func abbreviatePath(_ path: String) -> String {

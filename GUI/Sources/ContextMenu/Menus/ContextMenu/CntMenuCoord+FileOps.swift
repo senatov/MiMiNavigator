@@ -89,6 +89,41 @@ extension CntMenuCoord {
 
     // MARK: - Compress
 
+    func performArchiveCreation(
+        files: [CustomFile],
+        archiveName: String,
+        format: ArchiveFormat,
+        destination: URL,
+        deleteSource: Bool,
+        compressionLevel: CompressionLevel = .normal,
+        password: String? = nil,
+        appState: AppState
+    ) async {
+        if format == .zip {
+            await performCompress(
+                files: files,
+                archiveName: archiveName,
+                destination: destination,
+                moveToArchive: deleteSource,
+                compressionLevel: compressionLevel,
+                password: password,
+                appState: appState
+            )
+            return
+        }
+
+        await performPack(
+            files: files,
+            archiveName: archiveBaseName(archiveName, format: format),
+            format: format,
+            destination: destination,
+            deleteSource: deleteSource,
+            compressionLevel: compressionLevel,
+            password: password,
+            appState: appState
+        )
+    }
+
     func performCompress(
         files: [CustomFile],
         archiveName: String,
@@ -105,21 +140,67 @@ extension CntMenuCoord {
         isProcessing = true
         defer { isProcessing = false }
 
+        let progressPanel = ProgressPanel.shared
+        let handle = ActiveArchiveProcess()
+        let effectiveArchiveName = archiveName.isEmpty ? defaultArchiveName(for: files) : archiveName
+
+        await MainActor.run {
+            progressPanel.showPacking(
+                archiveName: effectiveArchiveName,
+                destinationPath: destination.path,
+                fileCount: files.count,
+                cancelHandler: { [handle] in
+                    log.info("[Compress] user cancelled — terminating process")
+                    handle.terminate()
+                }
+            )
+            progressPanel.updateProgress(0.02)
+            progressPanel.appendLog("Preparing compression…")
+        }
+
         do {
             let urls = files.map { $0.urlValue }
 
             let result = try await CompressService.shared.compress(
                 files: urls,
-                archiveName: archiveName,
+                archiveName: effectiveArchiveName,
                 destination: destination,
                 moveToArchive: moveToArchive,
                 compressionLevel: compressionLevel,
-                password: password
+                password: password,
+                onStage: { stage in
+                    Task { @MainActor in
+                        progressPanel.updateStatus(stage)
+                    }
+                },
+                onLog: { line in
+                    Task { @MainActor in
+                        progressPanel.appendLog(line)
+                    }
+                },
+                onProgress: { fraction in
+                    Task { @MainActor in
+                        progressPanel.updateProgress(fraction)
+                    }
+                },
+                processHandle: handle
             )
 
-            refreshPanels(appState: appState)
+            await MainActor.run {
+                progressPanel.updateStatus("Refreshing panels…")
+                progressPanel.updateProgress(0.98)
+                progressPanel.appendLog("Archive created: \(result.lastPathComponent)")
+                progressPanel.appendLog("Refreshing file panels…")
+            }
+            await refreshAfterArchiveOp(appState: appState, destination: destination, archiveURL: result)
 
             log.info("\(#function) SUCCESS created '\(result.lastPathComponent)' moveToArchive=\(moveToArchive)")
+            await MainActor.run {
+                progressPanel.finish(
+                    success: true,
+                    message: "✅ Created \(result.lastPathComponent)"
+                )
+            }
 
             // Show yellow HUD popup
             ArchiveInfoPopupController.shared.showArchiveCreated(
@@ -132,8 +213,39 @@ extension CntMenuCoord {
             )
         } catch {
             log.error("\(#function) FAILED: \(error.localizedDescription)")
-            activeDialog = .error(title: "Compress Failed", message: error.localizedDescription)
+            await MainActor.run {
+                if progressPanel.isCancelled {
+                    progressPanel.appendLog("⏹ Cancelled by user")
+                } else {
+                    progressPanel.appendLog("❌ \(error.localizedDescription)")
+                }
+                progressPanel.finish(
+                    success: false,
+                    message: progressPanel.isCancelled
+                        ? "⏹ Compression cancelled"
+                        : "❌ \(error.localizedDescription)"
+                )
+            }
+            if !progressPanel.isCancelled {
+                activeDialog = .error(title: "Compress Failed", message: error.localizedDescription)
+            }
         }
+    }
+
+    private func defaultArchiveName(for files: [CustomFile]) -> String {
+        guard let first = files.first else { return "Archive.zip" }
+        if files.count == 1 {
+            return "\(first.nameStr).zip"
+        }
+        return "Archive-\(files.count).zip"
+    }
+
+    private func archiveBaseName(_ archiveName: String, format: ArchiveFormat) -> String {
+        let suffix = ".\(format.fileExtension)"
+        guard archiveName.lowercased().hasSuffix(suffix.lowercased()) else {
+            return archiveName
+        }
+        return String(archiveName.dropLast(suffix.count))
     }
 
     /// Create symbolic link or Finder alias

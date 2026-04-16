@@ -83,7 +83,7 @@ extension CntMenuCoord {
             await MainActor.run {
                 progressPanel.hide()
             }
-            await refreshAfterArchiveOp(appState: appState, destination: destination)
+            await refreshAfterArchiveOp(appState: appState, destination: destination, archiveURL: archiveURL)
 
         } catch is CancellationError {
             log.info("[Pack] cancelled by user")
@@ -105,18 +105,43 @@ extension CntMenuCoord {
     // MARK: - Refresh after archive op
 
     /// Refresh panels that show the destination or source directory
-    private func refreshAfterArchiveOp(appState: AppState, destination: URL) async {
+    func refreshAfterArchiveOp(appState: AppState, destination: URL, archiveURL: URL) async {
         let destPath = destination.path
         let leftPath = await MainActor.run { appState.path(for: .left) }
         let rightPath = await MainActor.run { appState.path(for: .right) }
+        logCreatedArchiveSize(archiveURL)
         // refresh whichever panel(s) show the destination dir
         if leftPath == destPath {
             await appState.scanner.forceRefreshAfterFileOp(side: .left)
+            await MainActor.run {
+                AutoFitScheduler.shared.scheduleContentFit(
+                    panel: .left,
+                    appState: appState,
+                    reason: "archive-created \(archiveURL.lastPathComponent)"
+                )
+            }
             log.debug("[Pack] refreshed left panel after pack")
         }
         if rightPath == destPath {
             await appState.scanner.forceRefreshAfterFileOp(side: .right)
+            await MainActor.run {
+                AutoFitScheduler.shared.scheduleContentFit(
+                    panel: .right,
+                    appState: appState,
+                    reason: "archive-created \(archiveURL.lastPathComponent)"
+                )
+            }
             log.debug("[Pack] refreshed right panel after pack")
+        }
+    }
+
+    private func logCreatedArchiveSize(_ archiveURL: URL) {
+        do {
+            let attrs = try FileManager.default.attributesOfItem(atPath: archiveURL.path)
+            let size = (attrs[.size] as? NSNumber)?.int64Value ?? 0
+            log.info("[ArchiveRefresh] created='\(archiveURL.lastPathComponent)' size=\(size) path='\(archiveURL.path)'")
+        } catch {
+            log.warning("[ArchiveRefresh] size check failed for '\(archiveURL.lastPathComponent)': \(error.localizedDescription)")
         }
     }
 }

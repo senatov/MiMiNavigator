@@ -146,6 +146,24 @@ struct PackDialog: View {
         prefs.supportsPassword(selectedFormat)
     }
 
+    private var containsDirectoryInput: Bool {
+        files.contains { $0.urlValue.hasDirectoryPath }
+    }
+
+    private var allowsSingleCompressedFormats: Bool {
+        files.count == 1 && !containsDirectoryInput
+    }
+
+    private var selectableFormats: [ArchiveFormat] {
+        let formats = ArchiveFormat.availableFormats
+        guard !allowsSingleCompressedFormats else { return formats }
+        return formats.filter { !$0.isSingleCompressedFile }
+    }
+
+    private static let knownArchiveExtensions: [String] = ArchiveFormat.allCases
+        .map(\.fileExtension)
+        .sorted { $0.count > $1.count }
+
     // MARK: - Layout
 
     private enum Layout {
@@ -224,7 +242,15 @@ struct PackDialog: View {
         .clipShape(RoundedRectangle(cornerRadius: Layout.outerCornerRadius, style: .continuous))
         .contentShape(RoundedRectangle(cornerRadius: Layout.outerCornerRadius, style: .continuous))
         .onAppear {
+            if !selectableFormats.contains(selectedFormat),
+               let fallback = selectableFormats.first {
+                selectedFormat = fallback
+                compressionLevel = prefs.compressionLevel(for: fallback)
+            }
             isNameFieldFocused = true
+            if mode == .compress {
+                syncArchiveNameWithSelectedFormat()
+            }
             // Load password from Keychain if enabled — but DON'T override encrypt flag
             if prefs.useKeychainPasswords, let saved = ArchivePasswordStore.shared.loadPassword() {
                 password = saved
@@ -332,7 +358,7 @@ struct PackDialog: View {
                 .font(.system(size: 12, weight: .medium))
 
             Picker("", selection: $selectedFormat) {
-                ForEach(ArchiveFormat.availableFormats) { format in
+                ForEach(selectableFormats) { format in
                     HStack {
                         Image(systemName: format.icon)
                         Text(".\(format.fileExtension) — \(format.displayName)")
@@ -346,6 +372,9 @@ struct PackDialog: View {
             .onChange(of: selectedFormat) { _, newFormat in
                 prefs.updateLastFormat(newFormat)
                 compressionLevel = prefs.compressionLevel(for: newFormat)
+                if mode == .compress {
+                    syncArchiveNameWithSelectedFormat()
+                }
             }
         }
     }
@@ -467,8 +496,12 @@ struct PackDialog: View {
     }
 
     private func performPack() {
+        let normalizedName = normalizedArchiveNameForSubmit()
+        if archiveName != normalizedName {
+            archiveName = normalizedName
+        }
         let dest = resolvedDestination
-        log.info("[PackDialog] \(#function) name='\(archiveName)' dest='\(dest.path)'")
+        log.info("[PackDialog] \(#function) name='\(normalizedName)' dest='\(dest.path)'")
         log.info("[PackDialog] format=\(selectedFormat) level=\(compressionLevel) encrypted=\(usePassword) deleteSource=\(deleteSourceFiles)")
 
         // persist all current dialog options for next session
@@ -487,6 +520,36 @@ struct PackDialog: View {
         }
 
         let pwd: String? = usePassword && !password.isEmpty ? password : nil
-        onPack(archiveName, selectedFormat, dest, deleteSourceFiles, compressionLevel, pwd)
+        onPack(normalizedName, selectedFormat, dest, deleteSourceFiles, compressionLevel, pwd)
+    }
+
+    private func syncArchiveNameWithSelectedFormat() {
+        let baseName = baseArchiveName(from: archiveName)
+        guard !baseName.isEmpty else { return }
+        archiveName = "\(baseName).\(selectedFormat.fileExtension)"
+    }
+
+    private func normalizedArchiveNameForSubmit() -> String {
+        let trimmed = archiveName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return trimmed }
+        let baseName = baseArchiveName(from: trimmed)
+        switch mode {
+            case .compress:
+                return "\(baseName).\(selectedFormat.fileExtension)"
+            case .pack:
+                return baseName
+        }
+    }
+
+    private func baseArchiveName(from rawName: String) -> String {
+        let trimmed = rawName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return trimmed }
+        let lowercased = trimmed.lowercased()
+        for ext in Self.knownArchiveExtensions {
+            let suffix = ".\(ext.lowercased())"
+            guard lowercased.hasSuffix(suffix) else { continue }
+            return String(trimmed.dropLast(suffix.count))
+        }
+        return trimmed
     }
 }

@@ -81,6 +81,12 @@ struct FileRow: View, Equatable {
     nonisolated static func == (lhs: FileRow, rhs: FileRow) -> Bool {
         lhs.file.id == rhs.file.id && lhs.isSelected == rhs.isSelected && lhs.panelSide == rhs.panelSide
             && lhs.layoutVersion == rhs.layoutVersion
+            && lhs.file.sizeVersion == rhs.file.sizeVersion
+            && lhs.file.sizeInBytes == rhs.file.sizeInBytes
+            && lhs.file.cachedDirectorySize == rhs.file.cachedDirectorySize
+            && lhs.file.cachedShallowSize == rhs.file.cachedShallowSize
+            && lhs.file.cachedChildCount == rhs.file.cachedChildCount
+            && lhs.file.modifiedDate?.timeIntervalSince1970 == rhs.file.modifiedDate?.timeIntervalSince1970
     }
 
     private var isActivePanel: Bool {
@@ -122,7 +128,17 @@ struct FileRow: View, Equatable {
 
     private var stableContent: some View {
         StableKeyView(
-            file.id.hashValue ^ (isSelected ? 1 : 0) ^ (isActivePanel ? 2 : 0) ^ (isDropTargeted ? 4 : 0) ^ (isMarked ? 8 : 0)
+            file.id.hashValue
+                ^ file.sizeVersion.hashValue
+                ^ file.sizeInBytes.hashValue
+                ^ (file.cachedDirectorySize ?? Int64.min).hashValue
+                ^ (file.cachedShallowSize ?? Int64.min).hashValue
+                ^ (file.cachedChildCount ?? Int.min).hashValue
+                ^ Int(file.modifiedDate?.timeIntervalSince1970 ?? 0).hashValue
+                ^ (isSelected ? 1 : 0)
+                ^ (isActivePanel ? 2 : 0)
+                ^ (isDropTargeted ? 4 : 0)
+                ^ (isMarked ? 8 : 0)
         ) {
             ZStack(alignment: .leading) {
                 zebraBackground

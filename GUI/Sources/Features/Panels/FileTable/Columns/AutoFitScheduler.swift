@@ -136,6 +136,31 @@ final class AutoFitScheduler {
         }
     }
 
+    /// Called after file operations that update the current directory without
+    /// navigating away. Unlike navigation fit, same-path publishes are allowed.
+    func scheduleContentFit(panel: FavPanelSide, appState: AppState, reason: String) {
+        guard UserPreferences.shared.snapshot.autoFitColumnsOnNavigate else { return }
+        navigationFitTasks[panel]?.cancel()
+        let currentPath = appState.path(for: panel)
+        log.info("[AutoFit] content schedule panel=\(panel) path=\(currentPath) reason=\(reason)")
+        navigationFitTasks[panel] = Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(250))
+            if Task.isCancelled { return }
+
+            await self.waitForSizesResolved(appState: appState, panel: panel)
+            if Task.isCancelled { return }
+
+            log.debug("[AutoFit] content pass 1 panel=\(panel) reason=\(reason)")
+            self.runAutoFit(panel: panel, appState: appState)
+
+            try? await Task.sleep(for: .milliseconds(500))
+            if Task.isCancelled { return }
+
+            log.debug("[AutoFit] content pass 2 panel=\(panel) reason=\(reason)")
+            self.runAutoFit(panel: panel, appState: appState)
+        }
+    }
+
     // MARK: - Resize Autofit
 
     /// Called when panel container width changes significantly.

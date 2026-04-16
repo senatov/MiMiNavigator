@@ -110,11 +110,12 @@ extension CntMenuCoord {
         ) { [weak self] archiveName, format, destination, deleteSource, compressionLevel, password in
             guard let self else { return }
             Task {
-                await self.performCompress(
+                await self.performArchiveCreation(
                     files: batchFiles,
                     archiveName: archiveName,
+                    format: format,
                     destination: destination,
-                    moveToArchive: deleteSource,
+                    deleteSource: deleteSource,
                     compressionLevel: compressionLevel,
                     password: password,
                     appState: appState
