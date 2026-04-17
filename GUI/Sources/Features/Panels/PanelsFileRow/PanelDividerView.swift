@@ -20,7 +20,7 @@ struct PanelDividerView: View {
     var body: some View {
         let isHighlighted = divider.isDragging || isHovered
         let lineWidth = divider.isDragging ? PanelDividerMetrics.activeWidth : PanelDividerMetrics.normalWidth
-        let lineColor = isHighlighted ? colorStore.activeTheme.dividerActiveColor : colorStore.activeTheme.dividerNormalColor
+        let lineColor = isHighlighted ? PanelDividerMetrics.Colors.activeLine : colorStore.activeTheme.dividerNormalColor
 
         ZStack {
             if isHighlighted {
@@ -28,6 +28,8 @@ struct PanelDividerView: View {
             } else {
                 inactiveGroove(height: containerHeight)
             }
+
+            dividerHandle(isHighlighted: isHighlighted, lineColor: lineColor)
 
             if divider.isTooltipVisible {
                 tooltipLayer
@@ -263,7 +265,7 @@ struct PanelDividerView: View {
     private func inactiveGroove(height: CGFloat) -> some View {
         RoundedRectangle(cornerRadius: 3)
             .fill(.ultraThinMaterial)
-            .frame(width: 6, height: height)
+            .frame(width: PanelDividerMetrics.grooveWidth, height: height)
             .overlay(
                 RoundedRectangle(cornerRadius: 3)
                     .stroke(Color.white.opacity(0.25), lineWidth: 1)
@@ -292,15 +294,119 @@ struct PanelDividerView: View {
 
     @ViewBuilder
     private func activeDivider(height: CGFloat, lineWidth: CGFloat, color: Color) -> some View {
-        Rectangle()
-            .fill(color)
-            .frame(width: lineWidth, height: height)
-            .shadow(color: Color.black.opacity(0.35), radius: 5, x: 1, y: 0)
+        RoundedRectangle(cornerRadius: 3, style: .continuous)
+            .fill(
+                LinearGradient(
+                    colors: [
+                        color.opacity(0.58),
+                        color,
+                        color.opacity(0.62)
+                    ],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+            )
+            .frame(width: max(lineWidth, PanelDividerMetrics.grooveWidth), height: height)
+            .shadow(color: Color.black.opacity(0.18), radius: 3, x: 0.5, y: 0)
             .overlay(
-                Rectangle()
-                    .stroke(PanelDividerMetrics.Colors.grooveBorderActive, lineWidth: 0.5)
+                RoundedRectangle(cornerRadius: 3, style: .continuous)
+                    .stroke(PanelDividerMetrics.Colors.activeLineEdge, lineWidth: 0.5)
             )
             .allowsHitTesting(false)
+    }
+
+    @ViewBuilder
+    private func dividerHandle(isHighlighted: Bool, lineColor: Color) -> some View {
+        ZStack {
+            RoundedRectangle(
+                cornerRadius: PanelDividerMetrics.handleCornerRadius,
+                style: .continuous
+            )
+            .fill(handleFill(isHighlighted: isHighlighted, lineColor: lineColor))
+            .overlay(handleBorder(isHighlighted: isHighlighted, lineColor: lineColor))
+            .shadow(
+                color: PanelDividerMetrics.Colors.handleShadow.opacity(isHighlighted ? 1.0 : 0.7),
+                radius: isHighlighted ? 8 : 5,
+                x: 0,
+                y: 2
+            )
+
+            HStack(spacing: PanelDividerMetrics.glyphSpacing) {
+                handleGlyph
+                handleGlyph
+                handleGlyph
+            }
+        }
+        .frame(
+            width: PanelDividerMetrics.handleWidth,
+            height: PanelDividerMetrics.handleHeight
+        )
+        .scaleEffect(isHighlighted ? 1.03 : 1.0)
+        .animation(.spring(response: 0.22, dampingFraction: 0.78), value: isHighlighted)
+        .allowsHitTesting(false)
+    }
+
+    @ViewBuilder
+    private var handleGlyph: some View {
+        RoundedRectangle(cornerRadius: 1, style: .continuous)
+            .fill(PanelDividerMetrics.Colors.handleGlyph)
+            .frame(
+                width: PanelDividerMetrics.glyphWidth,
+                height: PanelDividerMetrics.glyphHeight
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 1, style: .continuous)
+                    .fill(Color.white.opacity(0.38))
+                    .frame(width: 0.5)
+                    .offset(x: -0.35)
+            )
+    }
+
+    private func handleFill(isHighlighted: Bool, lineColor: Color) -> some ShapeStyle {
+        LinearGradient(
+            colors: [
+                PanelDividerMetrics.Colors.handleFillTop,
+                isHighlighted ? PanelDividerMetrics.Colors.handleAccent : Color.white.opacity(0.10),
+                PanelDividerMetrics.Colors.handleFillBottom
+            ],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+    }
+
+    @ViewBuilder
+    private func handleBorder(isHighlighted: Bool, lineColor: Color) -> some View {
+        RoundedRectangle(
+            cornerRadius: PanelDividerMetrics.handleCornerRadius,
+            style: .continuous
+        )
+        .stroke(
+            isHighlighted
+                ? PanelDividerMetrics.Colors.activeLineEdge.opacity(0.95)
+                : PanelDividerMetrics.Colors.handleBorder,
+            lineWidth: isHighlighted ? 1.0 : 0.8
+        )
+        .overlay(
+            RoundedRectangle(
+                cornerRadius: PanelDividerMetrics.handleCornerRadius,
+                style: .continuous
+            )
+            .stroke(Color.white.opacity(0.3), lineWidth: 0.6)
+            .blur(radius: 0.6)
+            .mask(
+                RoundedRectangle(
+                    cornerRadius: PanelDividerMetrics.handleCornerRadius,
+                    style: .continuous
+                )
+                .fill(
+                    LinearGradient(
+                        colors: [.white, .clear],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+            )
+        )
     }
 }
 
