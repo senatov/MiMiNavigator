@@ -267,6 +267,7 @@ struct SettingsDiffToolPane: View {
     }
 }
 
+
 // MARK: - Add / Edit Sheet
 
 struct DiffToolEditSheet: View {
@@ -381,4 +382,3 @@ struct DiffToolEditSheet: View {
         if name.isEmpty { name = url.deletingPathExtension().lastPathComponent }
     }
 }
-

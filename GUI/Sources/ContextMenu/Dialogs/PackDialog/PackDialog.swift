@@ -164,69 +164,71 @@ struct PackDialog: View {
         .map(\.fileExtension)
         .sorted { $0.count > $1.count }
 
-    // MARK: - Layout
-
-    private enum Layout {
-        static let outerCornerRadius: CGFloat = 14
-        static let sectionCornerRadius: CGFloat = 12
-        static let horizontalPadding: CGFloat = 12
-    }
-
-
-    // MARK: - Glass backgrounds
-
-    @ViewBuilder
-    private var panelBackground: some View {
-        RoundedRectangle(cornerRadius: Layout.outerCornerRadius, style: .continuous)
-            .fill(.clear)
-    }
-
-
-    @ViewBuilder
-    private var panelBorder: some View {
-        RoundedRectangle(cornerRadius: Layout.outerCornerRadius, style: .continuous)
-            .strokeBorder(.quaternary, lineWidth: 0.8)
-    }
-
-
     // MARK: - Body
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            // Archive name
-            HIGTextField(
+            PackArchiveNameField(
                 label: L10n.Dialog.Pack.archiveNameLabel,
                 placeholder: L10n.PathInput.nameLabel,
-                text: $archiveName,
-                hasError: !isValidName && !archiveName.isEmpty
+                text: $archiveName, hasError: !isValidName && !archiveName.isEmpty
             )
             .focused($isNameFieldFocused)
 
-            // Destination selector — 3 buttons
-            destinationSelector
+            PackDestinationSelector(
+                destinationMode: $destinationMode,
+                resolvedDestination: resolvedDestination,
+                isValidDestination: isValidDestination,
+                onBrowseForFolder: browseForFolder,
+                onDestinationModeChange: { mode in
+                    prefs.updateDestinationMode(mode)
+                }
+            )
 
-            // Format picker
-            formatPicker
+            PackFormatPicker(
+                selectedFormat: $selectedFormat,
+                selectableFormats: selectableFormats,
+                onFormatChange: { newFormat in
+                    prefs.updateLastFormat(newFormat)
+                    compressionLevel = prefs.compressionLevel(for: newFormat)
+                    if mode == .compress {
+                        syncArchiveNameWithSelectedFormat()
+                    }
+                }
+            )
 
-            // Compression level (if supported)
             if supportsCompression {
-                compressionPicker
+                PackCompressionPicker(
+                    compressionLevel: $compressionLevel,
+                    onCompressionChange: { newLevel in
+                        prefs.setCompressionLevel(newLevel, for: selectedFormat)
+                    }
+                )
             }
 
-            // Password (if supported)
             if supportsPassword {
-                passwordSection
+                PackPasswordSection(
+                    usePassword: $usePassword,
+                    password: $password,
+                    showPassword: $showPassword,
+                    useKeychainPasswords: $prefs.useKeychainPasswords,
+                    onUsePasswordChange: { prefs.updateUsePassword($0) },
+                    onUseKeychainChange: { newValue in
+                        if newValue && !password.isEmpty {
+                            ArchivePasswordStore.shared.savePassword(password)
+                        } else if !newValue {
+                            ArchivePasswordStore.shared.deletePassword()
+                        }
+                        prefs.save()
+                    }
+                )
             }
 
-            // Delete source toggle
-            Toggle(isOn: $deleteSourceFiles) {
-                Text(mode == .pack ? "Delete source files after packing" : "Move originals into archive")
-                    .font(.system(size: 14))
-            }
-            .toggleStyle(.checkbox)
-            .onChange(of: deleteSourceFiles) { _, newVal in
-                prefs.updateDeleteSourceFiles(newVal)
-            }
+            PackDeleteSourceToggle(
+                mode: mode,
+                deleteSourceFiles: $deleteSourceFiles,
+                onChange: { prefs.updateDeleteSourceFiles($0) }
+            )
 
             HIGDialogButtons(
                 confirmTitle: confirmTitle,
@@ -237,10 +239,10 @@ struct PackDialog: View {
         }
         .padding(16)
         .frame(minWidth: 400)
-        .background(panelBackground)
-        .overlay(panelBorder)
-        .clipShape(RoundedRectangle(cornerRadius: Layout.outerCornerRadius, style: .continuous))
-        .contentShape(RoundedRectangle(cornerRadius: Layout.outerCornerRadius, style: .continuous))
+        .background(PackDialogStyle.panelBackground)
+        .overlay(PackDialogStyle.panelBorder)
+        .clipShape(RoundedRectangle(cornerRadius: PackDialogStyle.outerCornerRadius, style: .continuous))
+        .contentShape(RoundedRectangle(cornerRadius: PackDialogStyle.outerCornerRadius, style: .continuous))
         .onAppear {
             if !selectableFormats.contains(selectedFormat),
                let fallback = selectableFormats.first {
@@ -257,218 +259,6 @@ struct PackDialog: View {
             }
         }
         .onKeyPress(.escape) { onCancel(); return .handled }
-    }
-
-    // MARK: - Destination Selector
-
-    private var destinationSelector: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(L10n.Dialog.Pack.saveToLabel)
-                .font(.system(size: 12, weight: .medium))
-
-            HStack(spacing: 8) {
-                // Current panel button
-                destinationButton(
-                    mode: .currentPanel,
-                    label: "Current",
-                    icon: "folder",
-                    shortcut: "1"
-                )
-
-                // Opposite panel button
-                destinationButton(
-                    mode: .oppositePanel,
-                    label: "Opposite",
-                    icon: "arrow.left.arrow.right",
-                    shortcut: "2"
-                )
-
-                // Custom button + browse
-                HStack(spacing: 4) {
-                    destinationButton(
-                        mode: .custom,
-                        label: "Other…",
-                        icon: "folder.badge.gearshape",
-                        shortcut: "3"
-                    )
-
-                    if destinationMode == .custom {
-                        Button(action: browseForFolder) {
-                            Image(systemName: "folder.badge.plus")
-                        }
-                        .buttonStyle(.plain)
-                        .foregroundStyle(.secondary)
-                    }
-                }
-            }
-
-            // Show resolved path
-            HStack(spacing: 4) {
-                Image(systemName: "arrow.right")
-                    .font(.system(size: 10))
-                    .foregroundStyle(.tertiary)
-                Text(resolvedDestination.path)
-                    .font(.system(size: 11))
-                    .foregroundColor(isValidDestination ? .secondary : .red)
-                    .lineLimit(1)
-                    .truncationMode(.middle)
-            }
-            .padding(.leading, 4)
-        }
-    }
-
-    private func destinationButton(
-        mode: ArchivePreferencesStore.DestinationMode,
-        label: String,
-        icon: String,
-        shortcut: String
-    ) -> some View {
-        Button {
-            withAnimation(.easeOut(duration: 0.15)) {
-                destinationMode = mode
-                prefs.updateDestinationMode(mode)
-            }
-        } label: {
-            HStack(spacing: 4) {
-                Image(systemName: icon)
-                    .font(.system(size: 11))
-                Text(label)
-                    .font(.system(size: 12))
-            }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 6)
-            .background(
-                RoundedRectangle(cornerRadius: 6, style: .continuous)
-                    .fill(destinationMode == mode ? Color.accentColor.opacity(0.15) : Color.clear)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 6, style: .continuous)
-                    .stroke(destinationMode == mode ? Color.accentColor : Color(nsColor: .separatorColor), lineWidth: 1)
-            )
-        }
-        .buttonStyle(.plain)
-        .keyboardShortcut(KeyEquivalent(Character(shortcut)), modifiers: [])
-    }
-
-    // MARK: - Format Picker
-
-    private var formatPicker: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(L10n.Dialog.Pack.formatLabel)
-                .font(.system(size: 12, weight: .medium))
-
-            Picker("", selection: $selectedFormat) {
-                ForEach(selectableFormats) { format in
-                    HStack {
-                        Image(systemName: format.icon)
-                        Text(".\(format.fileExtension) — \(format.displayName)")
-                    }
-                    .tag(format)
-                }
-            }
-            .pickerStyle(.menu)
-            .labelsHidden()
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .onChange(of: selectedFormat) { _, newFormat in
-                prefs.updateLastFormat(newFormat)
-                compressionLevel = prefs.compressionLevel(for: newFormat)
-                if mode == .compress {
-                    syncArchiveNameWithSelectedFormat()
-                }
-            }
-        }
-    }
-
-    // MARK: - Compression Picker
-
-    private var compressionPicker: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text("Compression Level")
-                .font(.system(size: 12, weight: .medium))
-
-            Picker("", selection: $compressionLevel) {
-                ForEach(CompressionLevel.allCases) { level in
-                    Text(level.displayName).tag(level)
-                }
-            }
-            .pickerStyle(.menu)
-            .labelsHidden()
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .onChange(of: compressionLevel) { _, newLevel in
-                prefs.setCompressionLevel(newLevel, for: selectedFormat)
-            }
-        }
-    }
-
-    // MARK: - Password Section
-
-    private var passwordSection: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Toggle(isOn: $usePassword) {
-                HStack(spacing: 4) {
-                    Image(systemName: "lock.fill")
-                        .font(.system(size: 11))
-                    Text("Encrypt archive")
-                        .font(.system(size: 14))
-                }
-            }
-            .toggleStyle(.checkbox)
-            .onChange(of: usePassword) { _, newVal in
-                prefs.updateUsePassword(newVal)
-            }
-
-            if usePassword {
-                HStack(spacing: 8) {
-                    Group {
-                        if showPassword {
-                            TextField("Password", text: $password)
-                        } else {
-                            SecureField("Password", text: $password)
-                        }
-                    }
-                    .textFieldStyle(.plain)
-                    .font(.system(size: 14))
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 7)
-                    .background(Color(nsColor: .textBackgroundColor))
-                    .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 6, style: .continuous)
-                            .strokeBorder(Color(nsColor: .separatorColor), lineWidth: 1)
-                    )
-
-                    Button {
-                        showPassword.toggle()
-                    } label: {
-                        Image(systemName: showPassword ? "eye.slash" : "eye")
-                    }
-                    .buttonStyle(.plain)
-                    .foregroundStyle(.secondary)
-                }
-
-                // Save to Keychain option — togglable in dialog
-                HStack(spacing: 4) {
-                    Toggle(isOn: $prefs.useKeychainPasswords) {
-                        HStack(spacing: 4) {
-                            Image(systemName: "key.fill")
-                                .font(.system(size: 10))
-                            Text("Remember password in Keychain")
-                                .font(.system(size: 11))
-                        }
-                    }
-                    .toggleStyle(.checkbox)
-                    .onChange(of: prefs.useKeychainPasswords) { _, newVal in
-                        if newVal && !password.isEmpty {
-                            ArchivePasswordStore.shared.savePassword(password)
-                        } else if !newVal {
-                            ArchivePasswordStore.shared.deletePassword()
-                        }
-                        prefs.save()
-                    }
-                }
-                .foregroundStyle(.secondary)
-            }
-        }
     }
 
     // MARK: - Actions

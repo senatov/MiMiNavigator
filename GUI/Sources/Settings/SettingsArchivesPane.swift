@@ -189,4 +189,3 @@ struct SettingsArchivesPane: View {
         }
     }
 }
-
