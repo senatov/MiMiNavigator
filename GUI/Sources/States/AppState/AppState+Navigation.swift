@@ -26,12 +26,30 @@ extension AppState {
         }
         // --- End remote navigation handling ---
 
+        if PathUtils.areEqual(previousPath, newPath), !displayedFiles(for: panel).isEmpty {
+            log.info("[Navigate] \(panel): skip redundant local navigation to '\(newPath)'")
+            return
+        }
+
         updatePath(newPath, for: panel)
         setSelectedFile(nil, for: panel)
         multiSelectionManager?.resetAnchor(for: panel)
 
         if Self.isMountedVolumeRootPath(newPath) {
             log.info("[Navigate] \(panel): mounted volume root → background refresh")
+
+            let showHidden = UserPreferences.shared.snapshot.showHiddenFiles
+            if let cached = await DirectoryContentCache.shared.lookup(newPath, showHidden: showHidden) {
+                log.info("[Navigate] \(panel): mounted volume cache HIT (\(cached.files.count) items, stale=\(cached.isStale))")
+                if panel == .left {
+                    displayedLeftFiles = cached.files
+                } else {
+                    displayedRightFiles = cached.files
+                }
+                if let file = firstRealFile(in: cached.files) {
+                    setSelectedFile(file, for: panel)
+                }
+            }
 
             let spinnerTask = Task { @MainActor in
                 try? await Task.sleep(for: .milliseconds(200))

@@ -34,6 +34,13 @@ extension ConnToSrvrView {
     func startConnection(for url: URL) {
         isConnecting = true
 
+        if isManagedSMBProtocol(url) {
+            Task {
+                await finishRemoteConnect(url: url)
+            }
+            return
+        }
+
         if isSystemMountProtocol(url) {
             onConnect?(url, password)
             isConnecting = false
@@ -45,9 +52,13 @@ extension ConnToSrvrView {
         }
     }
 
+    func isManagedSMBProtocol(_ url: URL) -> Bool {
+        (url.scheme ?? "") == "smb"
+    }
+
     func isSystemMountProtocol(_ url: URL) -> Bool {
         let scheme = url.scheme ?? ""
-        return scheme == "smb" || scheme == "afp"
+        return scheme == "afp"
     }
 
     func handleConnectionSuccess(url: URL) {

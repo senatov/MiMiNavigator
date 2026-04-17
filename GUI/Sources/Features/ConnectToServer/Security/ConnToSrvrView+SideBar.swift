@@ -48,6 +48,7 @@ extension ConnToSrvrView {
             withAnimation(.spring(response: 0.28, dampingFraction: 0.72)) {
                 selectedID = server.id
             }
+            handleSelectionChange(server.id)
         }
         .contextMenu {
             Button("Connect") {

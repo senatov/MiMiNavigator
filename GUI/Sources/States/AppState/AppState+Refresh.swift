@@ -26,18 +26,6 @@ extension AppState {
     func setScannerDirectoryAndRefresh(_ path: String, for panel: FavPanelSide) async {
         await setScannerDirectory(path, for: panel)
 
-        if Self.isMountedVolumeRootPath(path) {
-            log.info("[Refresh] mounted volume root → background refresh panel=\(panel) path='\(path)'")
-
-            Task { [weak self] in
-                guard let self else { return }
-                await self.refreshFiles(for: panel)
-                log.info("[Refresh] mounted volume background refresh completed panel=\(panel) path='\(path)'")
-            }
-
-            return
-        }
-
         log.info("[Refresh] blocking refresh panel=\(panel) path='\(path)'")
         await refreshFiles(for: panel)
         log.info("[Refresh] blocking refresh completed panel=\(panel) path='\(path)'")

@@ -15,11 +15,8 @@ import Foundation
 
 enum FileScanner {
 
-    /// Resource keys prefetched in one batch syscall via contentsOfDirectory.
-    /// fileSecurityKey        — permissions + owner (kernel VFS-cached, negligible overhead).
-    /// directoryEntryCountKey — child count without directory enumeration.
-    /// Date keys              — creation, last-access, added-to-directory for extended columns.
-    private static let prefetchKeys: [URLResourceKey] = [
+    /// Full metadata set for local filesystems where batch-prefetch is cheap.
+    private static let localPrefetchKeys: [URLResourceKey] = [
         .isDirectoryKey,
         .isSymbolicLinkKey,
         .isAliasFileKey,
@@ -38,7 +35,30 @@ enum FileScanner {
         .addedToDirectoryDateKey,
     ]
 
-    private static let prefetchKeySet = Set(prefetchKeys)
+    /// Lean metadata set for mounted volumes, especially SMB/NAS paths under /Volumes.
+    /// Rich keys like security/extra dates can turn a simple listing into many remote round-trips.
+    private static let mountedVolumePrefetchKeys: [URLResourceKey] = [
+        .isDirectoryKey,
+        .isSymbolicLinkKey,
+        .isAliasFileKey,
+        .isPackageKey,
+        .isHiddenKey,
+        .isReadableKey,
+        .isWritableKey,
+        .fileSizeKey,
+        .contentModificationDateKey,
+    ]
+
+    private static let localPrefetchKeySet = Set(localPrefetchKeys)
+    private static let mountedVolumePrefetchKeySet = Set(mountedVolumePrefetchKeys)
+
+    private static func prefetchConfiguration(for url: URL) -> ([URLResourceKey], Set<URLResourceKey>) {
+        let isMountedVolumePath = url.path.hasPrefix("/Volumes/") && url.path != "/Volumes"
+        if isMountedVolumePath {
+            return (mountedVolumePrefetchKeys, mountedVolumePrefetchKeySet)
+        }
+        return (localPrefetchKeys, localPrefetchKeySet)
+    }
 
     // MARK: - Scan directory contents
 
@@ -50,6 +70,7 @@ enum FileScanner {
         log.debug("[FileScanner] scan: \(url.path)")
 
         let fileManager = FileManager.default
+        let (prefetchKeys, prefetchKeySet) = prefetchConfiguration(for: url)
 
         // Hard stop for unreadable directories — do not attempt enumeration.
         if !fileManager.isReadableFile(atPath: url.path) {
@@ -142,6 +163,7 @@ enum FileScanner {
         log.debug("[FileScanner] incremental scan: \(url.path)")
 
         let fileManager = FileManager.default
+        let (prefetchKeys, prefetchKeySet) = prefetchConfiguration(for: url)
 
         if !fileManager.isReadableFile(atPath: url.path) {
             log.debug("[FileScanner] incremental unreadable skipped: \(url.path)")

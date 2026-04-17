@@ -48,6 +48,8 @@ final class SMBFileProvider: @unchecked Sendable, RemoteFileProvider {
         let user: String
         let shareRootPath: String
         let mountPointURL: URL
+        let browseURL: URL
+        let didMountShare: Bool
     }
 
     private let stateQueue = DispatchQueue(label: "MiMiNavigator.SMBFileProvider.state")
@@ -58,17 +60,17 @@ final class SMBFileProvider: @unchecked Sendable, RemoteFileProvider {
     }
 
     var mountPath: String {
-        stateQueue.sync { session?.mountPointURL.path ?? "" }
+        stateQueue.sync { session?.browseURL.path ?? "" }
     }
 
     deinit {
-        let mountPointURL = stateQueue.sync { session?.mountPointURL }
-        guard let mountPointURL else { return }
+        let sessionSnapshot = stateQueue.sync { session }
+        guard let sessionSnapshot, sessionSnapshot.didMountShare else { return }
 
         do {
-            try Self.unmountIfNeeded(mountPointURL)
+            try Self.unmountIfNeeded(sessionSnapshot.mountPointURL)
         } catch {
-            log.warning("[SMB] deferred unmount failed path='\(mountPointURL.path)' error='\(error.localizedDescription)'")
+            log.warning("[SMB] deferred unmount failed path='\(sessionSnapshot.mountPointURL.path)' error='\(error.localizedDescription)'")
         }
     }
 
@@ -77,6 +79,11 @@ final class SMBFileProvider: @unchecked Sendable, RemoteFileProvider {
         let normalizedRemotePath = Self.normalizeRemotePath(remotePath)
         let shareRootPath = try Self.extractShareRootPath(from: normalizedRemotePath)
         let mountPointURL = try Self.makeMountPointURL(host: host, user: user, shareRootPath: shareRootPath)
+        let browseURL = Self.makeBrowseURL(
+            remotePath: normalizedRemotePath,
+            shareRootPath: shareRootPath,
+            mountPointURL: mountPointURL
+        )
 
         log.debug("[SMB] connect host=\(host) port=\(port)")
         log.debug("[SMB] user=\(user) remotePath=\(normalizedRemotePath)")
@@ -85,15 +92,23 @@ final class SMBFileProvider: @unchecked Sendable, RemoteFileProvider {
         log.debug("[SMB] password provided=\(!password.isEmpty)")
 
         try Self.createDirectoryIfNeeded(at: mountPointURL)
-        try Self.unmountIfNeeded(mountPointURL)
-        try Self.mountSMB(host: host, user: user, password: password, shareRootPath: shareRootPath, mountPointURL: mountPointURL)
+        let didMountShare: Bool
+        if Self.isMounted(at: mountPointURL) {
+            log.info("[SMB] reusing existing mount '\(mountPointURL.path)'")
+            didMountShare = false
+        } else {
+            try Self.mountSMB(host: host, user: user, password: password, shareRootPath: shareRootPath, mountPointURL: mountPointURL)
+            didMountShare = true
+        }
 
         let newSession = SMBSession(
             host: host,
             port: port,
             user: user,
             shareRootPath: shareRootPath,
-            mountPointURL: mountPointURL
+            mountPointURL: mountPointURL,
+            browseURL: browseURL,
+            didMountShare: didMountShare
         )
 
         stateQueue.sync { session = newSession }
@@ -213,6 +228,11 @@ final class SMBFileProvider: @unchecked Sendable, RemoteFileProvider {
 
         guard let activeSession else { return }
 
+        guard activeSession.didMountShare else {
+            log.info("[SMB] disconnected host=\(activeSession.host) reused mount='\(activeSession.mountPointURL.path)'")
+            return
+        }
+
         do {
             try Self.unmountIfNeeded(activeSession.mountPointURL)
             log.info("[SMB] disconnected host=\(activeSession.host) mount='\(activeSession.mountPointURL.path)'")
@@ -259,20 +279,18 @@ final class SMBFileProvider: @unchecked Sendable, RemoteFileProvider {
         return String(normalizedRemotePath.dropFirst(shareRootPath.count + 1))
     }
 
+    private static func makeBrowseURL(remotePath: String, shareRootPath: String, mountPointURL: URL) -> URL {
+        let relativePath = relativePathInsideShare(from: remotePath, shareRootPath: shareRootPath)
+        guard !relativePath.isEmpty else { return mountPointURL }
+        return mountPointURL.appendingPathComponent(relativePath, isDirectory: true)
+    }
+
     private static func makeMountPointURL(host: String, user: String, shareRootPath: String) throws -> URL {
         let shareName = shareRootPath.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
         guard !shareName.isEmpty else { throw SMBProviderError.invalidMountURL }
-
-        let baseURL = FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent(".mimi", isDirectory: true)
-            .appendingPathComponent("remote", isDirectory: true)
-            .appendingPathComponent("smb-mounts", isDirectory: true)
-
-        let safeHost = host.replacingOccurrences(of: "/", with: "_")
-        let safeUser = user.replacingOccurrences(of: "/", with: "_")
-        let safeShare = shareName.replacingOccurrences(of: "/", with: "_")
-
-        return baseURL.appendingPathComponent("\(safeHost)__\(safeUser)__\(safeShare)", isDirectory: true)
+        let decodedShareName = shareName.removingPercentEncoding ?? shareName
+        return URL(fileURLWithPath: "/Volumes", isDirectory: true)
+            .appendingPathComponent(decodedShareName, isDirectory: true)
     }
 
     private static func createDirectoryIfNeeded(at url: URL) throws {
@@ -302,6 +320,14 @@ final class SMBFileProvider: @unchecked Sendable, RemoteFileProvider {
             redactedArguments: ["//\(user):***@\(host)/\(shareName)", mountPointURL.path]
         )
 
+        if result.exitCode == 64,
+           result.combinedOutput.localizedCaseInsensitiveContains("file exists"),
+           isMounted(at: mountPointURL)
+        {
+            log.info("[SMB] mount_smbfs reported existing mount, reusing '\(mountPointURL.path)'")
+            return
+        }
+
         guard result.exitCode == 0 else {
             throw SMBProviderError.mountFailed(result.combinedOutput)
         }
@@ -327,6 +353,20 @@ final class SMBFileProvider: @unchecked Sendable, RemoteFileProvider {
         }
 
         log.warning("[SMB] umount returned exit=\(result.exitCode) path='\(mountPointURL.path)' output='\(result.combinedOutput)'")
+    }
+
+    private static func isMounted(at mountPointURL: URL) -> Bool {
+        guard FileManager.default.fileExists(atPath: mountPointURL.path) else { return false }
+
+        let result = try? runCommand(
+            executable: "/sbin/mount",
+            arguments: [],
+            redactedArguments: [],
+            ignoreNonZeroExitCode: true
+        )
+
+        guard let output = result?.stdout, !output.isEmpty else { return false }
+        return output.contains(" on \(mountPointURL.path) (smbfs")
     }
 
     private struct CommandResult {

@@ -20,6 +20,7 @@ final class RemoteConnectionManager {
 
     private(set) var connections: [RemoteConnection] = []
     private(set) var activeConnectionID: UUID?
+    var onConnectionActivated: ((RemoteConnection) -> Void)?
 
     private var autoConnectAttemptedServerIDs: Set<UUID> = []
     private var connectInFlightKeys: Set<String> = []
@@ -137,7 +138,7 @@ final class RemoteConnectionManager {
 
     private func supportsAutoConnectOnStart(for proto: RemoteProtocol) -> Bool {
         switch proto {
-            case .sftp, .ftp:
+            case .sftp, .ftp, .smb:
                 return true
             default:
                 return false
@@ -195,6 +196,7 @@ final class RemoteConnectionManager {
     private func reuseConnection(_ connection: RemoteConnection) {
         log.info("[RemoteConnectionManager] reusing existing connection for \(connection.displayName)")
         activeConnectionID = connection.id
+        notifyConnectionActivated(connection)
     }
 
     private func connectWithNewProvider(_ provider: any RemoteFileProvider, to server: RemoteServer, password: String) async {
@@ -231,6 +233,7 @@ final class RemoteConnectionManager {
         connections.append(connection)
         activeConnectionID = connection.id
         updateServerResult(originalServer, result: .success, errorDetail: nil)
+        notifyConnectionActivated(connection)
 
         log.info("\(#function) connected: \(connection.displayName)")
         log.info("\(#function) id=\(connection.id)")
@@ -308,6 +311,8 @@ final class RemoteConnectionManager {
     func setActive(id: UUID) {
         guard connections.contains(where: { $0.id == id }) else { return }
         activeConnectionID = id
+        guard let connection = connections.first(where: { $0.id == id }) else { return }
+        notifyConnectionActivated(connection)
     }
 
     func hasConnection(for server: RemoteServer) -> Bool {
@@ -315,7 +320,7 @@ final class RemoteConnectionManager {
     }
 
     func isConnected(to server: RemoteServer) -> Bool {
-        hasConnection(for: server)
+        hasConnection(for: server) || hasMountedSystemConnection(for: server)
     }
 
     func connection(for server: RemoteServer) -> RemoteConnection? {
@@ -332,6 +337,12 @@ final class RemoteConnectionManager {
                 && connection.server.user == server.user
                 && normalizedConnectionPath == normalizedServerPath
         }
+    }
+
+    private func hasMountedSystemConnection(for server: RemoteServer) -> Bool {
+        guard server.remoteProtocol == .smb else { return false }
+        guard let mountPointPath = expectedSMBMountPointPath(for: server) else { return false }
+        return Self.isSMBMounted(atPath: mountPointPath)
     }
 
     // MARK: - Remote operations
@@ -377,6 +388,37 @@ final class RemoteConnectionManager {
         return trimmed
     }
 
+    private func expectedSMBMountPointPath(for server: RemoteServer) -> String? {
+        let trimmed = Self.normalizeRemotePath(server.remotePath)
+        let components = trimmed.split(separator: "/", omittingEmptySubsequences: true)
+        guard let share = components.first else { return nil }
+        let decodedShare = String(share).removingPercentEncoding ?? String(share)
+        guard !decodedShare.isEmpty else { return nil }
+        return "/Volumes/" + decodedShare
+    }
+
+    private static func isSMBMounted(atPath path: String) -> Bool {
+        guard FileManager.default.fileExists(atPath: path) else { return false }
+
+        let process = Process()
+        let outputPipe = Pipe()
+        process.executableURL = URL(fileURLWithPath: "/sbin/mount")
+        process.standardOutput = outputPipe
+        process.standardError = Pipe()
+
+        do {
+            try process.run()
+            process.waitUntilExit()
+        } catch {
+            log.warning("[RemoteConnectionManager] SMB mount probe failed for \(path): \(error.localizedDescription)")
+            return false
+        }
+
+        let outputData = outputPipe.fileHandleForReading.readDataToEndOfFile()
+        let output = String(data: outputData, encoding: .utf8) ?? ""
+        return output.contains(" on \(path) (smbfs")
+    }
+
     private func createProvider(for proto: RemoteProtocol) -> (any RemoteFileProvider)? {
         log.debug("\(#function)(\(proto))")
 
@@ -385,11 +427,17 @@ final class RemoteConnectionManager {
                 return SFTPFileProvider()
             case .ftp:
                 return FTPFileProvider()
+            case .smb:
+                return SMBFileProvider()
             default:
                 log.warning("[RemoteConnectionManager] provider unavailable for protocol=\(proto.rawValue)")
-                log.warning("[RemoteConnectionManager] only FTP and SFTP providers are currently implemented")
+                log.warning("[RemoteConnectionManager] only FTP, SFTP, and SMB providers are currently implemented")
                 return nil
         }
+    }
+
+    private func notifyConnectionActivated(_ connection: RemoteConnection) {
+        onConnectionActivated?(connection)
     }
 
     private func updateServerResult(_ server: RemoteServer, result: ConnectionResult, errorDetail: String?) {

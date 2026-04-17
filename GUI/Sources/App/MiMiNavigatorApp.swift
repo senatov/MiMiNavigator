@@ -28,6 +28,7 @@ struct MiMiNavigatorApp: App {
 
     @State var didBindAppState = false
     @State var didWireCoordinatorCallbacks = false
+    @State var didRestoreStartupConnection = false
 
     // MARK: - Environment
 
@@ -115,7 +116,14 @@ struct MiMiNavigatorApp: App {
             }
         }
 
+        RemoteConnectionManager.shared.onConnectionActivated = { connection in
+            Task { @MainActor in
+                await handleActivatedConnection(connection)
+            }
+        }
+
         didWireCoordinatorCallbacks = true
+        restoreStartupConnectionIfNeeded()
     }
 
     func handleScenePhaseChange() {
@@ -144,6 +152,15 @@ struct MiMiNavigatorApp: App {
         let scheme = url.scheme ?? ""
         log.info("[ConnectToServer] connecting \(scheme)://\(url.host ?? "")")
         if scheme == "smb" || scheme == "afp" {
+            if scheme == "smb",
+               let activeConnection = RemoteConnectionManager.shared.activeConnection,
+               activeConnection.server.remoteProtocol == .smb,
+               let mountedURL = resolvedMountedOrRemoteURL(from: activeConnection.provider.mountPath)
+            {
+                appState.updatePath(mountedURL, for: side)
+                await refreshPanel(at: mountedURL, for: side)
+                return
+            }
             await connectMountedShare(connectURL, for: side)
             return
         }
@@ -170,21 +187,22 @@ struct MiMiNavigatorApp: App {
     private func connectMountedShare(_ url: URL, for side: FavPanelSide) async {
         if let mountedURL = await SMBMounter.shared.mountShare(url) {
             appState.updatePath(mountedURL, for: side)
+            await refreshPanel(at: mountedURL, for: side)
         }
     }
 
     private func connectRemoteProvider(for side: FavPanelSide) async {
         let manager = RemoteConnectionManager.shared
         guard manager.isConnected, let conn = manager.activeConnection else { return }
-
         let mountPath = conn.provider.mountPath
-        guard let remoteURL = URL(string: mountPath) else {
+
+        guard let remoteURL = resolvedMountedOrRemoteURL(from: conn.provider.mountPath) else {
             log.error("[ConnectToServer] bad mountPath URL: \(mountPath)")
             return
         }
 
         appState.updatePath(remoteURL, for: side)
-        await appState.refreshRemoteFiles(for: side)
+        await refreshPanel(at: remoteURL, for: side)
     }
 
     private func handleNetworkNavigate(_ shareURL: URL) async {
@@ -198,7 +216,45 @@ struct MiMiNavigatorApp: App {
 
         if let mountedURL = await SMBMounter.shared.mountShare(shareURL) {
             appState.updatePath(mountedURL, for: side)
+            await refreshPanel(at: mountedURL, for: side)
             NetworkNeighborhoodCoordinator.shared.close()
+        }
+    }
+
+    private func restoreStartupConnectionIfNeeded() {
+        guard !didRestoreStartupConnection else { return }
+        guard let connection = RemoteConnectionManager.shared.activeConnection else { return }
+        didRestoreStartupConnection = true
+
+        Task { @MainActor in
+            await handleActivatedConnection(connection)
+        }
+    }
+
+    private func handleActivatedConnection(_ connection: RemoteConnection) async {
+        guard let targetURL = resolvedMountedOrRemoteURL(from: connection.provider.mountPath) else {
+            log.error("[ConnectToServer] bad activated mountPath: \(connection.provider.mountPath)")
+            return
+        }
+
+        let side = appState.focusedPanel
+        appState.updatePath(targetURL, for: side)
+        await refreshPanel(at: targetURL, for: side)
+    }
+
+    private func resolvedMountedOrRemoteURL(from mountPath: String) -> URL? {
+        guard !mountPath.isEmpty else { return nil }
+        if mountPath.hasPrefix("/") {
+            return URL(fileURLWithPath: mountPath, isDirectory: true)
+        }
+        return URL(string: mountPath)
+    }
+
+    private func refreshPanel(at url: URL, for side: FavPanelSide) async {
+        if AppState.isRemotePath(url) {
+            await appState.refreshRemoteFiles(for: side)
+        } else {
+            await appState.refreshFiles(for: side, force: true)
         }
     }
 

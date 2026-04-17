@@ -160,6 +160,13 @@ final class PathNavigationService {
     }
 
     private func applyLocalTarget(_ target: NavigationTarget, side: FavPanelSide) async {
+        if PathUtils.areEqual(appState.url(for: side), target.urlForAppState),
+           !appState.displayedFiles(for: side).isEmpty
+        {
+            log.info("[PathNav] skip redundant local navigation \(side) → \(target.pathForScanner)")
+            return
+        }
+
         appState.updatePath(target.urlForAppState, for: side)
         await setDirectory(path: target.pathForScanner, side: side)
         await refresh(side: side)

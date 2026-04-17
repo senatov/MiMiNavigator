@@ -13,6 +13,11 @@ import Foundation
 // MARK: - Size Calculation Logic
 extension FileRow {
 
+    private var isMountedVolumeDirectory: Bool {
+        let path = file.urlValue.path
+        return path.hasPrefix("/Volumes/") && path != "/Volumes"
+    }
+
     // MARK: - Symlink size calculation
     func runSymlinkSizeTask() async {
         log.info("[FileRow] Task started for symlink file '\(file.nameStr)'")
@@ -43,6 +48,19 @@ extension FileRow {
             file.sizeIsExact = false
             file.sizeCalculationStarted = false
             return
+        }
+
+        if isMountedVolumeDirectory {
+            do {
+                try await Task.sleep(for: .milliseconds(900))
+            } catch {
+                file.sizeCalculationStarted = false
+                return
+            }
+            if Task.isCancelled {
+                file.sizeCalculationStarted = false
+                return
+            }
         }
 
         log.info("[FileRow] Task started for directory '\(file.nameStr)' symDir=\(file.isSymbolicDirectory)")
