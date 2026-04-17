@@ -399,24 +399,27 @@ final class RemoteConnectionManager {
 
     private static func isSMBMounted(atPath path: String) -> Bool {
         guard FileManager.default.fileExists(atPath: path) else { return false }
+        let mountURL = URL(fileURLWithPath: path, isDirectory: true)
+        let keys: Set<URLResourceKey> = [.volumeIsLocalKey, .volumeLocalizedFormatDescriptionKey]
 
-        let process = Process()
-        let outputPipe = Pipe()
-        process.executableURL = URL(fileURLWithPath: "/sbin/mount")
-        process.standardOutput = outputPipe
-        process.standardError = Pipe()
-
-        do {
-            try process.run()
-            process.waitUntilExit()
-        } catch {
-            log.warning("[RemoteConnectionManager] SMB mount probe failed for \(path): \(error.localizedDescription)")
+        guard let mountedVolumes = FileManager.default.mountedVolumeURLs(
+            includingResourceValuesForKeys: Array(keys),
+            options: []
+        ) else {
             return false
         }
 
-        let outputData = outputPipe.fileHandleForReading.readDataToEndOfFile()
-        let output = String(data: outputData, encoding: .utf8) ?? ""
-        return output.contains(" on \(path) (smbfs")
+        for volumeURL in mountedVolumes where volumeURL.path == mountURL.path {
+            guard let values = try? volumeURL.resourceValues(forKeys: keys) else { continue }
+            guard values.volumeIsLocal == false else { continue }
+
+            let description = values.volumeLocalizedFormatDescription?.lowercased() ?? ""
+            if description.contains("smb") {
+                return true
+            }
+        }
+
+        return false
     }
 
     private func createProvider(for proto: RemoteProtocol) -> (any RemoteFileProvider)? {
