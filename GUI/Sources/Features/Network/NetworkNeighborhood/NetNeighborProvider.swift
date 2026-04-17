@@ -135,22 +135,39 @@ final class NetworkNeighborhoodProvider: NSObject, ObservableObject {
         guard let idx = hosts.firstIndex(where: { $0.id == hostID }) else { return }
         guard hosts[idx].isExpandable, !hosts[idx].sharesLoaded else { return }
         hosts[idx].sharesLoading = true
+        hosts[idx].shareLoadState = .idle
         log.info("[Network] fetchShares for '\(hosts[idx].name)'")
         let host = hosts[idx]
-        let shares = await NetworkShareEnumerator.shares(for: host)
+        let result = await NetworkShareEnumerator.enumerateShares(for: host)
         if let i = hosts.firstIndex(where: { $0.id == hostID }) {
-            hosts[i].shares = shares
+            hosts[i].shares = result.shares
             hosts[i].sharesLoaded = true
             hosts[i].sharesLoading = false
+            hosts[i].shareLoadState = shareLoadState(for: result)
         }
-        log.info("[Network] '\(host.name)' shares: \(shares.map(\.name))")
+        log.info("[Network] '\(host.name)' shares: \(result.shares.map(\.name)) state=\(shareLoadState(for: result).rawValue)")
     }
 
     func retryFetchShares(for hostID: NetworkHost.ID) async {
         guard let idx = hosts.firstIndex(where: { $0.id == hostID }) else { return }
         hosts[idx].sharesLoaded = false
+        hosts[idx].sharesLoading = false
         hosts[idx].shares = []
+        hosts[idx].shareLoadState = .idle
         await fetchShares(for: hostID)
+    }
+
+    private func shareLoadState(for result: NetworkShareEnumerationResult) -> NetworkShareLoadState {
+        switch result {
+        case .shares:
+            return .loaded
+        case .noShares:
+            return .noShares
+        case .authRequired:
+            return .authRequired
+        case .unavailable:
+            return .unavailable
+        }
     }
 
     // MARK: - Normalize name for dedup
@@ -454,4 +471,3 @@ final class NetworkNeighborhoodProvider: NSObject, ObservableObject {
             || lowercasedName.hasPrefix("ipad (")
     }
 }
-

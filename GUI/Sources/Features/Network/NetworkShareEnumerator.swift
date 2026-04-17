@@ -16,6 +16,22 @@ struct KeychainCred: Hashable, Sendable {
     let server: String
 }
 
+enum NetworkShareEnumerationResult: Sendable {
+    case shares([NetworkShare])
+    case noShares
+    case authRequired
+    case unavailable
+
+    var shares: [NetworkShare] {
+        switch self {
+        case .shares(let shares):
+            return shares
+        case .noShares, .authRequired, .unavailable:
+            return []
+        }
+    }
+}
+
 // MARK: - Share enumeration (smbutil + Keychain)
 enum NetworkShareEnumerator {
 
@@ -169,7 +185,7 @@ enum NetworkShareEnumerator {
     }
 
     // MARK: - Main entry point
-    @concurrent static func shares(for host: NetworkHost) async -> [NetworkShare] {
+    @concurrent static func enumerateShares(for host: NetworkHost) async -> NetworkShareEnumerationResult {
         let scheme = host.serviceType.urlScheme
         let hostnameCandidates = hostnameVariants(host)
         logHostnameVariants(host: host, variants: hostnameCandidates)
@@ -177,7 +193,7 @@ enum NetworkShareEnumerator {
 
         guard shouldUseSmbUtil(for: host) else {
             log.info("[ShareEnum] unsupported service for smbutil: \(host.serviceType.rawValue) host='\(host.name)'")
-            return []
+            return .unavailable
         }
 
         log.info("[ShareEnum] host='\(host.name)' localhost=\(host.isLocalhost)")
@@ -187,7 +203,7 @@ enum NetworkShareEnumerator {
 
         guard !hostnameCandidates.isEmpty else {
             log.warning("[ShareEnum] no hostname candidates for '\(host.name)'")
-            return []
+            return .unavailable
         }
 
         // For localhost or any host: try guest/anonymous FIRST
@@ -202,14 +218,14 @@ enum NetworkShareEnumerator {
             )
             if hasSuccessfulShares(result) {
                 log.info("[ShareEnum] OK guest@\(hostname) -> \(result.map(\.name))")
-                return result
+                return .shares(result)
             }
         }
 
         // Skip credentials for localhost (should never need them)
         guard !host.isLocalhost else {
             log.info("[ShareEnum] localhost no guest shares found")
-            return []
+            return .noShares
         }
 
         // Try each credential x each hostname
@@ -224,13 +240,18 @@ enum NetworkShareEnumerator {
                 )
                 if hasSuccessfulShares(result) {
                     log.info("[ShareEnum] OK \(cred.user)@\(hostname) -> \(result.map(\.name))")
-                    return result
+                    return .shares(result)
                 }
             }
         }
 
-        log.info("[ShareEnum] no shares for '\(host.name)' - auth required")
-        return []
+        if credentials.isEmpty {
+            log.info("[ShareEnum] no shares for '\(host.name)' - auth required")
+            return .authRequired
+        }
+
+        log.info("[ShareEnum] no visible shares for '\(host.name)' after authenticated lookup")
+        return .noShares
     }
 
     // MARK: - Hostname variants to try (priority order)
@@ -263,11 +284,29 @@ enum NetworkShareEnumerator {
         return deduplicatedPreservingOrder(candidates.filter(isUsableCandidateHost))
     }
 
+    private static func serviceSpecificKeychainSuffix(for serviceType: NetworkServiceType) -> String? {
+        switch serviceType {
+        case .smb:
+            return "._smb._tcp.local"
+        case .afp:
+            return "._afp._tcp.local"
+        case .sftp, .ftp:
+            return nil
+        }
+    }
+
     private static func keychainServerVariants(for host: NetworkHost) -> [String] {
         let resolvedHostName = sanitizedHostName(host.hostName).map(normalizedAddressLikeValue)
         let effectiveHostName = normalizedAddressLikeValue(host.effectiveHostName)
         let displayHostName = normalizedAddressLikeValue(host.hostDisplayName)
         let baseName = normalizedLookupHost(host.name)
+        let serviceSpecificSuffix = serviceSpecificKeychainSuffix(for: host.serviceType)
+        let serviceSpecificVariant: String? =
+            if let serviceSpecificSuffix, isUsableCandidateHost(baseName) {
+                "\(baseName)\(serviceSpecificSuffix)"
+            } else {
+                nil
+            }
 
         let rawVariants: [String?] = [
             resolvedHostName,
@@ -277,8 +316,7 @@ enum NetworkShareEnumerator {
             isUsableCandidateHost(baseName) ? "\(baseName).local" : nil,
             isUsableCandidateHost(baseName) ? "\(baseName).local." : nil,
             isUsableCandidateHost(baseName) ? "\(baseName).fritz.box" : nil,
-            isUsableCandidateHost(baseName) ? "\(baseName)._smb._tcp.local" : nil,
-            isUsableCandidateHost(baseName) ? "\(baseName)._afp._tcp.local" : nil,
+            serviceSpecificVariant,
         ]
 
         return deduplicatedPreservingOrder(rawVariants.compactMap { $0 })
@@ -293,46 +331,21 @@ enum NetworkShareEnumerator {
         var seen = Set<String>()
 
         for server in serverVariants {
-            let query: [CFString: Any] = [
-                kSecClass: kSecClassInternetPassword,
-                kSecAttrServer: server,
-                kSecMatchLimit: kSecMatchLimitAll,
-                kSecReturnAttributes: true,
-                kSecReturnData: true,
-            ]
-            var items: AnyObject? = nil
-            let status = SecItemCopyMatching(query as CFDictionary, &items)
-            guard status == errSecSuccess,
-                  let array = items as? [[CFString: Any]]
-            else {
-                logKeychainLookupMiss(server: server, status: status)
+            guard let creds = NetworkAuthService.load(for: server) else {
+                logKeychainLookupMiss(server: server, status: errSecItemNotFound)
                 continue
             }
 
-            logKeychainLookupHit(server: server, itemCount: array.count)
+            logKeychainLookupHit(server: server, itemCount: 1)
 
-            for item in array {
-                let account = item[kSecAttrAccount] as? String ?? ""
-                let data = item[kSecValueData] as? Data ?? Data()
-                let password = String(data: data, encoding: .utf8) ?? ""
-
-                guard !account.isEmpty,
-                      account != "No user account",
-                      !password.isEmpty
-                else {
-                    logCredentialItemRejected(server: server, account: account, hasPassword: !password.isEmpty)
-                    continue
-                }
-
-                let key = "\(account.lowercased()):\(password):\(server.lowercased())"
-                guard seen.insert(key).inserted else {
-                    logDuplicateCredentialSkipped(server: server, account: account)
-                    continue
-                }
-
-                results.append(KeychainCred(user: account, password: password, server: server))
-                log.debug("[Keychain] found \(account)@\(server)")
+            let key = "\(creds.user.lowercased()):\(creds.password)"
+            guard seen.insert(key).inserted else {
+                logDuplicateCredentialSkipped(server: server, account: creds.user)
+                continue
             }
+
+            results.append(KeychainCred(user: creds.user, password: creds.password, server: server))
+            log.debug("[Keychain] found \(creds.user)@\(server)")
         }
 
         logCredentialCandidates(results)

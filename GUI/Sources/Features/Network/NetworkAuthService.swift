@@ -133,6 +133,16 @@ enum NetworkAuthService {
         return c.url
     }
 
+    static func authenticatedURL(for shareURL: URL) -> URL {
+        guard let host = shareURL.host else { return shareURL }
+        guard let creds = load(for: host) else { return shareURL }
+        guard var components = URLComponents(url: shareURL, resolvingAgainstBaseURL: false) else { return shareURL }
+
+        components.user = creds.user
+        components.password = creds.password
+        return components.url ?? shareURL
+    }
+
     // MARK: - Private: exact Keychain lookup
     private static func loadExact(for key: String) -> NetworkCredentials? {
         let query: [CFString: Any] = [

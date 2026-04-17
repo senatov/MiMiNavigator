@@ -323,10 +323,12 @@ struct NetworkNeighborhoodView: View {
         if host.sharesLoading {
             sharesLoadingRow
         } else if host.sharesLoaded && host.shares.isEmpty {
-            noSharesRow(for: host)
+            shareStatusRow(for: host)
         } else {
             ForEach(Array(host.shares.enumerated()), id: \.element.id) { index, share in
-                ShareRow(share: share) { onNavigate?(share.url) }
+                ShareRow(share: share) {
+                    onNavigate?(NetworkAuthService.authenticatedURL(for: share.url))
+                }
                 if index < host.shares.count - 1 {
                     Divider().padding(.leading, Layout.shareDividerInset)
                 }
@@ -439,15 +441,17 @@ struct NetworkNeighborhoodView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    // MARK: - No shares row
-    private func noSharesRow(for host: NetworkHost) -> some View {
+    // MARK: - Share status row
+    private func shareStatusRow(for host: NetworkHost) -> some View {
         HStack(spacing: 8) {
-            Text("😞").font(.system(size: 14))
-            Text(host.isLocalhost ? "No shared folders configured" : "No shares found")
-                .font(.caption).foregroundStyle(.secondary)
+            Image(systemName: statusIconName(for: host))
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(.secondary)
+            Text(shareStatusText(for: host))
+                .font(.caption)
+                .foregroundStyle(.secondary)
             Spacer()
-            if !host.isLocalhost && !host.deviceClass.isMobile && !host.deviceClass.isRouter
-                && host.deviceClass != .mediaBox {
+            if shouldShowSignIn(for: host) {
                 Button { authTarget = host } label: {
                     Label("Sign In", systemImage: "key.fill")
                         .font(.caption).padding(.horizontal, 8).padding(.vertical, 3)
@@ -461,9 +465,66 @@ struct NetworkNeighborhoodView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
+    private func shareStatusText(for host: NetworkHost) -> String {
+        switch host.shareLoadState {
+        case .authRequired:
+            return "Authentication required to view shared folders"
+        case .unavailable:
+            return "Share list is unavailable right now"
+        case .noShares:
+            return host.isLocalhost ? "No shared folders configured" : "No visible shared folders. Try signing in again."
+        case .loaded, .idle:
+            return host.isLocalhost ? "No shared folders configured" : "No shares found"
+        }
+    }
+
+    private func statusIconName(for host: NetworkHost) -> String {
+        switch host.shareLoadState {
+        case .authRequired:
+            return "lock.fill"
+        case .unavailable:
+            return "exclamationmark.triangle.fill"
+        case .noShares, .loaded, .idle:
+            return "folder.badge.questionmark"
+        }
+    }
+
+    private func shouldShowSignIn(for host: NetworkHost) -> Bool {
+        guard !host.isLocalhost,
+              !host.deviceClass.isMobile,
+              !host.deviceClass.isRouter,
+              host.deviceClass != .mediaBox
+        else {
+            return false
+        }
+
+        return host.shareLoadState == .authRequired
+            || host.shareLoadState == .unavailable
+            || host.shareLoadState == .noShares
+    }
+
+    private func shouldAutoPromptForAuthentication(for host: NetworkHost) -> Bool {
+        guard shouldShowSignIn(for: host), authTarget == nil else { return false }
+
+        switch host.shareLoadState {
+        case .authRequired, .noShares:
+            return true
+        case .idle, .loaded, .unavailable:
+            return false
+        }
+    }
+
     private func expandHost(_ host: NetworkHost) {
         expanded.insert(host.id)
-        Task { await provider.fetchShares(for: host.id) }
+        Task {
+            await provider.fetchShares(for: host.id)
+
+            guard let refreshedHost = provider.hosts.first(where: { $0.id == host.id }) else { return }
+            guard shouldAutoPromptForAuthentication(for: refreshedHost) else { return }
+
+            log.info("[Network] opening auth sheet after share lookup for '\(refreshedHost.name)' state=\(refreshedHost.shareLoadState.rawValue)")
+            authTarget = refreshedHost
+        }
     }
 
     // MARK: - Expand toggle

@@ -82,6 +82,14 @@ struct NetworkShare: Identifiable, Hashable, Sendable {
     }
 }
 
+enum NetworkShareLoadState: String, Hashable, Sendable {
+    case idle
+    case loaded
+    case noShares
+    case authRequired
+    case unavailable
+}
+
 // MARK: - Discovered network host
 struct NetworkHost: Identifiable, Hashable, Sendable {
     let id: UUID
@@ -95,6 +103,7 @@ struct NetworkHost: Identifiable, Hashable, Sendable {
     var shares: [NetworkShare]
     var sharesLoaded: Bool
     var sharesLoading: Bool
+    var shareLoadState: NetworkShareLoadState
     var bonjourServices: Set<String>
     var isLocalhost: Bool           // true = this Mac itself
     var rawMAC: String?             // MAC address if known (for mobile devices after rename)
@@ -121,6 +130,7 @@ struct NetworkHost: Identifiable, Hashable, Sendable {
         self.shares         = []
         self.sharesLoaded   = false
         self.sharesLoading  = false
+        self.shareLoadState = .idle
         self.bonjourServices = []
         self.isLocalhost    = isLocalhost
         self.rawMAC         = nil
