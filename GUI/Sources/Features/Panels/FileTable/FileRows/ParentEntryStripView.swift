@@ -156,8 +156,10 @@ struct ParentEntryStripView: View {
     }
 
     private func updateRowsCount(_ count: Int) async {
-        await MainActor.run {
-            rowsCount = count
+        let newCount = count
+        DispatchQueue.main.async {
+            guard rowsCount != newCount else { return }
+            rowsCount = newCount
         }
     }
 
