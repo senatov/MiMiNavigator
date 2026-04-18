@@ -15,6 +15,8 @@ struct DuoPanelBottomToolbarSection: View {
     let onEdit: () -> Void
     let onCopy: () -> Void
     let onMove: () -> Void
+    let onNewFolder: () -> Void
+    let onDelete: () -> Void
     let onSettings: () -> Void
     let onConsole: () -> Void
     let onExit: () -> Void
@@ -38,6 +40,8 @@ struct DuoPanelBottomToolbarSection: View {
                 downToolBarButton(title: store.buttonLabel(L10n.Toolbar.edit, for: .editFile), icon: "pencil", action: onEdit)
                 downToolBarButton(title: store.buttonLabel(L10n.Toolbar.copy, for: .copyFile), icon: "doc.on.doc", action: onCopy)
                 downToolBarButton(title: store.buttonLabel(L10n.Toolbar.move, for: .moveFile), icon: "square.and.arrow.down.on.square", action: onMove)
+                downToolBarButton(title: store.buttonLabel(L10n.Toolbar.newFolder, for: .newFolder), icon: "folder.badge.plus", action: onNewFolder)
+                downToolBarButton(title: store.buttonLabel(L10n.Toolbar.delete, for: .deleteFile), icon: "trash", action: onDelete)
                 downToolBarButton(title: store.buttonLabel(L10n.Toolbar.settings, for: .openSettings), icon: "gearshape", action: onSettings)
                 downToolBarButton(title: L10n.Toolbar.console, icon: "terminal", action: onConsole)
                 downToolBarButton(title: store.buttonLabel(L10n.Toolbar.exit, for: .exitApp), icon: "power", action: onExit)
