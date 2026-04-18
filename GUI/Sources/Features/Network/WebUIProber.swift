@@ -12,12 +12,21 @@ import Foundation
 // MARK: - Web UI Prober
 enum WebUIProber {
 
+    private enum ProbeOutcome {
+        case success(method: String, statusCode: Int)
+        case failure(String)
+    }
+
     private static let requestTimeoutSeconds: TimeInterval = 1.5
     private static let httpsPorts: Set<Int> = [443, 8443, 5001]
     private static let getFallbackRangeHeader = "bytes=0-0"
     private static let logPreviewLength = 120
     private static let staticURLVerificationLogPrefix = "[WebUI] static"
     private static let probeLogPrefix = "[WebUI] probe"
+    private static let infrastructurePorts: [Int] = [80, 443, 8080, 8443, 631, 8081, 8888, 7070, 5001]
+    private static let developerPorts: [Int] = [3000, 3001, 4000, 4200, 5000, 5173, 8000, 8008, 8083, 8123, 9000, 9090]
+    private static let mobilePorts: [Int] = [80, 443, 8443]
+    private static let defaultCandidatePorts = infrastructurePorts + developerPorts
 
     private static func scheme(for port: Int) -> String {
         httpsPorts.contains(port) ? "https" : "http"
@@ -86,19 +95,34 @@ enum WebUIProber {
         log.debug("\(staticURLVerificationLogPrefix) verify url=\(normalizedURLString(url.absoluteString))")
     }
 
-    private static func logProbeStart(hostName: String, address: String) {
-        log.debug("\(probeLogPrefix) host='\(hostName)' address='\(address)'")
+    private static func logProbeStart(hostName: String, address: String, candidateCount: Int) {
+        log.debug("\(probeLogPrefix) host='\(hostName)' address='\(address)' candidates=\(candidateCount)")
     }
 
-    private static func logProbeSuccess(url: URL, method: String, statusCode: Int) {
-        log.debug("\(probeLogPrefix) success method=\(method) code=\(statusCode)")
-        log.debug("\(probeLogPrefix) url=\(normalizedURLString(url.absoluteString))")
+    private static func logProbeSuccess(hostName: String, url: URL, method: String, statusCode: Int, candidateCount: Int) {
+        log.info(
+            "\(probeLogPrefix) '\(hostName)' hit url=\(normalizedURLString(url.absoluteString)) method=\(method) code=\(statusCode) candidates=\(candidateCount)"
+        )
     }
 
-    private static func logProbeFailure(url: URL, details: String) {
+    private static func logProbeFailure(hostName: String, candidateCount: Int, details: String) {
         let preview = details.prefix(logPreviewLength)
-        log.debug("\(probeLogPrefix) miss url=\(normalizedURLString(url.absoluteString))")
-        log.debug("\(probeLogPrefix) reason=\(preview)")
+        log.debug("\(probeLogPrefix) '\(hostName)' no hit after \(candidateCount) candidates reason=\(preview)")
+    }
+
+    private static func candidatePorts(for host: NetworkHost) -> [Int] {
+        if host.deviceClass.isMobile {
+            return mobilePorts
+        }
+
+        switch host.deviceClass {
+        case .router, .printer, .repeater, .networkSwitch, .camera, .nas:
+            return infrastructurePorts
+        case .mediaBox, .smartTV, .gameConsole:
+            return infrastructurePorts + [8123, 8083, 8000]
+        case .mac, .windowsPC, .linuxServer, .unknown, .androidPhone, .androidTablet, .iPhone, .iPad:
+            return defaultCandidatePorts
+        }
     }
 
     private static func bestAddress(_ host: NetworkHost) -> String {
@@ -123,7 +147,10 @@ enum WebUIProber {
     private static func verifiedStaticWebURLOrNil(for host: NetworkHost) async -> URL? {
         guard let staticURL = host.webUIURL else { return nil }
         logStaticURLVerificationStart(staticURL)
-        return await responds(url: staticURL) ? staticURL : nil
+        if case .success = await responds(url: staticURL) {
+            return staticURL
+        }
+        return nil
     }
 
     // MARK: - Probe host — returns first responding URL or nil
@@ -131,44 +158,59 @@ enum WebUIProber {
     @concurrent static func probe(host: NetworkHost) async -> URL? {
         let address = bestAddress(host)
         guard !address.isEmpty else { return nil }
-        logProbeStart(hostName: host.name, address: address)
 
         // Already has a static web URL (router/printer) — just verify it responds
         if let staticURL = await verifiedStaticWebURLOrNil(for: host) {
+            log.info("\(probeLogPrefix) '\(host.name)' static url=\(normalizedURLString(staticURL.absoluteString))")
             return staticURL
         }
 
+        let ports = candidatePorts(for: host)
+        logProbeStart(hostName: host.name, address: address, candidateCount: ports.count)
+
         // Probe all candidate ports concurrently
-        return await withTaskGroup(of: URL?.self) { @concurrent group in
-            for port in candidatePorts {
+        return await withTaskGroup(of: (URL, ProbeOutcome).self) { @concurrent group in
+            var firstFailureDetail: String?
+            for port in ports {
                 guard let url = candidateURL(host: address, port: port) else { continue }
                 group.addTask { @concurrent in
-                    if await responds(url: url) {
-                        return url
-                    }
-                    return nil
+                    (url, await responds(url: url))
                 }
             }
             // Return first non-nil result, cancel remaining tasks
-            for await result in group {
-                if let url = result {
+            for await (url, outcome) in group {
+                if case let .success(method, statusCode) = outcome {
                     group.cancelAll()
+                    logProbeSuccess(
+                        hostName: host.name,
+                        url: url,
+                        method: method,
+                        statusCode: statusCode,
+                        candidateCount: ports.count
+                    )
                     return url
                 }
+                if case let .failure(details) = outcome, firstFailureDetail == nil {
+                    firstFailureDetail = details
+                }
             }
+            logProbeFailure(
+                hostName: host.name,
+                candidateCount: ports.count,
+                details: firstFailureDetail ?? "no HTTP response on preferred ports"
+            )
             return nil
         }
     }
 
     // MARK: - Reachability Check
-    @concurrent static func responds(url: URL) async -> Bool {
+    @concurrent private static func responds(url: URL) async -> ProbeOutcome {
         let headRequest = headRequest(for: url)
 
         if let (_, response) = try? await probeSession.data(for: headRequest) {
             let statusCode = statusCode(from: response)
             if isSuccessfulStatusCode(statusCode) {
-                logProbeSuccess(url: url, method: "HEAD", statusCode: statusCode)
-                return true
+                return .success(method: "HEAD", statusCode: statusCode)
             }
         }
 
@@ -177,15 +219,12 @@ enum WebUIProber {
         if let (_, response) = try? await probeSession.data(for: getRequest) {
             let statusCode = statusCode(from: response)
             if isSuccessfulStatusCode(statusCode) {
-                logProbeSuccess(url: url, method: "GET", statusCode: statusCode)
-                return true
+                return .success(method: "GET", statusCode: statusCode)
             }
-            logProbeFailure(url: url, details: "GET status=\(statusCode)")
-            return false
+            return .failure("GET status=\(statusCode)")
         }
 
-        logProbeFailure(url: url, details: "no HTTP response")
-        return false
+        return .failure("no HTTP response")
     }
 
     // MARK: - Candidate Ports

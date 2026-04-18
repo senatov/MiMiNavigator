@@ -68,8 +68,12 @@ final class ColumnLayoutStore {
         do {
             let encoder = JSONEncoder()
             encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-            let data = try encoder.encode(snapshot)
-            try data.write(to: Self.layoutFileURL, options: .atomic)
+            try SafeJSONStorage.writeCodable(
+                snapshot,
+                to: Self.layoutFileURL,
+                label: "column_layout.json",
+                encoder: encoder
+            )
             log.debug("[ColumnLayoutStore] saved to ~/.mimi/column_layout.json")
         } catch {
             log.error("[ColumnLayoutStore] save failed: \(error.localizedDescription)")
@@ -82,9 +86,11 @@ final class ColumnLayoutStore {
             return nil
         }
         do {
-            let data = try Data(contentsOf: layoutFileURL)
-            let snapshot = try JSONDecoder().decode(LayoutSnapshot.self, from: data)
-            return snapshot
+            return try SafeJSONStorage.loadCodable(
+                from: layoutFileURL,
+                as: LayoutSnapshot.self,
+                label: "column_layout.json"
+            )
         } catch {
             log.warning("[ColumnLayoutStore] JSON decode failed: \(error.localizedDescription)")
             return nil

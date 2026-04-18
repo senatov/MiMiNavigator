@@ -53,6 +53,7 @@ enum FritzBoxDiscovery {
                 if let h = host { results.append(h) }
             }
         }
+        log.info("[FritzBox] fetched \(results.count)/\(count) populated host entries")
 
         // Dedup: prefer active over inactive when same name or same IP
         var byIP = [String: FritzBoxHost]()
@@ -77,8 +78,10 @@ enum FritzBoxDiscovery {
         var final = Array(byName.values)
         final.sort { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
 
+        let activeCount = final.filter(\.isActive).count
+        log.info("[FritzBox] hosts total=\(final.count) active=\(activeCount) inactive=\(final.count - activeCount)")
         let summary = final.map { "\($0.name)(\($0.ip),\($0.isActive ? "on" : "off"))" }
-        log.info("[FritzBox] hosts: \(summary)")
+        log.debug("[FritzBox] hosts: \(summary)")
         return final
     }
 
@@ -91,10 +94,7 @@ enum FritzBoxDiscovery {
     @concurrent private static func fetchHost(index: Int) async -> FritzBoxHost? {
         let params = "<NewIndex>\(index)</NewIndex>"
         let body = soapEnvelope(action: "GetGenericHostEntry", params: params)
-        guard let xml = await postSOAP(body: body, action: "GetGenericHostEntry") else {
-            log.debug("[FritzBox] host entry \(index) unavailable")
-            return nil
-        }
+        guard let xml = await postSOAP(body: body, action: "GetGenericHostEntry") else { return nil }
         guard let name = extractString(xml, tag: "NewHostName"), !name.isEmpty
         else { return nil }
         let ip = extractString(xml, tag: "NewIPAddress") ?? ""
@@ -141,10 +141,7 @@ enum FritzBoxDiscovery {
                     continue
                 }
 
-                if let xml = String(data: respData, encoding: .utf8) {
-                    log.debug("[FritzBox] \(action) endpoint=\(endpoint) OK")
-                    return xml
-                }
+                if let xml = String(data: respData, encoding: .utf8) { return xml }
 
                 log.debug("[FritzBox] \(action) endpoint=\(endpoint) invalid UTF-8")
             } catch {

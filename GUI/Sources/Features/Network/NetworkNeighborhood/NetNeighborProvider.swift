@@ -334,6 +334,7 @@ final class NetworkNeighborhoodProvider: NSObject, ObservableObject {
     func probeWebUI(for candidates: [NetworkHost]) async {
         guard !candidates.isEmpty else { return }
         log.info("[WebUI] probing \(candidates.count) hosts")
+        var hitCount = 0
         await withTaskGroup(of: (NetworkHost.ID, URL?).self) { group in
             for host in candidates {
                 group.addTask { @concurrent in
@@ -344,10 +345,11 @@ final class NetworkNeighborhoodProvider: NSObject, ObservableObject {
             for await (id, url) in group {
                 if let url, let idx = self.hosts.firstIndex(where: { $0.id == id }) {
                     self.hosts[idx].probedWebURL = url
-                    log.info("[WebUI] '\(self.hosts[idx].name)' → \(url)")
+                    hitCount += 1
                 }
             }
         }
+        log.info("[WebUI] probe complete hits=\(hitCount) misses=\(candidates.count - hitCount)")
     }
 
     func removeHostByName(_ name: String) {

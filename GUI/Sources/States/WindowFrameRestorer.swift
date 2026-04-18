@@ -19,6 +19,10 @@ import AppKit
 @MainActor
 final class WindowFrameRestorer {
 
+    private enum RecoveryKeys {
+        static let emergencyDividerResetPending = "window.emergencyDividerResetPending"
+    }
+
     static let shared = WindowFrameRestorer()
 
     private var didRestore = false
@@ -27,6 +31,8 @@ final class WindowFrameRestorer {
     private static let defaultHeight: CGFloat = 700
     private static let minWidth:      CGFloat = 600
     private static let minHeight:     CGFloat = 400
+    private static let emergencyWidth: CGFloat = 1000
+    private static let emergencyHeight: CGFloat = 1000
     private static let maxPollTicks   = 20      // 20 × 100ms = 2s
     private static let pollInterval   = 0.1     // seconds
 
@@ -78,6 +84,7 @@ final class WindowFrameRestorer {
 
     private func applyFrame(to win: NSWindow) {
         didRestore = true
+        MiMiDefaults.shared.removeObject(forKey: RecoveryKeys.emergencyDividerResetPending)
 
         if let savedFrame = StatePersistence.restoreWindowFrame() {
             if isUsable(savedFrame) {
@@ -89,6 +96,7 @@ final class WindowFrameRestorer {
             }
 
             if let adjustedFrame = adjustedFrameIfPossible(savedFrame) {
+                MiMiDefaults.shared.set(true, forKey: RecoveryKeys.emergencyDividerResetPending)
                 win.setFrame(adjustedFrame, display: true, animate: false)
                 StatePersistence.lastKnownWindowFrame = adjustedFrame
                 log.warning("[WindowFrameRestorer] adjusted unusable saved frame \(fmtRect(savedFrame)) -> \(fmtRect(adjustedFrame))")
@@ -96,6 +104,7 @@ final class WindowFrameRestorer {
                 return
             }
 
+            MiMiDefaults.shared.set(true, forKey: RecoveryKeys.emergencyDividerResetPending)
             log.warning("[WindowFrameRestorer] saved frame rejected as unusable: \(fmtRect(savedFrame))")
         } else {
             log.info("[WindowFrameRestorer] no saved frame found — using default frame")
@@ -115,8 +124,8 @@ final class WindowFrameRestorer {
         guard let targetScreen = preferredScreen(for: rect) else { return nil }
 
         let visibleFrame = targetScreen.visibleFrame
-        let width = min(max(rect.width, Self.minWidth), visibleFrame.width)
-        let height = min(max(rect.height, Self.minHeight), visibleFrame.height)
+        let width = min(max(rect.width, Self.emergencyWidth), visibleFrame.width)
+        let height = min(max(rect.height, Self.emergencyHeight), visibleFrame.height)
         let maxX = visibleFrame.maxX - width
         let maxY = visibleFrame.maxY - height
         let originX = min(max(rect.origin.x, visibleFrame.minX), maxX)

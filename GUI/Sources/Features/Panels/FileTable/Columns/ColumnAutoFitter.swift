@@ -325,7 +325,8 @@ enum ColumnAutoFitter {
             return colDelta < widthStabilityEpsilon
         }
         if !isNameStable || !areFixedColumnsStable {
-            log.verbose("[AutoFit] needsUpdate=true nameΔ\(pt(nameDelta))")
+            let unstableSummary = unstableCols.isEmpty ? "none" : unstableCols.joined(separator: " ")
+            log.verbose("[AutoFit] needsUpdate=true nameΔ\(pt(nameDelta)) fixed=\(unstableSummary)")
         }
         return !isNameStable || !areFixedColumnsStable
     }

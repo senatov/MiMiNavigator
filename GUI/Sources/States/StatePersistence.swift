@@ -94,8 +94,8 @@ private static func defaultPersistentState() -> PersistentState {
 private static func writeStateToDisk(_ snapshot: PersistentState) {
     ensureStateStorageExists()
     do {
-        let data = try JSONEncoder().encode(snapshot)
-        try data.write(to: stateFileURL, options: .atomic)
+        let encoder = JSONEncoder()
+        try SafeJSONStorage.writeCodable(snapshot, to: stateFileURL, label: "state.json", encoder: encoder)
     } catch {
         log.error("[StatePersistence] failed to write state: \(error.localizedDescription)")
     }
@@ -112,8 +112,7 @@ private static func loadPersistentState() -> PersistentState? {
     ensureStateFileExists()
 
     do {
-        let data = try Data(contentsOf: stateFileURL)
-        return try JSONDecoder().decode(PersistentState.self, from: data)
+        return try SafeJSONStorage.loadCodable(from: stateFileURL, as: PersistentState.self, label: "state.json")
     } catch {
         log.error("[StatePersistence] failed to load state: \(error.localizedDescription)")
         let snapshot = defaultPersistentState()

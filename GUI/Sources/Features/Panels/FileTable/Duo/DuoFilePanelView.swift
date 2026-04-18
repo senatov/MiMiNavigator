@@ -262,6 +262,10 @@ extension DuoFilePanelView {
 
 // MARK: - Panel Width Management
 extension DuoFilePanelView {
+    private enum RecoveryKeys {
+        static let emergencyDividerResetPending = "window.emergencyDividerResetPending"
+    }
+
     private func initializePanelWidth(containerWidth: CGFloat) {
         log.debug("\(#function) containerWidth=\(Int(containerWidth))")
         guard containerWidth > 0 else {
@@ -269,9 +273,20 @@ extension DuoFilePanelView {
             return
         }
 
-        let proposed = persistedLeftPanelWidth(containerWidth: containerWidth) ?? defaultInitialPanelWidth(containerWidth: containerWidth)
+        let emergencyResetPending = MiMiDefaults.shared.bool(forKey: RecoveryKeys.emergencyDividerResetPending)
+        let proposed: CGFloat
 
-        if persistedLeftPanelWidth(containerWidth: containerWidth) != nil {
+        if emergencyResetPending {
+            proposed = defaultInitialPanelWidth(containerWidth: containerWidth)
+            MiMiDefaults.shared.removeObject(forKey: RecoveryKeys.emergencyDividerResetPending)
+            log.warning("\(#function) emergency window recovery detected — resetting divider to 50/50")
+        } else {
+            proposed = persistedLeftPanelWidth(containerWidth: containerWidth) ?? defaultInitialPanelWidth(containerWidth: containerWidth)
+        }
+
+        if emergencyResetPending {
+            log.info("\(#function) using emergency divider fallback: \(Int(proposed))")
+        } else if persistedLeftPanelWidth(containerWidth: containerWidth) != nil {
             log.info("\(#function) restoring saved divider from MiMiDefaults: \(Int(proposed))")
         } else {
             log.info("\(#function) no saved divider, using 50/50: \(Int(proposed))")

@@ -196,12 +196,9 @@ final class MiMiDefaults {
             return
         }
         do {
-            let data = try Data(contentsOf: fileURL)
-            log.debug("[MiMiDefaults] load bytes=\(data.count)")
-            if let dict = try JSONSerialization.jsonObject(with: data) as? [String: Any] {
-                storage = dict
-                log.info("[MiMiDefaults] loaded \(dict.count) keys from \(fileURL.path)")
-            }
+            let dict = try SafeJSONStorage.loadJSONObject(from: fileURL, label: "defaults.json")
+            storage = dict
+            log.info("[MiMiDefaults] loaded \(dict.count) keys from \(fileURL.path)")
         } catch {
             log.error("[MiMiDefaults] load failed: \(error.localizedDescription)")
         }
@@ -214,11 +211,7 @@ final class MiMiDefaults {
         log.debug("[MiMiDefaults] saveToDisk start keys=\(storage.count)")
         isDirty = false
         do {
-            let data = try JSONSerialization.data(
-                withJSONObject: storage,
-                options: [.prettyPrinted, .sortedKeys]
-            )
-            try data.write(to: fileURL, options: .atomic)
+            try SafeJSONStorage.writeJSONObject(storage, to: fileURL, label: "defaults.json")
             log.debug("[MiMiDefaults] saved \(storage.count) keys")
         } catch {
             log.error("[MiMiDefaults] save failed: \(error.localizedDescription)")

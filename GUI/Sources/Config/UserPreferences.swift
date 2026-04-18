@@ -49,8 +49,8 @@ final class UserPreferences {
     private func writeSnapshotToDisk(_ snapshot: PreferencesSnapshot) {
         ensurePreferencesStorageExists()
         do {
-            let data = try JSONEncoder().encode(snapshot)
-            try data.write(to: fileURL, options: .atomic)
+            let encoder = JSONEncoder()
+            try SafeJSONStorage.writeCodable(snapshot, to: fileURL, label: "preferences.json", encoder: encoder)
             log.info("Preferences saved to ~/.mimi/preferences.json")
         } catch {
             log.error("Failed to save preferences: \(error.localizedDescription)")
@@ -70,8 +70,11 @@ final class UserPreferences {
         writeDefaultSnapshotIfNeeded()
 
         do {
-            let data = try Data(contentsOf: fileURL)
-            let decoded = try JSONDecoder().decode(PreferencesSnapshot.self, from: data)
+            let decoded = try SafeJSONStorage.loadCodable(
+                from: fileURL,
+                as: PreferencesSnapshot.self,
+                label: "preferences.json"
+            )
             isLoadingSnapshot = true
             snapshot = decoded
             isLoadingSnapshot = false
@@ -92,8 +95,13 @@ final class UserPreferences {
             do {
                 let directoryURL = fileURL.deletingLastPathComponent()
                 try FileManager.default.createDirectory(at: directoryURL, withIntermediateDirectories: true)
-                let data = try JSONEncoder().encode(snapshotCopy)
-                try data.write(to: fileURL, options: .atomic)
+                let encoder = JSONEncoder()
+                try SafeJSONStorage.writeCodable(
+                    snapshotCopy,
+                    to: fileURL,
+                    label: "preferences.json",
+                    encoder: encoder
+                )
                 log.info("Preferences saved to ~/.mimi/preferences.json")
             } catch {
                 log.error("Failed to save preferences: \(error.localizedDescription)")

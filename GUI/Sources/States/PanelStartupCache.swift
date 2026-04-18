@@ -64,8 +64,8 @@ final class PanelStartupCache: @unchecked Sendable {
             savedAt: Date()
         )
         do {
-            let data = try JSONEncoder().encode(payload)
-            try data.write(to: Self.cacheURL, options: .atomic)
+            let encoder = JSONEncoder()
+            try SafeJSONStorage.writeCodable(payload, to: Self.cacheURL, label: "panel_startup_cache.json", encoder: encoder)
             log.info("[PanelStartupCache] saved L=\(filteredLeft.count) R=\(filteredRight.count) files")
         } catch {
             log.warning("[PanelStartupCache] save failed: \(error.localizedDescription)")
@@ -80,8 +80,11 @@ final class PanelStartupCache: @unchecked Sendable {
         guard FileManager.default.fileExists(atPath: Self.cacheURL.path) else { return nil }
         do {
             log.debug("\(#function): attempting to load from disk at \(Self.cacheURL.path)")
-            let data = try Data(contentsOf: Self.cacheURL)
-            let payload = try JSONDecoder().decode(CachePayload.self, from: data)
+            let payload = try SafeJSONStorage.loadCodable(
+                from: Self.cacheURL,
+                as: CachePayload.self,
+                label: "panel_startup_cache.json"
+            )
             log.debug(
                 "\(#function): decoded cache leftPath='\(payload.leftPath)' rightPath='\(payload.rightPath)' "
                 + "leftCount=\(payload.leftFiles.count) rightCount=\(payload.rightFiles.count) "
