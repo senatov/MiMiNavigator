@@ -63,7 +63,7 @@ extension MediaInfoPanel {
         let ext = url.pathExtension.lowercased()
         stopVideoPlayback()
         if Self.supportedImageExtensions.contains(ext), let img = NSImage(contentsOf: url) {
-            showImagePreview(img)
+            showImagePreview(img, animated: isAnimatedImage(at: url))
             return
         }
         if Self.supportedVideoExtensions.contains(ext) {
@@ -73,9 +73,10 @@ extension MediaInfoPanel {
         showImagePreview(fallbackIcon(for: url))
     }
 
-    func showImagePreview(_ image: NSImage) {
+    func showImagePreview(_ image: NSImage, animated: Bool = false) {
         previewMode = .image
         previewImage = image
+        isAnimatedImagePreview = animated
         currentVideoURL = nil
         player?.pause()
         playerView?.player = nil
@@ -85,6 +86,7 @@ extension MediaInfoPanel {
     func showVideoPreview(for url: URL) {
         previewMode = .video
         previewImage = nil
+        isAnimatedImagePreview = false
         currentVideoURL = url
         showCurrentVideoPreviewIfPossible()
     }

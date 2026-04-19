@@ -10,6 +10,7 @@ import AppKit
 import AVFoundation
 import AVKit
 import FileModelKit
+import ImageIO
 import SwiftyBeaver
 import UniformTypeIdentifiers
 
@@ -60,6 +61,7 @@ final class MediaInfoPanel: NSObject, ObservableObject {
     @Published var displayTitle: String = "Media & Convert"
     @Published var previewImage: NSImage?
     @Published var previewMode: PreviewMode = .none
+    @Published var isAnimatedImagePreview: Bool = false
     @Published var currentVideoURL: URL?
     @Published var currentURL: URL?
     @Published var currentCoordinates: (Double, Double)?
@@ -262,5 +264,12 @@ final class MediaInfoPanel: NSObject, ObservableObject {
             return nil
         }
         return MediaFormat(rawValue: rawValue)
+    }
+
+    func isAnimatedImage(at url: URL) -> Bool {
+        guard let imageSource = CGImageSourceCreateWithURL(url as CFURL, nil) else {
+            return false
+        }
+        return CGImageSourceGetCount(imageSource) > 1
     }
 }

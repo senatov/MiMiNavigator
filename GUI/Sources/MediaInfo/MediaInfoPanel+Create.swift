@@ -386,10 +386,14 @@ private struct MediaInfoPanelView: View {
             switch controller.previewMode {
             case .image:
                 if let image = controller.previewImage {
-                    Image(nsImage: image)
-                        .resizable()
-                        .scaledToFit()
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    if controller.isAnimatedImagePreview {
+                        MediaInfoAnimatedImagePreview(image: image)
+                    } else {
+                        Image(nsImage: image)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    }
                 } else {
                     previewPlaceholder
                 }
@@ -486,5 +490,23 @@ private struct MediaInfoVideoPreview: NSViewRepresentable {
     func updateNSView(_ nsView: AVPlayerView, context: Context) {
         controller.playerView = nsView
         controller.showCurrentVideoPreviewIfPossible()
+    }
+}
+
+private struct MediaInfoAnimatedImagePreview: NSViewRepresentable {
+    let image: NSImage
+
+    func makeNSView(context: Context) -> NSImageView {
+        let view = NSImageView()
+        view.imageScaling = .scaleProportionallyUpOrDown
+        view.imageAlignment = .alignCenter
+        view.animates = true
+        view.image = image
+        return view
+    }
+
+    func updateNSView(_ nsView: NSImageView, context: Context) {
+        nsView.animates = true
+        nsView.image = image
     }
 }

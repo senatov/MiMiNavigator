@@ -25,7 +25,11 @@ enum AppLogger {
         LogKit.initialize(
             appSupportSubdir: "MiMiNavigator",
             logFileName: "MiMiNavigator.log",
-            wipeOnLaunch: true
+            wipeOnLaunch: false,
+            rotationPolicy: .init(
+                maxFileSizeBytes: 50 * 1024 * 1024,
+                uncompressedBackupCount: 3
+            )
         )
     }
 
