@@ -33,7 +33,7 @@ extension MediaInfoPanel {
         PanelTitleHelper.applyIconTitle(
             to: panel,
             systemImage: "info.circle",
-            title: "Media & Convert"
+            title: "Media􀅴 & Convert"
         )
 
         panel.contentView = NSHostingView(rootView: MediaInfoPanelView(controller: self))

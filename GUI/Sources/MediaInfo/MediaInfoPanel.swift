@@ -58,7 +58,7 @@ final class MediaInfoPanel: NSObject, ObservableObject {
     var player: AVPlayer?
 
     @Published var rawText: String = ""
-    @Published var displayTitle: String = "Media & Convert"
+    @Published var displayTitle: String = "Media􀅴 & Convert"
     @Published var previewImage: NSImage?
     @Published var previewMode: PreviewMode = .none
     @Published var isAnimatedImagePreview: Bool = false
@@ -130,6 +130,11 @@ final class MediaInfoPanel: NSObject, ObservableObject {
     func hide() {
         stopVideoPlayback()
         panel?.orderOut(nil)
+    }
+
+    func bringToFront() {
+        guard panel?.isVisible == true else { return }
+        panel?.orderFront(nil)
     }
 
     func ensurePanelExists() {

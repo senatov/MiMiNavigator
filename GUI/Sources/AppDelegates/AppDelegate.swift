@@ -133,6 +133,7 @@ import AppKit
         ConnectToServerCoordinator.shared.bringToFront()
         FindFilesCoordinator.shared.bringToFront()
         SettingsCoordinator.shared.bringToFront()
+        MediaInfoPanel.shared.bringToFront()
     }
 
     // MARK: - Termination — fast, no spinner
