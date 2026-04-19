@@ -23,8 +23,7 @@ extension MediaInfoPanel {
     }
 
     @objc func copyAllAction() {
-        guard let text = textView?.string else { return }
-        copyToPasteboard(text)
+        copyToPasteboard(rawText)
     }
 
     func copyToPasteboard(_ string: String) {

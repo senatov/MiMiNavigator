@@ -7,13 +7,12 @@
 //
 
 import AppKit
+import AVFoundation
 import SwiftyBeaver
 import UniformTypeIdentifiers
-import VLC
 
 @MainActor
 extension MediaInfoPanel {
-    // MARK: - Media siblings
     func loadMediaSiblings(for url: URL) {
         let dir = url.deletingLastPathComponent()
 
@@ -35,19 +34,19 @@ extension MediaInfoPanel {
         }
     }
 
-    // MARK: - navigateToMedia (NO window move/resize)
     func navigateToMedia(at index: Int) {
         guard index >= 0, index < mediaFiles.count else { return }
         currentIndex = index
         let url = mediaFiles[index]
         currentURL = url
+        configureConversionState(for: url)
         updatePreview(for: url)
-        panel?.title = "📦 \(url.lastPathComponent)"
-        // only update text — getMediaInfoToFile calls update(), not show()
-        Task(priority: .userInitiated) {
-            let getter = MediaInfoGetter()
-            getter.getMediaInfoToFile(url: url)
-        }
+        let getter = MediaInfoGetter()
+        getter.getMediaInfoToFile(
+            url: url,
+            panelSide: currentPanelSide,
+            appState: appState
+        )
     }
 
     @objc func prevMedia() {
@@ -60,7 +59,6 @@ extension MediaInfoPanel {
         navigateToMedia(at: currentIndex + 1)
     }
 
-    // MARK: - updatePreview (images + video thumbnails via AVAssetImageGenerator)
     func updatePreview(for url: URL) {
         let ext = url.pathExtension.lowercased()
         stopVideoPlayback()
@@ -76,34 +74,39 @@ extension MediaInfoPanel {
     }
 
     func showImagePreview(_ image: NSImage) {
-        imageView?.image = image
-        imageView?.isHidden = false
-        player?.stop()
-        player?.drawable = nil
-        playerView?.isHidden = true
+        previewMode = .image
+        previewImage = image
+        currentVideoURL = nil
+        player?.pause()
+        playerView?.player = nil
         player = nil
     }
 
     func showVideoPreview(for url: URL) {
-        guard let playerView else {
-            showImagePreview(fallbackIcon(for: url))
+        previewMode = .video
+        previewImage = nil
+        currentVideoURL = url
+        showCurrentVideoPreviewIfPossible()
+    }
+
+    func showCurrentVideoPreviewIfPossible() {
+        guard previewMode == .video, let url = currentVideoURL, let playerView else { return }
+        if let currentAsset = (player?.currentItem?.asset as? AVURLAsset)?.url, currentAsset == url {
+            playerView.player = player
             return
         }
-        let media = VLCMedia(url: url)
-        let mediaPlayer = VLCMediaPlayer()
-        mediaPlayer.media = media
-        mediaPlayer.drawable = playerView
-        mediaPlayer.delegate = self
-        self.player = mediaPlayer
-        imageView?.isHidden = true
-        playerView.isHidden = false
-        mediaPlayer.play()
+
+        let player = AVPlayer(url: url)
+        player.actionAtItemEnd = .pause
+        player.pause()
+        player.seek(to: .zero)
+        playerView.player = player
+        self.player = player
     }
 
     func stopVideoPlayback() {
-        player?.stop()
-        player?.drawable = nil
-        playerView?.isHidden = true
+        player?.pause()
+        playerView?.player = nil
         player = nil
     }
 

@@ -258,12 +258,16 @@ struct FileContextMenu: View {
     @ViewBuilder
     private var mediaSection: some View {
         if isMediaFile {
-            menuButton(.convertMedia)
             Button {
                 FileContextMenuLog.logMediaInfo(fileName: file.nameStr, path: filePath)
                 MediaInfoGetter().getMediaInfoToFile(url: file.urlValue)
             } label: {
-                Label("Get Media Info", systemImage: "info.circle")
+                HStack(spacing: 5) {
+                    Text("Media􀅴 & Convert")
+                    Image(systemName: "info.circle")
+                    Text("+")
+                    Text("Convert")
+                }
             }
             sectionDivider(after: .media)
         }

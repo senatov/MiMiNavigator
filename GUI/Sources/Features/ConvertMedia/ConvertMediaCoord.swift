@@ -26,19 +26,11 @@ final class ConvertMediaCoord {
 
     func open(file: CustomFile, panel: FavPanelSide, appState: AppState) {
         log.debug(#function)
-        if let existing = window, existing.isVisible {
-            existing.close()
-        }
-        let panelView = makeContentView(file: file, panel: panel, appState: appState)
-        let panelWindow = makePanel()
-        configure(panel: panelWindow)
-        panelWindow.contentView = NSHostingView(rootView: panelView)
-        restoreOrApplyDefaultFrame(for: panelWindow)
-        panelWindow.makeKeyAndOrderFront(nil)
-        window = panelWindow
-        isVisible = true
-        installReactivationObservers()
-        log.info("[ConvertMedia] panel opened for '\(file.nameStr)'")
+        MediaInfoGetter().getMediaInfoToFile(
+            url: file.urlValue,
+            panelSide: panel,
+            appState: appState
+        )
     }
 }
 

@@ -16,7 +16,8 @@ extension CntMenuCoord {
         targetFormat: MediaFormat,
         outputURL: URL,
         panel: FavPanelSide,
-        appState: AppState
+        appState: AppState,
+        deleteOriginal: Bool = false
     ) async {
         guard let sourceFormat = resolveSourceFormat(for: file) else { return }
 
@@ -30,7 +31,8 @@ extension CntMenuCoord {
                 sourceFormat: sourceFormat,
                 targetFormat: targetFormat,
                 outputURL: outputURL,
-                appState: appState
+                appState: appState,
+                deleteOriginal: deleteOriginal
             )
         } catch {
             handleMediaConversionError(error)
@@ -74,7 +76,8 @@ extension CntMenuCoord {
         sourceFormat: MediaFormat,
         targetFormat: MediaFormat,
         outputURL: URL,
-        appState: AppState
+        appState: AppState,
+        deleteOriginal: Bool
     ) async throws {
         let mediaConversionService: MediaConversionService = .shared
 
@@ -87,6 +90,11 @@ extension CntMenuCoord {
                 self?.cancelMediaConversion()
             }
         )
+
+        if deleteOriginal {
+            try FileManager.default.removeItem(at: file.urlValue)
+            log.info("[MediaConvert] deleted original '\(file.nameStr)'")
+        }
 
         refreshPanels(appState: appState)
         log.info("[MediaConvert] done → '\(outputURL.lastPathComponent)'")

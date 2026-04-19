@@ -9,21 +9,32 @@ import AppKit
 import Foundation
 import ImageIO
 import AVFoundation
+import FileModelKit
 import UniformTypeIdentifiers
 
 final class MediaInfoGetter: @unchecked Sendable {
 
-    func getMediaInfoToFile(url: URL, fast: Bool = false) {
+    @MainActor
+    func getMediaInfoToFile(
+        url: URL,
+        fast: Bool = false,
+        panelSide: FavPanelSide? = nil,
+        appState: AppState? = nil
+    ) {
         log.info("[MediaInfo] request file='\(url.path)'")
 
-        Task { @MainActor in
-            MediaInfoPanel.shared.show(title: "📦 Media Info", text: "Processing…", url: url)
-        }
+        MediaInfoPanel.shared.show(
+            title: "Media􀅴 & Convert",
+            text: "Processing…",
+            url: url,
+            panelSide: panelSide,
+            appState: appState
+        )
 
         Task.detached(priority: .userInitiated) { [url, fast] in
             let (info, coords) = await Self.buildInfo(url: url, fast: fast)
             await MainActor.run {
-                MediaInfoPanel.shared.update(title: "📦 Media Info", text: info, coordinates: coords)
+                MediaInfoPanel.shared.update(title: "Media􀅴 & Convert", text: info, coordinates: coords)
             }
         }
     }

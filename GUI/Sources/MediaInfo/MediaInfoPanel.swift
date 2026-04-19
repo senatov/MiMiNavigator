@@ -4,35 +4,26 @@
 //
 //  Created by Iakov Senatov on 22.03.2026.
 //  Copyright © 2026 Senatov. All rights reserved.
-//  Descr: media info floating panel — info + preview + prev/next navigation
+//  Descr: unified media panel — info, preview, sibling navigation and convert.
 
 import AppKit
+import AVFoundation
+import AVKit
+import FileModelKit
 import SwiftyBeaver
 import UniformTypeIdentifiers
-@preconcurrency import VLC
 
-// MARK: - MediaInfoPanel
 @MainActor
-final class MediaInfoPanel: NSObject {
+final class MediaInfoPanel: NSObject, ObservableObject {
 
     private let log = SwiftyBeaver.self
 
     static let shared = MediaInfoPanel()
 
-    var panel: NSPanel?
-    var textView: NSTextView?
-    var imageView: NSImageView?
-    var playerView: VLCVideoView?
-    var player: VLCMediaPlayer?
-
-    var currentURL: URL?
-    var currentCoordinates: (Double, Double)?
-    var mediaFiles: [URL] = []
-    var currentIndex = 0
-    var panelCreated = false
-
-    private override init() {
-        super.init()
+    enum PreviewMode {
+        case none
+        case image
+        case video
     }
 
     enum PreviewConstants {
@@ -40,15 +31,15 @@ final class MediaInfoPanel: NSObject {
     }
 
     enum LayoutConstants {
-        static let panelSize = NSSize(width: 900, height: 550)
-        static let minPanelSize = NSSize(width: 600, height: 350)
-        static let arrowWidth: CGFloat = 32
-        static let previewInsets: CGFloat = 8
-        static let previewSpacing: CGFloat = 4
-        static let stackBottomInset: CGFloat = 8
-        static let separatorToStackSpacing: CGFloat = 6
-        static let stackHeight: CGFloat = 28
-        static let textWidthMultiplier: CGFloat = 0.48
+        static let panelSize = NSSize(width: 1020, height: 680)
+        static let minPanelSize = NSSize(width: 820, height: 540)
+        static let frameAutosaveName = "MiMiNavigator.MediaInfoWindow"
+    }
+
+    enum PreferenceKeys {
+        static let targetFormat = "MediaInfoPanel.targetFormat"
+        static let deleteOriginal = "MediaInfoPanel.deleteOriginal"
+        static let outputDirectory = "MediaInfoPanel.outputDirectory"
     }
 
     static let supportedImageExtensions: Set<String> = [
@@ -56,38 +47,82 @@ final class MediaInfoPanel: NSObject {
     ]
     static let supportedVideoExtensions: Set<String> = ["mp4", "mov", "avi", "mkv", "m4v", "wmv", "flv", "ts", "webm"]
     static let supportedAudioExtensions: Set<String> = ["mp3", "aac", "flac", "wav", "m4a", "ogg", "wma", "aiff", "alac"]
-    static let supportedMediaExtensions: Set<String> =
+    static let supportedMediaExtensions =
         supportedImageExtensions
         .union(supportedVideoExtensions)
         .union(supportedAudioExtensions)
 
-    // MARK: - show (first open only positions window)
-    func show(title: String, text: String, url: URL? = nil, coordinates: (Double, Double)? = nil) {
+    var panel: NSPanel?
+    var playerView: AVPlayerView?
+    var player: AVPlayer?
+
+    @Published var rawText: String = ""
+    @Published var displayTitle: String = "Media & Convert"
+    @Published var previewImage: NSImage?
+    @Published var previewMode: PreviewMode = .none
+    @Published var currentVideoURL: URL?
+    @Published var currentURL: URL?
+    @Published var currentCoordinates: (Double, Double)?
+    @Published var targetFormat: MediaFormat = .mp4 {
+        didSet { persistPreferences() }
+    }
+    @Published var outputName: String = ""
+    @Published var outputDir: String = "" {
+        didSet { persistPreferences() }
+    }
+    @Published var availableFormats: [MediaFormat] = []
+    @Published var deleteOriginal: Bool = false {
+        didSet { persistPreferences() }
+    }
+
+    var mediaFiles: [URL] = []
+    var currentIndex = 0
+    var panelCreated = false
+    var currentPanelSide: FavPanelSide = .left
+    weak var appState: AppState?
+
+    private override init() {
+        super.init()
+    }
+
+    func show(
+        title: String,
+        text: String,
+        url: URL? = nil,
+        coordinates: (Double, Double)? = nil,
+        panelSide: FavPanelSide? = nil,
+        appState: AppState? = nil
+    ) {
         log.debug(#function)
         ensurePanelExists()
+        displayTitle = title
+        rawText = text
         currentURL = url
         currentCoordinates = coordinates ?? extractCoordinates(from: text)
+        self.appState = appState ?? self.appState ?? AppStateProvider.shared
+        currentPanelSide = panelSide ?? self.appState?.focusedPanel ?? currentPanelSide
 
         if let url {
+            configureConversionState(for: url)
             loadMediaSiblings(for: url)
             updatePreview(for: url)
         }
+
         log.debug("[MediaInfoPanel] show url=\(url?.path ?? "nil")")
-        refreshText(title: title, text: text)
         positionPanelIfNeeded()
         panel?.makeKeyAndOrderFront(nil)
         panel?.makeKey()
     }
 
-    // MARK: - update (content only — never move/resize)
     func update(title: String, text: String) {
         update(title: title, text: text, coordinates: nil)
     }
 
     func update(title: String, text: String, coordinates: (Double, Double)?) {
         log.debug("[MediaInfoPanel] update title=\(title)")
+        displayTitle = title
+        rawText = text
         currentCoordinates = coordinates ?? extractCoordinates(from: text)
-        refreshText(title: title, text: text)
     }
 
     func hide() {
@@ -105,38 +140,127 @@ final class MediaInfoPanel: NSObject {
         guard !panelCreated, let panel else { return }
         panelCreated = true
 
-        if let main = NSApp.mainWindow {
-            panel.setFrameOrigin(
-                NSPoint(
-                    x: main.frame.midX - panel.frame.width / 2,
-                    y: main.frame.midY - panel.frame.height / 2
-                ))
+        if !panel.setFrameUsingName(LayoutConstants.frameAutosaveName) {
+            panel.setFrame(defaultFrame(), display: true)
         }
+        panel.setFrameAutosaveName(LayoutConstants.frameAutosaveName)
     }
 
-    // MARK: - refreshText (internal — just update text content)
     func refreshText(title: String, text: String) {
-        panel?.title = title
-        let attr = buildAttributedContent(baseText: text, coordinates: currentCoordinates)
-        textView?.textStorage?.setAttributedString(attr)
-        textView?.scrollToBeginningOfDocument(nil)
+        displayTitle = title
+        rawText = text
     }
-}
 
+    var outputURL: URL {
+        URL(fileURLWithPath: outputDir)
+            .appendingPathComponent(outputName)
+            .appendingPathExtension(targetFormat.fileExtension)
+    }
 
-extension MediaInfoPanel: VLCMediaPlayerDelegate {
-    nonisolated func mediaPlayerStateChanged(_ aNotification: Notification) {
-        Task { @MainActor [weak self] in
-            guard let self, let player = self.player else { return }
-            switch player.state {
-            case .error:
-                guard let url = self.currentURL else { return }
-                self.log.error("[MediaInfoPanel] VLC player failed for \(url.path)")
-                self.stopVideoPlayback()
-                self.showImagePreview(self.fallbackIcon(for: url))
-            default:
-                break
-            }
+    var sourceFormat: MediaFormat? {
+        guard let currentURL else { return nil }
+        return MediaFormat.from(extension: currentURL.pathExtension.lowercased())
+    }
+
+    var isConvertible: Bool {
+        sourceFormat != nil && !availableFormats.isEmpty
+    }
+
+    var isValidConversion: Bool {
+        isConvertible && !outputName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    var toolInfo: String {
+        guard let sourceFormat else { return "" }
+        let tool = MediaFormat.requiredTool(from: sourceFormat, to: targetFormat)
+        return tool.isAvailable ? "\(tool.rawValue) • available" : "\(tool.rawValue) • not installed"
+    }
+
+    func configureConversionState(for url: URL) {
+        let detectedSourceFormat = MediaFormat.from(extension: url.pathExtension.lowercased())
+        let targetFormats = detectedSourceFormat.map { MediaFormat.targets(for: $0) } ?? []
+        availableFormats = targetFormats
+
+        if let stored = storedTargetFormat(), targetFormats.contains(stored) {
+            targetFormat = stored
+        } else if let first = targetFormats.first {
+            targetFormat = first
         }
+
+        outputName = url.deletingPathExtension().lastPathComponent
+        if let storedOutputDirectory = UserDefaults.standard.string(forKey: PreferenceKeys.outputDirectory),
+           FileManager.default.fileExists(atPath: storedOutputDirectory) {
+            outputDir = storedOutputDirectory
+        } else {
+            outputDir = url.deletingLastPathComponent().path
+        }
+        deleteOriginal = UserDefaults.standard.bool(forKey: PreferenceKeys.deleteOriginal)
+    }
+
+    func chooseOutputDir() {
+        let openPanel = NSOpenPanel()
+        openPanel.canChooseFiles = false
+        openPanel.canChooseDirectories = true
+        openPanel.allowsMultipleSelection = false
+        openPanel.prompt = "Choose"
+        openPanel.directoryURL = URL(fileURLWithPath: outputDir)
+        if openPanel.runModal() == .OK, let url = openPanel.url {
+            outputDir = url.path
+        }
+    }
+
+    func performConvert() {
+        guard isValidConversion, let currentURL else { return }
+        let currentFile = CustomFile(path: currentURL.path)
+        let resolvedAppState = appState ?? AppStateProvider.shared
+        guard let resolvedAppState else { return }
+
+        Task {
+            await CntMenuCoord.shared.performMediaConversion(
+                file: currentFile,
+                targetFormat: targetFormat,
+                outputURL: outputURL,
+                panel: currentPanelSide,
+                appState: resolvedAppState,
+                deleteOriginal: deleteOriginal
+            )
+        }
+    }
+
+    func defaultFrame() -> NSRect {
+        let size = LayoutConstants.panelSize
+        if let main = NSApp.mainWindow {
+            let frame = main.frame
+            return NSRect(
+                x: frame.midX - size.width / 2,
+                y: frame.midY - size.height / 2,
+                width: size.width,
+                height: size.height
+            )
+        }
+        if let screen = NSScreen.main?.visibleFrame {
+            return NSRect(
+                x: screen.midX - size.width / 2,
+                y: screen.midY - size.height / 2,
+                width: size.width,
+                height: size.height
+            )
+        }
+        return NSRect(origin: .zero, size: size)
+    }
+
+    func persistPreferences() {
+        UserDefaults.standard.set(targetFormat.rawValue, forKey: PreferenceKeys.targetFormat)
+        UserDefaults.standard.set(deleteOriginal, forKey: PreferenceKeys.deleteOriginal)
+        if !outputDir.isEmpty {
+            UserDefaults.standard.set(outputDir, forKey: PreferenceKeys.outputDirectory)
+        }
+    }
+
+    func storedTargetFormat() -> MediaFormat? {
+        guard let rawValue = UserDefaults.standard.string(forKey: PreferenceKeys.targetFormat) else {
+            return nil
+        }
+        return MediaFormat(rawValue: rawValue)
     }
 }
