@@ -19,14 +19,21 @@ extension FileOpsService {
         trashedURLs.reserveCapacity(files.count)
 
         for file in files {
-            var resultingURL: NSURL?
-            try fileManager.trashItem(at: file, resultingItemURL: &resultingURL)
+            do {
+                var resultingURL: NSURL?
+                try fileManager.trashItem(at: file, resultingItemURL: &resultingURL)
 
-            if let trashURL = resultingURL as URL? {
-                trashedURLs.append(trashURL)
+                if let trashURL = resultingURL as URL? {
+                    trashedURLs.append(trashURL)
+                }
+
+                log.info("[FileOps] trashed '\(file.lastPathComponent)'")
+            } catch {
+                let diagnostic = FileOperationDiagnostics.makeDelete(source: file, error: error)
+                log.error("[FileOps] delete failed for '\(file.lastPathComponent)': \(diagnostic.details)")
+                FileOperationDiagnosticPresenter.shared.show(diagnostic)
+                throw error
             }
-
-            log.info("[FileOps] trashed '\(file.lastPathComponent)'")
         }
 
         log.info("[FileOps] ✅ deleteFiles done")

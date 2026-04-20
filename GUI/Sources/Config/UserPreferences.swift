@@ -109,6 +109,10 @@ final class UserPreferences {
         }
     }
 
+    func synchronize() {
+        writeSnapshotToDisk(snapshot)
+    }
+
     // MARK: - Apply to AppState
     func apply(to appState: AppState) {
         log.info("Applying preferences (path settings only) to AppState.")
@@ -132,8 +136,8 @@ final class UserPreferences {
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            Task { @MainActor in
-                self?.save()
+            MainActor.assumeIsolated {
+                self?.synchronize()
                 log.info("Preferences saved on termination.")
             }
         }

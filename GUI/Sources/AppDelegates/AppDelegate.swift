@@ -13,6 +13,7 @@
 //   then calls reply(.now) — guarantees the app exits in < 1 s with no spinner.
 
 import AppKit
+import LogKit
 
 @MainActor final class AppDelegate: NSObject, NSApplicationDelegate {
 
@@ -183,6 +184,8 @@ import AppKit
         await ArchiveManager.shared.cleanup()
         // 5. Release security-scoped bookmarks — actor hop, fast
         await BookmarkStore.shared.stopAll()
+        // 6. Flush file loggers before the process exits so /tmp mirror is complete
+        LogKit.flush(timeoutSeconds: 2)
         log.info("[AppDelegate] performCleanupBeforeExit complete")
     }
 

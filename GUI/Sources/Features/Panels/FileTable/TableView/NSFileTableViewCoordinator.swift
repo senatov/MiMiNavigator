@@ -501,6 +501,8 @@ class Coordinator: NSObject, NSTableViewDelegate, NSTableViewDataSource, NSMenuD
             try FileManager.default.trashItem(at: file.urlValue, resultingItemURL: nil)
         } catch {
             log.error("[Coordinator] trash failed: \(error)")
+            let diagnostic = FileOperationDiagnostics.makeDelete(source: file.urlValue, error: error)
+            FileOperationDiagnosticPresenter.shared.show(diagnostic)
         }
     }
 

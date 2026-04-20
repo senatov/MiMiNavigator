@@ -63,12 +63,12 @@
         }
 
         func saveBeforeExit() {
+            UserPreferences.shared.capture(from: self)
+            UserPreferences.shared.synchronize()
+            MiMiDefaults.shared.synchronize()
             StatePersistence.saveBeforeExit(from: self)
             PanelStartupCache.shared.save(
                 leftPath: leftPath, rightPath: rightPath,
                 leftFiles: displayedLeftFiles, rightFiles: displayedRightFiles)
-            Task { @MainActor in
-                await ArchiveManager.shared.cleanup()
-            }
         }
     }

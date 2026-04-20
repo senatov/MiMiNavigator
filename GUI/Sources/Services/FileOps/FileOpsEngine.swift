@@ -17,10 +17,10 @@ final class FileOpsEngine {
 
     struct IOResult: Sendable {
         let bytes: Int64
-        let error: String?
-        var succeeded: Bool { error == nil }
-        static func ok(_ bytes: Int64) -> IOResult { IOResult(bytes: bytes, error: nil) }
-        static func fail(_ msg: String) -> IOResult { IOResult(bytes: 0, error: msg) }
+        let diagnostic: FileOperationDiagnosticInfo?
+        var succeeded: Bool { diagnostic == nil }
+        static func ok(_ bytes: Int64) -> IOResult { IOResult(bytes: bytes, diagnostic: nil) }
+        static func fail(_ diagnostic: FileOperationDiagnosticInfo) -> IOResult { IOResult(bytes: 0, diagnostic: diagnostic) }
     }
 
     private let panel = FileOpProgressPanel.shared
@@ -183,7 +183,10 @@ private extension FileOpsEngine {
             progress.fileCompleted(name: url.lastPathComponent, success: true)
             progress.add(bytes: fileSize(url: url))
         } catch {
-            progress.fileCompleted(name: url.lastPathComponent, success: false, error: error.localizedDescription)
+            recordFailure(
+                FileOperationDiagnostics.makeDelete(source: url, error: error),
+                progress: progress
+            )
         }
     }
 }
@@ -281,15 +284,23 @@ private extension FileOpsEngine {
             if result.succeeded {
                 progress.fileCompleted(name: item.lastPathComponent, success: true)
                 progress.add(bytes: result.bytes)
-            } else {
-                progress.fileCompleted(name: item.lastPathComponent, success: false, error: result.error)
+            } else if let diagnostic = result.diagnostic {
+                recordFailure(diagnostic, progress: progress)
             }
         }
     }
 
     nonisolated static func performIO(from source: URL, to target: URL, operation: FileOpType) -> IOResult {
         if AppState.isRemotePath(source) || AppState.isRemotePath(target) {
-            return .fail("Remote URLs not supported in FileOpsEngine")
+            return .fail(
+                FileOperationDiagnosticInfo(
+                    title: "\(operation.title) Failed",
+                    summary: "Remote URLs are not supported by FileOpsEngine.",
+                    details: "Operation: \(operation.title)\nPath: \(source.path)\nTarget: \(target.path)\nReason: Remote URLs not supported in FileOpsEngine",
+                    path: source.path,
+                    progressMessage: "\(source.lastPathComponent): remote URLs not supported"
+                )
+            )
         }
         let fm = FileManager.default
         do {
@@ -300,7 +311,7 @@ private extension FileOpsEngine {
             let size = Int64((try? source.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0)
             return .ok(size)
         } catch {
-            return .fail(error.localizedDescription)
+            return .fail(FileOperationDiagnostics.make(operation: operation, source: source, target: target, error: error))
         }
     }
 }
@@ -357,8 +368,8 @@ private extension FileOpsEngine {
                         if result.succeeded {
                             progress.fileCompleted(name: entry.source.lastPathComponent, success: true)
                             progress.add(bytes: result.bytes)
-                        } else {
-                            progress.fileCompleted(name: entry.source.lastPathComponent, success: false, error: result.error)
+                        } else if let diagnostic = result.diagnostic {
+                            self.recordFailure(diagnostic, progress: progress)
                         }
                     }
                 }
@@ -417,7 +428,10 @@ private extension FileOpsEngine {
                 if operation == .move { try fm.removeItem(at: entry.url) }
                 progress.fileCompleted(name: entry.url.lastPathComponent, success: true)
             } catch {
-                progress.fileCompleted(name: entry.url.lastPathComponent, success: false, error: error.localizedDescription)
+                recordFailure(
+                    FileOperationDiagnostics.make(operation: operation, source: entry.url, target: finalTarget, error: error),
+                    progress: progress
+                )
             }
         }
 
@@ -465,6 +479,15 @@ private extension FileOpsEngine {
 // MARK: - Cleanup
 
 private extension FileOpsEngine {
+    func recordFailure(_ diagnostic: FileOperationDiagnosticInfo, progress: FileOpProgress) {
+        let shouldPresentModal = progress.errors.isEmpty
+        let fileName = URL(fileURLWithPath: diagnostic.path).lastPathComponent
+        progress.fileCompleted(name: fileName, success: false, error: diagnostic.progressMessage)
+        log.error("[FileOpsEngine] \(diagnostic.details.replacingOccurrences(of: "\n", with: " | "))")
+        if shouldPresentModal {
+            FileOperationDiagnosticPresenter.shared.show(diagnostic)
+        }
+    }
 
     func cleanupEmptyDirs(plan: FileOpPlan) {
         plan.flatList.filter(\.isDirectory)

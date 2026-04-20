@@ -53,7 +53,6 @@ extension CntMenuCoord {
             log.info("\(#function) SUCCESS deleted \(files.count) item(s) → cursor moved to next file on \(panel)")
         } catch {
             log.error("\(#function) FAILED: \(error.localizedDescription)")
-            activeDialog = .error(title: "Delete Failed", message: error.localizedDescription)
         }
     }
 

@@ -128,9 +128,9 @@
                             deletedCount += 1
                             log.debug("\(#function) zapped archive tmp: \(url.lastPathComponent)")
                         } catch {
-                            let desc = error.localizedDescription
-                            log.error("\(#function) archive rm bombed '\(url.lastPathComponent)' — \(desc)")
-                            await MainActor.run { Self.showDeleteError(desc, urls: [url]) }
+                            let diagnostic = FileOperationDiagnostics.makeDelete(source: url, error: error)
+                            log.error("\(#function) archive rm bombed '\(url.lastPathComponent)' — \(diagnostic.details)")
+                            FileOperationDiagnosticPresenter.shared.show(diagnostic)
                         }
                     }
                     if deletedCount > 0 {
@@ -143,27 +143,20 @@
                     }
                 }
             } else {
-                // Normal filesystem: move to Trash via NSWorkspace
-                // Run recycle off MainActor — it can take 10-15s in large directories
-                log.info("[DELETE] ⏱ calling NSWorkspace.recycle for \(urls.count) item(s): \(urls.map(\.lastPathComponent))")
-                Task.detached(priority: .userInitiated) {
+                // Normal filesystem: route through FileOpsEngine so diagnostics, logging and progress stay unified.
+                log.info("[DELETE] ⏱ calling FileOpsEngine.delete for \(urls.count) item(s): \(urls.map(\.lastPathComponent))")
+                Task { @MainActor in
                     let startTime = CFAbsoluteTimeGetCurrent()
-                    let (trashedURLs, error) = await withCheckedContinuation { cont in
-                        NSWorkspace.shared.recycle(urls) { trashed, err in
-                            cont.resume(returning: (trashed, err))
-                        }
+                    do {
+                        let progress = try await FileOpsEngine.shared.delete(items: urls)
+                        let elapsed = CFAbsoluteTimeGetCurrent() - startTime
+                        log.info("[DELETE] ✅ FileOpsEngine.delete finished in \(String(format: "%.3f", elapsed))s with \(progress.errors.count) error(s)")
+                        await self.appState.refreshAndSelectAfterRemoval(removedFiles: files, on: panel)
+                        log.debug("[DELETE] ⏱ END performDelete")
+                    } catch {
+                        let elapsed = CFAbsoluteTimeGetCurrent() - startTime
+                        log.error("[DELETE] ❌ FileOpsEngine.delete FAILED after \(String(format: "%.3f", elapsed))s — \(error.localizedDescription)")
                     }
-                    let elapsed = CFAbsoluteTimeGetCurrent() - startTime
-                    if let error {
-                        let desc = error.localizedDescription
-                        log.error("[DELETE] ❌ recycle FAILED after \(String(format: "%.3f", elapsed))s — \(desc)")
-                        await MainActor.run { Self.showDeleteError(desc, urls: urls) }
-                        return
-                    }
-                    log.info("[DELETE] ✅ recycle OK: \(trashedURLs.count) item(s) trashed in \(String(format: "%.3f", elapsed))s")
-                    log.debug("[DELETE] ⏱ calling refreshAndSelectAfterRemoval...")
-                    await self.appState.refreshAndSelectAfterRemoval(removedFiles: files, on: panel)
-                    log.debug("[DELETE] ⏱ END performDelete")
                 }
             }
         }
