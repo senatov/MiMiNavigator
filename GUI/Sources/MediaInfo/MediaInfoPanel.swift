@@ -11,15 +11,11 @@ import AVFoundation
 import AVKit
 import FileModelKit
 import ImageIO
-import SwiftyBeaver
-import UniformTypeIdentifiers
 
 @MainActor
 final class MediaInfoPanel: NSObject, ObservableObject {
-
-    private let log = SwiftyBeaver.self
-
     static let shared = MediaInfoPanel()
+    static let windowTitle = "Media􀅴 & Convert"
 
     enum PreviewMode {
         case none
@@ -58,7 +54,7 @@ final class MediaInfoPanel: NSObject, ObservableObject {
     var player: AVPlayer?
 
     @Published var rawText: String = ""
-    @Published var displayTitle: String = "Media􀅴 & Convert"
+    @Published var displayTitle: String = windowTitle
     @Published var previewImage: NSImage?
     @Published var previewMode: PreviewMode = .none
     @Published var isAnimatedImagePreview: Bool = false
@@ -95,12 +91,11 @@ final class MediaInfoPanel: NSObject, ObservableObject {
         panelSide: FavPanelSide? = nil,
         appState: AppState? = nil
     ) {
-        log.debug(#function)
         ensurePanelExists()
         displayTitle = title
         rawText = text
         currentURL = url
-        currentCoordinates = coordinates ?? extractCoordinates(from: text)
+        currentCoordinates = coordinates ?? MediaInfoCoordinatesParser.extract(from: text)
         self.appState = appState ?? self.appState ?? AppStateProvider.shared
         currentPanelSide = panelSide ?? self.appState?.focusedPanel ?? currentPanelSide
 
@@ -108,9 +103,9 @@ final class MediaInfoPanel: NSObject, ObservableObject {
             configureConversionState(for: url)
             loadMediaSiblings(for: url)
             updatePreview(for: url)
+            log.debug("[MediaInfoPanel] show file='\(url.lastPathComponent)'")
         }
 
-        log.debug("[MediaInfoPanel] show url=\(url?.path ?? "nil")")
         positionPanelIfNeeded()
         panel?.makeKeyAndOrderFront(nil)
         panel?.makeKey()
@@ -121,10 +116,9 @@ final class MediaInfoPanel: NSObject, ObservableObject {
     }
 
     func update(title: String, text: String, coordinates: (Double, Double)?) {
-        log.debug("[MediaInfoPanel] update title=\(title)")
         displayTitle = title
         rawText = text
-        currentCoordinates = coordinates ?? extractCoordinates(from: text)
+        currentCoordinates = coordinates ?? MediaInfoCoordinatesParser.extract(from: text)
     }
 
     func hide() {
