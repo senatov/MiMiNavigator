@@ -19,12 +19,14 @@ let log = SwiftyBeaver.self
 /// Thin bootstrap wrapper — initializes LogKit once at app startup.
 /// All actual logger config (console, file, icons) is in LogKit/LogKit.swift.
 enum AppLogger {
+    private static let defaultLogFileName = "MiMiNavigator.log"
+    private static let defaultAppSupportSubdir = "MiMiNavigator"
 
     // MARK: - Call from @main init()
     static func initialize() {
         LogKit.initialize(
-            appSupportSubdir: "MiMiNavigator",
-            logFileName: "MiMiNavigator.log",
+            appSupportSubdir: defaultAppSupportSubdir,
+            logFileName: defaultLogFileName,
             wipeOnLaunch: false,
             rotationPolicy: .init(
                 maxFileSizeBytes: 50 * 1024 * 1024,
@@ -35,6 +37,24 @@ enum AppLogger {
 
     // MARK: - Log file URL (for settings / bug reports)
     static var logFileURL: URL? {
-        LogKit.logFileURL()
+        LogKit.logFileURL(
+            appSupportSubdir: defaultAppSupportSubdir,
+            logFileName: defaultLogFileName
+        )
+    }
+
+    static var tmpLogFileURL: URL {
+        URL(fileURLWithPath: "/tmp").appendingPathComponent(defaultLogFileName)
+    }
+
+    static var protectedLogFileURLs: [URL] {
+        [logFileURL, tmpLogFileURL]
+            .compactMap { $0 }
+            .map { $0.resolvingSymlinksInPath().standardizedFileURL }
+    }
+
+    static func isProtectedLogFile(_ url: URL) -> Bool {
+        let candidate = url.resolvingSymlinksInPath().standardizedFileURL
+        return protectedLogFileURLs.contains(candidate)
     }
 }

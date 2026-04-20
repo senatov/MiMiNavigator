@@ -1,6 +1,24 @@
 import Foundation
 
 enum FileOperationDiagnostics {
+    static func makeProtectedDelete(source: URL) -> FileOperationDiagnosticInfo {
+        let normalizedPath = source.resolvingSymlinksInPath().path
+        let details = [
+            "Operation: Delete",
+            "Path: \(normalizedPath)",
+            "Reason: This file is an active MiMiNavigator log destination.",
+            "Hint: Stop MiMiNavigator first, then remove or rotate the log file."
+        ].joined(separator: "\n")
+
+        return FileOperationDiagnosticInfo(
+            title: "Delete Blocked",
+            summary: "\"\(source.lastPathComponent)\" is currently used by MiMiNavigator logging.",
+            details: details,
+            path: normalizedPath,
+            progressMessage: "\(source.lastPathComponent): active app log file"
+        )
+    }
+
     static func makeDelete(source: URL, error: Error) -> FileOperationDiagnosticInfo {
         let nsError = error as NSError
         let underlying = nsError.userInfo[NSUnderlyingErrorKey] as? NSError

@@ -19,6 +19,12 @@ extension FileOpsService {
         trashedURLs.reserveCapacity(files.count)
 
         for file in files {
+            if AppLogger.isProtectedLogFile(file) {
+                let diagnostic = FileOperationDiagnostics.makeProtectedDelete(source: file)
+                log.error("[FileOps] delete blocked for '\(file.lastPathComponent)': \(diagnostic.details)")
+                FileOperationDiagnosticPresenter.shared.show(diagnostic)
+                throw CocoaError(.fileWriteNoPermission)
+            }
             do {
                 var resultingURL: NSURL?
                 try fileManager.trashItem(at: file, resultingItemURL: &resultingURL)

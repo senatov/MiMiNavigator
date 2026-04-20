@@ -497,6 +497,11 @@ class Coordinator: NSObject, NSTableViewDelegate, NSTableViewDataSource, NSMenuD
 
     @objc private func menuTrash() {
         guard let file = clickedFile else { return }
+        if AppLogger.isProtectedLogFile(file.urlValue) {
+            let diagnostic = FileOperationDiagnostics.makeProtectedDelete(source: file.urlValue)
+            FileOperationDiagnosticPresenter.shared.show(diagnostic)
+            return
+        }
         do {
             try FileManager.default.trashItem(at: file.urlValue, resultingItemURL: nil)
         } catch {

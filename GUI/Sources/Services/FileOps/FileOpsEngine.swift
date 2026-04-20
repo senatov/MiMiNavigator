@@ -178,6 +178,13 @@ private extension FileOpsEngine {
 
     func trashItem(url: URL, progress: FileOpProgress) {
         progress.setCurrentFile(url.lastPathComponent)
+        if AppLogger.isProtectedLogFile(url) {
+            recordFailure(
+                FileOperationDiagnostics.makeProtectedDelete(source: url),
+                progress: progress
+            )
+            return
+        }
         do {
             try fm.trashItem(at: url, resultingItemURL: nil)
             progress.fileCompleted(name: url.lastPathComponent, success: true)
