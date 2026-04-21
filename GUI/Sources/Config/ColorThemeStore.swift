@@ -30,6 +30,10 @@ final class ColorThemeStore {
     @ObservationIgnored @AppStorage("color.selectionInactive") var hexSelInactive: String = ""
     @ObservationIgnored @AppStorage("color.selectionBorder")   var hexSelBorder: String = ""
     @ObservationIgnored @AppStorage("selection.lineWidth")     var storedLineWidth: Double = 2.0
+    @ObservationIgnored @AppStorage("default.color.selectionActive")   private var defaultHexSelActive: String = ""
+    @ObservationIgnored @AppStorage("default.color.selectionInactive") private var defaultHexSelInactive: String = ""
+    @ObservationIgnored @AppStorage("default.color.selectionBorder")   private var defaultHexSelBorder: String = ""
+    @ObservationIgnored @AppStorage("default.selection.lineWidth")     private var defaultStoredLineWidth: Double = 0
     @ObservationIgnored @AppStorage("color.separator")         var hexSeparator: String = ""
     @ObservationIgnored @AppStorage("color.dialogBase")        var hexDialogBase: String = ""
     @ObservationIgnored @AppStorage("color.dialogStripe")      var hexDialogStripe: String = ""
@@ -87,7 +91,7 @@ final class ColorThemeStore {
     }
 
     func loadTheme(id: String) {
-        let base = ColorTheme.allPresets.first { $0.id == id } ?? .defaultTheme
+        let base = baseTheme(for: id)
         savedThemeID = base.id
         // Apply custom hex overrides on top of preset
         activeTheme = applyOverrides(to: base)
@@ -102,6 +106,42 @@ final class ColorThemeStore {
         return v != 0 ? v : fallback
     }
 
+    private func baseTheme(for id: String) -> ColorTheme {
+        let preset = ColorTheme.allPresets.first { $0.id == id } ?? .defaultTheme
+        guard preset.id == ColorTheme.defaultTheme.id else { return preset }
+        return applyDefaultSelectionOverrides(to: preset)
+    }
+
+    private func applyDefaultSelectionOverrides(to base: ColorTheme) -> ColorTheme {
+        var theme = base
+        if let c = Color(hex: defaultHexSelActive) { theme.selectionActive = c }
+        if let c = Color(hex: defaultHexSelInactive) { theme.selectionInactive = c }
+        if let c = Color(hex: defaultHexSelBorder) { theme.selectionBorder = c }
+        if defaultStoredLineWidth > 0 {
+            theme.selectionLineWidth = CGFloat(defaultStoredLineWidth)
+        }
+        return theme
+    }
+
+    func effectivePreset(id: String) -> ColorTheme {
+        baseTheme(for: id)
+    }
+
+    func updateSelectionDefaults(
+        active: Color? = nil,
+        inactive: Color? = nil,
+        border: Color? = nil,
+        lineWidth: Double? = nil
+    ) {
+        if let active { defaultHexSelActive = active.toHex() ?? defaultHexSelActive }
+        if let inactive { defaultHexSelInactive = inactive.toHex() ?? defaultHexSelInactive }
+        if let border { defaultHexSelBorder = border.toHex() ?? defaultHexSelBorder }
+        if let lineWidth { defaultStoredLineWidth = lineWidth }
+        if savedThemeID == ColorTheme.defaultTheme.id {
+            reloadOverrides()
+        }
+    }
+
     // MARK: - Apply hex overrides to base theme
     private func applyOverrides(to base: ColorTheme) -> ColorTheme {
         var theme = base
@@ -113,7 +153,9 @@ final class ColorThemeStore {
         if let c = Color(hex: ud("color.selectionActive"))   { theme.selectionActive = c }
         if let c = Color(hex: ud("color.selectionInactive")) { theme.selectionInactive = c }
         if let c = Color(hex: ud("color.selectionBorder"))   { theme.selectionBorder = c }
-        theme.selectionLineWidth = CGFloat(udD("selection.lineWidth", fallback: 2.0))
+        theme.selectionLineWidth = CGFloat(
+            udD("selection.lineWidth", fallback: Double(base.selectionLineWidth))
+        )
         if let c = Color(hex: ud("color.separator"))         { theme.separatorColor = c }
         if let c = Color(hex: ud("color.dialogBase"))        { theme.dialogBase = c }
         if let c = Color(hex: ud("color.dialogStripe"))      { theme.dialogStripe = c }
@@ -174,11 +216,12 @@ final class ColorThemeStore {
 
     // MARK: - Reload overrides on top of current preset
     func reloadOverrides() {
-        let base = ColorTheme.allPresets.first { $0.id == savedThemeID } ?? .defaultTheme
+        let base = baseTheme(for: savedThemeID)
         activeTheme = applyOverrides(to: base)
         themeVersion += 1
         log.debug("[ColorTheme] reloaded v\(themeVersion)")
     }
+
     // MARK: - Apply preset
     func applyPreset(_ theme: ColorTheme) {
         // Reset all custom overrides — original 13 tokens

@@ -41,7 +41,14 @@ struct SettingsColorsPanelsPane: View, ColorPaneHelpers {
     @AppStorage("color.columnChildCount")  private var hexColumnChildCount: String = ""
 
     private var preset: ColorTheme {
-        ColorTheme.allPresets.first { $0.id == selectedPresetID } ?? .defaultTheme
+        store.effectivePreset(id: selectedPresetID)
+    }
+
+    private struct SelectionColorItem {
+        let title: String
+        let help: String
+        let fallback: Color
+        let hex: Binding<String>
     }
 
     var body: some View {
@@ -105,22 +112,34 @@ struct SettingsColorsPanelsPane: View, ColorPaneHelpers {
             paneGroupBox {
                 VStack(spacing: 0) {
                     sectionHeader("Selection")
-                    colorRow("Active",   help: "Selected row — focused panel",
-                             preset: preset.selectionActive, hex: $hexSelActive, store: store)
+                    selectionColorRow(
+                        .init(
+                            title: "Active",
+                            help: "Selected row — focused panel",
+                            fallback: preset.selectionActive,
+                            hex: $hexSelActive
+                        )
+                    )
                     Divider()
-                    colorRow("Inactive", help: "Selected row — unfocused panel",
-                             preset: preset.selectionInactive, hex: $hexSelInactive, store: store)
+                    selectionColorRow(
+                        .init(
+                            title: "Inactive",
+                            help: "Selected row — unfocused panel",
+                            fallback: preset.selectionInactive,
+                            hex: $hexSelInactive
+                        )
+                    )
                     Divider()
-                    colorRow("Border",   help: "Top/bottom lines of selected row",
-                             preset: preset.selectionBorder, hex: $hexSelBorder, store: store)
+                    selectionColorRow(
+                        .init(
+                            title: "Border",
+                            help: "Top/bottom lines of selected row",
+                            fallback: preset.selectionBorder,
+                            hex: $hexSelBorder
+                        )
+                    )
                     Divider()
-                    rowLabel("Line width:", help: "Selection border thickness") {
-                        HStack(spacing: 10) {
-                            Slider(value: $selLineWidth, in: 0.5...4.0, step: 0.5).frame(width: 130)
-                            Text(String(format: "%.1f", selLineWidth))
-                                .monospacedDigit().foregroundStyle(.secondary).frame(width: 30)
-                        }
-                    }
+                    selectionLineWidthRow
                 }
             }
 
@@ -180,5 +199,74 @@ struct SettingsColorsPanelsPane: View, ColorPaneHelpers {
                 store.applyPreset(.defaultTheme)
             }
         }
+    }
+
+    private func selectionColorRow(_ item: SelectionColorItem) -> some View {
+        rowLabel("\(item.title):", help: item.help) {
+            HStack(spacing: 10) {
+                RoundedRectangle(cornerRadius: 3)
+                    .fill(item.fallback)
+                    .frame(width: 22, height: 16)
+                    .overlay(RoundedRectangle(cornerRadius: 3).stroke(Color.black.opacity(0.12), lineWidth: 0.5))
+                    .help("Preset default")
+                Text("→").foregroundStyle(.tertiary).font(.system(size: 11))
+                ColorPicker("", selection: selectionColorBinding(hex: item.hex, fallback: item.fallback))
+                    .labelsHidden().frame(width: 28)
+                if !item.hex.wrappedValue.isEmpty {
+                    Button {
+                        item.hex.wrappedValue = ""
+                        syncSelectionDefaults()
+                        store.reloadOverrides()
+                    } label: {
+                        Image(systemName: "arrow.uturn.backward").font(.system(size: 10))
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(.secondary)
+                    .help("Reset to preset default")
+                }
+            }
+        }
+    }
+
+    private var selectionLineWidthRow: some View {
+        rowLabel("Line width:", help: "Selection border thickness") {
+            HStack(spacing: 10) {
+                Slider(value: $selLineWidth, in: 0.5...4.0, step: 0.5)
+                    .frame(width: 130)
+                    .onChange(of: selLineWidth) { _, newValue in
+                        store.updateSelectionDefaults(lineWidth: newValue)
+                        store.reloadOverrides()
+                    }
+                Text(String(format: "%.1f", selLineWidth))
+                    .monospacedDigit()
+                    .foregroundStyle(.secondary)
+                    .frame(width: 30)
+            }
+        }
+    }
+
+    private func selectionColorBinding(hex: Binding<String>, fallback: Color) -> Binding<Color> {
+        Binding<Color>(
+            get: {
+                hex.wrappedValue.isEmpty ? fallback : Color(hex: hex.wrappedValue) ?? fallback
+            },
+            set: { newColor in
+                hex.wrappedValue = newColor.toHex() ?? ""
+                syncSelectionDefaults()
+                store.reloadOverrides()
+            }
+        )
+    }
+
+    private func syncSelectionDefaults() {
+        let active = Color(hex: hexSelActive) ?? preset.selectionActive
+        let inactive = Color(hex: hexSelInactive) ?? preset.selectionInactive
+        let border = Color(hex: hexSelBorder) ?? preset.selectionBorder
+        store.updateSelectionDefaults(
+            active: active,
+            inactive: inactive,
+            border: border,
+            lineWidth: selLineWidth
+        )
     }
 }

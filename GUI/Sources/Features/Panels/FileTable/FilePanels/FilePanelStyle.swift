@@ -7,11 +7,20 @@
 //   Selection colors in FileRow and text colors in FileRowView are served
 //   live from ColorThemeStore — constants here act as compile-time fallbacks only.
 
+import AppKit
 import SwiftUI
 
 // MARK: - Visual styling constants for file panels
 // Finder-style design (macOS HIG compliant)
 enum FilePanelStyle {
+
+    private static var backingScale: CGFloat {
+        NSScreen.main?.backingScaleFactor ?? 2.0
+    }
+
+    private static func pixelSnapped(_ value: CGFloat) -> CGFloat {
+        (value * backingScale).rounded() / backingScale
+    }
 
     // MARK: - Colors (Finder-style: minimal color differentiation)
     /// Blue color for symlink directories (subtle differentiation)
@@ -65,10 +74,10 @@ enum FilePanelStyle {
     }
 
     /// Icon size - scaled by InterfaceScaleStore
-    @MainActor static var iconSize: CGFloat { InterfaceScaleStore.shared.scaled(baseIconSize) }
+    @MainActor static var iconSize: CGFloat { pixelSnapped(InterfaceScaleStore.shared.scaled(baseIconSize)) }
 
     /// Row height - scaled by InterfaceScaleStore
-    @MainActor static var rowHeight: CGFloat { InterfaceScaleStore.shared.scaled(baseRowHeight) }
+    @MainActor static var rowHeight: CGFloat { pixelSnapped(InterfaceScaleStore.shared.scaled(baseRowHeight)) }
 
     /// Modified date column width
     static let modifiedColumnWidth: CGFloat = 145

@@ -27,37 +27,10 @@ struct FileRow: View, Equatable {
 
     @Environment(AppState.self) var appState
     @Environment(DragDropManager.self) var dragDropManager
-    @Environment(\.displayScale) private var displayScale
 
     @State private var colorStore = ColorThemeStore.shared
     @State private var isDropTargeted: Bool = false
     @State private var isHoveringParentRow: Bool = false
-
-    // MARK: - Selection colors — live from ColorThemeStore
-    private var selectionActiveFill: Color { colorStore.activeTheme.selectionActive }
-    private var selectionInactiveFill: Color { colorStore.activeTheme.selectionInactive }
-
-    private static let dropTargetFill = Color.accentColor.opacity(0.2)
-    private static let dropTargetBorder = Color.accentColor
-
-    private var onePixel: CGFloat { 1.0 / displayScale }
-
-    private func selectionBorderOverlay(color: Color) -> some View {
-        ZStack {
-            Rectangle().fill(color)
-                .frame(height: onePixel)
-                .frame(maxHeight: .infinity, alignment: .top)
-            Rectangle().fill(color)
-                .frame(height: onePixel)
-                .frame(maxHeight: .infinity, alignment: .bottom)
-            Rectangle().fill(color)
-                .frame(width: onePixel)
-                .frame(maxWidth: .infinity, alignment: .leading)
-            Rectangle().fill(color)
-                .frame(width: onePixel)
-                .frame(maxWidth: .infinity, alignment: .trailing)
-        }
-    }
 
     /// Shared formatter to avoid repeated ByteCountFormatter allocations during scrolling
     private static let sizeFormatter: ByteCountFormatter = {
@@ -111,7 +84,6 @@ struct FileRow: View, Equatable {
 
     var body: some View {
         rowContainer
-            .zIndex(isSelected ? 1 : 0)  // selected row renders above neighbours — border fully visible
     }
 
     // MARK: - Main Container
@@ -126,7 +98,7 @@ struct FileRow: View, Equatable {
         }
     }
 
-    private var stableContent: some View {
+    private var stableRowContent: some View {
         StableKeyView(
             file.id.hashValue
                 ^ file.sizeVersion.hashValue
@@ -136,11 +108,17 @@ struct FileRow: View, Equatable {
                 ^ (file.cachedChildCount ?? Int.min).hashValue
                 ^ Int(file.modifiedDate?.timeIntervalSince1970 ?? 0).hashValue
         ) {
-            ZStack(alignment: .leading) {
-                zebraBackground
-                highlightLayer
-                rowContent
+            rowContent
+        }
+    }
+
+    private var rowVisualContent: some View {
+        ZStack(alignment: .leading) {
+            zebraBackground
+            if isDropTargetActive {
+                dropTargetHighlight
             }
+            stableRowContent
         }
     }
 
@@ -155,7 +133,10 @@ struct FileRow: View, Equatable {
     // MARK: - Extracted Views
     @ViewBuilder
     private var zebraBackground: some View {
-        if isParentEntry {
+        if isSelected {
+            Color.clear
+                .allowsHitTesting(false)
+        } else if isParentEntry {
             parentRowBackground
         } else {
             standardRowBackground
@@ -178,15 +159,6 @@ struct FileRow: View, Equatable {
         return color.allowsHitTesting(false)
     }
 
-    @ViewBuilder
-    private var highlightLayer: some View {
-        if isDropTargetActive {
-            dropTargetHighlight
-        } else if isSelected {
-            selectionHighlight
-        }
-    }
-
     private var isDropTargetActive: Bool {
         (isDropTargeted || isInternalDropTarget) && isValidDropTarget
     }
@@ -202,29 +174,6 @@ struct FileRow: View, Equatable {
             .padding(.horizontal, 4)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .allowsHitTesting(false)
-    }
-
-    private var selectionHighlight: some View {
-        let fill = isActivePanel ? selectionActiveFill : selectionInactiveFill
-
-        return RoundedRectangle(cornerRadius: 6, style: .continuous)
-            .fill(fill)
-            .overlay(
-                RoundedRectangle(cornerRadius: 6, style: .continuous)
-                    // Draw the border strictly inside the row bounds to avoid clipping on the last visible row.
-                    .inset(by: onePixel * 0.5)
-                    .strokeBorder(selectionBorderColor, lineWidth: onePixel)
-            )
-            // Keep the 1px bottom border away from the scroll container clip edge and pixel-grid artifacts.
-            .padding(.vertical, 1)
-            .padding(.horizontal, 3)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .allowsHitTesting(false)
-    }
-
-    private var selectionBorderColor: Color {
-        Color(#colorLiteral(red: 0.1215686277, green: 0.01176470611, blue: 0.4235294163, alpha: 1))
-            .opacity(isActivePanel ? 0.75 : 0.35)
     }
 
     /// True when there are marked files on this panel (show group menu)
@@ -385,7 +334,7 @@ struct FileRow: View, Equatable {
 
     // MARK: - Parent Row View
     private func parentRowView() -> some View {
-        stableContent
+        rowVisualContent
             .background(parentRowHoverBackground)
             .frame(maxWidth: .infinity, alignment: .leading)
             .frame(height: FilePanelStyle.rowHeight)
@@ -414,7 +363,7 @@ struct FileRow: View, Equatable {
 
     // MARK: - Normal Row View
     private func normalRowView() -> some View {
-        stableContent
+        rowVisualContent
             .frame(maxWidth: .infinity, alignment: .leading)
             .frame(height: FilePanelStyle.rowHeight)
             .contentShape(Rectangle())

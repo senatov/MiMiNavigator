@@ -11,6 +11,8 @@ import SwiftUI
 
 // MARK: - ParentEntryStripView
 struct ParentEntryStripView: View {
+    static let rowHeight: CGFloat = 25
+
     let file: CustomFile
     let isSelected: Bool
     let parentURL: URL
