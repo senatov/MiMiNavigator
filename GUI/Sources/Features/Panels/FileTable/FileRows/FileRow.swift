@@ -135,10 +135,6 @@ struct FileRow: View, Equatable {
                 ^ (file.cachedShallowSize ?? Int64.min).hashValue
                 ^ (file.cachedChildCount ?? Int.min).hashValue
                 ^ Int(file.modifiedDate?.timeIntervalSince1970 ?? 0).hashValue
-                ^ (isSelected ? 1 : 0)
-                ^ (isActivePanel ? 2 : 0)
-                ^ (isDropTargeted ? 4 : 0)
-                ^ (isMarked ? 8 : 0)
         ) {
             ZStack(alignment: .leading) {
                 zebraBackground
