@@ -215,6 +215,8 @@ struct FileRow: View, Equatable {
                     .inset(by: onePixel * 0.5)
                     .strokeBorder(selectionBorderColor, lineWidth: onePixel)
             )
+            // Keep the 1px bottom border away from the scroll container clip edge and pixel-grid artifacts.
+            .padding(.vertical, 1)
             .padding(.horizontal, 3)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .allowsHitTesting(false)
