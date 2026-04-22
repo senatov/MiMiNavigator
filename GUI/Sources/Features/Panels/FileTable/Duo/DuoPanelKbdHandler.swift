@@ -29,6 +29,7 @@ final class DuoFilePanelKeyboardHandler {
     var onRefreshPanels: (() -> Void)?
     var onToggleHiddenFiles: (() -> Void)?
     var onOpenSettings: (() -> Void)?
+    var onRenameFile: (() -> Void)?
 
     init(appState: AppState) {
         self.appState = appState
@@ -144,6 +145,11 @@ final class DuoFilePanelKeyboardHandler {
             case .deleteFile:
                 log.info("[KEY] → Delete")
                 onDelete?()
+                return nil
+
+            case .renameFile:
+                log.info("[KEY] → Rename (F2)")
+                onRenameFile?()
                 return nil
 
             // ── Clipboard ──

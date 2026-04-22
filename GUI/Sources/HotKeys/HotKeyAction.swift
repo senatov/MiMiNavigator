@@ -23,6 +23,7 @@ enum HotKeyAction: String, CaseIterable, Identifiable, Codable, Sendable {
     case unpackFiles = "unpackFiles"
     case compareContent = "compareContent"
     case syncDirectories = "syncDirectories"
+    case renameFile = "renameFile"
 
     // MARK: - Clipboard
     case clipboardCopy = "clipboardCopy"
@@ -84,6 +85,7 @@ enum HotKeyAction: String, CaseIterable, Identifiable, Codable, Sendable {
             case .unpackFiles: return "Unpack Files"
             case .compareContent: return "Compare by Content"
             case .syncDirectories: return "Synchronize Directories"
+            case .renameFile: return "Rename File"
             case .clipboardCopy: return "Copy to Clipboard"
             case .clipboardCut: return "Cut to Clipboard"
             case .clipboardPaste: return "Paste from Clipboard"
@@ -123,7 +125,7 @@ enum HotKeyAction: String, CaseIterable, Identifiable, Codable, Sendable {
         switch self {
             case .viewFile, .editFile, .copyFile, .moveFile, .newFolder, .deleteFile,
                  .packFiles, .unpackFiles, .compareContent, .syncDirectories,
-                 .clipboardCopy, .clipboardCut, .clipboardPaste:
+                 .clipboardCopy, .clipboardCut, .clipboardPaste, .renameFile:
                 return .fileOperations
             case .togglePanelFocus, .moveUp, .moveDown, .pageUp, .pageDown, .moveToTop, .moveToBottom, .openSelected, .parentDirectory, .refreshPanels,
                 .newTab, .closeTab, .nextTab, .prevTab:

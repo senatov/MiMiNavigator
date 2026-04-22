@@ -6,6 +6,7 @@
 
 import AppKit
 import FileModelKit
+import RenameKit
 import SwiftUI
 import UniformTypeIdentifiers
 
@@ -318,18 +319,50 @@ struct FileRow: View, Equatable {
     // MARK: - Name column
     // Uses layout.nameWidth — same value as TableHeaderView nameColumnHeader.
     // This guarantees pixel-perfect alignment between header and rows.
+    private var isInlineRenaming: Bool {
+        appState.inlineRename.activeFileID == AnyHashable(file.id)
+    }
+
     @ViewBuilder
     private func nameColumnView() -> some View {
-        FileRowView(
-            file: file,
-            isSelected: isSelected,
-            isActivePanel: isActivePanel,
-            isMarked: isMarked
-        )
-        .frame(width: layout.nameWidth, alignment: .leading)
-        .clipped()
-        .padding(.vertical, 2)
-        .padding(.horizontal, 4)
+        if isInlineRenaming {
+            InlineRenameField(
+                text: Bindable(appState.inlineRename).editedName,
+                originalName: appState.inlineRename.originalName,
+                nameWidth: layout.nameWidth,
+                onCommit: { commitInlineRename() },
+                onCancel: { appState.inlineRename.cancel() }
+            )
+            .frame(width: layout.nameWidth, alignment: .leading)
+            .padding(.vertical, 2)
+            .padding(.horizontal, 4)
+        } else {
+            FileRowView(
+                file: file,
+                isSelected: isSelected,
+                isActivePanel: isActivePanel,
+                isMarked: isMarked
+            )
+            .frame(width: layout.nameWidth, alignment: .leading)
+            .clipped()
+            .padding(.vertical, 2)
+            .padding(.horizontal, 4)
+        }
+    }
+
+    private func commitInlineRename() {
+        guard let result = appState.inlineRename.commit() else { return }
+        let panel: FavPanelSide = result.panelTag == 0 ? .left : .right
+        // Find the original file by matching the name that was active
+        guard let selectedFile = panel == .left ? appState.selectedLeftFile : appState.selectedRightFile else { return }
+        Task {
+            await CntMenuCoord.shared.performRename(
+                file: selectedFile,
+                newName: result.newName,
+                panel: panel,
+                appState: appState
+            )
+        }
     }
 
     // MARK: - Parent Row View

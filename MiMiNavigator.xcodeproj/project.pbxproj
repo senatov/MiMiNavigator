@@ -22,6 +22,7 @@
 		DD000003DD000003DD000003 /* (null) in Frameworks */ = {isa = PBXBuildFile; };
 		EE000003EE000003EE000003 /* (null) in Frameworks */ = {isa = PBXBuildFile; };
 		FF82030CE1584192AE6E4DEA /* NetworkKit in Frameworks */ = {isa = PBXBuildFile; productRef = 52D4533F441E4D78BD910304 /* NetworkKit */; };
+		DD000014DD000014DD000014 /* RenameKit in Frameworks */ = {isa = PBXBuildFile; productRef = DD000015DD000015DD000015 /* RenameKit */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -108,6 +109,7 @@
 				97B3D6382DCA54B9002F1DB7 /* SystemPackage in Frameworks */,
 				97D128762DB62DD400274684 /* FilesProvider in Frameworks */,
 				CC000003CC000003CC000003 /* Citadel in Frameworks */,
+				DD000014DD000014DD000014 /* RenameKit in Frameworks */,
 			);
 		};
 		97AD1A3E2C624E040045C38D /* Frameworks */ = {
@@ -184,6 +186,7 @@
 				BB000012BB000012BB000012 /* ScannerKit */,
 				BB000013BB000013BB000013 /* ArchiveKit */,
 				970978BD2F8C3BBB00C0BE9D /* VLC */,
+				DD000015DD000015DD000015 /* RenameKit */,
 			);
 			productName = MiMiNavigator;
 			productReference = 97AD1A2E2C624E020045C38D /* MiMiNavigator.app */;
@@ -268,6 +271,7 @@
 				BB000002BB000002BB000002 /* XCLocalSwiftPackageReference "Packages/ScannerKit" */,
 				BB000004BB000004BB000004 /* XCLocalSwiftPackageReference "Packages/ArchiveKit" */,
 				CC000001CC000001CC000001 /* XCRemoteSwiftPackageReference "Citadel" */,
+				DD000016DD000016DD000016 /* XCLocalSwiftPackageReference "Packages/RenameKit" */,
 				970978BB2F8C341800C0BE9D /* XCRemoteSwiftPackageReference "VLC" */,
 			);
 			preferredProjectObjectVersion = 90;
@@ -708,6 +712,10 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/ArchiveKit;
 		};
+		DD000016DD000016DD000016 /* XCLocalSwiftPackageReference "Packages/RenameKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/RenameKit;
+		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCRemoteSwiftPackageReference section */
@@ -823,6 +831,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = CC000001CC000001CC000001 /* XCRemoteSwiftPackageReference "Citadel" */;
 			productName = Citadel;
+		};
+		DD000015DD000015DD000015 /* RenameKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = DD000016DD000016DD000016 /* XCLocalSwiftPackageReference "Packages/RenameKit" */;
+			productName = RenameKit;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

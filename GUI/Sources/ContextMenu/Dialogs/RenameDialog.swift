@@ -5,6 +5,7 @@
 //  Copyright © 2026 Senatov. All rights reserved.
 
 import FileModelKit
+import RenameKit
 import SwiftUI
 
 // MARK: - Rename Dialog
@@ -27,7 +28,7 @@ struct RenameDialog: View {
     }
 
     private var isValidName: Bool {
-        !newName.isEmpty && !newName.contains("/") && !newName.contains(":") && newName != "." && newName != ".."
+        FilenameCharacterFilter.validate(newName) == nil
     }
 
     private var hasChanges: Bool {
@@ -72,7 +73,13 @@ struct RenameDialog: View {
         .higDialogStyle()
         .higAutoFocusTextField()
         .onAppear { isTextFieldFocused = true }
-        .onChange(of: newName) { _, newValue in validateName(newValue) }
+        .onChange(of: newName) { _, newValue in
+            let filtered = FilenameCharacterFilter.sanitize(newValue)
+            if filtered != newValue {
+                newName = filtered
+            }
+            validateName(newValue)
+        }
         .alert("File already exists", isPresented: $showOverwriteAlert) {
             Button("Cancel", role: .cancel) {
                 isTextFieldFocused = true
@@ -103,14 +110,6 @@ struct RenameDialog: View {
 
     private func validateName(_ name: String) {
         log.debug(#function)
-        if name.isEmpty {
-            errorMessage = L10n.Error.nameEmpty
-        } else if name.contains("/") || name.contains(":") {
-            errorMessage = L10n.Error.nameInvalidChars
-        } else if name == "." || name == ".." {
-            errorMessage = L10n.Error.invalidNameGeneric
-        } else {
-            errorMessage = nil
-        }
+        errorMessage = FilenameCharacterFilter.validate(name)
     }
 }

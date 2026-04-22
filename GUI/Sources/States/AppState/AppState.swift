@@ -12,6 +12,7 @@
 import AppKit
 import FileModelKit
 import Foundation
+import RenameKit
 
 // MARK: - AppState
 @MainActor
@@ -200,6 +201,9 @@ final class AppState {
         set { rightPanel.archiveState = newValue }
     }
     var navigationCallbacks: [FavPanelSide: PanelNavigationCallbacks] = [:]
+
+    /// TC-style inline rename state (F2)
+    var inlineRename = InlineRenameState()
 
     // MARK: - Search Results (bridge)
     var leftSearchResultsPath: String? {

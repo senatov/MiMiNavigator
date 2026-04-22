@@ -14,18 +14,21 @@ extension FileTableView {
     // MARK: - Keyboard Handling
     func handleUpArrow() -> KeyPress.Result {
         guard isFocused else { return .ignored }
+        appState.inlineRename.cancel()
         keyboardNav.moveUp()
         return .handled
     }
 
     func handleDownArrow() -> KeyPress.Result {
         guard isFocused else { return .ignored }
+        appState.inlineRename.cancel()
         keyboardNav.moveDown()
         return .handled
     }
 
     func handlePageUp() -> KeyPress.Result {
         guard isFocused else { return .ignored }
+        appState.inlineRename.cancel()
         if pageNavThrottle.allow() {
             keyboardNav.pageUp()
         }
@@ -34,6 +37,7 @@ extension FileTableView {
 
     func handlePageDown() -> KeyPress.Result {
         guard isFocused else { return .ignored }
+        appState.inlineRename.cancel()
         if pageNavThrottle.allow() {
             keyboardNav.pageDown()
         }
@@ -42,12 +46,14 @@ extension FileTableView {
 
     func handleHome() -> KeyPress.Result {
         guard isFocused else { return .ignored }
+        appState.inlineRename.cancel()
         keyboardNav.jumpToFirst()
         return .handled
     }
 
     func handleEnd() -> KeyPress.Result {
         guard isFocused else { return .ignored }
+        appState.inlineRename.cancel()
         keyboardNav.jumpToLast()
         return .handled
     }

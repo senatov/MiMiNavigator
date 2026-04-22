@@ -38,6 +38,7 @@ enum HotKeyPresets {
         HotKeyBinding(action: .moveFile,         keyCode: 0x61, modifiers: .none),         // F6
         HotKeyBinding(action: .newFolder,        keyCode: 0x62, modifiers: .none),         // F7
         HotKeyBinding(action: .deleteFile,       keyCode: 0x64, modifiers: .none),         // F8
+        HotKeyBinding(action: .renameFile,       keyCode: 0x78, modifiers: .none),         // F2
         HotKeyBinding(action: .packFiles,        keyCode: 0x60, modifiers: .option),       // ⌥F5
         HotKeyBinding(action: .unpackFiles,      keyCode: 0x65, modifiers: .option),       // ⌥F9
         HotKeyBinding(action: .compareContent,   keyCode: 0x08, modifiers: .control),      // ⌃C
@@ -100,6 +101,7 @@ enum HotKeyPresets {
         HotKeyBinding(action: .moveFile,         keyCode: 0x07, modifiers: .command),      // ⌘X (then paste = move)
         HotKeyBinding(action: .newFolder,        keyCode: 0x2D, modifiers: [.command, .shift]), // ⌘⇧N
         HotKeyBinding(action: .deleteFile,       keyCode: 0x33, modifiers: .command),      // ⌘Backspace
+        HotKeyBinding(action: .renameFile,       keyCode: 0x78, modifiers: .none),         // F2
         HotKeyBinding(action: .packFiles,        keyCode: 0x00, modifiers: .none),         // Not standard
         HotKeyBinding(action: .unpackFiles,      keyCode: 0x00, modifiers: .none),         // Not standard
         HotKeyBinding(action: .compareContent,   keyCode: 0x00, modifiers: .none),         // Not standard
