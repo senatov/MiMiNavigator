@@ -39,6 +39,9 @@ extension FileTableView {
     }
 
     func handleSelectionChange(_ newID: CustomFile.ID?) {
+        if newID != nil {
+            isParentStripHighlighted = false
+        }
         updateSelectedIndex(for: newID)
     }
 

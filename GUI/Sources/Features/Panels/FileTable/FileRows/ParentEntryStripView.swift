@@ -71,6 +71,7 @@ struct ParentEntryStripView: View {
         ZStack(alignment: .leading) {
             Color.white
             pathLabel(geo: geo)
+                .frame(maxHeight: .infinity)
             pebbleButton(geo: geo)
             bottomBorder
         }

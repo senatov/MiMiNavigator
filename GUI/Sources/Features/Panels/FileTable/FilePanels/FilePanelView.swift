@@ -41,7 +41,9 @@ struct FilePanelView: View {
     }
 
     private var files: [CustomFile] {
-        prependParentEntry(to: rawFiles, currentPath: panelURL.path)
+        // Parent ".." strip is now a separate panel (ParentNavigationStripPanel)
+        // inside FileTableView — no longer prepended to file rows.
+        rawFiles
     }
 
     private var fileContentKey: String {
@@ -79,7 +81,7 @@ struct FilePanelView: View {
 
     // MARK: - View
     var body: some View {
-        VStack {
+        VStack(spacing: 0) {
             TabBarView(panelSide: viewModel.panelSide)
             breadcrumbSection
             contentSection

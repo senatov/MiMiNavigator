@@ -7,16 +7,6 @@
 //
 
 import Foundation
-
-//
-//  FileTableView+ViewState.swift
-//  MiMiNavigator
-//
-//  Created by Iakov Senatov on 06.04.2026.
-//  Copyright © 2026 Senatov. All rights reserved.
-//
-
-import Foundation
 import SwiftUI
 
 extension FileTableView {
@@ -54,7 +44,22 @@ extension FileTableView {
     // MARK: - View Composition
     var contentView: some View {
         ZStack {
-            mainScrollView
+            VStack(spacing: 0) {
+                ParentNavigationStripPanel(
+                    panelSide: panelSide,
+                    isHighlighted: isParentStripHighlighted,
+                    onSelect: { file in
+                        isParentStripHighlighted = true
+                        selectedID = nil
+                        onSelect(file)
+                    },
+                    onActivate: { file in
+                        isParentStripHighlighted = false
+                        onDoubleClick(file)
+                    }
+                )
+                mainScrollView
+            }
 
             AppKitDropView(
                 panelSide: panelSide,

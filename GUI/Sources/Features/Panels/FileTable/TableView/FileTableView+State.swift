@@ -49,11 +49,10 @@ extension FileTableView {
 
     private func makeSortedRows(from sortedFiles: [CustomFile], currentPath: String) -> [CustomFile] {
         var rows: [CustomFile] = []
-        rows.reserveCapacity(sortedFiles.count + 1)
+        rows.reserveCapacity(sortedFiles.count)
 
-        if currentPath != "/" {
-            rows.append(CustomFile.parentLink(from: currentPath))
-        }
+        // Parent ".." strip is now a separate panel (ParentNavigationStripPanel)
+        // — no longer injected into the rows array.
 
         for file in sortedFiles where shouldIncludeInRows(file) {
             rows.append(file)
@@ -109,9 +108,9 @@ extension FileTableView {
     /// Rebuilds the O(1) lookup dictionary and the rows array after list changes. Called only on list update.
     private func rebuildIndexByID() {
         let currentPath = appState.path(for: panelSide)
-
-        cachedIndexByID = makeIndexByID(from: cachedSortedFiles)
         cachedSortedRows = makeSortedRows(from: cachedSortedFiles, currentPath: currentPath)
+        // Build index from rows (not raw files) so positions match what keyboardNav sees
+        cachedIndexByID = makeIndexByID(from: cachedSortedRows)
 
         Self.log.debug(
             "[FileTableState] rebuilt rows panel=\(panelSide.rawValue) files=\(cachedSortedFiles.count) rows=\(cachedSortedRows.count) index=\(cachedIndexByID.count) path='\(currentPath)'"

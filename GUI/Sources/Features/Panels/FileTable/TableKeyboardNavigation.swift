@@ -4,6 +4,8 @@
 // Created by Iakov Senatov on 27.01.2026.
 // Copyright © 2026 Senatov. All rights reserved.
 // Description: Keyboard navigation logic for FileTableView.
+//   Parent strip is now a separate panel outside the table —
+//   this struct works only with real filesystem entries.
 //
 // Scroll strategy: uses ScrollViewReader.scrollTo(id:) — Finder-style minimum scroll.
 // Only scrolls when the target row is outside the visible rect; reveals at nearest edge.
@@ -15,6 +17,7 @@ import SwiftUI
 
 /// Handles keyboard-based file selection and navigation.
 /// Uses an O(1) index lookup via a pre-built dictionary for large directories.
+/// Parent ".." entry is NOT in the files array — it lives in ParentNavigationStripPanel.
 @MainActor
 struct TableKeyboardNavigation {
     let files: [CustomFile]
@@ -24,6 +27,8 @@ struct TableKeyboardNavigation {
     let onSelect: (CustomFile) -> Void
     let pageStep: Int
     let panelSide: FavPanelSide
+    /// Called when cursor moves above idx 0 — highlights the parent strip panel
+    let onParentFocused: () -> Void
     // Injected from outside — built once when list changes, not on every keypress
     private let indexByID: [CustomFile.ID: Int]
 
@@ -38,7 +43,8 @@ struct TableKeyboardNavigation {
         scrollAnchorID: Binding<CustomFile.ID?>,
         onSelect: @escaping (CustomFile) -> Void,
         pageStep: Int = 20,
-        panelSide: FavPanelSide
+        panelSide: FavPanelSide,
+        onParentFocused: @escaping () -> Void = {}
     ) {
         self.files = files
         self.indexByID = indexByID
@@ -47,70 +53,68 @@ struct TableKeyboardNavigation {
         self.onSelect = onSelect
         self.pageStep = pageStep
         self.panelSide = panelSide
+        self.onParentFocused = onParentFocused
     }
 
     // MARK: - Navigation Actions
 
     func moveUp() {
         guard !files.isEmpty else { return }
+        // Already on parent strip — stay there
+        if selectedID.wrappedValue == nil { return }
         let idx = currentIndex()
-
-        // Already at parent entry — do nothing
-        if idx == 0 { return }
-
-        let previousIndex = idx - 1
-
-        // Special UX: only when moving FROM first real file → parent entry
-        if idx == firstRealFileIndex {
-            withAnimation(.spring(response: 0.35, dampingFraction: 0.7)) {
-                selectAndScroll(at: 0)
-            }
-            log.debug("\(logPrefix) ↑ from first real file → parent entry")
+        if idx == 0 {
+            onParentFocused()
             return
         }
-
-        selectAndScroll(at: previousIndex)
+        selectAndScroll(at: idx - 1)
     }
+
 
     func moveDown() {
         guard !files.isEmpty else { return }
+        // Coming from parent strip (selectedID == nil) → land on first real file
+        if selectedID.wrappedValue == nil {
+            selectAndScroll(at: 0)
+            return
+        }
         let idx = currentIndex()
         let last = files.count - 1
         if idx == last { return }
         selectAndScroll(at: idx + 1)
     }
 
+
     func pageUp() {
         guard !files.isEmpty else { return }
-
-        let idx = currentIndex()
-        let target = max(firstRealFileIndex, idx - pageStep)
-
-        guard files.indices.contains(target) else { return }
-
-        let file = files[target]
-        if isParentRow(file) {
-            log.error("\(logPrefix) pageUp resolved to parent entry at idx=\(target); forcing first real file")
-            if files.indices.contains(firstRealFileIndex) {
-                selectAndScroll(at: firstRealFileIndex)
-            }
+        // From parent strip → land on first file
+        guard let _ = selectedID.wrappedValue else {
+            selectAndScroll(at: 0)
             return
         }
-
+        let idx = currentIndex()
+        let target = max(0, idx - pageStep)
         selectAndScroll(at: target)
     }
 
+
     func pageDown() {
         guard !files.isEmpty else { return }
+        // From parent strip → land on first file
+        guard let _ = selectedID.wrappedValue else {
+            selectAndScroll(at: min(files.count - 1, pageStep))
+            return
+        }
         let idx = currentIndex()
         selectAndScroll(at: min(files.count - 1, idx + pageStep))
     }
 
+
     func jumpToFirst() {
-        guard files.indices.contains(firstRealFileIndex) else { return }
-        // Jump-to-first targets the first real file, not the synthetic parent entry.
-        selectAndScroll(at: firstRealFileIndex)
+        guard !files.isEmpty else { return }
+        selectAndScroll(at: 0)
     }
+
 
     func jumpToLast() {
         guard !files.isEmpty else { return }
@@ -119,48 +123,21 @@ struct TableKeyboardNavigation {
 
     // MARK: - Private helpers
 
-    private func isParentRow(_ file: CustomFile) -> Bool {
-        // Primary detection
-        if ParentDirectoryEntry.isParentEntry(file) { return true }
-
-        // Fallback: UI may provide synthetic ".." without flag
-        return file.nameStr == ".."
-    }
-
-    /// Returns the currently selected row index, including the parent entry if present.
+    /// Returns the currently selected row index.
     private func currentIndex() -> Int {
-        guard let id = selectedID.wrappedValue else { return firstRealFileIndex }
-
-        if let first = files.first, isParentRow(first), first.id == id {
-            return 0
-        }
-        return indexByID[id] ?? firstRealFileIndex
+        guard let id = selectedID.wrappedValue else { return 0 }
+        return indexByID[id] ?? 0
     }
 
-    private func isAlreadySelected(_ file: CustomFile, index: Int) -> Bool {
-        if selectedID.wrappedValue == file.id {
-            log.debug("\(logPrefix) skip — already selected idx=\(index) name='\(file.nameStr)'")
-            return true
-        }
-        return false
-    }
-
-    /// Index of the first real filesystem entry.
-    /// The synthetic parent row ("..") is never a PageUp/jump-to-first target.
-    private var firstRealFileIndex: Int {
-        guard let first = files.first else { return 0 }
-        return isParentRow(first) ? 1 : 0
-    }
 
     private func selectAndScroll(at index: Int) {
         guard index >= 0 && index < files.count else { return }
         let file = files[index]
-        log.debug("\(logPrefix) resolved target idx=\(index) name='\(file.nameStr)' parent=\(isParentRow(file))")
+        log.debug("\(logPrefix) resolved target idx=\(index) name='\(file.nameStr)'")
         selectedID.wrappedValue = file.id
         onSelect(file)
         // Reset anchor to nil first so onChange fires even for same ID
         scrollAnchorID.wrappedValue = nil
         scrollAnchorID.wrappedValue = file.id
     }
-
 }

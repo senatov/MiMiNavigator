@@ -1,5 +1,7 @@
 // FileTableRowsView.swift
 // MiMiNavigator — Renders LazyVStack of file rows with optimized re-rendering.
+//   Parent ".." strip is now a separate panel (ParentNavigationStripPanel) —
+//   this view only renders real filesystem entries.
 
 import FileModelKit
 import SwiftUI
@@ -48,37 +50,34 @@ struct FileTableRowsView: View {
     let handleDirectoryAction: (DirectoryAction, CustomFile) -> Void
     let handleMultiSelectionAction: (MultiSelectionAction) -> Void
 
-    // Centralized helpers for selection and display
+
     private var currentSelectedID: CustomFile.ID? {
         selectedID
     }
 
-    private var displayRows: [CustomFile] {
-        makeDisplayRows(from: rows)
-    }
 
     private var isActivePanel: Bool {
         appState.focusedPanel == panelSide
     }
 
+
     private var selectedDisplayIndex: Int? {
-        displayRows.firstIndex { file in
-            isRowSelected(file: file, currentSelectedID: currentSelectedID)
-        }
+        rows.firstIndex { $0.id == currentSelectedID }
     }
+
 
     private var selectedRowYOffset: CGFloat? {
         guard let selectedDisplayIndex else { return nil }
-        let precedingHeight = displayRows.prefix(selectedDisplayIndex).reduce(CGFloat.zero) { partial, file in
-            partial + rowHeight(for: file)
-        }
-        return SelectionOverlayMetrics.rowsTopInset + precedingHeight
+        return SelectionOverlayMetrics.rowsTopInset
+            + CGFloat(selectedDisplayIndex) * FilePanelStyle.rowHeight
     }
 
+
     private var selectedRowHeight: CGFloat? {
-        guard let selectedDisplayIndex else { return nil }
-        return rowHeight(for: displayRows[selectedDisplayIndex])
+        guard selectedDisplayIndex != nil else { return nil }
+        return FilePanelStyle.rowHeight
     }
+
 
     private var selectionFillLayout: SelectionOverlayLayout? {
         guard let selectedRowYOffset, let selectedRowHeight else { return nil }
@@ -90,6 +89,7 @@ struct FileTableRowsView: View {
         )
     }
 
+
     private var selectionBorderLayout: SelectionOverlayLayout? {
         guard let selectedRowYOffset, let selectedRowHeight else { return nil }
         return SelectionOverlayLayout(
@@ -100,13 +100,16 @@ struct FileTableRowsView: View {
         )
     }
 
+
     var body: some View {
         VStack(spacing: 0) {
             rowsLayer
             bottomBreathingSpace
         }
     }
+
     // MARK: - View Sections
+
     private var rowsLayer: some View {
         ZStack(alignment: .topLeading) {
             selectionFillOverlay
@@ -117,15 +120,17 @@ struct FileTableRowsView: View {
         .animation(Self.selectionSpring, value: selectedRowYOffset)
     }
 
+
     private var rowsStack: some View {
         LazyVStack(alignment: .leading, spacing: 0) {
-            ForEach(Array(displayRows.enumerated()), id: \.element.id) { index, file in
+            ForEach(Array(rows.enumerated()), id: \.element.id) { index, file in
                 sizeAwareRow(index: index, file: file)
             }
         }
         .padding(.top, SelectionOverlayMetrics.rowsTopInset)
         .transaction { $0.disablesAnimations = true }
     }
+
 
     @ViewBuilder
     private var selectionFillOverlay: some View {
@@ -140,6 +145,7 @@ struct FileTableRowsView: View {
         }
     }
 
+
     @ViewBuilder
     private var selectionBorderOverlay: some View {
         if let layout = selectionBorderLayout {
@@ -153,27 +159,26 @@ struct FileTableRowsView: View {
         }
     }
 
+
     private var selectionBorderColor: Color {
         let base = colorStore.activeTheme.selectionBorder
         return isActivePanel ? base : base.opacity(0.5)
     }
 
+
     private var selectionBorderLineWidth: CGFloat {
         max(onePixel, colorStore.activeTheme.selectionLineWidth)
     }
+
 
     private var bottomBreathingSpace: some View {
         Color.clear.frame(height: onePixel)
     }
 
-    private func rowHeight(for file: CustomFile) -> CGFloat {
-        isParentRow(file) ? ParentEntryStripView.rowHeight : FilePanelStyle.rowHeight
-    }
 
     @ViewBuilder
     private func sizeAwareRow(index: Int, file: CustomFile) -> some View {
-        let isSelected = isRowSelected(file: file, currentSelectedID: currentSelectedID)
-        let isParent = isParentRow(file)
+        let isSelected = file.id == currentSelectedID
 
         SizeAwareRow(
             id: file.id,
@@ -182,77 +187,8 @@ struct FileTableRowsView: View {
             sizeVersion: file.sizeVersion,
             byteSize: file.sizeInBytes,
             modifiedTimestamp: file.modifiedDate?.timeIntervalSince1970 ?? 0,
-            isParent: isParent
+            isParent: false
         ) {
-            rowContent(index: index, file: file, isSelected: isSelected)
-                .id("\(file.id)#\(file.sizeVersion)#\(file.sizeInBytes)#\(file.modifiedDate?.timeIntervalSince1970 ?? 0)")
-        }
-    }
-
-    private func makeDisplayRows(from rows: [CustomFile]) -> [CustomFile] {
-        var output: [CustomFile] = []
-        output.reserveCapacity(rows.count)
-        var seenParent = false
-
-        for file in rows {
-            let isParent = isParentRow(file)
-            if isParent && seenParent {
-                continue
-            }
-            if isParent {
-                seenParent = true
-            }
-            output.append(file)
-        }
-
-        return output
-    }
-
-    // MARK: - Selection Check
-    private func isRowSelected(file: CustomFile, currentSelectedID: CustomFile.ID?) -> Bool {
-        guard let currentSelectedID else { return false }
-
-        // Normal files — match by ID
-        if file.id == currentSelectedID {
-            return true
-        }
-
-        // Parent row has unstable identity, so we detect selection by checking
-        // whether selectedID matches any real file. If not — parent is selected.
-        // Parent entry ("..") — detect by exclusion (selectedID does not belong to any real file)
-        if isParentRow(file) {
-            return !hasSelectedRealFile(currentSelectedID)
-        }
-
-        return false
-    }
-
-    private func hasSelectedRealFile(_ selectedID: CustomFile.ID) -> Bool {
-        rows.contains { file in
-            !isParentRow(file) && file.id == selectedID
-        }
-    }
-
-    // MARK: - Parent Row Detection
-
-    private func isParentRow(_ file: CustomFile) -> Bool {
-        file.isParentEntry || file.nameStr == ".."
-    }
-
-    // MARK: - Row Content
-
-    @ViewBuilder
-    private func rowContent(index: Int, file: CustomFile, isSelected: Bool) -> some View {
-        if isParentRow(file) {
-            let parentUrl = file.urlValue
-            ParentEntryStripView(
-                file: file,
-                isSelected: isSelected,
-                parentURL: parentUrl,
-                onSelect: onSelect,
-                onActivate: onDoubleClick
-            )
-        } else {
             FileRow(
                 index: index,
                 file: file,
@@ -267,9 +203,11 @@ struct FileTableRowsView: View {
                 onMultiSelectionAction: handleMultiSelectionAction
             )
             .frame(maxWidth: .infinity, alignment: .leading)
+            .id("\(file.id)#\(file.sizeVersion)#\(file.sizeInBytes)#\(file.modifiedDate?.timeIntervalSince1970 ?? 0)")
         }
     }
 }
+
 
 // MARK: - SizeAwareRow
 
