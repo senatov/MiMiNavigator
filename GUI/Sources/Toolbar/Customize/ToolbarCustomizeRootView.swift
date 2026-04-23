@@ -17,6 +17,7 @@ struct ToolbarCustomizeRootView: View {
     @State private var store = ToolbarStore.shared
     @State private var showResetConfirm = false
     @State private var dragItem: ToolbarItemID? = nil
+    @State private var activeInsertionIndex: Int? = nil
 
     var body: some View {
         VStack(spacing: 0) {
@@ -61,23 +62,16 @@ struct ToolbarCustomizeRootView: View {
 
     private var currentToolbarStrip: some View {
         HStack(spacing: 8) {
-            ForEach(store.visibleItems) { item in
+            let items = store.visibleItems
+            ForEach(Array(items.enumerated()), id: \.element) { index, item in
+                insertionZone(at: index)
                 ToolbarCustChip(item: item, isInToolbar: true, isDragging: dragItem == item)
                     .onDrag {
                         dragItem = item
                         return NSItemProvider(object: item.rawValue as NSString)
                     }
-                    .onDrop(of: [.text], delegate: ToolbarCustReorderDelegate(
-                        target: item, store: store, dragItem: $dragItem
-                    ))
             }
-            // Drop zone for appending at end
-            if store.visibleItems.count < store.orderedIDs.count {
-                ToolbarCustDropPlaceholder()
-                    .onDrop(of: [.text], delegate: ToolbarCustAppendDelegate(
-                        store: store, dragItem: $dragItem
-                    ))
-            }
+            insertionZone(at: items.count)
             Spacer(minLength: 0)
         }
         .frame(minHeight: 48)
@@ -90,6 +84,25 @@ struct ToolbarCustomizeRootView: View {
             RoundedRectangle(cornerRadius: 10, style: .continuous)
                 .strokeBorder(Color(nsColor: .separatorColor).opacity(0.4), lineWidth: 0.5)
         )
+        .onDrop(of: [.text], isTargeted: nil) { _ in
+            dragItem = nil
+            activeInsertionIndex = nil
+            return false
+        }
+    }
+
+    @ViewBuilder
+    private func insertionZone(at index: Int) -> some View {
+        ToolbarCustInsertionDropZone(isActive: activeInsertionIndex == index)
+            .onDrop(
+                of: [.text],
+                delegate: ToolbarCustInsertDelegate(
+                    targetVisibleIndex: index,
+                    store: store,
+                    dragItem: $dragItem,
+                    activeInsertionIndex: $activeInsertionIndex
+                )
+            )
     }
 
     // MARK: - Menu Bar Toggle

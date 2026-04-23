@@ -82,13 +82,14 @@ final class SettingsCoordinator {
 
     // MARK: - Close
     func close() {
-        window?.close()
         isVisible = false
+        window?.close()
         log.info("[Settings] panel closed")
     }
 
     func windowDidClose() {
         isVisible = false
+        window = nil
     }
 
     func bringToFront() {

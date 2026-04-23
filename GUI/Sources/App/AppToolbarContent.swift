@@ -22,32 +22,8 @@ struct AppToolbarContent: ToolbarContent {
         // All action buttons — left group
         ToolbarItem(placement: .primaryAction) {
             ToolbarButtonGroup {
-                if store.visibleIDs.contains(.refresh) {
-                    app.makeToolbarIcon(.refresh) { app.performRefresh() }
-                }
-                if store.visibleIDs.contains(.hiddenFiles) {
-                    app.makeToolbarToggle(.hiddenFiles)
-                }
-                if store.visibleIDs.contains(.openWith) {
-                    app.makeToolbarIcon(.openWith) { app.performOpenWith() }
-                }
-                if store.visibleIDs.contains(.swapPanels) {
-                    app.makeToolbarIcon(.swapPanels) { app.performSwapPanels() }
-                }
-                if store.visibleIDs.contains(.compare) {
-                    app.makeToolbarIcon(.compare) { app.performCompare() }
-                }
-                if store.visibleIDs.contains(.network) {
-                    app.makeToolbarIcon(.network) { app.performNetwork() }
-                }
-                if store.visibleIDs.contains(.connectServer) {
-                    app.makeToolbarIcon(.connectServer) { app.performConnectServer() }
-                }
-                if store.visibleIDs.contains(.findFiles) {
-                    app.makeToolbarIcon(.findFiles) { app.performFindFiles() }
-                }
-                if store.visibleIDs.contains(.settings) {
-                    app.makeToolbarIcon(.settings) { app.performSettings() }
+                ForEach(store.visibleItems) { item in
+                    toolbarButton(for: item)
                 }
             }
         }
@@ -60,6 +36,32 @@ struct AppToolbarContent: ToolbarContent {
         // View mode toggle — rightmost, near the title/version badge
         ToolbarItem(placement: .primaryAction) {
             ViewModeToolbarItem(appState: appState)
+        }
+    }
+
+    @ViewBuilder
+    private func toolbarButton(for item: ToolbarItemID) -> some View {
+        switch item {
+        case .refresh:
+            app.makeToolbarIcon(.refresh) { app.performRefresh() }
+        case .hiddenFiles:
+            app.makeToolbarToggle(.hiddenFiles)
+        case .openWith:
+            app.makeToolbarIcon(.openWith) { app.performOpenWith() }
+        case .swapPanels:
+            app.makeToolbarIcon(.swapPanels) { app.performSwapPanels() }
+        case .compare:
+            app.makeToolbarIcon(.compare) { app.performCompare() }
+        case .network:
+            app.makeToolbarIcon(.network) { app.performNetwork() }
+        case .connectServer:
+            app.makeToolbarIcon(.connectServer) { app.performConnectServer() }
+        case .findFiles:
+            app.makeToolbarIcon(.findFiles) { app.performFindFiles() }
+        case .settings:
+            app.makeToolbarIcon(.settings) { app.performSettings() }
+        case .menuBarToggle:
+            EmptyView()
         }
     }
 }

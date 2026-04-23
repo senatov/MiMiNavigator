@@ -18,6 +18,8 @@ final class ToolbarRightClickMonitor {
     static let shared = ToolbarRightClickMonitor()
     private var monitor: Any?
     private let toolbarHeight: CGFloat = 52
+    private let duplicateClickSuppressionInterval: TimeInterval = 0.5
+    private var lastOpenAttemptAt: TimeInterval = 0
     private init() {}
 
     // MARK: - Start / Stop
@@ -28,8 +30,7 @@ final class ToolbarRightClickMonitor {
             return
         }
         monitor = NSEvent.addLocalMonitorForEvents(matching: .rightMouseDown) { [weak self] event in
-            self?.handleRightClick(event)
-            return event
+            self?.handleRightClick(event) ?? event
         }
         log.info("[ToolbarRightClick] monitor started ✓")
     }
@@ -43,19 +44,21 @@ final class ToolbarRightClickMonitor {
     }
 
     // MARK: - Hit test
-    private func handleRightClick(_ event: NSEvent) {
+    private func handleRightClick(_ event: NSEvent) -> NSEvent? {
         log.debug("[ToolbarRightClick] event received")
 
         guard let window = resolveWindow(from: event) else {
             log.debug("[ToolbarRightClick] no window — ignored")
-            return
+            return event
         }
 
         if isClickInToolbar(event: event, window: window) {
             log.info("[ToolbarRightClick] ✓ opening customize panel")
             openCustomizePanel()
+            return nil
         } else {
             log.debug("[ToolbarRightClick] click outside toolbar — ignored")
+            return event
         }
     }
 
@@ -84,7 +87,13 @@ final class ToolbarRightClickMonitor {
     }
 
     private func openCustomizePanel() {
-        log.debug("[ToolbarRightClick] toggling customize panel")
-        ToolbarCustomizeCoordinator.shared.toggle()
+        let now = ProcessInfo.processInfo.systemUptime
+        if now - lastOpenAttemptAt < duplicateClickSuppressionInterval {
+            log.debug("[ToolbarRightClick] duplicate click suppressed")
+            return
+        }
+        lastOpenAttemptAt = now
+        log.debug("[ToolbarRightClick] showing customize panel")
+        ToolbarCustomizeCoordinator.shared.show()
     }
 }

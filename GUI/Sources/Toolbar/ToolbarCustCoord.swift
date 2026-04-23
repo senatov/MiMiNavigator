@@ -20,8 +20,8 @@ final class ToolbarCustomizeCoordinator {
     private var window: NSPanel?
 
     private let frameAutosaveName = "MiMiNavigator.ToolbarCustomizePanel"
-    private let defaultWidth: CGFloat = 520
-    private let defaultHeight: CGFloat = 560
+    private let defaultWidth: CGFloat = 600
+    private let defaultHeight: CGFloat = 645
 
     private init() {}
 
@@ -35,6 +35,7 @@ final class ToolbarCustomizeCoordinator {
         log.debug("[ToolbarCustomize] show() invoked")
         if let existing = window, existing.isVisible {
             existing.makeKeyAndOrderFront(nil)
+            orderAboveMainWindow(existing)
             isVisible = true
             return
         }
@@ -53,7 +54,7 @@ final class ToolbarCustomizeCoordinator {
         PanelTitleHelper.applyIconTitle(to: panel, systemImage: "wrench.adjustable", title: "Customize Toolbar")
         panel.toolbarStyle = .unified
         panel.animationBehavior = .utilityWindow
-        panel.isMovableByWindowBackground = true
+        panel.isMovableByWindowBackground = false
         panel.hidesOnDeactivate = false
         panel.level = .normal
         panel.tabbingMode = .disallowed
@@ -65,6 +66,7 @@ final class ToolbarCustomizeCoordinator {
         panel.setFrameAutosaveName(frameAutosaveName)
         panel.delegate = ToolbarCustWindowDelegate.shared
         panel.makeKeyAndOrderFront(nil)
+        orderAboveMainWindow(panel)
         panel.makeFirstResponder(panel.contentView)
         self.window = panel
         isVisible = true
@@ -79,9 +81,14 @@ final class ToolbarCustomizeCoordinator {
         log.info("[ToolbarCustomize] closed ✓")
     }
 
+    func bringToFront() {
+        guard let window, isVisible else { return }
+        orderAboveMainWindow(window)
+    }
 
     func windowDidClose() {
         isVisible = false
+        window = nil
     }
 
 
@@ -96,6 +103,14 @@ final class ToolbarCustomizeCoordinator {
             return NSRect(origin: NSPoint(x: sf.midX - size.width / 2, y: sf.midY - size.height / 2), size: size)
         }
         return NSRect(origin: .zero, size: size)
+    }
+
+    private func orderAboveMainWindow(_ panel: NSPanel) {
+        if let main = NSApp.mainWindow, main != panel {
+            panel.order(.above, relativeTo: main.windowNumber)
+        } else {
+            panel.orderFront(nil)
+        }
     }
 }
 

@@ -59,6 +59,9 @@ import LogKit
         installKeyMonitor()
         logStartupStep("key monitor installed")
 
+        installMainWindowObserver()
+        logStartupStep("main window observer installed")
+
         scheduleAutoConnectServers()
         logStartupStep("auto-connect scheduled")
 
@@ -115,6 +118,23 @@ import LogKit
         }
     }
 
+    private func installMainWindowObserver() {
+        NotificationCenter.default.removeObserver(self, name: NSWindow.didBecomeKeyNotification, object: nil)
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleWindowDidBecomeKey(_:)),
+            name: NSWindow.didBecomeKeyNotification,
+            object: nil
+        )
+    }
+
+    @objc private func handleWindowDidBecomeKey(_ notification: Notification) {
+        guard !isTerminationCleanupRunning, appState?.isTerminating != true else { return }
+        guard let window = notification.object as? NSWindow else { return }
+        guard window == NSApp.mainWindow else { return }
+        bringAuxiliaryPanelsToFront()
+    }
+
     private func logStartupCompletionIfNeeded(reason: String) {
         guard !didLogStartupCompletion else { return }
         didLogStartupCompletion = true
@@ -129,11 +149,16 @@ import LogKit
             return
         }
 
+        bringAuxiliaryPanelsToFront()
+    }
+
+    private func bringAuxiliaryPanelsToFront() {
         NetworkNeighborhoodCoordinator.shared.bringToFront()
         PackDialogCoordinator.shared.bringToFront()
         ConnectToServerCoordinator.shared.bringToFront()
         FindFilesCoordinator.shared.bringToFront()
         SettingsCoordinator.shared.bringToFront()
+        ToolbarCustomizeCoordinator.shared.bringToFront()
         MediaInfoPanel.shared.bringToFront()
     }
 
@@ -216,5 +241,6 @@ import LogKit
     func applicationWillTerminate(_ notification: Notification) {
         if let keyMonitor { NSEvent.removeMonitor(keyMonitor) }
         keyMonitor = nil
+        NotificationCenter.default.removeObserver(self, name: NSWindow.didBecomeKeyNotification, object: nil)
     }
 }

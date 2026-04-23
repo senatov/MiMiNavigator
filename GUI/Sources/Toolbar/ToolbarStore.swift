@@ -83,6 +83,38 @@ final class ToolbarStore {
         log.debug("[Toolbar] reordered — new order: \(orderedIDs.map(\.rawValue))")
     }
 
+    /// Reposition a visible item inside the current toolbar strip.
+    func moveVisibleItem(_ id: ToolbarItemID, toVisibleIndex targetVisibleIndex: Int) {
+        guard visibleIDs.contains(id), let fromOrderedIndex = orderedIDs.firstIndex(of: id) else { return }
+
+        let remainingVisibleItems = visibleItems.filter { $0 != id }
+        let insertionIndex = max(0, min(targetVisibleIndex, remainingVisibleItems.count))
+        let destination = orderedDestination(for: insertionIndex, visibleSequence: remainingVisibleItems, moving: id)
+        orderedIDs.move(fromOffsets: IndexSet(integer: fromOrderedIndex), toOffset: destination)
+        save()
+        log.debug("[Toolbar] moved visible item \(id.rawValue) to visibleIndex=\(insertionIndex)")
+    }
+
+    /// Makes a hidden item visible and inserts it at the requested toolbar position.
+    func showItem(_ id: ToolbarItemID, atVisibleIndex targetVisibleIndex: Int) {
+        guard !id.isFixed else { return }
+        guard !visibleIDs.contains(id) else {
+            moveVisibleItem(id, toVisibleIndex: targetVisibleIndex)
+            return
+        }
+        visibleIDs.insert(id)
+        guard let fromOrderedIndex = orderedIDs.firstIndex(of: id) else {
+            save()
+            return
+        }
+        let currentVisibleItems = visibleItems.filter { $0 != id }
+        let insertionIndex = max(0, min(targetVisibleIndex, currentVisibleItems.count))
+        let destination = orderedDestination(for: insertionIndex, visibleSequence: currentVisibleItems, moving: id)
+        orderedIDs.move(fromOffsets: IndexSet(integer: fromOrderedIndex), toOffset: destination)
+        save()
+        log.debug("[Toolbar] showed item \(id.rawValue) at visibleIndex=\(insertionIndex)")
+    }
+
     /// Reset order and visibility to factory defaults.
     func resetToDefaults() {
         orderedIDs = ToolbarItemID.defaultOrder
@@ -131,5 +163,21 @@ final class ToolbarStore {
     private func saveMenuBarVisible() {
         MiMiDefaults.shared.set(menuBarVisible, forKey: menuBarKey)
         log.debug("[Toolbar] menuBarVisible=\(menuBarVisible) saved")
+    }
+
+    private func orderedDestination(
+        for targetVisibleIndex: Int,
+        visibleSequence: [ToolbarItemID],
+        moving id: ToolbarItemID
+    ) -> Int {
+        guard targetVisibleIndex < visibleSequence.count else { return orderedIDs.count }
+        let anchor = visibleSequence[targetVisibleIndex]
+        guard
+            let anchorIndex = orderedIDs.firstIndex(of: anchor),
+            let currentIndex = orderedIDs.firstIndex(of: id)
+        else {
+            return orderedIDs.count
+        }
+        return anchorIndex < currentIndex ? anchorIndex : anchorIndex + 1
     }
 }
