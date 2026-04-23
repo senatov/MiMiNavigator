@@ -93,7 +93,9 @@ final class ToolbarRightClickMonitor {
             return
         }
         lastOpenAttemptAt = now
-        log.debug("[ToolbarRightClick] showing customize panel")
-        ToolbarCustomizeCoordinator.shared.show()
+        log.debug("[ToolbarRightClick] scheduling customize panel for next main-turn")
+        DispatchQueue.main.async {
+            ToolbarCustomizeCoordinator.shared.show()
+        }
     }
 }

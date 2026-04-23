@@ -20,6 +20,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.9.8] — 2026-04-24
+
+> **Release notes**
+> Toolbar Customize polish release.
+> The dialog now uses a clearer card-based layout, drag-to-remove works as advertised,
+> first right-click reliably brings the panel to the front, and `Done` closes it in one click.
+
+### Changed
+- **Toolbar Customize dialog redesign** — clearer section hierarchy, calmer spacing, stronger visual separation between current toolbar and available items
+- **Toolbar item chips / palette cells** — updated icon cards, visibility badges, and insertion markers for easier scanning during drag-and-drop
+- **Toolbar release packaging docs** — README and changelog now reflect the new release and notarized DMG flow
+
+### Fixed
+- **First toolbar right-click opening** — customize panel open is deferred to the next main turn and re-asserts z-order after menu tracking ends, so it appears above other windows immediately
+- **`Done` button close race** — closing state is now set before the panel loses focus, preventing the dialog from reappearing and requiring a second click
+- **Drag-to-remove behavior** — dropping an active toolbar item back into Available Items now really hides it instead of only resetting drag state
+- **Toolbar visibility accounting** — fixed item `menuBarToggle` no longer pollutes customizable visibility counts or minimum-visible-button enforcement
+
+---
+
 ## [0.9.7.4] — 2026-04-15
 
 > **Release notes**
@@ -540,7 +560,8 @@ Each release should include:
 
 ---
 
-[Unreleased]: https://github.com/senatov/MiMiNavigator/compare/v0.9.7.4...HEAD
+[Unreleased]: https://github.com/senatov/MiMiNavigator/compare/v0.9.8...HEAD
+[0.9.8]: https://github.com/senatov/MiMiNavigator/compare/v0.9.7.4.1...v0.9.8
 [0.9.7.4]: https://github.com/senatov/MiMiNavigator/compare/v0.9.7.3...v0.9.7.4
 [0.9.7]: https://github.com/senatov/MiMiNavigator/compare/v0.9.6...v0.9.7
 [0.9.6]: https://github.com/senatov/MiMiNavigator/compare/v0.9.4...v0.9.6

@@ -10,9 +10,10 @@ struct ToolbarCustInsertionDropZone: View {
     let isActive: Bool
 
     var body: some View {
-        RoundedRectangle(cornerRadius: 2, style: .continuous)
-            .fill(isActive ? Color.accentColor : Color.clear)
-            .frame(width: isActive ? 6 : 10, height: 42)
+        Capsule(style: .continuous)
+            .fill(isActive ? DialogColors.accent.opacity(0.95) : DialogColors.border.opacity(0.18))
+            .frame(width: isActive ? 8 : 4, height: 52)
+            .opacity(isActive ? 1.0 : 0.0)
             .animation(.easeOut(duration: 0.12), value: isActive)
     }
 }

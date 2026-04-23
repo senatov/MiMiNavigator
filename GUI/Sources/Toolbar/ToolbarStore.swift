@@ -51,6 +51,16 @@ final class ToolbarStore {
         orderedIDs.filter { visibleIDs.contains($0) }
     }
 
+    /// Ordered items that can be customized in the dialog.
+    var customizableItems: [ToolbarItemID] {
+        orderedIDs.filter { !$0.isFixed }
+    }
+
+    /// Visible customizable items shown in the current toolbar strip.
+    var customizableVisibleItems: [ToolbarItemID] {
+        customizableItems.filter { visibleIDs.contains($0) }
+    }
+
     /// Ordered items that are currently hidden (shown as disabled in palette).
     var hiddenItems: [ToolbarItemID] {
         orderedIDs.filter { !visibleIDs.contains($0) }
@@ -64,7 +74,7 @@ final class ToolbarStore {
     func toggleVisibility(_ id: ToolbarItemID) {
         guard !id.isFixed else { return }  // fixed items are always visible
         if visibleIDs.contains(id) {
-            guard visibleIDs.count > ToolbarStore.minVisibleCount else {
+            guard customizableVisibleItems.count > ToolbarStore.minVisibleCount else {
                 log.warning("[Toolbar] cannot hide \(id.rawValue) — minimum 1 visible")
                 return
             }
@@ -74,6 +84,18 @@ final class ToolbarStore {
         }
         save()
         log.debug("[Toolbar] toggled \(id.rawValue) → visible=\(visibleIDs.contains(id))")
+    }
+
+    /// Hides a visible customizable item without using toggle semantics.
+    func hideItem(_ id: ToolbarItemID) {
+        guard !id.isFixed, visibleIDs.contains(id) else { return }
+        guard customizableVisibleItems.count > ToolbarStore.minVisibleCount else {
+            log.warning("[Toolbar] cannot hide \(id.rawValue) — minimum 1 visible")
+            return
+        }
+        visibleIDs.remove(id)
+        save()
+        log.debug("[Toolbar] hid \(id.rawValue)")
     }
 
     /// Move item at source index to destination index (drag reorder within palette).
@@ -131,21 +153,22 @@ final class ToolbarStore {
         // Load order
         if let rawOrder = ud.array(forKey: orderKey) as? [String] {
             let decoded = rawOrder.compactMap { ToolbarItemID(rawValue: $0) }
+                .filter { !$0.isFixed }
             let knownSaved = Set(decoded)
-            let newIDs = ToolbarItemID.allCases.filter { !knownSaved.contains($0) }
+            let newIDs = ToolbarItemID.allCases.filter { !$0.isFixed && !knownSaved.contains($0) }
             orderedIDs = decoded + newIDs
         }
 
         // Load visibility — new IDs not in saved set are added as visible by default
         if let rawVisible = ud.array(forKey: visibilityKey) as? [String] {
-            let saved = Set(rawVisible.compactMap { ToolbarItemID(rawValue: $0) })
+            let saved = Set(rawVisible.compactMap { ToolbarItemID(rawValue: $0) }.filter { !$0.isFixed })
             let knownSaved = Set(rawVisible)  // raw strings that were in MiMiDefaults
             let brandNew = ToolbarItemID.allCases.filter {
                 !$0.isFixed && !knownSaved.contains($0.rawValue)
             }
             visibleIDs = saved.union(Set(brandNew))
         } else {
-            visibleIDs = Set(ToolbarItemID.allCases)
+            visibleIDs = Set(ToolbarItemID.defaultOrder)
         }
 
         // Load menu bar visibility (default = true)

@@ -47,3 +47,25 @@ struct ToolbarCustInsertDelegate: DropDelegate {
         return true
     }
 }
+
+// MARK: - Drop into palette to remove from toolbar
+struct ToolbarCustPaletteDropDelegate: DropDelegate {
+    let store: ToolbarStore
+    @Binding var dragItem: ToolbarItemID?
+
+    func dropUpdated(info: DropInfo) -> DropProposal? {
+        DropProposal(operation: .move)
+    }
+
+    func validateDrop(info: DropInfo) -> Bool {
+        info.hasItemsConforming(to: [.text])
+    }
+
+    func performDrop(info: DropInfo) -> Bool {
+        defer { dragItem = nil }
+        guard let item = dragItem else { return false }
+        guard store.visibleIDs.contains(item) else { return false }
+        store.hideItem(item)
+        return true
+    }
+}

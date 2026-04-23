@@ -18,6 +18,8 @@ final class ToolbarCustomizeCoordinator {
 
     private(set) var isVisible = false
     private var window: NSPanel?
+    private var mainWindowObserver: NSObjectProtocol?
+    private var isClosing = false
 
     private let frameAutosaveName = "MiMiNavigator.ToolbarCustomizePanel"
     private let defaultWidth: CGFloat = 600
@@ -32,10 +34,11 @@ final class ToolbarCustomizeCoordinator {
 
 
     func show() {
+        guard !isClosing else { return }
         log.debug("[ToolbarCustomize] show() invoked")
+        let sourceMainWindow = currentPrimaryWindow(excluding: window)
         if let existing = window, existing.isVisible {
-            existing.makeKeyAndOrderFront(nil)
-            orderAboveMainWindow(existing)
+            present(existing, relativeTo: sourceMainWindow)
             isVisible = true
             return
         }
@@ -56,39 +59,48 @@ final class ToolbarCustomizeCoordinator {
         panel.animationBehavior = .utilityWindow
         panel.isMovableByWindowBackground = false
         panel.hidesOnDeactivate = false
-        panel.level = .normal
+        panel.isFloatingPanel = true
+        panel.level = .floating
         panel.tabbingMode = .disallowed
         panel.hasShadow = true
+        panel.collectionBehavior.insert(.moveToActiveSpace)
         panel.backgroundColor = NSColor(DialogColors.base)
         if !panel.setFrameUsingName(frameAutosaveName) {
             panel.setFrame(computeDefaultFrame(), display: true)
         }
         panel.setFrameAutosaveName(frameAutosaveName)
         panel.delegate = ToolbarCustWindowDelegate.shared
-        panel.makeKeyAndOrderFront(nil)
-        orderAboveMainWindow(panel)
-        panel.makeFirstResponder(panel.contentView)
+        installReactivationObservers()
         self.window = panel
         isVisible = true
+        present(panel, relativeTo: sourceMainWindow)
+        panel.makeFirstResponder(panel.contentView)
         log.info("[ToolbarCustomize] opened ✓")
     }
 
 
     func close() {
         log.debug("[ToolbarCustomize] close() invoked")
-        window?.close()
+        guard !isClosing else { return }
+        isClosing = true
+        removeReactivationObservers()
         isVisible = false
+        let panel = window
+        window = nil
+        panel?.close()
         log.info("[ToolbarCustomize] closed ✓")
     }
 
     func bringToFront() {
+        guard !isClosing else { return }
         guard let window, isVisible else { return }
-        orderAboveMainWindow(window)
+        present(window, relativeTo: currentPrimaryWindow(excluding: window))
     }
 
     func windowDidClose() {
+        removeReactivationObservers()
+        isClosing = false
         isVisible = false
-        window = nil
     }
 
 
@@ -105,11 +117,76 @@ final class ToolbarCustomizeCoordinator {
         return NSRect(origin: .zero, size: size)
     }
 
-    private func orderAboveMainWindow(_ panel: NSPanel) {
-        if let main = NSApp.mainWindow, main != panel {
-            panel.order(.above, relativeTo: main.windowNumber)
+    private func installReactivationObservers() {
+        removeReactivationObservers()
+        mainWindowObserver = NotificationCenter.default.addObserver(
+            forName: NSWindow.didBecomeMainNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            guard let observedWindow = notification.object as? NSWindow else { return }
+            Task { @MainActor [weak self] in
+                guard let self,
+                      let panel = self.window,
+                      observedWindow != panel,
+                      observedWindow.isVisible,
+                      observedWindow.isMainWindow,
+                      NSApp.isActive,
+                      self.isVisible else {
+                    return
+                }
+                self.orderAbove(panel, relativeTo: observedWindow)
+            }
+        }
+    }
+
+    private func removeReactivationObservers() {
+        if let mainWindowObserver {
+            NotificationCenter.default.removeObserver(mainWindowObserver)
+            self.mainWindowObserver = nil
+        }
+    }
+
+    private func currentPrimaryWindow(excluding panel: NSWindow?) -> NSWindow? {
+        if let main = NSApp.mainWindow, main != panel, main.isVisible {
+            return main
+        }
+        if let key = NSApp.keyWindow, key != panel, key.isVisible {
+            return key
+        }
+        return NSApp.windows.first { window in
+            window != panel && window.isVisible && !window.isKind(of: NSPanel.self)
+        }
+    }
+
+    private func orderAbove(_ panel: NSPanel, relativeTo window: NSWindow) {
+        if panel.windowNumber == 0 {
+            panel.orderFrontRegardless()
         } else {
-            panel.orderFront(nil)
+            panel.order(.above, relativeTo: window.windowNumber)
+        }
+    }
+
+    private func present(_ panel: NSPanel, relativeTo window: NSWindow?) {
+        NSApp.activate(ignoringOtherApps: true)
+
+        if let window {
+            orderAbove(panel, relativeTo: window)
+        } else {
+            panel.orderFrontRegardless()
+        }
+
+        panel.makeKeyAndOrderFront(nil)
+
+        // Re-assert z-order on the next main turn, after right-click menu tracking settles.
+        DispatchQueue.main.async { [weak self, weak panel] in
+            guard let self, let panel, self.window === panel, self.isVisible else { return }
+            if let window = self.currentPrimaryWindow(excluding: panel) {
+                self.orderAbove(panel, relativeTo: window)
+            } else {
+                panel.orderFrontRegardless()
+            }
+            panel.makeKeyAndOrderFront(nil)
         }
     }
 }
