@@ -20,9 +20,9 @@
 		BB000003BB000003BB000003 /* (null) in Frameworks */ = {isa = PBXBuildFile; };
 		CC000003CC000003CC000003 /* Citadel in Frameworks */ = {isa = PBXBuildFile; productRef = CC000002CC000002CC000002 /* Citadel */; };
 		DD000003DD000003DD000003 /* (null) in Frameworks */ = {isa = PBXBuildFile; };
+		DD000014DD000014DD000014 /* RenameKit in Frameworks */ = {isa = PBXBuildFile; productRef = DD000015DD000015DD000015 /* RenameKit */; };
 		EE000003EE000003EE000003 /* (null) in Frameworks */ = {isa = PBXBuildFile; };
 		FF82030CE1584192AE6E4DEA /* NetworkKit in Frameworks */ = {isa = PBXBuildFile; productRef = 52D4533F441E4D78BD910304 /* NetworkKit */; };
-		DD000014DD000014DD000014 /* RenameKit in Frameworks */ = {isa = PBXBuildFile; productRef = DD000015DD000015DD000015 /* RenameKit */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
