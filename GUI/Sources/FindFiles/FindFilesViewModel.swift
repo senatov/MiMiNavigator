@@ -149,6 +149,8 @@ final class FindFilesViewModel {
     ///   - searchPath: Current directory of the active panel
     ///   - selectedFile: Currently selected file (optional)
     func configure(searchPath: String, selectedFile: CustomFile? = nil) {
+        // Reset stale/age filters — singleton VM keeps state between opens
+        resetAdvancedFilters()
         // Check if selected file is an archive
         if let file = selectedFile,
             !file.isDirectory,
@@ -173,6 +175,30 @@ final class FindFilesViewModel {
         // User must press Search to get fresh results.
         // (loadSavedResults is available via explicit "Load Last" action if needed)
     }
+
+
+
+    /// Reset advanced filters that persist in singleton ViewModel between dialog opens
+    private func resetAdvancedFilters() {
+        useStaleItemFilter = false
+        staleCriterionMode = .age
+        staleTimestampFilter = .both
+        staleAgeAmount = ""
+        staleAgeUnit = .months
+        staleSinceDate = Calendar.current.date(byAdding: .year, value: -2, to: Date()) ?? Date()
+        useModificationAgeFilter = false
+        modificationOlderThanDays = ""
+        useAccessAgeFilter = false
+        accessOlderThanDays = ""
+        useSizeFilter = false
+        fileSizeMin = ""
+        fileSizeMax = ""
+        useDateFilter = false
+        excludeSystemLocations = false
+        deletableOnly = false
+    }
+
+
 
     /// Check if file is a recognized archive format
     private func isArchiveFile(_ file: CustomFile) -> Bool {
