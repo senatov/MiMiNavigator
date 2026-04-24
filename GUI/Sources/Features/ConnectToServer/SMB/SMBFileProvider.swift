@@ -31,7 +31,7 @@ final class SMBFileProvider: @unchecked Sendable, RemoteFileProvider {
                 case .invalidMountURL:
                     return "SMB mount point URL is invalid"
                 case .invalidRemotePath(let path):
-                    return "Invalid SMB remote path: \(path)"
+                    return "SMB remote path must include a share name, for example /Share. Current path: \(path)"
                 case .mountFailed(let message):
                     return "SMB mount failed: \(message)"
                 case .commandFailed(let message):
@@ -264,6 +264,7 @@ final class SMBFileProvider: @unchecked Sendable, RemoteFileProvider {
         let components = normalizedPath.split(separator: "/", omittingEmptySubsequences: true)
 
         guard let share = components.first, !share.isEmpty else {
+            log.info("[SMB] connect deferred: missing share name in remotePath='\(remotePath)'")
             throw SMBProviderError.invalidRemotePath(remotePath)
         }
 

@@ -63,7 +63,6 @@ extension FileRow {
             }
         }
 
-        log.info("[FileRow] Task started for directory '\(file.nameStr)' symDir=\(file.isSymbolicDirectory)")
         // Skip known special / virtual directories to avoid useless scans and permission errors
         if shouldSkipSizeCalculation(fileURL) {
             log.debug("[FileRow] Skipping size calculation for special directory '\(file.nameStr)' path='\(fileURL.path)'")
@@ -86,20 +85,16 @@ extension FileRow {
             file.sizeCalculationStarted = false
         }
         guard !file.sizeCalculationStarted else {
-            log.info("[FileRow] Skip - already started for '\(file.nameStr)'")
             return
         }
         file.sizeCalculationStarted = true
         let targetURL = resolvedDirectorySizeTargetURL(from: fileURL)
-        log.info("[FileRow] sizeTarget '\(file.nameStr)' -> '\(targetURL.path)'")
         await withTaskGroup(of: Void.self) { group in
-            group.addTask(priority: .utility) { [fileName = file.nameStr] in
+            group.addTask(priority: .utility) {
                 await self.performPhase1Shallow(for: targetURL)
-                log.verbose("[FileRow] Phase 1 task finished for '\(fileName)'")
             }
-            group.addTask(priority: .utility) { [fileName = file.nameStr] in
+            group.addTask(priority: .utility) {
                 await self.performPhase2FullSize(for: targetURL)
-                log.verbose("[FileRow] Phase 2 task finished for '\(fileName)'")
             }
             for await _ in group {}
         }
@@ -111,41 +106,36 @@ extension FileRow {
 
     // MARK: - Phase 1: shallow directory size (fast estimate)
     private func performPhase1Shallow(for url: URL) async {
-        log.info("[FileRow] Phase 1 (estimate): shallow size for '\(file.nameStr)' url='\(url.path)'")
         if file.cachedShallowSize != nil { return }
         if file.sizeIsExact { return }
         let timeoutMs: UInt64 = 120
         let shallowOpt = await shallowSizeWithTimeout(url: url, timeoutMs: timeoutMs)
         if Task.isCancelled {
-            log.info("[FileRow] Phase 1 cancelled for '\(file.nameStr)'")
             file.sizeCalculationStarted = false
             return
         }
         guard let shallow = shallowOpt else {
-            log.info("[FileRow] Phase 1 skipped for '\(file.nameStr)' (timeout=\(timeoutMs)ms)")
+            log.debug("[FileRow] Phase 1 skipped for '\(file.nameStr)' (timeout=\(timeoutMs)ms)")
             return
         }
         if shallow == 0, hasNonZeroChildCountHint() || file.isSymbolicDirectory || isLikelyVirtualDirectory(url) {
-            log.info("[FileRow] Phase 1 produced 0 for '\(file.nameStr)' but looks non-empty — not showing estimate")
+            log.debug("[FileRow] Phase 1 produced 0 for '\(file.nameStr)' but looks non-empty — not showing estimate")
             return
         }
         file.cachedShallowSize = shallow
-        log.info("[FileRow] Phase 1 complete (estimate): '\(file.nameStr)' shallow=\(shallow)")
     }
 
     // MARK: - Phase 2: full recursive directory size
     private func performPhase2FullSize(for url: URL) async {
-        log.info("[FileRow] Phase 2: full size for '\(file.nameStr)' url='\(url.path)'")
         let size = await DirectorySizeService.shared.requestSize(for: url)
         if Task.isCancelled {
-            log.info("[FileRow] Phase 2 cancelled for '\(file.nameStr)'")
             file.sizeCalculationStarted = false
             return
         }
         if size == DirectorySizeService.unavailableSize {
             let shouldFallback = hasNonZeroChildCountHint() || file.isSymbolicDirectory || isLikelyVirtualDirectory(url)
             if shouldFallback {
-                log.warning("[FileRow] Phase 2 unavailable for '\(file.nameStr)' — running fallback scan")
+                log.debug("[FileRow] Phase 2 unavailable for '\(file.nameStr)' — running fallback scan")
                 let fallback = await fallbackDirectoryScanAsync(url: url)
                 file.cachedDirectorySize = fallback
                 file.sizeIsExact = fallback > 0
@@ -175,8 +165,6 @@ extension FileRow {
             let shouldFallback = (shallow > 0) || hasChildrenHint || looksVirtual || isSystemLike || !provenEmpty
 
             if shouldFallback {
-                log.warning("[FileRow] Phase 2 produced 0 for '\(file.nameStr)' — running fallback scan")
-
                 let fallback = await fallbackDirectoryScanAsync(url: url)
 
                 if fallback > 0 {
@@ -317,7 +305,7 @@ extension FileRow {
         }
 
         guard let candidate = appendedDirectoryCandidate(baseURL: normalized, fileName: fileName) else {
-            log.warning("[FileRow] sizeTarget mismatch '\(file.nameStr)' raw='\(rawURL.path)' normalized='\(normalized.path)'")
+            log.debug("[FileRow] sizeTarget fallback '\(file.nameStr)' raw='\(rawURL.path)' normalized='\(normalized.path)'")
             return normalized
         }
 

@@ -13,7 +13,7 @@ extension DualDirectoryScanner {
 
     func canStartRefresh(for side: FavPanelSide, force: Bool) -> Bool {
         if scanInProgress[side] == true && !force {
-            log.warning("[Scan] ⏭️ refreshFiles SKIPPED: scanInProgress=true for \(side)")
+            log.debug("[Scan] refreshFiles skipped: scanInProgress=true for \(side)")
             return false
         }
 
@@ -25,7 +25,7 @@ extension DualDirectoryScanner {
             let elapsed = Date().timeIntervalSince(last)
             if elapsed < scanCooldown {
                 let elapsedText = String(format: "%.1f", elapsed)
-                log.warning("[Scan] ⏭️ refreshFiles SKIPPED: scanCooldown (\(elapsedText)s < \(scanCooldown)s) for \(side) without recent FSEvents signal")
+                log.debug("[Scan] refreshFiles skipped: scanCooldown (\(elapsedText)s < \(scanCooldown)s) for \(side) without recent FSEvents signal")
                 return false
             }
         }

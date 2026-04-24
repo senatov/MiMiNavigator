@@ -123,7 +123,7 @@ final class RemoteConnectionManager {
     private func connectOnStartIfPossible(server: RemoteServer) async {
 
         guard !requiresDeferredStartupConnect(for: server) else {
-            log.info("[RemoteConnectionManager] auto-connect deferred for \(server.displayName): startup password access disabled")
+            log.info("[RemoteConnectionManager] auto-connect deferred for \(server.displayName): startup connection prerequisites not met")
             return
         }
 
@@ -159,7 +159,13 @@ final class RemoteConnectionManager {
     }
 
     private func requiresDeferredStartupConnect(for server: RemoteServer) -> Bool {
-        false
+        guard server.remoteProtocol == .smb else { return false }
+        guard Self.firstSMBShareComponent(in: server.remotePath) == nil else { return false }
+
+        log.info(
+            "[RemoteConnectionManager] auto-connect deferred for \(server.displayName): SMB remote path must include a share name, path='\(server.remotePath.isEmpty ? "/" : server.remotePath)'"
+        )
+        return true
     }
 
     private func unsupportedProtocolDetail(for server: RemoteServer) -> String {
@@ -389,12 +395,17 @@ final class RemoteConnectionManager {
     }
 
     private func expectedSMBMountPointPath(for server: RemoteServer) -> String? {
-        let trimmed = Self.normalizeRemotePath(server.remotePath)
+        guard let decodedShare = Self.firstSMBShareComponent(in: server.remotePath) else { return nil }
+        guard !decodedShare.isEmpty else { return nil }
+        return "/Volumes/" + decodedShare
+    }
+
+    private static func firstSMBShareComponent(in remotePath: String) -> String? {
+        let trimmed = normalizeRemotePath(remotePath)
         let components = trimmed.split(separator: "/", omittingEmptySubsequences: true)
         guard let share = components.first else { return nil }
         let decodedShare = String(share).removingPercentEncoding ?? String(share)
-        guard !decodedShare.isEmpty else { return nil }
-        return "/Volumes/" + decodedShare
+        return decodedShare.isEmpty ? nil : decodedShare
     }
 
     private static func isSMBMounted(atPath path: String) -> Bool {

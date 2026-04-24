@@ -262,12 +262,9 @@ actor DirectorySizeService {
                 let size: Int64 = self.withSecurityScope(resolvedURL) {
                     Self.computeShallowSize(resolvedURL)
                 }
-                let printable = (size == Self.unavailableSize) ? "unavailable" : "\(size)"
-                log.info("[DirectorySizeService] shallowSize computed: \(resolvedURL.path) -> \(printable)")
                 continuation.resume(returning: size)
             }
         }
-        log.info("[DirectorySizeService] shallowSize result: \(resolvedURL.path) -> \(result)")
         return result
     }
 
@@ -414,7 +411,7 @@ actor DirectorySizeService {
                 countedFiles += 1
             }
         }
-        log.info(
+        log.debug(
             "[DirectorySizeService] fullRecursive done: \(url.path) total=\(total) files=\(countedFiles) skippedDirs=\(skippedDirs) skippedSymlinks=\(skippedSymlinks) rvFail=\(resourceValueFailures) statFallbacks=\(statFallbacks)"
         )
 
