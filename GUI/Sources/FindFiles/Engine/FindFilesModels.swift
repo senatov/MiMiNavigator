@@ -120,10 +120,17 @@ struct FindFilesCriteria: Sendable {
     var searchInSubdirectories: Bool = true
     var searchInArchives: Bool = false
     var maxDepth: Int = 100
+    var filesOnly: Bool = false
+    var excludeSystemLocations: Bool = false
+    var deletableOnly: Bool = false
     var fileSizeMin: Int64? = nil
     var fileSizeMax: Int64? = nil
     var dateFrom: Date? = nil
     var dateTo: Date? = nil
+    var modificationBeforeDate: Date? = nil
+    var accessBeforeDate: Date? = nil
+    var modificationOlderThanDays: Int? = nil
+    var accessOlderThanDays: Int? = nil
 
     /// If true, searchDirectory is a single archive file (not a directory).
     /// Engine should search only inside that archive.

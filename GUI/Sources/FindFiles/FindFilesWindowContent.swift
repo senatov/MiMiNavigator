@@ -48,7 +48,12 @@ struct FindFilesWindowContent: View {
 
                 // MARK: - Action Bar (Search / Close) — tight to input
                 actionBar
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(actionBarBackground)
+                    .overlay(actionBarBorder)
+                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .padding(.horizontal, 10)
                     .padding(.top, 6)
                     .padding(.bottom, 6)
 
@@ -109,14 +114,15 @@ struct FindFilesWindowContent: View {
                 FindFilesAdvancedTab(viewModel: viewModel)
             }
         }
-        .fixedSize(horizontal: false, vertical: true)
+        .fixedSize(horizontal: false, vertical: selectedTab == .general)
+        .frame(height: selectedTab == .advanced ? 360 : nil)
         .background(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(Color(nsColor: .controlBackgroundColor))
+                .fill(DialogColors.light.opacity(0.98))
         )
         .overlay(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .strokeBorder(Color(nsColor: .separatorColor), lineWidth: 0.75)
+                .strokeBorder(DialogColors.border.opacity(0.55), lineWidth: 0.75)
         )
         .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
@@ -124,7 +130,7 @@ struct FindFilesWindowContent: View {
     // MARK: - Action Bar
 
     private var actionBar: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: 10) {
             // Result count badge (left side)
             if !viewModel.results.isEmpty {
                 Text("\(viewModel.results.count) found")
@@ -154,7 +160,7 @@ struct FindFilesWindowContent: View {
                     Label("Show in Panel", systemImage: "sidebar.squares.left")
                 }
                 .buttonStyle(ThemedButtonStyle())
-                .controlSize(.large)
+                .controlSize(.regular)
                 .help("Display search results in the focused panel")
             }
 
@@ -164,7 +170,7 @@ struct FindFilesWindowContent: View {
                 viewModel.newSearch()
             }
             .buttonStyle(ThemedButtonStyle())
-            .controlSize(.large)
+            .controlSize(.regular)
             .disabled(viewModel.searchState == .idle && viewModel.results.isEmpty)
 
             // Primary: Search / Stop (rightmost)
@@ -173,7 +179,7 @@ struct FindFilesWindowContent: View {
                     viewModel.cancelSearch()
                 }
                 .buttonStyle(ThemedButtonStyle())
-                .controlSize(.large)
+                .controlSize(.regular)
                 .tint(.red)
                 .keyboardShortcut(.escape, modifiers: [])
             } else {
@@ -183,10 +189,20 @@ struct FindFilesWindowContent: View {
                     Label("Search", systemImage: "magnifyingglass")
                 }
                 .buttonStyle(ThemedButtonStyle())
-                .controlSize(.large)
+                .controlSize(.regular)
                 .keyboardShortcut(.return, modifiers: [])
             }
         }
+    }
+
+    private var actionBarBackground: some View {
+        RoundedRectangle(cornerRadius: 12, style: .continuous)
+            .fill(DialogColors.light.opacity(0.98))
+    }
+
+    private var actionBarBorder: some View {
+        RoundedRectangle(cornerRadius: 12, style: .continuous)
+            .strokeBorder(DialogColors.border.opacity(0.42), lineWidth: 0.5)
     }
 
     // MARK: - Status Bar

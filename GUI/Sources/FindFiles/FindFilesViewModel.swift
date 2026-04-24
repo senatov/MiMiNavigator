@@ -19,6 +19,59 @@ enum FindFilesState: Equatable {
     case cancelled
 }
 
+enum FindFilesAgeUnit: String, CaseIterable, Identifiable {
+    case days = "days"
+    case months = "months"
+    case years = "years"
+
+    var id: String { rawValue }
+    var label: String { rawValue.capitalized }
+}
+
+enum FindFilesStaleCriterionMode: String, CaseIterable, Identifiable {
+    case date
+    case age
+
+    var id: String { rawValue }
+
+    var label: String {
+        switch self {
+        case .date: return "Date"
+        case .age: return "Age"
+        }
+    }
+}
+
+enum FindFilesTimestampFilter: String, CaseIterable, Identifiable {
+    case modified
+    case accessed
+    case both
+
+    var id: String { rawValue }
+
+    var label: String {
+        switch self {
+        case .modified: return "Modified"
+        case .accessed: return "Accessed"
+        case .both: return "Both"
+        }
+    }
+}
+
+enum FindFilesItemTypeFilter: String, CaseIterable, Identifiable {
+    case filesAndFolders
+    case filesOnly
+
+    var id: String { rawValue }
+
+    var label: String {
+        switch self {
+        case .filesAndFolders: return "Files and folders"
+        case .filesOnly: return "Files only"
+        }
+    }
+}
+
 // MARK: - Find Files ViewModel
 @MainActor
 @Observable
@@ -32,6 +85,9 @@ final class FindFilesViewModel {
     var useRegex: Bool = false
     var searchInSubdirectories: Bool = true
     var searchInArchives: Bool = false
+    var itemTypeFilter: FindFilesItemTypeFilter = .filesAndFolders
+    var excludeSystemLocations: Bool = false
+    var deletableOnly: Bool = false
 
     // Size filter
     var useSizeFilter: Bool = false
@@ -42,6 +98,18 @@ final class FindFilesViewModel {
     var useDateFilter: Bool = false
     var dateFrom: Date = Calendar.current.date(byAdding: .month, value: -1, to: Date()) ?? Date()
     var dateTo: Date = Date()
+    var useStaleItemFilter: Bool = false
+    var staleCriterionMode: FindFilesStaleCriterionMode = .age
+    var staleTimestampFilter: FindFilesTimestampFilter = .both
+    var staleAgeAmount: String = ""
+    var staleAgeUnit: FindFilesAgeUnit = .months
+    var staleSinceDate: Date = Calendar.current.date(byAdding: .year, value: -2, to: Date()) ?? Date()
+    var useModificationAgeFilter: Bool = false
+    var modificationOlderThanDays: String = ""
+    var modificationAgeUnit: FindFilesAgeUnit = .months
+    var useAccessAgeFilter: Bool = false
+    var accessOlderThanDays: String = ""
+    var accessAgeUnit: FindFilesAgeUnit = .months
 
     // MARK: - Results & State
     var results: [FindFilesResult] = []
@@ -124,6 +192,7 @@ final class FindFilesViewModel {
     func startSearch() {
         guard searchState != .searching else { return }
         log.info("[FindFiles] Starting search: name='\(fileNamePattern)' text='\(searchText)' dir='\(searchDirectory)'")
+        errorMessage = nil
         // Validate target path
         let targetURL = URL(fileURLWithPath: searchDirectory)
         var isDir: ObjCBool = false
@@ -136,6 +205,8 @@ final class FindFilesViewModel {
             errorMessage = "Path not found: \(searchDirectory)"
             return
         }
+        let staleAgeDays = staleAgeDaysIfNeeded()
+        guard errorMessage == nil else { return }
         // Save to history
         SearchHistoryManager.shared.add(fileNamePattern, for: .fileNamePattern)
         SearchHistoryManager.shared.add(searchDirectory, for: .searchDirectory)
@@ -144,7 +215,6 @@ final class FindFilesViewModel {
         }
         // Clear previous results
         results.removeAll()
-        errorMessage = nil
         searchState = .searching
         // Build search summary for export header
         var summaryParts: [String] = []
@@ -163,6 +233,9 @@ final class FindFilesViewModel {
         criteria.useRegex = useRegex
         criteria.searchInSubdirectories = searchInSubdirectories
         criteria.searchInArchives = searchInArchives
+        criteria.filesOnly = itemTypeFilter == .filesOnly
+        criteria.excludeSystemLocations = excludeSystemLocations
+        criteria.deletableOnly = deletableOnly
         criteria.isArchiveOnlySearch = isArchiveTarget
         criteria.isSingleFileContentSearch = isSingleFileTarget
 
@@ -174,6 +247,7 @@ final class FindFilesViewModel {
             criteria.dateFrom = dateFrom
             criteria.dateTo = dateTo
         }
+        applyStaleCriteria(to: &criteria, staleAgeDays: staleAgeDays)
 
         // Start async search — detached task to keep for-await loop OFF MainActor.
         // Results accumulate in FindFilesResultBuffer actor and flush to MainActor in batches.
@@ -280,6 +354,68 @@ final class FindFilesViewModel {
         searchState = .idle
         errorMessage = nil
         stats = FindFilesStats()
+    }
+
+    // MARK: - Advanced Presets
+
+    func applyPotentialBallastPreset() {
+        fileNamePattern = "*"
+        searchText = ""
+        searchDirectory = "/"
+        caseSensitive = false
+        useRegex = false
+        searchInSubdirectories = true
+        searchInArchives = false
+        itemTypeFilter = .filesAndFolders
+        excludeSystemLocations = true
+        deletableOnly = true
+        useSizeFilter = false
+        fileSizeMin = ""
+        fileSizeMax = ""
+        useDateFilter = false
+        useStaleItemFilter = true
+        staleCriterionMode = .age
+        staleTimestampFilter = .both
+        staleAgeAmount = ""
+        staleAgeUnit = .months
+    }
+
+    private func ageInDays(amount: String, unit: FindFilesAgeUnit) -> Int? {
+        guard let value = Int(amount.trimmingCharacters(in: .whitespacesAndNewlines)), value > 0 else {
+            return nil
+        }
+        switch unit {
+        case .days:
+            return value
+        case .months:
+            return value * 30
+        case .years:
+            return value * 365
+        }
+    }
+
+    private func staleAgeDaysIfNeeded() -> Int? {
+        guard useStaleItemFilter, staleCriterionMode == .age else { return nil }
+        guard let days = ageInDays(amount: staleAgeAmount, unit: staleAgeUnit) else {
+            errorMessage = "Enter a positive age value."
+            return nil
+        }
+        return days
+    }
+
+    private func applyStaleCriteria(to criteria: inout FindFilesCriteria, staleAgeDays: Int?) {
+        guard useStaleItemFilter else { return }
+        let appliesToModified = staleTimestampFilter == .modified || staleTimestampFilter == .both
+        let appliesToAccessed = staleTimestampFilter == .accessed || staleTimestampFilter == .both
+
+        switch staleCriterionMode {
+        case .age:
+            if appliesToModified { criteria.modificationOlderThanDays = staleAgeDays }
+            if appliesToAccessed { criteria.accessOlderThanDays = staleAgeDays }
+        case .date:
+            if appliesToModified { criteria.modificationBeforeDate = staleSinceDate }
+            if appliesToAccessed { criteria.accessBeforeDate = staleSinceDate }
+        }
     }
 
     // MARK: - Archive Password Handling

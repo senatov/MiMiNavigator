@@ -3,9 +3,9 @@
 //
 // Created by Iakov Senatov on 10.02.2026.
 // Copyright © 2026 Senatov. All rights reserved.
-// Description: Results table for Find Files Ñ displays search results with context menu.
+// Description: Results table for Find Files - displays search results with context menu.
 //   Columns: #, Name, Path, Date, Size, Match. All sortable except # and Match.
-//   Icons: real NSWorkspace icons via FileRowView.getSmartIcon Ñ same as main panel.
+//   Icons: real NSWorkspace icons via FileRowView.getSmartIcon - same as main panel.
 
 import SwiftUI
 
@@ -14,18 +14,18 @@ import SwiftUI
 struct FindFilesResultsView: View {
     @Bindable var viewModel: FindFilesViewModel
     var appState: AppState? = nil
-    private let colorStore = ColorThemeStore.shared  // @Observable singleton Ñ no @State needed
+    private let colorStore = ColorThemeStore.shared  // @Observable singleton - no @State needed
 
     @State private var sortOrder = [KeyPathComparator(\FindFilesResult.fileName)]
     @State private var cachedSorted: [FindFilesResult] = []
     @State private var lastResultCount: Int = 0
     @State private var userHasSelected: Bool = false  // stops auto-scroll when user clicks
 
-    // MARK: - Fonts (static Ñ same as FileRow)
+    // MARK: - Fonts (static - same as FileRow)
     private static let rowFont: Font = .system(size: 12)
     private static let monoFont: Font = .system(size: 12).monospacedDigit()
 
-    // MARK: - Formatters (static Ñ allocated once)
+    // MARK: - Formatters (static - allocated once)
     private static let dateFormatter: DateFormatter = {
         let f = DateFormatter()
         f.dateFormat = "dd.MM.yyyy HH:mm"
@@ -153,7 +153,7 @@ struct FindFilesResultsView: View {
 
             TableColumn("Date Mod.", value: \.sortableDate) { result in
                 rowCell(result) {
-                    Text(result.modifiedDate.map { Self.dateFormatter.string(from: $0) } ?? "Ñ")
+                    Text(result.modifiedDate.map { Self.dateFormatter.string(from: $0) } ?? "-")
                         .font(Self.monoFont)
                         .foregroundStyle(result.isPasswordProtected ? .red : theme.columnDateColor)
                 }
@@ -188,7 +188,7 @@ struct FindFilesResultsView: View {
                             .foregroundStyle(theme.columnNameColor)
                             .lineLimit(1)
                     } else {
-                        Text("Ñ").font(Self.rowFont).foregroundStyle(.quaternary)
+                        Text("-").font(Self.rowFont).foregroundStyle(.quaternary)
                     }
                 }
             }
@@ -222,7 +222,7 @@ struct FindFilesResultsView: View {
     }
 
     // MARK: - Name Cell
-    // Real NSWorkspace icons via FileRowView.getSmartIcon Ñ same chain as main panel
+    // Real NSWorkspace icons via FileRowView.getSmartIcon - same chain as main panel
 
     private func resultNameCell(_ result: FindFilesResult) -> some View {
         rowCell(result) {
@@ -279,6 +279,6 @@ struct FindFilesResultsView: View {
     // MARK: - Helpers
 
     private static func formatSize(_ bytes: Int64) -> String {
-        bytes == 0 ? "Ñ" : sizeFormatter.string(fromByteCount: bytes)
+        bytes == 0 ? "0 bytes" : sizeFormatter.string(fromByteCount: bytes)
     }
 }

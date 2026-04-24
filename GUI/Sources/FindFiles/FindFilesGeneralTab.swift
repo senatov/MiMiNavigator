@@ -46,7 +46,7 @@ struct FindFilesGeneralTab: View {
                         Button(action: browseDirectory) {
                             Image(systemName: "folder.badge.plus")
                         }
-                        .buttonStyle(.bordered)
+                        .buttonStyle(ThemedButtonStyle())
                         .controlSize(.regular)
                         .help("Browse…")
                     }
@@ -110,7 +110,7 @@ struct FindFilesGeneralTab: View {
             .padding(.horizontal, 16)
             .padding(.bottom, 12)
         }
-        .background(Color(nsColor: .windowBackgroundColor))
+        .background(DialogColors.base.opacity(0.96))
     }
 
     // MARK: - Section Header

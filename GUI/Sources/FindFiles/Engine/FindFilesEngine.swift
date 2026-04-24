@@ -22,6 +22,13 @@ actor FindFilesEngine {
     /// Archives already scanned during the main find pass (avoid double-scanning)
     private var scannedArchivePaths = Set<String>()
 
+    private static let findDateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+        return formatter
+    }()
+
     // MARK: - Start Search
 
     /// Starts an async search returning results as an AsyncStream.
@@ -75,14 +82,57 @@ actor FindFilesEngine {
     // MARK: - Private
 
     // MARK: - Shared find arguments
-    /// Directory names to prune from find traversal (cloud placeholders, caches, trash)
-    private static let pruneNames = ["CloudStorage", "Group Containers", ".Trash", "Caches"]
-    /// Build prune arguments for /usr/bin/find: ( -name X -type d -o ... ) -prune -o
-    private static func buildPruneArgs() -> [String] {
+    /// Directory names to prune from find traversal for every search.
+    private static let baselinePruneNames = [".Trash"]
+
+    /// System roots skipped by the "user-controlled ballast" preset.
+    /// Do not prune /Library, ~/Library, /Applications, Caches, Group Containers or CloudStorage here:
+    /// user-controlled leftovers often live there and are filtered later by deletability.
+    private static let systemPrunePaths = [
+        "/System",
+        "/private",
+        "/usr",
+        "/bin",
+        "/sbin",
+        "/dev",
+        "/cores",
+        "/Network"
+    ]
+
+    /// Installed runtime/package roots are not ballast while the package is present.
+    /// Leftovers from removed packages usually remain outside these roots, for example
+    /// in Application Support, Preferences, Logs, Caches, or Group Containers.
+    private static let installedPackagePrunePaths = [
+        "/Library/Frameworks",
+        "/Library/Developer",
+        "/Library/Apple",
+        "/Library/Java/JavaVirtualMachines",
+        "/Library/Python",
+        "/Library/Perl",
+        "/Library/Ruby",
+        "/Library/TeX",
+        "/opt/homebrew",
+        "/usr/local"
+    ]
+
+    /// Build prune arguments for /usr/bin/find: ( ... ) -prune -o
+    private static func buildPruneArgs(criteria: FindFilesCriteria) -> [String] {
+        var expressions: [[String]] = baselinePruneNames.map { ["-name", $0, "-type", "d"] }
+        if criteria.excludeSystemLocations {
+            expressions += systemPrunePaths.map { ["-path", $0, "-type", "d"] }
+            expressions += installedPackagePrunePaths.map { ["-path", $0, "-type", "d"] }
+            expressions += [
+                ["-name", "node_modules", "-type", "d"],
+                ["-name", ".git", "-type", "d"],
+                ["-name", ".svn", "-type", "d"],
+                ["-name", ".hg", "-type", "d"]
+            ]
+        }
+        guard !expressions.isEmpty else { return [] }
         var args: [String] = ["("]
-        for (i, name) in pruneNames.enumerated() {
-            if i > 0 { args.append("-o") }
-            args += ["-name", name, "-type", "d"]
+        for (index, expression) in expressions.enumerated() {
+            if index > 0 { args.append("-o") }
+            args += expression
         }
         args += [")", "-prune", "-o"]
         return args
@@ -211,9 +261,37 @@ actor FindFilesEngine {
         }
 
         // Prune directories that cause I/O errors on virtual/offline volumes
-        args += Self.buildPruneArgs()
+        // and, for user-file presets, skip macOS/app-support locations.
+        args += Self.buildPruneArgs(criteria: criteria)
 
         // Name matching (after -prune -o)
+        if criteria.filesOnly {
+            args += ["-type", "f"]
+        }
+        if let minSize = criteria.fileSizeMin {
+            args += ["-size", "+\(max(minSize - 1, 0))c"]
+        }
+        if let maxSize = criteria.fileSizeMax {
+            args += ["-size", "-\(max(maxSize + 1, 1))c"]
+        }
+        if let dateFrom = criteria.dateFrom {
+            args += ["-newermt", Self.findDateFormatter.string(from: dateFrom)]
+        }
+        if let dateTo = criteria.dateTo {
+            args += ["!", "-newermt", Self.findDateFormatter.string(from: dateTo)]
+        }
+        if let date = criteria.modificationBeforeDate {
+            args += ["!", "-newermt", Self.findDateFormatter.string(from: date)]
+        }
+        if let date = criteria.accessBeforeDate {
+            args += ["!", "-newerat", Self.findDateFormatter.string(from: date)]
+        }
+        if let days = criteria.modificationOlderThanDays, days > 0 {
+            args += ["-mtime", "+\(days - 1)"]
+        }
+        if let days = criteria.accessOlderThanDays, days > 0 {
+            args += ["-atime", "+\(days - 1)"]
+        }
         if criteria.useRegex {
             // Note: -E flag is inserted at args[0] before the path for BSD find
             args.insert("-E", at: 0)
@@ -288,6 +366,9 @@ actor FindFilesEngine {
         var isDir: ObjCBool = false
         let exists = FileManager.default.fileExists(atPath: line, isDirectory: &isDir)
         guard exists else { return }
+        if criteria.deletableOnly, !Self.isUserDeletable(path: line) {
+            return
+        }
 
         stats.filesScanned += 1
         // Show the actual file/directory being scanned, not just the parent
@@ -351,6 +432,13 @@ actor FindFilesEngine {
         }
     }
 
+    private static func isUserDeletable(path: String) -> Bool {
+        let fm = FileManager.default
+        guard fm.isDeletableFile(atPath: path) else { return false }
+        let parent = URL(fileURLWithPath: path).deletingLastPathComponent().path
+        return fm.isWritableFile(atPath: parent)
+    }
+
     // MARK: - Scan archives in directory (second pass)
     /// Runs a separate `find` to locate all archive files, then searches inside each.
     /// This is needed because the main `find -iname *.java` won't match archive files
@@ -369,7 +457,7 @@ actor FindFilesEngine {
             args += ["-maxdepth", "1"]
         }
         // Same prune rules as main search
-        args += Self.buildPruneArgs()
+        args += Self.buildPruneArgs(criteria: criteria)
         // Match archive extensions: ( -iname '*.zip' -o -iname '*.jar' -o ... ) -print
         let archiveExts = Array(ArchiveExtensions.all)
         var extArgs: [String] = ["("]
