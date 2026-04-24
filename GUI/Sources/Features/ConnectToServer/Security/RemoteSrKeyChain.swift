@@ -196,6 +196,7 @@ extension RemoteServerKeychain {
             kSecReturnData: true,
             kSecMatchLimit: kSecMatchLimitOne,
             kSecUseAuthenticationContext: authContext,
+            kSecUseAuthenticationUI: kSecUseAuthenticationUIFail,
         ]
     }
 
@@ -208,6 +209,7 @@ extension RemoteServerKeychain {
             kSecAttrAccount: server.user,
             kSecAttrProtocol: protocolAttr(server.remoteProtocol),
             kSecUseAuthenticationContext: authContext,
+            kSecUseAuthenticationUI: kSecUseAuthenticationUIFail,
         ]
     }
 }
