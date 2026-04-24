@@ -86,7 +86,7 @@ struct FindFilesAdvancedTab: View {
             VStack(spacing: 8) {
                 optionRow(
                     title: "Filter by size",
-                    detail: "Byte range",
+                    detail: "Only match files within the size range",
                     icon: "arrow.up.arrow.down",
                     tint: .orange,
                     isOn: $viewModel.useSizeFilter
@@ -98,14 +98,20 @@ struct FindFilesAdvancedTab: View {
                             .foregroundStyle(.secondary)
                         TextField("min", text: $viewModel.fileSizeMin)
                             .textFieldStyle(.roundedBorder)
-                            .frame(width: 100)
+                            .frame(width: 80)
                         Text("to")
                             .foregroundStyle(.secondary)
                         TextField("max", text: $viewModel.fileSizeMax)
                             .textFieldStyle(.roundedBorder)
-                            .frame(width: 100)
-                        Text("bytes")
-                            .foregroundStyle(.tertiary)
+                            .frame(width: 80)
+                        Picker("", selection: $viewModel.fileSizeUnit) {
+                            ForEach(FindFilesSizeUnit.allCases) { unit in
+                                Text(unit.label).tag(unit)
+                            }
+                        }
+                        .labelsHidden()
+                        .pickerStyle(.segmented)
+                        .frame(width: 180)
                         Spacer()
                     }
                     .font(.system(size: 12))
@@ -119,9 +125,36 @@ struct FindFilesAdvancedTab: View {
         advancedCard(icon: "calendar", title: "Dates", tint: .red) {
             VStack(spacing: 10) {
                 optionRow(
+                    title: "Filter by modification date",
+                    detail: "Only match files modified within the date range",
+                    icon: "calendar.badge.clock",
+                    tint: .purple,
+                    isOn: $viewModel.useDateFilter
+                )
+
+                if viewModel.useDateFilter {
+                    HStack(spacing: 8) {
+                        Text("From")
+                            .font(.system(size: 12))
+                            .foregroundStyle(.secondary)
+                        DatePicker("", selection: $viewModel.dateFrom, displayedComponents: .date)
+                            .labelsHidden()
+                        Text("to")
+                            .font(.system(size: 12))
+                            .foregroundStyle(.secondary)
+                        DatePicker("", selection: $viewModel.dateTo, displayedComponents: .date)
+                            .labelsHidden()
+                        Spacer()
+                    }
+                    .padding(.leading, 34)
+                }
+
+                rowDivider()
+
+                optionRow(
                     title: "Unused item age",
                     detail: "Choose date or age, then apply it to modified time, access time, or both",
-                    icon: "calendar.badge.clock",
+                    icon: "clock.badge.xmark",
                     tint: .red,
                     isOn: $viewModel.useStaleItemFilter
                 )

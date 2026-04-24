@@ -72,6 +72,25 @@ enum FindFilesItemTypeFilter: String, CaseIterable, Identifiable {
     }
 }
 
+enum FindFilesSizeUnit: String, CaseIterable, Identifiable {
+    case bytes = "B"
+    case kilobytes = "KB"
+    case megabytes = "MB"
+    case gigabytes = "GB"
+
+    var id: String { rawValue }
+    var label: String { rawValue }
+
+    var multiplier: Int64 {
+        switch self {
+        case .bytes: return 1
+        case .kilobytes: return 1024
+        case .megabytes: return 1024 * 1024
+        case .gigabytes: return 1024 * 1024 * 1024
+        }
+    }
+}
+
 // MARK: - Find Files ViewModel
 @MainActor
 @Observable
@@ -93,6 +112,7 @@ final class FindFilesViewModel {
     var useSizeFilter: Bool = false
     var fileSizeMin: String = ""
     var fileSizeMax: String = ""
+    var fileSizeUnit: FindFilesSizeUnit = .megabytes
 
     // Date filter
     var useDateFilter: Bool = false
@@ -193,6 +213,7 @@ final class FindFilesViewModel {
         useSizeFilter = false
         fileSizeMin = ""
         fileSizeMax = ""
+        fileSizeUnit = .megabytes
         useDateFilter = false
         excludeSystemLocations = false
         deletableOnly = false
@@ -266,8 +287,9 @@ final class FindFilesViewModel {
         criteria.isSingleFileContentSearch = isSingleFileTarget
 
         if useSizeFilter {
-            criteria.fileSizeMin = Int64(fileSizeMin)
-            criteria.fileSizeMax = Int64(fileSizeMax)
+            let mult = fileSizeUnit.multiplier
+            if let v = Int64(fileSizeMin) { criteria.fileSizeMin = v * mult }
+            if let v = Int64(fileSizeMax) { criteria.fileSizeMax = v * mult }
         }
         if useDateFilter {
             criteria.dateFrom = dateFrom
@@ -398,6 +420,7 @@ final class FindFilesViewModel {
         useSizeFilter = false
         fileSizeMin = ""
         fileSizeMax = ""
+        fileSizeUnit = .megabytes
         useDateFilter = false
         useStaleItemFilter = true
         staleCriterionMode = .age

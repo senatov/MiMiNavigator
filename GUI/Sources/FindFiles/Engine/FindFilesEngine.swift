@@ -85,6 +85,14 @@ actor FindFilesEngine {
     /// Directory names to prune from find traversal for every search.
     private static let baselinePruneNames = [".Trash"]
 
+    /// macOS bundle extensions — these are opaque containers, never useful in normal search.
+    /// Matched by name pattern "*.ext" to skip their entire subtree.
+    private static let bundlePruneExtensions = [
+        "app", "framework", "plugin", "kext", "bundle",
+        "appex", "qlgenerator", "mdimporter", "xpc",
+        "prefPane", "saver", "driver", "codex"
+    ]
+
     /// System roots skipped by the "user-controlled ballast" preset.
     /// Do not prune /Library, ~/Library, /Applications, Caches, Group Containers or CloudStorage here:
     /// user-controlled leftovers often live there and are filtered later by deletability.
@@ -118,6 +126,8 @@ actor FindFilesEngine {
     /// Build prune arguments for /usr/bin/find: ( ... ) -prune -o
     private static func buildPruneArgs(criteria: FindFilesCriteria) -> [String] {
         var expressions: [[String]] = baselinePruneNames.map { ["-name", $0, "-type", "d"] }
+        // Always skip macOS bundles — opaque containers
+        expressions += bundlePruneExtensions.map { ["-name", "*.\($0)", "-type", "d"] }
         if criteria.excludeSystemLocations {
             expressions += systemPrunePaths.map { ["-path", $0, "-type", "d"] }
             expressions += installedPackagePrunePaths.map { ["-path", $0, "-type", "d"] }
