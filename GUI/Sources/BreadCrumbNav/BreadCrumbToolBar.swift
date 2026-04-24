@@ -23,19 +23,13 @@ struct BreadCrumbToolBar: View {
         static let groupSpacing: CGFloat = 6
         static let iconSize: CGFloat = 15
         static let buttonSize: CGFloat = 28
-        static let cornerRadius: CGFloat = 7
-        static let borderLineWidth: CGFloat = 0.6
-        static let hoverScale: CGFloat = 1.05
     }
 
     private enum Palette {
         static let activeIcon = Color(nsColor: .labelColor)
         static let inactiveIcon = Color(nsColor: .labelColor).opacity(0.45)
         static let utilityIcon = Color(nsColor: NSColor(calibratedRed: 0.0, green: 0.42, blue: 0.55, alpha: 1.0))
-        static let hoverFill = Color.blue.opacity(0.25)
-        static let topHighlight = Color.white.opacity(0.35)
-        static let bottomShadow = Color.black.opacity(0.4)
-        static let hoverBorder = Color(#colorLiteral(red: 0.9529411793, green: 0.6862745285, blue: 0.1333333403, alpha: 1))
+        static let hoverTint = Color.accentColor
     }
 
     // Active panel check for icon contrast
@@ -87,19 +81,11 @@ struct BreadCrumbToolBar: View {
         self.panelSide = selectedSide
     }
 
-    private func navIcon(_ name: String) -> some View {
-        Image(systemName: name)
-            .font(.system(size: Metrics.iconSize, weight: .light))
-            .symbolRenderingMode(.multicolor)
-            .foregroundStyle(iconColor)
-    }
-
     // MARK: - Back Button
     private func backButton() -> some View {
         let canGoBack = appState.navigationHistory(for: panelSide).canGoBack
-
-        return NavArrowButton(
-            iconName: "arrowshape.backward",
+        return ToolBarIconButton(
+            iconName: "chevron.left",
             iconColor: iconColor,
             isEnabled: canGoBack,
             action: { handleBackTap(canGoBack: canGoBack) }
@@ -111,26 +97,25 @@ struct BreadCrumbToolBar: View {
         )
         .focusable(false)
         .allowsHitTesting(true)
-        .help("Click: go back | Ctrl+click: show history")
-        .accessibilityLabel("Back button")
+        .help("Back (Ctrl+click: history)")
     }
 
     // MARK: - Up Button
     private func upButton() -> some View {
-        UpNavigationButton(iconColor: iconColor) {
-            handleNavigateUp()
-        }
+        ToolBarIconButton(
+            iconName: "chevron.up",
+            iconColor: iconColor,
+            action: { handleNavigateUp() }
+        )
         .focusable(false)
-        .help("Go to parent directory")
-        .accessibilityLabel("Up button")
+        .help("Parent directory")
     }
 
     // MARK: - Forward Button
     private func forwardButton() -> some View {
         let canGoForward = appState.navigationHistory(for: panelSide).canGoForward
-
-        return NavArrowButton(
-            iconName: "arrowshape.right",
+        return ToolBarIconButton(
+            iconName: "chevron.right",
             iconColor: iconColor,
             isEnabled: canGoForward,
             action: { handleForwardTap(canGoForward: canGoForward) }
@@ -142,40 +127,35 @@ struct BreadCrumbToolBar: View {
         )
         .focusable(false)
         .allowsHitTesting(true)
-        .help("Click: go forward | Ctrl+click: show history")
-        .accessibilityLabel("Forward button")
+        .help("Forward (Ctrl+click: history)")
     }
 
     // MARK: - History Button
     private func historyButton() -> some View {
-        Button(action: {
-            log.debug("[BreadCrumbToolBar] history button tapped panel=\(panelSide)")
-            openHistoryWindow()
-        }) {
-            Image(systemName: "clock.arrow.circlepath")
-                .font(.system(size: Metrics.iconSize, weight: .light))
-                .symbolRenderingMode(.multicolor)
-                .foregroundStyle(Palette.utilityIcon)
-        }
-        .buttonStyle(NoSelectionButtonStyle())
+        ToolBarIconButton(
+            iconName: "clock.arrow.circlepath",
+            iconColor: Palette.utilityIcon,
+            action: {
+                log.debug("[BreadCrumbToolBar] history tapped panel=\(panelSide)")
+                openHistoryWindow()
+            }
+        )
         .focusable(false)
-        .help("Show navigation history")
+        .help("Navigation history")
     }
 
     // MARK: - Favorites Button
     private func favoritesButton() -> some View {
-        Button(action: {
-            log.debug("[BreadCrumbToolBar] favorites button tapped panel=\(panelSide)")
-            openFavoritesWindow()
-        }) {
-            Image(systemName: panelSide == .left ? "sidebar.left" : "sidebar.right")
-                .font(.system(size: Metrics.iconSize, weight: .light))
-                .symbolRenderingMode(.multicolor)
-                .foregroundStyle(Palette.utilityIcon)
-        }
-        .buttonStyle(NoSelectionButtonStyle())
+        ToolBarIconButton(
+            iconName: panelSide == .left ? "sidebar.left" : "sidebar.right",
+            iconColor: Palette.utilityIcon,
+            action: {
+                log.debug("[BreadCrumbToolBar] favorites tapped panel=\(panelSide)")
+                openFavoritesWindow()
+            }
+        )
         .focusable(false)
-        .help("Navigation between favorites — \(panelSide.rawValue)")
+        .help("Favorites — \(panelSide.rawValue)")
     }
 
     private func handleAppear() {
@@ -249,11 +229,11 @@ struct BreadCrumbToolBar: View {
         PanelDialogCoordinator.favorites.open(content: content)
     }
 
-    // MARK: - NavArrowButton — styled nav button (Back / Forward)
-    private struct NavArrowButton: View {
+    // MARK: - ToolBarIconButton — clean outline icon, no frame (Meet-style)
+    private struct ToolBarIconButton: View {
         let iconName: String
         let iconColor: Color
-        let isEnabled: Bool
+        var isEnabled: Bool = true
         let action: () -> Void
 
         @State private var isHovered = false
@@ -261,113 +241,18 @@ struct BreadCrumbToolBar: View {
         var body: some View {
             Button(action: action) {
                 Image(systemName: iconName)
-                    .font(.system(size: Metrics.iconSize, weight: .medium))
+                    .font(.system(size: Metrics.iconSize, weight: .light))
                     .symbolRenderingMode(.hierarchical)
-                    .foregroundStyle(isHovered ? Color.white : iconColor)
+                    .foregroundStyle(isHovered ? Palette.hoverTint : iconColor)
                     .frame(width: Metrics.buttonSize, height: Metrics.buttonSize)
-                    .background(buttonBackground)
-                    .overlay(buttonBorder)
-                    .scaleEffect(isHovered ? Metrics.hoverScale : 1.0)
-                    .animation(.spring(response: 0.25, dampingFraction: 0.6), value: isHovered)
+                    .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .disabled(!isEnabled)
-            .opacity(isEnabled ? 1.0 : 0.4)
+            .opacity(isEnabled ? 1.0 : 0.35)
             .onHover { hovering in
                 isHovered = hovering && isEnabled
             }
-        }
-
-        private var buttonBackground: some View {
-            ZStack {
-                RoundedRectangle(cornerRadius: Metrics.cornerRadius, style: .continuous)
-                    .fill(.ultraThinMaterial)
-
-                RoundedRectangle(cornerRadius: Metrics.cornerRadius)
-                    .stroke(Palette.topHighlight, lineWidth: 1)
-                    .blur(radius: 0.5)
-                    .offset(x: -0.5, y: -0.5)
-                    .mask(
-                        LinearGradient(colors: [.white, .clear], startPoint: .top, endPoint: .bottom)
-                    )
-
-                RoundedRectangle(cornerRadius: Metrics.cornerRadius)
-                    .stroke(Palette.bottomShadow, lineWidth: 1)
-                    .blur(radius: 0.5)
-                    .offset(x: 0.5, y: 0.5)
-                    .mask(
-                        LinearGradient(colors: [.clear, .black], startPoint: .top, endPoint: .bottom)
-                    )
-
-                if isHovered {
-                    RoundedRectangle(cornerRadius: Metrics.cornerRadius)
-                        .fill(Palette.hoverFill)
-                }
-            }
-        }
-
-        private var buttonBorder: some View {
-            RoundedRectangle(cornerRadius: Metrics.cornerRadius)
-                .stroke(Palette.hoverBorder.opacity(isHovered ? 0.7 : 0.3), lineWidth: Metrics.borderLineWidth)
-        }
-    }
-
-
-    private struct UpNavigationButton: View {
-        let iconColor: Color
-        let action: () -> Void
-
-        @State private var isHovered = false
-
-        var body: some View {
-            Button(action: action) {
-                Image(systemName: "arrowshape.up")
-                    .font(.system(size: Metrics.iconSize, weight: .light))
-                    .symbolRenderingMode(.hierarchical)
-                    .foregroundStyle(isHovered ? Color.white : iconColor)
-                    .frame(width: Metrics.buttonSize, height: Metrics.buttonSize)
-                    .background(buttonBackground)
-                    .overlay(buttonBorder)
-                    .scaleEffect(isHovered ? Metrics.hoverScale : 1.0)
-                    .animation(.spring(response: 0.25, dampingFraction: 0.6), value: isHovered)
-            }
-            .buttonStyle(.plain)
-            .onHover { hovering in
-                isHovered = hovering
-            }
-        }
-
-        private var buttonBackground: some View {
-            ZStack {
-                RoundedRectangle(cornerRadius: Metrics.cornerRadius, style: .continuous)
-                    .fill(.ultraThinMaterial)
-
-                RoundedRectangle(cornerRadius: Metrics.cornerRadius)
-                    .stroke(Palette.topHighlight, lineWidth: 1)
-                    .blur(radius: 0.5)
-                    .offset(x: -0.5, y: -0.5)
-                    .mask(
-                        LinearGradient(colors: [.white, .clear], startPoint: .top, endPoint: .bottom)
-                    )
-
-                RoundedRectangle(cornerRadius: Metrics.cornerRadius)
-                    .stroke(Palette.bottomShadow, lineWidth: 1)
-                    .blur(radius: 0.5)
-                    .offset(x: 0.5, y: 0.5)
-                    .mask(
-                        LinearGradient(colors: [.clear, .black], startPoint: .top, endPoint: .bottom)
-                    )
-
-                if isHovered {
-                    RoundedRectangle(cornerRadius: Metrics.cornerRadius)
-                        .fill(Palette.hoverFill)
-                }
-            }
-        }
-
-        private var buttonBorder: some View {
-            RoundedRectangle(cornerRadius: Metrics.cornerRadius)
-                .stroke(Palette.hoverBorder.opacity(isHovered ? 0.7 : 0.3), lineWidth: Metrics.borderLineWidth)
         }
     }
 }
