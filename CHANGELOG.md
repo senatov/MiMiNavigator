@@ -5,6 +5,31 @@ All notable changes to MiMiNavigator will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.8.1] — 2026-04-24
+
+> **Release notes**
+> Find Files and startup polish release.
+> Advanced search now has a practical "potential user ballast" workflow with user-chosen age/date criteria,
+> better pruning of macOS/runtime-owned locations, and clearer Media Convert-style dialog controls.
+
+### Added
+- **Find Files advanced template: Potential user ballast** — searches broad user-writable locations, including `/Library`, while skipping protected OS roots and package/runtime areas that are still owned by installed software
+- **Age/date search controls** — user can search by an explicit "since" date or by age in days, months, or years
+- **Modified/accessed criteria modes** — choose "not modified", "not accessed", or both, instead of filling separate mandatory fields
+- **Deletable-only filtering** — ballast search can skip matches the current user cannot remove
+
+### Changed
+- **Find Files dialog redesign** — advanced section and bottom buttons now follow the calmer Settings / Media Convert visual style
+- **Search pruning** — Python framework tests, `__pycache__`, package internals, caches, VCS folders, and macOS-controlled locations are filtered out more aggressively when they are part of installed software
+- **Search labels** — ambiguous wording such as "Return files only" was replaced with clearer file/folder scope wording
+
+### Fixed
+- **Find Files size column** — fixed invalid system-size placeholders in search results
+- **Startup remote restore** — saved SFTP/SMB connections no longer trigger noisy credential or invalid-path prompts during app startup
+- **Keychain prompts** — reduced repeated macOS Keychain permission prompts for saved remote connections on the same user account
+
+---
+
 ## [0.9.7.4.1] — 2026-04-15
 
 > **Release notes**
