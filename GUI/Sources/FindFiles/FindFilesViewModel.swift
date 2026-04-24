@@ -10,87 +10,6 @@ import FileModelKit
 import Foundation
 import SwiftUI
 
-// MARK: - Search State
-enum FindFilesState: Equatable {
-    case idle
-    case searching
-    case paused
-    case completed
-    case cancelled
-}
-
-enum FindFilesAgeUnit: String, CaseIterable, Identifiable {
-    case days = "days"
-    case months = "months"
-    case years = "years"
-
-    var id: String { rawValue }
-    var label: String { rawValue.capitalized }
-}
-
-enum FindFilesStaleCriterionMode: String, CaseIterable, Identifiable {
-    case date
-    case age
-
-    var id: String { rawValue }
-
-    var label: String {
-        switch self {
-        case .date: return "Date"
-        case .age: return "Age"
-        }
-    }
-}
-
-enum FindFilesTimestampFilter: String, CaseIterable, Identifiable {
-    case modified
-    case accessed
-    case both
-
-    var id: String { rawValue }
-
-    var label: String {
-        switch self {
-        case .modified: return "Modified"
-        case .accessed: return "Accessed"
-        case .both: return "Both"
-        }
-    }
-}
-
-enum FindFilesItemTypeFilter: String, CaseIterable, Identifiable {
-    case filesAndFolders
-    case filesOnly
-
-    var id: String { rawValue }
-
-    var label: String {
-        switch self {
-        case .filesAndFolders: return "Files and folders"
-        case .filesOnly: return "Files only"
-        }
-    }
-}
-
-enum FindFilesSizeUnit: String, CaseIterable, Identifiable {
-    case bytes = "B"
-    case kilobytes = "KB"
-    case megabytes = "MB"
-    case gigabytes = "GB"
-
-    var id: String { rawValue }
-    var label: String { rawValue }
-
-    var multiplier: Int64 {
-        switch self {
-        case .bytes: return 1
-        case .kilobytes: return 1024
-        case .megabytes: return 1024 * 1024
-        case .gigabytes: return 1024 * 1024 * 1024
-        }
-    }
-}
-
 // MARK: - Find Files ViewModel
 @MainActor
 @Observable
@@ -124,12 +43,6 @@ final class FindFilesViewModel {
     var staleAgeAmount: String = ""
     var staleAgeUnit: FindFilesAgeUnit = .months
     var staleSinceDate: Date = Calendar.current.date(byAdding: .year, value: -2, to: Date()) ?? Date()
-    var useModificationAgeFilter: Bool = false
-    var modificationOlderThanDays: String = ""
-    var modificationAgeUnit: FindFilesAgeUnit = .months
-    var useAccessAgeFilter: Bool = false
-    var accessOlderThanDays: String = ""
-    var accessAgeUnit: FindFilesAgeUnit = .months
 
     // MARK: - Results & State
     var results: [FindFilesResult] = []
@@ -206,10 +119,6 @@ final class FindFilesViewModel {
         staleAgeAmount = ""
         staleAgeUnit = .months
         staleSinceDate = Calendar.current.date(byAdding: .year, value: -2, to: Date()) ?? Date()
-        useModificationAgeFilter = false
-        modificationOlderThanDays = ""
-        useAccessAgeFilter = false
-        accessOlderThanDays = ""
         useSizeFilter = false
         fileSizeMin = ""
         fileSizeMax = ""
@@ -500,19 +409,54 @@ final class FindFilesViewModel {
         passwordContinuation = nil
     }
 
+    // MARK: - Persistence
+
+    func saveResults() {
+        guard !results.isEmpty else { return }
+        do {
+            let payload = SavedSearchPayload(summary: lastSearchSummary, results: results)
+            let data = try JSONEncoder().encode(payload)
+            try data.write(to: Self.savedResultsURL, options: .atomic)
+            log.info("[FindFiles] Saved \(results.count) results")
+        } catch {
+            log.warning("[FindFiles] Save failed: \(error.localizedDescription)")
+        }
+    }
+
+
+
+    func loadSavedResults() {
+        guard FileManager.default.fileExists(atPath: Self.savedResultsURL.path) else { return }
+        do {
+            let data = try Data(contentsOf: Self.savedResultsURL)
+            let payload = try JSONDecoder().decode(SavedSearchPayload.self, from: data)
+            results = payload.results
+            lastSearchSummary = payload.summary
+            searchState = .completed
+            log.info("[FindFiles] Loaded \(results.count) saved results")
+        } catch {
+            log.warning("[FindFiles] Load failed: \(error.localizedDescription)")
+        }
+    }
+
+
+
     // MARK: - Archive Progress Helpers
-    private func showArchiveProgress(for archiveURL: URL) -> (ProgressPanel, ActiveArchiveProcess) {
+
+    func showArchiveProgress(for archiveURL: URL) -> (ProgressPanel, ActiveArchiveProcess) {
         let progressPanel = ProgressPanel.shared
         let handle = ActiveArchiveProcess()
         progressPanel.show(
             archiveName: archiveURL.lastPathComponent,
             destinationPath: archiveURL.deletingLastPathComponent().path
         )
-        progressPanel.appendLine("Extracting archive: \(archiveURL.lastPathComponent)")
+        progressPanel.appendLine("Extracting: \(archiveURL.lastPathComponent)")
         return (progressPanel, handle)
     }
 
-    private func openArchiveWithProgress(
+
+
+    func openArchiveWithProgress(
         _ archiveURL: URL,
         progressPanel: ProgressPanel,
         handle: ActiveArchiveProcess
@@ -527,274 +471,10 @@ final class FindFilesViewModel {
             processHandle: handle
         )
     }
-
-    // MARK: - Actions on Results
-
-    /// Navigate to result file in the active panel.
-    /// For archive entries: extract the archive first, then navigate into the extracted directory.
-    func goToFile(result: FindFilesResult, appState: AppState) {
-        let panel = appState.focusedPanel
-
-        func selectFile(named fileName: String) {
-            let files = appState.displayedFiles(for: panel)
-            if let match = files.first(where: { $0.nameStr == fileName }) {
-                appState.select(match, on: panel)
-            }
-        }
-
-
-        func archiveTargetFileURL(for result: FindFilesResult, archivePath: String, tempDir: URL) -> URL {
-            let internalPath = result.fileURL.path
-                .replacingOccurrences(of: archivePath, with: "")
-                .trimmingCharacters(in: CharacterSet(charactersIn: "/"))
-            return tempDir.appendingPathComponent(internalPath)
-        }
-
-        func refreshPanel(at path: String) async {
-            appState.updatePath(path, for: panel)
-            if panel == .left {
-                await appState.scanner.setLeftDirectory(pathStr: path)
-                await appState.scanner.refreshFiles(currSide: .left)
-                await appState.refreshLeftFiles()
-            } else {
-                await appState.scanner.setRightDirectory(pathStr: path)
-                await appState.scanner.refreshFiles(currSide: .right)
-                await appState.refreshRightFiles()
-            }
-        }
-
-        func fallbackToArchiveLocation(_ archiveURL: URL) async {
-            let archiveDirPath = archiveURL.deletingLastPathComponent().path
-            await refreshPanel(at: archiveDirPath)
-            selectFile(named: archiveURL.lastPathComponent)
-        }
-
-        if result.isInsideArchive, let archivePath = result.archivePath {
-            let archiveURL = URL(fileURLWithPath: archivePath)
-            Task { @MainActor in
-                log.info("[FindFiles] goToFile: extracting archive \(archiveURL.lastPathComponent) for result \(result.fileName)")
-
-                let (progressPanel, handle) = showArchiveProgress(for: archiveURL)
-
-                do {
-                    let tempDir = try await openArchiveWithProgress(
-                        archiveURL,
-                        progressPanel: progressPanel,
-                        handle: handle
-                    )
-
-                    progressPanel.finish(success: true)
-
-                    var archState = appState.archiveState(for: panel)
-                    archState.enterArchive(archiveURL: archiveURL, tempDir: tempDir)
-                    appState.setArchiveState(archState, for: panel)
-
-                    let targetFileURL = archiveTargetFileURL(for: result, archivePath: archivePath, tempDir: tempDir)
-                    let targetDir = targetFileURL.deletingLastPathComponent().path
-                    let targetFileName = targetFileURL.lastPathComponent
-
-                    await refreshPanel(at: targetDir)
-                    selectFile(named: targetFileName)
-
-                    log.info("[FindFiles] goToFile: navigated to \(targetDir) and selected \(targetFileName)")
-                } catch {
-                    progressPanel.finish(success: false, details: error.localizedDescription)
-                    log.error("[FindFiles] goToFile: failed to extract archive: \(error.localizedDescription)")
-                    await fallbackToArchiveLocation(archiveURL)
-                }
-            }
-        } else {
-            let targetDir = result.fileURL.deletingLastPathComponent().path
-            Task { @MainActor in
-                await refreshPanel(at: targetDir)
-                selectFile(named: result.fileName)
-            }
-        }
-    }
-
-    /// Open the result file in default application
-    func openFile(result: FindFilesResult) {
-        if result.isInsideArchive {
-            // For archive entries — open the archive itself
-            if let archivePath = result.archivePath {
-                NSWorkspace.shared.open(URL(fileURLWithPath: archivePath))
-            }
-        } else {
-            NSWorkspace.shared.open(result.fileURL)
-        }
-    }
-
-    /// Reveal the result file in Finder
-    func revealInFinder(result: FindFilesResult) {
-        if result.isInsideArchive, let archivePath = result.archivePath {
-            NSWorkspace.shared.selectFile(archivePath, inFileViewerRootedAtPath: "")
-        } else {
-            NSWorkspace.shared.selectFile(result.filePath, inFileViewerRootedAtPath: "")
-        }
-    }
-
-    /// Copy result paths to clipboard
-    func copyResultPaths() {
-        let paths = results.map(\.filePath).joined(separator: "\n")
-        let pasteboard = NSPasteboard.general
-        pasteboard.clearContents()
-        pasteboard.setString(paths, forType: .string)
-    }
-
-    /// Export results to file
-    func exportResults() {
-        let panel = NSSavePanel()
-        panel.allowedContentTypes = [.plainText]
-        panel.nameFieldStringValue = "search_results.txt"
-        panel.begin { response in
-            guard response == .OK, let url = panel.url else { return }
-
-            // Header with query info
-            let dateStr = DateFormatter.localizedString(from: Date(), dateStyle: .medium, timeStyle: .short)
-            var lines: [String] = [
-                "MiMiNavigator — Search Results",
-                "Date: \(dateStr)",
-                "Query: \(self.lastSearchSummary)",
-                "Found: \(self.results.count) file(s)",
-                String(repeating: "-", count: 60),
-                ""
-            ]
-
-            // Result lines
-            for result in self.results {
-                var line = result.filePath
-                if let context = result.matchContext, let lineNum = result.lineNumber {
-                    line += ":\(lineNum): \(context)"
-                }
-                if result.isInsideArchive, let archive = result.archivePath {
-                    line = "[\(archive)] \(line)"
-                }
-                lines.append(line)
-            }
-
-            let content = lines.joined(separator: "\n")
-            try? content.write(to: url, atomically: true, encoding: .utf8)
-        }
-    }
-
-    // MARK: - Archive Result Helpers
-    private func archiveInternalPath(for result: FindFilesResult, archivePath: String) -> String {
-        if result.filePath.hasPrefix(archivePath) {
-            return String(result.filePath.dropFirst(archivePath.count))
-                .trimmingCharacters(in: CharacterSet(charactersIn: "/"))
-        }
-        return result.fileName
-    }
-
-    // MARK: - Show in Panel
-
-    /// Convert search results to CustomFile list and inject into the focused panel.
-    /// Regular files become fully navigable.
-    /// Archive entries are extracted via ArchiveManager so individual files appear
-    /// in the panel with full edit/delete support (dirty tracking → repack on close).
-    func showInPanel(appState: AppState) {
-        guard !results.isEmpty else { return }
-        let panel = appState.focusedPanel
-        let capturedResults = results
-
-
-        Task { @MainActor in
-            var customFiles: [CustomFile] = []
-            var openedArchives: Set<String> = []
-            var extractedArchiveDirectories: [String: URL] = [:]
-            let progressPanel = ProgressPanel.shared
-
-            for result in capturedResults {
-                if result.isInsideArchive, let archivePath = result.archivePath {
-                    let archiveURL = URL(fileURLWithPath: archivePath)
-                    let tempDir: URL
-
-                    if let existingTempDir = extractedArchiveDirectories[archivePath] {
-                        tempDir = existingTempDir
-                    } else {
-                        do {
-                            let (panelView, handle) = showArchiveProgress(for: archiveURL)
-                            tempDir = try await openArchiveWithProgress(
-                                archiveURL,
-                                progressPanel: panelView,
-                                handle: handle
-                            )
-                            panelView.finish(success: true)
-                            extractedArchiveDirectories[archivePath] = tempDir
-                            openedArchives.insert(archivePath)
-                        } catch {
-                            progressPanel.finish(success: false, details: error.localizedDescription)
-                            log.error("[FindFiles] showInPanel: archive extract failed: \(error.localizedDescription)")
-                            let cf = CustomFile(name: result.fileName, path: archivePath)
-                            if !customFiles.contains(where: { $0.id == cf.id }) {
-                                customFiles.append(cf)
-                            }
-                            continue
-                        }
-                    }
-
-                    let internalPath = archiveInternalPath(for: result, archivePath: archivePath)
-                    let extractedURL = tempDir.appendingPathComponent(internalPath)
-
-                    if FileManager.default.fileExists(atPath: extractedURL.path) {
-                        let cf = CustomFile(
-                            extractedPath: extractedURL.path,
-                            archiveSourcePath: archivePath,
-                            archiveInternalPath: internalPath
-                        )
-                        customFiles.append(cf)
-                    } else {
-                        log.warning("[FindFiles] showInPanel: extracted file not found: \(extractedURL.path)")
-                        let cf = CustomFile(name: result.fileName, path: archivePath)
-                        if !customFiles.contains(where: { $0.id == cf.id }) {
-                            customFiles.append(cf)
-                        }
-                    }
-                } else {
-                    let cf = CustomFile(name: result.fileName, path: result.filePath)
-                    customFiles.append(cf)
-                }
-            }
-
-            appState.searchResultArchives[panel] = openedArchives
-            let virtualPath = "\u{1F50D} Search Results"
-            appState.showSearchResults(customFiles, virtualPath: virtualPath, on: panel)
-            log.info("[FindFiles] showInPanel: \(customFiles.count) files (\(openedArchives.count) archives)")
-        }
-    }
-
-    // MARK: - Persistence
-
-    private func saveResults() {
-        guard !results.isEmpty else { return }
-        do {
-            let payload = SavedSearchPayload(summary: lastSearchSummary, results: results)
-            let data = try JSONEncoder().encode(payload)
-            try data.write(to: Self.savedResultsURL, options: .atomic)
-            log.info("[FindFiles] Saved \(results.count) results to disk")
-        } catch {
-            log.warning("[FindFiles] Failed to save results: \(error.localizedDescription)")
-        }
-    }
-
-    private func loadSavedResults() {
-        guard FileManager.default.fileExists(atPath: Self.savedResultsURL.path) else { return }
-        do {
-            let data = try Data(contentsOf: Self.savedResultsURL)
-            let payload = try JSONDecoder().decode(SavedSearchPayload.self, from: data)
-            results = payload.results
-            lastSearchSummary = payload.summary
-            searchState = .completed
-            log.info("[FindFiles] Loaded \(results.count) saved results from disk")
-        } catch {
-            log.warning("[FindFiles] Failed to load saved results: \(error.localizedDescription)")
-        }
-    }
 }
 
 // MARK: - Saved Search Payload
-/// Container for persisting search results between dialog sessions
-private struct SavedSearchPayload: Codable {
+struct SavedSearchPayload: Codable {
     let summary: String
     let results: [FindFilesResult]
 }
