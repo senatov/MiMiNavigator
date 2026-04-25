@@ -167,7 +167,7 @@ final class PathNavigationService {
             return
         }
 
-        appState.updatePath(target.urlForAppState, for: side)
+        appState.updateKnownDirectoryPath(target.urlForAppState, for: side)
         await setDirectory(path: target.pathForScanner, side: side)
         await refresh(side: side)
     }

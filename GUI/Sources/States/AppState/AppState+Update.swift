@@ -86,6 +86,10 @@ extension AppState {
         updatePath(URL(fileURLWithPath: pathString), for: panel)
     }
 
+    func updateKnownDirectoryPath(_ url: URL, for panel: FavPanelSide) {
+        applyPathUpdate(url.standardizedFileURL, isDir: true, for: panel)
+    }
+
     func updatePath(_ newURL: URL, for panel: FavPanelSide) {
         // guard: mangled remote URL wrapped in fileURLWithPath — bail early
         if Self.isRemotePath(newURL) && newURL.scheme == "file" {

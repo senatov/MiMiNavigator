@@ -31,7 +31,7 @@ extension AppState {
             return
         }
 
-        updatePath(newPath, for: panel)
+        updateKnownDirectoryPath(URL(fileURLWithPath: newPath), for: panel)
         setSelectedFile(nil, for: panel)
         multiSelectionManager?.resetAnchor(for: panel)
 

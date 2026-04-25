@@ -52,12 +52,95 @@ enum FileScanner {
     private static let localPrefetchKeySet = Set(localPrefetchKeys)
     private static let mountedVolumePrefetchKeySet = Set(mountedVolumePrefetchKeys)
 
+    private static let iCloudDriveVisibleContainers: [(containerName: String, displayName: String)] = [
+        ("iCloud~is~workflow~my~workflows", "Shortcuts"),
+        ("iCloud~com~apple~shortcuts~runtime", "Shortcuts"),
+        ("iCloud~com~pixelmatorteam~photo", "Photomator"),
+        ("iCloud~com~apple~Playgrounds", "Swift Playground"),
+        ("com~apple~Preview", "Preview"),
+        ("com~apple~Pages", "Pages"),
+        ("com~apple~Numbers", "Numbers"),
+    ]
+
     private static func prefetchConfiguration(for url: URL) -> ([URLResourceKey], Set<URLResourceKey>) {
         let isMountedVolumePath = url.path.hasPrefix("/Volumes/") && url.path != "/Volumes"
         if isMountedVolumePath {
             return (mountedVolumePrefetchKeys, mountedVolumePrefetchKeySet)
         }
         return (localPrefetchKeys, localPrefetchKeySet)
+    }
+
+    private static func isICloudDriveRoot(_ url: URL) -> Bool {
+        let expected = FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent("Library/Mobile Documents/com~apple~CloudDocs")
+            .standardizedFileURL
+            .path
+        return url.standardizedFileURL.path == expected
+    }
+
+    private static func iCloudMobileDocumentsRoot(for cloudDocsURL: URL) -> URL {
+        cloudDocsURL
+            .deletingLastPathComponent()
+            .standardizedFileURL
+    }
+
+    private static func finderVisibleICloudContainerEntries(showHiddenFiles: Bool, cloudDocsURL: URL) -> [CustomFile] {
+        let mobileDocumentsURL = iCloudMobileDocumentsRoot(for: cloudDocsURL)
+        let fileManager = FileManager.default
+        let options: FileManager.DirectoryEnumerationOptions = showHiddenFiles ? [] : [.skipsHiddenFiles]
+
+        guard let containers = try? fileManager.contentsOfDirectory(
+            at: mobileDocumentsURL,
+            includingPropertiesForKeys: [.isDirectoryKey, .isHiddenKey, .contentModificationDateKey],
+            options: options
+        ) else {
+            return []
+        }
+
+        let containersByName = Dictionary(
+            containers.map { ($0.lastPathComponent, $0) },
+            uniquingKeysWith: { first, _ in first }
+        )
+        var seenNames = Set<String>()
+        var entries: [CustomFile] = []
+
+        for visibleContainer in iCloudDriveVisibleContainers {
+            guard let containerURL = containersByName[visibleContainer.containerName],
+                  seenNames.insert(visibleContainer.displayName).inserted
+            else {
+                continue
+            }
+
+            let documentsURL = containerURL.appendingPathComponent("Documents", isDirectory: true)
+            var isDirectory: ObjCBool = false
+            guard fileManager.fileExists(atPath: documentsURL.path, isDirectory: &isDirectory),
+                  isDirectory.boolValue
+            else {
+                continue
+            }
+
+            entries.append(CustomFile(name: visibleContainer.displayName, path: documentsURL.path))
+        }
+
+        return entries
+    }
+
+    private static func mergedICloudDriveRootContents(
+        actualContents: [CustomFile],
+        showHiddenFiles: Bool,
+        cloudDocsURL: URL
+    ) -> [CustomFile] {
+        guard isICloudDriveRoot(cloudDocsURL) else { return actualContents }
+
+        var seenPaths = Set(actualContents.map(\.pathStr))
+        var merged = actualContents
+
+        for entry in finderVisibleICloudContainerEntries(showHiddenFiles: showHiddenFiles, cloudDocsURL: cloudDocsURL) {
+            guard seenPaths.insert(entry.pathStr).inserted else { continue }
+            merged.append(entry)
+        }
+
+        return merged
     }
 
     // MARK: - Scan directory contents
@@ -144,6 +227,11 @@ enum FileScanner {
             result.append(file)
         }
 
+        result = mergedICloudDriveRootContents(
+            actualContents: result,
+            showHiddenFiles: showHiddenFiles,
+            cloudDocsURL: url
+        )
         result.sort(by: groupedNameComparator)
         let elapsed = CFAbsoluteTimeGetCurrent() - startTime
         log.debug("[FileScanner] scan done: \(result.count) items in \(String(format: "%.3f", elapsed))s")
