@@ -15,6 +15,10 @@ struct PanelState {
     /// Current directory URL
     var currentDirectory: URL
 
+    /// Optional user-facing breadcrumb path, e.g. "$HOME/Library".
+    /// Scanner and file operations continue to use currentDirectory.
+    var breadcrumbDisplayPath: String?
+
     /// Currently selected file
     var selectedFile: CustomFile?
 

@@ -130,6 +130,10 @@ final class AppState {
         }
     }
 
+    func breadcrumbDisplayPath(for panel: FavPanelSide) -> String {
+        self[panel: panel].breadcrumbDisplayPath ?? path(for: panel)
+    }
+
     func setPath(_ path: String, for panel: FavPanelSide) {
         log.debug("[AppState] setPath panel=\(panel) path=\(path)")
         if panel == .left {

@@ -16,6 +16,8 @@ struct ExpandableSegmentButton: View {
 
     let segment: BreadCrumbView.DisplaySegment
     let textColor: Color      // breadcrumbText(Active|Inactive) from theme
+    let variableTextColor: Color
+    let variableItalic: Bool
     let fontSize: CGFloat     // breadcrumbFontSize from theme
     let onTap: () -> Void
     let helpText: String
@@ -28,11 +30,20 @@ struct ExpandableSegmentButton: View {
         (isHovered && segment.isTruncated) ? segment.fullName : segment.text
     }
 
+    private var displayColor: Color {
+        segment.isEnvironmentVariable ? variableTextColor : textColor
+    }
+
+    private var displayFont: Font {
+        let base = Font.system(size: fontSize, weight: .regular, design: .rounded)
+        return segment.isEnvironmentVariable && variableItalic ? base.italic() : base
+    }
+
     var body: some View {
         Button(action: onTap) {
             Text(displayText)
-                .font(.system(size: fontSize, weight: .regular, design: .rounded))
-                .foregroundStyle(textColor)
+                .font(displayFont)
+                .foregroundStyle(displayColor)
                 .kerning(0.1)
                 .padding(.vertical, 2)
                 .padding(.horizontal, isHovered && segment.isTruncated ? 4 : 0)

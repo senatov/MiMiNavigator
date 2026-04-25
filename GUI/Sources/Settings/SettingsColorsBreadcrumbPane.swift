@@ -17,7 +17,9 @@ struct SettingsColorsBreadcrumbPane: View, ColorPaneHelpers {
     @AppStorage("color.breadcrumbTextInactive") private var hexTextInactive: String = ""
     @AppStorage("color.breadcrumbBgActive")     private var hexBgActive:     String = ""
     @AppStorage("color.breadcrumbBgInactive")   private var hexBgInactive:   String = ""
+    @AppStorage("color.breadcrumbVariable")     private var hexVariable:     String = ""
     @AppStorage("breadcrumb.fontSize")          private var storedFontSize:  Double = 0
+    @AppStorage("breadcrumb.variableItalic")    private var variableItalic:  Bool = true
 
     private var preset: ColorTheme { ColorThemeStore.shared.activeTheme }
 
@@ -38,6 +40,9 @@ struct SettingsColorsBreadcrumbPane: View, ColorPaneHelpers {
                     colorRow("Inactive panel", help: "Path text color — unfocused panel",
                              preset: preset.breadcrumbTextInactive, hex: $hexTextInactive, store: store)
                     Divider()
+                    colorRow("Environment variable", help: "Text color for $VAR path segments",
+                             preset: preset.breadcrumbVariableColor, hex: $hexVariable, store: store)
+                    Divider()
                     sectionHeader("Background")
                     colorRow("Active panel",   help: "BreadCrumb bar background — focused",
                              preset: preset.breadcrumbBgActive,     hex: $hexBgActive,     store: store)
@@ -57,6 +62,10 @@ struct SettingsColorsBreadcrumbPane: View, ColorPaneHelpers {
                         store.breadcrumbFontSize = storedFontSize
                         store.reloadOverrides()
                     }
+                    Divider()
+                    Toggle("Italic environment variables", isOn: $variableItalic)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 8)
                 }
             }
 
@@ -84,8 +93,10 @@ struct SettingsColorsBreadcrumbPane: View, ColorPaneHelpers {
 
             resetButton {
                 hexTextActive = ""; hexTextInactive = ""
+                hexVariable = ""
                 hexBgActive   = ""; hexBgInactive   = ""
                 storedFontSize = 0
+                variableItalic = true
                 store.breadcrumbFontSize = 0
                 store.reloadOverrides()
             }
@@ -95,15 +106,15 @@ struct SettingsColorsBreadcrumbPane: View, ColorPaneHelpers {
     // MARK: - crumbPreview helper
     private func crumbPreview(text: Color, bg: Color, alpha: Double) -> some View {
         HStack(spacing: 4) {
-            ForEach(["Applications", "Utilities", "Terminal"], id: \.self) { seg in
-                if seg != "Applications" {
+            ForEach(["$HOME", "Library", "Mobile Documents"], id: \.self) { seg in
+                if seg != "$HOME" {
                     Image(systemName: "arrowtriangle.forward")
                         .font(.system(size: 8))
                         .foregroundStyle(text.opacity(0.5))
                 }
                 Text(seg)
-                    .font(.system(size: previewFontSize, weight: .regular, design: .rounded))
-                    .foregroundStyle(text)
+                    .font(previewFont(for: seg))
+                    .foregroundStyle(seg.hasPrefix("$") ? (Color(hex: hexVariable) ?? preset.breadcrumbVariableColor) : text)
                     .kerning(0.1)
             }
         }
@@ -114,5 +125,10 @@ struct SettingsColorsBreadcrumbPane: View, ColorPaneHelpers {
                 .stroke(Color(nsColor: NSColor(calibratedRed: 0.08, green: 0.13, blue: 0.32, alpha: alpha)),
                         lineWidth: 0.75)
         )
+    }
+
+    private func previewFont(for segment: String) -> Font {
+        let base = Font.system(size: previewFontSize, weight: .regular, design: .rounded)
+        return segment.hasPrefix("$") && variableItalic ? base.italic() : base
     }
 }

@@ -40,6 +40,7 @@ final class PathNavigationService {
     private struct NavigationTarget {
         let urlForAppState: URL
         let pathForScanner: String
+        let displayPath: String?
     }
 
     private func parseTarget(from input: String) -> NavigationTarget? {
@@ -51,7 +52,7 @@ final class PathNavigationService {
             return makeRemoteTarget(from: remoteURL)
         }
 
-        // Local: expand tilde and normalize.
+        // Local: expand tilde/environment variables and normalize.
         return makeLocalTarget(from: trimmed)
     }
 
@@ -85,8 +86,15 @@ final class PathNavigationService {
         makeNavigationTarget(url: remoteURL, scannerPath: remoteURL.absoluteString)
     }
 
-    private func localFileURL(from input: String) -> URL {
-        let expanded = (input as NSString).expandingTildeInPath
+    private func expandedLocalInput(_ input: String) -> (path: String, displayPath: String?)? {
+        guard let expansion = PathEnvironmentResolver.expand(input) else { return nil }
+        let expanded = (expansion.expanded as NSString).expandingTildeInPath
+        return (expanded, expansion.containsVariable ? expansion.original : nil)
+    }
+
+    private func localFileURL(from input: String) -> URL? {
+        guard let resolved = expandedLocalInput(input) else { return nil }
+        let expanded = resolved.path
         if let url = URL(string: expanded), url.isFileURL {
             return url
         }
@@ -94,9 +102,20 @@ final class PathNavigationService {
     }
 
     private func makeLocalTarget(from input: String) -> NavigationTarget {
-        let fileURL = localFileURL(from: input)
+        guard let fileURL = localFileURL(from: input),
+              let resolved = expandedLocalInput(input)
+        else {
+            return makeNavigationTarget(url: URL(fileURLWithPath: input), scannerPath: input, displayPath: nil)
+        }
         let normalizedDirURL = normalizeToDirectory(fileURL)
-        return makeNavigationTarget(url: normalizedDirURL, scannerPath: normalizedDirURL.path)
+        let normalizedDisplayPath = resolved.displayPath.flatMap {
+            PathEnvironmentResolver.symbolicPath(forResolvedPath: normalizedDirURL.path, preserving: $0) ?? $0
+        }
+        return makeNavigationTarget(
+            url: normalizedDirURL,
+            scannerPath: normalizedDirURL.path,
+            displayPath: normalizedDisplayPath
+        )
     }
 
     private func isRemoteTarget(_ target: NavigationTarget) -> Bool {
@@ -108,8 +127,8 @@ final class PathNavigationService {
         input.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
-    private func makeNavigationTarget(url: URL, scannerPath: String) -> NavigationTarget {
-        NavigationTarget(urlForAppState: url, pathForScanner: scannerPath)
+    private func makeNavigationTarget(url: URL, scannerPath: String, displayPath: String? = nil) -> NavigationTarget {
+        NavigationTarget(urlForAppState: url, pathForScanner: scannerPath, displayPath: displayPath)
     }
 
     // MARK: - Public API
@@ -167,7 +186,7 @@ final class PathNavigationService {
             return
         }
 
-        appState.updateKnownDirectoryPath(target.urlForAppState, for: side)
+        appState.updateKnownDirectoryPath(target.urlForAppState, for: side, displayPath: target.displayPath)
         await setDirectory(path: target.pathForScanner, side: side)
         await refresh(side: side)
     }

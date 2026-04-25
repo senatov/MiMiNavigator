@@ -256,7 +256,7 @@ struct BreadCrumbControlWrapper: View {
 
     // MARK: - Helpers
     private var currentPath: String {
-        appState.path(for: panelSide)
+        appState.breadcrumbDisplayPath(for: panelSide)
     }
 
     private var navigator: PathNavigationService {
@@ -277,7 +277,12 @@ struct BreadCrumbControlWrapper: View {
             return true
         }
 
-        let url = URL(fileURLWithPath: path)
+        guard let resolved = PathEnvironmentResolver.expand(path) else {
+            log.error("Path contains unresolved environment variable: \(path)")
+            return false
+        }
+
+        let url = URL(fileURLWithPath: (resolved.expanded as NSString).expandingTildeInPath)
         guard FileManager.default.fileExists(atPath: url.path) else {
             log.error("Path does not exist: \(path)")
             return false

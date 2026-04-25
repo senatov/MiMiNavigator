@@ -117,12 +117,15 @@ struct PathAutoCompleteField: View {
 
     // MARK: - Update Suggestions
     private func updateSuggestions(for path: String) {
-        guard isValidAbsolutePath(path) else {
+        guard let resolvedPath = expandedPath(path),
+              isValidAbsolutePath(resolvedPath)
+        else {
             dismissPopup()
             return
         }
 
-        let (dirURL, prefix) = splitPathAndPrefix(path)
+        let (dirURL, _) = splitPathAndPrefix(resolvedPath)
+        let prefix = splitDisplayPathAndPrefix(path).prefix
 
         guard directoryExists(dirURL) else {
             dismissPopup()
@@ -142,6 +145,11 @@ struct PathAutoCompleteField: View {
 
     private func isValidAbsolutePath(_ path: String) -> Bool {
         !path.isEmpty && path.hasPrefix("/")
+    }
+
+    private func expandedPath(_ path: String) -> String? {
+        guard let resolved = PathEnvironmentResolver.expand(path) else { return nil }
+        return (resolved.expanded as NSString).expandingTildeInPath
     }
 
     private func directoryExists(_ url: URL) -> Bool {
@@ -215,10 +223,11 @@ struct PathAutoCompleteField: View {
 
     // MARK: - Apply Suggestion
     private func applySuggestion(_ name: String) {
-        let (dirURL, _) = splitPathAndPrefix(text)
-        let fullPath = dirURL.appendingPathComponent(name).path
+        let displayParts = splitDisplayPathAndPrefix(text)
+        let fullPath = appendDisplayComponent(name, to: displayParts.directory)
+        let resolvedFullPath = expandedPath(fullPath) ?? fullPath
         suppressOnChange = true
-        if isDirAtURL(URL(fileURLWithPath: fullPath)) {
+        if isDirAtURL(URL(fileURLWithPath: resolvedFullPath)) {
             text = fullPath + "/"
         } else {
             text = fullPath
@@ -256,6 +265,22 @@ struct PathAutoCompleteField: View {
     }
 
     // MARK: - Helpers
+    private func splitDisplayPathAndPrefix(_ path: String) -> (directory: String, prefix: String) {
+        if path.hasSuffix("/") {
+            return (String(path.dropLast()), "")
+        }
+
+        let nsPath = path as NSString
+        let directory = nsPath.deletingLastPathComponent
+        return (directory == "." ? "" : directory, nsPath.lastPathComponent)
+    }
+
+    private func appendDisplayComponent(_ component: String, to directory: String) -> String {
+        guard !directory.isEmpty else { return component }
+        guard directory != "/" else { return "/" + component }
+        return directory + "/" + component
+    }
+
     private func splitPathAndPrefix(_ path: String) -> (URL, String) {
         if path.hasSuffix("/") {
             return (URL(fileURLWithPath: path), "")
@@ -265,7 +290,7 @@ struct PathAutoCompleteField: View {
         }
     }
 
-    private func currentPrefix() -> String { splitPathAndPrefix(text).1 }
+    private func currentPrefix() -> String { splitDisplayPathAndPrefix(text).prefix }
 
     private func isDirAtURL(_ url: URL) -> Bool {
         var isDir: ObjCBool = false

@@ -71,7 +71,9 @@ final class ColorThemeStore {
     @ObservationIgnored @AppStorage("color.breadcrumbTextInactive") var hexBreadcrumbTextInactive: String = ""
     @ObservationIgnored @AppStorage("color.breadcrumbBgActive")     var hexBreadcrumbBgActive: String = ""
     @ObservationIgnored @AppStorage("color.breadcrumbBgInactive")   var hexBreadcrumbBgInactive: String = ""
+    @ObservationIgnored @AppStorage("color.breadcrumbVariable")     var hexBreadcrumbVariable: String = ""
     @ObservationIgnored @AppStorage("breadcrumb.fontSize")          var breadcrumbFontSize: Double = 0
+    @ObservationIgnored @AppStorage("breadcrumb.variableItalic")    var breadcrumbVariableItalic: Bool = true
 
     // Button appearance
     @ObservationIgnored @AppStorage("button.borderColor")    var hexButtonBorder: String = ""
@@ -192,6 +194,7 @@ final class ColorThemeStore {
         if let c = Color(hex: ud("color.breadcrumbTextInactive")) { theme.breadcrumbTextInactive = c }
         if let c = Color(hex: ud("color.breadcrumbBgActive"))     { theme.breadcrumbBgActive = c }
         if let c = Color(hex: ud("color.breadcrumbBgInactive"))   { theme.breadcrumbBgInactive = c }
+        if let c = Color(hex: ud("color.breadcrumbVariable"))     { theme.breadcrumbVariableColor = c }
         let fs = udD("breadcrumb.fontSize")
         if fs > 0 { theme.breadcrumbFontSize = CGFloat(fs) }
         return theme
@@ -209,7 +212,7 @@ final class ColorThemeStore {
             "color.warmWhite", "color.zebraActiveEven", "color.zebraActiveOdd",
             "color.zebraInactiveEven", "color.zebraInactiveOdd", "color.filterActive",
             "color.breadcrumbTextActive", "color.breadcrumbTextInactive",
-            "color.breadcrumbBgActive", "color.breadcrumbBgInactive"
+            "color.breadcrumbBgActive", "color.breadcrumbBgInactive", "color.breadcrumbVariable"
         ]
         return keys.filter { !ud($0).isEmpty }.count
     }
@@ -243,7 +246,9 @@ final class ColorThemeStore {
         hexFilterActive = ""
         hexBreadcrumbTextActive = ""; hexBreadcrumbTextInactive = ""
         hexBreadcrumbBgActive = "";   hexBreadcrumbBgInactive = ""
+        hexBreadcrumbVariable = ""
         breadcrumbFontSize = 0
+        breadcrumbVariableItalic = true
         loadTheme(id: theme.id)
     }
 }

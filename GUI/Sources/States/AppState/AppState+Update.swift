@@ -86,8 +86,8 @@ extension AppState {
         updatePath(URL(fileURLWithPath: pathString), for: panel)
     }
 
-    func updateKnownDirectoryPath(_ url: URL, for panel: FavPanelSide) {
-        applyPathUpdate(url.standardizedFileURL, isDir: true, for: panel)
+    func updateKnownDirectoryPath(_ url: URL, for panel: FavPanelSide, displayPath: String? = nil) {
+        applyPathUpdate(url.standardizedFileURL, isDir: true, for: panel, displayPath: displayPath)
     }
 
     func updatePath(_ newURL: URL, for panel: FavPanelSide) {
@@ -144,10 +144,20 @@ extension AppState {
     }
 
     /// Apply resolved path — pure MainActor UI update, no IO
-    private func applyPathUpdate(_ normalizedURL: URL, isDir: Bool, for panel: FavPanelSide) {
+    private func applyPathUpdate(_ normalizedURL: URL, isDir: Bool, for panel: FavPanelSide, displayPath: String? = nil) {
         log.debug("\(#function) \(panel) → \(normalizedURL.path) isDir=\(isDir)")
         focusedPanel = panel
         updateTabPath(normalizedURL, for: panel)
+        if let displayPath {
+            self[panel: panel].breadcrumbDisplayPath = displayPath
+        } else if let preserved = PathEnvironmentResolver.symbolicPath(
+            forResolvedPath: normalizedURL.path,
+            preserving: self[panel: panel].breadcrumbDisplayPath
+        ) {
+            self[panel: panel].breadcrumbDisplayPath = preserved
+        } else {
+            self[panel: panel].breadcrumbDisplayPath = nil
+        }
         if !isNavigatingFromHistory {
             // Remote paths are always directory-like — record regardless of isDir flag
             if isDir || Self.isRemotePath(normalizedURL) {

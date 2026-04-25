@@ -92,6 +92,7 @@ struct BreadCrumbView: View {
         let text: String  // shown (may be truncated)
         let fullName: String  // full name for tooltip + hover-expand
         let originalIndex: Int  // index in pathComponents for navigation
+        let isEnvironmentVariable: Bool
         var isTruncated: Bool { text != fullName }
     }
 
@@ -100,12 +101,14 @@ struct BreadCrumbView: View {
     ///   remote  → ["SFTP demo@host", "pub", "docs"]   (first segment = origin label)
     ///   archive → ["archive.zip", "subdir"]
     ///   local   → ["Users", "senat", "Develop"]
-    private var pathComponents: [String] {
+    private var pathComponents: [BreadCrumbDisplayComponent] {
         let panelURL = panelURL
 
         // ── Remote (SFTP / FTP) ──────────────────────────────────────────────
         if AppState.isRemotePath(panelURL) {
-            return remoteComponents(for: panelURL)
+            return remoteComponents(for: panelURL).map {
+                BreadCrumbDisplayComponent(text: $0, isEnvironmentVariable: false)
+            }
         }
 
         // ── Archive (virtual) ────────────────────────────────────────────────
@@ -117,14 +120,24 @@ struct BreadCrumbView: View {
                 currentPath: panelURL.path,
                 archiveName: archiveURL.lastPathComponent,
                 tempDir: tempDir.standardizedFileURL.path
-            )
+            ).map { BreadCrumbDisplayComponent(text: $0, isEnvironmentVariable: false) }
         }
 
         // ── Local filesystem ─────────────────────────────────────────────────
-        return panelURL.path
-            .split(separator: "/")
-            .map(String.init)
-            .filter { !$0.isEmpty }
+        return PathEnvironmentResolver.displayComponents(from: appState.breadcrumbDisplayPath(for: panelSide))
+    }
+
+    private var pathComponentTexts: [String] {
+        pathComponents.map(\.text)
+    }
+
+    private var localDisplayPath: String {
+        appState.breadcrumbDisplayPath(for: panelSide)
+    }
+
+    private func makeLocalDisplayPath(through index: Int) -> String {
+        let joined = pathComponentTexts.prefix(index + 1).joined(separator: "/")
+        return localDisplayPath.hasPrefix("/") ? "/" + joined : joined
     }
 
     // MARK: - remoteComponents
@@ -196,20 +209,32 @@ struct BreadCrumbView: View {
         guard !components.isEmpty else { return [] }
 
         if components.count == 1 {
-            return [DisplaySegment(text: components[0], fullName: components[0], originalIndex: 0)]
+            return [
+                DisplaySegment(
+                    text: components[0].text,
+                    fullName: components[0].text,
+                    originalIndex: 0,
+                    isEnvironmentVariable: components[0].isEnvironmentVariable
+                )
+            ]
         }
 
         let charWidth: CGFloat = 7.5
         let totalSepWidth = CGFloat(components.count - 1) * separatorWidth
         let budgetForText = availableWidth - totalSepWidth - 16
 
-        let widths = components.map { CGFloat($0.count) * charWidth }
+        let widths = components.map { CGFloat($0.text.count) * charWidth }
         let totalWidth = widths.reduce(0, +)
 
         if totalWidth <= budgetForText {
             return components.enumerated()
-                .map { i, name in
-                    DisplaySegment(text: name, fullName: name, originalIndex: i)
+                .map { i, component in
+                    DisplaySegment(
+                        text: component.text,
+                        fullName: component.text,
+                        originalIndex: i,
+                        isEnvironmentVariable: component.isEnvironmentVariable
+                    )
                 }
         }
 
@@ -222,8 +247,9 @@ struct BreadCrumbView: View {
             var priority: Int
         }
         var segs = components.enumerated()
-            .map { i, name in
-                Seg(
+            .map { i, component in
+                let name = component.text
+                return Seg(
                     index: i, name: name, display: name, width: widths[i],
                     priority: truncPriority(index: i, total: components.count, len: name.count))
             }
@@ -243,7 +269,14 @@ struct BreadCrumbView: View {
             segs[idx].width = newWidth
             segs[idx].priority = 0
         }
-        return segs.map { DisplaySegment(text: $0.display, fullName: $0.name, originalIndex: $0.index) }
+        return segs.map {
+            DisplaySegment(
+                text: $0.display,
+                fullName: $0.name,
+                originalIndex: $0.index,
+                isEnvironmentVariable: components[$0.index].isEnvironmentVariable
+            )
+        }
     }
 
     // MARK: - truncPriority — never truncate first/last; longer middle first
@@ -267,7 +300,7 @@ struct BreadCrumbView: View {
             return origin + "/"
         }
 
-        let parts = Array(pathComponents[1...segment.originalIndex])
+        let parts = Array(pathComponentTexts[1...segment.originalIndex])
         return origin + "/" + parts.joined(separator: "/")
     }
 
@@ -275,12 +308,12 @@ struct BreadCrumbView: View {
         guard let tempDir = archiveTempDir else { return nil }
         guard segment.originalIndex > 0 else { return nil }
 
-        let sub = Array(pathComponents[1...segment.originalIndex])
+        let sub = Array(pathComponentTexts[1...segment.originalIndex])
         return tempDir.standardizedFileURL.path + "/" + sub.joined(separator: "/")
     }
 
     private func localTargetPath(for segment: DisplaySegment) -> String {
-        ("/" + pathComponents.prefix(segment.originalIndex + 1).joined(separator: "/"))
+        makeLocalDisplayPath(through: segment.originalIndex)
             .replacingOccurrences(of: "//", with: "/")
     }
 
@@ -297,6 +330,8 @@ struct BreadCrumbView: View {
         ExpandableSegmentButton(
             segment: segment,
             textColor: textColor,
+            variableTextColor: colorStore.activeTheme.breadcrumbVariableColor,
+            variableItalic: colorStore.breadcrumbVariableItalic,
             fontSize: fontSize,
             onTap: { handleTap(segment: segment) },
             helpText: tooltip(for: segment),
@@ -336,7 +371,7 @@ struct BreadCrumbView: View {
             if segment.originalIndex == 0 {
                 return "🌐 \(segment.fullName) — tap to go to root"
             }
-            let parts = Array(pathComponents[1...segment.originalIndex])
+            let parts = Array(pathComponentTexts[1...segment.originalIndex])
             return "📂 /\(parts.joined(separator: "/"))"
         }
 
@@ -344,11 +379,11 @@ struct BreadCrumbView: View {
             if segment.originalIndex == 0 {
                 return "📦 \(segment.fullName) — tap to exit archive"
             }
-            let parts = pathComponents.prefix(segment.originalIndex + 1)
+            let parts = pathComponentTexts.prefix(segment.originalIndex + 1)
             return "📂 \(parts.joined(separator: "/"))"
         }
 
-        let fullPath = "/" + pathComponents.prefix(segment.originalIndex + 1).joined(separator: "/")
+        let fullPath = makeLocalDisplayPath(through: segment.originalIndex)
         return "📂 Open \(fullPath)"
     }
 
@@ -360,7 +395,7 @@ struct BreadCrumbView: View {
                 ?? segment.fullName
         }
 
-        let parts = Array(pathComponents[1...segment.originalIndex])
+        let parts = Array(pathComponentTexts[1...segment.originalIndex])
         return "/" + parts.joined(separator: "/")
     }
 
@@ -370,7 +405,7 @@ struct BreadCrumbView: View {
         }
 
         guard let tempDir = archiveTempDir else { return "" }
-        let sub = Array(pathComponents[1...segment.originalIndex])
+        let sub = Array(pathComponentTexts[1...segment.originalIndex])
         return tempDir.standardizedFileURL.path + "/" + sub.joined(separator: "/")
     }
 
@@ -383,7 +418,7 @@ struct BreadCrumbView: View {
         } else if isInsideArchive {
             pathToCopy = archiveCopyPath(for: segment)
         } else {
-            pathToCopy = "/" + pathComponents.prefix(segment.originalIndex + 1).joined(separator: "/")
+            pathToCopy = makeLocalDisplayPath(through: segment.originalIndex)
         }
 
         NSPasteboard.general.clearContents()
