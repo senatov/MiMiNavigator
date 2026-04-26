@@ -85,7 +85,7 @@ struct BreadCrumbToolBar: View {
     private func backButton() -> some View {
         let canGoBack = appState.navigationHistory(for: panelSide).canGoBack
         return ToolBarIconButton(
-            iconName: "chevron.left",
+            iconName: "arrowshape.turn.up.backward",
             iconColor: iconColor,
             isEnabled: canGoBack,
             action: { handleBackTap(canGoBack: canGoBack) }
@@ -103,7 +103,7 @@ struct BreadCrumbToolBar: View {
     // MARK: - Up Button
     private func upButton() -> some View {
         ToolBarIconButton(
-            iconName: "chevron.up",
+            iconName: "arrowshape.up",
             iconColor: iconColor,
             action: { handleNavigateUp() }
         )
@@ -115,7 +115,7 @@ struct BreadCrumbToolBar: View {
     private func forwardButton() -> some View {
         let canGoForward = appState.navigationHistory(for: panelSide).canGoForward
         return ToolBarIconButton(
-            iconName: "chevron.right",
+            iconName: "arrowshape.turn.up.forward",
             iconColor: iconColor,
             isEnabled: canGoForward,
             action: { handleForwardTap(canGoForward: canGoForward) }

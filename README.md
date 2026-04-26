@@ -115,7 +115,7 @@ MiMiNavigator is a dual-panel file manager inspired by **Total Commander** and *
 | **Archive VFS** | Open archives as virtual directories, navigate inside, auto-repack on exit |
 | **Parent Directory** | `...` entry pinned to top of every panel, archive-aware navigation |
 | **Navigation History** | Per-panel history with quick-jump popover |
-| **Breadcrumb Nav** | Click-to-navigate path bar with autocomplete popup (ESC/click-outside dismiss, slide animation) |
+| **Breadcrumb Nav** | Click-to-navigate path bar with arrowshape back/forward/up controls and autocomplete popup (ESC/click-outside dismiss, slide animation) |
 | **Favorites Sidebar** | Quick access to bookmarked locations (FavoritesKit package) |
 | **Real-time Updates** | Automatic refresh on file system changes |
 | **FTP/SFTP** | Remote file browsing via curl (FTP) and Citadel/NIOSSH (SFTP) |
