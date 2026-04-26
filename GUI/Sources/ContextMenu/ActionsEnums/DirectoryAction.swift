@@ -30,7 +30,6 @@ enum DirectoryAction: String, CaseIterable, Identifiable {
     case share
     
     // Danger zone
-    case rename
     case delete
     
     // Info section
@@ -65,7 +64,6 @@ enum DirectoryAction: String, CaseIterable, Identifiable {
         case .pack: return "Pack..."
         case .createLink: return "Make Alias"
         case .share: return "Share..."
-        case .rename: return "Rename..."
         case .delete: return "Move to Trash"
         case .getInfo: return "Get Info"
         case .newFolder: return "New Folder"
@@ -93,7 +91,6 @@ enum DirectoryAction: String, CaseIterable, Identifiable {
         case .pack: return "doc.zipper"
         case .createLink: return "link"
         case .share: return "square.and.arrow.up"
-        case .rename: return "pencil"
         case .delete: return "trash"
         case .getInfo: return "info.circle"
         case .newFolder: return "folder.badge.plus"
@@ -115,7 +112,6 @@ enum DirectoryAction: String, CaseIterable, Identifiable {
         case .paste: return "⌘V"
         case .duplicate: return "⌘D"
         case .delete: return "⌘⌫"
-        case .rename: return "↵"
         case .getInfo: return "⌘I"
         case .newFolder: return "⇧⌘N"
         case .mirrorPanel: return "⌘="
@@ -134,7 +130,7 @@ enum DirectoryAction: String, CaseIterable, Identifiable {
     /// Whether this action opens a dialog for input
     var opensDialog: Bool {
         switch self {
-        case .rename, .pack, .createLink: return true
+        case .pack, .createLink: return true
         default: return false
         }
     }

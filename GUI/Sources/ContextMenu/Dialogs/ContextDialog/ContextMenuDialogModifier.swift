@@ -59,7 +59,6 @@ struct ContextMenuDialogModifier: ViewModifier {
     private func dialogContent(for dialog: ActiveDialog) -> some View {
         switch dialog {
             case .deleteConfirmation,
-                 .rename,
                  .pack,
                  .compress,
                  .createFolder,
@@ -78,5 +77,4 @@ struct ContextMenuDialogModifier: ViewModifier {
         }
     }
 }
-
 

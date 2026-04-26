@@ -332,7 +332,6 @@ struct FileContextMenu: View {
             menuButton(.duplicate)
             Divider()
             menuButton(.createLink)
-            menuButton(.rename)
             menuButton(.delete)
             Divider()
             menuButton(.getInfo)

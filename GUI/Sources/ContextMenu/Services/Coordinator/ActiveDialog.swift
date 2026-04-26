@@ -13,7 +13,6 @@ import Foundation
 enum ActiveDialog: Identifiable {
     // MARK: - Single-item dialogs
     case deleteConfirmation(files: [CustomFile])
-    case rename(file: CustomFile, panel: FavPanelSide)
     case pack(files: [CustomFile], destination: URL, sourcePanel: FavPanelSide)
     case compress(files: [CustomFile], destination: URL, sourcePanel: FavPanelSide)
     case createLink(file: CustomFile, destination: URL)
@@ -35,8 +34,6 @@ enum ActiveDialog: Identifiable {
         switch self {
             case .deleteConfirmation:
                 return "delete"
-            case .rename:
-                return "rename"
             case .pack:
                 return "pack"
             case .compress:

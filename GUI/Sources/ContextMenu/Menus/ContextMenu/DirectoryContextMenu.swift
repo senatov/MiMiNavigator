@@ -137,7 +137,6 @@ struct DirectoryContextMenu: View {
                 Label("Make Alias", systemImage: "link")
             }
             Divider()
-            menuButton(.rename)
             menuButton(.delete)
             Divider()
             menuButton(.getInfo)

@@ -26,18 +26,6 @@ extension ContextMenuDialogModifier {
                         coordinator.dismissDialog()
                     }
                 )
-            case .rename(let file, let panel):
-                RenameDialog(
-                    file: file,
-                    onRename: { newName in
-                        Task {
-                            await coordinator.performRename(file: file, newName: newName, panel: panel, appState: appState)
-                        }
-                    },
-                    onCancel: {
-                        coordinator.dismissDialog()
-                    }
-                )
             case .pack, .compress:
                 EmptyView()
             case .createFolder(let parentURL):

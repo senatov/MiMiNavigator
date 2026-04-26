@@ -39,6 +39,7 @@ struct DuoFilePanelView: View {
             geometrySection
 
             DuoPanelBottomToolbarSection(
+                onRename: { actions.performRename() },
                 onView: { actions.performView() },
                 onEdit: { actions.performEdit() },
                 onCopy: { actions.performCopy() },
@@ -342,16 +343,7 @@ extension DuoFilePanelView {
         handler.onOpenSettings = {
             HotKeySettingsCoordinator.shared.showSettings()
         }
-        handler.onRenameFile = { [appState] in
-            let panel = appState.focusedPanel
-            let file = panel == .left ? appState.selectedLeftFile : appState.selectedRightFile
-            guard let file, !file.isParentEntry, file.nameStr != ".." else { return }
-            appState.inlineRename.begin(
-                fileID: AnyHashable(file.id),
-                fileName: file.nameStr,
-                panelTag: panel == .left ? 0 : 1
-            )
-        }
+        handler.onRenameFile = { actions.performRename() }
         handler.register()
         keyboardHandler = handler
         log.debug("\(#function) keyboard handler registered")

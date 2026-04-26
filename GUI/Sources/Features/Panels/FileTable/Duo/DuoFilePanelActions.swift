@@ -61,6 +61,18 @@
             OpenWithService.shared.showOpenWithPicker(for: url)
         }
 
+        // MARK: - F2 Rename
+        func performRename() {
+            log.debug("[Rename] performRename - inline rename requested")
+            let panel = appState.focusedPanel
+            guard let file = currentSelectedFile, !file.isParentEntry, file.nameStr != ".." else { return }
+            appState.inlineRename.begin(
+                fileID: AnyHashable(file.id),
+                fileName: file.nameStr,
+                panelTag: panel == .left ? 0 : 1
+            )
+        }
+
         // MARK: - F5 Copy (supports batch operations)
         func performCopy() {
             log.debug("performCopy - Copy button pressed")

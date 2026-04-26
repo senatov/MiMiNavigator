@@ -242,9 +242,8 @@ class Coordinator: NSObject, NSTableViewDelegate, NSTableViewDataSource, NSMenuD
         addMenuItem(menu, title: "Show in Finder", action: #selector(menuRevealInFinder), key: "", icon: "folder")
         menu.addItem(NSMenuItem.separator())
 
-        // SECTION 5: Rename & Delete (⌥ Option only)
+        // SECTION 5: Delete (⌥ Option only)
         if optionHeld {
-            addMenuItem(menu, title: "Rename...", action: #selector(menuRename), key: "", icon: "pencil")
             addMenuItem(menu, title: "Move to Trash", action: #selector(menuTrash), key: "", icon: "trash")
         }
         menu.addItem(NSMenuItem.separator())
@@ -298,9 +297,8 @@ class Coordinator: NSObject, NSTableViewDelegate, NSTableViewDataSource, NSMenuD
         addMenuItem(menu, title: "Share...", action: #selector(menuShare), key: "", icon: "square.and.arrow.up")
         menu.addItem(NSMenuItem.separator())
 
-        // SECTION 4: Rename & Delete (⌥ Option only)
+        // SECTION 4: Delete (⌥ Option only)
         if optionHeld {
-            addMenuItem(menu, title: "Rename...", action: #selector(menuRename), key: "", icon: "pencil")
             addMenuItem(menu, title: "Move to Trash", action: #selector(menuTrash), key: "", icon: "trash")
         }
         menu.addItem(NSMenuItem.separator())
@@ -489,10 +487,6 @@ class Coordinator: NSObject, NSTableViewDelegate, NSTableViewDataSource, NSMenuD
     @objc private func menuRevealInFinder() {
         guard let file = clickedFile else { return }
         NSWorkspace.shared.selectFile(file.urlValue.path, inFileViewerRootedAtPath: "")
-    }
-
-    @objc private func menuRename() {
-        // TODO: implement inline rename
     }
 
     @objc private func menuTrash() {

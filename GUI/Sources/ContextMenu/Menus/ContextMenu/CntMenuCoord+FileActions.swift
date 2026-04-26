@@ -44,8 +44,6 @@ extension CntMenuCoord {
                 }
             case .createLink:
                 presentCreateLinkDialog(for: file, panel: panel, appState: appState)
-            case .rename:
-                activeDialog = .rename(file: file, panel: panel)
             case .getInfo:
                 GetInfoService.shared.showGetInfo(for: file.urlValue)
             case .cut:

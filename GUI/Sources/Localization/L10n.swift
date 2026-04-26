@@ -18,13 +18,13 @@ enum L10n {
         static let delete = String(localized: "Delete", comment: "Delete button")
         static let copy = String(localized: "Copy", comment: "Copy button")
         static let move = String(localized: "Move", comment: "Move button")
-        static let rename = String(localized: "Rename", comment: "Rename button")
         static let replace = String(localized: "Replace", comment: "Replace button")
         static let select = String(localized: "Select", comment: "Select button")
     }
     
     // MARK: - Toolbar Buttons (labels only, hotkeys added dynamically)
     enum Toolbar {
+        static let rename = String(localized: "Rename", comment: "Rename toolbar button")
         static let view = String(localized: "View", comment: "View toolbar button")
         static let edit = String(localized: "Edit", comment: "Edit toolbar button")
         static let copy = String(localized: "Copy", comment: "Copy toolbar button")
@@ -38,14 +38,6 @@ enum L10n {
     
     // MARK: - Dialog Titles
     enum Dialog {
-        
-        // MARK: Rename
-        enum Rename {
-            static let titleFolder = String(localized: "Rename folder", comment: "Rename folder dialog title")
-            static let titleFile = String(localized: "Rename file", comment: "Rename file dialog title")
-            static let placeholder = String(localized: "Name", comment: "Name field placeholder")
-        }
-        
         // MARK: Copy
         enum Copy {
             static let title = String(localized: "Copy File?", comment: "Copy confirmation dialog title")

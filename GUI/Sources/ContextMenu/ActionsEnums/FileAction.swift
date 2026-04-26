@@ -34,7 +34,6 @@ enum FileAction: String, CaseIterable, Identifiable {
     // Navigation
     case revealInFinder
     // Danger zone
-    case rename
     case delete
     // Info section
     case getInfo
@@ -67,7 +66,6 @@ enum FileAction: String, CaseIterable, Identifiable {
         case .share: return "Share..."
         case .convertMedia: return "Convert Media..."
         case .revealInFinder: return "Show in Finder"
-        case .rename: return "Rename..."
         case .delete: return "Move to Trash"
         case .getInfo: return "Get Info"
         case .newFolder: return "New Folder"
@@ -96,7 +94,6 @@ enum FileAction: String, CaseIterable, Identifiable {
         case .share: return "square.and.arrow.up"
         case .convertMedia: return "arrow.triangle.2.circlepath"
         case .revealInFinder: return "folder"
-        case .rename: return "pencil"
         case .delete: return "trash"
         case .getInfo: return "info.circle"
         case .newFolder: return "folder.badge.plus"
@@ -116,7 +113,6 @@ enum FileAction: String, CaseIterable, Identifiable {
         case .openInNewTab: return "⌘T"
         case .duplicate: return "⌘D"
         case .delete: return "⌘⌫"
-        case .rename: return "↵"
         case .getInfo: return "⌘I"
         case .newFolder: return "⇧⌘N"
         case .viewLister: return "Space"
@@ -136,7 +132,7 @@ enum FileAction: String, CaseIterable, Identifiable {
     /// Whether this action opens a dialog for input
     var opensDialog: Bool {
         switch self {
-        case .rename, .pack, .createLink: return true
+        case .pack, .createLink: return true
         default: return false
         }
     }

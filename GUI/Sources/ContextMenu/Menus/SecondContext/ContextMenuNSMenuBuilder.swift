@@ -53,7 +53,6 @@ enum ContextMenuNSMenuBuilder {
         fileOpsSubmenu.addItem(item(.duplicate, onAction: onAction))
         fileOpsSubmenu.addItem(.separator())
         fileOpsSubmenu.addItem(item(.createLink, onAction: onAction))
-        fileOpsSubmenu.addItem(item(.rename, onAction: onAction))
         fileOpsSubmenu.addItem(item(.delete, onAction: onAction))
         fileOpsSubmenu.addItem(item(.getInfo, onAction: onAction))
         let fileOpsItem = NSMenuItem(title: "􀉒 File Operations", action: nil, keyEquivalent: "")
@@ -104,7 +103,6 @@ enum ContextMenuNSMenuBuilder {
         folderOpsSubmenu.addItem(item(.duplicate, onAction: onAction))
         folderOpsSubmenu.addItem(.separator())
         folderOpsSubmenu.addItem(item(.createLink, onAction: onAction))
-        folderOpsSubmenu.addItem(item(.rename, onAction: onAction))
         folderOpsSubmenu.addItem(item(.delete, onAction: onAction))
         let folderOpsItem = NSMenuItem(title: "􀉒 Folder Operations", action: nil, keyEquivalent: "")
         if let img = NSImage(systemSymbolName: "ellipsis.circle", accessibilityDescription: nil) {
