@@ -32,6 +32,7 @@ enum PanelBackgroundAction: String, CaseIterable, Identifiable {
     // Navigation helpers
     case openInFinder
     case openInTerminal
+    case console
 
     // Cross-panel
     case mirrorPath
@@ -61,6 +62,7 @@ enum PanelBackgroundAction: String, CaseIterable, Identifiable {
         case .sortByType: return "Sort by Type"
         case .openInFinder: return "Open in Finder"
         case .openInTerminal: return "Open in Terminal"
+        case .console: return "Console"
         case .mirrorPath: return "Mirror Panel"
         case .openMarkedOnOtherPanel: return "Open Marked Dir on Other Panel"
         case .getInfo: return "Get Info"
@@ -84,6 +86,7 @@ enum PanelBackgroundAction: String, CaseIterable, Identifiable {
         case .sortByType: return "doc"
         case .openInFinder: return "folder"
         case .openInTerminal: return "terminal"
+        case .console: return "terminal"
         case .mirrorPath: return "arrow.left.arrow.right.square"
         case .openMarkedOnOtherPanel: return "folder.badge.arrow.right"
         case .getInfo: return "info.circle"

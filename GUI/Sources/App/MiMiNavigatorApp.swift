@@ -23,6 +23,7 @@ struct MiMiNavigatorApp: App {
     @State var showHiddenFiles = UserPreferences.shared.snapshot.showHiddenFiles
     @State var showAutomationOnboarding = false
     @State var showFullDiskOnboarding = false
+    @State var isFinderSidebarVisible = false
 
     // MARK: - Lifecycle State
 

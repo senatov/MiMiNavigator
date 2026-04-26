@@ -40,7 +40,7 @@ extension CntMenuCoord {
                 log.info("\(#function) sort action '\(action.rawValue)' not yet implemented")
             case .openInFinder:
                 RevealInFinderService.shared.revealInFinder(currentPath)
-            case .openInTerminal:
+            case .openInTerminal, .console:
                 openTerminal(at: currentPath)
             case .mirrorPath:
                 mirrorPathToOtherPanel(panel, appState: appState)

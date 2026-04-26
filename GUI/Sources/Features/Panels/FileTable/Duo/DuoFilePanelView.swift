@@ -12,6 +12,7 @@ import SwiftUI
 struct DuoFilePanelView: View {
     // MARK: - Environment & State
     @Environment(AppState.self) var appState
+    @Binding var isFinderSidebarVisible: Bool
     @State private var toolbarStore = ToolbarStore.shared  // tracks menuBarVisible changes
     @State private var leftPanelWidth: CGFloat = 0
     @State private var isInitialized = false
@@ -27,13 +28,14 @@ struct DuoFilePanelView: View {
         static let dividerHitAreaWidth: CGFloat = 24
         static let minPanelWidth: CGFloat = 80
         static let defaultBackingScale: CGFloat = 2.0
+        static let finderSidebarWidth: CGFloat = 220
     }
 
     // MARK: - Body
     var body: some View {
         VStack(spacing: 0) {
             if toolbarStore.menuBarVisible {
-                DuoPanelTopMenuBarSection()
+                DuoPanelTopMenuBarSection(isFinderSidebarVisible: $isFinderSidebarVisible)
             }
 
             geometrySection
@@ -46,8 +48,6 @@ struct DuoFilePanelView: View {
                 onMove: { actions.performMove() },
                 onNewFolder: { actions.performNewFolder() },
                 onDelete: { actions.performDelete() },
-                onSettings: { actions.performSettings() },
-                onConsole: { actions.performConsole() },
                 onExit: { actions.performExit() }
             )
         }
@@ -89,23 +89,46 @@ struct DuoFilePanelView: View {
 
     private var geometrySection: some View {
         GeometryReader { geometry in
-            if leftPanelWidth > 0, geometry.size.width > 0 {
-                DuoPanelFilePanelsSection(
-                    leftPanelWidth: $leftPanelWidth,
-                    containerWidth: geometry.size.width,
-                    containerHeight: geometry.size.height,
-                    fetchFiles: fetchFiles
-                )
-            }
-            Color.clear
-                .onAppear {
-                    scheduleGeometryWidthUpdate(geometry.size.width)
+            let panelWidth = panelsContainerWidth(for: geometry.size.width)
+            ZStack(alignment: .leading) {
+                HStack(spacing: 0) {
+                    if isFinderSidebarVisible {
+                        FinderSidebarView(appState: appState)
+                            .frame(width: Layout.finderSidebarWidth, height: geometry.size.height)
+                            .transition(.move(edge: .leading).combined(with: .opacity))
+                    }
+                    if leftPanelWidth > 0, panelWidth > 0 {
+                        DuoPanelFilePanelsSection(
+                            leftPanelWidth: $leftPanelWidth,
+                            containerWidth: panelWidth,
+                            containerHeight: geometry.size.height,
+                            fetchFiles: fetchFiles
+                        )
+                        .frame(width: panelWidth, height: geometry.size.height)
+                    }
                 }
-                .onChange(of: geometry.size.width) { _, newWidth in
-                    scheduleGeometryWidthUpdate(newWidth)
+                .frame(width: geometry.size.width, height: geometry.size.height, alignment: .leading)
+                Color.clear
+                    .onAppear {
+                        scheduleGeometryWidthUpdate(panelWidth)
+                    }
+                    .onChange(of: geometry.size.width) { _, newWidth in
+                        scheduleGeometryWidthUpdate(panelsContainerWidth(for: newWidth))
+                    }
+                    .onChange(of: isFinderSidebarVisible) { _, _ in
+                        scheduleGeometryWidthUpdate(panelsContainerWidth(for: geometry.size.width))
+                    }
+                    .allowsHitTesting(false)
                 }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .animation(.easeInOut(duration: 0.18), value: isFinderSidebarVisible)
+    }
+
+    // MARK: - Panels Width
+    private func panelsContainerWidth(for totalWidth: CGFloat) -> CGFloat {
+        let sidebarWidth = isFinderSidebarVisible ? Layout.finderSidebarWidth : 0
+        return max(totalWidth - sidebarWidth, Layout.minPanelWidth * 2 + Layout.dividerHitAreaWidth)
     }
 
     private func scheduleGeometryWidthUpdate(_ width: CGFloat) {

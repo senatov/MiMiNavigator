@@ -73,7 +73,7 @@ struct PanelBackgroundContextMenu: View {
             // SECTION 4: Open in external apps
             // ═══════════════════════════════════════════
             menuButton(.openInFinder)
-            menuButton(.openInTerminal)
+            menuButton(.console)
             
             Divider()
             

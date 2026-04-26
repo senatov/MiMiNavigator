@@ -26,7 +26,7 @@ extension MiMiNavigatorApp {
     // MARK: - Main Window Content
     var mainWindowContent: some View {
         log.debug(#function)
-        return DuoFilePanelView()
+        return DuoFilePanelView(isFinderSidebarVisible: $isFinderSidebarVisible)
             // MARK: - Environment
             .environment(appState)
             .environment(dragDropManager)

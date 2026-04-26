@@ -12,6 +12,7 @@ import SwiftUI
 
 struct TopMenuBarView: View {
     @Environment(AppState.self) var appState
+    @Binding var isFinderSidebarVisible: Bool
     @State private var favoritesTargetSide: FavPanelSide = .left
         // MARK: - Pixel helpers
     fileprivate var px: CGFloat {
@@ -74,6 +75,7 @@ struct TopMenuBarView: View {
             
                 // Menu row
             HStack(spacing: 6) {
+                finderSidebarButton
                 ForEach(menuData.dropLast()) { menu in
                     menuView(for: menu)
                 }
@@ -106,6 +108,20 @@ struct TopMenuBarView: View {
         }
     }
     
+        // MARK: - Finder Sidebar Toggle
+    private var finderSidebarButton: some View {
+        Button {
+            isFinderSidebarVisible.toggle()
+        } label: {
+            Image(systemName: "sidebar.left")
+                .font(.system(size: 14))
+                .frame(width: 22, height: 22)
+        }
+        .help(isFinderSidebarVisible ? "Hide Finder sidebar" : "Show Finder sidebar")
+        .buttonStyle(TopMenuButtonStyle())
+        .focusable(false)
+    }
+
         // MARK: -
     private func menuView(for menu: MenuCategory) -> some View {
         return Menu {

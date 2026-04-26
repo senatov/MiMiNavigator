@@ -180,7 +180,7 @@ enum ContextMenuNSMenuBuilder {
         menu.addItem(item(.paste, onAction: onAction, isEnabled: ClipboardManager.shared.hasContent))
         menu.addItem(item(.copyAsPathname, onAction: onAction))
         menu.addItem(item(.openInFinder, onAction: onAction))
-        menu.addItem(item(.openInTerminal, onAction: onAction))
+        menu.addItem(item(.console, onAction: onAction))
         menu.addItem(item(.getInfo, onAction: onAction))
         menu.addItem(item(.addToFavorites, onAction: onAction))
         menu.addItem(.separator())
