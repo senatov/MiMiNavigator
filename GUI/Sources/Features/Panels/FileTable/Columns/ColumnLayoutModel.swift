@@ -90,18 +90,36 @@ final class ColumnLayoutModel: Codable {
 
     func setWidth(_ width: CGFloat, for id: ColumnID) {
         guard let index = indexOfColumn(with: id) else { return }
-
         if id == .name {
             applyNameWidth(width)
             return
         }
-
         let clampedWidth = clampWidth(width, for: id)
         guard shouldApplyWidthChange(current: columns[index].width, new: clampedWidth) else { return }
-
         columns[index].width = clampedWidth
         updateNameWidthForContainer()
         incrementLayoutVersion()
+    }
+
+    // MARK: - Apply Autofit Widths
+    func applyAutoFitWidths(_ widths: [ColumnID: CGFloat], nameWidth: CGFloat) {
+        var changed = false
+        for index in columns.indices {
+            let id = columns[index].id
+            guard id != .name, let width = widths[id] else { continue }
+            let clampedWidth = width.clamped(to: id.minDragWidth...ColumnWidthPolicy.effectiveMaxWidth(for: id))
+            guard shouldApplyWidthChange(current: columns[index].width, new: clampedWidth) else { continue }
+            columns[index].width = clampedWidth
+            changed = true
+        }
+        let clampedNameWidth = max(LayoutMetrics.minNameWidth, nameWidth)
+        if shouldApplyWidthChange(current: storedNameWidth, new: clampedNameWidth) {
+            storedNameWidth = clampedNameWidth
+            changed = true
+        }
+        if changed {
+            incrementLayoutVersion()
+        }
     }
 
     private func calculateMaxWidth(for id: ColumnID) -> CGFloat {

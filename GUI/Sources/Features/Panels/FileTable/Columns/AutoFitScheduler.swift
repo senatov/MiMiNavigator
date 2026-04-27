@@ -30,7 +30,7 @@ final class AutoFitScheduler {
     private var lastAutoFitPath: [FavPanelSide: String] = [:]
     private var lastAutoFitWidth: [FavPanelSide: CGFloat] = [:]
     private var initialFitDone = false
-    private static var lastResizeFitTime: Date = .distantPast
+    private var lastResizeFitTime: [FavPanelSide: Date] = [:]
 
     private init() {}
 
@@ -163,20 +163,15 @@ final class AutoFitScheduler {
 
     // MARK: - Sidebar Layout Autofit
     func scheduleSidebarLayoutFit(appState: AppState, reason: String) {
+        guard UserPreferences.shared.snapshot.autoFitColumnsOnNavigate else { return }
         navigationFitTasks[.left]?.cancel()
         navigationFitTasks[.right]?.cancel()
         log.info("[AutoFit] sidebar layout schedule reason=\(reason)")
         navigationFitTasks[.left] = Task { @MainActor in
-            try? await Task.sleep(for: .milliseconds(260))
-            if Task.isCancelled { return }
-            log.debug("[AutoFit] sidebar layout pass left reason=\(reason)")
-            self.runAutoFit(panel: .left, appState: appState)
+            await self.runSidebarLayoutFit(panel: .left, appState: appState, reason: reason)
         }
         navigationFitTasks[.right] = Task { @MainActor in
-            try? await Task.sleep(for: .milliseconds(320))
-            if Task.isCancelled { return }
-            log.debug("[AutoFit] sidebar layout pass right reason=\(reason)")
-            self.runAutoFit(panel: .right, appState: appState)
+            await self.runSidebarLayoutFit(panel: .right, appState: appState, reason: reason)
         }
     }
 
@@ -191,8 +186,9 @@ final class AutoFitScheduler {
         let delta = abs(newWidth - lastWidth)
         guard delta > 12 else { return }
         let now = Date()
-        guard now.timeIntervalSince(Self.lastResizeFitTime) > 2.0 else { return }
-        Self.lastResizeFitTime = now
+        let lastFitTime = lastResizeFitTime[panel] ?? .distantPast
+        guard now.timeIntervalSince(lastFitTime) > 0.35 else { return }
+        lastResizeFitTime[panel] = now
         log.debug("[AutoFit] resize panel=\(panel) delta=\(Int(delta))pt")
         lastAutoFitWidth[panel] = newWidth
         let layout = ColumnLayoutStore.shared.layout(for: panel)
@@ -212,6 +208,17 @@ final class AutoFitScheduler {
         ColumnAutoFitter.autoFitAll(layout: layout, files: files)
     }
 
+    // MARK: - Run Sidebar Layout Fit
+    private func runSidebarLayoutFit(panel: FavPanelSide, appState: AppState, reason: String) async {
+        try? await Task.sleep(for: .milliseconds(260))
+        if Task.isCancelled { return }
+        log.debug("[AutoFit] sidebar layout pass 1 panel=\(panel) reason=\(reason)")
+        runAutoFit(panel: panel, appState: appState)
+        try? await Task.sleep(for: .milliseconds(360))
+        if Task.isCancelled { return }
+        log.debug("[AutoFit] sidebar layout pass 2 panel=\(panel) reason=\(reason)")
+        runAutoFit(panel: panel, appState: appState)
+    }
 
     private func waitForSizesResolved(appState: AppState, panel: FavPanelSide) async {
         for _ in 0..<maxSizePolls {

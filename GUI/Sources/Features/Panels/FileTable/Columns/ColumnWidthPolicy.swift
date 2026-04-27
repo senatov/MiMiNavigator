@@ -44,7 +44,7 @@ enum ColumnWidthPolicy {
     /// with deferred size calculation.
     static func sizeColumnFallbackWidth() -> CGFloat {
         let reference = "999,99 MB"
-        let font = NSFont.systemFont(ofSize: 12)
+        let font = NSFont.monospacedDigitSystemFont(ofSize: 12, weight: .regular)
         let attrs: [NSAttributedString.Key: Any] = [.font: font]
         let textWidth = (reference as NSString).size(withAttributes: attrs).width
         let result = ceil(textWidth + 2 * 5 + singleCharReserve(for: .size))
@@ -76,6 +76,8 @@ enum ColumnWidthPolicy {
         let font: NSFont = switch column {
         case .permissions:
             .monospacedSystemFont(ofSize: 11, weight: .regular)
+        case .size, .dateModified, .dateCreated, .dateLastOpened, .dateAdded, .childCount:
+            .monospacedDigitSystemFont(ofSize: 12, weight: .regular)
         default:
             .systemFont(ofSize: 12)
         }
