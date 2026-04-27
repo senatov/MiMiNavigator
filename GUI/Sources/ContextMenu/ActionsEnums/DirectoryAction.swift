@@ -14,6 +14,7 @@ enum DirectoryAction: String, CaseIterable, Identifiable {
     case openInNewTab
     case openInFinder
     case openInTerminal
+    case console
     case viewLister
     
     // Edit section
@@ -54,6 +55,7 @@ enum DirectoryAction: String, CaseIterable, Identifiable {
         case .openInNewTab: return "Open in New Tab"
         case .openInFinder: return "Show in Finder"
         case .openInTerminal: return "Open in Terminal"
+        case .console: return "Console"
         case .viewLister: return "Quick Look"
         case .cut: return "Cut"
         case .copy: return "Copy"
@@ -81,6 +83,7 @@ enum DirectoryAction: String, CaseIterable, Identifiable {
         case .openInNewTab: return "plus.square.on.square"
         case .openInFinder: return "folder.badge.gearshape"
         case .openInTerminal: return "terminal"
+        case .console: return "terminal"
         case .viewLister: return "eye"
         case .cut: return "scissors"
         case .copy: return "doc.on.doc"

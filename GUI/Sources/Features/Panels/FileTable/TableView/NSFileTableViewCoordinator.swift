@@ -240,6 +240,7 @@ class Coordinator: NSObject, NSTableViewDelegate, NSTableViewDataSource, NSMenuD
 
         // SECTION 4: Navigation
         addMenuItem(menu, title: "Show in Finder", action: #selector(menuRevealInFinder), key: "", icon: "folder")
+        addMenuItem(menu, title: "Console", action: #selector(menuConsole), key: "", icon: "terminal")
         menu.addItem(NSMenuItem.separator())
 
         // SECTION 5: Delete (⌥ Option only)
@@ -265,6 +266,7 @@ class Coordinator: NSObject, NSTableViewDelegate, NSTableViewDataSource, NSMenuD
         addMenuItem(menu, title: "Refresh", action: #selector(menuRefresh), key: "r")
         menu.addItem(NSMenuItem.separator())
         addMenuItem(menu, title: "Paste", action: #selector(menuPaste), key: "v")
+        addMenuItem(menu, title: "Console", action: #selector(menuConsole), key: "", icon: "terminal")
         if !optionHeld {
             menu.addItem(NSMenuItem.separator())
             addMoreMenuItem(menu, action: #selector(menuShowMoreBackground))
@@ -282,6 +284,7 @@ class Coordinator: NSObject, NSTableViewDelegate, NSTableViewDataSource, NSMenuD
         addMenuItem(menu, title: "Open in New Tab", action: #selector(menuOpenInNewTab), key: "t", icon: "plus.square.on.square")
         addMenuItem(menu, title: "Open in Finder", action: #selector(menuRevealInFinder), key: "", icon: "folder.badge.gear")
         addMenuItem(menu, title: "Open in Terminal", action: #selector(menuOpenInTerminal), key: "", icon: "terminal")
+        addMenuItem(menu, title: "Console", action: #selector(menuConsole), key: "", icon: "terminal")
         menu.addItem(NSMenuItem.separator())
 
         // SECTION 2: Edit
@@ -413,6 +416,12 @@ class Coordinator: NSObject, NSTableViewDelegate, NSTableViewDataSource, NSMenuD
         if let terminalURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.apple.Terminal") {
             NSWorkspace.shared.openApplication(at: terminalURL, configuration: NSWorkspace.OpenConfiguration())
         }
+    }
+
+    @objc private func menuConsole() {
+        guard let appState = AppStateProvider.shared else { return }
+        let path = appState.path(for: parent.panelSide)
+        CntMenuCoord.shared.openTerminal(at: URL(fileURLWithPath: path))
     }
 
     @objc private func menuCut() {

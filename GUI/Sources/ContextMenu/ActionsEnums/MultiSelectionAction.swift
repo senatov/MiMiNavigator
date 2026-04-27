@@ -22,6 +22,7 @@ enum MultiSelectionAction: String, CaseIterable, Identifiable {
 
     // Navigation
     case revealInFinder
+    case console
 
     // Danger zone
     case delete
@@ -44,6 +45,7 @@ enum MultiSelectionAction: String, CaseIterable, Identifiable {
         case .compress: return "Compress"
         case .share: return "Share..."
         case .revealInFinder: return "Show in Finder"
+        case .console: return "Console"
         case .delete: return "Move to Trash"
         case .mirrorPanel: return "Mirror Panel"
         case .addToFavorites: return "Add to Favorites"
@@ -60,6 +62,7 @@ enum MultiSelectionAction: String, CaseIterable, Identifiable {
         case .compress: return "archivebox"
         case .share: return "square.and.arrow.up"
         case .revealInFinder: return "folder"
+        case .console: return "terminal"
         case .delete: return "trash"
         case .mirrorPanel: return "arrow.left.arrow.right.square"
         case .addToFavorites: return "star.fill"

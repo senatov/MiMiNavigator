@@ -67,6 +67,8 @@ extension CntMenuCoord {
                 ConvertMediaCoord.shared.open(file: file, panel: panel, appState: appState)
             case .revealInFinder:
                 revealInFinder(batchFiles)
+            case .console:
+                openTerminal(at: getDestinationPath(for: panel, appState: appState))
             case .delete:
                 activeDialog = .deleteConfirmation(files: batchFiles)
             case .addToFavorites:

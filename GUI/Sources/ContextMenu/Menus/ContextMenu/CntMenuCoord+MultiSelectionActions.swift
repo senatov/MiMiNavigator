@@ -42,6 +42,8 @@ extension CntMenuCoord {
                 share(files)
             case .revealInFinder:
                 revealInFinder(files)
+            case .console:
+                openTerminal(at: getDestinationPath(for: panel, appState: appState))
             case .delete:
                 activeDialog = .deleteConfirmation(files: files)
             case .mirrorPanel:

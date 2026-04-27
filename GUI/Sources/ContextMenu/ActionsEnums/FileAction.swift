@@ -33,6 +33,7 @@ enum FileAction: String, CaseIterable, Identifiable {
     case convertMedia
     // Navigation
     case revealInFinder
+    case console
     // Danger zone
     case delete
     // Info section
@@ -66,6 +67,7 @@ enum FileAction: String, CaseIterable, Identifiable {
         case .share: return "Share..."
         case .convertMedia: return "Convert Media..."
         case .revealInFinder: return "Show in Finder"
+        case .console: return "Console"
         case .delete: return "Move to Trash"
         case .getInfo: return "Get Info"
         case .newFolder: return "New Folder"
@@ -94,6 +96,7 @@ enum FileAction: String, CaseIterable, Identifiable {
         case .share: return "square.and.arrow.up"
         case .convertMedia: return "arrow.triangle.2.circlepath"
         case .revealInFinder: return "folder"
+        case .console: return "terminal"
         case .delete: return "trash"
         case .getInfo: return "info.circle"
         case .newFolder: return "folder.badge.plus"
@@ -160,6 +163,7 @@ enum FileAction: String, CaseIterable, Identifiable {
             .share,
             // divider
             .revealInFinder,
+            .console,
             // divider — File Operations submenu: cut, copy, paste, duplicate, createLink, rename, delete, getInfo
             // divider
             .getInfo,

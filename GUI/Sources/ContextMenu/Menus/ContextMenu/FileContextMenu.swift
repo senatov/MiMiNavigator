@@ -308,6 +308,7 @@ struct FileContextMenu: View {
     @ViewBuilder
     private var navigationSection: some View {
         menuButton(.revealInFinder)
+        menuButton(.console)
 
         sectionDivider(after: .navigation)
     }

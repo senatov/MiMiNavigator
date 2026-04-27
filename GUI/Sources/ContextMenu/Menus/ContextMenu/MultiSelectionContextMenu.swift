@@ -50,6 +50,7 @@ struct MultiSelectionContextMenu: View {
         menuButton(.share)
         Divider()
         menuButton(.revealInFinder)
+        menuButton(.console)
         Divider()
         menuButton(.mirrorPanel)
         menuButton(.addToFavorites)

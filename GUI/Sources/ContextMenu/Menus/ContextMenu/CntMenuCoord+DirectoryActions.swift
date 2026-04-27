@@ -31,6 +31,8 @@ extension CntMenuCoord {
                 openInFinder(file)
             case .openInTerminal:
                 openInTerminal(file)
+            case .console:
+                openTerminal(at: getDestinationPath(for: panel, appState: appState))
             case .viewLister:
                 openQuickLook(file)
             case .duplicate:

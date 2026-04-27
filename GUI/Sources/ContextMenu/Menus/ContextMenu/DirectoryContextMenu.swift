@@ -96,6 +96,7 @@ struct DirectoryContextMenu: View {
         menuButton(.openInNewTab)
         menuButton(.openInFinder)
         menuButton(.openInTerminal)
+        menuButton(.console)
         menuButton(.viewLister)
     }
 
