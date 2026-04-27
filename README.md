@@ -17,7 +17,7 @@
   <img src="https://img.shields.io/badge/Archives-50%2B_Formats-6f42c1" alt="50+ archive formats" />
   <img src="https://img.shields.io/badge/Media-Preview_%26_Conversion_Placeholders-ff8c00" alt="Media preview and conversion placeholders" />
   <img src="https://img.shields.io/badge/License-AGPL--3.0-blue" alt="AGPL-3.0" />
-  <img src="https://img.shields.io/badge/v0.9.8-Active_Development-orange" alt="Active Development" />
+  <img src="https://img.shields.io/badge/v0.9.8.3-Active_Development-orange" alt="Active Development" />
 </p>
 
 <p align="center">
@@ -36,15 +36,14 @@
 
 
 
-## Recent Changes (v0.9.8 — April 2026)
+## Recent Changes (v0.9.8.3 — April 2026)
 
-- **Toolbar Customize redesign** — calmer card-based layout, clearer hierarchy, and better drag-and-drop affordances.
-- **One-click close** — `Done` now closes the customize dialog permanently on the first click.
-- **Reliable first open from R-click** — the toolbar customize panel now rises above other windows immediately on first invocation.
-- **Working drag-to-remove** — dropping a toolbar item into Available Items now truly hides it.
-- **Cleaner toolbar state persistence** — fixed items no longer distort customizable visibility counts or minimum-visible checks.
-- Finder-compatible clipboard remains intact for all file types including `.app` bundles.
-- The app continues to ship as a notarized DMG with drag-to-Applications install UX.
+- **Finder-style sidebar** — toggleable Finder-like sidebar with favorites, cloud locations, mounted volumes, History, Network, Trash, and context actions.
+- **Context menu coverage** — `Console` is available from file, directory, multi-selection, background, and Finder Sidebar menus.
+- **Mounted volume handling** — ejectable local mounts now show a mount-style icon and can be unmounted from the sidebar R-Menu.
+- **Privacy prompts reduced** — sidebar uses cached Finder favorites on open and avoids scanning protected service containers unless explicitly refreshed.
+- **Autofit layout rework** — left and right panels fit independently, `Name` is measured from current rows, and fixed columns are allowed to overflow right only when needed.
+- **Release metadata** — version and build number updated for the notarized `0.9.8.3` DMG release.
 
 ---
 

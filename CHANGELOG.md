@@ -10,6 +10,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - **Breadcrumb navigation controls** — back, forward, and parent-directory buttons now use arrowshape SF Symbols for clearer toolbar affordance
 
+## [0.9.8.3] — 2026-04-27
+
+> **Release notes**
+> Finder Sidebar and autofit correction release.
+> Adds a Finder-like sidebar, makes Console available across R-Menus, improves privacy behavior,
+> fixes duplicate and broken sidebar entries, and rewrites autofit layout so both panels size columns independently.
+
+### Added
+- **Finder-style sidebar** — toggleable source list with History, Shared/Network, favorites, cloud storage, mounted volumes, AirDrop, Network, and Trash
+- **Sidebar context actions** — Open, Console, Open in Finder, Copy as Pathname, and Unmount where applicable
+- **Mounted volume unmount** — ejectable local mounts can now be unmounted from the Finder Sidebar R-Menu
+- **Privacy purpose strings** — added protected folder, removable/network volume, app data, Music, and Photos usage descriptions
+
+### Changed
+- **Console R-Menu coverage** — Console is available from file, directory, multi-selection, background, and Finder Sidebar menus
+- **Finder Sidebar source loading** — sidebar no longer refreshes Finder system favorites on every open, reducing protected container prompts
+- **Finder Sidebar structure** — split into smaller source, item, row, action, and view files with focused logging
+- **Autofit architecture** — split measurement and layout into dedicated files; fixed-column sizing and Name-column sizing are now independent and easier to reason about
+- **Version metadata** — marketing version updated to `0.9.8.3`; build number updated to `111`
+
+### Fixed
+- **Autofit right panel clipping** — right panel no longer skips resize autofit because resize throttling is now tracked per panel
+- **Autofit Size column clipping** — size/date/count measurements now use the same monospaced-digit font used by rows
+- **Autofit Name priority** — Name is measured from current rows and fixed columns overflow right only when the measured Name width needs the space
+- **iCloud Drive duplicate** — sidebar keeps one working iCloud Drive entry
+- **History sidebar item** — replaced broken `x-apple-finder://recents` behavior with MiMiNavigator's own History window
+
 ## [0.9.8.1] — 2026-04-24
 
 > **Release notes**
@@ -590,7 +617,9 @@ Each release should include:
 
 ---
 
-[Unreleased]: https://github.com/senatov/MiMiNavigator/compare/v0.9.8...HEAD
+[Unreleased]: https://github.com/senatov/MiMiNavigator/compare/v0.9.8.3...HEAD
+[0.9.8.3]: https://github.com/senatov/MiMiNavigator/compare/v0.9.8.2...v0.9.8.3
+[0.9.8.1]: https://github.com/senatov/MiMiNavigator/compare/v0.9.8...v0.9.8.1
 [0.9.8]: https://github.com/senatov/MiMiNavigator/compare/v0.9.7.4.1...v0.9.8
 [0.9.7.4]: https://github.com/senatov/MiMiNavigator/compare/v0.9.7.3...v0.9.7.4
 [0.9.7]: https://github.com/senatov/MiMiNavigator/compare/v0.9.6...v0.9.7
