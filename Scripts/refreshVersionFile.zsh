@@ -24,9 +24,11 @@ TARGET_DIR="$PROJECT_DIR/GUI/Resources"
 TARGET_FILE="${TARGET_DIR}/curr_version.asc"
 PBXPROJ="$PROJECT_DIR/MiMiNavigator.xcodeproj/project.pbxproj"
 
-# ✅ Получение версии из git tag (e.g. "v0.9.7" → "0.9.7")
+# ✅ Получение версии из RELEASE_VERSION or git tag (e.g. "v0.9.7" → "0.9.7")
 GIT=/usr/bin/git
-if TAG=$($GIT -C "$PROJECT_DIR" describe --tags --abbrev=0 2>/dev/null); then
+if [[ -n "${RELEASE_VERSION:-}" ]]; then
+    GIT_VERSION="${RELEASE_VERSION#v}"
+elif TAG=$($GIT -C "$PROJECT_DIR" describe --tags --abbrev=0 2>/dev/null); then
     GIT_VERSION="${TAG#v}"
 else
     GIT_VERSION="0.0.0"

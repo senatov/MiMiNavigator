@@ -65,7 +65,7 @@ fi
 
 # ── Step 1: Version stamp ─────────────────────────────────────────────────────
 echo "[1/10] Updating version stamp..."
-Scripts/refreshVersionFile.zsh
+RELEASE_VERSION="${VERSION}" Scripts/refreshVersionFile.zsh
 
 # ── Step 2: Kill Xcode ────────────────────────────────────────────────────────
 echo "[2/10] Killing Xcode..."
@@ -252,8 +252,9 @@ if gh release view "${TAG}" &>/dev/null; then
 else
     echo "   Creating release ${TAG}..."
     gh release create "${TAG}" "${DMG}" \
+        --target "master" \
         --title "${TAG} — MiMiNavigator (notarized)" \
-        --notes "Notarized release. Mount DMG, drag to Applications, done."
+        --notes-file "Scripts/release_notes_${VERSION}.md"
 fi
 
 echo ""
