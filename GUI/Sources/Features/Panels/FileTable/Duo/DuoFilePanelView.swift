@@ -115,8 +115,9 @@ struct DuoFilePanelView: View {
                     .onChange(of: geometry.size.width) { _, newWidth in
                         scheduleGeometryWidthUpdate(panelsContainerWidth(for: newWidth))
                     }
-                    .onChange(of: isFinderSidebarVisible) { _, _ in
+                    .onChange(of: isFinderSidebarVisible) { _, isVisible in
                         scheduleGeometryWidthUpdate(panelsContainerWidth(for: geometry.size.width))
+                        scheduleFinderSidebarAutoFit(isVisible: isVisible)
                     }
                     .allowsHitTesting(false)
                 }
@@ -166,6 +167,13 @@ struct DuoFilePanelView: View {
     private func onDisappear() {
         log.debug("\(#function) DuoFilePanelView onDisappear")
         keyboardHandler?.unregister()
+    }
+
+    // MARK: - Finder Sidebar Autofit
+    private func scheduleFinderSidebarAutoFit(isVisible: Bool) {
+        let reason = isVisible ? "finderSidebarShow" : "finderSidebarHide"
+        log.info("[AutoFit] finder sidebar changed visible=\(isVisible)")
+        AutoFitScheduler.shared.scheduleSidebarLayoutFit(appState: appState, reason: reason)
     }
 
     private func handleInitialLayout(containerWidth: CGFloat) {

@@ -157,6 +157,22 @@
 	</dict>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>MiMiNavigator discovers network hosts and file shares on your local network.</string>
+	<key>NSDesktopFolderUsageDescription</key>
+	<string>MiMiNavigator needs access to Desktop when you browse, copy, move, or compare files there.</string>
+	<key>NSDocumentsFolderUsageDescription</key>
+	<string>MiMiNavigator needs access to Documents when you browse, copy, move, or compare files there.</string>
+	<key>NSDownloadsFolderUsageDescription</key>
+	<string>MiMiNavigator needs access to Downloads when you browse, copy, move, or compare files there.</string>
+	<key>NSRemovableVolumesUsageDescription</key>
+	<string>MiMiNavigator needs access to removable volumes when you browse, copy, move, unmount, or compare files on them.</string>
+	<key>NSNetworkVolumesUsageDescription</key>
+	<string>MiMiNavigator needs access to network volumes when you browse, copy, move, or compare files on mounted shares.</string>
+	<key>NSAppDataUsageDescription</key>
+	<string>MiMiNavigator may need access to application data folders only when you explicitly open or manage files there.</string>
+	<key>NSAppleMusicUsageDescription</key>
+	<string>MiMiNavigator needs access to your media library only when you explicitly open or manage files inside Music-related locations.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>MiMiNavigator needs access to your photo library only when you explicitly open or manage files inside Photos-related locations.</string>
 	<key>NSBonjourServices</key>
 	<array>
 		<string>_smb._tcp</string>

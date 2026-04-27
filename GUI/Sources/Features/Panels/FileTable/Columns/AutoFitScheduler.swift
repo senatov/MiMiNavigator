@@ -161,6 +161,25 @@ final class AutoFitScheduler {
         }
     }
 
+    // MARK: - Sidebar Layout Autofit
+    func scheduleSidebarLayoutFit(appState: AppState, reason: String) {
+        navigationFitTasks[.left]?.cancel()
+        navigationFitTasks[.right]?.cancel()
+        log.info("[AutoFit] sidebar layout schedule reason=\(reason)")
+        navigationFitTasks[.left] = Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(260))
+            if Task.isCancelled { return }
+            log.debug("[AutoFit] sidebar layout pass left reason=\(reason)")
+            self.runAutoFit(panel: .left, appState: appState)
+        }
+        navigationFitTasks[.right] = Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(320))
+            if Task.isCancelled { return }
+            log.debug("[AutoFit] sidebar layout pass right reason=\(reason)")
+            self.runAutoFit(panel: .right, appState: appState)
+        }
+    }
+
     // MARK: - Resize Autofit
 
     /// Called when panel container width changes significantly.
