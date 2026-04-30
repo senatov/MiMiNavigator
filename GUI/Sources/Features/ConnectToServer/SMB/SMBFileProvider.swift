@@ -15,6 +15,7 @@ import UniformTypeIdentifiers
 #endif
 
 
+// MARK: - SMBFileProvider
 final class SMBFileProvider: @unchecked Sendable, RemoteFileProvider {
     private enum SMBProviderError: LocalizedError {
         case missingSession
@@ -47,6 +48,7 @@ final class SMBFileProvider: @unchecked Sendable, RemoteFileProvider {
         let port: Int
         let user: String
         let shareRootPath: String
+        let mountRootURL: URL
         let mountPointURL: URL
         let browseURL: URL
         let didMountShare: Bool
@@ -68,7 +70,7 @@ final class SMBFileProvider: @unchecked Sendable, RemoteFileProvider {
         guard let sessionSnapshot, sessionSnapshot.didMountShare else { return }
 
         do {
-            try Self.unmountIfNeeded(sessionSnapshot.mountPointURL)
+            try Self.unmountIfNeeded(sessionSnapshot.mountPointURL, mountRootURL: sessionSnapshot.mountRootURL)
         } catch {
             log.warning("[SMB] deferred unmount failed path='\(sessionSnapshot.mountPointURL.path)' error='\(error.localizedDescription)'")
         }
@@ -78,7 +80,8 @@ final class SMBFileProvider: @unchecked Sendable, RemoteFileProvider {
     func connect(host: String, port: Int, user: String, password: String, remotePath: String) async throws {
         let normalizedRemotePath = Self.normalizeRemotePath(remotePath)
         let shareRootPath = try Self.extractShareRootPath(from: normalizedRemotePath)
-        let mountPointURL = try Self.makeMountPointURL(host: host, user: user, shareRootPath: shareRootPath)
+        let mountPointURL = try Self.existingSystemMountPointURL(shareRootPath: shareRootPath)
+            ?? Self.makeMountPointURL(host: host, user: user, shareRootPath: shareRootPath)
         let browseURL = Self.makeBrowseURL(
             remotePath: normalizedRemotePath,
             shareRootPath: shareRootPath,
@@ -106,6 +109,7 @@ final class SMBFileProvider: @unchecked Sendable, RemoteFileProvider {
             port: port,
             user: user,
             shareRootPath: shareRootPath,
+            mountRootURL: mountPointURL.deletingLastPathComponent(),
             mountPointURL: mountPointURL,
             browseURL: browseURL,
             didMountShare: didMountShare
@@ -234,7 +238,7 @@ final class SMBFileProvider: @unchecked Sendable, RemoteFileProvider {
         }
 
         do {
-            try Self.unmountIfNeeded(activeSession.mountPointURL)
+            try Self.unmountIfNeeded(activeSession.mountPointURL, mountRootURL: activeSession.mountRootURL)
             log.info("[SMB] disconnected host=\(activeSession.host) mount='\(activeSession.mountPointURL.path)'")
         } catch {
             log.warning("[SMB] disconnect failed host=\(activeSession.host) error='\(error.localizedDescription)'")
@@ -290,8 +294,9 @@ final class SMBFileProvider: @unchecked Sendable, RemoteFileProvider {
         let shareName = shareRootPath.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
         guard !shareName.isEmpty else { throw SMBProviderError.invalidMountURL }
         let decodedShareName = shareName.removingPercentEncoding ?? shareName
-        return URL(fileURLWithPath: "/Volumes", isDirectory: true)
-            .appendingPathComponent(decodedShareName, isDirectory: true)
+        let mountRootURL = try appMountRootURL()
+        let mountName = sanitizeMountName("\(host)-\(user)-\(decodedShareName)")
+        return mountRootURL.appendingPathComponent(mountName, isDirectory: true)
     }
 
     private static func createDirectoryIfNeeded(at url: URL) throws {
@@ -334,25 +339,23 @@ final class SMBFileProvider: @unchecked Sendable, RemoteFileProvider {
         }
     }
 
-    private static func unmountIfNeeded(_ mountPointURL: URL) throws {
+    private static func unmountIfNeeded(_ mountPointURL: URL, mountRootURL: URL) throws {
         guard FileManager.default.fileExists(atPath: mountPointURL.path) else { return }
-
         let result = try runCommand(
             executable: "/sbin/umount",
             arguments: [mountPointURL.path],
             redactedArguments: [mountPointURL.path],
             ignoreNonZeroExitCode: true
         )
-
         if result.exitCode == 0 {
             log.debug("[SMB] unmounted '\(mountPointURL.path)'")
+            removeAppMountDirectoryIfEmpty(mountPointURL, mountRootURL: mountRootURL)
             return
         }
-
         if result.combinedOutput.localizedCaseInsensitiveContains("not currently mounted") {
+            removeAppMountDirectoryIfEmpty(mountPointURL, mountRootURL: mountRootURL)
             return
         }
-
         log.warning("[SMB] umount returned exit=\(result.exitCode) path='\(mountPointURL.path)' output='\(result.combinedOutput)'")
     }
 
@@ -368,6 +371,43 @@ final class SMBFileProvider: @unchecked Sendable, RemoteFileProvider {
 
         guard let output = result?.stdout, !output.isEmpty else { return false }
         return output.contains(" on \(mountPointURL.path) (smbfs")
+    }
+
+    private static func existingSystemMountPointURL(shareRootPath: String) throws -> URL? {
+        let shareName = shareRootPath.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+        guard !shareName.isEmpty else { return nil }
+        let decodedShareName = shareName.removingPercentEncoding ?? shareName
+        let systemMountURL = URL(fileURLWithPath: "/Volumes", isDirectory: true)
+            .appendingPathComponent(decodedShareName, isDirectory: true)
+        return isMounted(at: systemMountURL) ? systemMountURL : nil
+    }
+
+    private static func appMountRootURL() throws -> URL {
+        let supportURL = try FileManager.default.url(
+            for: .applicationSupportDirectory,
+            in: .userDomainMask,
+            appropriateFor: nil,
+            create: true
+        )
+        return supportURL
+            .appendingPathComponent("MiMiNavigator", isDirectory: true)
+            .appendingPathComponent("Mounts", isDirectory: true)
+    }
+
+    private static func removeAppMountDirectoryIfEmpty(_ mountPointURL: URL, mountRootURL: URL) {
+        guard mountPointURL.path.hasPrefix(mountRootURL.path + "/") else { return }
+        try? FileManager.default.removeItem(at: mountPointURL)
+    }
+
+    private static func sanitizeMountName(_ name: String) -> String {
+        var result = name.precomposedStringWithCanonicalMapping
+        result = result.replacingOccurrences(of: " ", with: "-")
+        result = result.replacingOccurrences(of: "\u{2018}", with: "")
+        result = result.replacingOccurrences(of: "\u{2019}", with: "")
+        result = result.replacingOccurrences(of: "'", with: "")
+        let allowed = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "-_."))
+        result = result.unicodeScalars.filter { allowed.contains($0) }.map { String($0) }.joined()
+        return result.isEmpty ? "share" : result
     }
 
     private struct CommandResult {
