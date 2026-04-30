@@ -147,6 +147,18 @@ echo "[8/10] Creating fancy DMG installer..."
 DMG_BG="${PROJECT_DIR}/Scripts/dmg_background.png"
 DMG_RW="/tmp/MiMiNavigator-${VERSION}-rw.dmg"
 DMG_VOL="MiMiNavigator"
+DMG_WINDOW_LEFT=200
+DMG_WINDOW_TOP=120
+DMG_WINDOW_WIDTH=660
+DMG_WINDOW_HEIGHT=400
+DMG_WINDOW_RIGHT=$((DMG_WINDOW_LEFT + DMG_WINDOW_WIDTH))
+DMG_WINDOW_BOTTOM=$((DMG_WINDOW_TOP + DMG_WINDOW_HEIGHT))
+DMG_APP_X=170
+DMG_APP_Y=190
+DMG_APPS_X=490
+DMG_APPS_Y=190
+DMG_HIDDEN_X=120
+DMG_HIDDEN_Y=540
 
 # generate background if missing
 if [[ ! -f "${DMG_BG}" ]]; then
@@ -189,13 +201,20 @@ tell application "Finder"
         set current view of container window to icon view
         set toolbar visible of container window to false
         set statusbar visible of container window to false
-        set bounds of container window to {200, 120, 860, 520}
+        set bounds of container window to {${DMG_WINDOW_LEFT}, ${DMG_WINDOW_TOP}, ${DMG_WINDOW_RIGHT}, ${DMG_WINDOW_BOTTOM}}
         set viewOptions to the icon view options of container window
         set arrangement of viewOptions to not arranged
         set icon size of viewOptions to 128
         set background picture of viewOptions to file ".background:background.png"
-        set position of item "MiMiNavigator.app" of container window to {170, 190}
-        set position of item "Applications" of container window to {490, 190}
+        set position of item "MiMiNavigator.app" of container window to {${DMG_APP_X}, ${DMG_APP_Y}}
+        set position of item "Applications" of container window to {${DMG_APPS_X}, ${DMG_APPS_Y}}
+        set hiddenItemX to ${DMG_HIDDEN_X}
+        repeat with hiddenItemName in {".background", ".DS_Store", ".fseventsd", ".Trashes", ".VolumeIcon.icns"}
+            try
+                set position of item (hiddenItemName as text) of container window to {hiddenItemX, ${DMG_HIDDEN_Y}}
+            end try
+            set hiddenItemX to hiddenItemX + 180
+        end repeat
         close
         open
         update without registering applications
