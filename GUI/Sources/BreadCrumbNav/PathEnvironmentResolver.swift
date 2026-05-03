@@ -56,7 +56,7 @@ enum PathEnvironmentResolver {
     static func symbolicPath(forResolvedPath resolvedPath: String, preserving symbolicPath: String?) -> String? {
         guard let symbolicPath,
               let variable = firstVariable(in: symbolicPath),
-              let expansion = expand(symbolicPath)
+              expand(symbolicPath) != nil
         else {
             return nil
         }

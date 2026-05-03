@@ -92,6 +92,17 @@ struct ConvertMediaDialog: View {
     var toolInfo: String {
         guard let sourceFormat else { return "" }
         let tool = MediaFormat.requiredTool(from: sourceFormat, to: targetFormat)
+        if tool == .gifski {
+            let gifskiOK = FileManager.default.isExecutableFile(atPath: ConversionTool.gifskiPath)
+            let ffmpegOK = FileManager.default.isExecutableFile(atPath: ConversionTool.ffmpegPath)
+            if gifskiOK && ffmpegOK {
+                return "gifski + ffmpeg ✅"
+            }
+            if ffmpegOK {
+                return "gifski ❌ (fallback: ffmpeg)"
+            }
+            return "gifski ❌  ffmpeg ❌"
+        }
         let status = tool.isAvailable ? "✅" : "❌ not installed"
         return "\(tool.rawValue) \(status)"
     }

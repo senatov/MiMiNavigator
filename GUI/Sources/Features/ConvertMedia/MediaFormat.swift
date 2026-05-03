@@ -144,6 +144,7 @@ enum MediaFormat: String, CaseIterable, Identifiable, Hashable {
 
     // Required CLI tool for this conversion
     static func requiredTool(from source: MediaFormat, to target: MediaFormat) -> ConversionTool {
+        if target == .gif && (source.isVideo || source == .webp) { return .gifski }
         if source == .tgs { return .lottieAndFFmpeg }
         if source == .json && target != .json { return .lottieAndFFmpeg }
         if source.isImage && target.isImage { return .imageIO }
@@ -156,6 +157,7 @@ enum MediaFormat: String, CaseIterable, Identifiable, Hashable {
 
 enum ConversionTool: String {
     case ffmpeg = "ffmpeg"
+    case gifski = "gifski"
     case imageIO = "ImageIO (native)"
     case lottieAndFFmpeg = "Lottie + ffmpeg"
 
@@ -176,6 +178,9 @@ enum ConversionTool: String {
             return true
         case .ffmpeg, .lottieAndFFmpeg:
             return FileManager.default.isExecutableFile(atPath: Self.ffmpegPath)
+        case .gifski:
+            return FileManager.default.isExecutableFile(atPath: Self.gifskiPath)
+                && FileManager.default.isExecutableFile(atPath: Self.ffmpegPath)
         }
     }
 

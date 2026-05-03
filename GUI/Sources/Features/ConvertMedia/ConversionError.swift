@@ -12,6 +12,8 @@ import Foundation
 // MARK: - ConversionError
 enum ConversionError: LocalizedError {
     case toolMissing(String)
+    case gifskiMissing
+    case gifTooLarge(String)
     case readFailed(String)
     case writeFailed(String)
     case processFailed(Int)
@@ -21,6 +23,10 @@ enum ConversionError: LocalizedError {
         switch self {
             case .toolMissing(let tool):
                 return "Required tool not found: \(tool). Install via: brew install ffmpeg"
+            case .gifskiMissing:
+                return "gifski not installed. Install via: brew install gifski"
+            case .gifTooLarge(let size):
+                return "GIF too large (\(size)) even after downscaling — try shorter video"
             case .readFailed(let name):
                 return "Failed to read: \(name)"
             case .writeFailed(let name):
