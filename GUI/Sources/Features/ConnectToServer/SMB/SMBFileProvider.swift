@@ -317,9 +317,9 @@ final class SMBFileProvider: @unchecked Sendable, RemoteFileProvider {
 
     private static func mountSMB(host: String, user: String, password: String, shareRootPath: String, mountPointURL: URL) throws {
         let shareName = shareRootPath.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
-        let escapedUser = user.addingPercentEncoding(withAllowedCharacters: .urlUserAllowed) ?? user
-        let escapedPassword = password.addingPercentEncoding(withAllowedCharacters: .urlPasswordAllowed) ?? password
-        let escapedHost = host.addingPercentEncoding(withAllowedCharacters: .urlHostAllowed) ?? host
+        let escapedUser = percentEncodedUserInfo(user)
+        let escapedPassword = percentEncodedUserInfo(password)
+        let escapedHost = percentEncodedHost(host)
         let smbURL = "//\(escapedUser):\(escapedPassword)@\(escapedHost)/\(shareName)"
 
         let result = try runCommand(

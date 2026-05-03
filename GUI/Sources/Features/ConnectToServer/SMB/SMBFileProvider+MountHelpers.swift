@@ -26,4 +26,14 @@ extension SMBFileProvider {
         result = result.unicodeScalars.filter { allowed.contains($0) }.map { String($0) }.joined()
         return result.isEmpty ? "share" : result
     }
+
+    // MARK: - URL Encoding
+    static func percentEncodedUserInfo(_ value: String) -> String {
+        let allowed = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "-._~"))
+        return value.addingPercentEncoding(withAllowedCharacters: allowed) ?? value
+    }
+
+    static func percentEncodedHost(_ value: String) -> String {
+        value.addingPercentEncoding(withAllowedCharacters: .urlHostAllowed) ?? value
+    }
 }

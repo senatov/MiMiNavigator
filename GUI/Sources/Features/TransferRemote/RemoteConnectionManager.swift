@@ -188,7 +188,7 @@ final class RemoteConnectionManager {
             log.warning("[RemoteConnectionManager] connect requested with empty password for \(server.displayName)")
         }
 
-        guard let provider = createProvider(for: server.remoteProtocol) else {
+        guard let provider = createProvider(for: server) else {
             let detail = unsupportedProtocolDetail(for: server)
             log.warning("[RemoteConnectionManager] connect skipped for \(server.displayName): unsupported protocol=\(server.remoteProtocol.rawValue)")
             log.warning("[RemoteConnectionManager] diagnostic: \(detail)")
@@ -249,7 +249,7 @@ final class RemoteConnectionManager {
     private func handleConnectionFailure(_ error: Error, server: RemoteServer) {
         let nsError = error as NSError
         let result = classifyError(error)
-        updateServerResult(server, result: result, errorDetail: error.localizedDescription)
+        updateServerResult(server, result: result, errorDetail: detailedErrorDescription(error))
 
         if result == .authFailed {
             log.warning(
@@ -378,78 +378,6 @@ final class RemoteConnectionManager {
         return try await listDirectory(parentPath)
     }
 
-    private func parentPath(for path: String) -> String {
-        let parent = (path as NSString).deletingLastPathComponent
-        return parent.isEmpty ? "/" : parent
-    }
-
-    // MARK: - Helpers
-    private static func normalizeHost(_ host: String) -> String {
-        host.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-    }
-
-    private static func normalizeRemotePath(_ path: String) -> String {
-        let trimmed = path.trimmingCharacters(in: .whitespacesAndNewlines)
-        if trimmed.isEmpty { return "/" }
-        return trimmed
-    }
-
-    private func expectedSMBMountPointPath(for server: RemoteServer) -> String? {
-        guard let decodedShare = Self.firstSMBShareComponent(in: server.remotePath) else { return nil }
-        guard !decodedShare.isEmpty else { return nil }
-        return "/Volumes/" + decodedShare
-    }
-
-    private static func firstSMBShareComponent(in remotePath: String) -> String? {
-        let trimmed = normalizeRemotePath(remotePath)
-        let components = trimmed.split(separator: "/", omittingEmptySubsequences: true)
-        guard let share = components.first else { return nil }
-        let decodedShare = String(share).removingPercentEncoding ?? String(share)
-        return decodedShare.isEmpty ? nil : decodedShare
-    }
-
-    private static func isSMBMounted(atPath path: String) -> Bool {
-        guard FileManager.default.fileExists(atPath: path) else { return false }
-        let mountURL = URL(fileURLWithPath: path, isDirectory: true)
-        let keys: Set<URLResourceKey> = [.volumeIsLocalKey, .volumeLocalizedFormatDescriptionKey]
-
-        guard let mountedVolumes = FileManager.default.mountedVolumeURLs(
-            includingResourceValuesForKeys: Array(keys),
-            options: []
-        ) else {
-            return false
-        }
-
-        for volumeURL in mountedVolumes where volumeURL.path == mountURL.path {
-            guard let values = try? volumeURL.resourceValues(forKeys: keys) else { continue }
-            guard values.volumeIsLocal == false else { continue }
-
-            let description = values.volumeLocalizedFormatDescription?.lowercased() ?? ""
-            if description.contains("smb") {
-                return true
-            }
-        }
-
-        return false
-    }
-
-    private func createProvider(for proto: RemoteProtocol) -> (any RemoteFileProvider)? {
-        log.debug("\(#function)(\(proto))")
-
-        switch proto {
-            case .sftp:
-                return SFTPFileProvider()
-            case .ftp:
-                return FTPFileProvider()
-            case .smb:
-                return SMBFileProvider()
-            default:
-                log.warning("[RemoteConnectionManager] provider unavailable for protocol=\(proto.rawValue)")
-                log.warning("[RemoteConnectionManager] only FTP, SFTP, and SMB providers are currently implemented")
-                return nil
-        }
-    }
-
     private func notifyConnectionActivated(_ connection: RemoteConnection) {
         onConnectionActivated?(connection)
     }
@@ -463,48 +391,5 @@ final class RemoteConnectionManager {
         updated.lastErrorDetail = errorDetail
 
         RemoteServerStore.shared.update(updated)
-    }
-
-    private func classifyError(_ error: Error) -> ConnectionResult {
-        log.debug("\(#function)(\(error))")
-        let raw = String(describing: error).lowercased()
-        let message = error.localizedDescription.lowercased()
-
-        if let providerError = error as? RemoteProviderError {
-            switch providerError {
-                case .authFailed:
-                    return .authFailed
-                case .notConnected,
-                    .notImplemented,
-                    .invalidURL,
-                    .listingFailed,
-                    .downloadFailed:
-                    return .error
-                @unknown default:
-                    log.warning("\(#function): unhandled RemoteProviderError=\(providerError)")
-                    return .error
-            }
-        }
-
-        if message.contains("timeout") || message.contains("timed out") {
-            return .timeout
-        }
-
-        if message.contains("refused") || message.contains("connection refused") {
-            return .refused
-        }
-
-        if isAuthenticationError(message: message, raw: raw) {
-            return .authFailed
-        }
-
-        return .error
-    }
-
-    private func isAuthenticationError(message: String, raw: String) -> Bool {
-        message.contains("auth")
-            || message.contains("password")
-            || message.contains("denied")
-            || raw.contains("allauthenticationoptionsfailed")
     }
 }

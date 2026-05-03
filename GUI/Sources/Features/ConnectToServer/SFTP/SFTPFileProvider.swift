@@ -7,6 +7,7 @@
 //
 
 import Citadel
+import Crypto
 import FileModelKit
 import Foundation
 import NIO
@@ -25,6 +26,15 @@ final class SFTPFileProvider: RemoteFileProvider, @unchecked Sendable {
     var port = 22
     var username = ""
     var remoteRootPath = "/"
+    private let authType: RemoteAuthType
+    private let privateKeyPath: String
+
+    // MARK: - Init
+
+    init(authType: RemoteAuthType = .password, privateKeyPath: String = "") {
+        self.authType = authType
+        self.privateKeyPath = privateKeyPath
+    }
 
     // MARK: - Lifecycle
 
@@ -88,10 +98,11 @@ final class SFTPFileProvider: RemoteFileProvider, @unchecked Sendable {
         let normalizedRoot = normalizedRemoteRootPath(remotePath)
 
         do {
+            let authenticationMethod = try makeAuthenticationMethod(user: user, password: password)
             let ssh = try await SSHClient.connect(
                 host: host,
                 port: port,
-                authenticationMethod: .passwordBased(username: user, password: password),
+                authenticationMethod: authenticationMethod,
                 hostKeyValidator: .acceptAnything(),
                 reconnect: .never
             )
@@ -115,7 +126,7 @@ final class SFTPFileProvider: RemoteFileProvider, @unchecked Sendable {
             log.info("[SFTP] connected → \(mountPath)")
         } catch {
             resetSession()
-            log.error("[SFTP] connect failed: \(error.localizedDescription)")
+            log.error("[SFTP] connect failed: \(Self.errorDescription(error))")
             throw error
         }
     }
@@ -132,5 +143,75 @@ final class SFTPFileProvider: RemoteFileProvider, @unchecked Sendable {
         }
 
         log.info("[SFTP] disconnected")
+    }
+
+    // MARK: - Authentication
+    private func makeAuthenticationMethod(user: String, password: String) throws -> SSHAuthenticationMethod {
+        switch authType {
+            case .password:
+                return .passwordBased(username: user, password: password)
+            case .privateKey:
+                return try privateKeyAuthentication(user: user, password: password, keyPath: expandedPrivateKeyPath())
+            case .agent:
+                return try agentFallbackAuthentication(user: user, password: password)
+        }
+    }
+
+    // MARK: - Private Key Authentication
+    private func privateKeyAuthentication(user: String, password: String, keyPath: String) throws -> SSHAuthenticationMethod {
+        let keyData = try Data(contentsOf: URL(fileURLWithPath: keyPath))
+        let decryptionKey = password.isEmpty ? nil : Data(password.utf8)
+        if let method = try? ed25519Authentication(user: user, keyData: keyData, decryptionKey: decryptionKey) {
+            return method
+        }
+        if let method = try? rsaAuthentication(user: user, keyData: keyData, decryptionKey: decryptionKey) {
+            return method
+        }
+        throw RemoteProviderError.authFailed
+    }
+
+    // MARK: - Agent Fallback Authentication
+    private func agentFallbackAuthentication(user: String, password: String) throws -> SSHAuthenticationMethod {
+        for keyPath in defaultPrivateKeyPaths() where FileManager.default.fileExists(atPath: keyPath) {
+            if let method = try? privateKeyAuthentication(user: user, password: password, keyPath: keyPath) {
+                return method
+            }
+        }
+        throw RemoteProviderError.authFailed
+    }
+
+    // MARK: - Key Type Authentication
+    private func ed25519Authentication(user: String, keyData: Data, decryptionKey: Data?) throws -> SSHAuthenticationMethod {
+        let privateKey = try Curve25519.Signing.PrivateKey(sshEd25519: keyData, decryptionKey: decryptionKey)
+        return .ed25519(username: user, privateKey: privateKey)
+    }
+
+    private func rsaAuthentication(user: String, keyData: Data, decryptionKey: Data?) throws -> SSHAuthenticationMethod {
+        let privateKey = try Insecure.RSA.PrivateKey(sshRsa: keyData, decryptionKey: decryptionKey)
+        return .rsa(username: user, privateKey: privateKey)
+    }
+
+    // MARK: - Key Paths
+    private func expandedPrivateKeyPath() -> String {
+        let trimmedPath = privateKeyPath.trimmingCharacters(in: .whitespacesAndNewlines)
+        let path = trimmedPath.isEmpty ? "~/.ssh/id_rsa" : trimmedPath
+        guard path.hasPrefix("~/") else { return path }
+        return NSHomeDirectory() + "/" + path.dropFirst(2)
+    }
+
+    private func defaultPrivateKeyPaths() -> [String] {
+        [
+            "~/.ssh/id_ed25519",
+            "~/.ssh/id_rsa",
+        ].map { path in
+            NSHomeDirectory() + "/" + path.dropFirst(2)
+        }
+    }
+
+    // MARK: - Error Description
+    static func errorDescription(_ error: Error) -> String {
+        let described = String(describing: error)
+        guard !described.isEmpty else { return error.localizedDescription }
+        return described
     }
 }
