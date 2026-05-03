@@ -49,6 +49,10 @@ enum DirSizeCalculator {
         var flatList: [DirScanResult.FileEntry] = []
 
         for item in items {
+            guard !isServiceMetadataItem(item) else {
+                log.debug("[DirScanCalc] skip service metadata: \(item.path)")
+                continue
+            }
             var isDir: ObjCBool = false
             guard fm.fileExists(atPath: item.path, isDirectory: &isDir) else { continue }
 
@@ -123,7 +127,7 @@ enum DirSizeCalculator {
             let enumerator = fm.enumerator(
                 at: dirURL,
                 includingPropertiesForKeys: [.fileSizeKey, .isDirectoryKey],
-                options: []
+                options: [.skipsHiddenFiles]
             )
         else {
             log.warning("[DirScanCalc] can't enumerate: \(dirURL.path)")
@@ -131,6 +135,11 @@ enum DirSizeCalculator {
         }
 
         for case let fileURL as URL in enumerator {
+            if isServiceMetadataItem(fileURL) {
+                enumerator.skipDescendants()
+                log.debug("[DirScanCalc] skip service metadata: \(fileURL.path)")
+                continue
+            }
             do {
                 let vals = try fileURL.resourceValues(forKeys: [.fileSizeKey, .isDirectoryKey, .isPackageKey])
                 let isDir = vals.isDirectory ?? false
@@ -166,6 +175,23 @@ enum DirSizeCalculator {
     private static func fileSize(at url: URL, fm: FileManager) -> Int64 {
         (try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize).map(Int64.init) ?? 0
     }
+
+    private static func isServiceMetadataItem(_ url: URL) -> Bool {
+        let name = url.lastPathComponent
+        if name.hasPrefix("._") { return true }
+        return serviceMetadataNames.contains(name)
+    }
+
+    private static let serviceMetadataNames: Set<String> = [
+        ".DS_Store",
+        ".localized",
+        ".fseventsd",
+        ".Spotlight-V100",
+        ".TemporaryItems",
+        ".Trashes",
+        ".DocumentRevisions-V100",
+        ".apdisk"
+    ]
 
 
     private static func isPackage(at url: URL, fm: FileManager) -> Bool {

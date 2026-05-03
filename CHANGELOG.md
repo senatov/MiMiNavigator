@@ -10,6 +10,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - **Breadcrumb navigation controls** — back, forward, and parent-directory buttons now use arrowshape SF Symbols for clearer toolbar affordance
 
+## [0.9.8.4] — 2026-05-03
+
+> **Release notes**
+> SMB mount, connection navigation, and copy conflict polish release.
+> Fixes SMB mounting without `/Volumes` write access, makes toolbar connections open in the active panel and sidebar,
+> restores panels from history after disconnect, and clarifies copy conflict handling while skipping macOS service metadata files.
+
+### Added
+- **Application-owned SMB mount points** — SMB shares can mount under MiMiNavigator's Application Support folder when `/Volumes` cannot be written by the app
+- **Remote connections in Finder Sidebar** — active app-managed SMB/remote sessions now appear in the embedded Locations list
+- **History-based disconnect fallback** — disconnect restores each affected panel to the nearest previous history entry not belonging to the disconnected server
+
+### Changed
+- **Connection dropdown navigation** — toolbar connection actions now open SMB mount paths as local mounted folders and refresh the active panel immediately
+- **Copy conflict dialog** — conflict decisions now show clear Existing vs Incoming file cards and explicit `Skip Incoming` / `Replace Existing` actions
+- **File operation progress** — the progress HUD is hidden while the conflict dialog waits for a decision and no longer pulses the OK button on completion
+- **Version metadata** — marketing version updated to `0.9.8.4`; build number updated to `112`
+
+### Fixed
+- **SMB permission failure** — fixed connect failures caused by trying to create `/Volumes/<share>` directly
+- **SMB sidebar visibility** — app-managed SMB mounts no longer depend on Finder/system `/Volumes` registration to appear in MiMiNavigator UI
+- **macOS service metadata copy** — `.DS_Store`, AppleDouble `._*`, `.localized`, Spotlight, Trash, and other service metadata are excluded from copy plans
+
 ## [0.9.8.3] — 2026-04-27
 
 > **Release notes**
@@ -617,7 +640,8 @@ Each release should include:
 
 ---
 
-[Unreleased]: https://github.com/senatov/MiMiNavigator/compare/v0.9.8.3...HEAD
+[Unreleased]: https://github.com/senatov/MiMiNavigator/compare/v0.9.8.4...HEAD
+[0.9.8.4]: https://github.com/senatov/MiMiNavigator/compare/v0.9.8.3...v0.9.8.4
 [0.9.8.3]: https://github.com/senatov/MiMiNavigator/compare/v0.9.8.2...v0.9.8.3
 [0.9.8.1]: https://github.com/senatov/MiMiNavigator/compare/v0.9.8...v0.9.8.1
 [0.9.8]: https://github.com/senatov/MiMiNavigator/compare/v0.9.7.4.1...v0.9.8

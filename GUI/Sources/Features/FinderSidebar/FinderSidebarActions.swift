@@ -29,6 +29,15 @@ extension FinderSidebarView {
 
     // MARK: - Navigate
     func navigate(to url: URL) {
+        if AppState.isRemotePath(url) {
+            Task { @MainActor in
+                let panel = appState.focusedPanel
+                appState.updatePath(url, for: panel)
+                await appState.refreshRemoteFiles(for: panel)
+                log.info("[FinderSidebar] navigate remote panel=\(panel) url='\(url.absoluteString)'")
+            }
+            return
+        }
         if !url.isFileURL {
             log.info("[FinderSidebar] open external url='\(url.absoluteString)'")
             NSWorkspace.shared.open(url)

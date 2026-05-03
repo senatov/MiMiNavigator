@@ -169,6 +169,23 @@ final class PanelNavigationHistory {
         return Array(history[start..<currentIndex].reversed())
     }
 
+    // MARK: - Nearest Previous Entry
+    func nearestPreviousEntry(matching predicate: (URL) -> Bool) -> URL? {
+        guard currentIndex > 0 else { return nil }
+        var index = currentIndex - 1
+        while index >= 0 {
+            let candidate = history[index]
+            if predicate(candidate) {
+                currentIndex = index
+                scheduleSave()
+                log.info("[History] panel=\(panel) nearest previous → \(candidate.path) index=\(currentIndex)")
+                return candidate
+            }
+            index -= 1
+        }
+        return nil
+    }
+
     /// Get forward history for dropdown menu
     func getForwardHistory(limit: Int = 10) -> [URL] {
         guard currentIndex < history.count - 1 else { return [] }

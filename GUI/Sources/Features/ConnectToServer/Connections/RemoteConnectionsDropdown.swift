@@ -203,20 +203,35 @@ struct RemoteConnectionsDropdown: View {
     // MARK: - Navigate Active Panel
     private func navigateActivePanel(to server: RemoteServer) {
         guard let conn = manager.connection(for: server) else { return }
-
         manager.setActive(id: conn.id)
         let mountPath = conn.provider.mountPath
-        guard let remoteURL = URL(string: mountPath) else {
+        guard let targetURL = resolvedMountedOrRemoteURL(from: mountPath) else {
             log.error("[DropdownNav] bad mountPath: \(mountPath)")
             return
         }
-
         let side = appState.focusedPanel
-        appState.updatePath(remoteURL, for: side)
+        appState.updatePath(targetURL, for: side)
         Task {
-            await appState.refreshRemoteFiles(for: side)
+            await refreshPanel(at: targetURL, for: side)
         }
         log.info("[DropdownNav] \(side) → \(server.displayName)")
+    }
+
+    private func resolvedMountedOrRemoteURL(from mountPath: String) -> URL? {
+        guard !mountPath.isEmpty else { return nil }
+        if mountPath.hasPrefix("/") {
+            return URL(fileURLWithPath: mountPath, isDirectory: true)
+        }
+        return URL(string: mountPath)
+    }
+
+    private func refreshPanel(at url: URL, for side: FavPanelSide) async {
+        if AppState.isRemotePath(url) {
+            await appState.refreshRemoteFiles(for: side)
+        } else {
+            await appState.scanner.clearCooldown(for: side)
+            await appState.scanner.refreshFiles(currSide: side, force: true)
+        }
     }
 
 
@@ -235,10 +250,11 @@ struct RemoteConnectionsDropdown: View {
         pp.appendLog("Disconnecting…")
 
         Task {
+            let disconnectedMountPath = conn.provider.mountPath
             await manager.disconnect(id: conn.id)
-            await fallbackPanelsFromServer(server)
+            await fallbackPanelsFromServer(server, disconnectedMountPath: disconnectedMountPath)
             pp.appendLog("Session closed")
-            pp.appendLog("Panels restored to local paths")
+            pp.appendLog("Panels restored from history")
             pp.finish(success: true, message: "Disconnected from \(server.displayName)")
             log.info("[DropdownDisconnect] \(server.displayName)")
         }
@@ -246,22 +262,55 @@ struct RemoteConnectionsDropdown: View {
 
 
     // MARK: - Fallback all panels showing this server
-    private func fallbackPanelsFromServer(_ server: RemoteServer) async {
+    private func fallbackPanelsFromServer(_ server: RemoteServer, disconnectedMountPath: String) async {
         let scheme = server.remoteProtocol.urlScheme
         let host = server.host.lowercased()
 
         for side in FavPanelSide.allCases {
             let panelURL = side == .left ? appState.leftURL : appState.rightURL
-            guard isURLMatchingServer(panelURL, scheme: scheme, host: host) else { continue }
-            await appState.restoreLocalPath(for: side)
+            guard isURLMatchingServer(panelURL, scheme: scheme, host: host, mountPath: disconnectedMountPath) else { continue }
+            await restorePanelAfterDisconnect(side, server: server, disconnectedMountPath: disconnectedMountPath)
             log.info("[DropdownFallback] \(side) restored from \(server.displayName)")
         }
     }
 
 
     // MARK: - URL Matching
-    private func isURLMatchingServer(_ url: URL, scheme: String, host: String) -> Bool {
-        url.scheme?.lowercased() == scheme && url.host?.lowercased() == host
+    private func isURLMatchingServer(_ url: URL, scheme: String, host: String, mountPath: String) -> Bool {
+        if url.scheme?.lowercased() == scheme && url.host?.lowercased() == host { return true }
+        return urlMatchesMountPath(url, mountPath: mountPath)
+    }
+
+    private func urlMatchesMountPath(_ url: URL, mountPath: String) -> Bool {
+        guard !mountPath.isEmpty, mountPath.hasPrefix("/") else { return false }
+        let panelPath = NSString(string: url.path).standardizingPath
+        let normalizedMountPath = NSString(string: mountPath).standardizingPath
+        return panelPath == normalizedMountPath || panelPath.hasPrefix(normalizedMountPath + "/")
+    }
+
+    private func restorePanelAfterDisconnect(_ side: FavPanelSide, server: RemoteServer, disconnectedMountPath: String) async {
+        if let historyURL = nearestHistoryFallback(for: side, server: server, disconnectedMountPath: disconnectedMountPath) {
+            await restorePanel(side, to: historyURL)
+            return
+        }
+        await appState.restoreLocalPath(for: side)
+    }
+
+    private func nearestHistoryFallback(for side: FavPanelSide, server: RemoteServer, disconnectedMountPath: String) -> URL? {
+        let history = appState.navigationHistory(for: side)
+        return history.nearestPreviousEntry { candidate in
+            !isURLMatchingServer(
+                candidate,
+                scheme: server.remoteProtocol.urlScheme,
+                host: server.host.lowercased(),
+                mountPath: disconnectedMountPath
+            )
+        }
+    }
+
+    private func restorePanel(_ side: FavPanelSide, to url: URL) async {
+        appState.updatePath(url, for: side)
+        await refreshPanel(at: url, for: side)
     }
 
 

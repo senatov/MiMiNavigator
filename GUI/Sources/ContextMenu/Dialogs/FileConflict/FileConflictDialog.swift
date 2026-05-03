@@ -29,7 +29,7 @@ struct FileConflictDialog: View {
             Divider()
             buttonSection
         }
-        .frame(width: 520)
+        .frame(width: 640)
         .background(dialogBackground)
         .overlay(dialogBorder)
     }
@@ -47,9 +47,9 @@ private extension FileConflictDialog {
                 .foregroundStyle(.yellow)
                 .shadow(color: .orange.opacity(0.3), radius: 2, y: 1)
             VStack(alignment: .leading, spacing: 2) {
-                Text("File already exists")
+                Text("Replace file?")
                     .font(.system(size: 14, weight: .semibold))
-                Text("The destination already has a file named \"\(conflict.targetName)\"")
+                Text("A file named \"\(conflict.targetName)\" already exists in the destination.")
                     .font(.system(size: 12))
                     .foregroundStyle(.secondary)
                     .lineLimit(2)
@@ -63,24 +63,43 @@ private extension FileConflictDialog {
 
 
     var contentSection: some View {
-        VStack(spacing: 12) {
-            FileInfoRow(
-                title: "Source (incoming)",
-                url: conflict.sourceURL,
-                name: conflict.sourceName,
-                size: conflict.sourceSize,
-                date: conflict.sourceDate
-            )
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Choose what to do with the incoming file.")
+                .font(.system(size: 12))
+                .foregroundStyle(.secondary)
+            HStack(alignment: .top, spacing: 12) {
+                FileInfoRow(
+                    title: "Existing in destination",
+                    url: conflict.targetURL,
+                    name: conflict.targetName,
+                    size: conflict.targetSize,
+                    date: conflict.targetDate
+                )
+                .frame(maxWidth: .infinity, alignment: .leading)
+                transferArrow
+                FileInfoRow(
+                    title: "Incoming from source",
+                    url: conflict.sourceURL,
+                    name: conflict.sourceName,
+                    size: conflict.sourceSize,
+                    date: conflict.sourceDate
+                )
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
             comparisonBadge
-            FileInfoRow(
-                title: "Target (existing)",
-                url: conflict.targetURL,
-                name: conflict.targetName,
-                size: conflict.targetSize,
-                date: conflict.targetDate
-            )
+            Text("Replace Existing overwrites the destination file with the incoming file.")
+                .font(.system(size: 11))
+                .foregroundStyle(.secondary)
         }
         .padding(16)
+    }
+
+    var transferArrow: some View {
+        Image(systemName: "arrow.left")
+            .font(.system(size: 16, weight: .medium))
+            .foregroundStyle(.secondary)
+            .frame(width: 24, height: 54)
+            .padding(.top, 18)
     }
 
 
@@ -124,10 +143,9 @@ private extension FileConflictDialog {
             // left: Stop
             ConflictButton(title: "Stop", action: { resolve(.stop) })
             Spacer()
-            // right cluster: Skip, Keep Both, Replace
-            ConflictButton(title: "Skip", action: { resolve(.skip) })
+            ConflictButton(title: "Skip Incoming", action: { resolve(.skip) })
             ConflictButton(title: "Keep Both", action: { resolve(.keepBoth) })
-            ConflictButton(title: "Replace", isPrimary: true, action: { resolve(.replace) })
+            ConflictButton(title: "Replace Existing", isPrimary: true, action: { resolve(.replace) })
         }
         .padding(12)
         .background(DialogColors.stripe)

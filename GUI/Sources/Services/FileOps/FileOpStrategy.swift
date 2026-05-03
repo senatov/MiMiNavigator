@@ -53,6 +53,11 @@ enum FileOpStrategy: String, Sendable {
             return .manySmall
         }
 
+        if scan.flatList.contains(where: \.isDirectory) {
+            log.info("[FileOpStrategy] → manySmall (directory manifest)")
+            return .manySmall
+        }
+
         // Simple: small quick job
         let mb50: Int64 = 50 * 1024 * 1024
         if scan.fileCount <= 10 && scan.totalBytes < mb50 {

@@ -30,6 +30,7 @@ final class FileOpProgressPanel {
     private var waitingForOK = false
     private var pulseTimer: Timer?
     private var pulseGrowing = true
+    private var suspendedForUserDecision = false
 
     private init() {}
 
@@ -49,6 +50,7 @@ final class FileOpProgressPanel {
         progressBar?.startAnimation(nil)
         stopButton?.isHidden = false
         okButton?.isHidden = true
+        guard !suspendedForUserDecision else { return }
 
         centerInMainWindow()
         if let window = NSApp.mainWindow ?? NSApp.keyWindow {
@@ -56,12 +58,7 @@ final class FileOpProgressPanel {
         }
         panel.orderFront(nil)
 
-        // Throttled UI updates ~10/sec
-        updateTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
-            Task { @MainActor in
-                self?.refreshUI()
-            }
-        }
+        startUpdateTimer()
     }
 
     // MARK: - Hide
@@ -72,11 +69,31 @@ final class FileOpProgressPanel {
         stopOKPulse()
         progressBar?.stopAnimation(nil)
         waitingForOK = false
+        suspendedForUserDecision = false
         if let p = panel, let parent = p.parent {
             parent.removeChildWindow(p)
         }
         panel?.orderOut(nil)
         progress = nil
+    }
+
+    // MARK: - Suspend for User Decision
+    func suspendForUserDecision() {
+        suspendedForUserDecision = true
+        guard let panel, panel.isVisible else { return }
+        updateTimer?.invalidate()
+        updateTimer = nil
+        panel.orderOut(nil)
+    }
+
+    // MARK: - Resume after User Decision
+    func resumeAfterUserDecision() {
+        guard suspendedForUserDecision, let panel, let progress else { return }
+        suspendedForUserDecision = false
+        guard !progress.isCompleted, !progress.isCancelled else { return }
+        centerInMainWindow()
+        panel.orderFront(nil)
+        startUpdateTimer()
     }
 
     // MARK: - Refresh UI
@@ -104,12 +121,19 @@ final class FileOpProgressPanel {
                 fileLabel?.stringValue = progress.completionSummary
             }
 
-            // green border + pulse animation on OK button
-            startOKPulse()
-
-            // stop the 10/sec timer — no more updates needed
+            stopOKPulse()
             updateTimer?.invalidate()
             updateTimer = nil
+        }
+    }
+
+    // MARK: - Start Update Timer
+    private func startUpdateTimer() {
+        updateTimer?.invalidate()
+        updateTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
+            Task { @MainActor in
+                self?.refreshUI()
+            }
         }
     }
 

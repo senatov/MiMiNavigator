@@ -17,14 +17,19 @@
         let size: Int64
         let date: Date?
         
-        // MARK: - Body
-        var body: some View {
-            HStack(alignment: .top, spacing: 12) {
+    // MARK: - Body
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            titleText
+            HStack(alignment: .top, spacing: 10) {
                 fileIcon
                 fileDetails
-                Spacer()
             }
         }
+        .padding(10)
+        .background(cardBackground)
+        .overlay(cardBorder)
+    }
         
         // MARK: - Private Views
         private var fileIcon: some View {
@@ -36,17 +41,18 @@
         
         private var fileDetails: some View {
             VStack(alignment: .leading, spacing: 3) {
-                titleText
-                PathWithHighlight(path: parentPath)
                 nameText
+                pathText
                 dateText
                 sizeText
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
         
         private var titleText: some View {
             Text(title)
-                .font(.system(size: 12, weight: .light))
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(.primary)
         }
         
         private var nameText: some View {
@@ -55,11 +61,29 @@
                 .foregroundStyle(.primary)
                 .lineLimit(2)
         }
+
+        private var pathText: some View {
+            Text(parentPath)
+                .font(.system(size: 10))
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .truncationMode(.middle)
+        }
         
         private var dateText: some View {
             Text(formattedDate)
                 .font(.system(size: 10))
                 .foregroundStyle(.secondary)
+        }
+
+        private var cardBackground: some View {
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .fill(Color(nsColor: .controlBackgroundColor).opacity(0.65))
+        }
+
+        private var cardBorder: some View {
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .stroke(Color(nsColor: .separatorColor).opacity(0.45), lineWidth: 0.5)
         }
         
         private var sizeText: some View {

@@ -30,8 +30,25 @@ extension FinderSidebarView {
         return uniqueItems(
             cloudLocationItems
                 + systemItems
+                + remoteConnectionItems
                 + volumes
                 + systemLocationItems
+        )
+    }
+
+    // MARK: - Remote Connection Items
+    var remoteConnectionItems: [FinderSidebarItem] {
+        remoteManager.connections.compactMap(remoteConnectionItem)
+    }
+
+    // MARK: - Remote Connection Item
+    func remoteConnectionItem(for connection: RemoteConnection) -> FinderSidebarItem? {
+        guard let url = mountedOrRemoteURL(from: connection.provider.mountPath) else { return nil }
+        return FinderSidebarItem(
+            title: connection.server.displayName,
+            systemImage: "externaldrive.connected.to.line.below",
+            tint: .blue,
+            action: .navigate(url)
         )
     }
 
@@ -118,6 +135,15 @@ extension FinderSidebarView {
         guard url.path.hasPrefix("/Volumes/") else { return false }
         if values?.volumeIsInternal == true { return false }
         return values?.volumeIsEjectable == true || values?.volumeIsRemovable == true || url.pathComponents.count > 2
+    }
+
+    // MARK: - Mounted Or Remote URL
+    func mountedOrRemoteURL(from mountPath: String) -> URL? {
+        guard !mountPath.isEmpty else { return nil }
+        if mountPath.hasPrefix("/") {
+            return URL(fileURLWithPath: mountPath, isDirectory: true)
+        }
+        return URL(string: mountPath)
     }
 
     // MARK: - Volume Icon

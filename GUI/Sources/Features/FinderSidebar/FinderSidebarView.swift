@@ -13,6 +13,7 @@ import SwiftUI
 struct FinderSidebarView: View {
     let appState: AppState
     @State private var colorStore = ColorThemeStore.shared
+    @State var remoteManager = RemoteConnectionManager.shared
     @StateObject var favoritesStore = FavoritesStore.shared
     @State var volumes: [FinderSidebarItem] = []
     @State var selectedID: String?

@@ -87,6 +87,8 @@ private extension FileOpsEngine {
             log.debug("[FileOpsEngine] auto-resolved '\(source.lastPathComponent)' → \(memo)")
         } else if let handler = conflictHandler {
             let conflict = FileConflictInfo(source: source, target: target)
+            panel.suspendForUserDecision()
+            defer { panel.resumeAfterUserDecision() }
             let decision = await handler(conflict, remaining)
             resolution = decision.resolution
             if decision.applyToAll {
@@ -238,8 +240,11 @@ private extension FileOpsEngine {
     func buildPlan(items: [URL], destination: URL) async -> FileOpPlan {
         let scan = await DirSizeCalculator.scan(items)
         let strategy = FileOpStrategy.detect(scan: scan)
+        let executableItems = strategy == .simple
+            ? scan.flatList.filter { !$0.isDirectory }.map(\.url)
+            : items
         return FileOpPlan(
-            items: items, destination: destination, strategy: strategy,
+            items: executableItems, destination: destination, strategy: strategy,
             totalBytes: scan.totalBytes, fileCount: scan.fileCount, flatList: scan.flatList)
     }
 

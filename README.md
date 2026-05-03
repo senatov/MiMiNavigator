@@ -17,7 +17,7 @@
   <img src="https://img.shields.io/badge/Archives-50%2B_Formats-6f42c1" alt="50+ archive formats" />
   <img src="https://img.shields.io/badge/Media-Preview_%26_Conversion_Placeholders-ff8c00" alt="Media preview and conversion placeholders" />
   <img src="https://img.shields.io/badge/License-AGPL--3.0-blue" alt="AGPL-3.0" />
-  <img src="https://img.shields.io/badge/v0.9.8.3-Active_Development-orange" alt="Active Development" />
+  <img src="https://img.shields.io/badge/v0.9.8.4-Active_Development-orange" alt="Active Development" />
 </p>
 
 <p align="center">
@@ -36,14 +36,14 @@
 
 
 
-## Recent Changes (v0.9.8.3 — April 2026)
+## Recent Changes (v0.9.8.4 — May 2026)
 
-- **Finder-style sidebar** — toggleable Finder-like sidebar with favorites, cloud locations, mounted volumes, History, Network, Trash, and context actions.
-- **Context menu coverage** — `Console` is available from file, directory, multi-selection, background, and Finder Sidebar menus.
-- **Mounted volume handling** — ejectable local mounts now show a mount-style icon and can be unmounted from the sidebar R-Menu.
-- **Privacy prompts reduced** — sidebar uses cached Finder favorites on open and avoids scanning protected service containers unless explicitly refreshed.
-- **Autofit layout rework** — left and right panels fit independently, `Name` is measured from current rows, and fixed columns are allowed to overflow right only when needed.
-- **Release metadata** — version and build number updated for the notarized `0.9.8.3` DMG release.
+- **SMB mount reliability** — SMB shares can mount under MiMiNavigator's Application Support folder when `/Volumes` is not writable.
+- **Connection navigation** — toolbar connection actions open SMB sessions in the active panel and active remote sessions appear in the Finder-style sidebar.
+- **Disconnect recovery** — panels showing a disconnected server return to the nearest previous history entry that does not belong to that server.
+- **Copy conflict clarity** — conflict dialogs now show Existing vs Incoming file cards and explicit `Skip Incoming` / `Replace Existing` actions.
+- **Cleaner copy plans** — macOS service metadata such as `.DS_Store`, AppleDouble `._*`, `.localized`, Spotlight, and Trash metadata are skipped.
+- **Release metadata** — version and build number updated for the notarized `0.9.8.4` DMG release.
 
 ---
 
