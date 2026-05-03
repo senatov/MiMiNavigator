@@ -86,6 +86,7 @@ final class ConnectToServerCoordinator {
         panel.level = .normal
         panel.hidesOnDeactivate = false
         panel.tabbingMode = .disallowed
+        panel.autorecalculatesKeyViewLoop = true
 
         if !panel.setFrameUsingName(frameAutosaveName) {
             panel.setFrame(computeDefaultFrame(), display: true)
@@ -94,7 +95,7 @@ final class ConnectToServerCoordinator {
 
         panel.delegate = ConnectToServerWindowDelegate.shared
         panel.makeKeyAndOrderFront(nil)
-        panel.makeFirstResponder(panel.contentView)
+        panel.recalculateKeyViewLoop()
 
         window = panel
         isVisible = true

@@ -13,10 +13,11 @@ struct SettingsWindowView: View {
 
     let onDismiss: () -> Void
 
-    @State private var selectedSection: SettingsSection = .general
+    @State private var selectedSection: SettingsSection = Self.restoredSection()
     @State private var themeStore = ColorThemeStore.shared
     @State private var coordinator = SettingsCoordinator.shared
     @Environment(\.colorScheme) private var colorScheme
+    private static let selectedSectionDefaultsKey = "SettingsWindowView.selectedSection"
 
     private var dialogBgColor: Color {
         let store = ColorThemeStore.shared
@@ -42,12 +43,16 @@ struct SettingsWindowView: View {
                 selectedSection = pending
                 coordinator.pendingSection = nil
             }
+            persistSelectedSection()
         }
         .onChange(of: coordinator.pendingSection) { _, newValue in
             if let section = newValue {
                 selectedSection = section
                 coordinator.pendingSection = nil
             }
+        }
+        .onChange(of: selectedSection) { _, _ in
+            persistSelectedSection()
         }
     }
 
@@ -202,5 +207,15 @@ struct SettingsWindowView: View {
         .padding(.horizontal, 24)
         .padding(.top, 20)
         .padding(.bottom, 16)
+    }
+
+    // MARK: - State Persistence
+    private static func restoredSection() -> SettingsSection {
+        let rawValue = UserDefaults.standard.string(forKey: selectedSectionDefaultsKey) ?? SettingsSection.general.rawValue
+        return SettingsSection(rawValue: rawValue) ?? .general
+    }
+
+    private func persistSelectedSection() {
+        UserDefaults.standard.set(selectedSection.rawValue, forKey: Self.selectedSectionDefaultsKey)
     }
 }

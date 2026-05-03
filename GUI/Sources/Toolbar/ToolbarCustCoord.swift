@@ -62,6 +62,7 @@ final class ToolbarCustomizeCoordinator {
         panel.isFloatingPanel = true
         panel.level = .floating
         panel.tabbingMode = .disallowed
+        panel.autorecalculatesKeyViewLoop = true
         panel.hasShadow = true
         panel.collectionBehavior.insert(.moveToActiveSpace)
         panel.backgroundColor = NSColor(DialogColors.base)
@@ -74,7 +75,7 @@ final class ToolbarCustomizeCoordinator {
         self.window = panel
         isVisible = true
         present(panel, relativeTo: sourceMainWindow)
-        panel.makeFirstResponder(panel.contentView)
+        panel.recalculateKeyViewLoop()
         log.info("[ToolbarCustomize] opened ✓")
     }
 

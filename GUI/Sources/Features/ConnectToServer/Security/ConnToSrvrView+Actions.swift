@@ -194,7 +194,11 @@ extension ConnToSrvrView {
             log.info("[ConnToSrvr] focused on pending server=\(server.displayName)")
             return
         }
+        if restoreLastSelection() {
+            return
+        }
         selectFirst()
+        restoreLastFocusedField()
     }
 
     func mapFieldName(_ name: String) -> FormField? {
@@ -207,6 +211,60 @@ extension ConnToSrvrView {
             case "keyPath": return .keyPath
             default: return nil
         }
+    }
+
+    func fieldName(_ field: FormField) -> String {
+        switch field {
+            case .name: return "name"
+            case .host: return "host"
+            case .port: return "port"
+            case .remotePath: return "remotePath"
+            case .user: return "user"
+            case .password: return "password"
+            case .keyPath: return "keyPath"
+        }
+    }
+
+    func restoreLastSelection() -> Bool {
+        guard let rawID = UserDefaults.standard.string(forKey: Self.selectedServerDefaultsKey),
+            let id = UUID(uuidString: rawID),
+            let server = store.servers.first(where: { $0.id == id })
+        else {
+            return false
+        }
+        selectedID = server.id
+        applyServerToDraft(server)
+        restoreLastFocusedField()
+        log.info("[ConnToSrvr] restored selected server=\(server.displayName)")
+        return true
+    }
+
+    func restoreLastFocusedField() {
+        let rawField = UserDefaults.standard.string(forKey: Self.focusedFieldDefaultsKey)
+        let field = rawField.flatMap(mapFieldName) ?? defaultFocusedField()
+        Task { @MainActor in
+            focusedField = field
+        }
+    }
+
+    func defaultFocusedField() -> FormField {
+        if draft.host.isEmpty { return .host }
+        if draft.user.isEmpty { return .user }
+        if draft.authType == .privateKey { return .keyPath }
+        return .password
+    }
+
+    func persistSelectedID(_ id: RemoteServer.ID?) {
+        guard let id else {
+            UserDefaults.standard.removeObject(forKey: Self.selectedServerDefaultsKey)
+            return
+        }
+        UserDefaults.standard.set(id.uuidString, forKey: Self.selectedServerDefaultsKey)
+    }
+
+    func persistFocusedField(_ field: FormField?) {
+        guard let field else { return }
+        UserDefaults.standard.set(fieldName(field), forKey: Self.focusedFieldDefaultsKey)
     }
 
     func chooseKeyFile() {

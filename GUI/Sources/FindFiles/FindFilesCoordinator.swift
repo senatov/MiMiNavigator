@@ -76,6 +76,7 @@ final class FindFilesCoordinator {
         window.hidesOnDeactivate = false
         window.level = .normal
         window.tabbingMode = .disallowed
+        window.autorecalculatesKeyViewLoop = true
 
         // Restore saved frame or compute default position
         if !window.setFrameUsingName(frameAutosaveName) {
@@ -86,7 +87,7 @@ final class FindFilesCoordinator {
         window.setFrameAutosaveName(frameAutosaveName)
         window.delegate = FindFilesWindowDelegate.shared
         window.makeKeyAndOrderFront(nil)
-        window.makeFirstResponder(window.contentView)
+        window.recalculateKeyViewLoop()
         findWindow = window
         isVisible = true
         log.info("[FindFiles] Window opened")

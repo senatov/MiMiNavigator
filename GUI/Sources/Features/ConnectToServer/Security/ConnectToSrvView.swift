@@ -49,6 +49,8 @@ struct ConnToSrvrView: View {
     private static let dividerHoverTintOpacity: Double = 0.10
     private static let dividerIdleTintOpacity: Double = 0.04
     private static let dividerBorderOpacity: Double = 0.18
+    static let selectedServerDefaultsKey = "ConnToSrvrView.selectedServerID"
+    static let focusedFieldDefaultsKey = "ConnToSrvrView.focusedField"
 
     // MARK: - Derived State
 
@@ -114,6 +116,12 @@ struct ConnToSrvrView: View {
         .glassEffect()
         .onAppear(perform: handleAppear)
         .onDisappear(perform: handleDisappear)
+        .onChange(of: selectedID) { _, newValue in
+            persistSelectedID(newValue)
+        }
+        .onChange(of: focusedField) { _, newValue in
+            persistFocusedField(newValue)
+        }
         .onExitCommand {
             onDismiss?()
         }

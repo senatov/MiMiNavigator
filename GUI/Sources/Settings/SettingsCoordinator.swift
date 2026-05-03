@@ -66,6 +66,7 @@ final class SettingsCoordinator {
         panel.hidesOnDeactivate = false
         panel.level = .normal
         panel.tabbingMode = .disallowed
+        panel.autorecalculatesKeyViewLoop = true
 
         if !panel.setFrameUsingName(frameAutosaveName) {
             panel.setFrame(computeDefaultFrame(), display: true)
@@ -74,7 +75,7 @@ final class SettingsCoordinator {
         panel.delegate = SettingsWindowDelegate.shared
         log.debug(#function)
         panel.makeKeyAndOrderFront(nil)
-        panel.makeFirstResponder(panel.contentView)
+        panel.recalculateKeyViewLoop()
         window = panel
         isVisible = true
         log.info("[Settings] panel opened")

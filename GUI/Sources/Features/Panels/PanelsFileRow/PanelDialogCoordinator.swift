@@ -81,6 +81,7 @@ final class PanelDialogCoordinator: NSObject, NSWindowDelegate {
         newPanel.hidesOnDeactivate = false
         newPanel.level = .normal
         newPanel.tabbingMode = .disallowed
+        newPanel.autorecalculatesKeyViewLoop = true
         // Must be false — becomesKeyOnlyIfNeeded prevents Tab/Shift-Tab chain
         newPanel.becomesKeyOnlyIfNeeded = false
         newPanel.delegate = self
@@ -93,8 +94,7 @@ final class PanelDialogCoordinator: NSObject, NSWindowDelegate {
         newPanel.setFrameAutosaveName(kind.rawValue)
 
         newPanel.makeKeyAndOrderFront(nil)
-        // Give key focus to the hosting view so Tab chain works immediately
-        newPanel.makeFirstResponder(newPanel.contentView)
+        newPanel.recalculateKeyViewLoop()
         panel = newPanel
         isVisible = true
         log.info("[\(kind.rawValue)] Window opened")

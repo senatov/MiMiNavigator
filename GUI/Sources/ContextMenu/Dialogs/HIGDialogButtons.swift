@@ -36,11 +36,13 @@ struct HIGDialogButtons: View {
                 .keyboardShortcut(.cancelAction)
                 .buttonStyle(ThemedButtonStyle())
                 .controlSize(.large)
+                .focusable(true)
             Button(confirmTitle, action: onConfirm)
                 .keyboardShortcut(.defaultAction)
                 .buttonStyle(ThemedButtonStyle())
                 .tint(isDestructive ? .red : .accentColor)
                 .controlSize(.large)
+                .focusable(true)
                 .disabled(isConfirmDisabled)
         }
         .frame(maxWidth: .infinity, alignment: .trailing)
