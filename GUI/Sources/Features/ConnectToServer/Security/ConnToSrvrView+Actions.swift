@@ -51,6 +51,10 @@ extension ConnToSrvrView {
 
     func finishRemoteConnect(url: URL) async {
         await connectionManager.connect(to: draft, password: password)
+        guard !Task.isCancelled else {
+            isConnecting = false
+            return
+        }
         log.debug("[ConnToSrvr] connect() finished, isConnected=\(connectionManager.isConnected)")
 
         if connectionManager.isConnected(to: draft) {

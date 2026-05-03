@@ -25,6 +25,7 @@ struct ConnToSrvrView: View {
     @State var password: String = ""
     @State var keepPassword: Bool = true
     @State var isConnecting: Bool = false
+    @State var connectTask: Task<Void, Never>?
     @State var sessionLayout = SessionColumnLayout()
     @State var showPassword: Bool = false
     @State var connectionError: String = ""
@@ -112,7 +113,7 @@ struct ConnToSrvrView: View {
         .background(dialogBgColor.ignoresSafeArea())
         .glassEffect()
         .onAppear(perform: handleAppear)
-        .onDisappear(perform: releaseDividerCursorIfNeeded)
+        .onDisappear(perform: handleDisappear)
         .onExitCommand {
             onDismiss?()
         }

@@ -33,9 +33,10 @@ extension ConnToSrvrView {
 
     func startConnection(for url: URL) {
         isConnecting = true
+        connectTask?.cancel()
 
         if isManagedSMBProtocol(url) {
-            Task {
+            connectTask = Task {
                 await finishRemoteConnect(url: url)
             }
             return
@@ -47,9 +48,20 @@ extension ConnToSrvrView {
             return
         }
 
-        Task {
+        connectTask = Task {
             await finishRemoteConnect(url: url)
         }
+    }
+
+    func cancelConnectionTask() {
+        connectTask?.cancel()
+        connectTask = nil
+        isConnecting = false
+    }
+
+    func handleDisappear() {
+        cancelConnectionTask()
+        releaseDividerCursorIfNeeded()
     }
 
     func isManagedSMBProtocol(_ url: URL) -> Bool {
@@ -62,6 +74,7 @@ extension ConnToSrvrView {
     }
 
     func handleConnectionSuccess(url: URL) {
+        guard !Task.isCancelled else { return }
         log.info("[ConnToSrvr] connection SUCCESS host=\(draft.host)")
         connectionError = ""
         onConnect?(url, password)
@@ -69,6 +82,7 @@ extension ConnToSrvrView {
     }
 
     func handleConnectionFailure() {
+        guard !Task.isCancelled else { return }
         refreshDraftFromStore()
         let result = draft.lastResult
         let reason = result.rawValue

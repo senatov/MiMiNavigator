@@ -17,7 +17,7 @@ import UniformTypeIdentifiers
 
 // MARK: - SMBFileProvider
 final class SMBFileProvider: @unchecked Sendable, RemoteFileProvider {
-    private enum SMBProviderError: LocalizedError {
+    enum SMBProviderError: LocalizedError {
         case missingSession
         case invalidMountURL
         case invalidRemotePath(String)
@@ -56,6 +56,8 @@ final class SMBFileProvider: @unchecked Sendable, RemoteFileProvider {
 
     private let stateQueue = DispatchQueue(label: "MiMiNavigator.SMBFileProvider.state")
     private var session: SMBSession?
+    static let defaultCommandTimeout: TimeInterval = 20
+    static let mountCommandTimeout: TimeInterval = 15
 
     var isConnected: Bool {
         stateQueue.sync { session != nil }
@@ -323,7 +325,8 @@ final class SMBFileProvider: @unchecked Sendable, RemoteFileProvider {
         let result = try runCommand(
             executable: "/sbin/mount_smbfs",
             arguments: [smbURL, mountPointURL.path],
-            redactedArguments: ["//\(user):***@\(host)/\(shareName)", mountPointURL.path]
+            redactedArguments: ["//\(user):***@\(host)/\(shareName)", mountPointURL.path],
+            timeout: mountCommandTimeout
         )
 
         if result.exitCode == 64,
@@ -392,70 +395,5 @@ final class SMBFileProvider: @unchecked Sendable, RemoteFileProvider {
         return supportURL
             .appendingPathComponent("MiMiNavigator", isDirectory: true)
             .appendingPathComponent("Mounts", isDirectory: true)
-    }
-
-    private static func removeAppMountDirectoryIfEmpty(_ mountPointURL: URL, mountRootURL: URL) {
-        guard mountPointURL.path.hasPrefix(mountRootURL.path + "/") else { return }
-        try? FileManager.default.removeItem(at: mountPointURL)
-    }
-
-    private static func sanitizeMountName(_ name: String) -> String {
-        var result = name.precomposedStringWithCanonicalMapping
-        result = result.replacingOccurrences(of: " ", with: "-")
-        result = result.replacingOccurrences(of: "\u{2018}", with: "")
-        result = result.replacingOccurrences(of: "\u{2019}", with: "")
-        result = result.replacingOccurrences(of: "'", with: "")
-        let allowed = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "-_."))
-        result = result.unicodeScalars.filter { allowed.contains($0) }.map { String($0) }.joined()
-        return result.isEmpty ? "share" : result
-    }
-
-    private struct CommandResult {
-        let exitCode: Int32
-        let stdout: String
-        let stderr: String
-
-        var combinedOutput: String {
-            let parts = [
-                stdout.trimmingCharacters(in: .whitespacesAndNewlines), stderr.trimmingCharacters(in: .whitespacesAndNewlines),
-            ]
-            .filter { !$0.isEmpty }
-            return parts.joined(separator: " | ")
-        }
-    }
-
-    @discardableResult
-    private static func runCommand(
-        executable: String,
-        arguments: [String],
-        redactedArguments: [String],
-        ignoreNonZeroExitCode: Bool = false
-    ) throws -> CommandResult {
-        let process = Process()
-        let stdoutPipe = Pipe()
-        let stderrPipe = Pipe()
-
-        process.executableURL = URL(fileURLWithPath: executable)
-        process.arguments = arguments
-        process.standardOutput = stdoutPipe
-        process.standardError = stderrPipe
-
-        log.debug("[SMB] run \(executable) args=\(redactedArguments.joined(separator: " "))")
-
-        try process.run()
-        process.waitUntilExit()
-
-        let stdoutData = stdoutPipe.fileHandleForReading.readDataToEndOfFile()
-        let stderrData = stderrPipe.fileHandleForReading.readDataToEndOfFile()
-        let stdout = String(data: stdoutData, encoding: .utf8) ?? ""
-        let stderr = String(data: stderrData, encoding: .utf8) ?? ""
-        let result = CommandResult(exitCode: process.terminationStatus, stdout: stdout, stderr: stderr)
-
-        if !ignoreNonZeroExitCode, result.exitCode != 0 {
-            log.warning("[SMB] command failed exit=\(result.exitCode) output='\(result.combinedOutput)'")
-            throw SMBProviderError.commandFailed(result.combinedOutput)
-        }
-
-        return result
     }
 }

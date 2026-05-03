@@ -210,10 +210,16 @@ extension ConnToSrvrView {
             saveButton
                 .disabled(draft.host.isEmpty)
 
-            Button("Connect", action: connectAction)
-                .disabled(draft.host.isEmpty || isConnecting)
-                .buttonStyle(AnimatedDialogButtonStyle(role: .confirm))
-                .keyboardShortcut(.return, modifiers: .command)
+            if isConnecting {
+                Button("Cancel", action: cancelConnectionTask)
+                    .buttonStyle(AnimatedDialogButtonStyle())
+                    .keyboardShortcut(.cancelAction)
+            } else {
+                Button("Connect", action: connectAction)
+                    .disabled(draft.host.isEmpty)
+                    .buttonStyle(AnimatedDialogButtonStyle(role: .confirm))
+                    .keyboardShortcut(.return, modifiers: .command)
+            }
         }
         .glassEffect()
     }
