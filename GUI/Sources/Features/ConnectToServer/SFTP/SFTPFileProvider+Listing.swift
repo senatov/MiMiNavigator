@@ -20,8 +20,8 @@ extension SFTPFileProvider {
         let dirPath = normalizedListingRemotePath(path)
         let entries = try await sftp.listDirectory(atPath: dirPath)
 
-        let items = entries.compactMap { entry -> RemoteFileItem? in
-            guard let component = entry.components.first else { return nil }
+        let components = entries.flatMap(\.components)
+        let items = components.compactMap { component -> RemoteFileItem? in
             let name = component.filename
             guard name != ".", name != ".." else { return nil }
 
@@ -41,7 +41,7 @@ extension SFTPFileProvider {
             )
         }
 
-        log.debug("[SFTP] listed \(items.count) items at \(dirPath)")
+        log.debug("[SFTP] listed \(items.count) items at \(dirPath) chunks=\(entries.count) components=\(components.count)")
         return items
     }
 
