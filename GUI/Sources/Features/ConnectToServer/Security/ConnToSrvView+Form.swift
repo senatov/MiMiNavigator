@@ -104,27 +104,34 @@ extension ConnToSrvrView {
         }
     }
 
+    @ViewBuilder
     var passwordField: some View {
-        ZStack {
-            if showPassword {
-                TextField("", text: $password)
-                    .textFieldStyle(.roundedBorder)
-                    .glassEffect()
-                    .focused($focusedField, equals: .password)
-            } else {
-                SecureField("", text: $password)
-                    .textFieldStyle(.roundedBorder)
-                    .glassEffect()
-                    .focused($focusedField, equals: .password)
-            }
+        if showPassword {
+            TextField("", text: $password)
+                .id("plain-password-field")
+                .textFieldStyle(.roundedBorder)
+                .glassEffect()
+                .focused($focusedField, equals: .password)
+        } else {
+            SecureField("", text: $password)
+                .id("secure-password-field")
+                .textFieldStyle(.roundedBorder)
+                .glassEffect()
+                .focused($focusedField, equals: .password)
         }
     }
 
     var passwordVisibilityButton: some View {
         Button {
+            let shouldRestoreFocus = focusedField == .password
             showPassword.toggle()
+            if shouldRestoreFocus {
+                Task { @MainActor in
+                    focusedField = .password
+                }
+            }
         } label: {
-            Image(systemName: showPassword ? "eye.fill" : "eye.slash")
+            Image(systemName: showPassword ? "eye.slash" : "eye")
                 .foregroundStyle(.secondary)
                 .frame(width: 20)
         }

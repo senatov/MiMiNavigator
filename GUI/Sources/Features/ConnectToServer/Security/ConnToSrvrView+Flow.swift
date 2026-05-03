@@ -75,9 +75,19 @@ extension ConnToSrvrView {
         log.warning("[ConnToSrvr] connect failed host=\(draft.host)")
         log.warning("[ConnToSrvr] result=\(reason)")
         log.warning("[ConnToSrvr] detail=\(draft.lastErrorDetail ?? "—")")
-        connectionError = reason
+        connectionError = connectionErrorTitle(result: result, detail: draft.lastErrorDetail)
         isConnecting = false
         focusFieldForError(result)
+    }
+
+    func connectionErrorTitle(result: ConnectionResult, detail: String?) -> String {
+        guard draft.remoteProtocol == .smb,
+            let detail,
+            detail.localizedCaseInsensitiveContains("share")
+        else {
+            return result.rawValue
+        }
+        return "SMB Share Required"
     }
 
     func persistPasswordIfNeeded() {

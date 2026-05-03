@@ -55,8 +55,9 @@ final class ConnectToServerCoordinator {
     // MARK: - Open
     func open() {
         log.debug(#function)
-        if let existing = window, existing.isVisible {
-            existing.makeKeyAndOrderFront(nil)
+        if let existing = existingPanel() {
+            window = existing
+            existing.orderFront(nil)
             isVisible = true
             return
         }
@@ -109,9 +110,25 @@ final class ConnectToServerCoordinator {
         )
     }
 
+    // MARK: - Existing Panel Lookup
+    private func existingPanel() -> NSPanel? {
+        if let window, window.isVisible {
+            return window
+        }
+        return NSApp.windows
+            .compactMap { $0 as? NSPanel }
+            .first { panel in
+                panel.isVisible && panel.title == panelTitle
+            }
+    }
+
     // MARK: - Close
     func close() {
-        window?.close()
+        guard let window else {
+            isVisible = false
+            return
+        }
+        window.close()
         isVisible = false
         log.info("[ConnectToServer] panel closed")
     }
@@ -119,12 +136,13 @@ final class ConnectToServerCoordinator {
     // MARK: - Called by delegate
     func windowDidClose() {
         isVisible = false
+        window = nil
     }
 
     // MARK: - Raise to front (called by AppDelegate.applicationDidBecomeActive)
     func bringToFront() {
         guard isVisible else { return }
-        window?.makeKeyAndOrderFront(nil)
+        window?.orderFront(nil)
     }
 
     // MARK: - Handle connect action from view

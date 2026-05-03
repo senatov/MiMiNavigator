@@ -47,7 +47,12 @@ final class ConnectErrorPopupController: InfoPopupController {
         case .authFailed: tip = "Check username / password / SSH key."
         case .timeout:    tip = "Host unreachable or firewall blocking port \(server.port)."
         case .refused:    tip = "Service not running on \(server.host):\(server.port)."
-        default:          tip = "Check host, port, credentials, VPN, firewall."
+        default:
+            if server.remoteProtocol == .smb {
+                tip = "SMB path must start with a shared folder name. For SSH access to /Users, use SFTP."
+            } else {
+                tip = "Check host, port, credentials, VPN, firewall."
+            }
         }
         out.appendHUD("\nTip: \(tip)\n", font: Self.labelFont, color: Self.labelColor, para: para)
 

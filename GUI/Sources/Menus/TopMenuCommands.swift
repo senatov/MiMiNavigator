@@ -88,7 +88,7 @@ import Foundation
             MenuItem(
                 title: "Connect to Server…",
                 icon: "server.rack",
-                action: { ConnectToServerCoordinator.shared.toggle() },
+                action: { ConnectToServerCoordinator.shared.open() },
                 hotKey: .connectToServer
             ),
             MenuItem(

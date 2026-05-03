@@ -39,7 +39,7 @@ struct RemoteConnectionsDropdown: View {
             }
             Divider()
             Button {
-                ConnectToServerCoordinator.shared.toggle()
+                ConnectToServerCoordinator.shared.open()
             } label: {
                 Label("Manage Connections…", systemImage: "slider.horizontal.3")
             }

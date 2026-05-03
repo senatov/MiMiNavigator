@@ -369,7 +369,7 @@ struct MiMiNavigatorApp: App {
 
     func performConnectServer() {
         log.debug("Connect to Server button clicked")
-        ConnectToServerCoordinator.shared.toggle()
+        ConnectToServerCoordinator.shared.open()
     }
 
     func performFindFiles() {
