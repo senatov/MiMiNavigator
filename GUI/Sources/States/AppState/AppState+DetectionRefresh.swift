@@ -109,7 +109,15 @@ extension AppState {
             let remotePath = normalizedRemotePath(for: panelURL)
             log.info("[AppState] refreshRemoteFiles panel=\(panel) path=\(remotePath)")
             let items = try await manager.listDirectory(remotePath)
-            let files = items.map { CustomFile(remoteItem: $0) }
+            let allFiles = items.map { CustomFile(remoteItem: $0) }
+            let showHidden = UserPreferences.shared.snapshot.showHiddenFiles
+            let files: [CustomFile]
+            if showHidden {
+                files = allFiles
+            } else {
+                files = allFiles.filter { !$0.nameStr.hasPrefix(".") }
+            }
+            log.debug("[AppState] remote hidden filter: showHidden=\(showHidden) raw=\(allFiles.count) visible=\(files.count)")
             let sorted = applySorting(files)
             applyRemoteFiles(sorted, to: panel)
             restoreRemoteSelection(from: sorted, on: panel)

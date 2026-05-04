@@ -99,50 +99,6 @@ final class AppState {
         get { rightPanel.savedLocalURL }
         set { rightPanel.savedLocalURL = newValue }
     }
-    var leftPath: String {
-        get { leftURL.path }
-        set { leftURL = URL(fileURLWithPath: newValue) }
-    }
-    var rightPath: String {
-        get { rightURL.path }
-        set { rightURL = URL(fileURLWithPath: newValue) }
-    }
-    var savedLocalLeftPath: String? {
-        get { savedLocalLeftURL?.path }
-        set { savedLocalLeftURL = newValue.map { URL(fileURLWithPath: $0) } }
-    }
-    var savedLocalRightPath: String? {
-        get { savedLocalRightURL?.path }
-        set { savedLocalRightURL = newValue.map { URL(fileURLWithPath: $0) } }
-    }
-
-    func url(for panel: FavPanelSide) -> URL {
-        switch panel {
-            case .left: return leftURL
-            case .right: return rightURL
-        }
-    }
-
-    func path(for panel: FavPanelSide) -> String {
-        switch panel {
-            case .left: return leftPath
-            case .right: return rightPath
-        }
-    }
-
-    func breadcrumbDisplayPath(for panel: FavPanelSide) -> String {
-        self[panel: panel].breadcrumbDisplayPath ?? path(for: panel)
-    }
-
-    func setPath(_ path: String, for panel: FavPanelSide) {
-        log.debug("[AppState] setPath panel=\(panel) path=\(path)")
-        if panel == .left {
-            leftURL = URL(fileURLWithPath: path)
-        } else {
-            rightURL = URL(fileURLWithPath: path)
-        }
-    }
-
     func beginTermination() {
         guard !isTerminating else { return }
         isTerminating = true

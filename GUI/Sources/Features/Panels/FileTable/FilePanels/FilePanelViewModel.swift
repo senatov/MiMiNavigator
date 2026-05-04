@@ -39,8 +39,9 @@ final class FilePanelViewModel {
             log.warning("Attempted to set nil path for <<\(panelSide)>>")
             return
         }
+        let path = AppState.pathString(for: url)
         Task { @MainActor in
-            await appState.navigateToDirectory(url.path, on: panelSide)
+            await appState.navigateToDirectory(path, on: panelSide)
         }
     }
 
