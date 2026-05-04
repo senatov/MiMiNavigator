@@ -31,6 +31,7 @@ struct HIGTextField: View {
                 }
             }
             .textFieldStyle(.plain)
+            .applyFocusState(focusState)
             .autocorrectionDisabled()
             .textContentType(.none)
             .font(.system(size: 14))
@@ -45,6 +46,18 @@ struct HIGTextField: View {
                         lineWidth: 1
                     )
             )
+        }
+    }
+}
+
+// MARK: - Focus Binding Helper
+private extension View {
+    @ViewBuilder
+    func applyFocusState(_ focusState: FocusState<Bool>.Binding?) -> some View {
+        if let focusState {
+            focused(focusState)
+        } else {
+            self
         }
     }
 }

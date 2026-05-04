@@ -49,9 +49,9 @@ struct CreateFolderDialog: View {
                 label: L10n.Dialog.CreateFolder.enterNameLabel,
                 placeholder: L10n.Dialog.CreateFolder.placeholder,
                 text: $folderName,
-                hasError: !isValidName && !folderName.isEmpty
+                hasError: !isValidName && !folderName.isEmpty,
+                focusState: $isNameFieldFocused
             )
-            .focused($isNameFieldFocused)
 
             if !folderName.isEmpty && !isValidName {
                 Text(L10n.Error.nameInvalidCharsExtended)

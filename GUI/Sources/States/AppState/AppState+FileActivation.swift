@@ -174,12 +174,8 @@ extension AppState {
         }
         let openURL = resolvedTarget?.url ?? file.urlValue
 
-        NSWorkspace.shared.open(
-            [openURL],
-            withApplicationAt: NSWorkspace.shared.urlForApplication(toOpen: openURL)
-                ?? URL(fileURLWithPath: "/System/Library/CoreServices/Finder.app"),
-            configuration: NSWorkspace.OpenConfiguration()
-        ) { _, error in
+        let configuration = NSWorkspace.OpenConfiguration()
+        NSWorkspace.shared.open(openURL, configuration: configuration) { _, error in
             if let error { log.error("[AppState] open file failed: \(error.localizedDescription)") }
         }
     }

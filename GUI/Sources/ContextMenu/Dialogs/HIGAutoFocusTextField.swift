@@ -57,7 +57,7 @@ struct HIGAutoFocusTextField: ViewModifier {
 
     @MainActor
     private static func scheduleFocusAttempt(attempt: Int) {
-        let delay = retryDelayStep * Double(attempt)
+        let delay = attempt == 1 ? 0 : retryDelayStep * Double(attempt)
         DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
             Self.performFocusAttempt(attempt: attempt)
         }

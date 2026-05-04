@@ -234,12 +234,14 @@ extension DualDirectoryScanner {
             }
 
             do {
+                let attemptStart = Date()
                 let sorted = try await scanAndSortDirectory(
                     at: url,
                     showHidden: showHidden,
                     sortKey: sortKey,
                     sortAsc: sortAsc
                 )
+                let scanSortDuration = Date().timeIntervalSince(attemptStart)
 
                 if !isCurrentGeneration(generation, for: currSide) {
                     let currentGeneration = scanGeneration[currSide] ?? -1
@@ -264,7 +266,8 @@ extension DualDirectoryScanner {
 
                 let duration = Date().timeIntervalSince(scanStart)
                 let durationText = String(format: "%.3f", duration)
-                log.info("[Scan] Succeeded for \(url.path): \(sorted.count) items gen=\(generation) in \(durationText)s")
+                let scanSortText = String(format: "%.3f", scanSortDuration)
+                log.info("[Scan] scan/sort succeeded for \(url.path): \(sorted.count) items gen=\(generation) scanSort=\(scanSortText)s total=\(durationText)s")
 
                 let isTerminatingBeforePublish = await MainActor.run { appState.isTerminating }
                 guard !isTerminatingBeforePublish else {
@@ -272,9 +275,20 @@ extension DualDirectoryScanner {
                     return
                 }
 
+                let publishStart = Date()
                 lastFullScan[currSide] = Date()
                 await DirectoryContentCache.shared.store(path: url.path, files: sorted, showHidden: showHidden)
                 await publishSuccessfulScan(sorted, scannedPath: url.path, for: currSide)
+                let publishDuration = Date().timeIntervalSince(publishStart)
+                logSlowScanIfNeeded(
+                    path: url.path,
+                    side: currSide,
+                    generation: generation,
+                    itemCount: sorted.count,
+                    scanSortDuration: scanSortDuration,
+                    publishDuration: publishDuration,
+                    totalDuration: Date().timeIntervalSince(scanStart)
+                )
                 return
             } catch let error as NSError {
                 if isPermissionDeniedError(error) {
@@ -307,6 +321,23 @@ extension DualDirectoryScanner {
             return FileSortingService.sort(scanned, by: sortKey, bDirection: sortAsc)
         }
         .value
+    }
+
+    // MARK: - Slow Scan Diagnostics
+    func logSlowScanIfNeeded(
+        path: String,
+        side: FavPanelSide,
+        generation: Int,
+        itemCount: Int,
+        scanSortDuration: TimeInterval,
+        publishDuration: TimeInterval,
+        totalDuration: TimeInterval
+    ) {
+        guard totalDuration >= 2 || scanSortDuration >= 2 || publishDuration >= 1 else { return }
+        let scanSortText = String(format: "%.3f", scanSortDuration)
+        let publishText = String(format: "%.3f", publishDuration)
+        let totalText = String(format: "%.3f", totalDuration)
+        log.warning("[Scan] slow refresh side=\(side) gen=\(generation) path='\(path)' items=\(itemCount) scanSort=\(scanSortText)s publish=\(publishText)s total=\(totalText)s")
     }
 
     // MARK: - Watcher Signals

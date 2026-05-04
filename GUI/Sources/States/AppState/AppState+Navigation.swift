@@ -127,6 +127,13 @@ extension AppState {
                 await DirectoryContentCache.shared.store(path: newPath, files: files, showHidden: showHidden)
                 return
             }
+            if PathUtils.areEqual(path(for: panel), newPath),
+                Self.isExistingDirectory(newPath),
+                !Self.isReadableDirectory(newPath)
+            {
+                log.warning("[Navigate] \(panel): directory exists but is not readable, stopping retry: '\(newPath)'")
+                break
+            }
             if attempt < maxAttempts {
                 log.warning("[Navigate] \(panel): attempt \(attempt) got 0 files, retrying in 1s...")
                 try? await Task.sleep(for: .seconds(1))
@@ -268,6 +275,12 @@ extension AppState {
             portPart = ""
         }
         return "\(scheme)://\(userPart)\(host)\(portPart)"
+    }
+
+    // MARK: - Existing Directory Check
+    nonisolated static func isExistingDirectory(_ path: String) -> Bool {
+        var isDir: ObjCBool = false
+        return FileManager.default.fileExists(atPath: path, isDirectory: &isDir) && isDir.boolValue
     }
 
     /// True when path exists as a directory AND FileManager can open it (even if empty).
