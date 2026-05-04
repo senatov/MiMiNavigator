@@ -75,9 +75,9 @@ struct CreateLinkDialog: View {
                     label: L10n.Dialog.CreateLink.linkNameLabel,
                     placeholder: L10n.PathInput.nameLabel,
                     text: $linkName,
-                    hasError: errorMessage != nil
+                    hasError: errorMessage != nil,
+                    focusState: $isTextFieldFocused
                 )
-                .focused($isTextFieldFocused)
 
                 if let error = errorMessage {
                     Text(error)

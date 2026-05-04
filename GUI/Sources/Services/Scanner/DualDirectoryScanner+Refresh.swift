@@ -183,20 +183,22 @@ extension DualDirectoryScanner {
     }
 
     func validateDirectoryURL(_ url: URL) -> Bool {
+        var isDirectory: ObjCBool = false
+        guard FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory) else {
+            log.warning("[Scan] path no longer exists: \(url.path)")
+            return false
+        }
+        guard isDirectory.boolValue else {
+            log.debug("[Scan] skipping non-directory path: \(url.path)")
+            return false
+        }
         do {
             let values = try url.resourceValues(forKeys: [.isDirectoryKey])
             if values.isDirectory == true {
                 return true
             }
-
-            var isDirectory: ObjCBool = false
-            if FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory), isDirectory.boolValue {
-                log.debug("[Scan] firmlink directory confirmed via FileManager: \(url.path)")
-                return true
-            }
-
-            log.debug("[Scan] skipping non-directory path: \(url.path)")
-            return false
+            log.debug("[Scan] firmlink directory confirmed via FileManager: \(url.path)")
+            return true
         } catch {
             log.error("[Scan] cannot access path: \(url.path) error=\(error.localizedDescription)")
             return false
@@ -217,6 +219,9 @@ extension DualDirectoryScanner {
         let showHidden = panelState.showHidden
         let sortKey = panelState.sortKey
         let sortAsc = panelState.sortAsc
+        if await recoverMissingDirectoryIfNeeded(originalURL, side: currSide, generation: generation, showHidden: showHidden, sortKey: sortKey, sortAsc: sortAsc) {
+            return
+        }
 
         if isRemoteURL(originalURL) {
             log.debug("[Scan] routing to remote refresh side=\(currSide) gen=\(generation)")
@@ -321,6 +326,48 @@ extension DualDirectoryScanner {
             return FileSortingService.sort(scanned, by: sortKey, bDirection: sortAsc)
         }
         .value
+    }
+
+    // MARK: - Missing Directory Recovery
+    func recoverMissingDirectoryIfNeeded(
+        _ url: URL,
+        side: FavPanelSide,
+        generation: Int,
+        showHidden: Bool,
+        sortKey: SortKeysEnum,
+        sortAsc: Bool
+    ) async -> Bool {
+        guard url.isFileURL, !AppState.isExistingDirectory(url.path) else { return false }
+        guard let fallbackURL = nearestExistingReadableDirectory(from: url), fallbackURL.path != url.path else { return false }
+        log.warning("[Scan] current directory disappeared side=\(side) path='\(url.path)' fallback='\(fallbackURL.path)'")
+        await MainActor.run {
+            appState.updatePath(fallbackURL, for: side)
+        }
+        startFSEvents(for: side, url: fallbackURL)
+        do {
+            let sorted = try await scanAndSortDirectory(at: fallbackURL, showHidden: showHidden, sortKey: sortKey, sortAsc: sortAsc)
+            guard isCurrentGeneration(generation, for: side) else { return true }
+            lastFullScan[side] = Date()
+            await DirectoryContentCache.shared.store(path: fallbackURL.path, files: sorted, showHidden: showHidden)
+            await publishSuccessfulScan(sorted, scannedPath: fallbackURL.path, for: side)
+        } catch {
+            log.error("[Scan] fallback scan failed side=\(side) path='\(fallbackURL.path)' error=\(error.localizedDescription)")
+        }
+        return true
+    }
+
+    // MARK: - Nearest Existing Readable Directory
+    func nearestExistingReadableDirectory(from url: URL) -> URL? {
+        var candidate = url.deletingLastPathComponent()
+        while candidate.path != "/" {
+            if AppState.isReadableDirectory(candidate.path) {
+                return candidate
+            }
+            let parent = candidate.deletingLastPathComponent()
+            if parent.path == candidate.path { break }
+            candidate = parent
+        }
+        return AppState.isReadableDirectory("/") ? URL(fileURLWithPath: "/") : nil
     }
 
     // MARK: - Slow Scan Diagnostics
