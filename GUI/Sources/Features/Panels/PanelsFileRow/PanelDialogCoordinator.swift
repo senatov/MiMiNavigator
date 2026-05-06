@@ -4,8 +4,7 @@
 // Created by Iakov Senatov on 20.02.2026.
 // Copyright © 2026 Senatov. All rights reserved.
 // Description: Generic coordinator for History and Favorites standalone NSPanel windows.
-//              Pattern mirrors FindFilesCoordinator: persistent frame, centered by default,
-//              floats above main window, remembers position across sessions.
+//              Centers dialogs over the main window on every open.
 
 import AppKit
 import SwiftUI
@@ -24,9 +23,9 @@ final class PanelDialogCoordinator: NSObject, NSWindowDelegate {
 
     // MARK: - Shared instances
     static let history = PanelDialogCoordinator(
-        kind: .history, title: "Navigation History", systemImage: "clock.arrow.circlepath", size: NSSize(width: 620, height: 640))
+        kind: .history, title: "Navigation History", systemImage: "clock.arrow.circlepath", size: NSSize(width: 310, height: 768))
     static let favorites = PanelDialogCoordinator(
-        kind: .favorites, title: "Favorites", systemImage: "sidebar.left", size: NSSize(width: 540, height: 720))
+        kind: .favorites, title: "Favorites", systemImage: "sidebar.left", size: NSSize(width: 270, height: 864))
 
     // MARK: - State
     private(set) var isVisible = false
@@ -55,6 +54,7 @@ final class PanelDialogCoordinator: NSObject, NSWindowDelegate {
     func open<Content: View>(content: Content) {
         log.debug(#function)
         if let existing = panel, existing.isVisible {
+            existing.setFrame(computeDefaultFrame(), display: true)
             existing.makeKeyAndOrderFront(nil)
             isVisible = true
             return
@@ -72,7 +72,7 @@ final class PanelDialogCoordinator: NSObject, NSWindowDelegate {
         newPanel.isOpaque = false
         newPanel.backgroundColor = .windowBackgroundColor
         newPanel.isReleasedWhenClosed = false
-        newPanel.minSize = NSSize(width: 420, height: 360)
+        newPanel.minSize = NSSize(width: 260, height: 360)
         newPanel.titlebarAppearsTransparent = false
         PanelTitleHelper.applyIconTitle(to: newPanel, systemImage: windowImage, title: windowTitle)
         newPanel.toolbarStyle = .unified
@@ -86,12 +86,7 @@ final class PanelDialogCoordinator: NSObject, NSWindowDelegate {
         newPanel.becomesKeyOnlyIfNeeded = false
         newPanel.delegate = self
 
-        // Restore frame or compute centered default
-        if !newPanel.setFrameUsingName(kind.rawValue) {
-            let frame = computeDefaultFrame()
-            newPanel.setFrame(frame, display: true)
-        }
-        newPanel.setFrameAutosaveName(kind.rawValue)
+        newPanel.setFrame(computeDefaultFrame(), display: true)
 
         newPanel.makeKeyAndOrderFront(nil)
         newPanel.recalculateKeyViewLoop()

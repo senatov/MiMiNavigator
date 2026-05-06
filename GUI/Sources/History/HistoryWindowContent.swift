@@ -27,8 +27,8 @@ struct HistoryWindowContent: View {
             Divider()
             listArea
         }
-        .frame(minWidth: 440, idealWidth: 560, maxWidth: .infinity)
-        .frame(minHeight: 320, idealHeight: 620, maxHeight: .infinity)
+        .frame(minWidth: 280, idealWidth: 310, maxWidth: .infinity)
+        .frame(minHeight: 360, idealHeight: 768, maxHeight: .infinity)
         .background(.ultraThinMaterial)
         .opacity(appeared ? 1 : 0)
         .offset(y: appeared ? 0 : 4)
@@ -43,15 +43,15 @@ struct HistoryWindowContent: View {
     private var headerBar: some View {
         HStack(spacing: 8) {
             Spacer()
-            if !filteredURLs.isEmpty {
-                Text("\(filteredURLs.count)")
+            if !filteredItems.isEmpty {
+                Text("\(filteredItems.count)")
                     .font(.system(size: 11, weight: .medium).monospacedDigit())
                     .foregroundStyle(.secondary)
                     .padding(.horizontal, 7)
                     .padding(.vertical, 2)
                     .background(Capsule().fill(.quaternary))
-                if filteredURLs.count != directoryURLs.count {
-                    Text("of \(directoryURLs.count)")
+                if filteredItems.count != directoryItems.count {
+                    Text("of \(directoryItems.count)")
                         .font(.system(size: 11).monospacedDigit())
                         .foregroundStyle(.tertiary)
                 }
@@ -97,26 +97,27 @@ struct HistoryWindowContent: View {
     // MARK: - List Area (system inset grouped list, auto scroll + border)
     @ViewBuilder
     private var listArea: some View {
-        if directoryURLs.isEmpty {
+        if directoryItems.isEmpty {
             emptyStateView
-        } else if filteredURLs.isEmpty {
+        } else if filteredItems.isEmpty {
             noMatchView
         } else {
             List {
-                ForEach(filteredURLs, id: \.path) { url in
-                    let path = url.path
+                ForEach(filteredItems) { item in
+                    let path = item.url.path
                     HistoryRow(
                         path: path,
+                        addedAt: item.addedAt,
                         highlightText: searchText,
                         onSelect: { navigateToPath(path) },
-                        onDelete: { deleteFromHistory(url) }
+                        onDelete: { deleteFromHistory(item.url) }
                     )
                     .listRowSeparator(.hidden)
                 }
                 .onDelete { indexSet in
-                    let urls = filteredURLs
+                    let items = filteredItems
                     for idx in indexSet {
-                        deleteFromHistory(urls[idx])
+                        deleteFromHistory(items[idx].url)
                     }
                 }
             }
@@ -152,11 +153,11 @@ struct HistoryWindowContent: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
     // MARK: - Data
-    private var directoryURLs: [URL] { appState.selectionsHistory.getRecentSelections() }
-    private var filteredURLs: [URL] {
-        guard !searchText.isEmpty else { return directoryURLs }
+    private var directoryItems: [RecentHistorySelection] { appState.selectionsHistory.getRecentSelectionItems() }
+    private var filteredItems: [RecentHistorySelection] {
+        guard !searchText.isEmpty else { return directoryItems }
         let q = searchText.lowercased()
-        return directoryURLs.filter { $0.path.lowercased().contains(q) }
+        return directoryItems.filter { $0.url.path.lowercased().contains(q) }
     }
     // MARK: - Actions
     private func navigateToPath(_ path: String) {

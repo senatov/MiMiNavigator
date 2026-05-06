@@ -7,6 +7,13 @@
 
 import Foundation
 
+// MARK: - Recent History Selection
+struct RecentHistorySelection: Identifiable, Equatable {
+    let url: URL
+    let addedAt: Date
+    var id: String { url.path }
+}
+
 // MARK: - SelectionsHistory
 @MainActor
 @Observable
@@ -18,7 +25,7 @@ final class SelectionsHistory {
     private(set) var current: URL?
     private(set) var canGoBack: Bool = false
     private(set) var canGoForward: Bool = false
-    private var recentSelections: [URL] = []
+    private var recentSelections: [RecentHistorySelection] = []
     private static let maxEntries = 255
     // MARK: - JSON file path
     @ObservationIgnored
@@ -34,6 +41,12 @@ final class SelectionsHistory {
         var forwardStack: [String]
         var current: String?
         var recentSelections: [String]
+        var recentSelectionEntries: [RecentSelectionDTO]?
+    }
+
+    private struct RecentSelectionDTO: Codable {
+        var path: String
+        var addedAt: Date
     }
 
     // MARK: - Path helpers
@@ -68,10 +81,10 @@ final class SelectionsHistory {
             trimHistory()
         }
         // Always track in recentSelections for the History dialog
-        if let idx = recentSelections.firstIndex(where: { $0.standardizedFileURL == normalized }) {
+        if let idx = recentSelections.firstIndex(where: { $0.url.standardizedFileURL == normalized }) {
             recentSelections.remove(at: idx)
         }
-        recentSelections.insert(normalized, at: 0)
+        recentSelections.insert(RecentHistorySelection(url: normalized, addedAt: Date()), at: 0)
         if recentSelections.count > Self.maxEntries {
             recentSelections.removeLast()
         }
@@ -114,12 +127,16 @@ final class SelectionsHistory {
     }
     // MARK: - Recent selections (all entries, no limit)
     func getRecentSelections() -> [URL] {
+        recentSelections.map(\.url)
+    }
+    // MARK: - Recent selection items
+    func getRecentSelectionItems() -> [RecentHistorySelection] {
         recentSelections
     }
     // MARK: - Remove entry
     func remove(_ url: URL) {
         let normalized = url.standardizedFileURL
-        recentSelections.removeAll { $0.standardizedFileURL == normalized }
+        recentSelections.removeAll { $0.url.standardizedFileURL == normalized }
         saveToDisk()
     }
     // MARK: - Trim
@@ -149,7 +166,10 @@ final class SelectionsHistory {
             backStack: backStack.map(\.path),
             forwardStack: forwardStack.map(\.path),
             current: current?.path,
-            recentSelections: recentSelections.map(\.path)
+            recentSelections: recentSelections.map(\.url.path),
+            recentSelectionEntries: recentSelections.map { item in
+                RecentSelectionDTO(path: item.url.path, addedAt: item.addedAt)
+            }
         )
         do {
             let encoder = JSONEncoder()
@@ -171,7 +191,15 @@ final class SelectionsHistory {
             backStack = dto.backStack.map(Self.makeFileURL(from:))
             forwardStack = dto.forwardStack.map(Self.makeFileURL(from:))
             current = dto.current.map(Self.makeFileURL(from:))
-            recentSelections = dto.recentSelections.map(Self.makeFileURL(from:))
+            if let entries = dto.recentSelectionEntries {
+                recentSelections = entries.map { entry in
+                    RecentHistorySelection(url: Self.makeFileURL(from: entry.path), addedAt: entry.addedAt)
+                }
+            } else {
+                recentSelections = dto.recentSelections.map { path in
+                    RecentHistorySelection(url: Self.makeFileURL(from: path), addedAt: Date())
+                }
+            }
             updateNavigationState()
         } catch let error as CocoaError where error.code == .fileReadNoSuchFile {
             saveToDisk()

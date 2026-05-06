@@ -11,16 +11,20 @@ import SwiftUI
 // MARK: - History Row
 struct HistoryRow: View {
     let path: String
+    let addedAt: Date
     var highlightText: String = ""
     let onSelect: () -> Void
     let onDelete: () -> Void
     @State private var isHovered = false
     // MARK: - Computed Properties
-    private var displayName: String { URL(fileURLWithPath: path).lastPathComponent }
-    private var parentPath: String {
-        let parent = URL(fileURLWithPath: path).deletingLastPathComponent().path
-        let home = FileManager.default.homeDirectoryForCurrentUser.path
-        return parent.hasPrefix(home) ? "~" + parent.dropFirst(home.count) : parent
+    private static let dateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .short
+        formatter.timeStyle = .short
+        return formatter
+    }()
+    private var formattedAddedAt: String {
+        Self.dateFormatter.string(from: addedAt)
     }
     private var iconName: String {
         let p = path.lowercased()
@@ -50,16 +54,16 @@ struct HistoryRow: View {
                 .font(.system(size: 14))
                 .foregroundStyle(iconColor)
                 .frame(width: 20, alignment: .center)
-            VStack(alignment: .leading, spacing: 1) {
-                highlightedText(displayName)
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                highlightedText(path)
                     .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(.primary)
                     .lineLimit(1)
-                highlightedText(parentPath)
+                    .truncationMode(.middle)
+                Text(formattedAddedAt)
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
-                    .truncationMode(.middle)
             }
             Spacer(minLength: 4)
             Button(action: onDelete) {
