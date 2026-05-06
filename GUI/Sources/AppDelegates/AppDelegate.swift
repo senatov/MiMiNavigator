@@ -200,6 +200,7 @@ import LogKit
             appState?.saveBeforeExit()
         }
         // 2. Stop scanner timers and FSEvents streams — synchronous actor work
+        await DirectorySizeService.shared.shutdown()
         if let scanner = appState?.scanner {
             await scanner.stopMonitoring()
         }

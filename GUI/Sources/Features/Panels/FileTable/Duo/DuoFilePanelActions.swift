@@ -189,6 +189,10 @@
         // MARK: - Exit
         func performExit() {
             log.debug("performExit - Exit button pressed")
+            appState.beginTermination()
+            Task {
+                await DirectorySizeService.shared.shutdown()
+            }
 
             // Cleanup temporary JSON files in /tmp owned by current user
             cleanupUserTmpJSON()

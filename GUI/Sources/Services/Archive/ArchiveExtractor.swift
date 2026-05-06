@@ -171,7 +171,7 @@ enum ArchiveExtractor {
         handle?.set(process)
 
         do {
-            try await runProcess(process, errorPipe: errPipe, outputPipe: outPipe, onProgress: onProgress)
+            try await runProcess(process, errorPipe: errPipe, outputPipe: outPipe, onProgress: nil)
         } catch {
             guard shouldRetryZipWith7z(after: error) else { throw error }
             log.warning("[Extractor] unzip failed for \(archiveURL.lastPathComponent), trying 7z: \(error)")
@@ -179,7 +179,7 @@ enum ArchiveExtractor {
                 archiveURL: archiveURL,
                 to: destination,
                 password: nil,
-                onProgress: onProgress,
+                onProgress: nil,
                 handle: handle
             )
         }

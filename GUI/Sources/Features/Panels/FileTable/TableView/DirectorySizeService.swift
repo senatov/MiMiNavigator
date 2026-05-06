@@ -21,6 +21,7 @@ actor DirectorySizeService {
     // MARK: - Singleton
 
     static let shared = DirectorySizeService()
+    private nonisolated static let cancellation = DirectorySizeCancellationState()
     // MARK: - Constants
     /// Special value meaning: size could not be determined (permission/sandbox/virtual FS/unreadable).
     /// IMPORTANT: Do not format/display this as a real size.
@@ -116,6 +117,7 @@ actor DirectorySizeService {
     /// Request directory size.
     /// Returns cached value immediately if available.
     func requestSize(for url: URL) async -> Int64 {
+        guard !Self.cancellation.isCancelled else { return Self.unavailableSize }
         let resolvedURL = resolveURLForSizing(url)
         let key = cacheKey(for: resolvedURL)
         // fast bail: already known unreadable — don't even try
@@ -184,6 +186,16 @@ actor DirectorySizeService {
         }
     }
 
+    // MARK: - Shutdown
+    func shutdown() {
+        Self.cancellation.cancel()
+        for task in inFlightTasks.values {
+            task.cancel()
+        }
+        inFlightTasks.removeAll()
+        log.info("[DirectorySizeService] shutdown requested")
+    }
+
     private func computeSizeOnBackgroundQueue(for url: URL) async -> Int64 {
         await withCheckedContinuation { (continuation: CheckedContinuation<Int64, Never>) in
             queue.async { [semaphore, weak self] in
@@ -193,6 +205,10 @@ actor DirectorySizeService {
                 }
                 semaphore.wait()
                 defer { semaphore.signal() }
+                guard !Self.cancellation.isCancelled else {
+                    continuation.resume(returning: Self.unavailableSize)
+                    return
+                }
                 // Phase 2 + 3 native calculation (security-scoped best-effort)
                 let size: Int64 = self.withSecurityScope(url) {
                     Self.computeDirectorySizeNative(url)
@@ -251,11 +267,16 @@ actor DirectorySizeService {
     /// Sum file sizes of direct children only — no recursion.
     /// Returns approximate size instantly for UI display with "~" prefix.
     func shallowSize(for url: URL) async -> Int64 {
+        guard !Self.cancellation.isCancelled else { return Self.unavailableSize }
         let resolvedURL = resolveURLForSizing(url)
         //log.info("[DirectorySizeService] shallowSize start: \(resolvedURL.path)")
         let result = await withCheckedContinuation { (continuation: CheckedContinuation<Int64, Never>) in
             queue.async { [weak self] in
                 guard let self else {
+                    continuation.resume(returning: Self.unavailableSize)
+                    return
+                }
+                guard !Self.cancellation.isCancelled else {
                     continuation.resume(returning: Self.unavailableSize)
                     return
                 }
@@ -307,6 +328,10 @@ actor DirectorySizeService {
         let fm = FileManager.default
         guard let enumerator = fm.enumerator(atPath: path) else { return DirectorySizeService.unavailableSize }
         while let item = enumerator.nextObject() as? String {
+            if cancellation.isCancelled {
+                log.debug("[DirectorySizeService] fastDiskUsage cancelled: \(path)")
+                return DirectorySizeService.unavailableSize
+            }
             let fullPath = path + "/" + item
             var statbuf = stat()
             // lstat can fail on protected entries; ignore and continue
@@ -372,6 +397,10 @@ actor DirectorySizeService {
         var statFallbacks = 0
 
         while let fileURL = enumerator.nextObject() as? URL {
+            if cancellation.isCancelled {
+                log.debug("[DirectorySizeService] fullRecursive cancelled: \(url.path)")
+                return DirectorySizeService.unavailableSize
+            }
 
             // 1) Prefer resource values (fast + Finder-like).
             if let values = try? fileURL.resourceValues(forKeys: keys) {

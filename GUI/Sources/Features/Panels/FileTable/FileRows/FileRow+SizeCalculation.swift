@@ -40,6 +40,10 @@ extension FileRow {
     // MARK: - Directory size task orchestration
     func runDirectorySizeTask() async {
         let fileURL = file.urlValue
+        guard !appState.isTerminating else {
+            file.sizeCalculationStarted = false
+            return
+        }
 
         if AppState.isRemotePath(fileURL) {
             log.debug("[FileRow] Skipping remote directory size calculation for '\(file.nameStr)' path='\(fileURL.path)'")
@@ -51,16 +55,12 @@ extension FileRow {
         }
 
         if isMountedVolumeDirectory {
-            do {
-                try await Task.sleep(for: .milliseconds(900))
-            } catch {
-                file.sizeCalculationStarted = false
-                return
-            }
-            if Task.isCancelled {
-                file.sizeCalculationStarted = false
-                return
-            }
+            log.debug("[FileRow] Skipping mounted volume directory size for '\(file.nameStr)' path='\(fileURL.path)'")
+            file.cachedDirectorySize = DirectorySizeService.unavailableSize
+            file.cachedShallowSize = nil
+            file.sizeIsExact = false
+            file.sizeCalculationStarted = false
+            return
         }
 
         // Skip known special / virtual directories to avoid useless scans and permission errors
