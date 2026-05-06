@@ -5,6 +5,7 @@
 // Copyright © 2026 Senatov. All rights reserved.
 // Description: Finder-style source list embedded in the main dual-panel window.
 
+import AppKit
 import FavoritesKit
 import FileModelKit
 import SwiftUI
@@ -37,6 +38,12 @@ struct FinderSidebarView: View {
         .padding(.horizontal, DesignTokens.grid)
         .padding(.vertical, DesignTokens.grid - 2)
         .onAppear(perform: refreshSidebarSources)
+        .onReceive(NSWorkspace.shared.notificationCenter.publisher(for: Notification.Name("NSWorkspaceDidMountNotification"))) { _ in
+            refreshVolumes()
+        }
+        .onReceive(NSWorkspace.shared.notificationCenter.publisher(for: Notification.Name("NSWorkspaceDidUnmountNotification"))) { _ in
+            refreshVolumes()
+        }
     }
 
     // MARK: - Sidebar Background

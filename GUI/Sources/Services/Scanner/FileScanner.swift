@@ -37,6 +37,8 @@ enum FileScanner {
 
     /// Lean metadata set for mounted volumes, especially SMB/NAS paths under /Volumes.
     /// Rich keys like security/extra dates can turn a simple listing into many remote round-trips.
+    /// Keep directoryEntryCountKey: local external volumes usually return it from filesystem metadata,
+    /// and remote filesystems that do not support it simply leave the count empty.
     private static let mountedVolumePrefetchKeys: [URLResourceKey] = [
         .isDirectoryKey,
         .isSymbolicLinkKey,
@@ -47,6 +49,7 @@ enum FileScanner {
         .isWritableKey,
         .fileSizeKey,
         .contentModificationDateKey,
+        .directoryEntryCountKey,
     ]
 
     private static let localPrefetchKeySet = Set(localPrefetchKeys)

@@ -49,6 +49,7 @@ final class AppState {
     var scanner: DualDirectoryScanner!
     private(set) var leftNavigationHistory: PanelNavigationHistory!
     private(set) var rightNavigationHistory: PanelNavigationHistory!
+    var mountedVolumeObserver: Any?
     // MARK: - UI State
     var selectedDir: DirectorySelection = .init()
     var showFavTreePopup: Bool = false
@@ -130,6 +131,7 @@ final class AppState {
         self.multiSelectionManager = MultiSelectionManager(appState: self)
         self.fileActions = FileOperationActions(appState: self)
         self.scanner = DualDirectoryScanner(appState: self)
+        startMountedVolumeObserver()
         applyPreferencesFromSnapshot()
     }
 

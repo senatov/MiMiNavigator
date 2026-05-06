@@ -77,9 +77,7 @@ struct SelectionStatusBar: View {
     }
 
     private var isMountedVolumeRoot: Bool {
-        let normalized = NSString(string: currentPath).standardizingPath
-        guard normalized.hasPrefix("/Volumes/"), normalized != "/Volumes" else { return false }
-        return normalized.split(separator: "/").count == 2
+        AppState.isMountedVolumeRootPath(currentPath)
     }
 
     /// Filter binding for the current panel
@@ -156,7 +154,11 @@ struct SelectionStatusBar: View {
     }
 
     private var diskSpaceLabel: String {
-        availableDiskSpace == "—"
+        if let volumeLabel = VolumeStatusInfo.capacityLabel(for: currentURL) {
+            return volumeLabel
+        }
+
+        return availableDiskSpace == "—"
             ? "Free space unavailable"
             : "\(availableDiskSpace) free"
     }
