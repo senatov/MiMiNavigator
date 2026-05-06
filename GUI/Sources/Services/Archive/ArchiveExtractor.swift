@@ -148,6 +148,16 @@ enum ArchiveExtractor {
         archiveURL: URL, to destination: URL,
         password: String?, onProgress: ProgressLine?, handle: ActiveArchiveProcess?
     ) async throws {
+        if let password, !password.isEmpty {
+            try await extract7z(
+                archiveURL: archiveURL,
+                to: destination,
+                password: password,
+                onProgress: onProgress,
+                handle: handle
+            )
+            return
+        }
         let errPipe = Pipe()
         let outPipe = Pipe()
         let process = makeProcess(executablePath: "/usr/bin/unzip")
@@ -160,7 +170,30 @@ enum ArchiveExtractor {
         process.standardError = errPipe
         handle?.set(process)
 
-        try await runProcess(process, errorPipe: errPipe, outputPipe: outPipe, onProgress: onProgress)
+        do {
+            try await runProcess(process, errorPipe: errPipe, outputPipe: outPipe, onProgress: onProgress)
+        } catch {
+            guard shouldRetryZipWith7z(after: error) else { throw error }
+            log.warning("[Extractor] unzip failed for \(archiveURL.lastPathComponent), trying 7z: \(error)")
+            try await extract7z(
+                archiveURL: archiveURL,
+                to: destination,
+                password: nil,
+                onProgress: onProgress,
+                handle: handle
+            )
+        }
+    }
+
+    // MARK: - ZIP Fallback
+    private static func shouldRetryZipWith7z(after error: Error) -> Bool {
+        guard let archiveError = error as? ArchiveManagerError else { return false }
+        switch archiveError {
+        case .extractionFailed, .passwordRequired:
+            return true
+        default:
+            return false
+        }
     }
 
     // MARK: - TAR family
