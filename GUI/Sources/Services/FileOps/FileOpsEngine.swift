@@ -139,7 +139,7 @@ private extension FileOpsEngine {
             }
 
             progress.setCurrentFile(item.lastPathComponent)
-            if tryAtomicMove(from: item, to: target) {
+            if await tryAtomicMove(from: item, to: target) {
                 progress.fileCompleted(name: item.lastPathComponent, success: true)
             } else {
                 // cross-volume fallback
@@ -151,13 +151,22 @@ private extension FileOpsEngine {
         return progress
     }
 
-    func tryAtomicMove(from source: URL, to target: URL) -> Bool {
-        do {
-            try fm.moveItem(at: source, to: target)
-            return true
-        } catch {
-            return false
-        }
+    func tryAtomicMove(from source: URL, to target: URL) async -> Bool {
+        await Task.detached(priority: .userInitiated) {
+            Self.performSameVolumeMove(from: source, to: target)
+        }.value
+    }
+
+    nonisolated static func performSameVolumeMove(from source: URL, to target: URL) -> Bool {
+        guard isSameVolume(source: source, target: target) else { return false }
+        do { try FileManager.default.moveItem(at: source, to: target); return true } catch { return false }
+    }
+
+    nonisolated static func isSameVolume(source: URL, target: URL) -> Bool {
+        let sourceVolume = try? source.resourceValues(forKeys: [.volumeIdentifierKey]).volumeIdentifier
+        let targetVolume = try? target.deletingLastPathComponent().resourceValues(forKeys: [.volumeIdentifierKey]).volumeIdentifier
+        guard let sourceVolume, let targetVolume else { return false }
+        return sourceVolume.isEqual(targetVolume)
     }
 }
 
@@ -213,8 +222,8 @@ private extension FileOpsEngine {
         log.info("[FileOpsEngine] scheduling panel for \(itemCount) \(operation)")
         Task { @MainActor in
             try? await Task.sleep(nanoseconds: 200_000_000)
-            guard !progress.isCompleted else { return }
-            panel.hide()
+            guard !progress.isCompleted, !progress.isCancelled else { return }
+            panel.hideKeepingSuspendState()
             panel.show(progress: progress)
         }
     }
@@ -431,7 +440,10 @@ private extension FileOpsEngine {
 
             progress.setCurrentFile(entry.url.lastPathComponent)
             do {
-                if operation == .move && tryAtomicMove(from: entry.url, to: finalTarget) {
+                let didAtomicMove = operation == .move
+                    ? await tryAtomicMove(from: entry.url, to: finalTarget)
+                    : false
+                if didAtomicMove {
                     progress.fileCompleted(name: entry.url.lastPathComponent, success: true)
                     progress.add(bytes: entry.size)
                     continue

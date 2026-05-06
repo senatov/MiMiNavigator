@@ -77,12 +77,30 @@ final class FileOpProgressPanel {
         progress = nil
     }
 
+
+
+    /// hide panel visually but keep suspend flag intact — used by delayed showPanel task
+    func hideKeepingSuspendState() {
+        updateTimer?.invalidate()
+        updateTimer = nil
+        stopOKPulse()
+        progressBar?.stopAnimation(nil)
+        waitingForOK = false
+        if let p = panel, let parent = p.parent {
+            parent.removeChildWindow(p)
+        }
+        panel?.orderOut(nil)
+    }
+
     // MARK: - Suspend for User Decision
     func suspendForUserDecision() {
         suspendedForUserDecision = true
         guard let panel, panel.isVisible else { return }
         updateTimer?.invalidate()
         updateTimer = nil
+        if let parent = panel.parent {
+            parent.removeChildWindow(panel)
+        }
         panel.orderOut(nil)
     }
 
@@ -92,6 +110,9 @@ final class FileOpProgressPanel {
         suspendedForUserDecision = false
         guard !progress.isCompleted, !progress.isCancelled else { return }
         centerInMainWindow()
+        if let window = NSApp.mainWindow ?? NSApp.keyWindow {
+            window.addChildWindow(panel, ordered: .above)
+        }
         panel.orderFront(nil)
         startUpdateTimer()
     }
