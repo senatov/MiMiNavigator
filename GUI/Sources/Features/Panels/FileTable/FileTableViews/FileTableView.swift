@@ -119,11 +119,7 @@ struct FileTableView: View {
             scrollAnchorID: $scrollAnchorID,
             onSelect: onSelect,
             pageStep: visibleRowCount,
-            panelSide: panelSide,
-            onParentFocused: { [self] in
-                isParentStripHighlighted = true
-                selectedID = nil
-            }
+            panelSide: panelSide
         )
     }
 

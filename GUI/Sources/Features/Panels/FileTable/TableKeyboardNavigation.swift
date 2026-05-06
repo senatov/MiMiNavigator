@@ -27,8 +27,6 @@ struct TableKeyboardNavigation {
     let onSelect: (CustomFile) -> Void
     let pageStep: Int
     let panelSide: FavPanelSide
-    /// Called by callers that explicitly want to highlight the parent strip panel.
-    let onParentFocused: () -> Void
     // Injected from outside — built once when list changes, not on every keypress
     private let indexByID: [CustomFile.ID: Int]
 
@@ -43,8 +41,7 @@ struct TableKeyboardNavigation {
         scrollAnchorID: Binding<CustomFile.ID?>,
         onSelect: @escaping (CustomFile) -> Void,
         pageStep: Int = 20,
-        panelSide: FavPanelSide,
-        onParentFocused: @escaping () -> Void = {}
+        panelSide: FavPanelSide
     ) {
         self.files = files
         self.indexByID = indexByID
@@ -53,7 +50,6 @@ struct TableKeyboardNavigation {
         self.onSelect = onSelect
         self.pageStep = pageStep
         self.panelSide = panelSide
-        self.onParentFocused = onParentFocused
     }
 
     // MARK: - Navigation Actions
@@ -63,7 +59,10 @@ struct TableKeyboardNavigation {
         // Already on parent strip — stay there
         if selectedID.wrappedValue == nil { return }
         let idx = currentIndex()
-        if idx == 0 { return }
+        if idx == 0 {
+            log.debug("\(logPrefix) moveUp ignored at top panel=\(panelSide.rawValue)")
+            return
+        }
         selectAndScroll(at: idx - 1)
     }
 
@@ -90,7 +89,10 @@ struct TableKeyboardNavigation {
             return
         }
         let idx = currentIndex()
-        if idx == 0 { return }
+        if idx == 0 {
+            log.debug("\(logPrefix) pageUp ignored at top panel=\(panelSide.rawValue)")
+            return
+        }
         let target = max(0, idx - pageStep)
         selectAndScroll(at: target)
     }
