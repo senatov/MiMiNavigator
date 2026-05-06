@@ -37,36 +37,32 @@ enum FileOpStrategy: String, Sendable {
     /// Any file > 100 MB OR total > 1 GB — stream-copy with byte-level progress
     case fewLarge
 
+    /// large file threshold — files above this use streamCopy
+    static let largeFileThreshold: Int64 = 100 * 1024 * 1024
+
+
+
     static func detect(scan: DirScanResult) -> FileOpStrategy {
-        let mb100: Int64 = 100 * 1024 * 1024
-        let gb1: Int64 = 1024 * 1024 * 1024
+        let mb100 = largeFileThreshold
 
-        // FewLarge: huge files or huge total
-        if scan.maxFileSize > mb100 || scan.totalBytes > gb1 {
-            log.info("[FileOpStrategy] → fewLarge (maxFile=\(scan.maxFileSize), total=\(scan.totalBytes))")
-            return .fewLarge
-        }
-
-        // ManySmall: lots of files or deep tree
-        if scan.fileCount > 50 || scan.maxDepth > 3 {
-            log.info("[FileOpStrategy] → manySmall (files=\(scan.fileCount), depth=\(scan.maxDepth))")
-            return .manySmall
-        }
-
-        if scan.flatList.contains(where: \.isDirectory) {
-            log.info("[FileOpStrategy] → manySmall (directory manifest)")
-            return .manySmall
-        }
-
-        // Simple: small quick job
+        // Simple: small quick job (< 10 files AND < 50 MB)
         let mb50: Int64 = 50 * 1024 * 1024
-        if scan.fileCount <= 10 && scan.totalBytes < mb50 {
+        if scan.fileCount <= 10 && scan.totalBytes < mb50 && !scan.flatList.contains(where: \.isDirectory) {
             log.info("[FileOpStrategy] → simple (files=\(scan.fileCount), total=\(scan.totalBytes))")
             return .simple
         }
 
-        // Default to manySmall for middle ground
-        log.info("[FileOpStrategy] → manySmall (default)")
+        // FewLarge: ONLY when ALL files are big or very few files total
+        let largeFiles = scan.flatList.filter { !$0.isDirectory && $0.size > mb100 }
+        let smallFiles = scan.fileCount - largeFiles.count
+        if !largeFiles.isEmpty && smallFiles <= 5 {
+            log.info("[FileOpStrategy] → fewLarge (\(largeFiles.count) large, \(smallFiles) small)")
+            return .fewLarge
+        }
+
+        // ManySmall: everything else — parallel with TaskGroup
+        // works for mixed batches too (large files handled via streamCopy inside)
+        log.info("[FileOpStrategy] → manySmall (files=\(scan.fileCount), depth=\(scan.maxDepth), large=\(largeFiles.count))")
         return .manySmall
     }
 }

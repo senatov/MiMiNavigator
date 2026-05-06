@@ -344,45 +344,52 @@ private extension FileOpsEngine {
 
     func executeManySmall(plan: FileOpPlan, operation: FileOpType, progress: FileOpProgress) async throws {
         createDirectoryStructure(plan: plan)
-        // conflict resolution must happen on MainActor sequentially before dispatch
         var memorized: ConflictResolution? = nil
         let fileEntries = plan.flatList.filter { !$0.isDirectory }
 
-        // pre-resolve all conflicts on MainActor, then dispatch IO in parallel
+        // pre-resolve all conflicts on MainActor, split into small vs large
         struct ResolvedEntry: Sendable {
             let source: URL
             let target: URL
             let size: Int64
+            var isLarge: Bool { size > FileOpStrategy.largeFileThreshold }
         }
 
-        var resolved: [ResolvedEntry] = []
+        var smallBatch: [ResolvedEntry] = []
+        var largeBatch: [ResolvedEntry] = []
         for (index, entry) in fileEntries.enumerated() {
             guard !progress.isCancelled else { break }
             let remaining = fileEntries.count - index
             let targetDir = plan.destination.appendingPathComponent(
                 (entry.relativePath as NSString).deletingLastPathComponent)
             let targetURL = targetDir.appendingPathComponent(entry.url.lastPathComponent)
-
+            let resolved: ResolvedEntry
             if fm.fileExists(atPath: targetURL.path) {
                 let (finalTarget, skip, stop) = try await resolveConflictIfNeeded(
                     source: entry.url, destination: targetDir, remaining: remaining, memorized: &memorized)
                 if stop { break }
                 if skip { progress.fileSkipped(name: entry.url.lastPathComponent); continue }
-                resolved.append(ResolvedEntry(source: entry.url, target: finalTarget, size: entry.size))
+                resolved = ResolvedEntry(source: entry.url, target: finalTarget, size: entry.size)
             } else {
-                resolved.append(ResolvedEntry(source: entry.url, target: targetURL, size: entry.size))
+                resolved = ResolvedEntry(source: entry.url, target: targetURL, size: entry.size)
+            }
+            if resolved.isLarge {
+                largeBatch.append(resolved)
+            } else {
+                smallBatch.append(resolved)
             }
         }
 
-        // now execute resolved entries in parallel — no more conflict checks needed
+        // 1) parallel dispatch for small files
         try await withThrowingTaskGroup(of: Void.self) { group in
             var running = 0
-            for entry in resolved {
+            for entry in smallBatch {
                 guard !progress.isCancelled else { break }
                 if running >= maxConcurrency {
                     try await group.next()
                     running -= 1
                 }
+                progress.setCurrentFile(entry.source.lastPathComponent)
                 group.addTask(priority: .userInitiated) {
                     let result = Self.performIO(from: entry.source, to: entry.target, operation: operation)
                     await MainActor.run {
@@ -397,6 +404,30 @@ private extension FileOpsEngine {
                 running += 1
             }
             try await group.waitForAll()
+        }
+
+        // 2) sequential streamCopy for large files (live byte progress)
+        for entry in largeBatch {
+            guard !progress.isCancelled else { break }
+            progress.setCurrentFile(entry.source.lastPathComponent)
+            do {
+                let didAtomicMove = operation == .move
+                    ? await tryAtomicMove(from: entry.source, to: entry.target)
+                    : false
+                if didAtomicMove {
+                    progress.fileCompleted(name: entry.source.lastPathComponent, success: true)
+                    progress.add(bytes: entry.size)
+                    continue
+                }
+                try await streamCopy(from: entry.source, to: entry.target, progress: progress)
+                if operation == .move { try fm.removeItem(at: entry.source) }
+                progress.fileCompleted(name: entry.source.lastPathComponent, success: true)
+            } catch {
+                recordFailure(
+                    FileOperationDiagnostics.make(operation: operation, source: entry.source, target: entry.target, error: error),
+                    progress: progress
+                )
+            }
         }
 
         if operation == .move { cleanupEmptyDirs(plan: plan) }
@@ -469,33 +500,48 @@ private extension FileOpsEngine {
 private extension FileOpsEngine {
 
     func streamCopy(from source: URL, to destination: URL, progress: FileOpProgress) async throws {
-        let result = await Task.detached(priority: .userInitiated) {
-            Self.performStreamCopy(from: source, to: destination)
-        }.value
-        switch result {
-        case .success(let totalBytes): progress.add(bytes: totalBytes)
-        case .failure(let error): throw error
+        let bytesChannel = AsyncStream<Int64>.makeStream()
+        let copyTask = Task.detached(priority: .userInitiated) {
+            Self.performStreamCopy(from: source, to: destination, onChunk: { bytes in
+                bytesChannel.continuation.yield(bytes)
+            })
+        }
+        // consume live byte updates on MainActor while copy runs
+        let consumer = Task { @MainActor in
+            for await chunk in bytesChannel.stream {
+                progress.add(bytes: chunk)
+            }
+        }
+        let result = await copyTask.value
+        bytesChannel.continuation.finish()
+        await consumer.value
+        if case .failure(let error) = result {
+            throw error
         }
     }
 
-    nonisolated static func performStreamCopy(from source: URL, to destination: URL) -> Result<Int64, FileOpError> {
+
+
+    nonisolated static func performStreamCopy(
+        from source: URL, to destination: URL,
+        onChunk: @Sendable (Int64) -> Void = { _ in }
+    ) -> Result<Void, FileOpError> {
         guard let input = InputStream(url: source) else { return .failure(.fileNotFound(source.path)) }
         guard let output = OutputStream(url: destination, append: false) else { return .failure(.invalidDest(destination.path)) }
         input.open(); output.open()
         defer { input.close(); output.close() }
-        let bufSize = 256 * 1024
+        let bufSize = 1024 * 1024
         let buffer = UnsafeMutablePointer<UInt8>.allocate(capacity: bufSize)
         defer { buffer.deallocate() }
-        var total: Int64 = 0
         while true {
             let read = input.read(buffer, maxLength: bufSize)
             if read < 0 { return .failure(.readFailed(source.path)) }
             if read == 0 { break }
             let written = output.write(buffer, maxLength: read)
             if written < 0 { return .failure(.writeFailed(source.path)) }
-            total += Int64(written)
+            onChunk(Int64(written))
         }
-        return .success(total)
+        return .success(())
     }
 }
 
