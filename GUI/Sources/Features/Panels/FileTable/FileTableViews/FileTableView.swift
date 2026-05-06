@@ -70,6 +70,7 @@ struct FileTableView: View {
 
     /// True when keyboard nav moved above the first file row → parent strip is highlighted
     @State var isParentStripHighlighted: Bool = false
+    @State var lastTopEdgeKeyPressAt: Date? = nil
 
     /// Throttle for PgUp/PgDown — prevents overwhelming with rapid keypresses
     let pageNavThrottle = KeypressThrottle(interval: 0.08)

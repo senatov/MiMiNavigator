@@ -123,13 +123,13 @@ extension FileTableView {
     func registerNavigationCallbacks() {
         appState.navigationCallbacks[panelSide] = PanelNavigationCallbacks(
             moveUp: { [self] in
-                keyboardNav.moveUp()
+                handleMoveUpCommand()
             },
             moveDown: { [self] in
                 keyboardNav.moveDown()
             },
             pageUp: { [self] in
-                keyboardNav.pageUp()
+                handlePageUpCommand()
             },
             pageDown: { [self] in
                 keyboardNav.pageDown()

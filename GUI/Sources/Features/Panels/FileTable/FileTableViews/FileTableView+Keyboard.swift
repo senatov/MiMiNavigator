@@ -7,6 +7,7 @@
 //
 
 import Combine
+import FileModelKit
 import Foundation
 import SwiftUI
 
@@ -14,9 +15,14 @@ extension FileTableView {
     // MARK: - Keyboard Handling
     func handleUpArrow() -> KeyPress.Result {
         guard isFocused else { return .ignored }
-        appState.inlineRename.cancel()
-        keyboardNav.moveUp()
+        handleMoveUpCommand()
         return .handled
+    }
+
+    func handleMoveUpCommand() {
+        appState.inlineRename.cancel()
+        if handleTopEdgeParentNavigation() { return }
+        keyboardNav.moveUp()
     }
 
     func handleDownArrow() -> KeyPress.Result {
@@ -28,11 +34,16 @@ extension FileTableView {
 
     func handlePageUp() -> KeyPress.Result {
         guard isFocused else { return .ignored }
+        handlePageUpCommand()
+        return .handled
+    }
+
+    func handlePageUpCommand() {
         appState.inlineRename.cancel()
+        if handleTopEdgeParentNavigation() { return }
         if pageNavThrottle.allow() {
             keyboardNav.pageUp()
         }
-        return .handled
     }
 
     func handlePageDown() -> KeyPress.Result {
@@ -88,5 +99,46 @@ extension FileTableView {
     func handleJumpToLast(_: Notification) {
         guard isFocused else { return }
         keyboardNav.jumpToLast()
+    }
+
+    // MARK: - Top Edge Parent Navigation
+    private func handleTopEdgeParentNavigation() -> Bool {
+        guard isAtTopEdge else {
+            lastTopEdgeKeyPressAt = nil
+            isParentStripHighlighted = false
+            return false
+        }
+        let now = Date()
+        let isSecondQuickPress = lastTopEdgeKeyPressAt.map { now.timeIntervalSince($0) <= 0.45 } ?? false
+        lastTopEdgeKeyPressAt = now
+        if isSecondQuickPress {
+            activateParentFromTopEdge()
+        } else {
+            highlightParentFromTopEdge()
+        }
+        return true
+    }
+
+    private var isAtTopEdge: Bool {
+        guard currentPanelPath != "/" else { return false }
+        guard !cachedSortedRows.isEmpty else { return true }
+        guard let selectedID else { return true }
+        return cachedIndexByID[selectedID] == 0
+    }
+
+    private func highlightParentFromTopEdge() {
+        let parentFile = CustomFile.parentLink(from: currentPanelPath)
+        selectedID = nil
+        isParentStripHighlighted = true
+        onSelect(parentFile)
+        log.debug("[Nav] top edge parent highlighted panel=\(panelSide.rawValue) path='\(parentFile.urlValue.path)'")
+    }
+
+    private func activateParentFromTopEdge() {
+        let parentFile = CustomFile.parentLink(from: currentPanelPath)
+        selectedID = nil
+        isParentStripHighlighted = false
+        log.info("[Nav] top edge parent activated panel=\(panelSide.rawValue) path='\(parentFile.urlValue.path)'")
+        onDoubleClick(parentFile)
     }
 }
