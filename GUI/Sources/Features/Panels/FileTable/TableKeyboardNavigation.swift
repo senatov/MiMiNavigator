@@ -27,7 +27,7 @@ struct TableKeyboardNavigation {
     let onSelect: (CustomFile) -> Void
     let pageStep: Int
     let panelSide: FavPanelSide
-    /// Called when cursor moves above idx 0 — highlights the parent strip panel
+    /// Called by callers that explicitly want to highlight the parent strip panel.
     let onParentFocused: () -> Void
     // Injected from outside — built once when list changes, not on every keypress
     private let indexByID: [CustomFile.ID: Int]
@@ -63,10 +63,7 @@ struct TableKeyboardNavigation {
         // Already on parent strip — stay there
         if selectedID.wrappedValue == nil { return }
         let idx = currentIndex()
-        if idx == 0 {
-            onParentFocused()
-            return
-        }
+        if idx == 0 { return }
         selectAndScroll(at: idx - 1)
     }
 
@@ -93,6 +90,7 @@ struct TableKeyboardNavigation {
             return
         }
         let idx = currentIndex()
+        if idx == 0 { return }
         let target = max(0, idx - pageStep)
         selectAndScroll(at: target)
     }
