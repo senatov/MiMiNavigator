@@ -7,7 +7,6 @@
 //
 
 import AppKit
-import FileModelKit
 import Foundation
 import SwiftUI
 

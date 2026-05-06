@@ -244,7 +244,7 @@ struct TableHeaderView: View {
         let maxTextW = texts.reduce(CGFloat(0)) {
             Swift.max($0, ($1 as NSString).size(withAttributes: attrs).width)
         }
-        let optimal = ceil(maxTextW + 2 * TableColumnDefaults.cellPadding + 5)
+        let optimal = ceil(maxTextW + 2 * ColumnID.cellPadding + 5)
         return optimal.clamped(to: col.minDragWidth...col.maxWidth)
     }
 

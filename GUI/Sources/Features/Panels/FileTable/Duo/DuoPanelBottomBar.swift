@@ -7,7 +7,6 @@
 //
 
 import SwiftUI
-import FileModelKit
 
 /// Bottom toolbar with action buttons and optional thumbnail size slider
 struct DuoPanelBottomToolbarSection: View {

@@ -182,8 +182,19 @@
         // MARK: - Console
         func performConsole() {
             log.debug("performConsole - Console button pressed")
-            let path = appState.pathURL(for: appState.focusedPanel)?.path ?? "/"
-            ConsoleCurrPath.open(in: path)
+            let dir = appState.pathURL(for: appState.focusedPanel)?.path ?? "/"
+            let escaped = dir.replacingOccurrences(of: "\\", with: "\\\\")
+                .replacingOccurrences(of: "\"", with: "\\\"")
+            let src = """
+                tell application "Terminal"
+                    launch
+                    activate
+                    do script "cd \\\"\(escaped)\\\" && clear"
+                end tell
+                """
+            var err: NSDictionary?
+            NSAppleScript(source: src)?.executeAndReturnError(&err)
+            if let err { log.error("[Console] AppleScript err: \(err)") }
         }
 
         // MARK: - Exit

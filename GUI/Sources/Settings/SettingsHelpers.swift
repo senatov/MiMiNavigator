@@ -49,18 +49,4 @@ struct SettingsGroupBox<Content: View>: View {
     }
 }
 
-struct StubPane: View {
-    let section: SettingsSection
 
-    var body: some View {
-        VStack(spacing: 16) {
-            Image(systemName: section.icon)
-                .font(.system(size: 40, weight: .light))
-                .foregroundStyle(.tertiary)
-            Text("\(section.rawValue) settings coming soon")
-                .font(.system(size: 14))
-                .foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity, minHeight: 200)
-    }
-}

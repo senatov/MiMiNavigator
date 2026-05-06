@@ -12,48 +12,33 @@ import SwiftUI
 /// Centralized design constants for maintaining consistent visual appearance.
 /// Based on an 8pt grid system.
 enum DesignTokens {
-    
+
     // MARK: - Grid & Spacing
     /// Base grid unit (8pt)
     static let grid: CGFloat = 8
-    
+
     /// Standard corner radius (HIG: 8pt for cards/panels)
     static let radius: CGFloat = 8
-    
-    /// Small corner radius (HIG: 4-6pt for buttons/controls)
-    static let radiusSmall: CGFloat = 6
-    
-    /// Tiny corner radius (HIG: 4pt for rows/selections)
-    static let radiusTiny: CGFloat = 4
-    
-    /// Horizontal spacing between elements
-    static let horizontalSpacing: CGFloat = 8
-    
+
     // MARK: - Colors
     /// Card background color (window background)
     static let card = Color(nsColor: .windowBackgroundColor)
-    
+
     /// Panel background color (control background)
     static let panelBg = Color(nsColor: .controlBackgroundColor)
 
     /// Warm white background for active panel and session table
     @MainActor static var warmWhite: Color { ColorThemeStore.shared.activeTheme.warmWhite }
+
     /// Zebra stripe colors — themed, persisted via ColorThemeStore
     @MainActor static var zebraActiveEven: Color { ColorThemeStore.shared.activeTheme.zebraActiveEven }
     @MainActor static var zebraActiveOdd: Color { ColorThemeStore.shared.activeTheme.zebraActiveOdd }
     @MainActor static var zebraInactiveEven: Color { ColorThemeStore.shared.activeTheme.zebraInactiveEven }
     @MainActor static var zebraInactiveOdd: Color { ColorThemeStore.shared.activeTheme.zebraInactiveOdd }
 
-    /// Separator color
-    static let separator = Color(nsColor: .separatorColor)
-    
     // MARK: - Row-specific Tokens (Finder-style)
     enum Row {
         /// Icon size - 16pt (Finder list view standard), scaled
         @MainActor static var iconSize: CGFloat { FilePanelStyle.iconSize }
-        /// Row vertical padding
-        static let padding: CGFloat = 2
-        /// Horizontal spacing between elements
-        static let spacing: CGFloat = 6
     }
 }

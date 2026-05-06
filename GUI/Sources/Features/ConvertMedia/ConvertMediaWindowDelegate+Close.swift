@@ -7,7 +7,6 @@
 //
 
 import AppKit
-import FileModelKit
 import SwiftUI
 
 final class ConvertMediaWindowDelegate: NSObject, NSWindowDelegate {

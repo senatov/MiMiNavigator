@@ -26,7 +26,6 @@ struct ConnToSrvrView: View {
     @State var keepPassword: Bool = true
     @State var isConnecting: Bool = false
     @State var connectTask: Task<Void, Never>?
-    @State var sessionLayout = SessionColumnLayout()
     @State var showPassword: Bool = false
     @State var connectionError: String = ""
     @State var showSaveFlash: Bool = false

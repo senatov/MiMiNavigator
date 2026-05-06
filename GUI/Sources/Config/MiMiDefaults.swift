@@ -60,13 +60,6 @@ final class MiMiDefaults {
     }
 
 
-    func integer(forKey key: String) -> Int {
-        if let n = storage[key] as? Int { return n }
-        if let n = storage[key] as? Double { return Int(n) }
-        return 0
-    }
-
-
     func double(forKey key: String) -> Double {
         if let n = storage[key] as? Double { return n }
         if let n = storage[key] as? Int { return Double(n) }
@@ -121,10 +114,6 @@ final class MiMiDefaults {
         storage[key] = value
         scheduleSave()
     }
-    func set(_ value: Int, forKey key: String) {
-        storage[key] = value
-        scheduleSave()
-    }
     func set(_ value: Double, forKey key: String) {
         storage[key] = value
         scheduleSave()
@@ -145,14 +134,6 @@ final class MiMiDefaults {
         }
         scheduleSave()
     }
-    func set(_ value: URL?, forKey key: String) {
-        if let value {
-            storage[key] = value.path
-        } else {
-            storage.removeValue(forKey: key)
-        }
-        scheduleSave()
-    }
     func removeObject(forKey key: String) {
         storage.removeValue(forKey: key)
         scheduleSave()
@@ -166,17 +147,6 @@ final class MiMiDefaults {
         coalesceTimer = nil
         saveToDisk()
     }
-
-
-    // MARK: - All Keys
-    var allKeys: [String] {
-        Array(storage.keys).sorted()
-    }
-
-
-    // MARK: - File URL (for diagnostics / Settings UI)
-    var storageFileURL: URL { fileURL }
-    var storageDirectoryURL: URL { dirURL }
 
 
     // MARK: - Private: Directory

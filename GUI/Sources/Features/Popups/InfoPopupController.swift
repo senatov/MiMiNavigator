@@ -12,7 +12,6 @@
 //     • FileInfoPopup     — full file metadata (FileInfoPopupController)
 
 import AppKit
-import FileModelKit
 import Foundation
 import SwiftUI
 

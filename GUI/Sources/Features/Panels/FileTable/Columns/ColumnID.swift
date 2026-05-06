@@ -20,6 +20,10 @@ extension UTType {
 // MARK: - ColumnID
 
 enum ColumnID: String, CaseIterable, Codable, Identifiable, Transferable {
+
+    /// Horizontal padding inside each column cell (header + row must match)
+    static let cellPadding: CGFloat = 6
+
     case name, dateModified, size, kind, permissions, owner, childCount
     case dateCreated, dateLastOpened, dateAdded, group
 
@@ -149,7 +153,7 @@ enum ColumnID: String, CaseIterable, Codable, Identifiable, Transferable {
         case .size:
             return (3, 6)
         default:
-            return (TableColumnDefaults.cellPadding, TableColumnDefaults.cellPadding)
+            return (Self.cellPadding, Self.cellPadding)
         }
     }
 
@@ -167,7 +171,7 @@ enum ColumnID: String, CaseIterable, Codable, Identifiable, Transferable {
         case .childCount:
             return (10, 2)
         default:
-            return (TableColumnDefaults.cellPadding, TableColumnDefaults.cellPadding)
+            return (Self.cellPadding, Self.cellPadding)
         }
     }
 

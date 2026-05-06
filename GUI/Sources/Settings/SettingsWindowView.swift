@@ -14,9 +14,7 @@ struct SettingsWindowView: View {
     let onDismiss: () -> Void
 
     @State private var selectedSection: SettingsSection = Self.restoredSection()
-    @State private var themeStore = ColorThemeStore.shared
     @State private var coordinator = SettingsCoordinator.shared
-    @Environment(\.colorScheme) private var colorScheme
     private static let selectedSectionDefaultsKey = "SettingsWindowView.selectedSection"
 
     private var dialogBgColor: Color {

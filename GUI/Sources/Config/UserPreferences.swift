@@ -113,11 +113,6 @@ final class UserPreferences {
         writeSnapshotToDisk(snapshot)
     }
 
-    // MARK: - Apply to AppState
-    func apply(to appState: AppState) {
-        log.info("Applying preferences (path settings only) to AppState.")
-    }
-
     // MARK: - Capture from AppState
     func capture(from appState: AppState) {
         log.debug(#function + ": leftPath: \(appState.leftPath), rightPath: \(appState.rightPath)")

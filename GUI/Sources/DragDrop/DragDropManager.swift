@@ -16,7 +16,7 @@ import UniformTypeIdentifiers
 final class DragDropManager {
     private static let tableHeaderHeight: CGFloat = 24
 
-    static let shared = DragDropManager()
+    private static let shared = DragDropManager()
 
     /// Currently pending transfer (shown in confirmation dialog)
     var pendingOperation: FileTransferOperation?

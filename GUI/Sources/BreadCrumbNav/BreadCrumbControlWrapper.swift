@@ -45,12 +45,10 @@ struct BreadCrumbControlWrapper: View {
 
         enum Padding {
             static let horizontal: CGFloat = 1
-            static let textFieldPadding: CGFloat = 6
         }
 
         enum Colors {
             static let editingBackground = Color(nsColor: .controlAccentColor).opacity(0.08)
-            static let textFieldBackground = Color(nsColor: .textBackgroundColor)
         }
     }
 

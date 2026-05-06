@@ -41,8 +41,4 @@ enum PreferenceKeys: String, CaseIterable {
     case sortAscending
 
     // MARK: - Column Widths Helper
-    /// Generates key for column width storage
-    static func columnWidth(for column: String, panel: FavPanelSide) -> String {
-        "FileTable.\(panel).\(column)Width"
-    }
 }

@@ -7,7 +7,6 @@
 
 import AppKit
 import FavoritesKit
-import FileModelKit
 import SwiftUI
 
 // MARK: - Finder Sidebar View

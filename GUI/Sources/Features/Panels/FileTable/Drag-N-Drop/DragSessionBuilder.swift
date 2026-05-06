@@ -6,7 +6,6 @@
 // Description: Creates NSDraggingItem array for AppKit drag sessions
 
 import AppKit
-import FileModelKit
 import SwiftUI
 
 // MARK: - DragSessionBuilder

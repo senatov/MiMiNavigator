@@ -41,10 +41,6 @@ struct BreadCrumbToolBar: View {
         isActivePanel ? Palette.activeIcon : Palette.inactiveIcon
     }
 
-    private var navigator: PathNavigationService {
-        PathNavigationService.shared(appState: appState)
-    }
-
     // MARK: - Body
     var body: some View {
         navigationControls

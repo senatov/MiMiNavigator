@@ -11,7 +11,6 @@
 //   All checks are pure file reads, NO shell calls, NO process spawning.
 //   Results cached via NSCache — zero repeated I/O cost after first check.
 
-import FileModelKit
 import Foundation
 
 // MARK: - EncryptedArchiveCheck

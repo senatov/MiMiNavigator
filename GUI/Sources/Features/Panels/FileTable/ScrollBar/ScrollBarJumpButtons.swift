@@ -4,7 +4,6 @@
 // Description: Glass-style jump-to-edge buttons flush against the scrollbar track.
 //              Appear only when file list exceeds threshold row count.
 
-import FavoritesKit
 import FileModelKit
 import SwiftUI
 

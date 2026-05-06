@@ -6,7 +6,6 @@
 // Description: SwiftUI HIG-style Create New Folder dialog
 
 import SwiftUI
-import FileModelKit
 
 // MARK: - Create Folder Dialog
 /// SwiftUI HIG-style dialog matching PackDialog / BatchConfirmationDialog appearance.

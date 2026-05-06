@@ -29,7 +29,6 @@ final class ColorThemeStore {
     @ObservationIgnored @AppStorage("color.selectionActive")   var hexSelActive: String = ""
     @ObservationIgnored @AppStorage("color.selectionInactive") var hexSelInactive: String = ""
     @ObservationIgnored @AppStorage("color.selectionBorder")   var hexSelBorder: String = ""
-    @ObservationIgnored @AppStorage("selection.lineWidth")     var storedLineWidth: Double = 2.0
     @ObservationIgnored @AppStorage("default.color.selectionActive")   private var defaultHexSelActive: String = ""
     @ObservationIgnored @AppStorage("default.color.selectionInactive") private var defaultHexSelInactive: String = ""
     @ObservationIgnored @AppStorage("default.color.selectionBorder")   private var defaultHexSelBorder: String = ""

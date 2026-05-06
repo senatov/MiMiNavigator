@@ -61,7 +61,7 @@ final class AboutCoordinator {
         log.debug("[AboutCoordinator] About panel shown")
     }
     
-    func close() {
+    private func close() {
         panel?.close()
         panel = nil
     }

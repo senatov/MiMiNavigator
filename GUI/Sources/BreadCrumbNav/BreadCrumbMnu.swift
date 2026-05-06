@@ -11,7 +11,6 @@ import SwiftUI
 
 // MARK: - Favorites Button Section (left side of breadcrumb)
 struct BreadCrumbMnu: View {
-    @Environment(AppState.self) var appState
     let panelSide: FavPanelSide
 
     init(selectedSide: FavPanelSide) {
