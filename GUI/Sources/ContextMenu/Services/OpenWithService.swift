@@ -72,6 +72,7 @@ final class OpenWithService {
 
     private var lruDefaultsKey: String { "openWithLRU" }
     private var lruAppURLsKey: String { "openWithAppURLs" }
+    private var userAssociationsKey: String { "openWithUserAssociations" }
 
     private func nextRequestID() -> Int {
         Self.requestSequence += 1
@@ -119,6 +120,10 @@ final class OpenWithService {
         return normalized.isEmpty ? Constants.noExtensionKey : normalized
     }
 
+    func normalizedCacheExtension(for ext: String) -> String {
+        normalizedExtensionKey(for: ext)
+    }
+
     private func savedAppURLs() -> [String: String] {
         guard let urls = MiMiDefaults.shared.dictionary(forKey: lruAppURLsKey) as? [String: String] else {
             return [:]
@@ -134,6 +139,22 @@ final class OpenWithService {
         let lruSignature = recentBundles.joined(separator: "|")
 
         return "\(ext)#\(defaultBundleIdentifier)#\(lruSignature)"
+    }
+
+    private func userAssociatedBundle(for ext: String) -> String? {
+        let key = normalizedExtensionKey(for: ext)
+        let defaults = MiMiDefaults.shared.dictionary(forKey: userAssociationsKey) as? [String: String]
+        return defaults?[key]
+    }
+
+    private func storeUserAssociation(bundleID: String, ext: String, appURL: URL) {
+        let key = normalizedExtensionKey(for: ext)
+        var defaults = MiMiDefaults.shared.dictionary(forKey: userAssociationsKey) as? [String: String] ?? [:]
+        defaults[key] = bundleID
+        MiMiDefaults.shared.set(defaults, forKey: userAssociationsKey)
+        storeAppURLIfNeeded(appURL, for: bundleID)
+        invalidateCache(for: ext)
+        logInfo("user association updated key='\(key)' bundle='\(bundleID)'")
     }
 
     private func cachePrefix(for ext: String) -> String {
@@ -233,6 +254,7 @@ final class OpenWithService {
         var seenBundles = Set<String>()
         var seenAppPaths = Set<String>()
         let launchServiceAppURLs = applicationURLs(for: fileURL)
+        let userAssociatedBundle = userAssociatedBundle(for: ext)
 
         logDebug("LS apps count=\(launchServiceAppURLs.count)")
 
@@ -248,13 +270,14 @@ final class OpenWithService {
 
         appendMissingRecentApps(
             recentBundles: recentBundles,
+            preferredBundle: userAssociatedBundle,
             defaultApp: defaultApp,
             seenBundles: &seenBundles,
             seenAppPaths: &seenAppPaths,
             apps: &apps
         )
 
-        sortApplications(&apps, recentBundles: recentBundles)
+        sortApplications(&apps, recentBundles: recentBundles, preferredBundle: userAssociatedBundle)
 
         let orderedBundles = apps.map(\.bundleIdentifier)
         let elapsedMs = Int((CFAbsoluteTimeGetCurrent() - startedAt) * 1000)
@@ -269,6 +292,7 @@ final class OpenWithService {
 
     private func appendMissingRecentApps(
         recentBundles: [String],
+        preferredBundle: String?,
         defaultApp: URL?,
         seenBundles: inout Set<String>,
         seenAppPaths: inout Set<String>,
@@ -276,8 +300,9 @@ final class OpenWithService {
     ) {
         let knownBundles = Set(apps.map(\.bundleIdentifier))
         let savedURLs = savedAppURLs()
+        let bundlesToRestore = ([preferredBundle].compactMap { $0 } + recentBundles).filter { !knownBundles.contains($0) }
 
-        for bundleID in recentBundles where !knownBundles.contains(bundleID) {
+        for bundleID in bundlesToRestore {
             guard let path = savedURLs[bundleID], fileManager.fileExists(atPath: path) else {
                 logDebug("missing saved LRU app bundle='\(bundleID)'")
                 continue
@@ -298,8 +323,14 @@ final class OpenWithService {
         }
     }
 
-    private func sortApplications(_ apps: inout [AppInfo], recentBundles: [String]) {
+    private func sortApplications(_ apps: inout [AppInfo], recentBundles: [String], preferredBundle: String?) {
         apps.sort { lhs, rhs in
+            if lhs.bundleIdentifier == preferredBundle && rhs.bundleIdentifier != preferredBundle {
+                return true
+            }
+            if rhs.bundleIdentifier == preferredBundle && lhs.bundleIdentifier != preferredBundle {
+                return false
+            }
             let lhsLRU = recentBundles.firstIndex(of: lhs.bundleIdentifier) ?? Int.max
             let rhsLRU = recentBundles.firstIndex(of: rhs.bundleIdentifier) ?? Int.max
 
@@ -470,6 +501,7 @@ final class OpenWithService {
                 isDefault: false
             )
 
+            self.storeUserAssociation(bundleID: bundleIdentifier, ext: fileURL.pathExtension, appURL: appURL)
             self.openFile(fileURL, with: selectedApp)
         }
     }

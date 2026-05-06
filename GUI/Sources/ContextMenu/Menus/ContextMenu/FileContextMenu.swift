@@ -50,7 +50,7 @@ struct FileContextMenu: View {
     private static var appsCache: [String: [AppInfo]] = [:]
 
     private static func cacheKey(for file: CustomFile) -> String {
-        file.urlValue.pathExtension.lowercased()
+        OpenWithService.shared.normalizedCacheExtension(for: file.urlValue.pathExtension)
     }
 
     // MARK: - Cache Observer
@@ -85,6 +85,7 @@ struct FileContextMenu: View {
         .edit,
         .operations,
         .navigation,
+        .info,
         .favorites,
     ]
 
@@ -334,8 +335,6 @@ struct FileContextMenu: View {
             Divider()
             menuButton(.createLink)
             menuButton(.delete)
-            Divider()
-            menuButton(.getInfo)
         } label: {
             Label {
                 Text("􀉒 File Operations")
@@ -347,7 +346,8 @@ struct FileContextMenu: View {
 
     @ViewBuilder
     private var infoSection: some View {
-        EmptyView()
+        menuButton(.getInfo)
+        sectionDivider(after: .info)
     }
 
     @ViewBuilder

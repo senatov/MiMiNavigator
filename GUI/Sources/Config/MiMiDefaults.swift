@@ -32,6 +32,7 @@ final class MiMiDefaults {
             "MiMi.menuBarVisible",
             "MiMi.openWithLRU",
             "MiMi.openWithAppURLs",
+            "MiMi.openWithUserAssociations",
             "MiMi.lastPackDestination",
         ]
     }
