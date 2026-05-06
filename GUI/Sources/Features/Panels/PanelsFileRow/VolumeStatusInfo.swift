@@ -12,13 +12,29 @@ enum VolumeStatusInfo {
 
     // MARK: - Capacity Label
     static func capacityLabel(for url: URL) -> String? {
-        guard AppState.isMountedVolumeRootPath(url.path) else { return nil }
-        guard let free = availableCapacity(for: url) else { return nil }
+        guard let volumeURL = mountedVolumeRoot(for: url) else { return nil }
+        guard let free = availableCapacity(for: volumeURL) else { return nil }
         let freeText = formatBytes(free)
-        let totalText = totalCapacity(for: url).map(formatBytes)
-        let formatText = filesystemFormat(for: url)
+        let totalText = totalCapacity(for: volumeURL).map(formatBytes)
+        let formatText = filesystemFormat(for: volumeURL)
         return [freeText, totalText].compactMap { $0 }.joined(separator: " / ")
             + formatText.map { ", \($0)" }.orEmpty
+    }
+
+    // MARK: - Mounted Volume Root
+    static func mountedVolumeRoot(for url: URL) -> URL? {
+        guard url.isFileURL else { return nil }
+        if let volumeURL = resourceVolumeURL(for: url), AppState.isMountedVolumeRootPath(volumeURL.path) {
+            return volumeURL
+        }
+        return derivedMountedVolumeRoot(for: url)
+    }
+
+    // MARK: - Resource Volume URL
+    private static func resourceVolumeURL(for url: URL) -> URL? {
+        var value: AnyObject?
+        guard (try? (url as NSURL).getResourceValue(&value, forKey: URLResourceKey.volumeURLKey)) != nil else { return nil }
+        return value as? URL
     }
 
     // MARK: - Available Capacity
@@ -81,6 +97,14 @@ enum VolumeStatusInfo {
         if lower.contains("apfs") { return "APFS" }
         if lower.contains("mac os extended") { return "HFS+" }
         return raw
+    }
+
+    // MARK: - Derived Mounted Volume Root
+    private static func derivedMountedVolumeRoot(for url: URL) -> URL? {
+        let components = NSString(string: url.path).standardizingPath.split(separator: "/")
+        guard components.count >= 2, components[0] == "Volumes" else { return nil }
+        let volumePath = "/Volumes/" + components[1]
+        return URL(fileURLWithPath: volumePath, isDirectory: true)
     }
 }
 
