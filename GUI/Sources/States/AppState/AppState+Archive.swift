@@ -55,6 +55,9 @@ extension AppState {
                 } else {
                     progressPanel.finish(success: false, message: "❌ \(error.localizedDescription)")
                 }
+                if case ArchiveManagerError.toolNotFound(let message) = error {
+                    ArchiveToolInstallAlert.promptSevenZipInstall(reason: message)
+                }
             }
             log.error("[AppState] Failed to enter archive: \(error.localizedDescription)")
         }
