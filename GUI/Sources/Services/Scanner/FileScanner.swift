@@ -45,15 +45,20 @@ enum FileScanner {
         .isAliasFileKey,
         .isPackageKey,
         .isHiddenKey,
-        .isReadableKey,
-        .isWritableKey,
         .fileSizeKey,
         .contentModificationDateKey,
-        .directoryEntryCountKey,
+    ]
+
+    private static let volumesRootPrefetchKeys: [URLResourceKey] = [
+        .isDirectoryKey,
+        .isSymbolicLinkKey,
+        .isAliasFileKey,
+        .isHiddenKey,
     ]
 
     private static let localPrefetchKeySet = Set(localPrefetchKeys)
     private static let mountedVolumePrefetchKeySet = Set(mountedVolumePrefetchKeys)
+    private static let volumesRootPrefetchKeySet = Set(volumesRootPrefetchKeys)
 
     private static let iCloudDriveVisibleContainers: [(containerName: String, displayName: String)] = [
         ("iCloud~is~workflow~my~workflows", "Shortcuts"),
@@ -66,6 +71,9 @@ enum FileScanner {
     ]
 
     private static func prefetchConfiguration(for url: URL) -> ([URLResourceKey], Set<URLResourceKey>) {
+        if url.path == "/Volumes" {
+            return (volumesRootPrefetchKeys, volumesRootPrefetchKeySet)
+        }
         let isMountedVolumePath = url.path.hasPrefix("/Volumes/") && url.path != "/Volumes"
         if isMountedVolumePath {
             return (mountedVolumePrefetchKeys, mountedVolumePrefetchKeySet)
@@ -218,8 +226,16 @@ enum FileScanner {
             if let rv = try? fileURL.resourceValues(forKeys: prefetchKeySet),
                rv.fileSecurity != nil || rv.contentModificationDate != nil
             {
-                // Batch-prefetched resource values are valid — fast path
-                file = CustomFile(url: fileURL, resourceValues: rv)
+                if isVolumePath || url.path == "/Volumes" {
+                    file = CustomFile(lightweightURL: fileURL, resourceValues: rv)
+                } else {
+                    // Batch-prefetched resource values are valid — fast path
+                    file = CustomFile(url: fileURL, resourceValues: rv)
+                }
+            } else if (isVolumePath || url.path == "/Volumes"),
+                      let rv = try? fileURL.resourceValues(forKeys: prefetchKeySet)
+            {
+                file = CustomFile(lightweightURL: fileURL, resourceValues: rv)
             } else {
                 // Batch-prefetch returned empty values (common for symlinks into
                 // CloudStorage / File Provider paths and sometimes regular files

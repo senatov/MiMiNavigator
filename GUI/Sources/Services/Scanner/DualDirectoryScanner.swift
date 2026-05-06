@@ -37,6 +37,7 @@ actor DualDirectoryScanner {
     var lastFullScan: [FavPanelSide: Date] = [:]
 
     let scanCooldown: TimeInterval = 3
+    let mountedVolumeScanTimeout: TimeInterval = 8
     let progressivePreviewThreshold = 150
 
     // MARK: - MainActor publish state
@@ -82,6 +83,8 @@ actor DualDirectoryScanner {
 
         stopFSEvents(for: .left)
         stopFSEvents(for: .right)
+        cancelScan(for: .left)
+        cancelScan(for: .right)
 
         log.info("[DualDirectoryScanner] stopMonitoring: all timers and FSEvents watchers stopped")
     }

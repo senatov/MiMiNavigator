@@ -206,6 +206,8 @@ extension DualDirectoryScanner {
     }
 
     func timerFired(for side: FavPanelSide) async {
+        let isTerminating = await MainActor.run { appState.isTerminating }
+        if isTerminating { return }
         let isRemote = await isRemotePanelPath(for: side)
         if isRemote { return }
         if shouldSkipTimerRefresh(for: side) {

@@ -7,6 +7,43 @@
 import FileModelKit
 import Foundation
 
+// MARK: - Scan Timeout Error
+
+private struct ScanTimeoutError: LocalizedError {
+    let path: String
+    let seconds: TimeInterval
+    var errorDescription: String? {
+        let secondsText = String(format: "%.1f", seconds)
+        return "Scan timed out after \(secondsText)s: \(path)"
+    }
+}
+
+// MARK: - Scan Race Result
+
+private enum ScanRaceOutput: @unchecked Sendable {
+    case success([CustomFile])
+    case timeout
+    case failure(String)
+}
+
+// MARK: - Scan Race Result
+
+private final class ScanRaceResult: @unchecked Sendable {
+    private let lock = NSLock()
+    private var didResume = false
+    private let continuation: CheckedContinuation<ScanRaceOutput, Never>
+    init(_ continuation: CheckedContinuation<ScanRaceOutput, Never>) {
+        self.continuation = continuation
+    }
+    func resume(_ result: ScanRaceOutput) {
+        lock.lock()
+        defer { lock.unlock() }
+        guard !didResume else { return }
+        didResume = true
+        continuation.resume(returning: result)
+    }
+}
+
 extension DualDirectoryScanner {
 
     // MARK: - Refresh guards
@@ -295,6 +332,9 @@ extension DualDirectoryScanner {
                     totalDuration: Date().timeIntervalSince(scanStart)
                 )
                 return
+            } catch let error as ScanTimeoutError {
+                log.warning("[Scan] \(error.localizedDescription)")
+                return
             } catch let error as NSError {
                 if isPermissionDeniedError(error) {
                     log.debug("[Scan] Permission denied, trying bookmark recovery for: \(url.path)")
@@ -321,11 +361,53 @@ extension DualDirectoryScanner {
         sortKey: SortKeysEnum,
         sortAsc: Bool
     ) async throws -> [CustomFile] {
-        try await Task.detached(priority: .userInitiated) {
+        let scanTask = Task.detached(priority: .userInitiated) {
             let scanned = try FileScanner.scan(url: url, showHiddenFiles: showHidden)
             return FileSortingService.sort(scanned, by: sortKey, bDirection: sortAsc)
         }
-        .value
+        guard shouldTimeoutSlowVolumeScan(url) else {
+            return try await scanTask.value
+        }
+        return try await scanWithTimeout(scanTask, url: url)
+    }
+
+    // MARK: - Mounted Volume Timeout
+    func shouldTimeoutSlowVolumeScan(_ url: URL) -> Bool {
+        url.path == "/Volumes" || (url.path.hasPrefix("/Volumes/") && url.path != "/Volumes")
+    }
+
+    func scanWithTimeout(
+        _ scanTask: Task<[CustomFile], Error>,
+        url: URL
+    ) async throws -> [CustomFile] {
+        let result = await withCheckedContinuation { continuation in
+            let race = ScanRaceResult(continuation)
+            Task {
+                do {
+                    race.resume(.success(try await scanTask.value))
+                } catch {
+                    race.resume(.failure(error.localizedDescription))
+                }
+            }
+            Task {
+                let timeoutNanoseconds = UInt64(mountedVolumeScanTimeout * 1_000_000_000)
+                try? await Task.sleep(nanoseconds: timeoutNanoseconds)
+                scanTask.cancel()
+                race.resume(.timeout)
+            }
+        }
+        switch result {
+            case .success(let files):
+                return files
+            case .timeout:
+                throw ScanTimeoutError(path: url.path, seconds: mountedVolumeScanTimeout)
+            case .failure(let message):
+                throw NSError(
+                    domain: NSCocoaErrorDomain,
+                    code: NSFileReadUnknownError,
+                    userInfo: [NSLocalizedDescriptionKey: message]
+                )
+        }
     }
 
     // MARK: - Missing Directory Recovery
