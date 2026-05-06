@@ -12,6 +12,7 @@ import SwiftUI
 struct HistoryRow: View {
     let path: String
     let addedAt: Date
+    let isAvailable: Bool
     var highlightText: String = ""
     let onSelect: () -> Void
     let onDelete: () -> Void
@@ -40,12 +41,19 @@ struct HistoryRow: View {
         return "folder.fill"
     }
     private var iconColor: Color {
+        if !isAvailable { return Color.secondary.opacity(0.45) }
         let p = path.lowercased()
         if p.hasPrefix("/volumes/") { return .purple }
         if p.contains("/applications") { return .green }
         if p.contains("/library") || p.contains("/system") { return .red }
         if p.contains("/users") { return .orange }
         return .accentColor
+    }
+    private var pathColor: Color {
+        isAvailable ? .primary : Color.secondary.opacity(0.55)
+    }
+    private var dateColor: Color {
+        isAvailable ? .secondary : Color.secondary.opacity(0.45)
     }
     // MARK: - Body
     var body: some View {
@@ -56,13 +64,13 @@ struct HistoryRow: View {
                 .frame(width: 20, alignment: .center)
             HStack(alignment: .firstTextBaseline, spacing: 6) {
                 highlightedText(path)
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.primary)
+                    .font(.system(size: 14, weight: .light))
+                    .foregroundStyle(pathColor)
                     .lineLimit(1)
                     .truncationMode(.middle)
                 Text(formattedAddedAt)
-                    .font(.system(size: 11))
-                    .foregroundStyle(.secondary)
+                    .font(.system(size: 12, weight: .light))
+                    .foregroundStyle(dateColor)
                     .lineLimit(1)
             }
             Spacer(minLength: 4)
@@ -82,6 +90,7 @@ struct HistoryRow: View {
         }
         .onTapGesture(perform: onSelect)
         .help(path)
+        .opacity(isAvailable ? 1 : 0.55)
     }
     // MARK: - Highlighted Text
     @ViewBuilder
@@ -102,7 +111,7 @@ struct HistoryRow: View {
             if let s = AttributedString.Index(range.lowerBound, within: attributed),
                let e = AttributedString.Index(range.upperBound, within: attributed) {
                 attributed[s..<e].backgroundColor = .yellow.opacity(0.35)
-                attributed[s..<e].font = .system(size: 12, weight: .bold)
+                attributed[s..<e].font = .system(size: 14, weight: .regular)
             }
             pos = range.upperBound
         }

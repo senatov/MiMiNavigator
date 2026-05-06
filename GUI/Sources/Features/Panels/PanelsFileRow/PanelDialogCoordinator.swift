@@ -4,7 +4,7 @@
 // Created by Iakov Senatov on 20.02.2026.
 // Copyright © 2026 Senatov. All rights reserved.
 // Description: Generic coordinator for History and Favorites standalone NSPanel windows.
-//              Centers dialogs over the main window on every open.
+//              Centers dialogs over the main window and persists user-resized sizes.
 
 import AppKit
 import SwiftUI
@@ -23,9 +23,9 @@ final class PanelDialogCoordinator: NSObject, NSWindowDelegate {
 
     // MARK: - Shared instances
     static let history = PanelDialogCoordinator(
-        kind: .history, title: "Navigation History", systemImage: "clock.arrow.circlepath", size: NSSize(width: 310, height: 768))
+        kind: .history, title: "Navigation History", systemImage: "clock.arrow.circlepath", size: NSSize(width: 558, height: 768))
     static let favorites = PanelDialogCoordinator(
-        kind: .favorites, title: "Favorites", systemImage: "sidebar.left", size: NSSize(width: 270, height: 864))
+        kind: .favorites, title: "Favorites", systemImage: "sidebar.left", size: NSSize(width: 486, height: 864))
 
     // MARK: - State
     private(set) var isVisible = false
@@ -36,6 +36,7 @@ final class PanelDialogCoordinator: NSObject, NSWindowDelegate {
     private let windowTitle: String
     private let windowImage: String
     private let defaultSize: NSSize
+    private var sizeDefaultsKey: String { "\(kind.rawValue).size" }
 
     // MARK: - Init
     private init(kind: PanelDialogKind, title: String, systemImage: String, size: NSSize) {
@@ -54,7 +55,6 @@ final class PanelDialogCoordinator: NSObject, NSWindowDelegate {
     func open<Content: View>(content: Content) {
         log.debug(#function)
         if let existing = panel, existing.isVisible {
-            existing.setFrame(computeDefaultFrame(), display: true)
             existing.makeKeyAndOrderFront(nil)
             isVisible = true
             return
@@ -85,9 +85,7 @@ final class PanelDialogCoordinator: NSObject, NSWindowDelegate {
         // Must be false — becomesKeyOnlyIfNeeded prevents Tab/Shift-Tab chain
         newPanel.becomesKeyOnlyIfNeeded = false
         newPanel.delegate = self
-
         newPanel.setFrame(computeDefaultFrame(), display: true)
-
         newPanel.makeKeyAndOrderFront(nil)
         newPanel.recalculateKeyViewLoop()
         panel = newPanel
@@ -103,14 +101,19 @@ final class PanelDialogCoordinator: NSObject, NSWindowDelegate {
     }
 
     // MARK: - NSWindowDelegate
+    func windowDidResize(_ notification: Notification) {
+        savePanelSize()
+    }
+
     func windowWillClose(_ notification: Notification) {
+        savePanelSize()
         isVisible = false
     }
 
     // MARK: - Default Frame — centered on main window
 
     private func computeDefaultFrame() -> NSRect {
-        let size = defaultSize
+        let size = savedSize()
         if let mainWindow = NSApp.mainWindow {
             let mf = mainWindow.frame
             let x = mf.midX - size.width / 2
@@ -130,5 +133,22 @@ final class PanelDialogCoordinator: NSObject, NSWindowDelegate {
             )
         }
         return NSRect(origin: .zero, size: size)
+    }
+
+    // MARK: - Window Size Persistence
+
+    private func savedSize() -> NSSize {
+        guard let string = UserDefaults.standard.string(forKey: sizeDefaultsKey) else { return defaultSize }
+        let parts = string.split(separator: ",").compactMap { Double($0) }
+        guard parts.count == 2 else { return defaultSize }
+        let width = max(defaultSize.width * 0.6, CGFloat(parts[0]))
+        let height = max(defaultSize.height * 0.6, CGFloat(parts[1]))
+        return NSSize(width: width, height: height)
+    }
+
+    private func savePanelSize() {
+        guard let panel else { return }
+        let size = panel.frame.size
+        UserDefaults.standard.set("\(size.width),\(size.height)", forKey: sizeDefaultsKey)
     }
 }

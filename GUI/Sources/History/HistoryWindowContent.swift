@@ -27,7 +27,7 @@ struct HistoryWindowContent: View {
             Divider()
             listArea
         }
-        .frame(minWidth: 280, idealWidth: 310, maxWidth: .infinity)
+        .frame(minWidth: 360, idealWidth: 558, maxWidth: .infinity)
         .frame(minHeight: 360, idealHeight: 768, maxHeight: .infinity)
         .background(.ultraThinMaterial)
         .opacity(appeared ? 1 : 0)
@@ -108,6 +108,7 @@ struct HistoryWindowContent: View {
                     HistoryRow(
                         path: path,
                         addedAt: item.addedAt,
+                        isAvailable: isDirectoryAvailable(item.url),
                         highlightText: searchText,
                         onSelect: { navigateToPath(path) },
                         onDelete: { deleteFromHistory(item.url) }
@@ -188,6 +189,11 @@ struct HistoryWindowContent: View {
             return
         }
         // Local path
+        let localURL = URL(fileURLWithPath: path)
+        guard isDirectoryAvailable(localURL) else {
+            log.warning("[History] navigate unavailable path='\(path)'")
+            return
+        }
         appState.updatePath(path, for: panelSide)
         Task {
             if panelSide == .left {
@@ -208,5 +214,11 @@ struct HistoryWindowContent: View {
     private func clearHistory() {
         log.debug(#function + "()")
         withAnimation { appState.selectionsHistory.clear() }
+    }
+    // MARK: - Availability
+    private func isDirectoryAvailable(_ url: URL) -> Bool {
+        guard url.isFileURL else { return true }
+        var isDir: ObjCBool = false
+        return FileManager.default.fileExists(atPath: url.path, isDirectory: &isDir) && isDir.boolValue
     }
 }
