@@ -28,8 +28,8 @@ struct BreadCrumbToolBar: View {
     private enum Palette {
         static let activeIcon = Color(nsColor: .labelColor)
         static let inactiveIcon = Color(nsColor: .labelColor).opacity(0.45)
-        static let utilityIcon = Color(nsColor: NSColor(calibratedRed: 0.0, green: 0.42, blue: 0.55, alpha: 1.0))
-        static let hoverTint = Color.accentColor
+        static let utilityIcon = Color(#colorLiteral(red: 0.3058823529, green: 0.1450980392, blue: 0.5294117647, alpha: 1))
+        static let hoverTint = Color(#colorLiteral(red: 0.3058823529, green: 0.1450980392, blue: 0.5294117647, alpha: 1))
     }
 
     // Active panel check for icon contrast

@@ -80,11 +80,13 @@ final class SelectionsHistory {
             forwardStack.removeAll()
             trimHistory()
         }
-        // Always track in recentSelections for the History dialog
-        if let idx = recentSelections.firstIndex(where: { $0.url.standardizedFileURL == normalized }) {
-            recentSelections.remove(at: idx)
+        // Always track in recentSelections for the History dialog.
+        // Collapse only consecutive visits to the same place, preserving older non-adjacent repeats.
+        if recentSelections.first?.url.standardizedFileURL == normalized {
+            recentSelections[0] = RecentHistorySelection(url: normalized, addedAt: Date())
+        } else {
+            recentSelections.insert(RecentHistorySelection(url: normalized, addedAt: Date()), at: 0)
         }
-        recentSelections.insert(RecentHistorySelection(url: normalized, addedAt: Date()), at: 0)
         if recentSelections.count > Self.maxEntries {
             recentSelections.removeLast()
         }
@@ -200,6 +202,7 @@ final class SelectionsHistory {
                     RecentHistorySelection(url: Self.makeFileURL(from: path), addedAt: Date())
                 }
             }
+            collapseConsecutiveRecentSelections()
             updateNavigationState()
         } catch let error as CocoaError where error.code == .fileReadNoSuchFile {
             saveToDisk()
@@ -212,5 +215,16 @@ final class SelectionsHistory {
             updateNavigationState()
             saveToDisk()
         }
+    }
+    // MARK: - Collapse Consecutive Recent Selections
+    private func collapseConsecutiveRecentSelections() {
+        var collapsed: [RecentHistorySelection] = []
+        for item in recentSelections {
+            if collapsed.last?.url.standardizedFileURL == item.url.standardizedFileURL {
+                continue
+            }
+            collapsed.append(item)
+        }
+        recentSelections = collapsed
     }
 }
