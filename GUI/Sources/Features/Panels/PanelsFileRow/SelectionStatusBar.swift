@@ -163,6 +163,10 @@ struct SelectionStatusBar: View {
             : "\(availableDiskSpace) free"
     }
 
+    private var volumeCapacityInfo: VolumeStatusInfo.Capacity? {
+        VolumeStatusInfo.capacity(for: currentURL)
+    }
+
     // MARK: - Body
 
     var body: some View {
@@ -224,7 +228,7 @@ extension SelectionStatusBar {
             } else {
 
                 HStack(spacing: 4) {
-                    Image(systemName: "internaldrive")
+                    Image(systemName: volumeCapacityInfo?.systemImage ?? "internaldrive")
                         .font(.system(size: 10))
                         .foregroundStyle(.secondary)
 

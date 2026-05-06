@@ -10,15 +10,27 @@ import Foundation
 // MARK: - Volume Status Info
 enum VolumeStatusInfo {
 
+    // MARK: - Capacity
+    struct Capacity {
+        let label: String
+        let systemImage: String
+    }
+
     // MARK: - Capacity Label
     static func capacityLabel(for url: URL) -> String? {
+        capacity(for: url)?.label
+    }
+
+    // MARK: - Capacity Info
+    static func capacity(for url: URL) -> Capacity? {
         guard let volumeURL = mountedVolumeRoot(for: url) else { return nil }
         guard let free = availableCapacity(for: volumeURL) else { return nil }
         let freeText = formatBytes(free)
         let totalText = totalCapacity(for: volumeURL).map(formatBytes)
         let formatText = filesystemFormat(for: volumeURL)
-        return [freeText, totalText].compactMap { $0 }.joined(separator: " / ")
+        let label = [freeText, totalText].compactMap { $0 }.joined(separator: " / ")
             + formatText.map { ", \($0)" }.orEmpty
+        return Capacity(label: label, systemImage: deviceSymbol(for: volumeURL))
     }
 
     // MARK: - Mounted Volume Root
@@ -69,6 +81,34 @@ enum VolumeStatusInfo {
             return nil
         }
         return compactFormatName(raw)
+    }
+
+    // MARK: - Device Symbol
+    static func deviceSymbol(for url: URL) -> String {
+        let keys: Set<URLResourceKey> = [
+            .volumeIsEjectableKey,
+            .volumeIsInternalKey,
+            .volumeIsRemovableKey,
+            .volumeLocalizedFormatDescriptionKey,
+            .volumeLocalizedNameKey,
+            .volumeNameKey,
+        ]
+        let values = try? url.resourceValues(forKeys: keys)
+        let hint = [
+            values?.volumeLocalizedName,
+            values?.volumeName,
+            values?.volumeLocalizedFormatDescription,
+            url.lastPathComponent,
+        ]
+        .compactMap { $0 }
+        .joined(separator: " ")
+        .lowercased()
+        if hint.contains("cd") || hint.contains("dvd") || hint.contains("blu-ray") { return "opticaldiscdrive" }
+        if hint.contains("sd") || hint.contains("card") { return "sdcard" }
+        if hint.contains("ssd") || hint.contains("flash") { return "externaldrive.fill" }
+        if values?.volumeIsInternal == true { return "internaldrive" }
+        if values?.volumeIsEjectable == true || values?.volumeIsRemovable == true { return "externaldrive.fill" }
+        return "externaldrive"
     }
 
     // MARK: - File System Capacity
