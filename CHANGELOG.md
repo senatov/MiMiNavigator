@@ -10,6 +10,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - **Breadcrumb navigation controls** — back, forward, and parent-directory buttons now use arrowshape SF Symbols for clearer toolbar affordance
 
+## [0.9.8.5] — 2026-05-07
+
+> **Release notes**
+> Package split and mounted-volume stability release.
+> Moves scanner/archive internals into packages, improves mounted-volume scans, tightens file operation progress,
+> and fixes archive, remote connection, dialog, and navigation edge cases.
+
+### Added
+- **ScannerKit package ownership** — app-side scanner entry now re-exports `ScannerKit`, keeping scanning logic in the package
+- **ArchiveKit package ownership** — archive implementation files were removed from the app target and routed through package APIs
+- **Lightweight volume model** — volume metadata support was moved into packages for reuse by scanner logic
+
+### Changed
+- **Mounted volume scanning** — `/Volumes` and mounted paths use leaner metadata prefetching to avoid slow or fragile remote-volume lookups
+- **File operation progress** — many-small-file copy operations now use hybrid planning and stream-copy progress with live byte updates
+- **History and favorites dialogs** — dialog sizing and row behavior were refined
+- **Version metadata** — marketing version updated to `0.9.8.5`; build number updated to `115`
+
+### Fixed
+- **ArchiveKit public API** — exposed archive process handles and format labels/icons needed by the app UI
+- **AES ZIP extraction** — fixed encrypted ZIP extraction behavior
+- **Mounted volume exit and scan races** — improved stability around leaving and scanning volume-backed directories
+- **Remote connection auth** — fixed connection authentication and SFTP hidden-file filtering
+- **Dialog and keyboard focus** — fixed focus handling in dialogs and top-row navigation
+- **Open With and Get Info routing** — fixed association handling and kept Get Info out of file operation routing
+
 ## [0.9.8.4] — 2026-05-03
 
 > **Release notes**
@@ -640,7 +666,8 @@ Each release should include:
 
 ---
 
-[Unreleased]: https://github.com/senatov/MiMiNavigator/compare/v0.9.8.4...HEAD
+[Unreleased]: https://github.com/senatov/MiMiNavigator/compare/v0.9.8.5...HEAD
+[0.9.8.5]: https://github.com/senatov/MiMiNavigator/compare/v0.9.8.4...v0.9.8.5
 [0.9.8.4]: https://github.com/senatov/MiMiNavigator/compare/v0.9.8.3...v0.9.8.4
 [0.9.8.3]: https://github.com/senatov/MiMiNavigator/compare/v0.9.8.2...v0.9.8.3
 [0.9.8.1]: https://github.com/senatov/MiMiNavigator/compare/v0.9.8...v0.9.8.1

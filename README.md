@@ -17,7 +17,7 @@
   <img src="https://img.shields.io/badge/Archives-50%2B_Formats-6f42c1" alt="50+ archive formats" />
   <img src="https://img.shields.io/badge/Media-Preview_%26_Conversion_Placeholders-ff8c00" alt="Media preview and conversion placeholders" />
   <img src="https://img.shields.io/badge/License-AGPL--3.0-blue" alt="AGPL-3.0" />
-  <img src="https://img.shields.io/badge/v0.9.8.4-Active_Development-orange" alt="Active Development" />
+  <img src="https://img.shields.io/badge/v0.9.8.5-Active_Development-orange" alt="Active Development" />
 </p>
 
 <p align="center">
@@ -36,14 +36,14 @@
 
 
 
-## Recent Changes (v0.9.8.4 — May 2026)
+## Recent Changes (v0.9.8.5 — May 2026)
 
-- **SMB mount reliability** — SMB shares can mount under MiMiNavigator's Application Support folder when `/Volumes` is not writable.
-- **Connection navigation** — toolbar connection actions open SMB sessions in the active panel and active remote sessions appear in the Finder-style sidebar.
-- **Disconnect recovery** — panels showing a disconnected server return to the nearest previous history entry that does not belong to that server.
-- **Copy conflict clarity** — conflict dialogs now show Existing vs Incoming file cards and explicit `Skip Incoming` / `Replace Existing` actions.
-- **Cleaner copy plans** — macOS service metadata such as `.DS_Store`, AppleDouble `._*`, `.localized`, Spotlight, and Trash metadata are skipped.
-- **Release metadata** — version and build number updated for the notarized `0.9.8.4` DMG release.
+- **Package split** — scanner and archive internals now live in `ScannerKit` and `ArchiveKit`, reducing duplicate app-side code.
+- **Mounted volume scanning** — local and external volumes use leaner metadata prefetching for faster, safer listings.
+- **File operation progress** — many-small-file copy operations now report live byte progress with the hybrid stream-copy path.
+- **Archive compatibility** — AES ZIP extraction and ArchiveKit public API boundaries were fixed for app UI usage.
+- **Remote and dialog polish** — SFTP hidden-file filtering, connection auth handling, history/favorites dialogs, and keyboard focus were tightened.
+- **Release metadata** — version and build number updated for the notarized `0.9.8.5` DMG release.
 
 ---
 
