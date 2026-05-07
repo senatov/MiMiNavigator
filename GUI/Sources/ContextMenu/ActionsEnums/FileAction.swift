@@ -14,7 +14,7 @@ enum FileAction: String, CaseIterable, Identifiable {
     case open
     case openWith
     case openInNewTab
-    case browseContents   // .app: navigate into bundle as directory
+    case browseContents   // .app or archive-like file: browse contents explicitly
     
     // Quick Look
     case viewLister

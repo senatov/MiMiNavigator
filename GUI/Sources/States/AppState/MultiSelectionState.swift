@@ -49,7 +49,7 @@ extension AppState {
 
     /// Count of marked files
     func markedCount(for panel: FavPanelSide) -> Int {
-        self[panel: panel].markedFiles.count
+        markedCustomFiles(for: panel).count
     }
 
     /// Total size of marked files

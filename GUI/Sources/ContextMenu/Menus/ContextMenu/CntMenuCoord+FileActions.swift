@@ -28,9 +28,7 @@ extension CntMenuCoord {
             case .open:
                 openFileOrArchive(file, panel: panel, appState: appState)
             case .browseContents:
-                Task { @MainActor in
-                    await navigate(panel: panel, to: file.urlValue.path, appState: appState)
-                }
+                browseFileContents(file, panel: panel, appState: appState)
             case .openWith:
                 log.debug("\(#function) openWith handled by submenu")
             case .openInNewTab:
@@ -123,6 +121,19 @@ extension CntMenuCoord {
         // Regular files — open with system default application
         log.debug("[FileActions] open file via NSWorkspace: name='\(file.nameStr)' path='\(file.urlValue.path)'")
         NSWorkspace.shared.open(file.urlValue)
+    }
+
+    private func browseFileContents(_ file: CustomFile, panel: FavPanelSide, appState: AppState) {
+        if file.isArchiveFile {
+            log.info("[FileActions] browse archive contents: name='\(file.nameStr)' path='\(file.urlValue.path)'")
+            Task { @MainActor in
+                await appState.enterArchive(at: file.urlValue, on: panel)
+            }
+            return
+        }
+        Task { @MainActor in
+            await navigate(panel: panel, to: file.urlValue.path, appState: appState)
+        }
     }
 
     private func presentCreateLinkDialog(for file: CustomFile, panel: FavPanelSide, appState: AppState) {

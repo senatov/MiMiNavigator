@@ -140,7 +140,7 @@ extension AppState {
             Task { await navigateToParent(on: panel) }
             return
         }
-        if !file.isDirectory && ArchiveExtensions.isArchive(file.fileExtension) {
+        if file.isBrowsableArchive {
             Task { await enterArchive(at: file.urlValue, on: panel) }
             return
         }

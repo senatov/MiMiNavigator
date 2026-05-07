@@ -278,7 +278,7 @@ struct FileContextMenu: View {
     private var openSection: some View {
         menuButton(.open)
 
-        if file.isAppBundle {
+        if file.isAppBundle || file.isArchiveFile {
             menuButton(.browseContents)
         }
 

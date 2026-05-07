@@ -70,6 +70,10 @@ struct SelectionStatusBar: View {
         formatFileSize(markedSize)
     }
 
+    private var markedStatusText: String {
+        "\(L10n.Selection.markedCount(markedCount))  \(formattedMarkedSize) / \(formattedMarkedSize)"
+    }
+
     /// Active remote connection (if panel path is remote)
     private var remoteConnection: RemoteConnection? {
         guard AppState.isRemotePath(currentURL) else { return nil }
@@ -213,17 +217,10 @@ extension SelectionStatusBar {
                         .font(.system(size: 10))
                         .foregroundStyle(colorStore.activeTheme.markedCountColor)
 
-                    Text(L10n.Selection.markedCount(markedCount))
+                    Text(markedStatusText)
                         .font(.system(size: 11, weight: .medium))
                         .foregroundStyle(colorStore.activeTheme.markedCountColor)
                 }
-
-                Text("•")
-                    .foregroundStyle(.secondary)
-
-                Text(L10n.Selection.markedSize(formattedMarkedSize))
-                    .font(.system(size: 11))
-                    .foregroundStyle(.secondary)
 
             } else {
 
