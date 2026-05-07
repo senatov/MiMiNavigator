@@ -39,19 +39,35 @@ struct SelectionStatusBar: View {
 
     /// Number of marked files
     private var markedCount: Int {
-        appState.markedCount(for: panelSide)
+        markedFiles.count
     }
 
     /// Total size of marked files
     private var markedSize: Int64 {
-        appState.markedTotalSize(for: panelSide)
+        markedFiles.reduce(0) { $0 + $1.sizeInBytes }
     }
 
-    /// Number of displayed files (excluding ".." parent directory entry)
-    private var totalFiles: Int {
+    private var markedStatusColor: Color {
+        colorStore.activeTheme.markedFileColor
+    }
+
+    private var displayedPanelFiles: [CustomFile] {
         appState.displayedFiles(for: panelSide)
-            .filter { !ParentDirectoryEntry.isParentEntry($0) }
-            .count
+            .filter { !ParentDirectoryEntry.isParentEntry($0) && !$0.isDirectory }
+    }
+
+    private var markedFiles: [CustomFile] {
+        let marked = appState.markedFiles(for: panelSide)
+        return displayedPanelFiles.filter { marked.contains($0.id) }
+    }
+
+    /// Number of displayed files (excluding directories and ".." parent directory entry)
+    private var totalFiles: Int {
+        displayedPanelFiles.count
+    }
+
+    private var totalFilesSize: Int64 {
+        displayedPanelFiles.reduce(0) { $0 + $1.sizeInBytes }
     }
 
     /// Current URL for this panel
@@ -67,11 +83,11 @@ struct SelectionStatusBar: View {
 
     /// Formatted size of marked files
     private var formattedMarkedSize: String {
-        formatFileSize(markedSize)
+        formatKilobytes(markedSize)
     }
 
     private var markedStatusText: String {
-        "\(L10n.Selection.markedCount(markedCount))  \(formattedMarkedSize) / \(formattedMarkedSize)"
+        "\(formattedMarkedSize) / \(formatKilobytes(totalFilesSize)) in \(markedCount) / \(totalFiles) file(s)"
     }
 
     /// Active remote connection (if panel path is remote)
@@ -123,6 +139,16 @@ struct SelectionStatusBar: View {
 
     private func formatFileSize(_ value: Int64) -> String {
         ByteCountFormatter.string(fromByteCount: value, countStyle: .file)
+    }
+
+    private func formatKilobytes(_ value: Int64) -> String {
+        let kilobytes = max(0, Int((value + 1_023) / 1_024))
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.groupingSeparator = ","
+        let formatted = formatter.string(from: NSNumber(value: kilobytes)) ?? "\(kilobytes)"
+        return "\(formatted) k"
     }
 
     private func availableCapacityFromResourceValues(for url: URL) -> Int64? {
@@ -215,11 +241,11 @@ extension SelectionStatusBar {
                 HStack(spacing: 4) {
                     Image(systemName: "checkmark.circle.fill")
                         .font(.system(size: 10))
-                        .foregroundStyle(colorStore.activeTheme.markedCountColor)
+                        .foregroundStyle(markedStatusColor)
 
                     Text(markedStatusText)
                         .font(.system(size: 11, weight: .medium))
-                        .foregroundStyle(colorStore.activeTheme.markedCountColor)
+                        .foregroundStyle(markedStatusColor)
                 }
 
             } else {
