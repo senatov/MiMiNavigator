@@ -24,10 +24,7 @@ extension CntMenuCoord {
             return
         }
         isProcessing = true
-        defer {
-            isProcessing = false
-            activeDialog = nil
-        }
+        defer { isProcessing = false }
         let folderURL = parentURL.appendingPathComponent(name)
         do {
             try FileManager.default.createDirectory(at: folderURL, withIntermediateDirectories: false)
@@ -35,6 +32,7 @@ extension CntMenuCoord {
             await appState.refreshAndSelect(name: name, on: panel)
             let otherPanel: FavPanelSide = panel == .left ? .right : .left
             refreshPanel(otherPanel, appState: appState)
+            activeDialog = nil
             log.info("\(#function) ok — '\(name)' created, selected on \(panel)")
         } catch {
             log.error("\(#function) FAILED: \(error.localizedDescription)")

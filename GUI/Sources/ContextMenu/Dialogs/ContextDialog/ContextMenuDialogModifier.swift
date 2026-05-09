@@ -23,9 +23,19 @@ struct ContextMenuDialogModifier: ViewModifier {
         }
     }
 
+    private var shouldDismissOnBackgroundTap: Bool {
+        guard let dialog = coordinator.activeDialog else { return false }
+        switch dialog {
+            case .createFolder, .createFile, .batchProgress:
+                return false
+            default:
+                return !coordinator.isProcessing
+        }
+    }
 
     func body(content: Content) -> some View {
         content
+            .disabled(shouldShowOverlay)
             .overlay {
                 if shouldShowOverlay {
                     dialogOverlay
@@ -39,11 +49,10 @@ struct ContextMenuDialogModifier: ViewModifier {
             // Dimmed background
             Color.black.opacity(0.3)
                 .ignoresSafeArea()
+                .contentShape(Rectangle())
                 .onTapGesture {
-                    // Don't dismiss on background tap while processing
-                    if !coordinator.isProcessing {
-                        coordinator.dismissDialog()
-                    }
+                    guard shouldDismissOnBackgroundTap else { return }
+                    coordinator.dismissDialog()
                 }
 
             // Dialog content
@@ -59,22 +68,22 @@ struct ContextMenuDialogModifier: ViewModifier {
     private func dialogContent(for dialog: ActiveDialog) -> some View {
         switch dialog {
             case .deleteConfirmation,
-                 .pack,
-                 .compress,
-                 .createFolder,
-                 .createLink,
-                 .fileConflict:
+                .pack,
+                .compress,
+                .createFolder,
+                .createFile,
+                .createLink,
+                .fileConflict:
                 primaryDialogContent(for: dialog)
             case .error,
-                 .success:
+                .success:
                 alertDialogContent(for: dialog)
             case .batchCopyConfirmation,
-                 .batchMoveConfirmation,
-                 .batchDeleteConfirmation,
-                 .batchPackConfirmation,
-                 .batchProgress:
+                .batchMoveConfirmation,
+                .batchDeleteConfirmation,
+                .batchPackConfirmation,
+                .batchProgress:
                 batchDialogContent(for: dialog)
         }
     }
 }
-

@@ -1,36 +1,36 @@
-// CreateFolderDialog.swift
+// CreateFileDialog.swift
 // MiMiNavigator
 //
 // Created by Iakov Senatov on 10.03.2026.
 // Copyright © 2026 Senatov. All rights reserved.
-// Description: SwiftUI HIG-style Create New Folder dialog
+// Description: SwiftUI HIG-style Create New File dialog
 
 import AppKit
 import SwiftUI
 
-// MARK: - Create Folder Dialog
-/// SwiftUI HIG-style dialog matching PackDialog / BatchConfirmationDialog appearance.
-struct CreateFolderDialog: View {
+// MARK: - Create File Dialog
+/// SwiftUI HIG-style dialog matching CreateFolderDialog behavior.
+struct CreateFileDialog: View {
     let parentURL: URL
-    let onCreateFolder: (String) -> Void
+    let onCreateFile: (String) -> Void
     let onCancel: () -> Void
 
-    @State private var folderName: String
+    @State private var fileName: String
     @State private var errorMessage: String?
 
     init(
         parentURL: URL,
-        onCreateFolder: @escaping (String) -> Void,
+        onCreateFile: @escaping (String) -> Void,
         onCancel: @escaping () -> Void
     ) {
         self.parentURL = parentURL
-        self.onCreateFolder = onCreateFolder
+        self.onCreateFile = onCreateFile
         self.onCancel = onCancel
-        self._folderName = State(initialValue: L10n.Dialog.CreateFolder.defaultName)
+        self._fileName = State(initialValue: L10n.Dialog.CreateFile.defaultName)
     }
 
     private var isValidName: Bool {
-        let trimmed = folderName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmed = fileName.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return false }
         let invalidChars = CharacterSet(charactersIn: ":/\\")
         return trimmed.rangeOfCharacter(from: invalidChars) == nil
@@ -39,15 +39,15 @@ struct CreateFolderDialog: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             HIGDialogHeader(
-                L10n.Dialog.CreateFolder.title,
+                L10n.Dialog.CreateFile.title,
                 subtitle: parentURL.path
             )
             .frame(maxWidth: .infinity)
 
             nameField
 
-            if !folderName.isEmpty && !isValidName {
-                Text(L10n.Error.nameInvalidCharsExtended)
+            if !fileName.isEmpty && !isValidName {
+                Text(L10n.Error.fileNameInvalidCharsExtended)
                     .font(.system(size: 11))
                     .foregroundStyle(.red)
             }
@@ -67,12 +67,12 @@ struct CreateFolderDialog: View {
     // MARK: - nameField
     private var nameField: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(L10n.Dialog.CreateFolder.enterNameLabel)
+            Text(L10n.Dialog.CreateFile.enterNameLabel)
                 .font(.system(size: 12, weight: .medium))
                 .foregroundStyle(.primary)
-            CreateFolderNameField(
-                text: $folderName,
-                placeholder: L10n.Dialog.CreateFolder.placeholder,
+            CreateFileNameField(
+                text: $fileName,
+                placeholder: L10n.Dialog.CreateFile.placeholder,
                 onSubmit: performCreate
             )
             .frame(height: 19)
@@ -88,7 +88,7 @@ struct CreateFolderDialog: View {
     private var nameFieldBorder: some View {
         RoundedRectangle(cornerRadius: 6, style: .continuous)
             .strokeBorder(
-                !isValidName && !folderName.isEmpty ? Color.red.opacity(0.7) : Color(nsColor: .separatorColor),
+                !isValidName && !fileName.isEmpty ? Color.red.opacity(0.7) : Color(nsColor: .separatorColor),
                 lineWidth: 1
             )
     }
@@ -99,7 +99,7 @@ struct CreateFolderDialog: View {
             Spacer()
             DownToolbarButtonView(title: L10n.Button.cancel, systemImage: "xmark", action: onCancel)
                 .keyboardShortcut(.cancelAction)
-            DownToolbarButtonView(title: L10n.Button.create, systemImage: "folder.badge.plus", action: performCreate)
+            DownToolbarButtonView(title: L10n.Button.create, systemImage: "doc.badge.plus", action: performCreate)
                 .disabled(!isValidName)
                 .opacity(isValidName ? 1.0 : 0.55)
         }
@@ -108,21 +108,21 @@ struct CreateFolderDialog: View {
 
     // MARK: - performCreate
     private func performCreate() {
-        let trimmed = folderName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmed = fileName.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {
-            errorMessage = L10n.Error.folderNameEmpty
+            errorMessage = L10n.Error.fileNameEmpty
             return
         }
         guard isValidName else {
-            errorMessage = L10n.Error.nameInvalidCharsExtended
+            errorMessage = L10n.Error.fileNameInvalidCharsExtended
             return
         }
-        onCreateFolder(trimmed)
+        onCreateFile(trimmed)
     }
 }
 
-// MARK: - CreateFolderNameField
-private struct CreateFolderNameField: NSViewRepresentable {
+// MARK: - CreateFileNameField
+private struct CreateFileNameField: NSViewRepresentable {
     @Binding var text: String
     let placeholder: String
     let onSubmit: () -> Void
@@ -159,8 +159,8 @@ private struct CreateFolderNameField: NSViewRepresentable {
     }
 }
 
-// MARK: - CreateFolderNameField Coordinator
-extension CreateFolderNameField {
+// MARK: - CreateFileNameField Coordinator
+extension CreateFileNameField {
     @MainActor
     fileprivate final class Coordinator: NSObject, NSTextFieldDelegate {
         @Binding private var text: String
@@ -230,16 +230,16 @@ extension CreateFolderNameField {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { [weak self] in
                 self?.canSubmitFromKeyboard = true
             }
-            log.debug("[CreateFolder] focused name field and selected default name")
+            log.debug("[CreateFile] focused name field and selected default name")
         }
     }
 }
 
 // MARK: - Preview
 #Preview {
-    CreateFolderDialog(
+    CreateFileDialog(
         parentURL: URL(fileURLWithPath: "/Users/test/Documents"),
-        onCreateFolder: { _ in },
+        onCreateFile: { _ in },
         onCancel: {}
     )
     .padding(40)

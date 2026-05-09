@@ -62,6 +62,14 @@ enum L10n {
             static let locationLabel = String(localized: "Location:", comment: "Location label")
             static let enterNameLabel = String(localized: "Enter folder name:", comment: "Enter folder name label")
         }
+
+        // MARK: Create File
+        enum CreateFile {
+            static let title = String(localized: "Create New File", comment: "Create file dialog title")
+            static let placeholder = String(localized: "File name", comment: "File name placeholder")
+            static let defaultName = String(localized: "New File.txt", comment: "Default new file name")
+            static let enterNameLabel = String(localized: "Enter file name:", comment: "Enter file name label")
+        }
         
         // MARK: Pack/Archive
         enum Pack {
@@ -110,10 +118,13 @@ enum L10n {
         static let nameEmpty = String(localized: "Name cannot be empty", comment: "Empty name error")
         static let nameInvalidChars = String(localized: "Name cannot contain / or :", comment: "Invalid characters error")
         static let nameInvalidCharsExtended = String(localized: "Folder name cannot contain : / or \\ characters.", comment: "Invalid characters extended error")
+        static let fileNameInvalidCharsExtended = String(localized: "File name cannot contain : / or \\ characters.", comment: "Invalid file name characters extended error")
         static let invalidNameGeneric = String(localized: "Invalid name", comment: "Generic invalid name error")
         static let folderNameEmpty = String(localized: "Folder name cannot be empty.", comment: "Folder name empty error")
+        static let fileNameEmpty = String(localized: "File name cannot be empty.", comment: "File name empty error")
         static let failedToRemoveFile = String(localized: "Failed to remove existing file", comment: "Failed to remove file error")
         static let failedToCreateFolder = String(localized: "Failed to create folder.", comment: "Failed to create folder error")
+        static let failedToCreateFile = String(localized: "Failed to create file.", comment: "Failed to create file error")
         static func folderAlreadyExists(_ path: String) -> String {
             String(localized: "A folder with this name already exists:\n\(path)", comment: "Folder already exists error")
         }

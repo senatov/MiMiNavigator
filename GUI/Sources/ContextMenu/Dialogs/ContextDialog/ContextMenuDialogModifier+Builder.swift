@@ -40,6 +40,18 @@ extension ContextMenuDialogModifier {
                         coordinator.dismissDialog()
                     }
                 )
+            case .createFile(let parentURL):
+                CreateFileDialog(
+                    parentURL: parentURL,
+                    onCreateFile: { fileName in
+                        Task {
+                            await coordinator.performCreateFile(name: fileName, at: parentURL, appState: appState)
+                        }
+                    },
+                    onCancel: {
+                        coordinator.dismissDialog()
+                    }
+                )
             case .createLink(let file, let destination):
                 CreateLinkDialog(
                     file: file,

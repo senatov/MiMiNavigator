@@ -118,31 +118,41 @@ extension CntMenuCoord {
         activeDialog = .createFolder(parentURL: directory)
     }
 
-    /// Create new empty file in directory, then select it
+    /// Show Create File dialog so the user can enter a name
     func performNewFile(in directory: URL, appState: AppState) {
-        log.debug("\(#function) directory='\(directory.path)'")
+        log.debug("\(#function) showing dialog for directory='\(directory.path)'")
+        activeDialog = .createFile(parentURL: directory)
+    }
+
+    /// Create new empty file in directory, then select it
+    func performCreateFile(name: String, at directory: URL, appState: AppState) async {
+        log.debug("\(#function) name='\(name)' at='\(directory.path)'")
 
         // guard: reject remote / mangled paths
         guard !AppState.isRemotePath(directory) && directory.isFileURL else {
             log.error("\(#function) aborted — directory is remote: \(directory.absoluteString)")
             activeDialog = .error(
-                title: "Create File Failed", message: "Can't create file in remote path: \(directory.lastPathComponent)")
+                title: L10n.Error.failedToCreateFile, message: "Can't create file in remote path: \(directory.lastPathComponent)")
             return
         }
 
-        let newFileURL = generateUniqueName(baseName: "New File.txt", in: directory, isDirectory: false)
-
+        isProcessing = true
+        defer { isProcessing = false }
+        let newFileURL = directory.appendingPathComponent(name)
         do {
-            try Data().write(to: newFileURL)
+            guard FileManager.default.createFile(atPath: newFileURL.path, contents: Data()) else {
+                throw CocoaError(.fileWriteFileExists)
+            }
             let createdName = newFileURL.lastPathComponent
             let panel = panelForPath(directory.path, appState: appState)
+            await appState.refreshAndSelect(name: createdName, on: panel)
+            let otherPanel: FavPanelSide = panel == .left ? .right : .left
+            refreshPanel(otherPanel, appState: appState)
+            activeDialog = nil
             log.info("\(#function) ok — '\(createdName)' created, selecting on \(panel)")
-            Task { @MainActor in
-                await appState.refreshAndSelect(name: createdName, on: panel)
-            }
         } catch {
             log.error("\(#function) FAILED: \(error.localizedDescription)")
-            activeDialog = .error(title: "Create File Failed", message: error.localizedDescription)
+            activeDialog = .error(title: L10n.Error.failedToCreateFile, message: error.localizedDescription)
         }
     }
 
