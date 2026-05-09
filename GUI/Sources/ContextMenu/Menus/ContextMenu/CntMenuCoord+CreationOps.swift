@@ -12,6 +12,19 @@ import Foundation
 
 extension CntMenuCoord {
 
+    // MARK: - Inline Rename
+    /// Start TC-style inline rename for an item selected from the context menu.
+    func beginInlineRename(file: CustomFile, panel: FavPanelSide, appState: AppState) {
+        guard !file.isParentEntry, file.nameStr != ".." else { return }
+        appState.setSelectedFile(file, for: panel)
+        appState.focusedPanel = panel
+        appState.inlineRename.begin(
+            fileID: AnyHashable(file.id),
+            fileName: file.nameStr,
+            panelTag: panel == .left ? 0 : 1
+        )
+    }
+
     // MARK: - Create Folder
     /// Create new folder, then select it in the panel
     func performCreateFolder(name: String, at parentURL: URL, appState: AppState) async {

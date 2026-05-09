@@ -327,6 +327,7 @@ struct FileContextMenu: View {
         Menu {
             menuButton(.newFolder)
             menuButton(.newFile)
+            menuButton(.rename)
             Divider()
             menuButton(.cut)
             menuButton(.copy)
@@ -521,11 +522,18 @@ struct FileContextMenu: View {
 
     @ViewBuilder
     private func shortcutView(for action: FileAction) -> some View {
-        if let shortcut = action.shortcutHint {
+        if let shortcut = shortcutHint(for: action) {
             Text(shortcut)
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
+    }
+
+    private func shortcutHint(for action: FileAction) -> String? {
+        if action == .rename {
+            return HotKeyStore.shared.shortcutString(for: .renameFile)
+        }
+        return action.shortcutHint
     }
 
     @ViewBuilder

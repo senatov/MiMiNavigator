@@ -61,7 +61,7 @@ struct DirectoryContextMenu: View {
                 HStack {
                     Text(action.title)
                     Spacer()
-                    if let shortcut = action.shortcutHint {
+                    if let shortcut = shortcutHint(for: action) {
                         Text(shortcut)
                             .font(.caption)
                             .foregroundStyle(.secondary)
@@ -74,6 +74,13 @@ struct DirectoryContextMenu: View {
             }
         }
         .disabled(isActionDisabled(action))
+    }
+
+    private func shortcutHint(for action: DirectoryAction) -> String? {
+        if action == .rename {
+            return HotKeyStore.shared.shortcutString(for: .renameFile)
+        }
+        return action.shortcutHint
     }
 
     // MARK: - Action State
@@ -119,6 +126,7 @@ struct DirectoryContextMenu: View {
         Menu {
             menuButton(.newFolder)
             menuButton(.newFile)
+            menuButton(.rename)
             Divider()
             menuButton(.cut)
             menuButton(.copy)

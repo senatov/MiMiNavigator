@@ -40,6 +40,8 @@ extension CntMenuCoord {
                     guard let self = self else { return }
                     await self.performDuplicate(file: file, appState: appState)
                 }
+            case .rename:
+                beginInlineRename(file: file, panel: panel, appState: appState)
             case .createLink:
                 presentCreateLinkDialog(for: file, panel: panel, appState: appState)
             case .getInfo:
