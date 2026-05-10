@@ -84,11 +84,7 @@ struct FileRowView: View {
                     .opacity(iconOpacity)
                     .allowsHitTesting(false)
                 if appState.isGeoTagged(file) {
-                    Image(systemName: "globe.europe.africa.fill")
-                        .font(.system(size: 9, weight: .bold))
-                        .foregroundStyle(
-                            Color(#colorLiteral(red: 0.2392156869, green: 0.6745098233, blue: 0.9686274529, alpha: 1))
-                        )
+                    GeoTagBadgeView()
                         .offset(x: 2, y: 2)
                 }
                 switch file.securityState {
