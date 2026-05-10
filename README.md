@@ -36,7 +36,7 @@
 
 
 
-## Recent Changes (v0.9.8.5 — May 2026)
+## Recent Changes (v0.9.8.6 — May 2026)
 
 - **Geo-tagged photo badges** — images with GPS metadata show a compact orange globe badge directly on the file icon.
 - **Media Info GPS links** — Apple Maps, Google Maps, and OpenStreetMap links now appear near the top of the media information panel.
@@ -46,7 +46,7 @@
 - **File operation progress** — many-small-file copy operations now report live byte progress with the hybrid stream-copy path.
 - **Archive compatibility** — AES ZIP extraction and ArchiveKit public API boundaries were fixed for app UI usage.
 - **Remote and dialog polish** — SFTP hidden-file filtering, connection auth handling, history/favorites dialogs, and keyboard focus were tightened.
-- **Release metadata** — version `0.9.8.5` and build `116` updated for the notarized DMG release.
+- **Release metadata** — version `0.9.8.6` and build `117` updated for the notarized DMG release.
 
 ---
 
