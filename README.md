@@ -26,6 +26,7 @@
   <a href="#getting-started">Getting Started</a> ·
   <a href="#architecture">Architecture</a> ·
   <a href="#archive-support">Archive Support</a> ·
+  <a href="GUI/Docs/PLUGIN_BLUE_PAPER.md">Plugin Blue Paper</a> ·
   <a href="#roadmap">Roadmap</a>
 </p>
 
@@ -392,7 +393,7 @@ Log files:
 - [x] Network filesystem (SMB/AFP mount, Network Neighborhood discovery)
 - [ ] Cloud storage (iCloud, Dropbox)
 - [ ] Advanced file comparison
-- [ ] Plugin system
+- [ ] Plugin system — see [Plugin Development Blue Paper](GUI/Docs/PLUGIN_BLUE_PAPER.md)
 - [ ] App Store release
 
 ---
