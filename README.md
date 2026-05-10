@@ -38,12 +38,15 @@
 
 ## Recent Changes (v0.9.8.5 — May 2026)
 
+- **Geo-tagged photo badges** — images with GPS metadata show a compact orange globe badge directly on the file icon.
+- **Media Info GPS links** — Apple Maps, Google Maps, and OpenStreetMap links now appear near the top of the media information panel.
+- **Breadcrumb polish** — local paths show the filesystem root segment and Copy path uses the real filesystem path.
 - **Package split** — scanner and archive internals now live in `ScannerKit` and `ArchiveKit`, reducing duplicate app-side code.
 - **Mounted volume scanning** — local and external volumes use leaner metadata prefetching for faster, safer listings.
 - **File operation progress** — many-small-file copy operations now report live byte progress with the hybrid stream-copy path.
 - **Archive compatibility** — AES ZIP extraction and ArchiveKit public API boundaries were fixed for app UI usage.
 - **Remote and dialog polish** — SFTP hidden-file filtering, connection auth handling, history/favorites dialogs, and keyboard focus were tightened.
-- **Release metadata** — version and build number updated for the notarized `0.9.8.5` DMG release.
+- **Release metadata** — version `0.9.8.5` and build `116` updated for the notarized DMG release.
 
 ---
 

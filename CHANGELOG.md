@@ -7,41 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
-- **GeoTag badge on geotagged images** — after directory scan, EXIF GPS metadata is read from JPEG/HEIC/TIFF/DNG/RAW files in a background thread (ImageIO header-only, no pixel decode); files with GPS coordinates show a small globe overlay badge on the file icon in the panel
-- **GeoTagScanner in ScannerKit** — new `GeoTagScanner` enum provides `detectGeoTaggedPaths(_:)` (pure, thread-safe) and `applyGeoTags(_:to:)` (@MainActor, triggers @Observable refresh); supports 14 RAW/photo extensions
-- **GeoTagBadgeView** — lightweight SwiftUI overlay with `globe.europe.africa` SF Symbol, blue-to-green gradient, used as icon badge in FileRowView
-- **`hasGeoTag` property on CustomFile** — new `@Observable` boolean flag set asynchronously after scan; transferred across rescan cycles via `transferCachedSizes`
-- **Breadcrumb root segment** — local filesystem breadcrumb paths now start with a visible `/` root segment, making it clear the path is absolute and clickable to navigate to filesystem root
-
-### Changed
-- **Media Info Maps section** — GPS maps links (Apple/Google/OSM) now appear at the top of the info card, right after the FILE header, instead of hidden at the bottom
-- **Media Info nav buttons** — previous/next media buttons are now larger (32×32), with 3D gradient styling, drop shadow, and wider spacing for a polished macOS look
-- **Media Info header/button bars** — header and bottom button bars use `fixedSize` vertical layout so they never collapse or hide when the panel window is resized
-- **Breadcrumb navigation controls** — back, forward, and parent-directory buttons now use arrowshape SF Symbols for clearer toolbar affordance
-
-### Fixed
-- **Breadcrumb Copy path** — right-click Copy path on a breadcrumb segment now copies the actual filesystem path (`panelURL.path`) instead of a display path containing unresolved `$HOME` or other environment variables
-
-## [0.9.8.5] — 2026-05-07
+## [0.9.8.5] — 2026-05-10
 
 > **Release notes**
-> Package split and mounted-volume stability release.
-> Moves scanner/archive internals into packages, improves mounted-volume scans, tightens file operation progress,
-> and fixes archive, remote connection, dialog, and navigation edge cases.
+> Geo-tag photo badge, GPS Media Info, package split, and mounted-volume stability release.
+> Adds geotag badges for photos with GPS metadata, surfaces map links in Media Info, moves scanner/archive internals into packages,
+> improves mounted-volume scans, tightens file operation progress, and fixes archive, remote connection, dialog, and navigation edge cases.
 
 ### Added
+- **GeoTag badge on geotagged images** — after directory scan, EXIF GPS metadata is read from JPEG/HEIC/TIFF/DNG/RAW files in a background thread; files with GPS coordinates show a compact orange globe badge on the file icon
+- **GeoTagScanner in ScannerKit** — new `GeoTagScanner` enum provides `detectGeoTaggedPaths(_:)` and `applyGeoTags(_:to:)` for shared package-driven GPS metadata detection
+- **Breadcrumb root segment** — local filesystem breadcrumb paths now start with a visible `/` root segment, making absolute paths clearer and root navigation direct
 - **ScannerKit package ownership** — app-side scanner entry now re-exports `ScannerKit`, keeping scanning logic in the package
 - **ArchiveKit package ownership** — archive implementation files were removed from the app target and routed through package APIs
 - **Lightweight volume model** — volume metadata support was moved into packages for reuse by scanner logic
 
 ### Changed
+- **Media Info Maps section** — GPS maps links for Apple Maps, Google Maps, and OpenStreetMap now appear near the top of the info card
+- **Media Info navigation buttons** — previous/next media buttons are larger and styled consistently with the rest of the macOS UI
+- **Breadcrumb navigation controls** — back, forward, and parent-directory buttons now use arrowshape SF Symbols for clearer toolbar affordance
 - **Mounted volume scanning** — `/Volumes` and mounted paths use leaner metadata prefetching to avoid slow or fragile remote-volume lookups
 - **File operation progress** — many-small-file copy operations now use hybrid planning and stream-copy progress with live byte updates
 - **History and favorites dialogs** — dialog sizing and row behavior were refined
-- **Version metadata** — marketing version updated to `0.9.8.5`; build number updated to `115`
+- **Version metadata** — marketing version updated to `0.9.8.5`; build number updated to `116`
 
 ### Fixed
+- **GeoTag badge refresh** — the badge now survives NSTableView row reuse and scanner republish cycles
+- **Breadcrumb Copy path** — right-click Copy path on a breadcrumb segment now copies the actual filesystem path instead of a display path containing unresolved environment variables
 - **ArchiveKit public API** — exposed archive process handles and format labels/icons needed by the app UI
 - **AES ZIP extraction** — fixed encrypted ZIP extraction behavior
 - **Mounted volume exit and scan races** — improved stability around leaving and scanning volume-backed directories
