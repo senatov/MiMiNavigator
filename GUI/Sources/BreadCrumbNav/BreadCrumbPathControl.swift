@@ -42,7 +42,8 @@ struct BreadCrumbPathControl: View {
     // MARK: - Sections
 
     private var breadcrumbMenuSection: some View {
-        BreadCrumbMnu(selectedSide: panelSide)
+        BreadCrumbToolBar(selectedSide: panelSide)
+            .padding(.leading, 6)
     }
 
     private var spacerSection: some View {

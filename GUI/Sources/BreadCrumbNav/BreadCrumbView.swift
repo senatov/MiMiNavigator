@@ -25,7 +25,7 @@ struct BreadCrumbView: View {
     private var colorStore: ColorThemeStore { ColorThemeStore.shared }
 
     private let barHeight: CGFloat = 30
-    private let separatorWidth: CGFloat = 20
+    private let separatorWidth: CGFloat = 10
 
     // MARK: - Active panel
     private var isActive: Bool { appState.focusedPanel == panelSide }
@@ -329,12 +329,13 @@ struct BreadCrumbView: View {
     // MARK: - breadcrumbItem
     @ViewBuilder
     private func breadcrumbItem(segment: DisplaySegment, index: Int) -> some View {
-        if index > 0 {
-            Image(systemName: "arrowtriangle.forward.fill")
-                .symbolRenderingMode(.hierarchical)
+        let components = pathComponents
+        let prevIsRoot = index > 0 && components[index - 1].text == "/"
+        if index > 0 && !prevIsRoot {
+            Text("/")
                 .foregroundStyle(.secondary)
-                .font(.system(size: 14, weight: .light, design: .rounded))
-                .padding(.horizontal, 2)
+                .font(.system(size: fontSize, weight: .regular, design: .rounded))
+                .padding(.horizontal, 1)
         }
         ExpandableSegmentButton(
             segment: segment,

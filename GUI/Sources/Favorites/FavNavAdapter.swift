@@ -33,19 +33,45 @@ final class FavNavAdapter: FavoritesNavigationDelegate {
 
     func navigate(to url: URL, panel: FavPanelSide) async {
         let targetPanel: FavPanelSide = panel == .left ? .left : .right
-
         log.info("\(#function) url=\(url.path) panel=\(panel)")
-
-        // Update path
-        appState.updatePath(url, for: targetPanel)
-
-        // Update selectedDir for UI consistency
-        let file = CustomFile(name: url.lastPathComponent, path: url.path)
+        let resolvedURL = resolveToExistingAncestor(url)
+        if resolvedURL.path != url.path {
+            log.warning("\(#function) bookmark target gone, resolved to: \(resolvedURL.path)")
+            updateStaleFavorite(oldURL: url, newURL: resolvedURL)
+        }
+        appState.updatePath(resolvedURL, for: targetPanel)
+        let file = CustomFile(name: resolvedURL.lastPathComponent, path: resolvedURL.path)
         appState.selectedDir.selectedFSEntity = file
-
-        // Refresh files
         await appState.scanner.resetRefreshTimer(for: targetPanel)
         await appState.scanner.refreshFiles(currSide: targetPanel)
+    }
+
+
+
+    /// Walk up from `url` until we find an existing directory.
+    /// Falls back to home if nothing found.
+    private func resolveToExistingAncestor(_ url: URL) -> URL {
+        var candidate = url.standardizedFileURL
+        while candidate.path != "/" {
+            var isDir: ObjCBool = false
+            if FileManager.default.fileExists(atPath: candidate.path, isDirectory: &isDir),
+               isDir.boolValue {
+                return candidate
+            }
+            candidate = candidate.deletingLastPathComponent()
+        }
+        return FileManager.default.homeDirectoryForCurrentUser
+    }
+
+
+
+    /// Update stale user-favorite bookmark to point to the resolved path.
+    private func updateStaleFavorite(oldURL: URL, newURL: URL) {
+        let store = UserFavoritesStore.shared
+        guard store.contains(url: oldURL) else { return }
+        store.remove(url: oldURL)
+        store.add(url: newURL, name: newURL.lastPathComponent)
+        log.info("\(#function) bookmark updated: \(oldURL.path) → \(newURL.path)")
     }
 
     func navigateBack(panel: FavPanelSide) {
