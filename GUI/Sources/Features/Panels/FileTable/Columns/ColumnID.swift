@@ -101,7 +101,7 @@ enum ColumnID: String, CaseIterable, Codable, Identifiable, Transferable {
         case .owner, .group:
             cw(5,  .systemFont(ofSize: 8))
         case .childCount:
-            cw(2,  .systemFont(ofSize: 8))
+            cw(5,  .systemFont(ofSize: 8))
         }
     }
 
