@@ -21,6 +21,7 @@ class Coordinator: NSObject, NSTableViewDelegate, NSTableViewDataSource, NSMenuD
     weak var scrollView: NSScrollView?
 
     var files: [CustomFile] = []
+    var geoTaggedPaths: Set<String> = []
     var indexByID: [CustomFile.ID: Int] = [:]
     var lastVersion: Int = -1
     var lastSelectedID: CustomFile.ID?
@@ -31,9 +32,10 @@ class Coordinator: NSObject, NSTableViewDelegate, NSTableViewDataSource, NSMenuD
         super.init()
     }
 
-    func updateFiles(_ newFiles: [CustomFile], version: Int) {
+    func updateFiles(_ newFiles: [CustomFile], version: Int, geoTaggedPaths: Set<String>) {
         log.debug("[Coordinator] updateFiles count=\(newFiles.count) version=\(version)")
         files = newFiles
+        self.geoTaggedPaths = geoTaggedPaths
         lastVersion = version
         rebuildIndex()
     }
@@ -87,6 +89,7 @@ class Coordinator: NSObject, NSTableViewDelegate, NSTableViewDataSource, NSMenuD
             iv.imageScaling = .scaleProportionallyUpOrDown
             cell.addSubview(iv)
             cell.imageView = iv
+            GeoTagBadgeCellHelper.ensureBadgeView(in: cell)
 
             NSLayoutConstraint.activate([
                 iv.leadingAnchor.constraint(equalTo: cell.leadingAnchor, constant: 4),
@@ -122,6 +125,10 @@ class Coordinator: NSObject, NSTableViewDelegate, NSTableViewDataSource, NSMenuD
                 ParentDirectoryEntry.isParentEntry(file)
                 ? NSImage(systemSymbolName: "arrow.up.circle", accessibilityDescription: nil)
                 : NSWorkspace.shared.icon(forFile: file.urlValue.path)
+            GeoTagBadgeCellHelper.updateBadge(
+                in: cell,
+                isVisible: !ParentDirectoryEntry.isParentEntry(file) && geoTaggedPaths.contains(file.pathStr)
+            )
         }
 
         let isSelected = tableView.selectedRowIndexes.contains(row)

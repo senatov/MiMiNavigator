@@ -80,7 +80,7 @@ struct MediaInfoPanelView: View {
 
             Spacer()
 
-            HStack(spacing: 6) {
+            HStack(spacing: 12) {
                 navButton(symbol: "chevron.left", action: controller.prevMedia, disabled: controller.currentIndex <= 0)
                 navButton(
                     symbol: "chevron.right", action: controller.nextMedia,
@@ -92,19 +92,44 @@ struct MediaInfoPanelView: View {
         .background(sectionBackground)
         .overlay(sectionBorder)
         .clipShape(RoundedRectangle(cornerRadius: Layout.sectionCornerRadius, style: .continuous))
+        .fixedSize(horizontal: false, vertical: true)
         .padding(.horizontal, Layout.compactHorizontalPadding)
     }
 
     private func navButton(symbol: String, action: @escaping () -> Void, disabled: Bool) -> some View {
         Button(action: action) {
             Image(systemName: symbol)
-                .font(.caption)
-                .padding(6)
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(disabled ? .tertiary : .primary)
+                .frame(width: 32, height: 32)
                 .background {
-                    Circle().fill(.quaternary.opacity(0.9))
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .fill(
+                            .linearGradient(
+                                colors: [
+                                    Color(white: 0.95),
+                                    Color(white: 0.82),
+                                ],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
+                        .shadow(color: .black.opacity(0.18), radius: 1.5, x: 0, y: 1.5)
+                        .shadow(color: .white.opacity(0.6), radius: 0.5, x: 0, y: -0.5)
                 }
                 .overlay {
-                    Circle().strokeBorder(.quaternary, lineWidth: 0.8)
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .strokeBorder(
+                            .linearGradient(
+                                colors: [
+                                    Color(white: 1.0, opacity: 0.5),
+                                    Color(white: 0.5, opacity: 0.3),
+                                ],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            ),
+                            lineWidth: 0.8
+                        )
                 }
         }
         .buttonStyle(.plain)
@@ -154,6 +179,11 @@ struct MediaInfoPanelView: View {
 
     private var fileContent: some View {
         VStack(alignment: .leading, spacing: 10) {
+            // Maps section first — most useful when GPS is present
+            if let coordinates = controller.currentCoordinates {
+                mapsCard(coordinates: coordinates)
+            }
+
             ForEach(parsedSections) { section in
                 VStack(alignment: .leading, spacing: 8) {
                     if section.title.caseInsensitiveCompare("File") != .orderedSame {
@@ -185,10 +215,6 @@ struct MediaInfoPanelView: View {
                         }
                     }
                 }
-            }
-
-            if let coordinates = controller.currentCoordinates {
-                mapsCard(coordinates: coordinates)
             }
         }
     }
@@ -384,6 +410,7 @@ struct MediaInfoPanelView: View {
         }
         .padding(.horizontal, Layout.compactHorizontalPadding)
         .padding(.bottom, 10)
+        .fixedSize(horizontal: false, vertical: true)
     }
 
     private var panelBackground: some View {

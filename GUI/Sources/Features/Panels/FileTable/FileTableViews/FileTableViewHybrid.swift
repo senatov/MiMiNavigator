@@ -54,6 +54,7 @@ struct FileTableViewHybrid: View {
                     panelSide: panelSide,
                     files: files,
                     filesVersion: filesVersion,
+                    geoTaggedPaths: appState.geoTaggedPaths,
                     sortKey: appState.sortKey,
                     sortAscending: appState.bSortAscending,
                     selectedID: $selectedID,

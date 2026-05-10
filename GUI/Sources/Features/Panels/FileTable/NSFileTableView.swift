@@ -14,6 +14,7 @@
         let panelSide: FavPanelSide
         let files: [CustomFile]
         let filesVersion: Int
+        let geoTaggedPaths: Set<String>
         let sortKey: SortKeysEnum
         let sortAscending: Bool
         @Binding var selectedID: CustomFile.ID?
@@ -67,7 +68,7 @@
 
             context.coordinator.tableView = tableView
             context.coordinator.scrollView = scrollView
-            context.coordinator.updateFiles(files, version: filesVersion)
+            context.coordinator.updateFiles(files, version: filesVersion, geoTaggedPaths: geoTaggedPaths)
 
             updateBackgroundColor(scrollView: scrollView, tableView: tableView)
 
@@ -85,7 +86,7 @@
             // Files changed?
             let filesChanged = coord.lastVersion != filesVersion
             if filesChanged {
-                coord.updateFiles(files, version: filesVersion)
+                coord.updateFiles(files, version: filesVersion, geoTaggedPaths: geoTaggedPaths)
                 tableView.reloadData()
             }
 

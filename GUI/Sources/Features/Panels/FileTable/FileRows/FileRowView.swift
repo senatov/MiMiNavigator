@@ -14,6 +14,7 @@ import UniformTypeIdentifiers
 
 // MARK: - File row content view (icon + name)
 struct FileRowView: View {
+    @Environment(AppState.self) private var appState
     let file: CustomFile
     let isSelected: Bool
     let isActivePanel: Bool
@@ -82,6 +83,14 @@ struct FileRowView: View {
                     .frame(width: DesignTokens.Row.iconSize, height: DesignTokens.Row.iconSize)
                     .opacity(iconOpacity)
                     .allowsHitTesting(false)
+                if appState.isGeoTagged(file) {
+                    Image(systemName: "globe.europe.africa.fill")
+                        .font(.system(size: 9, weight: .bold))
+                        .foregroundStyle(
+                            Color(#colorLiteral(red: 0.2392156869, green: 0.6745098233, blue: 0.9686274529, alpha: 1))
+                        )
+                        .offset(x: 2, y: 2)
+                }
                 switch file.securityState {
                     case .restricted:
                         Image(systemName: "lock.square.stack")

@@ -31,6 +31,14 @@ final class AppState {
     var leftFilesVersion: Int { leftPanel.filesVersion }
     var rightFilesVersion: Int { rightPanel.filesVersion }
 
+    // MARK: - Geo-tagged files cache
+    var geoTaggedPaths: Set<String> = []
+
+    // MARK: - Geo-tagged file check
+    func isGeoTagged(_ file: CustomFile) -> Bool {
+        geoTaggedPaths.contains(file.pathStr)
+    }
+
     /// Bump version without replacing the file array — triggers onChange observers.
     /// Use when in-place mutations (e.g. deferred directory sizes) need to re-trigger autofit.
     func bumpFilesVersion(for panel: FavPanelSide) {

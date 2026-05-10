@@ -110,6 +110,9 @@ extension DualDirectoryScanner {
             if let oldAppSize = old.cachedAppSize, file.cachedAppSize == nil {
                 file.cachedAppSize = oldAppSize
             }
+            if old.hasGeoTag && !file.hasGeoTag {
+                file.hasGeoTag = true
+            }
             // sync sizeVersion so filesAreIdentical doesn't see a diff
             // (setting cachedDirectorySize above bumps sizeVersion via didSet,
             // but the old object may have been bumped multiple times)
@@ -121,8 +124,6 @@ extension DualDirectoryScanner {
             log.debug("[Scanner] transferred \(transferred) cached sizes to new file objects")
         }
     }
-
-
 
     /// Cheap identity + metadata equality check to avoid triggering SwiftUI rebuilds on no-op publishes.
     /// Includes row fields that affect visible rendering for externally changed files.
@@ -245,7 +246,6 @@ extension DualDirectoryScanner {
         Task { await self.resetFSEventsDebounce(for: side) }
         return true
     }
-
     // MARK: - Selection bootstrap
 
     @MainActor
@@ -284,6 +284,7 @@ extension DualDirectoryScanner {
             contentHash: contentHash,
             isFirstUpdate: isFirstUpdate
         ) {
+            scheduleGeoTagScan(publishedFiles, for: side, path: currentPath)
             return
         }
 
@@ -292,6 +293,7 @@ extension DualDirectoryScanner {
         lastUpdateTime[side] = now
 
         publishDisplayedFiles(publishedFiles, for: side)
+        scheduleGeoTagScan(publishedFiles, for: side, path: currentPath)
         log.info("[Scanner] published side=\(side) items=\(publishedFiles.count)")
 
         if isFirstUpdate {
@@ -300,14 +302,10 @@ extension DualDirectoryScanner {
     }
 
     func publishSuccessfulScan(_ files: [CustomFile], scannedPath: String, for side: FavPanelSide) async {
-        let publishedFiles = await MainActor.run {
-            sanitizedPublishedFiles(from: files)
-        }
+        log.debug("[Scan] publish side=\(side) path='\(scannedPath)' raw=\(files.count)")
 
-        log.debug("[Scan] publish side=\(side) path='\(scannedPath)' raw=\(files.count) sanitized=\(publishedFiles.count)")
-
-        await updateScannedFiles(publishedFiles, for: side)
-        await updateFileList(panelSide: side, with: publishedFiles)
+        await updateScannedFiles(files, for: side)
+        await updateFileList(panelSide: side, with: files)
     }
 
     // MARK: - Permission helpers

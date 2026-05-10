@@ -100,7 +100,7 @@ struct BreadCrumbView: View {
     /// Returns segments to display. Three modes:
     ///   remote  → ["SFTP demo@host", "pub", "docs"]   (first segment = origin label)
     ///   archive → ["archive.zip", "subdir"]
-    ///   local   → ["Users", "senat", "Develop"]
+    ///   local   → ["/", "Users", "senat", "Develop"]
     private var pathComponents: [BreadCrumbDisplayComponent] {
         let panelURL = panelURL
 
@@ -124,7 +124,16 @@ struct BreadCrumbView: View {
         }
 
         // ── Local filesystem ─────────────────────────────────────────────────
-        return PathEnvironmentResolver.displayComponents(from: appState.breadcrumbDisplayPath(for: panelSide))
+        let displayPath = appState.breadcrumbDisplayPath(for: panelSide)
+        var components = PathEnvironmentResolver.displayComponents(from: displayPath)
+        // Prepend filesystem root so the breadcrumb visually starts with "/"
+        if displayPath.hasPrefix("/") || displayPath.hasPrefix("$") {
+            components.insert(
+                BreadCrumbDisplayComponent(text: "/", isEnvironmentVariable: false),
+                at: 0
+            )
+        }
+        return components
     }
 
     private var pathComponentTexts: [String] {
@@ -410,6 +419,7 @@ struct BreadCrumbView: View {
     }
 
     // MARK: - copyPath
+    /// Copies the current panel's real filesystem path to clipboard.
     private func copyPath(for segment: DisplaySegment) {
         let pathToCopy: String
 
@@ -418,7 +428,7 @@ struct BreadCrumbView: View {
         } else if isInsideArchive {
             pathToCopy = archiveCopyPath(for: segment)
         } else {
-            pathToCopy = makeLocalDisplayPath(through: segment.originalIndex)
+            pathToCopy = panelURL.path
         }
 
         NSPasteboard.general.clearContents()

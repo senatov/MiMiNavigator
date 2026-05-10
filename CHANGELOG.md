@@ -7,8 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **GeoTag badge on geotagged images** — after directory scan, EXIF GPS metadata is read from JPEG/HEIC/TIFF/DNG/RAW files in a background thread (ImageIO header-only, no pixel decode); files with GPS coordinates show a small globe overlay badge on the file icon in the panel
+- **GeoTagScanner in ScannerKit** — new `GeoTagScanner` enum provides `detectGeoTaggedPaths(_:)` (pure, thread-safe) and `applyGeoTags(_:to:)` (@MainActor, triggers @Observable refresh); supports 14 RAW/photo extensions
+- **GeoTagBadgeView** — lightweight SwiftUI overlay with `globe.europe.africa` SF Symbol, blue-to-green gradient, used as icon badge in FileRowView
+- **`hasGeoTag` property on CustomFile** — new `@Observable` boolean flag set asynchronously after scan; transferred across rescan cycles via `transferCachedSizes`
+- **Breadcrumb root segment** — local filesystem breadcrumb paths now start with a visible `/` root segment, making it clear the path is absolute and clickable to navigate to filesystem root
+
 ### Changed
+- **Media Info Maps section** — GPS maps links (Apple/Google/OSM) now appear at the top of the info card, right after the FILE header, instead of hidden at the bottom
+- **Media Info nav buttons** — previous/next media buttons are now larger (32×32), with 3D gradient styling, drop shadow, and wider spacing for a polished macOS look
+- **Media Info header/button bars** — header and bottom button bars use `fixedSize` vertical layout so they never collapse or hide when the panel window is resized
 - **Breadcrumb navigation controls** — back, forward, and parent-directory buttons now use arrowshape SF Symbols for clearer toolbar affordance
+
+### Fixed
+- **Breadcrumb Copy path** — right-click Copy path on a breadcrumb segment now copies the actual filesystem path (`panelURL.path`) instead of a display path containing unresolved `$HOME` or other environment variables
 
 ## [0.9.8.5] — 2026-05-07
 
