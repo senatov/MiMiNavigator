@@ -122,10 +122,10 @@ enum ColumnAutoFitMeasurer {
         if column == .size {
             let fallback = ColumnWidthPolicy.sizeColumnFallbackWidth()
             log.verbose("[AutoFit] contentWidth \(column.rawValue) fallback=\(ColumnAutoFitLayout.pt(fallback))")
-            return fallback
+            return max(fallback, column.defaultWidth)
         }
         log.verbose("[AutoFit] contentWidth \(column.rawValue) empty")
-        return ColumnAutoFitMetrics.emptyColumnWidth
+        return max(ColumnAutoFitMetrics.emptyColumnWidth, column.defaultWidth)
     }
 
     // MARK: - Text Samples
