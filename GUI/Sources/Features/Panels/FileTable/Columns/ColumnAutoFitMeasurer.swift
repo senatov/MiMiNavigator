@@ -109,7 +109,8 @@ enum ColumnAutoFitMeasurer {
     // MARK: - Clamp Width
     private static func clamped(width: CGFloat, column: ColumnID, meaningfulCount: Int, totalCount: Int) -> CGFloat {
         guard column != .name else { return max(width, ColumnAutoFitMetrics.emptyColumnWidth) }
-        var clampedWidth = width.clamped(to: ColumnAutoFitMetrics.emptyColumnWidth...ColumnWidthPolicy.effectiveMaxWidth(for: column))
+        let floor = max(column.defaultWidth, ColumnAutoFitMetrics.emptyColumnWidth)
+        var clampedWidth = width.clamped(to: floor...ColumnWidthPolicy.effectiveMaxWidth(for: column))
         if column == .size && meaningfulCount < totalCount {
             clampedWidth = max(clampedWidth, ColumnWidthPolicy.sizeColumnFallbackWidth())
         }
