@@ -68,7 +68,7 @@ enum ColumnID: String, CaseIterable, Codable, Identifiable, Transferable {
         case .size:          75
         case .kind:          64
         case .permissions:   82
-        case .childCount:    40
+        case .childCount:    50
         case .owner, .group: 70
         }
     }
