@@ -342,6 +342,25 @@ Log files:
 
 ---
 
+## Cloud Storage
+
+MiMiNavigator **auto-discovers** cloud drives mounted on your Mac. Any provider that syncs through `~/Library/CloudStorage` appears automatically in the sidebar under **Cloud Drives** — no configuration needed.
+
+| Provider | How it appears |
+|----------|---------------|
+| Google Drive | Install [Google Drive for Desktop](https://www.google.com/drive/download/) → appears automatically |
+| OneDrive | Install [OneDrive for Mac](https://www.microsoft.com/en-us/microsoft-365/onedrive/download) → appears automatically |
+| Dropbox | Install [Dropbox for Mac](https://www.dropbox.com/install) → appears automatically |
+| Proton Drive | Install [Proton Drive for Mac](https://proton.me/drive/download) → appears automatically |
+| iCloud Drive | Built into macOS → appears automatically |
+| Any other provider | If it mounts to `~/Library/CloudStorage`, it will be detected |
+
+**For power users:** [rclone](https://rclone.org/) can mount virtually any cloud provider (S3, B2, MEGA, etc.) as a local FUSE filesystem. Once mounted, it appears in `/Volumes` and is browsable in MiMiNavigator.
+
+> MiMiNavigator is a **browser**, not a connector. It displays any cloud drive already attached to your Mac's filesystem but does not log in to cloud accounts directly.
+
+---
+
 ## Roadmap
 
 ### Done ✅
