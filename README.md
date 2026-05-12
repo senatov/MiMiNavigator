@@ -17,7 +17,7 @@
   <img src="https://img.shields.io/badge/Archives-50%2B_Formats-6f42c1" alt="50+ archive formats" />
   <img src="https://img.shields.io/badge/Media-Preview_%26_Conversion_Placeholders-ff8c00" alt="Media preview and conversion placeholders" />
   <img src="https://img.shields.io/badge/License-AGPL--3.0-blue" alt="AGPL-3.0" />
-  <img src="https://img.shields.io/badge/v0.9.8.5-Active_Development-orange" alt="Active Development" />
+  <a href="https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.8.6"><img src="https://img.shields.io/badge/release-v0.9.8.6-orange" alt="Release v0.9.8.6" /></a>
 </p>
 
 <p align="center">
@@ -32,8 +32,8 @@
 
 ---
 
-> ** 🔨 Under active development 🔨.
-** APIs and UI may change without notice.
+> **🔨 Under active development 🔨**  
+> APIs and UI may change without notice.
 
 
 
@@ -190,7 +190,8 @@ MiMiNavigator can browse archives as virtual directories. Double-click opens the
 > xattr -cr ~/Downloads/MiMiNavigator.app
 > ```
 
-**[Download latest release →](https://github.com/senatov/MiMiNavigator/releases/latest)**
+**[Download MiMiNavigator v0.9.8.6 →](https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.8.6)**  
+**[All releases →](https://github.com/senatov/MiMiNavigator/releases)**
 
 ---
 
