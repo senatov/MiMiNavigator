@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Google Drive share-link publishing docs** — documented the `Copy Share Link` flow, Google OAuth app credentials, Keychain token storage, and the mounted `My Drive/Public` sidebar behavior
+
 ## [0.9.8.6] — 2026-05-10
 
 > **Release notes**

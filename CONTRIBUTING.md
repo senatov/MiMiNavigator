@@ -52,6 +52,15 @@ xcodebuild -scheme MiMiNavigator \
 
 Build logs are automatically saved to `build-logs/` directory.
 
+### Google Drive OAuth Config
+
+Google Drive share-link development needs application OAuth credentials:
+
+- Copy `GUI/Resources/google_drive_oauth.example.json` to `GUI/Resources/google_drive_oauth.json`.
+- Fill it with a Google Desktop OAuth client from Google Cloud Console.
+- Do not commit `GUI/Resources/google_drive_oauth.json`; it is git-ignored because GitHub push protection treats the client secret as sensitive.
+- Runtime user tokens are stored in macOS Keychain by MiMiNavigator, not in this JSON file.
+
 ## Code Quality
 
 We use several tools to maintain high code quality. All checks run automatically in CI, but you should run them locally before submitting:

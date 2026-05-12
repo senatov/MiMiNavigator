@@ -344,20 +344,33 @@ Log files:
 
 ## Cloud Storage
 
-MiMiNavigator **auto-discovers** cloud drives mounted on your Mac. Any provider that syncs through `~/Library/CloudStorage` appears automatically in the sidebar under **Cloud Drives** — no configuration needed.
+MiMiNavigator **auto-discovers** cloud drives mounted on your Mac. Any provider that syncs through `~/Library/CloudStorage` appears automatically in the sidebar under **Cloud Drives**.
 
 | Provider | How it appears |
 |----------|---------------|
-| Google Drive | Install [Google Drive for Desktop](https://www.google.com/drive/download/) → appears automatically |
+| Google Drive | Install [Google Drive for Desktop](https://www.google.com/drive/download/) → appears automatically; shared uploads appear under `My Drive/Public` after sync |
 | OneDrive | Install [OneDrive for Mac](https://www.microsoft.com/en-us/microsoft-365/onedrive/download) → appears automatically |
 | Dropbox | Install [Dropbox for Mac](https://www.dropbox.com/install) → appears automatically |
 | Proton Drive | Install [Proton Drive for Mac](https://proton.me/drive/download) → appears automatically |
 | iCloud Drive | Built into macOS → appears automatically |
 | Any other provider | If it mounts to `~/Library/CloudStorage`, it will be detected |
 
+### Google Drive Share Links
+
+File and directory R-Menu includes **Copy Share Link** for Google Drive publishing:
+
+1. MiMiNavigator uploads the selected item to a `Public` folder in Google Drive.
+2. It creates an external Google Drive link with **View only** or **Allow editing** permission.
+3. The link is copied to the clipboard.
+4. The first use opens Google OAuth in the browser. After consent, the refresh token is stored in macOS Keychain and later share-link actions run without opening the browser again unless access is revoked.
+
+Google Drive app credentials are application credentials, not user credentials. A development build can bundle `GUI/Resources/google_drive_oauth.json`; this file is intentionally git-ignored. Use `GUI/Resources/google_drive_oauth.example.json` as the template and never commit a real Google OAuth client secret. User access and refresh tokens are never written to project files.
+
+When Google Drive for Desktop syncs the `Public` folder locally, MiMiNavigator shows it as **Google Drive Public** in the sidebar.
+
 **For power users:** [rclone](https://rclone.org/) can mount virtually any cloud provider (S3, B2, MEGA, etc.) as a local FUSE filesystem. Once mounted, it appears in `/Volumes` and is browsable in MiMiNavigator.
 
-> MiMiNavigator is a **browser**, not a connector. It displays any cloud drive already attached to your Mac's filesystem but does not log in to cloud accounts directly.
+> MiMiNavigator is primarily a filesystem browser. Google Drive share-link generation is the current exception: it uses Google OAuth only to upload selected items to `Public` and create shareable links.
 
 ---
 
@@ -398,6 +411,7 @@ MiMiNavigator **auto-discovers** cloud drives mounted on your Mac. Any provider 
 - [x] Firmlink handling for `/tmp`, `/var`, `/etc` in scanner and file operations
 - [x] Rename: panel tracking, scan cooldown fix, firmlink path resolution
 - [x] Version auto-sync from git tag via `Scripts/stamp_version.zsh`
+- [x] Google Drive share-link publishing to `Public` with Keychain-backed OAuth
 
 ### In Progress 🚧
 
@@ -410,7 +424,7 @@ MiMiNavigator **auto-discovers** cloud drives mounted on your Mac. Any provider 
 - [ ] Three-panel layout option
 - [x] FTP/SFTP connectivity (Citadel SFTP + curl-based FTP)
 - [x] Network filesystem (SMB/AFP mount, Network Neighborhood discovery)
-- [ ] Cloud storage (iCloud, Dropbox)
+- [ ] More cloud provider share-link APIs beyond Google Drive
 - [ ] Advanced file comparison
 - [ ] Plugin system — see [Plugin Development Blue Paper](GUI/Docs/PLUGIN_BLUE_PAPER.md)
 - [ ] App Store release
