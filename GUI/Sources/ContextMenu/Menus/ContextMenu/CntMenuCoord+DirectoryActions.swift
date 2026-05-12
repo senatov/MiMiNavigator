@@ -71,6 +71,10 @@ extension CntMenuCoord {
                 mirrorPathToOtherPanel(panel, appState: appState)
             case .addToFavorites:
                 addToFavorites(file)
+            case .cloudLinkReadOnly:
+                handleCloudLink(for: file, permission: .readOnly)
+            case .cloudLinkEdit:
+                handleCloudLink(for: file, permission: .allowEdit)
             case .newFolder:
                 let dir = getDestinationPath(for: panel, appState: appState)
                 performNewFolder(in: dir, appState: appState)

@@ -172,5 +172,33 @@ struct DirectoryContextMenu: View {
     @ViewBuilder
     private var favoritesSection: some View {
         favoritesToggleButton
+        cloudLinkSection
+    }
+
+    // MARK: - Cloud Link
+
+    @ViewBuilder
+    private var cloudLinkSection: some View {
+        if let provider = CloudProviderDetector.detect(url: file.urlValue) {
+            Divider()
+            Menu {
+                Button {
+                    CloudLinkService.generateLink(for: file.urlValue, provider: provider, permission: .readOnly)
+                } label: {
+                    Label("View only", systemImage: "eye")
+                }
+                Button {
+                    CloudLinkService.generateLink(for: file.urlValue, provider: provider, permission: .allowEdit)
+                } label: {
+                    Label("Allow editing", systemImage: "pencil")
+                }
+            } label: {
+                Label {
+                    Text("Cloud Link (\(provider.rawValue))")
+                } icon: {
+                    Image(systemName: provider.systemImage)
+                }
+            }
+        }
     }
 }
