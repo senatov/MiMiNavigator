@@ -44,6 +44,7 @@ struct MiMiNavigatorApp: App {
     // MARK: -
     init() {
         AppLogger.initialize()
+        GoogleDriveCredentialBootstrap.ensureLocalCredentials()
     }
 
     // MARK: - Toolbar

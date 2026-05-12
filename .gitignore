@@ -75,6 +75,13 @@ build-logs/
 
 
 # --------------------------------------------------
+# Local OAuth credentials
+# --------------------------------------------------
+
+GUI/Resources/google_drive_oauth.json
+
+
+# --------------------------------------------------
 # IDE
 # --------------------------------------------------
 
@@ -111,4 +118,3 @@ timeline.xctimeline
 # Packages/NetworkKit*.dmg
 .spm-checkouts
 *.xcbkptlist
-

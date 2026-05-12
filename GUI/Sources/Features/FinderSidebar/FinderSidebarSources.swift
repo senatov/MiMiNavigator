@@ -86,6 +86,9 @@ extension FinderSidebarView {
         if let children = try? FileManager.default.contentsOfDirectory(at: cloudStorage, includingPropertiesForKeys: [.isDirectoryKey], options: [.skipsHiddenFiles]) {
             items += children.compactMap(cloudStorageItem)
         }
+        if let publicURL = GoogleDriveMountedPaths.publicFolderURL() {
+            items.append(FinderSidebarItem(title: "Google Drive Public", systemImage: "folder.badge.person.crop", action: .navigate(publicURL)))
+        }
         return items.filter(\.shouldShow)
     }
 

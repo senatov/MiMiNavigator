@@ -14,6 +14,12 @@ enum GoogleDriveOAuthConfig {
     static let publicFolderName = "Public"
     static let localCredentialsPath = "~/.mimi/google_drive_oauth.json"
 
+    // MARK: - Local Credentials URL
+
+    static var localCredentialsURL: URL {
+        URL(fileURLWithPath: NSString(string: localCredentialsPath).expandingTildeInPath)
+    }
+
     // MARK: - Client Secret
 
     static var clientSecret: String? {
@@ -27,8 +33,7 @@ enum GoogleDriveOAuthConfig {
     // MARK: - Local Credentials
 
     private static var localCredentials: GoogleDriveLocalCredentials? {
-        let expanded = NSString(string: localCredentialsPath).expandingTildeInPath
-        guard let data = try? Data(contentsOf: URL(fileURLWithPath: expanded)) else { return nil }
+        guard let data = try? Data(contentsOf: localCredentialsURL) else { return nil }
         return try? JSONDecoder().decode(GoogleDriveLocalCredentials.self, from: data)
     }
 }
@@ -56,6 +61,13 @@ struct GoogleDriveLocalCredentials: Decodable {
             return
         }
         clientSecret = nil
+    }
+
+    // MARK: - Validation
+
+    static func hasClientSecret(in data: Data) -> Bool {
+        guard let credentials = try? JSONDecoder().decode(GoogleDriveLocalCredentials.self, from: data) else { return false }
+        return credentials.clientSecret?.isEmpty == false
     }
 }
 
@@ -133,7 +145,7 @@ enum GoogleDriveError: LocalizedError {
         case .missingLink(let fileID):
             return "Google Drive did not return a share link for \(fileID)."
         case .missingClientSecret:
-            return "Google Drive OAuth client secret is missing. Put downloaded desktop OAuth JSON at ~/.mimi/google_drive_oauth.json."
+            return "Google Drive OAuth app credentials are missing or invalid."
         case .requestFailed(let status, let body):
             return "Google Drive request failed with HTTP \(status): \(body)"
         case .keychain(let status):

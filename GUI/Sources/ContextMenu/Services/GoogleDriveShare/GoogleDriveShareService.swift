@@ -32,7 +32,7 @@ enum GoogleDriveShareService {
             showNotification("Google Drive share link failed: \(error.localizedDescription)")
             log.error("[CloudLink] Google Drive share failed: \(error.localizedDescription)")
             if case GoogleDriveError.missingClientSecret = error {
-                log.error("[CloudLink] place downloaded Google desktop OAuth JSON at \(GoogleDriveOAuthConfig.localCredentialsPath)")
+                log.error("[CloudLink] bundled or local Google desktop OAuth JSON is missing client_secret")
             }
             return false
         }
