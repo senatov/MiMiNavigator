@@ -61,6 +61,7 @@ struct FileTableView: View {
 
     /// O(1) scroll target — set by keyboard nav, consumed by ScrollView(.scrollPosition)
     @State var scrollAnchorID: CustomFile.ID? = nil
+    @State var nativeScrollView: NSScrollView? = nil
 
     @State var showSpinner: Bool = false
     @State var spinnerTask: Task<Void, Never>? = nil

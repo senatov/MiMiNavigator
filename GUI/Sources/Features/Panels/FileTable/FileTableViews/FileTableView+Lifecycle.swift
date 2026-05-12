@@ -17,6 +17,7 @@ extension FileTableView {
         log.debug("[Columns] panel=\(panelSide) column count=\(layout.columns.count)")
         recomputeSortedCache()
         registerNavigationCallbacks()
+        scrollToSelectionFromState()
     }
 
     func handleMenuTrackingBegan() {
@@ -49,6 +50,37 @@ extension FileTableView {
         if selectedID != newID {
             selectedID = newID
         }
+        scrollToSelectionFromState()
+    }
+
+    func scrollToSelectionFromState() {
+        guard let selectedID = selectedFileIDFromState else { return }
+        Task { @MainActor in
+            for attempt in 1...5 {
+                try? await Task.sleep(nanoseconds: UInt64(attempt) * 50_000_000)
+                guard let index = cachedIndexByID[selectedID] else { return }
+                if let scrollView = nativeScrollView {
+                    scrollNativeScrollView(scrollView, toRow: index)
+                    log.debug("[FileTableView] native scroll to selection panel=\(panelSide) row=\(index) attempt=\(attempt) id=\(selectedID)")
+                    return
+                }
+                log.debug("[FileTableView] native scroll missing panel=\(panelSide) attempt=\(attempt) id=\(selectedID)")
+            }
+            scrollAnchorID = nil
+            scrollAnchorID = selectedID
+        }
+    }
+
+    private func scrollNativeScrollView(_ scrollView: NSScrollView, toRow index: Int) {
+        let rowHeight = FilePanelStyle.rowHeight
+        let clipView = scrollView.contentView
+        let visibleHeight = clipView.bounds.height
+        let documentHeight = scrollView.documentView?.bounds.height ?? 0
+        let rowMidY = CGFloat(index) * rowHeight + rowHeight / 2
+        let maxY = max(0, documentHeight - visibleHeight)
+        let targetY = min(max(0, rowMidY - visibleHeight / 2), maxY)
+        clipView.scroll(to: NSPoint(x: clipView.bounds.origin.x, y: targetY))
+        scrollView.reflectScrolledClipView(clipView)
     }
 
     func handleLoadingChange(_ loading: Bool) {

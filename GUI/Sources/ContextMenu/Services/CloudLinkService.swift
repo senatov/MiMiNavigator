@@ -121,15 +121,10 @@ enum CloudLinkService {
 
 
     // MARK: - OneDrive
-    /// OneDrive — open web UI at the relative path
+    /// OneDrive needs Microsoft Graph auth to create a real sharing URL.
     private static func oneDriveLink(url: URL, permission: CloudLinkPermission) -> Bool {
-        let home = FileManager.default.homeDirectoryForCurrentUser.path
-        let storagePath = "\(home)/Library/CloudStorage/"
-        let relative = extractCloudRelativePath(from: url.path, storagePrefix: storagePath, providerPrefix: "OneDrive")
-        let encoded = relative.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? relative
-        let webURL = "https://onedrive.live.com/?view=0&id=root&qt=mru"
-        openInBrowser(webURL)
-        showNotification("OneDrive opened in browser. Navigate to '\(url.lastPathComponent)' and use Share → \(permission == .readOnly ? "View" : "Edit") link.")
+        log.info("[CloudLink] OneDrive Graph sharing is not configured for \(url.lastPathComponent), permission=\(permission.rawValue)")
+        showNotification("OneDrive sharing link requires Microsoft Graph sign-in.")
         return false
     }
 
@@ -138,9 +133,10 @@ enum CloudLinkService {
     // MARK: - Google Drive
     /// Google Drive — open web UI
     private static func googleDriveLink(url: URL, permission: CloudLinkPermission) -> Bool {
-        openInBrowser("https://drive.google.com/drive/my-drive")
-        showNotification("Google Drive opened in browser. Find '\(url.lastPathComponent)' and use Share → \(permission == .readOnly ? "Viewer" : "Editor").")
-        return false
+        Task {
+            await GoogleDriveShareService.copyShareLink(for: url, permission: permission)
+        }
+        return true
     }
 
 

@@ -203,7 +203,6 @@ struct FileTableRowsView: View {
                 onMultiSelectionAction: handleMultiSelectionAction
             )
             .frame(maxWidth: .infinity, alignment: .leading)
-            .id("\(file.id)#\(file.sizeVersion)#\(file.sizeInBytes)#\(file.modifiedDate?.timeIntervalSince1970 ?? 0)")
         }
     }
 }

@@ -31,6 +31,7 @@ extension AppState {
             return
         }
 
+        rememberCurrentSelection(for: panel)
         updateKnownDirectoryPath(URL(fileURLWithPath: newPath), for: panel)
         setSelectedFile(nil, for: panel)
         multiSelectionManager?.resetAnchor(for: panel)
@@ -49,6 +50,7 @@ extension AppState {
                 if let file = firstRealFile(in: cached.files) {
                     setSelectedFile(file, for: panel)
                 }
+                restoreRememberedSelection(in: newPath, on: panel)
             }
 
             let spinnerTask = Task { @MainActor in
@@ -86,6 +88,7 @@ extension AppState {
             log.info("[Navigate] \(panel): cache HIT (\(cached.files.count) items, stale=\(cached.isStale))")
             if panel == .left { displayedLeftFiles = cached.files } else { displayedRightFiles = cached.files }
             if let f = firstRealFile(in: cached.files) { setSelectedFile(f, for: panel) }
+            restoreRememberedSelection(in: newPath, on: panel)
             // background refresh — no spinner, no blocking
             Task { [weak self] in
                 guard let self else { return }
@@ -95,6 +98,7 @@ extension AppState {
                 let fresh = self.displayedFiles(for: panel)
                 if !fresh.isEmpty {
                     await DirectoryContentCache.shared.store(path: newPath, files: fresh, showHidden: showHidden)
+                    self.restoreRememberedSelection(in: newPath, on: panel)
                 }
             }
             return
@@ -118,6 +122,7 @@ extension AppState {
             if !files.isEmpty && PathUtils.areEqual(path(for: panel), newPath) {
                 log.info("[Navigate] \(panel): SUCCESS on attempt \(attempt), \(files.count) files")
                 await DirectoryContentCache.shared.store(path: newPath, files: files, showHidden: showHidden)
+                restoreRememberedSelection(in: newPath, on: panel)
                 return
             }
             if PathUtils.areEqual(path(for: panel), newPath),
@@ -125,6 +130,7 @@ extension AppState {
             {
                 log.info("[Navigate] \(panel): empty but readable dir accepted (attempt \(attempt))")
                 await DirectoryContentCache.shared.store(path: newPath, files: files, showHidden: showHidden)
+                restoreRememberedSelection(in: newPath, on: panel)
                 return
             }
             if PathUtils.areEqual(path(for: panel), newPath),
@@ -196,6 +202,7 @@ extension AppState {
             return
         }
         await navigateToDirectory(parentURL.path, on: panel)
+        selectFileByURL(currentURL.standardizedFileURL, on: panel)
     }
 
     /// Remote parent navigation — uses panel URL (not conn.currentPath which can lag)

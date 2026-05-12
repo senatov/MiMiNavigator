@@ -85,12 +85,14 @@ extension FileTableView {
             Self.log.debug(
                 "[FileTableState] skip cache rebuild panel=\(panelSide.rawValue) count=\(snapshot.count) hash=\(snapshot.combinedHash)"
             )
+            scrollToSelectionFromState()
             return
         }
 
         storeFilesSnapshot(snapshot)
         cachedSortedFiles = files
         rebuildIndexByID()
+        scrollToSelectionFromState()
 
         Self.log.debug(
             "[FileTableState] rebuilt cache panel=\(panelSide.rawValue) count=\(snapshot.count) hash=\(snapshot.combinedHash) force=\(force)")
@@ -100,6 +102,7 @@ extension FileTableView {
     func recomputeSortedCacheForSortChange() {
         cachedSortedFiles = files.sorted(by: sorter.compare)
         rebuildIndexByID()
+        scrollToSelectionFromState()
 
         Self.log.debug(
             "[FileTableState] rebuilt sorted cache after sort change panel=\(panelSide.rawValue) count=\(cachedSortedFiles.count)")

@@ -238,10 +238,6 @@ extension CntMenuCoord {
     // MARK: - Cloud Link
 
     func handleCloudLink(for file: CustomFile, permission: CloudLinkPermission) {
-        guard let provider = CloudProviderDetector.detect(url: file.urlValue) else {
-            log.warning("[FileActions] cloudLink called but file not in cloud: \(file.urlValue.path)")
-            return
-        }
-        CloudLinkService.generateLink(for: file.urlValue, provider: provider, permission: permission)
+        CloudLinkService.generateLink(for: file.urlValue, provider: .googleDrive, permission: permission)
     }
 }

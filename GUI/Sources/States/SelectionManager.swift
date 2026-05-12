@@ -51,6 +51,7 @@ final class SelectionManager {
         updatePanel(panelSide) { panel in
             panel.selectedFile = file
         }
+        state.rememberSelection(file, on: panelSide)
         // Resolve index safely (no magic 0)
         let items = state.displayedFiles(for: panelSide)
         if let idx = items.firstIndex(where: { $0.urlValue.standardizedFileURL == file.urlValue.standardizedFileURL }) {

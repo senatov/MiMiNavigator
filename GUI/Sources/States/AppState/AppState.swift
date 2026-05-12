@@ -57,6 +57,8 @@ final class AppState {
     var scanner: DualDirectoryScanner!
     private(set) var leftNavigationHistory: PanelNavigationHistory!
     private(set) var rightNavigationHistory: PanelNavigationHistory!
+    var directorySelectionRestore: [FavPanelSide: [String: URL]] = [.left: [:], .right: [:]]
+    var directorySelectionRestoreOrder: [FavPanelSide: [String]] = [.left: [], .right: []]
     var mountedVolumeObserver: Any?
     // MARK: - UI State
     var selectedDir: DirectorySelection = .init()

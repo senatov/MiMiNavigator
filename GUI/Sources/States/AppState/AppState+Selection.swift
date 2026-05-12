@@ -11,6 +11,8 @@ import Foundation
 // MARK: - Selection Operations
 extension AppState {
 
+    private static let maxRememberedSelectionDirectories = 10
+
     func select(_ file: CustomFile, on panel: FavPanelSide) {
         log.debug(#function)
         selectionManager?.select(file, on: panel)
@@ -24,6 +26,43 @@ extension AppState {
         } else {
             log.warning("[Selection] selectFileByName FAILED: '\(name)' not found on \(panel)")
         }
+    }
+
+    func selectFileByURL(_ url: URL, on panel: FavPanelSide) {
+        let normalized = url.standardizedFileURL
+        let files = displayedFiles(for: panel)
+        if let match = files.first(where: { $0.urlValue.standardizedFileURL == normalized }) {
+            log.info("[Selection] selectFileByURL found '\(match.nameStr)' on \(panel)")
+            setSelectedFile(match, for: panel)
+        } else {
+            log.warning("[Selection] selectFileByURL FAILED: '\(url.path)' not found on \(panel)")
+        }
+    }
+
+    func rememberSelection(_ selected: CustomFile, on panel: FavPanelSide) {
+        guard !selected.isParentEntry, selected.nameStr != ".." else { return }
+        let directoryPath = path(for: panel)
+        guard !directoryPath.isEmpty else { return }
+        directorySelectionRestore[panel, default: [:]][directoryPath] = selected.urlValue.standardizedFileURL
+        var order = directorySelectionRestoreOrder[panel, default: []]
+        order.removeAll { $0 == directoryPath }
+        order.append(directoryPath)
+        while order.count > Self.maxRememberedSelectionDirectories {
+            let removedPath = order.removeFirst()
+            directorySelectionRestore[panel]?.removeValue(forKey: removedPath)
+        }
+        directorySelectionRestoreOrder[panel] = order
+        log.debug("[Selection] remembered \(selected.nameStr) for \(directoryPath) panel=\(panel)")
+    }
+
+    func rememberCurrentSelection(for panel: FavPanelSide) {
+        guard let selected = self[panel: panel].selectedFile else { return }
+        rememberSelection(selected, on: panel)
+    }
+
+    func restoreRememberedSelection(in directoryPath: String, on panel: FavPanelSide) {
+        guard let url = directorySelectionRestore[panel]?[directoryPath] else { return }
+        selectFileByURL(url, on: panel)
     }
 
     func refreshAndSelect(name: String, on panel: FavPanelSide) async {

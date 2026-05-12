@@ -179,25 +179,23 @@ struct DirectoryContextMenu: View {
 
     @ViewBuilder
     private var cloudLinkSection: some View {
-        if let provider = CloudProviderDetector.detect(url: file.urlValue) {
-            Divider()
-            Menu {
-                Button {
-                    CloudLinkService.generateLink(for: file.urlValue, provider: provider, permission: .readOnly)
-                } label: {
-                    Label("View only", systemImage: "eye")
-                }
-                Button {
-                    CloudLinkService.generateLink(for: file.urlValue, provider: provider, permission: .allowEdit)
-                } label: {
-                    Label("Allow editing", systemImage: "pencil")
-                }
+        Divider()
+        Menu {
+            Button {
+                CloudLinkService.generateLink(for: file.urlValue, provider: .googleDrive, permission: .readOnly)
             } label: {
-                Label {
-                    Text("Cloud Link (\(provider.rawValue))")
-                } icon: {
-                    Image(systemName: provider.systemImage)
-                }
+                Label("View only", systemImage: "eye")
+            }
+            Button {
+                CloudLinkService.generateLink(for: file.urlValue, provider: .googleDrive, permission: .allowEdit)
+            } label: {
+                Label("Allow editing", systemImage: "pencil")
+            }
+        } label: {
+            Label {
+                Text("Copy Share Link")
+            } icon: {
+                Image(systemName: "link.badge.plus")
             }
         }
     }

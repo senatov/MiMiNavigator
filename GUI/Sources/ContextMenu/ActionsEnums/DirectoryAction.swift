@@ -78,8 +78,8 @@ enum DirectoryAction: String, CaseIterable, Identifiable {
         case .openOnOtherPanel: return "Open on Other Panel"
         case .mirrorPanel: return "Mirror Panel"
         case .addToFavorites: return "Add to Favorites"
-        case .cloudLinkReadOnly: return "Copy Cloud Link (View)"
-        case .cloudLinkEdit: return "Copy Cloud Link (Edit)"
+        case .cloudLinkReadOnly: return "Copy Share Link (View)"
+        case .cloudLinkEdit: return "Copy Share Link (Edit)"
         }
     }
 
@@ -109,8 +109,8 @@ enum DirectoryAction: String, CaseIterable, Identifiable {
         case .openOnOtherPanel: return "arrow.left.arrow.right.square"
         case .mirrorPanel: return "arrow.left.arrow.right.square"
         case .addToFavorites: return "star.fill"
-        case .cloudLinkReadOnly: return "link.icloud"
-        case .cloudLinkEdit: return "link.icloud.fill"
+        case .cloudLinkReadOnly: return "link.badge.plus"
+        case .cloudLinkEdit: return "link.badge.plus"
         }
     }
     
