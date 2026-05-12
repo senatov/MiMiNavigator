@@ -159,13 +159,9 @@ struct AutomationPermissionOnboarding: View {
 
 
     private func grantAll() {
-        for target in AutomationPermissionChecker.targetBundleIDs {
-            if AutomationPermissionChecker.checkPermission(for: target.id) != .authorized {
-                AutomationPermissionChecker.requestPermission(for: target.id)
-            }
-        }
-        // re-check after a short delay (TCC dialog is modal)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+        AutomationPermissionChecker.prewarmAllTargets()
+        // re-check after delay — TCC dialogs are modal, user clicks through them sequentially
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
             refreshStatuses()
         }
     }

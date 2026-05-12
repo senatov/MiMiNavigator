@@ -3,9 +3,10 @@
 //
 // Created by Iakov Senatov on 08.04.2026.
 // Copyright © 2026 Senatov. All rights reserved.
-// Description: Checks Automation (Apple Events) permission for target apps.
+// Description: Checks & requests Automation (Apple Events) permission for target apps.
 //   Uses AEDeterminePermissionToAutomateTarget to probe TCC status
-//   without triggering the system alert. Returns .authorized / .denied / .notDetermined.
+//   without triggering the system alert. Prewarms all targets with
+//   a harmless NSAppleScript to batch-trigger TCC dialogs at onboarding.
 
 import AppKit
 import Carbon
@@ -28,18 +29,31 @@ enum AutomationPermissionChecker {
 
     private static let wildcard = typeWildCard
 
-    /// Target apps that MiMiNavigator sends Apple Events to
+    /// Target apps that MiMiNavigator sends Apple Events to.
+    /// Must match temporary-exception.apple-events in entitlements.
     static let targetBundleIDs: [(id: String, name: String)] = [
         ("com.apple.systemevents", "System Events"),
         ("com.apple.finder", "Finder"),
+        ("com.apple.Terminal", "Terminal"),
+        ("com.apple.dt.FileMerge", "FileMerge"),
     ]
 
 
+
+    /// Harmless AppleScript per target — triggers TCC dialog on first run.
+    /// Each script does absolute minimum: just reads a property that always exists.
+    private static let prewarmScripts: [String: String] = [
+        "com.apple.systemevents": "tell application \"System Events\" to get name of current user",
+        "com.apple.finder": "tell application \"Finder\" to get name of startup disk",
+        "com.apple.Terminal": "tell application \"Terminal\" to get name",
+        "com.apple.dt.FileMerge": "tell application \"FileMerge\" to get name",
+    ]
+
+
+
     /// Check permission for a single target app without triggering the TCC alert.
-    /// Uses AEDeterminePermissionToAutomateTarget (macOS 10.14+).
     static func checkPermission(for bundleID: String) -> AutomationPermissionStatus {
         guard let target = NSRunningApplication.runningApplications(withBundleIdentifier: bundleID).first else {
-            // app not running — can't check, assume not determined
             return .notDetermined
         }
         guard var targetDesc = createTargetDescriptor(for: target.processIdentifier) else {
@@ -50,7 +64,7 @@ enum AutomationPermissionChecker {
             &targetDesc,
             wildcard,
             wildcard,
-            false   // askUserIfNeeded = false → don't show system alert
+            false
         )
         switch status {
         case noErr:
@@ -66,65 +80,126 @@ enum AutomationPermissionChecker {
     }
 
 
+
     /// Check all target apps, return true if ALL are authorized
     static func allAuthorized() -> Bool {
         targetBundleIDs.allSatisfy { checkPermission(for: $0.id) == .authorized }
     }
 
 
-    /// Ask permission for a target app by triggering a harmless AE.
-    /// This WILL show the TCC alert if not yet authorized — call only from explicit user action.
+
+    /// Prewarm all targets by executing a harmless AppleScript for each.
+    /// This triggers the TCC dialog if permission wasn't granted yet.
+    /// Skips already-authorized targets and targets that aren't installed.
+    /// Call from explicit user action only (onboarding "Grant Access" btn).
+    static func prewarmAllTargets() {
+        for target in targetBundleIDs {
+            let status = checkPermission(for: target.id)
+            if status == .authorized {
+                log.info("[AutomationPerm] \(target.name) already authorized, skip")
+                continue
+            }
+            prewarmTarget(bundleID: target.id, name: target.name)
+        }
+    }
+
+
+
+    /// Request permission for a single target by running its prewarm script.
+    /// Falls back to AEDeterminePermissionToAutomateTarget if no script defined.
     static func requestPermission(for bundleID: String) {
-        guard let target = NSRunningApplication.runningApplications(withBundleIdentifier: bundleID).first else {
-            // launch the target first so we can send it an event
+        prewarmTarget(bundleID: bundleID, name: bundleID)
+    }
+
+
+
+    // MARK: - Private
+
+    /// Run the harmless AppleScript for one target to trigger TCC.
+    /// If target not running, try to launch it first (hidden, no activation).
+    private static func prewarmTarget(bundleID: String, name: String) {
+        guard let scriptSource = prewarmScripts[bundleID] else {
+            log.warning("[AutomationPerm] no prewarm script for \(name), using AE probe")
+            aeProbeRequest(bundleID: bundleID)
+            return
+        }
+        // ensure target is running (Finder/SysEvents usually are, Terminal/FileMerge maybe not)
+        let running = NSRunningApplication.runningApplications(withBundleIdentifier: bundleID)
+        if running.isEmpty {
             guard let appURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID) else {
-                log.error("[AutomationPerm] cannot resolve URL for \(bundleID)")
+                log.warning("[AutomationPerm] \(name) not installed, skip")
                 return
             }
-
             let config = NSWorkspace.OpenConfiguration()
             config.activates = false
-
-            NSWorkspace.shared.openApplication(at: appURL, configuration: config) { app, error in
+            config.hides = true
+            NSWorkspace.shared.openApplication(at: appURL, configuration: config) { _, error in
                 if let error {
-                    log.error("[AutomationPerm] failed to launch \(bundleID): \(error)")
+                    log.warning("[AutomationPerm] failed to launch \(name): \(error.localizedDescription)")
                 } else {
-                    log.info("[AutomationPerm] launched \(bundleID) — will retry permission check")
+                    // retry after brief delay for process to register
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                        executePrewarmScript(scriptSource, name: name)
+                    }
                 }
             }
+            return
+        }
+        executePrewarmScript(scriptSource, name: name)
+    }
+
+
+
+    /// Execute NSAppleScript — this is what actually triggers the TCC dialog.
+    private static func executePrewarmScript(_ source: String, name: String) {
+        let script = NSAppleScript(source: source)
+        var errorInfo: NSDictionary?
+        log.info("[AutomationPerm] prewarm \(name) — executing AppleScript")
+        script?.executeAndReturnError(&errorInfo)
+        if let errorInfo {
+            let code = errorInfo[NSAppleScript.errorNumber] as? Int ?? -1
+            // -1743 = "not permitted" = TCC denied, expected on first-ever call
+            if code == -1743 {
+                log.info("[AutomationPerm] \(name) TCC dialog shown or denied (code -1743)")
+            } else {
+                log.warning("[AutomationPerm] \(name) script error: \(errorInfo)")
+            }
+        } else {
+            log.info("[AutomationPerm] \(name) prewarm OK — authorized")
+        }
+    }
+
+
+
+    /// Fallback: AE probe with askUserIfNeeded = true
+    private static func aeProbeRequest(bundleID: String) {
+        guard let target = NSRunningApplication.runningApplications(withBundleIdentifier: bundleID).first else {
             return
         }
         guard var targetDesc = createTargetDescriptor(for: target.processIdentifier) else {
             return
         }
         defer { AEDisposeDesc(&targetDesc) }
-        // ask with alert this time
         let _ = AEDeterminePermissionToAutomateTarget(
-            &targetDesc,
-            wildcard,
-            wildcard,
-            true    // askUserIfNeeded = true → shows TCC dialog
+            &targetDesc, wildcard, wildcard, true
         )
     }
 
-    // MARK: - Private Helpers
+
 
     private static func createTargetDescriptor(for pid: pid_t) -> AEAddressDesc? {
         var pidValue = pid
         var desc = AEAddressDesc()
-
         let err = AECreateDesc(
             typeKernelProcessID,
             &pidValue,
             MemoryLayout<pid_t>.size,
             &desc
         )
-
         guard err == noErr else {
             log.warning("[AutomationPerm] AECreateDesc failed: \(err)")
             return nil
         }
-
         return desc
     }
 }
