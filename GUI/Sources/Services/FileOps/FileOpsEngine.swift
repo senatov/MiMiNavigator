@@ -229,7 +229,11 @@ private extension FileOpsEngine {
     }
 
     func isDirectory(url: URL) -> Bool {
-        (try? url.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory ?? false
+        var isDirectory: ObjCBool = false
+        if fm.fileExists(atPath: url.path, isDirectory: &isDirectory) {
+            return isDirectory.boolValue
+        }
+        return (try? url.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory ?? false
     }
 
     func fileSize(url: URL) -> Int64 {
@@ -238,6 +242,27 @@ private extension FileOpsEngine {
 
     func calculateTotalSize(items: [URL]) -> Int64 {
         items.reduce(0) { $0 + fileSize(url: $1) }
+    }
+
+    func executeOpaqueDirectory(
+        source: URL,
+        target: URL,
+        size: Int64,
+        operation: FileOpType,
+        progress: FileOpProgress
+    ) async -> Bool {
+        let result = await Task.detached(priority: .userInitiated) {
+            Self.performIO(from: source, to: target, operation: operation)
+        }.value
+        if result.succeeded {
+            progress.fileCompleted(name: source.lastPathComponent, success: true)
+            progress.add(bytes: max(size, result.bytes))
+            return true
+        }
+        if let diagnostic = result.diagnostic {
+            recordFailure(diagnostic, progress: progress)
+        }
+        return false
     }
 }
 
@@ -419,6 +444,16 @@ private extension FileOpsEngine {
                     progress.add(bytes: entry.size)
                     continue
                 }
+                if isDirectory(url: entry.source) {
+                    _ = await executeOpaqueDirectory(
+                        source: entry.source,
+                        target: entry.target,
+                        size: entry.size,
+                        operation: operation,
+                        progress: progress
+                    )
+                    continue
+                }
                 try await streamCopy(from: entry.source, to: entry.target, progress: progress)
                 if operation == .move { try fm.removeItem(at: entry.source) }
                 progress.fileCompleted(name: entry.source.lastPathComponent, success: true)
@@ -477,6 +512,16 @@ private extension FileOpsEngine {
                 if didAtomicMove {
                     progress.fileCompleted(name: entry.url.lastPathComponent, success: true)
                     progress.add(bytes: entry.size)
+                    continue
+                }
+                if isDirectory(url: entry.url) {
+                    _ = await executeOpaqueDirectory(
+                        source: entry.url,
+                        target: finalTarget,
+                        size: entry.size,
+                        operation: operation,
+                        progress: progress
+                    )
                     continue
                 }
                 try await streamCopy(from: entry.url, to: finalTarget, progress: progress)
