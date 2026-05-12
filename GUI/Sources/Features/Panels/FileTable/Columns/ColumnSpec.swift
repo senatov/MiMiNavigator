@@ -25,8 +25,8 @@ struct ColumnSpec: Codable, Identifiable, Equatable {
         let decodedWidth = try container.decode(CGFloat.self, forKey: .width)
         let decodedVisible = try container.decode(Bool.self, forKey: .isVisible)
         self.id = decodedID
-        // Persisted width can be stale — enforce current defaultWidth as floor
-        self.width = max(decodedWidth, decodedID.defaultWidth)
+        // Persisted width can be stale — enforce minWidth as floor (not defaultWidth)
+        self.width = max(decodedWidth, decodedID.minWidth)
         self.isVisible = decodedVisible
     }
 }

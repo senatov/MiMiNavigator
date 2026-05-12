@@ -53,39 +53,27 @@ enum ColumnAutoFitMeasurer {
             return nameContentWidth(measuredWidths)
         case .owner:
             return ownerContentWidth(measuredWidths)
-        case .size:
-            return sizeColumnContentWidth(measuredWidths)
         default:
-            return weightedAverageContentWidth(measuredWidths, for: column)
+            return percentileContentWidth(measuredWidths, for: column)
         }
     }
 
-    // MARK: - Weighted Average
-    private static func weightedAverageContentWidth(_ measuredWidths: [CGFloat], for column: ColumnID) -> CGFloat {
-        let trimmed = trimmedWidths(measuredWidths, trimFraction: 0.10)
-        guard !trimmed.isEmpty else { return ColumnAutoFitMetrics.emptyColumnWidth }
-        let sumW = trimmed.reduce(0, +)
-        guard sumW > 0 else { return ColumnAutoFitMetrics.emptyColumnWidth }
-        let sumWW = trimmed.reduce(0) { $0 + $1 * $1 }
-        let weighted = sumWW / sumW
-        let extraWidth = ColumnWidthPolicy.extraReserveWidth(for: column)
-        return ceil(weighted + 2 * ColumnAutoFitMetrics.measuredContentInset + extraWidth)
-    }
-
-    // MARK: - Name Content Width
-    private static func nameContentWidth(_ measuredWidths: [CGFloat]) -> CGFloat {
-        ceil(weightedAverageContentWidth(measuredWidths, for: .name) + ColumnAutoFitMetrics.nameIconAndInsetWidth)
-    }
-
-    // MARK: - Size Content Width
-    private static func sizeColumnContentWidth(_ measuredWidths: [CGFloat]) -> CGFloat {
+    // MARK: - Percentile Content Width
+    /// 85th-percentile of trimmed widths + insets + per-column reserve.
+    /// Simple, predictable, tight fit without bloating short columns.
+    private static func percentileContentWidth(_ measuredWidths: [CGFloat], for column: ColumnID) -> CGFloat {
         let trimmed = trimmedWidths(measuredWidths, trimFraction: 0.10)
         guard !trimmed.isEmpty else { return ColumnAutoFitMetrics.emptyColumnWidth }
         let sorted = trimmed.sorted()
         let p85Index = min(Int(ceil(Double(sorted.count) * 0.85)) - 1, sorted.count - 1)
         let percentileWidth = sorted[max(0, p85Index)]
-        let extraWidth = ColumnWidthPolicy.extraReserveWidth(for: .size)
+        let extraWidth = ColumnWidthPolicy.extraReserveWidth(for: column)
         return ceil(percentileWidth + 2 * ColumnAutoFitMetrics.measuredContentInset + extraWidth)
+    }
+
+    // MARK: - Name Content Width
+    private static func nameContentWidth(_ measuredWidths: [CGFloat]) -> CGFloat {
+        ceil(percentileContentWidth(measuredWidths, for: .name) + ColumnAutoFitMetrics.nameIconAndInsetWidth)
     }
 
     // MARK: - Owner Content Width
@@ -109,7 +97,8 @@ enum ColumnAutoFitMeasurer {
     // MARK: - Clamp Width
     private static func clamped(width: CGFloat, column: ColumnID, meaningfulCount: Int, totalCount: Int) -> CGFloat {
         guard column != .name else { return max(width, ColumnAutoFitMetrics.emptyColumnWidth) }
-        let floor = max(column.defaultWidth, ColumnAutoFitMetrics.emptyColumnWidth)
+        // minWidth is the real minimum — not defaultWidth which is just the initial pre-autofit value
+        let floor = max(column.minWidth, ColumnAutoFitMetrics.emptyColumnWidth)
         var clampedWidth = width.clamped(to: floor...ColumnWidthPolicy.effectiveMaxWidth(for: column))
         if column == .size && meaningfulCount < totalCount {
             clampedWidth = max(clampedWidth, ColumnWidthPolicy.sizeColumnFallbackWidth())
@@ -122,10 +111,10 @@ enum ColumnAutoFitMeasurer {
         if column == .size {
             let fallback = ColumnWidthPolicy.sizeColumnFallbackWidth()
             log.verbose("[AutoFit] contentWidth \(column.rawValue) fallback=\(ColumnAutoFitLayout.pt(fallback))")
-            return max(fallback, column.defaultWidth)
+            return max(fallback, column.minWidth)
         }
         log.verbose("[AutoFit] contentWidth \(column.rawValue) empty")
-        return max(ColumnAutoFitMetrics.emptyColumnWidth, column.defaultWidth)
+        return max(ColumnAutoFitMetrics.emptyColumnWidth, column.minWidth)
     }
 
     // MARK: - Text Samples

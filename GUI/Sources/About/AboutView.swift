@@ -8,8 +8,8 @@ import SwiftUI
 
 // MARK: - AboutView
 struct AboutView: View {
-    @Environment(\.dismiss) private var dismiss
-    
+    var onClose: (() -> Void)?
+
     private let appName = "MiMiNavigator"
     private let tagline = "Dual-panel file manager for macOS"
     private let copyright = "© 2024–2026 Iakov Senatov"
@@ -305,7 +305,7 @@ struct AboutView: View {
         HStack {
             Spacer()
             DownToolbarButtonView(title: "Close", systemImage: "xmark") {
-                dismiss()
+                onClose?()
             }
             .keyboardShortcut(.defaultAction)
             Spacer()

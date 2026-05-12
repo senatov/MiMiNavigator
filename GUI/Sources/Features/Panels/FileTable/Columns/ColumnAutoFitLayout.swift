@@ -25,7 +25,7 @@ enum ColumnAutoFitMetrics {
     static let measuredContentInset: CGFloat = 5
     static let trailingPanelInset: CGFloat = 17
     static let nameIconAndInsetWidth: CGFloat = 34
-    static let ownerColumnInsetBoost: CGFloat = 8
+    static let ownerColumnInsetBoost: CGFloat = 4
     static let edgeAlignmentEpsilon: CGFloat = 0.5
 }
 
