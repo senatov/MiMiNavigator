@@ -69,6 +69,10 @@ struct FileTableView: View {
     @State var activeMenuTrackingCount: Int = 0
     @State var deferredFilesVersion: Int? = nil
 
+    /// True only when an explicit navigation occurred (directory change, back/forward, click-select).
+    /// Background refreshes (periodic scan) must NOT scroll — it hijacks user's scroll position.
+    @State var navigationScrollPending: Bool = true
+
     /// True when keyboard nav moved above the first file row → parent strip is highlighted
     @State var isParentStripHighlighted: Bool = false
     @State var lastTopEdgeKeyPressAt: Date? = nil

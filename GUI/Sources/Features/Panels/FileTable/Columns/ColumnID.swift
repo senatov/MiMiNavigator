@@ -68,7 +68,7 @@ enum ColumnID: String, CaseIterable, Codable, Identifiable, Transferable {
         case .size:          75
         case .kind:          64
         case .permissions:   82
-        case .childCount:    50
+        case .childCount:    56
         case .owner, .group: 70
         }
     }
@@ -81,6 +81,15 @@ enum ColumnID: String, CaseIterable, Codable, Identifiable, Transferable {
     }
 
     var isRequired: Bool { self == .name }
+
+    /// True for columns that use custom SwiftUI views (icons, colored badges)
+    /// and cannot be rendered via Canvas text draw.
+    var hasCustomView: Bool {
+        switch self {
+        case .kind, .permissions: true
+        default: false
+        }
+    }
 
     // MARK: - Width limits
     // Computed once per call — NSFont alloc is cheap, cached by system.

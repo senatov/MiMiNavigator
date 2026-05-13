@@ -49,12 +49,12 @@ struct FileTransferConfirmationDialog: View {
                     .offset(x: 6, y: 4)
             }
             .frame(width: 56, height: 56)
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: 4) {
                 Text("Move or Copy Items?")
-                    .font(.system(size: 14, weight: .light))
+                    .font(.system(size: 13, weight: .bold))
                 Text("Do you want to move or copy \(operation.itemsDescription) to \"\(operation.destinationName)\"?")
-                    .font(.system(size: 14))
-                    .foregroundStyle(.primary)
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
@@ -75,15 +75,15 @@ struct FileTransferConfirmationDialog: View {
                         .foregroundStyle(file.isDirectory ? .blue : .secondary)
                         .frame(width: 14)
                     Text(file.nameStr)
-                        .font(.system(size: 12))
+                        .font(.system(size: 11))
                         .lineLimit(1)
                         .truncationMode(.middle)
                 }
             }
             if remaining > 0 {
                 Text("and \(remaining) more…")
-                    .font(.system(size: 11))
-                    .foregroundStyle(.secondary)
+                    .font(.system(size: 10))
+                    .foregroundStyle(.tertiary)
                     .padding(.leading, 20)
             }
         }
@@ -92,7 +92,7 @@ struct FileTransferConfirmationDialog: View {
 
     // MARK: - Path Rows
     private var pathSection: some View {
-        VStack(alignment: .leading, spacing: 3) {
+        VStack(alignment: .leading, spacing: 2) {
             if let firstFile = operation.sourceFiles.first {
                 pathRow(label: "From:", path: firstFile.urlValue.deletingLastPathComponent().path)
             }
@@ -104,12 +104,12 @@ struct FileTransferConfirmationDialog: View {
     private func pathRow(label: String, path: String) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 4) {
             Text(label)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .frame(width: 36, alignment: .trailing)
+                .font(.system(size: 10))
+                .foregroundStyle(.tertiary)
+                .frame(width: 32, alignment: .trailing)
             Text(path)
-                .font(.caption)
-                .foregroundStyle(.secondary)
+                .font(.system(size: 10))
+                .foregroundStyle(.tertiary)
                 .lineLimit(1)
                 .truncationMode(.middle)
         }

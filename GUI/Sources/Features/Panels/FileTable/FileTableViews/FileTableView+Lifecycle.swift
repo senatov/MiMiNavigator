@@ -17,6 +17,7 @@ extension FileTableView {
         log.debug("[Columns] panel=\(panelSide) column count=\(layout.columns.count)")
         recomputeSortedCache()
         registerNavigationCallbacks()
+        navigationScrollPending = true
         scrollToSelectionFromState()
     }
 
@@ -49,11 +50,17 @@ extension FileTableView {
     func syncSelectionFromState(_ newID: CustomFile.ID?) {
         if selectedID != newID {
             selectedID = newID
+            navigationScrollPending = true
         }
         scrollToSelectionFromState()
     }
 
     func scrollToSelectionFromState() {
+        // Only scroll on explicit navigation, not on background refresh.
+        // Background refreshes fire scrollToSelectionFromState every 3s via publish cycle,
+        // which yanks the user back to the selected row mid-scroll on long directories.
+        guard navigationScrollPending else { return }
+        navigationScrollPending = false
         guard let selectedID = selectedFileIDFromState else { return }
         Task { @MainActor in
             for attempt in 1...5 {

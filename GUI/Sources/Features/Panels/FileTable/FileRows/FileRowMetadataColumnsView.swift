@@ -42,17 +42,68 @@ struct FileRowMetadataColumnsView: View {
 
     @ViewBuilder
     private func metadataCell(for spec: ColumnSpec) -> some View {
-        cellContent(for: spec.id)
-            .font(cellFont(for: spec.id))
-            .foregroundStyle(cellColor(for: spec.id))
-            .lineLimit(1)
-            .truncationMode(.tail)
+        if spec.id.hasCustomView {
+            // Kind & Permissions use SwiftUI views with icons — can't render in Canvas.
+            // Standard truncation + clipped is acceptable for these short values.
+            HStack(spacing: 0) {
+                if spec.id.alignment == .trailing { Spacer(minLength: 0) }
+                cellContent(for: spec.id)
+                    .font(cellFont(for: spec.id))
+                    .foregroundStyle(cellColor(for: spec.id))
+                    .lineLimit(1)
+                if spec.id.alignment == .leading { Spacer(minLength: 0) }
+            }
             .padding(.leading, spec.id.contentPadding.leading)
             .padding(.trailing, spec.id.contentPadding.trailing)
-            .frame(width: spec.width, alignment: spec.id.alignment)
+            .frame(width: spec.width)
+            .clipped()
+        } else {
+            // Canvas renders text via Core Graphics — no "…" truncation,
+            // hard clip at canvas bounds. One draw call per cell, zero SwiftUI layout overhead.
+            // Re-renders automatically when spec.width changes (Canvas is frame-dependent).
+            Canvas { context, size in
+                let text = cellText(for: spec.id)
+                let resolved = context.resolve(
+                    Text(text)
+                        .font(cellFont(for: spec.id))
+                        .foregroundStyle(cellColor(for: spec.id))
+                )
+                let textSize = resolved.measure(in: size)
+                let x: CGFloat
+                switch spec.id.alignment {
+                case .trailing:
+                    x = size.width - spec.id.contentPadding.trailing - textSize.width
+                case .center:
+                    x = (size.width - textSize.width) / 2
+                default:
+                    x = spec.id.contentPadding.leading
+                }
+                let y = (size.height - textSize.height) / 2
+                context.draw(resolved, in: CGRect(x: x, y: y, width: textSize.width, height: textSize.height))
+            }
+            .frame(width: spec.width, height: FilePanelStyle.rowHeight)
+        }
     }
 
-    // MARK: - Cell Content
+    // MARK: - Cell Text (plain string for Canvas rendering)
+
+    private func cellText(for column: ColumnID) -> String {
+        switch column {
+            case .dateModified: file.modifiedDateFormatted
+            case .size: file.displaySizeFormatted
+            case .kind: file.kindFormatted
+            case .permissions: file.permissionsFormatted
+            case .owner: file.ownerFormatted
+            case .childCount: file.childCountFormatted
+            case .dateCreated: file.creationDateFormatted
+            case .dateLastOpened: file.lastOpenedFormatted
+            case .dateAdded: file.dateAddedFormatted
+            case .group: file.groupNameFormatted
+            case .name: ""
+        }
+    }
+
+    // MARK: - Cell Content (SwiftUI views — kept for backward compat, not used by Canvas)
 
     @ViewBuilder
     private func cellContent(for column: ColumnID) -> some View {
