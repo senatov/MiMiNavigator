@@ -118,31 +118,54 @@ enum ColumnAutoFitMeasurer {
     }
 
     // MARK: - Text Samples
+    /// For large directories, sampling avoids measuring 19k+ strings.
+    /// Takes first 200 + every Nth to cover outliers without full enumeration.
+    private static let samplingThreshold = 500
+
     private static func textSamples(_ column: ColumnID, files: [CustomFile]) -> ([String], NSFont) {
+        let sampled = sampledFiles(files)
         switch column {
         case .name:
-            return (files.map(\.nameStr), .systemFont(ofSize: 14, weight: .light))
+            return (sampled.map(\.nameStr), .systemFont(ofSize: 14, weight: .light))
         case .size:
-            return (files.map(\.displaySizeFormatted), .monospacedDigitSystemFont(ofSize: 12, weight: .regular))
+            return (sampled.map(\.displaySizeFormatted), .monospacedDigitSystemFont(ofSize: 12, weight: .regular))
         case .dateModified:
-            return (files.map(\.modifiedDateFormatted), .monospacedDigitSystemFont(ofSize: 12, weight: .regular))
+            return (sampled.map(\.modifiedDateFormatted), .monospacedDigitSystemFont(ofSize: 12, weight: .regular))
         case .kind:
-            return (files.map(\.kindFormatted), .systemFont(ofSize: 12))
+            return (sampled.map(\.kindFormatted), .systemFont(ofSize: 12))
         case .permissions:
-            return (files.map(\.permissionsFormatted), .monospacedSystemFont(ofSize: 11, weight: .regular))
+            return (sampled.map(\.permissionsFormatted), .monospacedSystemFont(ofSize: 11, weight: .regular))
         case .owner:
-            return (files.map(\.ownerFormatted), .systemFont(ofSize: 12, weight: .regular))
+            return (sampled.map(\.ownerFormatted), .systemFont(ofSize: 12, weight: .regular))
         case .childCount:
-            return (files.map(\.childCountFormatted), .monospacedDigitSystemFont(ofSize: 12, weight: .regular))
+            return (sampled.map(\.childCountFormatted), .monospacedDigitSystemFont(ofSize: 12, weight: .regular))
         case .dateCreated:
-            return (files.map(\.creationDateFormatted), .monospacedDigitSystemFont(ofSize: 12, weight: .regular))
+            return (sampled.map(\.creationDateFormatted), .monospacedDigitSystemFont(ofSize: 12, weight: .regular))
         case .dateLastOpened:
-            return (files.map(\.lastOpenedFormatted), .monospacedDigitSystemFont(ofSize: 12, weight: .regular))
+            return (sampled.map(\.lastOpenedFormatted), .monospacedDigitSystemFont(ofSize: 12, weight: .regular))
         case .dateAdded:
-            return (files.map(\.dateAddedFormatted), .monospacedDigitSystemFont(ofSize: 12, weight: .regular))
+            return (sampled.map(\.dateAddedFormatted), .monospacedDigitSystemFont(ofSize: 12, weight: .regular))
         case .group:
-            return (files.map(\.groupNameFormatted), .systemFont(ofSize: 12))
+            return (sampled.map(\.groupNameFormatted), .systemFont(ofSize: 12))
         }
+    }
+
+
+    /// Deterministic sampling: first 200 items + every Nth for big dirs.
+    /// Guarantees O(500) max samples regardless of directory size.
+    private static func sampledFiles(_ files: [CustomFile]) -> [CustomFile] {
+        guard files.count > samplingThreshold else { return files }
+        let headCount = 200
+        let head = Array(files.prefix(headCount))
+        let remaining = files.dropFirst(headCount)
+        let stride = max(1, remaining.count / (samplingThreshold - headCount))
+        var sampled = head
+        for (idx, file) in remaining.enumerated() {
+            if idx % stride == 0 {
+                sampled.append(file)
+            }
+        }
+        return sampled
     }
 
     // MARK: - Text Widths

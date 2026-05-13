@@ -138,7 +138,7 @@ struct FileRowView: View {
                     .font(.system(size: Self.nameFontSize, weight: Self.nameWeight))
                     .foregroundStyle(nameColor)
                     .lineLimit(1)
-                    .truncationMode(.middle)
+                    .truncationMode(.tail)
             }
             .overlay(alignment: .trailing) {
                 FileInfoButton(file: file, isSelected: isSelected)

@@ -31,15 +31,30 @@ enum ColumnAutoFitMetrics {
 
 // MARK: - Column Auto Fit Layout
 enum ColumnAutoFitLayout {
+
+    /// Maximum fraction of container width that autofit may assign to the Name column.
+    /// The user can still drag the divider wider — this cap applies only to automatic sizing.
+    private static let nameAutoFitMaxFraction: CGFloat = 0.45
+
     // MARK: - Name Width
     static func nameWidth(calculatedNameWidth: CGFloat, containerWidth: CGFloat, fixedColumns: [FittedColumn]) -> CGFloat {
         let remainder = containerWidth
             - totalFixedWidth(fixedColumns)
             - dividerTotal(for: fixedColumns.count)
             - ColumnAutoFitMetrics.trailingPanelInset
-        let result = max(calculatedNameWidth, remainder)
+
+        // Cap: autofit name never exceeds fraction of container.
+        // Long file names are truncated with "…"; user drags divider to reveal.
+        let autoFitCap = containerWidth * nameAutoFitMaxFraction
+        let cappedName = min(calculatedNameWidth, autoFitCap)
+        let result = max(cappedName, remainder)
+
+        if cappedName < calculatedNameWidth {
+            log.debug("[AutoFit] name capped: measured=\(pt(calculatedNameWidth)) cap=\(pt(autoFitCap)) applied=\(pt(result))")
+        }
+
         if result > remainder + ColumnAutoFitMetrics.edgeAlignmentEpsilon {
-            log.debug("[AutoFit] fixed columns overflow right name=\(pt(calculatedNameWidth)) remainder=\(pt(remainder))")
+            log.debug("[AutoFit] fixed columns overflow right name=\(pt(result)) remainder=\(pt(remainder))")
         }
         return result
     }

@@ -60,14 +60,26 @@ extension DualDirectoryScanner {
 
         if !force, let last = lastFullScan[side] {
             let elapsed = Date().timeIntervalSince(last)
-            if elapsed < scanCooldown {
+            let effectiveCooldown = adaptiveCooldown(for: side)
+            if elapsed < effectiveCooldown {
                 let elapsedText = String(format: "%.1f", elapsed)
-                log.debug("[Scan] refreshFiles skipped: scanCooldown (\(elapsedText)s < \(scanCooldown)s) for \(side) without recent FSEvents signal")
+                log.debug("[Scan] refreshFiles skipped: scanCooldown (\(elapsedText)s < \(effectiveCooldown)s) for \(side) without recent FSEvents signal")
                 return false
             }
         }
 
         return true
+    }
+
+
+    /// Adaptive cooldown: big slow dirs get longer cooldown.
+    /// Base = 3s, but if last scan took >5s, cooldown = min(scanDuration * 3, 120s).
+    /// Prevents re-scanning 19k-file Outlook dirs every 3 seconds.
+    private func adaptiveCooldown(for side: FavPanelSide) -> TimeInterval {
+        guard let lastDuration = lastScanDuration[side], lastDuration > 5 else {
+            return scanCooldown
+        }
+        return min(lastDuration * 3, fsEventsDebounceInterval)
     }
 
     private func consumeRecentFSEventsSignal(for side: FavPanelSide) -> Bool {
@@ -147,6 +159,7 @@ extension DualDirectoryScanner {
 
     func clearCooldown(for side: FavPanelSide) {
         lastFullScan[side] = nil
+        lastScanDuration[side] = nil
         scanInProgress[side] = false
     }
 
@@ -319,6 +332,7 @@ extension DualDirectoryScanner {
 
                 let publishStart = Date()
                 lastFullScan[currSide] = Date()
+                lastScanDuration[currSide] = scanSortDuration
                 await DirectoryContentCache.shared.store(path: url.path, files: sorted, showHidden: showHidden)
                 await publishSuccessfulScan(sorted, scannedPath: url.path, for: currSide)
                 let publishDuration = Date().timeIntervalSince(publishStart)
@@ -333,7 +347,8 @@ extension DualDirectoryScanner {
                 )
                 return
             } catch let error as ScanTimeoutError {
-                log.warning("[Scan] \(error.localizedDescription)")
+                log.warning("[Scan] \(error.localizedDescription) — trying cache fallback")
+                await serveCachedOnTimeout(url: url, side: currSide, generation: generation, showHidden: showHidden)
                 return
             } catch let error as NSError {
                 if isPermissionDeniedError(error) {
@@ -365,21 +380,35 @@ extension DualDirectoryScanner {
             let scanned = try FileScanner.scan(url: url, showHiddenFiles: showHidden)
             return FileSortingService.sort(scanned, by: sortKey, bDirection: sortAsc)
         }
-        guard shouldTimeoutSlowVolumeScan(url) else {
-            return try await scanTask.value
-        }
-        return try await scanWithTimeout(scanTask, url: url)
+        // Always apply timeout: mounted volumes get short one, everything else gets generic
+        let timeout = effectiveTimeout(for: url)
+        return try await scanWithTimeout(scanTask, url: url, timeout: timeout)
     }
 
-    // MARK: - Mounted Volume Timeout
+
+    // MARK: - Effective Timeout
+
+    /// Mounted volumes get the short timeout; local dirs get genericScanTimeout.
+    func effectiveTimeout(for url: URL) -> TimeInterval {
+        if url.path == "/Volumes" || (url.path.hasPrefix("/Volumes/") && url.path != "/Volumes") {
+            return mountedVolumeScanTimeout
+        }
+        return genericScanTimeout
+    }
+
+
+    // MARK: - Mounted Volume Timeout (legacy compat)
+
     func shouldTimeoutSlowVolumeScan(_ url: URL) -> Bool {
         url.path == "/Volumes" || (url.path.hasPrefix("/Volumes/") && url.path != "/Volumes")
     }
 
     func scanWithTimeout(
         _ scanTask: Task<[CustomFile], Error>,
-        url: URL
+        url: URL,
+        timeout: TimeInterval? = nil
     ) async throws -> [CustomFile] {
+        let effectiveTimeout = timeout ?? mountedVolumeScanTimeout
         let result = await withCheckedContinuation { continuation in
             let race = ScanRaceResult(continuation)
             Task {
@@ -390,7 +419,7 @@ extension DualDirectoryScanner {
                 }
             }
             Task {
-                let timeoutNanoseconds = UInt64(mountedVolumeScanTimeout * 1_000_000_000)
+                let timeoutNanoseconds = UInt64(effectiveTimeout * 1_000_000_000)
                 try? await Task.sleep(nanoseconds: timeoutNanoseconds)
                 scanTask.cancel()
                 race.resume(.timeout)
@@ -400,7 +429,7 @@ extension DualDirectoryScanner {
             case .success(let files):
                 return files
             case .timeout:
-                throw ScanTimeoutError(path: url.path, seconds: mountedVolumeScanTimeout)
+                throw ScanTimeoutError(path: url.path, seconds: effectiveTimeout)
             case .failure(let message):
                 throw NSError(
                     domain: NSCocoaErrorDomain,
@@ -473,5 +502,26 @@ extension DualDirectoryScanner {
 
     func resetFSEventsDebounce(for side: FavPanelSide) {
         lastFSEventsPatch[side] = Date()
+    }
+
+
+    // MARK: - Cache Fallback on Timeout
+
+    /// When a scan times out, serve previously cached data so UI doesn't go blank.
+    /// The user sees stale-but-valid listing instead of an empty panel.
+    private func serveCachedOnTimeout(
+        url: URL,
+        side: FavPanelSide,
+        generation: Int,
+        showHidden: Bool
+    ) async {
+        guard isCurrentGeneration(generation, for: side) else { return }
+        if let cached = await DirectoryContentCache.shared.lookup(url.path, showHidden: showHidden) {
+            log.info("[Scan] serving \(cached.files.count) cached items after timeout for \(url.path)")
+            lastFullScan[side] = Date()
+            await publishSuccessfulScan(cached.files, scannedPath: url.path, for: side)
+        } else {
+            log.warning("[Scan] no cache available after timeout for \(url.path) — panel stays as-is")
+        }
     }
 }

@@ -178,6 +178,14 @@ final class AutoFitScheduler {
     // MARK: - Resize Autofit
 
     /// Called when panel container width changes significantly.
+    /// Guards against resize↔autofit feedback loops: after autofit changes
+    /// column widths, SwiftUI may emit a new geometry that differs by ~18pt,
+    /// which triggers another autofit, which changes columns again → loop.
+    /// We break the loop with a post-autofit grace period.
+    private let resizePostAutoFitGrace: TimeInterval = 2.0
+    /// Track when last autofit finished to avoid immediate re-trigger
+    private var lastAutoFitFinish: [FavPanelSide: Date] = [:]
+
     func handleResize(panel: FavPanelSide, newWidth: CGFloat, appState: AppState) {
         guard UserPreferences.shared.snapshot.autoFitColumnsOnNavigate else { return }
         let files = appState.displayedFiles(for: panel)
@@ -186,13 +194,18 @@ final class AutoFitScheduler {
         let delta = abs(newWidth - lastWidth)
         guard delta > 12 else { return }
         let now = Date()
+        // Debounce rapid resize events
         let lastFitTime = lastResizeFitTime[panel] ?? .distantPast
         guard now.timeIntervalSince(lastFitTime) > 0.35 else { return }
+        // Break resize↔autofit feedback loop: skip if autofit just ran
+        let lastFinish = lastAutoFitFinish[panel] ?? .distantPast
+        guard now.timeIntervalSince(lastFinish) > resizePostAutoFitGrace else { return }
         lastResizeFitTime[panel] = now
         log.debug("[AutoFit] resize panel=\(panel) delta=\(Int(delta))pt")
         lastAutoFitWidth[panel] = newWidth
         let layout = ColumnLayoutStore.shared.layout(for: panel)
         ColumnAutoFitter.autoFitAll(layout: layout, files: files)
+        lastAutoFitFinish[panel] = Date()
     }
 
     // MARK: - Helpers
@@ -206,6 +219,7 @@ final class AutoFitScheduler {
         }
         lastAutoFitWidth[panel] = layout.containerWidth
         ColumnAutoFitter.autoFitAll(layout: layout, files: files)
+        lastAutoFitFinish[panel] = Date()
     }
 
     // MARK: - Run Sidebar Layout Fit

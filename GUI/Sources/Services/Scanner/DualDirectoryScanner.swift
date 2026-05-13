@@ -35,9 +35,18 @@ actor DualDirectoryScanner {
     var activeScanTask: [FavPanelSide: Task<Void, Never>] = [:]
     var scanGeneration: [FavPanelSide: Int] = [.left: 0, .right: 0]
     var lastFullScan: [FavPanelSide: Date] = [:]
+    /// Tracks last scan duration per side for adaptive cooldown.
+    /// Large dirs get longer cooldown to avoid re-scanning every 3s.
+    var lastScanDuration: [FavPanelSide: TimeInterval] = [:]
 
     let scanCooldown: TimeInterval = 3
     let mountedVolumeScanTimeout: TimeInterval = 8
+    /// Generic scan timeout for ANY directory (local or remote).
+    /// Prevents multi-minute hangs on huge flat dirs (e.g. Outlook 19k logs).
+    let genericScanTimeout: TimeInterval = 20
+    /// Directories with more items than this threshold switch to incremental scanning
+    /// with progressive preview batches, so UI stays responsive.
+    let incrementalScanThreshold = 5000
     let progressivePreviewThreshold = 150
 
     // MARK: - MainActor publish state
