@@ -10,6 +10,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - **Google Drive share-link publishing docs** — documented the `Copy Share Link` flow, Google OAuth app credentials, Keychain token storage, and the mounted `My Drive/Public` sidebar behavior
 
+## [0.9.8.8] — 2026-05-13
+
+> **Release notes**
+> Large directory performance, Canvas cell rendering, scroll stability release.
+> Directories with 19k+ files load in 13s instead of 231s. Column cells use Core Graphics Canvas
+> for hard-clip rendering without truncation ellipsis. Background refresh no longer hijacks scroll.
+
+### Added
+- **Generic scan timeout (20s)** — all directories now have a scan deadline, not just `/Volumes/`
+- **Adaptive cooldown** — large dirs get `min(duration×3, 120s)` cooldown between rescans
+- **Cache fallback on timeout** — stale listing served from `DirectoryContentCache` instead of blank panel
+- **Task.isCancelled check** — scan loop checks cancellation every 500 items for responsive timeout
+- **AutoFit sampling** — column width measurement samples max 500 files (first 200 + every Nth)
+- **Resize↔autofit loop breaker** — `resizePostAutoFitGrace` (2s) prevents infinite autofit cycles
+- **Canvas cell rendering** — metadata columns (date, size, owner, childCount, group) rendered via `Canvas` draw call; no `…` truncation, hard clip at column edge, auto-redraws on resize
+- **`navigationScrollPending` guard** — `scrollToSelectionFromState()` only fires on explicit navigation, not background refresh
+- **`hasCustomView` on ColumnID** — distinguishes Canvas-renderable columns from custom SwiftUI views (kind, permissions)
+- **Find Files Advanced Search** — date pickers, size unit picker, pruned macOS bundle containers
+- **F2 inline rename** — `RenameKit` Swift Package
+- **`ParentNavigationStripPanel`** — extracted as standalone component
+- **`ToolBarIconButton`** — lightweight toolbar button style replacing navigation toolbar buttons
+
+### Changed
+- **Name column cap** — autofit limited to 45% of container width; user can drag wider
+- **Name truncation** — `.middle` → `.tail` — file name beginning always visible
+- **childCount default width** — 50pt → 56pt
+- **Transfer dialog fonts** — macOS HIG: 13pt bold title, 11pt secondary description, 10pt tertiary paths
+- **`fileKindOrderFromModel()`** — sort comparator uses `CustomFile` flags instead of re-fetching `url.resourceValues`
+- **`ToolbarCustomizeView`** — rewritten with `ToolbarCustCoord` coordinator
+
+### Fixed
+- **UI freeze on 19k-file directories** — scan timeout + adaptive cooldown + autofit sampling
+- **Phantom auto-select on scroll** — background refresh scroll hijack eliminated
+- **Column resize stale clip** — Canvas re-renders automatically on `frame(width:)` change
+
 ## [0.9.8.6] — 2026-05-10
 
 > **Release notes**

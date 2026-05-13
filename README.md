@@ -17,7 +17,7 @@
   <img src="https://img.shields.io/badge/Archives-50%2B_Formats-6f42c1" alt="50+ archive formats" />
   <img src="https://img.shields.io/badge/Media-Preview_%26_Conversion_Placeholders-ff8c00" alt="Media preview and conversion placeholders" />
   <img src="https://img.shields.io/badge/License-AGPL--3.0-blue" alt="AGPL-3.0" />
-  <a href="https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.8.6"><img src="https://img.shields.io/badge/release-v0.9.8.6-orange" alt="Release v0.9.8.6" /></a>
+  <a href="https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.8.8"><img src="https://img.shields.io/badge/release-v0.9.8.8-orange" alt="Release v0.9.8.8" /></a>
 </p>
 
 <p align="center">
@@ -37,17 +37,27 @@
 
 
 
-## Recent Changes (v0.9.8.6 — May 2026)
+## Recent Changes (v0.9.8.8 — May 2026)
+
+- **Large directory performance** — generic 20s scan timeout for all directories; adaptive cooldown (`min(duration×3, 120s)`) prevents re-scanning huge dirs every 3 seconds; eliminated parasitic `resourceValues` calls in sort comparator (19k files: 231s → 13s).
+- **AutoFit sampling** — column width measurement uses max 500 sampled files instead of all; resize↔autofit feedback loop broken with post-autofit grace period.
+- **Canvas cell rendering** — metadata columns (date, size, owner, childCount) rendered via Core Graphics Canvas — no `…` truncation, hard clip at column edge, auto-redraws on column resize.
+- **Name column cap** — autofit limits Name to 45% of container width; truncation changed to `.tail` so file name beginning is always visible.
+- **Scroll stability** — `navigationScrollPending` guard prevents background refresh from hijacking user scroll position on long directories.
+- **HIG dialog fonts** — transfer confirmation dialog uses macOS-standard font hierarchy (13pt bold title, 11pt description, 10pt paths).
+- **Find Files subsystem** — fixed stale filter state, Advanced Search UI with date pickers and size unit picker, pruned macOS bundle containers from `find` traversals.
+- **F2 inline rename** — new `RenameKit` Swift Package for in-place file renaming.
+- **Toolbar refactoring** — navigation buttons replaced with lightweight `ToolBarIconButton` style; `ToolbarCustomizeView` rewritten with `ToolbarCustCoord`.
+- **ParentNavigationStripPanel** — extracted as standalone component.
+
+---
+
+## Previous Changes (v0.9.8.6 — May 2026)
 
 - **Geo-tagged photo badges** — images with GPS metadata show a compact orange globe badge directly on the file icon.
 - **Media Info GPS links** — Apple Maps, Google Maps, and OpenStreetMap links now appear near the top of the media information panel.
 - **Breadcrumb polish** — local paths show the filesystem root segment and Copy path uses the real filesystem path.
 - **Package split** — scanner and archive internals now live in `ScannerKit` and `ArchiveKit`, reducing duplicate app-side code.
-- **Mounted volume scanning** — local and external volumes use leaner metadata prefetching for faster, safer listings.
-- **File operation progress** — many-small-file copy operations now report live byte progress with the hybrid stream-copy path.
-- **Archive compatibility** — AES ZIP extraction and ArchiveKit public API boundaries were fixed for app UI usage.
-- **Remote and dialog polish** — SFTP hidden-file filtering, connection auth handling, history/favorites dialogs, and keyboard focus were tightened.
-- **Release metadata** — version `0.9.8.6` and build `117` updated for the notarized DMG release.
 
 ---
 
@@ -187,7 +197,7 @@ MiMiNavigator can browse archives as virtual directories. Double-click opens the
 > xattr -cr ~/Downloads/MiMiNavigator.app
 > ```
 
-**[Download MiMiNavigator v0.9.8.6 →](https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.8.6)**  
+**[Download MiMiNavigator v0.9.8.8 →](https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.8.8)**  
 **[All releases →](https://github.com/senatov/MiMiNavigator/releases)**
 
 ---
@@ -307,6 +317,7 @@ MiMiNavigator/
 │   ├── FileModelKit/       # CustomFile model and utilities
 │   ├── LogKit/             # Centralized logging (SwiftyBeaver)
 │   ├── NetworkKit/         # Network neighborhood discovery (SMB/AFP)
+│   ├── RenameKit/          # F2 inline rename with undo support
 │   └── ScannerKit/         # File scanning utilities
 └── GUI/Docs/               # Architecture docs, screenshots
 
@@ -445,7 +456,7 @@ Looking for a way to start? Here are areas where help is especially appreciated:
 | **Localization** | ⭐ | Translate UI strings (German and Russian already done) |
 | **Unit Tests** | ⭐⭐ | Tests for MultiSelectionManager, FileOperations, ArchiveManager |
 | **FTP/SFTP** | ⭐⭐⭐ | Remote file system panel via Network framework |
-| **Performance** | ⭐⭐ | Profile and optimize for directories with 10k+ files |
+| **Performance** | ⭐⭐ | ~~Profile and optimize for directories with 10k+ files~~ **Done in v0.9.8.8** — 19k files: 231s→13s |
 
 ### How to Contribute
 
