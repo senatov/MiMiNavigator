@@ -7,8 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.8.9] — 2026-05-13
+
+> **Release notes**
+> Google Drive sharing and Media Info polish release.
+> Reduces repeated Keychain prompts for Google Drive sharing, improves image links for blogs,
+> and separates photo capture dates from cloud filesystem dates.
+
 ### Added
+- **Persistent Google Drive token cache** — OAuth access/refresh tokens are cached in `~/.mimi/google_drive_token_cache.json`; Keychain remains a fallback
+- **Blog-friendly Google Drive image links** — image share links use `https://lh3.googleusercontent.com/d/<fileID>=s0`
+- **Photo Date in Media Info** — EXIF capture date is shown separately from filesystem file dates
+- **Spotlight metadata fallback** — sparse JPEGs show available Spotlight fields when embedded EXIF is missing
 - **Google Drive share-link publishing docs** — documented the `Copy Share Link` flow, Google OAuth app credentials, Keychain token storage, and the mounted `My Drive/Public` sidebar behavior
+
+### Changed
+- **Media Info file dates** — `Created` / `Modified` labels now read `File Created` / `File Modified`
+- **Media Convert button** — primary-style button makes the convert action more visible
+- **Version metadata** — marketing version updated to `0.9.8.9`
 
 ## [0.9.8.8] — 2026-05-13
 
@@ -723,7 +739,10 @@ Each release should include:
 
 ---
 
-[Unreleased]: https://github.com/senatov/MiMiNavigator/compare/v0.9.8.5...HEAD
+[Unreleased]: https://github.com/senatov/MiMiNavigator/compare/v0.9.8.9...HEAD
+[0.9.8.9]: https://github.com/senatov/MiMiNavigator/compare/v0.9.8.8...v0.9.8.9
+[0.9.8.8]: https://github.com/senatov/MiMiNavigator/compare/v0.9.8.6...v0.9.8.8
+[0.9.8.6]: https://github.com/senatov/MiMiNavigator/compare/v0.9.8.5...v0.9.8.6
 [0.9.8.5]: https://github.com/senatov/MiMiNavigator/compare/v0.9.8.4...v0.9.8.5
 [0.9.8.4]: https://github.com/senatov/MiMiNavigator/compare/v0.9.8.3...v0.9.8.4
 [0.9.8.3]: https://github.com/senatov/MiMiNavigator/compare/v0.9.8.2...v0.9.8.3

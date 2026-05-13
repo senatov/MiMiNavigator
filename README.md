@@ -17,7 +17,7 @@
   <img src="https://img.shields.io/badge/Archives-50%2B_Formats-6f42c1" alt="50+ archive formats" />
   <img src="https://img.shields.io/badge/Media-Preview_%26_Conversion_Placeholders-ff8c00" alt="Media preview and conversion placeholders" />
   <img src="https://img.shields.io/badge/License-AGPL--3.0-blue" alt="AGPL-3.0" />
-  <a href="https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.8.8"><img src="https://img.shields.io/badge/release-v0.9.8.8-orange" alt="Release v0.9.8.8" /></a>
+  <a href="https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.8.9"><img src="https://img.shields.io/badge/release-v0.9.8.9-orange" alt="Release v0.9.8.9" /></a>
 </p>
 
 <p align="center">
@@ -37,7 +37,17 @@
 
 
 
-## Recent Changes (v0.9.8.8 — May 2026)
+## Recent Changes (v0.9.8.9 — May 2026)
+
+- **Google Drive share links** — `Copy Share Link` now caches OAuth tokens in `~/.mimi/google_drive_token_cache.json`, reducing repeated Keychain password prompts.
+- **Blog-friendly image sharing** — public image links now use `lh3.googleusercontent.com/d/<fileID>=s0` instead of Drive preview/download URLs.
+- **Media Info date clarity** — EXIF `Photo Date` is separated from filesystem `File Created` / `File Modified`, which is important for OneDrive/iCloud placeholder files.
+- **Sparse JPEG metadata fallback** — Media Info now includes available Spotlight fields when embedded EXIF has been stripped.
+- **Media Convert button** — brighter primary-style Convert button in the Media Info panel.
+
+---
+
+## Previous Changes (v0.9.8.8 — May 2026)
 
 - **Large directory performance** — generic 20s scan timeout for all directories; adaptive cooldown (`min(duration×3, 120s)`) prevents re-scanning huge dirs every 3 seconds; eliminated parasitic `resourceValues` calls in sort comparator (19k files: 231s → 13s).
 - **AutoFit sampling** — column width measurement uses max 500 sampled files instead of all; resize↔autofit feedback loop broken with post-autofit grace period.
@@ -45,10 +55,6 @@
 - **Name column cap** — autofit limits Name to 45% of container width; truncation changed to `.tail` so file name beginning is always visible.
 - **Scroll stability** — `navigationScrollPending` guard prevents background refresh from hijacking user scroll position on long directories.
 - **HIG dialog fonts** — transfer confirmation dialog uses macOS-standard font hierarchy (13pt bold title, 11pt description, 10pt paths).
-- **Find Files subsystem** — fixed stale filter state, Advanced Search UI with date pickers and size unit picker, pruned macOS bundle containers from `find` traversals.
-- **F2 inline rename** — new `RenameKit` Swift Package for in-place file renaming.
-- **Toolbar refactoring** — navigation buttons replaced with lightweight `ToolBarIconButton` style; `ToolbarCustomizeView` rewritten with `ToolbarCustCoord`.
-- **ParentNavigationStripPanel** — extracted as standalone component.
 
 ---
 
@@ -197,7 +203,7 @@ MiMiNavigator can browse archives as virtual directories. Double-click opens the
 > xattr -cr ~/Downloads/MiMiNavigator.app
 > ```
 
-**[Download MiMiNavigator v0.9.8.8 →](https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.8.8)**  
+**[Download MiMiNavigator v0.9.8.9 →](https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.8.9)**  
 **[All releases →](https://github.com/senatov/MiMiNavigator/releases)**
 
 ---
