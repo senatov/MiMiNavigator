@@ -97,6 +97,26 @@ struct GoogleDriveTokenResponse: Decodable {
     }
 }
 
+// MARK: - GoogleDriveAccessToken
+
+struct GoogleDriveAccessToken: Codable, Sendable {
+    let value: String
+    let expiresAt: Date
+
+    // MARK: - Validity
+
+    var isValid: Bool {
+        Date().addingTimeInterval(60) < expiresAt
+    }
+}
+
+// MARK: - GoogleDriveTokenCache
+
+struct GoogleDriveTokenCache: Codable, Sendable {
+    var accessToken: GoogleDriveAccessToken?
+    var refreshToken: String?
+}
+
 // MARK: - GoogleDriveFileListResponse
 
 struct GoogleDriveFileListResponse: Decodable {

@@ -7,6 +7,7 @@
 //
 
 import AVFoundation
+import CoreServices
 import Foundation
 import ImageIO
 import UniformTypeIdentifiers
@@ -25,10 +26,12 @@ enum MediaInfoReportBuilder {
         let type = UTType(filenameExtension: ext)
 
         do {
-            var sections = try makeGeneralSection(for: url, type: type)
+            let photoDate = type?.conforms(to: .image) == true ? imageContentDate(for: url) : nil
+            var sections = try makeGeneralSection(for: url, type: type, photoDate: photoDate)
 
             if type?.conforms(to: .image) == true {
                 appendImageMetadata(for: url, into: &sections)
+                appendSpotlightImageMetadata(for: url, into: &sections)
             }
 
             if (type?.conforms(to: .movie) == true || type?.conforms(to: .audio) == true) && !fast {
@@ -42,7 +45,7 @@ enum MediaInfoReportBuilder {
         }
     }
 
-    private static func makeGeneralSection(for url: URL, type: UTType?) throws -> Sections {
+    private static func makeGeneralSection(for url: URL, type: UTType?, photoDate: String?) throws -> Sections {
         let attrs = try FileManager.default.attributesOfItem(atPath: url.path)
         let size = (attrs[.size] as? NSNumber)?.int64Value ?? 0
         let sizeString = ByteCountFormatter.string(fromByteCount: size, countStyle: .file)
@@ -53,15 +56,38 @@ enum MediaInfoReportBuilder {
         sections.general.append("UTType: \(type?.identifier ?? "unknown")")
         sections.general.append("Size: \(sizeString) (\(size) bytes)")
         sections.general.append("Path: \(url.path)")
-
+        if let photoDate {
+            sections.general.append("Photo Date: \(photoDate)")
+        }
         if let created = attrs[.creationDate] as? Date {
-            sections.general.append("Created: \(created.ISO8601Format())")
+            sections.general.append("File Created: \(created.ISO8601Format())")
         }
         if let modified = attrs[.modificationDate] as? Date {
-            sections.general.append("Modified: \(modified.ISO8601Format())")
+            sections.general.append("File Modified: \(modified.ISO8601Format())")
         }
-
         return sections
+    }
+
+    private static func imageContentDate(for url: URL) -> String? {
+        guard
+            let imageSource = CGImageSourceCreateWithURL(url as CFURL, nil),
+            let metadata = CGImageSourceCopyPropertiesAtIndex(imageSource, 0, nil) as? [String: Any]
+        else {
+            return nil
+        }
+        if let exif = metadata[kCGImagePropertyExifDictionary as String] as? [String: Any] {
+            if let original = exif[kCGImagePropertyExifDateTimeOriginal as String] {
+                return "\(original)"
+            }
+            if let digitized = exif[kCGImagePropertyExifDateTimeDigitized as String] {
+                return "\(digitized)"
+            }
+        }
+        if let tiff = metadata[kCGImagePropertyTIFFDictionary as String] as? [String: Any],
+           let dateTime = tiff[kCGImagePropertyTIFFDateTime as String] {
+            return "\(dateTime)"
+        }
+        return nil
     }
 
     private static func appendImageMetadata(for url: URL, into sections: inout Sections) {
@@ -154,6 +180,48 @@ enum MediaInfoReportBuilder {
 
             sections.coordinates = (latitude, longitude)
         }
+    }
+
+    private static func appendSpotlightImageMetadata(for url: URL, into sections: inout Sections) {
+        guard let item = MDItemCreateWithURL(kCFAllocatorDefault, url as CFURL) else { return }
+        let fields = [
+            ("Date Added", "kMDItemDateAdded"),
+            ("Interesting Date", "kMDItemInterestingDate_Ranking"),
+            ("Uploaded", "kMDItemIsUploaded"),
+            ("Uploading", "kMDItemIsUploading"),
+            ("Logical Size", "kMDItemLogicalSize"),
+            ("Physical Size", "kMDItemPhysicalSize"),
+            ("Pixel Count", "kMDItemPixelCount"),
+            ("Bits Per Sample", "kMDItemBitsPerSample"),
+            ("Has Alpha", "kMDItemHasAlphaChannel"),
+            ("Orientation", "kMDItemOrientation"),
+        ]
+        for (label, key) in fields {
+            guard let value = MDItemCopyAttribute(item, key as CFString),
+                  let formatted = formatSpotlightValue(value) else { continue }
+            appendUnique("Spotlight \(label): \(formatted)", into: &sections.metadata)
+        }
+    }
+
+    private static func formatSpotlightValue(_ value: CFTypeRef) -> String? {
+        if let date = value as? Date {
+            return date.ISO8601Format()
+        }
+        if let number = value as? NSNumber {
+            return number.stringValue
+        }
+        if let string = value as? String, string.isEmpty == false {
+            return string
+        }
+        if let values = value as? [Any], values.isEmpty == false {
+            return values.map { "\($0)" }.joined(separator: ", ")
+        }
+        return nil
+    }
+
+    private static func appendUnique(_ line: String, into target: inout [String]) {
+        guard target.contains(line) == false else { return }
+        target.append(line)
     }
 
     private static func appendMediaMetadata(for url: URL, into sections: inout Sections) async {

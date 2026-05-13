@@ -14,24 +14,59 @@ import Security
 enum GoogleDriveOAuthClient {
     private static let authEndpoint = "https://accounts.google.com/o/oauth2/v2/auth"
     private static let tokenEndpoint = "https://oauth2.googleapis.com/token"
+    @MainActor private static var cachedAccessToken: GoogleDriveAccessToken?
+    @MainActor private static var cachedRefreshToken: String?
+    @MainActor private static var didLoadConfigCache = false
 
     // MARK: - Access Token
 
     static func accessToken() async throws -> String {
-        if let refreshToken = try GoogleDriveTokenStore.loadRefreshToken() {
+        if let token = await cachedAccessToken, token.isValid {
+            return token.value
+        }
+        if let token = try await configAccessToken(), token.isValid {
+            await cacheAccessToken(token)
+            return token.value
+        }
+        if let refreshToken = try await refreshToken() {
             do {
-                return try await refreshAccessToken(refreshToken)
+                let token = try await refreshAccessToken(refreshToken)
+                try await cacheTokens(accessToken: token, refreshToken: refreshToken)
+                return token.value
             } catch {
                 log.warning("[CloudLink] Google Drive refresh token failed: \(error.localizedDescription)")
+                await clearCachedTokens()
+                GoogleDriveTokenConfigStore.delete()
                 try? GoogleDriveTokenStore.deleteRefreshToken(ignoreMissing: true)
             }
         }
-        return try await interactiveAccessToken()
+        let token = try await interactiveAccessToken()
+        return token.value
+    }
+
+    // MARK: - Config Access Token
+
+    @MainActor
+    private static func configAccessToken() throws -> GoogleDriveAccessToken? {
+        try loadConfigCacheIfNeeded()
+        return cachedAccessToken
+    }
+
+    // MARK: - Refresh Token
+
+    @MainActor
+    private static func refreshToken() throws -> String? {
+        try loadConfigCacheIfNeeded()
+        if let cachedRefreshToken {
+            return cachedRefreshToken
+        }
+        cachedRefreshToken = try GoogleDriveTokenStore.loadRefreshToken()
+        return cachedRefreshToken
     }
 
     // MARK: - Interactive Access Token
 
-    private static func interactiveAccessToken() async throws -> String {
+    private static func interactiveAccessToken() async throws -> GoogleDriveAccessToken {
         guard GoogleDriveOAuthConfig.clientSecret != nil else { throw GoogleDriveError.missingClientSecret }
         let loopback = try GoogleDriveOAuthLoopbackServer()
         try await loopback.start()
@@ -46,8 +81,13 @@ enum GoogleDriveOAuthClient {
         let token = try await exchangeCode(code, verifier: verifier, redirectURI: loopback.redirectURI)
         if let refreshToken = token.refreshToken {
             try GoogleDriveTokenStore.saveRefreshToken(refreshToken)
+            let accessToken = accessToken(from: token)
+            try await cacheTokens(accessToken: accessToken, refreshToken: refreshToken)
+            return accessToken
         }
-        return token.accessToken
+        let accessToken = accessToken(from: token)
+        await cacheAccessToken(accessToken)
+        return accessToken
     }
 
     // MARK: - Authorization URL
@@ -87,7 +127,7 @@ enum GoogleDriveOAuthClient {
 
     // MARK: - Refresh Token
 
-    private static func refreshAccessToken(_ refreshToken: String) async throws -> String {
+    private static func refreshAccessToken(_ refreshToken: String) async throws -> GoogleDriveAccessToken {
         var values = [
             "client_id": GoogleDriveOAuthConfig.clientID,
             "grant_type": "refresh_token",
@@ -97,7 +137,8 @@ enum GoogleDriveOAuthClient {
             values["client_secret"] = clientSecret
         }
         let body = formBody(values)
-        return try await tokenRequest(body: body).accessToken
+        let token = try await tokenRequest(body: body)
+        return accessToken(from: token)
     }
 
     // MARK: - Token Request
@@ -150,6 +191,46 @@ enum GoogleDriveOAuthClient {
             }
             throw GoogleDriveError.requestFailed(http.statusCode, body)
         }
+    }
+
+    // MARK: - Cache
+
+    @MainActor
+    private static func cacheAccessToken(_ token: GoogleDriveAccessToken) {
+        cachedAccessToken = token
+    }
+
+    @MainActor
+    private static func clearCachedTokens() {
+        cachedAccessToken = nil
+        cachedRefreshToken = nil
+        didLoadConfigCache = false
+    }
+
+    // MARK: - Config Cache
+
+    @MainActor
+    private static func loadConfigCacheIfNeeded() throws {
+        guard didLoadConfigCache == false else { return }
+        didLoadConfigCache = true
+        guard let cache = try GoogleDriveTokenConfigStore.load() else { return }
+        cachedAccessToken = cache.accessToken
+        cachedRefreshToken = cache.refreshToken
+    }
+
+    @MainActor
+    private static func cacheTokens(accessToken: GoogleDriveAccessToken, refreshToken: String) throws {
+        cachedAccessToken = accessToken
+        cachedRefreshToken = refreshToken
+        didLoadConfigCache = true
+        try GoogleDriveTokenConfigStore.save(GoogleDriveTokenCache(accessToken: accessToken, refreshToken: refreshToken))
+    }
+
+    // MARK: - Access Token Model
+
+    private static func accessToken(from token: GoogleDriveTokenResponse) -> GoogleDriveAccessToken {
+        let lifetime = TimeInterval(token.expiresIn ?? 3600)
+        return GoogleDriveAccessToken(value: token.accessToken, expiresAt: Date().addingTimeInterval(lifetime))
     }
 }
 

@@ -85,7 +85,7 @@ enum MediaInfoPanelTextParser {
             return .path
         case "Size":
             return .size
-        case "Created", "Modified":
+        case "Created", "Modified", "File Created", "File Modified", "Photo Date":
             return .date
         default:
             return .primary

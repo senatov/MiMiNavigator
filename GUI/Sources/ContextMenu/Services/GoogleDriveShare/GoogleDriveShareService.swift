@@ -6,6 +6,7 @@
 
 import AppKit
 import Foundation
+import UniformTypeIdentifiers
 
 // MARK: - GoogleDriveShareService
 
@@ -41,16 +42,29 @@ enum GoogleDriveShareService {
     // MARK: - Share Link
 
     private static func shareLink(from file: GoogleDriveFile) throws -> String {
-        if let webViewLink = file.webViewLink, webViewLink.isEmpty == false {
-            return webViewLink
-        }
         if file.mimeType == "application/vnd.google-apps.folder" {
             return "https://drive.google.com/drive/folders/\(file.id)?usp=sharing"
+        }
+        if isInlineImage(file.mimeType) {
+            return "https://lh3.googleusercontent.com/d/\(file.id)=s0"
         }
         if let webContentLink = file.webContentLink, webContentLink.isEmpty == false {
             return webContentLink
         }
+        if let webViewLink = file.webViewLink, webViewLink.isEmpty == false {
+            return webViewLink
+        }
         return "https://drive.google.com/file/d/\(file.id)/view?usp=sharing"
+    }
+
+    // MARK: - Inline Image
+
+    private static func isInlineImage(_ mimeType: String?) -> Bool {
+        guard let mimeType,
+              let type = UTType(mimeType: mimeType) else {
+            return false
+        }
+        return type.conforms(to: .image)
     }
 
     // MARK: - Clipboard

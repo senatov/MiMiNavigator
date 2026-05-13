@@ -308,12 +308,7 @@ struct MediaInfoPanelView: View {
 
                 HStack {
                     Spacer()
-                    DownToolbarButtonView(
-                        title: "Convert",
-                        systemImage: "arrow.triangle.2.circlepath",
-                        action: controller.performConvert
-                    )
-                    .disabled(!controller.isValidConversion)
+                    MediaInfoConvertButton(isEnabled: controller.isValidConversion, action: controller.performConvert)
                 }
                 .padding(.top, Layout.sectionButtonTopPadding)
             } else {
