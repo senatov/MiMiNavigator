@@ -57,6 +57,14 @@ enum DirSizeCalculator {
             guard fm.fileExists(atPath: item.path, isDirectory: &isDir) else { continue }
 
             if isDir.boolValue {
+                // add root dir itself so createDirectoryStructure() can mkdir it
+                flatList.append(
+                    .init(
+                        url: item,
+                        relativePath: item.lastPathComponent,
+                        size: 0,
+                        isDirectory: true
+                    ))
                 // .app / .framework / .bundle — treat as opaque file, don't recurse
                 if isPackage(at: item, fm: fm) {
                     let size = directoryTotalSize(at: item, fm: fm)

@@ -27,7 +27,7 @@ enum AppLogger {
         LogKit.initialize(
             appSupportSubdir: defaultAppSupportSubdir,
             logFileName: defaultLogFileName,
-            wipeOnLaunch: false,
+            wipeOnLaunch: true,
             rotationPolicy: .init(
                 maxFileSizeBytes: 50 * 1024 * 1024,
                 uncompressedBackupCount: 3
