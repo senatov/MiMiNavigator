@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.9.0] — 2026-05-15
+
+> **Release notes**
+> File operations engine overhaul — clipboard paste, directory copy fix, progress panel UX.
+
+### Fixed
+- **Directory copy POSIX error 2** — root directory entry was missing from `DirSizeCalculator.flatList`, so `createDirectoryStructure()` never created the target subdirectory; all files inside failed with "No such file or directory"
+- **Cancel shows "✅ Done"** — `complete()` was called from `defer` after `cancel()`, overriding the cancelled state; now `complete()` is a no-op when already cancelled
+- **Delete progress title showed "Copying..."** — `performDelete` used `type: .copy`; added `FileOpType.delete` case with proper L10n strings
+- **Package directory double-entry** — `DirSizeCalculator` added both a directory entry and an opaque-file entry for `.app`/`.bundle` packages, which could conflict during `createDirectoryStructure`
+
+### Changed
+- **Clipboard paste via FileOpsEngine** — `ClipboardManager.paste` now delegates to `FileOpsEngine.copy/move` instead of manual per-file `FileOpsService`; gains progress panel, strategy selection, directory structure creation, and TC-style conflict resolution
+- **FileOpsEngine split into 9 files** — 616-line monolith split by responsibility: `+Conflict`, `+Move`, `+Delete`, `+Simple`, `+ManySmall`, `+FewLarge`, `+StreamCopy`, `+Helpers`
+- **TC-style progress panel** — cancel and success auto-dismiss after 0.4s; OK button only shown on errors
+- **Log wipe on launch** — `/tmp/MiMiNavigator.log` and Application Support log are now wiped on each app start
+- **Notarize script resilience** — handles immutable GitHub releases by deleting and recreating if `--clobber` fails
+- **Removed dead code** — `startOKPulse()` animation (26 lines), unused `coordinator` parameter, legacy `paste(to:)` without engine
+
 ## [0.9.8.9] — 2026-05-13
 
 > **Release notes**
@@ -739,7 +758,8 @@ Each release should include:
 
 ---
 
-[Unreleased]: https://github.com/senatov/MiMiNavigator/compare/v0.9.8.9...HEAD
+[Unreleased]: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.0...HEAD
+[0.9.9.0]: https://github.com/senatov/MiMiNavigator/compare/v0.9.8.9...v0.9.9.0
 [0.9.8.9]: https://github.com/senatov/MiMiNavigator/compare/v0.9.8.8...v0.9.8.9
 [0.9.8.8]: https://github.com/senatov/MiMiNavigator/compare/v0.9.8.6...v0.9.8.8
 [0.9.8.6]: https://github.com/senatov/MiMiNavigator/compare/v0.9.8.5...v0.9.8.6
