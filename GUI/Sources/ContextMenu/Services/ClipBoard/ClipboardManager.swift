@@ -62,7 +62,7 @@ final class ClipboardManager {
     }
 
     // MARK: - Paste files to destination via FileOpsEngine (TC/Finder-style)
-    func paste(to destination: URL, coordinator: CntMenuCoord) async -> Result<[URL], Error> {
+    func paste(to destination: URL) async -> Result<[URL], Error> {
         guard hasContent else {
             return .failure(FileOpsError.operationFailed("Clipboard is empty"))
         }

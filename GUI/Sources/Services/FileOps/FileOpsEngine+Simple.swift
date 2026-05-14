@@ -56,6 +56,7 @@ extension FileOpsEngine {
             switch operation {
             case .copy: try fm.copyItem(at: source, to: target)
             case .move: try fm.moveItem(at: source, to: target)
+            case .delete: try fm.removeItem(at: source)
             }
             let size = Int64((try? source.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0)
             return .ok(size)

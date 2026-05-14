@@ -29,7 +29,6 @@ final class FileOpProgressPanel {
     private var updateTimer: Timer?
     private var waitingForOK = false
     private var pulseTimer: Timer?
-    private var pulseGrowing = true
     private var suspendedForUserDecision = false
 
     private init() {}
@@ -166,33 +165,6 @@ final class FileOpProgressPanel {
         updateTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
             Task { @MainActor in
                 self?.refreshUI()
-            }
-        }
-    }
-
-
-    // MARK: - Green pulse animation
-
-    private func startOKPulse() {
-        guard let okBtn = okButton else { return }
-        okBtn.wantsLayer = true
-        guard let layer = okBtn.layer else { return }
-
-        layer.borderColor = NSColor.systemGreen.cgColor
-        layer.borderWidth = 2.5
-        layer.cornerRadius = 5
-
-        pulseGrowing = true
-        pulseTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
-            Task { @MainActor in
-                guard let self, let btn = self.okButton, let layer = btn.layer else { return }
-                NSAnimationContext.runAnimationGroup { ctx in
-                    ctx.duration = 0.45
-                    ctx.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
-                    let scale: CGFloat = self.pulseGrowing ? 1.08 : 1.0
-                    layer.setAffineTransform(CGAffineTransform(scaleX: scale, y: scale))
-                }
-                self.pulseGrowing.toggle()
             }
         }
     }

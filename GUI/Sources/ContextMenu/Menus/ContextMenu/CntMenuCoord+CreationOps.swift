@@ -65,7 +65,7 @@ extension CntMenuCoord {
         defer { isProcessing = false }
         let destination = getDestinationPath(for: panel, appState: appState)
         log.debug("\(#function) destination='\(destination.path)'")
-        let result = await clipboard.paste(to: destination, coordinator: self)
+        let result = await clipboard.paste(to: destination)
         switch result {
             case .success(let urls):
                 log.info("\(#function) SUCCESS pasted \(urls.count) item(s)")

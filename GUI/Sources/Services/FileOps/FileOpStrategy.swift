@@ -11,11 +11,13 @@ import Foundation
 enum FileOpType: String, Sendable {
     case copy = "Copying"
     case move = "Moving"
+    case delete = "Deleting"
 
     var title: String {
         switch self {
         case .copy: return L10n.BatchOperation.copying
         case .move: return L10n.BatchOperation.moving
+        case .delete: return L10n.BatchOperation.deleting
         }
     }
 
@@ -23,6 +25,7 @@ enum FileOpType: String, Sendable {
         switch self {
         case .copy: return L10n.BatchOperation.copied
         case .move: return L10n.BatchOperation.moved
+        case .delete: return L10n.BatchOperation.deleted
         }
     }
 }
