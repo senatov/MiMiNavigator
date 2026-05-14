@@ -113,6 +113,7 @@ final class FileOpProgress {
     }
 
     func complete() {
+        guard !isCancelled else { return }
         isCompleted = true
         endTime = Date()
         log.info("[FileOpProgress] done: \(processedFiles) ok, \(skippedFiles) skipped, \(errors.count) errs, \(String(format: "%.1f", elapsed))s")

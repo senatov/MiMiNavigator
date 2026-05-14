@@ -127,24 +127,36 @@ final class FileOpProgressPanel {
         progressBar?.doubleValue = progress.fraction * 100.0
 
         if (progress.isCompleted || progress.isCancelled) && !waitingForOK {
+            updateTimer?.invalidate()
+            updateTimer = nil
+
+            if progress.isCancelled {
+                // TC-style: cancel → auto-dismiss, no "Done" dialog
+                log.info("[FileOpProgressPanel] cancelled — auto-dismissing")
+                Task { @MainActor in
+                    try? await Task.sleep(nanoseconds: 400_000_000)
+                    self.hide()
+                }
+                return
+            }
+
+            if progress.errors.isEmpty {
+                // TC-style: success → auto-dismiss, no confirmation needed
+                log.info("[FileOpProgressPanel] completed ok — auto-dismissing")
+                Task { @MainActor in
+                    try? await Task.sleep(nanoseconds: 400_000_000)
+                    self.hide()
+                }
+                return
+            }
+
             stopButton?.isHidden = true
             okButton?.isHidden = false
             waitingForOK = true
-
-            if progress.isCancelled {
-                titleLabel?.stringValue = "❌ Cancelled"
-                fileLabel?.stringValue = progress.completionSummary
-            } else if !progress.errors.isEmpty {
-                titleLabel?.stringValue = "⚠️ Completed with errors"
-                fileLabel?.stringValue = progress.completionSummary
-            } else {
-                titleLabel?.stringValue = "✅ Done"
-                fileLabel?.stringValue = progress.completionSummary
-            }
+            titleLabel?.stringValue = "⚠️ Completed with errors"
+            fileLabel?.stringValue = progress.completionSummary
 
             stopOKPulse()
-            updateTimer?.invalidate()
-            updateTimer = nil
         }
     }
 
