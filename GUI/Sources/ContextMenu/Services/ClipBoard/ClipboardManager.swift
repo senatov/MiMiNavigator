@@ -61,107 +61,28 @@ final class ClipboardManager {
         pb.setString(text, forType: .string)
     }
 
-    // MARK: - Paste files to destination with conflict handling
+    // MARK: - Paste files to destination via FileOpsEngine (TC/Finder-style)
     func paste(to destination: URL, coordinator: CntMenuCoord) async -> Result<[URL], Error> {
         guard hasContent else {
             return .failure(FileOpsError.operationFailed("Clipboard is empty"))
         }
-
-        let fileOps = FileOpsService.shared
-        var resultURLs: [URL] = []
-        var memorizedResolution: ConflictResolution? = nil
-        var stopped = false
-
-        for (index, file) in files.enumerated() {
-            if stopped { break }
-            let remaining = files.count - index
-
-            if let conflict = fileOps.checkConflict(source: file, destination: destination) {
-                let resolution: ConflictResolution
-
-                if let cached = memorizedResolution {
-                    resolution = cached
-                } else {
-                    let decision = await coordinator.showConflictDialog(conflict: conflict, remainingCount: remaining)
-                    resolution = decision.resolution
-                    if decision.applyToAll {
-                        memorizedResolution = resolution
-                    }
-                }
-
-                switch resolution {
-                    case .stop:
-                        stopped = true
-                        continue
-                    case .skip:
-                        continue
-                    case .keepBoth, .replace:
-                        do {
-                            let resultURL: URL
-                            switch operation {
-                                case .copy:
-                                    resultURL = try await fileOps.copyFile(file, to: destination, resolution: resolution)
-                                case .cut:
-                                    resultURL = try await fileOps.moveFile(file, to: destination, resolution: resolution)
-                                case .none:
-                                    continue
-                            }
-                            resultURLs.append(resultURL)
-                        } catch {
-                            log.error("File operation failed: \(error.localizedDescription)")
-                            // Continue with next file
-                        }
-                }
-            } else {
-                // No conflict, proceed normally
-                do {
-                    let resultURL: URL
-                    switch operation {
-                        case .copy:
-                            resultURL = try await fileOps.copyFile(file, to: destination, resolution: .keepBoth)
-                        case .cut:
-                            resultURL = try await fileOps.moveFile(file, to: destination, resolution: .keepBoth)
-                        case .none:
-                            continue
-                    }
-                    resultURLs.append(resultURL)
-                } catch {
-                    log.error("File operation failed: \(error.localizedDescription)")
-                }
-            }
-        }
-
-        // Clear clipboard after successful cut-paste
-        if operation == .cut && !resultURLs.isEmpty {
-            clear()
-        }
-
-        log.info("Clipboard: Pasted \(resultURLs.count) item(s) to \(destination.path)")
-        return .success(resultURLs)
-    }
-
-    // MARK: - Legacy paste (auto keep-both)
-    func paste(to destination: URL) async -> Result<[URL], Error> {
-        guard hasContent else {
-            return .failure(FileOpsError.operationFailed("Clipboard is empty"))
-        }
-
+        let engine = FileOpsEngine.shared
         do {
-            let result: [URL]
-
+            let progress: FileOpProgress
             switch operation {
-                case .copy:
-                    result = try await FileOpsService.shared.copyFiles(files, to: destination)
-                case .cut:
-                    result = try await FileOpsService.shared.moveFiles(files, to: destination)
-                    clear()
-                case .none:
-                    return .failure(FileOpsError.operationFailed("No operation specified"))
+            case .copy:
+                progress = try await engine.copy(items: files, to: destination)
+            case .cut:
+                progress = try await engine.move(items: files, to: destination)
+                if !progress.isCancelled { clear() }
+            case .none:
+                return .failure(FileOpsError.operationFailed("No operation specified"))
             }
-
-            log.info("Clipboard: Pasted \(result.count) item(s) to \(destination.path)")
-            return .success(result)
-
+            if progress.isCancelled {
+                return .failure(FileOpsError.operationCancelled)
+            }
+            log.info("Clipboard: Pasted via engine to \(destination.path)")
+            return .success([destination])
         } catch {
             log.error("Clipboard paste failed: \(error.localizedDescription)")
             return .failure(error)
