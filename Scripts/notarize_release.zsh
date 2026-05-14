@@ -266,14 +266,31 @@ xcrun stapler staple "${DMG}"
 echo "[10/10] Uploading to GitHub release ${TAG}..."
 
 if gh release view "${TAG}" &>/dev/null; then
-    echo "   Release ${TAG} exists, uploading DMG..."
-    gh release upload "${TAG}" "${DMG}" --clobber
+    echo "   Release ${TAG} exists, attempting upload..."
+    if ! gh release upload "${TAG}" "${DMG}" --clobber 2>/dev/null; then
+        echo "   ⚠️  Upload failed (immutable release?) — recreating release..."
+        gh release delete "${TAG}" --yes --cleanup-tag 2>/dev/null || true
+        sleep 2
+        git tag -f "${TAG}"
+        git push origin "${TAG}" --force
+        sleep 1
+        NOTES_FILE="Scripts/release_notes_${VERSION}.md"
+        NOTES_FLAG=()
+        [[ -f "${NOTES_FILE}" ]] && NOTES_FLAG=(--notes-file "${NOTES_FILE}") || NOTES_FLAG=(--notes "Release ${TAG}")
+        gh release create "${TAG}" "${DMG}" \
+            --target "master" \
+            --title "${TAG} — MiMiNavigator (notarized)" \
+            "${NOTES_FLAG[@]}"
+    fi
 else
     echo "   Creating release ${TAG}..."
+    NOTES_FILE="Scripts/release_notes_${VERSION}.md"
+    NOTES_FLAG=()
+    [[ -f "${NOTES_FILE}" ]] && NOTES_FLAG=(--notes-file "${NOTES_FILE}") || NOTES_FLAG=(--notes "Release ${TAG}")
     gh release create "${TAG}" "${DMG}" \
         --target "master" \
         --title "${TAG} — MiMiNavigator (notarized)" \
-        --notes-file "Scripts/release_notes_${VERSION}.md"
+        "${NOTES_FLAG[@]}"
 fi
 
 echo ""
