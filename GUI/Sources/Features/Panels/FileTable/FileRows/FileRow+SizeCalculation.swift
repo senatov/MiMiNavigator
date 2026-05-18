@@ -215,29 +215,6 @@ extension FileRow {
         return size
     }
 
-    // MARK: - App managed network mount metadata
-    private func runAppManagedMountMetadataTask(for url: URL) async {
-        if file.cachedChildCount != nil && file.cachedShallowSize != nil {
-            file.sizeCalculationStarted = false
-            return
-        }
-        file.sizeCalculationStarted = true
-        let targetURL = resolvedDirectorySizeTargetURL(from: url)
-        guard let metadata = await AppManagedMountMetadataProbe.partialMetadata(for: targetURL) else {
-            log.debug("[FileRow] app-managed network mount metadata skipped for '\(file.nameStr)' path='\(targetURL.path)'")
-            file.cachedDirectorySize = DirectorySizeService.unavailableSize
-            file.sizeIsExact = false
-            file.sizeCalculationStarted = false
-            return
-        }
-        file.cachedChildCount = metadata.childCount
-        file.cachedShallowSize = metadata.shallowSize
-        file.cachedDirectorySize = nil
-        file.sizeIsExact = false
-        file.sizeCalculationStarted = false
-        appState.bumpFilesVersion(for: panelSide)
-    }
-
     // MARK: - Shallow size with timeout
     private func shallowSizeWithTimeout(url: URL, timeoutMs: UInt64) async -> Int64? {
         let target = resolvedDirectorySizeTargetURL(from: url)
