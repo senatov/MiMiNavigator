@@ -15,7 +15,7 @@
   <img src="https://img.shields.io/badge/Concurrency-Strict-2ea44f" alt="Strict Concurrency" />
   <img src="https://img.shields.io/badge/SFTP-Citadel-0a7bbb" alt="SFTP via Citadel" />
   <img src="https://img.shields.io/badge/Archives-50%2B_Formats-6f42c1" alt="50+ archive formats" />
-  <img src="https://img.shields.io/badge/Media-Preview_%26_Conversion_Placeholders-ff8c00" alt="Media preview and conversion placeholders" />
+  <img src="https://img.shields.io/badge/Media-Preview_%26_Conversion-ff8c00" alt="Media preview and conversion" />
   <img src="https://img.shields.io/badge/License-AGPL--3.0-blue" alt="AGPL-3.0" />
   <a href="https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.9.1"><img src="https://img.shields.io/badge/release-v0.9.9.1-orange" alt="Release v0.9.9.1" /></a>
 </p>
@@ -136,7 +136,7 @@ MiMiNavigator is a dual-panel file manager inspired by **Total Commander** and *
 | **Multi-Selection** | Cmd+Click toggle, Shift+Click range, Insert mark+next, pattern matching, Ctrl+A |
 | **Group Operations** | Batch Cut/Copy/Compress/Share/Delete on marked files; group context menu |
 | **Multi-File Drag & Drop** | Drag all marked files together; badge preview with count; Finder-compatible; works in both list and thumbnail views |
-| **Media Actions** | Native media info command plus a new placeholder `Convert Media 􀍓 􁔘...` entry for convertible media files (currently disabled, planned for future conversion workflows) |
+| **Media Actions** | Native media info command plus working `Convert Media 􀍓 􁔘...` workflows for video, audio, and image files |
 | **Find Files** | Advanced search: by name (wildcards), content, size, date — with archive search |
 | **Archive VFS** | Open archives as virtual directories, navigate inside, auto-repack on exit |
 | **Parent Directory** | `...` entry pinned to top of every panel, archive-aware navigation |
@@ -428,7 +428,7 @@ When Google Drive for Desktop syncs the `Public` folder locally, MiMiNavigator s
 - [x] Hotkey customization
 - [x] Tabbed interface (multiple tabs per panel, context menu, persistence)
 - [x] Archive Open → TC-style virtual directory (not Finder/Archive Utility)
-- [ ] Media conversion dialog and scripts for `Convert Media...`
+- [x] Media conversion dialog and scripts for `Convert Media...`
 - [x] Zebra-striped background fill for empty panel space
 - [x] Autocomplete popup: click-outside / ESC dismiss, slide animation, NSVisualEffectView
 - [x] FileOperationsService split into modular extensions (Delete, Rename, SymLink)
