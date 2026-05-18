@@ -205,7 +205,9 @@ extension ConnToSrvrView {
 
             Button("Disconnect", action: disconnectAction)
                 .disabled(!canDisconnectCurrentDraft)
-                .buttonStyle(AnimatedDialogButtonStyle(role: .destructive))
+                .buttonStyle(ThemedButtonStyle())
+                .tint(.red)
+                .controlSize(.large)
                 .focusable(true)
 
             saveButton
@@ -213,13 +215,16 @@ extension ConnToSrvrView {
 
             if isConnecting {
                 Button("Cancel", action: cancelConnectionTask)
-                    .buttonStyle(AnimatedDialogButtonStyle())
+                    .buttonStyle(ThemedButtonStyle())
+                    .controlSize(.large)
                     .focusable(true)
                     .keyboardShortcut(.cancelAction)
             } else {
                 Button("Connect", action: connectAction)
                     .disabled(draft.host.isEmpty)
-                    .buttonStyle(AnimatedDialogButtonStyle(role: .confirm))
+                    .buttonStyle(ThemedButtonStyle())
+                    .tint(.accentColor)
+                    .controlSize(.large)
                     .focusable(true)
                     .keyboardShortcut(.defaultAction)
             }
@@ -239,7 +244,8 @@ extension ConnToSrvrView {
                 }
             }
         }
-        .buttonStyle(AnimatedDialogButtonStyle())
+        .buttonStyle(ThemedButtonStyle())
+        .controlSize(.large)
         .focusable(true)
         .animation(.easeOut(duration: 0.2), value: showSaveFlash)
     }

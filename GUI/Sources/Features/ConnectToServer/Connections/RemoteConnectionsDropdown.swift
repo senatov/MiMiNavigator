@@ -163,9 +163,11 @@ struct RemoteConnectionsDropdown: View {
         let refreshed = RemoteServerStore.shared.servers.first(where: { $0.id == server.id }) ?? server
         let result = refreshed.lastResult
         let detail = refreshed.lastErrorDetail ?? result.rawValue
+        let summary = ConnectionErrorFormatter.summary(result: result, detail: detail, server: server)
         let pp = ProgressPanel.shared
         pp.appendLog("❌ Connection failed: \(result.rawValue)")
-        pp.appendLog("Detail: \(detail)")
+        pp.appendLog("Detail:")
+        ConnectionErrorFormatter.logLines(from: detail).forEach { pp.appendLog($0) }
         if result == .authFailed {
             pp.appendLog("Hint: check username/password or key path")
         } else if result == .timeout {
@@ -173,7 +175,7 @@ struct RemoteConnectionsDropdown: View {
         } else if result == .refused {
             pp.appendLog("Hint: \(server.remoteProtocol.rawValue) service not running on \(server.host):\(server.port)")
         }
-        pp.finish(success: false, message: "Failed — \(detail)")
+        pp.finish(success: false, message: "Failed — \(summary)")
         log.warning("[DropdownConnect] failed \(server.displayName): \(detail)")
 
         if result == .authFailed {

@@ -89,6 +89,7 @@ final class ProgressPanel: NSObject {
         if panel == nil { createPanel() }
         guard let panel else { return }
         resetContent(icon: icon, title: title, status: status)
+        clampPanelToMainWindow()
         centerInMainWindow()
         attachPanelToMainWindow(panel)
         animatePanelIn(panel)
@@ -474,6 +475,19 @@ final class ProgressPanel: NSObject {
             panel.center()
         }
     }
+
+    // MARK: - Clamp Panel to Main Window
+    private func clampPanelToMainWindow() {
+        guard let panel else { return }
+        let mainFrame = (NSApp.mainWindow ?? NSApp.keyWindow)?.frame ?? NSScreen.main?.visibleFrame
+        let availableWidth = max(ProgressPanelAppearance.defaultMinWidth, (mainFrame?.width ?? 760) - 48)
+        let availableHeight = max(ProgressPanelAppearance.defaultMinHeight, (mainFrame?.height ?? 520) - 80)
+        let targetWidth = min(panel.frame.width, min(availableWidth, 760))
+        let targetHeight = min(panel.frame.height, min(availableHeight, 520))
+        guard targetWidth != panel.frame.width || targetHeight != panel.frame.height else { return }
+        panel.setFrame(NSRect(x: panel.frame.minX, y: panel.frame.minY, width: targetWidth, height: targetHeight), display: false)
+    }
+
     // MARK: - Make Label Helper
     private func makeLabel(font: NSFont, color: NSColor) -> NSTextField {
         let lbl = NSTextField(labelWithString: "")

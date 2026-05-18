@@ -154,6 +154,8 @@
                         await self.appState.refreshAndSelectAfterRemoval(removedFiles: files, on: panel)
                     }
                 }
+            } else if appState.isRemotePanel(panel) {
+                performRemoteDelete(files: files, panel: panel)
             } else {
                 // Normal filesystem: route through FileOpsEngine so diagnostics, logging and progress stay unified.
                 log.info("[DELETE] ⏱ calling FileOpsEngine.delete for \(urls.count) item(s): \(urls.map(\.lastPathComponent))")
@@ -171,6 +173,43 @@
                     }
                 }
             }
+        }
+
+        // MARK: - Remote Delete
+        private func performRemoteDelete(files: [CustomFile], panel: FavPanelSide) {
+            let deletableFiles = files.filter { !ParentDirectoryEntry.isParentEntry($0) }
+            let progressPanel = ProgressPanel.shared
+            progressPanel.show(
+                icon: "trash",
+                title: "Deleting remote item(s)",
+                status: "\(deletableFiles.count) item(s) from remote server"
+            )
+            Task { @MainActor in
+                var deletedCount = 0
+                for file in deletableFiles {
+                    guard !progressPanel.isCancelled else { break }
+                    do {
+                        try await RemoteConnectionManager.shared.deleteItem(remotePath: file.pathStr, recursive: file.isDirectory)
+                        deletedCount += 1
+                        progressPanel.appendLog("Deleted: \(file.nameStr)")
+                    } catch {
+                        progressPanel.appendLog("Failed: \(file.nameStr) - \(error.localizedDescription)")
+                        log.error("[DELETE] remote delete failed path='\(file.pathStr)' error='\(error.localizedDescription)'")
+                    }
+                }
+                let success = deletedCount == deletableFiles.count
+                progressPanel.finish(success: success, message: remoteDeleteStatus(deleted: deletedCount, total: deletableFiles.count))
+                await self.appState.refreshAndSelectAfterRemoval(removedFiles: files, on: panel)
+                log.info("[DELETE] remote delete finished deleted=\(deletedCount)/\(deletableFiles.count)")
+            }
+        }
+
+        // MARK: - Remote Delete Status
+        private func remoteDeleteStatus(deleted: Int, total: Int) -> String {
+            if deleted == total {
+                return "Deleted \(deleted) remote item(s)"
+            }
+            return "Deleted \(deleted) of \(total) remote item(s)"
         }
 
         // MARK: - F9 Settings

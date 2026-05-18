@@ -23,7 +23,7 @@ extension ConnToSrvrView {
                 .glassEffect()
                 .focused($focusedField, equals: .name)
                 .onChange(of: draft.name) { _, newValue in
-                    if applyURLParserIfNeeded(newValue, clearName: true) {
+                    if applyURLParserIfNeeded(newValue, clearName: false) {
                         return
                     }
                     if !newValue.isEmpty {

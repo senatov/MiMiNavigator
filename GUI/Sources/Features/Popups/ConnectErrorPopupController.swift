@@ -39,7 +39,7 @@ final class ConnectErrorPopupController: InfoPopupController {
 
         if let detail = server.lastErrorDetail, !detail.isEmpty {
             out.appendHUD("\nError detail:\n", font: Self.labelFont, color: Self.labelColor, para: para)
-            out.appendHUD(detail + "\n",       font: Self.valueFont, color: Self.valueColor, para: para)
+            out.appendHUD(ConnectionErrorFormatter.readableDetail(detail) + "\n", font: Self.valueFont, color: Self.valueColor, para: para)
         }
 
         let tip: String

@@ -78,7 +78,7 @@ final class RemoteConnectionManager {
         connections.firstIndex { $0.id == id }
     }
 
-    private func requireActiveConnection(function: String = #function) throws -> RemoteConnection {
+    func requireActiveConnection(function: String = #function) throws -> RemoteConnection {
         guard let connection = activeConnection else {
             log.warning("\(function) failed: no active connection")
             throw RemoteProviderError.notConnected
