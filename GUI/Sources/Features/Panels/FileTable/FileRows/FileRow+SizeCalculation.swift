@@ -55,11 +55,7 @@ extension FileRow {
         }
 
         if AppState.isAppManagedNetworkMountPath(fileURL) {
-            log.debug("[FileRow] Skipping app-managed network mount directory size for '\(file.nameStr)' path='\(fileURL.path)'")
-            file.cachedDirectorySize = DirectorySizeService.unavailableSize
-            file.cachedShallowSize = nil
-            file.sizeIsExact = false
-            file.sizeCalculationStarted = false
+            await runAppManagedMountMetadataTask(for: fileURL)
             return
         }
 
@@ -217,6 +213,29 @@ extension FileRow {
     private func resolveZeroSizeIfNeeded(_ size: Int64, url: URL) async -> Int64 {
         if size == DirectorySizeService.unavailableSize { return size }
         return size
+    }
+
+    // MARK: - App managed network mount metadata
+    private func runAppManagedMountMetadataTask(for url: URL) async {
+        if file.cachedChildCount != nil && file.cachedShallowSize != nil {
+            file.sizeCalculationStarted = false
+            return
+        }
+        file.sizeCalculationStarted = true
+        let targetURL = resolvedDirectorySizeTargetURL(from: url)
+        guard let metadata = await AppManagedMountMetadataProbe.oneLevelMetadata(for: targetURL) else {
+            log.debug("[FileRow] app-managed network mount metadata skipped for '\(file.nameStr)' path='\(targetURL.path)'")
+            file.cachedDirectorySize = DirectorySizeService.unavailableSize
+            file.sizeIsExact = false
+            file.sizeCalculationStarted = false
+            return
+        }
+        file.cachedChildCount = metadata.childCount
+        file.cachedShallowSize = metadata.shallowSize
+        file.cachedDirectorySize = nil
+        file.sizeIsExact = false
+        file.sizeCalculationStarted = false
+        appState.bumpFilesVersion(for: panelSide)
     }
 
     // MARK: - Shallow size with timeout
