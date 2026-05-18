@@ -47,7 +47,7 @@ struct RemoteConnectionsDropdown: View {
             dropdownLabel
         }
         .menuStyle(.borderlessButton)
-        .frame(width: 130)
+        .controlSize(.regular)
         .help("Remote connections")
     }
 
@@ -55,13 +55,13 @@ struct RemoteConnectionsDropdown: View {
     // MARK: - Dropdown Label (collapsed state)
     private var dropdownLabel: some View {
         let activeCount = servers.filter { manager.isConnected(to: $0) }.count
-        return HStack(spacing: 4) {
+        return HStack(spacing: 5) {
             Image(systemName: "antenna.radiowaves.left.and.right")
-                .font(.system(size: 11, weight: .medium))
+                .font(.system(size: 13, weight: .regular))
                 .foregroundStyle(activeCount > 0 ? .green : .secondary)
             Text(activeCount > 0 ? "\(activeCount) active" : "Connections")
-                .font(.system(size: 10, weight: .medium, design: .monospaced))
-                .foregroundStyle(activeCount > 0 ? Color(nsColor: .systemGreen) : .primary)
+                .font(.system(size: 13, weight: .regular))
+                .foregroundStyle(Color.accentColor)
                 .lineLimit(1)
         }
     }
