@@ -454,6 +454,35 @@ When Google Drive for Desktop syncs the `Public` folder locally, MiMiNavigator s
 - [ ] Plugin system — see [Plugin Development Blue Paper](GUI/Docs/PLUGIN_BLUE_PAPER.md)
 - [ ] App Store release
 
+### Competitive Feature Gaps
+
+These items are based on features that competing macOS file managers use as clear selling points. They should guide future work toward high-value file-manager workflows before adding unrelated experimental features.
+
+| Priority | Feature | Why it matters |
+|----------|---------|----------------|
+| **P0** | **Batch Rename with live preview and undo** | A core power-user workflow. Rule stacking, before/after preview, and one-step rollback make it safer than simple multi-file rename. |
+| **P0** | **Persistent Preview Pane** | A permanent panel for images, PDFs, media, Markdown, source code, text, and hex previews is more useful than a temporary Quick Look popup during heavy browsing. |
+| **P0** | **Folder Sync / Directory Compare** | Two-pane managers are naturally suited for local-to-local, local-to-remote, and remote-to-remote comparison with one-way/two-way sync and conflict handling. |
+| **P1** | **Command Bar / Quick Open (`⌘K`)** | A fast command surface for paths, favorites, menu actions, file operations, saved presets, and recently used commands reduces menu hunting without weakening keyboard-first workflows. |
+| **P1** | **Workspaces** | Save and restore complete layouts: panes, tabs, paths, sort order, view mode, splitter position, and scroll position. Useful for repeated project, media, server, and archive workflows. |
+| **P1** | **Git status badges and basic Git actions** | Developers benefit from inline repository state: modified/untracked/ignored badges, branch display, and focused actions such as open in terminal or reveal changed files. |
+| **P1** | **First-class remote/cloud backends** | FTP/SFTP and mounted cloud folders are already present, but competitors sell direct S3, B2, WebDAV, Dropbox, OneDrive, Google Drive, SMB, AFP, and NFS workflows. |
+| **P2** | **Duplicate Finder** | Exact duplicates via hashing and near-duplicate images via perceptual hashing turn file cleanup into a built-in workflow instead of a separate utility. |
+| **P2** | **App Deleter / leftovers cleanup** | macOS users value safe app removal with related files from Application Support, Caches, Preferences, and launch agents clearly shown before deletion. |
+| **P2** | **Better system integration** | Finder services, URL handlers, share extensions, "Open in MiMiNavigator", and optional default-file-viewer behavior make the app feel like part of macOS instead of a standalone island. |
+
+Recommended implementation order:
+
+1. Batch Rename with live preview and undo.
+2. Persistent Preview Pane.
+3. Folder Sync / Directory Compare.
+4. Command Bar / Quick Open.
+5. Workspaces.
+6. Git status badges.
+7. Direct WebDAV/S3/B2 support or an rclone-first backend.
+
+Avoid prioritizing AI, Bluetooth, dashboards, or generic device-control features until the core file-manager workflows above feel complete.
+
 ---
 
 ## Contributing
