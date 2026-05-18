@@ -223,7 +223,7 @@ extension FileRow {
         }
         file.sizeCalculationStarted = true
         let targetURL = resolvedDirectorySizeTargetURL(from: url)
-        guard let metadata = await AppManagedMountMetadataProbe.oneLevelMetadata(for: targetURL) else {
+        guard let metadata = await AppManagedMountMetadataProbe.partialMetadata(for: targetURL) else {
             log.debug("[FileRow] app-managed network mount metadata skipped for '\(file.nameStr)' path='\(targetURL.path)'")
             file.cachedDirectorySize = DirectorySizeService.unavailableSize
             file.sizeIsExact = false

@@ -18,10 +18,10 @@ enum AppManagedMountMetadataProbe {
     }
 
     // MARK: - Probe
-    static func oneLevelMetadata(for url: URL, timeoutMs: UInt64 = 450) async -> Result? {
+    static func partialMetadata(for url: URL, maxDepth: Int = 3, timeoutMs: UInt64 = 1_200) async -> Result? {
         await withTaskGroup(of: Result?.self) { group in
             group.addTask(priority: .utility) {
-                Self.scanOneLevel(url)
+                await Self.scanPartial(url, maxDepth: maxDepth, deadline: Date().addingTimeInterval(Double(timeoutMs) / 1_000))
             }
             group.addTask {
                 try? await Task.sleep(nanoseconds: timeoutMs * 1_000_000)
@@ -33,22 +33,49 @@ enum AppManagedMountMetadataProbe {
         }
     }
 
-    // MARK: - One Level Scan
-    private static func scanOneLevel(_ url: URL) -> Result? {
-        let keys: Set<URLResourceKey> = [.isRegularFileKey, .fileSizeKey]
-        guard let children = try? FileManager.default.contentsOfDirectory(
-            at: url,
-            includingPropertiesForKeys: Array(keys),
-            options: []
-        ) else {
-            return nil
-        }
-        var shallowSize: Int64 = 0
+    // MARK: - Partial Scan
+    private static func scanPartial(_ url: URL, maxDepth: Int, deadline: Date) async -> Result? {
+        guard let rootChildren = await contentsOfDirectory(url, deadline: deadline) else { return nil }
+        let childCount = rootChildren.count
+        let shallowSize = await accumulatedSize(rootChildren, depth: 1, maxDepth: maxDepth, deadline: deadline)
+        return Result(childCount: childCount, shallowSize: shallowSize)
+    }
+
+    // MARK: - Accumulate Size
+    private static func accumulatedSize(_ children: [URL], depth: Int, maxDepth: Int, deadline: Date) async -> Int64 {
+        var total: Int64 = 0
         for child in children {
-            guard let values = try? child.resourceValues(forKeys: keys) else { continue }
-            guard values.isRegularFile == true else { continue }
-            shallowSize += Int64(values.fileSize ?? 0)
+            if Task.isCancelled || Date() >= deadline { break }
+            guard let values = try? child.resourceValues(forKeys: [.isRegularFileKey, .isDirectoryKey, .fileSizeKey]) else { continue }
+            if values.isRegularFile == true {
+                total += Int64(values.fileSize ?? 0)
+            } else if values.isDirectory == true && depth < maxDepth {
+                guard let branchChildren = await contentsOfDirectory(child, deadline: deadline) else { continue }
+                total += await accumulatedSize(branchChildren, depth: depth + 1, maxDepth: maxDepth, deadline: deadline)
+            }
         }
-        return Result(childCount: children.count, shallowSize: shallowSize)
+        return total
+    }
+
+    // MARK: - Timed Directory Listing
+    private static func contentsOfDirectory(_ url: URL, deadline: Date) async -> [URL]? {
+        let remaining = max(0.05, deadline.timeIntervalSinceNow)
+        let branchTimeoutMs = UInt64(min(250, remaining * 1_000))
+        return await withTaskGroup(of: [URL]?.self) { group in
+            group.addTask(priority: .utility) {
+                try? FileManager.default.contentsOfDirectory(
+                    at: url,
+                    includingPropertiesForKeys: [.isRegularFileKey, .isDirectoryKey, .fileSizeKey],
+                    options: []
+                )
+            }
+            group.addTask {
+                try? await Task.sleep(nanoseconds: branchTimeoutMs * 1_000_000)
+                return nil
+            }
+            let first = await group.next() ?? nil
+            group.cancelAll()
+            return first
+        }
     }
 }
