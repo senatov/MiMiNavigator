@@ -118,6 +118,9 @@ actor DirectorySizeService {
     func requestSize(for url: URL) async -> Int64 {
         guard !Self.cancellation.isCancelled else { return Self.unavailableSize }
         let resolvedURL = resolveURLForSizing(url)
+        guard !AppState.isAppManagedNetworkMountPath(resolvedURL) else {
+            return Self.unavailableSize
+        }
         let key = cacheKey(for: resolvedURL)
         // fast bail: already known unreadable — don't even try
         if permanentlyUnavailable.contains(key) {
@@ -195,6 +198,19 @@ actor DirectorySizeService {
         log.info("[DirectorySizeService] shutdown requested")
     }
 
+    // MARK: - Cancel Path
+    func cancelRequests(under rootURL: URL) {
+        let rootPath = resolveURLForSizing(rootURL).path
+        let matchingKeys = inFlightTasks.keys.filter { $0 == rootPath || $0.hasPrefix(rootPath + "/") }
+        for key in matchingKeys {
+            inFlightTasks[key]?.cancel()
+            inFlightTasks[key] = nil
+        }
+        if !matchingKeys.isEmpty {
+            log.info("[DirectorySizeService] cancelled \(matchingKeys.count) request(s) under \(rootPath)")
+        }
+    }
+
     private func computeSizeOnBackgroundQueue(for url: URL) async -> Int64 {
         await withCheckedContinuation { (continuation: CheckedContinuation<Int64, Never>) in
             queue.async { [semaphore, weak self] in
@@ -268,6 +284,9 @@ actor DirectorySizeService {
     func shallowSize(for url: URL) async -> Int64 {
         guard !Self.cancellation.isCancelled else { return Self.unavailableSize }
         let resolvedURL = resolveURLForSizing(url)
+        guard !AppState.isAppManagedNetworkMountPath(resolvedURL) else {
+            return Self.unavailableSize
+        }
         //log.info("[DirectorySizeService] shallowSize start: \(resolvedURL.path)")
         let result = await withCheckedContinuation { (continuation: CheckedContinuation<Int64, Never>) in
             queue.async { [weak self] in

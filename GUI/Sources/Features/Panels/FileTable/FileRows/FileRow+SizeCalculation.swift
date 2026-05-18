@@ -54,6 +54,15 @@ extension FileRow {
             return
         }
 
+        if AppState.isAppManagedNetworkMountPath(fileURL) {
+            log.debug("[FileRow] Skipping app-managed network mount directory size for '\(file.nameStr)' path='\(fileURL.path)'")
+            file.cachedDirectorySize = DirectorySizeService.unavailableSize
+            file.cachedShallowSize = nil
+            file.sizeIsExact = false
+            file.sizeCalculationStarted = false
+            return
+        }
+
         if isMountedVolumeDirectory {
             log.debug("[FileRow] Skipping mounted volume directory size for '\(file.nameStr)' path='\(fileURL.path)'")
             file.cachedDirectorySize = DirectorySizeService.unavailableSize
@@ -227,72 +236,12 @@ extension FileRow {
         }
     }
 
-    // MARK: - Fallback directory scan (slow but reliable)
-    private func fallbackDirectoryScanAsync(url: URL) async -> Int64 {
-        let target = resolvedDirectorySizeTargetURL(from: url)
-
-        return
-            await Task.detached(priority: .utility) {
-                let fm = FileManager.default
-                var total: Int64 = 0
-                let keys: Set<URLResourceKey> = [
-                    .isDirectoryKey,
-                    .fileSizeKey,
-                    .fileAllocatedSizeKey,
-                    .totalFileAllocatedSizeKey,
-                    .isReadableKey,
-                ]
-
-                let enumerator = fm.enumerator(
-                    at: target,
-                    includingPropertiesForKeys: Array(keys),
-                    options: [.skipsPackageDescendants, .skipsHiddenFiles],
-                    errorHandler: { failedURL, error in
-                        log.warning(
-                            "[FileRow] Fallback scan skipping inaccessible path '\(failedURL.path)': \(error.localizedDescription)")
-                        return true
-                    }
-                )
-
-                guard let enumerator else {
-                    log.warning("[FileRow] Fallback scan could not start for '\(target.path)'")
-                    return 0
-                }
-
-                while let next = enumerator.nextObject() as? URL {
-                    guard let values = try? next.resourceValues(forKeys: keys) else {
-                        log.debug("[FileRow] Fallback scan skipping unreadable metadata for '\(next.path)'")
-                        continue
-                    }
-
-                    if values.isReadable == false {
-                        if values.isDirectory == true {
-                            enumerator.skipDescendants()
-                        }
-                        log.debug("[FileRow] Fallback scan skipping unreadable path '\(next.path)'")
-                        continue
-                    }
-
-                    if let alloc = values.totalFileAllocatedSize {
-                        total += Int64(alloc)
-                    } else if let alloc = values.fileAllocatedSize {
-                        total += Int64(alloc)
-                    } else if let size = values.fileSize {
-                        total += Int64(size)
-                    }
-                }
-
-                return total
-            }
-            .value
-    }
-
     // MARK: - Helpers
     private func normalizedURLForSize(_ url: URL) -> URL {
         url.resolvingSymlinksInPath().standardizedFileURL
     }
 
-    private func resolvedDirectorySizeTargetURL(from rawURL: URL) -> URL {
+    func resolvedDirectorySizeTargetURL(from rawURL: URL) -> URL {
         let normalized = normalizedURLForSize(rawURL)
         let fileName = trimmedDirectoryDisplayName()
 
@@ -385,6 +334,7 @@ extension FileRow {
     private func shouldSkipSizeCalculation(_ url: URL) -> Bool {
         // Remote URLs (sftp:// ftp://) — FileManager can't resolve, skip immediately
         if AppState.isRemotePath(url) { return true }
+        if AppState.isAppManagedNetworkMountPath(url) { return true }
         // Remote paths stored as local paths (e.g. "/pub", "/pub/docs") with no host prefix
         // When the panel is showing remote content these paths have no leading real filesystem component
         if let scheme = url.scheme, scheme != "file" { return true }

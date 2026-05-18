@@ -19,6 +19,11 @@ extension DualDirectoryScanner {
             stopFSEvents(for: side)
             return
         }
+        guard !AppState.isAppManagedNetworkMountPath(url) else {
+            log.debug("[FSEvents] app-managed network mount — skip watcher: '\(url.path)' side=\(side)")
+            stopFSEvents(for: side)
+            return
+        }
         Task {
             let showHidden = await appState.showHiddenFilesSnapshot()
             launchFSEventsWatcher(for: side, path: url.path, showHiddenFiles: showHidden)

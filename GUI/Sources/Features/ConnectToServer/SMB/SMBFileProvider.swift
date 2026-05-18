@@ -226,21 +226,20 @@ final class SMBFileProvider: @unchecked Sendable, RemoteFileProvider {
 
     @concurrent
     func disconnect() async {
-        let activeSession = stateQueue.sync { () -> SMBSession? in
-            let snapshot = session
-            session = nil
-            return snapshot
-        }
+        let activeSession = stateQueue.sync { session }
 
         guard let activeSession else { return }
 
         guard activeSession.didMountShare else {
+            stateQueue.sync { session = nil }
             log.info("[SMB] disconnected host=\(activeSession.host) reused mount='\(activeSession.mountPointURL.path)'")
             return
         }
 
         do {
+            await DirectorySizeService.shared.cancelRequests(under: activeSession.mountPointURL)
             try Self.unmountIfNeeded(activeSession.mountPointURL, mountRootURL: activeSession.mountRootURL)
+            stateQueue.sync { session = nil }
             log.info("[SMB] disconnected host=\(activeSession.host) mount='\(activeSession.mountPointURL.path)'")
         } catch {
             log.warning("[SMB] disconnect failed host=\(activeSession.host) error='\(error.localizedDescription)'")
@@ -340,49 +339,6 @@ final class SMBFileProvider: @unchecked Sendable, RemoteFileProvider {
         guard result.exitCode == 0 else {
             throw SMBProviderError.mountFailed(result.combinedOutput)
         }
-    }
-
-    private static func unmountIfNeeded(_ mountPointURL: URL, mountRootURL: URL) throws {
-        guard FileManager.default.fileExists(atPath: mountPointURL.path) else { return }
-        let result = try runCommand(
-            executable: "/sbin/umount",
-            arguments: [mountPointURL.path],
-            redactedArguments: [mountPointURL.path],
-            ignoreNonZeroExitCode: true
-        )
-        if result.exitCode == 0 {
-            log.debug("[SMB] unmounted '\(mountPointURL.path)'")
-            removeAppMountDirectoryIfEmpty(mountPointURL, mountRootURL: mountRootURL)
-            return
-        }
-        if result.combinedOutput.localizedCaseInsensitiveContains("not currently mounted") {
-            removeAppMountDirectoryIfEmpty(mountPointURL, mountRootURL: mountRootURL)
-            return
-        }
-        log.warning("[SMB] umount returned exit=\(result.exitCode) path='\(mountPointURL.path)' output='\(result.combinedOutput)'")
-    }
-
-    private static func isMounted(at mountPointURL: URL) -> Bool {
-        guard FileManager.default.fileExists(atPath: mountPointURL.path) else { return false }
-
-        let result = try? runCommand(
-            executable: "/sbin/mount",
-            arguments: [],
-            redactedArguments: [],
-            ignoreNonZeroExitCode: true
-        )
-
-        guard let output = result?.stdout, !output.isEmpty else { return false }
-        return output.contains(" on \(mountPointURL.path) (smbfs")
-    }
-
-    private static func existingSystemMountPointURL(shareRootPath: String) throws -> URL? {
-        let shareName = shareRootPath.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
-        guard !shareName.isEmpty else { return nil }
-        let decodedShareName = shareName.removingPercentEncoding ?? shareName
-        let systemMountURL = URL(fileURLWithPath: "/Volumes", isDirectory: true)
-            .appendingPathComponent(decodedShareName, isDirectory: true)
-        return isMounted(at: systemMountURL) ? systemMountURL : nil
     }
 
     private static func appMountRootURL() throws -> URL {
