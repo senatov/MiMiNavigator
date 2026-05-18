@@ -63,34 +63,39 @@ if ! gh auth status &>/dev/null; then
     exit 1
 fi
 
-# ── Step 0: Push release refs before expensive build/notarization ─────────────
-echo "[0/10] Publishing release refs..."
+# ── Step 0: Check or publish release refs ─────────────────────────────────────
+echo "[0/10] Checking release refs..."
 CURRENT_BRANCH="$(git branch --show-current)"
 if [[ -z "${CURRENT_BRANCH}" ]]; then
     echo "❌ Detached HEAD. Checkout a branch before releasing."
     exit 1
 fi
-if ! git rev-parse -q --verify "refs/tags/${TAG}" &>/dev/null; then
-    echo "❌ Local tag ${TAG} is missing. Create the release tag before running this script."
-    exit 1
-fi
-TAG_TARGET="$(git rev-list -n 1 "${TAG}")"
-HEAD_SHA="$(git rev-parse HEAD)"
-if [[ "${TAG_TARGET}" != "${HEAD_SHA}" ]]; then
-    echo "❌ Local tag ${TAG} does not point to HEAD."
-    echo "   Tag:  ${TAG_TARGET}"
-    echo "   HEAD: ${HEAD_SHA}"
-    exit 1
-fi
-git push origin "${CURRENT_BRANCH}"
-git push origin "refs/tags/${TAG}"
-
-if ! gh release view "${TAG}" &>/dev/null && ! git ls-remote --exit-code --tags origin "refs/tags/${TAG}" &>/dev/null; then
-    echo "❌ Release ${TAG} does not exist and remote tag ${TAG} is missing."
-    echo "   Repository rules may block tag creation from this script."
-    echo "   Create/push the tag with an allowed account before running this release:"
-    echo "   git push origin refs/tags/${TAG}"
-    exit 1
+if gh release view "${TAG}" &>/dev/null; then
+    echo "   Existing GitHub release ${TAG} found."
+    echo "   Rebuild mode: will replace the DMG asset without moving tags."
+else
+    echo "   GitHub release ${TAG} not found; preparing new release refs."
+    if ! git rev-parse -q --verify "refs/tags/${TAG}" &>/dev/null; then
+        echo "❌ Local tag ${TAG} is missing. Create the release tag before running this script."
+        exit 1
+    fi
+    TAG_TARGET="$(git rev-list -n 1 "${TAG}")"
+    HEAD_SHA="$(git rev-parse HEAD)"
+    if [[ "${TAG_TARGET}" != "${HEAD_SHA}" ]]; then
+        echo "❌ Local tag ${TAG} does not point to HEAD."
+        echo "   Tag:  ${TAG_TARGET}"
+        echo "   HEAD: ${HEAD_SHA}"
+        exit 1
+    fi
+    git push origin "${CURRENT_BRANCH}"
+    git push origin "refs/tags/${TAG}"
+    if ! git ls-remote --exit-code --tags origin "refs/tags/${TAG}" &>/dev/null; then
+        echo "❌ Remote tag ${TAG} is missing after push."
+        echo "   Repository rules may block tag creation from this script."
+        echo "   Create/push the tag with an allowed account before running this release:"
+        echo "   git push origin refs/tags/${TAG}"
+        exit 1
+    fi
 fi
 
 # ── Step 1: Version stamp ─────────────────────────────────────────────────────
