@@ -265,28 +265,27 @@ xcrun stapler staple "${DMG}"
 # ── Step 10: Upload to GitHub ─────────────────────────────────────────────────
 echo "[10/10] Uploading to GitHub release ${TAG}..."
 
+NOTES_FILE="Scripts/release_notes_${VERSION}.md"
+NOTES_FLAG=()
+[[ -f "${NOTES_FILE}" ]] && NOTES_FLAG=(--notes-file "${NOTES_FILE}") || NOTES_FLAG=(--notes "Release ${TAG}")
+
 if gh release view "${TAG}" &>/dev/null; then
     echo "   Release ${TAG} exists, attempting upload..."
-    if ! gh release upload "${TAG}" "${DMG}" --clobber 2>/dev/null; then
-        echo "   ⚠️  Upload failed (immutable release?) — recreating release..."
-        gh release delete "${TAG}" --yes --cleanup-tag 2>/dev/null || true
-        sleep 2
-        git tag -f "${TAG}"
-        git push origin "${TAG}" --force
-        sleep 1
-        NOTES_FILE="Scripts/release_notes_${VERSION}.md"
-        NOTES_FLAG=()
-        [[ -f "${NOTES_FILE}" ]] && NOTES_FLAG=(--notes-file "${NOTES_FILE}") || NOTES_FLAG=(--notes "Release ${TAG}")
-        gh release create "${TAG}" "${DMG}" \
-            --target "master" \
-            --title "${TAG} — MiMiNavigator (notarized)" \
-            "${NOTES_FLAG[@]}"
+    if ! gh release upload "${TAG}" "${DMG}" --clobber; then
+        echo "   ❌ Upload failed. Existing release was left untouched."
+        echo "      Check whether the release is immutable or the asset is locked:"
+        echo "      https://github.com/senatov/MiMiNavigator/releases/tag/${TAG}"
+        exit 1
     fi
 else
-    echo "   Creating release ${TAG}..."
-    NOTES_FILE="Scripts/release_notes_${VERSION}.md"
-    NOTES_FLAG=()
-    [[ -f "${NOTES_FILE}" ]] && NOTES_FLAG=(--notes-file "${NOTES_FILE}") || NOTES_FLAG=(--notes "Release ${TAG}")
+    if ! git ls-remote --exit-code --tags origin "refs/tags/${TAG}" &>/dev/null; then
+        echo "   ❌ Release ${TAG} does not exist and remote tag ${TAG} is missing."
+        echo "      Repository rules may block tag creation from this script."
+        echo "      Create/push the tag with an allowed account, then rerun this upload step:"
+        echo "      gh release create ${TAG} ${DMG} --target master --title '${TAG} — MiMiNavigator (notarized)'"
+        exit 1
+    fi
+    echo "   Creating release ${TAG} for existing remote tag..."
     gh release create "${TAG}" "${DMG}" \
         --target "master" \
         --title "${TAG} — MiMiNavigator (notarized)" \
