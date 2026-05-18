@@ -62,6 +62,13 @@ if ! gh auth status &>/dev/null; then
     echo "❌ gh not authenticated. Run: gh auth login"
     exit 1
 fi
+if ! gh release view "${TAG}" &>/dev/null && ! git ls-remote --exit-code --tags origin "refs/tags/${TAG}" &>/dev/null; then
+    echo "❌ Release ${TAG} does not exist and remote tag ${TAG} is missing."
+    echo "   Repository rules may block tag creation from this script."
+    echo "   Create/push the tag with an allowed account before running this release:"
+    echo "   git push origin refs/tags/${TAG}"
+    exit 1
+fi
 
 # ── Step 1: Version stamp ─────────────────────────────────────────────────────
 echo "[1/10] Updating version stamp..."
