@@ -17,7 +17,7 @@
   <img src="https://img.shields.io/badge/Archives-50%2B_Formats-6f42c1" alt="50+ archive formats" />
   <img src="https://img.shields.io/badge/Media-Preview_%26_Conversion_Placeholders-ff8c00" alt="Media preview and conversion placeholders" />
   <img src="https://img.shields.io/badge/License-AGPL--3.0-blue" alt="AGPL-3.0" />
-  <a href="https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.9.0"><img src="https://img.shields.io/badge/release-v0.9.9.0-orange" alt="Release v0.9.9.0" /></a>
+  <a href="https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.9.1"><img src="https://img.shields.io/badge/release-v0.9.9.1-orange" alt="Release v0.9.9.1" /></a>
 </p>
 
 <p align="center">
@@ -37,7 +37,17 @@
 
 
 
-## Recent Changes (v0.9.9.0 — May 2026)
+## Recent Changes (v0.9.9.1 — May 2026)
+
+- **Remote directory metadata** — app-managed SMB/SFTP mounts can now show partial directory sizes and first-level child counts without blocking panel navigation.
+- **Timeout-safe probing** — remote directory size scans stop after a short budget and show the best known partial result instead of hanging the UI.
+- **Vuduo2 stability** — scanner now avoids expensive watchers and recursive refresh behavior on app-managed network mounts.
+- **Connections toolbar polish** — the Connections control uses standard toolbar sizing, font, and selected accent text color.
+- **Release upload safety** — notarized release upload no longer deletes existing GitHub releases or tags after an asset upload failure.
+
+---
+
+## Previous Changes (v0.9.9.0 — May 2026)
 
 - **Google Drive share links** — `Copy Share Link` now caches OAuth tokens in `~/.mimi/google_drive_token_cache.json`, reducing repeated Keychain password prompts.
 - **Blog-friendly image sharing** — public image links now use `lh3.googleusercontent.com/d/<fileID>=s0` instead of Drive preview/download URLs.
@@ -203,7 +213,7 @@ MiMiNavigator can browse archives as virtual directories. Double-click opens the
 > xattr -cr ~/Downloads/MiMiNavigator.app
 > ```
 
-**[Download MiMiNavigator v0.9.9.0 →](https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.9.0)**  
+**[Download MiMiNavigator v0.9.9.1 →](https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.9.1)**
 **[All releases →](https://github.com/senatov/MiMiNavigator/releases)**
 
 ---
