@@ -72,6 +72,13 @@ if [[ -z "${CURRENT_BRANCH}" ]]; then
 fi
 if gh release view "${TAG}" &>/dev/null; then
     echo "   Existing GitHub release ${TAG} found."
+    RELEASE_IMMUTABLE="$(gh release view "${TAG}" --json isImmutable --jq '.isImmutable')"
+    if [[ "${RELEASE_IMMUTABLE}" == "true" ]]; then
+        echo "❌ GitHub release ${TAG} is immutable."
+        echo "   GitHub will not allow replacing or deleting release assets."
+        echo "   Create a new version/tag instead, then run this script for that version."
+        exit 1
+    fi
     echo "   Rebuild mode: will replace the DMG asset without moving tags."
 else
     echo "   GitHub release ${TAG} not found; preparing new release refs."
