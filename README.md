@@ -17,7 +17,7 @@
   <img src="https://img.shields.io/badge/Archives-50%2B_Formats-6f42c1" alt="50+ archive formats" />
   <img src="https://img.shields.io/badge/Media-Preview_%26_Conversion-ff8c00" alt="Media preview and conversion" />
   <img src="https://img.shields.io/badge/License-AGPL--3.0-blue" alt="AGPL-3.0" />
-  <a href="https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.9.1"><img src="https://img.shields.io/badge/release-v0.9.9.1-orange" alt="Release v0.9.9.1" /></a>
+  <a href="https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.9.2"><img src="https://img.shields.io/badge/release-v0.9.9.2-orange" alt="Release v0.9.9.2" /></a>
 </p>
 
 <p align="center">
@@ -37,7 +37,16 @@
 
 
 
-## Recent Changes (v0.9.9.1 — May 2026)
+## Recent Changes (v0.9.9.2 - May 2026)
+
+- **Remote delete fix** — deleting files from SFTP/FTP/SMB panels now routes through the active remote provider instead of the local filesystem trash path.
+- **Connection error dialogs** — long network failures are formatted into readable summary/detail text and constrained to the app window width.
+- **Connect dialog polish** — URL-style input in the Name field now preserves the parsed host name and the dialog uses the app's custom 3D buttons with Connect as the default action.
+- **Release workflow guardrails** — the notarized release script now detects immutable GitHub releases before spending time on build and notarization.
+
+---
+
+## Previous Changes (v0.9.9.1 - May 2026)
 
 - **Remote directory metadata** — app-managed SMB/SFTP mounts can now show partial directory sizes and first-level child counts without blocking panel navigation.
 - **Timeout-safe probing** — remote directory size scans stop after a short budget and show the best known partial result instead of hanging the UI.
@@ -213,7 +222,7 @@ MiMiNavigator can browse archives as virtual directories. Double-click opens the
 > xattr -cr ~/Downloads/MiMiNavigator.app
 > ```
 
-**[Download MiMiNavigator v0.9.9.1 →](https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.9.1)**
+**[Download MiMiNavigator v0.9.9.2 ->](https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.9.2)**
 **[All releases →](https://github.com/senatov/MiMiNavigator/releases)**
 
 ---
