@@ -29,6 +29,8 @@ struct DuoFilePanelView: View {
         static let minPanelWidth: CGFloat = 80
         static let defaultBackingScale: CGFloat = 2.0
         static let finderSidebarWidth: CGFloat = 220
+        static let finderSidebarHiddenOffset: CGFloat = -18
+        static let finderSidebarAnimation = Animation.interactiveSpring(response: 0.28, dampingFraction: 0.92, blendDuration: 0)
     }
 
     // MARK: - Body
@@ -92,11 +94,7 @@ struct DuoFilePanelView: View {
             let panelWidth = panelsContainerWidth(for: geometry.size.width)
             ZStack(alignment: .leading) {
                 HStack(spacing: 0) {
-                    if isFinderSidebarVisible {
-                        FinderSidebarView(appState: appState)
-                            .frame(width: Layout.finderSidebarWidth, height: geometry.size.height)
-                            .transition(.move(edge: .leading).combined(with: .opacity))
-                    }
+                    finderSidebar(height: geometry.size.height)
                     if leftPanelWidth > 0, panelWidth > 0 {
                         DuoPanelFilePanelsSection(
                             leftPanelWidth: $leftPanelWidth,
@@ -123,7 +121,18 @@ struct DuoFilePanelView: View {
                 }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .animation(.easeInOut(duration: 0.18), value: isFinderSidebarVisible)
+        .animation(Layout.finderSidebarAnimation, value: isFinderSidebarVisible)
+    }
+
+    // MARK: - Finder Sidebar
+    private func finderSidebar(height: CGFloat) -> some View {
+        FinderSidebarView(appState: appState)
+            .frame(width: Layout.finderSidebarWidth, height: height)
+            .opacity(isFinderSidebarVisible ? 1 : 0)
+            .offset(x: isFinderSidebarVisible ? 0 : Layout.finderSidebarHiddenOffset)
+            .frame(width: isFinderSidebarVisible ? Layout.finderSidebarWidth : 0, height: height, alignment: .leading)
+            .clipped()
+            .allowsHitTesting(isFinderSidebarVisible)
     }
 
     // MARK: - Panels Width

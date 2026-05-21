@@ -253,10 +253,10 @@ struct RemoteConnectionsDropdown: View {
 
         Task {
             let disconnectedMountPath = conn.provider.mountPath
-            await manager.disconnect(id: conn.id)
             await fallbackPanelsFromServer(server, disconnectedMountPath: disconnectedMountPath)
-            pp.appendLog("Session closed")
             pp.appendLog("Panels restored from history")
+            await manager.disconnect(id: conn.id)
+            pp.appendLog("Session closed")
             pp.finish(success: true, message: "Disconnected from \(server.displayName)")
             log.info("[DropdownDisconnect] \(server.displayName)")
         }
