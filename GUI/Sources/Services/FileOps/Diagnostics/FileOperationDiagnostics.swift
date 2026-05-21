@@ -126,6 +126,8 @@ enum FileOperationDiagnostics {
         switch (error.domain, error.code) {
         case (NSCocoaErrorDomain, NSFileWriteFileExistsError):
             return "A file with the same name already exists."
+        case (NSOSStatusErrorDomain, -120):
+            return "The network volume stopped responding or the mount is stale. Reconnect the share before retrying."
         default:
             return nil
         }

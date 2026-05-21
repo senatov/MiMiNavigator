@@ -27,13 +27,16 @@ extension FileOpsService {
             }
             do {
                 var resultingURL: NSURL?
-                try fileManager.trashItem(at: file, resultingItemURL: &resultingURL)
-
+                if AppState.isAppManagedNetworkMountPath(file) {
+                    try fileManager.removeItem(at: file)
+                    resultingURL = nil
+                } else {
+                    try fileManager.trashItem(at: file, resultingItemURL: &resultingURL)
+                }
                 if let trashURL = resultingURL as URL? {
                     trashedURLs.append(trashURL)
                 }
-
-                log.info("[FileOps] trashed '\(file.lastPathComponent)'")
+                log.info("[FileOps] deleted '\(file.lastPathComponent)'")
             } catch {
                 let diagnostic = FileOperationDiagnostics.makeDelete(source: file, error: error)
                 log.error("[FileOps] delete failed for '\(file.lastPathComponent)': \(diagnostic.details)")

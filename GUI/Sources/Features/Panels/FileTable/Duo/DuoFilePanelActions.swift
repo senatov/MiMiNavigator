@@ -119,7 +119,7 @@
                 .filter { !ParentDirectoryEntry.isParentEntry($0) }
                 .map { $0.urlValue }
             
-            log.debug("[DELETE] after filtering parent entries: \(urls.count) URLs to trash: \(urls.map(\.lastPathComponent))")
+            log.debug("[DELETE] after filtering parent entries: \(urls.count) URLs to delete: \(urls.map(\.lastPathComponent))")
 
             guard !urls.isEmpty else {
                 log.warning("[DELETE] all files were parent entries, nothing to delete")
@@ -165,6 +165,10 @@
                         let progress = try await FileOpsEngine.shared.delete(items: urls)
                         let elapsed = CFAbsoluteTimeGetCurrent() - startTime
                         log.info("[DELETE] ✅ FileOpsEngine.delete finished in \(String(format: "%.3f", elapsed))s with \(progress.errors.count) error(s)")
+                        guard progress.errors.isEmpty else {
+                            log.warning("[DELETE] refresh skipped because delete finished with \(progress.errors.count) error(s)")
+                            return
+                        }
                         await self.appState.refreshAndSelectAfterRemoval(removedFiles: files, on: panel)
                         log.debug("[DELETE] ⏱ END performDelete")
                     } catch {

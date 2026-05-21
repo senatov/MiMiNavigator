@@ -19,6 +19,18 @@ extension AppState {
         return path.hasPrefix(rootPath + "/")
     }
 
+    // MARK: - Mount Point
+    nonisolated static func appManagedMountPointURL(for url: URL) -> URL? {
+        guard url.isFileURL else { return nil }
+        guard let rootPath = appManagedMountRootPath() else { return nil }
+        let path = url.standardizedFileURL.path
+        guard path.hasPrefix(rootPath + "/") else { return nil }
+        let relative = String(path.dropFirst(rootPath.count + 1))
+        guard let mountName = relative.split(separator: "/").first else { return nil }
+        return URL(fileURLWithPath: rootPath, isDirectory: true)
+            .appendingPathComponent(String(mountName), isDirectory: true)
+    }
+
     // MARK: - Mount Root
     nonisolated private static func appManagedMountRootPath() -> String? {
         guard let supportURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {

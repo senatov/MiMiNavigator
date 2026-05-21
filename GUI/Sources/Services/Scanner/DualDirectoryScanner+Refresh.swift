@@ -233,6 +233,13 @@ extension DualDirectoryScanner {
     }
 
     func validateDirectoryURL(_ url: URL) -> Bool {
+        if AppState.isAppManagedNetworkMountPath(url),
+           let mountPointURL = AppState.appManagedMountPointURL(for: url),
+           !SMBFileProvider.isMounted(at: mountPointURL)
+        {
+            log.warning("[Scan] app-managed network mount is stale: \(mountPointURL.path)")
+            return false
+        }
         var isDirectory: ObjCBool = false
         guard FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory) else {
             log.warning("[Scan] path no longer exists: \(url.path)")
@@ -391,6 +398,9 @@ extension DualDirectoryScanner {
     /// Mounted volumes get the short timeout; local dirs get genericScanTimeout.
     func effectiveTimeout(for url: URL) -> TimeInterval {
         if url.path == "/Volumes" || (url.path.hasPrefix("/Volumes/") && url.path != "/Volumes") {
+            return mountedVolumeScanTimeout
+        }
+        if AppState.isAppManagedNetworkMountPath(url) {
             return mountedVolumeScanTimeout
         }
         return genericScanTimeout

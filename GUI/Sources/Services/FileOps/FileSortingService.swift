@@ -25,6 +25,9 @@ enum FileSortingService {
             if leftPriority != rightPriority {
                 return leftPriority.rawValue < rightPriority.rawValue
             }
+            if leftPriority == .visibleDirectory || leftPriority == .hiddenDirectory {
+                return compareName(left, right, ascending: true)
+            }
 
             return compare(left, right, by: key, ascending: bDirection)
         }

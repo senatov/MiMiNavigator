@@ -28,6 +28,9 @@ struct TableFileSorter {
         if aIsFolder != bIsFolder {
             return aIsFolder && !bIsFolder
         }
+        if aIsFolder && bIsFolder {
+            return a.nameStr.localizedCaseInsensitiveCompare(b.nameStr) == .orderedAscending
+        }
         
         // Then sort by key
         switch sortKey {

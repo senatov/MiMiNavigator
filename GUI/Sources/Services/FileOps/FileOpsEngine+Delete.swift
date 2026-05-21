@@ -3,7 +3,7 @@
 //
 // Created by Iakov Senatov on 14.05.2026.
 // Copyright © 2026 Senatov. All rights reserved.
-// Description: Delete implementation — moves items to Trash.
+// Description: Delete implementation.
 
 import Foundation
 
@@ -18,14 +18,12 @@ extension FileOpsEngine {
         defer { progress.complete() }
         for url in items {
             guard !progress.isCancelled else { break }
-            trashItem(url: url, progress: progress)
+            await trashItem(url: url, progress: progress)
         }
         return progress
     }
 
-
-
-    func trashItem(url: URL, progress: FileOpProgress) {
+    func trashItem(url: URL, progress: FileOpProgress) async {
         progress.setCurrentFile(url.lastPathComponent)
         if AppLogger.isProtectedLogFile(url) {
             recordFailure(
@@ -34,15 +32,56 @@ extension FileOpsEngine {
             )
             return
         }
-        do {
-            try fm.trashItem(at: url, resultingItemURL: nil)
+        if AppState.isAppManagedNetworkMountPath(url),
+           let mountPointURL = AppState.appManagedMountPointURL(for: url),
+           !SMBFileProvider.isMounted(at: mountPointURL)
+        {
+            let error = NSError(
+                domain: NSCocoaErrorDomain,
+                code: NSFileWriteUnknownError,
+                userInfo: [NSLocalizedDescriptionKey: "Network mount is disconnected: \(mountPointURL.path)"]
+            )
+            recordFailure(
+                FileOperationDiagnostics.makeDelete(source: url, error: error),
+                progress: progress
+            )
+            return
+        }
+        let itemSize = fileSize(url: url)
+        let result = AppState.isAppManagedNetworkMountPath(url)
+            ? await Self.removeItemOffMainActor(url)
+            : await Self.trashItemOffMainActor(url)
+        switch result {
+        case .success:
             progress.fileCompleted(name: url.lastPathComponent, success: true)
-            progress.add(bytes: fileSize(url: url))
-        } catch {
+            progress.add(bytes: itemSize)
+        case .failure(let error):
             recordFailure(
                 FileOperationDiagnostics.makeDelete(source: url, error: error),
                 progress: progress
             )
         }
+    }
+
+    private nonisolated static func removeItemOffMainActor(_ url: URL) async -> Result<Void, Error> {
+        await Task.detached(priority: .userInitiated) {
+            do {
+                try FileManager.default.removeItem(at: url)
+                return .success(())
+            } catch {
+                return .failure(error)
+            }
+        }.value
+    }
+
+    private nonisolated static func trashItemOffMainActor(_ url: URL) async -> Result<Void, Error> {
+        await Task.detached(priority: .userInitiated) {
+            do {
+                try FileManager.default.trashItem(at: url, resultingItemURL: nil)
+                return .success(())
+            } catch {
+                return .failure(error)
+            }
+        }.value
     }
 }
