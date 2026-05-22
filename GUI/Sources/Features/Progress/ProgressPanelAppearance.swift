@@ -49,6 +49,7 @@ final class ProgressPanelAppearance {
     var hexStatusColor: String      = defaultStatusColorHex
     var panelWidth: CGFloat         = defaultWidth
     var panelHeight: CGFloat        = defaultHeight
+    var framesByOperation: [String: ProgressPanelFrame] = [:]
 
     // MARK: - Computed NSColor/NSFont accessors
 
@@ -83,6 +84,7 @@ final class ProgressPanelAppearance {
         var hexStatusColor: String?
         var panelWidth: Double?
         var panelHeight: Double?
+        var framesByOperation: [String: ProgressPanelFrame]?
     }
 
     func save() {
@@ -95,7 +97,8 @@ final class ProgressPanelAppearance {
             hexTitleColor: hexTitleColor,
             hexStatusColor: hexStatusColor,
             panelWidth: Double(panelWidth),
-            panelHeight: Double(panelHeight)
+            panelHeight: Double(panelHeight),
+            framesByOperation: framesByOperation
         )
         do {
             let encoder = JSONEncoder()
@@ -125,6 +128,7 @@ final class ProgressPanelAppearance {
             if let v = d.hexStatusColor  { hexStatusColor = v }
             if let v = d.panelWidth      { panelWidth = CGFloat(v) }
             if let v = d.panelHeight     { panelHeight = CGFloat(v) }
+            if let v = d.framesByOperation { framesByOperation = v }
             log.debug("[ProgressAppearance] loaded: \(Int(panelWidth))x\(Int(panelHeight)) font=\(logFontName)@\(logFontSize)")
         } catch {
             log.error("[ProgressAppearance] load failed: \(error)")
@@ -143,13 +147,36 @@ final class ProgressPanelAppearance {
         hexStatusColor = Self.defaultStatusColorHex
         panelWidth = Self.defaultWidth
         panelHeight = Self.defaultHeight
+        framesByOperation = [:]
         save()
     }
 
-    /// Call when panel is resized by user — saves new dimensions
+    // MARK: - Size Persistence
+
     func updateSize(width: CGFloat, height: CGFloat) {
         panelWidth = width
         panelHeight = height
         save()
     }
+
+    // MARK: - Operation Frame Persistence
+
+    func frame(for operationKey: String) -> ProgressPanelFrame? {
+        framesByOperation[operationKey]
+    }
+
+    func updateFrame(_ frame: ProgressPanelFrame, for operationKey: String) {
+        framesByOperation[operationKey] = frame
+        panelWidth = frame.width
+        panelHeight = frame.height
+        save()
+    }
+}
+
+// MARK: - Progress Panel Frame
+struct ProgressPanelFrame: Codable, Equatable {
+    var relativeX: Double
+    var relativeY: Double
+    var width: Double
+    var height: Double
 }

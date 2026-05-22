@@ -54,6 +54,7 @@ final class ProgressPanel: NSObject {
     private var lineCount = 0
     private var onCancel: (() -> Void)?
     private var eventMonitor: Any?
+    private var operationKey = "default"
     private override init() { super.init() }
     private var appearance: ProgressPanelAppearance { .shared }
 
@@ -62,6 +63,7 @@ final class ProgressPanel: NSObject {
         if panel == nil { createPanel() }
         isCancelled = false
         lineCount = 0
+        operationKey = "reset"
         resetContent(icon: icon, title: title, status: message)
     }
 
@@ -82,16 +84,17 @@ final class ProgressPanel: NSObject {
         icon: String = "archivebox.fill",
         title: String,
         status: String,
+        operationKey: String? = nil,
         cancelHandler: (() -> Void)? = nil
     ) {
         isCancelled = false
         lineCount = 0
         onCancel = cancelHandler
+        self.operationKey = normalizedOperationKey(operationKey ?? title)
         if panel == nil { createPanel() }
         guard let panel else { return }
         resetContent(icon: icon, title: title, status: status)
-        clampPanelToMainWindow()
-        centerInMainWindow()
+        restoreFrameForCurrentOperation()
         attachPanelToMainWindow(panel)
         animatePanelIn(panel)
         log.debug("[ProgressPanel] \(#function) title='\(title)'")
@@ -102,6 +105,7 @@ final class ProgressPanel: NSObject {
             icon: "archivebox.fill",
             title: "📦 \(archiveName)",
             status: "Extracting to \(abbreviatePath(destinationPath))…",
+            operationKey: "extract",
             cancelHandler: cancelHandler)
     }
     // MARK: - Convenience: packing
@@ -110,6 +114,7 @@ final class ProgressPanel: NSObject {
             icon: "archivebox.fill",
             title: "📦 Packing → \(archiveName)",
             status: "Packing \(fileCount) item(s) to \(abbreviatePath(destinationPath))…",
+            operationKey: "pack",
             cancelHandler: cancelHandler)
     }
     // MARK: - Convenience: file operation
@@ -120,6 +125,7 @@ final class ProgressPanel: NSObject {
             icon: icon,
             title: title,
             status: "\(itemCount) item(s) → \(abbreviatePath(destination))…",
+            operationKey: title,
             cancelHandler: cancelHandler)
     }
     // MARK: - Append Log Line
@@ -204,7 +210,6 @@ final class ProgressPanel: NSObject {
     func resumeAfterUserDecision() {
         guard let panel, panel.isVisible == false else { return }
         clampPanelToMainWindow()
-        centerInMainWindow()
         attachPanelToMainWindow(panel)
         animatePanelIn(panel)
     }
@@ -509,6 +514,66 @@ final class ProgressPanel: NSObject {
         }
     }
 
+    // MARK: - Frame Persistence
+
+    private func restoreFrameForCurrentOperation() {
+        guard let panel else { return }
+        applySavedSizeIfNeeded(to: panel)
+        if let saved = appearance.frame(for: operationKey),
+           let mainFrame = (NSApp.mainWindow ?? NSApp.keyWindow)?.frame {
+            let width = clampedWidth(CGFloat(saved.width), mainFrame: mainFrame)
+            let height = clampedHeight(CGFloat(saved.height), mainFrame: mainFrame)
+            let x = mainFrame.minX + CGFloat(saved.relativeX)
+            let y = mainFrame.minY + CGFloat(saved.relativeY)
+            panel.setFrame(NSRect(x: x, y: y, width: width, height: height), display: false)
+            clampPanelToMainWindow()
+            return
+        }
+        clampPanelToMainWindow()
+        centerInMainWindow()
+    }
+
+    private func applySavedSizeIfNeeded(to panel: NSPanel) {
+        let width = appearance.frame(for: operationKey).map { CGFloat($0.width) } ?? appearance.panelWidth
+        let height = appearance.frame(for: operationKey).map { CGFloat($0.height) } ?? appearance.panelHeight
+        panel.setFrame(NSRect(x: panel.frame.minX, y: panel.frame.minY, width: width, height: height), display: false)
+    }
+
+    private func persistFrameForCurrentOperation() {
+        guard let panel,
+              let mainFrame = (NSApp.mainWindow ?? NSApp.keyWindow)?.frame
+        else { return }
+        let frame = panel.frame
+        let stored = ProgressPanelFrame(
+            relativeX: Double(frame.minX - mainFrame.minX),
+            relativeY: Double(frame.minY - mainFrame.minY),
+            width: Double(frame.width),
+            height: Double(frame.height)
+        )
+        appearance.updateFrame(stored, for: operationKey)
+    }
+
+    private func normalizedOperationKey(_ rawValue: String) -> String {
+        let lowered = rawValue.lowercased()
+        if lowered.contains("copy") { return "copy" }
+        if lowered.contains("move") { return "move" }
+        if lowered.contains("delete") || lowered.contains("trash") { return "delete" }
+        if lowered.contains("pack") { return "pack" }
+        if lowered.contains("extract") { return "extract" }
+        let allowed = lowered.map { character -> Character in
+            character.isLetter || character.isNumber ? character : "-"
+        }
+        return String(allowed).split(separator: "-").joined(separator: "-")
+    }
+
+    private func clampedWidth(_ width: CGFloat, mainFrame: NSRect) -> CGFloat {
+        min(max(width, ProgressPanelAppearance.defaultMinWidth), max(ProgressPanelAppearance.defaultMinWidth, mainFrame.width - 48))
+    }
+
+    private func clampedHeight(_ height: CGFloat, mainFrame: NSRect) -> CGFloat {
+        min(max(height, ProgressPanelAppearance.defaultMinHeight), max(ProgressPanelAppearance.defaultMinHeight, mainFrame.height - 80))
+    }
+
     // MARK: - Clamp Panel to Main Window
     private func clampPanelToMainWindow() {
         guard let panel else { return }
@@ -517,8 +582,16 @@ final class ProgressPanel: NSObject {
         let availableHeight = max(ProgressPanelAppearance.defaultMinHeight, (mainFrame?.height ?? 520) - 80)
         let targetWidth = min(panel.frame.width, min(availableWidth, 760))
         let targetHeight = min(panel.frame.height, min(availableHeight, 520))
-        guard targetWidth != panel.frame.width || targetHeight != panel.frame.height else { return }
-        panel.setFrame(NSRect(x: panel.frame.minX, y: panel.frame.minY, width: targetWidth, height: targetHeight), display: false)
+        let current = panel.frame
+        let minX = mainFrame?.minX ?? current.minX
+        let minY = mainFrame?.minY ?? current.minY
+        let maxX = (mainFrame?.maxX ?? current.maxX) - targetWidth
+        let maxY = (mainFrame?.maxY ?? current.maxY) - targetHeight
+        let targetX = min(max(current.minX, minX), maxX)
+        let targetY = min(max(current.minY, minY), maxY)
+        let targetFrame = NSRect(x: targetX, y: targetY, width: targetWidth, height: targetHeight)
+        guard targetFrame != current else { return }
+        panel.setFrame(targetFrame, display: false)
     }
 
     // MARK: - Make Label Helper
@@ -770,9 +843,14 @@ final class ProgressActionButton: NSButton {
 extension ProgressPanel: NSWindowDelegate {
     nonisolated func windowDidResize(_ notification: Notification) {
         MainActor.assumeIsolated {
-            guard let panel else { return }
-            let size = panel.frame.size
-            appearance.updateSize(width: size.width, height: size.height)
+            guard panel != nil else { return }
+            persistFrameForCurrentOperation()
+        }
+    }
+
+    nonisolated func windowDidMove(_ notification: Notification) {
+        MainActor.assumeIsolated {
+            persistFrameForCurrentOperation()
         }
     }
 

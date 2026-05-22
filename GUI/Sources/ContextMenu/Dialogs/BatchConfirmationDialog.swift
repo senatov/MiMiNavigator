@@ -43,6 +43,7 @@ struct BatchConfirmationDialog: View {
             // Title
             Text(titleText)
                 .font(.system(size: 14, weight: .light))
+                .foregroundStyle(dialogTextColor)
                 .multilineTextAlignment(.center)
             
             // Summary info
@@ -58,15 +59,16 @@ struct BatchConfirmationDialog: View {
                             .font(.system(size: 12))
                     }
                 }
-                .foregroundStyle(.secondary)
+                .foregroundStyle(dialogTextColor)
                 
                 // Total size
                 HStack {
                     Text("Total size:")
                         .font(.system(size: 12))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(dialogTextColor)
                     Text(totalSize)
                         .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(dialogTextColor)
                 }
                 
                 // Destination (for copy/move)
@@ -74,9 +76,10 @@ struct BatchConfirmationDialog: View {
                     HStack(alignment: .top) {
                         Text("To:")
                             .font(.system(size: 12))
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(dialogTextColor)
                         Text(dest.path)
                             .font(.system(size: 12))
+                            .foregroundStyle(dialogTextColor)
                             .lineLimit(2)
                             .truncationMode(.middle)
                     }
@@ -85,9 +88,10 @@ struct BatchConfirmationDialog: View {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Recursive delete")
                             .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(dialogTextColor)
                         Text(deleteEstimateText)
                             .font(.system(size: 11))
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(dialogTextColor)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                     .padding(.top, 4)
@@ -106,21 +110,22 @@ struct BatchConfirmationDialog: View {
                                 HStack(spacing: 6) {
                                     Image(systemName: file.isDirectory ? "folder.fill" : "doc.fill")
                                         .font(.system(size: 10))
-                                        .foregroundStyle(.secondary)
+                                        .foregroundStyle(dialogTextColor)
                                     Text(file.nameStr)
                                         .font(.system(size: 11))
+                                        .foregroundStyle(dialogTextColor)
                                         .lineLimit(1)
                                         .truncationMode(.middle)
                                     Spacer()
                                     Text(file.fileSizeFormatted)
                                         .font(.system(size: 10))
-                                        .foregroundStyle(.secondary)
+                                        .foregroundStyle(dialogTextColor)
                                 }
                             }
                             if files.count > 50 {
                                 Text("... and \(files.count - 50) more")
                                     .font(.system(size: 11))
-                                    .foregroundStyle(.secondary)
+                                    .foregroundStyle(dialogTextColor)
                                     .padding(.top, 4)
                             }
                         }
@@ -135,7 +140,7 @@ struct BatchConfirmationDialog: View {
                 label: {
                     Text("Show files")
                         .font(.system(size: 12))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(dialogTextColor)
                 }
             )
             .padding(.horizontal, 8)
@@ -144,14 +149,15 @@ struct BatchConfirmationDialog: View {
             
             // Buttons
             HStack(spacing: 12) {
-                HIGSecondaryButton(title: L10n.Button.cancel, action: onCancel)
+                Button(L10n.Button.cancel, action: onCancel)
+                    .buttonStyle(ThemedButtonStyle())
+                    .controlSize(.large)
                     .keyboardShortcut(.cancelAction)
                 
-                HIGPrimaryButton(
-                    title: confirmButtonTitle,
-                    action: onConfirm,
-                    isDestructive: operationType == .delete
-                )
+                Button(confirmButtonTitle, action: onConfirm)
+                    .buttonStyle(ThemedButtonStyle())
+                    .tint(operationType == .delete ? .red : .accentColor)
+                    .controlSize(.large)
                 .keyboardShortcut(.defaultAction)
                 .disabled(operationType == .delete && directoriesCount > 0 && deleteEstimate == nil)
             }
@@ -211,6 +217,10 @@ struct BatchConfirmationDialog: View {
         case .delete: return L10n.Button.delete
         case .pack: return L10n.Button.create
         }
+    }
+
+    private var dialogTextColor: Color {
+        Color(nsColor: .systemBlue).opacity(0.9)
     }
 
     private var deleteEstimateText: String {
