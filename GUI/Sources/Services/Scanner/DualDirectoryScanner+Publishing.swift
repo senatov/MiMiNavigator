@@ -91,7 +91,10 @@ extension DualDirectoryScanner {
         var transferred = 0
         for file in newFiles {
             guard file.isDirectory, let old = lookup[file.pathStr] else { continue }
-            if file.cachedDirectorySize == nil, let oldSize = old.cachedDirectorySize {
+            if file.cachedDirectorySize == nil,
+               let oldSize = old.cachedDirectorySize,
+               oldSize != DirectorySizeService.unavailableSize
+            {
                 file.cachedDirectorySize = oldSize
                 transferred += 1
             }

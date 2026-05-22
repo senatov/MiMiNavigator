@@ -38,9 +38,6 @@ enum PanelBackgroundAction: String, CaseIterable, Identifiable {
     case mirrorPath
     case openMarkedOnOtherPanel
 
-    // Info
-    case getInfo
-
     // Favorites
     case addToFavorites
 
@@ -65,7 +62,6 @@ enum PanelBackgroundAction: String, CaseIterable, Identifiable {
         case .console: return "Console"
         case .mirrorPath: return "Mirror Panel"
         case .openMarkedOnOtherPanel: return "Open Marked Dir on Other Panel"
-        case .getInfo: return "Get Info"
         case .addToFavorites: return "Add to Favorites"
         }
     }
@@ -89,7 +85,6 @@ enum PanelBackgroundAction: String, CaseIterable, Identifiable {
         case .console: return "terminal"
         case .mirrorPath: return "arrow.left.arrow.right.square"
         case .openMarkedOnOtherPanel: return "folder.badge.arrow.right"
-        case .getInfo: return "info.circle"
         case .addToFavorites: return "star.fill"
         }
     }
@@ -104,7 +99,6 @@ enum PanelBackgroundAction: String, CaseIterable, Identifiable {
         case .paste: return "⌘V"
         case .copyAsPathname: return "⌥⌘C"
         case .mirrorPath: return "⌘="
-        case .getInfo: return "⌘I"
         default: return nil
         }
     }

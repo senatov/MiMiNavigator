@@ -28,6 +28,14 @@ enum FileOpType: String, Sendable {
         case .delete: return L10n.BatchOperation.deleted
         }
     }
+
+    var systemImage: String {
+        switch self {
+        case .copy: return "doc.on.doc"
+        case .move: return "arrow.right.doc.on.clipboard"
+        case .delete: return "trash"
+        }
+    }
 }
 
 // MARK: - Strategy

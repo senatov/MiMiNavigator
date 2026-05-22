@@ -18,7 +18,7 @@ extension CntMenuCoord {
     /// Batch-compatible actions (cut/copy/compress/pack/share/delete)
     /// use filesForOperation() to include all marked files when present.
     /// Single-file actions (open/openInNewTab/openInFinder/openInTerminal/viewLister/
-    /// rename/getInfo/duplicate/createLink) always operate on the clicked directory only.
+    /// rename/duplicate/createLink) always operate on the clicked directory only.
     func handleDirectoryAction(_ action: DirectoryAction, for file: CustomFile, panel: FavPanelSide, appState: AppState) {
         let batchFiles = appState.filesForOperation(on: panel)
         log.debug("\(#function) action=\(action.rawValue) dir='\(file.nameStr)' panel=\(panel) batchCount=\(batchFiles.count)")
@@ -44,8 +44,6 @@ extension CntMenuCoord {
                 beginInlineRename(file: file, panel: panel, appState: appState)
             case .createLink:
                 presentCreateLinkDialog(for: file, panel: panel, appState: appState)
-            case .getInfo:
-                GetInfoService.shared.showGetInfo(for: file.urlValue)
             case .cut:
                 clipboard.cut(files: batchFiles, from: panel)
             case .copy:

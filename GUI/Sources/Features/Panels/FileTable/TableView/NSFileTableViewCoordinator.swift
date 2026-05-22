@@ -256,11 +256,7 @@ class Coordinator: NSObject, NSTableViewDelegate, NSTableViewDataSource, NSMenuD
         }
         menu.addItem(NSMenuItem.separator())
 
-        // SECTION 6: Info
-        addMenuItem(menu, title: "Get Info", action: #selector(menuGetInfo), key: "i", icon: "info.circle")
-        menu.addItem(NSMenuItem.separator())
-
-        // SECTION 7: Favorites
+        // SECTION 6: Favorites
         addMenuItem(menu, title: "Add to Favorites", action: #selector(menuAddToFavorites), key: "", icon: "star")
 
         // (Removed passive hint at end)
@@ -313,15 +309,11 @@ class Coordinator: NSObject, NSTableViewDelegate, NSTableViewDataSource, NSMenuD
         }
         menu.addItem(NSMenuItem.separator())
 
-        // SECTION 5: Info
-        addMenuItem(menu, title: "Get Info", action: #selector(menuGetInfo), key: "i", icon: "info.circle")
-        menu.addItem(NSMenuItem.separator())
-
-        // SECTION 6: Cross-panel
+        // SECTION 5: Cross-panel
         addMenuItem(menu, title: "Open on Other Panel", action: #selector(menuOpenOnOtherPanel), key: "", icon: "rectangle.split.2x1")
         menu.addItem(NSMenuItem.separator())
 
-        // SECTION 7: Favorites
+        // SECTION 6: Favorites
         addMenuItem(menu, title: "Add to Favorites", action: #selector(menuAddToFavorites), key: "", icon: "star")
     }
 
@@ -519,11 +511,6 @@ class Coordinator: NSObject, NSTableViewDelegate, NSTableViewDataSource, NSMenuD
             let diagnostic = FileOperationDiagnostics.makeDelete(source: file.urlValue, error: error)
             FileOperationDiagnosticPresenter.shared.show(diagnostic)
         }
-    }
-
-    @objc private func menuGetInfo() {
-        guard let file = clickedFile else { return }
-        NSWorkspace.shared.activateFileViewerSelecting([file.urlValue])
     }
 
     @objc private func menuOpenOnOtherPanel() {

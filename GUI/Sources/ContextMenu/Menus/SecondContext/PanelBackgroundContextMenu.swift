@@ -88,9 +88,8 @@ struct PanelBackgroundContextMenu: View {
             Divider()
             
             // ═══════════════════════════════════════════
-            // SECTION 6: Info & Favorites
+            // SECTION 6: Favorites
             // ═══════════════════════════════════════════
-            menuButton(.getInfo)
             menuButton(.addToFavorites)
 
         }

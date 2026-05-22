@@ -183,6 +183,25 @@ final class ProgressPanel: NSObject {
     func finish(success: Bool, details: String?) {
         finish(success: success, message: details)
     }
+
+    // MARK: - Suspend for User Decision
+    func suspendForUserDecision() {
+        guard let panel, panel.isVisible else { return }
+        if let parent = panel.parent {
+            parent.removeChildWindow(panel)
+        }
+        panel.orderOut(nil)
+    }
+
+    // MARK: - Resume after User Decision
+    func resumeAfterUserDecision() {
+        guard let panel, panel.isVisible == false else { return }
+        clampPanelToMainWindow()
+        centerInMainWindow()
+        attachPanelToMainWindow(panel)
+        animatePanelIn(panel)
+    }
+
     // MARK: - Hide
     func hide() {
         guard let panel, panel.isVisible else { return }

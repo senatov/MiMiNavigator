@@ -46,8 +46,6 @@ extension CntMenuCoord {
                 mirrorPathToOtherPanel(panel, appState: appState)
             case .openMarkedOnOtherPanel:
                 openFirstMarkedDirectoryOnOtherPanel(panel, appState: appState)
-            case .getInfo:
-                GetInfoService.shared.showGetInfo(for: currentPath)
             case .copyAsPathname:
                 copyCurrentPathToPasteboard(currentPath)
             case .addToFavorites:

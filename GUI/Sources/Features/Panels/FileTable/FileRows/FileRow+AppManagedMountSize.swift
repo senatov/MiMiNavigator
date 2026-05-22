@@ -13,7 +13,7 @@ extension FileRow {
 
     // MARK: - Metadata task
     func runAppManagedMountMetadataTask(for url: URL) async {
-        let sizeResolved = file.cachedShallowSize != nil || file.cachedDirectorySize == DirectorySizeService.unavailableSize
+        let sizeResolved = file.cachedShallowSize != nil || file.cachedDirectorySize != nil
         if file.cachedChildCount != nil && sizeResolved {
             file.sizeCalculationStarted = false
             return
@@ -22,7 +22,6 @@ extension FileRow {
         let targetURL = resolvedDirectorySizeTargetURL(from: url)
         guard let metadata = await AppManagedMountMetadataProbe.partialMetadata(for: targetURL) else {
             log.debug("[FileRow] app-managed network mount metadata skipped for '\(file.nameStr)' path='\(targetURL.path)'")
-            file.cachedDirectorySize = DirectorySizeService.unavailableSize
             file.sizeIsExact = false
             file.sizeCalculationStarted = false
             return
@@ -30,8 +29,10 @@ extension FileRow {
         if let childCount = metadata.childCount {
             file.cachedChildCount = childCount
         }
-        file.cachedShallowSize = metadata.partialSize
-        file.cachedDirectorySize = metadata.partialSize == nil ? DirectorySizeService.unavailableSize : nil
+        if let partialSize = metadata.partialSize {
+            file.cachedShallowSize = partialSize
+            file.cachedDirectorySize = nil
+        }
         file.sizeIsExact = false
         file.sizeCalculationStarted = false
         appState.bumpFilesVersion(for: panelSide)

@@ -147,8 +147,6 @@ struct DirectoryContextMenu: View {
             }
             Divider()
             menuButton(.delete)
-            Divider()
-            menuButton(.getInfo)
         } label: {
             Label {
                 Text("􀉒 Folder Operations")

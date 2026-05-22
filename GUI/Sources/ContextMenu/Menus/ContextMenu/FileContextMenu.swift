@@ -85,8 +85,8 @@ struct FileContextMenu: View {
         .edit,
         .operations,
         .navigation,
-        .info,
         .favorites,
+        .info,
     ]
 
     private let userFavorites = UserFavoritesStore.shared
@@ -348,7 +348,6 @@ struct FileContextMenu: View {
     @ViewBuilder
     private var infoSection: some View {
         menuButton(.getInfo)
-        sectionDivider(after: .info)
     }
 
     @ViewBuilder

@@ -23,7 +23,7 @@ final class FileOpsEngine {
         static func fail(_ diagnostic: FileOperationDiagnosticInfo) -> IOResult { IOResult(bytes: 0, diagnostic: diagnostic) }
     }
 
-    let panel = FileOpProgressPanel.shared
+    let panel = ProgressPanel.shared
     let fm = FileManager.default
     let maxConcurrency = 5
 

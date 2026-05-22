@@ -89,26 +89,39 @@ final class FileOpProgress {
 
     func setCurrentFile(_ name: String) {
         currentFileName = name
+        ProgressPanel.shared.updateStatus("\(operationType.title) \(processedFiles + 1) / \(totalFiles): \(name)")
+        ProgressPanel.shared.updateProgress(fraction)
     }
 
     func add(bytes: Int64) {
         processedBytes += bytes
+        ProgressPanel.shared.updateProgress(fraction)
     }
 
     func fileCompleted(name: String, success: Bool, error: String? = nil) {
         processedFiles += 1
         if !success, let err = error {
             errors.append(FileOpErrorInfo(fileName: name, error: err))
+            ProgressPanel.shared.appendLog("Failed: \(name) - \(err)")
+        } else {
+            ProgressPanel.shared.appendLog("\(operationType.pastTense.capitalized): \(name)")
         }
+        ProgressPanel.shared.updateStatus(statusText)
+        ProgressPanel.shared.updateProgress(fraction)
     }
 
     func fileSkipped(name: String) {
         skippedFiles += 1
+        ProgressPanel.shared.appendLog("Skipped: \(name)")
+        ProgressPanel.shared.updateStatus(statusText)
+        ProgressPanel.shared.updateProgress(fraction)
     }
 
     func cancel() {
         isCancelled = true
         endTime = Date()
+        ProgressPanel.shared.appendLog("Cancelled by user")
+        ProgressPanel.shared.finish(success: false, message: "Cancelled")
         log.info("[FileOpProgress] cancelled at \(processedFiles)/\(totalFiles)")
     }
 
@@ -116,7 +129,13 @@ final class FileOpProgress {
         guard !isCancelled else { return }
         isCompleted = true
         endTime = Date()
+        ProgressPanel.shared.finish(success: errors.isEmpty, message: completionSummary)
         log.info("[FileOpProgress] done: \(processedFiles) ok, \(skippedFiles) skipped, \(errors.count) errs, \(String(format: "%.1f", elapsed))s")
+    }
+
+    func appendStep(_ text: String) {
+        ProgressPanel.shared.appendLog(text)
+        ProgressPanel.shared.updateStatus(text)
     }
 }
 

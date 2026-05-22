@@ -18,13 +18,15 @@ extension FileOpsEngine {
 
 
     func showPanel(progress: FileOpProgress, itemCount: Int, operation: String = "items") {
-        log.info("[FileOpsEngine] scheduling panel for \(itemCount) \(operation)")
-        Task { @MainActor in
-            try? await Task.sleep(nanoseconds: 200_000_000)
-            guard !progress.isCompleted, !progress.isCancelled else { return }
-            panel.hideKeepingSuspendState()
-            panel.show(progress: progress)
-        }
+        log.info("[FileOpsEngine] showing ProgressPanel for \(itemCount) \(operation)")
+        panel.show(
+            icon: progress.operationType.systemImage,
+            title: progress.operationType.title,
+            status: "\(itemCount) item(s)",
+            cancelHandler: { progress.cancel() }
+        )
+        panel.updateProgress(nil)
+        panel.appendLog("Starting \(progress.operationType.title.lowercased()): \(itemCount) item(s)")
     }
 
 

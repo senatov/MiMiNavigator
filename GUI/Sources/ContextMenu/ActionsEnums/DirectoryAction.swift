@@ -34,8 +34,6 @@ enum DirectoryAction: String, CaseIterable, Identifiable {
     // Danger zone
     case delete
     
-    // Info section
-    case getInfo
     // Create
     case newFolder
     case newFile
@@ -72,7 +70,6 @@ enum DirectoryAction: String, CaseIterable, Identifiable {
         case .createLink: return "Make Alias"
         case .share: return "Share..."
         case .delete: return "Move to Trash"
-        case .getInfo: return "Get Info"
         case .newFolder: return "New Folder"
         case .newFile: return "New File"
         case .openOnOtherPanel: return "Open on Other Panel"
@@ -103,7 +100,6 @@ enum DirectoryAction: String, CaseIterable, Identifiable {
         case .createLink: return "link"
         case .share: return "square.and.arrow.up"
         case .delete: return "trash"
-        case .getInfo: return "info.circle"
         case .newFolder: return "folder.badge.plus"
         case .newFile: return "doc.badge.plus"
         case .openOnOtherPanel: return "arrow.left.arrow.right.square"
@@ -126,7 +122,6 @@ enum DirectoryAction: String, CaseIterable, Identifiable {
         case .duplicate: return "⌘D"
         case .rename: return "F2"
         case .delete: return "⌘⌫"
-        case .getInfo: return "⌘I"
         case .newFolder: return "⇧⌘N"
         case .mirrorPanel: return "⌘="
         default: return nil
