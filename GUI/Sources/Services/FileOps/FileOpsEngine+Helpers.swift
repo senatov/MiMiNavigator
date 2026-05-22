@@ -84,13 +84,9 @@ extension FileOpsEngine {
 extension FileOpsEngine {
 
     func recordFailure(_ diagnostic: FileOperationDiagnosticInfo, progress: FileOpProgress) {
-        let shouldPresentModal = progress.errors.isEmpty
         let fileName = URL(fileURLWithPath: diagnostic.path).lastPathComponent
         progress.fileCompleted(name: fileName, success: false, error: diagnostic.progressMessage)
         log.error("[FileOpsEngine] \(diagnostic.details.replacingOccurrences(of: "\n", with: " | "))")
-        if shouldPresentModal {
-            FileOperationDiagnosticPresenter.shared.show(diagnostic)
-        }
     }
 
 
