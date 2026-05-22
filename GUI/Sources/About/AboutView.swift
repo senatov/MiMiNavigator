@@ -183,12 +183,6 @@ struct AboutView: View {
                     license: "MIT"
                 )
                 libraryRow(
-                    name: "ZIPFoundation",
-                    description: "ZIP archive handling library",
-                    url: "https://github.com/weichsel/ZIPFoundation",
-                    license: "MIT"
-                )
-                libraryRow(
                     name: "nmap",
                     description: "Network diagnostics and discovery reference tool",
                     url: "https://nmap.org",

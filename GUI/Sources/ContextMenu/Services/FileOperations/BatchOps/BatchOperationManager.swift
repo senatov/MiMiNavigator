@@ -60,6 +60,9 @@ final class BatchOperationManager {
         do {
             let progress = try await engine.move(items: urls, to: destination)
             if progress.errors.isEmpty && !progress.isCancelled {
+                for file in files {
+                    await ArchiveManager.shared.markDirtyByTempPath(file.pathStr)
+                }
                 appState.clearMarksAfterOperation(on: sourcePanel)
             }
         } catch {
@@ -163,4 +166,3 @@ final class BatchOperationManager {
         }
     }
 }
-

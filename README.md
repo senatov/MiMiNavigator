@@ -545,7 +545,6 @@ Sincere thanks to the open-source community:
 |--------|---------|---------|----------------|
 | Sebastian Kreutzberger | [SwiftyBeaver](https://github.com/SwiftyBeaver/SwiftyBeaver) | MIT | Clean, fast, low-friction logging that simply works |
 | Joannis Orlandos | [Citadel](https://github.com/orlandos-nl/Citadel) | MIT | An excellent SSH/SFTP library that fills an important gap not covered by SwiftNIO SSH |
-| Thomas Zoechling | [ZIPFoundation](https://github.com/weichsel/ZIPFoundation) | MIT | A strong example of clean Swift API design and a likely future dependency |
 | The Nmap Project | [nmap](https://nmap.org) | GPLv2 | The gold standard in network diagnostics, invaluable during LAN discovery development |
 | Apple | SwiftNIO, SwiftUI, kqueue, NetServiceBrowser | Apple licenses | Making macOS-native development a genuine pleasure |
 

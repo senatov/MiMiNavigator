@@ -283,12 +283,6 @@ actor ArchiveManager {
             sessions[key]?.isDirty = session.isDirty || scanForChanges(in: session)
         }
         if (sessions[key]?.isDirty ?? false) && repackIfDirty {
-            // Detect empty archive before repacking
-            let contents = (try? fm.contentsOfDirectory(atPath: session.tempDirectory.path)) ?? []
-            if contents.isEmpty {
-                log.error("[ArchiveManager] Archive became empty after modifications: \(archiveURL.lastPathComponent)")
-                throw ArchiveManagerError.extractionFailed("Archive is empty after modifications")
-            }
             log.info("[ArchiveManager] Repacking: \(archiveURL.lastPathComponent)")
             try await ArchiveRepacker.repack(session: session)
         }

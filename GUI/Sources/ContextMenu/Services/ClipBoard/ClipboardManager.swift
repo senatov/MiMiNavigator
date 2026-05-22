@@ -74,7 +74,12 @@ final class ClipboardManager {
                 progress = try await engine.copy(items: files, to: destination)
             case .cut:
                 progress = try await engine.move(items: files, to: destination)
-                if !progress.isCancelled { clear() }
+                if progress.errors.isEmpty && !progress.isCancelled {
+                    for file in files {
+                        await ArchiveManager.shared.markDirtyByTempPath(file.path)
+                    }
+                    clear()
+                }
             case .none:
                 return .failure(FileOpsError.operationFailed("No operation specified"))
             }
