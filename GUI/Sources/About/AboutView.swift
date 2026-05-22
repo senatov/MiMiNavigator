@@ -177,12 +177,6 @@ struct AboutView: View {
                     license: "MIT"
                 )
                 libraryRow(
-                    name: "FileProvider",
-                    description: "Cloud & network file access",
-                    url: "https://github.com/amosavian/FileProvider",
-                    license: "MIT"
-                )
-                libraryRow(
                     name: "Citadel",
                     description: "SSH/SFTP client library",
                     url: "https://github.com/orlandos-nl/Citadel",
@@ -195,28 +189,10 @@ struct AboutView: View {
                     license: "MIT"
                 )
                 libraryRow(
-                    name: "VLC",
-                    description: "Swift package wrapper for libVLC",
-                    url: "https://github.com/omaralbeik/VLC",
-                    license: "MIT"
-                )
-                libraryRow(
-                    name: "libVLC / VLC",
-                    description: "Playback engine for extended media format support",
-                    url: "https://www.videolan.org",
-                    license: "LGPL v2+"
-                )
-                libraryRow(
                     name: "nmap",
                     description: "Network diagnostics and discovery reference tool",
                     url: "https://nmap.org",
                     license: "GPLv2"
-                )
-                libraryRow(
-                    name: "Swift System",
-                    description: "Low-level system interfaces",
-                    url: "https://github.com/apple/swift-system",
-                    license: "Apache 2.0"
                 )
             }
         }

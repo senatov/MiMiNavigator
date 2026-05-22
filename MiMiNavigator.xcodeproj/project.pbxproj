@@ -7,13 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		970978BE2F8C3BBB00C0BE9D /* VLC in Frameworks */ = {isa = PBXBuildFile; productRef = 970978BD2F8C3BBB00C0BE9D /* VLC */; };
 		976FEA882D49C8C70078EA90 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 976FEA872D49C8C70078EA90 /* README.md */; };
-		97B3D6382DCA54B9002F1DB7 /* SystemPackage in Frameworks */ = {isa = PBXBuildFile; productRef = 97B3D6372DCA54B9002F1DB7 /* SystemPackage */; };
 		97B6C2A72F637D1F00578130 /* FileModelKit in Frameworks */ = {isa = PBXBuildFile; productRef = BB000011BB000011BB000011 /* FileModelKit */; };
 		97B6C2A82F637D1F00578130 /* ScannerKit in Frameworks */ = {isa = PBXBuildFile; productRef = BB000012BB000012BB000012 /* ScannerKit */; };
 		97B6C2A92F637D1F00578130 /* ArchiveKit in Frameworks */ = {isa = PBXBuildFile; productRef = BB000013BB000013BB000013 /* ArchiveKit */; };
-		97D128762DB62DD400274684 /* FilesProvider in Frameworks */ = {isa = PBXBuildFile; productRef = 97D128752DB62DD400274684 /* FilesProvider */; };
 		97D9156C2CD5625D00EB5FDD /* SwiftyBeaver in Frameworks */ = {isa = PBXBuildFile; productRef = 97D9156B2CD5625D00EB5FDD /* SwiftyBeaver */; };
 		97ECF2AD2F224FA5005A6EFB /* FavoritesKit in Frameworks */ = {isa = PBXBuildFile; productRef = 971A28F82F1B140900094ADE /* FavoritesKit */; };
 		AA000003AA000003AA000003 /* LogKit in Frameworks */ = {isa = PBXBuildFile; productRef = AA000002AA000002AA000002 /* LogKit */; };
@@ -103,11 +100,8 @@
 				AA000003AA000003AA000003 /* LogKit in Frameworks */,
 				BB000003BB000003BB000003 /* (null) in Frameworks */,
 				DD000003DD000003DD000003 /* (null) in Frameworks */,
-				970978BE2F8C3BBB00C0BE9D /* VLC in Frameworks */,
 				EE000003EE000003EE000003 /* (null) in Frameworks */,
 				97D9156C2CD5625D00EB5FDD /* SwiftyBeaver in Frameworks */,
-				97B3D6382DCA54B9002F1DB7 /* SystemPackage in Frameworks */,
-				97D128762DB62DD400274684 /* FilesProvider in Frameworks */,
 				CC000003CC000003CC000003 /* Citadel in Frameworks */,
 				DD000014DD000014DD000014 /* RenameKit in Frameworks */,
 			);
@@ -167,8 +161,6 @@
 			buildRules = (
 			);
 			dependencies = (
-				97B47D5F2DD1265B0017B126 /* PBXTargetDependency */,
-				97B47D5D2DD126570017B126 /* PBXTargetDependency */,
 				97D915692CD5624900EB5FDD /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
@@ -176,8 +168,6 @@
 			);
 			name = MiMiNavigator;
 			packageProductDependencies = (
-				97D128752DB62DD400274684 /* FilesProvider */,
-				97B3D6372DCA54B9002F1DB7 /* SystemPackage */,
 				971A28F82F1B140900094ADE /* FavoritesKit */,
 				52D4533F441E4D78BD910304 /* NetworkKit */,
 				AA000002AA000002AA000002 /* LogKit */,
@@ -185,7 +175,6 @@
 				BB000011BB000011BB000011 /* FileModelKit */,
 				BB000012BB000012BB000012 /* ScannerKit */,
 				BB000013BB000013BB000013 /* ArchiveKit */,
-				970978BD2F8C3BBB00C0BE9D /* VLC */,
 				DD000015DD000015DD000015 /* RenameKit */,
 			);
 			productName = MiMiNavigator;
@@ -262,8 +251,6 @@
 			mainGroup = 97AD1A252C624E020045C38D;
 			packageReferences = (
 				97D915672CD5621500EB5FDD /* XCRemoteSwiftPackageReference "SwiftyBeaver" */,
-				97D128732DB62CB400274684 /* XCRemoteSwiftPackageReference "FileProvider" */,
-				97B3D6362DCA54A2002F1DB7 /* XCRemoteSwiftPackageReference "swift-system" */,
 				971A28F72F1B140900094ADE /* XCLocalSwiftPackageReference "Packages/FavoritesKit" */,
 				9727CDA52F477FF400C4E234 /* XCLocalSwiftPackageReference "Packages/NetworkKit" */,
 				AA000001AA000001AA000001 /* XCLocalSwiftPackageReference "Packages/LogKit" */,
@@ -272,7 +259,6 @@
 				BB000004BB000004BB000004 /* XCLocalSwiftPackageReference "Packages/ArchiveKit" */,
 				CC000001CC000001CC000001 /* XCRemoteSwiftPackageReference "Citadel" */,
 				DD000016DD000016DD000016 /* XCLocalSwiftPackageReference "Packages/RenameKit" */,
-				970978BB2F8C341800C0BE9D /* XCRemoteSwiftPackageReference "VLC" */,
 			);
 			preferredProjectObjectVersion = 90;
 			productRefGroup = 97AD1A2F2C624E020045C38D /* Products */;
@@ -333,14 +319,6 @@
 			isa = PBXTargetDependency;
 			target = 97AD1A2D2C624E020045C38D /* MiMiNavigator */;
 			targetProxy = 97AD1A4C2C624E040045C38D /* PBXContainerItemProxy */;
-		};
-		97B47D5D2DD126570017B126 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			productRef = 97B47D5C2DD126570017B126 /* FilesProvider */;
-		};
-		97B47D5F2DD1265B0017B126 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			productRef = 97B47D5E2DD1265B0017B126 /* SystemPackage */;
 		};
 		97D915692CD5624900EB5FDD /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -719,30 +697,6 @@
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		970978BB2F8C341800C0BE9D /* XCRemoteSwiftPackageReference "VLC" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/omaralbeik/VLC.git";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 3.6.0;
-			};
-		};
-		97B3D6362DCA54A2002F1DB7 /* XCRemoteSwiftPackageReference "swift-system" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/apple/swift-system.git";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 1.6.1;
-			};
-		};
-		97D128732DB62CB400274684 /* XCRemoteSwiftPackageReference "FileProvider" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/amosavian/FileProvider";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 0.26.0;
-			};
-		};
 		97D915672CD5621500EB5FDD /* XCRemoteSwiftPackageReference "SwiftyBeaver" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/SwiftyBeaver/SwiftyBeaver";
@@ -767,35 +721,10 @@
 			package = 9727CDA52F477FF400C4E234 /* XCLocalSwiftPackageReference "Packages/NetworkKit" */;
 			productName = NetworkKit;
 		};
-		970978BD2F8C3BBB00C0BE9D /* VLC */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 970978BB2F8C341800C0BE9D /* XCRemoteSwiftPackageReference "VLC" */;
-			productName = VLC;
-		};
 		971A28F82F1B140900094ADE /* FavoritesKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 971A28F72F1B140900094ADE /* XCLocalSwiftPackageReference "Packages/FavoritesKit" */;
 			productName = FavoritesKit;
-		};
-		97B3D6372DCA54B9002F1DB7 /* SystemPackage */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 97B3D6362DCA54A2002F1DB7 /* XCRemoteSwiftPackageReference "swift-system" */;
-			productName = SystemPackage;
-		};
-		97B47D5C2DD126570017B126 /* FilesProvider */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 97D128732DB62CB400274684 /* XCRemoteSwiftPackageReference "FileProvider" */;
-			productName = FilesProvider;
-		};
-		97B47D5E2DD1265B0017B126 /* SystemPackage */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 97B3D6362DCA54A2002F1DB7 /* XCRemoteSwiftPackageReference "swift-system" */;
-			productName = SystemPackage;
-		};
-		97D128752DB62DD400274684 /* FilesProvider */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 97D128732DB62CB400274684 /* XCRemoteSwiftPackageReference "FileProvider" */;
-			productName = FilesProvider;
 		};
 		97D915682CD5624900EB5FDD /* SwiftyBeaver */ = {
 			isa = XCSwiftPackageProductDependency;

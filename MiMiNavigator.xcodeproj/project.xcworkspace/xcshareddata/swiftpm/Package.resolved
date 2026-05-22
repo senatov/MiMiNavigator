@@ -1,5 +1,5 @@
 {
-  "originHash" : "36f84766a0e9d2f254ef9f5b544bdc8bf13bf9de82f84d312789869773b874d9",
+  "originHash" : "12a3bca8babc498424591322de4aa2903ee22acaf33d0d2cb397a3640c3b3d40",
   "pins" : [
     {
       "identity" : "bigint",
@@ -17,15 +17,6 @@
       "state" : {
         "revision" : "ae8562f895de06ccb86fdb1cbb65fd99c8976e12",
         "version" : "0.12.1"
-      }
-    },
-    {
-      "identity" : "fileprovider",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/amosavian/FileProvider",
-      "state" : {
-        "revision" : "5d31778376af168ac917e0b1e8d2c4ee64cb246c",
-        "version" : "0.26.0"
       }
     },
     {
@@ -107,15 +98,6 @@
       "state" : {
         "revision" : "8cba041db09596183331d123f337d0eb2e6e8e91",
         "version" : "2.1.1"
-      }
-    },
-    {
-      "identity" : "vlc",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/omaralbeik/VLC.git",
-      "state" : {
-        "revision" : "9ff95718f4edce0368cc095a8e44fd31ddedb71a",
-        "version" : "3.6.0"
       }
     }
   ],

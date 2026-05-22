@@ -548,8 +548,6 @@ Sincere thanks to the open-source community:
 | Thomas Zoechling | [ZIPFoundation](https://github.com/weichsel/ZIPFoundation) | MIT | A strong example of clean Swift API design and a likely future dependency |
 | The Nmap Project | [nmap](https://nmap.org) | GPLv2 | The gold standard in network diagnostics, invaluable during LAN discovery development |
 | Apple | SwiftNIO, SwiftUI, kqueue, NetServiceBrowser | Apple licenses | Making macOS-native development a genuine pleasure |
-| Omar Albeik | [VLC](https://github.com/omaralbeik/VLC) | MIT | Swift package wrapper used for extended media playback integration |
-| VideoLAN | libVLC / VLC | LGPL v2 or later | Underlying playback engine for media formats not reliably handled by the native macOS media stack |
 
 Full third-party license texts and notices should also be provided in the application bundle, About/Credits section, or in a dedicated `Licenses` / `ThirdPartyNotices` folder.
 
