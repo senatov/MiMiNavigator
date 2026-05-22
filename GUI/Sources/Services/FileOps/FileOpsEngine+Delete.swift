@@ -11,12 +11,6 @@ import Foundation
 
 extension FileOpsEngine {
 
-    private struct RecursiveDeletePlan: Sendable {
-        let files: [URL]
-        let directories: [URL]
-        var totalCount: Int { files.count + directories.count }
-    }
-
     func performDelete(items: [URL]) async throws -> FileOpProgress {
         let totalSize = calculateTotalSize(items: items)
         let progress = FileOpProgress(totalFiles: items.count, totalBytes: totalSize, type: .delete, destination: nil)
@@ -78,69 +72,8 @@ extension FileOpsEngine {
             progress.appendStep("Deleting file: \(url.lastPathComponent)")
             return await Self.removeItemOffMainActor(url)
         }
-        progress.appendStep("Scanning directory contents: \(url.lastPathComponent)")
-        let planResult = await Self.makeRecursiveDeletePlan(root: url)
-        switch planResult {
-        case .failure(let error):
-            return .failure(error)
-        case .success(let plan):
-            progress.appendStep("Found \(plan.files.count) file(s), \(max(0, plan.directories.count - 1)) subfolder(s)")
-            let total = max(1, plan.totalCount)
-            var done = 0
-            for fileURL in plan.files {
-                guard !progress.isCancelled else { return .failure(CocoaError(.userCancelled)) }
-                done += 1
-                ProgressPanel.shared.updateStatus("[\(done)/\(total)] Deleting file: \(fileURL.lastPathComponent)")
-                ProgressPanel.shared.updateProgress(Double(done) / Double(total))
-                let result = await Self.removeItemOffMainActor(fileURL)
-                if case .failure(let error) = result {
-                    return .failure(error)
-                }
-                ProgressPanel.shared.appendLog("Deleted file: \(fileURL.lastPathComponent)")
-            }
-            for directoryURL in plan.directories {
-                guard !progress.isCancelled else { return .failure(CocoaError(.userCancelled)) }
-                done += 1
-                ProgressPanel.shared.updateStatus("[\(done)/\(total)] Deleting folder: \(directoryURL.lastPathComponent)")
-                ProgressPanel.shared.updateProgress(Double(done) / Double(total))
-                let result = await Self.removeItemOffMainActor(directoryURL)
-                if case .failure(let error) = result {
-                    return .failure(error)
-                }
-                ProgressPanel.shared.appendLog("Deleted folder: \(directoryURL.lastPathComponent)")
-            }
-            return .success(())
-        }
-    }
-
-    private nonisolated static func makeRecursiveDeletePlan(root: URL) async -> Result<RecursiveDeletePlan, Error> {
-        await Task.detached(priority: .userInitiated) {
-            let fileManager = FileManager.default
-            let keys: [URLResourceKey] = [.isDirectoryKey, .isSymbolicLinkKey]
-            guard let enumerator = fileManager.enumerator(
-                at: root,
-                includingPropertiesForKeys: keys,
-                options: []
-            ) else {
-                return .failure(CocoaError(.fileReadUnknown))
-            }
-            var files: [URL] = []
-            var directories: [URL] = []
-            while let itemURL = enumerator.nextObject() as? URL {
-                let values = try? itemURL.resourceValues(forKeys: Set(keys))
-                let isDirectory = values?.isDirectory == true && values?.isSymbolicLink != true
-                if isDirectory {
-                    directories.append(itemURL)
-                } else {
-                    files.append(itemURL)
-                }
-            }
-            directories.sort {
-                $0.pathComponents.count > $1.pathComponents.count
-            }
-            directories.append(root)
-            return .success(RecursiveDeletePlan(files: files, directories: directories))
-        }.value
+        progress.appendStep("Deleting directory: \(url.lastPathComponent)")
+        return await Self.removeItemOffMainActor(url)
     }
 
     private nonisolated static func removeItemOffMainActor(_ url: URL) async -> Result<Void, Error> {

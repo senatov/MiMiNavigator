@@ -13,7 +13,7 @@ import Foundation
 enum ConflictResolution: Equatable {
     /// skip the conflicting file, keep existing
     case skip
-    /// keep both — rename incoming with suffix
+    /// save the incoming file under a unique name, leaving the destination file untouched
     case keepBoth
     /// replace existing with incoming
     case replace

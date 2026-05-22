@@ -3,7 +3,7 @@
 //
 // Created by Iakov Senatov on 27.01.2026.
 // Copyright © 2026 Senatov. All rights reserved.
-// Description: Generates unique file names for "Keep Both" resolution
+// Description: Generates unique file names for "Save as Copy" conflict resolution
 
 import Foundation
 

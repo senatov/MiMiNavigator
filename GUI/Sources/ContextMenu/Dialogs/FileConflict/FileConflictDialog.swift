@@ -44,7 +44,7 @@ private extension FileConflictDialog {
                 .foregroundStyle(.yellow)
                 .shadow(color: .orange.opacity(0.3), radius: 2, y: 1)
             VStack(alignment: .leading, spacing: 2) {
-                Text("Replace file?")
+                Text("File already exists")
                     .font(.system(size: 14, weight: .semibold))
                 Text("A file named \"\(conflict.targetName)\" already exists in the destination.")
                     .font(.system(size: 12))
@@ -61,7 +61,7 @@ private extension FileConflictDialog {
 
     var contentSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Choose what to do with the incoming file.")
+            Text("Choose how to handle the incoming file.")
                 .font(.system(size: 12))
                 .foregroundStyle(.secondary)
             HStack(alignment: .top, spacing: 12) {
@@ -84,7 +84,7 @@ private extension FileConflictDialog {
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
             comparisonBadge
-            Text("Replace Existing overwrites the destination file with the incoming file.")
+            Text("Save as Copy keeps the destination file and writes the incoming file under a new name.")
                 .font(.system(size: 11))
                 .foregroundStyle(.secondary)
         }
@@ -126,13 +126,13 @@ private extension FileConflictDialog {
             ConflictButton(title: "Cancel", action: { resolve(.stop) })
             Spacer()
             Toggle(isOn: $applyToAll) {
-                Text("For all")
+                Text("Apply to remaining")
                     .font(.system(size: 12))
             }
             .toggleStyle(.checkbox)
             .help("Use the selected action for the remaining conflicts without showing this dialog again.")
-            ConflictButton(title: "Skip", action: { resolve(.skip) })
-            ConflictButton(title: "Keep Both", action: { resolve(.keepBoth) })
+            ConflictButton(title: "Skip Incoming", action: { resolve(.skip) })
+            ConflictButton(title: "Save as Copy", action: { resolve(.keepBoth) })
             ConflictButton(title: "Replace Existing", isPrimary: true, action: { resolve(.replace) })
         }
         .padding(12)

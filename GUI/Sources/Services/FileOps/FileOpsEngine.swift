@@ -44,8 +44,7 @@ extension FileOpsEngine {
     @discardableResult
     func copy(items: [URL], to destination: URL) async throws -> FileOpProgress {
         log.info("[FileOpsEngine] copy \(items.count) items → \(destination.path)")
-        let plan = await buildPlan(items: items, destination: destination)
-        return try await executeWithPanel(plan: plan, operation: .copy)
+        return try await performCopy(items: items, to: destination)
     }
 
 

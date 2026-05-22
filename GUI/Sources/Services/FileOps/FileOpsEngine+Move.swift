@@ -28,6 +28,10 @@ extension FileOpsEngine {
             progress.setCurrentFile(item.lastPathComponent)
             if await tryAtomicMove(from: item, to: target) {
                 progress.fileCompleted(name: item.lastPathComponent, success: true)
+            } else if isDirectory(url: item) {
+                _ = await executeOpaqueDirectory(
+                    source: item, target: target,
+                    size: fileSize(url: item), operation: .move, progress: progress)
             } else {
                 let plan = await buildPlan(items: [item], destination: destination)
                 try await executeFewLarge(plan: plan, operation: .move, progress: progress)

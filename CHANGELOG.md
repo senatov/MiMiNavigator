@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **Conflict dialog wording** — renamed `Keep Both` to `Save as Copy` and changed the dialog copy to explain that the destination file is preserved while the incoming file receives a unique name.
+- **Directory operation policy** — copy/move now treats selected top-level directories as opaque items through system file operations; app-managed remote mount directory deletes now remove the directory root in one operation.
+
 ## [0.9.9.0] — 2026-05-15
 
 > **Release notes**

@@ -53,7 +53,7 @@ struct ConflictButton: View {
 
 // MARK: - Preview
 #Preview("Primary Button") {
-    ConflictButton(title: "Keep Both", isPrimary: true, action: {})
+    ConflictButton(title: "Save as Copy", isPrimary: true, action: {})
         .padding()
 }
 

@@ -39,6 +39,8 @@
 
 ## Recent Changes (v0.9.9.2 - May 2026)
 
+- **Copy/move conflict wording** — the old `Keep Both` action is now labeled `Save as Copy`: the destination file stays untouched and the incoming file is written under a unique name such as `name (2).ext`.
+- **Directory operation policy** — top-level directories are copied or moved as whole items through `FileManager.copyItem` / `moveItem` instead of being expanded into per-file batches; local deletes use Trash, remote deletes remove directly.
 - **Remote delete fix** — deleting files from SFTP/FTP/SMB panels now routes through the active remote provider instead of the local filesystem trash path.
 - **Connection error dialogs** — long network failures are formatted into readable summary/detail text and constrained to the app window width.
 - **Connect dialog polish** — URL-style input in the Name field now preserves the parsed host name and the dialog uses the app's custom 3D buttons with Connect as the default action.
