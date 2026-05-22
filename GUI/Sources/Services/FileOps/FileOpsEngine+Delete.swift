@@ -66,13 +66,13 @@ extension FileOpsEngine {
     }
 
     private func deleteAppManagedItem(url: URL, progress: FileOpProgress) async -> Result<Void, Error> {
-        progress.appendStep("Preparing delete: \(url.lastPathComponent)")
+        progress.updateStatusOnly("Preparing delete: \(url.lastPathComponent)")
         let isDirectory = isDirectory(url: url)
         guard isDirectory else {
-            progress.appendStep("Deleting file: \(url.lastPathComponent)")
+            progress.updateStatusOnly("Deleting file: \(url.lastPathComponent)")
             return await Self.removeItemOffMainActor(url)
         }
-        progress.appendStep("Deleting directory: \(url.lastPathComponent)")
+        progress.updateStatusOnly("Deleting directory: \(url.lastPathComponent)")
         return await Self.removeItemOffMainActor(url)
     }
 

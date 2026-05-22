@@ -53,6 +53,7 @@ final class ProgressPanel: NSObject {
     private(set) var isCancelled = false
     private var lineCount = 0
     private var onCancel: (() -> Void)?
+    private var eventMonitor: Any?
     private override init() { super.init() }
     private var appearance: ProgressPanelAppearance { .shared }
 
@@ -153,6 +154,11 @@ final class ProgressPanel: NSObject {
         }
     }
 
+    func hideProgress() {
+        progressIndicator?.stopAnimation(nil)
+        setProgressVisible(false)
+    }
+
     // MARK: - Update (preferred for live progress)
     func update(text: String) {
         guard panel?.isVisible == true else { return }
@@ -170,11 +176,12 @@ final class ProgressPanel: NSObject {
         }
         actionButton?.title = "OK"
         actionButton?.isEnabled = true
+        actionButton?.keyEquivalent = "\r"
         applyActionButtonStyle(.confirm)
-        if success {
+        if success && progressIndicator?.isHidden == false {
             updateProgress(1)
         } else {
-            progressIndicator?.stopAnimation(nil)
+            hideProgress()
         }
         onCancel = nil
         log.debug("[ProgressPanel] \(#function) success=\(success) lines=\(lineCount)")
@@ -216,6 +223,7 @@ final class ProgressPanel: NSObject {
                 Task { @MainActor in
                     parent?.removeChildWindow(panel)
                     panel.orderOut(nil)
+                    self.removeEventMonitor()
                 }
             })
     }
@@ -279,6 +287,7 @@ final class ProgressPanel: NSObject {
         setProgressVisible(false)
         logTextView?.string = ""
         actionButton?.title = "Cancel"
+        actionButton?.keyEquivalent = ""
         actionButton?.isEnabled = true
         applyActionButtonStyle(.cancel)
     }
@@ -291,6 +300,7 @@ final class ProgressPanel: NSObject {
 
     private func animatePanelIn(_ panel: NSPanel) {
         log.debug(#function)
+        installEventMonitorIfNeeded()
         panel.alphaValue = 0
         panel.makeKeyAndOrderFront(nil)
         NSAnimationContext.runAnimationGroup { ctx in
@@ -479,8 +489,8 @@ final class ProgressPanel: NSObject {
         }
         isCancelled = true
         statusLabel?.stringValue = "Cancelling... operation will stop at the next safe point"
-        appendLog("Cancel requested")
         actionButton?.title = "OK"
+        actionButton?.keyEquivalent = "\r"
         actionButton?.isEnabled = true
         applyActionButtonStyle(.confirm)
         progressIndicator?.stopAnimation(nil)
@@ -530,6 +540,43 @@ final class ProgressPanel: NSObject {
     private func setProgressVisible(_ visible: Bool) {
         progressIndicator?.isHidden = !visible
         progressHeightConstraint?.constant = visible ? Layout.progressHeight : 0
+    }
+
+    private func installEventMonitorIfNeeded() {
+        guard eventMonitor == nil else { return }
+        eventMonitor = NSEvent.addLocalMonitorForEvents(matching: [.keyDown, .leftMouseDown, .rightMouseDown]) { [weak self] event in
+            guard let self else { return event }
+            let eventType = event.type
+            let keyCode = event.keyCode
+            let windowNumber = event.window?.windowNumber
+            let keepEvent = MainActor.assumeIsolated {
+                self.handleLocalEvent(type: eventType, keyCode: keyCode, windowNumber: windowNumber)
+            }
+            return keepEvent ? event : nil
+        }
+    }
+
+    private func removeEventMonitor() {
+        guard let eventMonitor else { return }
+        NSEvent.removeMonitor(eventMonitor)
+        self.eventMonitor = nil
+    }
+
+    private func handleLocalEvent(type: NSEvent.EventType, keyCode: UInt16, windowNumber: Int?) -> Bool {
+        guard panel?.isVisible == true, actionButton?.title == "OK" else { return true }
+        if type == .keyDown {
+            let isReturn = keyCode == 36 || keyCode == 76
+            let isEscape = keyCode == 53
+            if isReturn || isEscape {
+                hide()
+                return false
+            }
+        }
+        if type == .leftMouseDown || type == .rightMouseDown {
+            guard windowNumber != panel?.windowNumber else { return true }
+            hide()
+        }
+        return true
     }
     // MARK: - Abbreviate Path
     private func abbreviatePath(_ path: String) -> String {

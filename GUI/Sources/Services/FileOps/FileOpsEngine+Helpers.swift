@@ -25,8 +25,11 @@ extension FileOpsEngine {
             status: "\(itemCount) item(s)",
             cancelHandler: { progress.cancel() }
         )
-        panel.updateProgress(nil)
-        panel.appendLog("Starting \(progress.operationType.title.lowercased()): \(itemCount) item(s)")
+        if progress.showsProgressBar {
+            panel.updateProgress(nil)
+        } else {
+            panel.hideProgress()
+        }
     }
 
 

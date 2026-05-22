@@ -76,6 +76,10 @@ final class FileOpProgress {
         return Double(totalBytes - processedBytes) * rate
     }
 
+    var showsProgressBar: Bool {
+        totalFiles > 1 || totalBytes >= 8 * 1024 * 1024
+    }
+
     // MARK: - Init
 
     init(totalFiles: Int, totalBytes: Int64, type: FileOpType = .copy, destination: URL? = nil) {
@@ -90,12 +94,12 @@ final class FileOpProgress {
     func setCurrentFile(_ name: String) {
         currentFileName = name
         ProgressPanel.shared.updateStatus("\(operationType.title) \(processedFiles + 1) / \(totalFiles): \(name)")
-        ProgressPanel.shared.updateProgress(fraction)
+        updateProgressDisplay()
     }
 
     func add(bytes: Int64) {
         processedBytes += bytes
-        ProgressPanel.shared.updateProgress(fraction)
+        updateProgressDisplay()
     }
 
     func fileCompleted(name: String, success: Bool, error: String? = nil) {
@@ -107,14 +111,14 @@ final class FileOpProgress {
             ProgressPanel.shared.appendLog("\(operationType.pastTense.capitalized): \(name)")
         }
         ProgressPanel.shared.updateStatus(statusText)
-        ProgressPanel.shared.updateProgress(fraction)
+        updateProgressDisplay()
     }
 
     func fileSkipped(name: String) {
         skippedFiles += 1
         ProgressPanel.shared.appendLog("Skipped: \(name)")
         ProgressPanel.shared.updateStatus(statusText)
-        ProgressPanel.shared.updateProgress(fraction)
+        updateProgressDisplay()
     }
 
     func cancel() {
@@ -133,9 +137,16 @@ final class FileOpProgress {
         log.info("[FileOpProgress] done: \(processedFiles) ok, \(skippedFiles) skipped, \(errors.count) errs, \(String(format: "%.1f", elapsed))s")
     }
 
-    func appendStep(_ text: String) {
-        ProgressPanel.shared.appendLog(text)
+    func updateStatusOnly(_ text: String) {
         ProgressPanel.shared.updateStatus(text)
+    }
+
+    private func updateProgressDisplay() {
+        if showsProgressBar {
+            ProgressPanel.shared.updateProgress(fraction)
+        } else {
+            ProgressPanel.shared.hideProgress()
+        }
     }
 }
 
