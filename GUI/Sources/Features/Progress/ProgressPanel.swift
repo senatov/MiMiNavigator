@@ -544,13 +544,11 @@ final class ProgressPanel: NSObject {
 
     private func installEventMonitorIfNeeded() {
         guard eventMonitor == nil else { return }
-        eventMonitor = NSEvent.addLocalMonitorForEvents(matching: [.keyDown, .leftMouseDown, .rightMouseDown]) { [weak self] event in
+        eventMonitor = NSEvent.addLocalMonitorForEvents(matching: [.keyDown]) { [weak self] event in
             guard let self else { return event }
-            let eventType = event.type
             let keyCode = event.keyCode
-            let windowNumber = event.window?.windowNumber
             let keepEvent = MainActor.assumeIsolated {
-                self.handleLocalEvent(type: eventType, keyCode: keyCode, windowNumber: windowNumber)
+                self.handleKeyEvent(keyCode: keyCode)
             }
             return keepEvent ? event : nil
         }
@@ -562,19 +560,13 @@ final class ProgressPanel: NSObject {
         self.eventMonitor = nil
     }
 
-    private func handleLocalEvent(type: NSEvent.EventType, keyCode: UInt16, windowNumber: Int?) -> Bool {
+    private func handleKeyEvent(keyCode: UInt16) -> Bool {
         guard panel?.isVisible == true, actionButton?.title == "OK" else { return true }
-        if type == .keyDown {
-            let isReturn = keyCode == 36 || keyCode == 76
-            let isEscape = keyCode == 53
-            if isReturn || isEscape {
-                hide()
-                return false
-            }
-        }
-        if type == .leftMouseDown || type == .rightMouseDown {
-            guard windowNumber != panel?.windowNumber else { return true }
+        let isReturn = keyCode == 36 || keyCode == 76
+        let isEscape = keyCode == 53
+        if isReturn || isEscape {
             hide()
+            return false
         }
         return true
     }
@@ -781,6 +773,13 @@ extension ProgressPanel: NSWindowDelegate {
             guard let panel else { return }
             let size = panel.frame.size
             appearance.updateSize(width: size.width, height: size.height)
+        }
+    }
+
+    nonisolated func windowDidResignKey(_ notification: Notification) {
+        MainActor.assumeIsolated {
+            guard panel?.isVisible == true, actionButton?.title == "OK" else { return }
+            hide()
         }
     }
 }

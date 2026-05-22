@@ -34,13 +34,13 @@ struct ContextMenuDialogModifier: ViewModifier {
     }
 
     func body(content: Content) -> some View {
-        content
-            .disabled(shouldShowOverlay)
-            .overlay {
-                if shouldShowOverlay {
-                    dialogOverlay
-                }
+        ZStack {
+            content
+                .disabled(shouldShowOverlay)
+            if shouldShowOverlay {
+                dialogOverlay
             }
+        }
     }
 
     @ViewBuilder
