@@ -478,9 +478,13 @@ final class ProgressPanel: NSObject {
             return
         }
         isCancelled = true
+        statusLabel?.stringValue = "Cancelling... operation will stop at the next safe point"
+        appendLog("Cancel requested")
+        actionButton?.title = "OK"
+        actionButton?.isEnabled = true
+        applyActionButtonStyle(.confirm)
+        progressIndicator?.stopAnimation(nil)
         onCancel?()
-        actionButton?.isEnabled = false
-        statusLabel?.stringValue = "⏳ Cancelling…"
         log.debug("[ProgressPanel] cancel requested")
     }
     // MARK: - Center in Main Window

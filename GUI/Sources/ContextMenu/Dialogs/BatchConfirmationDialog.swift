@@ -18,6 +18,7 @@ struct BatchConfirmationDialog: View {
     let onCancel: () -> Void
     
     @State private var showFileList = false
+    @State private var deleteEstimate: DeletePreviewEstimate?
     
     private var totalSize: String {
         let bytes = files.reduce(0) { $0 + $1.sizeInBytes }
@@ -80,6 +81,17 @@ struct BatchConfirmationDialog: View {
                             .truncationMode(.middle)
                     }
                 }
+                if operationType == .delete && directoriesCount > 0 {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Recursive delete")
+                            .font(.system(size: 12, weight: .semibold))
+                        Text(deleteEstimateText)
+                            .font(.system(size: 11))
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .padding(.top, 4)
+                }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 8)
@@ -141,6 +153,7 @@ struct BatchConfirmationDialog: View {
                     isDestructive: operationType == .delete
                 )
                 .keyboardShortcut(.defaultAction)
+                .disabled(operationType == .delete && directoriesCount > 0 && deleteEstimate == nil)
             }
         }
         .padding(20)
@@ -152,6 +165,10 @@ struct BatchConfirmationDialog: View {
                 .strokeBorder(Color(nsColor: .separatorColor).opacity(0.5), lineWidth: 0.5)
         )
         .shadow(color: .black.opacity(0.22), radius: 20, x: 0, y: 8)
+        .task(id: files.map(\.pathStr).joined(separator: "\u{1F}")) {
+            guard operationType == .delete && directoriesCount > 0 else { return }
+            deleteEstimate = await DeletePreviewEstimator.estimate(files: files.map(\.urlValue))
+        }
     }
     
     // MARK: - Computed Properties
@@ -194,6 +211,14 @@ struct BatchConfirmationDialog: View {
         case .delete: return L10n.Button.delete
         case .pack: return L10n.Button.create
         }
+    }
+
+    private var deleteEstimateText: String {
+        guard let deleteEstimate else {
+            return "Calculating selected directories..."
+        }
+        let skipped = deleteEstimate.skippedCount > 0 ? "\nSome entries could not be scanned: \(deleteEstimate.skippedCount)." : ""
+        return "\(deleteEstimate.summaryText).\(skipped)"
     }
 }
 

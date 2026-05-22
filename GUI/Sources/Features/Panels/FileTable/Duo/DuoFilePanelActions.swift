@@ -157,6 +157,13 @@
             } else if appState.isRemotePanel(panel) {
                 performRemoteDelete(files: files, panel: panel)
             } else {
+                if files.contains(where: { $0.isDirectory }) {
+                    CntMenuCoord.shared.activeDialog = .batchDeleteConfirmation(
+                        files: files.filter { !ParentDirectoryEntry.isParentEntry($0) },
+                        sourcePanel: panel
+                    )
+                    return
+                }
                 // Normal filesystem: route through FileOpsEngine so diagnostics, logging and progress stay unified.
                 log.info("[DELETE] ⏱ calling FileOpsEngine.delete for \(urls.count) item(s): \(urls.map(\.lastPathComponent))")
                 Task { @MainActor in

@@ -12,8 +12,12 @@ struct DeleteConfirmationDialog: View {
     let files: [CustomFile]
     let onConfirm: () -> Void
     let onCancel: () -> Void
+    @State private var estimate: DeletePreviewEstimate?
     private var itemsDescription: String {
         files.count == 1 ? "\"\(files[0].nameStr)\"" : "\(files.count) items"
+    }
+    private var hasDirectories: Bool {
+        files.contains { $0.isDirectory }
     }
     var body: some View {
         VStack(spacing: 16) {
@@ -21,14 +25,44 @@ struct DeleteConfirmationDialog: View {
                 "Do you want to move \(itemsDescription) to Trash?",
                 subtitle: files.count == 1 ? files[0].urlValue.deletingLastPathComponent().path : nil
             )
+            if hasDirectories {
+                directoryWarning
+            }
             HIGDialogButtons(
                 confirmTitle: "Move to Trash",
                 isDestructive: true,
+                isConfirmDisabled: hasDirectories && estimate == nil,
                 onCancel: onCancel,
                 onConfirm: onConfirm
             )
         }
         .higDialogStyle()
+        .task(id: files.map(\.pathStr).joined(separator: "\u{1F}")) {
+            guard hasDirectories else { return }
+            estimate = await DeletePreviewEstimator.estimate(files: files.map(\.urlValue))
+        }
+    }
+    private var directoryWarning: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Recursive delete")
+                .font(.system(size: 12, weight: .semibold))
+            Text(directoryWarningText)
+                .font(.system(size: 11))
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(10)
+        .background(Color(nsColor: .controlBackgroundColor))
+        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+    }
+    private var directoryWarningText: String {
+        guard let estimate else {
+            return "Calculating selected directories..."
+        }
+        let skipped = estimate.skippedCount > 0 ? "\nSome entries could not be scanned: \(estimate.skippedCount)." : ""
+        let label = estimate.rootDirectoryCount == 1 ? "directory" : "directories"
+        return "This includes \(estimate.rootDirectoryCount) \(label): \(estimate.summaryText).\(skipped)"
     }
 }
 
