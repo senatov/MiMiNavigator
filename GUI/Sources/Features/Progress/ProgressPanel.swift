@@ -217,6 +217,7 @@ final class ProgressPanel: NSObject {
     // MARK: - Hide
     func hide() {
         guard let panel, panel.isVisible else { return }
+        persistFrameForCurrentOperation()
         let parent = panel.parent
         NSAnimationContext.runAnimationGroup(
             { ctx in
@@ -330,7 +331,7 @@ final class ProgressPanel: NSObject {
         panel.hasShadow = true
         panel.isOpaque = false
         panel.level = .floating
-        panel.isMovableByWindowBackground = false
+        panel.isMovableByWindowBackground = true
         panel.titlebarAppearsTransparent = true
         panel.titleVisibility = .hidden
         panel.backgroundColor = .clear
