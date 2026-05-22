@@ -76,6 +76,11 @@ extension AppState {
     /// This preserves scroll position because the displayed array is mutated, not replaced.
     func selectAfterRename(oldFile: CustomFile, newName: String, newURL: URL, on panel: FavPanelSide) {
         log.info("[Selection] selectAfterRename: '\(oldFile.nameStr)' → '\(newName)' panel=\(panel)")
+        if AppState.isAppManagedNetworkMountPath(newURL) {
+            log.info("[Selection] selectAfterRename app-managed mount — force refresh to preserve remote item type")
+            Task { await refreshAndSelect(name: newName, on: panel) }
+            return
+        }
         var files = displayedFiles(for: panel)
         if let idx = files.firstIndex(where: { $0.id == oldFile.id || $0.pathStr == oldFile.pathStr }) {
             // create updated file entry from filesystem

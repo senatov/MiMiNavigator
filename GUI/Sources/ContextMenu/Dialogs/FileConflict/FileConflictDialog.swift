@@ -3,8 +3,7 @@
 //
 // Created by Iakov Senatov on 23.01.2026.
 // Copyright © 2026 Senatov. All rights reserved.
-// Description: Windows-style file conflict dialog — warning icon, file info comparison,
-//              per-file actions + "Apply to all remaining files" checkbox.
+// Description: File conflict dialog with per-file actions and "for all" batch reuse.
 
 import SwiftUI
 
@@ -24,8 +23,6 @@ struct FileConflictDialog: View {
             headerSection
             Divider()
             contentSection
-            Divider()
-            if remainingCount > 1 { applyToAllSection }
             Divider()
             buttonSection
         }
@@ -124,26 +121,17 @@ private extension FileConflictDialog {
     }
 
 
-    var applyToAllSection: some View {
-        HStack {
+    var buttonSection: some View {
+        HStack(spacing: 8) {
+            ConflictButton(title: "Cancel", action: { resolve(.stop) })
+            Spacer()
             Toggle(isOn: $applyToAll) {
-                Text("Apply to all remaining files (\(remainingCount - 1) more)")
+                Text("For all")
                     .font(.system(size: 12))
             }
             .toggleStyle(.checkbox)
-            Spacer()
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 8)
-    }
-
-
-    var buttonSection: some View {
-        HStack(spacing: 8) {
-            // left: Stop
-            ConflictButton(title: "Stop", action: { resolve(.stop) })
-            Spacer()
-            ConflictButton(title: "Skip Incoming", action: { resolve(.skip) })
+            .help("Use the selected action for the remaining conflicts without showing this dialog again.")
+            ConflictButton(title: "Skip", action: { resolve(.skip) })
             ConflictButton(title: "Keep Both", action: { resolve(.keepBoth) })
             ConflictButton(title: "Replace Existing", isPrimary: true, action: { resolve(.replace) })
         }
@@ -158,7 +146,8 @@ private extension FileConflictDialog {
 private extension FileConflictDialog {
 
     func resolve(_ resolution: ConflictResolution) {
-        onResolve(BatchConflictDecision(resolution: resolution, applyToAll: applyToAll))
+        let shouldApplyToAll = resolution == .stop ? false : applyToAll
+        onResolve(BatchConflictDecision(resolution: resolution, applyToAll: shouldApplyToAll))
     }
 
 

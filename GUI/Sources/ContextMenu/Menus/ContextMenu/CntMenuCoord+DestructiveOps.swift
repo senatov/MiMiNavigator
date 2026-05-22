@@ -82,7 +82,9 @@ extension CntMenuCoord {
 
             log.info("[Rename] panel=\(panel) → selectAfterRename('\(newName)')")
             appState.selectAfterRename(oldFile: file, newName: newName, newURL: newURL, on: panel)
-            refreshOppositePanel(of: panel, appState: appState)
+            if !AppState.isAppManagedNetworkMountPath(newURL) {
+                refreshOppositePanel(of: panel, appState: appState)
+            }
             log.info("[Rename] 🏁 END SUCCESS")
         } catch {
             log.error("[Rename] ❌ FAILED: \(error.localizedDescription)")
