@@ -94,12 +94,7 @@ extension FileTableView {
         spinnerTask?.cancel()
 
         if loading {
-            spinnerTask = Task { @MainActor in
-                try? await Task.sleep(nanoseconds: 150_000_000)
-                if !Task.isCancelled && isLoading {
-                    showSpinner = true
-                }
-            }
+            showSpinner = true
         } else {
             showSpinner = false
         }

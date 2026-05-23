@@ -209,7 +209,7 @@ enum ColumnID: String, CaseIterable, Codable, Identifiable, Transferable {
         case .kind:          .type
         case .permissions:   .permissions
         case .owner:         .owner
-        case .childCount:    .childCount
+        case .childCount:    nil
         default:             nil
         }
     }

@@ -307,6 +307,9 @@ extension DualDirectoryScanner {
     func publishSuccessfulScan(_ files: [CustomFile], scannedPath: String, for side: FavPanelSide) async {
         log.debug("[Scan] publish side=\(side) path='\(scannedPath)' raw=\(files.count)")
 
+        await MainActor.run {
+            AutoFitScheduler.shared.runInitialPublishFit(panel: side, files: files)
+        }
         await updateScannedFiles(files, for: side)
         await updateFileList(panelSide: side, with: files)
     }

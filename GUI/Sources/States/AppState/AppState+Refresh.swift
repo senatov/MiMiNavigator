@@ -11,6 +11,19 @@ import Foundation
 // MARK: - Scanner Directory Helper
 extension AppState {
 
+    func beginPanelNavigationLoading(for panel: FavPanelSide) {
+        navigatingPanel = panel
+        setLoading(panel, true)
+        setSelectedFile(nil, for: panel)
+        if panel == .left {
+            displayedLeftFiles = []
+        } else {
+            displayedRightFiles = []
+        }
+        AutoFitScheduler.shared.prepareForNavigationLoading(panel: panel)
+        log.debug("[Refresh] begin navigation loading panel=\(panel)")
+    }
+
     /// Unified scanner directory setter — eliminates left/right branching at call sites.
     func setScannerDirectory(_ path: String, for panel: FavPanelSide) async {
         log.info("[Refresh] setScannerDirectory panel=\(panel) path='\(path)'")

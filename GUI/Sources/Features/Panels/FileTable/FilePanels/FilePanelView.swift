@@ -161,11 +161,12 @@ struct FilePanelView: View {
         if appState.navigatingPanel == viewModel.panelSide {
             VStack(spacing: 8) {
                 ProgressView()
-                    .scaleEffect(1.2)
-                    .controlSize(.regular)
+                    .scaleEffect(1.8)
+                    .controlSize(.large)
+                    .tint(Color(nsColor: .systemBlue).opacity(0.42))
                 Text("Loading…")
                     .font(.system(size: 11))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color(nsColor: .systemBlue).opacity(0.58))
             }
             .padding(16)
             .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 10))

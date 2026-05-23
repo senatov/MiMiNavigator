@@ -105,13 +105,10 @@ extension AppState {
         }
 
         // --- Cache miss: scan with spinner + retry ---
-        let spinnerTask = Task { @MainActor in
-            try? await Task.sleep(for: .milliseconds(200))
-            if !Task.isCancelled { navigatingPanel = panel }
-        }
+        beginPanelNavigationLoading(for: panel)
         defer {
-            spinnerTask.cancel()
             navigatingPanel = nil
+            setLoading(panel, false)
         }
         let maxAttempts = 3
         for attempt in 1...maxAttempts {

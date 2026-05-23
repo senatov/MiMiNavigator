@@ -101,6 +101,27 @@ final class ColumnLayoutModel: Codable {
         incrementLayoutVersion()
     }
 
+    func resetWidthsToDefaultsForLoading() {
+        var changed = false
+        for index in columns.indices {
+            let id = columns[index].id
+            guard id != .name else { continue }
+            let defaultWidth = max(id.defaultWidth, id.minWidth)
+            if shouldApplyWidthChange(current: columns[index].width, new: defaultWidth) {
+                columns[index].width = defaultWidth
+                changed = true
+            }
+        }
+        if shouldApplyWidthChange(current: storedNameWidth, new: 200) {
+            storedNameWidth = 200
+            changed = true
+        }
+        updateNameWidthForContainer()
+        if changed {
+            incrementLayoutVersion()
+        }
+    }
+
     // MARK: - Apply Autofit Widths
     func applyAutoFitWidths(_ widths: [ColumnID: CGFloat], nameWidth: CGFloat) {
         var changed = false

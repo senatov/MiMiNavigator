@@ -77,8 +77,9 @@ extension FileTableView {
 
     var spinnerView: some View {
         ProgressView()
-            .controlSize(.small)
-            .scaleEffect(0.9)
+            .controlSize(.large)
+            .scaleEffect(1.8)
+            .tint(Color(nsColor: .systemBlue).opacity(0.42))
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .allowsHitTesting(false)
             .transition(.opacity)

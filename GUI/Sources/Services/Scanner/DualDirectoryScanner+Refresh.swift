@@ -314,6 +314,7 @@ extension DualDirectoryScanner {
                 if sorted.count > progressivePreviewThreshold {
                     let preview = Array(sorted.prefix(progressivePreviewThreshold))
                     await MainActor.run {
+                        AutoFitScheduler.shared.runInitialPublishFit(panel: currSide, files: preview)
                         applyPreviewFiles(preview, for: currSide)
                     }
                 }

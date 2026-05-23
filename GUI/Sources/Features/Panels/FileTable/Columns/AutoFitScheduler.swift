@@ -161,6 +161,24 @@ final class AutoFitScheduler {
         }
     }
 
+    func prepareForNavigationLoading(panel: FavPanelSide) {
+        let layout = ColumnLayoutStore.shared.layout(for: panel)
+        layout.resetWidthsToDefaultsForLoading()
+        navigationFitTasks[panel]?.cancel()
+        lastAutoFitPath[panel] = ""
+        log.debug("[AutoFit] reset widths before navigation panel=\(panel)")
+    }
+
+    func runInitialPublishFit(panel: FavPanelSide, files: [CustomFile]) {
+        guard UserPreferences.shared.snapshot.autoFitColumnsOnNavigate else { return }
+        guard !files.isEmpty else { return }
+        let layout = ColumnLayoutStore.shared.layout(for: panel)
+        lastAutoFitWidth[panel] = layout.containerWidth
+        ColumnAutoFitter.autoFitAll(layout: layout, files: files)
+        lastAutoFitFinish[panel] = Date()
+        log.debug("[AutoFit] initial publish fit panel=\(panel) files=\(files.count)")
+    }
+
     // MARK: - Sidebar Layout Autofit
     func scheduleSidebarLayoutFit(appState: AppState, reason: String) {
         guard UserPreferences.shared.snapshot.autoFitColumnsOnNavigate else { return }
