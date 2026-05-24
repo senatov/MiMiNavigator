@@ -60,6 +60,10 @@ final class AppState {
     var directorySelectionRestore: [FavPanelSide: [String: URL]] = [.left: [:], .right: [:]]
     var directorySelectionRestoreOrder: [FavPanelSide: [String]] = [.left: [], .right: []]
     var mountedVolumeObserver: Any?
+
+    // MARK: - Autosave
+    var configurationAutosaveTask: Task<Void, Never>?
+
     // MARK: - UI State
     var selectedDir: DirectorySelection = .init()
     var showFavTreePopup: Bool = false

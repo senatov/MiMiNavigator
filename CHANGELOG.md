@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.9.3] — 2026-05-24
+
+> **Release notes**
+> View-mode parity, Preview drag-and-drop, Tree view, and autosave release.
+
+### Added
+- **Tree view mode** — third toolbar view mode with lazy expandable directory rows and metadata columns.
+- **Periodic configuration autosave** — state, preferences, panel paths, tabs, sort state, and startup cache save every 30 seconds in addition to exit.
+- **Preview/tree keyboard callbacks** — non-list views now register panel navigation callbacks for arrows, PageUp/PageDown, Home/End, and mark+move flows.
+
+### Changed
+- **Unified marked-file state** — Preview mode now uses `AppState.markedFiles` instead of a local thumbnail-only selection set.
+- **Shared sorting header** — Preview and Tree modes show the same sortable table header as List mode.
+- **Preview drag routing** — SwiftUI thumbnail drags now report source panel state into `DragDropManager` and can complete internal drops even when AppKit/SwiftUI drop destinations do not fire.
+
+### Fixed
+- **Ctrl+A in Preview mode** — mark-all now visibly selects the same files and operation targets as List mode.
+- **Preview DnD to opposite panel** — internal drag release is resolved by window coordinates and opens the normal transfer confirmation.
+- **Wrong source panel on row drops** — drop handlers use the recorded drag source panel instead of guessing from the destination.
+
 ### Changed
 - **Conflict dialog wording** — renamed `Keep Both` to `Save as Copy` and changed the dialog copy to explain that the destination file is preserved while the incoming file receives a unique name.
 - **Directory operation policy** — copy/move now treats selected top-level directories as opaque items through system file operations; app-managed remote mount directory deletes now remove the directory root in one operation.
@@ -763,7 +783,10 @@ Each release should include:
 
 ---
 
-[Unreleased]: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.0...HEAD
+[Unreleased]: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.3...HEAD
+[0.9.9.3]: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.2...v0.9.9.3
+[0.9.9.2]: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.1...v0.9.9.2
+[0.9.9.1]: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.0...v0.9.9.1
 [0.9.9.0]: https://github.com/senatov/MiMiNavigator/compare/v0.9.8.9...v0.9.9.0
 [0.9.8.9]: https://github.com/senatov/MiMiNavigator/compare/v0.9.8.8...v0.9.8.9
 [0.9.8.8]: https://github.com/senatov/MiMiNavigator/compare/v0.9.8.6...v0.9.8.8

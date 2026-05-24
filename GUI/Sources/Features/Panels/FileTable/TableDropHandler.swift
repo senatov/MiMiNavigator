@@ -22,7 +22,7 @@ struct TableDropHandler {
     func handlePanelDrop(_ droppedFiles: [CustomFile]) -> Bool {
         guard !droppedFiles.isEmpty else { return false }
         let destinationURL = appState.url(for: panelSide)
-        let sourceSide: FavPanelSide? = panelSide == .left ? .right : .left
+        let sourceSide = dragDropManager.dragSourcePanelSide
         dragDropManager.prepareTransfer(files: droppedFiles, to: destinationURL, from: sourceSide)
         log.info("[TableDrop] \(droppedFiles.count) file(s) → \(destinationURL.lastPathComponent)")
         return true

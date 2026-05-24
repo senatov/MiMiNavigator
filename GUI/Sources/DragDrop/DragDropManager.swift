@@ -27,6 +27,13 @@ final class DragDropManager {
     /// Files being dragged in the current session (set by both SwiftUI .onDrag and AppKit NSDraggingSession)
     var draggedFiles: [CustomFile] = []
 
+    /// Panel where the current internal drag started.
+    var dragSourcePanelSide: FavPanelSide?
+
+    private var dragCleanupTask: Task<Void, Never>?
+    private var internalReleaseWatchTask: Task<Void, Never>?
+    private weak var dragAppState: AppState?
+
     /// Currently highlighted drop target folder
     var dropTargetPath: URL?
 
@@ -54,15 +61,89 @@ final class DragDropManager {
 
     // MARK: - Start Drag
     /// Register files being dragged. Called from SwiftUI .onDrag (grid mode) and DragNSView (list mode).
-    func startDrag(files: [CustomFile], from panelSide: FavPanelSide) {
+    func startDrag(files: [CustomFile], from panelSide: FavPanelSide, appState: AppState? = nil) {
         log.debug("[DnD] drag started: \(files.count) item(s) from \(panelSide)")
         draggedFiles = files
+        dragSourcePanelSide = panelSide
+        dragAppState = appState
+        scheduleStaleDragCleanup()
+        startInternalReleaseWatchIfNeeded()
     }
 
     // MARK: - End Drag
     func endDrag() {
+        dragCleanupTask?.cancel()
+        dragCleanupTask = nil
+        internalReleaseWatchTask?.cancel()
+        internalReleaseWatchTask = nil
         draggedFiles = []
+        dragSourcePanelSide = nil
+        dragAppState = nil
         dropTargetPath = nil
+    }
+
+    private func scheduleStaleDragCleanup() {
+        dragCleanupTask?.cancel()
+        dragCleanupTask = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(30))
+            guard !showConfirmationDialog, !draggedFiles.isEmpty else { return }
+            log.debug("[DnD] stale drag cleanup: \(draggedFiles.count) item(s)")
+            endDrag()
+        }
+    }
+
+    // MARK: - Internal SwiftUI Drag Release Watch
+    private func startInternalReleaseWatchIfNeeded() {
+        guard dragAppState != nil else { return }
+        internalReleaseWatchTask?.cancel()
+        internalReleaseWatchTask = Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(180))
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .milliseconds(50))
+                guard !draggedFiles.isEmpty else { return }
+                if NSEvent.pressedMouseButtons == 0 {
+                    completeInternalSwiftUIDragIfNeeded()
+                    return
+                }
+            }
+        }
+    }
+
+    private func completeInternalSwiftUIDragIfNeeded() {
+        guard !draggedFiles.isEmpty else { return }
+        guard pendingOperation == nil, !showConfirmationDialog else {
+            endDrag()
+            return
+        }
+        guard let appState = dragAppState,
+              let sourceSide = dragSourcePanelSide,
+              let dropContext = internalDropContext()
+        else {
+            log.debug("[DnD] SwiftUI drag release ignored: no window context")
+            endDrag()
+            return
+        }
+        guard dropContext.side != sourceSide else {
+            log.debug("[DnD] SwiftUI drag release ignored: same panel")
+            endDrag()
+            return
+        }
+        let files = draggedFiles
+        let destination = appState.url(for: dropContext.side)
+        log.info("[DnD] SwiftUI internal drop: \(files.count) file(s) → \(dropContext.side) (\(destination.lastPathComponent))")
+        prepareTransfer(files: files, to: destination, from: sourceSide)
+        endDrag()
+    }
+
+    private func internalDropContext() -> (side: FavPanelSide, windowPoint: NSPoint)? {
+        let mouseScreenPoint = NSEvent.mouseLocation
+        guard let window = NSApp.windows.first(where: { window in
+            !(window is NSPanel) && window.isVisible && window.frame.contains(mouseScreenPoint)
+        }) else { return nil }
+        let windowPoint = window.convertPoint(fromScreen: mouseScreenPoint)
+        let width = window.contentView?.bounds.width ?? window.frame.width
+        let side: FavPanelSide = windowPoint.x < width / 2 ? .left : .right
+        return (side, windowPoint)
     }
 
     // MARK: - Set Drop Target

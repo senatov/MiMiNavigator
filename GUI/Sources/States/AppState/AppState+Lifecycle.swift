@@ -58,11 +58,31 @@
                     rightFiles: displayedRightFiles
                 )
                 AutoFitScheduler.shared.scheduleInitialFit(appState: self)
+                startConfigurationAutosave()
                 log.info("[AppState] initialize() async scan complete")
             }
         }
 
+        // MARK: - Periodic Configuration Autosave
+        func startConfigurationAutosave() {
+            configurationAutosaveTask?.cancel()
+            configurationAutosaveTask = Task { @MainActor [weak self] in
+                while !Task.isCancelled {
+                    try? await Task.sleep(for: .seconds(30))
+                    guard let self, !Task.isCancelled, !isTerminating else { continue }
+                    log.debug("[AppState] periodic configuration autosave")
+                    saveConfigurationSnapshot()
+                }
+            }
+        }
+
         func saveBeforeExit() {
+            configurationAutosaveTask?.cancel()
+            configurationAutosaveTask = nil
+            saveConfigurationSnapshot()
+        }
+
+        func saveConfigurationSnapshot() {
             UserPreferences.shared.capture(from: self)
             UserPreferences.shared.synchronize()
             MiMiDefaults.shared.synchronize()

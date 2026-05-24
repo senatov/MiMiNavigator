@@ -103,9 +103,12 @@ private struct ViewModeToolbarItem: View {
                 Image(systemName: "square.grid.2x2")
                     .tag(PanelViewMode.thumbnail)
                     .help("Thumbnail view")
+                Image(systemName: "list.bullet.indent")
+                    .tag(PanelViewMode.tree)
+                    .help("Tree view")
             }
             .pickerStyle(.segmented)
-            .frame(width: 64)
+            .frame(width: 96)
         }
     }
 }

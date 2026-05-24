@@ -7,9 +7,9 @@
 //
 
 // MARK: - DropNSView
-/// Handles EXTERNAL drops only (from Finder, other apps).
-/// For internal drag between panels, hitTest returns nil — DragNSView handles routing directly.
-/// External drags bypass hitTest via registerForDraggedTypes (cross-process AppKit behavior).
+/// Handles panel background drops from external apps and SwiftUI thumbnail drags.
+/// AppKit list drags are still routed by DragNSView, but SwiftUI .onDrag sessions
+/// need a real NSDraggingDestination over the opposite panel.
 
 import AppKit
 import FileModelKit
@@ -31,13 +31,23 @@ final class DropNSView: NSView {
         registerForDraggedTypes([.fileURL])
     }
 
-    /// Always nil — never intercept mouse events or internal drags.
-    /// External drags from other processes bypass hitTest via registerForDraggedTypes.
-    override func hitTest(_ point: NSPoint) -> NSView? { nil }
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        guard let dragDropManager, !dragDropManager.draggedFiles.isEmpty else { return nil }
+        return self
+    }
 
     override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {
-        log.debug("[AppKitDrop] draggingEntered panel=\(panelSide!) external")
+        log.debug("[AppKitDrop] draggingEntered panel=\(panelSide!)")
         return sender.draggingSourceOperationMask.intersection([.copy, .move])
+    }
+
+    override func draggingUpdated(_ sender: NSDraggingInfo) -> NSDragOperation {
+        sender.draggingSourceOperationMask.intersection([.copy, .move])
+    }
+
+    override func draggingExited(_ sender: NSDraggingInfo?) {
+        guard let dragDropManager, !dragDropManager.draggedFiles.isEmpty else { return }
+        dragDropManager.setDropTarget(nil)
     }
 
     // MARK: - Perform External Drop
@@ -45,6 +55,17 @@ final class DropNSView: NSView {
         guard let dragDropManager, let appState, let panelSide else {
             log.error("[AppKitDrop] missing dependencies")
             return false
+        }
+        if !dragDropManager.draggedFiles.isEmpty {
+            let destination = appState.url(for: panelSide)
+            log.info("[AppKitDrop] internal panel drop: \(dragDropManager.draggedFiles.count) file(s) → \(destination.lastPathComponent)")
+            dragDropManager.prepareTransfer(
+                files: dragDropManager.draggedFiles,
+                to: destination,
+                from: dragDropManager.dragSourcePanelSide
+            )
+            dragDropManager.endDrag()
+            return true
         }
         let urls = PasteboardURLResolver.resolve(from: sender.draggingPasteboard)
         guard !urls.isEmpty else {

@@ -270,7 +270,7 @@ struct FileRow: View, Equatable {
         }
 
         log.info("[FileRow] drop accepted: \(droppedFiles.count) → '\(file.nameStr)'")
-        dragDropManager.prepareTransfer(files: droppedFiles, to: file.urlValue, from: panelSide)
+        dragDropManager.prepareTransfer(files: droppedFiles, to: file.urlValue, from: dragDropManager.dragSourcePanelSide)
         return true
     }
 

@@ -12,9 +12,10 @@ import SwiftUI
 // MARK: - File panel view for one side (left or right)
 struct FilePanelView: View {
     @Environment(AppState.self) var appState
+    @Environment(DragDropManager.self) var dragDropManager
     @State private var colorStore = ColorThemeStore.shared
-    @State private var viewModel: FilePanelViewModel
-    @State private var viewModeStore = PanelViewModeStore.shared
+    @State var viewModel: FilePanelViewModel
+    @State var viewModeStore = PanelViewModeStore.shared
     let containerWidth: CGFloat
     @Binding var leftPanelWidth: CGFloat
     let onPanelTap: (FavPanelSide) -> Void
@@ -32,21 +33,25 @@ struct FilePanelView: View {
         AppState.isRemotePath(panelURL)
     }
 
-    private var currentMode: PanelViewMode {
+    var currentMode: PanelViewMode {
         viewModeStore.mode(for: viewModel.panelSide)
+    }
+
+    var columnLayout: ColumnLayoutModel {
+        ColumnLayoutStore.shared.layout(for: viewModel.panelSide)
     }
 
     private var rawFiles: [CustomFile] {
         viewModel.sortedFiles
     }
 
-    private var files: [CustomFile] {
+    var files: [CustomFile] {
         // Parent ".." strip is now a separate panel (ParentNavigationStripPanel)
         // inside FileTableView — no longer prepended to file rows.
         rawFiles
     }
 
-    private var fileContentKey: String {
+    var fileContentKey: String {
         makeFileContentKey(files: files, path: panelURL.path)
     }
 
@@ -101,6 +106,9 @@ struct FilePanelView: View {
         .overlay { navigationOverlay }
         .controlSize(.regular)
         .contentShape(Rectangle())
+        .onChange(of: currentMode) { _, _ in
+            registerNonListKeyboardCallbacks()
+        }
         .panelFocus(panelSide: viewModel.panelSide) {
             appState.showFavTreePopup = false
         }
@@ -117,43 +125,6 @@ struct FilePanelView: View {
                 }
             )
         }
-    }
-
-    @ViewBuilder
-    private var contentSection: some View {
-        if currentMode == .thumbnail {
-            thumbnailSection
-        } else {
-            fileTableSection
-        }
-    }
-
-    private var thumbnailSection: some View {
-        ThumbnailGridView(
-            files: files,
-            selectedID: selectedIDBinding,
-            panelSide: viewModel.panelSide,
-            cellSize: viewModeStore.thumbSize(for: viewModel.panelSide),
-            onSelect: { file in viewModel.select(file) },
-            onDoubleClick: handleDoubleClick
-        )
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-
-    private var fileTableSection: some View {
-        StableKeyView(fileContentKey) {
-            PanelFileTableSection(
-                files: files,
-                selectedID: selectedIDBinding,
-                panelSide: viewModel.panelSide,
-                onPanelTap: onPanelTap,
-                onSelect: { file in
-                    viewModel.select(file)
-                },
-                onDoubleClick: handleDoubleClick
-            )
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
     }
 
     @ViewBuilder
@@ -178,7 +149,7 @@ struct FilePanelView: View {
     }
 
     // MARK: - Binding to selected file ID
-    private var selectedIDBinding: Binding<CustomFile.ID?> {
+    var selectedIDBinding: Binding<CustomFile.ID?> {
         Binding<CustomFile.ID?>(
             get: {
                 selectedFile?.id
@@ -261,7 +232,7 @@ struct FilePanelView: View {
         log.debug("[FilePanelView] remote activate isDir=\(file.isDirectory) isParent=\(file.isParentEntry)")
     }
 
-    private func handleDoubleClick(_ file: CustomFile) {
+    func handleDoubleClick(_ file: CustomFile) {
         let _ = log.debug(#function)
         if isRemotePanel {
             logRemoteActivation(file)

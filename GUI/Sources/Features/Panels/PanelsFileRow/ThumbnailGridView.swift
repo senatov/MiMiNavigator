@@ -30,8 +30,6 @@ struct ThumbnailGridView: View {
     let onSelect: (CustomFile) -> Void
     let onDoubleClick: (CustomFile) -> Void
 
-    @State private var selectedIDs: Set<CustomFile.ID> = []
-
     /// Width matching the native scrollbar track — driven by ScrollBarConfig
     private static let scrollbarWidth: CGFloat = ScrollBarConfig.trackWidth
 
@@ -39,39 +37,21 @@ struct ThumbnailGridView: View {
         [GridItem(.adaptive(minimum: cellSize, maximum: cellSize + 20), spacing: 8)]
     }
 
+    private var markedIDs: Set<String> {
+        appState.markedFiles(for: panelSide)
+    }
+
     private func handleSelection(for file: CustomFile, modifiers: NSEvent.ModifierFlags) {
-        // ".." is navigation-only — never selectable
         guard !ParentDirectoryEntry.isParentEntry(file) else { return }
-
-        if modifiers.contains(.command) {
-            if selectedIDs.contains(file.id) {
-                selectedIDs.remove(file.id)
-            } else {
-                selectedIDs.insert(file.id)
-            }
-            selectedID = selectedIDs.isEmpty ? nil : file.id
-            onSelect(file)
-            return
-        }
-
-        if modifiers.contains(.shift),
-            let anchor = selectedID,
-            let anchorIndex = files.firstIndex(where: { $0.id == anchor }),
-            let targetIndex = files.firstIndex(where: { $0.id == file.id })
-        {
-            let lower = min(anchorIndex, targetIndex)
-            let upper = max(anchorIndex, targetIndex)
-            selectedIDs.removeAll()
-            for item in files[lower...upper] where !ParentDirectoryEntry.isParentEntry(item) {
-                selectedIDs.insert(item.id)
-            }
-            selectedID = file.id
-            onSelect(file)
-            return
-        }
-        selectedIDs = [file.id]
         selectedID = file.id
         onSelect(file)
+        appState.handleClickWithModifiers(on: file, modifiers: clickModifiers(from: modifiers))
+    }
+
+    private func clickModifiers(from flags: NSEvent.ModifierFlags) -> ClickModifiers {
+        if flags.contains(.command) { return .command }
+        if flags.contains(.shift) { return .shift }
+        return .none
     }
 
     // MARK: - Body
@@ -82,7 +62,7 @@ struct ThumbnailGridView: View {
                     ThumbnailCellView(
                         file: file,
                         cellSize: cellSize,
-                        isSelected: selectedIDs.contains(file.id),
+                        isSelected: selectedID == file.id || markedIDs.contains(file.id),
                         panelSide: panelSide,
                         dragFiles: dragFilesFor(file),
                         onSelect: { modifiers in
@@ -161,8 +141,8 @@ struct ThumbnailGridView: View {
 
     // MARK: - Drag helpers
     private func dragFilesFor(_ file: CustomFile) -> [CustomFile] {
-        if selectedIDs.contains(file.id) {
-            return files.filter { selectedIDs.contains($0.id) }
+        if markedIDs.contains(file.id) {
+            return files.filter { markedIDs.contains($0.id) }
         }
         return [file]
     }
@@ -252,7 +232,7 @@ private struct ThumbnailCellView: View {
         )
         .contextMenu { contextMenuContent }
         .onDrag {
-            dragDropManager.startDrag(files: dragFiles, from: panelSide)
+            dragDropManager.startDrag(files: dragFiles, from: panelSide, appState: appState)
             return makeDragProvider()
         } preview: {
             DragPreviewPopupView(files: dragFiles, panelSide: panelSide)

@@ -17,7 +17,7 @@
   <img src="https://img.shields.io/badge/Archives-50%2B_Formats-6f42c1" alt="50+ archive formats" />
   <img src="https://img.shields.io/badge/Media-Preview_%26_Conversion-ff8c00" alt="Media preview and conversion" />
   <img src="https://img.shields.io/badge/License-AGPL--3.0-blue" alt="AGPL-3.0" />
-  <a href="https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.9.2"><img src="https://img.shields.io/badge/release-v0.9.9.2-orange" alt="Release v0.9.9.2" /></a>
+  <a href="https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.9.3"><img src="https://img.shields.io/badge/release-v0.9.9.3-orange" alt="Release v0.9.9.3" /></a>
 </p>
 
 <p align="center">
@@ -37,7 +37,17 @@
 
 
 
-## Recent Changes (v0.9.9.2 - May 2026)
+## Recent Changes (v0.9.9.3 - May 2026)
+
+- **Unified panel view modes** — List, Preview, and Tree views now share sorting headers, keyboard navigation, marking, and file-operation shortcuts through the same AppState contracts.
+- **Preview DnD reliability** — drag-and-drop from Preview mode now routes internal panel drops through `DragDropManager`, including a fallback mouse-release watcher for SwiftUI drag sessions that do not deliver AppKit drop callbacks.
+- **Tree view mode** — added a third toolbar view mode with lazy expandable directory rows and table-style metadata columns.
+- **Preview selection consistency** — `Ctrl+A`, Cmd/Shift click, drag batches, and operation targets in Preview mode now use the same marked-file state as List mode.
+- **Periodic configuration autosave** — app configuration, panel paths, tabs, sort state, preferences, and startup cache are saved every 30 seconds in addition to normal exit save.
+
+---
+
+## Previous Changes (v0.9.9.2 - May 2026)
 
 - **Copy/move conflict wording** — the old `Keep Both` action is now labeled `Save as Copy`: the destination file stays untouched and the incoming file is written under a unique name such as `name (2).ext`.
 - **Directory operation policy** — top-level directories are copied or moved as whole items through `FileManager.copyItem` / `moveItem` instead of being expanded into per-file batches; local deletes use Trash, remote deletes remove directly.
@@ -224,7 +234,7 @@ MiMiNavigator can browse archives as virtual directories. Double-click opens the
 > xattr -cr ~/Downloads/MiMiNavigator.app
 > ```
 
-**[Download MiMiNavigator v0.9.9.2 ->](https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.9.2)**
+**[Download MiMiNavigator v0.9.9.3 ->](https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.9.3)**
 **[All releases →](https://github.com/senatov/MiMiNavigator/releases)**
 
 ---
