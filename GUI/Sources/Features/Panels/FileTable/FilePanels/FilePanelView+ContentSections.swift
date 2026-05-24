@@ -48,6 +48,17 @@ extension FilePanelView {
 
     var treeSection: some View {
         VStack(spacing: 0) {
+            ParentNavigationStripPanel(
+                panelSide: viewModel.panelSide,
+                isHighlighted: false,
+                onSelect: { file in
+                    selectedIDBinding.wrappedValue = nil
+                    viewModel.select(file)
+                },
+                onActivate: { file in
+                    handleDoubleClick(file)
+                }
+            )
             tableHeaderSection
             DirectoryTreeView(
                 files: files,
