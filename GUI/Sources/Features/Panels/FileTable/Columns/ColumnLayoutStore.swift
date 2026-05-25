@@ -54,6 +54,7 @@ final class ColumnLayoutStore {
             self.left = ColumnLayoutModel(panelSide: .left)
             self.right = ColumnLayoutModel(panelSide: .right)
             log.debug("[ColumnLayoutStore] created default layouts (no saved config)")
+            saveToDisk()
         }
         log.info("[ColumnLayoutStore] init done — left=\(left.columns.count) cols, right=\(right.columns.count) cols")
     }

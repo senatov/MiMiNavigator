@@ -19,6 +19,7 @@ final class ColumnLayoutModel: Codable {
         static let trailingContentInset: CGFloat = 17
         static let widthChangeEpsilon: CGFloat = 0.5
         static let unconstrainedWidthFallback: CGFloat = 9_999
+        static let maxNameWidthRatio: CGFloat = 0.55
     }
 
     var columns: [ColumnSpec]
@@ -78,8 +79,9 @@ final class ColumnLayoutModel: Codable {
         let dividerTotal = totalDividerWidth(for: fixedColumns.count)
         let currentFixedWidth = totalFixedWidth(for: fixedColumns)
         let availableWidth = containerWidth - currentFixedWidth - dividerTotal - LayoutMetrics.trailingContentInset
+        let ratioBound = containerWidth * LayoutMetrics.maxNameWidthRatio
 
-        return max(LayoutMetrics.minNameWidth, availableWidth)
+        return max(LayoutMetrics.minNameWidth, min(availableWidth, ratioBound))
     }
 
     private func totalFixedWidth(for columns: [ColumnSpec]) -> CGFloat {

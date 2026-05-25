@@ -88,6 +88,20 @@ enum SafeJSONStorage {
         }
     }
 
+    static func moveUnreadablePrimaryAside(fileURL: URL, label: String) {
+        let fileManager = FileManager.default
+        guard fileManager.fileExists(atPath: fileURL.path) else { return }
+        let timestamp = timestampFormatter.string(from: Date())
+        let corruptURL = fileURL.deletingLastPathComponent()
+            .appendingPathComponent("\(fileURL.lastPathComponent).corrupt-\(timestamp)")
+        do {
+            try fileManager.moveItem(at: fileURL, to: corruptURL)
+            log.warning("[SafeJSONStorage] \(label) moved unreadable primary to \(corruptURL.lastPathComponent)")
+        } catch {
+            log.error("[SafeJSONStorage] \(label) failed to move unreadable primary aside: \(error.localizedDescription)")
+        }
+    }
+
     private static func writeVerifiedData(
         _ data: Data,
         to fileURL: URL,

@@ -50,42 +50,73 @@ final class MiMiDefaults {
 
     // MARK: - String
     func string(forKey key: String) -> String? {
-        storage[key] as? String
+        guard let value = storage[key] else { return nil }
+        guard let string = value as? String else {
+            dropInvalidValue(forKey: key, expectedType: "String", actualValue: value)
+            return nil
+        }
+        return string
     }
 
 
     // MARK: - Bool / Numbers
     func bool(forKey key: String) -> Bool {
-        storage[key] as? Bool ?? false
+        guard let value = storage[key] else { return false }
+        guard let bool = value as? Bool else {
+            dropInvalidValue(forKey: key, expectedType: "Bool", actualValue: value)
+            return false
+        }
+        return bool
     }
 
 
     func double(forKey key: String) -> Double {
-        if let n = storage[key] as? Double { return n }
-        if let n = storage[key] as? Int { return Double(n) }
+        guard let value = storage[key] else { return 0.0 }
+        if let n = value as? Double { return n }
+        if let n = value as? Int { return Double(n) }
+        dropInvalidValue(forKey: key, expectedType: "Double", actualValue: value)
         return 0.0
     }
 
 
     // MARK: - Data / Collections
     func data(forKey key: String) -> Data? {
-        guard let base64 = storage[key] as? String else { return nil }
-        return Data(base64Encoded: base64)
+        guard let value = storage[key] else { return nil }
+        guard let base64 = value as? String, let data = Data(base64Encoded: base64) else {
+            dropInvalidValue(forKey: key, expectedType: "base64 Data", actualValue: value)
+            return nil
+        }
+        return data
     }
 
 
     func array(forKey key: String) -> [Any]? {
-        storage[key] as? [Any]
+        guard let value = storage[key] else { return nil }
+        guard let array = value as? [Any] else {
+            dropInvalidValue(forKey: key, expectedType: "Array", actualValue: value)
+            return nil
+        }
+        return array
     }
 
 
     func stringArray(forKey key: String) -> [String]? {
-        storage[key] as? [String]
+        guard let value = storage[key] else { return nil }
+        guard let array = value as? [String] else {
+            dropInvalidValue(forKey: key, expectedType: "[String]", actualValue: value)
+            return nil
+        }
+        return array
     }
 
 
     func dictionary(forKey key: String) -> [String: Any]? {
-        storage[key] as? [String: Any]
+        guard let value = storage[key] else { return nil }
+        guard let dictionary = value as? [String: Any] else {
+            dropInvalidValue(forKey: key, expectedType: "Dictionary", actualValue: value)
+            return nil
+        }
+        return dictionary
     }
 
 
@@ -96,7 +127,11 @@ final class MiMiDefaults {
 
     // MARK: - URL
     func url(forKey key: String) -> URL? {
-        guard let path = storage[key] as? String else { return nil }
+        guard let value = storage[key] else { return nil }
+        guard let path = value as? String, !path.isEmpty else {
+            dropInvalidValue(forKey: key, expectedType: "file URL path", actualValue: value)
+            return nil
+        }
         return URL(fileURLWithPath: path)
     }
 
@@ -172,6 +207,11 @@ final class MiMiDefaults {
             log.info("[MiMiDefaults] loaded \(dict.count) keys from \(fileURL.path)")
         } catch {
             log.error("[MiMiDefaults] load failed: \(error.localizedDescription)")
+            SafeJSONStorage.moveUnreadablePrimaryAside(fileURL: fileURL, label: "defaults.json")
+            storage = [:]
+            isDirty = true
+            saveToDisk()
+            log.warning("[MiMiDefaults] reset defaults.json to empty defaults after load failure")
         }
     }
 
@@ -234,14 +274,22 @@ final class MiMiDefaults {
             }
         }
         storage[Constants.migrationDoneKey] = true
+        isDirty = true
         if migrated > 0 {
             log.info("[MiMiDefaults] migrated \(migrated) keys from UserDefaults")
             saveToDisk()
         } else {
             log.info("[MiMiDefaults] no UserDefaults keys to migrate")
-            isDirty = true
             saveToDisk()
         }
+    }
+
+
+    // MARK: - Private: Invalid Values
+    private func dropInvalidValue(forKey key: String, expectedType: String, actualValue: Any) {
+        log.warning("[MiMiDefaults] invalid value for '\(key)': expected \(expectedType), got \(Swift.type(of: actualValue)) — using default")
+        storage.removeValue(forKey: key)
+        scheduleSave()
     }
 
 

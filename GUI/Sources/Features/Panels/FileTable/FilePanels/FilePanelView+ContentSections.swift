@@ -68,8 +68,10 @@ extension FilePanelView {
                 onSelect: { file in viewModel.select(file) },
                 onDoubleClick: handleDoubleClick
             )
+            .clipped()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .clipped()
         .modifier(panelDropTargetModifier)
         .onAppear(perform: registerNonListKeyboardCallbacks)
     }

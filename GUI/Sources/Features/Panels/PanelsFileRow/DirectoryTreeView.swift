@@ -52,6 +52,10 @@ struct DirectoryTreeView: View {
         return hasher.finalize()
     }
 
+    private var treeAnimationID: String {
+        expandedPaths.sorted().joined(separator: "|")
+    }
+
     // MARK: - Body
     var body: some View {
         ScrollView {
@@ -61,8 +65,10 @@ struct DirectoryTreeView: View {
                 }
             }
             .padding(.vertical, 1)
+            .animation(.easeInOut(duration: 0.18), value: treeAnimationID)
         }
         .background(treeBackground)
+        .clipped()
         .contextMenu { panelBackgroundMenu }
         .onAppear(perform: prepareTreeForCurrentPath)
         .onChange(of: filesSignature) { _, _ in prepareTreeForCurrentPath() }
@@ -78,11 +84,12 @@ struct DirectoryTreeView: View {
             isExpanded: isExpanded(item.file),
             isSelected: selectedID == item.file.id,
             isMarked: appState.isMarked(item.file, on: panelSide),
+            isEmptyDirectory: isEmptyDirectory(item.file),
             panelSide: panelSide,
             layout: layout,
             onToggle: { toggle(item.file) },
             onSelect: { select(item.file) },
-            onDoubleClick: { onDoubleClick(item.file) },
+            onDoubleClick: { activate(item.file) },
             onDrop: { droppedFiles in drop(droppedFiles, on: item.file) }
         )
     }
@@ -100,36 +107,77 @@ struct DirectoryTreeView: View {
         expandedPaths.contains(file.pathStr)
     }
 
+    private func isEmptyDirectory(_ file: CustomFile) -> Bool {
+        guard file.isDirectory || file.isSymbolicDirectory else { return false }
+        if let children = childrenByPath[file.pathStr] {
+            return children.isEmpty
+        }
+        if let childCount = file.childCount {
+            return childCount == 0
+        }
+        return false
+    }
+
     private func select(_ file: CustomFile) {
         selectedID = file.id
         onSelect(file)
     }
 
+    private func activate(_ file: CustomFile) {
+        if file.isDirectory || file.isSymbolicDirectory {
+            return
+        }
+        onDoubleClick(file)
+    }
+
     private func toggle(_ file: CustomFile) {
         guard file.isDirectory || file.isSymbolicDirectory else { return }
         if expandedPaths.contains(file.pathStr) {
-            expandedPaths.remove(file.pathStr)
+            withAnimation(.easeInOut(duration: 0.18)) {
+                let _ = expandedPaths.remove(file.pathStr)
+            }
             return
         }
-        expandedPaths.insert(file.pathStr)
         if childrenByPath[file.pathStr] == nil {
             childrenByPath[file.pathStr] = loadChildren(for: file)
+        }
+        guard childrenByPath[file.pathStr]?.isEmpty == false else { return }
+        withAnimation(.easeInOut(duration: 0.18)) {
+            let _ = expandedPaths.insert(file.pathStr)
         }
     }
 
     private func loadChildren(for file: CustomFile) -> [CustomFile] {
         let url = file.urlValue
         let includeHidden = appState.showHiddenFilesSnapshot()
-        let children = (try? FileManager.default.contentsOfDirectory(
-            at: url,
-            includingPropertiesForKeys: [.isDirectoryKey, .isHiddenKey, .contentModificationDateKey, .fileSizeKey],
-            options: includeHidden ? [] : [.skipsHiddenFiles]
-        )) ?? []
+        let children = directoryContents(at: url, includeHidden: includeHidden)
         let files = children.compactMap { url -> CustomFile? in
             guard includeHidden || !url.lastPathComponent.hasPrefix(".") else { return nil }
             return CustomFile(path: url.path)
         }
         return appState.applySorting(files)
+    }
+
+    private func directoryContents(at url: URL, includeHidden: Bool) -> [URL] {
+        do {
+            return try FileManager.default.contentsOfDirectory(
+                at: url,
+                includingPropertiesForKeys: [.isDirectoryKey, .isHiddenKey, .contentModificationDateKey, .fileSizeKey],
+                options: includeHidden ? [] : [.skipsHiddenFiles]
+            )
+        } catch {
+            log.warning("[Tree] keyed directory read failed: \(url.path) error=\(error.localizedDescription)")
+        }
+        do {
+            return try FileManager.default.contentsOfDirectory(
+                at: url,
+                includingPropertiesForKeys: nil,
+                options: includeHidden ? [] : [.skipsHiddenFiles]
+            )
+        } catch {
+            log.warning("[Tree] fallback directory read failed: \(url.path) error=\(error.localizedDescription)")
+            return []
+        }
     }
 
     private func drop(_ droppedFiles: [CustomFile], on file: CustomFile) -> Bool {
@@ -157,6 +205,7 @@ struct DirectoryTreeView: View {
             let children = loadChildren(for: file)
             guard children.count <= maxAutoExpandChildrenPerDirectory else { continue }
             childrenByPath[file.pathStr] = children
+            guard !children.isEmpty else { continue }
             expandedPaths.insert(file.pathStr)
             rowsBudget -= children.count
             for child in children where rowsBudget > 0 {
@@ -164,6 +213,7 @@ struct DirectoryTreeView: View {
                 let grandchildren = loadChildren(for: child)
                 guard grandchildren.count <= maxAutoExpandChildrenPerDirectory else { continue }
                 childrenByPath[child.pathStr] = grandchildren
+                guard !grandchildren.isEmpty else { continue }
                 expandedPaths.insert(child.pathStr)
                 rowsBudget -= grandchildren.count
             }
@@ -219,6 +269,7 @@ private struct DirectoryTreeRow: View {
     let isExpanded: Bool
     let isSelected: Bool
     let isMarked: Bool
+    let isEmptyDirectory: Bool
     let panelSide: FavPanelSide
     @Bindable var layout: ColumnLayoutModel
     let onToggle: () -> Void
@@ -252,20 +303,19 @@ private struct DirectoryTreeRow: View {
     private var nameCell: some View {
         HStack(spacing: 4) {
             Color.clear.frame(width: CGFloat(depth) * 16)
-            Button(action: onToggle) {
-                Image(systemName: disclosureIcon)
-                    .font(.system(size: 9, weight: .medium))
-                    .frame(width: 12)
-            }
-            .buttonStyle(.plain)
-            .opacity(isDirectory ? 1 : 0)
+            Image(systemName: disclosureIcon)
+                .font(.system(size: 9, weight: .medium))
+                .frame(width: 12)
+                .opacity(disclosureOpacity)
             Image(nsImage: NSWorkspace.shared.icon(forFile: file.urlValue.path))
                 .resizable()
                 .frame(width: 16, height: 16)
+                .opacity(isEmptyDirectory ? 0.55 : 1)
             Text(file.nameStr)
                 .font(.system(size: 13))
                 .lineLimit(1)
                 .truncationMode(.middle)
+                .foregroundStyle(nameForegroundStyle)
             Spacer(minLength: 0)
         }
         .padding(.horizontal, 4)
@@ -290,6 +340,18 @@ private struct DirectoryTreeRow: View {
 
     private var disclosureIcon: String {
         isExpanded ? "chevron.down" : "chevron.right"
+    }
+
+    private var disclosureOpacity: Double {
+        guard isDirectory else { return 0 }
+        return isEmptyDirectory ? 0.25 : 1
+    }
+
+    private var nameForegroundStyle: Color {
+        if isEmptyDirectory {
+            return Color(nsColor: .secondaryLabelColor).opacity(0.62)
+        }
+        return Color(nsColor: .labelColor)
     }
 
     private var rowBackground: some View {
@@ -333,7 +395,11 @@ private struct DirectoryTreeRow: View {
 
     private func handleSingleClick() {
         onSelect()
-        appState.handleClickWithModifiers(on: file, modifiers: currentClickModifiers())
+        let modifiers = currentClickModifiers()
+        appState.handleClickWithModifiers(on: file, modifiers: modifiers)
+        if modifiers == .none, isDirectory {
+            onToggle()
+        }
     }
 
     private func currentClickModifiers() -> ClickModifiers {
