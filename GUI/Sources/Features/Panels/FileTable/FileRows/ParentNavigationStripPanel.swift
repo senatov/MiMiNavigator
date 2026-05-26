@@ -29,14 +29,33 @@ struct ParentNavigationStripPanel: View {
         appState.path(for: panelSide)
     }
 
-
-    private var shouldShow: Bool {
-        currentPath != "/"
+    private var remoteURL: URL? {
+        guard let url = URL(string: currentPath), AppState.isRemotePath(url) else { return nil }
+        return url
     }
 
+    private var remotePath: String {
+        guard let remoteURL else { return "/" }
+        return remoteURL.path.isEmpty ? "/" : remoteURL.path
+    }
+
+    private var shouldShow: Bool {
+        if remoteURL != nil {
+            return remotePath != "/"
+        }
+        return currentPath != "/"
+    }
+
+    private var parentPath: String {
+        if remoteURL != nil {
+            let parent = (remotePath as NSString).deletingLastPathComponent
+            return parent.isEmpty ? "/" : parent
+        }
+        return (currentPath as NSString).deletingLastPathComponent
+    }
 
     private var parentFile: CustomFile {
-        CustomFile.parentLink(from: currentPath)
+        CustomFile(name: "..", path: parentPath, children: nil, isParentEntry: true)
     }
 
 
@@ -52,8 +71,19 @@ struct ParentNavigationStripPanel: View {
                 isSelected: isHighlighted,
                 parentURL: parentURL,
                 onSelect: onSelect,
-                onActivate: onActivate
+                onActivate: activateParent
             )
         }
+    }
+
+    // MARK: - Activation
+    private func activateParent(_ file: CustomFile) {
+        if remoteURL != nil {
+            Task { @MainActor in
+                await appState.navigateToParent(on: panelSide)
+            }
+            return
+        }
+        onActivate(file)
     }
 }

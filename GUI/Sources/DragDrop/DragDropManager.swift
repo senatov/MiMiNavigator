@@ -59,6 +59,18 @@ final class DragDropManager {
         return destination.lastPathComponent.isEmpty ? normalizedPath : destination.lastPathComponent
     }
 
+    private func humanReadableRemoteUploadError(_ error: Error, targetPath: String) -> String {
+        let message = error.localizedDescription.trimmingCharacters(in: .whitespacesAndNewlines)
+        let lowercased = message.lowercased()
+        if lowercased.contains("permission") || lowercased.contains("access denied") {
+            return "Server denied upload to '\(targetPath)'. Check write permissions for that remote folder."
+        }
+        if lowercased.contains("citadel.sftpmessage.status error 1") {
+            return "Server rejected upload to '\(targetPath)'. This usually means the folder is read-only or does not allow file creation."
+        }
+        return message
+    }
+
     // MARK: - Start Drag
     /// Register files being dragged. Called from SwiftUI .onDrag (grid mode) and DragNSView (list mode).
     func startDrag(files: [CustomFile], from panelSide: FavPanelSide, appState: AppState? = nil) {
@@ -378,8 +390,9 @@ final class DragDropManager {
                 log.info("[DnD] uploaded '\(file.nameStr)' → '\(destinationDisplayName(destination))'")
                 ok += 1
             } catch {
+                let message = humanReadableRemoteUploadError(error, targetPath: remotePath)
                 log.error("[DnD] upload '\(file.nameStr)' failed: \(error.localizedDescription)")
-                panel.appendLog("❌ \(file.nameStr): \(error.localizedDescription)")
+                panel.appendLog("❌ \(file.nameStr): \(message)")
                 fail += 1
             }
         }

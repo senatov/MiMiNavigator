@@ -135,6 +135,15 @@ extension FileTableView {
     }
 
     private func activateParentFromTopEdge() {
+        if AppState.isRemotePath(appState.url(for: panelSide)) {
+            selectedID = nil
+            isParentStripHighlighted = false
+            log.info("[Nav] top edge remote parent activated panel=\(panelSide.rawValue)")
+            Task { @MainActor in
+                await appState.navigateToParent(on: panelSide)
+            }
+            return
+        }
         let parentFile = CustomFile.parentLink(from: currentPanelPath)
         selectedID = nil
         isParentStripHighlighted = false
