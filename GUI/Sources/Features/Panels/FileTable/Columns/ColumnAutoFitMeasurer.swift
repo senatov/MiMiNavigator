@@ -12,7 +12,10 @@ enum ColumnAutoFitMeasurer {
     private static let correctiveClippingThreshold: CGFloat = 0.15
 
     // MARK: - Content Width
-    static func contentWidth(for column: ColumnID, files: [CustomFile]) -> CGFloat {
+    static func contentWidth(for column: ColumnID, files: [CustomFile], nameExtraWidths: [CGFloat] = []) -> CGFloat {
+        if column == .name, !nameExtraWidths.isEmpty {
+            return nameContentWidth(files: files, extraWidths: nameExtraWidths)
+        }
         let (texts, font) = textSamples(column, files: files)
         let meaningfulTexts = texts.filter(isRealContent)
         guard !meaningfulTexts.isEmpty else { return fallbackWidth(for: column) }
@@ -20,6 +23,21 @@ enum ColumnAutoFitMeasurer {
         let fittedWidth = fittedContentWidth(for: column, measuredWidths: measuredWidths)
         let width = clamped(width: fittedWidth, column: column, meaningfulCount: meaningfulTexts.count, totalCount: texts.count)
         log.verbose("[AutoFit] contentWidth \(column.rawValue) \(ColumnAutoFitLayout.pt(width))")
+        return width
+    }
+
+    // MARK: - Tree Name Content Width
+    private static func nameContentWidth(files: [CustomFile], extraWidths: [CGFloat]) -> CGFloat {
+        let samples = sampledNameSamples(files: files, extraWidths: extraWidths)
+        let meaningfulSamples = samples.filter { isRealContent($0.file.nameStr) }
+        guard !meaningfulSamples.isEmpty else { return fallbackWidth(for: .name) }
+        let attributes: [NSAttributedString.Key: Any] = [.font: NSFont.systemFont(ofSize: 14, weight: .light)]
+        let widths = meaningfulSamples.map { sample in
+            (sample.file.nameStr as NSString).size(withAttributes: attributes).width + sample.extraWidth
+        }
+        let fittedWidth = fittedContentWidth(for: .name, measuredWidths: widths)
+        let width = clamped(width: fittedWidth, column: .name, meaningfulCount: meaningfulSamples.count, totalCount: samples.count)
+        log.verbose("[AutoFit] contentWidth tree-name \(ColumnAutoFitLayout.pt(width))")
         return width
     }
 
@@ -163,6 +181,22 @@ enum ColumnAutoFitMeasurer {
         for (idx, file) in remaining.enumerated() {
             if idx % stride == 0 {
                 sampled.append(file)
+            }
+        }
+        return sampled
+    }
+
+    private static func sampledNameSamples(files: [CustomFile], extraWidths: [CGFloat]) -> [(file: CustomFile, extraWidth: CGFloat)] {
+        let pairs = zip(files, extraWidths).map { (file: $0.0, extraWidth: $0.1) }
+        guard pairs.count > samplingThreshold else { return pairs }
+        let headCount = 200
+        let head = Array(pairs.prefix(headCount))
+        let remaining = pairs.dropFirst(headCount)
+        let stride = max(1, remaining.count / (samplingThreshold - headCount))
+        var sampled = head
+        for (idx, pair) in remaining.enumerated() {
+            if idx % stride == 0 {
+                sampled.append(pair)
             }
         }
         return sampled

@@ -12,9 +12,9 @@ enum ColumnAutoFitter {
     private static let correctiveClippingThreshold: CGFloat = 0.15
 
     // MARK: - Auto Fit All
-    static func autoFitAll(layout: ColumnLayoutModel, files: [CustomFile]) {
+    static func autoFitAll(layout: ColumnLayoutModel, files: [CustomFile], nameExtraWidths: [CGFloat] = []) {
         log.verbose("[AutoFit] autoFitAll start container=\(ColumnAutoFitLayout.pt(layout.containerWidth)) files=\(files.count) fixedCols=\(layout.fixedColumns.count)")
-        guard let result = makeAutoFitResult(layout: layout, files: files) else {
+        guard let result = makeAutoFitResult(layout: layout, files: files, nameExtraWidths: nameExtraWidths) else {
             log.verbose("[AutoFit] autoFitAll skip no result")
             return
         }
@@ -28,11 +28,11 @@ enum ColumnAutoFitter {
     }
 
     // MARK: - Result
-    private static func makeAutoFitResult(layout: ColumnLayoutModel, files: [CustomFile]) -> ColumnAutoFitResult? {
+    private static func makeAutoFitResult(layout: ColumnLayoutModel, files: [CustomFile], nameExtraWidths: [CGFloat]) -> ColumnAutoFitResult? {
         guard layout.containerWidth > 0, !files.isEmpty else { return nil }
         let fixedSpecs = layout.fixedColumns
         var fixedColumns = measuredFixedColumns(from: fixedSpecs, files: files)
-        let nameWidth = ColumnAutoFitMeasurer.contentWidth(for: .name, files: files)
+        let nameWidth = ColumnAutoFitMeasurer.contentWidth(for: .name, files: files, nameExtraWidths: nameExtraWidths)
         for _ in 0..<2 {
             guard needsCorrectivePass(columns: fixedSpecs, fittedColumns: fixedColumns, files: files) else { break }
             applyCorrectivePass(columns: fixedSpecs, fittedColumns: &fixedColumns, files: files)

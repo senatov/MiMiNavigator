@@ -22,7 +22,13 @@ struct DirectoryTreeView: View {
     @State private var expandedPaths: Set<String> = []
     @State private var childrenByPath: [String: [CustomFile]] = [:]
     @State private var loadingSubtreePaths: Set<String> = []
+    @State private var autoFitTask: Task<Void, Never>?
     @State private var autoExpandedPath = ""
+
+    private enum TreeMetrics {
+        static let depthIndent: CGFloat = 16
+        static let disclosureReserve: CGFloat = 16
+    }
 
     private let maxAutoExpandRootCount = 60
     private let maxAutoExpandChildrenPerDirectory = 80
@@ -73,8 +79,8 @@ struct DirectoryTreeView: View {
         .contextMenu { panelBackgroundMenu }
         .onAppear(perform: prepareTreeForCurrentPath)
         .onChange(of: filesSignature) { _, _ in prepareTreeForCurrentPath() }
-        .onChange(of: appState.sortKey) { _, _ in resortLoadedChildren() }
-        .onChange(of: appState.bSortAscending) { _, _ in resortLoadedChildren() }
+        .onChange(of: appState.sortKey) { _, _ in resortLoadedChildrenAndFit() }
+        .onChange(of: appState.bSortAscending) { _, _ in resortLoadedChildrenAndFit() }
     }
 
     // MARK: - Tree Rows
@@ -86,6 +92,7 @@ struct DirectoryTreeView: View {
             isSelected: selectedID == item.file.id,
             isMarked: appState.isMarked(item.file, on: panelSide),
             isEmptyDirectory: isEmptyDirectory(item.file),
+            isExpandableDirectory: isExpandableDirectory(item.file),
             isLoadingSubtree: loadingSubtreePaths.contains(item.file.pathStr),
             panelSide: panelSide,
             layout: layout,
@@ -110,15 +117,39 @@ struct DirectoryTreeView: View {
         expandedPaths.contains(file.pathStr)
     }
 
+    private func isExpandableDirectory(_ file: CustomFile) -> Bool {
+        if file.isDirectory || file.isSymbolicDirectory { return true }
+        var isDirectory = ObjCBool(false)
+        if FileManager.default.fileExists(atPath: file.urlValue.path, isDirectory: &isDirectory), isDirectory.boolValue {
+            return true
+        }
+        if let values = try? file.urlValue.resourceValues(forKeys: [.isDirectoryKey]), values.isDirectory == true {
+            return true
+        }
+        return false
+    }
+
     private func isEmptyDirectory(_ file: CustomFile) -> Bool {
-        guard file.isDirectory || file.isSymbolicDirectory else { return false }
+        guard isExpandableDirectory(file) else { return false }
         if let children = childrenByPath[file.pathStr] {
             return children.isEmpty
         }
         if let childCount = file.childCount {
+            if childCount == 0, needsLiveDirectoryProbe(file) {
+                return false
+            }
             return childCount == 0
         }
         return false
+    }
+
+    private func needsLiveDirectoryProbe(_ file: CustomFile) -> Bool {
+        if file.isSymbolicDirectory { return true }
+        let path = file.urlValue.path
+        return path.contains("/Library/CloudStorage/")
+            || path.hasPrefix(FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Google Drive").path)
+            || path.hasPrefix(FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("OneDrive").path)
+            || path.hasPrefix(FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("ProtonDrive").path)
     }
 
     private func select(_ file: CustomFile) {
@@ -127,18 +158,19 @@ struct DirectoryTreeView: View {
     }
 
     private func activate(_ file: CustomFile) {
-        if file.isDirectory || file.isSymbolicDirectory {
+        if isExpandableDirectory(file) {
             return
         }
         onDoubleClick(file)
     }
 
     private func toggle(_ file: CustomFile) {
-        guard file.isDirectory || file.isSymbolicDirectory else { return }
+        guard isExpandableDirectory(file) else { return }
         if expandedPaths.contains(file.pathStr) {
             withAnimation(.easeInOut(duration: 0.18)) {
                 let _ = expandedPaths.remove(file.pathStr)
             }
+            scheduleTreeAutoFit(reason: "collapse")
             return
         }
         if childrenByPath[file.pathStr] == nil {
@@ -148,10 +180,11 @@ struct DirectoryTreeView: View {
         withAnimation(.easeInOut(duration: 0.18)) {
             let _ = expandedPaths.insert(file.pathStr)
         }
+        scheduleTreeAutoFit(reason: "expand")
     }
 
     private func toggleSubtree(_ file: CustomFile) {
-        guard file.isDirectory || file.isSymbolicDirectory else { return }
+        guard isExpandableDirectory(file) else { return }
         select(file)
         if expandedPaths.contains(file.pathStr) {
             collapseSubtree(file)
@@ -173,6 +206,7 @@ struct DirectoryTreeView: View {
                 expandedPaths.formUnion(expanded)
             }
             loadingSubtreePaths.remove(rootPath)
+            scheduleTreeAutoFit(reason: "expand-subtree")
         }
     }
 
@@ -189,7 +223,7 @@ struct DirectoryTreeView: View {
         childrenByPath[path] = children
         guard !children.isEmpty else { return }
         expandedPaths.insert(path)
-        for child in children where child.isDirectory || child.isSymbolicDirectory {
+        for child in children where isExpandableDirectory(child) {
             expandSubtree(
                 child,
                 expandedPaths: &expandedPaths,
@@ -205,11 +239,12 @@ struct DirectoryTreeView: View {
         withAnimation(.easeInOut(duration: 0.18)) {
             expandedPaths.subtract(pathsToCollapse)
         }
+        scheduleTreeAutoFit(reason: "collapse-subtree")
     }
 
     private func collectLoadedDescendantDirectoryPaths(from path: String, into result: inout Set<String>) {
         guard let children = childrenByPath[path] else { return }
-        for child in children where child.isDirectory || child.isSymbolicDirectory {
+        for child in children where isExpandableDirectory(child) {
             result.insert(child.pathStr)
             collectLoadedDescendantDirectoryPaths(from: child.pathStr, into: &result)
         }
@@ -249,7 +284,7 @@ struct DirectoryTreeView: View {
     }
 
     private func drop(_ droppedFiles: [CustomFile], on file: CustomFile) -> Bool {
-        guard file.isDirectory || file.isSymbolicDirectory else { return false }
+        guard isExpandableDirectory(file) else { return false }
         guard !droppedFiles.isEmpty else { return false }
         dragDropManager.prepareTransfer(files: droppedFiles, to: file.urlValue, from: dragDropManager.dragSourcePanelSide)
         return true
@@ -264,13 +299,14 @@ struct DirectoryTreeView: View {
             autoExpandedPath = currentPath
         }
         autoExpandInitialLevelsIfSmall()
+        scheduleTreeAutoFit(reason: "prepare")
     }
 
     private func autoExpandInitialLevelsIfSmall() {
         guard files.count <= maxAutoExpandRootCount else { return }
         var rowsBudget = maxAutoExpandedRows
         for file in files where rowsBudget > 0 {
-            guard file.isDirectory || file.isSymbolicDirectory else { continue }
+            guard isExpandableDirectory(file) else { continue }
             let children = loadChildren(for: file)
             guard children.count <= maxAutoExpandChildrenPerDirectory else { continue }
             childrenByPath[file.pathStr] = children
@@ -278,7 +314,7 @@ struct DirectoryTreeView: View {
             expandedPaths.insert(file.pathStr)
             rowsBudget -= children.count
             for child in children where rowsBudget > 0 {
-                guard child.isDirectory || child.isSymbolicDirectory else { continue }
+                guard isExpandableDirectory(child) else { continue }
                 let grandchildren = loadChildren(for: child)
                 guard grandchildren.count <= maxAutoExpandChildrenPerDirectory else { continue }
                 childrenByPath[child.pathStr] = grandchildren
@@ -289,12 +325,32 @@ struct DirectoryTreeView: View {
         }
     }
 
-    private func resortLoadedChildren() {
+    private func resortLoadedChildrenAndFit() {
         for key in Array(childrenByPath.keys) {
             if let children = childrenByPath[key] {
                 childrenByPath[key] = appState.applySorting(children)
             }
         }
+        scheduleTreeAutoFit(reason: "sort")
+    }
+
+    private func scheduleTreeAutoFit(reason: String) {
+        guard UserPreferences.shared.snapshot.autoFitColumnsOnNavigate else { return }
+        autoFitTask?.cancel()
+        autoFitTask = Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(140))
+            if Task.isCancelled { return }
+            let rows = visibleRows
+            guard !rows.isEmpty else { return }
+            let files = rows.map(\.file)
+            let extras = rows.map { nameExtraWidth(forDepth: $0.depth) }
+            log.debug("[AutoFit] tree fit panel=\(panelSide) reason=\(reason) rows=\(rows.count)")
+            ColumnAutoFitter.autoFitAll(layout: layout, files: files, nameExtraWidths: extras)
+        }
+    }
+
+    private func nameExtraWidth(forDepth depth: Int) -> CGFloat {
+        CGFloat(depth) * TreeMetrics.depthIndent + TreeMetrics.disclosureReserve
     }
 
     // MARK: - Background
@@ -327,216 +383,4 @@ private struct DirectoryTreeItem: Identifiable {
     let file: CustomFile
     let depth: Int
     var id: String { "\(depth):\(file.id)" }
-}
-
-// MARK: - Directory Tree Row
-private struct DirectoryTreeRow: View {
-    @Environment(AppState.self) private var appState
-    @Environment(DragDropManager.self) private var dragDropManager
-    let file: CustomFile
-    let depth: Int
-    let isExpanded: Bool
-    let isSelected: Bool
-    let isMarked: Bool
-    let isEmptyDirectory: Bool
-    let isLoadingSubtree: Bool
-    let panelSide: FavPanelSide
-    @Bindable var layout: ColumnLayoutModel
-    let onToggle: () -> Void
-    let onToggleSubtree: () -> Void
-    let onSelect: () -> Void
-    let onDoubleClick: () -> Void
-    let onDrop: ([CustomFile]) -> Bool
-    @State private var isDropTargeted = false
-
-    // MARK: - Body
-    var body: some View {
-        HStack(spacing: 0) {
-            nameCell
-            ForEach(layout.fixedColumns.indices, id: \.self) { index in
-                let spec = layout.fixedColumns[index]
-                dividerSpacer
-                fixedCell(spec)
-            }
-        }
-        .frame(height: FilePanelStyle.rowHeight)
-        .background(rowBackground)
-        .contentShape(Rectangle())
-        .onTapGesture(count: 2, perform: onDoubleClick)
-        .simultaneousGesture(TapGesture(count: 1).onEnded { handleSingleClick() })
-        .contextMenu { contextMenuContent }
-        .modifier(dropModifier)
-        .onDrag {
-            dragDropManager.startDrag(files: [file], from: panelSide, appState: appState)
-            return NSItemProvider(object: file.urlValue as NSURL)
-        }
-    }
-
-    // MARK: - Cells
-    private var nameCell: some View {
-        HStack(spacing: 4) {
-            Color.clear.frame(width: CGFloat(depth) * 16)
-            disclosureControl
-            Image(nsImage: NSWorkspace.shared.icon(forFile: file.urlValue.path))
-                .resizable()
-                .frame(width: 16, height: 16)
-                .opacity(isEmptyDirectory ? 0.55 : 1)
-            Text(file.nameStr)
-                .font(.system(size: 13))
-                .lineLimit(1)
-                .truncationMode(.middle)
-                .foregroundStyle(nameForegroundStyle)
-            Spacer(minLength: 0)
-        }
-        .padding(.horizontal, 4)
-        .frame(width: layout.nameWidth, alignment: .leading)
-        .clipped()
-    }
-
-    @ViewBuilder
-    private var disclosureControl: some View {
-        if isLoadingSubtree {
-            ProgressView()
-                .controlSize(.mini)
-                .scaleEffect(0.55)
-                .frame(width: 12, height: 16)
-        } else {
-            Button(action: handleDisclosureClick) {
-                Image(systemName: disclosureIcon)
-                    .font(.system(size: 9, weight: .medium))
-                    .frame(width: 12, height: 16)
-                    .contentShape(Rectangle())
-                    .opacity(disclosureOpacity)
-            }
-            .buttonStyle(.plain)
-            .disabled(!isDirectory || isEmptyDirectory)
-            .opacity(isDirectory ? 1 : 0)
-        }
-    }
-
-    private func fixedCell(_ spec: ColumnSpec) -> some View {
-        Text(text(for: spec.id))
-            .font(spec.id == .permissions ? .system(size: 11, design: .monospaced) : .system(size: 12))
-            .lineLimit(1)
-            .truncationMode(.tail)
-            .foregroundStyle(Color(nsColor: .secondaryLabelColor))
-            .frame(width: spec.width, alignment: spec.id.alignment)
-            .clipped()
-    }
-
-    private var dividerSpacer: some View {
-        ZStack {
-            Color.clear.frame(width: 14)
-            Rectangle()
-                .fill(ColorThemeStore.shared.activeTheme.dividerNormalColor)
-                .frame(width: 1)
-        }
-        .frame(width: 14)
-        .allowsHitTesting(false)
-    }
-
-    // MARK: - State
-    private var isDirectory: Bool {
-        file.isDirectory || file.isSymbolicDirectory
-    }
-
-    private var disclosureIcon: String {
-        isExpanded ? "chevron.down" : "chevron.right"
-    }
-
-    private var disclosureOpacity: Double {
-        guard isDirectory else { return 0 }
-        return isEmptyDirectory ? 0.25 : 1
-    }
-
-    private var nameForegroundStyle: Color {
-        if isEmptyDirectory {
-            return Color(nsColor: .secondaryLabelColor).opacity(0.62)
-        }
-        return Color(nsColor: .labelColor)
-    }
-
-    private var rowBackground: some View {
-        Group {
-            if isSelected {
-                Color.accentColor.opacity(0.22)
-            } else if isMarked {
-                Color.accentColor.opacity(0.12)
-            } else if isDropTargeted {
-                Color.accentColor.opacity(0.14)
-            } else {
-                Color.clear
-            }
-        }
-    }
-
-    private var dropModifier: DropTargetModifier {
-        DropTargetModifier(
-            isValidTarget: isDirectory,
-            isDropTargeted: $isDropTargeted,
-            onDrop: onDrop,
-            onTargetChange: { isDropTargeted = $0 }
-        )
-    }
-
-    private func text(for col: ColumnID) -> String {
-        switch col {
-            case .name: return file.nameStr
-            case .dateModified: return file.modifiedDateFormatted
-            case .size: return file.displaySizeFormatted
-            case .kind: return file.kindFormatted
-            case .permissions: return file.permissionsFormatted
-            case .owner: return file.ownerFormatted
-            case .childCount: return file.childCountFormatted
-            case .dateCreated: return file.creationDateFormatted
-            case .dateLastOpened: return file.lastOpenedFormatted
-            case .dateAdded: return file.dateAddedFormatted
-            case .group: return file.groupNameFormatted
-        }
-    }
-
-    private func handleSingleClick() {
-        onSelect()
-        let modifiers = currentClickModifiers()
-        appState.handleClickWithModifiers(on: file, modifiers: modifiers)
-        if modifiers == .none, isDirectory {
-            onToggle()
-        }
-    }
-
-    private func handleDisclosureClick() {
-        guard isDirectory, !isEmptyDirectory else { return }
-        onToggleSubtree()
-    }
-
-    private func currentClickModifiers() -> ClickModifiers {
-        guard let flags = NSApp.currentEvent?.modifierFlags.intersection(.deviceIndependentFlagsMask) else {
-            return .none
-        }
-        if flags.contains(.command) { return .command }
-        if flags.contains(.shift) { return .shift }
-        return .none
-    }
-
-    @ViewBuilder
-    private var contextMenuContent: some View {
-        let optionHeld = NSEvent.modifierFlags.contains(.option)
-        if appState.markedCount(for: panelSide) > 0 {
-            MultiSelectionContextMenu(
-                markedCount: appState.markedCount(for: panelSide),
-                panelSide: panelSide,
-                isOptionHeld: optionHeld
-            ) { action in
-                CntMenuCoord.shared.handleMultiSelectionAction(action, panel: panelSide, appState: appState)
-            }
-        } else if file.isDirectory || file.isSymbolicDirectory {
-            DirectoryContextMenu(file: file, panelSide: panelSide, isOptionHeld: optionHeld) { action in
-                CntMenuCoord.shared.handleDirectoryAction(action, for: file, panel: panelSide, appState: appState)
-            }
-        } else {
-            FileContextMenu(file: file, panelSide: panelSide, isOptionHeld: optionHeld) { action in
-                CntMenuCoord.shared.handleFileAction(action, for: file, panel: panelSide, appState: appState)
-            }
-        }
-    }
 }
