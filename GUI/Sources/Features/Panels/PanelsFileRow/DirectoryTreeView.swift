@@ -21,6 +21,7 @@ struct DirectoryTreeView: View {
     let onDoubleClick: (CustomFile) -> Void
     @State private var expandedPaths: Set<String> = []
     @State private var childrenByPath: [String: [CustomFile]] = [:]
+    @State private var loadingSubtreePaths: Set<String> = []
     @State private var autoExpandedPath = ""
 
     private let maxAutoExpandRootCount = 60
@@ -85,9 +86,11 @@ struct DirectoryTreeView: View {
             isSelected: selectedID == item.file.id,
             isMarked: appState.isMarked(item.file, on: panelSide),
             isEmptyDirectory: isEmptyDirectory(item.file),
+            isLoadingSubtree: loadingSubtreePaths.contains(item.file.pathStr),
             panelSide: panelSide,
             layout: layout,
             onToggle: { toggle(item.file) },
+            onToggleSubtree: { toggleSubtree(item.file) },
             onSelect: { select(item.file) },
             onDoubleClick: { activate(item.file) },
             onDrop: { droppedFiles in drop(droppedFiles, on: item.file) }
@@ -147,6 +150,71 @@ struct DirectoryTreeView: View {
         }
     }
 
+    private func toggleSubtree(_ file: CustomFile) {
+        guard file.isDirectory || file.isSymbolicDirectory else { return }
+        select(file)
+        if expandedPaths.contains(file.pathStr) {
+            collapseSubtree(file)
+            return
+        }
+        guard !loadingSubtreePaths.contains(file.pathStr) else { return }
+        loadingSubtreePaths.insert(file.pathStr)
+        Task { @MainActor in
+            await Task.yield()
+            let rootPath = file.pathStr
+            var expanded = Set<String>()
+            var loadedChildren: [String: [CustomFile]] = [:]
+            var visited = Set<String>()
+            expandSubtree(file, expandedPaths: &expanded, childrenByPath: &loadedChildren, visitedPaths: &visited)
+            for (path, children) in loadedChildren {
+                childrenByPath[path] = children
+            }
+            withAnimation(.easeInOut(duration: 0.18)) {
+                expandedPaths.formUnion(expanded)
+            }
+            loadingSubtreePaths.remove(rootPath)
+        }
+    }
+
+    private func expandSubtree(
+        _ file: CustomFile,
+        expandedPaths: inout Set<String>,
+        childrenByPath: inout [String: [CustomFile]],
+        visitedPaths: inout Set<String>
+    ) {
+        let path = file.pathStr
+        guard !visitedPaths.contains(path) else { return }
+        visitedPaths.insert(path)
+        let children = self.childrenByPath[path] ?? loadChildren(for: file)
+        childrenByPath[path] = children
+        guard !children.isEmpty else { return }
+        expandedPaths.insert(path)
+        for child in children where child.isDirectory || child.isSymbolicDirectory {
+            expandSubtree(
+                child,
+                expandedPaths: &expandedPaths,
+                childrenByPath: &childrenByPath,
+                visitedPaths: &visitedPaths
+            )
+        }
+    }
+
+    private func collapseSubtree(_ file: CustomFile) {
+        var pathsToCollapse: Set<String> = [file.pathStr]
+        collectLoadedDescendantDirectoryPaths(from: file.pathStr, into: &pathsToCollapse)
+        withAnimation(.easeInOut(duration: 0.18)) {
+            expandedPaths.subtract(pathsToCollapse)
+        }
+    }
+
+    private func collectLoadedDescendantDirectoryPaths(from path: String, into result: inout Set<String>) {
+        guard let children = childrenByPath[path] else { return }
+        for child in children where child.isDirectory || child.isSymbolicDirectory {
+            result.insert(child.pathStr)
+            collectLoadedDescendantDirectoryPaths(from: child.pathStr, into: &result)
+        }
+    }
+
     private func loadChildren(for file: CustomFile) -> [CustomFile] {
         let url = file.urlValue
         let includeHidden = appState.showHiddenFilesSnapshot()
@@ -192,6 +260,7 @@ struct DirectoryTreeView: View {
         if autoExpandedPath != currentPath {
             expandedPaths.removeAll()
             childrenByPath.removeAll()
+            loadingSubtreePaths.removeAll()
             autoExpandedPath = currentPath
         }
         autoExpandInitialLevelsIfSmall()
@@ -270,9 +339,11 @@ private struct DirectoryTreeRow: View {
     let isSelected: Bool
     let isMarked: Bool
     let isEmptyDirectory: Bool
+    let isLoadingSubtree: Bool
     let panelSide: FavPanelSide
     @Bindable var layout: ColumnLayoutModel
     let onToggle: () -> Void
+    let onToggleSubtree: () -> Void
     let onSelect: () -> Void
     let onDoubleClick: () -> Void
     let onDrop: ([CustomFile]) -> Bool
@@ -282,7 +353,9 @@ private struct DirectoryTreeRow: View {
     var body: some View {
         HStack(spacing: 0) {
             nameCell
-            ForEach(layout.fixedColumns, id: \.id) { spec in
+            ForEach(layout.fixedColumns.indices, id: \.self) { index in
+                let spec = layout.fixedColumns[index]
+                dividerSpacer
                 fixedCell(spec)
             }
         }
@@ -303,10 +376,7 @@ private struct DirectoryTreeRow: View {
     private var nameCell: some View {
         HStack(spacing: 4) {
             Color.clear.frame(width: CGFloat(depth) * 16)
-            Image(systemName: disclosureIcon)
-                .font(.system(size: 9, weight: .medium))
-                .frame(width: 12)
-                .opacity(disclosureOpacity)
+            disclosureControl
             Image(nsImage: NSWorkspace.shared.icon(forFile: file.urlValue.path))
                 .resizable()
                 .frame(width: 16, height: 16)
@@ -323,6 +393,27 @@ private struct DirectoryTreeRow: View {
         .clipped()
     }
 
+    @ViewBuilder
+    private var disclosureControl: some View {
+        if isLoadingSubtree {
+            ProgressView()
+                .controlSize(.mini)
+                .scaleEffect(0.55)
+                .frame(width: 12, height: 16)
+        } else {
+            Button(action: handleDisclosureClick) {
+                Image(systemName: disclosureIcon)
+                    .font(.system(size: 9, weight: .medium))
+                    .frame(width: 12, height: 16)
+                    .contentShape(Rectangle())
+                    .opacity(disclosureOpacity)
+            }
+            .buttonStyle(.plain)
+            .disabled(!isDirectory || isEmptyDirectory)
+            .opacity(isDirectory ? 1 : 0)
+        }
+    }
+
     private func fixedCell(_ spec: ColumnSpec) -> some View {
         Text(text(for: spec.id))
             .font(spec.id == .permissions ? .system(size: 11, design: .monospaced) : .system(size: 12))
@@ -331,6 +422,17 @@ private struct DirectoryTreeRow: View {
             .foregroundStyle(Color(nsColor: .secondaryLabelColor))
             .frame(width: spec.width, alignment: spec.id.alignment)
             .clipped()
+    }
+
+    private var dividerSpacer: some View {
+        ZStack {
+            Color.clear.frame(width: 14)
+            Rectangle()
+                .fill(ColorThemeStore.shared.activeTheme.dividerNormalColor)
+                .frame(width: 1)
+        }
+        .frame(width: 14)
+        .allowsHitTesting(false)
     }
 
     // MARK: - State
@@ -381,7 +483,7 @@ private struct DirectoryTreeRow: View {
         switch col {
             case .name: return file.nameStr
             case .dateModified: return file.modifiedDateFormatted
-            case .size: return file.fileSizeFormatted
+            case .size: return file.displaySizeFormatted
             case .kind: return file.kindFormatted
             case .permissions: return file.permissionsFormatted
             case .owner: return file.ownerFormatted
@@ -400,6 +502,11 @@ private struct DirectoryTreeRow: View {
         if modifiers == .none, isDirectory {
             onToggle()
         }
+    }
+
+    private func handleDisclosureClick() {
+        guard isDirectory, !isEmptyDirectory else { return }
+        onToggleSubtree()
     }
 
     private func currentClickModifiers() -> ClickModifiers {
