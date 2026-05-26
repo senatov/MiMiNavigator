@@ -36,7 +36,7 @@ final class ProgressPanelAppearance {
     static let defaultWidth: CGFloat = 560
     static let defaultHeight: CGFloat = 236
     static let defaultMinWidth: CGFloat = 380
-    static let defaultMinHeight: CGFloat = 220
+    static let defaultMinHeight: CGFloat = 168
 
     // MARK: - Published properties
 
@@ -103,8 +103,7 @@ final class ProgressPanelAppearance {
         do {
             let encoder = JSONEncoder()
             encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-            let json = try encoder.encode(data)
-            try json.write(to: fileURL)
+            try SafeJSONStorage.writeCodable(data, to: fileURL, label: "progress_appearance.json", encoder: encoder)
             log.debug("[ProgressAppearance] saved to \(fileURL.path)")
         } catch {
             log.error("[ProgressAppearance] save failed: \(error)")
@@ -117,8 +116,11 @@ final class ProgressPanelAppearance {
             return
         }
         do {
-            let json = try Data(contentsOf: fileURL)
-            let d = try JSONDecoder().decode(StoredData.self, from: json)
+            let d = try SafeJSONStorage.loadCodable(
+                from: fileURL,
+                as: StoredData.self,
+                label: "progress_appearance.json"
+            )
             if let v = d.hexBackground   { hexBackground = v }
             if let v = d.hexBorder       { hexBorder = v }
             if let v = d.logFontName     { logFontName = v }
@@ -132,6 +134,8 @@ final class ProgressPanelAppearance {
             log.debug("[ProgressAppearance] loaded: \(Int(panelWidth))x\(Int(panelHeight)) font=\(logFontName)@\(logFontSize)")
         } catch {
             log.error("[ProgressAppearance] load failed: \(error)")
+            SafeJSONStorage.moveUnreadablePrimaryAside(fileURL: fileURL, label: "progress_appearance.json")
+            save()
         }
     }
 
@@ -179,4 +183,5 @@ struct ProgressPanelFrame: Codable, Equatable {
     var relativeY: Double
     var width: Double
     var height: Double
+    var lineCount: Int?
 }

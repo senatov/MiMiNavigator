@@ -33,6 +33,9 @@ final class ProgressPanel: NSObject {
         static let borderWidth: CGFloat = 0.5
         static let buttonMinWidth: CGFloat = 92
         static let buttonHeight: CGFloat = 30
+        static let compactLineLimit = 6
+        static let compactExtraHeight: CGFloat = 124
+        static let compactHeightPadding: CGFloat = 18
     }
 
 
@@ -190,6 +193,7 @@ final class ProgressPanel: NSObject {
             hideProgress()
         }
         onCancel = nil
+        compactForShortOutputIfNeeded()
         log.debug("[ProgressPanel] \(#function) success=\(success) lines=\(lineCount)")
     }
 
@@ -523,7 +527,7 @@ final class ProgressPanel: NSObject {
         if let saved = appearance.frame(for: operationKey),
            let mainFrame = (NSApp.mainWindow ?? NSApp.keyWindow)?.frame {
             let width = clampedWidth(CGFloat(saved.width), mainFrame: mainFrame)
-            let height = clampedHeight(CGFloat(saved.height), mainFrame: mainFrame)
+            let height = clampedHeight(restoredHeight(for: saved), mainFrame: mainFrame)
             let x = mainFrame.minX + CGFloat(saved.relativeX)
             let y = mainFrame.minY + CGFloat(saved.relativeY)
             panel.setFrame(NSRect(x: x, y: y, width: width, height: height), display: false)
@@ -536,8 +540,18 @@ final class ProgressPanel: NSObject {
 
     private func applySavedSizeIfNeeded(to panel: NSPanel) {
         let width = appearance.frame(for: operationKey).map { CGFloat($0.width) } ?? appearance.panelWidth
-        let height = appearance.frame(for: operationKey).map { CGFloat($0.height) } ?? appearance.panelHeight
+        let height = appearance.frame(for: operationKey).map { restoredHeight(for: $0) } ?? appearance.panelHeight
         panel.setFrame(NSRect(x: panel.frame.minX, y: panel.frame.minY, width: width, height: height), display: false)
+    }
+
+    private func restoredHeight(for saved: ProgressPanelFrame) -> CGFloat {
+        if let savedLineCount = saved.lineCount, savedLineCount <= Layout.compactLineLimit {
+            return compactHeight(for: savedLineCount)
+        }
+        if saved.lineCount == nil, saved.height > Double(ProgressPanelAppearance.defaultHeight + 80) {
+            return ProgressPanelAppearance.defaultHeight
+        }
+        return CGFloat(saved.height)
     }
 
     private func persistFrameForCurrentOperation() {
@@ -549,9 +563,34 @@ final class ProgressPanel: NSObject {
             relativeX: Double(frame.minX - mainFrame.minX),
             relativeY: Double(frame.minY - mainFrame.minY),
             width: Double(frame.width),
-            height: Double(frame.height)
+            height: Double(frame.height),
+            lineCount: lineCount
         )
         appearance.updateFrame(stored, for: operationKey)
+    }
+
+    private func compactForShortOutputIfNeeded() {
+        guard let panel, lineCount > 0, lineCount <= Layout.compactLineLimit else { return }
+        let compactHeight = compactHeight(for: lineCount)
+        guard panel.frame.height > compactHeight + Layout.compactHeightPadding else { return }
+        let oldFrame = panel.frame
+        let newFrame = NSRect(
+            x: oldFrame.midX - oldFrame.width / 2,
+            y: oldFrame.midY - compactHeight / 2,
+            width: oldFrame.width,
+            height: compactHeight
+        )
+        panel.setFrame(newFrame, display: true, animate: true)
+        clampPanelToMainWindow()
+        persistFrameForCurrentOperation()
+        log.debug("[ProgressPanel] compacted short output lines=\(lineCount) height=\(Int(compactHeight))")
+    }
+
+    private func compactHeight(for lines: Int) -> CGFloat {
+        let fontHeight = ceil(appearance.logFont.ascender - appearance.logFont.descender + appearance.logFont.leading)
+        let visibleLines = max(3, min(lines, Layout.compactLineLimit))
+        let logHeight = CGFloat(visibleLines) * fontHeight + Layout.logInset.height * 2
+        return max(ProgressPanelAppearance.defaultMinHeight, Layout.compactExtraHeight + logHeight)
     }
 
     private func normalizedOperationKey(_ rawValue: String) -> String {
