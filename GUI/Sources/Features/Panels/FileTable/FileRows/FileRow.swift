@@ -321,6 +321,11 @@ struct FileRow: View, Equatable {
     // This guarantees pixel-perfect alignment between header and rows.
     private var isInlineRenaming: Bool {
         appState.inlineRename.activeFileID == AnyHashable(file.id)
+            && appState.inlineRename.panelTag == inlineRenamePanelTag
+    }
+
+    private var inlineRenamePanelTag: Int {
+        panelSide == .left ? 0 : 1
     }
 
     @ViewBuilder

@@ -525,6 +525,7 @@ final class ProgressPanel: NSObject {
         guard let panel else { return }
         applySavedSizeIfNeeded(to: panel)
         if let saved = appearance.frame(for: operationKey),
+           shouldRestoreFrame(saved),
            let mainFrame = (NSApp.mainWindow ?? NSApp.keyWindow)?.frame {
             let width = clampedWidth(CGFloat(saved.width), mainFrame: mainFrame)
             let height = clampedHeight(restoredHeight(for: saved), mainFrame: mainFrame)
@@ -539,9 +540,28 @@ final class ProgressPanel: NSObject {
     }
 
     private func applySavedSizeIfNeeded(to panel: NSPanel) {
-        let width = appearance.frame(for: operationKey).map { CGFloat($0.width) } ?? appearance.panelWidth
-        let height = appearance.frame(for: operationKey).map { restoredHeight(for: $0) } ?? appearance.panelHeight
+        let saved = appearance.frame(for: operationKey)
+        let width = saved.map { shouldRestoreFrame($0) ? CGFloat($0.width) : ProgressPanelAppearance.defaultWidth }
+            ?? ProgressPanelAppearance.defaultWidth
+        let height = saved.map { shouldRestoreFrame($0) ? restoredHeight(for: $0) : ProgressPanelAppearance.defaultHeight }
+            ?? ProgressPanelAppearance.defaultHeight
         panel.setFrame(NSRect(x: panel.frame.minX, y: panel.frame.minY, width: width, height: height), display: false)
+    }
+
+    private func shouldRestoreFrame(_ saved: ProgressPanelFrame) -> Bool {
+        if let savedLineCount = saved.lineCount, savedLineCount <= Layout.compactLineLimit {
+            return false
+        }
+        if saved.relativeX < 12 || saved.relativeY < 12 {
+            return false
+        }
+        if saved.width < Double(ProgressPanelAppearance.defaultWidth * 0.85) {
+            return false
+        }
+        if saved.height < Double(ProgressPanelAppearance.defaultHeight * 0.85) {
+            return false
+        }
+        return true
     }
 
     private func restoredHeight(for saved: ProgressPanelFrame) -> CGFloat {
@@ -597,7 +617,7 @@ final class ProgressPanel: NSObject {
         let lowered = rawValue.lowercased()
         if lowered.contains("copy") { return "copy" }
         if lowered.contains("move") { return "move" }
-        if lowered.contains("delete") || lowered.contains("trash") { return "delete" }
+        if lowered.contains("delete") || lowered.contains("delet") || lowered.contains("trash") { return "delete" }
         if lowered.contains("pack") { return "pack" }
         if lowered.contains("extract") { return "extract" }
         let allowed = lowered.map { character -> Character in

@@ -33,8 +33,8 @@ final class ProgressPanelAppearance {
     static let defaultLogColorHex    = "#0A1A6B"   // dark navy blue
     static let defaultTitleColorHex  = "#8B1A1A"   // dark reddish
     static let defaultStatusColorHex = "#0A1A6B"   // dark navy
-    static let defaultWidth: CGFloat = 560
-    static let defaultHeight: CGFloat = 236
+    static let defaultWidth: CGFloat = 448
+    static let defaultHeight: CGFloat = 519
     static let defaultMinWidth: CGFloat = 380
     static let defaultMinHeight: CGFloat = 168
 
@@ -171,8 +171,10 @@ final class ProgressPanelAppearance {
 
     func updateFrame(_ frame: ProgressPanelFrame, for operationKey: String) {
         framesByOperation[operationKey] = frame
-        panelWidth = frame.width
-        panelHeight = frame.height
+        if frame.height >= Double(Self.defaultHeight * 0.85) {
+            panelWidth = frame.width
+            panelHeight = frame.height
+        }
         save()
     }
 }
