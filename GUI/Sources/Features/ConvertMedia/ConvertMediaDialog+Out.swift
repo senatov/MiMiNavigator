@@ -15,8 +15,8 @@ extension ConvertMediaDialog {
     
     func performConvert() {
         guard isValid else { return }
-        log.info("[ConvertMediaDialog] convert \(file.nameStr) → \(targetFormat.rawValue)")
-        onConvert(targetFormat, outputURL)
+        log.info("[ConvertMediaDialog] convert \(file.nameStr) → \(targetPreset.rawValue)")
+        onConvert(targetPreset, outputURL)
     }
 
     func chooseOutputDir() {

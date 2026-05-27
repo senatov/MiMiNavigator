@@ -41,6 +41,7 @@
 
 - **Unified panel view modes** — List, Preview, and Tree views now share sorting headers, keyboard navigation, marking, and file-operation shortcuts through the same AppState contracts.
 - **Preview DnD reliability** — drag-and-drop from Preview mode now routes internal panel drops through `DragDropManager`, including a fallback mouse-release watcher for SwiftUI drag sessions that do not deliver AppKit drop callbacks.
+- **VLC-style media presets** — Convert Media now offers explicit presets for MP4 H.264/HEVC VideoToolbox, MOV ProRes, WebM VP9, high-quality GIF, ffmpeg palette GIF, still-frame extraction, and audio extraction.
 - **Tree view mode** — added a third toolbar view mode with lazy expandable directory rows and table-style metadata columns.
 - **Preview selection consistency** — `Ctrl+A`, Cmd/Shift click, drag batches, and operation targets in Preview mode now use the same marked-file state as List mode.
 - **Periodic configuration autosave** — app configuration, panel paths, tabs, sort state, preferences, and startup cache are saved every 30 seconds in addition to normal exit save.
@@ -157,7 +158,7 @@ MiMiNavigator is a dual-panel file manager inspired by **Total Commander** and *
 | **Multi-Selection** | Cmd+Click toggle, Shift+Click range, Insert mark+next, pattern matching, Ctrl+A |
 | **Group Operations** | Batch Cut/Copy/Compress/Share/Delete on marked files; group context menu |
 | **Multi-File Drag & Drop** | Drag all marked files together; badge preview with count; Finder-compatible; works in both list and thumbnail views |
-| **Media Actions** | Native media info command plus working `Convert Media 􀍓 􁔘...` workflows for video, audio, and image files |
+| **Media Actions** | Native media info command plus `Convert Media 􀍓 􁔘...` presets for video, GIF, audio, and image files |
 | **Find Files** | Advanced search: by name (wildcards), content, size, date — with archive search |
 | **Archive VFS** | Open archives as virtual directories, navigate inside, auto-repack on exit |
 | **Parent Directory** | `...` entry pinned to top of every panel, archive-aware navigation |
@@ -556,6 +557,9 @@ Sincere thanks to the open-source community:
 | Sebastian Kreutzberger | [SwiftyBeaver](https://github.com/SwiftyBeaver/SwiftyBeaver) | MIT | Clean, fast, low-friction logging that simply works |
 | Joannis Orlandos | [Citadel](https://github.com/orlandos-nl/Citadel) | MIT | An excellent SSH/SFTP library that fills an important gap not covered by SwiftNIO SSH |
 | The Nmap Project | [nmap](https://nmap.org) | GPLv2 | The gold standard in network diagnostics, invaluable during LAN discovery development |
+| FFmpeg contributors | [FFmpeg](https://ffmpeg.org/legal.html) | LGPL/GPL depending on build | External command-line backend for media conversion presets |
+| Apple | [VideoToolbox](https://developer.apple.com/documentation/videotoolbox) | Apple SDK | Hardware H.264/HEVC encode presets on macOS |
+| Kornel Lesinski | [gifski](https://gif.ski) | AGPL/commercial | Optional high-quality animated GIF encoder |
 | Apple | SwiftNIO, SwiftUI, kqueue, NetServiceBrowser | Apple licenses | Making macOS-native development a genuine pleasure |
 
 Full third-party license texts and notices should also be provided in the application bundle, About/Credits section, or in a dedicated `Licenses` / `ThirdPartyNotices` folder.

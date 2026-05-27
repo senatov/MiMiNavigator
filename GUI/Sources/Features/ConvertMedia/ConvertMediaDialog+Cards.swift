@@ -73,23 +73,30 @@ extension ConvertMediaDialog {
 
     var targetCard: some View {
         HStack(spacing: 10) {
-            Image(systemName: targetFormat.systemImage)
+            Image(systemName: targetPreset.systemImage)
                 .font(.title3)
                 .foregroundStyle(.accent)
                 .frame(width: 28)
             VStack(alignment: .leading, spacing: 2) {
-                Text("Convert to")
+                Text("Preset")
                     .font(.system(size: 14, weight: .light))
                     .foregroundStyle(.blue)
                     .textCase(.uppercase)
-                Picker("", selection: $targetFormat) {
-                    ForEach(availableFormats) { format in
-                        Label(format.displayName, systemImage: format.systemImage).tag(format)
+                Picker("", selection: $targetPreset) {
+                    ForEach(availablePresets) { preset in
+                        Label(preset.title, systemImage: preset.systemImage).tag(preset)
                     }
                 }
                 .labelsHidden()
                 .pickerStyle(.menu)
-                .frame(maxWidth: 200)
+                .frame(maxWidth: 260)
+                .onChange(of: targetPreset) { _, newPreset in
+                    targetFormat = newPreset.targetFormat
+                }
+                Text(targetPreset.subtitle)
+                    .font(.system(size: 11, weight: .light))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
             }
             Spacer()
         }
@@ -121,7 +128,7 @@ extension ConvertMediaDialog {
                                     performConvert()
                                 }
                             }
-                        Text(".\(targetFormat.fileExtension)")
+                        Text(".\(targetPreset.targetFormat.fileExtension)")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }

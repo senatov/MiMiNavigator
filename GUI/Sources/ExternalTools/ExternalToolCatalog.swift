@@ -119,6 +119,30 @@ enum ExternalToolCatalog {
         purpose: "Non-interactive SSH password auth",
         isSystemTool: false)
 
+    static let ffmpeg = ExternalTool(
+        id: "ffmpeg", name: "FFmpeg",
+        binaryCandidates: ["/opt/homebrew/bin/ffmpeg", "/usr/local/bin/ffmpeg"],
+        brewFormula: "ffmpeg",
+        websiteURL: "https://ffmpeg.org",
+        purpose: "Video, audio, GIF and WebP conversion",
+        isSystemTool: false)
+
+    static let ffprobe = ExternalTool(
+        id: "ffprobe", name: "ffprobe",
+        binaryCandidates: ["/opt/homebrew/bin/ffprobe", "/usr/local/bin/ffprobe"],
+        brewFormula: "ffmpeg",
+        websiteURL: "https://ffmpeg.org/ffprobe.html",
+        purpose: "Media stream inspection for conversion presets",
+        isSystemTool: false)
+
+    static let gifski = ExternalTool(
+        id: "gifski", name: "gifski",
+        binaryCandidates: ["/opt/homebrew/bin/gifski", "/usr/local/bin/gifski"],
+        brewFormula: "gifski",
+        websiteURL: "https://gif.ski",
+        purpose: "High-quality video to animated GIF conversion",
+        isSystemTool: false)
+
 
     // MARK: - Brew itself
 
@@ -136,7 +160,7 @@ enum ExternalToolCatalog {
     static let allTools: [ExternalTool] = [
         zip, unzip, tar, ditto, find,
         ssh, scp, smbutil, nslookup, curl, open, opendiff,
-        sevenZip, sshpass,
+        sevenZip, sshpass, ffmpeg, ffprobe, gifski,
     ]
 
 

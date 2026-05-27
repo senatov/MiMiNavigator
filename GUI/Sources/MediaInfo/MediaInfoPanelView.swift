@@ -263,21 +263,25 @@ struct MediaInfoPanelView: View {
                 .textCase(.uppercase)
 
             if controller.isConvertible {
-                row("Format") {
-                    Picker("", selection: $controller.targetFormat) {
-                        ForEach(controller.availableFormats) { format in
-                            Label(format.displayName, systemImage: format.systemImage).tag(format)
+                row("Preset") {
+                    Picker("", selection: $controller.targetPreset) {
+                        ForEach(controller.availablePresets) { preset in
+                            Label(preset.title, systemImage: preset.systemImage).tag(preset)
                         }
                     }
                     .labelsHidden()
                     .pickerStyle(.menu)
-                    .frame(maxWidth: 280, alignment: .leading)
+                    .frame(maxWidth: 320, alignment: .leading)
+                    Text(controller.targetPreset.subtitle)
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
                 }
 
                 row("Output") {
                     TextField("Filename", text: $controller.outputName)
                         .textFieldStyle(.roundedBorder)
-                    Text(".\(controller.targetFormat.fileExtension)")
+                    Text(".\(controller.targetPreset.targetFormat.fileExtension)")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }

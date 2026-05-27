@@ -122,15 +122,16 @@ extension ConvertMediaCoord {
     func makeContentView(file: CustomFile, panel: FavPanelSide, appState: AppState) -> some View {
         ConvertMediaDialog(
             file: file,
-            onConvert: { [weak self] targetFormat, outputURL in
+            onConvert: { [weak self] preset, outputURL in
                 self?.close()
                 Task {
                     await CntMenuCoord.shared.performMediaConversion(
                         file: file,
-                        targetFormat: targetFormat,
+                        targetFormat: preset.targetFormat,
                         outputURL: outputURL,
                         panel: panel,
-                        appState: appState
+                        appState: appState,
+                        preset: preset
                     )
                 }
             },

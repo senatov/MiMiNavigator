@@ -35,6 +35,7 @@ final class MediaInfoPanel: NSObject, ObservableObject {
 
     enum PreferenceKeys {
         static let targetFormat = "MediaInfoPanel.targetFormat"
+        static let targetPreset = "MediaInfoPanel.targetPreset"
         static let deleteOriginal = "MediaInfoPanel.deleteOriginal"
         static let outputDirectory = "MediaInfoPanel.outputDirectory"
     }
@@ -64,11 +65,18 @@ final class MediaInfoPanel: NSObject, ObservableObject {
     @Published var targetFormat: MediaFormat = .mp4 {
         didSet { persistPreferences() }
     }
+    @Published var targetPreset: MediaConversionPreset = .mp4H264VideoToolbox {
+        didSet {
+            targetFormat = targetPreset.targetFormat
+            persistPreferences()
+        }
+    }
     @Published var outputName: String = ""
     @Published var outputDir: String = "" {
         didSet { persistPreferences() }
     }
     @Published var availableFormats: [MediaFormat] = []
+    @Published var availablePresets: [MediaConversionPreset] = []
     @Published var deleteOriginal: Bool = false {
         didSet { persistPreferences() }
     }
@@ -155,7 +163,7 @@ final class MediaInfoPanel: NSObject, ObservableObject {
     var outputURL: URL {
         URL(fileURLWithPath: outputDir)
             .appendingPathComponent(outputName)
-            .appendingPathExtension(targetFormat.fileExtension)
+            .appendingPathExtension(targetPreset.targetFormat.fileExtension)
     }
 
     var sourceFormat: MediaFormat? {
@@ -164,7 +172,7 @@ final class MediaInfoPanel: NSObject, ObservableObject {
     }
 
     var isConvertible: Bool {
-        sourceFormat != nil && !availableFormats.isEmpty
+        sourceFormat != nil && !availablePresets.isEmpty
     }
 
     var isValidConversion: Bool {
@@ -173,19 +181,27 @@ final class MediaInfoPanel: NSObject, ObservableObject {
 
     var toolInfo: String {
         guard let sourceFormat else { return "" }
-        let tool = MediaFormat.requiredTool(from: sourceFormat, to: targetFormat)
-        return tool.isAvailable ? "\(tool.rawValue) • available" : "\(tool.rawValue) • not installed"
+        let tool = sourceFormat == .tgs || sourceFormat == .json
+            ? MediaFormat.requiredTool(from: sourceFormat, to: targetPreset.targetFormat)
+            : targetPreset.requiredTool
+        let status = tool.isAvailable ? "available" : "not installed"
+        return "\(tool.rawValue) • \(status) • \(sourceFormat.rawValue) → \(targetPreset.targetFormat.rawValue)"
     }
 
     func configureConversionState(for url: URL) {
         let detectedSourceFormat = MediaFormat.from(extension: url.pathExtension.lowercased())
-        let targetFormats = detectedSourceFormat.map { MediaFormat.targets(for: $0) } ?? []
-        availableFormats = targetFormats
+        let targetPresets = detectedSourceFormat.map { MediaConversionPreset.presets(for: $0) } ?? []
+        availablePresets = targetPresets
+        availableFormats = targetPresets.map(\.targetFormat).deduplicated()
 
-        if let stored = storedTargetFormat(), targetFormats.contains(stored) {
-            targetFormat = stored
-        } else if let first = targetFormats.first {
-            targetFormat = first
+        if let stored = storedTargetPreset(), targetPresets.contains(stored) {
+            targetPreset = stored
+        } else if let stored = storedTargetFormat(),
+                  let matchingPreset = MediaConversionPreset.defaultPreset(for: detectedSourceFormat ?? .mp4, target: stored),
+                  targetPresets.contains(matchingPreset) {
+            targetPreset = matchingPreset
+        } else if let first = targetPresets.first {
+            targetPreset = first
         }
 
         outputName = url.deletingPathExtension().lastPathComponent
@@ -219,10 +235,11 @@ final class MediaInfoPanel: NSObject, ObservableObject {
         Task {
             await CntMenuCoord.shared.performMediaConversion(
                 file: currentFile,
-                targetFormat: targetFormat,
+                targetFormat: targetPreset.targetFormat,
                 outputURL: outputURL,
                 panel: currentPanelSide,
                 appState: resolvedAppState,
+                preset: targetPreset,
                 deleteOriginal: deleteOriginal
             )
         }
@@ -252,6 +269,7 @@ final class MediaInfoPanel: NSObject, ObservableObject {
 
     func persistPreferences() {
         UserDefaults.standard.set(targetFormat.rawValue, forKey: PreferenceKeys.targetFormat)
+        UserDefaults.standard.set(targetPreset.rawValue, forKey: PreferenceKeys.targetPreset)
         UserDefaults.standard.set(deleteOriginal, forKey: PreferenceKeys.deleteOriginal)
         if !outputDir.isEmpty {
             UserDefaults.standard.set(outputDir, forKey: PreferenceKeys.outputDirectory)
@@ -263,6 +281,13 @@ final class MediaInfoPanel: NSObject, ObservableObject {
             return nil
         }
         return MediaFormat(rawValue: rawValue)
+    }
+
+    func storedTargetPreset() -> MediaConversionPreset? {
+        guard let rawValue = UserDefaults.standard.string(forKey: PreferenceKeys.targetPreset) else {
+            return nil
+        }
+        return MediaConversionPreset(rawValue: rawValue)
     }
 
     func isAnimatedImage(at url: URL) -> Bool {

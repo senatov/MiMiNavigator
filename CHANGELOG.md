@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Media conversion presets** — Convert Media now exposes VLC-style presets for MP4 H.264/HEVC VideoToolbox, MOV ProRes, MKV H.264, WebM VP9, high-quality GIF, ffmpeg palette GIF, frame extraction, and audio extraction.
+- **External media tools** — Settings and About now list FFmpeg, ffprobe, gifski, and VideoToolbox references with install/license links.
+
+### Changed
+- **MP4/MKV defaults** — video presets now prefer Apple VideoToolbox encoders instead of `libx264` defaults, reducing bundled GPL assumptions when using external FFmpeg.
+
 ## [0.9.9.3] — 2026-05-24
 
 > **Release notes**

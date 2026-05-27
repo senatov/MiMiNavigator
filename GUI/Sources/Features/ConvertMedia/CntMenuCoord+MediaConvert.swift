@@ -17,6 +17,7 @@ extension CntMenuCoord {
         outputURL: URL,
         panel: FavPanelSide,
         appState: AppState,
+        preset: MediaConversionPreset? = nil,
         deleteOriginal: Bool = false
     ) async {
         guard let sourceFormat = resolveSourceFormat(for: file) else { return }
@@ -32,6 +33,7 @@ extension CntMenuCoord {
                 targetFormat: targetFormat,
                 outputURL: outputURL,
                 appState: appState,
+                preset: preset,
                 deleteOriginal: deleteOriginal
             )
         } catch {
@@ -77,6 +79,7 @@ extension CntMenuCoord {
         targetFormat: MediaFormat,
         outputURL: URL,
         appState: AppState,
+        preset: MediaConversionPreset?,
         deleteOriginal: Bool
     ) async throws {
         let mediaConversionService: MediaConversionService = .shared
@@ -86,6 +89,7 @@ extension CntMenuCoord {
             target: outputURL,
             sourceFormat: sourceFormat,
             targetFormat: targetFormat,
+            preset: preset,
             onCancel: { [weak self] in
                 self?.cancelMediaConversion()
             }

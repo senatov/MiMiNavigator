@@ -11,15 +11,17 @@ import SwiftUI
 
 struct ConvertMediaDialog: View {
     let file: CustomFile
-    let onConvert: (MediaFormat, URL) -> Void
+    let onConvert: (MediaConversionPreset, URL) -> Void
     let onCancel: () -> Void
     var onNavigate: ((URL) -> Void)?
     var onDismiss: (() -> Void)?
 
     @State var targetFormat: MediaFormat
+    @State var targetPreset: MediaConversionPreset
     @State var outputName: String
     @State var outputDir: String
     @State var availableFormats: [MediaFormat]
+    @State var availablePresets: [MediaConversionPreset]
     @FocusState var isNameFieldFocused: Bool
     @State var configuredWindowNumber: Int?
     @State var frameSaveWorkItem: DispatchWorkItem?
@@ -61,20 +63,24 @@ struct ConvertMediaDialog: View {
         let height: Double
     }
 
-    init(file: CustomFile, onConvert: @escaping (MediaFormat, URL) -> Void, onCancel: @escaping () -> Void) {
+    init(file: CustomFile, onConvert: @escaping (MediaConversionPreset, URL) -> Void, onCancel: @escaping () -> Void) {
         self.file = file
         self.onConvert = onConvert
         self.onCancel = onCancel
 
         let fileExtension = file.urlValue.pathExtension.lowercased()
         let detectedSourceFormat = MediaFormat.from(extension: fileExtension)
-        let targetFormats = detectedSourceFormat.map { MediaFormat.targets(for: $0) } ?? []
+        let targetPresets = detectedSourceFormat.map { MediaConversionPreset.presets(for: $0) } ?? []
+        let targetFormats = targetPresets.map(\.targetFormat).deduplicated()
+        let selectedPreset = targetPresets.first ?? .mp4H264VideoToolbox
         let baseName = (file.nameStr as NSString).deletingPathExtension
         let outputDirectory = file.urlValue.deletingLastPathComponent().path
 
         sourceFormat = detectedSourceFormat
         _availableFormats = State(initialValue: targetFormats)
-        _targetFormat = State(initialValue: targetFormats.first ?? .mp4)
+        _availablePresets = State(initialValue: targetPresets)
+        _targetPreset = State(initialValue: selectedPreset)
+        _targetFormat = State(initialValue: selectedPreset.targetFormat)
         _outputName = State(initialValue: baseName)
         _outputDir = State(initialValue: outputDirectory)
     }
@@ -82,16 +88,18 @@ struct ConvertMediaDialog: View {
     var outputURL: URL {
         URL(fileURLWithPath: outputDir)
             .appendingPathComponent(outputName)
-            .appendingPathExtension(targetFormat.fileExtension)
+            .appendingPathExtension(targetPreset.targetFormat.fileExtension)
     }
 
     var isValid: Bool {
-        !outputName.isEmpty && !availableFormats.isEmpty && sourceFormat != nil
+        !outputName.isEmpty && !availablePresets.isEmpty && sourceFormat != nil
     }
 
     var toolInfo: String {
         guard let sourceFormat else { return "" }
-        let tool = MediaFormat.requiredTool(from: sourceFormat, to: targetFormat)
+        let tool = sourceFormat == .tgs || sourceFormat == .json
+            ? MediaFormat.requiredTool(from: sourceFormat, to: targetPreset.targetFormat)
+            : targetPreset.requiredTool
         if tool == .gifski {
             let gifskiOK = FileManager.default.isExecutableFile(atPath: ConversionTool.gifskiPath)
             let ffmpegOK = FileManager.default.isExecutableFile(atPath: ConversionTool.ffmpegPath)
@@ -104,7 +112,7 @@ struct ConvertMediaDialog: View {
             return "gifski ❌  ffmpeg ❌"
         }
         let status = tool.isAvailable ? "✅" : "❌ not installed"
-        return "\(tool.rawValue) \(status)"
+        return "\(tool.rawValue) \(status) • \(sourceFormat.rawValue) → \(targetPreset.targetFormat.rawValue)"
     }
 
     var body: some View {

@@ -188,6 +188,24 @@ struct AboutView: View {
                     url: "https://nmap.org",
                     license: "GPLv2"
                 )
+                libraryRow(
+                    name: "FFmpeg",
+                    description: "External media conversion command-line tool",
+                    url: "https://ffmpeg.org/legal.html",
+                    license: "LGPL/GPL"
+                )
+                libraryRow(
+                    name: "Apple VideoToolbox",
+                    description: "macOS hardware video encoder backend used by FFmpeg presets",
+                    url: "https://developer.apple.com/documentation/videotoolbox",
+                    license: "Apple SDK"
+                )
+                libraryRow(
+                    name: "gifski",
+                    description: "Optional high-quality GIF encoder",
+                    url: "https://gif.ski",
+                    license: "AGPL/commercial"
+                )
             }
         }
         .padding(.vertical, 12)
