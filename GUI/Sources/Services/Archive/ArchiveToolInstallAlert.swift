@@ -14,6 +14,19 @@ enum ArchiveToolInstallAlert {
 
     // MARK: - Prompt 7-Zip Install
     static func promptSevenZipInstall(reason: String) {
+        Task {
+            let tool = ExternalToolCatalog.sevenZip
+            let report = await ExternalToolDoctor.shared.diagnose(tool)
+            _ = await ExternalToolDoctor.shared.promptRepair(
+                tool: tool,
+                report: report,
+                context: reason
+            )
+        }
+    }
+
+    // MARK: - Legacy Prompt
+    static func promptSevenZipInstallLegacy(reason: String) {
         let command = ExternalToolCatalog.sevenZip.installHint
         let alert = NSAlert()
         alert.alertStyle = .warning

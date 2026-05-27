@@ -206,6 +206,12 @@ struct AboutView: View {
                     url: "https://gif.ski",
                     license: "AGPL/commercial"
                 )
+                libraryRow(
+                    name: "IntelliJ IDEA",
+                    description: "Optional external file and directory diff viewer via idea diff",
+                    url: "https://www.jetbrains.com/help/idea/comparing-files-and-folders.html",
+                    license: "Community/free or commercial"
+                )
             }
         }
         .padding(.vertical, 12)

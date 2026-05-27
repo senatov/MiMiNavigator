@@ -17,7 +17,7 @@
   <img src="https://img.shields.io/badge/Archives-50%2B_Formats-6f42c1" alt="50+ archive formats" />
   <img src="https://img.shields.io/badge/Media-Preview_%26_Conversion-ff8c00" alt="Media preview and conversion" />
   <img src="https://img.shields.io/badge/License-AGPL--3.0-blue" alt="AGPL-3.0" />
-  <a href="https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.9.3"><img src="https://img.shields.io/badge/release-v0.9.9.3-orange" alt="Release v0.9.9.3" /></a>
+  <a href="https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.9.4"><img src="https://img.shields.io/badge/release-v0.9.9.4-orange" alt="Release v0.9.9.4" /></a>
 </p>
 
 <p align="center">
@@ -37,11 +37,20 @@
 
 
 
-## Recent Changes (v0.9.9.3 - May 2026)
+## Recent Changes (v0.9.9.4 - May 2026)
+
+- **External Tool Doctor** — Settings can now check and repair optional tools such as FFmpeg, ffprobe, gifski, 7-Zip and sshpass through Homebrew.
+- **VLC-style media presets** — Convert Media now offers explicit presets for MP4 H.264/HEVC VideoToolbox, MOV ProRes, WebM VP9, high-quality GIF, ffmpeg palette GIF, still-frame extraction, and audio extraction.
+- **Media dependency repair** — Convert Media checks FFmpeg codec support before running and can offer install/reinstall when the local toolchain is missing or incomplete.
+- **Compare tool fallback** — IntelliJ IDEA Community/Ultimate is now detected as a free macOS-compatible file and directory diff viewer via `idea diff`.
+- **Tooling credits** — About and documentation now include FFmpeg, VideoToolbox and gifski links/license notes.
+
+---
+
+## Previous Changes (v0.9.9.3 - May 2026)
 
 - **Unified panel view modes** — List, Preview, and Tree views now share sorting headers, keyboard navigation, marking, and file-operation shortcuts through the same AppState contracts.
 - **Preview DnD reliability** — drag-and-drop from Preview mode now routes internal panel drops through `DragDropManager`, including a fallback mouse-release watcher for SwiftUI drag sessions that do not deliver AppKit drop callbacks.
-- **VLC-style media presets** — Convert Media now offers explicit presets for MP4 H.264/HEVC VideoToolbox, MOV ProRes, WebM VP9, high-quality GIF, ffmpeg palette GIF, still-frame extraction, and audio extraction.
 - **Tree view mode** — added a third toolbar view mode with lazy expandable directory rows and table-style metadata columns.
 - **Preview selection consistency** — `Ctrl+A`, Cmd/Shift click, drag batches, and operation targets in Preview mode now use the same marked-file state as List mode.
 - **Periodic configuration autosave** — app configuration, panel paths, tabs, sort state, preferences, and startup cache are saved every 30 seconds in addition to normal exit save.
@@ -235,7 +244,7 @@ MiMiNavigator can browse archives as virtual directories. Double-click opens the
 > xattr -cr ~/Downloads/MiMiNavigator.app
 > ```
 
-**[Download MiMiNavigator v0.9.9.3 ->](https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.9.3)**
+**[Download MiMiNavigator v0.9.9.4 ->](https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.9.4)**
 **[All releases →](https://github.com/senatov/MiMiNavigator/releases)**
 
 ---
@@ -560,6 +569,7 @@ Sincere thanks to the open-source community:
 | FFmpeg contributors | [FFmpeg](https://ffmpeg.org/legal.html) | LGPL/GPL depending on build | External command-line backend for media conversion presets |
 | Apple | [VideoToolbox](https://developer.apple.com/documentation/videotoolbox) | Apple SDK | Hardware H.264/HEVC encode presets on macOS |
 | Kornel Lesinski | [gifski](https://gif.ski) | AGPL/commercial | Optional high-quality animated GIF encoder |
+| JetBrains | [IntelliJ IDEA](https://www.jetbrains.com/help/idea/comparing-files-and-folders.html) | Community/free or commercial | Optional external file and directory diff viewer via `idea diff` |
 | Apple | SwiftNIO, SwiftUI, kqueue, NetServiceBrowser | Apple licenses | Making macOS-native development a genuine pleasure |
 
 Full third-party license texts and notices should also be provided in the application bundle, About/Credits section, or in a dedicated `Licenses` / `ThirdPartyNotices` folder.

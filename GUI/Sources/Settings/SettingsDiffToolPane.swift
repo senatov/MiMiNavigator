@@ -173,7 +173,7 @@ struct SettingsDiffToolPane: View {
                               bg: isSel ? .white.opacity(0.15) : .orange.opacity(0.10))
                     }
                 }
-                Text(tool.appPath)
+                Text(tool.displayPath)
                     .font(.system(size: 10, design: .monospaced))
                     .foregroundStyle(isSel ? .white.opacity(0.6) : .secondary)
                     .lineLimit(1).truncationMode(.middle)
@@ -220,7 +220,7 @@ struct SettingsDiffToolPane: View {
             Text(tool.name)
                 .font(.system(size: 13, weight: .medium))
             Divider()
-            infoLine("Path:", tool.appPath)
+            infoLine("Path:", tool.displayPath)
             infoLine("Arguments:", tool.arguments)
             infoLine("Scope:", tool.scope.label)
             infoLine("Status:", tool.isInstalled ? "Installed ✓" : "Not found ✗")

@@ -16,12 +16,14 @@ import SwiftUI
 struct SettingsExternalToolsPane: View {
 
     @State private var registry = ExternalToolRegistry.shared
+    @State private var doctor = ExternalToolDoctor.shared
     @State private var showSystemTools = false
 
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             headerSection
+            actionSection
             optionalToolsSection
             systemToolsSection
             Spacer(minLength: 0)
@@ -41,6 +43,31 @@ struct SettingsExternalToolsPane: View {
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
+    }
+
+    // MARK: - Actions
+
+    private var actionSection: some View {
+        HStack(spacing: 8) {
+            Button {
+                Task { await doctor.diagnoseAll() }
+            } label: {
+                Label("Check Tools", systemImage: "stethoscope")
+            }
+            .disabled(doctor.isChecking || doctor.isRepairing)
+            Button {
+                Task { await doctor.repairMissingAndBrokenTools() }
+            } label: {
+                Label("Repair Missing", systemImage: "wrench.adjustable")
+            }
+            .disabled(doctor.isChecking || doctor.isRepairing || !registry.brewAvailable)
+            if doctor.isChecking || doctor.isRepairing {
+                ProgressView()
+                    .controlSize(.small)
+            }
+            Spacer()
+        }
+        .controlSize(.small)
     }
 
 
@@ -137,9 +164,33 @@ struct SettingsExternalToolsPane: View {
                 }
             }
             Spacer()
+            if let report = doctor.reports[status.id] {
+                Text(report.summary)
+                    .font(.system(size: 11))
+                    .foregroundStyle(report.kind.isUsable ? Color.secondary : Color.orange)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+            }
             // (i) button for missing tools
             if !status.isAvailable {
                 ExternalToolInfoButton(tool: status.tool)
+            }
+            if let report = doctor.reports[status.id], !report.kind.isUsable, report.canRepair {
+                Button {
+                    Task {
+                        _ = await doctor.promptRepair(
+                            tool: status.tool,
+                            report: report,
+                            context: status.tool.purpose
+                        )
+                        await doctor.diagnoseAll()
+                    }
+                } label: {
+                    Image(systemName: "wrench.adjustable")
+                        .font(.system(size: 12))
+                }
+                .buttonStyle(.plain)
+                .help("Repair \(status.tool.name)")
             }
         }
         .padding(.horizontal, 10)

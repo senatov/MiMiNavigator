@@ -42,7 +42,11 @@ final class MediaConversionService {
         let tool = resolvedTool(sourceFormat: sourceFormat, targetFormat: targetFormat, preset: conversionPreset)
         logStart(source: source, sourceFormat: sourceFormat, targetFormat: targetFormat, tool: tool)
 
-        guard tool.isAvailable else {
+        let toolReady = await ExternalToolDoctor.shared.ensureReady(
+            conversionTool: tool,
+            context: "Media conversion needs \(tool.rawValue) for \(sourceFormat.rawValue) → \(targetFormat.rawValue)."
+        )
+        guard toolReady else {
             if tool == .gifski {
                 return try await handleMissingGifski(
                     source: source,

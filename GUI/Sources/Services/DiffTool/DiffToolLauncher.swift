@@ -43,7 +43,7 @@ enum DiffToolLauncher {
         do {
             try task.run()
             log.info("[Compare] launched \(tool.name) ✓  args=\(args)")
-            let bundlePath = tool.appPath.hasSuffix(".app") ? tool.appPath : nil
+            let bundlePath = tool.displayPath.hasSuffix(".app") ? tool.displayPath : nil
             waitForAppReady(processName: tool.processName, appPath: bundlePath, frame: NSApp.mainWindow?.frame)
         } catch {
             log.error("[Compare] \(tool.name) failed: \(error.localizedDescription)")

@@ -44,13 +44,19 @@ struct DiffTool: Identifiable, Codable, Equatable {
     // MARK: Computed
 
     var processName: String {
-        URL(fileURLWithPath: appPath).deletingPathExtension().lastPathComponent
+        if id == "intellij", let path = intellijInstallPath, path.hasSuffix(".app") {
+            return URL(fileURLWithPath: path).deletingPathExtension().lastPathComponent
+        }
+        return URL(fileURLWithPath: appPath).deletingPathExtension().lastPathComponent
     }
 
     /// Real binary inside .app, or the path as-is for CLIs.
     /// Prefers CLI launcher (bcomp, ksdiff) over raw GUI binary
     /// because CLI launchers handle arguments correctly.
     var resolvedBinary: String {
+        if id == "intellij", let launcher = intellijLauncherPath {
+            return launcher
+        }
         guard appPath.hasSuffix(".app") else { return appPath }
         let dir = "\(appPath)/Contents/MacOS"
         // Known CLI launcher names (preferred over GUI binary)
@@ -70,7 +76,44 @@ struct DiffTool: Identifiable, Codable, Equatable {
     }
 
     var isInstalled: Bool {
-        FileManager.default.fileExists(atPath: appPath)
+        if id == "intellij" { return intellijInstallPath != nil }
+        return FileManager.default.fileExists(atPath: appPath)
+    }
+
+    var displayPath: String {
+        if id == "intellij", let path = intellijInstallPath { return path }
+        return appPath
+    }
+
+    private var intellijInstallPath: String? {
+        intellijCandidates.first { FileManager.default.fileExists(atPath: $0) }
+    }
+
+    private var intellijLauncherPath: String? {
+        let candidates = [
+            "/usr/local/bin/idea",
+            "/opt/homebrew/bin/idea",
+            "\(NSHomeDirectory())/bin/idea",
+        ]
+        if let launcher = candidates.first(where: { FileManager.default.isExecutableFile(atPath: $0) }) {
+            return launcher
+        }
+        guard let app = intellijInstallPath, app.hasSuffix(".app") else { return nil }
+        let macOSDir = "\(app)/Contents/MacOS"
+        let bundled = ["idea", "IntelliJ IDEA"].map { "\(macOSDir)/\($0)" }
+        return bundled.first { FileManager.default.isExecutableFile(atPath: $0) }
+    }
+
+    private var intellijCandidates: [String] {
+        [
+            "/Applications/IntelliJ IDEA CE.app",
+            "/Applications/IntelliJ IDEA.app",
+            "/Applications/IntelliJ IDEA Ultimate.app",
+            "\(NSHomeDirectory())/Applications/IntelliJ IDEA CE.app",
+            "\(NSHomeDirectory())/Applications/IntelliJ IDEA.app",
+            "/usr/local/bin/idea",
+            "/opt/homebrew/bin/idea",
+        ]
     }
 
     /// Expand %left / %right into real argument array
@@ -144,9 +187,15 @@ extension DiffTool {
         arguments: "\"%left\" \"%right\"",
         scope: .both, isBuiltIn: true, isEnabled: true)
 
+    static let intellij = DiffTool(
+        id: "intellij", name: "IntelliJ IDEA",
+        appPath: "/Applications/IntelliJ IDEA CE.app",
+        arguments: "diff \"%left\" \"%right\"",
+        scope: .both, isBuiltIn: true, isEnabled: true)
+
     static let allBuiltIns: [DiffTool] = [
         .diffMerge, .beyondCompare, .fileMerge,
-        .kaleidoscope, .araxis, .bbEdit, .meld,
+        .kaleidoscope, .araxis, .bbEdit, .meld, .intellij,
     ]
 }
 
@@ -184,8 +233,8 @@ final class DiffToolRegistry {
         // Auto priority
         let priority: [String]
         switch scope {
-        case .filesOnly: priority = ["diffmerge","bc","kscope","araxis","filemerge","bbedit"]
-        case .dirsOnly, .both: priority = ["diffmerge","bc","kscope","araxis"]
+        case .filesOnly: priority = ["diffmerge","bc","kscope","araxis","intellij","filemerge","bbedit"]
+        case .dirsOnly, .both: priority = ["diffmerge","bc","kscope","araxis","intellij"]
         }
         for id in priority {
             if let t = available.first(where: { $0.id == id }) { return t }

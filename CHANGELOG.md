@@ -7,12 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.9.4] — 2026-05-27
+
+> **Release notes**
+> Media conversion presets and external tool self-repair release.
+
 ### Added
+- **External Tool Doctor** — Settings can now check optional tools and repair missing or broken Homebrew-installed dependencies.
 - **Media conversion presets** — Convert Media now exposes VLC-style presets for MP4 H.264/HEVC VideoToolbox, MOV ProRes, MKV H.264, WebM VP9, high-quality GIF, ffmpeg palette GIF, frame extraction, and audio extraction.
 - **External media tools** — Settings and About now list FFmpeg, ffprobe, gifski, and VideoToolbox references with install/license links.
+- **IntelliJ IDEA compare tool** — Diff Tool settings now detect IntelliJ IDEA Community/Ultimate and use `idea diff` for file and directory comparison when available.
 
 ### Changed
 - **MP4/MKV defaults** — video presets now prefer Apple VideoToolbox encoders instead of `libx264` defaults, reducing bundled GPL assumptions when using external FFmpeg.
+- **Media dependency checks** — Convert Media now validates FFmpeg/gifski availability before conversion and offers install/reinstall repair when dependencies are missing or incomplete.
+
+### Fixed
+- **Archive tool repair** — 7-Zip missing-tool prompts now use the shared external tool repair flow.
 
 ## [0.9.9.3] — 2026-05-24
 
@@ -790,7 +801,8 @@ Each release should include:
 
 ---
 
-[Unreleased]: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.3...HEAD
+[Unreleased]: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.4...HEAD
+[0.9.9.4]: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.3...v0.9.9.4
 [0.9.9.3]: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.2...v0.9.9.3
 [0.9.9.2]: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.1...v0.9.9.2
 [0.9.9.1]: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.0...v0.9.9.1
