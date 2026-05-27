@@ -37,6 +37,7 @@ final class ProgressPanelAppearance {
     static let defaultHeight: CGFloat = 519
     static let defaultMinWidth: CGFloat = 380
     static let defaultMinHeight: CGFloat = 168
+    static let defaultAutoCloseSeconds = 2
 
     // MARK: - Published properties
 
@@ -49,6 +50,7 @@ final class ProgressPanelAppearance {
     var hexStatusColor: String      = defaultStatusColorHex
     var panelWidth: CGFloat         = defaultWidth
     var panelHeight: CGFloat        = defaultHeight
+    var autoCloseSeconds: Int       = defaultAutoCloseSeconds
     var framesByOperation: [String: ProgressPanelFrame] = [:]
 
     // MARK: - Computed NSColor/NSFont accessors
@@ -84,6 +86,7 @@ final class ProgressPanelAppearance {
         var hexStatusColor: String?
         var panelWidth: Double?
         var panelHeight: Double?
+        var autoCloseSeconds: Int?
         var framesByOperation: [String: ProgressPanelFrame]?
     }
 
@@ -98,6 +101,7 @@ final class ProgressPanelAppearance {
             hexStatusColor: hexStatusColor,
             panelWidth: Double(panelWidth),
             panelHeight: Double(panelHeight),
+            autoCloseSeconds: autoCloseSeconds,
             framesByOperation: framesByOperation
         )
         do {
@@ -130,6 +134,7 @@ final class ProgressPanelAppearance {
             if let v = d.hexStatusColor  { hexStatusColor = v }
             if let v = d.panelWidth      { panelWidth = CGFloat(v) }
             if let v = d.panelHeight     { panelHeight = CGFloat(v) }
+            if let v = d.autoCloseSeconds { autoCloseSeconds = max(0, v) }
             if let v = d.framesByOperation { framesByOperation = v }
             log.debug("[ProgressAppearance] loaded: \(Int(panelWidth))x\(Int(panelHeight)) font=\(logFontName)@\(logFontSize)")
         } catch {
@@ -151,6 +156,7 @@ final class ProgressPanelAppearance {
         hexStatusColor = Self.defaultStatusColorHex
         panelWidth = Self.defaultWidth
         panelHeight = Self.defaultHeight
+        autoCloseSeconds = Self.defaultAutoCloseSeconds
         framesByOperation = [:]
         save()
     }
@@ -175,6 +181,11 @@ final class ProgressPanelAppearance {
             panelWidth = frame.width
             panelHeight = frame.height
         }
+        save()
+    }
+
+    func clearSavedFrames() {
+        framesByOperation = [:]
         save()
     }
 }

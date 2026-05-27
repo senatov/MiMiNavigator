@@ -97,6 +97,57 @@ struct SettingsProgressPane: View {
                 .padding(.vertical, 4)
             }
 
+            // MARK: - Behavior
+            GroupBox("Behavior") {
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack {
+                        Text("Auto-close:")
+                            .frame(width: 80, alignment: .trailing)
+                        Stepper(value: $appearance.autoCloseSeconds, in: 0...30) {
+                            Text(appearance.autoCloseSeconds == 0
+                                ? "Off"
+                                : "\(appearance.autoCloseSeconds) sec")
+                        }
+                        .frame(width: 130)
+                        Text("after operation finish")
+                            .foregroundStyle(.secondary)
+                    }
+                    .font(.system(size: 12))
+                    Text("The remaining seconds are shown on the green OK button.")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                        .padding(.leading, 96)
+                }
+                .padding(.vertical, 4)
+            }
+
+            // MARK: - Saved Frames
+            GroupBox("Saved Frames") {
+                VStack(alignment: .leading, spacing: 10) {
+                    if appearance.framesByOperation.isEmpty {
+                        Text("No saved ProgressPanel positions yet.")
+                            .font(.system(size: 12))
+                            .foregroundStyle(.secondary)
+                    } else {
+                        LazyVGrid(columns: [GridItem(.adaptive(minimum: 96), spacing: 8)], alignment: .leading, spacing: 8) {
+                            ForEach(appearance.framesByOperation.keys.sorted(), id: \.self) { key in
+                                Text(key)
+                                    .font(.system(size: 11, design: .monospaced))
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 4)
+                                    .background(Color(nsColor: .controlBackgroundColor))
+                                    .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
+                            }
+                        }
+                    }
+                    Button("Reset Saved Positions") {
+                        appearance.clearSavedFrames()
+                    }
+                    .disabled(appearance.framesByOperation.isEmpty)
+                }
+                .padding(.vertical, 4)
+            }
+
             // MARK: - Actions
             HStack {
                 Button("Reset to Defaults") {
@@ -105,6 +156,7 @@ struct SettingsProgressPane: View {
                 Spacer()
                 Button("Save") {
                     appearance.save()
+                    ProgressPanel.shared.refreshAppearance()
                 }
                 .buttonStyle(.borderedProminent)
             }

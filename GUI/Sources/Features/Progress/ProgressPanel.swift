@@ -58,6 +58,7 @@ final class ProgressPanel: NSObject {
     private var onCancel: (() -> Void)?
     private var eventMonitor: Any?
     private var operationKey = "default"
+    private var autoCloseTask: Task<Void, Never>?
     private override init() { super.init() }
     private var appearance: ProgressPanelAppearance { .shared }
 
@@ -93,6 +94,7 @@ final class ProgressPanel: NSObject {
         isCancelled = false
         lineCount = 0
         onCancel = cancelHandler
+        cancelAutoCloseTimer()
         self.operationKey = normalizedOperationKey(operationKey ?? title)
         if panel == nil { createPanel() }
         guard let panel else { return }
@@ -194,6 +196,7 @@ final class ProgressPanel: NSObject {
         }
         onCancel = nil
         compactForShortOutputIfNeeded()
+        startAutoCloseTimerIfNeeded()
         log.debug("[ProgressPanel] \(#function) success=\(success) lines=\(lineCount)")
     }
 
@@ -221,6 +224,7 @@ final class ProgressPanel: NSObject {
     // MARK: - Hide
     func hide() {
         guard let panel, panel.isVisible else { return }
+        cancelAutoCloseTimer()
         persistFrameForCurrentOperation()
         let parent = panel.parent
         NSAnimationContext.runAnimationGroup(
@@ -288,6 +292,7 @@ final class ProgressPanel: NSObject {
     }
 
     private func resetContent(icon: String, title: String, status: String) {
+        cancelAutoCloseTimer()
         iconView?.image = NSImage(systemSymbolName: icon, accessibilityDescription: nil)
         titleLabel?.stringValue = title
         statusLabel?.stringValue = status
@@ -497,6 +502,7 @@ final class ProgressPanel: NSObject {
             hide()
             return
         }
+        cancelAutoCloseTimer()
         isCancelled = true
         statusLabel?.stringValue = "Cancelling... operation will stop at the next safe point"
         actionButton?.title = "OK"
@@ -549,9 +555,6 @@ final class ProgressPanel: NSObject {
     }
 
     private func shouldRestoreFrame(_ saved: ProgressPanelFrame) -> Bool {
-        if let savedLineCount = saved.lineCount, savedLineCount <= Layout.compactLineLimit {
-            return false
-        }
         if saved.relativeX < 12 || saved.relativeY < 12 {
             return false
         }
@@ -618,12 +621,43 @@ final class ProgressPanel: NSObject {
         if lowered.contains("copy") { return "copy" }
         if lowered.contains("move") { return "move" }
         if lowered.contains("delete") || lowered.contains("delet") || lowered.contains("trash") { return "delete" }
+        if lowered.contains("upload") || lowered.contains("⬆") { return "upload" }
+        if lowered.contains("download") || lowered.contains("⬇") { return "download" }
         if lowered.contains("pack") { return "pack" }
         if lowered.contains("extract") { return "extract" }
+        if lowered.contains("connect") || lowered.contains("disconnect") { return "connection" }
+        if lowered.contains("convert") { return "convert" }
+        if lowered.contains("find") || lowered.contains("search") { return "search" }
         let allowed = lowered.map { character -> Character in
             character.isLetter || character.isNumber ? character : "-"
         }
         return String(allowed).split(separator: "-").joined(separator: "-")
+    }
+
+    private func startAutoCloseTimerIfNeeded() {
+        cancelAutoCloseTimer()
+        let seconds = appearance.autoCloseSeconds
+        guard seconds > 0 else { return }
+        autoCloseTask = Task { @MainActor in
+            for remaining in stride(from: seconds, through: 1, by: -1) {
+                actionButton?.title = "OK (\(remaining))"
+                applyActionButtonStyle(.confirm)
+                try? await Task.sleep(for: .seconds(1))
+                guard !Task.isCancelled else { return }
+            }
+            actionButton?.title = "OK"
+            applyActionButtonStyle(.confirm)
+            hide()
+        }
+    }
+
+    private func cancelAutoCloseTimer() {
+        autoCloseTask?.cancel()
+        autoCloseTask = nil
+        if actionButton?.title.hasPrefix("OK (") == true {
+            actionButton?.title = "OK"
+            applyActionButtonStyle(.confirm)
+        }
     }
 
     private func clampedWidth(_ width: CGFloat, mainFrame: NSRect) -> CGFloat {
