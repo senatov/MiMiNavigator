@@ -36,6 +36,10 @@ struct DragSelectionResolver {
         windowPoint: NSPoint,
         panelFrame: NSRect
     ) -> [CustomFile] {
+        guard isInsideNameColumn(windowPoint: windowPoint, side: side, panelFrame: panelFrame) else {
+            log.debug("[DragResolver] drag ignored outside name column")
+            return []
+        }
         guard let hitFile = fileUnderCursor(
             windowPoint: windowPoint,
             panelSide: side,
@@ -52,6 +56,16 @@ struct DragSelectionResolver {
         return [hitFile]
     }
 
+    @MainActor
+    private static func isInsideNameColumn(
+        windowPoint: NSPoint,
+        side: FavPanelSide,
+        panelFrame: NSRect
+    ) -> Bool {
+        let xInPanel = windowPoint.x - panelFrame.minX
+        let nameColumnWidth = ColumnLayoutStore.shared.layout(for: side).nameWidth + 8
+        return xInPanel >= 0 && xInPanel <= nameColumnWidth
+    }
 
     /// Row hit-test — determines which file is under the mouse cursor.
     /// panelFrame = DragNSView bounds in window coords.

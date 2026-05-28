@@ -66,8 +66,10 @@ extension FileTableView {
                 appState: appState,
                 dragDropManager: dragDropManager
             )
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
 
             DragOverlayView(panelSide: panelSide)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
 
             if showSpinner {
                 spinnerView

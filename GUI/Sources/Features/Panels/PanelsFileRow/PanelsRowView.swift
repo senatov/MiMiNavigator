@@ -13,6 +13,7 @@ import SwiftUI
 /// Delegates all divider logic to PanelDividerView.
 struct PanelsRowView: View {
     @Environment(AppState.self) var appState
+    @Environment(DragDropManager.self) var dragDropManager
     @Binding var leftPanelWidth: CGFloat
     let containerWidth: CGFloat
     let containerHeight: CGFloat
@@ -41,7 +42,6 @@ struct PanelsRowView: View {
                     tx.animation = nil
                 }
             }
-
             // Preview divider (doesn't trigger layout during drag)
             if let previewX = divider.dragPreviewLeft {
                 Rectangle()
@@ -50,8 +50,14 @@ struct PanelsRowView: View {
                     .position(x: previewX, y: containerHeight / 2)
                     .allowsHitTesting(false)
             }
+            WindowExternalFileDropInstaller(
+                appState: appState,
+                dragDropManager: dragDropManager,
+                leftPanelWidth: leftPanelWidth,
+                containerWidth: containerWidth
+            )
+            .frame(width: containerWidth, height: containerHeight)
         }
-
     }
 
     // MARK: - Left Panel

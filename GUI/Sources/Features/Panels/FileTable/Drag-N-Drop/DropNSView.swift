@@ -23,26 +23,30 @@ final class DropNSView: NSView {
 
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
-        registerForDraggedTypes([.fileURL])
+        registerForDraggedTypes(PasteboardURLResolver.fileURLPasteboardTypes)
     }
 
     required init?(coder: NSCoder) {
         super.init(coder: coder)
-        registerForDraggedTypes([.fileURL])
+        registerForDraggedTypes(PasteboardURLResolver.fileURLPasteboardTypes)
     }
 
     override func hitTest(_ point: NSPoint) -> NSView? {
-        guard let dragDropManager, !dragDropManager.draggedFiles.isEmpty else { return nil }
-        return self
+        guard acceptsDragHit else { return nil }
+        return bounds.contains(point) ? self : nil
     }
 
     override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {
         log.debug("[AppKitDrop] draggingEntered panel=\(panelSide!)")
-        return sender.draggingSourceOperationMask.intersection([.copy, .move])
+        return allowedOperation(for: sender)
     }
 
     override func draggingUpdated(_ sender: NSDraggingInfo) -> NSDragOperation {
-        sender.draggingSourceOperationMask.intersection([.copy, .move])
+        allowedOperation(for: sender)
+    }
+
+    override func prepareForDragOperation(_ sender: NSDraggingInfo) -> Bool {
+        !PasteboardURLResolver.resolve(from: sender.draggingPasteboard).isEmpty
     }
 
     override func draggingExited(_ sender: NSDraggingInfo?) {
@@ -69,7 +73,8 @@ final class DropNSView: NSView {
         }
         let urls = PasteboardURLResolver.resolve(from: sender.draggingPasteboard)
         guard !urls.isEmpty else {
-            log.debug("[AppKitDrop] pasteboard has no file URLs")
+            let types = sender.draggingPasteboard.types?.map(\.rawValue).joined(separator: ", ") ?? "none"
+            log.debug("[AppKitDrop] pasteboard has no file URLs types=\(types)")
             return false
         }
         let destination = appState.url(for: panelSide)
@@ -77,5 +82,41 @@ final class DropNSView: NSView {
         log.info("[AppKitDrop] external drop: \(files.count) file(s) → \(destination.lastPathComponent)")
         dragDropManager.prepareTransfer(files: files, to: destination, from: nil)
         return true
+    }
+
+    private var acceptsDragHit: Bool {
+        if let dragDropManager, !dragDropManager.draggedFiles.isEmpty { return true }
+        guard let eventType = NSApp.currentEvent?.type else { return true }
+        if isMouseDragEvent(eventType) { return true }
+        return !isPassthroughMouseEvent(eventType)
+    }
+
+    private func isMouseDragEvent(_ eventType: NSEvent.EventType) -> Bool {
+        switch eventType {
+        case .leftMouseDragged, .rightMouseDragged, .otherMouseDragged:
+            return true
+        default:
+            return false
+        }
+    }
+
+    private func isPassthroughMouseEvent(_ eventType: NSEvent.EventType) -> Bool {
+        switch eventType {
+        case .leftMouseDown, .rightMouseDown, .otherMouseDown,
+             .leftMouseUp, .rightMouseUp, .otherMouseUp,
+             .scrollWheel:
+            return true
+        default:
+            return false
+        }
+    }
+
+    private func allowedOperation(for sender: NSDraggingInfo) -> NSDragOperation {
+        let supported = sender.draggingSourceOperationMask.intersection([.copy, .move])
+        if supported.contains(.move) { return .move }
+        if supported.contains(.copy) { return .copy }
+        if sender.draggingSourceOperationMask.contains(.generic) { return .copy }
+        if !PasteboardURLResolver.resolve(from: sender.draggingPasteboard).isEmpty { return .copy }
+        return []
     }
 }

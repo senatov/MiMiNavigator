@@ -22,8 +22,9 @@ final class ClipboardManager {
     private(set) var files: [URL] = []
     private(set) var operation: ClipboardOperation?
     private(set) var sourcePanel: FavPanelSide?
+    private var internalPasteboardChangeCount: Int = -1
 
-    var hasContent: Bool { !files.isEmpty && operation != nil }
+    var hasContent: Bool { internalClipboardIsCurrent || hasExternalFileURLs }
     var isCut: Bool { operation == .cut }
     var isCopy: Bool { operation == .copy }
 
@@ -35,6 +36,7 @@ final class ClipboardManager {
         self.operation = .copy
         self.sourcePanel = panel
         writeToPasteboard(self.files)
+        internalPasteboardChangeCount = NSPasteboard.general.changeCount
         log.info("Clipboard: Copied \(files.count) item(s) from \(String(describing: panel))")
     }
 
@@ -44,6 +46,7 @@ final class ClipboardManager {
         self.operation = .cut
         self.sourcePanel = panel
         writeToPasteboard(self.files)
+        internalPasteboardChangeCount = NSPasteboard.general.changeCount
         log.info("Clipboard: Cut \(files.count) item(s) from \(String(describing: panel))")
     }
 
@@ -63,25 +66,25 @@ final class ClipboardManager {
 
     // MARK: - Paste files to destination via FileOpsEngine (TC/Finder-style)
     func paste(to destination: URL) async -> Result<[URL], Error> {
-        guard hasContent else {
+        guard let pasteSource = resolvePasteSource() else {
             return .failure(FileOpsError.operationFailed("Clipboard is empty"))
         }
+        let sourceFiles = pasteSource.files
+        let sourceOperation = pasteSource.operation
         let engine = FileOpsEngine.shared
         do {
             let progress: FileOpProgress
-            switch operation {
+            switch sourceOperation {
             case .copy:
-                progress = try await engine.copy(items: files, to: destination)
+                progress = try await engine.copy(items: sourceFiles, to: destination)
             case .cut:
-                progress = try await engine.move(items: files, to: destination)
+                progress = try await engine.move(items: sourceFiles, to: destination)
                 if progress.errors.isEmpty && !progress.isCancelled {
-                    for file in files {
+                    for file in sourceFiles {
                         await ArchiveManager.shared.markDirtyByTempPath(file.path)
                     }
                     clear()
                 }
-            case .none:
-                return .failure(FileOpsError.operationFailed("No operation specified"))
             }
             if progress.isCancelled {
                 return .failure(FileOpsError.operationCancelled)
@@ -99,15 +102,43 @@ final class ClipboardManager {
         files = []
         operation = nil
         sourcePanel = nil
+        internalPasteboardChangeCount = -1
         log.debug("Clipboard: Cleared")
     }
 
     // MARK: - Get summary for UI
     var summary: String {
         guard hasContent else { return "Clipboard empty" }
-
+        if !internalClipboardIsCurrent {
+            let count = externalFileURLs().count
+            let itemWord = count == 1 ? "item" : "items"
+            return "External \(count) \(itemWord)"
+        }
         let opName = isCut ? "Cut" : "Copied"
         let itemWord = files.count == 1 ? "item" : "items"
         return "\(opName) \(files.count) \(itemWord)"
+    }
+
+    private var internalClipboardIsCurrent: Bool {
+        !files.isEmpty && operation != nil && NSPasteboard.general.changeCount == internalPasteboardChangeCount
+    }
+
+    private var hasExternalFileURLs: Bool {
+        !externalFileURLs().isEmpty
+    }
+
+    private func externalFileURLs() -> [URL] {
+        PasteboardURLResolver.resolve(from: NSPasteboard.general)
+            .filter { $0.isFileURL && FileManager.default.fileExists(atPath: $0.path) }
+    }
+
+    private func resolvePasteSource() -> (files: [URL], operation: ClipboardOperation)? {
+        if internalClipboardIsCurrent, let operation {
+            return (files, operation)
+        }
+        let externalFiles = externalFileURLs()
+        guard !externalFiles.isEmpty else { return nil }
+        log.info("Clipboard: using external pasteboard file URLs count=\(externalFiles.count)")
+        return (externalFiles, .copy)
     }
 }
