@@ -75,8 +75,8 @@ enum DirectoryAction: String, CaseIterable, Identifiable {
         case .openOnOtherPanel: return "Open on Other Panel"
         case .mirrorPanel: return "Mirror Panel"
         case .addToFavorites: return "Add to Favorites"
-        case .cloudLinkReadOnly: return "Copy Share Link (View)"
-        case .cloudLinkEdit: return "Copy Share Link (Edit)"
+        case .cloudLinkReadOnly: return "Share+Link (View)"
+        case .cloudLinkEdit: return "Share+Link (Edit)"
         }
     }
 

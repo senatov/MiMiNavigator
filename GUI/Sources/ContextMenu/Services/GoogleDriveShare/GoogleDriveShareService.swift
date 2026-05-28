@@ -16,20 +16,42 @@ enum GoogleDriveShareService {
     // MARK: - Copy Share Link
 
     static func copyShareLink(for url: URL, permission: CloudLinkPermission) async -> Bool {
+        let panel = ProgressPanel.shared
+        panel.show(
+            icon: "link.badge.plus",
+            title: "Share+Link: \(url.lastPathComponent)",
+            status: "Uploading to Google Drive…",
+            operationKey: "google-drive-share"
+        )
+        panel.updateProgress(nil)
+        panel.appendKeyValueLog("Source", value: url.path)
         do {
             log.info("[CloudLink] Google Drive upload start file='\(url.lastPathComponent)' permission=\(permission.rawValue)")
+            panel.appendLog("Authenticating with Google Drive…")
             let token = try await GoogleDriveOAuthClient.accessToken()
             let client = GoogleDriveAPIClient(accessToken: token)
+            panel.appendLog("Preparing your personal Google Drive public folder…")
             let publicFolder = try await client.ensurePublicFolder()
+            panel.appendLog("Uploading item…")
             let uploaded = try await client.uploadEntry(at: url, parentID: publicFolder.id)
+            panel.appendLog("Applying public \(permission.rawValue) permission…")
             try await client.applyPermission(fileID: uploaded.id, permission: permission)
             let metadata = try await client.fileMetadata(fileID: uploaded.id)
             let link = try shareLink(from: metadata)
             copyToClipboard(link)
+            panel.appendLog("File uploaded to your personal Google Drive.")
+            panel.appendKeyValueLog("File", value: url.lastPathComponent)
+            panel.appendKeyValueLog("Path", value: url.path)
+            panel.appendKeyValueLog("Public link", value: link)
+            panel.appendLog("Public link copied to clipboard.")
+            panel.finish(success: true, message: "Share+Link ready: link copied to clipboard", autoClose: false)
+            panel.startAutoCloseTimerIfNeeded(seconds: 2)
             showNotification("Google Drive share link copied.")
             log.info("[CloudLink] Google Drive link copied fileID='\(uploaded.id)' link='\(link)'")
             return true
         } catch {
+            panel.appendLog("❌ \(error.localizedDescription)")
+            panel.finish(success: false, message: "Share+Link failed")
             showNotification("Google Drive share link failed: \(error.localizedDescription)")
             log.error("[CloudLink] Google Drive share failed: \(error.localizedDescription)")
             if case GoogleDriveError.missingClientSecret = error {

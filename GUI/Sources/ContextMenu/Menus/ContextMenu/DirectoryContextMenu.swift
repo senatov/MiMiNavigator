@@ -191,7 +191,7 @@ struct DirectoryContextMenu: View {
             }
         } label: {
             Label {
-                Text("Copy Share Link")
+                Text("Share+Link")
             } icon: {
                 Image(systemName: "link.badge.plus")
             }
