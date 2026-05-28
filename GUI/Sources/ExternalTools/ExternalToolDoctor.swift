@@ -137,7 +137,7 @@ final class ExternalToolDoctor {
         guard encoders.exitCode == 0 else {
             return report(tool: tool, kind: .broken, summary: "ffmpeg failed", details: encoders.combinedOutput)
         }
-        let required = ["h264_videotoolbox", "hevc_videotoolbox", "prores_ks", "libvpx-vp9", "libwebp", "libmp3lame", "libvorbis", "libopus"]
+        let required = ["h264_videotoolbox", "hevc_videotoolbox", "prores_ks", "libvpx-vp9", "libmp3lame", "libopus"]
         let missing = required.filter { !encoders.combinedOutput.contains($0) }
         if !missing.isEmpty {
             return report(tool: tool, kind: .incomplete, summary: "Missing codecs: \(missing.joined(separator: ", "))", details: encoders.combinedOutput)
