@@ -16,7 +16,7 @@ final class ProgressPanel: NSObject {
     static let shared = ProgressPanel()
 
     // MARK: - Layout
-    private enum Layout {
+    enum Layout {
         static let containerCornerRadius: CGFloat = 12
         static let outerPadding: CGFloat = 14
         static let topInset: CGFloat = 10
@@ -34,38 +34,44 @@ final class ProgressPanel: NSObject {
         static let buttonMinWidth: CGFloat = 92
         static let buttonHeight: CGFloat = 30
         static let compactLineLimit = 6
-        static let compactExtraHeight: CGFloat = 124
+        static let compactExtraHeight: CGFloat = 168
         static let compactHeightPadding: CGFloat = 18
+        static let minimumPanelHeight: CGFloat = 248
     }
 
-
     // MARK: - UI
-    private var panel: NSPanel?
-    private var container: NSView?
-    private var iconView: NSImageView?
-    private var titleLabel: NSTextField?
-    private var statusLabel: NSTextField?
-    private var progressIndicator: NSProgressIndicator?
-    private var progressHeightConstraint: NSLayoutConstraint?
-    private var logTextView: NSTextView?
-    private var scrollView: NSScrollView?
-    private var actionButton: NSButton?
-    private var backgroundEffectView: NSVisualEffectView?
-    private var logBackgroundEffectView: NSVisualEffectView?
+    var panel: NSPanel?
+    var container: NSView?
+    var iconView: NSImageView?
+    var titleLabel: NSTextField?
+    var statusLabel: NSTextField?
+    var progressIndicator: NSProgressIndicator?
+    var progressHeightConstraint: NSLayoutConstraint?
+    var logTextView: NSTextView?
+    var scrollView: NSScrollView?
+    var actionButton: NSButton?
+    var backgroundEffectView: NSVisualEffectView?
+    var logBackgroundEffectView: NSVisualEffectView?
     // MARK: - State
-    private(set) var isCancelled = false
-    private var lineCount = 0
-    private var onCancel: (() -> Void)?
-    private var eventMonitor: Any?
-    private var operationKey = "default"
-    private var autoCloseTask: Task<Void, Never>?
+    var isCancelled = false
+    var isFinished = false
+    var autoCloseSuppressedByUser = false
+    var autoCloseGeneration = 0
+    var lastActionButtonActionTime: TimeInterval = 0
+    var lineCount = 0
+    var onCancel: (() -> Void)?
+    var eventMonitor: Any?
+    var operationKey = "default"
+    var autoCloseTask: Task<Void, Never>?
     private override init() { super.init() }
-    private var appearance: ProgressPanelAppearance { .shared }
+    var appearance: ProgressPanelAppearance { .shared }
 
     // MARK: - Compatibility Helpers
     func reset(title: String, message: String, icon: String = "archivebox.fill") {
         if panel == nil { createPanel() }
         isCancelled = false
+        isFinished = false
+        autoCloseSuppressedByUser = false
         lineCount = 0
         operationKey = "reset"
         resetContent(icon: icon, title: title, status: message)
@@ -74,7 +80,7 @@ final class ProgressPanel: NSObject {
     func setCancelHandler(_ handler: (() -> Void)?) {
         onCancel = handler
         actionButton?.isEnabled = true
-        if actionButton?.title != "OK" {
+        if !isFinished {
             actionButton?.title = "Cancel"
             applyActionButtonStyle(.cancel)
         }
@@ -92,6 +98,8 @@ final class ProgressPanel: NSObject {
         cancelHandler: (() -> Void)? = nil
     ) {
         isCancelled = false
+        isFinished = false
+        autoCloseSuppressedByUser = false
         lineCount = 0
         onCancel = cancelHandler
         cancelAutoCloseTimer()
@@ -145,6 +153,21 @@ final class ProgressPanel: NSObject {
         tv.textStorage?.append(NSAttributedString(string: entry, attributes: attrs))
         tv.scrollToEndOfDocument(nil)
     }
+
+    // MARK: - Append Attributed Log
+    func appendAttributedLog(_ content: NSAttributedString) {
+        guard let tv = logTextView else { return }
+        lineCount += 1
+        let prefix = NSAttributedString(
+            string: "\(lineCount). ",
+            attributes: [.font: appearance.logFont, .foregroundColor: appearance.logColor])
+        let entry = NSMutableAttributedString(attributedString: prefix)
+        entry.append(content)
+        entry.append(NSAttributedString(string: "\n", attributes: [.font: appearance.logFont]))
+        tv.textStorage?.append(entry)
+        tv.scrollToEndOfDocument(nil)
+    }
+
     // MARK: - Update Status
     func updateStatus(_ text: String) {
         statusLabel?.stringValue = text
@@ -176,7 +199,7 @@ final class ProgressPanel: NSObject {
         statusLabel?.stringValue = text
     }
     // MARK: - Finish (Cancel → OK)
-    func finish(success: Bool, message: String? = nil) {
+    func finish(success: Bool, message: String? = nil, autoClose: Bool = true) {
         if let msg = message {
             statusLabel?.stringValue = msg
         } else {
@@ -189,6 +212,7 @@ final class ProgressPanel: NSObject {
         actionButton?.isEnabled = true
         actionButton?.keyEquivalent = "\r"
         applyActionButtonStyle(.confirm)
+        isFinished = true
         if success && progressIndicator?.isHidden == false {
             updateProgress(1)
         } else {
@@ -196,12 +220,14 @@ final class ProgressPanel: NSObject {
         }
         onCancel = nil
         compactForShortOutputIfNeeded()
-        startAutoCloseTimerIfNeeded()
+        if autoClose {
+            startAutoCloseTimerIfNeeded()
+        }
         log.debug("[ProgressPanel] \(#function) success=\(success) lines=\(lineCount)")
     }
 
     func finish(success: Bool, details: String?) {
-        finish(success: success, message: details)
+        finish(success: success, message: details, autoClose: true)
     }
 
     // MARK: - Suspend for User Decision
@@ -224,6 +250,7 @@ final class ProgressPanel: NSObject {
     // MARK: - Hide
     func hide() {
         guard let panel, panel.isVisible else { return }
+        autoCloseGeneration += 1
         cancelAutoCloseTimer()
         persistFrameForCurrentOperation()
         let parent = panel.parent
@@ -242,726 +269,4 @@ final class ProgressPanel: NSObject {
             })
     }
 
-    private func makeContainerView() -> NSView {
-        let view = NSView()
-        view.translatesAutoresizingMaskIntoConstraints = false
-        view.wantsLayer = true
-        view.layer?.cornerRadius = Layout.containerCornerRadius
-        view.layer?.masksToBounds = true
-        view.layer?.borderWidth = Layout.borderWidth
-        return view
-    }
-
-    private func makeBackgroundEffectView() -> NSVisualEffectView {
-        let effectView = NSVisualEffectView()
-        effectView.translatesAutoresizingMaskIntoConstraints = false
-        effectView.material = .hudWindow
-        effectView.blendingMode = .behindWindow
-        effectView.state = .active
-        effectView.wantsLayer = true
-        effectView.layer?.cornerRadius = Layout.containerCornerRadius
-        effectView.layer?.masksToBounds = true
-        return effectView
-    }
-
-    private func makeLogEffectView() -> NSVisualEffectView {
-        let effectView = NSVisualEffectView()
-        effectView.translatesAutoresizingMaskIntoConstraints = false
-        effectView.material = .sidebar
-        effectView.blendingMode = .withinWindow
-        effectView.state = .active
-        effectView.wantsLayer = true
-        effectView.layer?.cornerRadius = Layout.logCornerRadius
-        effectView.layer?.masksToBounds = true
-        return effectView
-    }
-
-    private func configureContainerAppearance() {
-        let a = appearance
-        container?.layer?.backgroundColor = a.bgColor.withAlphaComponent(0.92).cgColor
-        container?.layer?.borderColor = a.borderColor.cgColor
-        backgroundEffectView?.alphaValue = 1
-    }
-
-    private func configureLogContainerAppearance() {
-        let a = appearance
-        scrollView?.layer?.cornerRadius = Layout.logCornerRadius
-        scrollView?.layer?.borderColor = a.borderColor.cgColor
-        scrollView?.layer?.borderWidth = Layout.borderWidth
-        logBackgroundEffectView?.alphaValue = 0.72
-    }
-
-    private func resetContent(icon: String, title: String, status: String) {
-        cancelAutoCloseTimer()
-        iconView?.image = NSImage(systemSymbolName: icon, accessibilityDescription: nil)
-        titleLabel?.stringValue = title
-        statusLabel?.stringValue = status
-        progressIndicator?.stopAnimation(nil)
-        progressIndicator?.isIndeterminate = false
-        progressIndicator?.doubleValue = 0
-        setProgressVisible(false)
-        logTextView?.string = ""
-        actionButton?.title = "Cancel"
-        actionButton?.keyEquivalent = ""
-        actionButton?.isEnabled = true
-        applyActionButtonStyle(.cancel)
-    }
-
-    private func attachPanelToMainWindow(_ panel: NSPanel) {
-        if let window = NSApp.mainWindow ?? NSApp.keyWindow {
-            window.addChildWindow(panel, ordered: .above)
-        }
-    }
-
-    private func animatePanelIn(_ panel: NSPanel) {
-        log.debug(#function)
-        installEventMonitorIfNeeded()
-        panel.alphaValue = 0
-        panel.makeKeyAndOrderFront(nil)
-        NSAnimationContext.runAnimationGroup { ctx in
-            ctx.duration = 0.18
-            ctx.timingFunction = CAMediaTimingFunction(name: .easeOut)
-            panel.animator().alphaValue = 1
-        }
-    }
-
-    // MARK: - Create Panel (autolayout, resizable)
-    private func createPanel() {
-        let a = appearance
-        let panel = NSPanel(
-            contentRect: NSRect(x: 0, y: 0, width: a.panelWidth, height: a.panelHeight),
-            styleMask: [.titled, .resizable],
-            backing: .buffered,
-            defer: true
-        )
-        panel.becomesKeyOnlyIfNeeded = false
-        panel.isFloatingPanel = true
-        panel.hidesOnDeactivate = false
-        panel.hasShadow = true
-        panel.isOpaque = false
-        panel.level = .floating
-        panel.isMovableByWindowBackground = true
-        panel.titlebarAppearsTransparent = true
-        panel.titleVisibility = .hidden
-        panel.backgroundColor = .clear
-        panel.minSize = NSSize(
-            width: ProgressPanelAppearance.defaultMinWidth,
-            height: ProgressPanelAppearance.defaultMinHeight
-        )
-        panel.delegate = self
-
-        guard let contentView = panel.contentView else { return }
-
-        let containerView = makeContainerView()
-        let backgroundView = makeBackgroundEffectView()
-        contentView.addSubview(containerView)
-        containerView.addSubview(backgroundView, positioned: .below, relativeTo: nil)
-
-        container = containerView
-        backgroundEffectView = backgroundView
-
-        NSLayoutConstraint.activate([
-            containerView.topAnchor.constraint(equalTo: contentView.topAnchor),
-            containerView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
-            containerView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
-            containerView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
-            backgroundView.topAnchor.constraint(equalTo: containerView.topAnchor),
-            backgroundView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor),
-            backgroundView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
-            backgroundView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
-        ])
-
-        let icon = NSImageView()
-        icon.translatesAutoresizingMaskIntoConstraints = false
-        icon.image = NSImage(systemSymbolName: "archivebox.fill", accessibilityDescription: "Progress")
-        icon.symbolConfiguration = NSImage.SymbolConfiguration(pointSize: 16, weight: .medium)
-        icon.contentTintColor = .controlAccentColor
-        containerView.addSubview(icon)
-        iconView = icon
-
-        let title = makeLabel(font: a.titleFont, color: a.titleColor)
-        title.lineBreakMode = .byTruncatingMiddle
-        containerView.addSubview(title)
-        titleLabel = title
-
-        let status = makeLabel(font: a.statusFont, color: a.statusColor)
-        status.lineBreakMode = .byTruncatingMiddle
-        containerView.addSubview(status)
-        statusLabel = status
-
-        let progress = NSProgressIndicator()
-        progress.translatesAutoresizingMaskIntoConstraints = false
-        progress.isIndeterminate = false
-        progress.minValue = 0
-        progress.maxValue = 1
-        progress.doubleValue = 0
-        progress.controlSize = .small
-        progress.style = .bar
-        progress.isDisplayedWhenStopped = false
-        containerView.addSubview(progress)
-        progressIndicator = progress
-
-        let scrollView = NSScrollView()
-        scrollView.translatesAutoresizingMaskIntoConstraints = false
-        scrollView.hasVerticalScroller = true
-        scrollView.autohidesScrollers = true
-        scrollView.drawsBackground = false
-        scrollView.wantsLayer = true
-
-        let logEffectView = makeLogEffectView()
-        scrollView.addSubview(logEffectView, positioned: .below, relativeTo: nil)
-        logBackgroundEffectView = logEffectView
-
-        let textView = CopyableTextView()
-        textView.isEditable = false
-        textView.isAutomaticTextCompletionEnabled = false
-        textView.allowsUndo = true
-        textView.isRichText = false
-        textView.drawsBackground = false
-        textView.textContainerInset = Layout.logInset
-        textView.textContainer?.lineFragmentPadding = Layout.logLinePadding
-        textView.textContainer?.widthTracksTextView = true
-        textView.isVerticallyResizable = true
-        textView.isHorizontallyResizable = false
-        textView.autoresizingMask = [.width]
-
-        let menu = NSMenu()
-        menu.addItem(withTitle: "Copy All", action: #selector(copyAll), keyEquivalent: "")
-        textView.menu = menu
-        scrollView.documentView = textView
-        containerView.addSubview(scrollView)
-        self.scrollView = scrollView
-        logTextView = textView
-
-        NSLayoutConstraint.activate([
-            logEffectView.topAnchor.constraint(equalTo: scrollView.topAnchor),
-            logEffectView.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor),
-            logEffectView.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor),
-            logEffectView.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor),
-        ])
-
-        let button = ProgressActionButton()
-        button.translatesAutoresizingMaskIntoConstraints = false
-        button.title = "Cancel"
-        button.target = self
-        button.action = #selector(actionButtonTapped)
-        containerView.addSubview(button)
-        actionButton = button
-        applyActionButtonStyle(.cancel)
-
-        NSLayoutConstraint.activate([
-            icon.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: Layout.outerPadding),
-            icon.topAnchor.constraint(equalTo: containerView.topAnchor, constant: Layout.topInset),
-            icon.widthAnchor.constraint(equalToConstant: Layout.iconSize),
-            icon.heightAnchor.constraint(equalToConstant: Layout.iconSize),
-
-            title.leadingAnchor.constraint(equalTo: icon.trailingAnchor, constant: Layout.titleSpacing),
-            title.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -Layout.outerPadding),
-            title.centerYAnchor.constraint(equalTo: icon.centerYAnchor),
-
-            status.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: Layout.outerPadding),
-            status.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -Layout.outerPadding),
-            status.topAnchor.constraint(equalTo: title.bottomAnchor, constant: Layout.statusTopSpacing),
-
-            progress.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: Layout.outerPadding),
-            progress.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -Layout.outerPadding),
-            progress.topAnchor.constraint(equalTo: status.bottomAnchor, constant: Layout.progressTopSpacing),
-
-            scrollView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: Layout.outerPadding),
-            scrollView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -Layout.outerPadding),
-            scrollView.topAnchor.constraint(equalTo: progress.bottomAnchor, constant: Layout.logTopSpacing),
-            scrollView.bottomAnchor.constraint(equalTo: button.topAnchor, constant: -Layout.logTopSpacing),
-
-            button.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -Layout.outerPadding),
-            button.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -Layout.buttonBottomInset),
-            button.widthAnchor.constraint(greaterThanOrEqualToConstant: Layout.buttonMinWidth),
-            button.heightAnchor.constraint(equalToConstant: Layout.buttonHeight),
-        ])
-        let progressHeightConstraint = progress.heightAnchor.constraint(equalToConstant: 0)
-        progressHeightConstraint.isActive = true
-        self.progressHeightConstraint = progressHeightConstraint
-
-        self.panel = panel
-        configureContainerAppearance()
-        configureLogContainerAppearance()
-    }
-    // MARK: - Copy to Clipboard
-    func copyAllToClipboard() {
-        guard let text = logTextView?.string, !text.isEmpty else { return }
-        let pasteboard = NSPasteboard.general
-        pasteboard.clearContents()
-        pasteboard.setString(text, forType: .string)
-        log.debug("[ProgressPanel] copied log to clipboard")
-    }
-    @objc private func copyAll() {
-        copyAllToClipboard()
-    }
-    // MARK: - Action Button
-    @objc private func actionButtonTapped() {
-        if actionButton?.title == "OK" {
-            hide()
-            return
-        }
-        cancelAutoCloseTimer()
-        isCancelled = true
-        statusLabel?.stringValue = "Cancelling... operation will stop at the next safe point"
-        actionButton?.title = "OK"
-        actionButton?.keyEquivalent = "\r"
-        actionButton?.isEnabled = true
-        applyActionButtonStyle(.confirm)
-        progressIndicator?.stopAnimation(nil)
-        onCancel?()
-        log.debug("[ProgressPanel] cancel requested")
-    }
-    // MARK: - Center in Main Window
-    private func centerInMainWindow() {
-        guard let panel else { return }
-        if let mainFrame = (NSApp.mainWindow ?? NSApp.keyWindow)?.frame {
-            let x = mainFrame.midX - panel.frame.width / 2
-            let y = mainFrame.midY - panel.frame.height / 2
-            panel.setFrameOrigin(NSPoint(x: x, y: y))
-        } else {
-            panel.center()
-        }
-    }
-
-    // MARK: - Frame Persistence
-
-    private func restoreFrameForCurrentOperation() {
-        guard let panel else { return }
-        applySavedSizeIfNeeded(to: panel)
-        if let saved = appearance.frame(for: operationKey),
-           shouldRestoreFrame(saved),
-           let mainFrame = (NSApp.mainWindow ?? NSApp.keyWindow)?.frame {
-            let width = clampedWidth(CGFloat(saved.width), mainFrame: mainFrame)
-            let height = clampedHeight(restoredHeight(for: saved), mainFrame: mainFrame)
-            let x = mainFrame.minX + CGFloat(saved.relativeX)
-            let y = mainFrame.minY + CGFloat(saved.relativeY)
-            panel.setFrame(NSRect(x: x, y: y, width: width, height: height), display: false)
-            clampPanelToMainWindow()
-            return
-        }
-        clampPanelToMainWindow()
-        centerInMainWindow()
-    }
-
-    private func applySavedSizeIfNeeded(to panel: NSPanel) {
-        let saved = appearance.frame(for: operationKey)
-        let width = saved.map { shouldRestoreFrame($0) ? CGFloat($0.width) : ProgressPanelAppearance.defaultWidth }
-            ?? ProgressPanelAppearance.defaultWidth
-        let height = saved.map { shouldRestoreFrame($0) ? restoredHeight(for: $0) : ProgressPanelAppearance.defaultHeight }
-            ?? ProgressPanelAppearance.defaultHeight
-        panel.setFrame(NSRect(x: panel.frame.minX, y: panel.frame.minY, width: width, height: height), display: false)
-    }
-
-    private func shouldRestoreFrame(_ saved: ProgressPanelFrame) -> Bool {
-        if saved.relativeX < 12 || saved.relativeY < 12 {
-            return false
-        }
-        if saved.width < Double(ProgressPanelAppearance.defaultWidth * 0.85) {
-            return false
-        }
-        if saved.height < Double(ProgressPanelAppearance.defaultHeight * 0.85) {
-            return false
-        }
-        return true
-    }
-
-    private func restoredHeight(for saved: ProgressPanelFrame) -> CGFloat {
-        if let savedLineCount = saved.lineCount, savedLineCount <= Layout.compactLineLimit {
-            return compactHeight(for: savedLineCount)
-        }
-        if saved.lineCount == nil, saved.height > Double(ProgressPanelAppearance.defaultHeight + 80) {
-            return ProgressPanelAppearance.defaultHeight
-        }
-        return CGFloat(saved.height)
-    }
-
-    private func persistFrameForCurrentOperation() {
-        guard let panel,
-              let mainFrame = (NSApp.mainWindow ?? NSApp.keyWindow)?.frame
-        else { return }
-        let frame = panel.frame
-        let stored = ProgressPanelFrame(
-            relativeX: Double(frame.minX - mainFrame.minX),
-            relativeY: Double(frame.minY - mainFrame.minY),
-            width: Double(frame.width),
-            height: Double(frame.height),
-            lineCount: lineCount
-        )
-        appearance.updateFrame(stored, for: operationKey)
-    }
-
-    private func compactForShortOutputIfNeeded() {
-        guard let panel, lineCount > 0, lineCount <= Layout.compactLineLimit else { return }
-        let compactHeight = compactHeight(for: lineCount)
-        guard panel.frame.height > compactHeight + Layout.compactHeightPadding else { return }
-        let oldFrame = panel.frame
-        let newFrame = NSRect(
-            x: oldFrame.midX - oldFrame.width / 2,
-            y: oldFrame.midY - compactHeight / 2,
-            width: oldFrame.width,
-            height: compactHeight
-        )
-        panel.setFrame(newFrame, display: true, animate: true)
-        clampPanelToMainWindow()
-        persistFrameForCurrentOperation()
-        log.debug("[ProgressPanel] compacted short output lines=\(lineCount) height=\(Int(compactHeight))")
-    }
-
-    private func compactHeight(for lines: Int) -> CGFloat {
-        let fontHeight = ceil(appearance.logFont.ascender - appearance.logFont.descender + appearance.logFont.leading)
-        let visibleLines = max(3, min(lines, Layout.compactLineLimit))
-        let logHeight = CGFloat(visibleLines) * fontHeight + Layout.logInset.height * 2
-        return max(ProgressPanelAppearance.defaultMinHeight, Layout.compactExtraHeight + logHeight)
-    }
-
-    private func normalizedOperationKey(_ rawValue: String) -> String {
-        let lowered = rawValue.lowercased()
-        if lowered.contains("copy") { return "copy" }
-        if lowered.contains("move") { return "move" }
-        if lowered.contains("delete") || lowered.contains("delet") || lowered.contains("trash") { return "delete" }
-        if lowered.contains("upload") || lowered.contains("⬆") { return "upload" }
-        if lowered.contains("download") || lowered.contains("⬇") { return "download" }
-        if lowered.contains("pack") { return "pack" }
-        if lowered.contains("extract") { return "extract" }
-        if lowered.contains("connect") || lowered.contains("disconnect") { return "connection" }
-        if lowered.contains("convert") { return "convert" }
-        if lowered.contains("find") || lowered.contains("search") { return "search" }
-        let allowed = lowered.map { character -> Character in
-            character.isLetter || character.isNumber ? character : "-"
-        }
-        return String(allowed).split(separator: "-").joined(separator: "-")
-    }
-
-    private func startAutoCloseTimerIfNeeded() {
-        cancelAutoCloseTimer()
-        let seconds = appearance.autoCloseSeconds
-        guard seconds > 0 else { return }
-        autoCloseTask = Task { @MainActor in
-            for remaining in stride(from: seconds, through: 1, by: -1) {
-                actionButton?.title = "OK (\(remaining))"
-                applyActionButtonStyle(.confirm)
-                try? await Task.sleep(for: .seconds(1))
-                guard !Task.isCancelled else { return }
-            }
-            actionButton?.title = "OK"
-            applyActionButtonStyle(.confirm)
-            hide()
-        }
-    }
-
-    private func cancelAutoCloseTimer() {
-        autoCloseTask?.cancel()
-        autoCloseTask = nil
-        if actionButton?.title.hasPrefix("OK (") == true {
-            actionButton?.title = "OK"
-            applyActionButtonStyle(.confirm)
-        }
-    }
-
-    private func clampedWidth(_ width: CGFloat, mainFrame: NSRect) -> CGFloat {
-        min(max(width, ProgressPanelAppearance.defaultMinWidth), max(ProgressPanelAppearance.defaultMinWidth, mainFrame.width - 48))
-    }
-
-    private func clampedHeight(_ height: CGFloat, mainFrame: NSRect) -> CGFloat {
-        min(max(height, ProgressPanelAppearance.defaultMinHeight), max(ProgressPanelAppearance.defaultMinHeight, mainFrame.height - 80))
-    }
-
-    // MARK: - Clamp Panel to Main Window
-    private func clampPanelToMainWindow() {
-        guard let panel else { return }
-        let mainFrame = (NSApp.mainWindow ?? NSApp.keyWindow)?.frame ?? NSScreen.main?.visibleFrame
-        let availableWidth = max(ProgressPanelAppearance.defaultMinWidth, (mainFrame?.width ?? 760) - 48)
-        let availableHeight = max(ProgressPanelAppearance.defaultMinHeight, (mainFrame?.height ?? 520) - 80)
-        let targetWidth = min(panel.frame.width, min(availableWidth, 760))
-        let targetHeight = min(panel.frame.height, min(availableHeight, 520))
-        let current = panel.frame
-        let minX = mainFrame?.minX ?? current.minX
-        let minY = mainFrame?.minY ?? current.minY
-        let maxX = (mainFrame?.maxX ?? current.maxX) - targetWidth
-        let maxY = (mainFrame?.maxY ?? current.maxY) - targetHeight
-        let targetX = min(max(current.minX, minX), maxX)
-        let targetY = min(max(current.minY, minY), maxY)
-        let targetFrame = NSRect(x: targetX, y: targetY, width: targetWidth, height: targetHeight)
-        guard targetFrame != current else { return }
-        panel.setFrame(targetFrame, display: false)
-    }
-
-    // MARK: - Make Label Helper
-    private func makeLabel(font: NSFont, color: NSColor) -> NSTextField {
-        let lbl = NSTextField(labelWithString: "")
-        lbl.translatesAutoresizingMaskIntoConstraints = false
-        lbl.font = font
-        lbl.textColor = color
-        lbl.maximumNumberOfLines = 1
-        lbl.cell?.truncatesLastVisibleLine = true
-        return lbl
-    }
-
-    private func applyActionButtonStyle(_ semantic: ProgressActionButton.Semantic) {
-        guard let button = actionButton as? ProgressActionButton else { return }
-        button.semantic = semantic
-    }
-
-    private func setProgressVisible(_ visible: Bool) {
-        progressIndicator?.isHidden = !visible
-        progressHeightConstraint?.constant = visible ? Layout.progressHeight : 0
-    }
-
-    private func installEventMonitorIfNeeded() {
-        guard eventMonitor == nil else { return }
-        eventMonitor = NSEvent.addLocalMonitorForEvents(matching: [.keyDown]) { [weak self] event in
-            guard let self else { return event }
-            let keyCode = event.keyCode
-            let keepEvent = MainActor.assumeIsolated {
-                self.handleKeyEvent(keyCode: keyCode)
-            }
-            return keepEvent ? event : nil
-        }
-    }
-
-    private func removeEventMonitor() {
-        guard let eventMonitor else { return }
-        NSEvent.removeMonitor(eventMonitor)
-        self.eventMonitor = nil
-    }
-
-    private func handleKeyEvent(keyCode: UInt16) -> Bool {
-        guard panel?.isVisible == true, actionButton?.title == "OK" else { return true }
-        let isReturn = keyCode == 36 || keyCode == 76
-        let isEscape = keyCode == 53
-        if isReturn || isEscape {
-            hide()
-            return false
-        }
-        return true
-    }
-    // MARK: - Abbreviate Path
-    private func abbreviatePath(_ path: String) -> String {
-        let home = FileManager.default.homeDirectoryForCurrentUser.path
-        if path.hasPrefix(home) {
-            return "~" + path.dropFirst(home.count)
-        }
-        return path
-    }
-    // MARK: - Refresh Appearance (call after Settings change)
-    func refreshAppearance() {
-        guard container != nil else { return }
-        let a = appearance
-        configureContainerAppearance()
-        titleLabel?.font = a.titleFont
-        titleLabel?.textColor = a.titleColor
-        statusLabel?.font = a.statusFont
-        statusLabel?.textColor = a.statusColor
-        configureLogContainerAppearance()
-        log.debug("[ProgressPanel] appearance refreshed")
-    }
-}
-
-final class ProgressActionButton: NSButton {
-    enum Semantic {
-        case cancel
-        case confirm
-
-        var borderColor: NSColor {
-            switch self {
-            case .cancel: return NSColor.systemRed.withAlphaComponent(0.9)
-            case .confirm: return NSColor.systemGreen.withAlphaComponent(0.9)
-            }
-        }
-
-        var titleColor: NSColor {
-            switch self {
-            case .cancel: return NSColor.systemRed.blended(withFraction: 0.35, of: .labelColor) ?? .labelColor
-            case .confirm: return NSColor.systemGreen.blended(withFraction: 0.35, of: .labelColor) ?? .labelColor
-            }
-        }
-
-        var glowColor: NSColor {
-            switch self {
-            case .cancel: return NSColor.systemRed.withAlphaComponent(0.25)
-            case .confirm: return NSColor.systemGreen.withAlphaComponent(0.25)
-            }
-        }
-    }
-
-    var semantic: Semantic = .cancel {
-        didSet {
-            needsLayout = true
-            updateAppearance()
-        }
-    }
-
-    private let baseGradient = CAGradientLayer()
-    private let glossGradient = CAGradientLayer()
-    private let borderLayer = CAShapeLayer()
-    private let innerShadowLayer = CAShapeLayer()
-
-    override init(frame frameRect: NSRect) {
-        super.init(frame: frameRect)
-        configure()
-    }
-
-    required init?(coder: NSCoder) {
-        super.init(coder: coder)
-        configure()
-    }
-
-    override func layout() {
-        super.layout()
-        guard let layer else { return }
-
-        let buttonBounds = bounds.insetBy(dx: 0.5, dy: 0.5)
-        let shapePath = CGPath(
-            roundedRect: buttonBounds,
-            cornerWidth: 9,
-            cornerHeight: 9,
-            transform: nil
-        )
-
-        baseGradient.frame = bounds
-        glossGradient.frame = bounds
-        borderLayer.frame = bounds
-        borderLayer.path = shapePath
-        innerShadowLayer.frame = bounds
-        innerShadowLayer.path = shapePath
-
-        layer.shadowPath = shapePath
-        updateAppearance()
-    }
-
-    override func setButtonType(_ buttonType: NSButton.ButtonType) {
-        super.setButtonType(buttonType)
-        updateAppearance()
-    }
-
-    override func updateLayer() {
-        super.updateLayer()
-        updateAppearance()
-    }
-
-    private func configure() {
-        isBordered = false
-        bezelStyle = .regularSquare
-        setButtonType(.momentaryPushIn)
-        focusRingType = .none
-        wantsLayer = true
-        layerContentsRedrawPolicy = .onSetNeedsDisplay
-        imagePosition = .noImage
-        font = .systemFont(ofSize: 12.5, weight: .semibold)
-        contentTintColor = semantic.titleColor
-
-        guard let layer else { return }
-        layer.cornerRadius = 9
-        layer.masksToBounds = false
-        layer.backgroundColor = NSColor.clear.cgColor
-        layer.shadowOpacity = 1
-        layer.shadowRadius = 4
-        layer.shadowOffset = CGSize(width: 0, height: -2)
-
-        baseGradient.colors = [
-            NSColor.white.withAlphaComponent(0.62).cgColor,
-            NSColor(calibratedWhite: 0.92, alpha: 0.76).cgColor,
-            NSColor(calibratedWhite: 0.82, alpha: 0.92).cgColor
-        ]
-        baseGradient.locations = [0, 0.42, 1]
-        baseGradient.startPoint = CGPoint(x: 0.5, y: 1)
-        baseGradient.endPoint = CGPoint(x: 0.5, y: 0)
-        baseGradient.cornerRadius = 9
-
-        glossGradient.colors = [
-            NSColor.white.withAlphaComponent(0.52).cgColor,
-            NSColor.white.withAlphaComponent(0.12).cgColor,
-            NSColor.clear.cgColor
-        ]
-        glossGradient.locations = [0, 0.22, 0.8]
-        glossGradient.startPoint = CGPoint(x: 0.5, y: 1)
-        glossGradient.endPoint = CGPoint(x: 0.5, y: 0)
-        glossGradient.cornerRadius = 9
-
-        borderLayer.fillColor = NSColor.clear.cgColor
-        borderLayer.lineWidth = 1
-
-        innerShadowLayer.fillColor = NSColor.clear.cgColor
-        innerShadowLayer.strokeColor = NSColor.white.withAlphaComponent(0.35).cgColor
-        innerShadowLayer.lineWidth = 1
-        innerShadowLayer.opacity = 0.95
-
-        layer.addSublayer(baseGradient)
-        layer.addSublayer(glossGradient)
-        layer.addSublayer(innerShadowLayer)
-        layer.addSublayer(borderLayer)
-
-        updateAppearance()
-    }
-
-    private func updateAppearance() {
-        let isPressed = cell?.isHighlighted ?? false
-        let scale: CGFloat = isPressed ? 0.965 : 1
-
-        layer?.setAffineTransform(CGAffineTransform(scaleX: scale, y: scale))
-        layer?.shadowColor = semantic.glowColor.cgColor
-        layer?.shadowOpacity = isPressed ? 0.18 : 0.34
-        layer?.shadowRadius = isPressed ? 2 : 4
-        layer?.shadowOffset = CGSize(width: 0, height: isPressed ? -1 : -2)
-
-        borderLayer.strokeColor = semantic.borderColor.cgColor
-        innerShadowLayer.opacity = isEnabled ? 0.95 : 0.45
-
-        let topAlpha: CGFloat = isEnabled ? (isPressed ? 0.48 : 0.62) : 0.28
-        let midAlpha: CGFloat = isEnabled ? (isPressed ? 0.62 : 0.76) : 0.36
-        let bottomAlpha: CGFloat = isEnabled ? (isPressed ? 0.78 : 0.92) : 0.48
-        baseGradient.colors = [
-            NSColor.white.withAlphaComponent(topAlpha).cgColor,
-            NSColor(calibratedWhite: 0.92, alpha: midAlpha).cgColor,
-            NSColor(calibratedWhite: 0.82, alpha: bottomAlpha).cgColor
-        ]
-        glossGradient.opacity = isPressed ? 0.55 : 1
-
-        let paragraph = NSMutableParagraphStyle()
-        paragraph.alignment = .center
-        attributedTitle = NSAttributedString(
-            string: title,
-            attributes: [
-                .font: font ?? NSFont.systemFont(ofSize: 12.5, weight: .semibold),
-                .foregroundColor: isEnabled ? semantic.titleColor : NSColor.disabledControlTextColor,
-                .paragraphStyle: paragraph,
-                .kern: 0.15
-            ]
-        )
-    }
-}
-
-// MARK: - NSWindowDelegate
-extension ProgressPanel: NSWindowDelegate {
-    nonisolated func windowDidResize(_ notification: Notification) {
-        MainActor.assumeIsolated {
-            guard panel != nil else { return }
-            persistFrameForCurrentOperation()
-        }
-    }
-
-    nonisolated func windowDidMove(_ notification: Notification) {
-        MainActor.assumeIsolated {
-            persistFrameForCurrentOperation()
-        }
-    }
-
-    nonisolated func windowDidResignKey(_ notification: Notification) {
-        MainActor.assumeIsolated {
-            guard panel?.isVisible == true, actionButton?.title == "OK" else { return }
-            hide()
-        }
-    }
-}
-
-private final class CopyableTextView: NSTextView {
-    override func performKeyEquivalent(with event: NSEvent) -> Bool {
-        if event.modifierFlags.contains(.command), event.charactersIgnoringModifiers == "c" {
-            self.copy(self)
-            return true
-        }
-        return super.performKeyEquivalent(with: event)
-    }
 }
