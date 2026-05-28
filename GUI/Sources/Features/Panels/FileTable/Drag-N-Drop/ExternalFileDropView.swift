@@ -14,9 +14,10 @@ struct WindowExternalFileDropInstaller: NSViewRepresentable {
     let leftPanelWidth: CGFloat
     let containerWidth: CGFloat
 
-    func makeNSView(context: Context) -> WindowExternalFileDropInstallerNSView {
-        let view = WindowExternalFileDropInstallerNSView()
-        view.update(
+    func makeNSView(context: Context) -> ExternalFileDropNSView {
+        let view = ExternalFileDropNSView(frame: .zero)
+        updateReceiver(
+            view,
             appState: appState,
             dragDropManager: dragDropManager,
             leftPanelWidth: leftPanelWidth,
@@ -25,108 +26,28 @@ struct WindowExternalFileDropInstaller: NSViewRepresentable {
         return view
     }
 
-    func updateNSView(_ nsView: WindowExternalFileDropInstallerNSView, context: Context) {
-        nsView.update(
+    func updateNSView(_ nsView: ExternalFileDropNSView, context: Context) {
+        updateReceiver(
+            nsView,
             appState: appState,
             dragDropManager: dragDropManager,
             leftPanelWidth: leftPanelWidth,
             containerWidth: containerWidth
         )
     }
-}
 
-// MARK: - Window External File Drop Installer NSView
-@MainActor
-final class WindowExternalFileDropInstallerNSView: NSView {
-    private static let receiverIdentifier = NSUserInterfaceItemIdentifier("MiMiNavigator.ExternalFileDropReceiver")
-
-    private weak var appState: AppState?
-    private weak var dragDropManager: DragDropManager?
-    private var leftPanelWidth: CGFloat = 0
-    private var containerWidth: CGFloat = 0
-    private var receiver: ExternalFileDropNSView?
-
-    override func hitTest(_ point: NSPoint) -> NSView? {
-        nil
-    }
-
-    override func viewDidMoveToWindow() {
-        super.viewDidMoveToWindow()
-        installReceiverIfNeeded()
-        scheduleReceiverFrameUpdate()
-    }
-
-    override func viewWillMove(toWindow newWindow: NSWindow?) {
-        if newWindow == nil {
-            receiver?.removeFromSuperview()
-            receiver = nil
-        }
-        super.viewWillMove(toWindow: newWindow)
-    }
-
-    override func layout() {
-        super.layout()
-        updateReceiverFrame()
-    }
-
-    // MARK: - Update
-    func update(
+    // MARK: - Update Receiver
+    private func updateReceiver(
+        _ view: ExternalFileDropNSView,
         appState: AppState,
         dragDropManager: DragDropManager,
         leftPanelWidth: CGFloat,
         containerWidth: CGFloat
     ) {
-        self.appState = appState
-        self.dragDropManager = dragDropManager
-        self.leftPanelWidth = leftPanelWidth
-        self.containerWidth = containerWidth
-        syncReceiverState()
-        installReceiverIfNeeded()
-        scheduleReceiverFrameUpdate()
-    }
-
-    // MARK: - Receiver Installation
-    private func installReceiverIfNeeded() {
-        guard let contentView = window?.contentView else { return }
-        if receiver == nil {
-            receiver = contentView.subviews.first { $0.identifier == Self.receiverIdentifier } as? ExternalFileDropNSView
-        }
-        if receiver?.superview === contentView {
-            syncReceiverState()
-            return
-        }
-        receiver?.removeFromSuperview()
-        let view = ExternalFileDropNSView(frame: .zero)
-        receiver = view
-        view.identifier = Self.receiverIdentifier
-        syncReceiverState()
-        contentView.addSubview(view, positioned: .above, relativeTo: nil)
-        window?.acceptsMouseMovedEvents = true
-        log.info("[ExternalDrop] window receiver installed")
-    }
-
-    // MARK: - Receiver State
-    private func syncReceiverState() {
-        receiver?.appState = appState
-        receiver?.dragDropManager = dragDropManager
-        receiver?.leftPanelWidth = leftPanelWidth
-        receiver?.containerWidth = containerWidth
-    }
-
-    // MARK: - Receiver Frame
-    private func scheduleReceiverFrameUpdate() {
-        Task { @MainActor [weak self] in
-            self?.installReceiverIfNeeded()
-            self?.updateReceiverFrame()
-        }
-    }
-
-    private func updateReceiverFrame() {
-        guard let receiver, let contentView = window?.contentView else { return }
-        let frameInWindow = convert(bounds, to: nil)
-        let frameInContent = contentView.convert(frameInWindow, from: nil)
-        guard receiver.frame != frameInContent else { return }
-        receiver.frame = frameInContent
+        view.appState = appState
+        view.dragDropManager = dragDropManager
+        view.leftPanelWidth = leftPanelWidth
+        view.containerWidth = containerWidth
     }
 }
 
