@@ -51,6 +51,9 @@ extension FileOpsEngine {
                 )
             )
         }
+        if operation != .delete, let diagnostic = validateWritableDestination(source: source, target: target, operation: operation) {
+            return .fail(diagnostic)
+        }
         let fm = FileManager.default
         do {
             switch operation {
@@ -63,5 +66,22 @@ extension FileOpsEngine {
         } catch {
             return .fail(FileOperationDiagnostics.make(operation: operation, source: source, target: target, error: error))
         }
+    }
+
+    // MARK: - Destination Preflight
+    nonisolated private static func validateWritableDestination(
+        source: URL,
+        target: URL,
+        operation: FileOpType
+    ) -> FileOperationDiagnosticInfo? {
+        let parent = target.deletingLastPathComponent()
+        guard parent.isFileURL else { return nil }
+        guard FileManager.default.fileExists(atPath: parent.path) else {
+            return FileOperationDiagnostics.makeUnwritableDestination(operation: operation, source: source, target: target, reason: "Destination folder does not exist.")
+        }
+        guard FileManager.default.isWritableFile(atPath: parent.path) else {
+            return FileOperationDiagnostics.makeUnwritableDestination(operation: operation, source: source, target: target, reason: "Destination folder is not writable.")
+        }
+        return nil
     }
 }

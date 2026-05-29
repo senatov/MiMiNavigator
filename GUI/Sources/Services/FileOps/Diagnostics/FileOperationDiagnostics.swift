@@ -90,6 +90,30 @@ enum FileOperationDiagnostics {
         )
     }
 
+    static func makeUnwritableDestination(
+        operation: FileOpType,
+        source: URL,
+        target: URL,
+        reason: String
+    ) -> FileOperationDiagnosticInfo {
+        let parent = target.deletingLastPathComponent()
+        let lines = [
+            "Operation: \(operation.title)",
+            "Path: \(source.path)",
+            "Target: \(target.path)",
+            "Destination: \(parent.path)",
+            "Reason: \(reason)",
+            "Hint: Choose a writable folder or grant access to the destination."
+        ]
+        return FileOperationDiagnosticInfo(
+            title: "\(operation.title) Failed",
+            summary: "\"\(source.lastPathComponent)\" could not be \(operation.pastTense.lowercased()) because the destination is not writable.",
+            details: lines.joined(separator: "\n"),
+            path: source.path,
+            progressMessage: "\(source.lastPathComponent): destination not writable"
+        )
+    }
+
     private static func summaryText(for operation: FileOpType, source: URL, target: URL?, error: NSError) -> String {
         summaryText(prefix: operation.pastTense.lowercased(), source: source, error: error)
     }
