@@ -13,7 +13,9 @@ extension SMBFileProvider {
 
     static func removeAppMountDirectoryIfEmpty(_ mountPointURL: URL, mountRootURL: URL) {
         guard mountPointURL.path.hasPrefix(mountRootURL.path + "/") else { return }
-        try? FileManager.default.removeItem(at: mountPointURL)
+        let fileManager = FileManager.default
+        guard (try? fileManager.contentsOfDirectory(atPath: mountPointURL.path).isEmpty) == true else { return }
+        try? fileManager.removeItem(at: mountPointURL)
     }
 
     static func sanitizeMountName(_ name: String) -> String {

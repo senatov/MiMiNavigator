@@ -105,10 +105,12 @@ struct HistoryWindowContent: View {
             List {
                 ForEach(filteredItems) { item in
                     let path = item.url.path
+                    let isDisconnected = AppState.isStaleAppManagedNetworkMountPath(item.url)
                     HistoryRow(
                         path: path,
                         addedAt: item.addedAt,
                         isAvailable: isDirectoryAvailable(item.url),
+                        unavailableReason: isDisconnected ? "Disconnected network mount" : nil,
                         highlightText: searchText,
                         onSelect: { navigateToPath(path) },
                         onDelete: { deleteFromHistory(item.url) }
@@ -213,6 +215,7 @@ struct HistoryWindowContent: View {
     // MARK: - Availability
     private func isDirectoryAvailable(_ url: URL) -> Bool {
         guard url.isFileURL else { return true }
+        guard !AppState.isStaleAppManagedNetworkMountPath(url) else { return false }
         var isDir: ObjCBool = false
         return FileManager.default.fileExists(atPath: url.path, isDirectory: &isDir) && isDir.boolValue
     }

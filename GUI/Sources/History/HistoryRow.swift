@@ -6,6 +6,7 @@
 // Copyright © 2025-2026 Senatov. All rights reserved.
 // Description: Single row in navigation history List with hover, highlight, swipe-delete.
 
+import AppKit
 import SwiftUI
 
 // MARK: - History Row
@@ -13,6 +14,7 @@ struct HistoryRow: View {
     let path: String
     let addedAt: Date
     let isAvailable: Bool
+    var unavailableReason: String?
     var highlightText: String = ""
     let onSelect: () -> Void
     let onDelete: () -> Void
@@ -74,6 +76,21 @@ struct HistoryRow: View {
                     .lineLimit(1)
             }
             Spacer(minLength: 4)
+            if let unavailableReason {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .font(.system(size: 12))
+                    .foregroundStyle(.orange.opacity(0.8))
+                    .help(unavailableReason)
+            }
+            Button(action: copyPath) {
+                Image(systemName: "doc.on.doc")
+                    .font(.system(size: 13))
+                    .foregroundStyle(.secondary)
+            }
+            .buttonStyle(.plain)
+            .help("Copy path")
+            .opacity(isHovered ? 1 : 0)
+            .animation(.easeInOut(duration: 0.15), value: isHovered)
             Button(action: onDelete) {
                 Image(systemName: "xmark.circle.fill")
                     .font(.system(size: 14))
@@ -90,7 +107,18 @@ struct HistoryRow: View {
         }
         .onTapGesture(perform: onSelect)
         .help(path)
+        .contextMenu {
+            Button(action: copyPath) {
+                Label("Copy Path", systemImage: "doc.on.doc")
+            }
+        }
         .opacity(isAvailable ? 1 : 0.55)
+    }
+    // MARK: - Copy Path
+    private func copyPath() {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(path, forType: .string)
+        log.debug("[History] copied path='\(path)'")
     }
     // MARK: - Highlighted Text
     @ViewBuilder

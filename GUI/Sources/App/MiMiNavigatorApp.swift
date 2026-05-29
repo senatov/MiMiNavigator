@@ -87,6 +87,7 @@ struct MiMiNavigatorApp: App {
         WindowFrameRestorer.shared.scheduleRestore()
         bindAppStateIfNeeded()
         wireCoordinatorCallbacks()
+        AppManagedMountCleanupScheduler.start()
     }
 
     func bindAppStateIfNeeded() {
@@ -145,6 +146,7 @@ struct MiMiNavigatorApp: App {
         if AppState.isRemotePath(appState.rightURL) {
             await appState.restoreLocalPath(for: FavPanelSide.right)
         }
+        await AppState.cleanupStaleAppManagedMounts()
     }
 
     private func handleRemoteConnect(url: URL, password: String) async {

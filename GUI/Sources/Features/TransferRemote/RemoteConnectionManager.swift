@@ -272,6 +272,7 @@ final class RemoteConnectionManager {
         removeConnection(at: connectionIndex)
         updateActiveConnectionAfterDisconnect(id: id)
         disableConnectOnStartAfterManualDisconnect(for: connection.server)
+        await AppState.cleanupStaleAppManagedMounts()
 
         log.info("\(#function) \(connection.displayName)")
         log.info("\(#function) remaining=\(connections.count)")
@@ -310,6 +311,7 @@ final class RemoteConnectionManager {
 
         connections.removeAll()
         activeConnectionID = nil
+        await AppState.cleanupStaleAppManagedMounts()
         log.info("\(#function) all closed")
     }
 
