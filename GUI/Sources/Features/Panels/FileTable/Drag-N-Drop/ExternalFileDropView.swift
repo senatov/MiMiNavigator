@@ -113,14 +113,12 @@ final class ExternalFileDropNSView: NSView {
     }
 
     private var acceptsPointerEvent: Bool {
-        guard let eventType = NSApp.currentEvent?.type else { return true }
+        guard let eventType = NSApp.currentEvent?.type else { return false }
         switch eventType {
-        case .leftMouseDown, .rightMouseDown, .otherMouseDown,
-             .leftMouseUp, .rightMouseUp, .otherMouseUp,
-             .scrollWheel:
-            return false
-        default:
+        case .leftMouseDragged, .rightMouseDragged, .otherMouseDragged:
             return true
+        default:
+            return false
         }
     }
 
