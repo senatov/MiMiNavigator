@@ -52,14 +52,18 @@ extension BreadCrumbView {
         }
         var used = totalWidth
         while used > budgetForText {
-            guard let idx = segs.enumerated().filter({ $0.element.display.count > 3 }).max(by: { $0.element.priority < $1.element.priority })?.offset else { break }
+            guard let idx = shrinkCandidateIndex(in: segs) else { break }
             let old = segs[idx]
-            let newDisplay = truncMiddle(old.display, maxLen: max(3, old.display.count - 4))
+            let newDisplay = truncMiddle(old.name, maxLen: max(4, old.display.count - 4))
+            guard newDisplay.count < old.display.count else {
+                segs[idx].priority = 0
+                continue
+            }
             let newWidth = CGFloat(newDisplay.count) * charWidth
             used -= old.width - newWidth
             segs[idx].display = newDisplay
             segs[idx].width = newWidth
-            segs[idx].priority = 0
+            segs[idx].priority = shrinkPriority(index: old.index, total: components.count, len: newDisplay.count)
         }
         return segs.map {
             DisplaySegment(
@@ -197,6 +201,13 @@ extension BreadCrumbView {
             }
     }
 
+    private func shrinkCandidateIndex(in segments: [BreadCrumbMeasuredSegment]) -> Int? {
+        segments.enumerated()
+            .filter { $0.element.display.count > 4 && $0.element.priority > 0 }
+            .max { $0.element.priority < $1.element.priority }?
+            .offset
+    }
+
     private func showsSeparatorBefore(index: Int, components: [BreadCrumbDisplayComponent]) -> Bool {
         index > 0 && components[index - 1].text != "/"
     }
@@ -206,10 +217,20 @@ extension BreadCrumbView {
         return len * 10
     }
 
+    private func shrinkPriority(index: Int, total: Int, len: Int) -> Int {
+        guard index != 0 else { return 0 }
+        let edgePenalty = index == total - 1 ? 0 : 1_000
+        return edgePenalty + len * 10
+    }
+
     private func truncMiddle(_ s: String, maxLen: Int) -> String {
         guard s.count > maxLen, maxLen >= 3 else { return s }
-        let half = (maxLen - 1) / 2
-        return "\(s.prefix(half))...\(s.suffix(half))"
+        if maxLen == 3 { return "..." }
+        let marker = "..."
+        let keep = maxLen - marker.count
+        let head = max(1, (keep + 1) / 2)
+        let tail = max(0, keep - head)
+        return "\(s.prefix(head))\(marker)\(s.suffix(tail))"
     }
 }
 

@@ -86,9 +86,9 @@ for f in "${DIRTY[@]}"; do
     for attr in "${JUNK_ATTRS[@]}"; do
         if xattr "$f" 2>/dev/null | grep -qF "$attr"; then
             if xattr -d "$attr" "$f" 2>/dev/null; then
-                (( REMOVED++ ))
+                (( ++REMOVED ))
             else
-                (( FAILED++ ))
+                (( ++FAILED ))
                 echo "   ⚠️  failed: ${f##${PROJECT_ROOT}/} (${attr})"
             fi
         fi
