@@ -194,15 +194,10 @@ struct HistoryWindowContent: View {
             log.warning("[History] navigate unavailable path='\(path)'")
             return
         }
-        appState.updatePath(path, for: panelSide)
-        Task {
-            if panelSide == .left {
-                await appState.scanner.setLeftDirectory(pathStr: path)
-                await appState.refreshLeftFiles()
-            } else {
-                await appState.scanner.setRightDirectory(pathStr: path)
-                await appState.refreshRightFiles()
-            }
+        appState.isNavigatingFromHistory = true
+        Task { @MainActor in
+            defer { appState.isNavigatingFromHistory = false }
+            await appState.navigateToDirectory(path, on: panelSide)
         }
     }
     // MARK: - Delete from History

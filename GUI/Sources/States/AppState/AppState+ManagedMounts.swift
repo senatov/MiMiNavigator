@@ -31,6 +31,12 @@ extension AppState {
             .appendingPathComponent(String(mountName), isDirectory: true)
     }
 
+    // MARK: - Mount Point Match
+    nonisolated static func isAppManagedNetworkMountPoint(_ url: URL) -> Bool {
+        guard let mountPointURL = appManagedMountPointURL(for: url) else { return false }
+        return url.standardizedFileURL.path == mountPointURL.standardizedFileURL.path
+    }
+
     // MARK: - Mount Root
     nonisolated private static func appManagedMountRootPath() -> String? {
         guard let supportURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {

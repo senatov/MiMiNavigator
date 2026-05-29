@@ -235,6 +235,7 @@ extension DualDirectoryScanner {
     func validateDirectoryURL(_ url: URL) -> Bool {
         if AppState.isAppManagedNetworkMountPath(url),
            let mountPointURL = AppState.appManagedMountPointURL(for: url),
+           !AppState.isAppManagedNetworkMountPoint(url),
            !SMBFileProvider.isMounted(at: mountPointURL)
         {
             log.warning("[Scan] app-managed network mount is stale: \(mountPointURL.path)")
