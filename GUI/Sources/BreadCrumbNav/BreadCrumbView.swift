@@ -86,22 +86,12 @@ struct BreadCrumbView: View {
         .controlSize(.mini)
     }
 
-    // MARK: - DisplaySegment
-    struct DisplaySegment: Identifiable {
-        let id = UUID()
-        let text: String  // shown (may be truncated)
-        let fullName: String  // full name for tooltip + hover-expand
-        let originalIndex: Int  // index in pathComponents for navigation
-        let isEnvironmentVariable: Bool
-        var isTruncated: Bool { text != fullName }
-    }
-
     // MARK: - pathComponents
     /// Returns segments to display. Three modes:
     ///   remote  → ["SFTP demo@host", "pub", "docs"]   (first segment = origin label)
     ///   archive → ["archive.zip", "subdir"]
     ///   local   → ["/", "Users", "senat", "Develop"]
-    private var pathComponents: [BreadCrumbDisplayComponent] {
+    var pathComponents: [BreadCrumbDisplayComponent] {
         let panelURL = panelURL
 
         // ── Remote (SFTP / FTP) ──────────────────────────────────────────────
@@ -212,95 +202,6 @@ struct BreadCrumbView: View {
         return [archiveName] + relative.split(separator: "/").map(String.init)
     }
 
-    // MARK: - visibleSegments — smart truncation
-    private func visibleSegments(for availableWidth: CGFloat) -> [DisplaySegment] {
-        let components = pathComponents
-        guard !components.isEmpty else { return [] }
-
-        if components.count == 1 {
-            return [
-                DisplaySegment(
-                    text: components[0].text,
-                    fullName: components[0].text,
-                    originalIndex: 0,
-                    isEnvironmentVariable: components[0].isEnvironmentVariable
-                )
-            ]
-        }
-
-        let charWidth: CGFloat = 7.5
-        let totalSepWidth = CGFloat(components.count - 1) * separatorWidth
-        let budgetForText = availableWidth - totalSepWidth - 16
-
-        let widths = components.map { CGFloat($0.text.count) * charWidth }
-        let totalWidth = widths.reduce(0, +)
-
-        if totalWidth <= budgetForText {
-            return components.enumerated()
-                .map { i, component in
-                    DisplaySegment(
-                        text: component.text,
-                        fullName: component.text,
-                        originalIndex: i,
-                        isEnvironmentVariable: component.isEnvironmentVariable
-                    )
-                }
-        }
-
-        // Truncate: middle-first, by length
-        struct Seg {
-            var index: Int
-            var name: String
-            var display: String
-            var width: CGFloat
-            var priority: Int
-        }
-        var segs = components.enumerated()
-            .map { i, component in
-                let name = component.text
-                return Seg(
-                    index: i, name: name, display: name, width: widths[i],
-                    priority: truncPriority(index: i, total: components.count, len: name.count))
-            }
-        var used = totalWidth
-        while used > budgetForText {
-            guard
-                let idx = segs.enumerated()
-                    .filter({ $0.element.display.count > 3 })
-                    .max(by: { $0.element.priority < $1.element.priority })?
-                    .offset
-            else { break }
-            let old = segs[idx]
-            let newDisplay = truncMiddle(old.display, maxLen: max(3, old.display.count - 4))
-            let newWidth = CGFloat(newDisplay.count) * charWidth
-            used -= old.width - newWidth
-            segs[idx].display = newDisplay
-            segs[idx].width = newWidth
-            segs[idx].priority = 0
-        }
-        return segs.map {
-            DisplaySegment(
-                text: $0.display,
-                fullName: $0.name,
-                originalIndex: $0.index,
-                isEnvironmentVariable: components[$0.index].isEnvironmentVariable
-            )
-        }
-    }
-
-    // MARK: - truncPriority — never truncate first/last; longer middle first
-    private func truncPriority(index: Int, total: Int, len: Int) -> Int {
-        guard index != 0 && index != total - 1 else { return 0 }
-        return len * 10
-    }
-
-    // MARK: - truncMiddle
-    private func truncMiddle(_ s: String, maxLen: Int) -> String {
-        guard s.count > maxLen, maxLen >= 3 else { return s }
-        let half = (maxLen - 1) / 2
-        return "\(s.prefix(half))…\(s.suffix(half))"
-    }
-
     private func remoteTargetPath(for segment: DisplaySegment) -> String? {
         guard let connection = activeRemoteConnection else { return nil }
 
@@ -329,9 +230,7 @@ struct BreadCrumbView: View {
     // MARK: - breadcrumbItem
     @ViewBuilder
     private func breadcrumbItem(segment: DisplaySegment, index: Int) -> some View {
-        let components = pathComponents
-        let prevIsRoot = index > 0 && components[index - 1].text == "/"
-        if index > 0 && !prevIsRoot {
+        if segment.showsSeparatorBefore {
             Text("/")
                 .foregroundStyle(.secondary)
                 .font(.system(size: fontSize, weight: .regular, design: .rounded))
