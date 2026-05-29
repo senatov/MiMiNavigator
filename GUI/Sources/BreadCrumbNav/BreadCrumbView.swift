@@ -231,10 +231,8 @@ struct BreadCrumbView: View {
     @ViewBuilder
     private func breadcrumbItem(segment: DisplaySegment, index: Int) -> some View {
         if segment.showsSeparatorBefore {
-            Text("/")
-                .foregroundStyle(.secondary)
-                .font(.system(size: fontSize, weight: .regular, design: .rounded))
-                .padding(.horizontal, 1)
+            BreadCrumbSeparator(fontSize: fontSize)
+                .zIndex(20)
         }
         ExpandableSegmentButton(
             segment: segment,

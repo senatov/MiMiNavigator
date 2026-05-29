@@ -38,7 +38,7 @@ extension BreadCrumbView {
         if totalWidth <= budgetForText {
             return components.enumerated().map { displaySegment(for: $0.element, index: $0.offset, components: components) }
         }
-        if let collapsed = collapsedChainSegments(components: components, budgetForText: budgetForText, charWidth: charWidth) {
+        if let collapsed = contextualCollapsedSegments(components: components, budgetForText: budgetForText, charWidth: charWidth) {
             return collapsed
         }
         var segs = components.enumerated().map { i, component in
@@ -89,29 +89,112 @@ extension BreadCrumbView {
         )
     }
 
-    private func collapsedChainSegments(
+    private func contextualCollapsedSegments(
         components: [BreadCrumbDisplayComponent],
         budgetForText: CGFloat,
         charWidth: CGFloat
     ) -> [DisplaySegment]? {
-        guard components.count > 2 else { return nil }
-        let hiddenRange = 1..<(components.count - 1)
+        guard components.count > 6 else { return nil }
+        let budgets = contextualBudgets(for: components.count)
+        for budget in budgets {
+            if let result = collapsedSegments(
+                components: components,
+                leadingCount: budget.leading,
+                trailingCount: budget.trailing,
+                budgetForText: budgetForText,
+                charWidth: charWidth
+            ) {
+                return result
+            }
+        }
+        return nil
+    }
+
+    private func contextualBudgets(for count: Int) -> [(leading: Int, trailing: Int)] {
+        let leadingMax = min(4, count - 3)
+        let trailingMax = min(6, count - 3)
+        var result: [(leading: Int, trailing: Int)] = []
+        for leading in stride(from: leadingMax, through: 2, by: -1) {
+            for trailing in stride(from: trailingMax, through: 2, by: -1) {
+                guard leading + trailing < count else { continue }
+                result.append((leading, trailing))
+            }
+        }
+        return result
+    }
+
+    private func collapsedSegments(
+        components: [BreadCrumbDisplayComponent],
+        leadingCount: Int,
+        trailingCount: Int,
+        budgetForText: CGFloat,
+        charWidth: CGFloat
+    ) -> [DisplaySegment]? {
+        let hiddenStart = leadingCount
+        let hiddenEnd = components.count - trailingCount
+        guard hiddenStart < hiddenEnd else { return nil }
+        let hiddenRange = hiddenStart..<hiddenEnd
         let hiddenText = components[hiddenRange].map(\.text).joined(separator: " / ")
-        let collapsedText = "..."
-        let keptWidth = CGFloat(components[0].text.count + collapsedText.count + components.last!.text.count) * charWidth
-        guard keptWidth <= max(budgetForText, 48) else { return nil }
-        return [
-            displaySegment(for: components[0], index: 0, showsSeparatorBefore: false),
-            DisplaySegment(
-                text: collapsedText,
-                fullName: hiddenText,
-                originalIndex: hiddenRange.upperBound - 1,
-                isEnvironmentVariable: false,
-                showsSeparatorBefore: components[0].text != "/",
-                isCollapsedChain: true
-            ),
-            displaySegment(for: components.last!, index: components.count - 1, showsSeparatorBefore: true)
-        ]
+        let indexes = Array(0..<leadingCount) + [-1] + Array(hiddenEnd..<components.count)
+        var textByIndex = Dictionary(uniqueKeysWithValues: indexes.compactMap { index -> (Int, String)? in
+            guard index >= 0 else { return (-1, "...") }
+            return (index, components[index].text)
+        })
+        if fits(indexes: indexes, textByIndex: textByIndex, budgetForText: budgetForText, charWidth: charWidth) {
+            return makeCollapsedSegments(components: components, indexes: indexes, textByIndex: textByIndex, hiddenRange: hiddenRange, hiddenText: hiddenText)
+        }
+        for index in shrinkOrder(indexes: indexes, components: components) {
+            guard index >= 0, let text = textByIndex[index], text.count > 8 else { continue }
+            textByIndex[index] = truncMiddle(text, maxLen: max(8, min(12, text.count - 4)))
+            if fits(indexes: indexes, textByIndex: textByIndex, budgetForText: budgetForText, charWidth: charWidth) {
+                return makeCollapsedSegments(components: components, indexes: indexes, textByIndex: textByIndex, hiddenRange: hiddenRange, hiddenText: hiddenText)
+            }
+        }
+        return nil
+    }
+
+    private func fits(indexes: [Int], textByIndex: [Int: String], budgetForText: CGFloat, charWidth: CGFloat) -> Bool {
+        let textWidth = indexes.reduce(CGFloat(0)) { total, index in
+            total + CGFloat((textByIndex[index] ?? "").count) * charWidth
+        }
+        return textWidth <= max(budgetForText, 72)
+    }
+
+    private func makeCollapsedSegments(
+        components: [BreadCrumbDisplayComponent],
+        indexes: [Int],
+        textByIndex: [Int: String],
+        hiddenRange: Range<Int>,
+        hiddenText: String
+    ) -> [DisplaySegment] {
+        indexes.map { index in
+            if index == -1 {
+                return DisplaySegment(
+                    text: "...",
+                    fullName: hiddenText,
+                    originalIndex: hiddenRange.upperBound - 1,
+                    isEnvironmentVariable: false,
+                    showsSeparatorBefore: components[hiddenRange.lowerBound - 1].text != "/",
+                    isCollapsedChain: true
+                )
+            }
+            return DisplaySegment(
+                text: textByIndex[index] ?? components[index].text,
+                fullName: components[index].text,
+                originalIndex: index,
+                isEnvironmentVariable: components[index].isEnvironmentVariable,
+                showsSeparatorBefore: showsSeparatorBefore(index: index, components: components),
+                isCollapsedChain: false
+            )
+        }
+    }
+
+    private func shrinkOrder(indexes: [Int], components: [BreadCrumbDisplayComponent]) -> [Int] {
+        indexes
+            .filter { $0 >= 0 }
+            .sorted { lhs, rhs in
+                components[lhs].text.count > components[rhs].text.count
+            }
     }
 
     private func showsSeparatorBefore(index: Int, components: [BreadCrumbDisplayComponent]) -> Bool {

@@ -24,10 +24,16 @@ struct ExpandableSegmentButton: View {
     let copyAction: () -> Void
 
     @State private var isHovered = false
+    @State private var lastLoggedHover = false
 
     /// Show full name when hovered and segment is truncated.
     private var displayText: String {
-        (isHovered && segment.isTruncated) ? segment.fullName : segment.text
+        guard isHovered else { return segment.text }
+        return segment.isTruncated ? expandedText : segment.text
+    }
+
+    private var expandedText: String {
+        segment.isCollapsedChain ? segment.fullName : segment.fullName
     }
 
     private var displayColor: Color {
@@ -41,40 +47,71 @@ struct ExpandableSegmentButton: View {
 
     var body: some View {
         Button(action: onTap) {
-            Text(displayText)
-                .font(displayFont)
-                .foregroundStyle(displayColor)
-                .kerning(0.1)
-                .padding(.vertical, isHovered ? 4 : 2)
-                .padding(.horizontal, isHovered ? 7 : 0)
-                .lineLimit(1)
-                .fixedSize()
-                .background(
-                    Group {
-                        if isHovered {
-                            RoundedRectangle(cornerRadius: 7, style: .continuous)
-                                .fill(Color(#colorLiteral(red: 0.72, green: 0.82, blue: 0.92, alpha: 0.34)))
-                                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 7, style: .continuous))
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 7, style: .continuous)
-                                        .stroke(Color(#colorLiteral(red: 0.78, green: 0.88, blue: 1.0, alpha: 0.58)), lineWidth: 0.8)
-                                )
-                                .shadow(color: Color(#colorLiteral(red: 0.35, green: 0.5, blue: 0.68, alpha: 0.28)), radius: 7, x: 0, y: 3)
-                        }
-                    }
-                )
+            label
         }
         .buttonStyle(.plain)
         .help(helpText)
-        .scaleEffect(isHovered ? 1.08 : 1.0, anchor: .center)
-        .zIndex(isHovered ? 10 : 0)
+        .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .scaleEffect(isHovered ? 1.07 : 1.0, anchor: .center)
+        .zIndex(isHovered ? 100 : 0)
         .onHover { hovering in
-            withAnimation(.spring(response: 0.24, dampingFraction: 0.68)) {
-                isHovered = hovering
+            setHover(hovering)
+        }
+        .onContinuousHover { phase in
+            switch phase {
+                case .active:
+                    setHover(true)
+                case .ended:
+                    setHover(false)
             }
         }
         .contextMenu {
             Button("Copy path", action: copyAction)
+        }
+    }
+
+    private var label: some View {
+        Text(displayText)
+            .font(displayFont)
+            .foregroundStyle(displayColor)
+            .kerning(0)
+            .lineLimit(1)
+            .truncationMode(.middle)
+            .padding(.vertical, isHovered ? 5 : 3)
+            .padding(.horizontal, isHovered ? 9 : 4)
+            .fixedSize(horizontal: true, vertical: false)
+            .background(hoverBubble)
+            .overlay(hoverGlow)
+    }
+
+    @ViewBuilder
+    private var hoverBubble: some View {
+        if isHovered {
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(Color(#colorLiteral(red: 0.68, green: 0.80, blue: 0.92, alpha: 0.42)))
+                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                .shadow(color: Color(#colorLiteral(red: 0.28, green: 0.42, blue: 0.58, alpha: 0.36)), radius: 8, x: 0, y: 3)
+                .transition(.scale(scale: 0.9).combined(with: .opacity))
+        }
+    }
+
+    @ViewBuilder
+    private var hoverGlow: some View {
+        if isHovered {
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .stroke(Color(#colorLiteral(red: 0.82, green: 0.91, blue: 1.0, alpha: 0.74)), lineWidth: 1)
+        }
+    }
+
+    // MARK: - Hover
+    private func setHover(_ hovering: Bool) {
+        guard isHovered != hovering else { return }
+        if lastLoggedHover != hovering {
+            log.debug("[BreadCrumb] hover \(hovering ? "enter" : "exit") index=\(segment.originalIndex) text='\(segment.fullName)'")
+            lastLoggedHover = hovering
+        }
+        withAnimation(.spring(response: 0.24, dampingFraction: 0.68)) {
+            isHovered = hovering
         }
     }
 }
