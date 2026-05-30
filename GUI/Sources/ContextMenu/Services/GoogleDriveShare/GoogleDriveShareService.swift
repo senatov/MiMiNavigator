@@ -44,8 +44,7 @@ enum GoogleDriveShareService {
             panel.appendKeyValueLog("Path", value: url.path)
             panel.appendKeyValueLog("Public link", value: link)
             panel.appendLog("Public link copied to clipboard.")
-            panel.finish(success: true, message: "Share+Link ready: link copied to clipboard", autoClose: false)
-            panel.startAutoCloseTimerIfNeeded(seconds: 2)
+            panel.finish(success: true, message: "Share+Link ready: link copied to clipboard")
             showNotification("Google Drive share link copied.")
             log.info("[CloudLink] Google Drive link copied fileID='\(uploaded.id)' link='\(link)'")
             return true

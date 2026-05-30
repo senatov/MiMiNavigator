@@ -37,7 +37,7 @@ final class ProgressPanelAppearance {
     static let defaultHeight: CGFloat = 519
     static let defaultMinWidth: CGFloat = 380
     static let defaultMinHeight: CGFloat = 168
-    static let defaultAutoCloseSeconds = 2
+    static let defaultAutoCloseSeconds = 2.0
 
     // MARK: - Published properties
 
@@ -50,7 +50,7 @@ final class ProgressPanelAppearance {
     var hexStatusColor: String      = defaultStatusColorHex
     var panelWidth: CGFloat         = defaultWidth
     var panelHeight: CGFloat        = defaultHeight
-    var autoCloseSeconds: Int       = defaultAutoCloseSeconds
+    var autoCloseSeconds: Double    = defaultAutoCloseSeconds
     var framesByOperation: [String: ProgressPanelFrame] = [:]
 
     // MARK: - Computed NSColor/NSFont accessors
@@ -86,7 +86,7 @@ final class ProgressPanelAppearance {
         var hexStatusColor: String?
         var panelWidth: Double?
         var panelHeight: Double?
-        var autoCloseSeconds: Int?
+        var autoCloseSeconds: Double?
         var framesByOperation: [String: ProgressPanelFrame]?
     }
 

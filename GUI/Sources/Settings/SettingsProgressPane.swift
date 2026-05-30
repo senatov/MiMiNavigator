@@ -103,12 +103,12 @@ struct SettingsProgressPane: View {
                     HStack {
                         Text("Auto-close:")
                             .frame(width: 80, alignment: .trailing)
-                        Stepper(value: $appearance.autoCloseSeconds, in: 0...30) {
-                            Text(appearance.autoCloseSeconds == 0
+                        Stepper(value: autoCloseBinding, in: 0...30, step: 0.1) {
+                            Text(appearance.autoCloseSeconds <= 0
                                 ? "Off"
-                                : "\(appearance.autoCloseSeconds) sec")
+                                : "\(appearance.autoCloseSeconds, format: .number.precision(.fractionLength(1))) sec")
                         }
-                        .frame(width: 130)
+                        .frame(width: 150)
                         Text("after operation finish")
                             .foregroundStyle(.secondary)
                     }
@@ -166,6 +166,13 @@ struct SettingsProgressPane: View {
     }
 
     // MARK: - Color Row Helper
+
+    private var autoCloseBinding: Binding<Double> {
+        Binding(
+            get: { appearance.autoCloseSeconds },
+            set: { appearance.autoCloseSeconds = max(0, ($0 * 10).rounded() / 10) }
+        )
+    }
 
     private func colorRow(label: String, hex: Binding<String>) -> some View {
         HStack {

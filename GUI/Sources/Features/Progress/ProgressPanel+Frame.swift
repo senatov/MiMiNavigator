@@ -69,7 +69,7 @@ extension ProgressPanel {
     }
 
     // MARK: - Auto Close
-    func startAutoCloseTimerIfNeeded(seconds overrideSeconds: Int? = nil) {
+    func startAutoCloseTimerIfNeeded(seconds overrideSeconds: Double? = nil) {
         guard isFinished else { return }
         guard !autoCloseSuppressedByUser else {
             log.debug("[ProgressPanel] auto-close skipped: user interacted")
@@ -79,14 +79,15 @@ extension ProgressPanel {
         autoCloseGeneration += 1
         let generation = autoCloseGeneration
         let seconds = overrideSeconds ?? appearance.autoCloseSeconds
-        guard seconds > 0 else { return }
+        let tenths = Int((seconds * 10).rounded())
+        guard tenths > 0 else { return }
         log.debug("[ProgressPanel] auto-close started seconds=\(seconds) generation=\(generation)")
         autoCloseTask = Task { @MainActor in
-            for remaining in stride(from: seconds, through: 1, by: -1) {
+            for remainingTenths in stride(from: tenths, through: 1, by: -1) {
                 guard generation == autoCloseGeneration, !autoCloseSuppressedByUser else { return }
-                actionButton?.title = "OK (\(remaining))"
+                actionButton?.title = "OK (\(formatAutoCloseSeconds(remainingTenths)))"
                 applyActionButtonStyle(.confirm)
-                try? await Task.sleep(for: .seconds(1))
+                try? await Task.sleep(for: .milliseconds(100))
                 guard !Task.isCancelled, generation == autoCloseGeneration, !autoCloseSuppressedByUser else { return }
             }
             guard generation == autoCloseGeneration, !autoCloseSuppressedByUser else { return }
@@ -95,6 +96,11 @@ extension ProgressPanel {
             log.debug("[ProgressPanel] auto-close elapsed generation=\(generation)")
             hide()
         }
+    }
+
+    // MARK: - Format Auto Close Seconds
+    func formatAutoCloseSeconds(_ tenths: Int) -> String {
+        String(format: "%.1f", Double(tenths) / 10)
     }
 
     // MARK: - Cancel Auto Close
