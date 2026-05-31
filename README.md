@@ -17,7 +17,7 @@
   <img src="https://img.shields.io/badge/Archives-50%2B_Formats-6f42c1" alt="50+ archive formats" />
   <img src="https://img.shields.io/badge/Media-Preview_%26_Conversion-ff8c00" alt="Media preview and conversion" />
   <img src="https://img.shields.io/badge/License-AGPL--3.0-blue" alt="AGPL-3.0" />
-  <a href="https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.9.4"><img src="https://img.shields.io/badge/release-v0.9.9.4-orange" alt="Release v0.9.9.4" /></a>
+  <a href="https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.9.5"><img src="https://img.shields.io/badge/release-v0.9.9.5-orange" alt="Release v0.9.9.5" /></a>
 </p>
 
 <p align="center">
@@ -37,76 +37,24 @@
 
 
 
-## Recent Changes (v0.9.9.4 - May 2026)
+## Recent Changes (v0.9.9.5 - May 2026)
 
-- **External Tool Doctor** — Settings can now check and repair optional tools such as FFmpeg, ffprobe, gifski, 7-Zip and sshpass through Homebrew.
-- **VLC-style media presets** — Convert Media now offers explicit presets for MP4 H.264/HEVC VideoToolbox, MOV ProRes, WebM VP9, high-quality GIF, ffmpeg palette GIF, still-frame extraction, and audio extraction.
-- **Media dependency repair** — Convert Media checks FFmpeg codec support before running and can offer install/reinstall when the local toolchain is missing or incomplete.
-- **Compare tool fallback** — IntelliJ IDEA Community/Ultimate is now detected as a free macOS-compatible file and directory diff viewer via `idea diff`.
-- **Tooling credits** — About and documentation now include FFmpeg, VideoToolbox and gifski links/license notes.
+- **File operation freeze fix** — conflict dialogs no longer hang after internal drag-and-drop moves; progress-panel event monitoring now handles mouse and keyboard events through valid AppKit paths.
+- **Progress auto-close fix** — successful short operations keep their timer even when the mouse merely moves over the progress panel.
+- **DnD event routing** — internal panel drops end the drag session before transfer work starts, so confirmation and conflict dialogs do not compete with active drag state.
+- **Divider hover restored** — the middle splitter regains orange hover tracking after external drop overlay updates.
+- **Breadcrumb polish** — long paths collapse more predictably, separators stay visible, and shortened segments can expand on hover.
+- **Managed mount cleanup** — stale app-managed SMB mount folders are cleaned only when safe, and unavailable history/favorite entries are shown without navigating into dead mounts.
+- **Progress panel refactor** — copyable logs, action-button handling, layout constraints, frame persistence, and window delegation were split into focused components.
+- **File context menu cleanup** — file menu actions, labels, sections, visibility, and item builders now live in smaller files.
+- **Build metadata** — release version is `0.9.9.5`, build `121`.
 
----
+## Previous Changes
 
-## Previous Changes (v0.9.9.3 - May 2026)
+- **v0.9.9.4** — media conversion presets, External Tool Doctor, FFmpeg/gifski checks, IntelliJ IDEA diff detection, and shared repair flow for archive tools.
+- **v0.9.9.3** — unified List/Preview/Tree view behavior, Preview drag-and-drop reliability, Tree view mode, and periodic configuration autosave.
 
-- **Unified panel view modes** — List, Preview, and Tree views now share sorting headers, keyboard navigation, marking, and file-operation shortcuts through the same AppState contracts.
-- **Preview DnD reliability** — drag-and-drop from Preview mode now routes internal panel drops through `DragDropManager`, including a fallback mouse-release watcher for SwiftUI drag sessions that do not deliver AppKit drop callbacks.
-- **Tree view mode** — added a third toolbar view mode with lazy expandable directory rows and table-style metadata columns.
-- **Preview selection consistency** — `Ctrl+A`, Cmd/Shift click, drag batches, and operation targets in Preview mode now use the same marked-file state as List mode.
-- **Periodic configuration autosave** — app configuration, panel paths, tabs, sort state, preferences, and startup cache are saved every 30 seconds in addition to normal exit save.
-
----
-
-## Previous Changes (v0.9.9.2 - May 2026)
-
-- **Copy/move conflict wording** — the old `Keep Both` action is now labeled `Save as Copy`: the destination file stays untouched and the incoming file is written under a unique name such as `name (2).ext`.
-- **Directory operation policy** — top-level directories are copied or moved as whole items through `FileManager.copyItem` / `moveItem` instead of being expanded into per-file batches; local deletes use Trash, remote deletes remove directly.
-- **Remote delete fix** — deleting files from SFTP/FTP/SMB panels now routes through the active remote provider instead of the local filesystem trash path.
-- **Connection error dialogs** — long network failures are formatted into readable summary/detail text and constrained to the app window width.
-- **Connect dialog polish** — URL-style input in the Name field now preserves the parsed host name and the dialog uses the app's custom 3D buttons with Connect as the default action.
-- **Release workflow guardrails** — the notarized release script now detects immutable GitHub releases before spending time on build and notarization.
-
----
-
-## Previous Changes (v0.9.9.1 - May 2026)
-
-- **Remote directory metadata** — app-managed SMB/SFTP mounts can now show partial directory sizes and first-level child counts without blocking panel navigation.
-- **Timeout-safe probing** — remote directory size scans stop after a short budget and show the best known partial result instead of hanging the UI.
-- **Vuduo2 stability** — scanner now avoids expensive watchers and recursive refresh behavior on app-managed network mounts.
-- **Connections toolbar polish** — the Connections control uses standard toolbar sizing, font, and selected accent text color.
-- **Release upload safety** — notarized release upload no longer deletes existing GitHub releases or tags after an asset upload failure.
-
----
-
-## Previous Changes (v0.9.9.0 — May 2026)
-
-- **Google Drive share links** — `Copy Share Link` now caches OAuth tokens in `~/.mimi/google_drive_token_cache.json`, reducing repeated Keychain password prompts.
-- **Blog-friendly image sharing** — public image links now use `lh3.googleusercontent.com/d/<fileID>=s0` instead of Drive preview/download URLs.
-- **Media Info date clarity** — EXIF `Photo Date` is separated from filesystem `File Created` / `File Modified`, which is important for OneDrive/iCloud placeholder files.
-- **Sparse JPEG metadata fallback** — Media Info now includes available Spotlight fields when embedded EXIF has been stripped.
-- **Media Convert button** — brighter primary-style Convert button in the Media Info panel.
-
----
-
-## Previous Changes (v0.9.8.8 — May 2026)
-
-- **Large directory performance** — generic 20s scan timeout for all directories; adaptive cooldown (`min(duration×3, 120s)`) prevents re-scanning huge dirs every 3 seconds; eliminated parasitic `resourceValues` calls in sort comparator (19k files: 231s → 13s).
-- **AutoFit sampling** — column width measurement uses max 500 sampled files instead of all; resize↔autofit feedback loop broken with post-autofit grace period.
-- **Canvas cell rendering** — metadata columns (date, size, owner, childCount) rendered via Core Graphics Canvas — no `…` truncation, hard clip at column edge, auto-redraws on column resize.
-- **Name column cap** — autofit limits Name to 45% of container width; truncation changed to `.tail` so file name beginning is always visible.
-- **Scroll stability** — `navigationScrollPending` guard prevents background refresh from hijacking user scroll position on long directories.
-- **HIG dialog fonts** — transfer confirmation dialog uses macOS-standard font hierarchy (13pt bold title, 11pt description, 10pt paths).
-
----
-
-## Previous Changes (v0.9.8.6 — May 2026)
-
-- **Geo-tagged photo badges** — images with GPS metadata show a compact orange globe badge directly on the file icon.
-- **Media Info GPS links** — Apple Maps, Google Maps, and OpenStreetMap links now appear near the top of the media information panel.
-- **Breadcrumb polish** — local paths show the filesystem root segment and Copy path uses the real filesystem path.
-- **Package split** — scanner and archive internals now live in `ScannerKit` and `ArchiveKit`, reducing duplicate app-side code.
-
----
+See [CHANGELOG.md](CHANGELOG.md) for the full release history.
 
 ## What is MiMiNavigator?
 
@@ -244,7 +192,7 @@ MiMiNavigator can browse archives as virtual directories. Double-click opens the
 > xattr -cr ~/Downloads/MiMiNavigator.app
 > ```
 
-**[Download MiMiNavigator v0.9.9.4 ->](https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.9.4)**
+**[Download MiMiNavigator v0.9.9.5 ->](https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.9.5)**
 **[All releases →](https://github.com/senatov/MiMiNavigator/releases)**
 
 ---
@@ -574,16 +522,9 @@ Sincere thanks to the open-source community:
 
 Full third-party license texts and notices should also be provided in the application bundle, About/Credits section, or in a dedicated `Licenses` / `ThirdPartyNotices` folder.
 
-Special thanks to **Anthropic / Claude** for pair-programming support throughout this project, including architecture decisions, refactoring, debugging, and documentation.
-
 ## Acknowledgements
 
 **MiMiNavigator** is developed by **Iakov Senatov** -- Diplom-Ingenieur (Chemical Process Engineering), 35 years of programming experience.
-
-
-
-
-
 
 ## License
 
@@ -593,5 +534,3 @@ Special thanks to **Anthropic / Claude** for pair-programming support throughout
   <a href="https://www.linkedin.com/in/iakov-senatov-07060765"><img src="https://img.shields.io/badge/LinkedIn-Iakov_Senatov-0077B5?logo=linkedin&logoColor=white" alt="LinkedIn"></a>
   <a href="https://github.com/senatov"><img src="https://img.shields.io/badge/GitHub-senatov-181717?logo=github&logoColor=white" alt="GitHub"></a>
 </p>
-
-<p align="center"><sub>Made with ❤️ for macOS · Building the future of file management, one commit at a time</sub></p>

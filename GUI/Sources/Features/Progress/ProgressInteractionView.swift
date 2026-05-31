@@ -31,7 +31,6 @@ final class ProgressInteractionView: NSView {
     }
 
     override func mouseUp(with event: NSEvent) {
-        onInteraction?()
         super.mouseUp(with: event)
     }
 
@@ -46,7 +45,6 @@ final class ProgressInteractionView: NSView {
     }
 
     override func rightMouseUp(with event: NSEvent) {
-        onInteraction?()
         super.rightMouseUp(with: event)
     }
 
@@ -61,7 +59,6 @@ final class ProgressInteractionView: NSView {
     }
 
     override func otherMouseUp(with event: NSEvent) {
-        onInteraction?()
         super.otherMouseUp(with: event)
     }
 
@@ -71,7 +68,6 @@ final class ProgressInteractionView: NSView {
     }
 
     override func mouseMoved(with event: NSEvent) {
-        onInteraction?()
         super.mouseMoved(with: event)
     }
 
@@ -105,7 +101,6 @@ final class ProgressInteractionEffectView: NSVisualEffectView {
     }
 
     override func mouseUp(with event: NSEvent) {
-        onInteraction?()
         super.mouseUp(with: event)
     }
 
@@ -120,7 +115,6 @@ final class ProgressInteractionEffectView: NSVisualEffectView {
     }
 
     override func rightMouseUp(with event: NSEvent) {
-        onInteraction?()
         super.rightMouseUp(with: event)
     }
 
@@ -135,7 +129,6 @@ final class ProgressInteractionEffectView: NSVisualEffectView {
     }
 
     override func otherMouseUp(with event: NSEvent) {
-        onInteraction?()
         super.otherMouseUp(with: event)
     }
 
@@ -145,7 +138,6 @@ final class ProgressInteractionEffectView: NSVisualEffectView {
     }
 
     override func mouseMoved(with event: NSEvent) {
-        onInteraction?()
         super.mouseMoved(with: event)
     }
 

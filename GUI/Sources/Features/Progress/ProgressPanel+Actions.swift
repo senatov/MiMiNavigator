@@ -13,15 +13,11 @@ extension ProgressPanel {
     private static let interactionEventMask: NSEvent.EventTypeMask = [
         .keyDown,
         .leftMouseDown,
-        .leftMouseUp,
         .leftMouseDragged,
         .rightMouseDown,
-        .rightMouseUp,
         .rightMouseDragged,
         .otherMouseDown,
-        .otherMouseUp,
         .otherMouseDragged,
-        .mouseMoved,
         .scrollWheel
     ]
 
@@ -103,11 +99,11 @@ extension ProgressPanel {
     // MARK: - Handle Interaction
     func handleInteraction(type: NSEvent.EventType, keyCode: UInt16?, windowNumber: Int) -> Bool {
         guard panel?.isVisible == true else { return true }
-        if isPanelInteraction(windowNumber: windowNumber) {
-            registerUserInteraction(source: "event-monitor")
-        }
         if type == .keyDown, isFinished, let keyCode {
             return handleKeyEvent(keyCode: keyCode)
+        }
+        if isPanelInteraction(windowNumber: windowNumber) {
+            registerUserInteraction(source: "event-monitor")
         }
         return true
     }
@@ -124,10 +120,7 @@ extension ProgressPanel {
     // MARK: - Panel Interaction
     func isPanelInteraction(windowNumber: Int) -> Bool {
         guard let panel else { return false }
-        if windowNumber == panel.windowNumber {
-            return true
-        }
-        return panel.frame.contains(NSEvent.mouseLocation)
+        return windowNumber == panel.windowNumber
     }
 
     // MARK: - Handle Key Event

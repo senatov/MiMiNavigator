@@ -33,15 +33,11 @@ final class ProgressPanelWindow: NSPanel {
         switch event.type {
         case .keyDown,
              .leftMouseDown,
-             .leftMouseUp,
              .leftMouseDragged,
              .rightMouseDown,
-             .rightMouseUp,
              .rightMouseDragged,
              .otherMouseDown,
-             .otherMouseUp,
              .otherMouseDragged,
-             .mouseMoved,
              .scrollWheel:
             return true
         default:

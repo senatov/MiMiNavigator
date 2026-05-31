@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.9.5] — 2026-05-31
+
+> **Release notes**
+> Drag-and-drop file operation stability, breadcrumb polish, managed mount cleanup, and progress panel hardening release.
+
+### Added
+- **Breadcrumb segment components** — path separators and segment rendering are split into focused views with hover expansion for shortened path elements.
+- **External file drop view** — external app drops are isolated from normal mouse tracking so panel hover and splitter tracking remain responsive.
+- **Progress panel components** — copyable log text, action button, interaction view, window subclass, layout, constraints, frame handling, and delegate logic are split into smaller files.
+- **Managed mount cleanup scheduler** — app-managed mount directories are cleaned after startup and disconnect without deleting non-empty user data.
+
+### Changed
+- **Build metadata** — marketing version updated to `0.9.9.5`; build number updated to `121`.
+- **File context menu structure** — actions, labels, menu items, sections, and visibility rules are extracted from the monolithic menu file.
+- **Breadcrumb truncation** — long paths keep useful leading and trailing context, separators remain visible, and hover diagnostics were tightened.
+- **Drag-and-drop transfer flow** — internal drag state is ended before file operations start, reducing modal-dialog conflicts during move/copy confirmation and conflict handling.
+- **Packages submodule** — updated to include breadcrumb truncation and managed mount cleanup support from MiMiKits.
+
+### Fixed
+- **Conflict dialog freeze after internal move** — progress-panel event monitoring no longer reads `NSEvent.keyCode` from mouse events while an AppKit conflict alert is running.
+- **Progress panel auto-close** — mouse movement and unrelated main-window events no longer cancel the successful-operation auto-close timer.
+- **File conflict dialog routing** — conflict resolution now uses an AppKit modal alert path and safely resumes pending operations on dismissal.
+- **Move-to-self replacement safety** — file operations skip same-source/same-target replacement cases and perform destructive target removal off the main actor.
+- **Divider hover highlight** — the middle panel splitter again receives hover tracking after external drop overlay updates.
+- **Destination write preflight** — copy and move detect unwritable or missing destination folders before entering long file-manager operations.
+- **Managed mount history/favorites** — unavailable app-managed SMB mount paths are shown as unavailable instead of navigating into stale mount roots.
+- **External drag view hierarchy** — external drop handling no longer adds an unsupported subview directly to `NSHostingController.view`.
+
 ## [0.9.9.4] — 2026-05-27
 
 > **Release notes**
@@ -801,7 +829,8 @@ Each release should include:
 
 ---
 
-[Unreleased]: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.4...HEAD
+[Unreleased]: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.5...HEAD
+[0.9.9.5]: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.4...v0.9.9.5
 [0.9.9.4]: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.3...v0.9.9.4
 [0.9.9.3]: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.2...v0.9.9.3
 [0.9.9.2]: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.1...v0.9.9.2
