@@ -84,7 +84,7 @@ extension ProgressPanel {
         eventMonitor = NSEvent.addLocalMonitorForEvents(matching: Self.interactionEventMask) { [weak self] event in
             guard let self else { return event }
             let type = event.type
-            let keyCode = event.keyCode
+            let keyCode = type == .keyDown ? event.keyCode : nil
             let windowNumber = event.windowNumber
             let keepEvent = MainActor.assumeIsolated {
                 self.handleInteraction(type: type, keyCode: keyCode, windowNumber: windowNumber)
@@ -101,12 +101,12 @@ extension ProgressPanel {
     }
 
     // MARK: - Handle Interaction
-    func handleInteraction(type: NSEvent.EventType, keyCode: UInt16, windowNumber: Int) -> Bool {
+    func handleInteraction(type: NSEvent.EventType, keyCode: UInt16?, windowNumber: Int) -> Bool {
         guard panel?.isVisible == true else { return true }
         if isPanelInteraction(windowNumber: windowNumber) {
             registerUserInteraction(source: "event-monitor")
         }
-        if type == .keyDown, isFinished {
+        if type == .keyDown, isFinished, let keyCode {
             return handleKeyEvent(keyCode: keyCode)
         }
         return true
