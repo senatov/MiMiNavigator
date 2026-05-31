@@ -70,6 +70,7 @@ final class DragNSView: NSView, NSDraggingSource {
 
     // MARK: - Mouse Down
     private func handleMouseDown(_ event: NSEvent) {
+        guard canStartPanelDrag else { return }
         guard hasWindowContext(for: event) else { return }
         guard event.type == .leftMouseDown, isPrimaryMouseDown,
             !event.modifierFlags.contains(.control)
@@ -97,6 +98,10 @@ final class DragNSView: NSView, NSDraggingSource {
     // MARK: - Mouse Dragged
     /// Returns true if drag was initiated (event consumed).
     private func handleMouseDragged(_ event: NSEvent) -> Bool {
+        guard canStartPanelDrag else {
+            resetDragState()
+            return false
+        }
         guard hasWindowContext(for: event) else { return false }
         guard shouldHandlePrimaryDrag(event) else { return false }
         guard !dragState.didStart, !dragState.isResize else { return false }
@@ -183,6 +188,13 @@ final class DragNSView: NSView, NSDraggingSource {
         panelSide != nil && appState != nil
     }
 
+    private var canStartPanelDrag: Bool {
+        CntMenuCoord.shared.activeDialog == nil
+            && dragDropManager?.showConfirmationDialog != true
+            && window?.attachedSheet == nil
+            && NSApp.modalWindow == nil
+    }
+
     private func registerDragStart(files: [CustomFile]) {
         guard let panelSide else { return }
         dragDropManager?.startDrag(files: files, from: panelSide)
@@ -254,10 +266,6 @@ final class DragNSView: NSView, NSDraggingSource {
     private func handleExternalDragEnd(screenPoint: NSPoint, operation: NSDragOperation) -> Bool {
         guard operation != [] else { return false }
 
-        if let draggedFiles = dragDropManager?.draggedFiles {
-            animateDropPreviewIfPossible(screenPoint: screenPoint, files: draggedFiles)
-        }
-
         dragDropManager?.endDrag()
         log.debug("[DragNSView] drag ended externally op=\(operation.rawValue)")
         return true
@@ -302,7 +310,6 @@ final class DragNSView: NSView, NSDraggingSource {
             "[DragNSView] internal drop: \(files.count) file(s) → \(dropSide) (\(destination.lastPathComponent)) subdir=\(dirUnderCursor != nil)"
         )
 
-        animateDropPreviewIfPossible(screenPoint: screenPoint, files: files)
         dragDropManager.prepareTransfer(files: files, to: destination, from: panelSide)
     }
 
@@ -352,73 +359,6 @@ final class DragNSView: NSView, NSDraggingSource {
     }
 
     // MARK: - Helpers
-
-    private func canAnimateDropPreview() -> Bool {
-        window?.contentView?.superview != nil
-    }
-
-    private func animateDropPreviewIfPossible(screenPoint: NSPoint, files: [CustomFile]) {
-        guard canAnimateDropPreview() else { return }
-        guard let window,
-            let contentView = window.contentView,
-            let overlayContainer = contentView.superview
-        else {
-            return
-        }
-        guard let previewImage = makeDropPreviewImage(from: files) else { return }
-        let windowPoint = window.convertPoint(fromScreen: screenPoint)
-        let contentPoint = contentView.convert(windowPoint, from: nil)
-        let overlayPoint = overlayContainer.convert(contentPoint, from: contentView)
-        let previewFrame = dropPreviewFrame(centeredAt: overlayPoint)
-        let previewView = NSImageView(frame: previewFrame)
-        previewView.image = previewImage
-        previewView.imageScaling = .scaleProportionallyUpOrDown
-        previewView.alphaValue = 1.0
-        previewView.wantsLayer = true
-        previewView.layer?.anchorPoint = CGPoint(x: 0.5, y: 0.5)
-        previewView.layer?.position = CGPoint(x: previewFrame.midX, y: previewFrame.midY)
-
-        overlayContainer.addSubview(previewView, positioned: .above, relativeTo: contentView)
-        log.debug("[DragNSView] drop preview fade-out started at \(overlayPoint)")
-
-        NSAnimationContext.runAnimationGroup { context in
-            context.duration = DragNSViewUI.dropPreviewFadeDuration
-            context.timingFunction = CAMediaTimingFunction(name: .easeOut)
-            previewView.animator().alphaValue = 0.0
-            previewView.animator().frame = dropPreviewScaledFrame(from: previewFrame)
-        } completionHandler: {
-            DispatchQueue.main.async {
-                previewView.removeFromSuperview()
-            }
-        }
-    }
-
-    private func makeDropPreviewImage(from files: [CustomFile]) -> NSImage? {
-        let image = NSImage(systemSymbolName: "doc.fill", accessibilityDescription: "Dragged file")
-        image?.size = DragNSViewUI.dropPreviewSize
-        return image
-    }
-
-    private func dropPreviewFrame(centeredAt point: NSPoint) -> NSRect {
-        NSRect(
-            x: point.x - (DragNSViewUI.dropPreviewSize.width / 2),
-            y: point.y - (DragNSViewUI.dropPreviewSize.height / 2),
-            width: DragNSViewUI.dropPreviewSize.width,
-            height: DragNSViewUI.dropPreviewSize.height
-        )
-    }
-
-    private func dropPreviewScaledFrame(from frame: NSRect) -> NSRect {
-        let scaledWidth = frame.width * DragNSViewUI.dropPreviewEndScale
-        let scaledHeight = frame.height * DragNSViewUI.dropPreviewEndScale
-        return NSRect(
-            x: frame.midX - (scaledWidth / 2),
-            y: frame.midY - (scaledHeight / 2),
-            width: scaledWidth,
-            height: scaledHeight
-        )
-    }
-
     private func panelFrameInWindowCoordinates() -> NSRect {
         guard self.window != nil else { return .zero }
         return convert(bounds, to: nil)

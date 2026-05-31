@@ -26,7 +26,7 @@ struct ContextMenuDialogModifier: ViewModifier {
     private var shouldDismissOnBackgroundTap: Bool {
         guard let dialog = coordinator.activeDialog else { return false }
         switch dialog {
-            case .createFolder, .createFile, .batchProgress:
+            case .createFolder, .createFile, .fileConflict, .batchProgress:
                 return false
             default:
                 return !coordinator.isProcessing

@@ -24,7 +24,7 @@ extension FileOpsEngine {
             let finalTarget: URL
             if fm.fileExists(atPath: targetURL.path) {
                 let (resolved, skip, stop) = try await resolveConflictIfNeeded(
-                    source: entry.url, destination: targetDir, remaining: remaining, memorized: &memorized)
+                    source: entry.url, destination: targetDir, operation: operation, remaining: remaining, memorized: &memorized)
                 if stop { break }
                 if skip { progress.fileSkipped(name: entry.url.lastPathComponent); continue }
                 finalTarget = resolved

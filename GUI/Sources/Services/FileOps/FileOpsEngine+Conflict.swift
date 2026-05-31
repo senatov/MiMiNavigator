@@ -17,10 +17,16 @@ extension FileOpsEngine {
     func resolveConflictIfNeeded(
         source: URL,
         destination: URL,
+        operation: FileOpType,
         remaining: Int,
         memorized: inout ConflictResolution?
     ) async throws -> (target: URL, skip: Bool, stop: Bool) {
         let target = destination.appendingPathComponent(source.lastPathComponent)
+        let isSameSourceAndTarget = sameFileURL(source, target)
+        if operation == .move && isSameSourceAndTarget {
+            log.warning("[FileOpsEngine] move skipped because source and target are identical: \(source.path)")
+            return (target, true, false)
+        }
         guard fm.fileExists(atPath: target.path) else {
             return (target, false, false)
         }
@@ -49,10 +55,24 @@ extension FileOpsEngine {
         case .keepBoth:
             return (UniqueNameGen.resolve(name: source.lastPathComponent, in: destination), false, false)
         case .replace:
+            if isSameSourceAndTarget {
+                log.warning("[FileOpsEngine] replace skipped because source and target are identical: \(source.path)")
+                return (target, true, false)
+            }
             if fm.fileExists(atPath: target.path) {
-                try fm.removeItem(at: target)
+                try await removeExistingTarget(target)
             }
             return (target, false, false)
         }
+    }
+
+    private func removeExistingTarget(_ target: URL) async throws {
+        try await Task.detached(priority: .userInitiated) {
+            try FileManager.default.removeItem(at: target)
+        }.value
+    }
+
+    nonisolated private func sameFileURL(_ lhs: URL, _ rhs: URL) -> Bool {
+        lhs.standardizedFileURL.resolvingSymlinksInPath().path == rhs.standardizedFileURL.resolvingSymlinksInPath().path
     }
 }

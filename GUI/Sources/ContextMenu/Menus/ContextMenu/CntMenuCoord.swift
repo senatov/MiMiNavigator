@@ -103,9 +103,7 @@ final class CntMenuCoord {
     /// Show file conflict resolution dialog — returns BatchConflictDecision with applyToAll flag
     func showConflictDialog(conflict: FileConflictInfo, remainingCount: Int = 1) async -> BatchConflictDecision {
         log.debug("\(#function) source='\(conflict.sourceName)' target='\(conflict.targetName)' remaining=\(remainingCount)")
-        return await withCheckedContinuation { continuation in
-            activeDialog = .fileConflict(conflict: conflict, remainingCount: remainingCount, continuation: continuation)
-        }
+        return showAppKitConflictDialog(conflict: conflict, remainingCount: remainingCount)
     }
 
     /// Resolve conflict from UI callback
@@ -122,6 +120,51 @@ final class CntMenuCoord {
     /// Dismiss active dialog
     func dismissDialog() {
         log.debug("\(#function)")
+        if case .fileConflict(_, _, let continuation) = activeDialog {
+            activeDialog = nil
+            continuation.resume(returning: BatchConflictDecision(resolution: .stop, applyToAll: false))
+            return
+        }
         activeDialog = nil
+    }
+
+    private func showAppKitConflictDialog(conflict: FileConflictInfo, remainingCount: Int) -> BatchConflictDecision {
+        let alert = NSAlert()
+        alert.alertStyle = .warning
+        alert.messageText = "File already exists"
+        alert.informativeText = conflictMessage(conflict)
+        alert.addButton(withTitle: "Replace Existing")
+        alert.addButton(withTitle: "Save as Copy")
+        alert.addButton(withTitle: "Skip Incoming")
+        alert.addButton(withTitle: "Cancel")
+        if remainingCount > 1 {
+            alert.showsSuppressionButton = true
+            alert.suppressionButton?.title = "Apply to remaining"
+        }
+        NSApp.activate(ignoringOtherApps: true)
+        let response = alert.runModal()
+        let applyToAll = alert.suppressionButton?.state == .on
+        let resolution = conflictResolution(for: response)
+        log.debug("[Conflict] resolved via NSAlert resolution=\(resolution) applyToAll=\(applyToAll)")
+        return BatchConflictDecision(resolution: resolution, applyToAll: resolution == .stop ? false : applyToAll)
+    }
+
+    private func conflictMessage(_ conflict: FileConflictInfo) -> String {
+        let sourceSize = ByteCountFormatter.string(fromByteCount: conflict.sourceSize, countStyle: .file)
+        let targetSize = ByteCountFormatter.string(fromByteCount: conflict.targetSize, countStyle: .file)
+        return "A file named \"\(conflict.targetName)\" already exists in the destination.\n\nExisting: \(conflict.targetURL.path)\nSize: \(targetSize)\n\nIncoming: \(conflict.sourceURL.path)\nSize: \(sourceSize)"
+    }
+
+    private func conflictResolution(for response: NSApplication.ModalResponse) -> ConflictResolution {
+        switch response {
+        case .alertFirstButtonReturn:
+            return .replace
+        case .alertSecondButtonReturn:
+            return .keepBoth
+        case .alertThirdButtonReturn:
+            return .skip
+        default:
+            return .stop
+        }
     }
 }

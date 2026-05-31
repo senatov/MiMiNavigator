@@ -220,13 +220,13 @@ final class DragDropManager {
             log.error("[DnD] executeTransfer called with no pending op")
             return
         }
-
-        defer {
-            pendingOperation = nil
-            showConfirmationDialog = false
-            endDrag()
+        pendingOperation = nil
+        showConfirmationDialog = false
+        endDrag()
+        await Task.yield()
+        if action != .abort {
+            try? await Task.sleep(for: .milliseconds(120))
         }
-
         switch action {
             case .abort:
                 log.debug("[DnD] transfer aborted")
