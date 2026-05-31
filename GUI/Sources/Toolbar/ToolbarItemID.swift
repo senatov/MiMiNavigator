@@ -23,6 +23,7 @@ enum ToolbarItemID: String, CaseIterable, Identifiable, Codable, Sendable {
     case connectServer  = "connectServer"
     case findFiles      = "findFiles"
     case settings       = "settings"
+    case feedback       = "feedback"
     case menuBarToggle  = "menuBarToggle"  // fixed — cannot be removed from toolbar
 
     var id: String { rawValue }
@@ -44,6 +45,7 @@ enum ToolbarItemID: String, CaseIterable, Identifiable, Codable, Sendable {
         case .connectServer:  return "Connect"
         case .findFiles:      return "Find Files"
         case .settings:       return "Settings"
+        case .feedback:       return "Feedback"
         case .menuBarToggle:  return "Menu Bar"
         }
     }
@@ -64,6 +66,7 @@ enum ToolbarItemID: String, CaseIterable, Identifiable, Codable, Sendable {
         case .connectServer:  return "link"
         case .findFiles:      return "magnifyingglass"
         case .settings:       return "gearshape"
+        case .feedback:       return "bubble.left.and.text.bubble.right"
         case .menuBarToggle:  return "menubar.rectangle"
         }
     }
@@ -80,6 +83,7 @@ enum ToolbarItemID: String, CaseIterable, Identifiable, Codable, Sendable {
         case .connectServer:  return "Connect to Server (⌃N)"
         case .findFiles:      return "Find Files (⇧⌘F)"
         case .settings:       return "Settings (⌘,)"
+        case .feedback:       return "Open MiMiNavigator feedback options"
         case .menuBarToggle:  return "Toggle menu bar visibility"
         }
     }
@@ -96,5 +100,6 @@ enum ToolbarItemID: String, CaseIterable, Identifiable, Codable, Sendable {
         .connectServer,
         .findFiles,
         .settings,
+        .feedback,
     ]
 }

@@ -60,6 +60,8 @@ struct AppToolbarContent: ToolbarContent {
             app.makeToolbarIcon(.findFiles) { app.performFindFiles() }
         case .settings:
             app.makeToolbarIcon(.settings) { app.performSettings() }
+        case .feedback:
+            FeedbackToolbarButton(action: FeedbackCoordinator.shared.show)
         case .menuBarToggle:
             EmptyView()
         }

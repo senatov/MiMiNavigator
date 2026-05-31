@@ -183,3 +183,35 @@ struct ToolbarToggleButton: View {
         .fastTooltip(isActive ? helpActive : helpInactive)
     }
 }
+
+// MARK: - Feedback Toolbar Button
+struct FeedbackToolbarButton: View {
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Text("💬")
+                .font(.system(size: 15, weight: .medium, design: .rounded))
+                .frame(width: 24, height: 22)
+                .background(
+                    RoundedRectangle(cornerRadius: 6, style: .continuous)
+                        .fill(
+                            LinearGradient(
+                                colors: [
+                                    Color(#colorLiteral(red: 1.0, green: 0.5411764706, blue: 0.0, alpha: 1.0)).opacity(0.92),
+                                    Color(#colorLiteral(red: 0.937254902, green: 0.2196078431, blue: 0.4823529412, alpha: 1.0)).opacity(0.78)
+                                ],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 6, style: .continuous)
+                        .strokeBorder(Color.white.opacity(0.55), lineWidth: 0.7)
+                )
+        }
+        .buttonStyle(.borderless)
+        .fastTooltip("Open feedback options")
+    }
+}
