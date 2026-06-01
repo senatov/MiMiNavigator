@@ -97,6 +97,7 @@ final class ProgressPanel: NSObject {
         operationKey: String? = nil,
         cancelHandler: (() -> Void)? = nil
     ) {
+        ArchiveInfoPopupController.shared.hide()
         isCancelled = false
         isFinished = false
         autoCloseSuppressedByUser = false
