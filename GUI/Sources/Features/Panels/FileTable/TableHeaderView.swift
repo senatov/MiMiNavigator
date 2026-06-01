@@ -14,6 +14,8 @@ struct TableHeaderView: View {
     var isFocused: Bool = false
 
     @State private var dragOverTargetID: ColumnID? = nil
+    @State private var draggedColumnID: ColumnID? = nil
+    @State private var columnFrames: [ColumnID: CGRect] = [:]
 
     // MARK: - Computed Properties
 
@@ -26,6 +28,11 @@ struct TableHeaderView: View {
         isFocused
         ? ColorThemeStore.shared.activeTheme.warmWhite
         : TableHeaderStyle.backgroundColor
+    }
+
+    private enum HeaderDragMetrics {
+        static let coordinateSpaceName = "ColumnHeaderSpace"
+        static let minimumDragDistance: CGFloat = 8
     }
 
     // MARK: - Body
@@ -72,6 +79,7 @@ struct TableHeaderView: View {
                 }
             }
         }
+        .coordinateSpace(name: HeaderDragMetrics.coordinateSpaceName)
         .onPreferenceChange(ColumnWidthPreferenceKey.self) { syncColumnWidths(from: $0) }
         .frame(maxWidth: .infinity, alignment: .leading)
         .clipped()
@@ -124,12 +132,8 @@ struct TableHeaderView: View {
         .background(dragTargetBackground(for: spec.id))
         .overlay(alignment: .leading) { dragTargetIndicator(for: spec.id) }
         .background(geoMeasurement(for: spec))
-        .draggable(spec.id) { dragPreview(for: spec) }
-        .dropDestination(for: ColumnID.self) { items, _ in
-            handleDrop(items: items, target: spec.id)
-        } isTargeted: { targeted in
-            dragOverTargetID = targeted ? spec.id : nil
-        }
+        .background(columnFrameMeasurement(for: spec.id))
+        .gesture(columnReorderGesture(for: spec.id), including: .gesture)
     }
 
     // MARK: - Dividers
@@ -174,6 +178,16 @@ struct TableHeaderView: View {
         }
     }
 
+    private func columnFrameMeasurement(for columnID: ColumnID) -> some View {
+        GeometryReader { geo in
+            Color.clear
+            .onAppear { columnFrames[columnID] = geo.frame(in: .named(HeaderDragMetrics.coordinateSpaceName)) }
+            .onChange(of: geo.frame(in: .named(HeaderDragMetrics.coordinateSpaceName))) { _, frame in
+                columnFrames[columnID] = frame
+            }
+        }
+    }
+
     private func syncColumnWidths(from entries: [ColumnWidthEntry]) {
         guard !layout.isColumnReorderActive else { return }
         // skip geo-sync if autofit just applied — stale geo values would overwrite fresh widths
@@ -204,22 +218,58 @@ struct TableHeaderView: View {
         }
     }
 
-    private func dragPreview(for spec: ColumnSpec) -> some View {
-        Text(spec.id.title)
-        .font(.system(size: 11, weight: .medium))
-        .padding(.horizontal, 8)
-        .padding(.vertical, 4)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 4))
-        .onAppear { layout.beginColumnReorder() }
-        .onDisappear { layout.endColumnReorder() }
+    private func columnReorderGesture(for columnID: ColumnID) -> some Gesture {
+        DragGesture(minimumDistance: HeaderDragMetrics.minimumDragDistance, coordinateSpace: .named(HeaderDragMetrics.coordinateSpaceName))
+        .onChanged { value in
+            handleColumnDragChanged(sourceID: columnID, location: value.location)
+        }
+        .onEnded { _ in
+            finishColumnDrag()
+        }
     }
 
-    private func handleDrop(items: [ColumnID], target: ColumnID) -> Bool {
-        guard let src = items.first else { return false }
-        layout.moveColumn(src, before: target)
-        layout.endColumnReorder()
+    private func handleColumnDragChanged(sourceID: ColumnID, location: CGPoint) {
+        if draggedColumnID == nil {
+            draggedColumnID = sourceID
+            layout.beginColumnReorder()
+            log.debug("[Columns] drag begin panel=\(panelSide) source=\(sourceID.rawValue)")
+        }
+        guard let targetID = targetColumnID(at: location), targetID != sourceID else { return }
+        dragOverTargetID = targetID
+        moveColumn(sourceID, around: targetID, location: location)
+    }
+
+    private func targetColumnID(at location: CGPoint) -> ColumnID? {
+        columnFrames.first { _, frame in
+            frame.contains(location)
+        }?.key
+    }
+
+    private func moveColumn(_ sourceID: ColumnID, around targetID: ColumnID, location: CGPoint) {
+        guard let targetFrame = columnFrames[targetID] else { return }
+        if location.x < targetFrame.midX {
+            layout.moveColumn(sourceID, before: targetID)
+        } else if let nextID = nextVisibleFixedColumn(after: targetID, excluding: sourceID) {
+            layout.moveColumn(sourceID, before: nextID)
+        } else {
+            layout.moveColumnToEnd(sourceID)
+        }
+        log.debug("[Columns] drag reorder source=\(sourceID.rawValue) target=\(targetID.rawValue)")
+    }
+
+    private func nextVisibleFixedColumn(after targetID: ColumnID, excluding sourceID: ColumnID) -> ColumnID? {
+        let ids = fixedCols.map(\.id).filter { $0 != sourceID }
+        guard let targetIndex = ids.firstIndex(of: targetID) else { return nil }
+        let nextIndex = ids.index(after: targetIndex)
+        guard nextIndex < ids.endIndex else { return nil }
+        return ids[nextIndex]
+    }
+
+    private func finishColumnDrag() {
+        log.debug("[Columns] drag finish panel=\(panelSide) source=\(draggedColumnID?.rawValue ?? "nil")")
+        draggedColumnID = nil
         dragOverTargetID = nil
-        return true
+        layout.endColumnReorder()
     }
 
     // MARK: - Sort
