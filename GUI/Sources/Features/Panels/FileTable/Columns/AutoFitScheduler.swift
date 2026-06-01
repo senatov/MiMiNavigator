@@ -173,6 +173,7 @@ final class AutoFitScheduler {
         guard UserPreferences.shared.snapshot.autoFitColumnsOnNavigate else { return }
         guard !files.isEmpty else { return }
         let layout = ColumnLayoutStore.shared.layout(for: panel)
+        guard !layout.isColumnReorderActive else { return }
         lastAutoFitWidth[panel] = layout.containerWidth
         ColumnAutoFitter.autoFitAll(layout: layout, files: files)
         lastAutoFitFinish[panel] = Date()
@@ -222,6 +223,7 @@ final class AutoFitScheduler {
         log.debug("[AutoFit] resize panel=\(panel) delta=\(Int(delta))pt")
         lastAutoFitWidth[panel] = newWidth
         let layout = ColumnLayoutStore.shared.layout(for: panel)
+        guard !layout.isColumnReorderActive else { return }
         ColumnAutoFitter.autoFitAll(layout: layout, files: files)
         lastAutoFitFinish[panel] = Date()
     }
@@ -230,6 +232,10 @@ final class AutoFitScheduler {
 
     private func runAutoFit(panel: FavPanelSide, appState: AppState) {
         let layout = ColumnLayoutStore.shared.layout(for: panel)
+        guard !layout.isColumnReorderActive else {
+            log.debug("[AutoFit] runAutoFit skip — column reorder active panel=\(panel)")
+            return
+        }
         let files = appState.displayedFiles(for: panel)
         guard !files.isEmpty else {
             log.debug("[AutoFit] runAutoFit skip — no files panel=\(panel)")

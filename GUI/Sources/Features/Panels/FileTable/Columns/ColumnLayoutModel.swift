@@ -27,6 +27,7 @@ final class ColumnLayoutModel: Codable {
     var containerWidth: CGFloat = 0
     private(set) var storedNameWidth: CGFloat = 200
     private let storageKey: String
+    private(set) var isColumnReorderActive = false
 
     /// tick bumped on every autofit apply — syncColumnWidths skips 1 render cycle after
     var autoFitGeneration: Int = 0
@@ -195,10 +196,21 @@ final class ColumnLayoutModel: Codable {
     func toggle(_ id: ColumnID) {
         guard !id.isRequired, let idx = columns.firstIndex(where: { $0.id == id }) else { return }
         columns[idx].isVisible.toggle()
+        incrementLayoutVersion()
         save()
     }
 
     func canMove(_ id: ColumnID) -> Bool { id != .name }
+
+    @MainActor
+    func beginColumnReorder() {
+        isColumnReorderActive = true
+    }
+
+    @MainActor
+    func endColumnReorder() {
+        isColumnReorderActive = false
+    }
 
     @MainActor
     func moveColumn(_ sourceID: ColumnID, before targetID: ColumnID) {
@@ -210,6 +222,7 @@ final class ColumnLayoutModel: Codable {
         let spec = columns.remove(at: srcIdx)
         let insertIdx = columns.firstIndex(where: { $0.id == targetID }) ?? columns.endIndex
         columns.insert(spec, at: insertIdx)
+        incrementLayoutVersion()
         save()
     }
 
@@ -218,6 +231,18 @@ final class ColumnLayoutModel: Codable {
         guard sourceID != .name, let srcIdx = columns.firstIndex(where: { $0.id == sourceID }) else { return }
         let spec = columns.remove(at: srcIdx)
         columns.append(spec)
+        incrementLayoutVersion()
+        save()
+    }
+
+    @MainActor
+    func restoreDefaults() {
+        for col in ColumnID.allCases {
+            guard let idx = columns.firstIndex(where: { $0.id == col }) else { continue }
+            columns[idx].isVisible = col.defaultVisible
+            columns[idx].width = col.defaultWidth
+        }
+        incrementLayoutVersion()
         save()
     }
 

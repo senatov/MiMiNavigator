@@ -342,6 +342,7 @@ struct DirectoryTreeView: View {
             if Task.isCancelled { return }
             let rows = visibleRows
             guard !rows.isEmpty else { return }
+            guard !layout.isColumnReorderActive else { return }
             let files = rows.map(\.file)
             let extras = rows.map { nameExtraWidth(forDepth: $0.depth) }
             log.debug("[AutoFit] tree fit panel=\(panelSide) reason=\(reason) rows=\(rows.count)")

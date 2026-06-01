@@ -65,10 +65,9 @@ struct TableHeaderView: View {
             nameColumnHeader
             nameDivider()
 
-            ForEach(fixedCols.indices, id: \.self) { i in
-                let spec = fixedCols[i]
+            ForEach(fixedCols) { spec in
                 fixedColumnHeader(for: spec)
-                if i < fixedCols.count - 1 {
+                if spec.id != fixedCols.last?.id {
                     columnDivider(for: spec)
                 }
             }
@@ -113,6 +112,7 @@ struct TableHeaderView: View {
             compactSpacing: spec.id.isDateColumn,
             onSort: { toggleSort(spec.id) },
             onAutoFit: {
+                guard !layout.isColumnReorderActive else { return }
                 let w = autoFitWidth(for: spec.id)
                 layout.setWidth(w, for: spec.id)
                 layout.saveWidths()
@@ -146,7 +146,7 @@ struct TableHeaderView: View {
             min: 60,
             max: effectiveMax,
             onEnd: { layout.saveWidths() },
-            onAutoFit: { autoFitWidth(for: .name) }
+            onAutoFit: { layout.isColumnReorderActive ? layout.nameWidth : autoFitWidth(for: .name) }
         )
     }
 
@@ -159,7 +159,7 @@ struct TableHeaderView: View {
             min: spec.id.minDragWidth,
             max: Swift.min(spec.id.maxWidth, maxRight),
             onEnd: { layout.saveWidths() },
-            onAutoFit: { autoFitWidth(for: spec.id) }
+            onAutoFit: { layout.isColumnReorderActive ? spec.width : autoFitWidth(for: spec.id) }
         )
     }
 
@@ -175,6 +175,7 @@ struct TableHeaderView: View {
     }
 
     private func syncColumnWidths(from entries: [ColumnWidthEntry]) {
+        guard !layout.isColumnReorderActive else { return }
         // skip geo-sync if autofit just applied — stale geo values would overwrite fresh widths
         if layout.autoFitGeneration != layout.lastSyncedGeneration {
             layout.lastSyncedGeneration = layout.autoFitGeneration
@@ -209,11 +210,14 @@ struct TableHeaderView: View {
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
         .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 4))
+        .onAppear { layout.beginColumnReorder() }
+        .onDisappear { layout.endColumnReorder() }
     }
 
     private func handleDrop(items: [ColumnID], target: ColumnID) -> Bool {
         guard let src = items.first else { return false }
         layout.moveColumn(src, before: target)
+        layout.endColumnReorder()
         dragOverTargetID = nil
         return true
     }
@@ -221,6 +225,7 @@ struct TableHeaderView: View {
     // MARK: - Sort
 
     private func toggleSort(_ col: ColumnID) {
+        guard !layout.isColumnReorderActive else { return }
         guard let key = col.sortKey else { return }
         appState.focusedPanel = panelSide
         if sortKey == key {
@@ -286,6 +291,7 @@ struct TableHeaderView: View {
             UserPreferences.shared.snapshot.autoFitColumnsOnNavigate = newVal
             UserPreferences.shared.save()
             if newVal {
+                guard !layout.isColumnReorderActive else { return }
                 let files = panelSide == .left ? appState.displayedLeftFiles : appState.displayedRightFiles
                 ColumnAutoFitter.autoFitAll(layout: layout, files: files)
             }
@@ -298,12 +304,7 @@ struct TableHeaderView: View {
     }
 
     private func restoreDefaults() {
-        for col in ColumnID.allCases {
-            guard let idx = layout.columns.firstIndex(where: { $0.id == col }) else { continue }
-            layout.columns[idx].isVisible = col.defaultVisible
-            layout.columns[idx].width = col.defaultWidth
-        }
-        layout.saveWidths()
+        layout.restoreDefaults()
     }
 }
 
