@@ -205,6 +205,7 @@ struct ToolbarCustomizeRootView: View {
                 .foregroundStyle(.tertiary)
             Spacer()
             ToolbarCustomizeDoneButton(title: "Done", systemImage: "checkmark") {
+                log.debug("[ToolbarCustomize] Done action invoked")
                 onDismiss()
             }
         }

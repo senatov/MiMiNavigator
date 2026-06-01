@@ -61,6 +61,10 @@ final class ToolbarCustomizeCoordinator {
         panel.titleVisibility = .visible
         panel.title = "Customize Toolbar"
         PanelTitleHelper.applyIconTitle(to: panel, systemImage: "wrench.adjustable", title: "Customize Toolbar")
+        panel.onCloseButtonClick = { [weak self] in
+            log.debug("[ToolbarCustomize] titlebar close routed to coordinator")
+            self?.close()
+        }
         panel.toolbarStyle = .unified
         panel.animationBehavior = .utilityWindow
         panel.isMovableByWindowBackground = false
@@ -92,9 +96,11 @@ final class ToolbarCustomizeCoordinator {
         let panel = window
         if let panel {
             saveSize(panel.frame.size)
+            (panel as? ToolbarCustomizePanel)?.onCloseButtonClick = nil
         }
         window = nil
-        panel?.close()
+        panel?.orderOut(nil)
+        isClosing = false
         log.info("[ToolbarCustomize] closed ✓")
     }
 
@@ -248,8 +254,34 @@ final class ToolbarCustomizeCoordinator {
 
 // MARK: - Toolbar Customize Panel
 private final class ToolbarCustomizePanel: NSPanel {
+    var onCloseButtonClick: (() -> Void)?
+
     override var canBecomeKey: Bool { true }
     override var canBecomeMain: Bool { false }
+
+    override func sendEvent(_ event: NSEvent) {
+        if event.type == .leftMouseDown {
+            log.debug("[ToolbarCustomize] panel leftMouseDown key=\(isKeyWindow) loc=\(event.locationInWindow)")
+            if isCloseButtonClick(event) {
+                log.debug("[ToolbarCustomize] titlebar close hit")
+                onCloseButtonClick?()
+                return
+            }
+            if !isKeyWindow {
+                log.debug("[ToolbarCustomize] making panel key before forwarding click")
+                makeKey()
+            }
+        }
+        super.sendEvent(event)
+    }
+
+    private func isCloseButtonClick(_ event: NSEvent) -> Bool {
+        guard let closeButton = standardWindowButton(.closeButton), !closeButton.isHidden else {
+            return false
+        }
+        let pointInButton = closeButton.convert(event.locationInWindow, from: nil)
+        return closeButton.bounds.contains(pointInButton)
+    }
 }
 
 // MARK: - First Mouse Hosting View
@@ -263,6 +295,14 @@ private final class ToolbarCustomizeHostingView<Content: View>: NSHostingView<Co
 // MARK: - NSWindowDelegate
 private final class ToolbarCustWindowDelegate: NSObject, NSWindowDelegate {
     @MainActor static let shared = ToolbarCustWindowDelegate()
+
+    func windowShouldClose(_ sender: NSWindow) -> Bool {
+        log.debug("[ToolbarCustomize] windowShouldClose routed to coordinator")
+        Task { @MainActor in
+            ToolbarCustomizeCoordinator.shared.close()
+        }
+        return false
+    }
 
     func windowDidResize(_ notification: Notification) {
         Task { @MainActor in
