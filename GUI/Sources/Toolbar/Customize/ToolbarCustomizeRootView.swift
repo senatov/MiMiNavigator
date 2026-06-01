@@ -7,6 +7,7 @@
 //   Refined macOS layout with card-based sections, explicit hierarchy,
 //   reorderable current toolbar strip, and palette drop-to-remove behavior.
 
+import AppKit
 import SwiftUI
 
 // MARK: - Toolbar Customize Root View
@@ -203,7 +204,7 @@ struct ToolbarCustomizeRootView: View {
                 .font(.system(size: 11))
                 .foregroundStyle(.tertiary)
             Spacer()
-            DownToolbarButtonView(title: "Done", systemImage: "checkmark") {
+            ToolbarCustomizeDoneButton(title: "Done", systemImage: "checkmark") {
                 onDismiss()
             }
         }
@@ -241,5 +242,54 @@ struct ToolbarCustomizeRootView: View {
             RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .strokeBorder(DialogColors.border.opacity(0.42), lineWidth: 0.5)
         )
+    }
+}
+
+// MARK: - Toolbar Customize Done Button
+private struct ToolbarCustomizeDoneButton: NSViewRepresentable {
+    let title: String
+    let systemImage: String
+    let action: () -> Void
+
+    func makeNSView(context: Context) -> ToolbarCustomizeDoneNSButton {
+        let button = ToolbarCustomizeDoneNSButton(title: title, target: context.coordinator, action: #selector(Coordinator.performAction))
+        button.image = NSImage(systemSymbolName: systemImage, accessibilityDescription: title)
+        button.imagePosition = .imageLeading
+        button.bezelStyle = .rounded
+        button.controlSize = .regular
+        button.font = .systemFont(ofSize: 13, weight: .medium)
+        button.setButtonType(.momentaryPushIn)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.widthAnchor.constraint(greaterThanOrEqualToConstant: 90).isActive = true
+        return button
+    }
+
+    func updateNSView(_ nsView: ToolbarCustomizeDoneNSButton, context: Context) {
+        nsView.title = title
+        nsView.image = NSImage(systemSymbolName: systemImage, accessibilityDescription: title)
+        context.coordinator.action = action
+    }
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(action: action)
+    }
+
+    final class Coordinator: NSObject {
+        var action: () -> Void
+
+        init(action: @escaping () -> Void) {
+            self.action = action
+        }
+
+        @objc func performAction() {
+            action()
+        }
+    }
+}
+
+// MARK: - Toolbar Customize Done NSButton
+private final class ToolbarCustomizeDoneNSButton: NSButton {
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
+        true
     }
 }

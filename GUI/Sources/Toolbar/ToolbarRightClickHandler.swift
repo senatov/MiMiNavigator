@@ -54,7 +54,7 @@ final class ToolbarRightClickMonitor {
 
         if isClickInToolbar(event: event, window: window) {
             log.info("[ToolbarRightClick] ✓ opening customize panel")
-            openCustomizePanel()
+            openCustomizePanel(anchorScreenPoint: screenPoint(for: event, in: window))
             return nil
         } else {
             log.debug("[ToolbarRightClick] click outside toolbar — ignored")
@@ -86,7 +86,11 @@ final class ToolbarRightClickMonitor {
         return isInside
     }
 
-    private func openCustomizePanel() {
+    private func screenPoint(for event: NSEvent, in window: NSWindow) -> NSPoint {
+        window.convertPoint(toScreen: event.locationInWindow)
+    }
+
+    private func openCustomizePanel(anchorScreenPoint: NSPoint) {
         let now = ProcessInfo.processInfo.systemUptime
         if now - lastOpenAttemptAt < duplicateClickSuppressionInterval {
             log.debug("[ToolbarRightClick] duplicate click suppressed")
@@ -95,7 +99,7 @@ final class ToolbarRightClickMonitor {
         lastOpenAttemptAt = now
         log.debug("[ToolbarRightClick] scheduling customize panel for next main-turn")
         DispatchQueue.main.async {
-            ToolbarCustomizeCoordinator.shared.show()
+            ToolbarCustomizeCoordinator.shared.show(anchorScreenPoint: anchorScreenPoint)
         }
     }
 }

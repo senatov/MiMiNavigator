@@ -130,9 +130,14 @@ struct TableHeaderView: View {
         .padding(.trailing, spec.id.headerPadding.trailing)
         .frame(width: spec.width, alignment: spec.id.alignment)
         .background(dragTargetBackground(for: spec.id))
+        .overlay { draggingColumnBorder(for: spec.id) }
         .overlay(alignment: .leading) { dragTargetIndicator(for: spec.id) }
         .background(geoMeasurement(for: spec))
         .background(columnFrameMeasurement(for: spec.id))
+        .opacity(draggedColumnID == spec.id ? 0.72 : 1)
+        .scaleEffect(draggedColumnID == spec.id ? 1.03 : 1, anchor: .center)
+        .animation(.easeOut(duration: 0.10), value: draggedColumnID)
+        .animation(.easeOut(duration: 0.10), value: dragOverTargetID)
         .gesture(columnReorderGesture(for: spec.id), including: .gesture)
     }
 
@@ -209,6 +214,16 @@ struct TableHeaderView: View {
 
     private func dragTargetBackground(for id: ColumnID) -> Color {
         dragOverTargetID == id ? Color.accentColor.opacity(0.15) : .clear
+    }
+
+    @ViewBuilder
+    private func draggingColumnBorder(for id: ColumnID) -> some View {
+        if draggedColumnID == id {
+            RoundedRectangle(cornerRadius: 3, style: .continuous)
+                .stroke(Color.orange, lineWidth: 2)
+                .padding(1)
+                .allowsHitTesting(false)
+        }
     }
 
     @ViewBuilder

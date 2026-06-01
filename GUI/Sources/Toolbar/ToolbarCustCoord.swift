@@ -4,7 +4,7 @@
 // Created by Iakov Senatov on 24.02.2026.
 // Copyright © 2026 Senatov. All rights reserved.
 // Description: Manages Toolbar Customize as standalone NSPanel.
-//   Same pattern as SettingsCoordinator — proper NSWindowDelegate, frame autosave.
+//   Same pattern as SettingsCoordinator — proper NSWindowDelegate, size persistence.
 
 import AppKit
 import SwiftUI
@@ -21,8 +21,10 @@ final class ToolbarCustomizeCoordinator {
     private var mainWindowObserver: NSObjectProtocol?
     private var isClosing = false
 
-    private let frameAutosaveName = "MiMiNavigator.ToolbarCustomizePanel"
-    private let defaultWidth: CGFloat = 600
+    private let sizeDefaultsKey = "MiMiNavigator.ToolbarCustomizePanelSize"
+    private let toolbarHeight: CGFloat = 52
+    private let panelMargin: CGFloat = 12
+    private let defaultWidth: CGFloat = 1_200
     private let defaultHeight: CGFloat = 645
 
     private init() {}
@@ -33,27 +35,31 @@ final class ToolbarCustomizeCoordinator {
     }
 
 
-    func show() {
+    func show(anchorScreenPoint: NSPoint? = nil) {
         guard !isClosing else { return }
         log.debug("[ToolbarCustomize] show() invoked")
         let sourceMainWindow = currentPrimaryWindow(excluding: window)
         if let existing = window, existing.isVisible {
+            position(existing, near: anchorScreenPoint, relativeTo: sourceMainWindow)
             present(existing, relativeTo: sourceMainWindow)
             isVisible = true
             return
         }
         let contentView = ToolbarCustomizeRootView(onDismiss: { [weak self] in self?.close() })
             .frame(minWidth: 440, minHeight: 460)
-        let panel = NSPanel(
-            contentRect: .zero,
+        let initialFrame = frame(near: anchorScreenPoint, relativeTo: sourceMainWindow, requestedSize: restoredSize())
+        let panel = ToolbarCustomizePanel(
+            contentRect: initialFrame,
             styleMask: [.titled, .closable, .resizable, .miniaturizable, .utilityWindow],
             backing: .buffered,
             defer: false
         )
-        panel.contentView = NSHostingView(rootView: contentView)
+        panel.contentView = ToolbarCustomizeHostingView(rootView: contentView)
         panel.isReleasedWhenClosed = false
         panel.minSize = NSSize(width: 440, height: 460)
         panel.titlebarAppearsTransparent = false
+        panel.titleVisibility = .visible
+        panel.title = "Customize Toolbar"
         PanelTitleHelper.applyIconTitle(to: panel, systemImage: "wrench.adjustable", title: "Customize Toolbar")
         panel.toolbarStyle = .unified
         panel.animationBehavior = .utilityWindow
@@ -62,14 +68,11 @@ final class ToolbarCustomizeCoordinator {
         panel.isFloatingPanel = true
         panel.level = .floating
         panel.tabbingMode = .disallowed
+        panel.becomesKeyOnlyIfNeeded = false
         panel.autorecalculatesKeyViewLoop = true
         panel.hasShadow = true
         panel.collectionBehavior.insert(.moveToActiveSpace)
         panel.backgroundColor = NSColor(DialogColors.base)
-        if !panel.setFrameUsingName(frameAutosaveName) {
-            panel.setFrame(computeDefaultFrame(), display: true)
-        }
-        panel.setFrameAutosaveName(frameAutosaveName)
         panel.delegate = ToolbarCustWindowDelegate.shared
         installReactivationObservers()
         self.window = panel
@@ -87,6 +90,9 @@ final class ToolbarCustomizeCoordinator {
         removeReactivationObservers()
         isVisible = false
         let panel = window
+        if let panel {
+            saveSize(panel.frame.size)
+        }
         window = nil
         panel?.close()
         log.info("[ToolbarCustomize] closed ✓")
@@ -99,23 +105,82 @@ final class ToolbarCustomizeCoordinator {
     }
 
     func windowDidClose() {
+        if let window {
+            saveSize(window.frame.size)
+        }
         removeReactivationObservers()
         isClosing = false
         isVisible = false
     }
 
+    func windowDidResize() {
+        guard let window else { return }
+        saveSize(window.frame.size)
+    }
+
 
     private func computeDefaultFrame() -> NSRect {
-        let size = NSSize(width: defaultWidth, height: defaultHeight)
+        frame(near: nil, relativeTo: currentPrimaryWindow(excluding: window), requestedSize: restoredSize())
+    }
+
+    private func position(_ panel: NSPanel, near anchorScreenPoint: NSPoint?, relativeTo window: NSWindow?) {
+        panel.setFrame(frame(near: anchorScreenPoint, relativeTo: window, requestedSize: panel.frame.size), display: true)
+    }
+
+    private func frame(near anchorScreenPoint: NSPoint?, relativeTo window: NSWindow?, requestedSize: NSSize) -> NSRect {
+        let bounds = constrainedMainWindowFrame(relativeTo: window)
+        let availableWidth = max(440, bounds.width - 2 * panelMargin)
+        let availableHeight = max(460, bounds.height - toolbarHeight - 2 * panelMargin)
+        let size = NSSize(
+            width: min(max(440, requestedSize.width), availableWidth),
+            height: min(max(460, requestedSize.height), availableHeight)
+        )
+        let fallbackAnchor = NSPoint(x: bounds.midX, y: bounds.maxY - toolbarHeight)
+        let anchor = anchorScreenPoint ?? fallbackAnchor
+        let toolbarBottomY = bounds.maxY - toolbarHeight
+        let preferredTopY = min(anchor.y - panelMargin, toolbarBottomY - panelMargin)
+        let preferredOrigin = NSPoint(
+            x: anchor.x - size.width / 2,
+            y: preferredTopY - size.height
+        )
+        let minX = bounds.minX + panelMargin
+        let maxX = max(minX, bounds.maxX - size.width - panelMargin)
+        let minY = bounds.minY + panelMargin
+        let maxY = max(minY, toolbarBottomY - size.height - panelMargin)
+        let x = min(max(preferredOrigin.x, minX), maxX)
+        let y = min(max(preferredOrigin.y, minY), maxY)
+        return NSRect(origin: NSPoint(x: x, y: y), size: size)
+    }
+
+    private func constrainedMainWindowFrame(relativeTo window: NSWindow?) -> NSRect {
+        if let window {
+            return window.frame
+        }
         if let main = NSApp.mainWindow {
-            let mf = main.frame
-            return NSRect(origin: NSPoint(x: mf.midX - size.width / 2, y: mf.midY - size.height / 2), size: size)
+            return main.frame
         }
         if let screen = NSScreen.main {
-            let sf = screen.visibleFrame
-            return NSRect(origin: NSPoint(x: sf.midX - size.width / 2, y: sf.midY - size.height / 2), size: size)
+            return screen.visibleFrame
         }
-        return NSRect(origin: .zero, size: size)
+        return NSRect(origin: .zero, size: NSSize(width: defaultWidth, height: defaultHeight + toolbarHeight))
+    }
+
+    private func restoredSize() -> NSSize {
+        guard let string = UserDefaults.standard.string(forKey: sizeDefaultsKey) else {
+            return NSSize(width: defaultWidth, height: defaultHeight)
+        }
+        let parts = string.split(separator: "x").compactMap { Double($0) }
+        guard parts.count == 2 else {
+            return NSSize(width: defaultWidth, height: defaultHeight)
+        }
+        return NSSize(width: max(440, parts[0]), height: max(460, parts[1]))
+    }
+
+    private func saveSize(_ size: NSSize) {
+        let width = Int(max(440, size.width).rounded())
+        let height = Int(max(460, size.height).rounded())
+        UserDefaults.standard.set("\(width)x\(height)", forKey: sizeDefaultsKey)
+        log.debug("[ToolbarCustomize] size saved \(width)x\(height)")
     }
 
     private func installReactivationObservers() {
@@ -171,24 +236,26 @@ final class ToolbarCustomizeCoordinator {
     private func present(_ panel: NSPanel, relativeTo window: NSWindow?) {
         NSApp.activate(ignoringOtherApps: true)
 
-        if let window {
-            orderAbove(panel, relativeTo: window)
-        } else {
-            panel.orderFrontRegardless()
-        }
-
         panel.makeKeyAndOrderFront(nil)
 
-        // Re-assert z-order on the next main turn, after right-click menu tracking settles.
+        // Re-assert key status on the next main turn, after right-click menu tracking settles.
         DispatchQueue.main.async { [weak self, weak panel] in
             guard let self, let panel, self.window === panel, self.isVisible else { return }
-            if let window = self.currentPrimaryWindow(excluding: panel) {
-                self.orderAbove(panel, relativeTo: window)
-            } else {
-                panel.orderFrontRegardless()
-            }
             panel.makeKeyAndOrderFront(nil)
         }
+    }
+}
+
+// MARK: - Toolbar Customize Panel
+private final class ToolbarCustomizePanel: NSPanel {
+    override var canBecomeKey: Bool { true }
+    override var canBecomeMain: Bool { false }
+}
+
+// MARK: - First Mouse Hosting View
+private final class ToolbarCustomizeHostingView<Content: View>: NSHostingView<Content> {
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
+        true
     }
 }
 
@@ -196,6 +263,12 @@ final class ToolbarCustomizeCoordinator {
 // MARK: - NSWindowDelegate
 private final class ToolbarCustWindowDelegate: NSObject, NSWindowDelegate {
     @MainActor static let shared = ToolbarCustWindowDelegate()
+
+    func windowDidResize(_ notification: Notification) {
+        Task { @MainActor in
+            ToolbarCustomizeCoordinator.shared.windowDidResize()
+        }
+    }
 
     func windowWillClose(_ notification: Notification) {
         Task { @MainActor in
