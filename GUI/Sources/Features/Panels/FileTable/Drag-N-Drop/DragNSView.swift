@@ -135,7 +135,9 @@ final class DragNSView: NSView, NSDraggingSource {
     // MARK: - helper NSDraggingSource
     func draggingSession(_ session: NSDraggingSession, sourceOperationMaskFor context: NSDraggingContext) -> NSDragOperation {
         switch context {
-            case .outsideApplication: return [.copy, .move]
+            case .outsideApplication:
+                if dragContainsAppManagedNetworkMount { return [.copy] }
+                return [.copy, .move]
             case .withinApplication: return [.move]
             @unknown default: return [.copy]
         }
@@ -213,6 +215,10 @@ final class DragNSView: NSView, NSDraggingSource {
             }
             return url
         }
+    }
+
+    private var dragContainsAppManagedNetworkMount: Bool {
+        cachedSelection.contains { AppState.isAppManagedNetworkMountPath($0.urlValue) }
     }
 
     private func resolveDropContext(
