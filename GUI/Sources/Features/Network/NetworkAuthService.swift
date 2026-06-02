@@ -19,6 +19,8 @@ struct NetworkCredentials {
 // MARK: - Keychain wrapper for network credentials
 enum NetworkAuthService {
 
+    private static let appCredentialPath = "/MiMiNavigator"
+    private static let appCredentialLabelPrefix = "MiMiNavigator:"
     private static let knownHostSuffixes = [
         "._smb._tcp.local",
         "._afp._tcp.local",
@@ -32,15 +34,17 @@ enum NetworkAuthService {
             kSecClass: kSecClassInternetPassword,
             kSecAttrServer: host,
             kSecAttrAccount: creds.user,
+            kSecAttrPath: appCredentialPath,
             kSecValueData: Data(creds.password.utf8),
-            kSecAttrLabel: "MiMiNavigator: \(host)"
+            kSecAttrLabel: "\(appCredentialLabelPrefix) \(host)"
         ]
     }
 
     private static func deleteQuery(host: String) -> [CFString: Any] {
         [
             kSecClass: kSecClassInternetPassword,
-            kSecAttrServer: host
+            kSecAttrServer: host,
+            kSecAttrPath: appCredentialPath
         ]
     }
 
@@ -91,8 +95,8 @@ enum NetworkAuthService {
         }
     }
 
-    // MARK: - Load credentials — tries all hostname variants Finder may have stored
-    // Finder stores SMB credentials under keys like:
+    // MARK: - Load credentials — tries MiMiNavigator-owned hostname variants
+    // Host keys may look like:
     //   "kira-macpro"                      (plain name)
     //   "kira-macpro.local"                (mDNS)
     //   "kira-macpro._smb._tcp.local"      (Bonjour full)
@@ -148,9 +152,11 @@ enum NetworkAuthService {
         let query: [CFString: Any] = [
             kSecClass:            kSecClassInternetPassword,
             kSecAttrServer:       key,
+            kSecAttrPath:         appCredentialPath,
             kSecReturnAttributes: true,
             kSecReturnData:       true,
-            kSecMatchLimit:       kSecMatchLimitOne
+            kSecMatchLimit:       kSecMatchLimitOne,
+            kSecUseAuthenticationUI: kSecUseAuthenticationUISkip
         ]
         var item: CFTypeRef?
         guard SecItemCopyMatching(query as CFDictionary, &item) == errSecSuccess,
