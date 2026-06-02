@@ -93,10 +93,11 @@ extension NetworkNeighborhoodProvider: NetServiceDelegate {
     nonisolated func netServiceDidResolveAddress(_ sender: NetService) {
         let name = sender.name
         let hostName = sender.hostName ?? "(nil)"
+        let resolvedHostName = ipv4Address(from: sender.addresses) ?? hostName
         let port = sender.port
         let senderType = sender.type
         let senderID = ObjectIdentifier(sender)
-        log.info("[Bonjour] resolved '\(name)' → \(hostName):\(port)")
+        log.info("[Bonjour] resolved '\(name)' → \(resolvedHostName):\(port)")
         let isMobile = senderType.contains("mobdev")
         let isPrinter =
             !isMobile
@@ -109,10 +110,10 @@ extension NetworkNeighborhoodProvider: NetServiceDelegate {
         Task { @MainActor in
             let displayName =
                 isMobile
-                ? self.refinedMobileName(hostName: hostName, rawName: name)
+                ? self.refinedMobileName(hostName: resolvedHostName, rawName: name)
                 : name
             self.addResolvedHost(
-                name: displayName, hostName: hostName,
+                name: displayName, hostName: resolvedHostName,
                 port: port, serviceType: serviceType,
                 isPrinter: isPrinter,
                 isMobile: isMobile
@@ -144,6 +145,26 @@ extension NetworkNeighborhoodProvider: NetServiceDelegate {
         if hn.contains("iphone") || hn.contains("phone") { return "iPhone (\(label))" }
         if hn.contains("mabila") || hn.hasSuffix("-s-iphone") { return "iPhone (\(label))" }
         return "Apple Device (\(label))"
+    }
+
+    // MARK: - IPv4 address from resolved Bonjour service
+    nonisolated private func ipv4Address(from addresses: [Data]?) -> String? {
+        guard let addresses else { return nil }
+        for addressData in addresses {
+            let result = addressData.withUnsafeBytes { rawBuffer -> String? in
+                guard let baseAddress = rawBuffer.baseAddress else { return nil }
+                let socketAddress = baseAddress.assumingMemoryBound(to: sockaddr.self)
+                guard socketAddress.pointee.sa_family == sa_family_t(AF_INET) else { return nil }
+                var hostBuffer = [CChar](repeating: 0, count: Int(NI_MAXHOST))
+                let status = getnameinfo(socketAddress, socklen_t(addressData.count), &hostBuffer, socklen_t(hostBuffer.count), nil, 0, NI_NUMERICHOST)
+                guard status == 0 else { return nil }
+                let endIndex = hostBuffer.firstIndex(of: 0) ?? hostBuffer.endIndex
+                let bytes = hostBuffer[..<endIndex].map { UInt8(bitPattern: $0) }
+                return String(decoding: bytes, as: UTF8.self)
+            }
+            if let result { return result }
+        }
+        return nil
     }
 
     nonisolated func netService(_ sender: NetService, didNotResolve errorDict: [String: NSNumber]) {

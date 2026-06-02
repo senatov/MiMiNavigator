@@ -20,7 +20,7 @@ enum NetworkDeviceXT: Sendable, CaseIterable {
     case printer
     case iPhone
     case iPad
-    case mediaBox      // Enigma2 / OpenPLi / Kodi / HTPC — web UI only, no SMB
+    case mediaBox      // Enigma2 / OpenPLi / Kodi / HTPC, often Linux-based with Web UI and file access
     case smartTV
     case repeater
     case networkSwitch
@@ -154,7 +154,7 @@ enum NetworkDeviceXT: Sendable, CaseIterable {
     // MARK: - Behavior
     var isExpandable: Bool {
         switch self {
-            case .printer, .router, .repeater, .networkSwitch, .camera, .iPhone, .iPad, .androidPhone, .androidTablet, .mediaBox, .smartTV, .gameConsole:
+            case .printer, .router, .repeater, .networkSwitch, .camera, .iPhone, .iPad, .androidPhone, .androidTablet, .smartTV, .gameConsole:
                 return false
             default:
                 return true

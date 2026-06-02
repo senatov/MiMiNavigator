@@ -25,6 +25,10 @@ struct HostNodeRow: View {
             && !host.isOffline && host.deviceClass != .iPhone && host.deviceClass != .iPad
     }
 
+    private var showsConfigButton: Bool {
+        host.webUIURL == nil && host.deviceClass.isMobile
+    }
+
     var body: some View {
         HStack(spacing: 0) {
             chevron
@@ -125,7 +129,21 @@ struct HostNodeRow: View {
                 .tint(webUIColor)
                 .controlSize(.mini)
             }
-            if host.webUIURL == nil && !host.deviceLabel.isEmpty {
+            if showsConfigButton {
+                Button { showInfoPopup.toggle() } label: {
+                    Label("Config", systemImage: "gearshape")
+                        .font(.caption2)
+                        .padding(.horizontal, 7).padding(.vertical, 3)
+                }
+                .buttonStyle(ThemedButtonStyle())
+                .tint(.teal)
+                .controlSize(.mini)
+                .help("Device configuration")
+                .popover(isPresented: $showInfoPopup, arrowEdge: .trailing) {
+                    NetworkDeviceInfoPopup(host: host)
+                }
+            }
+            if host.webUIURL == nil && !host.deviceLabel.isEmpty && !showsConfigButton {
                 Text(host.deviceLabel)
                     .font(.caption2)
                     .foregroundStyle(.secondary)
@@ -141,7 +159,7 @@ struct HostNodeRow: View {
                             .strokeBorder(Color.white.opacity(0.10), lineWidth: 0.8)
                     }
             }
-            if isHovered {
+            if isHovered && !showsConfigButton {
                 Button { showInfoPopup.toggle() } label: {
                     Image(systemName: "info.circle")
                         .font(.system(size: 14))

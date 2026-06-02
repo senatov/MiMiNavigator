@@ -6,7 +6,7 @@
 // Description: Tree-style Network Neighborhood — Bonjour + FritzBox TR-064 discovery.
 //   - NSPanel via NetworkNeighborhoodCoordinator (movable, resizable, persists position)
 //   - Web UI button for ANY device with responding HTTP port (23 ports probed)
-//   - mediaBox (Enigma2/OpenPLi/Kodi): icon=tv/red, no SMB expand, no Sign In
+//   - mediaBox (Enigma2/OpenPLi/Kodi): icon=tv/red, Web UI plus optional SMB shares
 //   - Right-click context menu: copy name / IP / Web URL / MAC / mount URL
 //   - Offline hosts hidden; Sign In only for expandable non-mobile non-router hosts
 
@@ -492,8 +492,7 @@ struct NetworkNeighborhoodView: View {
     private func shouldShowSignIn(for host: NetworkHost) -> Bool {
         guard !host.isLocalhost,
               !host.deviceClass.isMobile,
-              !host.deviceClass.isRouter,
-              host.deviceClass != .mediaBox
+              !host.deviceClass.isRouter
         else {
             return false
         }

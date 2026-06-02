@@ -198,11 +198,12 @@ final class NetworkNeighborhoodProvider: NSObject, ObservableObject {
         let norm = normalizedName(name)
         if let idx = hosts.firstIndex(where: { normalizedName($0.name) == norm }) {
             if let bt = bonjourType { hosts[idx].bonjourServices.insert(bt) }
-            // Update hostName only if new one is better (contains "." = DNS, not raw MAC)
+            // Update hostName only if new one is usable for connections or Web UI.
             let newHNBetter =
                 !hostName.isEmpty && hostName != "(nil)"
                 && (hostName.contains(".") || hostName.first?.isNumber == true)
                 && !hostName.contains("@")
+                && hostName.rangeOfCharacter(from: .whitespacesAndNewlines) == nil
             if newHNBetter {
                 hosts[idx].hostName = hostName
                 if port > 0 { hosts[idx].port = port }

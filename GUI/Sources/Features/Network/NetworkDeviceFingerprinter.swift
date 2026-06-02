@@ -50,7 +50,7 @@ enum NetworkDeviceFingerprinter {
         "synology", "qnap", "buffalo", "wd my cloud", "netgear",
         "readynas", "diskstation", "terramaster", "asustor",
     ]
-    // Enigma2 / OpenPLi / Kodi media boxes — web UI only, no SMB shares
+    // Enigma2 / OpenPLi / Kodi media boxes — Web UI plus optional Linux file services
     private static let mediaBoxKeywords = [
         "vuduo", "vu+", "enigma", "openpli", "openatv", "openvix",
         "dreambox", "dm800", "dm900", "dm7080", "gigablue", "xtrend",
