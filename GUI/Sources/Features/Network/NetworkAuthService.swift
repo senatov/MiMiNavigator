@@ -137,14 +137,49 @@ enum NetworkAuthService {
         return c.url
     }
 
+    @MainActor
     static func authenticatedURL(for shareURL: URL) -> URL {
         guard let host = shareURL.host else { return shareURL }
-        guard let creds = load(for: host) else { return shareURL }
+        if let creds = load(for: host) {
+            return authenticatedURL(shareURL, user: creds.user, password: creds.password)
+        }
+        guard let server = configuredServer(for: shareURL) else { return shareURL }
+        let password = RemoteServerKeychain.loadPassword(for: server)
+        guard !password.isEmpty else { return shareURL }
+        return authenticatedURL(shareURL, user: server.user, password: password)
+    }
+
+    private static func authenticatedURL(_ shareURL: URL, user: String, password: String) -> URL {
         guard var components = URLComponents(url: shareURL, resolvingAgainstBaseURL: false) else { return shareURL }
 
-        components.user = creds.user
-        components.password = creds.password
+        components.user = user
+        components.password = password
         return components.url ?? shareURL
+    }
+
+    @MainActor
+    private static func configuredServer(for shareURL: URL) -> RemoteServer? {
+        guard let host = shareURL.host else { return nil }
+        let scheme = shareURL.scheme?.lowercased() ?? ""
+        let sharePath = normalizedPath(shareURL.path)
+        return RemoteServerStore.shared.servers.first { server in
+            guard server.remoteProtocol.urlScheme == scheme else { return false }
+            guard normalizedHost(server.host) == normalizedHost(host) else { return false }
+            guard !server.user.isEmpty else { return false }
+            return configuredPathMatches(sharePath: sharePath, serverPath: normalizedPath(server.remotePath))
+        }
+    }
+
+    private static func configuredPathMatches(sharePath: String, serverPath: String) -> Bool {
+        guard serverPath != "/" else { return true }
+        return sharePath == serverPath || sharePath.hasPrefix(serverPath + "/")
+    }
+
+    private static func normalizedPath(_ path: String) -> String {
+        let trimmed = path.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return "/" }
+        let prefixed = trimmed.hasPrefix("/") ? trimmed : "/" + trimmed
+        return prefixed.hasSuffix("/") && prefixed.count > 1 ? String(prefixed.dropLast()) : prefixed
     }
 
     // MARK: - Private: exact Keychain lookup

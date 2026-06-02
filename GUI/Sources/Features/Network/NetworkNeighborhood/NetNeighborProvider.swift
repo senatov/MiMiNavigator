@@ -16,7 +16,7 @@ final class NetworkNeighborhoodProvider: NSObject, ObservableObject {
 
     static let shared = NetworkNeighborhoodProvider()
 
-    @Published private(set) var hosts: [NetworkHost] = []
+    @Published var hosts: [NetworkHost] = []
     @Published private(set) var isScanning: Bool = false
 
     private var browsers: [NetServiceBrowser] = []
@@ -45,6 +45,7 @@ final class NetworkNeighborhoodProvider: NSObject, ObservableObject {
         isScanning = true
         scanGeneration += 1
         let generation = scanGeneration
+        mergeConfiguredLocalServers()
 
         let serviceTypes =
             NetworkServiceType.allCases.map { $0.rawValue }
