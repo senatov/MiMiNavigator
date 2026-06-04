@@ -194,6 +194,7 @@ final class DragDropManager {
         from sourcePanelSide: FavPanelSide?
     ) {
         log.debug("[DnD] prepareTransfer: \(files.count) file(s) → \(destinationDisplayName(destination))")
+        InfoPopupController.hideAll(reason: "drag-drop-prepare", immediate: true)
         pendingOperation = makePendingOperation(
             files: files,
             destination: destination,

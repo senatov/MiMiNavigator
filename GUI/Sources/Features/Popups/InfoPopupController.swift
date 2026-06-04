@@ -35,8 +35,23 @@ class InfoPopupController {
     private(set) var panel: NSPanel?
     private(set) var textView: NSTextView?
     var monitors = PopupEventMonitors()
+    private var debugName: String { String(describing: type(of: self)) }
 
-    init() {}
+    private static var registeredControllers: [InfoPopupController] = []
+
+    init() {
+        Self.registeredControllers.append(self)
+    }
+
+    static func hideAll(reason: String, immediate: Bool = true) {
+        let visibleControllers = registeredControllers.filter { $0.panel?.isVisible == true }
+        guard !visibleControllers.isEmpty else { return }
+
+        log.debug(
+            "[InfoPopup] hiding \(visibleControllers.count) transient popup(s), reason=\(reason)"
+        )
+        visibleControllers.forEach { $0.hide(immediate: immediate, reason: reason) }
+    }
 
     // MARK: - show(content:anchorFrame:)
     /// Present the popup with pre-built attributed content, anchored below anchorFrame.
@@ -86,9 +101,20 @@ class InfoPopupController {
 
     // MARK: - hide
     func hide() {
+        hide(immediate: false, reason: "explicit")
+    }
+
+    func hide(immediate: Bool, reason: String) {
         monitors.remove()
         guard let panel, panel.isVisible else { return }
+        log.debug("[InfoPopup] hide \(debugName), immediate=\(immediate), reason=\(reason)")
         let parent = panel.parent
+        if immediate {
+            parent?.removeChildWindow(panel)
+            panel.alphaValue = 0
+            panel.orderOut(nil)
+            return
+        }
         NSAnimationContext.runAnimationGroup(
             { ctx in
                 ctx.duration = 0.10
