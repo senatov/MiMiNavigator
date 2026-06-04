@@ -22,12 +22,17 @@ final class BatchOpsCoord {
         log.debug("[BatchOperationCoordinator] initialized")
     }
 
+    private func hideTransientPopups(_ reason: String) {
+        InfoPopupController.hideAll(reason: "batch-\(reason)", immediate: true)
+    }
+
     // MARK: - Copy Operation (F5)
 
     /// Initiate batch copy from focused panel to opposite panel.
     /// Remote source: downloads files via SFTP/FTP provider directly to destination.
     /// Local source: shows confirmation dialog then copies via FileOpsEngine.
     func initiateCopy(appState: AppState) {
+        hideTransientPopups("copy")
         let sourcePanel = appState.focusedPanel
         let files = appState.filesForOperation(on: sourcePanel)
         let selectedFile = sourcePanel == .left ? appState.selectedLeftFile : appState.selectedRightFile
@@ -78,6 +83,7 @@ final class BatchOpsCoord {
 
     /// Execute confirmed copy operation
     func executeCopy(files: [CustomFile], destination: URL, sourcePanel: FavPanelSide, appState: AppState) {
+        hideTransientPopups("copy-execute")
         log.info("[BatchOperationCoordinator] executeCopy: \(files.count) files")
 
         Task { @MainActor in
@@ -89,6 +95,7 @@ final class BatchOpsCoord {
 
     /// Initiate batch move from focused panel to opposite panel
     func initiateMove(appState: AppState) {
+        hideTransientPopups("move")
         let sourcePanel = appState.focusedPanel
         // Remote → local not supported
         if AppState.isRemotePath(appState.url(for: sourcePanel)) {
@@ -118,6 +125,7 @@ final class BatchOpsCoord {
 
     /// Execute confirmed move operation
     func executeMove(files: [CustomFile], destination: URL, sourcePanel: FavPanelSide, appState: AppState) {
+        hideTransientPopups("move-execute")
         log.info("[BatchOperationCoordinator] executeMove: \(files.count) files")
 
         Task { @MainActor in
@@ -129,6 +137,7 @@ final class BatchOpsCoord {
 
     /// Initiate batch delete on focused panel
     func initiateDelete(appState: AppState) {
+        hideTransientPopups("delete")
         let sourcePanel = appState.focusedPanel
         let files = appState.filesForOperation(on: sourcePanel)
 
@@ -147,6 +156,7 @@ final class BatchOpsCoord {
 
     /// Execute confirmed delete operation
     func executeDelete(files: [CustomFile], sourcePanel: FavPanelSide, appState: AppState) {
+        hideTransientPopups("delete-execute")
         log.info("[BatchOperationCoordinator] executeDelete: \(files.count) files")
 
         Task { @MainActor in
@@ -158,6 +168,7 @@ final class BatchOpsCoord {
 
     /// Initiate batch pack (archive) operation
     func initiatePack(appState: AppState, archiveName: String, format: ArchiveFormat) {
+        hideTransientPopups("pack")
         let sourcePanel = appState.focusedPanel
         let files = appState.filesForOperation(on: sourcePanel)
 

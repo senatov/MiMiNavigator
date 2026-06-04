@@ -202,15 +202,16 @@ extension CntMenuCoord {
                 )
             }
 
-            // Show yellow HUD popup
-            ArchiveInfoPopupController.shared.showArchiveCreated(
-                archiveName: result.lastPathComponent,
-                destination: destination,
-                fileCount: files.count,
-                format: .zip,  // CompressService always creates ZIP
-                compressionLevel: compressionLevel,
-                encrypted: password != nil && !password!.isEmpty
-            )
+            if !moveToArchive {
+                ArchiveInfoPopupController.shared.showArchiveCreated(
+                    archiveName: result.lastPathComponent,
+                    destination: destination,
+                    fileCount: files.count,
+                    format: .zip,
+                    compressionLevel: compressionLevel,
+                    encrypted: password != nil && !password!.isEmpty
+                )
+            }
         } catch {
             log.error("\(#function) FAILED: \(error.localizedDescription)")
             await MainActor.run {

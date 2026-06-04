@@ -13,8 +13,19 @@ extension FileOpsEngine {
 
     func performMove(items: [URL], to destination: URL) async throws -> FileOpProgress {
         let progress = createProgress(items: items, type: .move, destination: destination)
-        showPanel(progress: progress, itemCount: items.count, operation: "move")
         var memorized: ConflictResolution? = nil
+        if items.count == 1,
+           let item = items.first,
+           let quickProgress = try await performSingleAtomicMoveIfPossible(
+               item: item,
+               destination: destination,
+               progress: progress,
+               memorized: &memorized
+           )
+        {
+            return quickProgress
+        }
+        showPanel(progress: progress, itemCount: items.count, operation: "move")
         for (index, item) in items.enumerated() {
             guard !progress.isCancelled else { break }
             let remaining = items.count - index
@@ -37,6 +48,36 @@ extension FileOpsEngine {
                 try await executeFewLarge(plan: plan, operation: .move, progress: progress)
             }
         }
+        progress.complete()
+        return progress
+    }
+
+    private func performSingleAtomicMoveIfPossible(
+        item: URL,
+        destination: URL,
+        progress: FileOpProgress,
+        memorized: inout ConflictResolution?
+    ) async throws -> FileOpProgress? {
+        let (target, skip, stop) = try await resolveConflictIfNeeded(
+            source: item,
+            destination: destination,
+            operation: .move,
+            remaining: 1,
+            memorized: &memorized
+        )
+        if stop {
+            progress.complete()
+            return progress
+        }
+        if skip {
+            progress.fileSkipped(name: item.lastPathComponent)
+            progress.complete()
+            return progress
+        }
+        guard await tryAtomicMove(from: item, to: target) else {
+            return nil
+        }
+        progress.fileCompleted(name: item.lastPathComponent, success: true)
         progress.complete()
         return progress
     }
