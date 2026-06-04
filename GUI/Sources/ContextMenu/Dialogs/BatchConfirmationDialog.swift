@@ -21,6 +21,9 @@ struct BatchConfirmationDialog: View {
     @State private var deleteEstimate: DeletePreviewEstimate?
     
     private var totalSize: String {
+        if operationType == .delete, let deleteEstimate {
+            return deleteEstimate.sizeText
+        }
         let bytes = files.reduce(0) { $0 + $1.sizeInBytes }
         return ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file)
     }
@@ -42,7 +45,8 @@ struct BatchConfirmationDialog: View {
             
             // Title
             Text(titleText)
-                .font(.system(size: 14, weight: .light))
+                .font(.system(size: 14, weight: .regular))
+                .foregroundStyle(primaryTextColor)
                 .multilineTextAlignment(.center)
             
             // Summary info
@@ -68,7 +72,8 @@ struct BatchConfirmationDialog: View {
                         .font(.system(size: 12))
                         .foregroundStyle(secondaryTextColor)
                     Text(totalSize)
-                        .font(.system(size: 12, weight: .medium))
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(primaryTextColor)
                 }
                 
                 // Destination (for copy/move)
@@ -87,6 +92,7 @@ struct BatchConfirmationDialog: View {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Recursive delete")
                             .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(primaryTextColor)
                         Text(deleteEstimateText)
                             .font(.system(size: 11))
                             .foregroundStyle(secondaryTextColor)
@@ -111,6 +117,7 @@ struct BatchConfirmationDialog: View {
                                         .symbolRenderingMode(.multicolor)
                                     Text(file.nameStr)
                                         .font(.system(size: 11))
+                                        .foregroundStyle(primaryTextColor)
                                         .lineLimit(1)
                                         .truncationMode(.middle)
                                     Spacer()
@@ -145,19 +152,14 @@ struct BatchConfirmationDialog: View {
             Divider()
             
             // Buttons
-            HStack(spacing: 12) {
-                Button(L10n.Button.cancel, action: onCancel)
-                    .buttonStyle(ThemedButtonStyle())
-                    .controlSize(.large)
-                    .keyboardShortcut(.cancelAction)
-                
-                Button(confirmButtonTitle, action: onConfirm)
-                    .buttonStyle(ThemedButtonStyle())
-                    .tint(operationType == .delete ? .red : .accentColor)
-                    .controlSize(.large)
-                .keyboardShortcut(.defaultAction)
-                .disabled(operationType == .delete && directoriesCount > 0 && deleteEstimate == nil)
-            }
+            HIGDialogButtons(
+                cancelTitle: L10n.Button.cancel,
+                confirmTitle: confirmButtonTitle,
+                isDestructive: operationType == .delete,
+                isConfirmDisabled: operationType == .delete && directoriesCount > 0 && deleteEstimate == nil,
+                onCancel: onCancel,
+                onConfirm: onConfirm
+            )
         }
         .padding(20)
         .frame(width: 380)
@@ -217,7 +219,11 @@ struct BatchConfirmationDialog: View {
     }
 
     private var secondaryTextColor: Color {
-        Color(nsColor: .systemIndigo).opacity(0.82)
+        Color(#colorLiteral(red: 0.05, green: 0.16, blue: 0.30, alpha: 0.78))
+    }
+
+    private var primaryTextColor: Color {
+        Color(#colorLiteral(red: 0.03, green: 0.10, blue: 0.18, alpha: 1.0))
     }
 
     private var deleteEstimateText: String {

@@ -17,7 +17,7 @@
   <img src="https://img.shields.io/badge/Archives-50%2B_Formats-6f42c1" alt="50+ archive formats" />
   <img src="https://img.shields.io/badge/Media-Preview_%26_Conversion-ff8c00" alt="Media preview and conversion" />
   <img src="https://img.shields.io/badge/License-AGPL--3.0-blue" alt="AGPL-3.0" />
-  <a href="https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.9.5"><img src="https://img.shields.io/badge/release-v0.9.9.5-orange" alt="Release v0.9.9.5" /></a>
+  <a href="https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.9.5.1"><img src="https://img.shields.io/badge/release-v0.9.9.5.1-orange" alt="Release v0.9.9.5.1" /></a>
 </p>
 
 <p align="center">
@@ -37,20 +37,15 @@
 
 
 
-## Recent Changes (v0.9.9.5 - May 2026)
+## Recent Changes (v0.9.9.5.1 - June 2026)
 
-- **File operation freeze fix** — conflict dialogs no longer hang after internal drag-and-drop moves; progress-panel event monitoring now handles mouse and keyboard events through valid AppKit paths.
-- **Progress auto-close fix** — successful short operations keep their timer even when the mouse merely moves over the progress panel.
-- **DnD event routing** — internal panel drops end the drag session before transfer work starts, so confirmation and conflict dialogs do not compete with active drag state.
-- **Divider hover restored** — the middle splitter regains orange hover tracking after external drop overlay updates.
-- **Breadcrumb polish** — long paths collapse more predictably, separators stay visible, and shortened segments can expand on hover.
-- **Managed mount cleanup** — stale app-managed SMB mount folders are cleaned only when safe, and unavailable history/favorite entries are shown without navigating into dead mounts.
-- **Progress panel refactor** — copyable logs, action-button handling, layout constraints, frame persistence, and window delegation were split into focused components.
-- **File context menu cleanup** — file menu actions, labels, sections, visibility, and item builders now live in smaller files.
-- **Build metadata** — release version is `0.9.9.5`, build `121`.
+- **Breadcrumb hover lens** — active path segments now use a stronger convex 3D lens with layered highlight, inner shadow, and raised drawing order above adjacent breadcrumb items.
+- **Sharper hover text** — hover enlargement uses a real font-size change instead of scaling the rendered button, keeping breadcrumb labels clear.
+- **Build metadata** — release version is `0.9.9.5.1`, build `122`.
 
 ## Previous Changes
 
+- **v0.9.9.5** — drag-and-drop file operation stability, breadcrumb truncation polish, managed mount cleanup, progress panel hardening, and file context menu cleanup.
 - **v0.9.9.4** — media conversion presets, External Tool Doctor, FFmpeg/gifski checks, IntelliJ IDEA diff detection, and shared repair flow for archive tools.
 - **v0.9.9.3** — unified List/Preview/Tree view behavior, Preview drag-and-drop reliability, Tree view mode, and periodic configuration autosave.
 
@@ -192,7 +187,7 @@ MiMiNavigator can browse archives as virtual directories. Double-click opens the
 > xattr -cr ~/Downloads/MiMiNavigator.app
 > ```
 
-**[Download MiMiNavigator v0.9.9.5 ->](https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.9.5)**
+**[Download MiMiNavigator v0.9.9.5.1 ->](https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.9.5.1)**
 **[All releases →](https://github.com/senatov/MiMiNavigator/releases)**
 
 ---

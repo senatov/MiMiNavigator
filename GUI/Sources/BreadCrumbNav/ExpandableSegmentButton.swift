@@ -27,7 +27,7 @@ struct ExpandableSegmentButton: View {
     @State private var lastLoggedHover = false
 
     private let lensCornerRadius: CGFloat = 10
-    private let hoverScale: CGFloat = 1.28
+    private let hoverFontScale: CGFloat = 1.13
 
     /// Show full name when hovered and segment is truncated.
     private var displayText: String {
@@ -44,7 +44,8 @@ struct ExpandableSegmentButton: View {
     }
 
     private var displayFont: Font {
-        let base = Font.system(size: fontSize, weight: .regular, design: .rounded)
+        let resolvedSize = isHovered ? fontSize * hoverFontScale : fontSize
+        let base = Font.system(size: resolvedSize, weight: .regular, design: .rounded)
         return segment.isEnvironmentVariable && variableItalic ? base.italic() : base
     }
 
@@ -55,8 +56,7 @@ struct ExpandableSegmentButton: View {
         .buttonStyle(.plain)
         .help(helpText)
         .contentShape(RoundedRectangle(cornerRadius: lensCornerRadius, style: .continuous))
-        .scaleEffect(isHovered ? hoverScale : 1.0, anchor: .center)
-        .zIndex(isHovered ? 100 : 0)
+        .zIndex(isHovered ? 1_000 : 0)
         .onHover { hovering in
             setHover(hovering)
         }
@@ -85,6 +85,7 @@ struct ExpandableSegmentButton: View {
             .fixedSize(horizontal: true, vertical: false)
             .background(hoverBubble)
             .overlay(hoverGlow)
+            .zIndex(isHovered ? 1_000 : 0)
     }
 
     @ViewBuilder
@@ -97,6 +98,7 @@ struct ExpandableSegmentButton: View {
                 .overlay(lensInnerShadow)
                 .shadow(color: Color(#colorLiteral(red: 0.12, green: 0.24, blue: 0.38, alpha: 0.34)), radius: 10, x: 0, y: 5)
                 .shadow(color: Color(#colorLiteral(red: 0.84, green: 0.94, blue: 1.0, alpha: 0.34)), radius: 3, x: 0, y: -1)
+                .zIndex(1_000)
                 .transition(.scale(scale: 0.9).combined(with: .opacity))
         }
     }

@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.9.5.1] — 2026-06-04
+
+> **Release notes**
+> Breadcrumb hover lens clarity and release metadata update.
+
+### Changed
+- **Build metadata** — marketing version updated to `0.9.9.5.1`; build number updated to `122`.
+- **Breadcrumb hover lens** — hovered path segments now use a stronger convex 3D lens treatment with layered highlight, inner shadow, and raised drawing order above adjacent breadcrumb items.
+
+### Fixed
+- **Breadcrumb hover text clarity** — hover enlargement now uses a real font-size change instead of scaling the rendered button, keeping the segment title sharper while preserving the enlarged lens effect.
+
 ## [0.9.9.5] — 2026-05-31
 
 > **Release notes**
@@ -829,7 +841,8 @@ Each release should include:
 
 ---
 
-[Unreleased]: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.5...HEAD
+[Unreleased]: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.5.1...HEAD
+[0.9.9.5.1]: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.5...v0.9.9.5.1
 [0.9.9.5]: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.4...v0.9.9.5
 [0.9.9.4]: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.3...v0.9.9.4
 [0.9.9.3]: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.2...v0.9.9.3
