@@ -26,6 +26,9 @@ struct ExpandableSegmentButton: View {
     @State private var isHovered = false
     @State private var lastLoggedHover = false
 
+    private let lensCornerRadius: CGFloat = 10
+    private let hoverScale: CGFloat = 1.28
+
     /// Show full name when hovered and segment is truncated.
     private var displayText: String {
         guard isHovered else { return segment.text }
@@ -51,8 +54,8 @@ struct ExpandableSegmentButton: View {
         }
         .buttonStyle(.plain)
         .help(helpText)
-        .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-        .scaleEffect(isHovered ? 1.07 : 1.0, anchor: .center)
+        .contentShape(RoundedRectangle(cornerRadius: lensCornerRadius, style: .continuous))
+        .scaleEffect(isHovered ? hoverScale : 1.0, anchor: .center)
         .zIndex(isHovered ? 100 : 0)
         .onHover { hovering in
             setHover(hovering)
@@ -77,8 +80,8 @@ struct ExpandableSegmentButton: View {
             .kerning(0)
             .lineLimit(1)
             .truncationMode(.middle)
-            .padding(.vertical, isHovered ? 5 : 3)
-            .padding(.horizontal, isHovered ? 9 : 4)
+            .padding(.vertical, isHovered ? 6 : 3)
+            .padding(.horizontal, isHovered ? 11 : 4)
             .fixedSize(horizontal: true, vertical: false)
             .background(hoverBubble)
             .overlay(hoverGlow)
@@ -87,10 +90,13 @@ struct ExpandableSegmentButton: View {
     @ViewBuilder
     private var hoverBubble: some View {
         if isHovered {
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(Color(#colorLiteral(red: 0.68, green: 0.80, blue: 0.92, alpha: 0.42)))
-                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-                .shadow(color: Color(#colorLiteral(red: 0.28, green: 0.42, blue: 0.58, alpha: 0.36)), radius: 8, x: 0, y: 3)
+            RoundedRectangle(cornerRadius: lensCornerRadius, style: .continuous)
+                .fill(lensFill)
+                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: lensCornerRadius, style: .continuous))
+                .overlay(lensHighlight)
+                .overlay(lensInnerShadow)
+                .shadow(color: Color(#colorLiteral(red: 0.12, green: 0.24, blue: 0.38, alpha: 0.34)), radius: 10, x: 0, y: 5)
+                .shadow(color: Color(#colorLiteral(red: 0.84, green: 0.94, blue: 1.0, alpha: 0.34)), radius: 3, x: 0, y: -1)
                 .transition(.scale(scale: 0.9).combined(with: .opacity))
         }
     }
@@ -98,9 +104,66 @@ struct ExpandableSegmentButton: View {
     @ViewBuilder
     private var hoverGlow: some View {
         if isHovered {
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .stroke(Color(#colorLiteral(red: 0.82, green: 0.91, blue: 1.0, alpha: 0.74)), lineWidth: 1)
+            RoundedRectangle(cornerRadius: lensCornerRadius, style: .continuous)
+                .stroke(lensStroke, lineWidth: 1.2)
         }
+    }
+
+    private var lensFill: LinearGradient {
+        LinearGradient(
+            colors: [
+                Color(#colorLiteral(red: 0.92, green: 0.98, blue: 1.0, alpha: 0.76)),
+                Color(#colorLiteral(red: 0.67, green: 0.83, blue: 0.96, alpha: 0.58)),
+                Color(#colorLiteral(red: 0.43, green: 0.66, blue: 0.86, alpha: 0.46))
+            ],
+            startPoint: .top,
+            endPoint: .bottom
+        )
+    }
+
+    private var lensHighlight: some View {
+        RoundedRectangle(cornerRadius: lensCornerRadius - 2, style: .continuous)
+            .stroke(
+                LinearGradient(
+                    colors: [
+                        Color(#colorLiteral(red: 1.0, green: 1.0, blue: 1.0, alpha: 0.86)),
+                        Color(#colorLiteral(red: 0.86, green: 0.94, blue: 1.0, alpha: 0.28)),
+                        Color(#colorLiteral(red: 0.25, green: 0.42, blue: 0.62, alpha: 0.24))
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                ),
+                lineWidth: 1
+            )
+            .padding(1)
+    }
+
+    private var lensInnerShadow: some View {
+        RoundedRectangle(cornerRadius: lensCornerRadius, style: .continuous)
+            .stroke(Color(#colorLiteral(red: 0.09, green: 0.22, blue: 0.36, alpha: 0.22)), lineWidth: 2)
+            .blur(radius: 1.5)
+            .offset(y: 1)
+            .mask(
+                LinearGradient(
+                    colors: [
+                        Color(#colorLiteral(red: 0.0, green: 0.0, blue: 0.0, alpha: 0.0)),
+                        Color(#colorLiteral(red: 0.0, green: 0.0, blue: 0.0, alpha: 1.0))
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            )
+    }
+
+    private var lensStroke: LinearGradient {
+        LinearGradient(
+            colors: [
+                Color(#colorLiteral(red: 1.0, green: 1.0, blue: 1.0, alpha: 0.92)),
+                Color(#colorLiteral(red: 0.34, green: 0.58, blue: 0.78, alpha: 0.66))
+            ],
+            startPoint: .top,
+            endPoint: .bottom
+        )
     }
 
     // MARK: - Hover
