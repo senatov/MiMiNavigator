@@ -20,7 +20,11 @@ struct ParentEntryStripView: View {
     let onSelect: (CustomFile) -> Void
     let onActivate: (CustomFile) -> Void
     private var label: String { "\(parentName)   (\(rowsCount) dirs)" }
-    private let textColor = Color.black
+    private var textColor: Color {
+        pebbleActive
+            ? Color(#colorLiteral(red: 1, green: 0.92, blue: 0.05, alpha: 1))
+            : Color.black
+    }
     private let borderColor = Color(#colorLiteral(red: 0.55, green: 0.55, blue: 0.58, alpha: 1))
     private var pebbleActive: Bool { isSelected || isHovering }
     private var showHidden: Bool { UserPreferences.shared.snapshot.showHiddenFiles }
@@ -45,8 +49,8 @@ struct ParentEntryStripView: View {
 
     private enum UI {
         static let stripHeight: CGFloat = 25
-        static let buttonHeight: CGFloat = 21
-        static let horizontalInset: CGFloat = 4
+        static let buttonInset: CGFloat = 1
+        static let buttonHeight: CGFloat = 24
         static let borderHeight: CGFloat = 1.5
         static let shadowRadius: CGFloat = 3.0
         static let shadowY: CGFloat = -2.0
@@ -86,9 +90,6 @@ struct ParentEntryStripView: View {
         withAnimation(.easeInOut(duration: 0.10)) {
             isHovering = isHoveringNow
         }
-        isHoveringNow
-            ? Self.navigateUpCursor.set()
-            : NSCursor.arrow.set()
     }
 
     // MARK: - Full Width Button
@@ -119,8 +120,9 @@ struct ParentEntryStripView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
             }
             .buttonStyle(ParentStripButtonStyle(isHighlighted: pebbleActive))
-            .frame(width: max(0, geo.size.width - UI.horizontalInset * 2), height: UI.buttonHeight)
-            .padding(.horizontal, UI.horizontalInset)
+            .frame(width: max(0, geo.size.width - UI.buttonInset * 2), height: UI.buttonHeight)
+            .overlay(ParentStripCursorView(cursor: Self.navigateUpCursor))
+            .padding(.horizontal, UI.buttonInset)
             Spacer()
         }
     }
@@ -190,6 +192,7 @@ struct ParentEntryStripView: View {
 // MARK: - Parent Strip Button Style
 private struct ParentStripButtonStyle: ButtonStyle {
     let isHighlighted: Bool
+    private let buttonShape = ParentStripButtonShape(topRadius: 3, bottomRadius: 11)
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .padding(.horizontal, 8)
@@ -197,9 +200,9 @@ private struct ParentStripButtonStyle: ButtonStyle {
             .background(buttonBackground)
             .background(.ultraThinMaterial)
             .overlay(buttonHighlight)
-            .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
+            .clipShape(buttonShape)
             .overlay(
-                RoundedRectangle(cornerRadius: 4, style: .continuous)
+                buttonShape
                     .stroke(Color.white.opacity(isHighlighted ? 0.75 : 0.45), lineWidth: 0.8)
             )
             .shadow(color: .black.opacity(isHighlighted ? 0.30 : 0.20), radius: 2, x: 0.8, y: 1.5)
@@ -235,5 +238,62 @@ private struct ParentStripButtonStyle: ButtonStyle {
             endPoint: .bottom
         )
         .blendMode(.overlay)
+    }
+}
+
+// MARK: - Parent Strip Button Shape
+private struct ParentStripButtonShape: Shape {
+    let topRadius: CGFloat
+    let bottomRadius: CGFloat
+    func path(in rect: CGRect) -> Path {
+        let top = min(topRadius, rect.height / 2)
+        let bottom = min(bottomRadius, rect.height / 2)
+        var path = Path()
+        path.move(to: CGPoint(x: rect.minX + top, y: rect.minY))
+        path.addLine(to: CGPoint(x: rect.maxX - top, y: rect.minY))
+        path.addQuadCurve(to: CGPoint(x: rect.maxX, y: rect.minY + top), control: CGPoint(x: rect.maxX, y: rect.minY))
+        path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY - bottom))
+        path.addQuadCurve(to: CGPoint(x: rect.maxX - bottom, y: rect.maxY), control: CGPoint(x: rect.maxX, y: rect.maxY))
+        path.addLine(to: CGPoint(x: rect.minX + bottom, y: rect.maxY))
+        path.addQuadCurve(to: CGPoint(x: rect.minX, y: rect.maxY - bottom), control: CGPoint(x: rect.minX, y: rect.maxY))
+        path.addLine(to: CGPoint(x: rect.minX, y: rect.minY + top))
+        path.addQuadCurve(to: CGPoint(x: rect.minX + top, y: rect.minY), control: CGPoint(x: rect.minX, y: rect.minY))
+        path.closeSubpath()
+        return path
+    }
+}
+
+// MARK: - Parent Strip Cursor View
+private struct ParentStripCursorView: NSViewRepresentable {
+    let cursor: NSCursor
+    func makeNSView(context: Context) -> ParentStripCursorNSView {
+        ParentStripCursorNSView(cursor: cursor)
+    }
+    func updateNSView(_ nsView: ParentStripCursorNSView, context: Context) {
+        nsView.cursor = cursor
+    }
+}
+
+// MARK: - Parent Strip Cursor NSView
+private final class ParentStripCursorNSView: NSView {
+    var cursor: NSCursor {
+        didSet {
+            window?.invalidateCursorRects(for: self)
+        }
+    }
+    init(cursor: NSCursor) {
+        self.cursor = cursor
+        super.init(frame: .zero)
+    }
+    required init?(coder: NSCoder) {
+        self.cursor = .pointingHand
+        super.init(coder: coder)
+    }
+    override func resetCursorRects() {
+        super.resetCursorRects()
+        addCursorRect(bounds, cursor: cursor)
+    }
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        nil
     }
 }
