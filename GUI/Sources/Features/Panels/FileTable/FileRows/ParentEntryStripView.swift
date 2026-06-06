@@ -21,13 +21,14 @@ struct ParentEntryStripView: View {
     @State private var keyboardPulse = false
     private var label: String { "\(parentName)   (\(rowsCount) dirs)" }
     private var textColor: Color {
-        isActive ? Color(#colorLiteral(red: 1, green: 0.92, blue: 0.05, alpha: 1)) : Color.black
+        isActive ? Self.activeContentColor : Color.black
     }
     private var iconColor: Color {
         isActive
-            ? Color(#colorLiteral(red: 1, green: 0.88, blue: 0.04, alpha: 1))
+            ? Self.activeContentColor
             : Color(#colorLiteral(red: 0.521568656, green: 0.1098039225, blue: 0.05098039284, alpha: 1))
     }
+    private static let activeContentColor = Color(#colorLiteral(red: 0.02, green: 0.16, blue: 0.72, alpha: 1))
     private let borderColor = Color(#colorLiteral(red: 0.55, green: 0.55, blue: 0.58, alpha: 1))
     private var isActive: Bool { isSelected || isHovering }
     private var showHidden: Bool { UserPreferences.shared.snapshot.showHiddenFiles }
