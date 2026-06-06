@@ -7,6 +7,7 @@
 //   ◤ /ParentDir (N dirs)  — N respects Show Hidden setting.
 
 import FileModelKit
+import AppKit
 import SwiftUI
 
 // MARK: - ParentEntryStripView
@@ -19,10 +20,17 @@ struct ParentEntryStripView: View {
     let onSelect: (CustomFile) -> Void
     let onActivate: (CustomFile) -> Void
     private var label: String { "\(parentName)   (\(rowsCount) dirs)" }
-    private let textColor = Color(#colorLiteral(red: 0.25, green: 0.25, blue: 0.27, alpha: 1))
+    private let textColor = Color.black
     private let borderColor = Color(#colorLiteral(red: 0.55, green: 0.55, blue: 0.58, alpha: 1))
     private var pebbleActive: Bool { isSelected || isHovering }
     private var showHidden: Bool { UserPreferences.shared.snapshot.showHiddenFiles }
+    private static let navigateUpCursor: NSCursor = {
+        guard let image = NSImage(systemSymbolName: "arrow.up.circle.fill", accessibilityDescription: "Navigate up") else {
+            return .pointingHand
+        }
+        image.size = NSSize(width: 18, height: 18)
+        return NSCursor(image: image, hotSpot: NSPoint(x: 9, y: 9))
+    }()
 
     private var parentName: String {
         parentURL.path == "/" ? "/Root" : parentURL.path
@@ -37,9 +45,8 @@ struct ParentEntryStripView: View {
 
     private enum UI {
         static let stripHeight: CGFloat = 25
-        static let pebbleWidth: CGFloat = 0.092
-        static let pebbleHeight: CGFloat = 20
-        static let textInset: CGFloat = 0.09
+        static let buttonHeight: CGFloat = 21
+        static let horizontalInset: CGFloat = 4
         static let borderHeight: CGFloat = 1.5
         static let shadowRadius: CGFloat = 3.0
         static let shadowY: CGFloat = -2.0
@@ -70,9 +77,7 @@ struct ParentEntryStripView: View {
     private func stripContent(geo: GeometryProxy) -> some View {
         ZStack(alignment: .leading) {
             Color.white
-            pathLabel(geo: geo)
-                .frame(maxHeight: .infinity)
-            pebbleButton(geo: geo)
+            fullWidthButton(geo: geo)
             bottomBorder
         }
     }
@@ -81,29 +86,21 @@ struct ParentEntryStripView: View {
         withAnimation(.easeInOut(duration: 0.10)) {
             isHovering = isHoveringNow
         }
+        isHoveringNow
+            ? Self.navigateUpCursor.set()
+            : NSCursor.arrow.set()
     }
 
-    // MARK: - Path Label
-    private func pathLabel(geo: GeometryProxy) -> some View {
-        Text(label)
-            .font(.system(size: 10, weight: .thin, design: .monospaced))
-            .foregroundStyle(textColor)
-            .lineLimit(1)
-            .truncationMode(.middle)
-            .padding(.leading, geo.size.width * UI.textInset)
-    }
-
-    // MARK: - Pebble Button (corner triangle)
-    private func pebbleButton(geo: GeometryProxy) -> some View {
-        let btnStyle = LiquidGlassButtonStyle(isHighlighted: pebbleActive)
+    // MARK: - Full Width Button
+    private func fullWidthButton(geo: GeometryProxy) -> some View {
         return VStack(spacing: 0) {
-            HStack(spacing: 0) {
-                Button(action: activateParentNavigation) {
-                    Image(systemName: pebbleActive ? "arrowshape.turn.up.left.fill" : "arrowshape.turn.up.left")
+            Button(action: activateParentNavigation) {
+                HStack(spacing: 6) {
+                    Image(systemName: pebbleActive ? "arrow.up.circle.fill" : "arrow.up.circle")
                         .font(.system(size: 11, weight: .semibold))
-                        .foregroundColor(btnStyle.iconColor)
+                        .foregroundColor(Color(#colorLiteral(red: 0.521568656, green: 0.1098039225, blue: 0.05098039284, alpha: 1)))
                         .rotationEffect(
-                            .degrees(pebbleActive ? 45 : 0),
+                            .degrees(pebbleActive ? -8 : 0),
                             anchor: .center
                         )
                         .animation(
@@ -112,15 +109,18 @@ struct ParentEntryStripView: View {
                                 : .easeOut(duration: 0.15),
                             value: pebbleActive
                         )
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-                        .padding(.leading, 1)
-                        .offset(x: -3, y: -3)
+                    Text(label)
+                        .font(.system(size: 10, weight: .thin, design: .monospaced))
+                        .foregroundStyle(textColor)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                    Spacer(minLength: 0)
                 }
-                .buttonStyle(btnStyle)
-                .frame(width: geo.size.width * UI.pebbleWidth, height: UI.pebbleHeight)
-                .clipped()
-                Spacer()
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
             }
+            .buttonStyle(ParentStripButtonStyle(isHighlighted: pebbleActive))
+            .frame(width: max(0, geo.size.width - UI.horizontalInset * 2), height: UI.buttonHeight)
+            .padding(.horizontal, UI.horizontalInset)
             Spacer()
         }
     }
@@ -184,5 +184,56 @@ struct ParentEntryStripView: View {
                 return isDir && (showHidden || !isHid)
             }
             .count
+    }
+}
+
+// MARK: - Parent Strip Button Style
+private struct ParentStripButtonStyle: ButtonStyle {
+    let isHighlighted: Bool
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .padding(.horizontal, 8)
+            .padding(.vertical, 2)
+            .background(buttonBackground)
+            .background(.ultraThinMaterial)
+            .overlay(buttonHighlight)
+            .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 4, style: .continuous)
+                    .stroke(Color.white.opacity(isHighlighted ? 0.75 : 0.45), lineWidth: 0.8)
+            )
+            .shadow(color: .black.opacity(isHighlighted ? 0.30 : 0.20), radius: 2, x: 0.8, y: 1.5)
+            .shadow(color: .white.opacity(0.45), radius: 1, x: -0.4, y: -0.6)
+            .scaleEffect(configuration.isPressed ? 0.985 : 1)
+            .animation(.easeInOut(duration: 0.16), value: isHighlighted)
+            .animation(.bouncy, value: configuration.isPressed)
+    }
+    private var buttonBackground: some ShapeStyle {
+        LinearGradient(
+            colors: isHighlighted
+                ? [
+                    Color(#colorLiteral(red: 1, green: 0.86, blue: 0.90, alpha: 1)),
+                    Color(#colorLiteral(red: 0.78, green: 0.70, blue: 0.96, alpha: 1)),
+                    Color(#colorLiteral(red: 0.66, green: 0.60, blue: 0.88, alpha: 1))
+                ]
+                : [
+                    Color(#colorLiteral(red: 0.86, green: 0.86, blue: 0.86, alpha: 0.92)),
+                    Color(#colorLiteral(red: 0.72, green: 0.72, blue: 0.72, alpha: 0.86))
+                ],
+            startPoint: .top,
+            endPoint: .bottom
+        )
+    }
+    private var buttonHighlight: some View {
+        LinearGradient(
+            colors: [
+                Color.white.opacity(isHighlighted ? 0.48 : 0.60),
+                Color.clear,
+                Color.black.opacity(0.13)
+            ],
+            startPoint: .top,
+            endPoint: .bottom
+        )
+        .blendMode(.overlay)
     }
 }
