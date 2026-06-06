@@ -19,6 +19,7 @@ extension FileOpsEngine {
 
     func showPanel(progress: FileOpProgress, itemCount: Int, operation: String = "items") {
         log.info("[FileOpsEngine] showing ProgressPanel for \(itemCount) \(operation)")
+        progress.usesProgressPanel = true
         panel.show(
             icon: progress.operationType.systemImage,
             title: progress.operationType.title,

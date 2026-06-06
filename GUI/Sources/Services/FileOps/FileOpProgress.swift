@@ -27,6 +27,7 @@ final class FileOpProgress {
     var currentFileName: String = ""
     var isCancelled: Bool = false
     var isCompleted: Bool = false
+    var usesProgressPanel: Bool = false
     var errors: [FileOpErrorInfo] = []
 
     // MARK: - Timing
@@ -93,12 +94,14 @@ final class FileOpProgress {
 
     func setCurrentFile(_ name: String) {
         currentFileName = name
+        guard usesProgressPanel else { return }
         ProgressPanel.shared.updateStatus("\(operationType.title) \(processedFiles + 1) / \(totalFiles): \(name)")
         updateProgressDisplay()
     }
 
     func add(bytes: Int64) {
         processedBytes += bytes
+        guard usesProgressPanel else { return }
         updateProgressDisplay()
     }
 
@@ -106,8 +109,10 @@ final class FileOpProgress {
         processedFiles += 1
         if !success, let err = error {
             errors.append(FileOpErrorInfo(fileName: name, error: err))
+            guard usesProgressPanel else { return }
             ProgressPanel.shared.appendLog("Failed: \(name) - \(err)")
         } else {
+            guard usesProgressPanel else { return }
             ProgressPanel.shared.appendLog("\(operationType.pastTense.capitalized): \(name)")
         }
         ProgressPanel.shared.updateStatus(statusText)
@@ -116,6 +121,7 @@ final class FileOpProgress {
 
     func fileSkipped(name: String) {
         skippedFiles += 1
+        guard usesProgressPanel else { return }
         ProgressPanel.shared.appendLog("Skipped: \(name)")
         ProgressPanel.shared.updateStatus(statusText)
         updateProgressDisplay()
@@ -124,6 +130,7 @@ final class FileOpProgress {
     func cancel() {
         isCancelled = true
         endTime = Date()
+        guard usesProgressPanel else { return }
         ProgressPanel.shared.appendLog("Cancelled by user")
         ProgressPanel.shared.finish(success: false, message: "Cancelled")
         log.info("[FileOpProgress] cancelled at \(processedFiles)/\(totalFiles)")
@@ -133,15 +140,19 @@ final class FileOpProgress {
         guard !isCancelled else { return }
         isCompleted = true
         endTime = Date()
-        ProgressPanel.shared.finish(success: errors.isEmpty, message: completionSummary)
+        if usesProgressPanel {
+            ProgressPanel.shared.finish(success: errors.isEmpty, message: completionSummary)
+        }
         log.info("[FileOpProgress] done: \(processedFiles) ok, \(skippedFiles) skipped, \(errors.count) errs, \(String(format: "%.1f", elapsed))s")
     }
 
     func updateStatusOnly(_ text: String) {
+        guard usesProgressPanel else { return }
         ProgressPanel.shared.updateStatus(text)
     }
 
     private func updateProgressDisplay() {
+        guard usesProgressPanel else { return }
         if showsProgressBar {
             ProgressPanel.shared.updateProgress(fraction)
         } else {
