@@ -41,6 +41,7 @@ struct TabBarView: View {
                         ForEach(tabs) { tab in
                             TabItemView(
                                 tab: tab,
+                                panelSide: panelSide,
                                 isActive: tab.id == activeID,
                                 isPanelFocused: isPanelFocused,
                                 isOnlyTab: isOnlyTab,
