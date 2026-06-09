@@ -27,10 +27,10 @@ struct TabItemView: View {
     @Environment(\.colorScheme) private var colorScheme
 
     // MARK: - Layout constants
-    private let tabHeight: CGFloat = 29
-    private let minTabWidth: CGFloat = 92
-    private let maxTabWidth: CGFloat = 210
-    private let cornerRadius: CGFloat = 5
+    private let tabHeight: CGFloat = 28
+    private let minTabWidth: CGFloat = 132
+    private let maxTabWidth: CGFloat = 260
+    private let cornerRadius: CGFloat = 6
 
     // MARK: - Body
 
@@ -39,11 +39,10 @@ struct TabItemView: View {
             .frame(height: tabHeight)
             .background(tabFill)
             .clipShape(tabShape)
-            .glassEffect(in: .rect(cornerRadius: cornerRadius))
             .overlay(tabGlassHighlight)
             .overlay(tabBorder)
-            .shadow(color: tabOuterShadowColor, radius: isActive ? 2.2 : 1.1, x: 0, y: isActive ? -1 : 0)
-            .shadow(color: tabLowerShadowColor, radius: isActive ? 1.5 : 0.8, x: 0, y: isActive ? 1 : 0)
+            .shadow(color: tabOuterShadowColor, radius: isActive ? 1.4 : 0.7, x: 0, y: isActive ? -0.5 : 0)
+            .shadow(color: tabLowerShadowColor, radius: isActive ? 1.8 : 0.8, x: 0, y: isActive ? 1.2 : 0.6)
             .background(frameReader)
             .onTapGesture { onSelect() }
             .onHover(perform: handleHover)
@@ -76,8 +75,8 @@ struct TabItemView: View {
                 )
                 .frame(width: 14)
 
-            Text(tab.truncatedDisplayName(maxLength: 16))
-                .font(.system(size: 13, weight: isActive ? .medium : .regular, design: .default))
+            Text(tab.truncatedDisplayName(maxLength: 22))
+                .font(.system(size: 12.5, weight: isActive ? .medium : .regular, design: .default))
                 .lineLimit(1)
                 .foregroundStyle(isActive ? activeForeground : inactiveForeground)
                 .shadow(color: activeTextHighlight, radius: 0, x: 0, y: isActive ? 1 : 0)
@@ -88,8 +87,8 @@ struct TabItemView: View {
             // Close button — always reserves space, visible on hover/active
             closeButton
         }
-        .padding(.leading, 11)
-        .padding(.trailing, isActive ? 8 : 6)
+        .padding(.leading, 13)
+        .padding(.trailing, isActive ? 9 : 7)
         .frame(minWidth: minTabWidth, maxWidth: maxTabWidth)
     }
 
@@ -128,8 +127,8 @@ struct TabItemView: View {
             LinearGradient(
                 stops: [
                     .init(color: Color(nsColor: .windowBackgroundColor).opacity(colorScheme == .dark ? 0.82 : 1), location: 0),
-                    .init(color: Color(nsColor: .controlBackgroundColor).opacity(colorScheme == .dark ? 0.62 : 0.98), location: 0.58),
-                    .init(color: Color(nsColor: .separatorColor).opacity(colorScheme == .dark ? 0.18 : 0.10), location: 1),
+                    .init(color: Color(nsColor: .controlBackgroundColor).opacity(colorScheme == .dark ? 0.56 : 0.96), location: 0.72),
+                    .init(color: Color(nsColor: .separatorColor).opacity(colorScheme == .dark ? 0.14 : 0.08), location: 1),
                 ],
                 startPoint: .top,
                 endPoint: .bottom
@@ -137,8 +136,8 @@ struct TabItemView: View {
         } else if isHovered {
             LinearGradient(
                 stops: [
-                    .init(color: Color(nsColor: .windowBackgroundColor).opacity(colorScheme == .dark ? 0.46 : 0.82), location: 0),
-                    .init(color: Color(nsColor: .controlBackgroundColor).opacity(colorScheme == .dark ? 0.34 : 0.70), location: 1),
+                    .init(color: Color(nsColor: .windowBackgroundColor).opacity(colorScheme == .dark ? 0.40 : 0.78), location: 0),
+                    .init(color: Color(nsColor: .controlBackgroundColor).opacity(colorScheme == .dark ? 0.28 : 0.62), location: 1),
                 ],
                 startPoint: .top,
                 endPoint: .bottom
@@ -146,8 +145,8 @@ struct TabItemView: View {
         } else {
             LinearGradient(
                 stops: [
-                    .init(color: Color(nsColor: .windowBackgroundColor).opacity(colorScheme == .dark ? 0.28 : 0.58), location: 0),
-                    .init(color: Color(nsColor: .controlBackgroundColor).opacity(colorScheme == .dark ? 0.20 : 0.42), location: 1),
+                    .init(color: Color(nsColor: .windowBackgroundColor).opacity(colorScheme == .dark ? 0.22 : 0.52), location: 0),
+                    .init(color: Color(nsColor: .controlBackgroundColor).opacity(colorScheme == .dark ? 0.16 : 0.36), location: 1),
                 ],
                 startPoint: .top,
                 endPoint: .bottom
@@ -156,7 +155,7 @@ struct TabItemView: View {
     }
 
     private var activeForeground: Color {
-        isPanelFocused ? Color(nsColor: .systemGreen).opacity(0.88) : Color(nsColor: .darkGray)
+        isPanelFocused ? Color(nsColor: .systemGreen).opacity(0.82) : Color(nsColor: .darkGray)
     }
 
     private var inactiveForeground: Color {
@@ -166,30 +165,30 @@ struct TabItemView: View {
     }
 
     private var activeTextHighlight: Color {
-        isActive && isPanelFocused ? Color.white.opacity(colorScheme == .dark ? 0.10 : 0.62) : .clear
+        isActive && isPanelFocused ? Color.white.opacity(colorScheme == .dark ? 0.08 : 0.48) : .clear
     }
 
     private var activeTextShade: Color {
-        isActive && isPanelFocused ? Color.black.opacity(colorScheme == .dark ? 0.34 : 0.13) : .clear
+        isActive && isPanelFocused ? Color.black.opacity(colorScheme == .dark ? 0.28 : 0.10) : .clear
     }
 
     private var tabOuterShadowColor: Color {
         isActive
-            ? Color.white.opacity(colorScheme == .dark ? 0.05 : 0.62)
-            : Color.white.opacity(colorScheme == .dark ? 0.02 : 0.28)
+            ? Color.white.opacity(colorScheme == .dark ? 0.04 : 0.44)
+            : Color.white.opacity(colorScheme == .dark ? 0.02 : 0.20)
     }
 
     private var tabLowerShadowColor: Color {
-        Color.black.opacity(colorScheme == .dark ? 0.36 : isActive ? 0.20 : 0.12)
+        Color.black.opacity(colorScheme == .dark ? 0.32 : isActive ? 0.16 : 0.09)
     }
 
     private var tabBorder: some View {
         tabShape
             .stroke(
                 isActive
-                    ? Color(nsColor: .separatorColor).opacity(isPanelFocused ? 0.95 : 0.72)
-                    : Color(nsColor: .separatorColor).opacity(isHovered ? 0.72 : 0.56),
-                lineWidth: isActive ? 1.15 : 0.95
+                    ? Color(nsColor: .separatorColor).opacity(isPanelFocused ? 0.86 : 0.66)
+                    : Color(nsColor: .separatorColor).opacity(isHovered ? 0.66 : 0.50),
+                lineWidth: isActive ? 1.0 : 0.85
             )
     }
 
@@ -198,9 +197,9 @@ struct TabItemView: View {
             .stroke(
                 LinearGradient(
                     stops: [
-                        .init(color: Color.white.opacity(colorScheme == .dark ? 0.18 : 0.88), location: 0),
-                        .init(color: Color.white.opacity(0.10), location: 0.42),
-                        .init(color: Color.black.opacity(colorScheme == .dark ? 0.22 : 0.10), location: 1),
+                        .init(color: Color.white.opacity(colorScheme == .dark ? 0.12 : 0.72), location: 0),
+                        .init(color: Color.white.opacity(0.08), location: 0.48),
+                        .init(color: Color.black.opacity(colorScheme == .dark ? 0.18 : 0.07), location: 1),
                     ],
                     startPoint: .top,
                     endPoint: .bottom
