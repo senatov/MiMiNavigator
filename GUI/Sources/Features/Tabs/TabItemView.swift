@@ -27,10 +27,10 @@ struct TabItemView: View {
     @Environment(\.colorScheme) private var colorScheme
 
     // MARK: - Layout constants
-    private let tabHeight: CGFloat = 28
+    private let tabHeight: CGFloat = 27
     private let minTabWidth: CGFloat = 132
     private let maxTabWidth: CGFloat = 260
-    private let cornerRadius: CGFloat = 6
+    private let cornerRadius: CGFloat = 9
 
     // MARK: - Body
 
@@ -41,8 +41,8 @@ struct TabItemView: View {
             .clipShape(tabShape)
             .overlay(tabGlassHighlight)
             .overlay(tabBorder)
-            .shadow(color: tabOuterShadowColor, radius: isActive ? 1.4 : 0.7, x: 0, y: isActive ? -0.5 : 0)
-            .shadow(color: tabLowerShadowColor, radius: isActive ? 1.8 : 0.8, x: 0, y: isActive ? 1.2 : 0.6)
+            .shadow(color: tabOuterShadowColor, radius: isActive ? 2.0 : 1.0, x: 0, y: -0.6)
+            .shadow(color: tabLowerShadowColor, radius: isActive ? 4.5 : 2.4, x: 0, y: isActive ? 3.0 : 1.8)
             .background(frameReader)
             .onTapGesture { onSelect() }
             .onHover(perform: handleHover)
@@ -136,8 +136,8 @@ struct TabItemView: View {
         } else if isHovered {
             LinearGradient(
                 stops: [
-                    .init(color: Color(nsColor: .windowBackgroundColor).opacity(colorScheme == .dark ? 0.40 : 0.78), location: 0),
-                    .init(color: Color(nsColor: .controlBackgroundColor).opacity(colorScheme == .dark ? 0.28 : 0.62), location: 1),
+                    .init(color: inactiveFillTop.opacity(colorScheme == .dark ? 0.32 : 0.72), location: 0),
+                    .init(color: inactiveFillFoot.opacity(colorScheme == .dark ? 0.26 : 0.64), location: 1),
                 ],
                 startPoint: .top,
                 endPoint: .bottom
@@ -145,8 +145,8 @@ struct TabItemView: View {
         } else {
             LinearGradient(
                 stops: [
-                    .init(color: Color(nsColor: .windowBackgroundColor).opacity(colorScheme == .dark ? 0.22 : 0.52), location: 0),
-                    .init(color: Color(nsColor: .controlBackgroundColor).opacity(colorScheme == .dark ? 0.16 : 0.36), location: 1),
+                    .init(color: inactiveFillTop.opacity(colorScheme == .dark ? 0.24 : 0.54), location: 0),
+                    .init(color: inactiveFillFoot.opacity(colorScheme == .dark ? 0.18 : 0.46), location: 1),
                 ],
                 startPoint: .top,
                 endPoint: .bottom
@@ -179,7 +179,7 @@ struct TabItemView: View {
     }
 
     private var tabLowerShadowColor: Color {
-        Color.black.opacity(colorScheme == .dark ? 0.32 : isActive ? 0.16 : 0.09)
+        Color.black.opacity(colorScheme == .dark ? 0.38 : isActive ? 0.26 : 0.17)
     }
 
     private var tabBorder: some View {
@@ -187,8 +187,8 @@ struct TabItemView: View {
             .stroke(
                 isActive
                     ? activeBorder.opacity(isPanelFocused ? 0.86 : 0.66)
-                    : Color(nsColor: .separatorColor).opacity(isHovered ? 0.66 : 0.50),
-                lineWidth: isActive ? 1.0 : 0.85
+                    : inactiveBorder.opacity(isHovered ? 0.68 : 0.52),
+                lineWidth: isActive ? 1.0 : 0.9
             )
     }
 
@@ -229,6 +229,18 @@ struct TabItemView: View {
         Color(#colorLiteral(red: 0.745, green: 0.819, blue: 0.925, alpha: 1))
     }
 
+    private var inactiveFillTop: Color {
+        Color(#colorLiteral(red: 0.875, green: 0.902, blue: 0.936, alpha: 1))
+    }
+
+    private var inactiveFillFoot: Color {
+        Color(#colorLiteral(red: 0.722, green: 0.776, blue: 0.842, alpha: 1))
+    }
+
+    private var inactiveBorder: Color {
+        Color(#colorLiteral(red: 0.455, green: 0.536, blue: 0.642, alpha: 1))
+    }
+
     private var frameReader: some View {
         GeometryReader { geo in
             Color.clear
@@ -244,8 +256,8 @@ struct TabItemView: View {
     private var tabShape: some Shape {
         UnevenRoundedRectangle(
             topLeadingRadius: cornerRadius,
-            bottomLeadingRadius: 0,
-            bottomTrailingRadius: 0,
+            bottomLeadingRadius: 4,
+            bottomTrailingRadius: 4,
             topTrailingRadius: cornerRadius,
             style: .continuous
         )

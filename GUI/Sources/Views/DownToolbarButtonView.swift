@@ -44,13 +44,13 @@ struct DownToolbarGlassButtonStyle: ButtonStyle {
     // MARK: -
     func makeBody(configuration: Configuration) -> some View {
         let isPressed = configuration.isPressed
-        let scale = isPressed ? 0.972 : (isHovered ? 1.045 : 1.0)
-        let shadowOpacity = isPressed ? 0.26 : (isHovered ? 0.22 : 0.12)
-        let shadowRadius: CGFloat = isPressed ? 10 : (isHovered ? 12 : 6)
-        let shadowYOffset: CGFloat = isPressed ? 5 : (isHovered ? 7 : 3)
-        let highlightOpacity = isPressed ? 0.22 : (isHovered ? 0.34 : 0.26)
-        let borderOpacity = isPressed ? 0.18 : (isHovered ? 0.24 : 0.16)
-        let glassOpacity = isPressed ? 0.84 : (isHovered ? 0.94 : 0.88)
+        let scale = isPressed ? 0.976 : (isHovered ? 1.028 : 1.0)
+        let shadowOpacity = isPressed ? 0.30 : (isHovered ? 0.28 : 0.18)
+        let shadowRadius: CGFloat = isPressed ? 7 : (isHovered ? 9 : 5)
+        let shadowYOffset: CGFloat = isPressed ? 4 : (isHovered ? 5 : 3)
+        let highlightOpacity = isPressed ? 0.24 : (isHovered ? 0.42 : 0.32)
+        let borderOpacity = isPressed ? 0.28 : (isHovered ? 0.38 : 0.30)
+        let glassOpacity = isPressed ? 0.78 : (isHovered ? 0.88 : 0.82)
         let topGlowOpacity = isPressed ? 0.18 : (isHovered ? 0.28 : 0.20)
         let bottomEdgeOpacity = isPressed ? 0.20 : (isHovered ? 0.28 : 0.18)
 
@@ -62,23 +62,33 @@ struct DownToolbarGlassButtonStyle: ButtonStyle {
             .background {
                 ZStack {
                     RoundedRectangle(cornerRadius: 13, style: .continuous)
-                        .fill(.ultraThinMaterial)
+                        .fill(
+                            LinearGradient(
+                                colors: [
+                                    Color(#colorLiteral(red: 0.94, green: 0.97, blue: 1.0, alpha: 1)),
+                                    Color(#colorLiteral(red: 0.78, green: 0.83, blue: 0.90, alpha: 1)),
+                                    Color(#colorLiteral(red: 0.61, green: 0.69, blue: 0.80, alpha: 1)),
+                                ],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
                         .opacity(glassOpacity)
                     RoundedRectangle(cornerRadius: 13, style: .continuous)
                         .fill(
                             LinearGradient(
                                 colors: [
                                     Color.white.opacity(topGlowOpacity),
-                                    Color.white.opacity(0.08),
+                                    Color.white.opacity(0.05),
                                     Color.clear,
-                                    Color.gray.opacity(0.09)
+                                    Color(#colorLiteral(red: 0.22, green: 0.32, blue: 0.48, alpha: 1)).opacity(0.08)
                                 ],
                                 startPoint: .top,
                                 endPoint: .bottom
                             )
                         )
                     RoundedRectangle(cornerRadius: 13, style: .continuous)
-                        .fill(Color.white.opacity(isHovered ? 0.05 : 0.03))
+                        .fill(Color.white.opacity(isHovered ? 0.07 : 0.035))
                 }
             }
             .overlay {
@@ -87,7 +97,7 @@ struct DownToolbarGlassButtonStyle: ButtonStyle {
             }
             .overlay {
                 RoundedRectangle(cornerRadius: 13, style: .continuous)
-                    .stroke(Color.black.opacity(borderOpacity), lineWidth: 1)
+                    .stroke(Color(#colorLiteral(red: 0.31, green: 0.42, blue: 0.57, alpha: 1)).opacity(borderOpacity), lineWidth: 1)
                     .padding(0.5)
             }
             .overlay(alignment: .top) {
@@ -108,7 +118,7 @@ struct DownToolbarGlassButtonStyle: ButtonStyle {
                 RoundedRectangle(cornerRadius: 13, style: .continuous)
                     .fill(
                         LinearGradient(
-                            colors: [Color.clear, Color.black.opacity(bottomEdgeOpacity)],
+                            colors: [Color.clear, Color(#colorLiteral(red: 0.12, green: 0.18, blue: 0.28, alpha: 1)).opacity(bottomEdgeOpacity)],
                             startPoint: .top,
                             endPoint: .bottom
                         )
@@ -117,7 +127,7 @@ struct DownToolbarGlassButtonStyle: ButtonStyle {
                     .padding(.horizontal, 4)
                     .padding(.bottom, 1)
             }
-            .shadow(color: Color.white.opacity(isHovered ? 0.16 : 0.08), radius: 1.5, y: -1)
+            .shadow(color: Color.white.opacity(isHovered ? 0.26 : 0.16), radius: 1.5, y: -1)
             .shadow(color: Color.black.opacity(shadowOpacity), radius: shadowRadius, y: shadowYOffset)
             .scaleEffect(scale)
             .animation(.spring(response: 0.20, dampingFraction: 0.70), value: configuration.isPressed)

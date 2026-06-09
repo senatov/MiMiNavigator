@@ -30,6 +30,10 @@ struct SelectionStatusBar: View {
         currentURL.path
     }
 
+    private var hasMultipleTabs: Bool {
+        appState.tabManager(for: panelSide).tabs.count > 1
+    }
+
     // MARK: - State
 
     @State private var colorStore = ColorThemeStore.shared
@@ -200,22 +204,21 @@ struct SelectionStatusBar: View {
     // MARK: - Body
 
     var body: some View {
-        VStack(spacing: 0) {
-            tabStripSection
-            HStack(spacing: 8) {
-                leftInfoSection
-                remoteBadgeSection
-                filterSection
-                Spacer()
-                thumbnailSliderSection
-                positionIndicator
+        HStack(spacing: 8) {
+            leftInfoSection
+            remoteBadgeSection
+            filterSection
+            if hasMultipleTabs {
+                tabStripSection
             }
-            .padding(.horizontal, 12)
-            .frame(height: 24)
-            .background(Color(nsColor: .windowBackgroundColor).opacity(0.82))
+            Spacer()
+            thumbnailSliderSection
+            positionIndicator
         }
-        .frame(height: 53)
-        .background(Color(nsColor: .controlBackgroundColor).opacity(0.86))
+        .padding(.horizontal, 12)
+        .padding(.vertical, 3)
+        .frame(height: 31)
+        .background(Color(nsColor: .windowBackgroundColor).opacity(0.84))
         .overlay(alignment: .top) {
             Rectangle()
                 .fill(Color(nsColor: .separatorColor))
@@ -305,15 +308,7 @@ extension SelectionStatusBar {
 
     private var tabStripSection: some View {
         TabBarView(panelSide: panelSide)
-            .padding(.horizontal, 4)
-            .frame(maxWidth: .infinity)
-            .frame(height: 29)
-            .background(Color(nsColor: .controlBackgroundColor).opacity(0.78))
-            .overlay(alignment: .bottom) {
-                Rectangle()
-                    .fill(Color(nsColor: .separatorColor).opacity(0.65))
-                    .frame(height: 1)
-            }
+            .frame(minWidth: 0, maxWidth: 360)
     }
 
     private var thumbnailSliderSection: some View {
