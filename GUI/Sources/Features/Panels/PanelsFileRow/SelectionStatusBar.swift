@@ -200,25 +200,22 @@ struct SelectionStatusBar: View {
     // MARK: - Body
 
     var body: some View {
-
-        HStack(spacing: 8) {
-
-            leftInfoSection
-
-            remoteBadgeSection
-
-            filterSection
-
-            Spacer()
-
-            thumbnailSliderSection
-
-            positionIndicator
+        VStack(spacing: 0) {
+            tabStripSection
+            HStack(spacing: 8) {
+                leftInfoSection
+                remoteBadgeSection
+                filterSection
+                Spacer()
+                thumbnailSliderSection
+                positionIndicator
+            }
+            .padding(.horizontal, 12)
+            .frame(height: 24)
+            .background(Color(nsColor: .windowBackgroundColor).opacity(0.82))
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 4)
-        .frame(height: 28)
-        .background(Color(nsColor: .windowBackgroundColor).opacity(0.8))
+        .frame(height: 53)
+        .background(Color(nsColor: .controlBackgroundColor).opacity(0.86))
         .overlay(alignment: .top) {
             Rectangle()
                 .fill(Color(nsColor: .separatorColor))
@@ -304,6 +301,19 @@ extension SelectionStatusBar {
 
         PanelFilterBar(query: filterQuery, panelSide: panelSide)
             .frame(minWidth: 140, maxWidth: 220)
+    }
+
+    private var tabStripSection: some View {
+        TabBarView(panelSide: panelSide)
+            .padding(.horizontal, 4)
+            .frame(maxWidth: .infinity)
+            .frame(height: 29)
+            .background(Color(nsColor: .controlBackgroundColor).opacity(0.78))
+            .overlay(alignment: .bottom) {
+                Rectangle()
+                    .fill(Color(nsColor: .separatorColor).opacity(0.65))
+                    .frame(height: 1)
+            }
     }
 
     private var thumbnailSliderSection: some View {

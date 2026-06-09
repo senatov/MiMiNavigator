@@ -87,7 +87,6 @@ struct FilePanelView: View {
     // MARK: - View
     var body: some View {
         VStack(spacing: 0) {
-            TabBarView(panelSide: viewModel.panelSide)
             breadcrumbSection
             contentSection
             SelectionStatusBar(panelSide: viewModel.panelSide)

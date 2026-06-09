@@ -1,9 +1,8 @@
 // TabItemView.swift
 // MiMiNavigator
 //
-// Created by Iakov Senatov on 14.02.2026.
 // Copyright © 2026 Senatov. All rights reserved.
-// Description: Single tab — MS Edge style: rounded top, active tab elevated, crisp close button
+// Description: Single bottom tab with glass-friendly compact styling.
 
 import SwiftUI
 
@@ -12,6 +11,7 @@ struct TabItemView: View {
 
     let tab: TabItem
     let isActive: Bool
+    let isPanelFocused: Bool
     let isOnlyTab: Bool
     let tabCount: Int
     let onSelect: () -> Void
@@ -23,61 +23,35 @@ struct TabItemView: View {
     @State private var isHovered = false
     @Environment(\.colorScheme) private var colorScheme
 
-    // MARK: - Layout constants (Edge-style)
-    private let tabHeight: CGFloat = 28
+    // MARK: - Layout constants
+    private let tabHeight: CGFloat = 26
     private let minTabWidth: CGFloat = 80
-    private let maxTabWidth: CGFloat = 210
-    private let cornerRadius: CGFloat = 8
+    private let maxTabWidth: CGFloat = 180
+    private let cornerRadius: CGFloat = 3
 
     // MARK: - Body
 
     var body: some View {
-        HStack(spacing: 0) {
-            // Left shoulder curve (active tab only)
-            if isActive {
-                shoulderCurve(mirrored: false)
-            }
-
-            tabContent
-                .frame(height: tabHeight)
-                .background(tabFill)
-                .clipShape(
-                    UnevenRoundedRectangle(
-                        topLeadingRadius: cornerRadius,
-                        bottomLeadingRadius: 0,
-                        bottomTrailingRadius: 0,
-                        topTrailingRadius: cornerRadius,
-                        style: .continuous
-                    )
+        tabContent
+            .frame(height: tabHeight)
+            .background(tabFill)
+            .clipShape(tabShape)
+            .overlay(tabBorder)
+            .shadow(color: tabShadowColor, radius: isActive ? 1 : 0, x: 0, y: isActive ? -0.5 : 0)
+            .onTapGesture { onSelect() }
+            .onHover { isHovered = $0 }
+            .contextMenu {
+                TabContextMenu(
+                    tab: tab,
+                    isOnlyTab: isOnlyTab,
+                    tabCount: tabCount,
+                    onClose: onClose,
+                    onCloseOthers: onCloseOthers,
+                    onCloseToRight: onCloseToRight,
+                    onDuplicate: onDuplicate
                 )
-                .shadow(
-                    color: isActive ? Color.black.opacity(colorScheme == .dark ? 0.4 : 0.12) : .clear,
-                    radius: isActive ? 3 : 0,
-                    x: 0,
-                    y: isActive ? -1 : 0
-                )
-                .offset(y: isActive ? -1 : 2)  // active tab "floats" above the bar
-                .zIndex(isActive ? 10 : 0)
-                .onTapGesture { onSelect() }
-                .onHover { isHovered = $0 }
-                .contextMenu {
-                    TabContextMenu(
-                        tab: tab,
-                        isOnlyTab: isOnlyTab,
-                        tabCount: tabCount,
-                        onClose: onClose,
-                        onCloseOthers: onCloseOthers,
-                        onCloseToRight: onCloseToRight,
-                        onDuplicate: onDuplicate
-                    )
-                }
-                .help(tab.displayName)
-
-            // Right shoulder curve (active tab only)
-            if isActive {
-                shoulderCurve(mirrored: true)
             }
-        }
+            .help(tab.displayName)
         .animation(.easeOut(duration: 0.15), value: isActive)
         .animation(.easeOut(duration: 0.12), value: isHovered)
     }
@@ -88,19 +62,20 @@ struct TabItemView: View {
         HStack(spacing: 5) {
             // Favicon-style folder icon
             Image(systemName: tab.isArchive ? "doc.zipper" : "folder.fill")
-                .font(.system(size: 11, weight: .medium))
+                .font(.system(size: 10.5, weight: .semibold))
                 .foregroundStyle(
                     isActive
-                        ? Color.accentColor
-                        : Color.secondary.opacity(0.7)
+                        ? Color(nsColor: .systemGreen)
+                        : inactiveForeground.opacity(0.72)
                 )
                 .frame(width: 14)
 
-            // Tab name
             Text(tab.truncatedDisplayName(maxLength: 16))
-                .font(.system(size: 13, weight: isActive ? .medium : .regular, design: .default))
+                .font(.system(size: 12, weight: isActive ? .bold : .medium, design: .default))
                 .lineLimit(1)
-                .foregroundStyle(isActive ? Color.primary : Color.secondary)
+                .foregroundStyle(isActive ? activeForeground : inactiveForeground)
+                .shadow(color: activeTextHighlight, radius: 0, x: 0, y: isActive ? 1 : 0)
+                .shadow(color: activeTextShade, radius: 0, x: 0, y: isActive ? -0.5 : 0)
 
             Spacer(minLength: 0)
 
@@ -108,7 +83,7 @@ struct TabItemView: View {
             closeButton
         }
         .padding(.leading, 10)
-        .padding(.trailing, 6)
+        .padding(.trailing, isActive ? 7 : 5)
         .frame(minWidth: minTabWidth, maxWidth: maxTabWidth)
     }
 
@@ -144,45 +119,60 @@ struct TabItemView: View {
     @ViewBuilder
     private var tabFill: some View {
         if isActive {
-            // Active: solid window background — same as content below
-            Color(nsColor: .windowBackgroundColor)
+            LinearGradient(
+                colors: [
+                    Color(nsColor: .windowBackgroundColor).opacity(colorScheme == .dark ? 0.74 : 1),
+                    Color(nsColor: .controlBackgroundColor).opacity(colorScheme == .dark ? 0.52 : 0.96),
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
         } else if isHovered {
-            Color(nsColor: .controlBackgroundColor).opacity(0.7)
+            Color(nsColor: .windowBackgroundColor).opacity(colorScheme == .dark ? 0.24 : 0.62)
         } else {
-            Color(nsColor: .controlBackgroundColor).opacity(0.35)
+            Color(nsColor: .controlBackgroundColor).opacity(colorScheme == .dark ? 0.12 : 0.18)
         }
     }
 
-    // MARK: - Shoulder curves (Edge-style concave corners)
+    private var activeForeground: Color {
+        isPanelFocused ? Color(nsColor: .systemGreen) : Color(nsColor: .darkGray)
+    }
 
-    /// The little curved "ears" where the active tab meets the bar — Edge trademark
-    @ViewBuilder
-    private func shoulderCurve(mirrored: Bool) -> some View {
-        Canvas { ctx, size in
-            // Draw a filled quarter-circle that cuts into the bar corner
-            let r: CGFloat = 6
-            var path = Path()
-            if mirrored {
-                path.move(to: CGPoint(x: 0, y: size.height))
-                path.addQuadCurve(
-                    to: CGPoint(x: r, y: size.height - r),
-                    control: CGPoint(x: r, y: size.height)
-                )
-                path.addLine(to: CGPoint(x: r, y: 0))
-                path.addLine(to: CGPoint(x: 0, y: 0))
-            } else {
-                path.move(to: CGPoint(x: size.width, y: size.height))
-                path.addQuadCurve(
-                    to: CGPoint(x: size.width - r, y: size.height - r),
-                    control: CGPoint(x: size.width - r, y: size.height)
-                )
-                path.addLine(to: CGPoint(x: size.width - r, y: 0))
-                path.addLine(to: CGPoint(x: size.width, y: 0))
-            }
-            path.closeSubpath()
-            ctx.fill(path, with: .color(Color(nsColor: .windowBackgroundColor)))
-        }
-        .frame(width: 10, height: tabHeight)
-        .offset(y: -1)
+    private var inactiveForeground: Color {
+        colorScheme == .dark
+            ? Color(nsColor: .tertiaryLabelColor)
+            : Color(nsColor: .darkGray)
+    }
+
+    private var activeTextHighlight: Color {
+        isActive && isPanelFocused ? Color.white.opacity(colorScheme == .dark ? 0.1 : 0.72) : .clear
+    }
+
+    private var activeTextShade: Color {
+        isActive && isPanelFocused ? Color.black.opacity(colorScheme == .dark ? 0.42 : 0.18) : .clear
+    }
+
+    private var tabShadowColor: Color {
+        isPanelFocused ? Color.black.opacity(colorScheme == .dark ? 0.28 : 0.14) : .clear
+    }
+
+    private var tabBorder: some View {
+        tabShape
+            .stroke(
+                isActive
+                    ? Color(nsColor: .separatorColor).opacity(isPanelFocused ? 0.88 : 0.62)
+                    : Color(nsColor: .separatorColor).opacity(0.26),
+                lineWidth: 0.7
+            )
+    }
+
+    private var tabShape: some Shape {
+        UnevenRoundedRectangle(
+            topLeadingRadius: cornerRadius,
+            bottomLeadingRadius: 0,
+            bottomTrailingRadius: 0,
+            topTrailingRadius: cornerRadius,
+            style: .continuous
+        )
     }
 }

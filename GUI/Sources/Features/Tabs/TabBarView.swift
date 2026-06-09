@@ -1,173 +1,194 @@
-    // TabBarView.swift
-    // MiMiNavigator
-    //
-    // Created by Claude on 14.02.2026.
-    // Copyright © 2026 Senatov. All rights reserved.
-    // Description: Horizontal tab bar above breadcrumb navigation — shows all tabs for one panel
+// TabBarView.swift
+// MiMiNavigator
+//
+// Copyright © 2026 Senatov. All rights reserved.
+// Description: Horizontal tab strip in the bottom panel status bar.
 
-    import SwiftUI
-    import FileModelKit
+import FileModelKit
+import SwiftUI
 
-    // MARK: - Tab Bar View
-    /// Horizontal scrollable tab bar displayed above the breadcrumb in each panel.
-    /// Shows all open tabs with the active tab highlighted.
-    /// Hidden when only one tab is present (clean single-tab experience).
-    struct TabBarView: View {
+// MARK: - Tab Bar View
+/// Horizontal tab strip displayed in the bottom panel status bar.
+struct TabBarView: View {
 
-        @Environment(AppState.self) var appState
-        let panelSide: FavPanelSide
+    @Environment(AppState.self) var appState
+    let panelSide: FavPanelSide
 
-        // MARK: - Computed
+    // MARK: - Computed
 
-        private var tabManager: TabManager {
-            appState.tabManager(for: panelSide)
-        }
+    private var tabManager: TabManager {
+        appState.tabManager(for: panelSide)
+    }
 
-        // MARK: - Body
+    private var isPanelFocused: Bool {
+        appState.focusedPanel == panelSide
+    }
 
-        var body: some View {
-            let tabs = tabManager.tabs
-            let activeID = tabManager.activeTabID
-            let isOnlyTab = tabs.count <= 1
+    // MARK: - Body
 
-            // Hide tab bar when single tab (clean look)
-            if tabs.count > 1 {
-                ScrollViewReader { proxy in
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 0) {
-                            ForEach(tabs) { tab in
-                                TabItemView(
-                                    tab: tab,
-                                    isActive: tab.id == activeID,
-                                    isOnlyTab: isOnlyTab,
-                                    tabCount: tabs.count,
-                                    onSelect: {
-                                        handleTabSelect(tab)
-                                    },
-                                    onClose: {
-                                        handleTabClose(tab)
-                                    },
-                                    onCloseOthers: {
-                                        handleCloseOthers(keeping: tab)
-                                    },
-                                    onCloseToRight: {
-                                        handleCloseToRight(of: tab)
-                                    },
-                                    onDuplicate: {
-                                        handleDuplicate(tab)
-                                    }
-                                )
-                                .id(tab.id)
-                            }
-                        }
-                        .padding(.leading, 6)
-                        .padding(.top, 4)
-                    }
-                    .frame(height: 32)
-                    .background(tabBarBackground)
-                    .onChange(of: activeID) { _, newID in
-                        withAnimation(.easeInOut(duration: 0.2)) {
-                            proxy.scrollTo(newID, anchor: .center)
+    var body: some View {
+        let tabs = tabManager.tabs
+        let activeID = tabManager.activeTabID
+        let isOnlyTab = tabs.count <= 1
+        ScrollViewReader { proxy in
+            HStack(spacing: 2) {
+                tabNavigationButton(systemName: "chevron.left", action: handleSelectPrevious)
+                    .disabled(isOnlyTab)
+                tabNavigationButton(systemName: "chevron.right", action: handleSelectNext)
+                    .disabled(isOnlyTab)
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 3) {
+                        ForEach(tabs) { tab in
+                            TabItemView(
+                                tab: tab,
+                                isActive: tab.id == activeID,
+                                isPanelFocused: isPanelFocused,
+                                isOnlyTab: isOnlyTab,
+                                tabCount: tabs.count,
+                                onSelect: {
+                                    handleTabSelect(tab)
+                                },
+                                onClose: {
+                                    handleTabClose(tab)
+                                },
+                                onCloseOthers: {
+                                    handleCloseOthers(keeping: tab)
+                                },
+                                onCloseToRight: {
+                                    handleCloseToRight(of: tab)
+                                },
+                                onDuplicate: {
+                                    handleDuplicate(tab)
+                                }
+                            )
+                            .id(tab.id)
                         }
                     }
                 }
+                .frame(height: 27)
+                addTabButton
+                Spacer(minLength: 0)
             }
-        }
-
-        // MARK: - Tab Bar Background
-
-        private var tabBarBackground: some View {
-            ZStack {
-                Color(nsColor: .controlBackgroundColor).opacity(0.5)
-                // Bottom separator — the "floor" of the tab bar
-                VStack(spacing: 0) {
-                    Spacer()
-                    Color(nsColor: .separatorColor).opacity(0.65)
-                        .frame(height: 0.5)
-                }
-            }
-        }
-
-        // MARK: - Actions
-
-        private func handleTabSelect(_ tab: TabItem) {
-            let mgr = tabManager
-            guard tab.id != mgr.activeTabID else { return }
-
-            log.info("[TabBarView] selectTab panel=\(panelSide) tab='\(tab.displayName)'")
-            mgr.selectTab(tab.id)
-
-            // Sync panel path to the selected tab's path
-            Task { @MainActor in
-                let url = tab.url
-                appState.updatePath(url, for: panelSide)
-                if panelSide == .left {
-                    await appState.scanner.setLeftDirectory(pathStr: url.path)
-                    await appState.scanner.refreshFiles(currSide: .left)
-                    await appState.refreshLeftFiles()
-                } else {
-                    await appState.scanner.setRightDirectory(pathStr: url.path)
-                    await appState.scanner.refreshFiles(currSide: .right)
-                    await appState.refreshRightFiles()
-                }
-            }
-        }
-
-        private func handleTabClose(_ tab: TabItem) {
-            let mgr = tabManager
-            let wasActive = (tab.id == mgr.activeTabID)
-
-            log.info("[TabBarView] closeTab panel=\(panelSide) tab='\(tab.displayName)' wasActive=\(wasActive)")
-            mgr.closeTab(tab.id)
-
-            // If closed tab was active, navigate to the new active tab
-            if wasActive {
-                syncToActiveTab()
-            }
-        }
-
-        private func handleCloseOthers(keeping tab: TabItem) {
-            let mgr = tabManager
-            log.info("[TabBarView] closeOthers panel=\(panelSide) keeping='\(tab.displayName)'")
-            mgr.closeOtherTabs(keeping: tab.id)
-            syncToActiveTab()
-        }
-
-        private func handleCloseToRight(of tab: TabItem) {
-            let mgr = tabManager
-            let activeWasRight = mgr.activeTabIndex > (mgr.tabs.firstIndex(where: { $0.id == tab.id }) ?? 0)
-            log.info("[TabBarView] closeToRight panel=\(panelSide) of='\(tab.displayName)'")
-            mgr.closeTabsToRight(of: tab.id)
-
-            if activeWasRight {
-                syncToActiveTab()
-            }
-        }
-
-        private func handleDuplicate(_ tab: TabItem) {
-            let mgr = tabManager
-            log.info("[TabBarView] duplicate panel=\(panelSide) tab='\(tab.displayName)'")
-            mgr.duplicateTab(tab.id)
-            syncToActiveTab()
-        }
-
-        // MARK: - Sync Helper
-
-        /// Navigate the panel to the current active tab's path
-        private func syncToActiveTab() {
-            let newActive = tabManager.activeTab
-            Task { @MainActor in
-                let url = newActive.url
-                appState.updatePath(url, for: panelSide)
-                if panelSide == .left {
-                    await appState.scanner.setLeftDirectory(pathStr: url.path)
-                    await appState.scanner.refreshFiles(currSide: .left)
-                    await appState.refreshLeftFiles()
-                } else {
-                    await appState.scanner.setRightDirectory(pathStr: url.path)
-                    await appState.scanner.refreshFiles(currSide: .right)
-                    await appState.refreshRightFiles()
+            .frame(height: 29)
+            .onChange(of: activeID) { _, newID in
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    proxy.scrollTo(newID, anchor: .center)
                 }
             }
         }
     }
+
+    // MARK: - Add Tab Button
+
+    private var addTabButton: some View {
+        Button(action: handleAddTab) {
+            Image(systemName: "plus")
+                .font(.system(size: 12, weight: .medium))
+                .frame(width: 24, height: 25)
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(Color(nsColor: .darkGray))
+        .overlay(alignment: .leading) {
+            Rectangle()
+                .fill(Color(nsColor: .separatorColor).opacity(0.55))
+                .frame(width: 1)
+        }
+        .help("New Tab")
+    }
+
+    // MARK: - Navigation Button
+
+    private func tabNavigationButton(systemName: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: systemName)
+                .font(.system(size: 9, weight: .bold))
+                .frame(width: 17, height: 25)
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(Color(nsColor: .tertiaryLabelColor))
+    }
+
+    // MARK: - Actions
+
+    private func handleTabSelect(_ tab: TabItem) {
+        let mgr = tabManager
+        guard tab.id != mgr.activeTabID else { return }
+        log.info("[TabBarView] selectTab panel=\(panelSide) tab='\(tab.displayName)'")
+        mgr.selectTab(tab.id)
+        syncToActiveTab()
+    }
+
+    private func handleTabClose(_ tab: TabItem) {
+        let mgr = tabManager
+        let wasActive = (tab.id == mgr.activeTabID)
+        log.info("[TabBarView] closeTab panel=\(panelSide) tab='\(tab.displayName)' wasActive=\(wasActive)")
+        mgr.closeTab(tab.id)
+        if wasActive {
+            syncToActiveTab()
+        }
+    }
+
+    private func handleCloseOthers(keeping tab: TabItem) {
+        let mgr = tabManager
+        log.info("[TabBarView] closeOthers panel=\(panelSide) keeping='\(tab.displayName)'")
+        mgr.closeOtherTabs(keeping: tab.id)
+        syncToActiveTab()
+    }
+
+    private func handleCloseToRight(of tab: TabItem) {
+        let mgr = tabManager
+        let activeWasRight = mgr.activeTabIndex > (mgr.tabs.firstIndex(where: { $0.id == tab.id }) ?? 0)
+        log.info("[TabBarView] closeToRight panel=\(panelSide) of='\(tab.displayName)'")
+        mgr.closeTabsToRight(of: tab.id)
+        if activeWasRight {
+            syncToActiveTab()
+        }
+    }
+
+    private func handleDuplicate(_ tab: TabItem) {
+        let mgr = tabManager
+        log.info("[TabBarView] duplicate panel=\(panelSide) tab='\(tab.displayName)'")
+        mgr.duplicateTab(tab.id)
+        syncToActiveTab()
+    }
+
+    private func handleAddTab() {
+        let mgr = tabManager
+        let url = appState.url(for: panelSide)
+        log.info("[TabBarView] addTab panel=\(panelSide) path='\(url.path)'")
+        _ = mgr.addTab(url: url)
+        syncToActiveTab()
+    }
+
+    private func handleSelectPrevious() {
+        let mgr = tabManager
+        mgr.selectPreviousTab()
+        syncToActiveTab()
+    }
+
+    private func handleSelectNext() {
+        let mgr = tabManager
+        mgr.selectNextTab()
+        syncToActiveTab()
+    }
+
+    // MARK: - Sync Helper
+
+    /// Navigate the panel to the current active tab's path.
+    private func syncToActiveTab() {
+        let newActive = tabManager.activeTab
+        Task { @MainActor in
+            let url = newActive.url
+            appState.updatePath(url, for: panelSide)
+            if panelSide == .left {
+                await appState.scanner.setLeftDirectory(pathStr: url.path)
+                await appState.scanner.refreshFiles(currSide: .left)
+                await appState.refreshLeftFiles()
+            } else {
+                await appState.scanner.setRightDirectory(pathStr: url.path)
+                await appState.scanner.refreshFiles(currSide: .right)
+                await appState.refreshRightFiles()
+            }
+        }
+    }
+}

@@ -31,6 +31,7 @@
 
             setupSpinnerWatchdog()
             StatePersistence.restoreTabs(into: self)
+            syncPanelPathsToRestoredTabs()
             StatePersistence.restoreSorting(into: self)
             focusedPanel = .left
             if let cached = PanelStartupCache.shared.load(forLeftPath: leftPath, rightPath: rightPath) {
@@ -90,5 +91,14 @@
             PanelStartupCache.shared.save(
                 leftPath: leftPath, rightPath: rightPath,
                 leftFiles: displayedLeftFiles, rightFiles: displayedRightFiles)
+        }
+
+        // MARK: - Restore Tab Paths
+        private func syncPanelPathsToRestoredTabs() {
+            leftURL = leftTabManager.activeTab.url
+            rightURL = rightTabManager.activeTab.url
+            leftNavigationHistory.navigateTo(leftURL)
+            rightNavigationHistory.navigateTo(rightURL)
+            log.info("[AppState] restored active tab paths L=\(leftURL.path) R=\(rightURL.path)")
         }
     }
