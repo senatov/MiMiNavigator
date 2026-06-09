@@ -70,7 +70,7 @@ struct TabItemView: View {
                 .font(.system(size: 10.5, weight: .semibold))
                 .foregroundStyle(
                     isActive
-                        ? Color(nsColor: .systemGreen)
+                        ? activeForeground
                         : inactiveForeground.opacity(0.72)
                 )
                 .frame(width: 14)
@@ -126,9 +126,9 @@ struct TabItemView: View {
         if isActive {
             LinearGradient(
                 stops: [
-                    .init(color: Color(nsColor: .windowBackgroundColor).opacity(colorScheme == .dark ? 0.82 : 1), location: 0),
-                    .init(color: Color(nsColor: .controlBackgroundColor).opacity(colorScheme == .dark ? 0.56 : 0.96), location: 0.72),
-                    .init(color: Color(nsColor: .separatorColor).opacity(colorScheme == .dark ? 0.14 : 0.08), location: 1),
+                    .init(color: activeFillTop.opacity(colorScheme == .dark ? 0.72 : 1), location: 0),
+                    .init(color: activeFillMid.opacity(colorScheme == .dark ? 0.54 : 0.98), location: 0.66),
+                    .init(color: activeFillFoot.opacity(colorScheme == .dark ? 0.32 : 0.92), location: 1),
                 ],
                 startPoint: .top,
                 endPoint: .bottom
@@ -155,7 +155,7 @@ struct TabItemView: View {
     }
 
     private var activeForeground: Color {
-        isPanelFocused ? Color(nsColor: .systemGreen).opacity(0.82) : Color(nsColor: .darkGray)
+        isPanelFocused ? activeNavy : Color(nsColor: .darkGray)
     }
 
     private var inactiveForeground: Color {
@@ -169,7 +169,7 @@ struct TabItemView: View {
     }
 
     private var activeTextShade: Color {
-        isActive && isPanelFocused ? Color.black.opacity(colorScheme == .dark ? 0.28 : 0.10) : .clear
+        isActive && isPanelFocused ? activeNavy.opacity(colorScheme == .dark ? 0.42 : 0.18) : .clear
     }
 
     private var tabOuterShadowColor: Color {
@@ -186,7 +186,7 @@ struct TabItemView: View {
         tabShape
             .stroke(
                 isActive
-                    ? Color(nsColor: .separatorColor).opacity(isPanelFocused ? 0.86 : 0.66)
+                    ? activeBorder.opacity(isPanelFocused ? 0.86 : 0.66)
                     : Color(nsColor: .separatorColor).opacity(isHovered ? 0.66 : 0.50),
                 lineWidth: isActive ? 1.0 : 0.85
             )
@@ -199,7 +199,7 @@ struct TabItemView: View {
                     stops: [
                         .init(color: Color.white.opacity(colorScheme == .dark ? 0.12 : 0.72), location: 0),
                         .init(color: Color.white.opacity(0.08), location: 0.48),
-                        .init(color: Color.black.opacity(colorScheme == .dark ? 0.18 : 0.07), location: 1),
+                        .init(color: activeNavy.opacity(colorScheme == .dark ? 0.20 : 0.10), location: 1),
                     ],
                     startPoint: .top,
                     endPoint: .bottom
@@ -207,6 +207,26 @@ struct TabItemView: View {
                 lineWidth: 0.8
             )
             .padding(0.8)
+    }
+
+    private var activeNavy: Color {
+        Color(#colorLiteral(red: 0.018, green: 0.071, blue: 0.204, alpha: 1))
+    }
+
+    private var activeBorder: Color {
+        Color(#colorLiteral(red: 0.333, green: 0.451, blue: 0.651, alpha: 1))
+    }
+
+    private var activeFillTop: Color {
+        Color(#colorLiteral(red: 0.965, green: 0.984, blue: 1.0, alpha: 1))
+    }
+
+    private var activeFillMid: Color {
+        Color(#colorLiteral(red: 0.886, green: 0.929, blue: 0.988, alpha: 1))
+    }
+
+    private var activeFillFoot: Color {
+        Color(#colorLiteral(red: 0.745, green: 0.819, blue: 0.925, alpha: 1))
     }
 
     private var frameReader: some View {
