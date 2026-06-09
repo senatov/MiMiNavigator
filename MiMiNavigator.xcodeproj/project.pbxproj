@@ -52,6 +52,10 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
+				Preview0.png,
+				Preview1.png,
+				Preview2.png,
+				Preview3.png,
 				Tests/MiMiNavigatorTests/MiMiNavigatorTests.swift,
 				Tests/MiMiNavigatorUITests/MiMiNavigatorUITests.swift,
 				Tests/MiMiNavigatorUITests/MiMiNavigatorUITestsLaunchTests.swift,
