@@ -70,7 +70,9 @@ struct SortableHeader: View {
                 )
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+        .offset(y: TableHeaderStyle.contentVerticalOffset)
+        .frame(height: TableHeaderStyle.height, alignment: .center)
+        .frame(maxWidth: .infinity)
         .background(Color.clear)
     }
 

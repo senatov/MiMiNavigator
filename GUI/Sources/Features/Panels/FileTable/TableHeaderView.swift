@@ -6,6 +6,7 @@
 import FileModelKit
 import SwiftUI
 
+// MARK: - Table Header View
 struct TableHeaderView: View {
 
     @Environment(AppState.self) var appState
@@ -30,6 +31,7 @@ struct TableHeaderView: View {
         : TableHeaderStyle.backgroundColor
     }
 
+    // MARK: - Header Drag Metrics
     private enum HeaderDragMetrics {
         static let coordinateSpaceName = "ColumnHeaderSpace"
         static let minimumDragDistance: CGFloat = 8
@@ -307,7 +309,6 @@ struct TableHeaderView: View {
     func autoFitWidth(for col: ColumnID) -> CGFloat {
         let files = panelSide == .left ? appState.displayedLeftFiles : appState.displayedRightFiles
         guard !files.isEmpty else { return col.defaultWidth }
-
         let (texts, font) = textsAndFont(for: col, files: files)
         let attrs: [NSAttributedString.Key: Any] = [.font: font]
         let maxTextW = texts.reduce(CGFloat(0)) {

@@ -11,6 +11,7 @@
 import AppKit
 import FileModelKit
 
+// MARK: - Drag Selection Resolver
 struct DragSelectionResolver {
     private static let tableHeaderHeight = TableHeaderStyle.height
 
@@ -19,12 +20,10 @@ struct DragSelectionResolver {
         appState.filesForOperation(on: side)
     }
 
-
     @MainActor
     static func resolveURLs(from appState: AppState, side: FavPanelSide) -> [URL] {
         resolve(from: appState, side: side).map { $0.urlValue }
     }
-
 
     /// Finder-style drag resolution: if mouse is over a file that belongs to
     /// marked/selected set → drag the whole set; otherwise drag just that file.
