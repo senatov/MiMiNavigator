@@ -12,7 +12,7 @@ import AppKit
 import FileModelKit
 
 struct DragSelectionResolver {
-    private static let tableHeaderHeight: CGFloat = 24
+    private static let tableHeaderHeight = TableHeaderStyle.height
 
     @MainActor
     static func resolve(from appState: AppState, side: FavPanelSide) -> [CustomFile] {

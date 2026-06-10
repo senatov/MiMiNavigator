@@ -42,8 +42,7 @@ struct TableHeaderView: View {
             containerWidthProbe
             columnHeaders
         }
-        .frame(height: 22)
-        .padding(.vertical, 1)
+        .frame(height: TableHeaderStyle.height)
         .background(headerBg)
         .overlay { headerBorder }
         .shadow(color: .black.opacity(0.10), radius: 1, x: 0, y: 1)

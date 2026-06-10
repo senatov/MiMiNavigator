@@ -9,6 +9,7 @@ import SwiftUI
 
 // MARK: - TableHeaderStyle
 enum TableHeaderStyle {
+    static let height: CGFloat = 26
     /// Standard black for inactive column titles
     static let color = Color(nsColor: .labelColor)
     /// Active sort column title weight — .light for clear contrast with light base

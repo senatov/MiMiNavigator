@@ -70,7 +70,7 @@ struct SortableHeader: View {
                 )
             }
         }
-        .frame(maxWidth: .infinity)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
         .background(Color.clear)
     }
 
