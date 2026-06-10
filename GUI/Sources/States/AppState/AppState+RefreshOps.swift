@@ -16,12 +16,22 @@ extension AppState {
         panel == .left ? displayedLeftFiles : displayedRightFiles
     }
 
-    private func autoSelectFirstRealFileIfNeeded(for panel: FavPanelSide) {
-        guard self[panel: panel].selectedFile == nil else { return }
-        guard let file = firstRealFile(in: currentDisplayedFiles(for: panel)) else { return }
-
+    // MARK: - Reconcile selection with the refreshed file list
+    private func reconcileSelectionAfterRefresh(for panel: FavPanelSide) {
+        let files = currentDisplayedFiles(for: panel)
+        if let selected = self[panel: panel].selectedFile {
+            let selectedURL = selected.urlValue.standardizedFileURL
+            if let refreshedSelection = files.first(where: { $0.urlValue.standardizedFileURL == selectedURL }) {
+                setSelectedFile(refreshedSelection, for: panel)
+                return
+            }
+        }
+        guard let file = firstRealFile(in: files) else {
+            setSelectedFile(nil, for: panel)
+            return
+        }
         setSelectedFile(file, for: panel)
-        log.debug("[REFRESH] auto-selected \(file.nameStr) panel=\(panel)")
+        log.debug("[REFRESH] selected first file \(file.nameStr) panel=\(panel)")
     }
 
     private func setLoading(_ isLoading: Bool, for panel: FavPanelSide) {
@@ -59,7 +69,7 @@ extension AppState {
         }
 
         await refreshDetectedFiles(for: panel, force: force)
-        autoSelectFirstRealFileIfNeeded(for: panel)
+        reconcileSelectionAfterRefresh(for: panel)
     }
 
     /// Backward-compatible wrapper.
