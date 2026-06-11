@@ -62,7 +62,7 @@ git gc --aggressive --prune=now 2>&1 | grep -v "^$" || true
 
 # ── Step 6: Packages submodule cleanup ────────────────────────────────────────
 echo "🔹 Step 6/7: Packages submodule cleanup..."
-if [[ -d "${PACKAGES_DIR}/.git" ]]; then
+if git -C "${PACKAGES_DIR}" rev-parse --git-dir &>/dev/null; then
     (cd "${PACKAGES_DIR}" && git gc --prune=now 2>/dev/null && echo "   ✓ Packages gc done") || echo "   ⚠️  Packages gc skipped"
 else
     echo "   ⚠️  Packages not a git repo — skipping"

@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.9.5.2] — 2026-06-11
+
+> **Release notes**
+> Navigation, panel layout, file-operation feedback, and Finder-style context menu update.
+
+### Added
+- **Native Option menu alternatives** — file and folder operation submenu items are prepared as AppKit alternates and appear live while Option is held without closing the context menu.
+- **Multi-selection Get Info** — Get Info can open Finder information windows for all marked items.
+- **Tab hover details** — compact AppKit hover popups expose full tab paths without expanding the bottom status strip.
+
+### Changed
+- **Build metadata** — marketing version updated to `0.9.9.5.2`; build number updated to `123`.
+- **Bottom panel layout** — tabs moved into the status strip and gained wider glass surfaces, stronger active-state colors, and restored persisted paths.
+- **Parent-directory strip** — parent navigation is now a full-width glass control with dedicated button styling, cursor tracking, readable active colors, and animated feedback.
+- **Table headers** — header height and text placement were adjusted for even top and bottom spacing.
+- **Release notes storage** — version-specific files were replaced by one current `RELEASE_NOTES.md` used by the publishing script.
+- **Release pipeline** — branch and tag publication now happens only after the DMG has been built, signed, notarized, and stapled.
+- **Documentation screenshots** — interface previews were refreshed for the current panel layout.
+
+### Fixed
+- **Directory selection fallback** — refresh and navigation preserve an existing valid item, select the first real row when no known target exists, and clear stale selection for empty directories.
+- **Archive initial selection** — opening an archive now selects its first real entry when no remembered selection exists.
+- **Get Info availability** — directory and multi-selection context menus now expose the same Get Info action already available for files.
+- **Stale archive progress panel** — fast atomic file operations cannot update or complete an old archive HUD.
+- **Unnecessary move progress popup** — successful single-file atomic moves, including drag-and-drop moves after archive creation, no longer show the yellow progress panel.
+
 ## [0.9.9.5.1] — 2026-06-04
 
 > **Release notes**
@@ -841,7 +867,8 @@ Each release should include:
 
 ---
 
-[Unreleased]: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.5.1...HEAD
+[Unreleased]: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.5.2...HEAD
+[0.9.9.5.2]: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.5.1...v0.9.9.5.2
 [0.9.9.5.1]: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.5...v0.9.9.5.1
 [0.9.9.5]: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.4...v0.9.9.5
 [0.9.9.4]: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.3...v0.9.9.4

@@ -1,7 +1,8 @@
 #!/bin/zsh
 # MARK: - notarize_release.zsh
-# Full pipeline: version stamp → clean Release build with Developer ID signing
-# → hardened runtime → DMG → notarize → staple → upload to GitHub release.
+# Full pipeline: validate release refs → version stamp → clean Release build
+# with Developer ID signing → hardened runtime → DMG → notarize → staple
+# → publish branch/tag → upload to GitHub release.
 #
 # Usage:  zsh Scripts/notarize_release.zsh <version>
 # Example: zsh Scripts/notarize_release.zsh 0.9.7.1
@@ -11,7 +12,7 @@
 #   Developer ID Application certificate in Keychain
 #   App-specific password in ~/.ssh/mimi_notary_password
 
-set -eo pipefail
+set -euo pipefail
 
 # ── Credentials ───────────────────────────────────────────────────────────────
 APPLE_ID="senatov@icloud.com"
@@ -36,6 +37,10 @@ fi
 
 VERSION="$1"
 TAG="v${VERSION}"
+if [[ ! "${VERSION}" =~ '^[0-9]+(\.[0-9]+)+$' ]]; then
+    print -u2 "Invalid version '${VERSION}'. Expected digits separated by dots."
+    exit 1
+fi
 
 # ── Paths ─────────────────────────────────────────────────────────────────────
 PROJECT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
@@ -47,6 +52,7 @@ BUILD_LOG="/tmp/mimi_notarize_build.log"
 DMG="/tmp/MiMiNavigator-${VERSION}.dmg"
 DMG_STAGE="/tmp/mimi_dmg_notarize"
 DERIVED_DATA_ROOT="${HOME}/Library/Developer/Xcode/DerivedData"
+NOTES_FILE="${PROJECT_DIR}/RELEASE_NOTES.md"
 
 echo "═══════════════════════════════════════════"
 echo "  MiMiNavigator Notarized Release ${TAG}"
@@ -62,12 +68,37 @@ if ! gh auth status &>/dev/null; then
     echo "❌ gh not authenticated. Run: gh auth login"
     exit 1
 fi
+if [[ -n "$(git status --porcelain)" ]]; then
+    echo "❌ Working tree is not clean. Commit release preparation changes first."
+    git status --short
+    exit 1
+fi
+if [[ ! -f "${NOTES_FILE}" ]]; then
+    echo "❌ Release notes not found: ${NOTES_FILE}"
+    exit 1
+fi
+if ! grep -Fqx "# MiMiNavigator ${TAG}" "${NOTES_FILE}"; then
+    echo "❌ ${NOTES_FILE} does not describe ${TAG}."
+    exit 1
+fi
 
-# ── Step 0: Check or publish release refs ─────────────────────────────────────
+# ── Step 0: Validate release refs ─────────────────────────────────────────────
 echo "[0/10] Checking release refs..."
 CURRENT_BRANCH="$(git branch --show-current)"
 if [[ -z "${CURRENT_BRANCH}" ]]; then
     echo "❌ Detached HEAD. Checkout a branch before releasing."
+    exit 1
+fi
+if ! git rev-parse -q --verify "refs/tags/${TAG}" &>/dev/null; then
+    echo "❌ Local tag ${TAG} is missing. Create the release tag before running this script."
+    exit 1
+fi
+TAG_TARGET="$(git rev-list -n 1 "${TAG}")"
+HEAD_SHA="$(git rev-parse HEAD)"
+if [[ "${TAG_TARGET}" != "${HEAD_SHA}" ]]; then
+    echo "❌ Local tag ${TAG} does not point to HEAD."
+    echo "   Tag:  ${TAG_TARGET}"
+    echo "   HEAD: ${HEAD_SHA}"
     exit 1
 fi
 if gh release view "${TAG}" &>/dev/null; then
@@ -81,33 +112,16 @@ if gh release view "${TAG}" &>/dev/null; then
     fi
     echo "   Rebuild mode: will replace the DMG asset without moving tags."
 else
-    echo "   GitHub release ${TAG} not found; preparing new release refs."
-    if ! git rev-parse -q --verify "refs/tags/${TAG}" &>/dev/null; then
-        echo "❌ Local tag ${TAG} is missing. Create the release tag before running this script."
-        exit 1
-    fi
-    TAG_TARGET="$(git rev-list -n 1 "${TAG}")"
-    HEAD_SHA="$(git rev-parse HEAD)"
-    if [[ "${TAG_TARGET}" != "${HEAD_SHA}" ]]; then
-        echo "❌ Local tag ${TAG} does not point to HEAD."
-        echo "   Tag:  ${TAG_TARGET}"
-        echo "   HEAD: ${HEAD_SHA}"
-        exit 1
-    fi
-    git push origin "${CURRENT_BRANCH}"
-    git push origin "refs/tags/${TAG}"
-    if ! git ls-remote --exit-code --tags origin "refs/tags/${TAG}" &>/dev/null; then
-        echo "❌ Remote tag ${TAG} is missing after push."
-        echo "   Repository rules may block tag creation from this script."
-        echo "   Create/push the tag with an allowed account before running this release:"
-        echo "   git push origin refs/tags/${TAG}"
-        exit 1
-    fi
+    echo "   GitHub release ${TAG} not found; refs will be published after notarization."
 fi
 
 # ── Step 1: Version stamp ─────────────────────────────────────────────────────
 echo "[1/10] Updating version stamp..."
 RELEASE_VERSION="${VERSION}" Scripts/refreshVersionFile.zsh
+if ! grep -Fq "MARKETING_VERSION = ${VERSION};" "${PROJECT_FILE}/project.pbxproj"; then
+    echo "❌ MARKETING_VERSION was not updated to ${VERSION}."
+    exit 1
+fi
 
 # ── Step 2: Kill Xcode ────────────────────────────────────────────────────────
 echo "[2/10] Killing Xcode..."
@@ -307,10 +321,6 @@ xcrun stapler staple "${DMG}"
 # ── Step 10: Upload to GitHub ─────────────────────────────────────────────────
 echo "[10/10] Uploading to GitHub release ${TAG}..."
 
-NOTES_FILE="Scripts/release_notes_${VERSION}.md"
-NOTES_FLAG=()
-[[ -f "${NOTES_FILE}" ]] && NOTES_FLAG=(--notes-file "${NOTES_FILE}") || NOTES_FLAG=(--notes "Release ${TAG}")
-
 if gh release view "${TAG}" &>/dev/null; then
     echo "   Release ${TAG} exists, attempting upload..."
     if ! gh release upload "${TAG}" "${DMG}" --clobber; then
@@ -320,18 +330,18 @@ if gh release view "${TAG}" &>/dev/null; then
         exit 1
     fi
 else
+    echo "   Publishing ${CURRENT_BRANCH} and ${TAG} after successful notarization..."
+    git push origin "${CURRENT_BRANCH}"
+    git push origin "refs/tags/${TAG}"
     if ! git ls-remote --exit-code --tags origin "refs/tags/${TAG}" &>/dev/null; then
-        echo "   ❌ Release ${TAG} does not exist and remote tag ${TAG} is missing."
-        echo "      Repository rules may block tag creation from this script."
-        echo "      Create/push the tag with an allowed account, then rerun this upload step:"
-        echo "      gh release create ${TAG} ${DMG} --target master --title '${TAG} — MiMiNavigator (notarized)'"
+        echo "   ❌ Remote tag ${TAG} is missing after push."
         exit 1
     fi
     echo "   Creating release ${TAG} for existing remote tag..."
     gh release create "${TAG}" "${DMG}" \
-        --target "master" \
+        --target "${CURRENT_BRANCH}" \
         --title "${TAG} — MiMiNavigator (notarized)" \
-        "${NOTES_FLAG[@]}"
+        --notes-file "${NOTES_FILE}"
 fi
 
 echo ""

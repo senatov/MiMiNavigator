@@ -17,7 +17,7 @@
   <img src="https://img.shields.io/badge/Archives-50%2B_Formats-6f42c1" alt="50+ archive formats" />
   <img src="https://img.shields.io/badge/Media-Preview_%26_Conversion-ff8c00" alt="Media preview and conversion" />
   <img src="https://img.shields.io/badge/License-AGPL--3.0-blue" alt="AGPL-3.0" />
-  <a href="https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.9.5.1"><img src="https://img.shields.io/badge/release-v0.9.9.5.1-orange" alt="Release v0.9.9.5.1" /></a>
+  <a href="https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.9.5.2"><img src="https://img.shields.io/badge/release-v0.9.9.5.2-orange" alt="Release v0.9.9.5.2" /></a>
 </p>
 
 <p align="center">
@@ -37,14 +37,20 @@
 
 
 
-## Recent Changes (v0.9.9.5.1 - June 2026)
+## Recent Changes (v0.9.9.5.2 - June 2026)
 
-- **Breadcrumb hover lens** — active path segments now use a stronger convex 3D lens with layered highlight, inner shadow, and raised drawing order above adjacent breadcrumb items.
-- **Sharper hover text** — hover enlargement uses a real font-size change instead of scaling the rendered button, keeping breadcrumb labels clear.
-- **Build metadata** — release version is `0.9.9.5.1`, build `122`.
+- **Bottom panel tabs** — tabs now share the status strip with wider glass styling, restored paths, distinct active-state colors, and compact hover details.
+- **Parent navigation** — the parent-directory strip is a full-width glass control with reliable hover tracking, animated feedback, and a dedicated navigation cursor.
+- **Selection fallback** — archive and directory navigation preserves a valid selection or selects the first real row when no saved match exists.
+- **Finder-style Option menus** — context menus reveal native alternate file and folder operations live while Option is held.
+- **Get Info coverage** — Get Info is available for files, directories, and multiple selections.
+- **Progress feedback** — fast atomic operations no longer display or reuse stale archive progress panels.
+- **Table headers** — column labels have corrected height and vertical alignment.
+- **Build metadata** — release version is `0.9.9.5.2`, build `123`.
 
 ## Previous Changes
 
+- **v0.9.9.5.1** — breadcrumb hover lens clarity and sharper enlarged path text.
 - **v0.9.9.5** — drag-and-drop file operation stability, breadcrumb truncation polish, managed mount cleanup, progress panel hardening, and file context menu cleanup.
 - **v0.9.9.4** — media conversion presets, External Tool Doctor, FFmpeg/gifski checks, IntelliJ IDEA diff detection, and shared repair flow for archive tools.
 - **v0.9.9.3** — unified List/Preview/Tree view behavior, Preview drag-and-drop reliability, Tree view mode, and periodic configuration autosave.
@@ -187,7 +193,7 @@ MiMiNavigator can browse archives as virtual directories. Double-click opens the
 > xattr -cr ~/Downloads/MiMiNavigator.app
 > ```
 
-**[Download MiMiNavigator v0.9.9.5.1 ->](https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.9.5.1)**
+**[Download MiMiNavigator v0.9.9.5.2 ->](https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.9.5.2)**
 **[All releases →](https://github.com/senatov/MiMiNavigator/releases)**
 
 ---
