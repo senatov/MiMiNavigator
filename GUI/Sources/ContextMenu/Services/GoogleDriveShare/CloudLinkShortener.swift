@@ -9,19 +9,22 @@ import Foundation
 // MARK: - CloudLinkShortener
 
 enum CloudLinkShortener {
-    private static let endpoint = "https://is.gd/create.php"
-    private static let aliasPrefix = "MiMiNavi_"
-    private static let maximumAttempts = 4
+    private static let endpoint = "https://spoo.me/api/v1/shorten"
+    private static let aliasPrefix = "MiMiNavigator_"
+    private static let maximumAttempts = 8
 
     // MARK: - Shorten
 
     static func shorten(_ link: String) async throws -> String {
         var lastError: Error?
-        for _ in 0..<maximumAttempts {
+        for attempt in 0..<maximumAttempts {
             do {
                 return try await requestShortLink(link, alias: makeAlias())
-            } catch CloudLinkShortenerError.aliasUnavailable {
-                lastError = CloudLinkShortenerError.aliasUnavailable
+            } catch let error as CloudLinkShortenerError where error.isRetryable {
+                lastError = error
+                if attempt < maximumAttempts - 1 {
+                    try await Task.sleep(for: .milliseconds(500))
+                }
             } catch {
                 throw error
             }
@@ -32,35 +35,39 @@ enum CloudLinkShortener {
     // MARK: - Request Short Link
 
     private static func requestShortLink(_ link: String, alias: String) async throws -> String {
-        guard var components = URLComponents(string: endpoint) else {
+        guard let url = URL(string: endpoint) else {
             throw CloudLinkShortenerError.invalidResponse
         }
-        components.queryItems = [
-            URLQueryItem(name: "format", value: "json"),
-            URLQueryItem(name: "url", value: link),
-            URLQueryItem(name: "shorturl", value: alias),
-        ]
-        guard let url = components.url else {
-            throw CloudLinkShortenerError.invalidResponse
-        }
-        let (data, response) = try await URLSession.shared.data(from: url)
-        guard response is HTTPURLResponse else {
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try JSONSerialization.data(withJSONObject: ["long_url": link, "alias": alias])
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let http = response as? HTTPURLResponse else {
             throw CloudLinkShortenerError.requestFailed
         }
-        let result = try JSONDecoder().decode(CloudLinkShortenerResponse.self, from: data)
-        if let shortURL = result.shortURL, shortURL.isEmpty == false {
-            return shortURL
+        if http.statusCode == 201 {
+            let result = try JSONDecoder().decode(CloudLinkShortenerResponse.self, from: data)
+            guard result.shortURL.hasPrefix("https://spoo.me/") else {
+                throw CloudLinkShortenerError.invalidResponse
+            }
+            return result.shortURL
         }
-        if result.errorCode == 2 {
+        let error = try? JSONDecoder().decode(CloudLinkShortenerServiceError.self, from: data)
+        let message = error?.message ?? String(data: data, encoding: .utf8) ?? "Unknown error"
+        if http.statusCode == 409 || message.localizedCaseInsensitiveContains("alias") {
             throw CloudLinkShortenerError.aliasUnavailable
         }
-        throw CloudLinkShortenerError.service(result.errorMessage ?? "Unknown error")
+        if http.statusCode == 429 || http.statusCode >= 500 {
+            throw CloudLinkShortenerError.serviceUnavailable(message)
+        }
+        throw CloudLinkShortenerError.service(message)
     }
 
     // MARK: - Alias
 
     private static func makeAlias() -> String {
-        let suffix = UUID().uuidString.replacingOccurrences(of: "-", with: "").prefix(6)
+        let suffix = UUID().uuidString.replacingOccurrences(of: "-", with: "").prefix(2).uppercased()
         return aliasPrefix + suffix
     }
 }
@@ -68,30 +75,17 @@ enum CloudLinkShortener {
 // MARK: - CloudLinkShortenerResponse
 
 private struct CloudLinkShortenerResponse: Decodable {
-    let shortURL: String?
-    let errorCode: Int?
-    let errorMessage: String?
+    let shortURL: String
 
     enum CodingKeys: String, CodingKey {
-        case shortURL = "shorturl"
-        case errorCode = "errorcode"
-        case errorMessage = "errormessage"
+        case shortURL = "short_url"
     }
+}
 
-    // MARK: - Init
+// MARK: - CloudLinkShortenerServiceError
 
-    init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        shortURL = try container.decodeIfPresent(String.self, forKey: .shortURL)
-        errorMessage = try container.decodeIfPresent(String.self, forKey: .errorMessage)
-        if let value = try? container.decode(Int.self, forKey: .errorCode) {
-            errorCode = value
-        } else if let value = try? container.decode(String.self, forKey: .errorCode) {
-            errorCode = Int(value)
-        } else {
-            errorCode = nil
-        }
-    }
+private struct CloudLinkShortenerServiceError: Decodable {
+    let message: String?
 }
 
 // MARK: - CloudLinkShortenerError
@@ -101,6 +95,16 @@ private enum CloudLinkShortenerError: LocalizedError {
     case invalidResponse
     case requestFailed
     case service(String)
+    case serviceUnavailable(String)
+
+    var isRetryable: Bool {
+        switch self {
+        case .aliasUnavailable, .serviceUnavailable:
+            return true
+        default:
+            return false
+        }
+    }
 
     var errorDescription: String? {
         switch self {
@@ -112,6 +116,8 @@ private enum CloudLinkShortenerError: LocalizedError {
             return "The link shortener request failed."
         case .service(let message):
             return "The link shortener rejected the request: \(message)"
+        case .serviceUnavailable(let message):
+            return "The link shortener is temporarily unavailable: \(message)"
         }
     }
 }

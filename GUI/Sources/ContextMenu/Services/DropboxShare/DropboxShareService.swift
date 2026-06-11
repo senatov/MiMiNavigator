@@ -29,15 +29,12 @@ enum DropboxShareService {
             let path = "/Public/\(destination.lastPathComponent)"
             let originalLink = try await DropboxAPIClient(accessToken: token).sharedLink(for: path)
             panel.appendLog("Creating MiMiNavi short link…")
-            let clipboardLink = await shortenedLink(or: originalLink, panel: panel)
-            copyToClipboard(clipboardLink)
+            let shortLink = try await CloudLinkShortener.shorten(originalLink)
+            copyToClipboard(shortLink)
             panel.appendKeyValueLog("Dropbox path", value: path)
-            panel.appendKeyValueLog("Public link", value: originalLink)
-            if clipboardLink != originalLink {
-                panel.appendKeyValueLog("Short link", value: clipboardLink)
-            }
+            panel.appendKeyValueLog("Short link", value: shortLink)
             panel.finish(success: true, message: "Share+Link ready: link copied to clipboard")
-            log.info("[CloudLink] Dropbox link copied path='\(path)' link='\(clipboardLink)'")
+            log.info("[CloudLink] Dropbox short link copied path='\(path)' link='\(shortLink)'")
             return true
         } catch {
             panel.appendLog("❌ \(error.localizedDescription)")
@@ -63,20 +60,6 @@ enum DropboxShareService {
         }
         let fallbackName = ext.isEmpty ? "\(stem) \(UUID().uuidString)" : "\(stem) \(UUID().uuidString).\(ext)"
         return folder.appendingPathComponent(fallbackName, isDirectory: source.hasDirectoryPath)
-    }
-
-    // MARK: - Short Link
-
-    private static func shortenedLink(or link: String, panel: ProgressPanel) async -> String {
-        do {
-            let shortLink = try await CloudLinkShortener.shorten(link)
-            panel.appendLog("MiMiNavi short link created.")
-            return shortLink
-        } catch {
-            panel.appendLog("Short link unavailable; using the original Dropbox link.")
-            log.warning("[CloudLink] Dropbox short link failed: \(error.localizedDescription)")
-            return link
-        }
     }
 
     // MARK: - Clipboard
