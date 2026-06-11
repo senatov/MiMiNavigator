@@ -77,6 +77,21 @@ private struct CloudLinkShortenerResponse: Decodable {
         case errorCode = "errorcode"
         case errorMessage = "errormessage"
     }
+
+    // MARK: - Init
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        shortURL = try container.decodeIfPresent(String.self, forKey: .shortURL)
+        errorMessage = try container.decodeIfPresent(String.self, forKey: .errorMessage)
+        if let value = try? container.decode(Int.self, forKey: .errorCode) {
+            errorCode = value
+        } else if let value = try? container.decode(String.self, forKey: .errorCode) {
+            errorCode = Int(value)
+        } else {
+            errorCode = nil
+        }
+    }
 }
 
 // MARK: - CloudLinkShortenerError

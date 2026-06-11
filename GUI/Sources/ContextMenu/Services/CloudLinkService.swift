@@ -44,12 +44,13 @@ enum CloudLinkService {
 
 
     // MARK: - Dropbox
-    /// Dropbox link generation requires MiMiNavigator Dropbox OAuth credentials.
+    /// Dropbox supports view-only links for copied Public items.
     private static func dropboxLink(url: URL, permission: CloudLinkPermission) -> Bool {
         guard permission == .readOnly else { return false }
-        log.warning("[CloudLink] Dropbox OAuth app key is not configured for \(url.lastPathComponent)")
-        showNotification("Dropbox Share+Link requires a MiMiNavigator Dropbox App Key.")
-        return false
+        Task {
+            await DropboxShareService.copyShareLink(for: url)
+        }
+        return true
     }
 
 
