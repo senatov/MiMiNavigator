@@ -21,18 +21,18 @@ struct DropboxAPIClient {
     // MARK: - Shared Link
 
     func sharedLink(for path: String) async throws -> String {
-        for attempt in 0..<8 {
-            if let existing = try await existingSharedLink(for: path) {
-                return existing
-            }
+        for attempt in 0..<30 {
             do {
+                if let existing = try await existingSharedLink(for: path) {
+                    return existing
+                }
                 return try await createSharedLink(for: path)
             } catch DropboxError.requestFailed(let status, let body)
-                where status == 409 && body.contains("path/not_found") && attempt < 7 {
+                where status == 409 && body.contains("path/not_found") && attempt < 29 {
                 try await Task.sleep(for: .seconds(1))
             }
         }
-        throw DropboxError.requestFailed(409, "Dropbox did not finish syncing \(path).")
+        throw DropboxError.requestFailed(409, "Dropbox did not finish syncing \(path) within 30 seconds.")
     }
 
     // MARK: - Existing Link
