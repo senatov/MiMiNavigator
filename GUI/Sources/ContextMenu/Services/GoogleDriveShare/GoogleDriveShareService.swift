@@ -38,15 +38,20 @@ enum GoogleDriveShareService {
             try await client.applyPermission(fileID: uploaded.id, permission: permission)
             let metadata = try await client.fileMetadata(fileID: uploaded.id)
             let link = try shareLink(from: metadata)
-            copyToClipboard(link)
+            panel.appendLog("Creating MiMiNavi short link…")
+            let clipboardLink = await shortenedLink(or: link, panel: panel)
+            copyToClipboard(clipboardLink)
             panel.appendLog("File uploaded to your personal Google Drive.")
             panel.appendKeyValueLog("File", value: url.lastPathComponent)
             panel.appendKeyValueLog("Path", value: url.path)
             panel.appendKeyValueLog("Public link", value: link)
-            panel.appendLog("Public link copied to clipboard.")
+            if clipboardLink != link {
+                panel.appendKeyValueLog("Short link", value: clipboardLink)
+            }
+            panel.appendLog("Share link copied to clipboard.")
             panel.finish(success: true, message: "Share+Link ready: link copied to clipboard")
             showNotification("Google Drive share link copied.")
-            log.info("[CloudLink] Google Drive link copied fileID='\(uploaded.id)' link='\(link)'")
+            log.info("[CloudLink] Google Drive link copied fileID='\(uploaded.id)' link='\(clipboardLink)'")
             return true
         } catch {
             panel.appendLog("❌ \(error.localizedDescription)")
@@ -86,6 +91,20 @@ enum GoogleDriveShareService {
             return false
         }
         return type.conforms(to: .image)
+    }
+
+    // MARK: - Short Link
+
+    private static func shortenedLink(or link: String, panel: ProgressPanel) async -> String {
+        do {
+            let shortLink = try await CloudLinkShortener.shorten(link)
+            panel.appendLog("MiMiNavi short link created.")
+            return shortLink
+        } catch {
+            panel.appendLog("Short link unavailable; using the original Google Drive link.")
+            log.warning("[CloudLink] short link failed: \(error.localizedDescription)")
+            return link
+        }
     }
 
     // MARK: - Clipboard

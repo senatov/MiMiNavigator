@@ -181,21 +181,50 @@ struct DirectoryContextMenu: View {
     private var cloudLinkSection: some View {
         Divider()
         Menu {
-            Button {
-                CloudLinkService.generateLink(for: file.urlValue, provider: .googleDrive, permission: .readOnly)
-            } label: {
-                Label("View only", systemImage: "eye")
-            }
-            Button {
-                CloudLinkService.generateLink(for: file.urlValue, provider: .googleDrive, permission: .allowEdit)
-            } label: {
-                Label("Allow editing", systemImage: "pencil")
+            let providers = CloudDriveAvailability.shareProviders
+            if providers.count > 1 {
+                ForEach(providers, id: \.rawValue) { provider in
+                    cloudProviderMenu(provider)
+                }
+            } else if let provider = providers.first {
+                cloudProviderActions(provider)
+            } else {
+                Text("No supported cloud drive connected")
             }
         } label: {
             Label {
                 Text("Share+Link")
             } icon: {
                 Image(systemName: "link.badge.plus")
+            }
+        }
+    }
+
+    // MARK: - Cloud Provider Menu
+
+    @ViewBuilder
+    private func cloudProviderMenu(_ provider: CloudProvider) -> some View {
+        Menu {
+            cloudProviderActions(provider)
+        } label: {
+            Label(provider.rawValue, systemImage: provider.systemImage)
+        }
+    }
+
+    // MARK: - Cloud Provider Actions
+
+    @ViewBuilder
+    private func cloudProviderActions(_ provider: CloudProvider) -> some View {
+        Button {
+            CloudLinkService.generateLink(for: file.urlValue, provider: provider, permission: .readOnly)
+        } label: {
+            Label("View only", systemImage: "eye")
+        }
+        if provider == .googleDrive {
+            Button {
+                CloudLinkService.generateLink(for: file.urlValue, provider: provider, permission: .allowEdit)
+            } label: {
+                Label("Allow editing", systemImage: "pencil")
             }
         }
     }
