@@ -4,7 +4,7 @@
 // Created by Iakov Senatov on 24.02.2026.
 // Copyright © 2026 Senatov. All rights reserved.
 // Description: Registry of external diff tools.
-//   Built-in presets (DiffMerge, Beyond Compare, FileMerge, Kaleidoscope…) + user-added tools.
+//   Built-in presets (KDiff3, Beyond Compare, FileMerge, Kaleidoscope…) + user-added tools.
 //   Active tool is persisted in UserDefaults. Tool list persisted as JSON.
 //   launchDiffTool() in MiMiNavigatorApp reads resolveTool(for:) instead of hardcoded paths.
 
@@ -33,7 +33,7 @@ enum DiffToolScope: String, Codable, CaseIterable, Identifiable {
 // MARK: - DiffTool
 
 struct DiffTool: Identifiable, Codable, Equatable {
-    var id:        String          // stable key — "diffmerge", "bc", uuid for user tools
+    var id:        String          // stable key — "kdiff3", "bc", uuid for user tools
     var name:      String
     var appPath:   String          // .app bundle or CLI binary
     var arguments: String          // %left / %right placeholders
@@ -145,10 +145,10 @@ struct DiffTool: Identifiable, Codable, Equatable {
 
 extension DiffTool {
 
-    static let diffMerge = DiffTool(
-        id: "diffmerge", name: "DiffMerge",
-        appPath: "/Applications/DiffMerge.app",
-        arguments: "--nosplash \"%left\" \"%right\"",
+    static let kdiff3 = DiffTool(
+        id: "kdiff3", name: "KDiff3",
+        appPath: "/Applications/kdiff3.app",
+        arguments: "\"%left\" \"%right\"",
         scope: .both, isBuiltIn: true, isEnabled: true)
 
     static let beyondCompare = DiffTool(
@@ -194,7 +194,7 @@ extension DiffTool {
         scope: .both, isBuiltIn: true, isEnabled: true)
 
     static let allBuiltIns: [DiffTool] = [
-        .diffMerge, .beyondCompare, .fileMerge,
+        .kdiff3, .beyondCompare, .fileMerge,
         .kaleidoscope, .araxis, .bbEdit, .meld, .intellij,
     ]
 }
@@ -233,8 +233,8 @@ final class DiffToolRegistry {
         // Auto priority
         let priority: [String]
         switch scope {
-        case .filesOnly: priority = ["diffmerge","bc","kscope","araxis","intellij","filemerge","bbedit"]
-        case .dirsOnly, .both: priority = ["diffmerge","bc","kscope","araxis","intellij"]
+        case .filesOnly: priority = ["kdiff3","bc","kscope","araxis","intellij","filemerge","bbedit"]
+        case .dirsOnly, .both: priority = ["kdiff3","bc","kscope","araxis","intellij"]
         }
         for id in priority {
             if let t = available.first(where: { $0.id == id }) { return t }
@@ -287,12 +287,16 @@ final class DiffToolRegistry {
     private func load() {
         if let data = MiMiDefaults.shared.data(forKey: listKey),
            var saved = try? JSONDecoder().decode([DiffTool].self, from: data) {
+            saved.removeAll { $0.id == "diffmerge" }
             for builtin in DiffTool.allBuiltIns {
                 if !saved.contains(where: { $0.id == builtin.id }) { saved.append(builtin) }
             }
             tools = saved
         } else {
             tools = DiffTool.allBuiltIns
+        }
+        if activeToolID == "diffmerge" {
+            activeToolID = "kdiff3"
         }
         // auto-disable not-installed tools so checkboxes don't mislead
         for i in tools.indices where !tools[i].isInstalled {

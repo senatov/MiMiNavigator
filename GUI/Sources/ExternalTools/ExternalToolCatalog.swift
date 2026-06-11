@@ -106,9 +106,17 @@ enum ExternalToolCatalog {
     static let sevenZip = ExternalTool(
         id: "7z", name: "7-Zip",
         binaryCandidates: ["/opt/homebrew/bin/7z", "/usr/local/bin/7z", "/opt/homebrew/bin/7zz", "/usr/local/bin/7zz"],
-        brewFormula: "7zip",
-        websiteURL: "https://www.7-zip.org",
+        brewFormula: "p7zip",
+        websiteURL: "https://github.com/p7zip-project/p7zip",
         purpose: "7z, RAR, ISO and 30+ archive formats",
+        isSystemTool: false)
+
+    static let unar = ExternalTool(
+        id: "unar", name: "unar",
+        binaryCandidates: ["/opt/homebrew/bin/unar", "/usr/local/bin/unar"],
+        brewFormula: "unar",
+        websiteURL: "https://theunarchiver.com/command-line",
+        purpose: "RAR and legacy archive extraction",
         isSystemTool: false)
 
     static let sshpass = ExternalTool(
@@ -160,7 +168,7 @@ enum ExternalToolCatalog {
     static let allTools: [ExternalTool] = [
         zip, unzip, tar, ditto, find,
         ssh, scp, smbutil, nslookup, curl, open, opendiff,
-        sevenZip, sshpass, ffmpeg, ffprobe, gifski,
+        sevenZip, unar, sshpass, ffmpeg, ffprobe, gifski,
     ]
 
 

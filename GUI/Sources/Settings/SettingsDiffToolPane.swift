@@ -119,11 +119,11 @@ struct SettingsDiffToolPane: View {
             if registry.tools.filter({ $0.isEnabled && $0.isInstalled }).isEmpty {
                 HStack(spacing: 8) {
                     Image(systemName: "exclamationmark.triangle").foregroundStyle(.orange)
-                    Text("No diff tool installed. Download DiffMerge (free) or Beyond Compare.")
+                    Text("No diff tool installed. Install KDiff3 (free) or Beyond Compare.")
                         .font(.system(size: 11)).foregroundStyle(.secondary)
                     Spacer()
-                    Button("DiffMerge↗") {
-                        NSWorkspace.shared.open(URL(string: "https://sourcegear.com/diffmerge/")!)
+                    Button("Install KDiff3") {
+                        DiffToolLauncher.offerInstallKDiff3()
                     }.controlSize(.small)
                     Button("Beyond Compare↗") {
                         NSWorkspace.shared.open(URL(string: "https://www.scootersoftware.com/")!)

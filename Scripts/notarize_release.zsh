@@ -95,12 +95,7 @@ if ! git rev-parse -q --verify "refs/tags/${TAG}" &>/dev/null; then
 fi
 TAG_TARGET="$(git rev-list -n 1 "${TAG}")"
 HEAD_SHA="$(git rev-parse HEAD)"
-if [[ "${TAG_TARGET}" != "${HEAD_SHA}" ]]; then
-    echo "❌ Local tag ${TAG} does not point to HEAD."
-    echo "   Tag:  ${TAG_TARGET}"
-    echo "   HEAD: ${HEAD_SHA}"
-    exit 1
-fi
+RETAG_EXISTING_RELEASE=false
 if gh release view "${TAG}" &>/dev/null; then
     echo "   Existing GitHub release ${TAG} found."
     RELEASE_IMMUTABLE="$(gh release view "${TAG}" --json isImmutable --jq '.isImmutable')"
@@ -110,8 +105,20 @@ if gh release view "${TAG}" &>/dev/null; then
         echo "   Create a new version/tag instead, then run this script for that version."
         exit 1
     fi
-    echo "   Rebuild mode: will replace the DMG asset without moving tags."
+    if [[ "${TAG_TARGET}" != "${HEAD_SHA}" ]]; then
+        RETAG_EXISTING_RELEASE=true
+        echo "   Rebuild commit differs from the existing tag."
+        echo "   Tag will move after successful notarization:"
+        echo "     ${TAG_TARGET} -> ${HEAD_SHA}"
+    fi
+    echo "   Rebuild mode: will replace the DMG asset and move the tag only if needed."
 else
+    if [[ "${TAG_TARGET}" != "${HEAD_SHA}" ]]; then
+        echo "❌ Local tag ${TAG} does not point to HEAD."
+        echo "   Tag:  ${TAG_TARGET}"
+        echo "   HEAD: ${HEAD_SHA}"
+        exit 1
+    fi
     echo "   GitHub release ${TAG} not found; refs will be published after notarization."
 fi
 
@@ -322,6 +329,11 @@ xcrun stapler staple "${DMG}"
 echo "[10/10] Uploading to GitHub release ${TAG}..."
 
 if gh release view "${TAG}" &>/dev/null; then
+    if [[ "${RETAG_EXISTING_RELEASE}" == "true" ]]; then
+        echo "   Moving ${TAG} to the notarized rebuild commit..."
+        git tag -fa "${TAG}" -m "release ${VERSION}"
+        git push origin "refs/tags/${TAG}" --force
+    fi
     echo "   Release ${TAG} exists, attempting upload..."
     if ! gh release upload "${TAG}" "${DMG}" --clobber; then
         echo "   ❌ Upload failed. Existing release was left untouched."

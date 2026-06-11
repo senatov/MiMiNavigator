@@ -62,6 +62,7 @@
 | `/usr/bin/unzip` | ZIP extraction | Built-in macOS |
 | `/usr/bin/zip` | ZIP repacking | Built-in macOS |
 | `/usr/bin/tar` | TAR family (libarchive) | Built-in macOS |
+| `unar` / `lsar` | RAR and legacy archive support | `brew install unar` |
 | `7z` | Everything else | `brew install p7zip` |
 
 ---

@@ -4,8 +4,7 @@
 //
 //  Created by Iakov Senatov on 13.03.2026.
 //  Copyright © 2026 Senatov. All rights reserved.
-//  Description: Launches external diff/compare tools (DirEqual, DiffMerge, FileMerge, etc.).
-//               Priority: DirEqual → FileMerge (opendiff) → kdiff3 → Beyond Compare.
+//  Description: Launches external diff/compare tools (DirEqual, KDiff3, FileMerge, etc.).
 //               Extracted from MiMiNavigatorApp.swift.
 
 import AppKit
@@ -32,10 +31,6 @@ enum DiffToolLauncher {
             return
         }
         log.info("[Compare] using '\(tool.name)' binary=\(tool.resolvedBinary)")
-        if tool.id == "diffmerge" {
-            removeQuarantine(atPath: tool.appPath)
-            applyDiffMergeConfigIfNeeded()
-        }
         let args = tool.buildArgs(left: leftURL.path, right: rightURL.path)
         let task = Process()
         task.executableURL = URL(fileURLWithPath: tool.resolvedBinary)
@@ -199,7 +194,7 @@ enum DiffToolLauncher {
             No suitable diff tool is installed or enabled.
 
             Recommended free options:
-            • DiffMerge  —  brew install --cask diffmerge
+            • KDiff3  —  brew install --cask kdiff3
             • Beyond Compare  —  scootersoftware.com
             • Kaleidoscope  —  App Store
 
@@ -213,22 +208,17 @@ enum DiffToolLauncher {
         }
     }
 
-    // MARK: - offerInstallDiffMerge
+    // MARK: - offerInstallKDiff3
     @MainActor
-    static func offerInstallDiffMerge() {
+    static func offerInstallKDiff3() {
         log.debug("\(#function)")
         let alert = NSAlert()
-        alert.messageText = "DiffMerge Not Found"
+        alert.messageText = "KDiff3 Not Found"
         alert.informativeText = """
-            DiffMerge is a free tool for two-panel directory comparison.
+            KDiff3 is a free tool for file and directory comparison.
 
             Install via Homebrew:
-              brew install --cask diffmerge
-
-            Note: after installation macOS may block the app due to quarantine.
-            MiMiNavigator removes quarantine attributes automatically on first launch.
-            If you still see a warning, run manually:
-              xattr -cr /Applications/DiffMerge.app
+              brew install --cask kdiff3
             """
         alert.alertStyle = .informational
         alert.addButton(withTitle: "Install via brew")
@@ -237,12 +227,12 @@ enum DiffToolLauncher {
             let script = """
                 tell application "Terminal"
                     activate
-                    do script "brew install --cask diffmerge && (xattr -cr /Applications/DiffMerge.app 2>/dev/null || xattr -cr ~/Applications/DiffMerge.app 2>/dev/null) && echo 'DiffMerge ready ✓'"
+                    do script "brew install --cask kdiff3 && echo 'KDiff3 ready'"
                 end tell
                 """
             var err: NSDictionary?
             NSAppleScript(source: script)?.executeAndReturnError(&err)
-            log.info("[Compare] offered DiffMerge install via brew")
+            log.info("[Compare] offered KDiff3 install via brew")
         }
     }
 
@@ -263,75 +253,4 @@ enum DiffToolLauncher {
         log.info("[Compare] offered Xcode via App Store")
     }
 
-    // MARK: - removeQuarantine
-    static func removeQuarantine(atPath path: String) {
-        log.debug("\(#function) path=\(path)")
-        let task = Process()
-        task.executableURL = URL(fileURLWithPath: "/usr/bin/xattr")
-        task.arguments = ["-cr", path]
-        do {
-            try task.run()
-            task.waitUntilExit()
-            log.info("[Compare] xattr -cr \(path) ✓")
-        } catch {
-            log.warning("[Compare] xattr failed: \(error.localizedDescription)")
-        }
-    }
-
-    // MARK: - applyDiffMergeConfigIfNeeded
-    static func applyDiffMergeConfigIfNeeded() {
-        log.debug("\(#function)")
-        let prefPath = NSHomeDirectory() + "/Library/Preferences/SourceGear DiffMerge Preferences"
-        let existing = (try? String(contentsOfFile: prefPath, encoding: .utf8)) ?? ""
-        guard !existing.contains("[Folder/Color/Different]") else {
-            log.debug("[DiffMerge] config already applied, skipping")
-            return
-        }
-        do {
-            try diffMergeDefaultConfig.write(toFile: prefPath, atomically: true, encoding: .utf8)
-            log.info("[DiffMerge] default config written to \(prefPath) ✓")
-        } catch {
-            log.error("[DiffMerge] failed to write config: \(error.localizedDescription)")
-        }
-    }
-
-    // MARK: - diffMergeDefaultConfig
-    // Bundled DiffMerge preferences exported from developer's configured instance
-    static let diffMergeDefaultConfig = """
-        [Window]
-        [Window/Size]
-        [Window/Size/Blank]
-        w=1358
-        h=1059
-        maximized=0
-        [Window/Size/Folder]
-        w=1358
-        h=1059
-        maximized=0
-        [Revision]
-        Check=1771462638
-        [Folder]
-        ShowFlags=31
-        [Folder/Printer]
-        Font=14:70:SF Pro Display
-        [Folder/Color]
-        [Folder/Color/Different]
-        bg=16242133
-        [License]
-        Check=1771463713
-        [File]
-        Font=14:70:SF Pro Display
-        [File/Ruleset]
-        Serialized=004207024cffffffff0353090000005f44656661756c745f0453010000002a054200064c00000000174c00000000184c00000000154201124c0e000000134c10000000164c18000000144cffffffff024c0000000003530f000000432f432b2b2f432320536f7572636504530a00000063206370702063732068054203064c01000000174c01000000184c010000001542010b4c000000000c4c110000000d53030000002f5c2a0e53030000005c2a2f0f4200104200114c000000000b4c010000000c4c110000000d53020000002f2f0e53000000000f425c104201114c010000000b4c020000000c4c0e0000000d5301000000220e5301000000220f425c104201114c020000000b4c030000000c4c0e0000000d5301000000270e5301000000270f425c104201114c03000000124c18000000134c10000000164c18000000144c00000000024c0100000003531300000056697375616c20426173696320536f757263650453170000006261732066726d20636c73207662702063746c20766273054203064c01000000174c01000000184c010000001542010b4c000000000c4c110000000d5301000000270e53000000000f4200104201114c000000000b4c010000000c4c0e0000000d5301000000220e5301000000220f4200104200114c01000000124c10000000134c10000000164c10000000144c01000000024c0200000003530d000000507974686f6e20536f757263650453020000007079054203064c01000000174c01000000184c010000001542010b4c000000000c4c110000000d5301000000230e53000000000f4200104201114c000000000b4c010000000c4c0e0000000d5301000000220e5301000000220f4200104200114c01000000124c0c000000134c10000000164c18000000144c02000000024c0300000003530b0000004a61766120536f757263650453080000006a617661206a6176054203064c01000000174c01000000184c010000001542010b4c000000000c4c110000000d53030000002f5c2a0e53030000005c2a2f0f4200104200114c000000000b4c010000000c4c110000000d53020000002f2f0e53000000000f425c104201114c010000000b4c020000000c4c0e0000000d5301000000220e5301000000220f425c104201114c02000000124c18000000134c10000000164c18000000144c03000000024c0400000003530a000000546578742046696c65730453080000007478742074657874054203064c01000000174c01000000184c01000000154201124c0e000000134c10000000164c18000000144c04000000024c050000000353100000005554462d3820546578742046696c65730453080000007574662075746638054203064c2b000000174c2b000000184c2b000000154201124c0e000000134c10000000164c18000000144c05000000024c06000000035309000000584d4c2046696c6573045303000000786d6c054203064c2b000000174c2b000000184c2b0000001542010b4c000000000c4c110000000d53040000003c212d2d0e53030000002d2d3e0f4200104200114c00000000124c18000000134c10000000164c18000000144c06000000014207
-        [File/Printer]
-        Font=14:70:SF Pro Display
-        [ExternalTools]
-        Serialized=004201014201
-        [Options]
-        [Dialog]
-        [Dialog/Color]
-        CustomColors=::::::::::::::::
-        [Misc]
-        CheckFoldersOnActivate=1
-        """
 }

@@ -174,7 +174,7 @@ MiMiNavigator can browse archives as virtual directories. Double-click opens the
 | Disk Images | `iso` `img` `vhd` `vmdk` |
 | Legacy | `arj` `lha` `lzh` `ace` `sit` `sitx` `Z` |
 
-**Extraction chain:** `/usr/bin/unzip` → `/usr/bin/tar` (libarchive) → `7z` (fallback). Install 7z for full format support: `brew install p7zip`.
+**Extraction chain:** `/usr/bin/unzip` → `/usr/bin/tar` (libarchive) → `7z` (fallback). Install archive tools with `brew install unar p7zip`.
 
 ---
 
@@ -202,7 +202,7 @@ MiMiNavigator can browse archives as virtual directories. Double-click opens the
 **Requirements:**
 - macOS 26+ (Apple Silicon)
 - Xcode (latest) with Swift 6.2
-- Optional: `brew install swiftlint swift-format p7zip`
+- Optional: `brew install swiftlint swift-format unar p7zip`
 
 ```bash
 git clone --recurse-submodules https://github.com/senatov/MiMiNavigator.git
