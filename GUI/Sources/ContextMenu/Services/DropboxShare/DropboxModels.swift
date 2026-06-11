@@ -9,7 +9,7 @@ import Foundation
 // MARK: - DropboxOAuthConfig
 
 enum DropboxOAuthConfig {
-    static let appKey = "qso2hk6zhqw91rz"
+    static let appKey = "n36zw8tyocpgqzz"
     static let redirectURI = "http://127.0.0.1:53682/dropbox/oauth2callback"
     static let scopes = "files.metadata.read sharing.read sharing.write"
 }
@@ -56,6 +56,7 @@ struct DropboxSharedLinkList: Decodable {
 enum DropboxError: LocalizedError {
     case invalidURL(String)
     case missingOAuthCode
+    case oauthTimedOut
     case missingRefreshToken
     case missingDropboxRoot
     case missingPublicFolder
@@ -69,6 +70,8 @@ enum DropboxError: LocalizedError {
             return "Invalid URL: \(value)"
         case .missingOAuthCode:
             return "Dropbox OAuth did not return an authorization code."
+        case .oauthTimedOut:
+            return "Dropbox sign-in did not complete within 60 seconds. Check that the Dropbox app is enabled and its redirect URI is configured."
         case .missingRefreshToken:
             return "Dropbox OAuth did not return a refresh token."
         case .missingDropboxRoot:

@@ -41,11 +41,11 @@ enum DropboxOAuthClient {
         let verifier = try randomValue(byteCount: 64)
         let state = try randomValue(byteCount: 32)
         let loopback = try DropboxOAuthLoopbackServer(expectedState: state)
+        defer { loopback.cancel() }
         try await loopback.start()
         let url = try authorizationURL(verifier: verifier, state: state)
         await MainActor.run { _ = NSWorkspace.shared.open(url) }
         let code = try await loopback.waitForCode()
-        loopback.cancel()
         let response = try await exchangeCode(code, verifier: verifier)
         guard let refreshToken = response.refreshToken else { throw DropboxError.missingRefreshToken }
         try DropboxTokenStore.saveRefreshToken(refreshToken)

@@ -15,7 +15,7 @@ enum DropboxShareService {
 
     static func copyShareLink(for sourceURL: URL) async -> Bool {
         let panel = ProgressPanel.shared
-        panel.show(icon: "link.badge.plus", title: "Share+Link: \(sourceURL.lastPathComponent)", status: "Copying to Dropbox…", operationKey: "dropbox-share")
+        panel.show(icon: "link.badge.plus", title: "Share+Link: \(sourceURL.lastPathComponent)", status: "Authenticating with Dropbox…", operationKey: "dropbox-share")
         panel.updateProgress(nil)
         panel.appendKeyValueLog("Source", value: sourceURL.path)
         do {

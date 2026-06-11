@@ -46,6 +46,10 @@ final class DropboxOAuthLoopbackServer: @unchecked Sendable {
             lock.lock()
             codeContinuation = continuation
             lock.unlock()
+            queue.asyncAfter(deadline: .now() + 60) { [weak self] in
+                self?.resolveCode(.failure(DropboxError.oauthTimedOut))
+                self?.listener.cancel()
+            }
         }
     }
 
