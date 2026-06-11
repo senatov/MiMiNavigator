@@ -13,6 +13,23 @@
 import AppKit
 import Foundation
 
+// MARK: - Context Menu Tracking Observer
+
+@MainActor
+private final class ContextMenuTrackingObserver: NSObject {
+    private let onBegin: @MainActor (NSMenu) -> Void
+
+    init(onBegin: @escaping @MainActor (NSMenu) -> Void) {
+        self.onBegin = onBegin
+    }
+
+    // MARK: - Menu Tracking
+    @objc func menuDidBeginTracking(_ notification: Notification) {
+        guard let menu = notification.object as? NSMenu else { return }
+        onBegin(menu)
+    }
+}
+
 // MARK: - PopupEventMonitors
 
 /// Lifecycle: create → install(...) → remove() / deinit auto-removes.
@@ -79,6 +96,20 @@ final class PopupEventMonitors {
                 Task { @MainActor in onHide() }
             }
         }
+    }
+
+    // MARK: - Context Menu Monitoring
+
+    func installContextMenuPreparation(onBegin: @escaping @MainActor (NSMenu) -> Void) {
+        remove()
+        let observer = ContextMenuTrackingObserver(onBegin: onBegin)
+        NotificationCenter.default.addObserver(
+            observer,
+            selector: #selector(ContextMenuTrackingObserver.menuDidBeginTracking(_:)),
+            name: NSMenu.didBeginTrackingNotification,
+            object: nil
+        )
+        focusObserver = observer
     }
 
     // MARK: - Remove (MainActor)

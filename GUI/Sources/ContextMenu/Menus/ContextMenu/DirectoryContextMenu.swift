@@ -30,6 +30,8 @@ struct DirectoryContextMenu: View {
         crossPanelSection
         Divider()
         favoritesSection
+        Divider()
+        infoSection
     }
 
     // MARK: - Add / Remove Favorites toggle
@@ -158,7 +160,7 @@ struct DirectoryContextMenu: View {
 
     @ViewBuilder
     private var infoSection: some View {
-        EmptyView()
+        menuButton(.getInfo)
     }
 
     @ViewBuilder

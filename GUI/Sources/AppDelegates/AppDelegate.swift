@@ -55,6 +55,9 @@ import LogKit
         ToolbarRightClickMonitor.shared.start()
         logStartupStep("toolbar right-click monitor started")
 
+        ContextMenuOptionCoordinator.shared.start()
+        logStartupStep("context menu Option monitor started")
+
         log.debug("installing keyDown monitor for Tab/Backtab")
         installKeyMonitor()
         logStartupStep("key monitor installed")

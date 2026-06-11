@@ -98,7 +98,6 @@ struct FileContextMenu: View {
     // when SwiftUI diffs 1500+ rows in large directories.
     @State var openWithApps: [AppInfo]?
     @State var openWithMenuID: String?
-    @State private var lastOptionState: Bool = false
 
     struct DebugSnapshot {
         let fileName: String
@@ -157,13 +156,8 @@ struct FileContextMenu: View {
     var body: some View {
         menuContent
             .onAppear {
-                lastOptionState = isOptionHeld
                 ensureOpenWithLoaded()
                 logBodyAppearance()
-            }
-            .onChange(of: isOptionHeld) { oldValue, newValue in
-                log.debug("[FileContextMenu] option key changed file='\(file.nameStr)' old=\(oldValue) new=\(newValue)")
-                lastOptionState = newValue
             }
     }
 

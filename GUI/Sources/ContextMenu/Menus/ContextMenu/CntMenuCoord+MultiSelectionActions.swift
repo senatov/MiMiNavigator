@@ -36,6 +36,8 @@ extension CntMenuCoord {
                     guard let self = self else { return }
                     await self.performPaste(to: panel, appState: appState)
                 }
+            case .getInfo:
+                GetInfoService.shared.showGetInfo(for: files.map(\.urlValue))
             case .compress:
                 presentCompressDialog(for: files, panel: panel, appState: appState)
             case .share:

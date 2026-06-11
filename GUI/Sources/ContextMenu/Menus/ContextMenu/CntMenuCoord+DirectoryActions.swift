@@ -42,6 +42,8 @@ extension CntMenuCoord {
                 }
             case .rename:
                 beginInlineRename(file: file, panel: panel, appState: appState)
+            case .getInfo:
+                GetInfoService.shared.showGetInfo(for: file.urlValue)
             case .createLink:
                 presentCreateLinkDialog(for: file, panel: panel, appState: appState)
             case .cut:

@@ -17,8 +17,6 @@ struct MultiSelectionContextMenu: View {
     let isOptionHeld: Bool
     let onAction: (MultiSelectionAction) -> Void
 
-
-
     @ViewBuilder
     private var moreSelectionOperationsMenu: some View {
         Menu {
@@ -35,7 +33,6 @@ struct MultiSelectionContextMenu: View {
             }
         }
     }
-
 
     var body: some View {
         Text("\(markedCount) items selected")
@@ -54,6 +51,8 @@ struct MultiSelectionContextMenu: View {
         Divider()
         menuButton(.mirrorPanel)
         menuButton(.addToFavorites)
+        Divider()
+        menuButton(.getInfo)
     }
 
     // MARK: - Menu Button Builder

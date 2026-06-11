@@ -24,6 +24,7 @@ enum DirectoryAction: String, CaseIterable, Identifiable {
     case paste
     case duplicate
     case rename
+    case getInfo
     
     // Operations section
     case compress
@@ -65,6 +66,7 @@ enum DirectoryAction: String, CaseIterable, Identifiable {
         case .paste: return "Paste"
         case .duplicate: return "Duplicate"
         case .rename: return "Rename"
+        case .getInfo: return "Get Info"
         case .compress: return "Compress"
         case .pack: return "Pack..."
         case .createLink: return "Make Alias"
@@ -95,6 +97,7 @@ enum DirectoryAction: String, CaseIterable, Identifiable {
         case .paste: return "doc.on.clipboard"
         case .duplicate: return "plus.square.on.square"
         case .rename: return "pencil"
+        case .getInfo: return "info.circle"
         case .compress: return "archivebox"
         case .pack: return "doc.zipper"
         case .createLink: return "link"
@@ -121,6 +124,7 @@ enum DirectoryAction: String, CaseIterable, Identifiable {
         case .paste: return "⌘V"
         case .duplicate: return "⌘D"
         case .rename: return "F2"
+        case .getInfo: return "⌘I"
         case .delete: return "⌘⌫"
         case .newFolder: return "⇧⌘N"
         case .mirrorPanel: return "⌘="

@@ -15,6 +15,7 @@ enum MultiSelectionAction: String, CaseIterable, Identifiable {
     case copy
     case copyAsPathname
     case paste
+    case getInfo
 
     // Operations
     case compress
@@ -42,6 +43,7 @@ enum MultiSelectionAction: String, CaseIterable, Identifiable {
         case .copy: return "Copy"
         case .copyAsPathname: return "Copy as Pathname"
         case .paste: return "Paste"
+        case .getInfo: return "Get Info"
         case .compress: return "Compress"
         case .share: return "Share..."
         case .revealInFinder: return "Show in Finder"
@@ -59,6 +61,7 @@ enum MultiSelectionAction: String, CaseIterable, Identifiable {
         case .copy: return "doc.on.doc"
         case .copyAsPathname: return "link.circle.fill"
         case .paste: return "doc.on.clipboard"
+        case .getInfo: return "info.circle"
         case .compress: return "archivebox"
         case .share: return "square.and.arrow.up"
         case .revealInFinder: return "folder"
@@ -76,6 +79,7 @@ enum MultiSelectionAction: String, CaseIterable, Identifiable {
         case .copy: return "⌘C"
         case .copyAsPathname: return "⌥⌘C"
         case .paste: return "⌘V"
+        case .getInfo: return "⌘I"
         case .delete: return "⌘⌫"
         case .mirrorPanel: return "⌘="
         default: return nil
