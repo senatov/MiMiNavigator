@@ -1,28 +1,34 @@
-# MiMiNavigator v0.9.9.5.2
+# MiMiNavigator v0.9.9.5.3
 
-Navigation, panel layout, file-operation feedback, and Finder-style context menu update.
+Cloud Share+Link update for Google Drive and Dropbox.
 
 ## Highlights
 
-- Panel tabs now live in the bottom status strip with wider glass styling, distinct active-state colors, restored paths, and compact hover details.
-- The parent-directory strip is now a full-width glass control with reliable AppKit hover tracking, animated feedback, readable active colors, and an upward-navigation cursor.
-- Opening archives and navigating or refreshing directories now preserves a valid selection when possible and otherwise selects the first real row.
-- File and folder context menus now react live while Option is held, using native AppKit alternate menu items without closing or rebuilding the menu.
-- Get Info is consistently available for files, folders, and multiple selections.
+- Share+Link now detects mounted Google Drive and Dropbox accounts and offers a provider choice when both are available.
+- Google Drive keeps view-only and editable sharing modes, while Dropbox exposes the supported view-only action.
+- Dropbox sharing uses OAuth PKCE with refresh tokens stored in Keychain and copies items into the Dropbox `Public` folder before creating a shared link.
+- Generated cloud links are shortened to branded `https://spoo.me/MiMiNavigator_XX` URLs and copied directly to the clipboard.
 
 ## Fixed
 
-- Fast single-file moves and copies no longer reuse or complete a stale archive progress panel.
-- Successful atomic moves, including drag-and-drop moves after archive creation, no longer show an unnecessary yellow progress popup.
-- Table headers have improved height and vertical alignment so column labels no longer touch the top border.
+- Missing Google Drive and Dropbox `Public` folders are created automatically when the mounted drive is writable.
+- Dropbox shared-link creation waits for newly copied files to finish syncing before requesting the remote link.
+- Dropbox OAuth no longer waits indefinitely when authorization cannot return a callback.
+- Existing filenames in Dropbox `Public` are preserved by generating a collision-safe destination name.
+- Long provider URLs are no longer copied when branded short-link creation fails.
+- Temporary shortener failures and alias collisions are retried with a fresh alias.
+
+## Security
+
+- Dropbox authorization uses PKCE without embedding an app secret.
+- Dropbox refresh tokens are stored in the macOS Keychain.
 
 ## Documentation
 
-- Refreshed application screenshots and documented the current panel, navigation, selection, and context-menu behavior.
-- Release metadata updated to version `0.9.9.5.2`, build `123`.
+- Release metadata updated to version `0.9.9.5.3`, build `123`.
 
 ## Download
 
 The DMG is signed, notarized by Apple, and includes an Applications shortcut for drag-to-install.
 
-**Full Changelog**: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.5.1...v0.9.9.5.2
+**Full Changelog**: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.5.2...v0.9.9.5.3
