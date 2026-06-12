@@ -85,9 +85,10 @@ extension AppState {
         if let idx = files.firstIndex(where: { $0.id == oldFile.id || $0.pathStr == oldFile.pathStr }) {
             // create updated file entry from filesystem
             let keys: Set<URLResourceKey> = [
-                .isDirectoryKey, .isSymbolicLinkKey,
+                .isDirectoryKey, .isSymbolicLinkKey, .isAliasFileKey,
                 .fileSizeKey, .contentModificationDateKey, .fileSecurityKey,
-                .directoryEntryCountKey
+                .directoryEntryCountKey, .creationDateKey,
+                .contentAccessDateKey, .addedToDirectoryDateKey
             ]
             if let rv = try? newURL.resourceValues(forKeys: keys) {
                 let updated = CustomFile(url: newURL, resourceValues: rv)

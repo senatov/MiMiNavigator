@@ -131,6 +131,10 @@ enum ColumnAutoFitMeasurer {
             log.verbose("[AutoFit] contentWidth \(column.rawValue) fallback=\(ColumnAutoFitLayout.pt(fallback))")
             return max(fallback, column.minWidth)
         }
+        if column.isDateColumn {
+            log.verbose("[AutoFit] contentWidth \(column.rawValue) empty date fallback")
+            return max(column.defaultWidth, column.minWidth)
+        }
         log.verbose("[AutoFit] contentWidth \(column.rawValue) empty")
         return max(ColumnAutoFitMetrics.emptyColumnWidth, column.minWidth)
     }

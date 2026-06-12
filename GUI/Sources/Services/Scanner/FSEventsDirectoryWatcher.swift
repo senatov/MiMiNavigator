@@ -228,9 +228,10 @@
                         // Since we can't check the existing list here (we're off MainActor),
                         // always include it — applyPatch will merge by pathStr.
                         let keys: Set<URLResourceKey> = [
-                            .isDirectoryKey, .isSymbolicLinkKey,
+                            .isDirectoryKey, .isSymbolicLinkKey, .isAliasFileKey,
                             .fileSizeKey, .contentModificationDateKey, .fileSecurityKey,
-                            .directoryEntryCountKey,
+                            .directoryEntryCountKey, .creationDateKey,
+                            .contentAccessDateKey, .addedToDirectoryDateKey,
                         ]
                         if let rv = try? url.resourceValues(forKeys: keys) {
                             let file = CustomFile(url: url, resourceValues: rv)
@@ -238,9 +239,10 @@
                         }
                     } else {
                         let keys: Set<URLResourceKey> = [
-                            .isDirectoryKey, .isSymbolicLinkKey,
+                            .isDirectoryKey, .isSymbolicLinkKey, .isAliasFileKey,
                             .fileSizeKey, .contentModificationDateKey, .fileSecurityKey,
-                            .directoryEntryCountKey,
+                            .directoryEntryCountKey, .creationDateKey,
+                            .contentAccessDateKey, .addedToDirectoryDateKey,
                         ]
                         if let rv = try? url.resourceValues(forKeys: keys) {
                             added.append(CustomFile(url: url, resourceValues: rv))
