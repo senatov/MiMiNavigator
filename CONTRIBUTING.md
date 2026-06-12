@@ -61,6 +61,15 @@ Google Drive share-link development needs application OAuth credentials:
 - Do not commit `GUI/Resources/google_drive_oauth.json`; it is git-ignored because GitHub push protection treats the client secret as sensitive.
 - Runtime user tokens are stored in macOS Keychain by MiMiNavigator, not in this JSON file.
 
+### Cloud Share+Link Development
+
+- Google Drive and Dropbox share the `CloudLinkShortener` implementation.
+- Branded aliases use `mimiNavi_` plus 14 random Base62 characters. Keep aliases URL-safe; do not add punctuation that requires escaping.
+- Dropbox OAuth uses PKCE and stores only its refresh token in macOS Keychain.
+- Dropbox publishing copies items to the mounted `Public` folder, then waits for the remote API to observe the synced path.
+- The shortener retries temporary service failures and alias conflicts with a newly generated alias.
+- See `GUI/Docs/Cloud_Share_Link.md` for the service flow, security model, and test requirements.
+
 ## Code Quality
 
 We use several tools to maintain high code quality. All checks run automatically in CI, but you should run them locally before submitting:

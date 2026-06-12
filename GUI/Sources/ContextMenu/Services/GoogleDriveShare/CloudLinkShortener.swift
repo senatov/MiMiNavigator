@@ -10,7 +10,9 @@ import Foundation
 
 enum CloudLinkShortener {
     private static let endpoint = "https://spoo.me/api/v1/shorten"
-    private static let aliasPrefix = "MiMiNavigator_"
+    private static let aliasPrefix = "mimiNavi_"
+    private static let aliasSuffixLength = 14
+    private static let aliasCharacters = Array("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
     private static let maximumAttempts = 8
 
     // MARK: - Shorten
@@ -66,8 +68,9 @@ enum CloudLinkShortener {
 
     // MARK: - Alias
 
-    private static func makeAlias() -> String {
-        let suffix = UUID().uuidString.replacingOccurrences(of: "-", with: "").prefix(2).uppercased()
+    static func makeAlias() -> String {
+        var generator = SystemRandomNumberGenerator()
+        let suffix = String((0..<aliasSuffixLength).map { _ in aliasCharacters.randomElement(using: &generator) ?? "0" })
         return aliasPrefix + suffix
     }
 }

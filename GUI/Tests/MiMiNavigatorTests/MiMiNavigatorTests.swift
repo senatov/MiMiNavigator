@@ -10,6 +10,8 @@ import XCTest
 @testable import MiMiNavigator
 
 final class MiMiNavigatorTests: XCTestCase {
+    private let cloudLinkAliasCharacters = Set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+
     override func setUpWithError() throws {
         // Put setup code here. This method is called before invocation of each test method in class.
     }
@@ -34,6 +36,19 @@ final class MiMiNavigatorTests: XCTestCase {
         // This is an example of a performance test case.
         measure {
             // Put the code you want to measure the time of here.
+        }
+    }
+
+    // MARK: - Cloud Link Alias
+
+    func testCloudLinkAliasesAreLongRandomAndURLSafe() {
+        let aliases = (0..<1_000).map { _ in CloudLinkShortener.makeAlias() }
+        XCTAssertEqual(Set(aliases).count, aliases.count)
+        for alias in aliases {
+            XCTAssertTrue(alias.hasPrefix("mimiNavi_"))
+            XCTAssertEqual(alias.count, 23)
+            let suffix = String(alias.dropFirst("mimiNavi_".count))
+            XCTAssertTrue(suffix.allSatisfy(cloudLinkAliasCharacters.contains))
         }
     }
 }

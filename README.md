@@ -360,22 +360,25 @@ MiMiNavigator **auto-discovers** cloud drives mounted on your Mac. Any provider 
 | iCloud Drive | Built into macOS → appears automatically |
 | Any other provider | If it mounts to `~/Library/CloudStorage`, it will be detected |
 
-### Google Drive Share Links
+### Cloud Share Links
 
-File and directory R-Menu includes **Copy Share Link** for Google Drive publishing:
+File and directory R-Menu includes **Share+Link** for Google Drive and Dropbox publishing:
 
-1. MiMiNavigator uploads the selected item to a `Public` folder in Google Drive.
-2. It creates an external Google Drive link with **View only** or **Allow editing** permission.
-3. The link is copied to the clipboard.
-4. The first use opens Google OAuth in the browser. After consent, the refresh token is stored in macOS Keychain and later share-link actions run without opening the browser again unless access is revoked.
+1. MiMiNavigator detects the mounted cloud providers and asks which provider to use when both are available.
+2. Google Drive uploads to `My Drive/Public` and supports **View only** or **Allow editing**.
+3. Dropbox copies the item to `Public`, waits for sync, and creates a view-only shared link.
+4. The provider URL is shortened to `https://spoo.me/mimiNavi_<14 random Base62 characters>` and copied to the clipboard.
+5. The first use opens provider OAuth in the browser. Refresh tokens are stored in macOS Keychain.
 
 Google Drive app credentials are application credentials, not user credentials. A development build can bundle `GUI/Resources/google_drive_oauth.json`; this file is intentionally git-ignored. Use `GUI/Resources/google_drive_oauth.example.json` as the template and never commit a real Google OAuth client secret. User access and refresh tokens are never written to project files.
 
-When Google Drive for Desktop syncs the `Public` folder locally, MiMiNavigator shows it as **Google Drive Public** in the sidebar.
+Dropbox authorization uses PKCE and does not embed an app secret. Alias generation uses the shared `CloudLinkShortener` implementation for both providers; the long random suffix prevents predictable links and makes collisions impractical.
+
+When a cloud desktop client syncs the `Public` folder locally, MiMiNavigator exposes the provider folder in the sidebar.
 
 **For power users:** [rclone](https://rclone.org/) can mount virtually any cloud provider (S3, B2, MEGA, etc.) as a local FUSE filesystem. Once mounted, it appears in `/Volumes` and is browsable in MiMiNavigator.
 
-> MiMiNavigator is primarily a filesystem browser. Google Drive share-link generation is the current exception: it uses Google OAuth only to upload selected items to `Public` and create shareable links.
+> MiMiNavigator is primarily a filesystem browser. Google Drive and Dropbox Share+Link are narrow API integrations used only to publish selected items and create shareable links.
 
 ---
 
@@ -417,6 +420,7 @@ When Google Drive for Desktop syncs the `Public` folder locally, MiMiNavigator s
 - [x] Rename: panel tracking, scan cooldown fix, firmlink path resolution
 - [x] Version auto-sync from git tag via `Scripts/stamp_version.zsh`
 - [x] Google Drive share-link publishing to `Public` with Keychain-backed OAuth
+- [x] Dropbox Share+Link with PKCE, sync-aware publishing, and branded random aliases
 
 ### In Progress 🚧
 
@@ -429,7 +433,7 @@ When Google Drive for Desktop syncs the `Public` folder locally, MiMiNavigator s
 - [ ] Three-panel layout option
 - [x] FTP/SFTP connectivity (Citadel SFTP + curl-based FTP)
 - [x] Network filesystem (SMB/AFP mount, Network Neighborhood discovery)
-- [ ] More cloud provider share-link APIs beyond Google Drive
+- [ ] More cloud provider share-link APIs beyond Google Drive and Dropbox
 - [ ] Advanced file comparison
 - [ ] Plugin system — see [Plugin Development Blue Paper](GUI/Docs/PLUGIN_BLUE_PAPER.md)
 - [ ] App Store release

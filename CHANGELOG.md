@@ -7,6 +7,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.9.5.4] — 2026-06-12
+
+> **Release notes**
+> Cloud Share+Link alias privacy and collision-resistance update.
+
+### Changed
+- **Branded cloud aliases** — Google Drive and Dropbox links now use the shorter `mimiNavi_` prefix followed by 14 random Base62 characters.
+- **Alias entropy** — the previous two-character UUID prefix was replaced with roughly 83 bits of URL-safe random space, preventing predictable sequences and making collisions impractical.
+- **Developer documentation** — cloud publishing architecture, provider flows, OAuth storage, alias constraints, retry behavior, and regression coverage are documented for contributors.
+- **Build metadata** — marketing version updated to `0.9.9.5.4`; build number remains `123`.
+
+### Added
+- **Cloud alias regression test** — generates 1,000 aliases and verifies the prefix, length, URL-safe alphabet, and uniqueness.
+
+## [0.9.9.5.3] — 2026-06-11
+
+> **Release notes**
+> Cloud Share+Link update for Google Drive and Dropbox.
+
+### Added
+- **Dynamic cloud provider selection** — Share+Link detects mounted Google Drive and Dropbox accounts and offers a provider choice when both are available.
+- **Dropbox Share+Link** — OAuth PKCE, Keychain refresh-token storage, Public-folder copying, sync-aware shared-link creation, and view-only publishing.
+- **Branded short links** — provider links are shortened through the shared spoo.me integration and copied directly to the clipboard.
+
+### Changed
+- **Google Drive publishing** — retains view-only and editable permissions while sharing the common provider-selection and short-link flow.
+- **Public folder handling** — missing Google Drive and Dropbox `Public` folders are created automatically when the mounted drive is writable.
+- **Release pipeline** — obsolete archive tools were removed and clean release rebuild behavior was restored.
+- **Build metadata** — marketing version updated to `0.9.9.5.3`; build number remains `123`.
+
+### Fixed
+- **Dropbox synchronization** — shared-link lookup and creation retry while newly copied files are still being indexed.
+- **Dropbox OAuth timeout** — authorization no longer waits indefinitely when the callback cannot return.
+- **Destination collisions** — existing Dropbox Public filenames are preserved through collision-safe destination naming.
+- **Shortener fallback** — long provider URLs are not copied when branded shortening fails; temporary service failures and alias conflicts retry with a new alias.
+
 ## [0.9.9.5.2] — 2026-06-11
 
 > **Release notes**
