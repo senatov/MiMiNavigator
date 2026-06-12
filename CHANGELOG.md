@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Cloud short-link creation** — fit branded aliases within spoo.me's 16-character maximum by using `mimiNavi` plus 8 random Base62 characters.
+- **Shortener error reporting** — decode the service's `error` response field and retry only real HTTP 409 alias conflicts instead of misreporting validation failures as collisions.
+
 ## [0.9.9.5.4] — 2026-06-12
 
 > **Release notes**

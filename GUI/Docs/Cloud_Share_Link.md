@@ -31,13 +31,13 @@ The feature is intentionally narrow. MiMiNavigator remains a filesystem-first ap
 `CloudLinkShortener` is shared by both providers and generates aliases in this format:
 
 ```text
-mimiNavi_<14 random Base62 characters>
+mimiNavi<8 random Base62 characters>
 ```
 
 Example:
 
 ```text
-https://spoo.me/mimiNavi_5Jzui456601lGa
+https://spoo.me/mimiNavi5Jzui456
 ```
 
 The suffix alphabet is:
@@ -46,7 +46,7 @@ The suffix alphabet is:
 abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789
 ```
 
-The 14-character Base62 suffix provides approximately 83 bits of possible alias space. Do not replace it with counters, timestamps, filenames, short UUID prefixes, or another predictable value.
+spoo.me limits custom aliases to 16 characters. The 8-character `mimiNavi` prefix plus an 8-character Base62 suffix uses the full limit and provides approximately 48 bits of random alias space. Do not replace the suffix with counters, timestamps, filenames, short UUID prefixes, or another predictable value.
 
 Keep punctuation out of the suffix. Characters such as `!` may be legal in some URL contexts but introduce escaping and interoperability risks in clipboard, browser, messaging, and API paths.
 
@@ -72,8 +72,8 @@ Never log access tokens, refresh tokens, authorization codes, PKCE verifiers, or
 
 `MiMiNavigatorTests.testCloudLinkAliasesAreLongRandomAndURLSafe` generates 1,000 aliases and verifies:
 
-- Every alias starts with `mimiNavi_`.
-- Every alias has a 14-character suffix.
+- Every alias starts with `mimiNavi`.
+- Every alias has an 8-character suffix and a 16-character total length.
 - Every suffix contains only Base62 characters.
 - The generated sample contains no duplicates.
 

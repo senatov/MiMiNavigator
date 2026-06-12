@@ -10,8 +10,8 @@ import Foundation
 
 enum CloudLinkShortener {
     private static let endpoint = "https://spoo.me/api/v1/shorten"
-    private static let aliasPrefix = "mimiNavi_"
-    private static let aliasSuffixLength = 14
+    private static let aliasPrefix = "mimiNavi"
+    private static let aliasSuffixLength = 8
     private static let aliasCharacters = Array("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
     private static let maximumAttempts = 8
 
@@ -55,9 +55,9 @@ enum CloudLinkShortener {
             }
             return result.shortURL
         }
-        let error = try? JSONDecoder().decode(CloudLinkShortenerServiceError.self, from: data)
-        let message = error?.message ?? String(data: data, encoding: .utf8) ?? "Unknown error"
-        if http.statusCode == 409 || message.localizedCaseInsensitiveContains("alias") {
+        let serviceError = try? JSONDecoder().decode(CloudLinkShortenerServiceError.self, from: data)
+        let message = serviceError?.detail ?? String(data: data, encoding: .utf8) ?? "Unknown error"
+        if http.statusCode == 409 {
             throw CloudLinkShortenerError.aliasUnavailable
         }
         if http.statusCode == 429 || http.statusCode >= 500 {
@@ -89,6 +89,11 @@ private struct CloudLinkShortenerResponse: Decodable {
 
 private struct CloudLinkShortenerServiceError: Decodable {
     let message: String?
+    let error: String?
+
+    var detail: String? {
+        error ?? message
+    }
 }
 
 // MARK: - CloudLinkShortenerError

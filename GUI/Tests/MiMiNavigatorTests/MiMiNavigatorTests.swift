@@ -45,9 +45,10 @@ final class MiMiNavigatorTests: XCTestCase {
         let aliases = (0..<1_000).map { _ in CloudLinkShortener.makeAlias() }
         XCTAssertEqual(Set(aliases).count, aliases.count)
         for alias in aliases {
-            XCTAssertTrue(alias.hasPrefix("mimiNavi_"))
-            XCTAssertEqual(alias.count, 23)
-            let suffix = String(alias.dropFirst("mimiNavi_".count))
+            XCTAssertTrue(alias.hasPrefix("mimiNavi"))
+            XCTAssertEqual(alias.count, 16)
+            let suffix = String(alias.dropFirst("mimiNavi".count))
+            XCTAssertEqual(suffix.count, 8)
             XCTAssertTrue(suffix.allSatisfy(cloudLinkAliasCharacters.contains))
         }
     }

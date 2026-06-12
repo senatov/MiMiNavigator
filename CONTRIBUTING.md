@@ -64,7 +64,7 @@ Google Drive share-link development needs application OAuth credentials:
 ### Cloud Share+Link Development
 
 - Google Drive and Dropbox share the `CloudLinkShortener` implementation.
-- Branded aliases use `mimiNavi_` plus 14 random Base62 characters. Keep aliases URL-safe; do not add punctuation that requires escaping.
+- Branded aliases use `mimiNavi` plus 8 random Base62 characters, exactly matching spoo.me's 16-character alias limit. Keep aliases URL-safe; do not add punctuation that requires escaping.
 - Dropbox OAuth uses PKCE and stores only its refresh token in macOS Keychain.
 - Dropbox publishing copies items to the mounted `Public` folder, then waits for the remote API to observe the synced path.
 - The shortener retries temporary service failures and alias conflicts with a newly generated alias.
