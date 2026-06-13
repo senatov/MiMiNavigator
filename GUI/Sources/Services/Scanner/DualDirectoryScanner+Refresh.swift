@@ -7,41 +7,28 @@
 import FileModelKit
 import Foundation
 
-// MARK: - Scan Timeout Error
-
-private struct ScanTimeoutError: LocalizedError {
-    let path: String
-    let seconds: TimeInterval
-    var errorDescription: String? {
-        let secondsText = String(format: "%.1f", seconds)
-        return "Scan timed out after \(secondsText)s: \(path)"
-    }
+// MARK: - Scanner Panel State
+struct ScannerPanelState {
+    let url: URL
+    let showHidden: Bool
+    let sortKey: SortKeysEnum
+    let sortAsc: Bool
 }
 
-// MARK: - Scan Race Result
-
-private enum ScanRaceOutput: @unchecked Sendable {
-    case success([CustomFile])
-    case timeout
-    case failure(String)
+// MARK: - Scan Attempt Context
+struct ScanAttemptContext {
+    let side: FavPanelSide
+    let generation: Int
+    let showHidden: Bool
+    let sortKey: SortKeysEnum
+    let sortAsc: Bool
+    let scanStart: Date
 }
 
-// MARK: - Scan Race Result
-
-private final class ScanRaceResult: @unchecked Sendable {
-    private let lock = NSLock()
-    private var didResume = false
-    private let continuation: CheckedContinuation<ScanRaceOutput, Never>
-    init(_ continuation: CheckedContinuation<ScanRaceOutput, Never>) {
-        self.continuation = continuation
-    }
-    func resume(_ result: ScanRaceOutput) {
-        lock.lock()
-        defer { lock.unlock() }
-        guard !didResume else { return }
-        didResume = true
-        continuation.resume(returning: result)
-    }
+// MARK: - Scan Attempt Result
+enum ScanAttemptResult: Equatable {
+    case continueScanning
+    case stop
 }
 
 extension DualDirectoryScanner {
@@ -70,7 +57,6 @@ extension DualDirectoryScanner {
 
         return true
     }
-
 
     /// Adaptive cooldown: big slow dirs get longer cooldown.
     /// Base = 3s, but if last scan took >5s, cooldown = min(scanDuration * 3, 120s).
@@ -190,20 +176,26 @@ extension DualDirectoryScanner {
         AppState.isRemotePath(url)
     }
 
+    // MARK: - Current Panel State
     @MainActor
-    func currentPanelState(for side: FavPanelSide) -> (url: URL, showHidden: Bool, sortKey: SortKeysEnum, sortAsc: Bool) {
+    func currentPanelState(for side: FavPanelSide) -> ScannerPanelState {
         let panelURL = side == .left ? appState.leftURL : appState.rightURL
         let hidden = UserPreferences.shared.snapshot.showHiddenFiles
-        return (panelURL, hidden, appState.sortKey, appState.bSortAscending)
+        return ScannerPanelState(
+            url: panelURL,
+            showHidden: hidden,
+            sortKey: appState.sortKey,
+            sortAsc: appState.bSortAscending
+        )
     }
 
     @MainActor
     func currentPanelPathOnMain(for side: FavPanelSide) -> String {
         switch side {
-            case .left:
-                return appState.leftURL.path
-            case .right:
-                return appState.rightURL.path
+        case .left:
+            return appState.leftURL.path
+        case .right:
+            return appState.rightURL.path
         }
     }
 
@@ -227,10 +219,9 @@ extension DualDirectoryScanner {
         var seen = Set<String>()
         var candidates: [URL] = []
 
-        for candidate in [originalURL, aliasResolvedURL, symlinkResolvedURL] {
-            if seen.insert(candidate.path).inserted {
-                candidates.append(candidate)
-            }
+        for candidate in [originalURL, aliasResolvedURL, symlinkResolvedURL]
+        where seen.insert(candidate.path).inserted {
+            candidates.append(candidate)
         }
 
         return candidates
@@ -281,7 +272,14 @@ extension DualDirectoryScanner {
         let showHidden = panelState.showHidden
         let sortKey = panelState.sortKey
         let sortAsc = panelState.sortAsc
-        if await recoverMissingDirectoryIfNeeded(originalURL, side: currSide, generation: generation, showHidden: showHidden, sortKey: sortKey, sortAsc: sortAsc) {
+        let recoveryContext = ScanRecoveryContext(
+            side: currSide,
+            generation: generation,
+            showHidden: showHidden,
+            sortKey: sortKey,
+            sortAsc: sortAsc
+        )
+        if await recoverMissingDirectoryIfNeeded(originalURL, context: recoveryContext) {
             return
         }
 
@@ -291,246 +289,18 @@ extension DualDirectoryScanner {
             return
         }
 
-        let urlsToTry = resolvedCandidateURLs(for: originalURL)
-
-        for (index, url) in urlsToTry.enumerated() {
-            log.info("[Scan] Attempt \(index + 1)/\(urlsToTry.count): \(url.path)")
-
-            guard validateDirectoryURL(url) else {
-                continue
-            }
-
-            do {
-                let attemptStart = Date()
-                let sorted = try await scanAndSortDirectory(
-                    at: url,
-                    showHidden: showHidden,
-                    sortKey: sortKey,
-                    sortAsc: sortAsc
-                )
-                let scanSortDuration = Date().timeIntervalSince(attemptStart)
-
-                if !isCurrentGeneration(generation, for: currSide) {
-                    let currentGeneration = scanGeneration[currSide] ?? -1
-                    log.debug("[Scan] Ignoring stale scan result side=\(currSide) gen=\(generation) current=\(currentGeneration)")
-                    return
-                }
-
-                if sorted.count > progressivePreviewThreshold {
-                    let preview = Array(sorted.prefix(progressivePreviewThreshold))
-                    await MainActor.run {
-                        AutoFitScheduler.shared.runInitialPublishFit(panel: currSide, files: preview)
-                        applyPreviewFiles(preview, for: currSide)
-                    }
-                }
-
-                if !isCurrentGeneration(generation, for: currSide) {
-                    let currentGeneration = scanGeneration[currSide] ?? -1
-                    log.debug(
-                        "[Scan] Ignoring post-preview stale result side=\(currSide) gen=\(generation) current=\(currentGeneration)"
-                    )
-                    return
-                }
-
-                let duration = Date().timeIntervalSince(scanStart)
-                let durationText = String(format: "%.3f", duration)
-                let scanSortText = String(format: "%.3f", scanSortDuration)
-                log.info("[Scan] scan/sort succeeded for \(url.path): \(sorted.count) items gen=\(generation) scanSort=\(scanSortText)s total=\(durationText)s")
-
-                let isTerminatingBeforePublish = await MainActor.run { appState.isTerminating }
-                guard !isTerminatingBeforePublish else {
-                    log.info("[Scan] publish skipped: app is terminating for \(currSide) gen=\(generation)")
-                    return
-                }
-
-                let publishStart = Date()
-                lastFullScan[currSide] = Date()
-                lastScanDuration[currSide] = scanSortDuration
-                await DirectoryContentCache.shared.store(path: url.path, files: sorted, showHidden: showHidden)
-                await publishSuccessfulScan(sorted, scannedPath: url.path, for: currSide)
-                let publishDuration = Date().timeIntervalSince(publishStart)
-                logSlowScanIfNeeded(
-                    path: url.path,
-                    side: currSide,
-                    generation: generation,
-                    itemCount: sorted.count,
-                    scanSortDuration: scanSortDuration,
-                    publishDuration: publishDuration,
-                    totalDuration: Date().timeIntervalSince(scanStart)
-                )
-                return
-            } catch let error as ScanTimeoutError {
-                log.warning("[Scan] \(error.localizedDescription) — trying cache fallback")
-                await serveCachedOnTimeout(url: url, side: currSide, generation: generation, showHidden: showHidden)
-                return
-            } catch let error as NSError {
-                if isPermissionDeniedError(error) {
-                    log.debug("[Scan] Permission denied, trying bookmark recovery for: \(url.path)")
-                    let recovered = await requestAndRetryAccess(for: url, side: currSide)
-                    if recovered {
-                        return
-                    }
-                    break
-                }
-
-                log.error("[Scan] Attempt \(index + 1) failed: \(error.localizedDescription)")
-            }
-        }
-
-        let duration = Date().timeIntervalSince(scanStart)
-        let durationText = String(format: "%.3f", duration)
-        log.debug(
-            "[Scan] Scan finished without access side=\(currSide) path='\(originalURL.path)' gen=\(generation) in \(durationText)s")
-    }
-
-    func scanAndSortDirectory(
-        at url: URL,
-        showHidden: Bool,
-        sortKey: SortKeysEnum,
-        sortAsc: Bool
-    ) async throws -> [CustomFile] {
-        let scanTask = Task.detached(priority: .userInitiated) {
-            let scanned = try FileScanner.scan(url: url, showHiddenFiles: showHidden)
-            return FileSortingService.sort(scanned, by: sortKey, bDirection: sortAsc)
-        }
-        // Always apply timeout: mounted volumes get short one, everything else gets generic
-        let timeout = effectiveTimeout(for: url)
-        return try await scanWithTimeout(scanTask, url: url, timeout: timeout)
-    }
-
-
-    // MARK: - Effective Timeout
-
-    /// Mounted volumes get the short timeout; local dirs get genericScanTimeout.
-    func effectiveTimeout(for url: URL) -> TimeInterval {
-        if url.path == "/Volumes" || (url.path.hasPrefix("/Volumes/") && url.path != "/Volumes") {
-            return mountedVolumeScanTimeout
-        }
-        if AppState.isAppManagedNetworkMountPath(url) {
-            return mountedVolumeScanTimeout
-        }
-        return genericScanTimeout
-    }
-
-
-    // MARK: - Mounted Volume Timeout (legacy compat)
-
-    func shouldTimeoutSlowVolumeScan(_ url: URL) -> Bool {
-        url.path == "/Volumes" || (url.path.hasPrefix("/Volumes/") && url.path != "/Volumes")
-    }
-
-    func scanWithTimeout(
-        _ scanTask: Task<[CustomFile], Error>,
-        url: URL,
-        timeout: TimeInterval? = nil
-    ) async throws -> [CustomFile] {
-        let effectiveTimeout = timeout ?? mountedVolumeScanTimeout
-        let result = await withCheckedContinuation { continuation in
-            let race = ScanRaceResult(continuation)
-            Task {
-                do {
-                    race.resume(.success(try await scanTask.value))
-                } catch {
-                    race.resume(.failure(error.localizedDescription))
-                }
-            }
-            Task {
-                let timeoutNanoseconds = UInt64(effectiveTimeout * 1_000_000_000)
-                try? await Task.sleep(nanoseconds: timeoutNanoseconds)
-                scanTask.cancel()
-                race.resume(.timeout)
-            }
-        }
-        switch result {
-            case .success(let files):
-                return files
-            case .timeout:
-                throw ScanTimeoutError(path: url.path, seconds: effectiveTimeout)
-            case .failure(let message):
-                throw NSError(
-                    domain: NSCocoaErrorDomain,
-                    code: NSFileReadUnknownError,
-                    userInfo: [NSLocalizedDescriptionKey: message]
-                )
-        }
-    }
-
-    // MARK: - Missing Directory Recovery
-    func recoverMissingDirectoryIfNeeded(
-        _ url: URL,
-        side: FavPanelSide,
-        generation: Int,
-        showHidden: Bool,
-        sortKey: SortKeysEnum,
-        sortAsc: Bool
-    ) async -> Bool {
-        guard url.isFileURL, !AppState.isExistingDirectory(url.path) else { return false }
-        guard let fallbackURL = nearestExistingReadableDirectory(from: url), fallbackURL.path != url.path else { return false }
-        log.warning("[Scan] current directory disappeared side=\(side) path='\(url.path)' fallback='\(fallbackURL.path)'")
-        await MainActor.run {
-            appState.updatePath(fallbackURL, for: side)
-        }
-        startFSEvents(for: side, url: fallbackURL)
-        do {
-            let sorted = try await scanAndSortDirectory(at: fallbackURL, showHidden: showHidden, sortKey: sortKey, sortAsc: sortAsc)
-            guard isCurrentGeneration(generation, for: side) else { return true }
-            lastFullScan[side] = Date()
-            await DirectoryContentCache.shared.store(path: fallbackURL.path, files: sorted, showHidden: showHidden)
-            await publishSuccessfulScan(sorted, scannedPath: fallbackURL.path, for: side)
-        } catch {
-            log.error("[Scan] fallback scan failed side=\(side) path='\(fallbackURL.path)' error=\(error.localizedDescription)")
-        }
-        return true
-    }
-
-    // MARK: - Nearest Existing Readable Directory
-    func nearestExistingReadableDirectory(from url: URL) -> URL? {
-        var candidate = url.deletingLastPathComponent()
-        while candidate.path != "/" {
-            if AppState.isReadableDirectory(candidate.path) {
-                return candidate
-            }
-            let parent = candidate.deletingLastPathComponent()
-            if parent.path == candidate.path { break }
-            candidate = parent
-        }
-        return AppState.isReadableDirectory("/") ? URL(fileURLWithPath: "/") : nil
-    }
-
-    // MARK: - Slow Scan Diagnostics
-    func logSlowScanIfNeeded(
-        path: String,
-        side: FavPanelSide,
-        generation: Int,
-        itemCount: Int,
-        scanSortDuration: TimeInterval,
-        publishDuration: TimeInterval,
-        totalDuration: TimeInterval
-    ) {
-        guard totalDuration >= 2 || scanSortDuration >= 2 || publishDuration >= 1 else { return }
-        let scanSortText = String(format: "%.3f", scanSortDuration)
-        let publishText = String(format: "%.3f", publishDuration)
-        let totalText = String(format: "%.3f", totalDuration)
-        log.warning("[Scan] slow refresh side=\(side) gen=\(generation) path='\(path)' items=\(itemCount) scanSort=\(scanSortText)s publish=\(publishText)s total=\(totalText)s")
-    }
-
-    // MARK: - Cache Fallback on Timeout
-
-    /// When a scan times out, serve previously cached data so UI doesn't go blank.
-    /// The user sees stale-but-valid listing instead of an empty panel.
-    private func serveCachedOnTimeout(
-        url: URL,
-        side: FavPanelSide,
-        generation: Int,
-        showHidden: Bool
-    ) async {
-        guard isCurrentGeneration(generation, for: side) else { return }
-        if let cached = await DirectoryContentCache.shared.lookup(url.path, showHidden: showHidden) {
-            log.info("[Scan] serving \(cached.files.count) cached items after timeout for \(url.path)")
-            lastFullScan[side] = Date()
-            await publishSuccessfulScan(cached.files, scannedPath: url.path, for: side)
-        } else {
-            log.warning("[Scan] no cache available after timeout for \(url.path) — panel stays as-is")
-        }
+        let context = ScanAttemptContext(
+            side: currSide,
+            generation: generation,
+            showHidden: showHidden,
+            sortKey: sortKey,
+            sortAsc: sortAsc,
+            scanStart: scanStart
+        )
+        await performLocalScanAttempts(
+            resolvedCandidateURLs(for: originalURL),
+            originalURL: originalURL,
+            context: context
+        )
     }
 }

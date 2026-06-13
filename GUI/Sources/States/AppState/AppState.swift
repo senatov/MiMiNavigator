@@ -122,6 +122,7 @@ final class AppState {
 
     // MARK: - Init
     init() {
+        DefaultMimiHomeInstaller.installMissingFiles()
         log.info("[AppState] init")
         let paths = StatePersistence.loadInitialPaths()
         leftPanel = PanelState(currentDirectory: paths.left)

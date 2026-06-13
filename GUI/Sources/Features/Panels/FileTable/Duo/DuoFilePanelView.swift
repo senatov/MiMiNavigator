@@ -25,8 +25,6 @@ struct DuoFilePanelView: View {
 
     // MARK: - Constants
     private enum Layout {
-        static let dividerHitAreaWidth: CGFloat = 24
-        static let minPanelWidth: CGFloat = 80
         static let defaultBackingScale: CGFloat = 2.0
         static let finderSidebarWidth: CGFloat = 220
         static let finderSidebarHiddenOffset: CGFloat = -18
@@ -58,7 +56,7 @@ struct DuoFilePanelView: View {
         .onChange(of: leftPanelWidth) { _, newValue in
             guard newValue > 0, isInitialized else { return }
             MiMiDefaults.shared.set(newValue, forKey: "leftPanelWidth")
-            MiMiDefaults.shared.set(savedLeftPanelRatio(for: newValue), forKey: "leftPanelWidthRatio")
+            MiMiDefaults.shared.set(savedLeftPanelRatio(for: newValue, containerWidth: lastContainerWidth), forKey: "leftPanelWidthRatio")
         }
         .overlay {
             progressOverlay
@@ -138,7 +136,7 @@ struct DuoFilePanelView: View {
     // MARK: - Panels Width
     private func panelsContainerWidth(for totalWidth: CGFloat) -> CGFloat {
         let sidebarWidth = isFinderSidebarVisible ? Layout.finderSidebarWidth : 0
-        return max(totalWidth - sidebarWidth, Layout.minPanelWidth * 2 + Layout.dividerHitAreaWidth)
+        return max(totalWidth - sidebarWidth, 0)
     }
 
     private func scheduleGeometryWidthUpdate(_ width: CGFloat) {
@@ -248,11 +246,11 @@ struct DuoFilePanelView: View {
     }
 
     private func availablePanelWidth(containerWidth: CGFloat) -> CGFloat {
-        max(containerWidth - Layout.dividerHitAreaWidth, Layout.minPanelWidth * 2)
+        PanelDividerMetrics.availablePanelWidth(containerWidth: containerWidth)
     }
 
-    private func savedLeftPanelRatio(for width: CGFloat) -> CGFloat {
-        let availableWidth = availablePanelWidth(containerWidth: max(width + Layout.dividerHitAreaWidth, 1))
+    private func savedLeftPanelRatio(for width: CGFloat, containerWidth: CGFloat) -> CGFloat {
+        let availableWidth = availablePanelWidth(containerWidth: containerWidth)
         guard availableWidth > 0 else { return 0.5 }
         return min(max(width / availableWidth, 0), 1)
     }
@@ -346,10 +344,9 @@ extension DuoFilePanelView {
     }
 
     private func calculateConstrainedWidth(proposed: CGFloat, containerWidth: CGFloat) -> CGFloat {
-        let maxWidth = containerWidth - Layout.minPanelWidth - Layout.dividerHitAreaWidth
         let snapped = (proposed * screenScale).rounded() / screenScale
-        let result = min(max(snapped, Layout.minPanelWidth), maxWidth)
-        log.debug("\(#function) proposed=\(Int(proposed)) max=\(Int(maxWidth)) → result=\(Int(result))")
+        let result = PanelDividerMetrics.constrainedLeftWidth(snapped, containerWidth: containerWidth)
+        log.debug("\(#function) proposed=\(Int(proposed)) container=\(Int(containerWidth)) → result=\(Int(result))")
         return result
     }
 }

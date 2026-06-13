@@ -11,7 +11,6 @@ import SwiftUI
 
 // MARK: - Command Bar Appearance Defaults
 enum CommandBarAppearanceDefaults {
-    static let backgroundHex = "#D6D9DE"
     static let backgroundColor =
         Color(#colorLiteral(red: 0.84, green: 0.85, blue: 0.87, alpha: 1))
     static let moireIntensity = 0.28
@@ -22,7 +21,7 @@ enum CommandBarAppearanceDefaults {
 struct DuoPanelToolbarBackground: View {
     let cornerRadius: CGFloat
     @AppStorage("color.commandBarBackground")
-    private var hexBackground = CommandBarAppearanceDefaults.backgroundHex
+    private var hexBackground: String = ""
     @AppStorage("commandBar.moireIntensity")
     private var moireIntensity = CommandBarAppearanceDefaults.moireIntensity
 
@@ -47,7 +46,7 @@ struct DuoPanelToolbarBackground: View {
             stops: [
                 .init(color: backgroundColor.opacity(0.90), location: 0),
                 .init(color: backgroundColor.opacity(0.96), location: 0.58),
-                .init(color: backgroundColor, location: 1),
+                .init(color: backgroundColor, location: 1)
             ],
             startPoint: .top,
             endPoint: .bottom
@@ -67,7 +66,7 @@ struct DuoPanelToolbarBackground: View {
                         Color.white.opacity(moireIntensity * 0.34),
                         Color.clear,
                         Color.black.opacity(moireIntensity * 0.12),
-                        Color.white.opacity(moireIntensity * 0.10),
+                        Color.white.opacity(moireIntensity * 0.10)
                     ],
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
@@ -82,7 +81,7 @@ struct DuoPanelToolbarBackground: View {
                     colors: [
                         Color.white.opacity(0.48 + moireIntensity * 0.20),
                         Color.white.opacity(0.08),
-                        Color.black.opacity(0.10 + moireIntensity * 0.10),
+                        Color.black.opacity(0.10 + moireIntensity * 0.10)
                     ],
                     startPoint: .top,
                     endPoint: .bottom

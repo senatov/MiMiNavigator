@@ -44,4 +44,20 @@ enum PanelDividerMetrics {
     static let glyphWidth: CGFloat = 1.25
     static let glyphHeight: CGFloat = 14
     static let glyphSpacing: CGFloat = 3.5
+
+    // MARK: - Width Constraints
+    static func availablePanelWidth(containerWidth: CGFloat) -> CGFloat {
+        max(containerWidth - hitAreaWidth, 0)
+    }
+
+    static func minimumPanelWidth(containerWidth: CGFloat) -> CGFloat {
+        min(minPanelWidth, availablePanelWidth(containerWidth: containerWidth) / 2)
+    }
+
+    static func constrainedLeftWidth(_ proposed: CGFloat, containerWidth: CGFloat) -> CGFloat {
+        let availableWidth = availablePanelWidth(containerWidth: containerWidth)
+        let minimumWidth = minimumPanelWidth(containerWidth: containerWidth)
+        let maximumWidth = max(minimumWidth, availableWidth - minimumWidth)
+        return min(max(proposed, minimumWidth), maximumWidth)
+    }
 }

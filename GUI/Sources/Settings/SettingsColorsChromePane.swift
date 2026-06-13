@@ -25,7 +25,7 @@ struct SettingsColorsChromePane: View, ColorPaneHelpers {
     @AppStorage("color.zebraInactiveOdd")    private var hexZebraInactiveOdd: String = ""
     @AppStorage("color.filterActive")        private var hexFilterActive: String = ""
     @AppStorage("color.commandBarBackground")
-    private var hexCommandBarBackground = CommandBarAppearanceDefaults.backgroundHex
+    private var hexCommandBarBackground: String = ""
     @AppStorage("commandBar.moireIntensity")
     private var commandBarMoireIntensity = CommandBarAppearanceDefaults.moireIntensity
 
@@ -62,8 +62,8 @@ struct SettingsColorsChromePane: View, ColorPaneHelpers {
             paneGroupBox {
                 VStack(spacing: 0) {
                     sectionHeader("Panel Border")
-                    colorRow("Focused panel",   help: "Border — active (focused) panel",
-                             preset: preset.panelBorderActive,   hex: $hexBorderActive,   store: store)
+                    colorRow("Focused panel", help: "Border — active (focused) panel",
+                             preset: preset.panelBorderActive, hex: $hexBorderActive, store: store)
                     Divider()
                     colorRow("Unfocused panel", help: "Border — inactive panel",
                              preset: preset.panelBorderInactive, hex: $hexBorderInactive, store: store)
@@ -88,15 +88,15 @@ struct SettingsColorsChromePane: View, ColorPaneHelpers {
                     colorRow("Even rows", help: "Active panel — even row bg",
                              preset: preset.zebraActiveEven, hex: $hexZebraActiveEven, store: store)
                     Divider()
-                    colorRow("Odd rows",  help: "Active panel — odd row bg",
-                             preset: preset.zebraActiveOdd,  hex: $hexZebraActiveOdd,  store: store)
+                    colorRow("Odd rows", help: "Active panel — odd row bg",
+                             preset: preset.zebraActiveOdd, hex: $hexZebraActiveOdd, store: store)
                     Divider()
                     sectionHeader("Zebra Stripes — Inactive Panel")
                     colorRow("Even rows", help: "Inactive panel — even row bg",
                              preset: preset.zebraInactiveEven, hex: $hexZebraInactiveEven, store: store)
                     Divider()
-                    colorRow("Odd rows",  help: "Inactive panel — odd row bg",
-                             preset: preset.zebraInactiveOdd,  hex: $hexZebraInactiveOdd,  store: store)
+                    colorRow("Odd rows", help: "Inactive panel — odd row bg",
+                             preset: preset.zebraInactiveOdd, hex: $hexZebraInactiveOdd, store: store)
                 }
             }
 
@@ -116,7 +116,7 @@ struct SettingsColorsChromePane: View, ColorPaneHelpers {
                 hexZebraActiveEven   = ""; hexZebraActiveOdd = ""
                 hexZebraInactiveEven = ""; hexZebraInactiveOdd = ""
                 hexFilterActive = ""
-                hexCommandBarBackground = CommandBarAppearanceDefaults.backgroundHex
+                hexCommandBarBackground = ""
                 commandBarMoireIntensity = CommandBarAppearanceDefaults.moireIntensity
                 store.storedPanelBorderWidth = 0
                 store.reloadOverrides()
@@ -138,9 +138,9 @@ struct SettingsColorsChromePane: View, ColorPaneHelpers {
                 ColorPicker("", selection: commandBarColorBinding)
                     .labelsHidden()
                     .frame(width: 28)
-                if hexCommandBarBackground != CommandBarAppearanceDefaults.backgroundHex {
+                if !hexCommandBarBackground.isEmpty {
                     Button {
-                        hexCommandBarBackground = CommandBarAppearanceDefaults.backgroundHex
+                        hexCommandBarBackground = ""
                     } label: {
                         Image(systemName: "arrow.uturn.backward")
                             .font(.system(size: 10))

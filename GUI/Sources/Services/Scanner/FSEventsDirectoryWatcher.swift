@@ -1,270 +1,255 @@
-    // FSEventsDirectoryWatcher.swift
-    // MiMiNavigator
-    //
-    // Created by Iakov Senatov on 27.02.2026.
-    // Copyright © 2026 Senatov. All rights reserved.
-    // Description: Surgical directory change detection via FSEventStreamCreate (kernel-level).
-    //   Watches only the top-level directory (no kFSEventStreamCreateFlagFileEvents) —
-    //   that flag triggers recursive events from all subdirectories which floods the queue
-    //   on large collections like Anki media (26k files, constant writes).
-    //
-    // Strategy:
-    //   • Dir-level events only (no FileEvents flag) → one event per batch of changes
-    //   • Throttle: coalesce rapid bursts into a single callback via latency + DispatchWorkItem
-    //   • Filter: only events whose parent == watchedPath reach onPatch
-    //   • Sorting is done off MainActor before patch delivery
+// FSEventsDirectoryWatcher.swift
+// MiMiNavigator
+//
+// Created by Iakov Senatov on 27.02.2026.
+// Copyright © 2026 Senatov. All rights reserved.
+// Description: Top-level directory change detection via FSEventStreamCreate.
 
-    import CoreServices
-    import FileModelKit
-    import Foundation
+import CoreServices
+import FileModelKit
+import Foundation
 
-    // MARK: - FSEvents Directory Watcher
-
-    final class FSEventsDirectoryWatcher: @unchecked Sendable {
-
-        // MARK: - Types
-
-        struct DirectoryPatch: Sendable {
-            // Paths with updated childCount (subdirectory changes)
-            let childCountUpdates: [String: Int]
-            let addedOrModified: [CustomFile]
-            let removedPaths: [String]
-            let watchedPath: String
-            /// True when the watched directory itself was reported changed (dir-level event).
-            /// Signals that a full rescan is needed because we cannot determine removals incrementally.
-            let needsFullRescan: Bool
-        }
-
-        // MARK: - State
-
-        private(set) var watchedPath: String = ""
-        private var stream: FSEventStreamRef?
-        private let callbackQueue = DispatchQueue(label: "mimi.fsevents", qos: .utility)
-        private let onPatch: @Sendable (DirectoryPatch) -> Void
-        private var showHiddenFiles: Bool = false
-
-        // Throttle: discard bursts — only process last event after quiet period
-        private var pendingWork: DispatchWorkItem?
-        private let throttleDelay: TimeInterval = 0.3
-
-        // FSEvents kernel-side coalescing latency
-        private static let latency: CFTimeInterval = 0.5
-
-        // MARK: - Init
-
-        init(onPatch: @escaping @Sendable (DirectoryPatch) -> Void) {
-            self.onPatch = onPatch
-        }
-
-        // MARK: - Start / Stop
-
-        @discardableResult
-        func watch(path: String, showHiddenFiles: Bool) -> Bool {
-            stop()
-            guard !path.isEmpty else { return false }
-            watchedPath = path
-            self.showHiddenFiles = showHiddenFiles
-            let pathsToWatch = [path] as CFArray
-            var context = FSEventStreamContext(
-                version: 0,
-                info: Unmanaged.passRetained(self).toOpaque(),
-                retain: nil,
-                release: { ptr in
-                    if let p = ptr { Unmanaged<FSEventsDirectoryWatcher>.fromOpaque(p).release() }
-                },
-                copyDescription: nil
-            )
-            // NOTE: NO kFSEventStreamCreateFlagFileEvents — that flag causes recursive subtree
-            // events which floods the queue on directories with active subdirs (e.g. Anki media).
-            // Dir-level events are sufficient: one event fires when anything in the dir changes.
-            // kFSEventStreamCreateFlagNoDefer removed: it bypasses kernel-side batching
-            // and causes 3x duplicate callbacks per event. latency=0.5s + throttle=0.3s suffice.
-            let flags = UInt32(
-                kFSEventStreamCreateFlagUseCFTypes
-                | kFSEventStreamCreateFlagWatchRoot
-            )
-            let callback: FSEventStreamCallback = { _, infoPtr, numEvents, eventPaths, eventFlags, _ in
-                guard let infoPtr else { return }
-                let watcher = Unmanaged<FSEventsDirectoryWatcher>.fromOpaque(infoPtr).takeUnretainedValue()
-                let cfPaths = Unmanaged<CFArray>.fromOpaque(eventPaths).takeUnretainedValue()
-                guard let rawPaths = cfPaths as? [String] else { return }
-                let flagsArray = Array(UnsafeBufferPointer(start: eventFlags, count: numEvents))
-                watcher.scheduleHandleEvents(paths: rawPaths, flags: flagsArray)
-            }
-            guard let s = FSEventStreamCreate(
-                kCFAllocatorDefault,
-                callback,
-                &context,
-                pathsToWatch,
-                FSEventStreamEventId(kFSEventStreamEventIdSinceNow),
-                Self.latency,
-                flags
-            ) else {
-                log.error("[FSEvents] FSEventStreamCreate FAILED for '\(path)'")
-                return false
-            }
-            FSEventStreamSetDispatchQueue(s, callbackQueue)
-            guard FSEventStreamStart(s) else {
-                FSEventStreamInvalidate(s)
-                FSEventStreamRelease(s)
-                log.error("[FSEvents] FSEventStreamStart FAILED for '\(path)'")
-                return false
-            }
-            stream = s
-            log.info("[FSEvents] watching '\(path)'")
-            return true
-        }
-
-        func stop() {
-            pendingWork?.cancel()
-            pendingWork = nil
-            guard let s = stream else { return }
-            FSEventStreamStop(s)
-            FSEventStreamInvalidate(s)
-            FSEventStreamRelease(s)
-            stream = nil
-            log.info("[FSEvents] stopped watching '\(watchedPath)'")
-        }
-
-        // MARK: - Throttle
-
-        /// Coalesces rapid bursts: cancels previous work item, schedules new one after throttleDelay.
-        private func scheduleHandleEvents(paths: [String], flags: [FSEventStreamEventFlags]) {
-            pendingWork?.cancel()
-            //log.debug("[FSEvents] scheduleHandleEvents: \(paths.count) paths for '\(watchedPath)': \(paths)")
-            let work = DispatchWorkItem { [weak self] in
-                self?.handleEvents(paths: paths, flags: flags)
-            }
-            pendingWork = work
-            callbackQueue.asyncAfter(deadline: .now() + throttleDelay, execute: work)
-        }
-
-        // MARK: - Event handling (runs on callbackQueue — NOT MainActor)
-        private func handleEvents(paths: [String], flags: [FSEventStreamEventFlags]) {
-            let watched = watchedPath
-            let fm = FileManager.default
-            let hidden = showHiddenFiles
-            var directChildren: [String] = []
-            var childCountUpdates: [String: Int] = [:]
-
-            var watchedDirChanged = false
-            for p in paths {
-                let cleanPath = p.hasSuffix("/") ? String(p.dropLast()) : p
-                // Dir-level FSEvents (no kFSEventStreamCreateFlagFileEvents) returns
-                // the watched directory path itself when any direct child changes.
-                // Enumerate all current children to detect adds/removes.
-                if cleanPath == watched {
-                    watchedDirChanged = true
-                    continue
-                }
-                let url = URL(fileURLWithPath: cleanPath)
-                let parent = url.deletingLastPathComponent().path
-                if parent == watched {
-                    directChildren.append(p)
-                } else {
-                    let relPath = String(p.dropFirst(watched.count + 1))
-                    if let firstSlash = relPath.firstIndex(of: "/") {
-                        let subdirName = String(relPath[..<firstSlash])
-                        let subdirPath = (watched as NSString).appendingPathComponent(subdirName)
-                        if childCountUpdates[subdirPath] == nil {
-                            // Ask OS for updated child count (single cached VFS call, no enumeration)
-                            let subdirURL = URL(fileURLWithPath: subdirPath)
-                            if let rv = try? subdirURL.resourceValues(forKeys: [.directoryEntryCountKey]),
-                               let count = rv.directoryEntryCount {
-                                childCountUpdates[subdirPath] = count
-                            }
-                        }
-                    }
-                }
-            }
-            // When dir-level event fires for watched dir itself, trigger full rescan.
-            // Dir-level FSEvents cannot tell us which files were added/removed —
-            // only that "something changed" in the directory.
-            //log.debug("[FSEvents] handleEvents: watchedDirChanged=\(watchedDirChanged) directChildren=\(directChildren.count) childCountUpdates=\(childCountUpdates.count)")
-            if watchedDirChanged && directChildren.isEmpty {
-                log.info("[FSEvents] watched dir event → full rescan for '\(watched)' (debounced)")
-
-                let patch = DirectoryPatch(
-                    childCountUpdates: childCountUpdates,
-                    addedOrModified: [],
-                    removedPaths: [],
-                    watchedPath: watched,
-                    needsFullRescan: true
-                )
-                onPatch(patch)
-                return
-            }
-            guard !directChildren.isEmpty || !childCountUpdates.isEmpty else { return }
-
-            var added: [CustomFile] = []
-            var removed: [String] = []
-
-            for p in directChildren {
-                let cleanPath = p.hasSuffix("/") ? String(p.dropLast()) : p
-
-                // Skip if this is the watched directory itself
-                if cleanPath == watched { continue }
-                let url = URL(fileURLWithPath: cleanPath)
-                if fm.fileExists(atPath: cleanPath) {
-                    if !hidden && url.lastPathComponent.hasPrefix(".") { continue }
-                    // For existing directories: dir-level FSEvents fires when contents change,
-                    // NOT when the directory itself was added. Only update childCount.
-                    var isDirFlag = ObjCBool(false)
-                    _ = fm.fileExists(atPath: cleanPath, isDirectory: &isDirFlag)
-                    if isDirFlag.boolValue {
-                        // Ask OS for child count (single cached VFS call, no enumeration)
-                        let dirURL = URL(fileURLWithPath: cleanPath)
-                        if let rv = try? dirURL.resourceValues(forKeys: [.directoryEntryCountKey]),
-                           let count = rv.directoryEntryCount {
-                            childCountUpdates[cleanPath] = count
-                        }
-                        // Still create/update the CustomFile entry for genuine adds
-                        // but only if this is flagged as a new item (not already in the list).
-                        // Since we can't check the existing list here (we're off MainActor),
-                        // always include it — applyPatch will merge by pathStr.
-                        let keys: Set<URLResourceKey> = [
-                            .isDirectoryKey, .isSymbolicLinkKey, .isAliasFileKey,
-                            .fileSizeKey, .contentModificationDateKey, .fileSecurityKey,
-                            .directoryEntryCountKey, .creationDateKey,
-                            .contentAccessDateKey, .addedToDirectoryDateKey,
-                        ]
-                        if let rv = try? url.resourceValues(forKeys: keys) {
-                            let file = CustomFile(url: url, resourceValues: rv)
-                            added.append(file)
-                        }
-                    } else {
-                        let keys: Set<URLResourceKey> = [
-                            .isDirectoryKey, .isSymbolicLinkKey, .isAliasFileKey,
-                            .fileSizeKey, .contentModificationDateKey, .fileSecurityKey,
-                            .directoryEntryCountKey, .creationDateKey,
-                            .contentAccessDateKey, .addedToDirectoryDateKey,
-                        ]
-                        if let rv = try? url.resourceValues(forKeys: keys) {
-                            added.append(CustomFile(url: url, resourceValues: rv))
-                        } else {
-                            added.append(CustomFile(name: url.lastPathComponent, path: cleanPath))
-                        }
-                    }
-                } else {
-                    removed.append(cleanPath)
-                }
-            }
-
-            if !directChildren.isEmpty {
-                log.info("[FSEvents] \(directChildren.count) item(s) changed in '\(watched)'")
-            }
-            if !childCountUpdates.isEmpty {
-            }
-
-            let patch = DirectoryPatch(
-                childCountUpdates: childCountUpdates,
-                addedOrModified: added,
-                removedPaths: removed,
-                watchedPath: watched,
-                needsFullRescan: false
-            )
-            onPatch(patch)
-        }
-
-        deinit { stop() }
+// MARK: - FSEvents Directory Watcher
+final class FSEventsDirectoryWatcher: @unchecked Sendable {
+    // MARK: - Directory Patch
+    struct DirectoryPatch: Sendable {
+        let childCountUpdates: [String: Int]
+        let addedOrModified: [CustomFile]
+        let removedPaths: [String]
+        let watchedPath: String
+        let needsFullRescan: Bool
     }
+
+    // MARK: - Event Classification
+    private struct EventClassification {
+        var directChildren: [String] = []
+        var childCountUpdates: [String: Int] = [:]
+        var watchedDirectoryChanged = false
+    }
+
+    // MARK: - State
+    private(set) var watchedPath = ""
+    private var stream: FSEventStreamRef?
+    private let callbackQueue = DispatchQueue(label: "mimi.fsevents", qos: .utility)
+    private let onPatch: @Sendable (DirectoryPatch) -> Void
+    private var showHiddenFiles = false
+    private var pendingWork: DispatchWorkItem?
+    private let throttleDelay: TimeInterval = 0.3
+    private static let latency: CFTimeInterval = 0.5
+    private static let resourceKeys: Set<URLResourceKey> = [
+        .isDirectoryKey,
+        .isSymbolicLinkKey,
+        .isAliasFileKey,
+        .fileSizeKey,
+        .contentModificationDateKey,
+        .fileSecurityKey,
+        .directoryEntryCountKey,
+        .creationDateKey,
+        .contentAccessDateKey,
+        .addedToDirectoryDateKey
+    ]
+
+    // MARK: - Init
+    init(onPatch: @escaping @Sendable (DirectoryPatch) -> Void) {
+        self.onPatch = onPatch
+    }
+
+    // MARK: - Watch
+    @discardableResult
+    func watch(path: String, showHiddenFiles: Bool) -> Bool {
+        stop()
+        guard !path.isEmpty else { return false }
+        watchedPath = path
+        self.showHiddenFiles = showHiddenFiles
+        var context = FSEventStreamContext(
+            version: 0,
+            info: Unmanaged.passUnretained(self).toOpaque(),
+            retain: nil,
+            release: nil,
+            copyDescription: nil
+        )
+        let callback: FSEventStreamCallback = { _, info, _, eventPaths, _, _ in
+            guard let info else { return }
+            let watcher = Unmanaged<FSEventsDirectoryWatcher>.fromOpaque(info).takeUnretainedValue()
+            let cfPaths = Unmanaged<CFArray>.fromOpaque(eventPaths).takeUnretainedValue()
+            guard let paths = cfPaths as? [String] else { return }
+            watcher.scheduleHandleEvents(paths: paths)
+        }
+        let flags = UInt32(
+            kFSEventStreamCreateFlagUseCFTypes
+                | kFSEventStreamCreateFlagWatchRoot
+        )
+        guard let newStream = FSEventStreamCreate(
+            kCFAllocatorDefault,
+            callback,
+            &context,
+            [path] as CFArray,
+            FSEventStreamEventId(kFSEventStreamEventIdSinceNow),
+            Self.latency,
+            flags
+        ) else {
+            log.error("[FSEvents] stream creation failed for '\(path)'")
+            return false
+        }
+        FSEventStreamSetDispatchQueue(newStream, callbackQueue)
+        guard FSEventStreamStart(newStream) else {
+            FSEventStreamInvalidate(newStream)
+            FSEventStreamRelease(newStream)
+            log.error("[FSEvents] stream start failed for '\(path)'")
+            return false
+        }
+        stream = newStream
+        log.info("[FSEvents] watching '\(path)'")
+        return true
+    }
+
+    // MARK: - Stop
+    func stop() {
+        pendingWork?.cancel()
+        pendingWork = nil
+        guard let stream else { return }
+        FSEventStreamStop(stream)
+        FSEventStreamInvalidate(stream)
+        FSEventStreamRelease(stream)
+        self.stream = nil
+        log.info("[FSEvents] stopped watching '\(watchedPath)'")
+    }
+
+    // MARK: - Schedule Event Handling
+    private func scheduleHandleEvents(paths: [String]) {
+        pendingWork?.cancel()
+        let work = DispatchWorkItem { [weak self] in
+            self?.handleEvents(paths: paths)
+        }
+        pendingWork = work
+        callbackQueue.asyncAfter(deadline: .now() + throttleDelay, execute: work)
+    }
+
+    // MARK: - Handle Events
+    private func handleEvents(paths: [String]) {
+        let watched = watchedPath
+        var classification = classifyEvents(paths, watchedPath: watched)
+        if classification.watchedDirectoryChanged && classification.directChildren.isEmpty {
+            log.info("[FSEvents] watched directory changed; full rescan for '\(watched)'")
+            onPatch(makeFullRescanPatch(watchedPath: watched, childCounts: classification.childCountUpdates))
+            return
+        }
+        guard !classification.directChildren.isEmpty || !classification.childCountUpdates.isEmpty else { return }
+        let changes = collectDirectChanges(
+            classification.directChildren,
+            childCounts: &classification.childCountUpdates
+        )
+        log.info("[FSEvents] \(classification.directChildren.count) item(s) changed in '\(watched)'")
+        onPatch(DirectoryPatch(
+            childCountUpdates: classification.childCountUpdates,
+            addedOrModified: changes.added,
+            removedPaths: changes.removed,
+            watchedPath: watched,
+            needsFullRescan: false
+        ))
+    }
+
+    // MARK: - Classify Events
+    private func classifyEvents(_ paths: [String], watchedPath: String) -> EventClassification {
+        var result = EventClassification()
+        for path in paths {
+            let cleanPath = normalizedPath(path)
+            if cleanPath == watchedPath {
+                result.watchedDirectoryChanged = true
+                continue
+            }
+            let parent = URL(fileURLWithPath: cleanPath).deletingLastPathComponent().path
+            if parent == watchedPath {
+                result.directChildren.append(cleanPath)
+                continue
+            }
+            guard let subdirectoryPath = topLevelSubdirectoryPath(for: cleanPath, watchedPath: watchedPath),
+                  result.childCountUpdates[subdirectoryPath] == nil,
+                  let count = directoryEntryCount(at: subdirectoryPath)
+            else {
+                continue
+            }
+            result.childCountUpdates[subdirectoryPath] = count
+        }
+        return result
+    }
+
+    // MARK: - Collect Direct Changes
+    private func collectDirectChanges(
+        _ paths: [String],
+        childCounts: inout [String: Int]
+    ) -> (added: [CustomFile], removed: [String]) {
+        var added: [CustomFile] = []
+        var removed: [String] = []
+        for path in paths {
+            guard FileManager.default.fileExists(atPath: path) else {
+                removed.append(path)
+                continue
+            }
+            let url = URL(fileURLWithPath: path)
+            if !showHiddenFiles && url.lastPathComponent.hasPrefix(".") { continue }
+            if isDirectory(path), let count = directoryEntryCount(at: path) {
+                childCounts[path] = count
+            }
+            if let file = makeCustomFile(url: url) {
+                added.append(file)
+            }
+        }
+        return (added, removed)
+    }
+
+    // MARK: - Make Custom File
+    private func makeCustomFile(url: URL) -> CustomFile? {
+        if let values = try? url.resourceValues(forKeys: Self.resourceKeys) {
+            return CustomFile(url: url, resourceValues: values)
+        }
+        guard !isDirectory(url.path) else { return nil }
+        return CustomFile(name: url.lastPathComponent, path: url.path)
+    }
+
+    // MARK: - Full Rescan Patch
+    private func makeFullRescanPatch(
+        watchedPath: String,
+        childCounts: [String: Int]
+    ) -> DirectoryPatch {
+        DirectoryPatch(
+            childCountUpdates: childCounts,
+            addedOrModified: [],
+            removedPaths: [],
+            watchedPath: watchedPath,
+            needsFullRescan: true
+        )
+    }
+
+    // MARK: - Top-Level Subdirectory Path
+    private func topLevelSubdirectoryPath(for path: String, watchedPath: String) -> String? {
+        let prefix = watchedPath.hasSuffix("/") ? watchedPath : watchedPath + "/"
+        guard path.hasPrefix(prefix) else { return nil }
+        let relativePath = String(path.dropFirst(prefix.count))
+        guard let separator = relativePath.firstIndex(of: "/") else { return nil }
+        let name = String(relativePath[..<separator])
+        return (watchedPath as NSString).appendingPathComponent(name)
+    }
+
+    // MARK: - Directory Entry Count
+    private func directoryEntryCount(at path: String) -> Int? {
+        let url = URL(fileURLWithPath: path)
+        return try? url.resourceValues(forKeys: [.directoryEntryCountKey]).directoryEntryCount
+    }
+
+    // MARK: - Directory Check
+    private func isDirectory(_ path: String) -> Bool {
+        var isDirectory: ObjCBool = false
+        return FileManager.default.fileExists(atPath: path, isDirectory: &isDirectory)
+            && isDirectory.boolValue
+    }
+
+    // MARK: - Normalize Path
+    private func normalizedPath(_ path: String) -> String {
+        path.hasSuffix("/") ? String(path.dropLast()) : path
+    }
+
+    deinit {
+        stop()
+    }
+}

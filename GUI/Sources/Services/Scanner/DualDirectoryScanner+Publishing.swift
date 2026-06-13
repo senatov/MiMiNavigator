@@ -7,6 +7,48 @@
 import FileModelKit
 import Foundation
 
+// MARK: - Scanner Publish State
+struct ScannerPublishState {
+    let samePath: Bool
+    let sameHash: Bool
+    let sameVisibleCount: Bool
+    let currentDisplayedCount: Int
+}
+
+// MARK: - File Publish Fingerprint
+private struct FilePublishFingerprint: Equatable {
+    let id: String
+    let name: String
+    let path: String
+    let isDirectory: Bool
+    let isParentEntry: Bool
+    let sizeVersion: Int
+    let childCount: Int?
+    let directorySize: Int64?
+    let shallowSize: Int64?
+    let sizeInBytes: Int64
+    let sizeIsExact: Bool
+    let modifiedTimestamp: TimeInterval?
+    let securityState: String
+
+    // MARK: - Init
+    init(file: CustomFile) {
+        id = file.id
+        name = file.nameStr
+        path = file.pathStr
+        isDirectory = file.isDirectory
+        isParentEntry = file.isParentEntry
+        sizeVersion = file.sizeVersion
+        childCount = file.cachedChildCount
+        directorySize = file.cachedDirectorySize
+        shallowSize = file.cachedShallowSize
+        sizeInBytes = file.sizeInBytes
+        sizeIsExact = file.sizeIsExact
+        modifiedTimestamp = file.modifiedDate?.timeIntervalSince1970
+        securityState = String(describing: file.securityState)
+    }
+}
+
 extension DualDirectoryScanner {
 
     // MARK: - MainActor publish helpers
@@ -14,40 +56,40 @@ extension DualDirectoryScanner {
     @MainActor
     func displayedFilesBinding(for side: FavPanelSide) -> [CustomFile] {
         switch side {
-            case .left:
-                return appState.displayedLeftFiles
-            case .right:
-                return appState.displayedRightFiles
+        case .left:
+            return appState.displayedLeftFiles
+        case .right:
+            return appState.displayedRightFiles
         }
     }
 
     @MainActor
     func setDisplayedFiles(_ files: [CustomFile], for side: FavPanelSide) {
         switch side {
-            case .left:
-                appState.displayedLeftFiles = files
-            case .right:
-                appState.displayedRightFiles = files
+        case .left:
+            appState.displayedLeftFiles = files
+        case .right:
+            appState.displayedRightFiles = files
         }
     }
 
     @MainActor
     func panelSelection(for side: FavPanelSide) -> CustomFile? {
         switch side {
-            case .left:
-                return appState.selectedLeftFile
-            case .right:
-                return appState.selectedRightFile
+        case .left:
+            return appState.selectedLeftFile
+        case .right:
+            return appState.selectedRightFile
         }
     }
 
     @MainActor
     func setPanelSelection(_ file: CustomFile?, for side: FavPanelSide) {
         switch side {
-            case .left:
-                appState.selectedLeftFile = file
-            case .right:
-                appState.selectedRightFile = file
+        case .left:
+            appState.selectedLeftFile = file
+        case .right:
+            appState.selectedRightFile = file
         }
     }
 
@@ -78,7 +120,6 @@ extension DualDirectoryScanner {
         setDisplayedFiles(files, for: side)
     }
 
-
     // MARK: - Cached metadata transfer
 
     /// Transfer cached directory/shallow sizes + security state from old CustomFile
@@ -91,41 +132,37 @@ extension DualDirectoryScanner {
         var transferred = 0
         for file in newFiles {
             guard file.isDirectory, let old = lookup[file.pathStr] else { continue }
-            if file.cachedDirectorySize == nil,
-               let oldSize = old.cachedDirectorySize,
-               oldSize != DirectorySizeService.unavailableSize
-            {
-                file.cachedDirectorySize = oldSize
-                transferred += 1
-            }
-            if file.cachedShallowSize == nil, let oldShallow = old.cachedShallowSize {
-                file.cachedShallowSize = oldShallow
-            }
-            if old.sizeIsExact && !file.sizeIsExact {
-                file.sizeIsExact = old.sizeIsExact
-            }
-            if old.securityState != .normal && file.securityState == .normal {
-                file.securityState = old.securityState
-            }
-            if old.sizeCalculationStarted {
-                file.sizeCalculationStarted = old.sizeCalculationStarted
-            }
-            if let oldAppSize = old.cachedAppSize, file.cachedAppSize == nil {
-                file.cachedAppSize = oldAppSize
-            }
-            if old.hasGeoTag && !file.hasGeoTag {
-                file.hasGeoTag = true
-            }
-            // sync sizeVersion so filesAreIdentical doesn't see a diff
-            // (setting cachedDirectorySize above bumps sizeVersion via didSet,
-            // but the old object may have been bumped multiple times)
-            if old.sizeVersion != file.sizeVersion {
-                file.sizeVersion = old.sizeVersion
-            }
+            transferred += transferDirectorySize(from: old, to: file)
+            transferCachedMetadata(from: old, to: file)
         }
         if transferred > 0 {
             log.debug("[Scanner] transferred \(transferred) cached sizes to new file objects")
         }
+    }
+
+    // MARK: - Transfer Directory Size
+    @MainActor
+    private func transferDirectorySize(from old: CustomFile, to file: CustomFile) -> Int {
+        guard file.cachedDirectorySize == nil,
+              let oldSize = old.cachedDirectorySize,
+              oldSize != DirectorySizeService.unavailableSize
+        else {
+            return 0
+        }
+        file.cachedDirectorySize = oldSize
+        return 1
+    }
+
+    // MARK: - Transfer Cached Metadata
+    @MainActor
+    private func transferCachedMetadata(from old: CustomFile, to file: CustomFile) {
+        if file.cachedShallowSize == nil { file.cachedShallowSize = old.cachedShallowSize }
+        if old.sizeIsExact { file.sizeIsExact = true }
+        if file.securityState == .normal { file.securityState = old.securityState }
+        if old.sizeCalculationStarted { file.sizeCalculationStarted = true }
+        if file.cachedAppSize == nil { file.cachedAppSize = old.cachedAppSize }
+        if old.hasGeoTag { file.hasGeoTag = true }
+        file.sizeVersion = old.sizeVersion
     }
 
     /// Cheap identity + metadata equality check to avoid triggering SwiftUI rebuilds on no-op publishes.
@@ -133,22 +170,10 @@ extension DualDirectoryScanner {
     @MainActor
     private func filesAreIdentical(_ lhs: [CustomFile], _ rhs: [CustomFile]) -> Bool {
         guard lhs.count == rhs.count else { return false }
-        for i in lhs.indices {
-            let a = lhs[i]
-            let b = rhs[i]
-            if a.id != b.id { return false }
-            if a.nameStr != b.nameStr { return false }
-            if a.pathStr != b.pathStr { return false }
-            if a.isDirectory != b.isDirectory { return false }
-            if a.isParentEntry != b.isParentEntry { return false }
-            if a.sizeVersion != b.sizeVersion { return false }
-            if a.cachedChildCount != b.cachedChildCount { return false }
-            if a.cachedDirectorySize != b.cachedDirectorySize { return false }
-            if a.cachedShallowSize != b.cachedShallowSize { return false }
-            if a.sizeInBytes != b.sizeInBytes { return false }
-            if a.sizeIsExact != b.sizeIsExact { return false }
-            if a.modifiedDate?.timeIntervalSince1970 != b.modifiedDate?.timeIntervalSince1970 { return false }
-            if String(describing: a.securityState) != String(describing: b.securityState) { return false }
+        for index in lhs.indices {
+            let oldFingerprint = FilePublishFingerprint(file: lhs[index])
+            let newFingerprint = FilePublishFingerprint(file: rhs[index])
+            if oldFingerprint != newFingerprint { return false }
         }
         return true
     }
@@ -208,12 +233,17 @@ extension DualDirectoryScanner {
         path: String,
         files: [CustomFile],
         contentHash: Int
-    ) -> (samePath: Bool, sameHash: Bool, sameVisibleCount: Bool, currentDisplayedCount: Int) {
+    ) -> ScannerPublishState {
         let currentDisplayedCount = currentDisplayedFiles(for: side).count
         let samePath = lastPublishedPathOnMain[side] == path
         let sameHash = lastContentHashOnMain[side] == contentHash
         let sameVisibleCount = currentDisplayedCount == files.count
-        return (samePath, sameHash, sameVisibleCount, currentDisplayedCount)
+        return ScannerPublishState(
+            samePath: samePath,
+            sameHash: sameHash,
+            sameVisibleCount: sameVisibleCount,
+            currentDisplayedCount: currentDisplayedCount
+        )
     }
 
     // MARK: - Publish deduplication
@@ -305,99 +335,10 @@ extension DualDirectoryScanner {
 
     func publishSuccessfulScan(_ files: [CustomFile], scannedPath: String, for side: FavPanelSide) async {
         log.debug("[Scan] publish side=\(side) path='\(scannedPath)' raw=\(files.count)")
-
         await MainActor.run {
             AutoFitScheduler.shared.runInitialPublishFit(panel: side, files: files)
         }
         await updateScannedFiles(files, for: side)
         await updateFileList(panelSide: side, with: files)
-    }
-
-    // MARK: - Permission helpers
-
-    func isPermissionDeniedError(_ error: NSError) -> Bool {
-        log.debug("[Permissions] isPermissionDeniedError")
-        log.debug("[Permissions] domain=\(error.domain) code=\(error.code)")
-        if error.domain == NSCocoaErrorDomain && error.code == 257 { return true }
-        if error.domain == NSPOSIXErrorDomain && error.code == 13 { return true }
-
-        if let underlying = error.userInfo[NSUnderlyingErrorKey] as? NSError {
-            return isPermissionDeniedError(underlying)
-        }
-
-        log.debug("[Permissions] isPermissionDeniedError -> false")
-        return false
-    }
-
-    func rescanDirectoryAfterBookmarkRestore(_ url: URL, side: FavPanelSide) async -> Bool {
-        log.info("[Permissions] Rescan after bookmark restore start")
-        log.info("[Permissions] side=\(side) path='\(url.path)'")
-        do {
-            let showHidden = await MainActor.run { UserPreferences.shared.snapshot.showHiddenFiles }
-            let scanned = try FileScanner.scan(url: url, showHiddenFiles: showHidden)
-            log.info("[Permissions] Rescan succeeded: items=\(scanned.count) path='\(url.path)'")
-            await updateScannedFiles(scanned, for: side)
-            await updateFileList(panelSide: side, with: scanned)
-            return true
-        } catch {
-            log.warning("[Permissions] Rescan after bookmark restore failed: \(error.localizedDescription)")
-            return false
-        }
-    }
-
-    func scanHomeDirectoryForFallback(_ homeURL: URL, side: FavPanelSide) async {
-        log.info("[Permissions] scanHomeDirectoryForFallback start")
-        log.info("[Permissions] side=\(side) path='\(homeURL.path)'")
-        do {
-            let showHidden = await MainActor.run { UserPreferences.shared.snapshot.showHiddenFiles }
-            let sortKey = await MainActor.run { appState.sortKey }
-            let sortAsc = await MainActor.run { appState.bSortAscending }
-
-            let scanned = try FileScanner.scan(url: homeURL, showHiddenFiles: showHidden)
-            let sorted = FileSortingService.sort(scanned, by: sortKey, bDirection: sortAsc)
-
-            await updateScannedFiles(sorted, for: side)
-            await updateFileList(panelSide: side, with: sorted)
-
-            log.info("[Permissions] Fallback to Home succeeded: items=\(sorted.count)")
-        } catch {
-            log.error("[Permissions] Home directory scan failed: \(error)")
-        }
-    }
-
-    func requestAndRetryAccess(for url: URL, side: FavPanelSide) async -> Bool {
-        log.info("[Permissions] requestAndRetryAccess start")
-        log.info("[Permissions] side=\(side) path='\(url.path)'")
-        log.info("[Permissions] checking bookmarks")
-
-        let restored = await BookmarkStore.shared.restoreAll()
-        if !restored.isEmpty {
-            log.info("[Permissions] Restored \(restored.count) bookmark(s), retrying scan")
-            return await rescanDirectoryAfterBookmarkRestore(url, side: side)
-        }
-
-        log.warning("[Permissions] No bookmark for path='\(url.path)', falling back to Home directory")
-
-        let homeURL = URL(fileURLWithPath: NSHomeDirectory())
-
-        await MainActor.run {
-            log.debug(#function + ": setting Home as the current directory")
-            appState.setURL(homeURL, for: side)
-        }
-
-        await scanHomeDirectoryForFallback(homeURL, side: side)
-        return false
-    }
-
-    // MARK: - Cache sync
-
-    @MainActor
-    func updateFileList(panelSide: FavPanelSide, with files: [CustomFile]) async {
-        switch panelSide {
-            case .left:
-                await fileCache.updateLeftFiles(files)
-            case .right:
-                await fileCache.updateRightFiles(files)
-        }
     }
 }

@@ -7,6 +7,13 @@
 import FileModelKit
 import Foundation
 
+// MARK: - Scanner Patch State
+struct ScannerPatchState {
+    let files: [CustomFile]
+    let sortKey: SortKeysEnum
+    let sortAsc: Bool
+}
+
 extension DualDirectoryScanner {
 
     // MARK: - FSEvents watcher setup
@@ -37,10 +44,10 @@ extension DualDirectoryScanner {
 
     func launchFSEventsWatcher(for side: FavPanelSide, path: String, showHiddenFiles: Bool) {
         switch side {
-            case .left:
-                if leftWatchedPath == path { return }
-            case .right:
-                if rightWatchedPath == path { return }
+        case .left:
+            if leftWatchedPath == path { return }
+        case .right:
+            if rightWatchedPath == path { return }
         }
         let watcher = FSEventsDirectoryWatcher { [weak self] patch in
             guard let self else { return }
@@ -56,14 +63,14 @@ extension DualDirectoryScanner {
         }
 
         switch side {
-            case .left:
-                leftFSEvents?.stop()
-                leftFSEvents = watcher
-                leftWatchedPath = path
-            case .right:
-                rightFSEvents?.stop()
-                rightFSEvents = watcher
-                rightWatchedPath = path
+        case .left:
+            leftFSEvents?.stop()
+            leftFSEvents = watcher
+            leftWatchedPath = path
+        case .right:
+            rightFSEvents?.stop()
+            rightFSEvents = watcher
+            rightWatchedPath = path
         }
 
         log.info("[FSEvents] started for \(side) panel: '\(path)'")
@@ -72,15 +79,14 @@ extension DualDirectoryScanner {
     func stopFSEvents(for side: FavPanelSide) {
         requestedWatchedPath[side] = nil
         switch side {
-            case .left:
-                leftFSEvents?.stop()
-                leftFSEvents = nil
-                leftWatchedPath = nil
-
-            case .right:
-                rightFSEvents?.stop()
-                rightFSEvents = nil
-                rightWatchedPath = nil
+        case .left:
+            leftFSEvents?.stop()
+            leftFSEvents = nil
+            leftWatchedPath = nil
+        case .right:
+            rightFSEvents?.stop()
+            rightFSEvents = nil
+            rightWatchedPath = nil
         }
     }
 
@@ -105,23 +111,21 @@ extension DualDirectoryScanner {
             await refreshFiles(currSide: side)
             return
         }
+        await applyIncrementalPatch(patch, for: side)
+    }
+
+    // MARK: - Apply Incremental Patch
+    private func applyIncrementalPatch(
+        _ patch: FSEventsDirectoryWatcher.DirectoryPatch,
+        for side: FavPanelSide
+    ) async {
         let childUpdates = patch.childCountUpdates
         let removedPaths = patch.removedPaths
         let addedOrModified = patch.addedOrModified
         let state = await currentPatchState(for: side)
         let totalChanges = addedOrModified.count + removedPaths.count
-        // childCount-only patches: apply silently w/o triggering SwiftUI rebuild
         if totalChanges == 0 {
-            if childUpdates.isEmpty { return }
-            // CustomFile is @Observable class — mutate in-place, SwiftUI picks up
-            // changes via observation. No publishDisplayedFiles needed.
-            let files = state.files
-            for (path, count) in childUpdates {
-                if let idx = files.firstIndex(where: { $0.pathStr == path }),
-                   files[idx].cachedChildCount != count {
-                    files[idx].cachedChildCount = count
-                }
-            }
+            applyChildCountUpdates(childUpdates, to: state.files)
             return
         }
         let useIncremental = totalChanges <= 5
@@ -137,7 +141,7 @@ extension DualDirectoryScanner {
             sortKey: state.sortKey,
             sortAsc: state.sortAsc
         )
-        applyChildCountUpdates(childUpdates, to: &merged)
+        applyChildCountUpdates(childUpdates, to: merged)
         if !useIncremental {
             merged = FileSortingService.sort(merged, by: state.sortKey, bDirection: state.sortAsc)
         }
@@ -145,9 +149,13 @@ extension DualDirectoryScanner {
     }
 
     @MainActor
-    func currentPatchState(for side: FavPanelSide) -> (files: [CustomFile], sortKey: SortKeysEnum, sortAsc: Bool) {
+    func currentPatchState(for side: FavPanelSide) -> ScannerPatchState {
         let files = side == .left ? appState.displayedLeftFiles : appState.displayedRightFiles
-        return (files, appState.sortKey, appState.bSortAscending)
+        return ScannerPatchState(
+            files: files,
+            sortKey: appState.sortKey,
+            sortAsc: appState.bSortAscending
+        )
     }
 
     func mergeUpdatedFiles(
@@ -176,7 +184,7 @@ extension DualDirectoryScanner {
         }
     }
 
-    func applyChildCountUpdates(_ childUpdates: [String: Int], to files: inout [CustomFile]) {
+    func applyChildCountUpdates(_ childUpdates: [String: Int], to files: [CustomFile]) {
         for (path, count) in childUpdates {
             if let index = files.firstIndex(where: { $0.pathStr == path }) {
                 files[index].cachedChildCount = count
@@ -224,10 +232,10 @@ extension DualDirectoryScanner {
         }
         timer.resume()
         switch side {
-            case .left:
-                leftTimer = timer
-            case .right:
-                rightTimer = timer
+        case .left:
+            leftTimer = timer
+        case .right:
+            rightTimer = timer
         }
     }
 
@@ -258,15 +266,14 @@ extension DualDirectoryScanner {
 
     func resetRefreshTimer(for side: FavPanelSide) {
         switch side {
-            case .left:
-                leftTimer?.cancel()
-                leftTimer = nil
-                setupTimer(for: .left)
-
-            case .right:
-                rightTimer?.cancel()
-                rightTimer = nil
-                setupTimer(for: .right)
+        case .left:
+            leftTimer?.cancel()
+            leftTimer = nil
+            setupTimer(for: .left)
+        case .right:
+            rightTimer?.cancel()
+            rightTimer = nil
+            setupTimer(for: .right)
         }
     }
 

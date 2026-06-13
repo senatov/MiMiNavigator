@@ -78,8 +78,10 @@ struct PanelDividerView: View {
                 }
 
                 let proposed = (value.location.x - divider.dragGrabOffset) - (PanelDividerMetrics.hitAreaWidth / 2)
-                let maxW = containerWidth - PanelDividerMetrics.minPanelWidth - PanelDividerMetrics.hitAreaWidth
-                let clamped = max(PanelDividerMetrics.minPanelWidth, min(proposed, maxW))
+                let clamped = PanelDividerMetrics.constrainedLeftWidth(
+                    proposed,
+                    containerWidth: containerWidth
+                )
                 let snapped = snapToPixelGrid(clamped)
 
                 let moved = abs((divider.dragPreviewLeft ?? leftPanelWidth) - snapped) >= 0.5
@@ -119,7 +121,10 @@ struct PanelDividerView: View {
         divider.suppressDragUntilMouseUp = true
         let scale = NSScreen.main?.backingScaleFactor ?? 2.0
         let halfCenter = (containerWidth / 2.0 * scale).rounded() / scale
-        let halfLeft = halfCenter - PanelDividerMetrics.hitAreaWidth / 2
+        let halfLeft = PanelDividerMetrics.constrainedLeftWidth(
+            halfCenter - PanelDividerMetrics.hitAreaWidth / 2,
+            containerWidth: containerWidth
+        )
         divider.lastAppliedWidth = halfLeft
         leftPanelWidth = halfLeft
         showTooltip(text: ratioText(forDividerCenterX: halfCenter), at: CGPoint(x: halfCenter, y: 46))
