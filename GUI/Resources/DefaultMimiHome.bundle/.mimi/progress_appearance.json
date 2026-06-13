@@ -1,0 +1,13 @@
+{
+  "autoCloseSeconds": 0.5,
+  "framesByOperation": {},
+  "hexBackground": "FFF8E4",
+  "hexBorder": "#C8B88A",
+  "hexLogColor": "#0A1A6B",
+  "hexStatusColor": "005392",
+  "hexTitleColor": "521B92",
+  "logFontName": "System",
+  "logFontSize": 12,
+  "panelHeight": 519,
+  "panelWidth": 448
+}

@@ -1,0 +1,15 @@
+{
+  "MiMiDefaults.migratedFromUserDefaults": true,
+  "MiMiNavigator.sortAscending": false,
+  "MiMiNavigator.sortKey": "date",
+  "color.breadcrumbBgActive": "F9F8E4",
+  "color.commandBarBackground": "#D6D9DE",
+  "color.zebraActiveEven": "FFFFFF",
+  "color.zebraActiveOdd": "F1F1F1",
+  "color.zebraInactiveOdd": "F3F3F3",
+  "com.senatov.MiMiNavigator.toolbar.menuBarVisible": true,
+  "commandBar.moireIntensity": 0.28,
+  "panelThumbSize.left": 280,
+  "panelViewMode.left": "thumbnail",
+  "panelViewMode.right": "list"
+}

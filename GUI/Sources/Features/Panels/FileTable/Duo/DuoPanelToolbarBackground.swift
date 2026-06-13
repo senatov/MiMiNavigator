@@ -9,12 +9,22 @@
 import AppKit
 import SwiftUI
 
+// MARK: - Command Bar Appearance Defaults
+enum CommandBarAppearanceDefaults {
+    static let backgroundHex = "#D6D9DE"
+    static let backgroundColor =
+        Color(#colorLiteral(red: 0.84, green: 0.85, blue: 0.87, alpha: 1))
+    static let moireIntensity = 0.28
+}
+
 // MARK: - Duo Panel Chrome Background
 /// Shared top and bottom command-bar background.
 struct DuoPanelToolbarBackground: View {
     let cornerRadius: CGFloat
-    @AppStorage("color.commandBarBackground") private var hexBackground: String = ""
-    @AppStorage("commandBar.moireIntensity") private var moireIntensity: Double = 0.28
+    @AppStorage("color.commandBarBackground")
+    private var hexBackground = CommandBarAppearanceDefaults.backgroundHex
+    @AppStorage("commandBar.moireIntensity")
+    private var moireIntensity = CommandBarAppearanceDefaults.moireIntensity
 
     // MARK: - Body
     var body: some View {
@@ -46,7 +56,7 @@ struct DuoPanelToolbarBackground: View {
 
     private var backgroundColor: Color {
         Color(hex: hexBackground)
-            ?? Color(#colorLiteral(red: 0.84, green: 0.85, blue: 0.87, alpha: 1))
+            ?? CommandBarAppearanceDefaults.backgroundColor
     }
 
     private var moireOverlay: some View {

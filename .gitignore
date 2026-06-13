@@ -79,7 +79,6 @@ build-logs/
 # --------------------------------------------------
 
 GUI/Resources/google_drive_oauth.json
-GUI/Resources/DefaultMimiHome.bundle/
 
 
 # --------------------------------------------------

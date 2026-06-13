@@ -1,0 +1,46 @@
+{
+  "customDestination": "",
+  "deleteSourceFiles": false,
+  "destinationMode": "current",
+  "formatPrefs": {
+    "7z": {
+      "compressionLevel": 3,
+      "usePassword": false
+    },
+    "Z": {
+      "compressionLevel": 5,
+      "usePassword": false
+    },
+    "bz2": {
+      "compressionLevel": 5,
+      "usePassword": false
+    },
+    "tar.bz2": {
+      "compressionLevel": 5,
+      "usePassword": false
+    },
+    "tar.gz": {
+      "compressionLevel": 5,
+      "usePassword": false
+    },
+    "tar.lz4": {
+      "compressionLevel": 5,
+      "usePassword": false
+    },
+    "tar.lzma": {
+      "compressionLevel": 5,
+      "usePassword": false
+    },
+    "tar.xz": {
+      "compressionLevel": 5,
+      "usePassword": false
+    },
+    "zip": {
+      "compressionLevel": 9,
+      "usePassword": false
+    }
+  },
+  "lastFormat": "zip",
+  "useKeychainPasswords": true,
+  "usePassword": false
+}

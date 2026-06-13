@@ -24,12 +24,12 @@ struct SettingsColorsChromePane: View, ColorPaneHelpers {
     @AppStorage("color.zebraInactiveEven")   private var hexZebraInactiveEven: String = ""
     @AppStorage("color.zebraInactiveOdd")    private var hexZebraInactiveOdd: String = ""
     @AppStorage("color.filterActive")        private var hexFilterActive: String = ""
-    @AppStorage("color.commandBarBackground") private var hexCommandBarBackground: String = ""
-    @AppStorage("commandBar.moireIntensity") private var commandBarMoireIntensity: Double = 0.28
+    @AppStorage("color.commandBarBackground")
+    private var hexCommandBarBackground = CommandBarAppearanceDefaults.backgroundHex
+    @AppStorage("commandBar.moireIntensity")
+    private var commandBarMoireIntensity = CommandBarAppearanceDefaults.moireIntensity
 
     private var preset: ColorTheme { ColorThemeStore.shared.activeTheme }
-    private let defaultCommandBarBackground =
-        Color(#colorLiteral(red: 0.84, green: 0.85, blue: 0.87, alpha: 1))
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -116,8 +116,8 @@ struct SettingsColorsChromePane: View, ColorPaneHelpers {
                 hexZebraActiveEven   = ""; hexZebraActiveOdd = ""
                 hexZebraInactiveEven = ""; hexZebraInactiveOdd = ""
                 hexFilterActive = ""
-                hexCommandBarBackground = ""
-                commandBarMoireIntensity = 0.28
+                hexCommandBarBackground = CommandBarAppearanceDefaults.backgroundHex
+                commandBarMoireIntensity = CommandBarAppearanceDefaults.moireIntensity
                 store.storedPanelBorderWidth = 0
                 store.reloadOverrides()
             }
@@ -128,7 +128,7 @@ struct SettingsColorsChromePane: View, ColorPaneHelpers {
         rowLabel("Background:", help: "Shared background color for the top menu and bottom action bar") {
             HStack(spacing: 10) {
                 RoundedRectangle(cornerRadius: 3)
-                    .fill(defaultCommandBarBackground)
+                    .fill(CommandBarAppearanceDefaults.backgroundColor)
                     .frame(width: 22, height: 16)
                     .overlay(RoundedRectangle(cornerRadius: 3).stroke(Color.black.opacity(0.12), lineWidth: 0.5))
                     .help("Default")
@@ -138,9 +138,9 @@ struct SettingsColorsChromePane: View, ColorPaneHelpers {
                 ColorPicker("", selection: commandBarColorBinding)
                     .labelsHidden()
                     .frame(width: 28)
-                if !hexCommandBarBackground.isEmpty {
+                if hexCommandBarBackground != CommandBarAppearanceDefaults.backgroundHex {
                     Button {
-                        hexCommandBarBackground = ""
+                        hexCommandBarBackground = CommandBarAppearanceDefaults.backgroundHex
                     } label: {
                         Image(systemName: "arrow.uturn.backward")
                             .font(.system(size: 10))
@@ -156,7 +156,8 @@ struct SettingsColorsChromePane: View, ColorPaneHelpers {
     private var commandBarColorBinding: Binding<Color> {
         Binding(
             get: {
-                Color(hex: hexCommandBarBackground) ?? defaultCommandBarBackground
+                Color(hex: hexCommandBarBackground)
+                    ?? CommandBarAppearanceDefaults.backgroundColor
             },
             set: { newColor in
                 hexCommandBarBackground = newColor.toHex() ?? ""
