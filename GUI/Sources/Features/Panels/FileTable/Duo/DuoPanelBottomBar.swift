@@ -24,9 +24,6 @@ struct DuoPanelBottomToolbarSection: View {
     private enum Layout {
         static let toolbarHorizontalPadding: CGFloat = 16
         static let toolbarVerticalPadding: CGFloat = 12
-        static let toolbarCornerRadius: CGFloat = 10
-        static let toolbarOuterPadding: CGFloat = 8
-        static let toolbarBottomPadding: CGFloat = 8
         static let toolbarButtonSpacing: CGFloat = 12
     }
     
@@ -48,10 +45,8 @@ struct DuoPanelBottomToolbarSection: View {
             .padding(.vertical, Layout.toolbarVerticalPadding)
         }
         .background(
-            DuoPanelToolbarBackground(cornerRadius: Layout.toolbarCornerRadius)
+            DuoPanelToolbarBackground(cornerRadius: 0)
         )
-        .padding(.horizontal, Layout.toolbarOuterPadding)
-        .padding(.bottom, Layout.toolbarBottomPadding)
     }
     
     private func downToolBarButton(title: String, icon: String, action: @escaping () -> Void) -> some View {

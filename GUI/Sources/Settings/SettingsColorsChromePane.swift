@@ -24,11 +24,27 @@ struct SettingsColorsChromePane: View, ColorPaneHelpers {
     @AppStorage("color.zebraInactiveEven")   private var hexZebraInactiveEven: String = ""
     @AppStorage("color.zebraInactiveOdd")    private var hexZebraInactiveOdd: String = ""
     @AppStorage("color.filterActive")        private var hexFilterActive: String = ""
+    @AppStorage("color.commandBarBackground") private var hexCommandBarBackground: String = ""
+    @AppStorage("commandBar.moireIntensity") private var commandBarMoireIntensity: Double = 0.28
 
     private var preset: ColorTheme { ColorThemeStore.shared.activeTheme }
+    private let defaultCommandBarBackground =
+        Color(#colorLiteral(red: 0.84, green: 0.85, blue: 0.87, alpha: 1))
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
+
+            // ── Command Bars ───────────────────────────────
+            paneGroupBox {
+                VStack(spacing: 0) {
+                    sectionHeader("Command Bars")
+                    commandBarColorRow
+                    Divider()
+                    sliderRow("Moire", help: "Shared texture intensity for the top and bottom command bars",
+                              value: $commandBarMoireIntensity, range: 0...1, step: 0.05,
+                              displayFormat: "%.2f") {}
+                }
+            }
 
             // ── Panel Divider ──────────────────────────────
             paneGroupBox {
@@ -100,9 +116,51 @@ struct SettingsColorsChromePane: View, ColorPaneHelpers {
                 hexZebraActiveEven   = ""; hexZebraActiveOdd = ""
                 hexZebraInactiveEven = ""; hexZebraInactiveOdd = ""
                 hexFilterActive = ""
+                hexCommandBarBackground = ""
+                commandBarMoireIntensity = 0.28
                 store.storedPanelBorderWidth = 0
                 store.reloadOverrides()
             }
         }
+    }
+
+    private var commandBarColorRow: some View {
+        rowLabel("Background:", help: "Shared background color for the top menu and bottom action bar") {
+            HStack(spacing: 10) {
+                RoundedRectangle(cornerRadius: 3)
+                    .fill(defaultCommandBarBackground)
+                    .frame(width: 22, height: 16)
+                    .overlay(RoundedRectangle(cornerRadius: 3).stroke(Color.black.opacity(0.12), lineWidth: 0.5))
+                    .help("Default")
+                Text("→")
+                    .foregroundStyle(.tertiary)
+                    .font(.system(size: 11))
+                ColorPicker("", selection: commandBarColorBinding)
+                    .labelsHidden()
+                    .frame(width: 28)
+                if !hexCommandBarBackground.isEmpty {
+                    Button {
+                        hexCommandBarBackground = ""
+                    } label: {
+                        Image(systemName: "arrow.uturn.backward")
+                            .font(.system(size: 10))
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(.secondary)
+                    .help("Reset to default")
+                }
+            }
+        }
+    }
+
+    private var commandBarColorBinding: Binding<Color> {
+        Binding(
+            get: {
+                Color(hex: hexCommandBarBackground) ?? defaultCommandBarBackground
+            },
+            set: { newColor in
+                hexCommandBarBackground = newColor.toHex() ?? ""
+            }
+        )
     }
 }

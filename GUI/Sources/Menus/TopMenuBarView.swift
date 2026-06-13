@@ -6,7 +6,6 @@
 // Description: SwiftUI component for rendering top menu bar with dropdown menus and shortcuts.
 //
 
-import AppKit
 import FileModelKit
 import SwiftUI
 
@@ -14,66 +13,11 @@ struct TopMenuBarView: View {
     @Environment(AppState.self) var appState
     @Binding var isFinderSidebarVisible: Bool
     @State private var favoritesTargetSide: FavPanelSide = .left
-        // MARK: - Pixel helpers
-    fileprivate var px: CGFloat {
-        let scale = NSScreen.main?.backingScaleFactor ?? 2.0
-        return 1.0 / scale
-    }
-        // MARK: -
+
+    // MARK: - Body
     var body: some View {
         ZStack(alignment: .top) {
-                // Glass bar background (liquid-glass, macOS 26.1 style)
-            RoundedRectangle(cornerRadius: MenuBarMetrics.corner, style: .continuous)
-                .fill(.ultraThinMaterial)
-                // Decorative hairline ring (crisp, gradient)
-                .overlay(
-                    RoundedRectangle(cornerRadius: MenuBarMetrics.corner, style: .continuous)
-                        .strokeBorder(
-                            LinearGradient(
-                                colors: [
-                                    Color.white.opacity(0.30),  // top highlight
-                                    Color.blue.opacity(0.08),
-                                    Color.black.opacity(0.12),  // bottom subtle shadow
-                                ],
-                                startPoint: .top,
-                                endPoint: .bottom
-                            ),
-                            lineWidth: px
-                        )
-                )
-                // Soft top glow
-                .overlay(alignment: .top) {
-                    LinearGradient(
-                        colors: [Color.white.opacity(0.22), Color.blue.opacity(0.08), .clear],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                    .frame(height: MenuBarMetrics.height * 0.55)
-                }
-                // Crisp bottom hairline
-                .overlay(alignment: .bottom) {
-                    Rectangle()
-                        .fill(
-                            LinearGradient(
-                                colors: [
-                                    Color.white.opacity(0.40),  // upper edge highlight
-                                    Color.white.opacity(0.18),
-                                    Color.black.opacity(0.20)   // lower subtle shadow
-                                ],
-                                startPoint: .top,
-                                endPoint: .bottom
-                            )
-                        )
-                        .frame(height: px)
-                        .padding(.horizontal, 0.5)
-                        .allowsHitTesting(false)
-                }
-                .clipShape(RoundedRectangle(cornerRadius: MenuBarMetrics.corner, style: .continuous))
-                .contentShape(RoundedRectangle(cornerRadius: MenuBarMetrics.corner, style: .continuous))
-                .shadow(color: Color.black.opacity(0.10), radius: 8, x: 0, y: 2)
-                .shadow(color: Color.blue.opacity(0.06), radius: 18, x: 0, y: 10)
-            
-                // Menu row
+            DuoPanelToolbarBackground(cornerRadius: MenuBarMetrics.corner)
             HStack(spacing: 6) {
                 finderSidebarButton
                 ForEach(menuData.dropLast()) { menu in
