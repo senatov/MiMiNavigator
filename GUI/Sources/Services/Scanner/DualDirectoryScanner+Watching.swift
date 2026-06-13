@@ -24,8 +24,13 @@ extension DualDirectoryScanner {
             stopFSEvents(for: side)
             return
         }
+        requestedWatchedPath[side] = url.path
         Task {
             let showHidden = await appState.showHiddenFilesSnapshot()
+            guard requestedWatchedPath[side] == url.path else {
+                log.debug("[FSEvents] stale watcher start ignored: '\(url.path)' side=\(side)")
+                return
+            }
             launchFSEventsWatcher(for: side, path: url.path, showHiddenFiles: showHidden)
         }
     }
@@ -44,7 +49,11 @@ extension DualDirectoryScanner {
             }
         }
 
-        watcher.watch(path: path, showHiddenFiles: showHiddenFiles)
+        guard watcher.watch(path: path, showHiddenFiles: showHiddenFiles) else {
+            log.error("[FSEvents] watcher start failed for \(side) panel: '\(path)'")
+            stopFSEvents(for: side)
+            return
+        }
 
         switch side {
             case .left:
@@ -57,11 +66,11 @@ extension DualDirectoryScanner {
                 rightWatchedPath = path
         }
 
-        lastFSEventsPatch[side] = Date()
         log.info("[FSEvents] started for \(side) panel: '\(path)'")
     }
 
     func stopFSEvents(for side: FavPanelSide) {
+        requestedWatchedPath[side] = nil
         switch side {
             case .left:
                 leftFSEvents?.stop()
@@ -78,7 +87,19 @@ extension DualDirectoryScanner {
     // MARK: - Incremental patch application
 
     func applyPatch(_ patch: FSEventsDirectoryWatcher.DirectoryPatch, for side: FavPanelSide) async {
+        let activePath = side == .left ? leftWatchedPath : rightWatchedPath
+        guard activePath == patch.watchedPath,
+              requestedWatchedPath[side] == patch.watchedPath
+        else {
+            log.debug("[FSEvents] stale patch ignored for \(side): '\(patch.watchedPath)'")
+            return
+        }
         lastFSEventsPatch[side] = Date()
+        if scanInProgress[side] == true {
+            pendingRefreshAfterScan[side] = true
+            log.debug("[FSEvents] refresh queued after active scan for \(side)")
+            return
+        }
         if patch.needsFullRescan {
             log.info("[FSEvents] needsFullRescan for \(side) panel")
             await refreshFiles(currSide: side)
@@ -228,12 +249,9 @@ extension DualDirectoryScanner {
     }
 
     func shouldSkipTimerRefresh(for side: FavPanelSide) -> Bool {
-        guard let lastPatch = lastFSEventsPatch[side] else {
-            return false
-        }
-
-        let elapsed = Date().timeIntervalSince(lastPatch)
-        return elapsed < fsEventsDebounceInterval
+        guard let lastFullScan = lastFullScan[side] else { return false }
+        let elapsed = Date().timeIntervalSince(lastFullScan)
+        return elapsed < max(fallbackScanInterval, adaptiveCooldown(for: side))
     }
 
     // MARK: - Timer / watcher maintenance
@@ -257,6 +275,7 @@ extension DualDirectoryScanner {
 
         leftWatchedPath = nil
         rightWatchedPath = nil
+        requestedWatchedPath.removeAll()
 
         startFSEvents(for: .left, url: panelURLs.left)
         startFSEvents(for: .right, url: panelURLs.right)

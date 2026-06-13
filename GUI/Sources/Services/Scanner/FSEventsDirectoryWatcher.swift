@@ -47,10 +47,6 @@
         private var pendingWork: DispatchWorkItem?
         private let throttleDelay: TimeInterval = 0.3
 
-        // Full-rescan protection (avoid duplicate rescans from bursty FSEvents)
-        private var lastFullRescanDate: Date?
-        private let fullRescanMinInterval: TimeInterval = 1.0
-
         // FSEvents kernel-side coalescing latency
         private static let latency: CFTimeInterval = 0.5
 
@@ -62,9 +58,10 @@
 
         // MARK: - Start / Stop
 
-        func watch(path: String, showHiddenFiles: Bool) {
+        @discardableResult
+        func watch(path: String, showHiddenFiles: Bool) -> Bool {
             stop()
-            guard !path.isEmpty else { return }
+            guard !path.isEmpty else { return false }
             watchedPath = path
             self.showHiddenFiles = showHiddenFiles
             let pathsToWatch = [path] as CFArray
@@ -104,12 +101,18 @@
                 flags
             ) else {
                 log.error("[FSEvents] FSEventStreamCreate FAILED for '\(path)'")
-                return
+                return false
             }
             FSEventStreamSetDispatchQueue(s, callbackQueue)
-            FSEventStreamStart(s)
+            guard FSEventStreamStart(s) else {
+                FSEventStreamInvalidate(s)
+                FSEventStreamRelease(s)
+                log.error("[FSEvents] FSEventStreamStart FAILED for '\(path)'")
+                return false
+            }
             stream = s
             log.info("[FSEvents] watching '\(path)'")
+            return true
         }
 
         func stop() {
@@ -179,14 +182,6 @@
             // only that "something changed" in the directory.
             //log.debug("[FSEvents] handleEvents: watchedDirChanged=\(watchedDirChanged) directChildren=\(directChildren.count) childCountUpdates=\(childCountUpdates.count)")
             if watchedDirChanged && directChildren.isEmpty {
-                let now = Date()
-                if let last = lastFullRescanDate,
-                   now.timeIntervalSince(last) < fullRescanMinInterval {
-                    log.debug("[FSEvents] full rescan suppressed (debounced) for '\(watched)'")
-                    return
-                }
-
-                lastFullRescanDate = now
                 log.info("[FSEvents] watched dir event → full rescan for '\(watched)' (debounced)")
 
                 let patch = DirectoryPatch(

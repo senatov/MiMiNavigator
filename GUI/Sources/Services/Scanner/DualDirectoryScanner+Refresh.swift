@@ -75,11 +75,11 @@ extension DualDirectoryScanner {
     /// Adaptive cooldown: big slow dirs get longer cooldown.
     /// Base = 3s, but if last scan took >5s, cooldown = min(scanDuration * 3, 120s).
     /// Prevents re-scanning 19k-file Outlook dirs every 3 seconds.
-    private func adaptiveCooldown(for side: FavPanelSide) -> TimeInterval {
+    func adaptiveCooldown(for side: FavPanelSide) -> TimeInterval {
         guard let lastDuration = lastScanDuration[side], lastDuration > 5 else {
             return scanCooldown
         }
-        return min(lastDuration * 3, fsEventsDebounceInterval)
+        return min(lastDuration * 3, 120)
     }
 
     private func consumeRecentFSEventsSignal(for side: FavPanelSide) -> Bool {
@@ -130,10 +130,10 @@ extension DualDirectoryScanner {
 
         activeScanTask[currSide] = task
         await task.value
-        finishScan(for: currSide, expectedGeneration: generation)
+        await finishScan(for: currSide, expectedGeneration: generation)
     }
 
-    func finishScan(for side: FavPanelSide, expectedGeneration: Int) {
+    func finishScan(for side: FavPanelSide, expectedGeneration: Int) async {
         let currentGeneration = scanGeneration[side] ?? 0
         guard currentGeneration == expectedGeneration else {
             log.debug(
@@ -145,6 +145,10 @@ extension DualDirectoryScanner {
         scanInProgress[side] = false
         activeScanTask.removeValue(forKey: side)
         log.debug("[Scan] Finished scan side=\(side) gen=\(expectedGeneration) active=false")
+        guard pendingRefreshAfterScan[side] == true else { return }
+        pendingRefreshAfterScan[side] = false
+        log.info("[FSEvents] running queued refresh after scan for \(side)")
+        await refreshFiles(currSide: side, force: true)
     }
 
     func cancelScan(for side: FavPanelSide) {
@@ -509,13 +513,6 @@ extension DualDirectoryScanner {
         let totalText = String(format: "%.3f", totalDuration)
         log.warning("[Scan] slow refresh side=\(side) gen=\(generation) path='\(path)' items=\(itemCount) scanSort=\(scanSortText)s publish=\(publishText)s total=\(totalText)s")
     }
-
-    // MARK: - Watcher Signals
-
-    func resetFSEventsDebounce(for side: FavPanelSide) {
-        lastFSEventsPatch[side] = Date()
-    }
-
 
     // MARK: - Cache Fallback on Timeout
 

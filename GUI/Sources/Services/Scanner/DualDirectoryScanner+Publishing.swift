@@ -246,7 +246,6 @@ extension DualDirectoryScanner {
         }
 
         log.verbose("[Scanner] skip identical publish side=\(side) path='\(path)' count=\(state.currentDisplayedCount) hash=\(contentHash)")
-        Task { await self.resetFSEventsDebounce(for: side) }
         return true
     }
     // MARK: - Selection bootstrap

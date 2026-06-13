@@ -25,11 +25,13 @@ actor DualDirectoryScanner {
 
     var leftWatchedPath: String?
     var rightWatchedPath: String?
+    var requestedWatchedPath: [FavPanelSide: String] = [:]
 
     // MARK: - Debounce / scan state
 
     var lastFSEventsPatch: [FavPanelSide: Date] = [:]
-    let fsEventsDebounceInterval: TimeInterval = 120
+    var pendingRefreshAfterScan: [FavPanelSide: Bool] = [.left: false, .right: false]
+    let fallbackScanInterval: TimeInterval = 30
 
     var scanInProgress: [FavPanelSide: Bool] = [.left: false, .right: false]
     var activeScanTask: [FavPanelSide: Task<Void, Never>] = [:]
