@@ -342,6 +342,8 @@ echo "[10/10] Uploading to GitHub release ${TAG}..."
 
 if gh release view "${TAG}" &>/dev/null; then
     if [[ "${RETAG_EXISTING_RELEASE}" == "true" ]]; then
+        echo "   Publishing ${CURRENT_BRANCH} before moving the release tag..."
+        git push origin "${CURRENT_BRANCH}"
         echo "   Moving ${TAG} to the notarized rebuild commit..."
         git tag -fa "${TAG}" -m "release ${VERSION}"
         git push origin "refs/tags/${TAG}" --force

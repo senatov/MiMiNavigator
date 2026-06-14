@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - **Native window hit testing** — internal drop fallback now uses AppKit's frontmost-window hit-test instead of manually inspecting the Core Graphics window list.
+- **Release hardening** — removed unused JIT, unsigned executable memory, DYLD environment, library-validation, debug, and personal-data access entitlements from Developer ID builds.
 - **Build metadata** — marketing version updated to `0.9.9.5.5`; build number remains `123`.
 
 ### Fixed
